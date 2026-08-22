@@ -5,10 +5,16 @@ import {
 } from "@medusajs/framework/http"
 
 import {
+  AdminGetCommerceSettingsParams,
+  AdminUpdateCommerceSetting,
+  AdminUpsertCommerceSetting,
+} from "./admin/commerce-settings/validators"
+import {
   AdminGetShippingAttributesParams,
   AdminShippingAttributeFlags,
   AdminUpsertShippingAttribute,
 } from "./admin/shipping-attributes/validators"
+import { StoreGetPaymentOptionsParams } from "./store/payment-options/validators"
 
 export default defineMiddlewares({
   routes: [
@@ -28,6 +34,30 @@ export default defineMiddlewares({
       matcher: "/admin/shipping-attributes/:id",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminShippingAttributeFlags)],
+    },
+    {
+      matcher: "/admin/commerce-settings",
+      method: "GET",
+      middlewares: [
+        validateAndTransformQuery(AdminGetCommerceSettingsParams, {}),
+      ],
+    },
+    {
+      matcher: "/admin/commerce-settings",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminUpsertCommerceSetting)],
+    },
+    {
+      matcher: "/admin/commerce-settings/:key",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminUpdateCommerceSetting)],
+    },
+    {
+      matcher: "/store/payment-options",
+      method: "GET",
+      middlewares: [
+        validateAndTransformQuery(StoreGetPaymentOptionsParams, {}),
+      ],
     },
   ],
 })
