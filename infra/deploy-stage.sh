@@ -119,15 +119,18 @@ step "2. A HEAD osszevetese a(z) $REMOTE/$BRANCH aggal"
 git fetch "$REMOTE" "$BRANCH" >/dev/null 2>&1 \
   || fail "a 'git fetch $REMOTE $BRANCH' nem futott le. Halozat vagy hitelesites?"
 
-HEAD_SHA="$(git rev-parse HEAD 2>/dev/null)"
+# Mindenhol --verify --quiet, es nem a csupasz rev-parse. A csupasz alak hiba
+# eseten VISSZAECHOZZA a bemenetet a kimenetre (es 128-cal lep ki), tehat egy
+# nem letezo hivatkozas is nem-ures valaszt ad, es az "ures-e" ellenorzes atengedi.
+HEAD_SHA="$(git rev-parse --verify --quiet HEAD)"
 [ -n "$HEAD_SHA" ] || fail "nem tudtam megallapitani a HEAD azonositojat"
 
-REMOTE_SHA="$(git rev-parse "$REMOTE/$BRANCH" 2>/dev/null)"
+REMOTE_SHA="$(git rev-parse --verify --quiet "$REMOTE/$BRANCH")"
 [ -n "$REMOTE_SHA" ] || fail "nem tudtam megallapitani a(z) $REMOTE/$BRANCH azonositojat"
 
 if [ -n "$ALLOW_DETACHED" ]; then
-  TARGET_SHA="$(git rev-parse "$ALLOW_DETACHED^{commit}" 2>/dev/null)"
-  [ -n "$TARGET_SHA" ] || fail "a megadott commit nem letezik: $ALLOW_DETACHED"
+  TARGET_SHA="$(git rev-parse --verify --quiet "$ALLOW_DETACHED^{commit}")"
+  [ -n "$TARGET_SHA" ] || fail "a megadott commit nem letezik ebben a repoban: $ALLOW_DETACHED"
 
   [ "$HEAD_SHA" = "$TARGET_SHA" ] \
     || fail "a --allow-detached $ALLOW_DETACHED azonositot kert, de a HEAD $HEAD_SHA. Elobb allj ra: git checkout $ALLOW_DETACHED"
