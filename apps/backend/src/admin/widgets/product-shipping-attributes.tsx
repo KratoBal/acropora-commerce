@@ -56,7 +56,13 @@ const ProductShippingAttributesWidget = ({
 
         const body = await response.json()
         if (!cancelled) {
-          setFlags({ ...EMPTY, ...(body.shipping_attribute ?? {}) })
+          const shippingAttribute = body.shipping_attribute ?? {}
+
+          setFlags({
+            pickup_only: Boolean(shippingAttribute.pickup_only),
+            foxpost_forbidden: Boolean(shippingAttribute.foxpost_forbidden),
+            is_frozen: Boolean(shippingAttribute.is_frozen),
+          })
         }
       } catch (e) {
         if (!cancelled) {
