@@ -1,22 +1,24 @@
-import { MedusaError } from "@medusajs/framework/utils"
-
-import { COMMERCE_SETTINGS_MODULE } from "../../modules/commerce-settings"
+import { getCommerceSettingValue } from "../../modules/commerce-settings/accessor"
+import {
+  CASH_ON_DELIVERY_FEE_SETTING_KEY,
+  COMMERCE_SETTING_DEFINITIONS,
+  DEFAULT_CASH_ON_DELIVERY_FEE_HUF,
+  normalizeCommerceSettingValue,
+} from "../../modules/commerce-settings/definitions"
 import { PaymentRole } from "./payment-eligibility"
 
 /**
  * The cash-on-delivery fee.
  *
  * The amount is NOT a business constant. It lives in the commerce-settings
- * module so it can be changed without a deployment, and the number below is
- * only the value used when nothing has been stored yet. It appears in exactly
- * one place in the codebase, here.
+ * module so it can be changed without a deployment. Its approved fallback is
+ * owned by the central commerce-setting definition and re-exported here for
+ * backwards compatibility.
  */
-export const CASH_ON_DELIVERY_FEE_SETTING_KEY = "cash_on_delivery_fee_huf"
-
-export const DEFAULT_CASH_ON_DELIVERY_FEE_HUF = 450
+export { CASH_ON_DELIVERY_FEE_SETTING_KEY, DEFAULT_CASH_ON_DELIVERY_FEE_HUF }
 
 export const CASH_ON_DELIVERY_FEE_SETTING_DESCRIPTION =
-  "Utánvét kezelési díj, forintban. Csak utánvétes fizetésnél számítjuk fel, rendelésenként egyszer."
+  COMMERCE_SETTING_DEFINITIONS[CASH_ON_DELIVERY_FEE_SETTING_KEY].description
 
 /**
  * Validates a fee value.
@@ -26,30 +28,7 @@ export const CASH_ON_DELIVERY_FEE_SETTING_DESCRIPTION =
  * it would silently pay the customer.
  */
 export const normalizeCashOnDeliveryFee = (raw: unknown): number => {
-  const value = typeof raw === "string" ? Number(raw) : raw
-
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      `${CASH_ON_DELIVERY_FEE_SETTING_KEY} must be a number, received ${JSON.stringify(raw)}`
-    )
-  }
-
-  if (!Number.isInteger(value)) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      `${CASH_ON_DELIVERY_FEE_SETTING_KEY} must be a whole number of forints, received ${value}`
-    )
-  }
-
-  if (value < 0) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      `${CASH_ON_DELIVERY_FEE_SETTING_KEY} must not be negative, received ${value}`
-    )
-  }
-
-  return value
+  return normalizeCommerceSettingValue(CASH_ON_DELIVERY_FEE_SETTING_KEY, raw)
 }
 
 /**
@@ -61,20 +40,8 @@ export const normalizeCashOnDeliveryFee = (raw: unknown): number => {
  */
 export const getCashOnDeliveryFee = async (container: {
   resolve: (key: string) => any
-}): Promise<number> => {
-  const service = container.resolve(COMMERCE_SETTINGS_MODULE)
-
-  const [setting] = await service.listCommerceSettings(
-    { key: CASH_ON_DELIVERY_FEE_SETTING_KEY },
-    { take: 1 }
-  )
-
-  if (!setting) {
-    return DEFAULT_CASH_ON_DELIVERY_FEE_HUF
-  }
-
-  return normalizeCashOnDeliveryFee(setting.value)
-}
+}): Promise<number> =>
+  getCommerceSettingValue(container, CASH_ON_DELIVERY_FEE_SETTING_KEY)
 
 /**
  * How much the cash-on-delivery fee adds to this cart.

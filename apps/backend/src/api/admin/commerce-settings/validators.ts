@@ -1,8 +1,12 @@
 import { z } from "@medusajs/framework/zod"
 
+import { COMMERCE_SETTING_KEYS } from "../../../modules/commerce-settings/definitions"
+
+const CommerceSettingKey = z.enum(COMMERCE_SETTING_KEYS)
+
 export const AdminUpsertCommerceSetting = z
   .object({
-    key: z.string().min(1),
+    key: CommerceSettingKey,
     value: z.unknown(),
     description: z.string().nullish(),
   })
@@ -17,7 +21,7 @@ export const AdminUpdateCommerceSetting = z
 
 export const AdminGetCommerceSettingsParams = z
   .object({
-    key: z.union([z.string(), z.array(z.string())]).optional(),
+    key: z.union([CommerceSettingKey, z.array(CommerceSettingKey)]).optional(),
   })
   .strict()
 

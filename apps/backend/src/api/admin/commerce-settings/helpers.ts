@@ -1,13 +1,12 @@
 import { MedusaContainer } from "@medusajs/framework"
 
 import { COMMERCE_SETTINGS_MODULE } from "../../../modules/commerce-settings"
-import CommerceSettingsModuleService from "../../../modules/commerce-settings/service"
 import {
-  CASH_ON_DELIVERY_FEE_SETTING_KEY,
-  CASH_ON_DELIVERY_FEE_SETTING_DESCRIPTION,
-  DEFAULT_CASH_ON_DELIVERY_FEE_HUF,
-  normalizeCashOnDeliveryFee,
-} from "../../../workflows/utils/cod-fee"
+  assertCommerceSettingKey,
+  COMMERCE_SETTING_DEFINITIONS,
+  CommerceSettingKey,
+} from "../../../modules/commerce-settings/definitions"
+import CommerceSettingsModuleService from "../../../modules/commerce-settings/service"
 
 export const resolveService = (
   scope: MedusaContainer
@@ -16,38 +15,34 @@ export const resolveService = (
 /**
  * Per-key validation and defaults.
  *
- * A settings table is only as safe as its edges: the value column is JSON, so
- * the checks have to happen where a value enters. Unknown keys are accepted as
- * they are; known keys are validated by the module that owns them.
+ * A settings table is only as safe as its edges: the value column is text, so
+ * the checks have to happen where a value enters. Unknown keys are rejected.
  */
-export const KNOWN_SETTINGS: Record<
-  string,
-  { description: string; defaultValue: unknown; validate: (v: unknown) => unknown }
-> = {
-  [CASH_ON_DELIVERY_FEE_SETTING_KEY]: {
-    description: CASH_ON_DELIVERY_FEE_SETTING_DESCRIPTION,
-    defaultValue: DEFAULT_CASH_ON_DELIVERY_FEE_HUF,
-    validate: normalizeCashOnDeliveryFee,
-  },
-}
+export const KNOWN_SETTINGS = COMMERCE_SETTING_DEFINITIONS
 
 /** Validates, then serializes to the text column. */
 export const validateSettingValue = (key: string, value: unknown): string => {
-  const validated = KNOWN_SETTINGS[key]
-    ? KNOWN_SETTINGS[key].validate(value)
-    : value
+  const knownKey = assertCommerceSettingKey(key)
+  const validated = KNOWN_SETTINGS[knownKey].normalize(value)
 
-  return typeof validated === "string" ? validated : String(validated)
+  return String(validated)
 }
 
-/** A key with no row is not missing, it is unset, and the default applies. */
-export const defaultSetting = (key: string) => ({
-  id: null,
-  key,
-  value: KNOWN_SETTINGS[key]?.defaultValue ?? null,
-  description: KNOWN_SETTINGS[key]?.description ?? null,
-  is_default: true,
-})
+/** A missing row exposes an approved default, or an explicit unconfigured state. */
+export const defaultSetting = (key: string) => {
+  const knownKey = assertCommerceSettingKey(key)
+  const definition = KNOWN_SETTINGS[knownKey]
+  const hasDefault = definition.defaultValue !== undefined
+
+  return {
+    id: null,
+    key: knownKey,
+    value: definition.defaultValue ?? null,
+    description: definition.description,
+    is_default: hasDefault,
+    is_configured: false,
+  }
+}
 
 export const upsertSetting = async (
   scope: MedusaContainer,
@@ -55,17 +50,22 @@ export const upsertSetting = async (
   value: unknown,
   description?: string | null
 ) => {
+  const knownKey: CommerceSettingKey = assertCommerceSettingKey(key)
   const service = resolveService(scope)
-  const validated = validateSettingValue(key, value)
+  const validated = validateSettingValue(knownKey, value)
+  const definition = KNOWN_SETTINGS[knownKey]
 
-  const [existing] = await service.listCommerceSettings({ key }, { take: 1 })
+  const [existing] = await service.listCommerceSettings(
+    { key: knownKey },
+    { take: 1 }
+  )
 
   if (!existing) {
     const [created] = await service.createCommerceSettings([
       {
-        key,
+        key: knownKey,
         value: validated,
-        description: description ?? KNOWN_SETTINGS[key]?.description ?? null,
+        description: description ?? definition.description,
       },
     ])
     return created
