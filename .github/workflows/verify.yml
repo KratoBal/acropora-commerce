@@ -1,0 +1,56 @@
+name: verify
+
+# Minden pull requesten es a fo agon fut. A cel nem a teljesseg, hanem az, hogy
+# egy hiba NE a stage kornyezetben derüljön ki eloszor. A lepesek sorrendje
+# szandekos: a gyorsak elol, hogy egy elgepeles ne varjon a buildre.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # A repo package.json-ja: ^20.19.0 || >=22.12.0
+          node-version: '22'
+          cache: npm
+
+      - name: Telepites
+        run: npm ci
+
+      - name: Titok-kereses a valtozasokban
+        # Publikus repo eseten egy elgepelt kulcs veglegesen kikerul, es a
+        # torles nem segit. Ez a lepes a MOSTANI fat nezi at, nem a tortenetet:
+        # olcso, es pont azt a hibat fogja meg, amit egy ember nem vesz eszre.
+        run: |
+          set -o pipefail
+          if git grep -nIE "BEGIN (RSA|OPENSSH|PRIVATE) KEY|AKIA[0-9A-Z]{16}|github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}" -- . ':!*.example' ':!*.template'; then
+            echo "::error::Kulcsra emlekezteto szoveg a fában. Ha valodi, VONJATOK VISSZA, ne csak toroljetek."
+            exit 1
+          fi
+          echo "nincs kulcs-alaku szoveg"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipusellenorzes
+        working-directory: apps/backend
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Unit tesztek
+        working-directory: apps/backend
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
