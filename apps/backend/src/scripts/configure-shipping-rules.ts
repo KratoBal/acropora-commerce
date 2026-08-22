@@ -92,7 +92,7 @@ export default async function configureShippingRules({
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const fulfillment = container.resolve(Modules.FULFILLMENT)
 
-  const apply = (args ?? []).includes("--apply")
+  const apply = (args ?? []).includes("--apply") || (args ?? []).includes("apply")
 
   const targets = OPTION_ROLES.map((target) => ({
     ...target,
