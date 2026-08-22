@@ -34,6 +34,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/shipping-attributes",
     },
     {
+      resolve: "./src/modules/commerce-settings",
+    },
+    {
       resolve: "@medusajs/medusa/caching",
       options: {
         providers: [
