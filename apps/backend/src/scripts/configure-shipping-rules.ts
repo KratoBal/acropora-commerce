@@ -8,9 +8,9 @@ import { batchShippingOptionRulesWorkflow } from "@medusajs/medusa/core-flows"
 
 import {
   SHIPPING_CLASS_RULE_ATTRIBUTE,
-  ShippingOptionRole,
   ruleForRole,
 } from "../workflows/utils/shipping-eligibility"
+import { resolveShippingOptionRoleBindings } from "../workflows/utils/shipping-option-roles"
 
 /**
  * Applies the `shipping_class` rules to the Acropora shipping options.
@@ -36,53 +36,11 @@ import {
  */
 
 /**
- * Stage shipping-option ids, from the Phase 3 brief. Each can be overridden by
- * an environment variable so the same script works against another environment
- * without editing code.
+ * The option ids and their roles live in
+ * `src/workflows/utils/shipping-option-roles.ts`, shared with the payment
+ * eligibility resolver. One table, so the two cannot drift apart, and every id
+ * stays overridable by an environment variable.
  */
-const OPTION_ROLES: {
-  role: ShippingOptionRole
-  name: string
-  id: string
-  env: string
-}[] = [
-  {
-    role: "PICKUP",
-    name: "Bolti átvétel",
-    id: "so_01M0K5AFG6M5PDEKCQYW2FNBQZ",
-    env: "ACROPORA_SO_PICKUP",
-  },
-  {
-    role: "GLS_NORMAL",
-    name: "GLS házhozszállítás",
-    id: "so_01M0K6P7P1Z9XQQANXE2FRATR7",
-    env: "ACROPORA_SO_GLS_HOME",
-  },
-  {
-    role: "GLS_NORMAL",
-    name: "GLS csomagpont",
-    id: "so_01M0K6W1873VS64WAPQZM7H8KH",
-    env: "ACROPORA_SO_GLS_POINT",
-  },
-  {
-    role: "GLS_HEAVY",
-    name: "GLS nehézáru házhozszállítás",
-    id: "so_01M0K73C9TZZV3ETP02F66HJVG",
-    env: "ACROPORA_SO_GLS_HEAVY_HOME",
-  },
-  {
-    role: "GLS_HEAVY",
-    name: "GLS nehézáru csomagpont",
-    id: "so_01M0K7547Z7DNE7CNA86A2FFJ6",
-    env: "ACROPORA_SO_GLS_HEAVY_POINT",
-  },
-  {
-    role: "FOXPOST",
-    name: "Foxpost csomagpont",
-    id: "so_01M0K783R7D71AKJXC5D0SQ1SN",
-    env: "ACROPORA_SO_FOXPOST",
-  },
-]
 
 const sameValue = (a: unknown, b: unknown) =>
   JSON.stringify(Array.isArray(a) ? [...a].sort() : a) ===
@@ -97,10 +55,7 @@ export default async function configureShippingRules({
 
   const apply = (args ?? []).includes("--apply") || (args ?? []).includes("apply")
 
-  const targets = OPTION_ROLES.map((target) => ({
-    ...target,
-    id: process.env[target.env] ?? target.id,
-  }))
+  const targets = resolveShippingOptionRoleBindings()
 
   const options = await fulfillment.listShippingOptions(
     { id: targets.map((t) => t.id) },
