@@ -31,6 +31,21 @@ module.exports = defineConfig({
 
   modules: [
     {
+      resolve: "@medusajs/medusa/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/medusa/fulfillment-manual",
+            id: "manual",
+          },
+          {
+            resolve: "./src/modules/acropora-fulfillment",
+            id: "shipping",
+          },
+        ],
+      },
+    },
+    {
       resolve: "./src/modules/shipping-attributes",
     },
     {

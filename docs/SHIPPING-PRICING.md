@@ -1,9 +1,8 @@
-# Shipping pricing foundation
+# Shipping pricing
 
-The shipping-pricing foundation is deliberately separate from runtime checkout
-wiring. It centralizes operational HUF settings, merchandise-value calculation,
-and a pure role-based pricing policy for a later calculated-price fulfillment
-provider.
+Shipping pricing centralizes operational HUF settings, merchandise-value
+calculation, and a pure role-based pricing policy. The Acropora fulfillment
+provider connects these components to Medusa's calculated shipping runtime.
 
 ## Commerce settings
 
@@ -44,7 +43,33 @@ Promotions, loyalty, tax totals, shipping and fees do not alter `goods_total`.
 - `GLS_NORMAL` and `FOXPOST` become 0 HUF when
   `goods_total >= free_shipping_threshold_huf`.
 
-This foundation does not register a fulfillment provider, change shipping
-options or price rules, create a positive COD fee line item, call carrier APIs,
-or connect the policy to cart/checkout workflows. Those are separate reviewed
-changes.
+## Checkout runtime
+
+`src/modules/acropora-fulfillment` is registered as provider
+`fp_acropora_shipping`. For a calculated shipping option Medusa passes the
+option's `data`, the shipping-method data, and the cart fulfillment context to
+the provider. Medusa 2.19 does not pass the shipping option's database ID as a
+separate `calculatePrice` argument, so every activated option must store its own
+stable shipping-option ID in `data.id`.
+
+The runtime path is:
+
+```text
+shipping option data.id
+  -> existing shipping-option ID-to-role mapping
+  -> cart context.items
+  -> calculateGoodsTotal
+  -> validated commerce settings
+  -> calculateShippingPrice
+  -> calculated_amount
+```
+
+Unknown option data, absent carrier settings, and malformed settings fail
+closed. Pickup resolves to zero before carrier settings are read. Configured HUF
+amounts are returned as tax-inclusive so the configured number is the checkout
+charge.
+
+The provider preserves manual/no-op fulfillment execution. It does not call
+GLS or Foxpost APIs, book shipments, or create labels. Registering the provider
+does not activate it for existing shipping options; follow
+`CALCULATED-SHIPPING-ROLLOUT.md` in a separately approved environment change.
