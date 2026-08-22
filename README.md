@@ -156,3 +156,9 @@ The storefront is configured via environment variables in `apps/storefront/.env.
 
 - [Medusa Documentation](https://docs.medusajs.com)
 - [Medusa Cloud](https://cloud.medusajs.com)
+
+## Fejlesztes
+
+Minden pull request es a fo agra iras lefuttatja a `verify` folyamatot: telepites,
+titok-kereses, lint, tipusellenorzes, unit tesztek, build. Zold ellenorzes nelkul nem
+olvasztunk be.
