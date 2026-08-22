@@ -76,9 +76,12 @@ export const resolveSelectedPaymentRole = (
 }
 
 /**
- * The one place that answers "what may this cart pay with, and does it owe a
- * cash-on-delivery fee". Every caller, the store route and the cart hook alike,
- * goes through here.
+ * The one place that answers "what may this cart pay with, and how large would
+ * the cash-on-delivery fee be".
+ *
+ * The fee is reported, not applied: the cart hook that used to write it on as a
+ * negative discount was removed. Today the only caller is the store
+ * payment-options route.
  */
 export const resolveCartPaymentContext = async (
   cart: CartForPayment,
