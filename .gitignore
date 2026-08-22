@@ -55,3 +55,9 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 **/.DS_Store
+
+# A stage telepites kimenete. A szkript irja (infra/deploy-stage.sh), es
+# szandekosan NEM kerul verziokovetesbe: a hoston keletkezik, es ha kovetve
+# lenne, minden telepites utan piszkos munkafat hagyna, amit a kovetkezo
+# telepites sajat feke tagadna meg.
+DEPLOYED.md
