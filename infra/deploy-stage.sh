@@ -6,9 +6,9 @@
 #   1. megtagadja a futast piszkos munkafan
 #   2. megtagadja, ha a HEAD nem az origin/main feje
 #   3. megall, ha a telepitendo commit uj migraciot hoz
-#   4. epit GIT_SHA build argumentummal
-#   5. ket cimket ad: a rovid azonositot es a mozgo "stage" mutatot
-#   6. visszaolvassa a kepbol a cimket es a kornyezeti valtozot
+#   4. epit GIT_SHA build argumentummal, CSAK a rovid azonositos cimkevel
+#   5. visszaolvassa a kepbol a cimket es a kornyezeti valtozot
+#   6. csak ezutan teszi ra a mozgo "stage" mutatot
 #   7. kiirja a DEPLOYED.md fajlt
 #
 # Amit NEM csinal, szandekosan:
@@ -158,6 +158,11 @@ COMMIT_SUBJECT="$(git log -1 --format=%s "$HEAD_SHA")"
 
 step "3. Migracio-ellenorzes"
 
+# MEDDIG LAT EL EZ A FEK: csak a Medusa modulok migracios konyvtarat nezi, es
+# csak a HOZZAADOTT fajlokat (--diff-filter=A). Ma ez fedi a valosagot, mert a
+# "medusa db:generate" ide teszi oket. Ha valaha mashova kerul migracio, vagy
+# egy meglevo fajlt IRNAK AT, ez a fek CSENDBEN engedi at. Ha a szerkezet
+# valtozik, ez a minta is valtozzon vele.
 MIGRATION_GLOB='apps/backend/src/modules/*/migrations/*.ts'
 PREVIOUS_SHA=""
 
@@ -212,13 +217,20 @@ FULL_TAG="$IMAGE_NAME:$SHORT_SHA"
 MOVING_TAG="$IMAGE_NAME:$STAGE_TAG"
 
 echo "cimke:        $FULL_TAG"
-echo "mozgo cimke:  $MOVING_TAG"
 echo "GIT_SHA:      $HEAD_SHA"
 
+# A build CSAK a rovid azonositos cimket adja. A mozgo "stage" cimke a
+# visszameres UTAN kerul fel, kulon lepesben.
+#
+# Miert nem egyszerre: ha a build sikerul, de a belyegzes rossz (a cimke vagy a
+# kornyezeti valtozo nem egyezik a commit-tal), akkor a build parancsban egyutt
+# kiadott "stage" cimke MAR arra a kepre mutatna, es a kovetkezo
+# "docker compose up" azt inditana el, holott a szkript megtagadta a telepitest.
+# Igy viszont igaz marad az, amiert az egesz szkript van: a "stage" cimke SOSEM
+# mutat ellenorizetlen kepre.
 docker build \
   --build-arg "GIT_SHA=$HEAD_SHA" \
   -t "$FULL_TAG" \
-  -t "$MOVING_TAG" \
   -f Dockerfile \
   . || fail "a 'docker build' elhasalt. A kep NEM keszult el, es a DEPLOYED.md sem irodott ki."
 
@@ -252,10 +264,24 @@ fi
 echo "digest: $DIGEST_NOTE"
 
 # ---------------------------------------------------------------------------
-# 6. DEPLOYED.md
+# 6. A mozgo cimke, csak most
 # ---------------------------------------------------------------------------
 
-step "6. A DEPLOYED.md kiirasa"
+step "6. A mozgo cimke ratetele"
+
+docker tag "$FULL_TAG" "$MOVING_TAG" \
+  || fail "a mozgo cimke ratetele nem sikerult. A kep megvan es ellenorzott ($FULL_TAG), de a '$MOVING_TAG' cimke NEM mutat ra."
+
+MOVING_ID="$(docker image inspect --format '{{.Id}}' "$MOVING_TAG" 2>/dev/null)"
+[ -n "$MOVING_ID" ] && [ "$MOVING_ID" = "$IMAGE_DIGEST" ] \
+  || fail "a '$MOVING_TAG' cimke nem ugyanarra a kepre mutat, mint a(z) '$FULL_TAG'."
+echo "mozgo cimke rendben: $MOVING_TAG -> $FULL_TAG"
+
+# ---------------------------------------------------------------------------
+# 7. DEPLOYED.md
+# ---------------------------------------------------------------------------
+
+step "7. A DEPLOYED.md kiirasa"
 
 LOCAL_TIME="$(date '+%Y-%m-%d %H:%M:%S %Z')"
 UTC_TIME="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -283,10 +309,10 @@ EOF
 echo "kiirva: $DEPLOYED_FILE"
 
 # ---------------------------------------------------------------------------
-# 7. Ami hatravan, es amit a szkript szandekosan nem tesz meg
+# 8. Ami hatravan, es amit a szkript szandekosan nem tesz meg
 # ---------------------------------------------------------------------------
 
-step "7. Kesz"
+step "8. Kesz"
 
 cat <<EOF
 

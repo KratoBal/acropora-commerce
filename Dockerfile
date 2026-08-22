@@ -13,11 +13,11 @@ WORKDIR /app/apps/backend
 
 RUN npx medusa build
 
-# A build argumentum nem oroklodik szakaszok kozott, ezert mindket szakaszban
-# kulon kell deklaralni. Itt szandekosan a draga lepesek UTAN all: egy ARG a
-# deklaraciojatol kezdve elavultta teszi a gyorsitotarat, es a commit minden
-# telepitesnel mas, tehat feljebb minden buildnel ujra futna az npm ci.
-ARG GIT_SHA=unknown
+# A builder szakasz szandekosan NEM deklaralja a GIT_SHA argumentumot: nem
+# hasznalja az erteket, tehat ott a deklaracio nem csinalna semmit. A "mindket
+# szakaszban kulon kell" szabaly igaz, de csak arra a szakaszra, amelyik
+# tenylegesen OLVASSA az erteket, mert a build argumentum nem oroklodik.
+# Itt ez a runner.
 
 
 FROM node:22-bookworm-slim AS runner
