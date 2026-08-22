@@ -85,6 +85,11 @@ export const getCashOnDeliveryFee = async (container: {
  * where cash on delivery is not offered, both make it zero.
  *
  * The fee is per order, not per item: nothing here multiplies by quantity.
+ *
+ * This REPORTS the amount, it does not apply it. The mechanism that wrote the
+ * fee onto the cart represented it as a negative discount and was removed; the
+ * clean replacement is a separate decision. Until then the only consumer is the
+ * store payment-options endpoint, which reports the number.
  */
 export const resolveCashOnDeliveryFeeAmount = ({
   selectedPaymentRole,

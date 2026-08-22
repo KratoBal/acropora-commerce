@@ -8,8 +8,16 @@ import { resolveCartPaymentContext } from "../../../workflows/utils/resolve-cart
  * be.
  *
  * The backend is the source of truth: the storefront asks, it does not decide.
- * The same resolver answers here and in the cart hook, so what is offered and
- * what is charged cannot disagree.
+ *
+ * `cash_on_delivery_fee` is a REPORTED amount, not a charged one. Nothing adds
+ * it to a cart: the mechanism that used to do so represented the fee as a
+ * negative discount, which was rejected, and the replacement is not built yet.
+ * The field stays because the amount is the surviving business rule and the
+ * storefront contract should not move twice, but a storefront must not charge
+ * it on its own.
+ *
+ * In practice it is zero today for a second reason as well: no payment provider
+ * is mapped to a role, so `selected_payment_role` is never COD.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { cart_id } = req.validatedQuery as { cart_id: string }
