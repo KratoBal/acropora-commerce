@@ -1,12 +1,13 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+import { assertCommerceSettingKey } from "../../../../modules/commerce-settings/definitions"
 import { defaultSetting, resolveService, upsertSetting } from "../helpers"
 import { AdminUpdateCommerceSettingType } from "../validators"
 
 /** `key` is the setting key, for example `cash_on_delivery_fee_huf`. */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const service = resolveService(req.scope)
-  const key = req.params.key
+  const key = assertCommerceSettingKey(req.params.key)
 
   const [commerce_setting] = await service.listCommerceSettings(
     { key },
