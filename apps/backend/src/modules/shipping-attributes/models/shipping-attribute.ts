@@ -4,8 +4,13 @@ import { model } from "@medusajs/framework/utils"
  * Shipping-relevant product attributes that Medusa itself does not model.
  *
  * These are shared concepts between Acropora OS and Medusa, so they get typed
- * columns rather than living in `product.metadata`. Weight is deliberately NOT
- * duplicated here: `ProductVariant.weight` is the canonical Medusa weight field.
+ * columns rather than living in `product.metadata`.
+ *
+ * Every flag is set by hand. Acropora does not maintain reliable product
+ * weights for shipping decisions, and the current UNAS webshop is operated by
+ * marking products manually, so `is_heavy` is an explicit flag rather than
+ * something derived from `ProductVariant.weight`. Weight is still not
+ * duplicated here: it is simply not used for the shipping decision.
  */
 export const ShippingAttribute = model
   .define("shipping_attribute", {
@@ -22,6 +27,13 @@ export const ShippingAttribute = model
 
     /** Foxpost must not be offered when any cart item has this set. */
     foxpost_forbidden: model.boolean().default(false),
+
+    /**
+     * Heavy goods. Set by hand, never inferred from weight: Acropora has no
+     * reliable product weights, and the UNAS practice this replaces is manual
+     * marking too.
+     */
+    is_heavy: model.boolean().default(false),
 
     /** Frozen goods cannot be shipped, so they behave like `pickup_only`. */
     is_frozen: model.boolean().default(false),

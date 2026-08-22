@@ -18,8 +18,11 @@ import {
  * DRY RUN BY DEFAULT. It prints the exact plan and changes nothing unless it is
  * called with `--apply`:
  *
- *   npx medusa exec ./src/scripts/configure-shipping-rules.ts            # plan only
- *   npx medusa exec ./src/scripts/configure-shipping-rules.ts -- --apply # apply
+ *   npx medusa exec ./src/scripts/configure-shipping-rules.ts          # plan only
+ *   npx medusa exec ./src/scripts/configure-shipping-rules.ts apply    # apply
+ *
+ * Both `apply` and `--apply` are accepted: the CLI does not always forward a
+ * leading `--`, so the positional form is the one that reliably arrives.
  *
  * Idempotent: an option whose `shipping_class` rule already matches is left
  * alone, and re-running produces an empty plan.

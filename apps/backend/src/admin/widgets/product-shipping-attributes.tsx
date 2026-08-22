@@ -6,12 +6,14 @@ import { useEffect, useState } from "react"
 type Flags = {
   pickup_only: boolean
   foxpost_forbidden: boolean
+  is_heavy: boolean
   is_frozen: boolean
 }
 
 const EMPTY: Flags = {
   pickup_only: false,
   foxpost_forbidden: false,
+  is_heavy: false,
   is_frozen: false,
 }
 
@@ -25,6 +27,11 @@ const FIELDS: { key: keyof Flags; label: string; hint: string }[] = [
     key: "foxpost_forbidden",
     label: "Foxpost tiltva",
     hint: "A Foxpost csomagpont nem választható.",
+  },
+  {
+    key: "is_heavy",
+    label: "Nehézáru",
+    hint: "Csak nehézáru szállítással kérhető, a normál futár és a Foxpost nem választható.",
   },
   {
     key: "is_frozen",
@@ -58,9 +65,13 @@ const ProductShippingAttributesWidget = ({
         if (!cancelled) {
           const shippingAttribute = body.shipping_attribute ?? {}
 
+          // Only the editable booleans enter form state. The API response also
+          // carries id, product_id and timestamps, and a spread would send them
+          // straight back on save, which the strict POST validator rejects.
           setFlags({
             pickup_only: Boolean(shippingAttribute.pickup_only),
             foxpost_forbidden: Boolean(shippingAttribute.foxpost_forbidden),
+            is_heavy: Boolean(shippingAttribute.is_heavy),
             is_frozen: Boolean(shippingAttribute.is_frozen),
           })
         }

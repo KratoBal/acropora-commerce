@@ -7,7 +7,6 @@ import {
 
 type Variant = {
   id: string
-  weight?: number | null
   product?: { id?: string | null; type_id?: string | null } | null
 }
 
@@ -15,6 +14,7 @@ type Attribute = {
   product_id: string
   pickup_only?: boolean
   foxpost_forbidden?: boolean
+  is_heavy?: boolean
   is_frozen?: boolean
 }
 
@@ -55,9 +55,8 @@ const makeContainer = (variants: Variant[], attributes: Attribute[]) => {
 const variant = (
   id: string,
   productId: string,
-  weight: number | null = 1_000,
   typeId: string | null = null
-): Variant => ({ id, weight, product: { id: productId, type_id: typeId } })
+): Variant => ({ id, product: { id: productId, type_id: typeId } })
 
 const line = (
   id: string,
@@ -96,8 +95,8 @@ describe("resolveCartShippingClass", () => {
   describe("mixed carts", () => {
     it("normal plus heavy becomes HEAVY", async () => {
       const { container } = makeContainer(
-        [variant("v1", "p1", 1_000), variant("v2", "p2", 25_000)],
-        []
+        [variant("v1", "p1"), variant("v2", "p2")],
+        [{ product_id: "p2", is_heavy: true }]
       )
 
       const result = await resolveCartShippingClass(
@@ -125,8 +124,11 @@ describe("resolveCartShippingClass", () => {
 
     it("heavy plus pickup-only becomes PICKUP_ONLY", async () => {
       const { container } = makeContainer(
-        [variant("v1", "p1", 30_000), variant("v2", "p2")],
-        [{ product_id: "p2", is_frozen: true }]
+        [variant("v1", "p1"), variant("v2", "p2")],
+        [
+          { product_id: "p1", is_heavy: true },
+          { product_id: "p2", is_frozen: true },
+        ]
       )
 
       const result = await resolveCartShippingClass(
@@ -139,8 +141,11 @@ describe("resolveCartShippingClass", () => {
 
     it("foxpost-forbidden plus heavy becomes HEAVY", async () => {
       const { container } = makeContainer(
-        [variant("v1", "p1"), variant("v2", "p2", 21_000)],
-        [{ product_id: "p1", foxpost_forbidden: true }]
+        [variant("v1", "p1"), variant("v2", "p2")],
+        [
+          { product_id: "p1", foxpost_forbidden: true },
+          { product_id: "p2", is_heavy: true },
+        ]
       )
 
       const result = await resolveCartShippingClass(
@@ -152,20 +157,12 @@ describe("resolveCartShippingClass", () => {
     })
   })
 
-  describe("weight boundary, in grams", () => {
-    it("exactly 20,000 g is not heavy", async () => {
-      const { container } = makeContainer([variant("v1", "p1", 20_000)], [])
-
-      const result = await resolveCartShippingClass(
-        { items: [line("l1", "v1")] },
-        container as any
+  describe("heavy is an explicit flag, not a measurement", () => {
+    it("is heavy only when the product is marked", async () => {
+      const { container } = makeContainer(
+        [variant("v1", "p1")],
+        [{ product_id: "p1", is_heavy: true }]
       )
-
-      expect(result.shipping_class).toBe("NORMAL")
-    })
-
-    it("20,001 g is heavy", async () => {
-      const { container } = makeContainer([variant("v1", "p1", 20_001)], [])
 
       const result = await resolveCartShippingClass(
         { items: [line("l1", "v1")] },
@@ -175,8 +172,8 @@ describe("resolveCartShippingClass", () => {
       expect(result.shipping_class).toBe("HEAVY")
     })
 
-    it("a variant with no weight is not heavy", async () => {
-      const { container } = makeContainer([variant("v1", "p1", null)], [])
+    it("is not heavy when the product is not marked", async () => {
+      const { container } = makeContainer([variant("v1", "p1")], [])
 
       const result = await resolveCartShippingClass(
         { items: [line("l1", "v1")] },
@@ -185,12 +182,32 @@ describe("resolveCartShippingClass", () => {
 
       expect(result.shipping_class).toBe("NORMAL")
     })
+
+    it("never asks the variant for a weight", async () => {
+      const { container, calls } = makeContainer([variant("v1", "p1")], [])
+
+      await resolveCartShippingClass(
+        { items: [line("l1", "v1")] },
+        container as any
+      )
+
+      const variantCall = calls.find((c) => c.entity === "variant")
+      expect(variantCall).toBeDefined()
+      expect(JSON.stringify(calls)).not.toContain("weight")
+    })
   })
 
   it("ignores a restrictive item that does not require shipping", async () => {
     const { container } = makeContainer(
-      [variant("v1", "p1"), variant("v2", "p2", 90_000)],
-      [{ product_id: "p2", pickup_only: true, foxpost_forbidden: true }]
+      [variant("v1", "p1"), variant("v2", "p2")],
+      [
+        {
+          product_id: "p2",
+          pickup_only: true,
+          is_heavy: true,
+          foxpost_forbidden: true,
+        },
+      ]
     )
 
     const result = await resolveCartShippingClass(
@@ -230,8 +247,8 @@ describe("resolveCartShippingClass", () => {
    * the same cart is classified differently in the two places without erroring.
    */
   it("returns the same class for both workflow cart shapes", async () => {
-    const variants = [variant("v1", "p1", 25_000)]
-    const attributes: Attribute[] = []
+    const variants = [variant("v1", "p1")]
+    const attributes: Attribute[] = [{ product_id: "p1", is_heavy: true }]
 
     const withoutPricing = {
       items: [
@@ -255,6 +272,7 @@ describe("resolveCartShippingClass", () => {
           // the with-pricing workflow also carries an expanded variant
           variant: { id: "v1", weight: 25_000 },
           product: { id: "p1", weight: 25_000 },
+          // ... which must be ignored: weight decides nothing any more
         },
       ],
     }
@@ -324,7 +342,7 @@ describe("livestock resolution", () => {
   it("makes a configured livestock type PICKUP_ONLY", () => {
     const items = normalizeCartShippingItems(
       [{ id: "l1", variant_id: "v1", requires_shipping: true }],
-      new Map([["v1", { id: "v1", weight: 100, product: { id: "p1", type_id: "ptyp_coral" } }]]),
+      new Map([["v1", { id: "v1", product: { id: "p1", type_id: "ptyp_coral" } }]]),
       new Map(),
       createLivestockPredicate("ptyp_coral")
     )

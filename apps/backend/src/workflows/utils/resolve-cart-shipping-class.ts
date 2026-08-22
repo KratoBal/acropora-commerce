@@ -26,7 +26,6 @@ export type CartForShipping = {
 
 type VariantRow = {
   id: string
-  weight?: number | null
   product?: { id?: string | null; type_id?: string | null } | null
 }
 
@@ -34,6 +33,7 @@ type ShippingAttributeRow = {
   product_id: string
   pickup_only?: boolean | null
   foxpost_forbidden?: boolean | null
+  is_heavy?: boolean | null
   is_frozen?: boolean | null
 }
 
@@ -62,10 +62,10 @@ export const normalizeCartShippingItems = (
       // A product with no shipping-attributes row is unrestricted, not unknown.
       pickup_only: attributes?.pickup_only === true,
       foxpost_forbidden: attributes?.foxpost_forbidden === true,
+      // Heavy is a hand-set product flag, never derived from variant weight.
+      is_heavy: attributes?.is_heavy === true,
       is_frozen: attributes?.is_frozen === true,
       is_livestock: isLivestockProductType(variant?.product?.type_id),
-      // ProductVariant.weight is the canonical weight, in grams.
-      weight: variant?.weight ?? null,
       requires_shipping: item.requires_shipping,
     }
   })
@@ -75,10 +75,9 @@ export const normalizeCartShippingItems = (
  *
  * Called from BOTH shipping-option listing workflows. It deliberately reads
  * only `items[].id`, `items[].variant_id` and `items[].requires_shipping`,
- * because the two workflows populate the cart with DIFFERENT field sets
- * (`listShippingOptionsForCartWorkflow` has no variant weight, the
- * with-pricing one does). Reading anything else would make the same function
- * decide differently in the two places, without erroring.
+ * because the two workflows populate the cart with DIFFERENT field sets.
+ * Reading anything else would make the same function decide differently in the
+ * two places, without erroring.
  */
 export const resolveCartShippingClass = async (
   cart: CartForShipping,
@@ -106,7 +105,10 @@ export const resolveCartShippingClass = async (
     const { data: variants } = await query.graph({
       entity: "variant",
       filters: { id: variantIds },
-      fields: ["id", "weight", "product.id", "product.type_id"],
+      // No weight: the heavy decision is a product flag, not a measurement.
+      // The variant is still the anchor, because it is the only line-item field
+      // the caller cannot set.
+      fields: ["id", "product.id", "product.type_id"],
     })
 
     for (const variant of (variants ?? []) as VariantRow[]) {
@@ -131,7 +133,13 @@ export const resolveCartShippingClass = async (
     const { data: attributes } = await query.graph({
       entity: "shipping_attribute",
       filters: { product_id: productIds },
-      fields: ["product_id", "pickup_only", "foxpost_forbidden", "is_frozen"],
+      fields: [
+        "product_id",
+        "pickup_only",
+        "foxpost_forbidden",
+        "is_heavy",
+        "is_frozen",
+      ],
     })
 
     for (const row of (attributes ?? []) as ShippingAttributeRow[]) {

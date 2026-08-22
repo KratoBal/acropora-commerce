@@ -1,12 +1,12 @@
 import {
-  HEAVY_WEIGHT_THRESHOLD_GRAMS,
   computeShippingClass,
   ShippingRelevantItem,
 } from "../compute-shipping-class"
 
 /**
- * All weights in these tests are in GRAMS.
- * The threshold is 20,000 g; exactly 20,000 g is not heavy, 20,001 g is.
+ * Every input is an explicit product flag. There is no weight threshold:
+ * Acropora keeps no reliable shipping weights, so heavy goods are marked by
+ * hand, exactly as in the UNAS webshop this replaces.
  */
 const item = (
   id: string,
@@ -16,17 +16,13 @@ const item = (
   pickup_only: false,
   is_frozen: false,
   is_livestock: false,
+  is_heavy: false,
   foxpost_forbidden: false,
-  weight: 1_000,
   requires_shipping: true,
   ...overrides,
 })
 
 describe("computeShippingClass", () => {
-  it("uses grams and a 20,000 g threshold", () => {
-    expect(HEAVY_WEIGHT_THRESHOLD_GRAMS).toBe(20_000)
-  })
-
   describe("NORMAL", () => {
     it("returns NORMAL for an empty cart", () => {
       expect(computeShippingClass([])).toEqual({
@@ -40,11 +36,11 @@ describe("computeShippingClass", () => {
       expect(computeShippingClass(undefined).shipping_class).toBe("NORMAL")
     })
 
-    it("returns NORMAL for a single normal item", () => {
+    it("returns NORMAL for a single unflagged item", () => {
       expect(computeShippingClass([item("a")]).shipping_class).toBe("NORMAL")
     })
 
-    it("returns NORMAL for a multi-item cart of normal items", () => {
+    it("returns NORMAL for a multi-item cart of unflagged items", () => {
       const result = computeShippingClass([item("a"), item("b"), item("c")])
       expect(result.shipping_class).toBe("NORMAL")
       expect(result.shipping_class_source).toBeNull()
@@ -72,32 +68,26 @@ describe("computeShippingClass", () => {
   })
 
   describe("HEAVY", () => {
-    it("treats exactly 20,000 g as NOT heavy", () => {
-      expect(
-        computeShippingClass([item("a", { weight: 20_000 })]).shipping_class
-      ).toBe("NORMAL")
-    })
-
-    it("treats 20,001 g as heavy", () => {
-      const result = computeShippingClass([item("a", { weight: 20_001 })])
+    it("returns HEAVY for an item marked is_heavy", () => {
+      const result = computeShippingClass([item("a", { is_heavy: true })])
       expect(result.shipping_class).toBe("HEAVY")
       expect(result.shipping_class_source).toBe("a")
     })
 
-    it("makes the whole cart heavy when only one of several items is heavy", () => {
+    it("makes the whole cart heavy when only one of several items is marked", () => {
       const result = computeShippingClass([
         item("a"),
-        item("b", { weight: 25_000 }),
+        item("b", { is_heavy: true }),
         item("c"),
       ])
       expect(result.shipping_class).toBe("HEAVY")
       expect(result.shipping_class_source).toBe("b")
     })
 
-    it("prefers HEAVY over NO_FOXPOST", () => {
+    it("prefers HEAVY over NO_FOXPOST across two items", () => {
       const result = computeShippingClass([
         item("a", { foxpost_forbidden: true }),
-        item("b", { weight: 30_000 }),
+        item("b", { is_heavy: true }),
       ])
       expect(result.shipping_class).toBe("HEAVY")
       expect(result.shipping_class_source).toBe("b")
@@ -106,7 +96,7 @@ describe("computeShippingClass", () => {
     it("prefers HEAVY over NO_FOXPOST on the same item", () => {
       expect(
         computeShippingClass([
-          item("a", { weight: 30_000, foxpost_forbidden: true }),
+          item("a", { is_heavy: true, foxpost_forbidden: true }),
         ]).shipping_class
       ).toBe("HEAVY")
     })
@@ -133,7 +123,7 @@ describe("computeShippingClass", () => {
 
     it("prefers PICKUP_ONLY over HEAVY", () => {
       const result = computeShippingClass([
-        item("a", { weight: 30_000 }),
+        item("a", { is_heavy: true }),
         item("b", { is_livestock: true }),
       ])
       expect(result.shipping_class).toBe("PICKUP_ONLY")
@@ -144,13 +134,25 @@ describe("computeShippingClass", () => {
       expect(
         computeShippingClass([
           item("a", { foxpost_forbidden: true }),
-          item("b", { weight: 30_000 }),
+          item("b", { is_heavy: true }),
           item("c", { pickup_only: true }),
         ]).shipping_class
       ).toBe("PICKUP_ONLY")
     })
 
-    it("applies to the whole cart even with many normal items", () => {
+    it("wins even when set on the same item as every other flag", () => {
+      expect(
+        computeShippingClass([
+          item("a", {
+            pickup_only: true,
+            is_heavy: true,
+            foxpost_forbidden: true,
+          }),
+        ]).shipping_class
+      ).toBe("PICKUP_ONLY")
+    })
+
+    it("applies to the whole cart even with many unflagged items", () => {
       expect(
         computeShippingClass([
           item("a"),
@@ -162,22 +164,40 @@ describe("computeShippingClass", () => {
     })
   })
 
+  describe("precedence, exhaustively", () => {
+    const cases: [string, Partial<ShippingRelevantItem>, string][] = [
+      ["pickup_only alone", { pickup_only: true }, "PICKUP_ONLY"],
+      ["is_frozen alone", { is_frozen: true }, "PICKUP_ONLY"],
+      ["is_livestock alone", { is_livestock: true }, "PICKUP_ONLY"],
+      ["is_heavy alone", { is_heavy: true }, "HEAVY"],
+      ["foxpost_forbidden alone", { foxpost_forbidden: true }, "NO_FOXPOST"],
+      ["nothing set", {}, "NORMAL"],
+    ]
+
+    it.each(cases)("%s => %s", (_name, flags, expected) => {
+      expect(computeShippingClass([item("a", flags)]).shipping_class).toBe(
+        expected
+      )
+    })
+
+    it("keeps pickup_only > is_heavy > foxpost_forbidden > normal", () => {
+      const order = [
+        { pickup_only: true },
+        { is_heavy: true },
+        { foxpost_forbidden: true },
+        {},
+      ]
+      const expected = ["PICKUP_ONLY", "HEAVY", "NO_FOXPOST", "NORMAL"]
+
+      // Adding a strictly weaker flag to the cart must never change the result.
+      for (let i = 0; i < order.length; i++) {
+        const cart = order.slice(i).map((flags, index) => item(`i${index}`, flags))
+        expect(computeShippingClass(cart).shipping_class).toBe(expected[i])
+      }
+    })
+  })
+
   describe("missing and unusual data", () => {
-    it("does not treat a missing weight as heavy", () => {
-      expect(
-        computeShippingClass([item("a", { weight: undefined })]).shipping_class
-      ).toBe("NORMAL")
-      expect(
-        computeShippingClass([item("a", { weight: null })]).shipping_class
-      ).toBe("NORMAL")
-    })
-
-    it("does not treat a non-finite weight as heavy", () => {
-      expect(
-        computeShippingClass([item("a", { weight: Number.NaN })]).shipping_class
-      ).toBe("NORMAL")
-    })
-
     it("treats an item with no flags at all as normal, not as restricted", () => {
       expect(computeShippingClass([{}]).shipping_class).toBe("NORMAL")
     })
@@ -188,7 +208,8 @@ describe("computeShippingClass", () => {
         item("gift-card", {
           requires_shipping: false,
           is_frozen: true,
-          weight: 50_000,
+          is_heavy: true,
+          foxpost_forbidden: true,
         }),
       ])
       expect(result.shipping_class).toBe("NORMAL")
@@ -201,9 +222,9 @@ describe("computeShippingClass", () => {
       [],
       [item("a")],
       [item("a", { foxpost_forbidden: true })],
-      [item("a", { weight: 20_001 })],
+      [item("a", { is_heavy: true })],
       [item("a", { is_livestock: true })],
-      [item("a", { pickup_only: true }), item("b", { weight: 40_000 })],
+      [item("a", { pickup_only: true }), item("b", { is_heavy: true })],
     ]
 
     for (const cart of carts) {

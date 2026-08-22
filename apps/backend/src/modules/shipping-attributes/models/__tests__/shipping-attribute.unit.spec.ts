@@ -25,6 +25,7 @@ describe("ShippingAttribute model", () => {
       "foxpost_forbidden",
       "id",
       "is_frozen",
+      "is_heavy",
       "pickup_only",
       "product_id",
       "updated_at",
@@ -42,7 +43,12 @@ describe("ShippingAttribute model", () => {
   })
 
   it("defaults every flag to false, so missing data is never a restriction", () => {
-    for (const flag of ["pickup_only", "foxpost_forbidden", "is_frozen"]) {
+    for (const flag of [
+      "pickup_only",
+      "foxpost_forbidden",
+      "is_heavy",
+      "is_frozen",
+    ]) {
       const property = parsed.schema[flag] as unknown as {
         parse: (name: string) => { defaultValue?: unknown; nullable?: boolean }
       }
@@ -53,7 +59,8 @@ describe("ShippingAttribute model", () => {
     }
   })
 
-  it("does not duplicate weight, which belongs on ProductVariant", () => {
+  it("carries no weight column: heavy is a hand-set flag, not a measurement", () => {
     expect(Object.keys(parsed.schema)).not.toContain("weight")
+    expect(Object.keys(parsed.schema)).toContain("is_heavy")
   })
 })

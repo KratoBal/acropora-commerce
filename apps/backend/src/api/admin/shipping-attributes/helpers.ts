@@ -6,6 +6,7 @@ import ShippingAttributesModuleService from "../../../modules/shipping-attribute
 export type ShippingAttributeFlags = {
   pickup_only: boolean
   foxpost_forbidden: boolean
+  is_heavy: boolean
   is_frozen: boolean
 }
 
@@ -18,6 +19,7 @@ export const defaultFlags = (product_id: string) => ({
   product_id,
   pickup_only: false,
   foxpost_forbidden: false,
+  is_heavy: false,
   is_frozen: false,
 })
 

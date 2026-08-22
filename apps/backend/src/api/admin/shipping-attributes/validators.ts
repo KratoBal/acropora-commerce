@@ -4,6 +4,7 @@ export const AdminShippingAttributeFlags = z
   .object({
     pickup_only: z.boolean().optional(),
     foxpost_forbidden: z.boolean().optional(),
+    is_heavy: z.boolean().optional(),
     is_frozen: z.boolean().optional(),
   })
   .strict()
