@@ -61,3 +61,8 @@ Thumbs.db
 # lenne, minden telepites utan piszkos munkafat hagyna, amit a kovetkezo
 # telepites sajat feke tagadna meg.
 DEPLOYED.md
+
+# A stage BEKAPCSOLT allapotanak visszamerese (infra/activated-state.sh).
+# Ugyanabbol az okbol nem kovetett: a gephez tartozik, nem a kodhoz. Ezert
+# tartalmazza a sajat append-only tortenetet, mert a git nem fogja orizni.
+ACTIVATED.md
