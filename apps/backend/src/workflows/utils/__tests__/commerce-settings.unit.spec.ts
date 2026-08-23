@@ -17,11 +17,9 @@ import {
 } from "../../../api/admin/commerce-settings/helpers"
 import { AdminUpsertCommerceSetting } from "../../../api/admin/commerce-settings/validators"
 
-const containerWith = (rows: { key: string; value: unknown }[]) => ({
-  resolve: () => ({
-    listCommerceSettings: async (filters: { key: string }) =>
-      rows.filter((row) => row.key === filters.key),
-  }),
+const serviceWith = (rows: { key: string; value: unknown }[]) => ({
+  listCommerceSettings: async (filters: { key: string }) =>
+    rows.filter((row) => row.key === filters.key),
 })
 
 describe("commerce setting definitions", () => {
@@ -33,55 +31,58 @@ describe("commerce setting definitions", () => {
         SHIPPING_GLS_HEAVY_SETTING_KEY,
         SHIPPING_FOXPOST_SETTING_KEY,
         FREE_SHIPPING_THRESHOLD_SETTING_KEY,
-      ].sort()
+      ].sort(),
     )
   })
 
   it("accepts zero, positive integers and numeric text", () => {
     expect(
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, 0)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, 0),
     ).toBe(0)
     expect(
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, 1_990)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, 1_990),
     ).toBe(1_990)
     expect(
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, "1990")
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, "1990"),
     ).toBe(1_990)
   })
 
   it.each([-1, "-1"])("rejects a negative HUF value: %p", (value) => {
     expect(() =>
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, value)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, value),
     ).toThrow(/must not be negative/)
   })
 
   it("rejects fractional, non-numeric, null and undefined values", () => {
     expect(() =>
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, 1.5)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, 1.5),
     ).toThrow(/whole number/)
     expect(() =>
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, "nem szám")
+      normalizeCommerceSettingValue(
+        SHIPPING_GLS_NORMAL_SETTING_KEY,
+        "nem szám",
+      ),
     ).toThrow(/must be a number/)
     expect(() =>
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, NaN)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, NaN),
     ).toThrow(/must be a number/)
     expect(() =>
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, null)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, null),
     ).toThrow(/must be a number/)
     expect(() =>
-      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, undefined)
+      normalizeCommerceSettingValue(SHIPPING_GLS_NORMAL_SETTING_KEY, undefined),
     ).toThrow(/must be a number/)
   })
 
   it("rejects an unknown key at the admin edge", () => {
     expect(() => validateSettingValue("shipping_guessed_huf", 100)).toThrow(
-      /Unknown commerce setting key/
+      /Unknown commerce setting key/,
     )
     expect(
       AdminUpsertCommerceSetting.safeParse({
         key: "shipping_guessed_huf",
         value: 100,
-      }).success
+      }).success,
     ).toBe(false)
   })
 
@@ -108,39 +109,36 @@ describe("typed commerce setting access", () => {
   it("uses an approved default when no row exists", async () => {
     await expect(
       getCommerceSettingValue(
-        containerWith([]),
-        FREE_SHIPPING_THRESHOLD_SETTING_KEY
-      )
+        serviceWith([]),
+        FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+      ),
     ).resolves.toBe(50_000)
   })
 
   it("requires explicit carrier prices instead of inventing defaults", async () => {
     await expect(
-      getCommerceSettingValue(
-        containerWith([]),
-        SHIPPING_GLS_NORMAL_SETTING_KEY
-      )
+      getCommerceSettingValue(serviceWith([]), SHIPPING_GLS_NORMAL_SETTING_KEY),
     ).rejects.toThrow(/must be configured/)
   })
 
   it("fails loudly on a stored invalid value", async () => {
     await expect(
       getCommerceSettingValue(
-        containerWith([{ key: SHIPPING_FOXPOST_SETTING_KEY, value: "-5" }]),
-        SHIPPING_FOXPOST_SETTING_KEY
-      )
+        serviceWith([{ key: SHIPPING_FOXPOST_SETTING_KEY, value: "-5" }]),
+        SHIPPING_FOXPOST_SETTING_KEY,
+      ),
     ).rejects.toThrow(/must not be negative/)
   })
 
   it("reads the four shipping-pricing settings through the module service", async () => {
     await expect(
       getShippingPricingSettings(
-        containerWith([
+        serviceWith([
           { key: SHIPPING_GLS_NORMAL_SETTING_KEY, value: "1990" },
           { key: SHIPPING_GLS_HEAVY_SETTING_KEY, value: "5990" },
           { key: SHIPPING_FOXPOST_SETTING_KEY, value: "1490" },
-        ])
-      )
+        ]),
+      ),
     ).resolves.toEqual({
       shipping_gls_normal_huf: 1_990,
       shipping_gls_heavy_huf: 5_990,

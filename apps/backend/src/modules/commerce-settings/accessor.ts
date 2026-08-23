@@ -1,6 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils"
 
-import { COMMERCE_SETTINGS_MODULE } from "."
 import {
   COMMERCE_SETTING_DEFINITIONS,
   CommerceSettingKey,
@@ -15,13 +14,11 @@ type CommerceSettingRow = {
   value: unknown
 }
 
-export type CommerceSettingsContainer = {
-  resolve: (key: string) => {
-    listCommerceSettings: (
-      filters: { key: string },
-      config: { take: number }
-    ) => Promise<CommerceSettingRow[]>
-  }
+export type CommerceSettingsService = {
+  listCommerceSettings: (
+    filters: { key: string },
+    config: { take: number }
+  ) => Promise<CommerceSettingRow[]>
 }
 
 /**
@@ -29,10 +26,9 @@ export type CommerceSettingsContainer = {
  * carrier prices intentionally fail until the business configures them.
  */
 export const getCommerceSettingValue = async (
-  container: CommerceSettingsContainer,
+  service: CommerceSettingsService,
   key: CommerceSettingKey
 ): Promise<number> => {
-  const service = container.resolve(COMMERCE_SETTINGS_MODULE)
   const [setting] = await service.listCommerceSettings({ key }, { take: 1 })
   const definition = COMMERCE_SETTING_DEFINITIONS[key]
 
@@ -59,14 +55,14 @@ export type ShippingPricingSettings = {
 
 /** Reads all values required by the future calculated-price provider. */
 export const getShippingPricingSettings = async (
-  container: CommerceSettingsContainer
+  service: CommerceSettingsService
 ): Promise<ShippingPricingSettings> => {
   const [glsNormal, glsHeavy, foxpost, freeShippingThreshold] =
     await Promise.all([
-      getCommerceSettingValue(container, SHIPPING_GLS_NORMAL_SETTING_KEY),
-      getCommerceSettingValue(container, SHIPPING_GLS_HEAVY_SETTING_KEY),
-      getCommerceSettingValue(container, SHIPPING_FOXPOST_SETTING_KEY),
-      getCommerceSettingValue(container, FREE_SHIPPING_THRESHOLD_SETTING_KEY),
+      getCommerceSettingValue(service, SHIPPING_GLS_NORMAL_SETTING_KEY),
+      getCommerceSettingValue(service, SHIPPING_GLS_HEAVY_SETTING_KEY),
+      getCommerceSettingValue(service, SHIPPING_FOXPOST_SETTING_KEY),
+      getCommerceSettingValue(service, FREE_SHIPPING_THRESHOLD_SETTING_KEY),
     ])
 
   return {
