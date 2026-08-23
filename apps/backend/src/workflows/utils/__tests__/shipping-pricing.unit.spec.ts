@@ -36,7 +36,7 @@ describe("shipping pricing policy", () => {
 
   it("does not let a 450 HUF COD fee push 49,600 HUF of goods over the threshold", () => {
     const goodsTotalHuf = calculateGoodsTotal([
-      { unit_price: 49_600, quantity: 1 },
+      { unit_price: 49_600, quantity: 1, is_tax_inclusive: true },
       {
         unit_price: 450,
         quantity: 1,

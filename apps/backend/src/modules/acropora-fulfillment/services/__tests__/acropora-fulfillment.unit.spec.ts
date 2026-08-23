@@ -77,7 +77,9 @@ const calculate = async (
   return service.calculatePrice(
     { id: idFor(role) },
     {},
-    contextWith([{ unit_price: goodsTotalHuf, quantity: 1 }]),
+    contextWith([
+      { unit_price: goodsTotalHuf, quantity: 1, is_tax_inclusive: true },
+    ]),
   )
 }
 
@@ -128,7 +130,9 @@ describe("Acropora calculated fulfillment provider", () => {
       service.calculatePrice(
         { id: idFor("PICKUP") },
         {},
-        contextWith([{ unit_price: 10_000, quantity: 1 }]),
+        contextWith([
+          { unit_price: 10_000, quantity: 1, is_tax_inclusive: true },
+        ]),
       ),
     ).resolves.toEqual({
       calculated_amount: 0,
@@ -176,7 +180,7 @@ describe("Acropora calculated fulfillment provider", () => {
       { id: idFor("GLS_NORMAL") },
       {},
       contextWith([
-        { unit_price: 49_600, quantity: 1 },
+        { unit_price: 49_600, quantity: 1, is_tax_inclusive: true },
         {
           unit_price: 450,
           quantity: 1,
@@ -219,8 +223,77 @@ describe("Acropora calculated fulfillment provider", () => {
       service.calculatePrice(
         { id: "so_unknown" },
         {},
-        contextWith([{ unit_price: 50_000, quantity: 1 }]),
+        contextWith([
+          { unit_price: 50_000, quantity: 1, is_tax_inclusive: true },
+        ]),
       ),
     ).rejects.toThrow(/Unknown Acropora shipping option id/)
+  })
+
+  describe("tax semantics at the shipping boundary", () => {
+    it("prices normally when the cart states that its prices include tax", async () => {
+      const service = new AcroporaFulfillmentService(
+        cradleWith(configuredSettings),
+      )
+
+      await expect(
+        service.calculatePrice(
+          { id: idFor("GLS_NORMAL") },
+          {},
+          contextWith([
+            { unit_price: 10_000, quantity: 1, is_tax_inclusive: true },
+          ]),
+        ),
+      ).resolves.toMatchObject({ calculated_amount: 3_500 })
+    })
+
+    it("refuses to price rather than compare a net cart against a gross threshold", async () => {
+      // This is a behaviour change at the shipping boundary, not only a type
+      // change: before the invariant, a net price was silently added to a gross
+      // sum and measured against a gross threshold.
+      const service = new AcroporaFulfillmentService(
+        cradleWith(configuredSettings),
+      )
+
+      await expect(
+        service.calculatePrice(
+          { id: idFor("GLS_NORMAL") },
+          {},
+          contextWith([
+            { unit_price: 10_000, quantity: 1, is_tax_inclusive: false },
+          ]),
+        ),
+      ).rejects.toThrow(/priced without tax/)
+    })
+
+    it("refuses when the cart does not state its tax semantics at all", async () => {
+      const service = new AcroporaFulfillmentService(
+        cradleWith(configuredSettings),
+      )
+
+      await expect(
+        service.calculatePrice(
+          { id: idFor("GLS_NORMAL") },
+          {},
+          contextWith([{ unit_price: 10_000, quantity: 1 }]),
+        ),
+      ).rejects.toThrow(/no known tax status/)
+    })
+
+    it("keeps pickup free without reading the cart at all", async () => {
+      // Pickup returns before the goods total is computed, so an unstated tax
+      // status cannot take store pickup away from a customer.
+      const service = new AcroporaFulfillmentService(
+        cradleWith(configuredSettings),
+      )
+
+      await expect(
+        service.calculatePrice(
+          { id: idFor("PICKUP") },
+          {},
+          contextWith([{ unit_price: 10_000, quantity: 1 }]),
+        ),
+      ).resolves.toMatchObject({ calculated_amount: 0 })
+    })
   })
 })
