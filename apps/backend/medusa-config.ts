@@ -53,6 +53,21 @@ module.exports = defineConfig({
       },
     },
     {
+      // The payment module runs with its defaults today, which registers only
+      // the built-in system provider. Declaring it here adds ours; the system
+      // provider is registered unconditionally by the module loader, so
+      // `pp_system_default` does not disappear with this entry.
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/acropora-payment",
+            id: "cod",
+          },
+        ],
+      },
+    },
+    {
       resolve: "./src/modules/shipping-attributes",
     },
     {

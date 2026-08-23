@@ -120,3 +120,62 @@ következménye van. Nautilus a konzervatívat választotta, megindokolta, és k
 **Kapcsolódó, ugyanebben a körben megerősítve:** a folyamat-definíció import-idejű tesztje
 marad. Egy olyan hiba, ami a típusellenőrzésen és a fordításon is átmegy, de induláskor
 elhasal, csak így jelenik meg a folyamatos integrációban.
+
+---
+
+## D-2026-08-23-24: Az utánvét fizetési szolgáltató modellje külön tervezés, nem a gyári alapértelmezetten
+
+**Döntés (Balázs, 2026-08-23 16:43, Discord, az Eldöntendő dolgok szálban), szó szerint:** a
+következő körben **külön tervezzük meg** az utánvét fizetési szolgáltató modelljét, és **nem
+kötjük a `pp_system_default` szolgáltatóhoz**.
+
+**A döntés kontextusa, és ezt Balázs mérte, nem mi:** a stage audit igazolta, hogy az utánvét
+díjának futásidejű bekötése helyes, **de nincs élő utánvét szolgáltató-hozzárendelés**. Ez
+független megerősítése annak, amit a PR 10 leírása is kimondott: minden út szerkezetileg helyes
+és teszttel fedett, de az első valódi utánvétes kosár lesz az első végrehajtás.
+
+**Mit zár ki ez a döntés:** azt a kényelmes utat, hogy a gyári alapértelmezett szolgáltatót
+nevezzük ki utánvétnek, csak hogy a szerep kitöltődjön. Az gyorsan működne, és utólag nagyon
+nehéz lenne visszabontani, mert a rendelések már azzal a szolgáltató-azonosítóval jönnének létre.
+
+**A következő kör jellege ebből következik:** a fizetési szolgáltató bekötése **külön tervezési
+munka**, nem a mostani folytatása.
+
+**Ami a PR 10 beolvasztásával lezárult:** a domain és a folyamat kész, a szabály egy helyen áll,
+a három beszúrási pont viselkedése szándékosan különbözik (a végpont ad és töröl, a kosár-frissítő
+hook csak töröl és sosem dob, a lezárási kapu csak ellenőriz).
+
+---
+
+## D-2026-08-23-25: Az utánvét hat üzleti szabálya
+
+**Döntés (Balázs, 2026-08-23 17:21, a PR12 feladatleírásában), a PR11 architektúra-dokumentum
+hat nyitott kérdésére válaszul. Szó szerint:**
+
+1. **Az utánvétes rendelés akkor tekinthető fizetettnek, amikor a pénz ténylegesen beérkezett
+   hozzánk.** Nem a rendelés létrejöttekor.
+2. **Az utánvétes rendelés azonnal teljesíthető.** A raktár nem vár a pénzre.
+3. **Sikertelen kézbesítésnél nem töröljük a rendelést**, hanem sikertelenül lezárt
+   rendelésként kezeljük.
+4. **Visszaküldés esetén az utánvét díját is visszaadjuk.**
+5. **A pénz beérkezésének elismerése külön jogosultsághoz kötött**, nem általános
+   adminisztrátori művelet.
+6. **Meghiúsult utánvétes rendelésnél a hűségpont nem marad meg**; ha jóváírás történt, vissza
+   kell vonni.
+
+**Miért egy bejegyzés hat helyett:** együtt érkeztek, egy architektúra-dokumentum hat nyitott
+kérdésére, és együtt is olvasandók. Az első dönti el a szolgáltató egyetlen metódusának
+viselkedését, a többi ebből következik vagy erre épül.
+
+**Amit az első és a második együtt jelent, és ez a lényeg:** a teljesítés és a fizetés
+**szétválik**. A raktár dolgozhat, miközben a pénz még nem érkezett meg. Ehhez nem kell azt
+hazudni, hogy a rendelés ki van fizetve: a Medusa `pending_authorization` állapota pontosan ezt
+az esetet ismeri, és nem hoz létre fizetés-rekordot.
+
+**A harmadik új fogalmat vezet be:** a sikertelenül lezárt rendelés. Ez nem törlés és nem
+visszatérítés, mert **pénzmozgás nem történt**. Ez az Acropora OS oldalán is megjelenik majd,
+tehát murena területét is érinti.
+
+**A hatodik részben megválaszol egy korábban nyitott tételt:** a `D-2026-08-22-08` alatt a
+hűségpont refund-viselkedése kimérendőként állt. A meghiúsult utánvétes kézbesítésre most van
+szabály. **Ami továbbra sem eldöntött:** a részleges visszatérítés általános esete.

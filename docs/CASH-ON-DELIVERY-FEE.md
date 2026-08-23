@@ -124,6 +124,12 @@ carts back to the payment step.
 
 The mismatch is written to the log, and completion accepts it.
 
+## The payment itself
+
+This document stops at the fee. How the money is taken, when the order counts
+as paid, and what happens when a parcel is never handed over are in
+[Cash on delivery payment](./CASH-ON-DELIVERY-PAYMENT.md).
+
 ## Not covered here
 
 Draft orders and admin-created orders. That path does not go through the store
