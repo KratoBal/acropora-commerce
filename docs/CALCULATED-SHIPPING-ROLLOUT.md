@@ -35,8 +35,16 @@ Also confirm that:
   by the target shipping options;
 - all target option IDs match the resolved bindings in
   `shipping-option-roles.ts`, including environment-variable overrides;
-- the current option records, prices, data, provider IDs, and complete rule
-  arrays have been exported for rollback;
+- every relevant Acropora product belongs to one shipping profile. Multiple
+  shipping profiles are a blocker: Medusa 2.19 passes this provider only the
+  items filtered for the option's shipping profile, while Acropora's threshold
+  is defined for the full order goods total;
+- the current option records have been exported, including `id`, name,
+  provider ID, price type, data, metadata, shipping profile, service zone,
+  type, and every shipping-option rule (`id`, attribute, operator, value);
+- the current flat prices and their price rules have been exported separately,
+  including each price's currency or region, amount, price-list/tier fields,
+  and complete rule set;
 - no unrelated shipping configuration rollout is in progress.
 
 ## Per-option activation contract
@@ -52,16 +60,20 @@ Choose the corresponding fulfillment option exposed by the provider. Do not
 write a role name into option data: role resolution remains centralized in the
 existing ID-to-role mapping.
 
-Preserve the shipping profile, service zone, type, and every existing
-eligibility rule. Medusa shipping-option updates can replace the complete rules
-array, so do not use a partial update that accidentally deletes
-`shipping_class`, `enabled_in_store`, or `is_return` rules. Use a reviewed admin
-operation or a purpose-built, dry-run-first migration that reads and re-submits
-the complete record.
+Before and after every update, assert:
 
-Legacy flat prices and their price rules are ignored after an option becomes
-calculated. Keep them during the initial observation window for rollback, then
-remove them only in a separately reviewed cleanup.
+```text
+shipping_option.data.id === shipping_option.id
+```
+
+Stop the rollout on any mismatch. The update payload must omit `rules`
+entirely. Snapshot the full existing rule array before the update and compare it
+afterward, including `shipping_class`, `enabled_in_store`, and `is_return`.
+Preserve the shipping profile, service zone, type, and metadata as well.
+
+Changing `price_type` to `calculated` removes the option's flat prices and their
+price rules in Medusa 2.19. They cannot remain on the option during an
+observation window. The pre-update export is the rollback source of truth.
 
 ## Recommended rollout order
 
@@ -71,6 +83,8 @@ remove them only in a separately reviewed cleanup.
 4. Activate one normal carrier option and test the boundary cases.
 5. Activate the remaining normal, Foxpost, and heavy options one at a time.
 6. Verify checkout after each option and monitor calculation errors.
+7. Stop if a second shipping profile is present; do not activate this provider
+   until a full-cart goods-total design is implemented.
 
 The legacy flat rules use a different boundary in the current environment:
 1150/3500 HUF through `item_total <= 50000`, then zero from `>= 50001`.
@@ -91,6 +105,11 @@ Calculated pricing intentionally changes this to `goods_total >= 50000`.
 ## Rollback
 
 For any failing option, restore its exported provider ID, flat price type, data,
-prices, and full rule set together. Do not disable or remove the Acropora
-provider while another option still references it. A rollback is an environment
-change and requires the same approval and verification as activation.
+shipping profile, service zone, type, metadata, and full shipping-option rule
+set. Recreate the exported flat prices and their price rules; calculated
+activation removed them from Medusa. Validate the `data.id === id` invariant and
+compare the restored option and price snapshots before reopening checkout.
+
+Do not disable or remove the Acropora provider while another option still
+references it. A rollback is an environment change and requires the same
+approval and verification as activation.

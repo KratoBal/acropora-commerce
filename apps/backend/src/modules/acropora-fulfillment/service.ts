@@ -60,6 +60,18 @@ const isKnownOption = (optionData: unknown): boolean => {
   }
 }
 
+type CalculableShippingOption = CreateShippingOptionDTO & { id?: string }
+
+const hasMatchingOptionDataId = (shippingOption: CalculableShippingOption) => {
+  if (!isKnownOption(shippingOption.data)) {
+    return false
+  }
+
+  const optionDataId = (shippingOption.data as Record<string, unknown>).id
+
+  return !shippingOption.id || shippingOption.id === optionDataId
+}
+
 /**
  * Calculated-price provider for Acropora's existing manually executed shipping
  * methods. Carrier booking and label handling deliberately remain no-ops.
@@ -95,7 +107,7 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
   }
 
   async canCalculate(data: CreateShippingOptionDTO): Promise<boolean> {
-    return data.price_type === "calculated" && isKnownOption(data.data)
+    return data.price_type === "calculated" && hasMatchingOptionDataId(data)
   }
 
   async calculatePrice(

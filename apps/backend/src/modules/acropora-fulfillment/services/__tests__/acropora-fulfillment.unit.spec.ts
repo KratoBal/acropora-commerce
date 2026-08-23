@@ -59,20 +59,30 @@ describe("Acropora calculated fulfillment provider", () => {
     )
     expect(
       await service.canCalculate({
+        id: idFor("GLS_NORMAL"),
         price_type: "calculated",
         data: { id: idFor("GLS_NORMAL") },
       } as any),
     ).toBe(true)
     expect(
       await service.canCalculate({
+        id: idFor("GLS_NORMAL"),
         price_type: "flat",
         data: { id: idFor("GLS_NORMAL") },
       } as any),
     ).toBe(false)
     expect(
       await service.canCalculate({
+        id: idFor("GLS_NORMAL"),
         price_type: "calculated",
         data: { id: "so_unknown" },
+      } as any),
+    ).toBe(false)
+    expect(
+      await service.canCalculate({
+        id: idFor("GLS_NORMAL"),
+        price_type: "calculated",
+        data: { id: idFor("FOXPOST") },
       } as any),
     ).toBe(false)
   })
