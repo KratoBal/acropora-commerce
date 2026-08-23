@@ -1,4 +1,7 @@
-import { getCommerceSettingValue } from "../../modules/commerce-settings/accessor"
+import {
+  CommerceSettingsService,
+  getCommerceSettingValue,
+} from "../../modules/commerce-settings/accessor"
 import {
   CASH_ON_DELIVERY_FEE_SETTING_KEY,
   COMMERCE_SETTING_DEFINITIONS,
@@ -38,10 +41,10 @@ export const normalizeCashOnDeliveryFee = (raw: unknown): number => {
  * the default applies. A stored but invalid value IS an error, because silently
  * charging a different amount than the one on the record is worse than failing.
  */
-export const getCashOnDeliveryFee = async (container: {
-  resolve: (key: string) => any
-}): Promise<number> =>
-  getCommerceSettingValue(container, CASH_ON_DELIVERY_FEE_SETTING_KEY)
+export const getCashOnDeliveryFee = async (
+  service: CommerceSettingsService,
+): Promise<number> =>
+  getCommerceSettingValue(service, CASH_ON_DELIVERY_FEE_SETTING_KEY)
 
 /**
  * How much the cash-on-delivery fee adds to this cart.

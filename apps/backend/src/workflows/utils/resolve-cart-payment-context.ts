@@ -9,6 +9,7 @@ import {
   getCashOnDeliveryFee,
   resolveCashOnDeliveryFeeAmount,
 } from "./cod-fee"
+import { COMMERCE_SETTINGS_MODULE } from "../../modules/commerce-settings"
 
 export type CartPaymentContext = {
   shipping_roles: ShippingOptionRole[]
@@ -101,7 +102,7 @@ export const resolveCartPaymentContext = async (
   // Only read the setting when it can actually matter.
   const feeHuf =
     selected_payment_role === "COD" && allowed_payment_roles.includes("COD")
-      ? await getCashOnDeliveryFee(container)
+      ? await getCashOnDeliveryFee(container.resolve(COMMERCE_SETTINGS_MODULE))
       : 0
 
   return {

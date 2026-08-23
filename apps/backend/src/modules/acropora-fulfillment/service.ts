@@ -12,7 +12,7 @@ import {
 } from "@medusajs/framework/utils"
 
 import {
-  CommerceSettingsContainer,
+  CommerceSettingsService,
   getShippingPricingSettings,
 } from "../commerce-settings/accessor"
 import { calculateGoodsTotal } from "../../workflows/utils/goods-total"
@@ -79,11 +79,15 @@ const hasMatchingOptionDataId = (shippingOption: CalculableShippingOption) => {
 class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
   static identifier = "acropora"
 
-  protected readonly container_: CommerceSettingsContainer
+  protected readonly commerceSettings_: CommerceSettingsService
 
-  constructor(container: CommerceSettingsContainer) {
+  constructor({
+    commerce_settings,
+  }: {
+    commerce_settings: CommerceSettingsService
+  }) {
     super()
-    this.container_ = container
+    this.commerceSettings_ = commerce_settings
   }
 
   async getFulfillmentOptions(): Promise<FulfillmentOption[]> {
@@ -126,7 +130,7 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
     }
 
     const goodsTotalHuf = calculateGoodsTotal(context.items)
-    const settings = await getShippingPricingSettings(this.container_)
+    const settings = await getShippingPricingSettings(this.commerceSettings_)
     const calculatedAmount = calculateShippingPrice({
       role,
       goodsTotalHuf,

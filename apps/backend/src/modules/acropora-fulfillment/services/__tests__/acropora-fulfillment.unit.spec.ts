@@ -19,14 +19,23 @@ const idFor = (role: ShippingOptionRole) =>
   resolveShippingOptionRoleBindings().find((binding) => binding.role === role)!
     .id
 
-const containerWith = (settings: Record<string, unknown>) => ({
-  resolve: () => ({
-    listCommerceSettings: async ({ key }: { key: string }) =>
-      Object.prototype.hasOwnProperty.call(settings, key)
-        ? [{ key, value: settings[key] }]
-        : [],
-  }),
+const serviceWith = (settings: Record<string, unknown>) => ({
+  listCommerceSettings: async ({ key }: { key: string }) =>
+    Object.prototype.hasOwnProperty.call(settings, key)
+      ? [{ key, value: settings[key] }]
+      : [],
 })
+
+const cradleWith = (settings: Record<string, unknown>) => ({
+  commerce_settings: serviceWith(settings),
+})
+
+const failingCradle = {
+  commerce_settings: {
+    listCommerceSettings: async ({ key }: { key: string }) =>
+      Promise.reject(new Error(`settings must not be read for ${key}`)),
+  },
+}
 
 const contextWith = (
   items: GoodsTotalLineItem[],
@@ -38,7 +47,7 @@ const calculate = async (
   goodsTotalHuf: number,
   settings = configuredSettings,
 ) => {
-  const service = new AcroporaFulfillmentService(containerWith(settings))
+  const service = new AcroporaFulfillmentService(cradleWith(settings))
 
   return service.calculatePrice(
     { id: idFor(role) },
@@ -50,7 +59,7 @@ const calculate = async (
 describe("Acropora calculated fulfillment provider", () => {
   it("publishes the configured option ids and accepts only calculated known options", async () => {
     const service = new AcroporaFulfillmentService(
-      containerWith(configuredSettings),
+      cradleWith(configuredSettings),
     )
     const options = await service.getFulfillmentOptions()
 
@@ -88,11 +97,7 @@ describe("Acropora calculated fulfillment provider", () => {
   })
 
   it("keeps pickup at zero without reading carrier settings", async () => {
-    const service = new AcroporaFulfillmentService({
-      resolve: () => {
-        throw new Error("carrier settings must not be read for pickup")
-      },
-    })
+    const service = new AcroporaFulfillmentService(failingCradle)
 
     await expect(
       service.calculatePrice(
@@ -139,7 +144,7 @@ describe("Acropora calculated fulfillment provider", () => {
 
   it("excludes a marked COD fee from the runtime goods total", async () => {
     const service = new AcroporaFulfillmentService(
-      containerWith(configuredSettings),
+      cradleWith(configuredSettings),
     )
 
     const result = await service.calculatePrice(
@@ -182,7 +187,7 @@ describe("Acropora calculated fulfillment provider", () => {
 
   it("fails closed for option data that cannot be mapped to a role", async () => {
     const service = new AcroporaFulfillmentService(
-      containerWith(configuredSettings),
+      cradleWith(configuredSettings),
     )
 
     await expect(
