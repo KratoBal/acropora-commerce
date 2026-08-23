@@ -14,7 +14,10 @@ import {
   AdminShippingAttributeFlags,
   AdminUpsertShippingAttribute,
 } from "./admin/shipping-attributes/validators"
-import { StoreGetPaymentOptionsParams } from "./store/payment-options/validators"
+import {
+  StoreGetPaymentOptionsParams,
+  StorePostPaymentOptions,
+} from "./store/payment-options/validators"
 
 export default defineMiddlewares({
   routes: [
@@ -58,6 +61,11 @@ export default defineMiddlewares({
       middlewares: [
         validateAndTransformQuery(StoreGetPaymentOptionsParams, {}),
       ],
+    },
+    {
+      matcher: "/store/payment-options",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostPaymentOptions)],
     },
   ],
 })

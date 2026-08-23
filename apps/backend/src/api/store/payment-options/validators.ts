@@ -5,3 +5,9 @@ export const StoreGetPaymentOptionsParams = z
     cart_id: z.string().min(1),
   })
   .strict()
+
+export const StorePostPaymentOptions = z
+  .object({
+    cart_id: z.string().min(1),
+  })
+  .strict()
