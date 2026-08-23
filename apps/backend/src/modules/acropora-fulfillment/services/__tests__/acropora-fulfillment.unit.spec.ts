@@ -192,6 +192,33 @@ describe("Acropora calculated fulfillment provider", () => {
     expect(result.calculated_amount).toBe(3_500)
   })
 
+  it("keeps free shipping at exactly the threshold when a COD fee is present", async () => {
+    // The mirror of the case above, and the one the runtime actually meets.
+    // There the fee must not GRANT free shipping to a cart below the
+    // threshold; here it must not TAKE it away from a cart that reached it.
+    // Both rules meet in this single cart, and the equivalent assertion on the
+    // pure functions lives in cod-fee-reconciliation.unit.spec.ts. This one
+    // pins it where it runs: on the provider that prices the live cart.
+    const service = new AcroporaFulfillmentService(
+      cradleWith(configuredSettings),
+    )
+
+    const result = await service.calculatePrice(
+      { id: idFor("GLS_NORMAL") },
+      {},
+      contextWith([
+        { unit_price: 50_000, quantity: 1, is_tax_inclusive: true },
+        {
+          unit_price: 450,
+          quantity: 1,
+          metadata: { [ACROPORA_LINE_ITEM_KIND_METADATA_KEY]: "fee" },
+        },
+      ]),
+    )
+
+    expect(result.calculated_amount).toBe(0)
+  })
+
   it.each([
     [
       {
