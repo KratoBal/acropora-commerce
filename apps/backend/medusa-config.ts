@@ -1,5 +1,7 @@
 import { loadEnv, defineConfig } from "@medusajs/framework/utils"
 
+import { COMMERCE_SETTINGS_MODULE } from "./src/modules/commerce-settings"
+
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
 module.exports = defineConfig({
@@ -32,6 +34,11 @@ module.exports = defineConfig({
   modules: [
     {
       resolve: "@medusajs/medusa/fulfillment",
+      // Fulfillment providers are instantiated inside the fulfillment module's
+      // isolated container. Medusa forwards only declared module dependencies
+      // into that container, so this is required for the provider's dynamic
+      // pricing settings service.
+      dependencies: [COMMERCE_SETTINGS_MODULE],
       options: {
         providers: [
           {

@@ -1,4 +1,6 @@
 import { CalculateShippingOptionPriceDTO } from "@medusajs/framework/types"
+import { asFunction, asValue } from "@medusajs/framework/awilix"
+import { createMedusaContainer } from "@medusajs/framework/utils"
 
 import {
   ACROPORA_LINE_ITEM_KIND_METADATA_KEY,
@@ -6,6 +8,8 @@ import {
 } from "../../../../workflows/utils/goods-total"
 import { ShippingOptionRole } from "../../../../workflows/utils/shipping-eligibility"
 import { resolveShippingOptionRoleBindings } from "../../../../workflows/utils/shipping-option-roles"
+import { COMMERCE_SETTINGS_MODULE } from "../../../commerce-settings"
+import { CommerceSettingsService } from "../../../commerce-settings/accessor"
 import AcroporaFulfillmentService from "../../service"
 
 const configuredSettings: Record<string, unknown> = {
@@ -26,16 +30,37 @@ const serviceWith = (settings: Record<string, unknown>) => ({
       : [],
 })
 
-const cradleWith = (settings: Record<string, unknown>) => ({
-  commerce_settings: serviceWith(settings),
-})
+/**
+ * Mirrors Medusa's module loader: a fulfillment provider receives the
+ * fulfillment module's isolated cradle, where each declared dependency is a
+ * forwarding registration to the shared application container.
+ */
+const isolatedFulfillmentProviderCradle = (
+  commerceSettings: CommerceSettingsService,
+) => {
+  const sharedContainer = createMedusaContainer()
+  sharedContainer.register({
+    [COMMERCE_SETTINGS_MODULE]: asValue(commerceSettings),
+  })
 
-const failingCradle = {
-  commerce_settings: {
+  const fulfillmentContainer = createMedusaContainer()
+  fulfillmentContainer.register({
+    [COMMERCE_SETTINGS_MODULE]: asFunction(() =>
+      sharedContainer.resolve(COMMERCE_SETTINGS_MODULE),
+    ),
+  })
+
+  return fulfillmentContainer.cradle
+}
+
+const cradleWith = (settings: Record<string, unknown>) =>
+  isolatedFulfillmentProviderCradle(serviceWith(settings))
+
+const failingCradle = () =>
+  isolatedFulfillmentProviderCradle({
     listCommerceSettings: async ({ key }: { key: string }) =>
       Promise.reject(new Error(`settings must not be read for ${key}`)),
-  },
-}
+  })
 
 const contextWith = (
   items: GoodsTotalLineItem[],
@@ -97,7 +122,7 @@ describe("Acropora calculated fulfillment provider", () => {
   })
 
   it("keeps pickup at zero without reading carrier settings", async () => {
-    const service = new AcroporaFulfillmentService(failingCradle)
+    const service = new AcroporaFulfillmentService(failingCradle())
 
     await expect(
       service.calculatePrice(
