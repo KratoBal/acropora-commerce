@@ -94,3 +94,29 @@ veszélyesebb, mint az explicit hiba.
 sehol nem nézi az adóval értendőséget; a típusban nincs is ilyen mező. A repóban egyetlen
 helyen szerepel adóval értendőség, a saját szolgáltatónkban, tehát arra a számra, amit **mi
 állítunk elő**. Arra, amivel **összehasonlítunk**, eddig csak feltevés volt.
+
+---
+
+## D-2026-08-23-23: Az aktív kosárban lévő utánvét-díj nem árazódik át
+
+**Döntés (Balázs, 2026-08-23 16:16, Discord, az Eldöntendő dolgok szálban), szó szerint:** a
+konzervatív döntést fogadjuk el, az aktív kosár utánvét-díja **nem árazódik át** a beállítás
+változásakor.
+
+**Mit jelent a gyakorlatban:** ha egy kosárban már ott a díj 450 forinttal, és az üzemeltető
+átállítja a beállítást 550 forintra, az a kosár **marad 450 forinton**. Az új összeg a következő
+kosárnál lép életbe.
+
+**Az indok, ami a döntést hordozza (nautilus mérése és javaslata):** az átárazás elvenné a
+vásárló alól a végösszeget, és **törölné a kosár fizetési munkamenetét**. Vagyis egy rutin
+adminisztrátori árváltoztatás visszadobná az összes élő kosarat a fizetési lépésre, olyan
+emberek alatt, akik éppen fizetni készültek.
+
+**Ez a döntés eredetileg implementációs választásnak indult**, és azért került fel, mert üzleti
+következménye van. Nautilus a konzervatívat választotta, megindokolta, és kimondta, hogy nem az
+ő döntése. Ezzel a megerősítéssel **követelmény lett, nem választás**: ha valaha valaki
+átárazást akar bevezetni, az egy új döntés, nem egy javítás.
+
+**Kapcsolódó, ugyanebben a körben megerősítve:** a folyamat-definíció import-idejű tesztje
+marad. Egy olyan hiba, ami a típusellenőrzésen és a fordításon is átmegy, de induláskor
+elhasal, csak így jelenik meg a folyamatos integrációban.
