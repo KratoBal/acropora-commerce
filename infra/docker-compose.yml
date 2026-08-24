@@ -1,0 +1,121 @@
+name: acropora-commerce-stage
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: acropora-commerce-postgres-stage
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: medusa
+      POSTGRES_USER: medusa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - medusa_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medusa -d medusa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - medusa_stage
+
+  redis:
+    image: redis:7-alpine
+    container_name: acropora-commerce-redis-stage
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - medusa_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - medusa_stage
+
+  medusa-server:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: acropora-commerce-medusa:stage
+    container_name: acropora-commerce-medusa-server-stage
+    restart: unless-stopped
+    env_file:
+      - ../backend/apps/backend/.env
+    environment:
+      NODE_ENV: production
+      MEDUSA_WORKER_MODE: server
+      DISABLE_MEDUSA_ADMIN: "false"
+      PORT: "9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:9001:9000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:9000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.middlewares.acropora-commerce-stage-gzip.compress=true"
+      - "traefik.http.middlewares.acropora-commerce-stage-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.acropora-commerce-stage-http.entrypoints=http"
+      - "traefik.http.routers.acropora-commerce-stage-http.rule=Host(`commerce-stage.acropora.hu`) && PathPrefix(`/`)"
+      - "traefik.http.routers.acropora-commerce-stage-http.middlewares=acropora-commerce-stage-https"
+      - "traefik.http.routers.acropora-commerce-stage-http.service=acropora-commerce-stage"
+      - "traefik.http.routers.acropora-commerce-stage-https.entrypoints=https"
+      - "traefik.http.routers.acropora-commerce-stage-https.rule=Host(`commerce-stage.acropora.hu`) && PathPrefix(`/`)"
+      - "traefik.http.routers.acropora-commerce-stage-https.middlewares=acropora-commerce-stage-gzip"
+      - "traefik.http.routers.acropora-commerce-stage-https.service=acropora-commerce-stage"
+      - "traefik.http.routers.acropora-commerce-stage-https.tls=true"
+      - "traefik.http.routers.acropora-commerce-stage-https.tls.certresolver=letsencrypt"
+      - "traefik.http.services.acropora-commerce-stage.loadbalancer.server.port=9000"
+    networks:
+      - medusa_stage
+      - coolify
+
+  medusa-worker:
+    image: acropora-commerce-medusa:stage
+    container_name: acropora-commerce-medusa-worker-stage
+    restart: unless-stopped
+    env_file:
+      - ../backend/apps/backend/.env
+    environment:
+      NODE_ENV: production
+      MEDUSA_WORKER_MODE: worker
+      DISABLE_MEDUSA_ADMIN: "true"
+      PORT: "9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      medusa-server:
+        condition: service_healthy
+    networks:
+      - medusa_stage
+
+volumes:
+  medusa_postgres_data:
+  medusa_redis_data:
+
+networks:
+  medusa_stage:
+    name: acropora-commerce-stage
+
+  coolify:
+    external: true
+    name: coolify
