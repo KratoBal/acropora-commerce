@@ -13,6 +13,12 @@
 #
 #   Azt tudja, MI van most beallitva. Azt NEM, hogy MIERT.
 #
+#   A futo commitrol pedig azt is kiirja, MELYIK UTROL tudja. Ez nem
+#   reszletkerdes: a korabbi eljaras ereje abbol jott, hogy HAROM fuggetlen
+#   forras (DEPLOYED.md, kep-cimke, kontener valtozo) ugyanazt adta. A Coolify
+#   agon csak EGY van meg, es ha ezt elhallgatnank, valaki ugyanolyan erosnek
+#   olvasna.
+#
 #   Az indok a dontesi naploban all (docs/ACROPORA-COMMERCE-DECISIONS.md), es
 #   ott is marad. Ez a fajl nem mondja meg, hogy egy szolgaltato azert van egy
 #   regiohoz kotve, mert uzleti dontes szolt rola, vagy azert, mert valaki
@@ -21,7 +27,8 @@
 #
 # Amit csinal:
 #   1. ellenorzi, hogy a mert tablak es mezok tenyleg leteznek
-#   2. kiolvassa a futo kontenerbol a commitot es a szerep-lekepezest
+#   2. kiolvassa a futo kontenerbol a commitot es a szerep-lekepezest, es ha a
+#      commit nem all a kornyezeti valtozoban (Coolify), a kep-hivatkozasbol
 #   3. lekerdezi MINDEN regio fizetesi szolgaltatoit, torolt sorok nelkul
 #   4. kiirja az ACTIVATED.md fajlt: felul a mai allapot, alul append-only tortenet
 #
@@ -35,6 +42,7 @@
 #
 # Hasznalat:
 #   bash infra/activated-state.sh
+#   bash infra/activated-state.sh --self-test   # a kep-cimke felismero esetei
 #   ACTIVATED_FILE=/tmp/x.md bash infra/activated-state.sh   # mashova ir
 #
 # Kornyezeti valtozok, ha a kontenerek maskepp hivjak oket:
@@ -64,12 +72,88 @@ step() {
 }
 
 usage() {
-  sed -n '2,45p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,53p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
+}
+
+# ---------------------------------------------------------------------------
+# A futo commit kiolvasasa a kep-hivatkozasbol
+# ---------------------------------------------------------------------------
+#
+# A Coolify NEM adja at a GIT_SHA build argumentumot, tehat az APP_GIT_SHA ures
+# marad es a hozza tartozo cimke "unknown". A commit viszont ott van, mas
+# alakban: a kep-hivatkozas cimkeje maga a teljes sha, peldaul
+#   <alkalmazas-azonosito>:5ce0e0611c57e8862c0aa3534d7574abed77bc1d
+#
+# Ez a fuggveny SZTRINGET kap es sztringet ad vissza, hogy tesztelheto legyen
+# elo kontener nelkul is (lasd --self-test). Egy felismero, ami mindenre shat
+# mond, rosszabb a semminel, ezert szigoru:
+#
+#   - a digest-alak (@sha256:...) NEM commit, hanem a kep tartalmanak lenyomata
+#   - a cimke a legutolso KETPONT utan all, de csak ha az a legutolso PERJEL
+#     utan van: a registry:port alakban is van ketpont
+#   - pontosan 40 karakter, es csak kisbetus hexa
+commit_from_image_ref() {
+  local ref="${1:-}"
+  [ -n "$ref" ] || return 1
+
+  case "$ref" in *"@"*) return 1 ;; esac
+
+  local last_segment="${ref##*/}"
+  case "$last_segment" in
+    *:*) ;;
+    *) return 1 ;;
+  esac
+
+  local tag="${last_segment##*:}"
+  case "$tag" in *[!0-9a-f]*) return 1 ;; esac
+  [ ${#tag} -eq 40 ] || return 1
+
+  printf '%s\n' "$tag"
+}
+
+self_test() {
+  local failures=0
+
+  check() {
+    local label="$1" input="$2" expected="$3" got
+    got="$(commit_from_image_ref "$input" || true)"
+    if [ "$got" = "$expected" ]; then
+      echo "  rendben: $label"
+    else
+      echo "  BUKOTT:  $label -- vart: '${expected}', kapott: '${got}'"
+      failures=$((failures + 1))
+    fi
+  }
+
+  local sha="5ce0e0611c57e8862c0aa3534d7574abed77bc1d"
+
+  echo "A kep-hivatkozas felismerese:"
+  check "Coolify alak, teljes sha a cimkeben" "obpxbcqgjturybmemmdi7wid:$sha" "$sha"
+  check "registry porttal, a cimke megis sha" "registry.example.com:5000/app:$sha" "$sha"
+  check "sajat epitesunk cimkeje" "acropora-commerce-medusa:stage" ""
+  check "latest" "valami:latest" ""
+  check "rovid sha" "app:5ce0e06" ""
+  check "ures bemenet" "" ""
+  check "nincs ketpont" "csakegynev" ""
+  check "ketpont csak a registry reszben" "registry.example.com:5000/app" ""
+  check "digest, nem commit" "app@sha256:0000000000000000000000000000000000000000000000000000000000000000" ""
+  check "nagybetus hexa" "app:5CE0E0611C57E8862C0AA3534D7574ABED77BC1D" ""
+  check "41 karakter" "app:${sha}a" ""
+
+  if [ "$failures" -eq 0 ]; then
+    echo
+    echo "minden eset rendben"
+    exit 0
+  fi
+
+  echo
+  fail "$failures eset bukott"
 }
 
 case "${1:-}" in
   -h|--help) usage ;;
+  --self-test) self_test ;;
   "") ;;
   *) fail "ismeretlen kapcsolo: $1" ;;
 esac
@@ -129,15 +213,38 @@ docker inspect "$SERVER_CONTAINER" >/dev/null 2>&1 \
   || fail "nincs ilyen kontener: $SERVER_CONTAINER (allitsd a SERVER_CONTAINER valtozot)"
 
 RUNNING_SHA="$(docker exec "$SERVER_CONTAINER" printenv APP_GIT_SHA 2>/dev/null)"
-[ -n "$RUNNING_SHA" ] || RUNNING_SHA="(nincs beallitva)"
+SHA_SOURCE="APP_GIT_SHA"
+
+# A Coolify nem adja at a GIT_SHA build argumentumot, tehat ott ez a valtozo
+# ures, vagy a Dockerfile alapertekere ("unknown") all. Ilyenkor a commit meg
+# mindig megvan, csak mas uton: a kep-hivatkozas cimkeje maga a sha.
+if [ -z "$RUNNING_SHA" ] || [ "$RUNNING_SHA" = "unknown" ]; then
+  IMAGE_REF="$(docker inspect --format '{{.Config.Image}}' "$SERVER_CONTAINER" 2>/dev/null)"
+  FROM_IMAGE="$(commit_from_image_ref "$IMAGE_REF" || true)"
+
+  if [ -n "$FROM_IMAGE" ]; then
+    RUNNING_SHA="$FROM_IMAGE"
+    SHA_SOURCE="kep-cimke"
+  else
+    RUNNING_SHA="(nincs beallitva)"
+    SHA_SOURCE="(nem talalhato)"
+  fi
+fi
 
 # A printenv 1-gyel ter vissza, ha a valtozo nincs beallitva. A hianya MERT
 # ALLAPOT, nem szkripthiba: ilyenkor a szerep-lekepezes ures, es a dij nulla.
 COD_PROVIDER_ENV="$(docker exec "$SERVER_CONTAINER" printenv ACROPORA_PP_COD 2>/dev/null)"
 [ -n "$COD_PROVIDER_ENV" ] || COD_PROVIDER_ENV="(nincs beallitva)"
 
-echo "APP_GIT_SHA:      $RUNNING_SHA"
+echo "futo commit:      $RUNNING_SHA  (forras: $SHA_SOURCE)"
 echo "ACROPORA_PP_COD:  $COD_PROVIDER_ENV"
+
+if [ "$SHA_SOURCE" = "kep-cimke" ]; then
+  echo
+  echo "FIGYELEM: ez a szam EGY utrol jott, nem haromrol. A DEPLOYED.md, a kep"
+  echo "cimkeje es a futo kontener valtozoja korabban egymastol fuggetlenul"
+  echo "adta ugyanazt; a Coolify agon csak a kep-hivatkozas van meg."
+fi
 
 # ---------------------------------------------------------------------------
 # 3. A regiok es a hozzajuk kotott szolgaltatok
@@ -203,8 +310,17 @@ RUN_BY="$(id -un 2>/dev/null || echo ismeretlen)@$(hostname 2>/dev/null || echo 
 # A mai allapot szoveges alakja. Az ujjlenyomat EBBOL keszul, tehat a
 # visszameres idopontja NEM valtoztatja meg: csak a valodi allapotvaltozas.
 render_state() {
-  echo "- futo commit (APP_GIT_SHA): $RUNNING_SHA"
+  echo "- futo commit: $RUNNING_SHA (forras: $SHA_SOURCE)"
   echo "- ACROPORA_PP_COD: $COD_PROVIDER_ENV"
+
+  if [ "$SHA_SOURCE" = "kep-cimke" ]; then
+    echo
+    echo "> **Ez a commit EGY utrol jott, nem haromrol.** A korabbi eljarasban a"
+    echo "> DEPLOYED.md, a kep OCI cimkeje es a futo kontener kornyezeti valtozoja"
+    echo "> egymastol FUGGETLENUL adta ugyanazt a szamot, es az egyezesuk volt a"
+    echo "> bizonyitek. A Coolify agon a GIT_SHA build argumentum nem kerul at,"
+    echo "> tehat ez a szam kizarolag a kep-hivatkozas cimkejebol szarmazik."
+  fi
   echo
   echo "### Regiok"
   echo
