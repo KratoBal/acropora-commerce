@@ -47,4 +47,19 @@ ENV APP_GIT_SHA=$GIT_SHA
 LABEL org.opencontainers.image.revision=$GIT_SHA
 LABEL org.opencontainers.image.source=https://github.com/KratoBal/acropora-commerce
 
+# A Coolify a konteneren BELULROL ellenorzi az egeszseget, curl vagy wget
+# paranccsal, es a node:22-bookworm-slim kepben egyik sincs. Ezert a kep sajat
+# ellenorzest hoz, a node beepitett halozati hivasaval: igy nem kell csomagot
+# telepiteni a futtato retegbe.
+#
+# Az indulasi turelem 60 masodperc, mert a mai naplo szerint az indulas 2,5
+# masodperc, de az ELSO indulas migracioval ennel hosszabb lehet.
+#
+# Amit ez az ellenorzes BIZONYIT: a HTTP kiszolgalo fut es valaszol. Amit NEM:
+# hogy a rendszer mukodik. A /health utvonal a Medusa sajat megjegyzese szerint
+# is statikus valasz, tehat egy futas kozben elveszett adatbazis mellett is
+# zold marad. Az indulasi hibat viszont megfogja, mert akkor kiszolgalo sincs.
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=5 \
+  CMD ["node","-e","fetch('http://127.0.0.1:9000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
 CMD ["npx", "medusa", "start", "--host", "0.0.0.0", "--port", "9000"]
