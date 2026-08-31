@@ -16,6 +16,37 @@ import { ACROPORA_LINE_ITEM_KIND_METADATA_KEY } from "./goods-total"
  * order creation) all build the fee from here, so the business rule exists once.
  */
 
+/**
+ * WHICH TAX RATE THE FEE GETS, AND WHY THAT IS NOT A CHOICE WE MAKE HERE.
+ *
+ * The fee IS taxed: `getItemTaxLines` filters the item list on exactly one
+ * thing, gift cards, so a line with no variant still goes to the tax provider.
+ * What it goes in AS is the point. `normalizeLineItemsForTax` hands over six
+ * fields — id, product_id, product_type_id, quantity, unit_price,
+ * currency_code — and this line has neither a product nor a variant, so
+ * `product_id` and `product_type_id` are undefined.
+ *
+ * A product-based or product-type-based tax rule therefore CANNOT match it.
+ * What the fee gets is the region's default rate, and nothing else.
+ *
+ * The owner confirmed on 2026-08-31 that the handling fee is taxed at 27%, and
+ * the region default is 27%, so today the two agree and there is nothing to
+ * configure. THE NUMBER IS NOT THE POINT — the agreement is a coincidence we
+ * measured, not a mechanism. Nothing in this code, and nothing in the tax
+ * module, ties the fee to 27: if the region default is ever changed, the fee
+ * silently follows it, with no error, no missing tax line and no failing test.
+ * Only the number on the invoice would differ.
+ *
+ * So the condition that expires this paragraph is not a date: it is the region
+ * default moving away from 27%. If that happens and the fee must stay at 27,
+ * the fee needs a tax rule that can reach it, which means giving it something a
+ * rule can key on — a product, a product type, or a tax code — and that is a
+ * modelling decision, not a comment.
+ *
+ * Measured 2026-08-31 against @medusajs/core-flows 2.19.0 by reading the source;
+ * the runtime behaviour on a live region was not measured.
+ */
+
 /** The second half of the marker contract. The first half lives in goods-total. */
 export const ACROPORA_FEE_TYPE_METADATA_KEY = "fee_type" as const
 
