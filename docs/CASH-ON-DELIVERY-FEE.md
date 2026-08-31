@@ -124,6 +124,31 @@ carts back to the payment step.
 
 The mismatch is written to the log, and completion accepts it.
 
+## Which tax rate the fee gets
+
+The fee is taxed. `getItemTaxLines` filters the item list on gift cards and
+nothing else, so a line with no variant is still sent to the tax provider.
+
+What matters is what it is sent **as**. `normalizeLineItemsForTax` passes six
+fields — id, product_id, product_type_id, quantity, unit_price, currency_code —
+and the fee has neither a product nor a variant, so `product_id` and
+`product_type_id` are undefined. A product-based or product-type-based tax rule
+cannot match it. The fee gets **the region's default rate**.
+
+The handling fee is taxed at 27%, and the region default is 27%, so today the
+two agree and there is nothing to configure. **The agreement is measured, not
+enforced.** Nothing ties the fee to 27: if the region default is changed, the
+fee follows it silently — no error, no missing tax line, no failing test, just a
+different number on the invoice.
+
+The condition that ends this is therefore not a date but a change: the region
+default moving away from 27% while the fee must stay at it. At that point the
+fee needs something a tax rule can key on — a product, a product type or a tax
+code — which is a modelling decision rather than a setting.
+
+Measured 2026-08-31 by reading `@medusajs/core-flows` 2.19.0. The runtime
+behaviour against a live region was not measured.
+
 ## The payment itself
 
 This document stops at the fee. How the money is taken, when the order counts

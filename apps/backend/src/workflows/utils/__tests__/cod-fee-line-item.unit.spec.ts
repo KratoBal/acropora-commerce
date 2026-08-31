@@ -55,6 +55,20 @@ describe("cash-on-delivery fee line item", () => {
       // demands a profile for every line that requires shipping.
       expect(item.requires_shipping).toBe(false)
     })
+
+    it("carries no product identity, which is what decides its tax rate", () => {
+      // This is not tidiness. `normalizeLineItemsForTax` passes product_id and
+      // product_type_id to the tax provider, and those are the only things a
+      // product-based tax rule can match on. With neither, the fee gets the
+      // region default and nothing else can reach it.
+      //
+      // So giving this line a variant or a product later would silently move
+      // it to a different rate. That change would break no type and fail no
+      // other test, which is why this one exists.
+      expect(item).not.toHaveProperty("variant_id")
+      expect(item).not.toHaveProperty("product_id")
+      expect(item).not.toHaveProperty("product_type_id")
+    })
   })
 
   describe("marker contract", () => {
