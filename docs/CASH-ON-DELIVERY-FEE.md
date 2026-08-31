@@ -130,8 +130,29 @@ This document stops at the fee. How the money is taken, when the order counts
 as paid, and what happens when a parcel is never handed over are in
 [Cash on delivery payment](./CASH-ON-DELIVERY-PAYMENT.md).
 
+## The order path is watched, but only in one direction
+
+Draft orders and admin-created orders do not go through cart completion, so the
+gate above never sees them. They go through `createOrderWorkflow`, and its
+`orderCreated` hook reports an order that was created carrying **more than one**
+fee.
+
+It reports and does not throw. By then the order exists, and throwing would
+start compensation against an order that may already have an authorized payment
+behind it — a worse failure than the duplicate it was meant to catch. The gate
+is on the cart, where being wrong is still free; this is a smoke alarm.
+
+**A missing fee cannot be detected there at all.** The hook is handed the order
+as a query result whose field list is fixed in the Medusa source: addresses,
+summary, items with their tax lines and adjustments, credit lines, shipping
+methods, transactions, currency, total, id. There is no payment collection, no
+payment session and no provider — and on a draft order the payment method often
+does not exist yet. So "cash on delivery was chosen and the fee is missing" is
+not knowable at that moment, by any query.
+
 ## Not covered here
 
-Draft orders and admin-created orders. That path does not go through the store
-checkout and needs its own examination, including which entry point creates the
-fee and whether an admin may waive it.
+Which entry point puts the fee on a draft order in the first place, and whether
+an admin may waive it. Today an admin adds it by hand through the standard
+draft-order item endpoint, which accepts a line with no variant, a title and a
+custom price.
