@@ -83,6 +83,20 @@ describe("the order-created cash-on-delivery fee alarm", () => {
     expect(message).toContain("fee_b")
   })
 
+  it("says in the warning itself what it does not watch", async () => {
+    // Whoever reads this line is reading a warning, not the source file. If it
+    // did not name its own limit, a reader would reasonably conclude that the
+    // order path is checked for a MISSING fee too. It is not, and it cannot be.
+    const logger = await run({
+      id: "order_42",
+      items: [feeLine("fee_a"), feeLine("fee_b")],
+    })
+
+    const message = logger.error.mock.calls[0][0] as string
+    expect(message).toContain("duplicates ONLY")
+    expect(message).toContain("MISSING")
+  })
+
   it("does not throw when the order is unusable, and says it could not check", async () => {
     // The order already exists by now. An exception escaping this hook would
     // compensate a completed creation because a CHECK could not run, so the

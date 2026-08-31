@@ -43,25 +43,44 @@ import {
  * Measured against @medusajs/core-flows 2.19.0 by reading the source; the
  * condition that expires it is the version moving, not the date.
  */
+
+/**
+ * The name says DUPLICATE, and that is the whole scope.
+ *
+ * It is deliberately not called something like "checkOrderCashOnDeliveryFee":
+ * that name would promise the missing-fee case too, and a guard whose name
+ * claims more than it does misleads exactly the way a green number does when
+ * nothing was measured. The log line repeats the limit for the same reason -
+ * whoever reads it is reading a warning, not this file.
+ */
+export const warnOnDuplicateCashOnDeliveryFee = (
+  order: unknown,
+  logger: { error: (message: string) => void }
+): void => {
+  const items = (order as { items?: MarkableLineItem[] } | null)?.items
+  const fees = findCashOnDeliveryFeeLineItems(items)
+
+  if (fees.length <= 1) {
+    return
+  }
+
+  const orderId = (order as { id?: string } | null)?.id ?? "unknown"
+
+  logger.error(
+    `Order ${orderId} was created carrying ${fees.length} cash-on-delivery fee lines, and it may only carry one. ` +
+      `The customer has been charged the fee more than once. Line ids: ${fees
+        .map((fee) => fee.id ?? "unknown")
+        .join(", ")}. ` +
+      `This check sees duplicates ONLY: it has no payment data here, so an order that pays cash on delivery ` +
+      `and is MISSING its fee is not detected by it, and never will be at this point.`
+  )
+}
+
 createOrderWorkflow.hooks.orderCreated(async ({ order }, { container }) => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
 
   try {
-    const items = (order as { items?: MarkableLineItem[] } | null)?.items
-    const fees = findCashOnDeliveryFeeLineItems(items)
-
-    if (fees.length <= 1) {
-      return
-    }
-
-    const orderId = (order as { id?: string } | null)?.id ?? "unknown"
-
-    logger.error(
-      `Order ${orderId} was created carrying ${fees.length} cash-on-delivery fee lines, and it may only carry one. ` +
-        `The customer has been charged the fee more than once. Line ids: ${fees
-          .map((fee) => fee.id ?? "unknown")
-          .join(", ")}.`
-    )
+    warnOnDuplicateCashOnDeliveryFee(order, logger)
   } catch (error) {
     /**
      * A failure to LOOK must never become a failure to create the order. The
