@@ -1,4 +1,4 @@
-import { model } from "@medusajs/framework/utils";
+import { model } from "@medusajs/framework/utils"
 
 /**
  * Which payment methods a shipping method allows, and in what order they are
@@ -49,6 +49,6 @@ export const ShippingPaymentRule = model
       unique: true,
       where: "deleted_at IS NULL",
     },
-  ]);
+  ])
 
-export default ShippingPaymentRule;
+export default ShippingPaymentRule
