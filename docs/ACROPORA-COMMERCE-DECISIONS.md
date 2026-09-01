@@ -49,8 +49,8 @@ viselkedés, és ha valaha kell, az külön döntés.
 szállítás plusz utánvét kezelési díj**. Nem elfogadható: szállítási kiigazítás, negatív
 kiigazítás, rejtett szállítási felár, beégetett összeg, és a kliens által küldött összeg.
 
-**Az architektúra elve, nautilus javaslatából átvéve:** *egy szabály, egy ellenőr, több
-beszúró*. Az üzleti szabály egy közös domain építőben áll, és a későbbi beszúró pontok
+**Az architektúra elve, nautilus javaslatából átvéve:** _egy szabály, egy ellenőr, több
+beszúró_. Az üzleti szabály egy közös domain építőben áll, és a későbbi beszúró pontok
 (pénztár, piszkozat-rendelés, saját rendelés-létrehozás) **nem duplikálhatják**.
 
 **Az építő tiszta domain kód:** nincs benne HTTP, Medusa folyamat, fizetési logika és
@@ -179,3 +179,23 @@ tehát murena területét is érinti.
 **A hatodik részben megválaszol egy korábban nyitott tételt:** a `D-2026-08-22-08` alatt a
 hűségpont refund-viselkedése kimérendőként állt. A meghiúsult utánvétes kézbesítésre most van
 szabály. **Ami továbbra sem eldöntött:** a részleges visszatérítés általános esete.
+
+## D-2026-09-01-01: A nehézáru szállítás utánvéttel is fizethető
+
+**Döntés (Balázs, 2026-09-01 20:40, Discord, szó szerint):** _„Legyen utánvét"_.
+
+**Amire vonatkozik:** a `GLS_HEAVY` szerepkör, ami **két** szállítási módot fed le, a
+nehézáru házhozszállítást és a nehézáru csomagpontot. A válasz mindkettőre áll.
+
+**Ami nem változik:** a bolti átvétel utánvét nélkül marad (nincs mit kézbesíteni), a
+sima GLS házhozszállításnál és csomagpontnál pedig eddig is volt.
+
+**Amiért ez a bejegyzés a döntésnél többet rögzít.** A `GLS_HEAVY` sor eddig csak online
+kártyát engedett, és **sehol nem állt, hogy ez szándékos-e**. Nem az volt: kimondatlan
+állapot, ami élt és hatott a vevőre, miközben senki nem tudta megmondani, ki döntött így.
+Egy hiányzó adatot megkérdezünk, és addig nem történik semmi; egy kimondatlan döntés
+viszont közben működik. A kettőt csak az különbözteti meg, hogy le van-e írva.
+
+**Ezért a `SHIPPING_ROLE_PAYMENTS` minden sora mostantól megnevezi a döntőjét**, és ahol
+nincs döntés, ott ez is ki van írva: a `FOXPOST` sor az eredeti építésből maradt, és
+Balázst **soha nem kérdeztük meg róla**. Nem döntésként szerepel, hanem megerősítetlenként.

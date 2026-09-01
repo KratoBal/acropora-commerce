@@ -13,12 +13,34 @@ export const PAYMENT_ROLES = ["ONLINE_CARD", "COD", "PAY_AT_STORE"] as const
 
 export type PaymentRole = (typeof PAYMENT_ROLES)[number]
 
-/** The single source of truth for payment eligibility. */
+/**
+ * The single source of truth for payment eligibility.
+ *
+ * EVERY ROW HERE IS A BUSINESS DECISION, so each one says whose it was. The
+ * table used to carry the decisions without recording them, and that is how a
+ * live rule went a week without anyone knowing it was deliberate.
+ *
+ * `PICKUP` (Balázs, 2026-08-31): card or paying in the shop. No cash on
+ * delivery - there is no delivery to collect on.
+ *
+ * `GLS_NORMAL` (Balázs, 2026-08-31): card or cash on delivery. This role also
+ * covers the GLS parcel point, not only home delivery.
+ *
+ * `GLS_HEAVY` (Balázs, 2026-09-01, "Legyen utánvét"): card or cash on
+ * delivery. Until that day this row read card only, and nothing said whether
+ * that was a decision or an omission. It was an omission. The role covers BOTH
+ * heavy options - home delivery and the heavy parcel point - so the answer
+ * applies to both.
+ *
+ * `FOXPOST` (inherited from the original build, never separately confirmed):
+ * card or cash on delivery. Balázs has not been asked about this one; it is
+ * recorded as unconfirmed rather than presented as decided.
+ */
 export const SHIPPING_ROLE_PAYMENTS: Record<ShippingOptionRole, PaymentRole[]> =
   {
     PICKUP: ["ONLINE_CARD", "PAY_AT_STORE"],
     GLS_NORMAL: ["ONLINE_CARD", "COD"],
-    GLS_HEAVY: ["ONLINE_CARD"],
+    GLS_HEAVY: ["ONLINE_CARD", "COD"],
     FOXPOST: ["ONLINE_CARD", "COD"],
   }
 

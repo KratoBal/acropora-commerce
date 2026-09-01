@@ -343,19 +343,23 @@ describe("checkout arithmetic", () => {
 
   it("switching to a delivery that may not be paid on delivery takes the fee off too", () => {
     // The selection never changed; the shipping method made it ineligible.
+    //
+    // Store pickup, not heavy GLS. Heavy GLS was the example until 2026-09-01,
+    // when Balázs decided it may be paid on delivery after all. Left alone,
+    // this test would have kept passing against a shipping method that no
+    // longer proves anything.
     const subject = cart([{ unit_price: 10_000 }])
 
     subject.settle({ role: "GLS_NORMAL", paymentRole: "COD" })
 
-    expect(allowedPaymentRolesFor(["GLS_HEAVY"])).not.toContain("COD")
+    expect(allowedPaymentRolesFor(["PICKUP"])).not.toContain("COD")
 
-    const afterHeavy = subject.settle({
-      role: "GLS_HEAVY",
+    const afterPickup = subject.settle({
+      role: "PICKUP",
       paymentRole: "COD",
     })
 
-    expect(afterHeavy.plan.action).toBe("remove")
-    expect(afterHeavy.fee).toBe(0)
-    expect(afterHeavy.total).toBe(16_900)
+    expect(afterPickup.plan.action).toBe("remove")
+    expect(afterPickup.fee).toBe(0)
   })
 })

@@ -34,10 +34,26 @@ describe("payment eligibility by selected shipping option", () => {
     ])
   })
 
-  it("heavy GLS allows online card only", () => {
-    expect(allowedPaymentRolesFor(["GLS_HEAVY"])).toEqual(["ONLINE_CARD"])
-    expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(false)
+  it("heavy GLS allows online card and cash on delivery", () => {
+    // Balázs, 2026-09-01: "Legyen utánvét". Before that this row read card
+    // only, and nothing recorded whether that was deliberate.
+    expect(allowedPaymentRolesFor(["GLS_HEAVY"])).toEqual([
+      "ONLINE_CARD",
+      "COD",
+    ])
+    expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(true)
     expect(isPaymentRoleAllowedFor("PAY_AT_STORE", ["GLS_HEAVY"])).toBe(false)
+  })
+
+  it("still refuses cash on delivery on store pickup", () => {
+    // The counterpart of the change above, and the reason it is a separate
+    // assertion: switching the heavy row on everywhere would satisfy the test
+    // before this one and break the shop. There is no delivery to collect on.
+    expect(isPaymentRoleAllowedFor("COD", ["PICKUP"])).toBe(false)
+    expect(allowedPaymentRolesFor(["PICKUP"])).toEqual([
+      "ONLINE_CARD",
+      "PAY_AT_STORE",
+    ])
   })
 
   it("Foxpost allows online card and cash on delivery", () => {
@@ -63,13 +79,20 @@ describe("payment eligibility by selected shipping option", () => {
   })
 
   it("takes the intersection across several selected shipping methods", () => {
-    // Not the union: a heavy delivery must not become payable on delivery just
+    // Not the union: store pickup must not become payable on delivery just
     // because another selected method allows it.
-    expect(allowedPaymentRolesFor(["GLS_NORMAL", "GLS_HEAVY"])).toEqual([
-      "ONLINE_CARD",
-    ])
+    //
+    // The example is pickup rather than heavy GLS on purpose. Heavy GLS used
+    // to be the one that forbade cash on delivery, and it stopped being so on
+    // 2026-09-01 - which would have quietly turned this into a test where
+    // intersection and union give the same answer, and it would have gone on
+    // passing while proving nothing.
     expect(allowedPaymentRolesFor(["PICKUP", "GLS_NORMAL"])).toEqual([
       "ONLINE_CARD",
+    ])
+    expect(allowedPaymentRolesFor(["GLS_NORMAL", "GLS_HEAVY"])).toEqual([
+      "ONLINE_CARD",
+      "COD",
     ])
   })
 
@@ -80,9 +103,16 @@ describe("payment eligibility by selected shipping option", () => {
   })
 
   describe("invalidation when shipping changes", () => {
-    it("normal GLS to heavy GLS invalidates cash on delivery", () => {
+    it("normal GLS to store pickup invalidates cash on delivery", () => {
       expect(isPaymentRoleAllowedFor("COD", ["GLS_NORMAL"])).toBe(true)
-      expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(false)
+      expect(isPaymentRoleAllowedFor("COD", ["PICKUP"])).toBe(false)
+    })
+
+    it("normal GLS to heavy GLS no longer invalidates it", () => {
+      // Kept as an assertion rather than deleted: this transition used to
+      // remove the fee from a cart, and the hook that does the removing is
+      // still there. If the heavy row is ever narrowed again, this says so.
+      expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(true)
     })
 
     it("Foxpost to pickup invalidates cash on delivery", () => {
