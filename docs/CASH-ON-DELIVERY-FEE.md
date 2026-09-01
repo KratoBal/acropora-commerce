@@ -15,6 +15,29 @@ rebuild, no deployment and no migration is involved. See
 
 The fee is charged once per order. Nothing multiplies it by quantity.
 
+## None of this runs until `ACROPORA_PP_COD` is set
+
+Everything below is implemented and has been since 2026-08-23. It is also
+**inert in any environment where `ACROPORA_PP_COD` is unset**, and it fails in
+the quietest possible way: the fee is simply always zero, no line is ever
+created, and nothing logs, warns or throws.
+
+The chain is short. `buildProviderRoleMap` fills the provider-to-role map from
+the environment; with no value the map is empty. `resolveSelectedPaymentRole`
+returns `null` for every cart against an empty map, so `selected_payment_role`
+is never `COD`, so the fee is never due, so it is never added.
+
+The amount is not the input to check. That one has a fallback in code (450), so
+a missing settings row still produces a real amount. The provider id has no
+fallback, and deliberately: guessing one would mean charging a
+cash-on-delivery fee to a card payment.
+
+**So "the fee does not appear" has two very different causes.** Either the
+customer's cart is genuinely not paying cash on delivery, or this variable is
+absent and no cart ever can. Check the variable before reading anything else
+here as broken. `apps/backend/.env.template` carries the value and why it is
+not a choice.
+
 ## The line
 
 ```json
