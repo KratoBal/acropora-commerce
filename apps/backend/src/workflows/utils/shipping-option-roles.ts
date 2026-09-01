@@ -58,14 +58,25 @@ export const SHIPPING_OPTION_ROLE_BINDINGS: ShippingOptionRoleBinding[] = [
   },
 ]
 
-/** Resolves the bindings with any environment overrides applied. */
+/**
+ * Resolves the bindings with any environment overrides applied.
+ *
+ * An override only counts when it names an id. A bare `??` would let an empty
+ * line in an env file ("ACROPORA_SO_PICKUP=") through as an empty string:
+ * dotenv parses such a key as "" rather than leaving it out (measured), and ""
+ * is not nullish, so the option would be mapped to "" and quietly lose its
+ * role. Nothing fails, and payment eligibility then decides on one role fewer.
+ * Unmapping an option is done by removing it from the table above, never by
+ * blanking a variable.
+ */
 export const resolveShippingOptionRoleBindings = (
   env: NodeJS.ProcessEnv = process.env
 ): ShippingOptionRoleBinding[] =>
-  SHIPPING_OPTION_ROLE_BINDINGS.map((binding) => ({
-    ...binding,
-    id: env[binding.env] ?? binding.id,
-  }))
+  SHIPPING_OPTION_ROLE_BINDINGS.map((binding) => {
+    const override = env[binding.env]?.trim()
+
+    return { ...binding, id: override || binding.id }
+  })
 
 export const buildShippingOptionRoleMap = (
   env: NodeJS.ProcessEnv = process.env

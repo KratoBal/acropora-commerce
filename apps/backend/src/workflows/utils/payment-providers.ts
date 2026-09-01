@@ -3,14 +3,17 @@ import { PaymentRole } from "./payment-eligibility"
 /**
  * Which Medusa payment provider stands for which payment role.
  *
- * EMPTY BY DEFAULT, and that is the whole point of this phase: the eligibility
- * architecture is complete, but no real provider is wired, so nothing in the
- * live checkout changes. SimplePay, cash on delivery and pay-at-store providers
- * are introduced in a later phase; when they exist, this map is filled from the
- * environment and the rest of the code needs no change.
+ * Filled from the environment, and an unset role stays unmapped on purpose.
  *
- *   ACROPORA_PP_ONLINE_CARD=pp_simplepay_simplepay
- *   ACROPORA_PP_COD=pp_system_default
+ * Cash on delivery is wired: the Acropora COD provider is registered in
+ * medusa-config.ts, and its id is a historical constant rather than a choice
+ * (CASH_ON_DELIVERY_PROVIDER_ID). Pay-at-store can only be the built-in system
+ * provider today. Online card is still unwired: no SimplePay provider is
+ * registered, so there is no id to name, and naming a provider that does not
+ * exist has the same effect as a typo.
+ *
+ *   ACROPORA_PP_ONLINE_CARD=              (blocked on the SimplePay integration)
+ *   ACROPORA_PP_COD=pp_acropora_cod
  *   ACROPORA_PP_PAY_AT_STORE=pp_system_default
  *
  * This is the SimplePay integration point. Nothing else in the codebase names a
