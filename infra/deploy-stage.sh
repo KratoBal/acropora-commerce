@@ -23,7 +23,6 @@
 # Hasznalat:
 #   bash infra/deploy-stage.sh
 #   bash infra/deploy-stage.sh --allow-detached <sha>   # szandekos visszaallas
-#   bash infra/deploy-stage.sh --migrations-applied     # a migraciot mar lefuttattam
 #
 # set -e szandekosan NINCS egyedul: minden lepes utan kifejezett ellenorzes all,
 # hogy a hiba ne csak megallitson, hanem meg is mondja, mi a baj.
@@ -36,7 +35,6 @@ REMOTE="${REMOTE:-origin}"
 BRANCH="${BRANCH:-main}"
 
 ALLOW_DETACHED=""
-MIGRATIONS_APPLIED="no"
 
 fail() {
   echo >&2
@@ -61,9 +59,6 @@ while [ $# -gt 0 ]; do
       shift
       [ $# -gt 0 ] || fail "a --allow-detached utan meg kell adni egy commit azonositot"
       ALLOW_DETACHED="$1"
-      ;;
-    --migrations-applied)
-      MIGRATIONS_APPLIED="yes"
       ;;
     -h|--help)
       usage
@@ -172,36 +167,69 @@ fi
 
 MIGRATION_NOTE=""
 
+# EZ MAR NEM KAPU, HANEM ERTESITES -- es a valtozas oka fontosabb a valtozasnal.
+#
+# Amig a migraciot EMBER futtatta, volt ertelme megtagadni a telepitest, amig
+# meg nem erositette. 2026-09-01 ota a KONTENER futtatja, indulaskor (lasd
+# apps/backend/docker-entrypoint.sh), es akkor is megall, ha a migracio bukik.
+# Ettol a --migrations-applied kapcsolo nem egyszeruen folosleges lett, hanem
+# MEGTEVESZTO: a hivo egy olyan dolgot allitott volna, amit nem o csinal.
+# Ezert a kapcsolo ki is kerult, nem no-op-kent maradt bent.
+#
+# AMIT EZ NEM OLD MEG, ES AMIERT AZ ERTESITES A FAJLNEVEKET SOROLJA:
+# az automatikus migracio nem megvalaszolja a regi kerdest, hanem KICSERELI.
+# Nem az a kerdes tobbe, hogy lefuttattad-e, hanem hogy szabad-e FELUGYELET
+# NELKUL lefutnia. Egy oszlopot torlo migracio mostantol magatol elindul a
+# kontener indulasakor. A darabszam ("ket uj migracio") errol semmit nem mond;
+# a fajlnevbol latszik, hogy torles vagy bovites. Ezert nevek, nem szam.
+#
+# ES AZERT ALL A TELEPITES ELOTT: egy figyelmeztetes, ami az esemeny utan jon,
+# kronika, nem ovintezkedes. Ez a blokk a build es a kontener-inditas ELOTT fut.
+
+# ISMERT POZITIV ESET, MIELOTT BARMIT ALLITANANK A HIANYROL.
+#
+# A fenti minta szuk, es a sajat fejlece is kimondja, hogy ha a migraciok
+# valaha mashova kerulnek, CSENDBEN enged at mindent. Egy "nincs uj migracio"
+# uzenet ilyenkor nem a valosagrol szol, hanem a mintarol -- es epp az a
+# fajta megnyugtato nulla, amire nem szoktunk rakerdezni.
+#
+# Ezert a script eloszor megnezi, hogy a minta a JELENLEGI fan talal-e
+# egyaltalan valamit. Ha nem, a hiany-uzenetnek nincs bizonyito ereje, es ezt
+# ki is mondja.
+MIGRATION_FILES_TODAY="$(git ls-files "$MIGRATION_GLOB" | wc -l | tr -d ' ')"
+if [ "$MIGRATION_FILES_TODAY" = "0" ]; then
+  echo >&2
+  echo "FIGYELEM: a migracios minta ($MIGRATION_GLOB) a JELENLEGI fan sem talal" >&2
+  echo "egyetlen fajlt sem. Vagy elkerultek a migraciok, vagy a minta avult el." >&2
+  echo "Amig ez igy all, az alabbi migracios uzenet NEM bizonyit semmit." >&2
+  echo >&2
+fi
+
 if [ -z "$PREVIOUS_SHA" ]; then
-  MIGRATION_NOTE="nem futott (nem volt mihez hasonlitani, elozo telepites nincs feljegyezve)"
-  if [ "$MIGRATIONS_APPLIED" != "yes" ]; then
-    echo >&2 "Nincs korabbi telepites feljegyezve ($DEPLOYED_FILE), tehat nem tudom megmondani," >&2
-    echo >&2 "hogy ez a commit hoz-e uj migraciot." >&2
-    fail "nezd meg kezzel, es ha rendben, futtasd ujra a --migrations-applied kapcsoloval."
-  fi
-  MIGRATION_NOTE="nem futott (elso feljegyzett telepites, a --migrations-applied kapcsoloval jovahagyva)"
+  MIGRATION_NOTE="a kontener futtatja indulaskor (nincs feljegyzett elozo telepites, igy nem tudom felsorolni, mi az uj)"
+  echo >&2
+  echo "MIGRACIO: nincs feljegyzett korabbi telepites ($DEPLOYED_FILE)," >&2
+  echo "tehat nem tudom megmondani, mi az UJ ebben a commitban." >&2
+  echo "A kontener indulaskor minden fuggo migraciot lefuttat." >&2
+  echo >&2
 elif [ "$PREVIOUS_SHA" = "$HEAD_SHA" ]; then
-  MIGRATION_NOTE="nem futott (ugyanaz a commit, mint a legutobbi telepitesnel)"
-  echo "az elozo telepites ugyanez a commit volt"
+  MIGRATION_NOTE="nincs uj (ugyanaz a commit, mint a legutobbi telepitesnel)"
+  echo "MIGRACIO: az elozo telepites ugyanez a commit volt, nincs uj migracio."
 else
   NEW_MIGRATIONS="$(git diff --name-only --diff-filter=A "$PREVIOUS_SHA" "$HEAD_SHA" -- "$MIGRATION_GLOB" 2>/dev/null)"
 
   if [ -n "$NEW_MIGRATIONS" ]; then
-    echo "Uj migracios fajlok a(z) $PREVIOUS_SHA es a(z) $HEAD_SHA kozott:" >&2
-    echo "$NEW_MIGRATIONS" >&2
-
-    if [ "$MIGRATIONS_APPLIED" != "yes" ]; then
-      echo >&2
-      echo "A szkript SOHA nem futtat migraciot. A migracio kulon, tudatos lepes:" >&2
-      echo "  cd apps/backend && npx medusa db:migrate" >&2
-      echo >&2
-      fail "futtasd le a migraciot, majd inditsd ujra a --migrations-applied kapcsoloval."
-    fi
-
-    MIGRATION_NOTE="futott a telepites elott, kezzel: $(echo "$NEW_MIGRATIONS" | tr '\n' ' ' | sed 's/ $//')"
+    MIGRATION_NOTE="a kontener futtatja indulaskor: $(echo "$NEW_MIGRATIONS" | tr '\n' ' ' | sed 's/ $//')"
+    echo >&2
+    echo "MIGRACIO: ez a telepites UJ migraciokat hoz, es a kontener" >&2
+    echo "indulaskor MAGATOL lefuttatja oket, felugyelet nelkul:" >&2
+    echo "$NEW_MIGRATIONS" | sed 's/^/  /' >&2
+    echo >&2
+    echo "Ha barmelyik torol vagy szukit, most nezd meg, mielott elindul." >&2
+    echo >&2
   else
-    MIGRATION_NOTE="nem futott (a(z) $PREVIOUS_SHA ota nincs uj migracios fajl)"
-    echo "nincs uj migracio"
+    MIGRATION_NOTE="nincs uj (a(z) $PREVIOUS_SHA ota nincs uj migracios fajl)"
+    echo "MIGRACIO: a(z) $PREVIOUS_SHA ota nincs uj migracios fajl."
   fi
 fi
 
