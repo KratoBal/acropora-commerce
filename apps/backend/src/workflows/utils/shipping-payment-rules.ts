@@ -72,6 +72,12 @@ export const toShippingRolePayments = (
  *
  * The positions are the order the methods are offered in, per shipping method.
  * Card first, because it is the one every shipping method allows.
+ *
+ * THE HEAVY ROW GAINED CASH ON DELIVERY ON 2026-09-01 (Balázs, "Legyen
+ * utánvét"), and the drift test is how this file learned about it: the code
+ * matrix moved on a separate branch, and the assertion went red the moment the
+ * two met. That is the whole reason the assertion exists, so it is worth
+ * recording that it worked rather than quietly fixing the row.
  */
 export const SHIPPING_PAYMENT_RULE_SEED: ShippingPaymentRuleRow[] = [
   { shipping_role: "PICKUP", payment_role: "ONLINE_CARD", position: 1 },
@@ -79,6 +85,7 @@ export const SHIPPING_PAYMENT_RULE_SEED: ShippingPaymentRuleRow[] = [
   { shipping_role: "GLS_NORMAL", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "GLS_NORMAL", payment_role: "COD", position: 2 },
   { shipping_role: "GLS_HEAVY", payment_role: "ONLINE_CARD", position: 1 },
+  { shipping_role: "GLS_HEAVY", payment_role: "COD", position: 2 },
   { shipping_role: "FOXPOST", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "FOXPOST", payment_role: "COD", position: 2 },
 ];
