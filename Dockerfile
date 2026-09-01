@@ -30,6 +30,14 @@ COPY --from=builder /app/apps/backend/.medusa/server ./
 
 RUN npm install --omit=dev
 
+# Applies pending migrations before the server starts, and refuses to start
+# it if they fail - see the script's own header for why this is an entrypoint
+# and not a `&&` chain in CMD. Copied AFTER `npm install` so editing it does
+# not invalidate that layer.
+COPY apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
 EXPOSE 9000
 
 # Ugyanaz a szam ket fuggetlen uton. A cimke akkor is olvashato, ha a kontener
