@@ -1,8 +1,8 @@
-import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility";
+import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
 import {
   SHIPPING_OPTION_ROLES,
   ShippingOptionRole,
-} from "./shipping-eligibility";
+} from "./shipping-eligibility"
 
 /**
  * The stored form of "which payment methods may this shipping method use, and
@@ -12,16 +12,16 @@ import {
  * why there is no `allowed` flag.
  */
 export type ShippingPaymentRuleRow = {
-  shipping_role: string;
-  payment_role: string;
-  position: number;
-};
+  shipping_role: string
+  payment_role: string
+  position: number
+}
 
 const isShippingRole = (value: string): value is ShippingOptionRole =>
-  (SHIPPING_OPTION_ROLES as readonly string[]).includes(value);
+  (SHIPPING_OPTION_ROLES as readonly string[]).includes(value)
 
 const isPaymentRole = (value: string): value is PaymentRole =>
-  (PAYMENT_ROLES as readonly string[]).includes(value);
+  (PAYMENT_ROLES as readonly string[]).includes(value)
 
 /**
  * Turns stored rows into the map the eligibility rules already speak.
@@ -40,27 +40,27 @@ const isPaymentRole = (value: string): value is PaymentRole =>
 export const toShippingRolePayments = (
   rows: ShippingPaymentRuleRow[],
 ): Record<ShippingOptionRole, PaymentRole[]> => {
-  const byShippingRole = {} as Record<ShippingOptionRole, PaymentRole[]>;
+  const byShippingRole = {} as Record<ShippingOptionRole, PaymentRole[]>
 
   for (const role of SHIPPING_OPTION_ROLES) {
-    byShippingRole[role] = [];
+    byShippingRole[role] = []
   }
 
-  const ordered = [...rows].sort((a, b) => a.position - b.position);
+  const ordered = [...rows].sort((a, b) => a.position - b.position)
 
   for (const row of ordered) {
-    if (!isShippingRole(row.shipping_role)) continue;
-    if (!isPaymentRole(row.payment_role)) continue;
+    if (!isShippingRole(row.shipping_role)) continue
+    if (!isPaymentRole(row.payment_role)) continue
 
-    const list = byShippingRole[row.shipping_role];
+    const list = byShippingRole[row.shipping_role]
 
     if (!list.includes(row.payment_role)) {
-      list.push(row.payment_role);
+      list.push(row.payment_role)
     }
   }
 
-  return byShippingRole;
-};
+  return byShippingRole
+}
 
 /**
  * The rows that reproduce today's behaviour exactly.
@@ -81,4 +81,4 @@ export const SHIPPING_PAYMENT_RULE_SEED: ShippingPaymentRuleRow[] = [
   { shipping_role: "GLS_HEAVY", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "FOXPOST", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "FOXPOST", payment_role: "COD", position: 2 },
-];
+]
