@@ -32,5 +32,12 @@
     ".medusa/admin",
     ".cache",
     "eslint.config.*",
+    // Test-only code. Without these the server build carries every spec and
+    // fixture into .medusa/server -- measured 2026-09-01: 18 compiled test
+    // files in the image. Jest finds its tests by its own testMatch, not by
+    // this list, so excluding them here does not hide them from the runner.
+    "**/__tests__/**",
+    "**/*.spec.ts",
+    "integration-tests/**",
   ]
 }
