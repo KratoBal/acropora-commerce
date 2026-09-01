@@ -34,3 +34,31 @@ On 2026-09-01 the same infrastructure questions were asked three times in one af
 every answer already existed in a document nobody had open at that moment. The fix is not
 another map: it is putting the answer where the question gets asked. A merge happens here, so
 what a merge does belongs here.
+
+## The deploy key, and the failure nobody could have seen
+
+The first webhook-triggered deployment, 2026-09-01 at 15:50:54, failed three seconds in:
+
+```
+Error: Permission denied (publickey).
+fatal: Could not read from remote repository.
+```
+
+**The webhook was fine.** GitHub delivered it and Coolify answered `200`; the deployment
+started. What failed was the step before the build: Coolify could not read this repository,
+because the private key attached to those two applications was not one this repository knows.
+
+This repository has exactly **one** deploy key, read-only, named `coolify ai-stage (acrobot,
+csak olvaso)`. The two staging applications were pointing at a different key. Both were
+switched over at 15:57.
+
+**Why this is worth a paragraph rather than a fix and silence:** those applications could
+never have deployed themselves, for as long as they have existed. The misconfiguration was not
+introduced by the webhooks — it was made visible by them, because until that afternoon nothing
+had ever asked those applications to fetch this repository. A wrong setting that nothing
+exercises stays invisible indefinitely, and it will surface on the day someone actually needs
+the deployment to work.
+
+The same shape appears elsewhere in this codebase's history: a check that cannot fail, a guard
+that reports but does not stop, a test that waits for something always present. This was the
+infrastructure version of it.
