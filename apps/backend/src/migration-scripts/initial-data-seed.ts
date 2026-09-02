@@ -2,26 +2,178 @@ import { MedusaContainer } from "@medusajs/framework";
 import {
   ContainerRegistrationKeys,
   ModuleRegistrationName,
-  Modules,
-  ProductStatus,
 } from "@medusajs/framework/utils";
 import {
-  createApiKeysWorkflow,
-  createCollectionsWorkflow,
-  createInventoryLevelsWorkflow,
-  createProductCategoriesWorkflow,
-  createProductOptionsWorkflow,
-  createProductsWorkflow,
   createRegionsWorkflow,
   createSalesChannelsWorkflow,
   createShippingOptionsWorkflow,
-  createShippingProfilesWorkflow,
   createStockLocationsWorkflow,
-  createStoresWorkflow,
   createTaxRegionsWorkflow,
-  linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
+  updateShippingOptionsWorkflow,
 } from "@medusajs/medusa/core-flows";
+
+/**
+ * The settings this shop actually runs on, so they are typed once and not twice.
+ *
+ * WHY THIS FILE CHANGED COMPLETELY. Until now it held Medusa's factory example:
+ * British, German, Danish, Swedish, French and Italian regions, a "Default
+ * Sales Channel" described as "Created by Medusa", and two example shipping
+ * options at 10 EUR. Not one line of it was ours. Balázs asked whether the
+ * settings that exist on the test machine have to be typed again on production;
+ * the answer is no, and this is where that answer lives.
+ *
+ * All seven values were MEASURED on the test machine on 2026-09-02 by acrobot,
+ * with direct read-only SQL, and not derived from names. Where a name looked
+ * obvious it was still asked for: the region is called "Hungary", not
+ * "Magyarország" - the Hungarian form was a guess in the request and would have
+ * produced a second, wrong region.
+ *
+ * ===================================================================
+ * WHAT THIS SCRIPT DOES NOT DO, AND WILL NOT
+ * ===================================================================
+ *
+ * IT CREATES NO SECRETS. Two publishable/secret keys exist on the test machine;
+ * production needs NEW ones, issued by hand. A key in a seed is a key in the
+ * repository, and this repository is public - see `scripts/scan-secrets.mjs`
+ * for what that costs.
+ *
+ * IT WRITES NO `shipping_payment_rule` ROWS, AND THE REASON WRITTEN HERE FIRST
+ * WAS WRONG. It said the pairings were "a separate decision". Measured
+ * afterwards: they are decided. `SHIPPING_PAYMENT_RULE_SEED` in
+ * `workflows/utils/shipping-payment-rules.ts` holds all eight pairs, and a unit
+ * test asserts them against the code matrix.
+ *
+ * WHAT IS ACTUALLY TRUE IS NARROWER, AND IT IS WHY THE ROWS STILL DO NOT BELONG
+ * HERE YET: the table has no reader. `toShippingRolePayments` is called by
+ * nothing but its own test, and no production code queries the table - the
+ * eligibility rules run from the code matrix. Seeding rows today would store a
+ * second copy of a decision nothing consults, in a table whose first consumer
+ * arrives later; at that moment there would be two sources, one of them written
+ * months earlier by a seed and never looked at since.
+ *
+ * So the rows belong in the change that wires the reader, together with
+ * retiring the code matrix - one change, one source. Not before.
+ *
+ * IT ATTACHES NO SHIPPING RULES. The `shipping_class` rules are applied by
+ * `src/scripts/configure-shipping-rules.ts`, which reads the role bindings and
+ * runs dry by default. Duplicating that logic here would give two places to
+ * change and one to forget.
+ *
+ * IT DOES NOT RUN ITSELF ANYWHERE. Writing to the live shop needs Balázs's
+ * permission for that occasion, every time.
+ *
+ * ===================================================================
+ * THE ONE THING IT CANNOT CARRY ACROSS, AND THE REASON IS STRUCTURAL
+ * ===================================================================
+ *
+ * `CreateShippingOptionDTO` has NO `id` field - measured in the installed
+ * package. Medusa generates the id, and a caller cannot ask for a specific one.
+ *
+ * That matters more here than it would elsewhere, because this codebase
+ * identifies shipping options BY ID in three places: the role table in
+ * `workflows/utils/shipping-option-roles.ts`, the calculated-pricing contract
+ * (`data.id` equals the option's own id), and the six `ACROPORA_SO_*`
+ * overrides.
+ *
+ * So on a fresh database the five other settings transfer exactly, and the
+ * shipping options do NOT: their ids are new. This script therefore prints the
+ * six override lines at the end, ready to paste, and says what breaks without
+ * them. A plan that promised the same guarantee for all seven would have failed
+ * at the sixth, in production.
+ *
+ * ===================================================================
+ * IDEMPOTENT, BECAUSE THE FACTORY VERSION WAS NOT
+ * ===================================================================
+ *
+ * The factory seed left twenty-one sales channels and twenty-eight API keys on
+ * the test machine, which is what running a non-idempotent seed repeatedly
+ * looks like. Every step here asks whether the thing exists first, by name, and
+ * skips it if it does. Running this twice creates nothing the second time.
+ */
+
+/**
+ * A MERT ERTEKEK, EXPORTALVA, HOGY ALLITAST LEHESSEN RAJUK TENNI.
+ *
+ * Eddig modul-szintu, nem exportalt konstansok voltak, es ezert SEMMI nem
+ * merte oket: egy elirt nev vagy egy kiesett szallitasi mod ugyanugy lefordult
+ * volna. Egy seed, ami het mert erteket ir be, es amirol egyetlen allitas sem
+ * szol, pontosan az az alak, amit a lapunk "megneveztem a lyukat, es kikuldtem
+ * rajta a funkciot" nev alatt gyujt.
+ *
+ * A HOZZA TARTOZO TESZT (`__tests__/initial-data-seed.unit.spec.ts`) a MERESt
+ * tartalmazza kulon leirva, nem ebbol szamolja -- kulonben az allitas azt
+ * mondana, hogy a konstans egyenlo onmagaval.
+ */
+const REGIO_NEVE = "Hungary";
+const CSATORNA_NEVE = "Acropora Webshop";
+const RAKTAR_NEVE = "Acropora Budapest";
+const PICKUP_SET_NEVE = "Acropora Budapest pick up";
+const SHIPPING_SET_NEVE = "Acropora Budapest shipping";
+const PICKUP_ZONA = "Bolti átvétel";
+const SHIPPING_ZONA = "Házhozszállítás";
+
+/**
+ * A hat szállítási mód, a szerepével együtt.
+ *
+ * A NEVEK ÉS A SORREND a `workflows/utils/shipping-option-roles.ts` táblájából
+ * valók, hogy a kiírt környezeti változók és a szerep-tábla ne tudjanak
+ * elcsúszni. A `calculated` mezők a mérésből: öt tétel calculated, egy flat.
+ */
+const SZALLITASI_MODOK = [
+  {
+    name: "Bolti átvétel",
+    env: "ACROPORA_SO_PICKUP",
+    zona: PICKUP_ZONA,
+    calculated: false,
+  },
+  {
+    name: "GLS házhozszállítás",
+    env: "ACROPORA_SO_GLS_HOME",
+    zona: SHIPPING_ZONA,
+    calculated: true,
+  },
+  {
+    name: "GLS csomagpont",
+    env: "ACROPORA_SO_GLS_POINT",
+    zona: SHIPPING_ZONA,
+    calculated: true,
+  },
+  {
+    name: "GLS nehézáru házhozszállítás",
+    env: "ACROPORA_SO_GLS_HEAVY_HOME",
+    zona: SHIPPING_ZONA,
+    calculated: true,
+  },
+  {
+    name: "GLS nehézáru csomagpont",
+    env: "ACROPORA_SO_GLS_HEAVY_POINT",
+    zona: SHIPPING_ZONA,
+    calculated: true,
+  },
+  {
+    name: "Foxpost csomagpont",
+    env: "ACROPORA_SO_FOXPOST",
+    zona: SHIPPING_ZONA,
+    calculated: true,
+  },
+] as const;
+
+/**
+ * A SEED HET TETELE, EGY HELYEN, OLVASHATO ALAKBAN.
+ *
+ * Nem uj forras: ugyanazokat a konstansokat mutatja meg, amikbol a szkript
+ * dolgozik. Azert all itt, hogy a teszt ne a fuggveny FUTASABOL kovetkeztessen
+ * (ahhoz adatbazis kellene), hanem az ERTEKEKET nezhesse meg.
+ */
+export const SEED_SETTINGS = {
+  regio: { nev: REGIO_NEVE, penznem: "huf" },
+  ado: { orszag: "hu", kulcsNeve: "Áfa", szazalek: 27 },
+  csatorna: CSATORNA_NEVE,
+  raktar: RAKTAR_NEVE,
+  szallitasiModok: SZALLITASI_MODOK,
+  fizetesiSzolgaltatok: ["pp_system_default", "pp_acropora_cod"],
+} as const;
 
 export default async function initial_data_seed({
   container,
@@ -29,811 +181,287 @@ export default async function initial_data_seed({
   container: MedusaContainer;
 }) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
-  const link = container.resolve(ContainerRegistrationKeys.LINK);
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
   const fulfillmentModuleService = container.resolve(
-    ModuleRegistrationName.FULFILLMENT
+    ModuleRegistrationName.FULFILLMENT,
   );
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  /** Létezik-e már egy adott nevű sor. Ez az idempotencia egyetlen eszköze. */
+  const letezik = async (entity: string, name: string) => {
+    const { data } = await query.graph({
+      entity,
+      fields: ["id", "name"],
+      filters: { name },
+    });
+    return data?.[0] ?? null;
+  };
 
-  logger.info("Seeding store data...");
-  const {
-    result: [defaultSalesChannel],
-  } = await createSalesChannelsWorkflow(container).run({
-    input: {
-      salesChannelsData: [
+  // --- 1. RÉGIÓ -----------------------------------------------------------
+  let region = await letezik("region", REGIO_NEVE);
+  if (region) {
+    logger.info(`A(z) "${REGIO_NEVE}" régió már létezik, kihagyva.`);
+  } else {
+    const { result } = await createRegionsWorkflow(container).run({
+      input: {
+        regions: [
+          {
+            name: SEED_SETTINGS.regio.nev,
+            currency_code: SEED_SETTINGS.regio.penznem,
+            countries: [SEED_SETTINGS.ado.orszag],
+            // MIND A KETTO ENGEDELYEZVE a teszt gepen. A pp_acropora_cod a sajat
+            // utanvet-szolgaltatonk, a pp_system_default a beepitett.
+            payment_providers: [...SEED_SETTINGS.fizetesiSzolgaltatok],
+          },
+        ],
+      },
+    });
+    region = result[0];
+    logger.info(
+      `Régió létrehozva: ${SEED_SETTINGS.regio.nev} (${SEED_SETTINGS.regio.penznem})`,
+    );
+  }
+
+  // --- 2. ADÓTERÜLET ÉS A 27 SZÁZALÉKOS KULCS -----------------------------
+  const { data: adoteruletek } = await query.graph({
+    entity: "tax_region",
+    fields: ["id", "country_code"],
+    filters: { country_code: SEED_SETTINGS.ado.orszag },
+  });
+  if (adoteruletek?.length) {
+    logger.info("A magyar adóterület már létezik, kihagyva.");
+  } else {
+    await createTaxRegionsWorkflow(container).run({
+      input: [
         {
-          name: "Default Sales Channel",
-          description: "Created by Medusa",
-        },
-      ],
-    },
-  });
-
-  const {
-    result: [publishableApiKey],
-  } = await createApiKeysWorkflow(container).run({
-    input: {
-      api_keys: [
-        {
-          title: "Default Publishable API Key",
-          type: "publishable",
-          created_by: "",
-        },
-      ],
-    },
-  });
-
-  await linkSalesChannelsToApiKeyWorkflow(container).run({
-    input: {
-      id: publishableApiKey.id,
-      add: [defaultSalesChannel.id],
-    },
-  });
-
-  const {
-    result: [store],
-  } = await createStoresWorkflow(container).run({
-    input: {
-      stores: [
-        {
-          name: "Default Store",
-          supported_currencies: [
-            {
-              currency_code: "eur",
-              is_default: true,
-            },
-            {
-              currency_code: "usd",
-              is_default: false,
-            },
-          ],
-          default_sales_channel_id: defaultSalesChannel.id,
-        },
-      ],
-    },
-  });
-
-  logger.info("Seeding region data...");
-  const { result: regionResult } = await createRegionsWorkflow(container).run({
-    input: {
-      regions: [
-        {
-          name: "Europe",
-          currency_code: "eur",
-          countries,
-          payment_providers: ["pp_system_default"],
-        },
-      ],
-    },
-  });
-  const region = regionResult[0];
-  logger.info("Finished seeding regions.");
-
-  logger.info("Seeding tax regions...");
-  await createTaxRegionsWorkflow(container).run({
-    input: countries.map((country_code) => ({
-      country_code,
-      provider_id: "tp_system",
-    })),
-  });
-  logger.info("Finished seeding tax regions.");
-
-  logger.info("Seeding stock location data...");
-  const { result: stockLocationResult } = await createStockLocationsWorkflow(
-    container
-  ).run({
-    input: {
-      locations: [
-        {
-          name: "European Warehouse",
-          address: {
-            city: "Copenhagen",
-            country_code: "DK",
-            address_1: "",
+          country_code: SEED_SETTINGS.ado.orszag,
+          provider_id: "tp_system",
+          // A `default_tax_rate` MAGA az alapertelmezes: a tipusban nincs
+          // `is_default` mezo, es a fordito ezt meg is mondta. A mert
+          // "is_default igaz" allapotot eppen ez allitja elo.
+          default_tax_rate: {
+            name: SEED_SETTINGS.ado.kulcsNeve,
+            rate: SEED_SETTINGS.ado.szazalek,
           },
         },
       ],
-    },
-  });
-  const stockLocation = stockLocationResult[0];
+    });
+    logger.info(
+      `Adóterület létrehozva: ${SEED_SETTINGS.ado.orszag}, ` +
+        `${SEED_SETTINGS.ado.szazalek} százalékos alapkulccsal.`,
+    );
+  }
 
-  await link.create({
-    [Modules.STOCK_LOCATION]: {
-      stock_location_id: stockLocation.id,
-    },
-    [Modules.FULFILLMENT]: {
-      fulfillment_provider_id: "manual_manual",
-    },
-  });
+  // --- 3. ÉRTÉKESÍTÉSI CSATORNA -------------------------------------------
+  let csatorna = await letezik("sales_channel", CSATORNA_NEVE);
+  if (csatorna) {
+    logger.info(`A(z) "${CSATORNA_NEVE}" csatorna már létezik, kihagyva.`);
+  } else {
+    const { result } = await createSalesChannelsWorkflow(container).run({
+      input: { salesChannelsData: [{ name: CSATORNA_NEVE }] },
+    });
+    csatorna = result[0];
+    logger.info(`Értékesítési csatorna létrehozva: ${CSATORNA_NEVE}`);
+  }
 
-  logger.info("Seeding fulfillment data...");
-  // This is created by a migration script in core.
-  const { data: shippingProfileResult } = await query.graph({
+  // --- 4. RAKTÁR ----------------------------------------------------------
+  let raktar = await letezik("stock_location", RAKTAR_NEVE);
+  if (raktar) {
+    logger.info(`A(z) "${RAKTAR_NEVE}" raktár már létezik, kihagyva.`);
+  } else {
+    const { result } = await createStockLocationsWorkflow(container).run({
+      input: {
+        locations: [
+          {
+            name: RAKTAR_NEVE,
+            // A PONTOS UTCA NEM VOLT A MERESBEN, es nem talalom ki: a varos es
+            // az orszag a nevbol es a regiobol kovetkezik, az utca ures marad,
+            // ugyanugy, ahogy a gyari peldaban is ures volt. Ha szamit, a Medusa
+            // adminban egy sor.
+            address: { city: "Budapest", country_code: "hu", address_1: "" },
+          },
+        ],
+      },
+    });
+    raktar = result[0];
+    logger.info(`Raktár létrehozva: ${RAKTAR_NEVE}`);
+
+    await linkSalesChannelsToStockLocationWorkflow(container).run({
+      input: { id: raktar.id, add: [csatorna.id] },
+    });
+    logger.info("A raktár és az értékesítési csatorna összekötve.");
+  }
+
+  // --- 5. FULFILLMENT SETEK ÉS ZÓNÁK --------------------------------------
+  //
+  // KETTO A MIENK: egy pickup (bolti atvetel) es egy shipping (hazhozszallitas),
+  // mindketto magyar orszag-zonaval. A gyari "European Warehouse delivery" NEM
+  // kerul letrehozasra: az a peldabol valo.
+  const { data: meglevoSetek } = await query.graph({
+    entity: "fulfillment_set",
+    fields: ["id", "name", "type", "service_zones.id", "service_zones.name"],
+  });
+  const setNevSzerint = new Map(
+    (meglevoSetek ?? []).map((s: { name: string }) => [s.name, s]),
+  );
+
+  const setEloallit = async (
+    name: string,
+    type: "pickup" | "shipping",
+    zona: string,
+  ) => {
+    const meglevo = setNevSzerint.get(name);
+    if (meglevo) {
+      logger.info(`A(z) "${name}" fulfillment set már létezik, kihagyva.`);
+      return meglevo;
+    }
+    const letrehozott = await fulfillmentModuleService.createFulfillmentSets({
+      name,
+      type,
+      service_zones: [
+        { name: zona, geo_zones: [{ country_code: "hu", type: "country" }] },
+      ],
+    });
+    logger.info(`Fulfillment set létrehozva: ${name} (${type})`);
+    return letrehozott;
+  };
+
+  const pickupSet = await setEloallit(PICKUP_SET_NEVE, "pickup", PICKUP_ZONA);
+  const shippingSet = await setEloallit(
+    SHIPPING_SET_NEVE,
+    "shipping",
+    SHIPPING_ZONA,
+  );
+
+  const zonaAzonosito = (set: unknown, nev: string) => {
+    const zonak = (set as { service_zones?: { name: string; id: string }[] })
+      .service_zones;
+    const zona = zonak?.find((z) => z.name === nev);
+    if (!zona) {
+      throw new Error(
+        `Nem találom a(z) "${nev}" szolgáltatási zónát. A seed itt megáll, mert egy zóna nélkül a szállítási módok rossz helyre kerülnének.`,
+      );
+    }
+    return zona.id;
+  };
+
+  // A SZALLITASI PROFIL A GYARI, es ez szandekos: a teszt gepen is egyetlen
+  // profil all, a "Default Shipping Profile". Nem cserelni valo.
+  const { data: profilok } = await query.graph({
     entity: "shipping_profile",
-    fields: ["id"],
+    fields: ["id", "name"],
   });
-  const shippingProfile = shippingProfileResult[0];
+  const profil = profilok?.[0];
+  if (!profil) {
+    throw new Error(
+      "Nincs szállítási profil. A seed itt megáll: profil nélkül egyetlen szállítási mód sem hozható létre.",
+    );
+  }
 
-  const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
-    type: "shipping",
-    service_zones: [
-      {
-        name: "Europe",
-        geo_zones: [
-          {
-            country_code: "gb",
-            type: "country",
-          },
-          {
-            country_code: "de",
-            type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
-            type: "country",
-          },
-        ],
-      },
-    ],
-  });
+  // --- 6. A HAT SZÁLLÍTÁSI MÓD --------------------------------------------
+  const kiirandoAzonositok: { env: string; id: string }[] = [];
 
-  await link.create({
-    [Modules.STOCK_LOCATION]: {
-      stock_location_id: stockLocation.id,
-    },
-    [Modules.FULFILLMENT]: {
-      fulfillment_set_id: fulfillmentSet.id,
-    },
-  });
+  for (const mod of SZALLITASI_MODOK) {
+    const meglevo = await letezik("shipping_option", mod.name);
+    if (meglevo) {
+      logger.info(`A(z) "${mod.name}" szállítási mód már létezik, kihagyva.`);
+      kiirandoAzonositok.push({ env: mod.env, id: meglevo.id });
+      continue;
+    }
 
-  await createShippingOptionsWorkflow(container).run({
-    input: [
-      {
-        name: "Standard Shipping",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Standard",
-          description: "Ship in 2-3 days.",
-          code: "standard",
-        },
-        prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
-      {
-        name: "Express Shipping",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Express",
-          description: "Ship in 24 hours.",
-          code: "express",
-        },
-        prices: [
-          {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
-          },
-          {
-            region_id: region.id,
-            amount: 10,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
-    ],
-  });
-  logger.info("Finished seeding fulfillment data.");
+    const zonaId = zonaAzonosito(
+      mod.zona === PICKUP_ZONA ? pickupSet : shippingSet,
+      mod.zona,
+    );
 
-  await linkSalesChannelsToStockLocationWorkflow(container).run({
-    input: {
-      id: stockLocation.id,
-      add: [defaultSalesChannel.id],
-    },
-  });
-  logger.info("Finished seeding stock location data.");
+    // A KET ALAK KULON AG, ES NEM EGY OBJEKTUM FELTETELES MEZOKKEL.
+    //
+    // A `price_type` DISZKRIMINAL: a flat alak megkoveteli a `prices` tombot, a
+    // calculated pedig tiltja. Az elso valtozatom egy objektumot epitett
+    // feltételes spreadekkel, es a fordito jogosan utasitotta el -- pontosan azt
+    // az ellenorzest utotte ki, ami itt a leghasznosabb.
+    const kozos = {
+      name: mod.name,
+      service_zone_id: zonaId,
+      shipping_profile_id: profil.id,
+      type: { label: mod.name, description: mod.name, code: mod.env },
+    };
 
-  logger.info("Seeding product data...");
-
-  const { result: categoryResult } = await createProductCategoriesWorkflow(
-    container
-  ).run({
-    input: {
-      product_categories: [
-        {
-          name: "Shirts",
-          is_active: true,
-        },
-        {
-          name: "Sweatshirts",
-          is_active: true,
-        },
-        {
-          name: "Pants",
-          is_active: true,
-        },
-        {
-          name: "Merch",
-          is_active: true,
-        },
+    const { result } = await createShippingOptionsWorkflow(container).run({
+      input: [
+        mod.calculated
+          ? {
+              ...kozos,
+              price_type: "calculated" as const,
+              provider_id: "acropora_shipping",
+            }
+          : {
+              ...kozos,
+              price_type: "flat" as const,
+              provider_id: "manual_manual",
+              data: { id: "manual-fulfillment" },
+              // A BOLTI ATVETEL ARA NULLA, ES KI VAN IRVA, NEM ELHAGYVA. Egy ar
+              // nelkuli flat opcio MAST jelent, mint egy nulla forintos: az
+              // elso arazatlan, a masodik ingyenes.
+              prices: [
+                { currency_code: "huf", amount: 0 },
+                { currency_code: "eur", amount: 0 },
+                { currency_code: "usd", amount: 0 },
+              ],
+            },
       ],
-    },
-  });
+    });
 
-  const { result: productOptionsResult } = await createProductOptionsWorkflow(
-    container
-  ).run({
-    input: {
-      product_options: [
-        {
-          title: "Size",
-          values: ["S", "M", "L", "XL"],
-        },
-        {
-          title: "Color",
-          values: ["Black", "White"],
-        },
-      ],
-    },
-  });
-  const sizeOption = productOptionsResult.find((o) => o.title === "Size")!;
-  const colorOption = productOptionsResult.find((o) => o.title === "Color")!;
+    const letrehozott = result[0];
+    kiirandoAzonositok.push({ env: mod.env, id: letrehozott.id });
 
-  await createProductsWorkflow(container).run({
-    input: {
-      products: [
-        {
-          title: "Medusa T-Shirt",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
-          ],
-          description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png",
-            },
-          ],
-          options: [
-            { id: sizeOption.id },
-            { id: colorOption.id },
-          ],
-          variants: [
-            {
-              title: "S / Black",
-              sku: "SHIRT-S-BLACK",
-              options: {
-                Size: "S",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "S / White",
-              sku: "SHIRT-S-WHITE",
-              options: {
-                Size: "S",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / Black",
-              sku: "SHIRT-M-BLACK",
-              options: {
-                Size: "M",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M / White",
-              sku: "SHIRT-M-WHITE",
-              options: {
-                Size: "M",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / Black",
-              sku: "SHIRT-L-BLACK",
-              options: {
-                Size: "L",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / White",
-              sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / Black",
-              sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / White",
-              sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
-        },
-        {
-          title: "Medusa Sweatshirt",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
-          ],
-          description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
-            },
-          ],
-          options: [{ id: sizeOption.id }],
-          variants: [
-            {
-              title: "S",
-              sku: "SWEATSHIRT-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SWEATSHIRT-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATSHIRT-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATSHIRT-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
-        },
-        {
-          title: "Medusa Sweatpants",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
-          ],
-          description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
-            },
-          ],
-          options: [{ id: sizeOption.id }],
-          variants: [
-            {
-              title: "S",
-              sku: "SWEATPANTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SWEATPANTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SWEATPANTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATPANTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
-        },
-        {
-          title: "Medusa Shorts",
-          category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
-          ],
-          description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
-          weight: 400,
-          status: ProductStatus.PUBLISHED,
-          shipping_profile_id: shippingProfile.id,
-          images: [
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
-            },
-          ],
-          options: [{ id: sizeOption.id }],
-          variants: [
-            {
-              title: "S",
-              sku: "SHORTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "M",
-              sku: "SHORTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L",
-              sku: "SHORTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SHORTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-          ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel.id,
-            },
-          ],
-        },
-      ],
-    },
-  });
-  logger.info("Finished seeding product data.");
+    // A SZAMITOTT ARAZAS SZERZODESE: a szolgaltato option data-jaban a `data.id`
+    // MEGEGYEZIK az opcio sajat azonositojaval. Ezt csak a letrehozas UTAN lehet
+    // beallitani, mert az azonositot a Medusa generalja.
+    if (mod.calculated) {
+      await updateShippingOptionsWorkflow(container).run({
+        input: [{ id: letrehozott.id, data: { id: letrehozott.id } }],
+      });
+    }
 
-  logger.info("Seeding inventory levels.");
+    logger.info(
+      `Szállítási mód létrehozva: ${mod.name} (${mod.calculated ? "calculated" : "flat"})`,
+    );
+  }
 
-  const { data: inventoryItems } = await query.graph({
-    entity: "inventory_item",
-    fields: ["id"],
-  });
-
-  await createInventoryLevelsWorkflow(container).run({
-    input: {
-      inventory_levels: inventoryItems.map((item) => ({
-        location_id: stockLocation.id,
-        stocked_quantity: 1000000,
-        inventory_item_id: item.id,
-      })),
-    },
-  });
-
-  logger.info("Finished seeding inventory levels data.");
+  // --- A HAT SOR, AMIT KÉZZEL KELL ÁTVINNI --------------------------------
+  logger.info("");
+  logger.info("=== A HAT SOR, AMI NEM MEGY AT MAGATOL ===");
+  logger.info("");
+  for (const { env, id } of kiirandoAzonositok) {
+    logger.info(`${env}=${id}`);
+  }
+  logger.info("");
+  logger.info(
+    "Ezek a sorok az apps/backend/.env fajlba valok, ebben a kornyezetben.",
+  );
+  logger.info("");
+  logger.info("HA KIMARADNAK, EZ TORIK EL, ES CSENDBEN:");
+  logger.info(
+    "  1. A szerep-tabla beegetett azonositoi egy MASIK kornyezet opcioira mutatnak,",
+  );
+  logger.info(
+    "     tehat egyetlen szallitasi mod sem kap szerepet. A fizetesi jogosultsag ures",
+  );
+  logger.info("     listat ad: a vevo nem tud fizetesi modot valasztani.");
+  logger.info(
+    "  2. A configure-shipping-rules szkript ugyanezt a tablat olvassa, tehat a",
+  );
+  logger.info("     shipping_class szabalyok sem a helyes opciokra kerulnek.");
+  logger.info("");
+  logger.info(
+    "Egyik sem ad hibauzenetet. A bolt elindul, es a kassza nem mukodik.",
+  );
+  logger.info("");
+  logger.info("A kovetkezo lepes, miutan a hat sor a helyen van:");
+  logger.info(
+    "  npx medusa exec ./src/scripts/configure-shipping-rules.ts        # terv",
+  );
+  logger.info(
+    "  npx medusa exec ./src/scripts/configure-shipping-rules.ts apply  # alkalmazas",
+  );
 }
