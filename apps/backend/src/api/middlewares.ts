@@ -18,6 +18,7 @@ import {
   StoreGetPaymentOptionsParams,
   StorePostPaymentOptions,
 } from "./store/payment-options/validators"
+import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators"
 
 export default defineMiddlewares({
   routes: [
@@ -54,6 +55,13 @@ export default defineMiddlewares({
       matcher: "/admin/commerce-settings/:key",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminUpdateCommerceSetting)],
+    },
+    {
+      matcher: "/admin/order-business-status/:order_id",
+      method: "POST",
+      middlewares: [
+        validateAndTransformBody(AdminTransitionOrderBusinessStatus),
+      ],
     },
     {
       matcher: "/store/payment-options",

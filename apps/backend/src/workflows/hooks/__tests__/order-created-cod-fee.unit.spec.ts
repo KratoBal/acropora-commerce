@@ -1,4 +1,6 @@
 import { ACROPORA_LINE_ITEM_KIND_METADATA_KEY } from "../../utils/goods-total"
+import { asValue } from "@medusajs/framework/awilix"
+import { createMedusaContainer, ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import {
   ACROPORA_FEE_TYPE_METADATA_KEY,
   CASH_ON_DELIVERY_FEE_TYPE,
@@ -40,11 +42,18 @@ const merchandise = (id: string) => ({ id, metadata: null })
 
 const run = async (order: unknown) => {
   const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn() }
-  const container = { resolve: () => logger }
+  const orderBusinessStatus = {
+    transitionOrderBusinessStatus: jest.fn().mockResolvedValue({}),
+  }
+  const container = createMedusaContainer()
+  container.register({
+    [ContainerRegistrationKeys.LOGGER]: asValue(logger),
+    order_business_status: asValue(orderBusinessStatus),
+  })
 
   await registered.handler!({ order }, { container })
 
-  return logger
+  return { logger, orderBusinessStatus }
 }
 
 describe("the order-created cash-on-delivery fee alarm", () => {
@@ -53,7 +62,7 @@ describe("the order-created cash-on-delivery fee alarm", () => {
   })
 
   it("says nothing when the order carries one fee", async () => {
-    const logger = await run({
+    const { logger } = await run({
       id: "order_1",
       items: [merchandise("item_1"), feeLine("item_2")],
     })
@@ -64,13 +73,16 @@ describe("the order-created cash-on-delivery fee alarm", () => {
   it("says nothing when the order carries no fee", async () => {
     // A missing fee is NOT something this hook can judge: it cannot see the
     // payment method. Silence here is the documented limit, not an oversight.
-    const logger = await run({ id: "order_1", items: [merchandise("item_1")] })
+    const { logger } = await run({
+      id: "order_1",
+      items: [merchandise("item_1")],
+    })
 
     expect(logger.error).not.toHaveBeenCalled()
   })
 
   it("reports an order that carries the fee twice, naming the lines", async () => {
-    const logger = await run({
+    const { logger } = await run({
       id: "order_42",
       items: [merchandise("item_1"), feeLine("fee_a"), feeLine("fee_b")],
     })
@@ -87,7 +99,7 @@ describe("the order-created cash-on-delivery fee alarm", () => {
     // Whoever reads this line is reading a warning, not the source file. If it
     // did not name its own limit, a reader would reasonably conclude that the
     // order path is checked for a MISSING fee too. It is not, and it cannot be.
-    const logger = await run({
+    const { logger } = await run({
       id: "order_42",
       items: [feeLine("fee_a"), feeLine("fee_b")],
     })
@@ -101,7 +113,7 @@ describe("the order-created cash-on-delivery fee alarm", () => {
     // The order already exists by now. An exception escaping this hook would
     // compensate a completed creation because a CHECK could not run, so the
     // failure has to stay inside and be written down.
-    const logger = await run({
+    const { logger } = await run({
       id: "order_1",
       get items(): never {
         throw new Error("items unavailable")
@@ -113,7 +125,7 @@ describe("the order-created cash-on-delivery fee alarm", () => {
   })
 
   it("survives an order with no items at all", async () => {
-    const logger = await run({ id: "order_1" })
+    const { logger } = await run({ id: "order_1" })
 
     expect(logger.error).not.toHaveBeenCalled()
   })
