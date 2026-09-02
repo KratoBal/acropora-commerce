@@ -22,6 +22,10 @@ import {
   resolveShippingOptionRoleBindings,
 } from "../../workflows/utils/shipping-option-roles"
 import { calculateShippingPrice } from "../../workflows/utils/shipping-pricing"
+import {
+  FoxpostPickupPoint,
+  FoxpostPickupPointsService,
+} from "../../services/foxpost-pickup-points"
 
 const optionRole = (
   optionData: Record<string, unknown>,
@@ -60,6 +64,36 @@ const isKnownOption = (optionData: unknown): boolean => {
   }
 }
 
+const selectedFoxpostPickupPointId = (data: Record<string, unknown>): string => {
+  const pickupPoint = data.foxpost_pickup_point
+
+  if (!pickupPoint || typeof pickupPoint !== "object") {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Foxpost fulfillment data must contain foxpost_pickup_point",
+    )
+  }
+
+  const id = Reflect.get(pickupPoint, "id")
+
+  if (typeof id !== "string" || id.trim().length === 0) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Foxpost fulfillment data must contain a pickup-point id",
+    )
+  }
+
+  return id
+}
+
+const persistedFoxpostPickupPoint = (pickupPoint: FoxpostPickupPoint) => ({
+  foxpost_pickup_point: {
+    id: pickupPoint.id,
+    name: pickupPoint.name,
+    address: pickupPoint.address,
+  },
+})
+
 type CalculableShippingOption = CreateShippingOptionDTO & { id?: string }
 
 const hasMatchingOptionDataId = (shippingOption: CalculableShippingOption) => {
@@ -80,21 +114,33 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
   static identifier = "acropora"
 
   protected readonly commerceSettings_: CommerceSettingsService
+  protected readonly foxpostPickupPoints_: FoxpostPickupPointsService
 
-  constructor({
-    commerce_settings,
-  }: {
-    commerce_settings: CommerceSettingsService
-  }) {
+  constructor(
+    dependencies: {
+      commerce_settings: CommerceSettingsService
+      foxpostPickupPoints?: FoxpostPickupPointsService
+    },
+  ) {
     super()
-    this.commerceSettings_ = commerce_settings
+    this.commerceSettings_ = dependencies.commerce_settings
+    this.foxpostPickupPoints_ = Object.prototype.hasOwnProperty.call(
+      dependencies,
+      "foxpostPickupPoints",
+    )
+      ? dependencies.foxpostPickupPoints ?? new FoxpostPickupPointsService()
+      : new FoxpostPickupPointsService()
   }
 
   async getFulfillmentOptions(): Promise<FulfillmentOption[]> {
-    return resolveShippingOptionRoleBindings().map(({ id, name }) => ({
-      id,
-      name,
-    }))
+    const availability = await this.foxpostPickupPoints_.getAvailability()
+
+    return resolveShippingOptionRoleBindings()
+      .filter(({ role }) => role !== "FOXPOST" || availability.available)
+      .map(({ id, name }) => ({
+        id,
+        name,
+      }))
   }
 
   async validateFulfillmentData(
@@ -102,8 +148,34 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
     data: Record<string, unknown>,
     _context: ValidateFulfillmentDataContext,
   ): Promise<Record<string, unknown>> {
-    optionRole(optionData)
-    return data
+    const role = optionRole(optionData)
+
+    if (role !== "FOXPOST") {
+      return data
+    }
+
+    const availability = await this.foxpostPickupPoints_.getAvailability()
+
+    if (!availability.available) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Foxpost shipping is currently unavailable",
+      )
+    }
+
+    const pickupPointId = selectedFoxpostPickupPointId(data)
+    const pickupPoint = availability.pickup_points.find(
+      (candidate) => candidate.id === pickupPointId,
+    )
+
+    if (!pickupPoint) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "The selected Foxpost pickup point is unavailable",
+      )
+    }
+
+    return persistedFoxpostPickupPoint(pickupPoint)
   }
 
   async validateOption(data: Record<string, unknown>): Promise<boolean> {
