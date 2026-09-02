@@ -1,6 +1,8 @@
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createOrderWorkflow } from "@medusajs/medusa/core-flows"
 
+import { transitionOrderBusinessStatusWorkflow } from "../transition-order-business-status"
+
 import {
   findCashOnDeliveryFeeLineItems,
   type MarkableLineItem,
@@ -93,4 +95,13 @@ createOrderWorkflow.hooks.orderCreated(async ({ order }, { container }) => {
       }. The order was not affected, but it was not checked either.`
     )
   }
+
+  await transitionOrderBusinessStatusWorkflow(container).run({
+    input: {
+      order_id: (order as { id: string }).id,
+      to: "pending_processing",
+      actor: "system",
+      source: "order_created",
+    },
+  })
 })
