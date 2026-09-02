@@ -31,15 +31,20 @@ jobs:
 
       - name: Titok-kereses a valtozasokban
         # Publikus repo eseten egy elgepelt kulcs veglegesen kikerul, es a
-        # torles nem segit. Ez a lepes a MOSTANI fat nezi at, nem a tortenetet:
-        # olcso, es pont azt a hibat fogja meg, amit egy ember nem vesz eszre.
-        run: |
-          set -o pipefail
-          if git grep -nIE "BEGIN (RSA|OPENSSH|PRIVATE) KEY|AKIA[0-9A-Z]{16}|github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}" -- . ':!*.example' ':!*.template'; then
-            echo "::error::Kulcsra emlekezteto szoveg a fában. Ha valodi, VONJATOK VISSZA, ne csak toroljetek."
-            exit 1
-          fi
-          echo "nincs kulcs-alaku szoveg"
+        # torles nem segit. Ez a lepes a MOSTANI fat nezi at, nem a tortenetet.
+        #
+        # AZ ELOZO VALTOZAT KIZARTA A `*.example` ES `*.template` FAJLOKAT --
+        # PONTOSAN AZT A FAJLTIPUST, AHOL A 2026-08-25-I SZIVARGAS TORTENT.
+        # A kizarasnak volt oka: a sablonok helykitolto ertekeket hordoznak, es
+        # egy puszta mintalista azokon folyton riadot fujt volna. De a valasz
+        # arra nem a fajlok atugrasa, hanem hogy a keres az ANYAGOT nezze, ne
+        # csak a jelolot. Egy orzo, ami vak arra a helyre, ahol az incidens
+        # tortent, diszlet.
+        #
+        # A kereses ezert atkerult egy szkriptbe, ami entropiat es alakot mer,
+        # es amit a pre-commit hook is ugyanigy hiv. A reszletek es a VAK FOLT
+        # a szkript fejlecében allnak.
+        run: node scripts/scan-secrets.mjs
 
       - name: Lint
         run: npm run lint
