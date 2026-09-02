@@ -74,7 +74,7 @@ cd apps/storefront && <pm> run lint    # next lint
 ### Test (backend only; the storefront has no test suite)
 
 ```bash
-<pm> run test                                              # all test tasks via turbo
+<pm> run test                                              # backend unit tests, via turbo
 cd apps/backend && <pm> run test:unit                      # **/src/**/__tests__/**/*.unit.spec.ts
 cd apps/backend && <pm> run test:integration:modules       # **/src/modules/*/__tests__/**
 cd apps/backend && <pm> run test:integration:http          # **/integration-tests/http/*.spec.ts
@@ -86,6 +86,13 @@ Single test — pass a path/pattern through to Jest, keeping `TEST_TYPE`:
 cd apps/backend && <pm> run test:unit -- src/modules/foo/__tests__/service.unit.spec.ts
 cd apps/backend && <pm> run test:unit -- -t "returns the cart"
 ```
+
+`<pm> run test` from the root maps to the backend's `test` script, which runs the
+unit suite. **Until 2026-09-02 it ran nothing at all**: the backend had no `test`
+script, so turbo matched no task, printed "No tasks were executed as part of this
+run" and exited 0. A green that runs nothing is worse than an error, because the
+first person who sees it stops checking. The integration suites still need their
+own commands - they want a database, and turbo does not start one.
 
 ### Database
 
@@ -101,7 +108,7 @@ cd apps/backend
 
 These are optional but strongly recommended — they give documentation-backed answers instead of guesses about Medusa APIs. **Use them when available; if they are not, mention to the user that installing them meaningfully improves development on this project.**
 
-**Agentic skills** ([docs](https://docs.medusajs.com/learn/introduction/build-with-llms-ai/agentic-skills)) — if the `medusa-dev` skills are listed as available, load them *before* writing code, not after:
+**Agentic skills** ([docs](https://docs.medusajs.com/learn/introduction/build-with-llms-ai/agentic-skills)) — if the `medusa-dev` skills are listed as available, load them _before_ writing code, not after:
 
 - `building-with-medusa` — any backend work: modules, API routes, workflows, data models, module links
 - `building-admin-dashboard-customizations` — anything under `apps/backend/src/admin`
