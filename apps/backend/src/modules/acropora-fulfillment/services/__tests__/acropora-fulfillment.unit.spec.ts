@@ -11,6 +11,7 @@ import { resolveShippingOptionRoleBindings } from "../../../../workflows/utils/s
 import { COMMERCE_SETTINGS_MODULE } from "../../../commerce-settings"
 import { CommerceSettingsService } from "../../../commerce-settings/accessor"
 import AcroporaFulfillmentService from "../../service"
+import { FoxpostPickupPointsService } from "../../../../services/foxpost-pickup-points"
 
 const configuredSettings: Record<string, unknown> = {
   shipping_gls_normal_huf: 3_500,
@@ -29,6 +30,30 @@ const serviceWith = (settings: Record<string, unknown>) => ({
       ? [{ key, value: settings[key] }]
       : [],
 })
+
+const foxpostPickupPointsWith = (configured = true) =>
+  new FoxpostPickupPointsService({
+    env: configured
+      ? {
+          FOXPOST_API_USER: "foxpost-user",
+          FOXPOST_API_PASSWORD: "foxpost-password",
+          FOXPOST_API_KEY: "foxpost-key",
+        }
+      : {},
+    fetcher: async () => ({
+      ok: true,
+      json: async () => [
+        {
+          operator_id: "HU1234",
+          name: "FOXPOST A-BOX Test",
+          address: "1111 Budapest, Teszt utca 1.",
+          open: { hetfo: "00:00-24:00" },
+          geolat: 47.5,
+          geolng: 19.1,
+        },
+      ],
+    }),
+  })
 
 /**
  * Mirrors Medusa's module loader: a fulfillment provider receives the
@@ -53,8 +78,13 @@ const isolatedFulfillmentProviderCradle = (
   return fulfillmentContainer.cradle
 }
 
-const cradleWith = (settings: Record<string, unknown>) =>
-  isolatedFulfillmentProviderCradle(serviceWith(settings))
+const cradleWith = (
+  settings: Record<string, unknown>,
+  foxpostPickupPoints = foxpostPickupPointsWith(),
+) => ({
+  ...isolatedFulfillmentProviderCradle(serviceWith(settings)),
+  foxpostPickupPoints,
+})
 
 const failingCradle = () =>
   isolatedFulfillmentProviderCradle({
@@ -121,6 +151,41 @@ describe("Acropora calculated fulfillment provider", () => {
         data: { id: idFor("FOXPOST") },
       } as any),
     ).toBe(false)
+  })
+
+  it("does not expose Foxpost as a selectable fulfillment option when unavailable", async () => {
+    const service = new AcroporaFulfillmentService(
+      cradleWith(configuredSettings, foxpostPickupPointsWith(false)),
+    )
+
+    const options = await service.getFulfillmentOptions()
+
+    expect(options.map(({ id }) => id)).not.toContain(idFor("FOXPOST"))
+  })
+
+  it("stores the server-resolved Foxpost pickup point on the fulfillment data", async () => {
+    const service = new AcroporaFulfillmentService(
+      cradleWith(configuredSettings),
+    )
+
+    await expect(
+      service.validateFulfillmentData(
+        { id: idFor("FOXPOST") },
+        {
+          foxpost_pickup_point: {
+            id: "HU1234",
+            address: "a buyer-provided address is never persisted",
+          },
+        },
+        {},
+      ),
+    ).resolves.toEqual({
+      foxpost_pickup_point: {
+        id: "HU1234",
+        name: "FOXPOST A-BOX Test",
+        address: "1111 Budapest, Teszt utca 1.",
+      },
+    })
   })
 
   it("keeps pickup at zero without reading carrier settings", async () => {
