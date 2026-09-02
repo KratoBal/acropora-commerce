@@ -22,7 +22,7 @@ const transitions: Record<OrderBusinessStatus, AllowedTransition[]> = {
     { to: "closed_unsuccessfully", actors: ["admin"] },
   ],
   out_for_delivery: [
-    { to: "closed", actors: ["carrier"] },
+    { to: "closed", actors: ["carrier", "admin"] },
     { to: "closed_unsuccessfully", actors: ["carrier", "admin"] },
   ],
   ready_for_pickup: [
@@ -30,7 +30,7 @@ const transitions: Record<OrderBusinessStatus, AllowedTransition[]> = {
     { to: "closed_unsuccessfully", actors: ["admin"] },
   ],
   closed: [],
-  closed_unsuccessfully: [],
+  closed_unsuccessfully: [{ to: "stocking", actors: ["admin"] }],
 }
 
 export const assertBusinessStatusTransition = ({

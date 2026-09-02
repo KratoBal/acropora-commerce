@@ -34,7 +34,7 @@ describe("order business-status transitions", () => {
     ).toThrow("pending_processing cannot transition to closed")
   })
 
-  it("rejects a manual Kiszállítás to Megrendelés lezárva transition", () => {
+  it("allows an admin Kiszállítás to Megrendelés lezárva transition", () => {
     expect(() =>
       assertBusinessStatusTransition({
         from: "out_for_delivery",
@@ -42,7 +42,18 @@ describe("order business-status transitions", () => {
         actor: "admin",
         source: "admin",
       }),
-    ).toThrow("admin cannot transition out_for_delivery to closed")
+    ).not.toThrow()
+  })
+
+  it("allows an admin to reopen Sikertelenül lezárt rendelés into Készletezés alatt", () => {
+    expect(() =>
+      assertBusinessStatusTransition({
+        from: "closed_unsuccessfully",
+        to: "stocking",
+        actor: "admin",
+        source: "admin",
+      }),
+    ).not.toThrow()
   })
 
   it("rejects a transition away from Megrendelés lezárva", () => {
