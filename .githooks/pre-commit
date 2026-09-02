@@ -1,0 +1,24 @@
+#!/bin/sh
+# Refuses a commit that would introduce something shaped like a live credential.
+#
+# THE LOCAL HALF ONLY. The authoritative half is the `Titok-kereses` step in
+# `.github/workflows/verify.yml`, which runs the SAME script on the whole tree.
+# A hook can be skipped (`git commit --no-verify`) and only exists on machines
+# where somebody ran `npm install`, so this is a fast warning, not the rule.
+#
+# Sharing one script between the two is the point: a hook and a CI step that
+# drift apart give a false sense of a gate that is only half there.
+#
+# WHY THIS REPOSITORY GOT A HOOK AT ALL, when it had none: a CI step cannot
+# stop a commit from existing. It stops a MERGE. The 2026-08-25 leak was in the
+# history from the moment of the commit, and by the time CI spoke the value had
+# already been written down. A guard against something irreversible has to run
+# before the irreversible part.
+
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+[ -z "$staged" ] && exit 0
+
+node scripts/scan-secrets.mjs --staged
