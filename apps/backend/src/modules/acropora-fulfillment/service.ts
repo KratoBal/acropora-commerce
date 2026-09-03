@@ -124,13 +124,27 @@ const hasMatchingOptionDataId = (shippingOption: CalculableShippingOption) => {
     )
   }
 
-  if (!isKnownOption(shippingOption.data)) {
-    return false
-  }
+  // AZ AZONOSITOVAL RENDELKEZO OPCIONAL A KERDES AZ ONHIVATKOZAS, NEM A KOTES.
+  //
+  // Az eredeti alak azt kovetelte, hogy a `data.id` egy MAR ISMERT opciot
+  // nevezzen, vagyis hogy a hat kornyezeti valtozo egyike mar erre az
+  // azonositora alljon. A seed viszont pont azt a visszairast vegzi, amivel az
+  // opcio eloszor megkapja a sajat azonositojat -- olyankor, amikor a valtozok
+  // meg uresek, mert az ERTEKUK ez az azonosito. A kotest kovetelni itt
+  // ugyanaz a kor, mint a letrehozasnal, csak egy lepessel kesobb: eles futason
+  // ezen hasalt el az onhivatkozas, `Cannot calcuate pricing for: []` alakban.
+  //
+  // Amit itt ellenorizni LEHET, az az onhivatkozas: a `data.id` UGYANAZ az
+  // opcio legyen. Ez tovabbra is elutasit minden idegen es minden hianyzo
+  // erteket, es a mai negy allitas kozul egyet sem enged at.
+  //
+  // A KOTEST NEM ITT ORIZZUK, ES NEM IS ITT KELL: a `calculatePrice` ismeretlen
+  // azonositora hibat dob, tehat kasszan arat szamolni tovabbra sem lehet
+  // kotetlen opciora.
+  const optionDataId = (shippingOption.data as Record<string, unknown> | null)
+    ?.id
 
-  const optionDataId = (shippingOption.data as Record<string, unknown>).id
-
-  return shippingOption.id === optionDataId
+  return typeof optionDataId === "string" && shippingOption.id === optionDataId
 }
 
 /**

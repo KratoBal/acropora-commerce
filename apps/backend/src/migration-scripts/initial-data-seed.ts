@@ -233,6 +233,26 @@ export default async function initial_data_seed({
     return data?.[0] ?? null;
   };
 
+  /**
+   * A SZALLITASI MODNAL A PUSZTA LETEZES NEM ELEG, ezert kap sajat lekerdezest.
+   *
+   * A szamitott arazasu mod ketreszes: eloszor letrejon, aztan egy MASODIK
+   * hivas irja bele a sajat azonositojat (`data.id`). A ketto kozott a sor mar
+   * letezik, de meg hasznalhatatlan -- es eles futason pontosan itt szakadt meg
+   * a szkript, tehat ez az allapot nem elmeleti.
+   *
+   * A nevre szuro `letezik` ilyenkor "megvan, kihagyom" valaszt adna, es a
+   * hianyzo visszairas SOHA nem potlodna. Ezert kell ide a `data` mezo is.
+   */
+  const letezoSzallitasiMod = async (name: string) => {
+    const { data } = await query.graph({
+      entity: "shipping_option",
+      fields: ["id", "name", "data"],
+      filters: { name },
+    });
+    return data?.[0] ?? null;
+  };
+
   // --- 1. RÉGIÓ -----------------------------------------------------------
   let region = await letezik("region", REGIO_NEVE);
   if (region) {
@@ -388,10 +408,27 @@ export default async function initial_data_seed({
   const kiirandoAzonositok: { env: string; id: string }[] = [];
 
   for (const mod of SZALLITASI_MODOK) {
-    const meglevo = await letezik("shipping_option", mod.name);
+    const meglevo = await letezoSzallitasiMod(mod.name);
     if (meglevo) {
-      logger.info(`A(z) "${mod.name}" szállítási mód már létezik, kihagyva.`);
       kiirandoAzonositok.push({ env: mod.env, id: meglevo.id });
+
+      const onhivatkozas = (meglevo.data as Record<string, unknown> | null)?.id;
+
+      if (mod.calculated && onhivatkozas !== meglevo.id) {
+        // A FELIG LETREHOZOTT MOD POTLASA. Eles futason ez az allapot elo is
+        // allt: a mod letrejott, a visszairas viszont elbukott, es a szkript
+        // kilepett. Kihagyni ilyenkor annyit jelentene, hogy a sor orokre
+        // hasznalhatatlan marad, es semmi nem hivja fel ra a figyelmet.
+        await updateShippingOptionsWorkflow(container).run({
+          input: [{ id: meglevo.id, data: { id: meglevo.id } }],
+        });
+        logger.info(
+          `A(z) "${mod.name}" szállítási mód létezett, de önhivatkozás nélkül. Pótolva.`,
+        );
+      } else {
+        logger.info(`A(z) "${mod.name}" szállítási mód már létezik, kihagyva.`);
+      }
+
       continue;
     }
 
