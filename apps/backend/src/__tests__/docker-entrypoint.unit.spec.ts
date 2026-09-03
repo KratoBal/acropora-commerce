@@ -18,10 +18,19 @@ import { join } from "node:path"
 
 const ENTRYPOINT = join(__dirname, "..", "..", "docker-entrypoint.sh")
 
-/// Puts a fake `npx` first on PATH. It records that it ran, and exits with
-/// the code the test asks for - which is exactly the signal the entrypoint
-/// branches on.
-function runEntrypoint(migrateExitCode: number): {
+/// Puts a fake `npx` first on PATH. It exits with the code the test asks for -
+/// which is exactly the signal the entrypoint branches on.
+///
+/// IT BRANCHES ON THE SUBCOMMAND, AND THAT IS THE POINT OF THE SECOND
+/// PARAMETER. The entrypoint now runs npx TWICE (`medusa db:migrate`, then
+/// `medusa exec <verify script>`), and a fake that returns one code for both
+/// could not tell the two refusals apart: a test asserting "the server did not
+/// start" would pass even if the entrypoint had dropped the second step
+/// entirely.
+function runEntrypoint(
+  migrateExitCode: number,
+  verifyExitCode = 0
+): {
   status: number | null
   serverStarted: boolean
 } {
@@ -29,7 +38,18 @@ function runEntrypoint(migrateExitCode: number): {
   const marker = join(dir, "server-started")
   const fakeNpx = join(dir, "npx")
 
-  writeFileSync(fakeNpx, `#!/bin/sh\nexit ${migrateExitCode}\n`)
+  writeFileSync(
+    fakeNpx,
+    [
+      "#!/bin/sh",
+      'case "$2" in',
+      `  db:migrate) exit ${migrateExitCode} ;;`,
+      `  exec) exit ${verifyExitCode} ;;`,
+      "  *) exit 0 ;;",
+      "esac",
+      "",
+    ].join("\n")
+  )
   chmodSync(fakeNpx, 0o755)
 
   const result = spawnSync(
@@ -60,8 +80,24 @@ describe("docker-entrypoint.sh", () => {
     expect(serverStarted).toBe(false)
   })
 
-  it("starts the server when the migration succeeds", () => {
-    const { status, serverStarted } = runEntrypoint(0)
+  /*
+    A MASODIK MEGTAGADAS. A hat szallitasi azonositot kezzel visszuk at minden
+    kornyezetbe, es ha egy hibas, a bolt ELINDUL, a kassza pedig nem kinal
+    fizetesi modot. Nincs hibauzenet, nincs naplo sor: pontosan az a fajta hiba,
+    amit csak egy elmaradt rendeles mutat meg, hetekkel kesobb.
+
+    Az allitas ugyanaz az alak, mint a migracional: nem az uzenetet nezi, hanem
+    azt, hogy a szerver NEM indult el.
+  */
+  it("does not start the server when the shipping id check fails", () => {
+    const { status, serverStarted } = runEntrypoint(0, 1)
+
+    expect(status).not.toBe(0)
+    expect(serverStarted).toBe(false)
+  })
+
+  it("starts the server when the migration and the id check both succeed", () => {
+    const { status, serverStarted } = runEntrypoint(0, 0)
 
     expect(status).toBe(0)
     expect(serverStarted).toBe(true)

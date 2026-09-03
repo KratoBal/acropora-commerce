@@ -1,19 +1,26 @@
 import { Module } from "@medusajs/framework/utils"
 
 import CommerceSettingsModuleService from "./service"
-import verifyShippingOptionRolesLoader from "./loaders/verify-shipping-option-roles"
 
 export const COMMERCE_SETTINGS_MODULE = "commerce_settings"
 
 /**
- * A LOADER ITT LOG, ES EZ AZ ELSO LOADER EBBEN A REPOBAN.
+ * A LOADER INNEN ELKERULT, ES A HELYE VOLT A HIBA, NEM A TARTALMA.
  *
- * Miert EBBEN a modulban: a hat szallitasi-mod azonosito BEALLITAS, es ez a
- * beallitasok modulja. Egy sajat modul letrehozasa csak azert, hogy legyen hova
- * tenni egy indulasi ellenorzest, tobb szerkezetet adna, mint amennyi kerdest
- * megold.
+ * Itt allt a hat szallitasi-mod azonosito indulasi ellenorzese, azzal az
+ * indoklassal, hogy az azonositok BEALLITASOK, es ez a beallitasok modulja. Az
+ * indoklas jo volt, a hely nem: a `runLoaders` a modul SAJAT konteneret adja at
+ * a betoltonek, a `query` viszont az ALKALMAZAS konteneteren all, es csak akkor,
+ * amikor mar minden modul betoltodott.
+ *
+ * Ezert az ellenorzes SOHA nem futott le, egyetlen kornyezetben sem, es minden
+ * indulaskor kiirta, hogy nem tudta elvegezni. Nem hiba jele volt, hanem az
+ * egyetlen lehetseges viselkedes.
+ *
+ * Az ellenorzes most `src/scripts/verify-shipping-option-roles.ts` alatt all, es
+ * az indito szkript futtatja a szerver elindulasa ELOTT, ott, ahol a `query`
+ * letezik. A tartalma valtozatlan.
  */
 export default Module(COMMERCE_SETTINGS_MODULE, {
   service: CommerceSettingsModuleService,
-  loaders: [verifyShippingOptionRolesLoader],
 })

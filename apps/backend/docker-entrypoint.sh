@@ -29,6 +29,22 @@ set -e
 
 echo "docker-entrypoint: applying Medusa migrations..."
 npx medusa db:migrate
-echo "docker-entrypoint: migrations applied, starting server..."
+
+# THE SECOND REFUSAL, AND IT IS HERE FOR THE SAME REASON AS THE FIRST.
+#
+# The six shipping option ids are carried into every environment by hand. If one
+# is wrong, the shop starts, the checkout offers no payment method, and NOTHING
+# says so. Measured on 2026-09-03: the check that was supposed to catch this sat
+# in a module loader, where `query` does not exist, and reported on every single
+# start that it could not run. Structural, not environmental - a module loader
+# gets the module's own container.
+#
+# `medusa exec` boots the app container, so the query works here. The path is
+# the COMPILED file: the runner stage copies `.medusa/server` to /app, so the
+# source-tree path does not exist in the image.
+echo "docker-entrypoint: verifying the shipping option ids..."
+npx medusa exec ./src/scripts/verify-shipping-option-roles.js
+
+echo "docker-entrypoint: migrations applied, ids verified, starting server..."
 
 exec "$@"
