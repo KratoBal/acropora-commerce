@@ -176,6 +176,42 @@ export const SEED_SETTINGS = {
   fizetesiSzolgaltatok: ["pp_system_default", "pp_acropora_cod"],
 } as const;
 
+/**
+ * AZ ADOTERULET BEMENETE, KULON ES EXPORTALVA -- EZ A VARRAT.
+ *
+ * MIERT NEM MARADT A HIVASBAN. A `code` hianya 2026-09-03-an eles futason
+ * bukott el, es az elso javitas csak a KONSTANST allitotta (van-e kodja). Az
+ * viszont epp az a trivialis allitas, amit magunknak tiltunk: ha valaki a
+ * `code:` sort a HIVASBOL veszi ki, a konstans valtozatlan marad, a spec zold,
+ * es a szkript ugyanugy hagy maga utan kulcs nelkuli adoteruletet.
+ *
+ * Igy viszont a hivasnak ATADOTT objektum maga is megnezheto, adatbazis nelkul.
+ * Ez ugyanaz az elv, amit a teszt-duplaknal hasznalunk: amit a HIVO hasznal, de
+ * a teszt nem allit, az a biztos hiba helye.
+ */
+export function adoteruletBemenet() {
+  return [
+    {
+      country_code: SEED_SETTINGS.ado.orszag,
+      provider_id: "tp_system",
+      // A `default_tax_rate` MAGA az alapertelmezes: a tipusban nincs
+      // `is_default` mezo, es a fordito ezt meg is mondta. A mert
+      // "is_default igaz" allapotot eppen ez allitja elo.
+      //
+      // A `code` KOTELEZO, es ezt eles futas mondta meg, nem a tipus:
+      // `Value for TaxRate.code is required, 'undefined' found`. A workflow
+      // ekkor MAR letrehozta az adoterulet sorat, es csak a kulcs bukott el
+      // rajta -- az eles boltban ezert allt egy magyar adoterulet NULLA
+      // kulccsal, keszen allonak latszva.
+      default_tax_rate: {
+        name: SEED_SETTINGS.ado.kulcsNeve,
+        code: SEED_SETTINGS.ado.kulcsKodja,
+        rate: SEED_SETTINGS.ado.szazalek,
+      },
+    },
+  ];
+}
+
 export default async function initial_data_seed({
   container,
 }: {
@@ -232,34 +268,7 @@ export default async function initial_data_seed({
     logger.info("A magyar adóterület már létezik, kihagyva.");
   } else {
     await createTaxRegionsWorkflow(container).run({
-      input: [
-        {
-          country_code: SEED_SETTINGS.ado.orszag,
-          provider_id: "tp_system",
-          // A `default_tax_rate` MAGA az alapertelmezes: a tipusban nincs
-          // `is_default` mezo, es a fordito ezt meg is mondta. A mert
-          // "is_default igaz" allapotot eppen ez allitja elo.
-          /**
-           * A `code` KOTELEZO, es ezt eles futas mondta meg, nem a tipus.
-           *
-           * 2026-09-03-an az eles boltban a szkript PONTOSAN ITT hasalt el:
-           * `Value for TaxRate.code is required, 'undefined' found`. A
-           * TypeScript nem szolt, mert a mezo a tipusban elhagyhato -- a
-           * MikroORM validalasa viszont futasidoben koveteli.
-           *
-           * ES AMIERT EZ TOBB EGY HIANYZO MEZONEL: a workflow ekkor MAR
-           * letrehozta az adoterulet sorat, es csak a kulcs bukott el rajta.
-           * Az eles boltban ezert egy magyar adoterulet allt NULLA kulccsal --
-           * kivulrol keszen allonak latszott, kozben nem szamolt volna afat.
-           * A bukas tehat nem "nem tortent meg", hanem "felig megtortent".
-           */
-          default_tax_rate: {
-            name: SEED_SETTINGS.ado.kulcsNeve,
-            code: SEED_SETTINGS.ado.kulcsKodja,
-            rate: SEED_SETTINGS.ado.szazalek,
-          },
-        },
-      ],
+      input: adoteruletBemenet(),
     });
     logger.info(
       `Adóterület létrehozva: ${SEED_SETTINGS.ado.orszag}, ` +

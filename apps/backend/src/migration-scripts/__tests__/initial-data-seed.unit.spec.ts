@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { SHIPPING_OPTION_ROLE_BINDINGS } from "../../workflows/utils/shipping-option-roles";
-import { SEED_SETTINGS } from "../initial-data-seed";
+import { adoteruletBemenet, SEED_SETTINGS } from "../initial-data-seed";
 
 /**
  * A SEED HET TETELE, ALLITASBA TEVE.
@@ -51,6 +51,28 @@ describe("a seed hét mért tétele", () => {
   it("az adókulcsnak van kódja, mert a nélkül a seed futásidőben elhasal", () => {
     expect(typeof SEED_SETTINGS.ado.kulcsKodja).toBe("string");
     expect(SEED_SETTINGS.ado.kulcsKodja.trim().length).toBeGreaterThan(0);
+  });
+
+  /**
+   * ÉS AMIT A FENTI ÁLLÍTÁS NEM FOG MEG -- EZÉRT ÁLL ITT EGY MÁSODIK.
+   *
+   * A fenti a KONSTANST nézi. Ha valaki a `code:` sort a HÍVÁSBÓL veszi ki,
+   * a konstans változatlan marad, a fenti állítás zöld, és a seed ugyanúgy
+   * hagyna maga után kulcs nélküli adóterületet -- pontosan az az állapot,
+   * ami 2026-09-03-án élesben előállt.
+   *
+   * Ez az állítás ezért azt az OBJEKTUMOT nézi, amit a workflow MEGKAP.
+   * Adatbázis nem kell hozzá: nem a futást mérjük, hanem a hívás alakját.
+   */
+  it("az adóterület bemenete átadja a kulcs kódját is a workflow-nak", () => {
+    const bemenet = adoteruletBemenet();
+    expect(bemenet).toHaveLength(1);
+
+    const kulcs = bemenet[0].default_tax_rate;
+    expect(kulcs.name).toBe(SEED_SETTINGS.ado.kulcsNeve);
+    expect(kulcs.rate).toBe(SEED_SETTINGS.ado.szazalek);
+    expect(kulcs.code).toBe(SEED_SETTINGS.ado.kulcsKodja);
+    expect(String(kulcs.code ?? "").trim().length).toBeGreaterThan(0);
   });
 
   it("az értékesítési csatorna az Acropora Webshop", () => {
