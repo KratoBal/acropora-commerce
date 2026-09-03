@@ -1,6 +1,7 @@
 import { MedusaContainer } from "@medusajs/framework";
 import {
   ContainerRegistrationKeys,
+  MedusaError,
   ModuleRegistrationName,
 } from "@medusajs/framework/utils";
 import {
@@ -337,7 +338,8 @@ export default async function initial_data_seed({
       .service_zones;
     const zona = zonak?.find((z) => z.name === nev);
     if (!zona) {
-      throw new Error(
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
         `Nem találom a(z) "${nev}" szolgáltatási zónát. A seed itt megáll, mert egy zóna nélkül a szállítási módok rossz helyre kerülnének.`,
       );
     }
@@ -352,7 +354,8 @@ export default async function initial_data_seed({
   });
   const profil = profilok?.[0];
   if (!profil) {
-    throw new Error(
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
       "Nincs szállítási profil. A seed itt megáll: profil nélkül egyetlen szállítási mód sem hozható létre.",
     );
   }

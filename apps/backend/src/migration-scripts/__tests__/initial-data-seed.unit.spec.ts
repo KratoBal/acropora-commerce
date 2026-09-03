@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { SHIPPING_OPTION_ROLE_BINDINGS } from "../../workflows/utils/shipping-option-roles";
 import { SEED_SETTINGS } from "../initial-data-seed";
 
@@ -83,5 +86,69 @@ describe("a seed hét mért tétele", () => {
     expect(aSeedbol.length).toBe(6);
     expect(aSzerepTablabol.length).toBe(6);
     expect(aSeedbol).toEqual(aSzerepTablabol);
+  });
+});
+
+/*
+  A MASODIK KIKOTES MERES-OLDALA, AMI EDDIG HIANYZOTT.
+
+  Az ujrafuttathatosag a KODBAN all: minden letrehozas elott letezes-ellenorzes
+  fut, es a mar meglevot kihagyjuk. De EGYETLEN allitas sem szolt rola -- aki
+  kiveszi valamelyik ellenorzest, zold tesztek mellett teszi.
+
+  ES EZ NEM ELMELETI KOCKAZAT: a gyari seed pontosan ezen bukott el a teszt
+  gepen. Huszonegy ertekesitesi csatorna keletkezett, ebbol husz ures Default,
+  plusz huszonnyolc api kulcs. Nem egy hiba tortent hussszor, hanem EGY hiany
+  huszszor.
+
+  A FORRAST OLVASSUK, NEM A FUTAST. A `seed` egy Medusa containert var, es a
+  benne futo workflow-k halozatot es adatbazist ernek el; egy futtato teszt
+  ehhez az egesz keretet ki kellene valtania. A szerkezeti allitas olcsobb, es
+  EPP AZT a valtozast fogja meg, amitol felunk: egy kivett vagy elfelejtett
+  ellenorzest.
+
+  AMIT EZ NEM BIZONYIT, kimondva: hogy a seed VALOBAN idempotens. Azt csak egy
+  ketszeri eles futas mondja meg. Ez az allitas annyit ver, hogy az
+  ellenorzesek OTT VANNAK -- se tobbet, se kevesebbet.
+*/
+describe("a seed újrafuttathatósága", () => {
+  const forras = readFileSync(
+    join(__dirname, "..", "initial-data-seed.ts"),
+    "utf8",
+  );
+
+  it("a forrás betöltődött, és tartalmazza a seedet", () => {
+    // ISMERT POZITIV KONTROLL. Egy ures vagy rossz utrol olvasott fajl minden
+    // lenti allitast teljesitene: nulla letrehozas, nulla ellenorzes.
+    expect(forras.length).toBeGreaterThan(5000);
+    expect(forras).toContain("SEED_SETTINGS");
+  });
+
+  it("minden entitás, amit létrehozunk, létezés-ellenőrzés mögött áll", () => {
+    const ellenorzott = [...forras.matchAll(/await letezik\("([a-z_]+)"/g)].map(
+      (m) => m[1],
+    );
+    // A `tax_region` sajat alakban ellenorzi magat (`adoteruletek?.length`),
+    // mert ott az azonosito nem a `name`, hanem a `country_code`.
+    expect(forras).toContain("if (adoteruletek?.length)");
+    expect(ellenorzott.sort()).toEqual([
+      "region",
+      "sales_channel",
+      "shipping_option",
+      "stock_location",
+    ]);
+  });
+
+  it("a létrehozó hívások száma nem nőtt az ellenőrzöttek mögött", () => {
+    /*
+      MI PIROSIT: egy UJ create-workflow, amihez nem irtak ellenorzest. A szam
+      nem onmagaban erdekes -- azert all itt, hogy egy bovites ne csuszhasson be
+      nemán. Aki hetediket ad hozza, ezt a sort is atirja, es akkor OTT dol el,
+      hogy gondolt-e az ismetlodesre.
+    */
+    const letrehozok = [
+      ...forras.matchAll(/create[A-Za-z]+Workflow\(container\)/g),
+    ];
+    expect(letrehozok.length).toBe(5);
   });
 });
