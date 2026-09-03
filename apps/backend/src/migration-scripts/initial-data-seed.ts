@@ -169,7 +169,7 @@ const SZALLITASI_MODOK = [
  */
 export const SEED_SETTINGS = {
   regio: { nev: REGIO_NEVE, penznem: "huf" },
-  ado: { orszag: "hu", kulcsNeve: "Áfa", szazalek: 27 },
+  ado: { orszag: "hu", kulcsNeve: "Áfa", kulcsKodja: "HU_VAT_27", szazalek: 27 },
   csatorna: CSATORNA_NEVE,
   raktar: RAKTAR_NEVE,
   szallitasiModok: SZALLITASI_MODOK,
@@ -239,8 +239,23 @@ export default async function initial_data_seed({
           // A `default_tax_rate` MAGA az alapertelmezes: a tipusban nincs
           // `is_default` mezo, es a fordito ezt meg is mondta. A mert
           // "is_default igaz" allapotot eppen ez allitja elo.
+          /**
+           * A `code` KOTELEZO, es ezt eles futas mondta meg, nem a tipus.
+           *
+           * 2026-09-03-an az eles boltban a szkript PONTOSAN ITT hasalt el:
+           * `Value for TaxRate.code is required, 'undefined' found`. A
+           * TypeScript nem szolt, mert a mezo a tipusban elhagyhato -- a
+           * MikroORM validalasa viszont futasidoben koveteli.
+           *
+           * ES AMIERT EZ TOBB EGY HIANYZO MEZONEL: a workflow ekkor MAR
+           * letrehozta az adoterulet sorat, es csak a kulcs bukott el rajta.
+           * Az eles boltban ezert egy magyar adoterulet allt NULLA kulccsal --
+           * kivulrol keszen allonak latszott, kozben nem szamolt volna afat.
+           * A bukas tehat nem "nem tortent meg", hanem "felig megtortent".
+           */
           default_tax_rate: {
             name: SEED_SETTINGS.ado.kulcsNeve,
+            code: SEED_SETTINGS.ado.kulcsKodja,
             rate: SEED_SETTINGS.ado.szazalek,
           },
         },

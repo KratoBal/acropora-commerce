@@ -34,6 +34,25 @@ describe("a seed hét mért tétele", () => {
     expect(SEED_SETTINGS.ado.szazalek).toBe(27);
   });
 
+  /**
+   * AZ ADÓKULCSNAK KÓDJA IS VAN, ÉS EZT ÉLES BUKÁS ÍRATTA IDE.
+   *
+   * A `code` a MikroORM validálásában kötelező, a TypeScript típusában
+   * viszont elhagyható -- tehát a fordító NEM szól, ha kiesik. Az éles
+   * futás 2026-09-03-án pontosan ezen hasalt el.
+   *
+   * AMIT EZ AZ ÁLLÍTÁS BIZONYÍT, ÉS AMIT NEM. Bizonyítja, hogy a konstans
+   * hordoz kódot, tehát a mező kiesése a konstansból pirosat ad. NEM
+   * bizonyítja, hogy a workflow-hívás át is adja: ehhez a hívás futtatása
+   * kellene, az pedig adatbázist igényel. A hívás oldalát a következő éles
+   * futás méri -- és a PR törzse ezt feltételként mondja ki, nem
+   * lábjegyzetként.
+   */
+  it("az adókulcsnak van kódja, mert a nélkül a seed futásidőben elhasal", () => {
+    expect(typeof SEED_SETTINGS.ado.kulcsKodja).toBe("string");
+    expect(SEED_SETTINGS.ado.kulcsKodja.trim().length).toBeGreaterThan(0);
+  });
+
   it("az értékesítési csatorna az Acropora Webshop", () => {
     expect(SEED_SETTINGS.csatorna).toBe("Acropora Webshop");
   });
