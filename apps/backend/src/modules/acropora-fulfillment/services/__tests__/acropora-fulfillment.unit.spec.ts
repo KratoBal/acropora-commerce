@@ -153,6 +153,40 @@ describe("Acropora calculated fulfillment provider", () => {
     ).toBe(false)
   })
 
+  // AZ ELSO ALLITAS AZ, AMI ELES FUTASON BUKOTT EL. A seed a szallitasi modot
+  // ID ES DATA NELKUL adja at, mert mindketto csak a letrehozas UTAN letezik --
+  // es a Medusa a szolgaltatot MEG A LETREHOZAS ELOTT kerdezi meg. A masodik
+  // ket allitas azt rogziti, hogy ez nem szabad ajto: ami adatot a letrehozas
+  // MEGIS hoz, annak ismert opciot kell neveznie.
+  it("accepts a calculated option that is still being created, but not a wrong one", async () => {
+    const service = new AcroporaFulfillmentService(
+      cradleWith(configuredSettings),
+    )
+
+    expect(
+      await service.canCalculate({
+        price_type: "calculated",
+      } as any),
+    ).toBe(true)
+    expect(
+      await service.canCalculate({
+        price_type: "calculated",
+        data: {},
+      } as any),
+    ).toBe(true)
+    expect(
+      await service.canCalculate({
+        price_type: "calculated",
+        data: { id: "so_unknown" },
+      } as any),
+    ).toBe(false)
+    expect(
+      await service.canCalculate({
+        price_type: "flat",
+      } as any),
+    ).toBe(false)
+  })
+
   it("does not expose Foxpost as a selectable fulfillment option when unavailable", async () => {
     const service = new AcroporaFulfillmentService(
       cradleWith(configuredSettings, foxpostPickupPointsWith(false)),

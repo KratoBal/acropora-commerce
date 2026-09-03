@@ -96,14 +96,41 @@ const persistedFoxpostPickupPoint = (pickupPoint: FoxpostPickupPoint) => ({
 
 type CalculableShippingOption = CreateShippingOptionDTO & { id?: string }
 
+const carriesNoOptionData = (data: unknown): boolean => {
+  if (data === undefined || data === null) {
+    return true
+  }
+
+  return typeof data === "object" && Object.keys(data as object).length === 0
+}
+
 const hasMatchingOptionDataId = (shippingOption: CalculableShippingOption) => {
+  // CREATION IS ASKED BEFORE THERE IS ANYTHING TO MATCH AGAINST. Medusa runs
+  // `validateShippingOptionsForPriceCalculation` inside the create workflow,
+  // and the option id only exists once that workflow has finished. An option
+  // being created therefore carries no `data.id`, and demanding a known one
+  // here is a condition nothing can satisfy: it is what stopped the live seed
+  // from creating the five calculated options at all.
+  //
+  // The trailing `!shippingOption.id` below already encoded this intent, but it
+  // sat BEHIND the `isKnownOption` gate and so could never be reached.
+  //
+  // This stays a check that can still fail: data supplied at creation must name
+  // a known option. Only the absence of data is waived, never a wrong value.
+  if (!shippingOption.id) {
+    return (
+      carriesNoOptionData(shippingOption.data) ||
+      isKnownOption(shippingOption.data)
+    )
+  }
+
   if (!isKnownOption(shippingOption.data)) {
     return false
   }
 
   const optionDataId = (shippingOption.data as Record<string, unknown>).id
 
-  return !shippingOption.id || shippingOption.id === optionDataId
+  return shippingOption.id === optionDataId
 }
 
 /**
