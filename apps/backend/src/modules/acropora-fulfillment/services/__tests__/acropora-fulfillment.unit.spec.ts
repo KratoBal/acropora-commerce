@@ -187,6 +187,49 @@ describe("Acropora calculated fulfillment provider", () => {
     ).toBe(false)
   })
 
+  // A VISSZAIRAS AZ A LEPES, AMI AZ ONHIVATKOZAST ELOSZOR BEIRJA, es eles
+  // futason `Cannot calcuate pricing for: []` alakban hasalt el. Az elso allitas
+  // azonositoja SZANDEKOSAN olyan, ami egyetlen kornyezeti valtozoban sem
+  // szerepel: pontosan ez a helyzet all fenn, amikor egy uj mod eloszor kapja
+  // meg a sajat azonositojat, mert a valtozo ERTEKE lenne ez az azonosito.
+  //
+  // A masik harom azt rogziti, hogy ez nem szabad ajto: idegen, hianyzo es nem
+  // szoveges ertek tovabbra sem megy at.
+  it("accepts the self-reference write-back on an option no env var binds yet", async () => {
+    const service = new AcroporaFulfillmentService(
+      cradleWith(configuredSettings),
+    )
+
+    expect(
+      await service.canCalculate({
+        id: "so_frissen_letrehozott",
+        price_type: "calculated",
+        data: { id: "so_frissen_letrehozott" },
+      } as any),
+    ).toBe(true)
+    expect(
+      await service.canCalculate({
+        id: "so_frissen_letrehozott",
+        price_type: "calculated",
+        data: { id: "so_masik" },
+      } as any),
+    ).toBe(false)
+    expect(
+      await service.canCalculate({
+        id: "so_frissen_letrehozott",
+        price_type: "calculated",
+        data: {},
+      } as any),
+    ).toBe(false)
+    expect(
+      await service.canCalculate({
+        id: "so_frissen_letrehozott",
+        price_type: "calculated",
+        data: { id: 42 },
+      } as any),
+    ).toBe(false)
+  })
+
   it("does not expose Foxpost as a selectable fulfillment option when unavailable", async () => {
     const service = new AcroporaFulfillmentService(
       cradleWith(configuredSettings, foxpostPickupPointsWith(false)),

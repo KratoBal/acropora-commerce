@@ -172,10 +172,21 @@ describe("a seed újrafuttathatósága", () => {
     // A `tax_region` sajat alakban ellenorzi magat (`adoteruletek?.length`),
     // mert ott az azonosito nem a `name`, hanem a `country_code`.
     expect(forras).toContain("if (adoteruletek?.length)");
+
+    // A `shipping_option` SAJAT LEKERDEZEST KAPOTT, es nem gyengites, hanem
+    // szigoritas. A puszta letezes ott nem eleg: a szamitott arazasu mod a
+    // letrehozas es az onhivatkozas beirasa KOZOTT mar letezik, de meg
+    // hasznalhatatlan -- eles futason pontosan ebben az allapotban szakadt meg a
+    // szkript. A nevre szuro `letezik` ilyenkor kihagyna, es a hianyzo
+    // visszairas soha nem potlodna. Ezert a helyer olvassa a `data` mezot is, es
+    // ezert kell a potlas aga is, kulon allitassal.
+    expect(forras).toContain("const letezoSzallitasiMod = async");
+    expect(forras).toContain("await letezoSzallitasiMod(mod.name)");
+    expect(forras).toContain("onhivatkozas !== meglevo.id");
+
     expect(ellenorzott.sort()).toEqual([
       "region",
       "sales_channel",
-      "shipping_option",
       "stock_location",
     ]);
   });
