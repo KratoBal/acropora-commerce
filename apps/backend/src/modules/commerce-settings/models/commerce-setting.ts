@@ -1,4 +1,4 @@
-import { model } from "@medusajs/framework/utils"
+import { model } from "@medusajs/framework/utils";
 
 /**
  * Store-wide operational settings that must be editable without a deployment.
@@ -37,6 +37,6 @@ export const CommerceSetting = model
       unique: true,
       where: "deleted_at IS NULL",
     },
-  ])
+  ]);
 
-export default CommerceSetting
+export default CommerceSetting;
