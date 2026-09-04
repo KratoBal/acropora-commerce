@@ -91,6 +91,28 @@ describe("what we say about it", () => {
     expect(malformed).not.toBe(wrongPath)
   })
 
+  it("says WHICH application needs the value, and that there are two", () => {
+    /*
+      MEASURED THE HARD WAY on 2026-09-04: the guard fired on the staging shop
+      and refused to start, exactly as designed. The variable had been set - in
+      the Acropora OS API, where the name also looks meaningful. The shop was
+      down for fifteen minutes, and it took a second round to notice that the
+      service is TWO applications from one image, a server and a worker, both
+      running this check.
+
+      A refusal that names the fault but not the PLACE sends whoever reads it to
+      the wrong console. The message is the only thing they have: the container
+      log is where this lands.
+
+      WHAT TURNS THIS RED: dropping either half. Naming the application without
+      the worker leaves the second one to fail silently on the next round.
+    */
+    const missing = describeFileBackendUrlProblem("missing")
+    expect(missing).toContain("KERESKEDELMI BACKEND")
+    expect(missing).toContain("Acropora OS")
+    expect(missing).toContain("feldolgozó")
+  })
+
   it("names the variable and shows the shape in every sentence", () => {
     /*
       The price of refusing to start is only fair if the message says what to
