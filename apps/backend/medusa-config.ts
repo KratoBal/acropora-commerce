@@ -68,6 +68,47 @@ module.exports = defineConfig({
       },
     },
     {
+      /**
+       * THE PUBLIC ADDRESS OF UPLOADED IMAGES COMES FROM THE ENVIRONMENT.
+       *
+       * Without this entry the default file module runs with the local
+       * provider's own fallback, `http://localhost:9000/static` (measured in
+       * @medusajs/file-local, `services/local-file.js`). That address resolves
+       * on the server and nowhere else, so the STOREFRONT shows a broken image
+       * while every one of our own screens looks fine.
+       *
+       * DECLARING IT REPLACES THE DEFAULT, IT DOES NOT ADD TO IT. `transformModules`
+       * keys by service name and the last entry with the same key wins, and the
+       * file module's provider loader registers ONLY `options.providers` - it has
+       * no unconditional system provider. That is the difference from the payment
+       * module above, whose loader registers the system provider first, which is
+       * why that comment says the opposite. The two loaders really do behave
+       * differently; the difference is in their source, not in the documentation.
+       *
+       * NO DEFAULT ON THE VALUE, and that is the point of the whole entry: a
+       * fallback here would be the very fault being fixed. The deploy refuses to
+       * start without it - see `src/scripts/verify-file-backend-url.ts`, run from
+       * the entrypoint. It is checked THERE and not thrown from here because this
+       * file is loaded by `medusa build` too, and a throw would break the image
+       * build in every environment, including ones that never serve a customer.
+       *
+       * THE VALUE CARRIES THE PATH, not just the host: the provider appends the
+       * file key to the configured pathname.
+       */
+      resolve: "@medusajs/medusa/file",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/medusa/file-local",
+            id: "local",
+            options: {
+              backend_url: process.env.MEDUSA_FILE_BACKEND_URL,
+            },
+          },
+        ],
+      },
+    },
+    {
       resolve: "./src/modules/shipping-attributes",
     },
     {
