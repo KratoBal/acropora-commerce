@@ -108,7 +108,11 @@ export function describeFileBackendUrlProblem(
       "A MEDUSA_FILE_BACKEND_URL nincs beállítva, ezért a bolt a képek belső, " +
       "localhost címét adná ki a vevőnek. A bolt szándékosan nem indul el: " +
       "állítsd be a nyilvános címet, a /static útvonallal együtt " +
-      "(például https://commerce-stage.acropora.hu/static)."
+      "(például https://commerce-stage.acropora.hu/static). " +
+      "EZT A KERESKEDELMI BACKEND ALKALMAZÁSBAN kell beállítani, nem az " +
+      "Acropora OS API-ban -- a változó neve ott is értelmesnek látszik. " +
+      "ÉS MIND A KETTŐBEN: a szerverben ÉS a feldolgozóban is, mert ugyanabból " +
+      "a képből indulnak, és ez az ellenőrzés mind a kettőben lefut."
     );
   if (problem === "malformed")
     return (
