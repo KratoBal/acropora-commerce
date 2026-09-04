@@ -27,10 +27,24 @@
 # needs no bash-only syntax.
 set -e
 
+# THE FIRST REFUSAL IS THE CHEAPEST ONE, AND IT RUNS FIRST FOR THAT REASON.
+#
+# Without MEDUSA_FILE_BACKEND_URL the file provider falls back to
+# `http://localhost:9000/static` (measured in @medusajs/file-local): the deploy
+# comes up, every one of OUR screens looks right, and the STOREFRONT shows a
+# broken image to the customer. Nothing fails and nothing is logged - the
+# silence is the fault, not the missing variable.
+#
+# Plain `node`, not `medusa exec`: this reads one environment variable and needs
+# neither the database nor the application container. Booting the app for it
+# would turn the fastest check into the slowest one.
+echo "docker-entrypoint: verifying the public image prefix..."
+node ./src/scripts/verify-file-backend-url.js
+
 echo "docker-entrypoint: applying Medusa migrations..."
 npx medusa db:migrate
 
-# THE SECOND REFUSAL, AND IT IS HERE FOR THE SAME REASON AS THE FIRST.
+# THE THIRD REFUSAL, AND IT IS HERE FOR THE SAME REASON AS THE OTHER TWO.
 #
 # The six shipping option ids are carried into every environment by hand. If one
 # is wrong, the shop starts, the checkout offers no payment method, and NOTHING
