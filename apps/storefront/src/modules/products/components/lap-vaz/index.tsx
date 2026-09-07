@@ -70,6 +70,38 @@ type VazSzakasz = {
  *
  * A `varakozo` szoveg SEMLEGES: megmondja, mi jon ide, es nem allit semmit a
  * termekrol. Ez a kulonbseg a "meg nem kesz" es a "kitalalt adat" kozott.
+ *
+ * === HONNAN JOTT A LISTA, ES MIERT SZAMIT ===
+ *
+ * A tervfajl (`exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html`)
+ * MUSZAKI (1b) valtozatabol. A sotet (2a) valtozat ugyanezt a doboz-sort
+ * hasznalja, mas ertek-keszlettel.
+ *
+ * Ezt azert kell kiirni, mert a tervfajl TOBB valtozatot tartalmaz, es egy
+ * "hianyzo doboz" bejelentesnel az elso kerdes az, hogy ugyanabbol a
+ * valtozatbol nezzuk-e.
+ *
+ * === EGY KONKRET ESET, AMI EBBOL MAR ELOJOTT: A VIDEO ===
+ *
+ * Murena a terv dobozlistajat kiolvasva talalt egy VIDEO elemet a foto es a
+ * meretezes-seged kozott, ami ebbol a tizennegybol hianyzik. Helyesen NEM
+ * nevezte hibanak, hanem ket magyarazatot adott melle.
+ *
+ * A valasz egy HARMADIK volt, es meressel dolt el. A tervfajlban a "VIDEÓ"
+ * szo haromszor all (ekezettel; ekezet nelkul nullaszor), es MINDHAROM
+ * BOLYEGKEP, nem doboz:
+ *
+ *   a befoglalo racs ketszer `grid-template-columns: repeat(6,1fr)`
+ *   mindegyik `aspect-ratio:1`, tobb ugyanilyen testverrel
+ *   az egyik szomszedja a "NAPPALI FÉNY" felirat -- szinten bolyegkep
+ *
+ * Vagyis a video a KEPGALERIA hatos bolyegkep-savjanak eleme. Ha valaha
+ * megepul, a galeriaban a helye (az a `fotoResz` sloton at erkezik), NEM egy
+ * tizenotodik dobozkent.
+ *
+ * ES A MERESI TANULSAG: egy doboz-lista kinyerese NEM kulonbozteti meg a
+ * bolyegkepet a doboztol -- a kulonbseg csak a BEFOGLALO RACSBOL latszik. Aki
+ * legkozelebb "hianyzo dobozt" talal, elobb a racsot nezze meg.
  */
 /**
  * MINDEN SZOVEG ITT A VEVONEK SZOL, TEHAT MAGYAR HELYESIRASSAL ALL.
@@ -324,7 +356,7 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] = MUSZAKI_LAP_SZAKASZAI.map(
   (szakasz) => ({
     ...szakasz,
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
-  })
+  }),
 )
 
 /** Melyik vilag melyik dobozlistat kapja. */
@@ -384,8 +416,8 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
             szakasz.oszlop === "teljes"
               ? "lg:col-span-2"
               : szakasz.oszlop === "bal"
-              ? "lg:col-start-1"
-              : "lg:col-start-2"
+                ? "lg:col-start-1"
+                : "lg:col-start-2"
           }
         >
           <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>
