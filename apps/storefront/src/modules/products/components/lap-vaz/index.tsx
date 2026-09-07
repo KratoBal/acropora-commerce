@@ -372,8 +372,40 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * a tervben keszen all. Egy "vegyuk ki, ugysem tudjuk kitolteni" javaslat
  * mindig igy nez ki: ovatosnak latszik, es kozben szegenyebb lapot ad.
  */
-export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] = MUSZAKI_LAP_SZAKASZAI.map(
-  (szakasz) => ({
+/**
+ * AMI NEM KERUL A SOTET LISTARA -- ES A KET KERDES SZETVALASZTVA.
+ *
+ * Nautilus fogalmazta meg a kulonbseget, es ez a resze a tartos:
+ *
+ *   "MI LEGYEN a dobozban"      -> Balazs szabalya valaszol: ami nincs, ott a
+ *                                  doboz uresen all
+ *   "MELYIK DOBOZ letezik ezen  -> a TERV a forras
+ *    a lapon"
+ *
+ * A szerkezeti allitas a DRIFT ellen ved, nem a terv ellen. Ezert elhagyhat a
+ * sotet lista dobozt, ha a terv sem tartalmazza -- de UJAT nem adhat hozza es
+ * SORRENDET nem valtoztathat, es az elhagyottak itt, nevvel allnak.
+ *
+ * A MERES (a validalt hatarral, ismert pozitiv kontrollal):
+ *
+ *   a korall savban "Ami meg kellhet hozza"   0 doboz
+ *   a muszaki savban ugyanaz                  2 doboz
+ *   KONTROLL: a "Tovabbi ... peldanyok" doboz a korall savban MEGVAN (1)
+ *
+ * A kontroll azert kell, mert a nulla onmagaban a kereses tulajdonsaga is
+ * lehetne: ha teljes szelessegu dobozt egyaltalan nem talalnank a korall
+ * savban, a nulla semmit nem mondana.
+ *
+ * (A hatar maga: a ket valtozat CIMKEZETT konteneere, es a vagas ott van, ahol
+ * a muszaki kontener KEZDODIK -- nem ahol a korall nominalisan vegzodik, mert
+ * a ketto atfed.)
+ */
+const ELO_ALLAT_ELHAGYOTT = new Set(["kiegeszitok"])
+
+export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
+  MUSZAKI_LAP_SZAKASZAI.filter(
+    (szakasz) => !ELO_ALLAT_ELHAGYOTT.has(szakasz.kulcs)
+  ).map((szakasz) => ({
     ...szakasz,
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
   }))
