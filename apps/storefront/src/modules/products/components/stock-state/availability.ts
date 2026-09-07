@@ -142,9 +142,22 @@ export const availabilityLabel: Record<Availability, string> = {
  * termeke nulla keszleten all, tehat a nulla nem meres.
  *
  * Nem az ALLAPOT volt hamis, hanem az IGEIDO.
+ *
+ * === ES A MASODIK MONDAT VISSZAKERULT (acrobot, 14679) ===
+ *
+ * Elsore "Ez a darab nem elerheto."-re csereltem az egesz masodik mondatot.
+ * Az REDUNDANS volt: pontosan azt mondja, ami a FOLOTTE allo cimke
+ * ("Nem elérhető"), tehat egy sorral lejjebb megismetli ugyanazt.
+ *
+ * A "Nem kerul vissza raktarra" viszont HOZZATESZ valamit, es NEM a multrol
+ * szol: egy konkret korall-telep vagy hal nem potolhato, tehat nem is kerulhet
+ * vissza raktarra. Ez a termek TERMESZETEBOL kovetkezik, nem egy vasarlasbol.
+ *
+ * Az ag amugy is CSAK egyedi peldanyra fut (uniquePiece), tehat a mondat
+ * hatokore pontosan az, amire igaz.
  */
 export const SOLD_OUT_EXPLANATION =
-  "Egyedi példány, nem pótolható. Ez a darab nem elérhető."
+  "Egyedi példány, nem pótolható. Nem kerül vissza raktárra."
 
 /**
  * A WYSIWYG-ÍGÉRET, KIMONDVA (picasso látványterve, 2026-09-07).

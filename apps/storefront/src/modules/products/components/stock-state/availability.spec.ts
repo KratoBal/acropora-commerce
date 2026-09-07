@@ -181,8 +181,31 @@ describe("a vevőnek szánt szövegek", () => {
      * visszairt "Egyedi darab volt..." mellett is zold maradna, ha valaki csak
      * a kezdetet igazitja.
      */
+    /**
+     * CSAK A MULT IDEJU ALAK TILOS -- ES EZ SZUKITES A KORABBIHOZ KEPEST.
+     *
+     * Elsore a "vissza raktárra" reszt IS tiltottam. Az TUL TAG volt: a regi
+     * mondatban nem AZ volt a hibas, hanem a "volt". A "Nem kerul vissza
+     * raktarra" a termek TERMESZETEROL szol (egy konkret peldany nem
+     * potolhato), nem egy vasarlasrol -- tehat tiltani nem kellett volna.
+     *
+     * Egy szuro ara az, amit ELVESZ: ez a tiltas egy IGAZ es hasznos mondatot
+     * vett volna el, egyetlen valodi hiba miatt, ami mellette allt.
+     */
     expect(SOLD_OUT_EXPLANATION).not.toContain("volt")
-    expect(SOLD_OUT_EXPLANATION).not.toContain("vissza raktárra")
+
+    /**
+     * ES A MASODIK MONDAT IS ROGZITVE VAN -- ezt a KALIBRACIO hivta elo.
+     *
+     * Amikor a masodik mondatot lecsereltem, NULLA allitas pirosodott: a
+     * szovege sehol nem volt megnevezve. Pedig epp ez a mondat volt haromszor
+     * vita targya, es acrobot kifejezetten ezt kerte megtartani.
+     *
+     * A tiltas (a mult ido) es a rogzites (a megtartando mondat) KET KULON
+     * kerdes: az elso azt vedi, hogy ne allitsunk valotlant, a masodik azt,
+     * hogy egy dontesbol szuletett mondat ne tunjon el csendben.
+     */
+    expect(SOLD_OUT_EXPLANATION).toContain("Nem kerül vissza raktárra")
     expect(UNIQUE_PIECE_PROMISE.startsWith("A fotó pontosan ezt")).toBe(true)
   })
 
