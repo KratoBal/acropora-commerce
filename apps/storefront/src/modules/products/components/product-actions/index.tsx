@@ -10,6 +10,12 @@ import { isEqual } from "lodash"
 import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
+import StockState from "../stock-state"
+import {
+  availabilityOf,
+  similarItemsHref,
+  uniquePieceOf,
+} from "../stock-state/availability"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
 
@@ -116,6 +122,23 @@ export default function ProductActions({
     return false
   }, [selectedVariant])
 
+  /*
+    HÁROM ÁLLAPOT, KETTŐ HELYETT.
+
+    A mai gomb egyetlen logikai értéket ismer, és egyetlen feliratot ("Out of
+    stock"). Egy élő állat lapján ez összemossa a VISSZAJÖHET és a MÁR NINCS
+    esetet -- a vevő azt hiheti, kap egy állatot, ami már nem létezik.
+
+    A jelző KIFEJEZETT: amíg a vetítés nem hozza át, `uniquePiece` hamis, és a
+    lap az ELFOGYOTT ágat rajzolja. A halkabb tévedés a szándék, nem a hiány.
+  */
+  const uniquePiece = uniquePieceOf(product.metadata)
+  const similarHref = similarItemsHref(product)
+  const availability = availabilityOf({
+    inStock: inStock && !!isValidVariant,
+    uniquePiece,
+  })
+
   const actionsRef = useRef<HTMLDivElement>(null)
 
   const inView = useIntersection(actionsRef, "0px")
@@ -162,32 +185,31 @@ export default function ProductActions({
 
         <ProductPrice product={product} variant={selectedVariant} />
 
-        <Button
-          onClick={handleAddToCart}
-          disabled={
-            !inStock ||
-            !selectedVariant ||
-            !!disabled ||
-            isAdding ||
-            !isValidVariant
-          }
-          variant="primary"
-          className="w-full h-10"
-          isLoading={isAdding}
-          data-testid="add-product-button"
-        >
-          {!selectedVariant
-            ? "Select variant"
-            : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Add to cart"}
-        </Button>
+        {!selectedVariant ? (
+          <Button
+            disabled
+            variant="primary"
+            className="w-full h-10"
+            data-testid="add-product-button"
+          >
+            Válassz változatot
+          </Button>
+        ) : (
+          <StockState
+            availability={availability}
+            similarHref={similarHref}
+            onAddToCart={handleAddToCart}
+            isAdding={isAdding}
+            disabled={!!disabled || isAdding}
+          />
+        )}
         <MobileActions
           product={product}
           variant={selectedVariant}
           options={options}
           updateOptions={setOptionValue}
-          inStock={inStock}
+          availability={availability}
+          similarHref={similarHref}
           handleAddToCart={handleAddToCart}
           isAdding={isAdding}
           show={!inView}

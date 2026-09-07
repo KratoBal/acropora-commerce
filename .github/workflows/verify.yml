@@ -119,5 +119,18 @@ jobs:
         working-directory: apps/backend
         run: pnpm run test:unit
 
+      # A KIRAKAT TESZTJEI KULON LEPES, MERT A FENTI CSAK A BACKENDET FUTTATJA.
+      #
+      # MERVE (2026-09-07): a kirakatban addig EGYALTALAN NEM VOLT tesztfutto.
+      # Amikor bekerult (vitest), a CI-ben semmi nem hivta -- a `pnpm run
+      # test:unit` lepes `working-directory: apps/backend` alatt fut, a `turbo
+      # test` pedig sehol nem szerepelt. Egy meres, amit senki nem futtat,
+      # ugyanaz, mint egy orzo, ami szol de nem allit meg: ott van, es nem ved.
+      #
+      # A `--filter` szandekos: a backend tesztjeit a fenti lepes viszi, es ket
+      # helyen futtatni ugyanazt csak a kaput lassitja.
+      - name: Kirakat tesztek
+        run: pnpm --filter @dtc/storefront test
+
       - name: Build
         run: pnpm run build
