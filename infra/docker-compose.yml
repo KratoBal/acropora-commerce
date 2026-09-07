@@ -100,8 +100,11 @@ services:
   # nulla hiba.
   storefront:
     build:
-      context: ../backend/apps/storefront
-      dockerfile: Dockerfile
+      # A KONTEXTUS A REPO GYOKERE, nem a kirakat konyvtara: a telepites a
+      # gyokeri lockfile-bol megy (pinnelve), es a `--filter` valasztja ki, mi
+      # epuljon. A reszletek az apps/storefront/Dockerfile fejlecében.
+      context: ../backend
+      dockerfile: apps/storefront/Dockerfile
       args:
         # A `next build` a Store API-t MAR BUILD IDOBEN hivja (harom oldal
         # `generateStaticParams` fuggvenye), tehat ezek EPITESI feltetelek, nem

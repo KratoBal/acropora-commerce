@@ -1,0 +1,32 @@
+# A MUNKATERULET CSOMAGJAI.
+#
+# A pnpm a package.json "workspaces" mezojet NEM olvassa -- ki is mondja
+# figyelmeztetesben --, ezert all itt. A ket glob ugyanaz, ami korabban ott
+# allt, beture.
+packages:
+  - "apps/**"
+  - "!apps/backend/.medusa/**"
+
+# MELYIK CSOMAG FUTTATHATJA A TELEPITESI SZKRIPTJET.
+#
+# A pnpm alapertelmezesben EGYIKET SEM futtatja, es ez helyes: egy telepitesi
+# szkript tetszoleges kodot futtat a gepen. Amit itt felsorolunk, azt tudatosan
+# engedjuk.
+#
+# MIERT KELL EGYALTALAN: a munkateruleten belul ez csak FIGYELMEZTETES volt, es
+# mind a ket build lefutott. ONALLO telepitesnel viszont HIBA -- merve
+# 2026-09-07 a kirakat sajat konyvtaraban: `ERR_PNPM_IGNORED_BUILDS`, kilepesi
+# kod 1. A kirakat kepe pontosan ilyen onallo telepitest vegez.
+#
+# A `sharp` a Next kep-optimalizaloja. A MAI lapjainkon nem fut (merve: a
+# termeklapon tizenegy img all es NULLA megy a /_next/image uton, mert a
+# next.config `unoptimized: true` beallitast hasznal) -- de a telepitese akkor
+# is kell, kulonben a pnpm megtagadja a telepitest.
+onlyBuiltDependencies:
+  - "@medusajs/telemetry"
+  - "@swc/core"
+  - esbuild
+  - msgpackr-extract
+  - protobufjs
+  - sharp
+  - unrs-resolver

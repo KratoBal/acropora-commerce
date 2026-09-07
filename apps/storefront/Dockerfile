@@ -5,74 +5,77 @@
 # ============================================================================
 #
 # MA: a kep a BEOLVASZTATLAN agrol epul (feat/storefront-from-dtc-starter),
-# pinneles NELKUL, azert, hogy Balazs lassa a kirakatot egy cimen. A CI Build
-# lepese a gyokerbol futo `turbo build`-del a kirakatot is epiti, es ott a ket
-# React utkozese miatt ma elhasal -- tehat az ag nem olvaszthato be.
+# azert, hogy Balazs lassa a kirakatot egy cimen.
 #
-# A LEJARAT: a repo atallitasa pnpm-re. A pnpm izolalt `node_modules`-a a ket
-# React utkozeset szerkezetileg megszunteti, es akkor
-#   - a kep a FO AGROL epul,
-#   - a fuggosegek a repo lockfile-jabol jonnek, tehat pinnelve lesznek,
-#   - es EZ A BLOKK TORLENDO.
+# A LEJARAT: amikor az ag beolvad, a kep a FO AGROL epul, es EZ A BLOKK
+# TORLENDO. Semmi mas nem valtozik benne.
 #
-# MIERT ALL ITT EZ A HAROM SOR: egy ideiglenes megoldas, aminek nincs kimondva
-# a vege, allando lesz. (acrobot kikotese, 2026-09-07)
+# MIERT ALL ITT: egy ideiglenes megoldas, aminek nincs kimondva a vege,
+# allando lesz. (acrobot kikotese, 2026-09-07)
 #
-# ES MIERT NINCS SAJAT LOCKFILE HELYETTE: egy masodik lockfile a repoban
-# ugyanaz a szag, amitol a kirakat kiemeleset elvetettuk -- utana ki kellene
-# vezetni, es a kivezetes az, ami elmarad. A pinneles hianyat inkabb VISELJUK
-# es LEIRJUK. Az ara most alacsony: egy TESZT gepi kep, amit napokban merunk,
-# nem honapokban.
+# AMI EDDIG ITT ALLT ES MAR NEM IGAZ: a kep korabban a kirakat konyvtaraban,
+# npm-mel, LOCKFILE NELKUL telepitett, tehat a verziok nem voltak pinnelve.
+# A repo pnpm-re allitasa ezt megszuntette: a telepites a GYOKERBOL megy, a
+# repo sajat lockfile-jabol.
 # ============================================================================
 #
-# === MIERT KULON DOCKERFILE, ES MIERT A KIRAKAT KONYVTARABAN ===
+# === A TELEPITES A GYOKERBOL MEGY, ES EZ MERT DONTES ===
 #
-# A repo gyokerében allo Dockerfile CSAK a hatteret epiti (`npx medusa build`,
-# 9000-es port), es a compose negy szolgaltatasa kozott sincs kirakat. Vagyis a
-# kirakatnak ma NINCS telepitesi utja: beolvasztas utan sehol nem futna -- nem
-# hibaval, hanem ugy, hogy nincs hova telepiteni.
+# A ket alkalmazas KET KULONBOZO React fovezriot igenyel (a hatter admin-ja
+# 18-ast, mert a Medusa 2.19 iranyitopultja az; a kirakat 19-est, Next 15.5).
+# Az npm hoisting ezt nem tudta szetvalasztani: a `next` es a `@headlessui` a
+# gyokeri 18-ast latta, a lap kodja a sajat 19-est, es a build a
+# lap-generalasnal elhasalt (React error #31).
 #
-# === A TELEPITES A KIRAKAT KONYVTARABAN TORTENIK, ES EZ MERT DONTES ===
+# A pnpm izolalt `node_modules`-a szerkezetileg megoldja. Merve 2026-09-07,
+# feloldas-mereesel:
 #
-# A gyokerbol futo `npm ci` a KET alkalmazas fuggosegeit egy fara teszi, es a
-# ketto KET KULONBOZO React fovezriot igenyel: a hatter admin-kiterjesztese
-# 18-ast (a Medusa 2.19 iranyitopultja az), a kirakat 19-est (Next 15.5).
-# Merve 2026-09-07, feloldas-meressel, nem a hibauzenetbol:
+#     next            -> react 19.0.5
+#     @headlessui     -> react 19.0.5
+#     a kirakat kodja -> react 19.0.5
+#     a hatter        -> react 18.3.1
 #
-#     next          -> react 18.3.1   (a gyokerbol)
-#     @headlessui   -> react 18.3.1
-#     a kirakat kodja -> react 19.0.5 (a sajat node_modules-abol)
+# === MIERT NEM `pnpm deploy` A RUNNER SZAKASZBAN ===
 #
-# Ket React egyszerre, es a 19-es nem fogadja el a 18-as elemeit: a `next build`
-# a lap-generalasnal elhasal (React error #31).
+# A kezenfekvo alak az lenne, hogy a runner egy onallo, `pnpm deploy`-jal
+# eloallitott konyvtarat kap. Ket dolgot mertem meg, es mind a ketto ellene
+# szol MA:
 #
-# Ha viszont a telepites EBBEN a konyvtarban tortenik, mindketto 19.0.5-ot lat.
-# Merve ugyanaznap: 533 csomag, kilepesi kod 0, 244 statikus lap, nulla hiba.
+#   `pnpm deploy`            -> ERR_PNPM_DEPLOY_NONINJECTED_WORKSPACE
+#                               (`inject-workspace-packages=true` kellene, ami
+#                               a TELJES munkaterulet telepiteset megvaltoztatja)
+#   `pnpm deploy --legacy`   -> kilepesi kod 243, es a kimenetben a
+#                               `node_modules/react` SZIMBOLIKUS LINK marad,
+#                               tehat nem onallo
 #
-# === AMIT EZ AR, ES AMIT NEM OLD MEG ===
-#
-# NINCS lockfile ehhez a telepiteshez, tehat a verziok nincsenek pinnelve: ket
-# honap mulva ugyanez a fajl mas verziokat huzhat be, CSENDBEN. Ezt vagy egy
-# sajat lockfile oldja fel (masodik lockfile a repoban), vagy az, ha a repo
-# egesze pnpm-re all -- ott az izolacio szerkezeti, es akkor ennek a fajlnak
-# CSAK a telepito sorai valtoznak.
-#
-# ES AMIT EZ NEM CSINAL: nem veszi ki a kirakatot a workspace-bol. A gyokerbol
-# futo `turbo build` tovabbra is epiti, tehat a CI kapuja megmarad -- es ma
-# tovabbra is elhasal rajta. Ez a fajl a TELEPITEST oldja meg, nem a kaput.
+# Ezert a runner a TELJES `/app` fat kapja meg: a gyokeri `node_modules` (benne
+# a `.pnpm` tarolo) es a kirakat konyvtara egyutt. Nagyobb kep, cserebe a
+# szimbolikus linkek feloldodnak. Merve: ebbol a fa-alakbol indulva a szerver a
+# `/hu` es az ekezetes kategoria-lapon egyarant HTTP 200-at ad.
 
 FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+# A `corepack` a node:22 kepben benne van, tehat nem kell kulon telepites.
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+
+# MIND A KET workspace package.json fajlja kell: a `--frozen-lockfile` a
+# lockfile-t a TELJES munkateruleteel veti ossze, es egy hianyzo workspace-nel
+# megtagadja a telepitest.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY apps/storefront/package.json ./apps/storefront/package.json
+
+# `--filter @dtc/storefront...`: csak a kirakat es a fuggosegei telepulnek.
+# A harom pont a szuro resze, nem elgepeles.
+RUN pnpm install --frozen-lockfile --filter "@dtc/storefront..."
 
 COPY . .
 
 # A `next build` a Store API-t MAR BUILD IDOBEN hivja: harom oldal
 # (kategoria, termek, gyujtemeny) `generateStaticParams` fuggvenye lekerdezi a
-# katalogust. Ezert a ket valtozo nem futasideju, hanem EPITESI feltetel -- a
+# katalogust. Ezert ezek EPITESI feltetelek, nem futasideju beallitasok -- a
 # kulcs nelkul a build a kategoria-oldalnal all meg, 400-as valasszal.
 ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL
 ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -83,7 +86,7 @@ ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
 ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
 
-RUN npm run build
+RUN pnpm --filter @dtc/storefront build
 
 
 FROM node:22-bookworm-slim AS runner
@@ -92,15 +95,16 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-# A `next start` harom dolgot igenyel: a lefordított kimenetet, a fuggosegeket
-# es a statikus fajlokat. A `public` konyvtar kulon all, mert a `.next` nem
-# tartalmazza.
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+
+# A TELJES fa, a fenti indoklas szerint: a gyokeri `node_modules` a `.pnpm`
+# tarolóval egyutt, es a kirakat konyvtara. A hatter forrasa NEM kell.
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.js ./next.config.js
-COPY --from=builder /app/check-env-variables.js ./check-env-variables.js
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder /app/apps/storefront ./apps/storefront
+
+WORKDIR /app/apps/storefront
 
 # A NEGY VALTOZO A RUNNER SZAKASZBAN IS KELL, ES EZ MERT HIBA VOLT.
 #
@@ -113,9 +117,8 @@ COPY --from=builder /app/check-env-variables.js ./check-env-variables.js
 #      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY"
 #
 # Vagyis a kep SIKERESEN felepult volna, es a kontener INDULASKOR halt volna
-# meg. Ez ugyanaz a szabaly, amit a `GIT_SHA` blokk lentebb mar kimond, es amit
-# a hatter Dockerfile-ja is: a build argumentum NEM OROKLODIK szakaszok kozott,
-# tehat abban a szakaszban kell deklaralni, amelyik OLVASSA.
+# meg. A build argumentum NEM OROKLODIK szakaszok kozott, tehat abban a
+# szakaszban kell deklaralni, amelyik OLVASSA.
 ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL
 ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
 ARG NEXT_PUBLIC_DEFAULT_REGION=hu
@@ -146,4 +149,4 @@ LABEL org.opencontainers.image.source=https://github.com/KratoBal/acropora-comme
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=5 \
   CMD ["node","-e","fetch('http://127.0.0.1:8000/hu').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "start"]

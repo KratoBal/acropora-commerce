@@ -20,14 +20,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # A pnpm A NODE ELE KELL: a `setup-node` gyorsitotara a csomagkezelo
+      # lockfile-jat keresi, es ha a pnpm meg nincs telepitve, a `cache: pnpm`
+      # lepes elhasal.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
       - uses: actions/setup-node@v4
         with:
           # A repo package.json-ja: ^20.19.0 || >=22.12.0
           node-version: '22'
-          cache: npm
+          cache: pnpm
 
       - name: Telepites
-        run: npm ci
+        # `--frozen-lockfile`: a lockfile-bol telepit, es MEGALL, ha az nem illik
+        # a package.json fajlokhoz. Igy egy elfelejtett lockfile-frissites itt
+        # bukik el, nem az eles buildben.
+        run: pnpm install --frozen-lockfile
 
       - name: Titok-kereses a valtozasokban
         # Publikus repo eseten egy elgepelt kulcs veglegesen kikerul, es a
@@ -67,15 +77,15 @@ jobs:
         # hatokore.
         env:
           NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ba7f178c2b6b94dc96334fc7f24d32c3949b4575fc764658812fcd508a8b7dcc
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Tipusellenorzes
         working-directory: apps/backend
-        run: npx tsc --noEmit -p tsconfig.json
+        run: pnpm exec tsc --noEmit -p tsconfig.json
 
       - name: Unit tesztek
         working-directory: apps/backend
-        run: npm run test:unit
+        run: pnpm run test:unit
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
