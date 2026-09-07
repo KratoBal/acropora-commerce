@@ -305,17 +305,9 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  */
 const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
   foto: { varakozo: "Saját fotó: ez a példány" },
-  "meretezes-seged": {
-    cim: "Elhelyezés-segéd",
-    varakozo: "Hová tedd ezt a példányt?",
-  },
   fulek: {
     varakozo:
       "Gondozás, Leírás, Vízparaméterek, Élőállat-szállítás, Értékelések",
-  },
-  "muszaki-adatok": {
-    cim: "Tartási paraméterek",
-    varakozo: "Nehézség, fényigény, áramlás",
   },
   csomagajanlat: { cim: "Kötegajánlat", varakozo: "Ide jön a kötegajánlat" },
   kerdezd: { cim: "Kérdezd a boltot", varakozo: "Kapcsolatfelvétel" },
@@ -352,12 +344,39 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * masolat eseten csendben kimaradna, es az elteres csak a lapon latszana.
  * A felirat-elteresek egy helyen allnak, fent.
  */
-export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] = MUSZAKI_LAP_SZAKASZAI.map(
-  (szakasz) => ({
+/**
+ * AMI NEM KERUL A SOTET LISTARA (acrobot dontese, 2026-09-07).
+ *
+ * A ket doboznak az elo allat lapjan SEM FORRASA, SEM JELENTESE nincs, es a
+ * tervben sem all ott. Acrobot indoka szo szerint: "ha egy doboznak sem
+ * forrasa, sem jelentese nincs azon a vilagon, akkor nem varakozo hely, hanem
+ * zaj".
+ *
+ * === ES EZ FELULIR EGY KORABBI SZERKEZETI DONTEST -- KIMONDVA ===
+ *
+ * A `lap-vaz.component.spec` allitasa eddig azt vedte, hogy a ket vilag
+ * UGYANAZOKAT a dobozokat kapja ("a ket vilag nem ket kulon lap"). Az allitas
+ * jo volt, es engem meg is fogott: elsore kivettem a tartozek-dobozt, es
+ * pirosra valtott.
+ *
+ * Most acrobot dontese felulirja, de NEM torli a vedelmet, csak SZUKITI: a
+ * sotet lista tovabbra sem tartalmazhat UJ dobozt es nem valtoztathat
+ * SORRENDET -- csak elhagyhat olyat, ami itt fel van sorolva. Igy a "nem ket
+ * kulon lap" szandeka megmarad, es a kivetel egy helyen, nevvel all.
+ *
+ * A TARTOZEK-DOBOZ (`kiegeszitok`) SZANDEKOSAN NINCS ITT: a tervbol merve az
+ * sem all a korall valtozaton, de acrobot kifejezetten ezt a KETTOT nevezte
+ * meg. Nem tagitom a dontest a sajat meresemre hivatkozva; felirtam neki.
+ */
+const ELO_ALLAT_ELHAGYOTT = new Set(["meretezes-seged", "muszaki-adatok"])
+
+export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
+  MUSZAKI_LAP_SZAKASZAI.filter(
+    (szakasz) => !ELO_ALLAT_ELHAGYOTT.has(szakasz.kulcs)
+  ).map((szakasz) => ({
     ...szakasz,
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
-  }),
-)
+  }))
 
 /** Melyik vilag melyik dobozlistat kapja. */
 export function szakaszokVilagra(vilag: Vilag): VazSzakasz[] {
@@ -416,8 +435,8 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
             szakasz.oszlop === "teljes"
               ? "lg:col-span-2"
               : szakasz.oszlop === "bal"
-                ? "lg:col-start-1"
-                : "lg:col-start-2"
+              ? "lg:col-start-1"
+              : "lg:col-start-2"
           }
         >
           <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>
