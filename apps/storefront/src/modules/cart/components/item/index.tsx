@@ -73,9 +73,28 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
    * kosarban van, fogy el. Ahhoz valodi keszlet kell egy egyedi peldany mogott,
    * es ma a bolt egyetlen valodi termeke sem visel keszletet.
    *
-   * A FELOLDASI FELTETEL, hogy ne felejtsuk el: amikor valodi keszlet all egy
-   * egyedi peldany mogott, ez az allapot eletre kel -- akkor kell egy elohivo,
-   * ami a bolt oldalan megkerdezi, megvehető-e MEG a peldany.
+   * === A FELOLDASI FELTETEL, ES HONNAN KELL JONNIE A JELNEK ===
+   *
+   * Amikor valodi keszlet all egy egyedi peldany mogott, ez az allapot eletre
+   * kel. De a jelnek NEM MINDEGY, honnan jon, es ezt acrobot erve dontotte el
+   * (14553):
+   *
+   *   a bolt sajat rendelesei    SZERKEZETILEG VAKOK ra. A WYSIWYG peldanyok
+   *                              tulnyomo reszet A BOLTBAN adjak el, nem a
+   *                              webshopon, es arrol a Medusa semmit nem tud.
+   *
+   *   az Acropora OS             ott kel el a peldany (bolti eladas VAGY
+   *                              webshopos rendeles), es az OS a torzsadat
+   *                              gazdaja. A jelnek onnan kell jonnie, a
+   *                              vetitesen at.
+   *
+   * Vagyis egy elohivo, ami a bolt rendeleseibol dolgozna, a valodi esetek
+   * TOBBSEGET nem latna -- es epp attol latszana mukodonek, hogy a ritkabb
+   * esetet helyesen kezeli.
+   *
+   * A MAI ALLAPOT, MERVE (2026-09-08, a bolt teljes katalogusa): 1492
+   * valtozatbol EGYETLEN visel nulla folotti keszletet, es az a sajat
+   * proba-termekunk (TEST0001, 4242 darab). Vagyis egyetlen valodi termek sem.
    *
    * ADDIG A `stillAvailable` IGAZ, es ez tudatos: egy elohivo, ami nem tud
    * elsulni, diszlet. (acrobot egyetertett, 14559 -- es hozzatette, hogy ebben
