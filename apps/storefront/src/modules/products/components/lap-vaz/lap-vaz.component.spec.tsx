@@ -367,16 +367,47 @@ describe("az élő állat lap feliratai", () => {
     expect(cimek(ELO_ALLAT_LAP_SZAKASZAI)).not.toContain("Méretezés-segéd")
   })
 
-  /** A tervből mért feliratok, egyenként megnevezve. */
+  /**
+   * A TERVBŐL MÉRT FELIRATOK, EGYENKÉNT MEGNEVEZVE -- ÉS MOST MÁR MIND.
+   *
+   * === MIÉRT NEM EGY OKOS, ÁLTALÁNOS SZABÁLY ÁLL ITT ===
+   *
+   * Írtam egyet: "ha egy feliratot a sötét világ felülír, a világos alak nem
+   * jelenhet meg a sötét listában", a felülírtak halmazát a két lista
+   * KÜLÖNBSÉGÉBŐL vezetve le. Elegánsnak látszott, és a kalibráció megölte.
+   *
+   * Ha valaki egy sötét feliratot VISSZAÍR a világos alakjára, a két érték
+   * EGYENLŐ lesz -- tehát a szabály onnantól nem tekinti felülírtnak, és nem
+   * tilt semmit. Mérve: két visszaírás, NULLA piros abból az állításból.
+   * Pontosan arra volt vak, amiért megírtam.
+   *
+   * Egy visszacsúszást csak úgy lehet elkapni, ha a VÁRT ÉRTÉKET megnevezzük.
+   * Ezért ez a lista, és ezért teljes: MINDEN felülírt mező szerepel benne, nem
+   * csak a négy cím. A `foto` várakozó szövegének visszaírása korábban NULLA
+   * pirosat adott -- semmi nem fedte.
+   */
   it("a tervből mért feliratokat viseli", () => {
     const sotet = ELO_ALLAT_LAP_SZAKASZAI
-    const cim = (kulcs: string) =>
-      sotet.find((szakasz) => szakasz.kulcs === kulcs)?.cim
+    const doboz = (kulcs: string) =>
+      sotet.find((szakasz) => szakasz.kulcs === kulcs)
 
-    expect(cim("hasonlo")).toBe("További WYSIWYG példányok")
-    expect(cim("meretezes-seged")).toBe("Elhelyezés-segéd")
-    expect(cim("kerdezd")).toBe("Kérdezd a boltot")
-    expect(cim("csomagajanlat")).toBe("Kötegajánlat")
+    expect(doboz("hasonlo")?.cim).toBe("További WYSIWYG példányok")
+    expect(doboz("meretezes-seged")?.cim).toBe("Elhelyezés-segéd")
+    expect(doboz("kerdezd")?.cim).toBe("Kérdezd a boltot")
+    expect(doboz("csomagajanlat")?.cim).toBe("Kötegajánlat")
+    expect(doboz("muszaki-adatok")?.cim).toBe("Tartási paraméterek")
+
+    // A varakozo szovegek is felul vannak irva, es eddig egyiket sem fedte semmi.
+    expect(doboz("foto")?.varakozo).toBe("Saját fotó: ez a példány")
+    expect(doboz("meretezes-seged")?.varakozo).toBe("Hová tedd ezt a példányt?")
+    expect(doboz("muszaki-adatok")?.varakozo).toBe("Nehézség, fényigény, áramlás")
+    expect(doboz("csomagajanlat")?.varakozo).toBe("Ide jön a kötegajánlat")
+    expect(doboz("hasonlo")?.varakozo).toBe(
+      "Ide jönnek a további egyedi példányok",
+    )
+    expect(doboz("fulek")?.varakozo).toBe(
+      "Gondozás, Leírás, Vízparaméterek, Élőállat-szállítás, Értékelések",
+    )
   })
 
   /**
