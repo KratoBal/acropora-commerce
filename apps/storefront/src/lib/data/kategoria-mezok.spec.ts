@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
@@ -26,7 +26,34 @@ import { describe, expect, it } from "vitest"
  * mezolistankban nem all `*products` -- NEM azt, hogy a valasz kicsi. A meretet
  * az elo API mondja meg, es az a szam a fuggveny kommentjeben all.
  */
-const NYERS = readFileSync(join(__dirname, "categories.ts"), "utf-8")
+/**
+ * A HALO A `lib/data` MINDEN FAJLJAT NEZI, NEM EGYET -- ES EZ ACROBOT KERESE.
+ *
+ * Az elso valtozat NEV SZERINT olvasta a `categories.ts`-t. Ettol a
+ * `collections.ts` mezolistajarol SEMMIT nem allitott: egy `*products` OTT nem
+ * dontott volna pirosra semmit.
+ *
+ * Es pontosan ez tortent: a hibat harom UTON talaltuk meg egy este alatt (a
+ * kategoria-lista, a `getCategoryByHandle`, es a `getCollectionByHandle`), es a
+ * harmadikat acrobot vette eszre, nem a halo.
+ *
+ * Ezert a halo mostantol a MAPPAT jarja be. A negyedik utat -- barmi is legyen
+ * -- mar nem embernek kell megtalalnia.
+ */
+const ADAT_MAPPA = __dirname
+
+const forrasFajlok = (): string[] =>
+  readdirSync(ADAT_MAPPA)
+    .filter((n) => n.endsWith(".ts") && !n.endsWith(".spec.ts"))
+    .sort()
+
+/** Egy fajl kommentek nelkuli forrasa. */
+const kodja = (nev: string) =>
+  readFileSync(join(ADAT_MAPPA, nev), "utf-8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/[^\n]*/g, "")
+
+const NYERS = readFileSync(join(ADAT_MAPPA, "categories.ts"), "utf-8")
 
 /**
  * A KOMMENTEKET KI KELL SZURNI, ES EZT A SAJAT ORZOM TANITOTTA MEG.
@@ -70,6 +97,37 @@ describe("a kategoria-lekerdezesek mezolistaja", () => {
    * mi KELL hogy ott legyen. Egy elnyomo szabaly onmagaban tul szelesre is
    * mehet, es akkor a masik iranyban okoz kart.
    */
+  /**
+   * ES UGYANEZ A TELJES MAPPARA. Az elozo allitas a `categories.ts`-rol szol;
+   * ez arrol, hogy EGYETLEN adat-fajl mezolistajaban sem all `*products`.
+   *
+   * A ketto kozul ez az, ami a NEGYEDIK utat is megfogja -- egy olyan fajlt,
+   * ami ma meg nem letezik.
+   */
+  it("a lib/data EGYETLEN fájljának mezőlistájában sincs *products", () => {
+    const vetkezok: string[] = []
+
+    for (const nev of forrasFajlok()) {
+      const kod = kodja(nev)
+      for (const m of Array.from(
+        kod.matchAll(/fields:\s*(["'`][^"'`]*["'`])/g),
+      )) {
+        if (m[1].includes("products")) vetkezok.push(`${nev}: ${m[1]}`)
+      }
+    }
+
+    expect(vetkezok).toEqual([])
+  })
+
+  /** ISMERT POZITIV KONTROLL: a bejaras tenyleg lat fajlokat es mezolistakat. */
+  it("a bejárás több adat-fájlt lát, és talál bennük mezőlistát", () => {
+    const fajlok = forrasFajlok()
+    expect(fajlok.length).toBeGreaterThan(3)
+
+    const mezosek = fajlok.filter((n) => kodja(n).includes("fields:"))
+    expect(mezosek.length).toBeGreaterThan(1)
+  })
+
   it("a *category_children MEGMARAD, mert az alkategória-rács abból épül", () => {
     expect(FORRAS).toContain("*category_children")
   })
