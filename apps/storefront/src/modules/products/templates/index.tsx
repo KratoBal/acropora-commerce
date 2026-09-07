@@ -4,6 +4,7 @@ import ImageGallery from "@modules/products/components/image-gallery"
 import ProductActions from "@modules/products/components/product-actions"
 import RelatedProducts from "@modules/products/components/related-products"
 import ProductInfo from "@modules/products/templates/product-info"
+import ProductBreadcrumb from "@modules/products/components/product-breadcrumb"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
@@ -17,6 +18,7 @@ type ProductTemplateProps = {
   region: HttpTypes.StoreRegion
   countryCode: string
   images: HttpTypes.StoreProductImage[]
+  categories: HttpTypes.StoreProductCategory[]
 }
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
@@ -24,6 +26,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   region,
   countryCode,
   images,
+  categories,
 }) => {
   if (!product || !product.id) {
     return notFound()
@@ -31,6 +34,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
   return (
     <>
+      <div className="content-container pt-6"><ProductBreadcrumb product={product} categories={categories} /></div>
       <div
         className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"
         data-testid="product-container"
