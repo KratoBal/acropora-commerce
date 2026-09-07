@@ -47,12 +47,24 @@ describe("a váz valódi tartalma", () => {
     expect(screen.getByText("TDS mérők")).toBeTruthy()
   })
 
-  it("a leírást tisztítva, jelölőként mutatja", () => {
+  /**
+   * A LEÍRÁS A FÜLEK DOBOZÁBAN JELENIK MEG, JELÖLŐKÉNT.
+   *
+   * Ez az állítás SZÁNDÉKOSAN nem a komponens nevére szól, hanem a
+   * viselkedésre: a leírás a `fulek` dobozban áll, és a `<strong>` valódi
+   * jelölőként renderelődik, nem szövegként.
+   *
+   * Így akkor is érvényes marad, ha a fülek komponense cserélődik -- és épp ez
+   * történt: a saját leírás-blokkom helyére a #50 már beolvadt fül-komponense
+   * került, hogy a Codex munkája ne essen ki a műszaki lapról.
+   */
+  it("a leírás a fülek dobozában, jelölőként jelenik meg", () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
-    const leiras = screen.getByTestId("vaz-leiras")
-    expect(leiras.querySelector("strong")).toBeTruthy()
-    expect(leiras.textContent).not.toContain("<strong>")
+    const fulek = document.querySelector('[data-vaz-szakasz="fulek"]')
+    expect(fulek?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(fulek?.querySelector("strong")).toBeTruthy()
+    expect(fulek?.textContent).not.toContain("<strong>")
   })
 
   /**
