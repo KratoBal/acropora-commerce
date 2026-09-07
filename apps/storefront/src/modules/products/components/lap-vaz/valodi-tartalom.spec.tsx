@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it } from "vitest"
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
 import { legmelyebbKategoria, vazTartalom } from "./valodi-tartalom"
 
+const VASARLASI_RESZ = <div data-testid="vaz-vasarlas">vásárlási rész</div>
+
 afterEach(cleanup)
 
 /**
@@ -103,6 +105,27 @@ describe("a váz valódi tartalma", () => {
 
     const cimsor = document.querySelector('[data-vaz-szakasz="cimsor"]')
     expect(cimsor?.getAttribute("data-vaz-ures")).toBe("nem")
+  })
+
+  /**
+   * A MÁR BEOLVADT MUNKA BEFOGADÁSA. Acrobot kikötése: ezek nem újraépítendők,
+   * a váznak be kell fogadnia őket.
+   *
+   * Régió nélkül a `mennyiség` doboz üres marad -- ez nem hiba, hanem az, hogy
+   * ár és készlet régió nélkül nem értelmezhető.
+   */
+  it("átadott vásárlási résszel a mennyiség doboz nem üres", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK, VASARLASI_RESZ)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+  })
+
+  it("átadott rész nélkül a mennyiség doboz üresen marad", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
   })
 
   it("a tizennégy doboz akkor is mind ott áll, ha csak a fele kap tartalmat", () => {

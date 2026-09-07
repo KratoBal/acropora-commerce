@@ -144,9 +144,48 @@ export const Leiras = ({ termek }: { termek: Termek }) => {
  * A ki nem toltott kulcsok SZANDEKOSAN hianyoznak, es a fenti fejlec mondja meg,
  * miert: nincs forrasuk. Egy ures kulcs itt tobbet mond, mint egy kitalalt ertek.
  */
-export function vazTartalom(termek: Termek): Record<string, React.ReactNode> {
+/**
+ * A MAR BEOLVADT RESZEK BEFOGADASA -- ES EGY ELTERES, AMIT KIMONDOK.
+ *
+ * Acrobot kikotese: "Ezek nem ujraepitendok: a vaznak be kell fogadnia oket."
+ * A `ProductActions` HAROM mar beolvadt munkat hoz magaval:
+ *
+ *   #48, #51, #55   murena harom keszlet-allapota, az egyedi peldany jelveny,
+ *                   es a magyarazo mondatok
+ *   #54             a Codex mennyisegi lepteteje
+ *   #58             a valtozat-valaszto merese
+ *
+ * AZ ELTERES, ES NEM REJTEM EL: a terv EZT HAROM KULON DOBOZRA bontja
+ * (elerhetoseg, valaszto, mennyiseg), a `ProductActions` viszont egyetlen
+ * komponens, ami mind a harmat tartalmazza. Ide a `mennyiseg` slotba kerul,
+ * es a masik ket doboz emiatt uresnek latszik, holott a tartalmuk MEGVAN --
+ * csak eggyel lejjebb.
+ *
+ * MIERT IGY, ES NEM SZETSZEDVE: a szetszedes a mar beolvadt komponens
+ * ATIRASA lenne, harom kulon darabra, es a kozottuk levo allapot (kivalasztott
+ * valtozat, mennyiseg, kosarba tetel) egyutt mozog. Egy vaz-lepes ezt nem
+ * vallalhatja. A szetbontas kulon kor, es akkor a HAROM doboz kulon-kulon kap
+ * tartalmat.
+ *
+ * ES MIERT PARAMETER, NEM IMPORT: a `ProductActions` KLIENS-komponens, es a
+ * lancaban server-only modul all. Ha ez a fajl importalja, a rea iranyulo
+ * TESZTFAJL EL SEM INDUL -- merve: a spec module-szintu hibaval elszallt, es az
+ * osszegzes MEGIS 69 zoldet irt, mert a tobbi fajl lefutott. Ugyanaz az alak,
+ * mint a "nulla teszt futott le", csak fajl szinten, es meg meg is nyugtat.
+ *
+ * Igy a lekepezes tiszta marad: a vaz azt mondja meg, MI HOVA kerul, es aki a
+ * lapot osszerakja, az adja at a komponenst.
+ */
+export function vazTartalom(
+  termek: Termek,
+  vasarlasiResz?: React.ReactNode
+): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,
+  }
+
+  if (vasarlasiResz) {
+    tartalom.mennyiseg = vasarlasiResz
   }
 
   const foto = <Foto termek={termek} />
