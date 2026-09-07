@@ -27,7 +27,7 @@ type ProductActionsProps = {
 }
 
 const optionsAsKeymap = (
-  variantOptions: HttpTypes.StoreProductVariant["options"]
+  variantOptions: HttpTypes.StoreProductVariant["options"],
 ) => {
   return variantOptions?.reduce((acc: Record<string, string>, varopt) => {
     if (varopt.option_id) acc[varopt.option_id] = varopt.value
@@ -223,11 +223,21 @@ export default function ProductActions({
             csak nem a doboz hianyabol olvassuk ki, hanem abbol, hogy nem lehet
             valasztani.
 
-            MIERT SZAMIT EZ A KATALOGUSON: 1884 termeknek NINCS valtozata (a
-            vetites `Kivitel` = `Alap` alakot ad nekik), es 9-nek van valodi
-            valasztasa. Az elso csoportnal eddig semmi nem allt a helyen; most
-            ott all a doboz, es a vevo latja, hogy ennel a terméknel nincs mibol
-            valasztani.
+            MIERT SZAMIT EZ A KATALOGUSON -- ES A SZAM HELYESBITVE (2026-09-07
+            22:3x, a teljes katalogus bejarva, lapozva):
+
+              1492 termek, MINDEGYIKNEK pontosan EGY opcioja: `Kivitel` = `Alap`
+              tobb opcios vagy tobb valtozatos termek: NULLA
+
+            Korabban "1884 termeknek nincs valtozata, 9-nek van" allt itt. Az a
+            szam az UNAS FORRASOLDALROL valo, nem a Medusa `variants` /
+            `options` mezojerol -- ket kulonbozo rendszer, ugyanaz a szo. A
+            Medusaban minden termeknek VAN legalab egy valtozata.
+
+            AMIT EZ A GYAKORLATBAN JELENT: ma a MASODIK allapot fut minden
+            terméklapon (a doboz ott all, nem valaszthato), es az ELSO allapot
+            (valodi valaszto) a mai adaton EGYALTALAN NEM all elo. Allitas fedi,
+            de a boltban nem latszik -- ezt jobb tudni, mint kiprobaltnak hinni.
 
             ES EGY NEGYEDIK ESET, AMI NEM A VALTOZATOK SZAMAROL SZOL:
             EGYEDI PELDANYNAL A DOBOZ EGYALTALAN NEM JELENIK MEG.
@@ -249,6 +259,24 @@ export default function ProductActions({
             a sort megirtam, meg nem valtoztatott semmit (a regi feltetel `> 1`
             volt); a 81 beolvasztasa ota valtoztat. A mondat, ami akkor igaz
             volt, ma mar nem az.
+          */}
+          {/*
+            ES AMIERT A `options?.length > 0` FELTETEL BENT MARAD, HOLOTT MA
+            REDUNDANS -- mert a kalibracio ezt kifejezetten megmutatta.
+
+            A feltetel elhagyasa NULLA allitast dont pirosra: a vedelem ket
+            helyen all, es a masik fele (a `ProductOptionSelect` sajat ures-ag
+            kezelese) egyedul is megvedi a lapot. Vagyis a kovetkezo olvaso
+            joggal hiszi, hogy a sor felesleges.
+
+            NEM AZ. Ha kikerul, egy opcio nelkuli terméknel egy URES KONTENER es
+            egy ELVALASZTO marad a lapon -- olyan kimenet, amire ma EGYETLEN
+            allitas sem szol. A redundancia tehat nem veletlen, hanem a
+            MASODIK reteg, es a jelenlegi adaton (nulla opcio nelkuli termek)
+            egyszeruen nem tud elsulni.
+
+            Egy redundans vedelem, aminek le van irva, MIERT redundans, mas
+            dolog, mint egy felesleges sor. (acrobot kikotese, 2026-09-07.)
           */}
           {!uniquePiece && (product.options?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-y-4">
