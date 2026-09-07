@@ -1,5 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+
+import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
@@ -71,7 +73,7 @@ function getImagesForVariant(
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
-  const { handle } = params
+  const handle = decodeHandleParam(params.handle)
   const region = await getRegion(params.countryCode)
 
   if (!region) {
@@ -111,7 +113,7 @@ export default async function ProductPage(props: Props) {
 
   const pricedProduct = await listProducts({
     countryCode: params.countryCode,
-    queryParams: { handle: params.handle },
+    queryParams: { handle: decodeHandleParam(params.handle) },
   }).then(({ response }) => response.products[0])
 
   if (!pricedProduct) {

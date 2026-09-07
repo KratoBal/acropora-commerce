@@ -7,6 +7,7 @@ import { HttpTypes, StoreRegion } from "@medusajs/types"
 import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
+import { decodeHandleParams } from "@lib/util/decode-handle-param"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -49,7 +50,9 @@ export async function generateStaticParams() {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   try {
-    const productCategory = await getCategoryByHandle(params.category)
+    const productCategory = await getCategoryByHandle(
+      decodeHandleParams(params.category)
+    )
 
     const title = productCategory.name + " | Medusa Store"
 
@@ -73,7 +76,9 @@ export default async function CategoryPage(props: Props) {
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
 
-  const productCategory = await getCategoryByHandle(params.category)
+  const productCategory = await getCategoryByHandle(
+    decodeHandleParams(params.category)
+  )
 
   if (!productCategory) {
     notFound()

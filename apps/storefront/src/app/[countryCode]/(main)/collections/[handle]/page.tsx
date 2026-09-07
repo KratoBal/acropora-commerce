@@ -7,6 +7,7 @@ import { StoreCollection, StoreRegion } from "@medusajs/types"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
+import { decodeHandleParam } from "@lib/util/decode-handle-param"
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
@@ -56,7 +57,9 @@ export async function generateStaticParams() {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
-  const collection = await getCollectionByHandle(params.handle)
+  const collection = await getCollectionByHandle(
+    decodeHandleParam(params.handle)
+  )
 
   if (!collection) {
     notFound()
@@ -76,9 +79,9 @@ export default async function CollectionPage(props: Props) {
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
 
-  const collection = await getCollectionByHandle(params.handle).then(
-    (collection) => collection
-  )
+  const collection = await getCollectionByHandle(
+    decodeHandleParam(params.handle)
+  ).then((collection) => collection)
 
   if (!collection) {
     notFound()
