@@ -60,6 +60,62 @@ describe("a készlet-állapot kirajzolása", () => {
   })
 
   /**
+   * A REZ A FO CSELEKVESEN -- ES A HAROM ALLITAS EGYUTT MER, KULON-KULON NEM.
+   *
+   * A tervbol merve (playwright, a tervlap megrenderelve): a "Kosárba" gomb
+   * hattere `oklch(0.62 0.13 45)`, vagyis a `--terv-kiemel`. Ugyanabbol a
+   * meresbol: a "Köteg kosárba" NEM rez, es a tovabbvivo gomb sem az.
+   *
+   * Ha csak az elso allitas allna itt, egy olyan valtozas, ami MINDEN gombot
+   * rezre fest, ugyanugy zold maradna -- es akkor a rez nem jelolne semmit.
+   * Ezert all mellette a ket TILTO eset, nev szerint.
+   */
+  it("a kapható kosár-gomb rezet visel", () => {
+    render(
+      <StockState
+        availability="KAPHATO"
+        similarHref="/collections/elo-korallok"
+        onAddToCart={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId("add-product-button")).toHaveStyle({
+      background: "var(--terv-kiemel)",
+    })
+  })
+
+  /**
+   * KULON TESZT, ES NEM TAGOLASI IZLES: ket FUGGETLENUL RONTHATO allitas van
+   * (a rez megleteten es a hatokoren), es egy tesztben a futtato csak a TESZT
+   * nevet irja ki. Egy fajlban merve: a rez elvetele az elsot dontotte pirosra,
+   * a hatokor kinyitasa (rez a letiltott gombra is) a masodikat -- es
+   * mindketto zolden hagyta a masikat.
+   */
+  it("a letiltott és a továbbvivő gomb NEM visel rezet", () => {
+    const { unmount } = render(
+      <StockState
+        availability="ELFOGYOTT"
+        similarHref="/collections/elo-korallok"
+        onAddToCart={vi.fn()}
+      />,
+    )
+    expect(
+      screen.getByTestId("add-product-button").getAttribute("style"),
+    ).toBeNull()
+    unmount()
+
+    render(
+      <StockState
+        availability="ELADVA"
+        similarHref="/collections/elo-korallok"
+        onAddToCart={vi.fn()}
+      />,
+    )
+    expect(
+      screen.getByText("Hasonló példányok megnézése").getAttribute("style"),
+    ).toBeNull()
+  })
+
+  /**
    * A LÉNYEG: NEM LETILTOTT GOMB, HANEM MÁSIK GOMB.
    *
    * Két állítás, mert az egyik önmagában kevés. Hogy a hivatkozás OTT VAN, azt

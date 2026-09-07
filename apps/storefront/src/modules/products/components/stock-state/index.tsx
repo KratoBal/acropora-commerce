@@ -85,14 +85,52 @@ export default function StockState({
     )
   }
 
+  /**
+   * A FO CSELEKVES REZ -- MERVE A TERVBOL, NEM A TOKEN NEVEBOL KOVETKEZTETVE.
+   *
+   * A tervlapot megrenderelve (playwright, ugyanaz a modszer, amivel a
+   * tokeneket kiolvastuk) a "Kosárba" gomb erteke:
+   *
+   *   hatter  oklch(0.62 0.13 45)   = `--terv-kiemel`
+   *   szoveg  oklch(0.15 0.014 45)  = `--terv-kiemel-szoveg`
+   *
+   * ES AMI UGYANEBBOL A MERESBOL KIDERULT, ES EPP ILYEN FONTOS: a "Köteg
+   * kosárba" gomb NEM rez (`oklch(0.95 0.006 250)`), es az ELADVA agunk
+   * tovabbvivo gombja sem az. A rez a FO cselekvest jeloli, nem minden gombot
+   * -- ha mindegyik azt viselne, egyik sem jelolne semmit.
+   *
+   * === A LETILTOTT GOMB SZANDEKOSAN NEM REZ ===
+   *
+   * ELFOGYOTT allapotban a gomb ott all, de le van tiltva. Egy rez hatteru
+   * letiltott gomb KATTINTHATONAK latszik: a szin a fo cselekvest igeri, a
+   * viselkedes megtagadja. Ilyenkor a keszlet sajat letiltott stilusa marad,
+   * es a rez elmarad -- a felirat pedig amugy is megmondja, mi az allapot.
+   *
+   * === KET ELTERES, AMIT MERTEM ES NEM VALTOZTATOK MEG ===
+   *
+   * A tervben a gomb 402x54 es a sugara 0px; nalunk 40 magas, es a sugarat a
+   * keszlet adja. Mindketto kulon kerdes (a magassag a jobb oszlop egeszet
+   * erinti, a sugar a keszlet gomb-stilusat), es egy szin-javitas nem viheti
+   * el oket csendben. Ezert allnak itt leirva.
+   */
+  const letiltva = disabled || availability === "ELFOGYOTT"
+
   return (
     <Button
       onClick={onAddToCart}
-      disabled={disabled || availability === "ELFOGYOTT"}
+      disabled={letiltva}
       variant="primary"
       className="h-10 w-full"
       isLoading={isAdding}
       data-testid={testId}
+      style={
+        letiltva
+          ? undefined
+          : {
+              background: "var(--terv-kiemel)",
+              color: "var(--terv-kiemel-szoveg)",
+            }
+      }
     >
       {availabilityLabel[availability]}
     </Button>

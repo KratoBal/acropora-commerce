@@ -31,7 +31,17 @@
      (a bekapcsolt bolyegkep kerete es ket bal oldali kiemelo csik) LATHATATLAN
      volt neki. Merve a tervfajlbol, 2026-09-07. */
   --terv-kiemel: oklch(0.62 0.13 45); /* 12 hely -- rez, a fo cselekves */
-  --terv-kiemel-sotet: oklch(0.55 0.13 45); /* ugyanaz lenyomva */
+  /* A NEVE "SOTET", A KOSARBAN MEGIS AZ ALAP -- es ezt ki kell mondani,
+     kulonben valaki "kijavitja". A termeklapon ez a lenyomott allapot; a
+     KOSAR tervlapjan viszont az akcent alap erteke ez (merve a kosar
+     token-JSON-jabol: `oklch(0.55 0.13 45)` 13 hatter + 9 szoveg, mig a
+     `0.62` NULLASZOR fordul elo ott). A kosar a vilagos vilagban all -- a
+     `data-vilag` egyetlen helyen kerul ki, a vaz sajat konteneren --, tehat
+     ott ennek az erteke tenyleg 0.55.
+     Aki tehat a kosarban `--terv-kiemel`-re irna at, 0.62-t kapna: olyan
+     erteket, ami a kosar tervlapjan egyszer sem szerepel. (murena merese,
+     2026-09-08, visszamerve.) */
+  --terv-kiemel-sotet: oklch(0.55 0.13 45);
   /* A REZEN ALLO SZOVEG SOTET, NEM FEHER -- es ez nem izles, hanem meres:
      a tervben a kilenc rez hatterbol OT visel sajat szoveget, es MIND AZ OT
      ugyanezt az erteket hasznalja. (A masik negy szoveg nelkuli negyzet:
