@@ -3,7 +3,7 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
-import { ELO_ALLAT_VAZON, hasznaljaVazat } from "./index"
+import { ELO_ALLAT_VAZON, galeriatAdunkAt, hasznaljaVazat } from "./index"
 
 const termek = (gyoker: string) =>
   ({ categories: [{ name: gyoker, mpath: "c1" }] }) as never
@@ -93,5 +93,70 @@ describe("a hasonló lista fejléce ágnként", () => {
     expect(
       hivasok.filter((h) => h.slice(0, 200).includes("fejlecNelkul")),
     ).toHaveLength(1)
+  })
+})
+
+/**
+ * A FOTO SLOT ATADASA -- A SZAKADAS, AMI MAR MEGVOLT, CSAK MEG NEM SULT EL.
+ *
+ * A #89 megepitette a slotot es megindokolta; a sablon viszont egyik agban sem
+ * adta at. A kepesseg megvolt, a hivas nem -- es pontosan akkor derult volna
+ * ki, amikor az elo allat lapja atall a vazra, vagyis amikor a jelveny
+ * elvesztese a legdragabb.
+ */
+describe("ki kapja a valódi galériát a fotó slotba", () => {
+  it("az élő állat IGEN, mind a három gyökéren", () => {
+    expect(galeriatAdunkAt(termek("Korallok"))).toBe(true)
+    expect(galeriatAdunkAt(termek("Halak"))).toBe(true)
+    expect(galeriatAdunkAt(termek("Gerinctelenek"))).toBe(true)
+  })
+
+  /**
+   * ES A MUSZAKI NEM -- ez a HATAR, nem elmaradas. Az o lapjan a vaz sajat,
+   * tervbol keszult egykepes valtozata all, es azt nem en irom at.
+   */
+  it("a műszaki termék NEM: az a váz saját fotóját tartja meg", () => {
+    expect(galeriatAdunkAt(termek("Termékek"))).toBe(false)
+    expect(galeriatAdunkAt({ categories: [] } as never)).toBe(false)
+    expect(galeriatAdunkAt(null)).toBe(false)
+  })
+
+  /**
+   * ES A KET KERDES KULON ALL. Ma MINDKETTO a harom gyokerbol dol el, tehat
+   * egybeesnek -- de nem ugyanaz a kerdes: az egyik azt mondja meg, KI KAPJA a
+   * vazat, a masik azt, MI KERUL a foto dobozaba. Ha valaki osszevonna oket,
+   * ez a sor mutatja meg, hogy a ket valasz ELLENTETES ugyanarra a termekre.
+   */
+  it("a két kérdés nem ugyanaz: ugyanarra a termékre ellentétes a válasz", () => {
+    expect(hasznaljaVazat(termek("Termékek"))).toBe(true)
+    expect(galeriatAdunkAt(termek("Termékek"))).toBe(false)
+  })
+})
+
+/**
+ * ES HOGY A SABLON TENYLEG ATADJA. Ugyanaz a hatar, mint a hasonlo listanal: a
+ * sablon nem renderelheto jsdomban, a forrasa viszont olvashato. Amit ez mer:
+ * MIT AD AT a sablon, nem azt, mi jelenik meg a kepernyon.
+ */
+describe("a sablon átadja-e a fotó slotot", () => {
+  const forras = readFileSync(join(__dirname, "..", "index.tsx"), "utf-8")
+
+  /** ISMERT POZITIV KONTROLL: a fajl tenyleg ez, es tenyleg ket galeria all benne. */
+  it("a forrás olvasható, és mindkét ág renderel galériát", () => {
+    expect(forras).toContain("MuszakiLap")
+    expect(forras.match(/<ImageGallery/g)).toHaveLength(2)
+  })
+
+  it("a váz ága a fotó slotban adja át, a döntést a határ mondja meg", () => {
+    const vazAg = forras.slice(
+      forras.indexOf("<MuszakiLap"),
+      forras.indexOf("</MuszakiLap>") > -1
+        ? forras.indexOf("</MuszakiLap>")
+        : forras.indexOf("  return (", forras.indexOf("<MuszakiLap")),
+    )
+
+    expect(vazAg).toContain("fotoResz={")
+    expect(vazAg).toContain("galeriatAdunkAt(product)")
+    expect(vazAg).toContain("uniquePiece={uniquePieceOf(product.metadata)}")
   })
 })

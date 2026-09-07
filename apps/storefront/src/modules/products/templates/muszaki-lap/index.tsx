@@ -61,6 +61,37 @@ export function hasznaljaVazat(
   return ELO_ALLAT_VAZON
 }
 
+/**
+ * KI KAPJA A VALODI GALERIAT A FOTO SLOTBA.
+ *
+ * A #89 atadhatova tette a foto slotot, es a fejleceben MEG IS MONDTA, miert:
+ * az elo allat lapjan ket dolog TAPAD a kephez, es egyik sincs a
+ * `ProductActions`-ben -- a `UniquePieceBadge` az elso kepen, a
+ * `UniquePiecePromise` a galeria alatt. A vaz sajat `Foto` komponense egyetlen
+ * kepet rajzol, es errol a kettorol nem tud.
+ *
+ * A KEPESSEG MEGVOLT, A HIVAS NEM. A sablon egyik aga sem adta at a slotot,
+ * tehat a vaz mindenhol a sajat egykepes valtozatat hasznalta. Ez a szakadas
+ * alakja: mindket oldal helyes onmagaban, csak senki nem koti ossze -- es
+ * pontosan akkor sult volna el, amikor az elo allat lapja atall, vagyis amikor
+ * a jelveny elvesztese a legdragabb.
+ *
+ * === MIERT CSAK A SOTET VILAG, ES MIERT NEM MINDENKI ===
+ *
+ * A muszaki lap NEM az en korom (acrobot felosztasa, 2026-09-07). Ott a vaz
+ * sajat `Foto` komponense a TERVBOL keszult, 16:10 aranyban, es ha a galeriat
+ * feltetel nelkul adnam at, az o lapjanak a kepe valtozna meg anelkul, hogy
+ * barki ranezett volna. Ugyanaz a hiba lenne, mint amit a kapu maga kerul el.
+ *
+ * Ez a feltetel tehat HATAR, nem optimalizacio, es a muszaki oldal barmikor
+ * kiterjesztheti magara -- egy szo atirasaval.
+ */
+export function galeriatAdunkAt(
+  termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
+): boolean {
+  return vilagaTermeknek(termek) === "sotet"
+}
+
 type Props = {
   product: HttpTypes.StoreProduct
   vasarlasiResz?: React.ReactNode
