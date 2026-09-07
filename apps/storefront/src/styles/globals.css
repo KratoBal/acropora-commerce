@@ -68,6 +68,7 @@
    */
   --terv-betu-fo-lanc: var(--terv-betu-fo), system-ui, sans-serif;
   --terv-betu-mono-lanc: var(--terv-betu-mono), ui-monospace, monospace;
+  --terv-betu-kiemelt-lanc: var(--terv-betu-kiemelt), Georgia, serif;
 }
 
 @layer utilities {
