@@ -52,7 +52,7 @@ import React from "react"
  *
  * (murena kerese, 2026-09-07, msg_id 14358; az erve az oveé.)
  */
-export const ELO_ALLAT_VAZON = false
+export const ELO_ALLAT_VAZON = true
 
 export function hasznaljaVazat(
   termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
