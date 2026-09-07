@@ -294,3 +294,33 @@ describe("a vevonek szant szoveg magyarul all", () => {
     },
   )
 })
+
+/**
+ * A HORGONY-AZONOSITOK. A ragados sav gombja `#vaz-mennyiseg` cimre ugrik, es
+ * egy horgony CSENDBEN nem csinal semmit, ha nincs celpont: nem hibazik, csak
+ * nem tortenik semmi. Ezert allitas all ra, nem a figyelem.
+ */
+describe("a dobozok horgonyozhatok", () => {
+  it("minden doboz visel #vaz-<kulcs> azonosítót", () => {
+    render(<LapVaz tartalom={{}} />)
+
+    for (const szakasz of MUSZAKI_LAP_SZAKASZAI) {
+      const doboz = document.getElementById(`vaz-${szakasz.kulcs}`)
+      expect(doboz, `hiányzik: vaz-${szakasz.kulcs}`).not.toBeNull()
+    }
+  })
+
+  /**
+   * ES A CELPONT, AMIRE A SAV MUTAT, KULON ALLITAST KAP.
+   *
+   * A fenti allitas a KULCSOKBOL veszi a varhato halmazt, tehat ha valaki
+   * atnevezi a `mennyiseg` kulcsot, VELE EGYUTT valtozik es zold marad --
+   * onhivatkozo. A sav horgonya viszont egy KIIRT sztring a sablonban, ami nem
+   * valtozna vele. Ez a sor mondja ki a nevet.
+   */
+  it("a vásárló oszlop horgonya pontosan #vaz-mennyiseg", () => {
+    render(<LapVaz tartalom={{}} />)
+
+    expect(document.getElementById("vaz-mennyiseg")).not.toBeNull()
+  })
+})
