@@ -71,6 +71,44 @@
   --terv-betu-kiemelt-lanc: var(--terv-betu-kiemelt), Georgia, serif;
 }
 
+/*
+ * A MASODIK ERTEK-KESZLET: A SOTET LAP.
+ *
+ * EGY VAZ, KET ERTEK-KESZLET -- es a valto NEM izles es nem felhasznaloi
+ * beallitas, hanem a TERMEK FAJTAJA. Balazs szo szerint: "a korallokhoz a 2a
+ * valo ami ek sotetek a szinei".
+ *
+ *   elo allat (korall, hal, gerinctelen)   sotet lap  (a terv 2a valtozata)
+ *   muszaki termek                         vilagos    (az 1b valtozat)
+ *
+ * MIERT `data-vilag` ES NEM `prefers-color-scheme`: az utobbi a LATOGATO
+ * beallitasa, ez viszont a TERMEKROL szol. Egy muszaki termek lapja akkor sem
+ * lesz sotet, ha a latogato sotet temat hasznal, es forditva.
+ *
+ * MIERT NEM `dark` OSZTALY: a kirakat Tailwind beallitasaban a `darkMode:
+ * "class"` MAR HASZNALATBAN van, es a `@medusajs/ui-preset` sajat sotet
+ * valtozatait vezerli vele. Ha ide ulnenk ra, ket kulonbozo dolgot mozgatna
+ * ugyanaz a kapcsolo.
+ *
+ * AZ ERTEKEK a tervbol jonnek, ugyanabbol a merésbol, mint a vilagos keszlet,
+ * es a szerep-parositast acrobot adta at (2026-09-07 18:56). A ket akcent
+ * SZANDEKOSAN elter: sotet hatteren vilagosabb rez all. Ne egysegesitsd.
+ */
+[data-vilag="sotet"] {
+  --terv-hatter: oklch(0.235 0.02 248);        /* 16 elem a tervben */
+  --terv-hatter-lap: oklch(0.17 0.016 250);    /*  8 elem -- melyebb felulet */
+  --terv-hatter-halvany: oklch(0.205 0.018 249);
+
+  --terv-kiemel: oklch(0.55 0.13 45);          /*  9 elem -- a sotet valtozat rezje */
+  --terv-kiemel-sotet: oklch(0.62 0.13 45);
+
+  --terv-szoveg: oklch(0.95 0.006 250);        /* 53 elem sotet hatteren */
+  --terv-szoveg-halvany: oklch(0.72 0.012 250);
+
+  --terv-keret: oklch(0.28 0.014 250);         /*  9 elem */
+  --terv-keret-meleg: oklch(0.33 0.016 250);
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
