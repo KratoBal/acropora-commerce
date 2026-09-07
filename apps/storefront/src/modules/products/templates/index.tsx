@@ -8,6 +8,8 @@ import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-relat
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
+import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
+
 import ProductActionsWrapper from "./product-actions-wrapper"
 
 type ProductTemplateProps = {
@@ -58,7 +60,10 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           */}
         </div>
         <div className="block w-full relative">
-          <ImageGallery images={images} />
+          <ImageGallery
+            images={images}
+            uniquePiece={uniquePieceOf(product.metadata)}
+          />
         </div>
         <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-12">
           <Suspense

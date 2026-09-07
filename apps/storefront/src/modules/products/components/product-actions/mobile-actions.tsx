@@ -10,13 +10,22 @@ import { getProductPrice } from "@lib/util/get-product-price"
 import OptionSelect from "./option-select"
 import { HttpTypes } from "@medusajs/types"
 import { isSimpleProduct } from "@lib/util/product"
+import StockState from "../stock-state"
+import type { Availability } from "../stock-state/availability"
 
 type MobileActionsProps = {
   product: HttpTypes.StoreProduct
   variant?: HttpTypes.StoreProductVariant
   options: Record<string, string | undefined>
   updateOptions: (title: string, value: string) => void
-  inStock?: boolean
+  /**
+   * UGYANAZ AZ ÁLLAPOT, MINT AZ ASZTALI DOBOZBAN -- SZÁMÍTVA, NEM ÚJRASZÁMOLVA.
+   *
+   * Ha ez a sáv a saját `inStock` értékéből dolgozna, a két hely külön
+   * romolhatna el: a lapon "Eladva" állna, a lebegő sávon "Out of stock".
+   */
+  availability: Availability
+  similarHref: string
   handleAddToCart: () => void
   isAdding?: boolean
   show: boolean
@@ -28,7 +37,8 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   variant,
   options,
   updateOptions,
-  inStock,
+  availability,
+  similarHref,
   handleAddToCart,
   isAdding,
   show,
@@ -116,19 +126,23 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   <ChevronDown />
                 </div>
               </Button>}
-              <Button
-                onClick={handleAddToCart}
-                disabled={!inStock || !variant}
-                className="w-full"
-                isLoading={isAdding}
-                data-testid="mobile-cart-button"
-              >
-                {!variant
-                  ? "Select variant"
-                  : !inStock
-                  ? "Out of stock"
-                  : "Add to cart"}
-              </Button>
+              {!variant ? (
+                <Button
+                  disabled
+                  className="w-full"
+                  data-testid="mobile-cart-button"
+                >
+                  Válassz változatot
+                </Button>
+              ) : (
+                <StockState
+                  availability={availability}
+                  similarHref={similarHref}
+                  onAddToCart={handleAddToCart}
+                  isAdding={isAdding}
+                  testId="mobile-cart-button"
+                />
+              )}
             </div>
           </div>
         </Transition>
