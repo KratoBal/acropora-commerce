@@ -71,7 +71,7 @@ cd apps/backend && <pm> run lint       # medusa lint
 cd apps/storefront && <pm> run lint    # next lint
 ```
 
-### Test (backend only; the storefront has no test suite)
+### Test
 
 ```bash
 <pm> run test                                              # backend unit tests, via turbo
@@ -86,6 +86,27 @@ Single test — pass a path/pattern through to Jest, keeping `TEST_TYPE`:
 cd apps/backend && <pm> run test:unit -- src/modules/foo/__tests__/service.unit.spec.ts
 cd apps/backend && <pm> run test:unit -- -t "returns the cart"
 ```
+
+The storefront has its own suite, and both of its gates run in CI
+(`.github/workflows/verify.yml`):
+
+```bash
+cd apps/storefront && <pm> run test                        # vitest run
+cd apps/storefront && <pm> exec tsc --noEmit -p tsconfig.json   # the type gate
+```
+
+Two things about the storefront are worth knowing before trusting a green run.
+
+**The type gate is a separate command, not part of the build.** `next.config.js`
+sets `typescript.ignoreBuildErrors: true`, so `next build` compiles a project
+with type errors and says nothing. Vitest also compiles differently from `tsc`,
+so a green test run does not stand in for it either. Both gates exist in CI for
+that reason, and a change that passes one can still fail the other.
+
+**A high pass count is not proof that your file ran.** A spec that throws at
+module level (a `server-only` module reaching a client component, for instance)
+is reported as a failed *file*, while the test count stays high and can even
+grow. Read `Test Files` and the exit code before `Tests`.
 
 `<pm> run test` from the root maps to the backend's `test` script, which runs the
 unit suite. **Until 2026-09-02 it ran nothing at all**: the backend had no `test`
