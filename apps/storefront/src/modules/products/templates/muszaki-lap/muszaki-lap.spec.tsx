@@ -172,6 +172,24 @@ describe("a sablon átadja-e a fotó slotot", () => {
    * valaki egy negyedik helyre teszi -- vagy egyet elvesz --, ez pirosra valt,
    * es valaki megnezi, miert.
    */
+  /**
+   * A RAGADOS SAV GOMBJA UGYANAZT A TOKENT VISELI, MINT A KOSAR-GOMB.
+   *
+   * A sav gombja a SABLONBAN all (node-kent adjuk at), nem a komponensben,
+   * tehat a `stock-state` allitasa nem fedi. Merve a tervlapon, szakaszonkent:
+   * a sav gombja is a fo cselekves szinet viseli (sotet lapon 0.62, vilagoson
+   * 0.55) -- vagyis ugyanaz a `--terv-kiemel-sotet`.
+   *
+   * A `--terv-kiemel` rovidebb neve MINDKET vilagban tevedne, csak ellentetes
+   * iranyba, es ezt egy forras-olvaso allitas tudja megfogni: a sablon nem
+   * renderelheto jsdomban, a forrasa viszont olvashato.
+   */
+  it("a ragadós sáv gombja a fő cselekvés tokenjét viseli", () => {
+    expect(forras).toContain("ragados-sav-ugras")
+    expect(forras).toContain("var(--terv-kiemel-sotet)")
+    expect(forras).not.toContain('background: "var(--terv-kiemel)"')
+  })
+
   it("a forrás olvasható, és mindhárom helyen áll galéria", () => {
     expect(forras).toContain("MuszakiLap")
     expect(forras.match(/<ImageGallery/g)).toHaveLength(3)

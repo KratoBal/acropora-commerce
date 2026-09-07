@@ -70,6 +70,13 @@ describe("a készlet-állapot kirajzolása", () => {
    * rezre fest, ugyanugy zold maradna -- es akkor a rez nem jelolne semmit.
    * Ezert all mellette a ket TILTO eset, nev szerint.
    */
+  /**
+   * A TOKEN NEVE MEGLEPO, ES EZERT ALL ITT KULON MONDAT: a fo cselekves
+   * MINDKET vilagban a `--terv-kiemel-sotet` erteket viseli (vilagoson 0.55,
+   * soteten 0.62) -- merve a tervlap harom lapjan, szakaszonkent, nulla
+   * kivetellel. A `--terv-kiemel` MINDKET vilagban tevedne, csak ellentetes
+   * iranyba. Aki "kijavitja" a rovidebb nevre, a tervtol tavolodik.
+   */
   it("a kapható kosár-gomb rezet visel", () => {
     render(
       <StockState
@@ -79,7 +86,7 @@ describe("a készlet-állapot kirajzolása", () => {
       />,
     )
     expect(screen.getByTestId("add-product-button")).toHaveStyle({
-      background: "var(--terv-kiemel)",
+      background: "var(--terv-kiemel-sotet)",
     })
   })
 
