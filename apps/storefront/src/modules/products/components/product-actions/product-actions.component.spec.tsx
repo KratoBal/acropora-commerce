@@ -60,10 +60,24 @@ vi.mock("@lib/hooks/use-in-view", () => ({
 
 afterEach(cleanup)
 
+/**
+ * A VALODI ADAT ALAKJA, NEM A LEGEGYSZERUBB.
+ *
+ * A stage mind a 19 termeke EGY opciot hordoz (`Kivitel` = `Alap`): a vetites
+ * teszi oda, amikor a forrasban nincs valasztas. Egy ures opcio-lista tehat NEM
+ * a valosag legegyszerubb esete, hanem egy olyan alak, ami a boltban elo sem
+ * fordul.
+ *
+ * MERVE (nautilus lelete, 2026-09-07): nala az ures listan egy allitas akkor is
+ * ZOLD MARADT, amikor az orzot kivette -- vagyis semmit nem mert. Az en ket
+ * allitasom a valodi alakon is all (lemertem, mielott atirtam), de a fixtura
+ * ettol meg tevedes volt: egy kesobbi allitas, amit erre epitenek, ugyanabba a
+ * csapdaba futna.
+ */
 const VALTOZAT = {
   id: "variant_1",
   title: "Egy méret",
-  options: [],
+  options: [{ id: "optval_1", option_id: "opt_1", value: "Alap" }],
   manage_inventory: true,
   allow_backorder: false,
   inventory_quantity: 0,
@@ -86,7 +100,7 @@ function termek(metadata: Record<string, unknown> | null) {
     handle: "acropora-tenuis",
     metadata,
     collection: { id: "col_1", handle: "elo-korallok", title: "Élő korallok" },
-    options: [],
+    options: [{ id: "opt_1", title: "Kivitel" }],
     variants: [VALTOZAT],
   } as never
 }
