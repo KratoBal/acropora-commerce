@@ -33,10 +33,25 @@ export default async function Footer() {
                   className="grid grid-cols-1 gap-2"
                   data-testid="footer-categories"
                 >
-                  {productCategories?.slice(0, 6).map((c) => {
-                    if (c.parent_category) {
-                      return;
-                    }
+                  {/*
+                    ELOSZOR SZURUNK GYOKERRE, AZUTAN VAGUNK.
+
+                    A starterben forditva allt: `slice(0, 6)` a NYERS listan,
+                    es a szures utana. Merve 2026-09-07 a teszt bolton: a lista
+                    elso hat eleme kozott PONTOSAN EGY gyoker van ("Termékek"),
+                    a masik ot az O leszarmazottja -- azokat a szures eldobta.
+                    A lablec igy 219 kategoriabol 24 linket mutatott, es a bolt
+                    ot masik gyokere (Halak, Korallok, Gerinctelenek, Édesvízi
+                    akvarisztika, Shop 'n the Shop) SEHOL nem jelent meg.
+
+                    Vagyis a hiba nem a darabszamban volt, hanem a SORRENDBEN:
+                    ugyanaz a hat, mast jelent a szures elott es utana.
+                    Szures utan vagva: 6 gyoker, 53 link.
+                  */}
+                  {productCategories
+                    ?.filter((c) => !c.parent_category)
+                    .slice(0, 6)
+                    .map((c) => {
 
                     const children =
                       c.category_children?.map((child) => ({

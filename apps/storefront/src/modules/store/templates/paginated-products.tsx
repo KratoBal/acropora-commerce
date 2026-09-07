@@ -1,3 +1,4 @@
+import { listCategoryIdsWithDescendants } from "@lib/data/categories"
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { OptionValueIds } from "@lib/util/product-option-filters"
@@ -41,7 +42,20 @@ export default async function PaginatedProducts({
   }
 
   if (categoryId) {
-    queryParams["category_id"] = [categoryId]
+    /**
+     * A LESZARMAZOTTAK IS BELEKERULNEK, ES EZ NEM KENYELMI KERDES.
+     *
+     * A Medusa `category_id` szurese PONTOS EGYEZES -- merve 2026-09-07 a teszt
+     * bolton, ismert pozitiv kontrollal (a reszletek a
+     * `listCategoryIdsWithDescendants` fejleceben). A starter egyetlen
+     * azonositot adott at, tehat egy szulo-kategoria lapja CSAK a kozvetlenul
+     * ra akasztott termekeket mutatta.
+     *
+     * Amit ez a valodi katalogusban jelentene: a "Termékek" gyokerre kattintva
+     * a vevo 34 termeket latna 1653 helyett, es het szulo-kategoria lapja
+     * teljesen ures lenne, mikozben alattuk 168 termek all.
+     */
+    queryParams["category_id"] = await listCategoryIdsWithDescendants(categoryId)
   }
 
   if (productsIds) {
