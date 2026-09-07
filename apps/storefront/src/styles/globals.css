@@ -42,6 +42,26 @@
   --terv-keret-sotet: oklch(0.28 0.014 250);  /*  9 elem */
 
   /*
+   * A SARKOK: A TERV GYAKORLATILAG SZOGLETES, ES EZ MERES, NEM IZLES.
+   *
+   * A teljes tervben (mind a hat lap-valtozat) OSSZESEN 19 `border-radius`
+   * deklaracio all, es abbol 16 az `50%` -- vagyis korok, nem dobozok. Valodi
+   * doboz-lekerekites HAROM van: ketto 8px, egy 6px.
+   *
+   * A kontroll amellett, hogy ez nem a keresesem tulajdonsaga: ugyanabban a
+   * fajlban a `padding` 155-szor, a `font-size` 320-szor, a `background`
+   * 138-szor fordul elo. A kereso latja a stilusokat; a lekerekites tenyleg
+   * nincs ott.
+   *
+   * MIERT SZAMIT: a starter a `@medusajs/ui-preset` lekerekiteseit hasznalja
+   * majdnem mindenhol. Ez a LEGLATHATOBB kulonbseg a mai lap es a terv kozott,
+   * a szinek utan -- es olcsobb most tudni rola, mint a vaz vegen.
+   */
+  --terv-sugar-doboz: 8px;   /* 2 elofordulas a tervben */
+  --terv-sugar-kicsi: 6px;   /* 1 elofordulas */
+  --terv-sugar-kor: 50%;     /* 16 elofordulas -- avatar, jelzo-pont */
+
+  /*
    * A BETUK a next/font-bol jonnek (lasd a gyoker layoutot), tehat itt csak
    * tartalek-lancot adunk hozzajuk. Ha a betu valamiert nem toltodik le, a lap
    * nem marad betu nelkul.
