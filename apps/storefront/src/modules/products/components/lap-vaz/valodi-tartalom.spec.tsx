@@ -34,7 +34,41 @@ const TERMEK = {
   options: [{ id: "o1", title: "Kivitel", values: [{ id: "ov1", value: "Alap" }] }],
 } as never
 
+/**
+ * TÁBLÁZATOS LEÍRÁS: a katalógusban 189 terméknél a műszaki adatok a leírásba
+ * ágyazott táblázatokban állnak. A fül-komponens EZEKET emeli ki külön fülre.
+ */
+const TABLAZATOS = {
+  ...(TERMEK as object),
+  description:
+    "<p>Bevezető szöveg</p><table><tr><td>Teljesítmény</td><td>160 W</td></tr></table>",
+} as never
+
 describe("a váz valódi tartalma", () => {
+  /**
+   * A FÜL-SÁV MEGJELENIK, HA A LEÍRÁSBAN TÁBLÁZAT ÁLL.
+   *
+   * Ezt az állítást a kalibráció kényszerítette ki. Az előző, viselkedés-alapú
+   * állításom ("a leírás jelölőként jelenik meg a fülek dobozában") NEM tudta
+   * megkülönböztetni a fül-komponenst a saját leírás-blokkomtól: mindkettő
+   * jelölőként rendereli a szöveget. Vagyis nem védte azt, amiért felvettem.
+   *
+   * Ez viszont a LÁTHATÓ KÖVETKEZMÉNYRE szól: táblázatos leírásnál két fül
+   * keletkezik (Leírás és Műszaki adatok), és a saját blokkom ilyet nem ad.
+   * Ha valaki a #50 munkáját visszacseréli, ez pirosra vált.
+   */
+  it("táblázatos leírásnál fül-sáv jelenik meg", () => {
+    render(<LapVaz tartalom={vazTartalom(TABLAZATOS)} />)
+
+    const fulek = document.querySelector('[data-vaz-szakasz="fulek"]')
+    const gombok = fulek?.querySelectorAll('[role="tab"]') ?? []
+
+    expect(gombok.length).toBe(2)
+    const feliratok = Array.from(gombok).map((g) => g.textContent)
+    expect(feliratok).toContain("Leírás")
+    expect(feliratok).toContain("Műszaki adatok")
+  })
+
   it("a legmélyebb kategóriát választja, nem a gyökeret", () => {
     expect(legmelyebbKategoria(TERMEK)).toBe("TDS mérők")
   })
