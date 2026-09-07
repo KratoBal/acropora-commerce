@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  availabilityLabel,
   availabilityOf,
+  SIMILAR_ITEMS_LABEL,
   similarItemsHref,
+  SOLD_OUT_EXPLANATION,
+  UNIQUE_PIECE_PROMISE,
   uniquePieceOf,
 } from "./availability"
 
@@ -93,5 +97,33 @@ describe("a továbbvivő gomb címe", () => {
   it("besorolás nélkül a bolt főoldalára visz", () => {
     expect(similarItemsHref({})).toBe("/store")
     expect(similarItemsHref({ collection: null, categories: [] })).toBe("/store")
+  })
+})
+
+/**
+ * A VEVONEK SZANT SZOVEGEK, ES A KET KOTOJEL TILALMA.
+ *
+ * A latvanyterv mindket mondatban ket kotojelet hasznal elvalasztojelkent. A
+ * magyar szedesben ez nem helyes alak, es a LAPON LATSZIK -- vagyis nem
+ * stiluskerdes, hanem a vevo ele kerulo hiba.
+ *
+ * Az allitas a MINTARA megy, nem a teljes mondatra: igy egy kesobbi
+ * atfogalmazas nem doronti el, egy visszacsuszott kotojel viszont igen.
+ */
+describe("a vevőnek szánt szövegek", () => {
+  it("megjelenik az Eladva magyarázata és a WYSIWYG-ígéret", () => {
+    expect(SOLD_OUT_EXPLANATION.startsWith("Egyedi darab volt")).toBe(true)
+    expect(UNIQUE_PIECE_PROMISE.startsWith("A fotó pontosan ezt")).toBe(true)
+  })
+
+  it("nincs két kötőjel a vevőnek szánt szövegekben", () => {
+    for (const szoveg of [
+      SOLD_OUT_EXPLANATION,
+      UNIQUE_PIECE_PROMISE,
+      SIMILAR_ITEMS_LABEL,
+      ...Object.values(availabilityLabel),
+    ]) {
+      expect(szoveg).not.toContain("--")
+    }
   })
 })

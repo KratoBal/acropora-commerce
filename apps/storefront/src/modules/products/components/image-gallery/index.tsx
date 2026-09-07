@@ -2,7 +2,9 @@ import { HttpTypes } from "@medusajs/types"
 import { Container } from "@modules/common/components/ui"
 import Image from "next/image"
 
-import UniquePieceBadge from "@modules/products/components/unique-piece-badge"
+import UniquePieceBadge, {
+  UniquePiecePromise,
+} from "@modules/products/components/unique-piece-badge"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
@@ -43,6 +45,12 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
             </Container>
           )
         })}
+        {/*
+          AZ ÍGÉRET-MONDAT A KÉP ALATT ÁLL, EGYSZER (picasso terve, 2026-09-07).
+          A jelvény a kép sarkában, ez a galéria alatt: a kettő külön helyen, mert
+          a jelvény jelöl, ez pedig magyaráz.
+        */}
+        {uniquePiece && <UniquePiecePromise className="mt-1" />}
       </div>
     </div>
   )

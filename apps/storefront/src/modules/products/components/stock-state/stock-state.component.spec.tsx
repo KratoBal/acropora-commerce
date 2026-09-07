@@ -86,6 +86,24 @@ describe("a készlet-állapot kirajzolása", () => {
   })
 
   /**
+   * AZ ELADVA MAGYARÁZATA A DOBOZBAN VAN, NEM A LAPON.
+   *
+   * A puszta "Eladva" nem mondja meg, hogy ez VÉGLEGES: enélkül a vevő ugyanúgy
+   * visszatérhet holnap, mint egy elfogyott terméknél, és hiába.
+   */
+  it("ELADVA állapotban ott áll a magyarázat is", () => {
+    render(
+      <StockState
+        availability="ELADVA"
+        similarHref="/store"
+        onAddToCart={() => undefined}
+      />,
+    )
+
+    expect(screen.getByText(/Egyedi darab volt, nem pótolható/)).toBeTruthy()
+  })
+
+  /**
    * A KÉT KIRAJZOLÁSI HELY NEM ÜTKÖZIK.
    *
    * A lap a gomb-oszlopban ÉS a lebegő mobil sávon is kirajzolja ezt a dobozt.

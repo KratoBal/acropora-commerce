@@ -4,6 +4,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import {
   availabilityLabel,
   SIMILAR_ITEMS_LABEL,
+  SOLD_OUT_EXPLANATION,
   type Availability,
 } from "./availability"
 
@@ -44,8 +45,16 @@ export default function StockState({
   if (availability === "ELADVA") {
     return (
       <div className="flex flex-col gap-2" data-testid={testId + "-eladva"}>
-        <span className="text-sm font-semibold text-neutral-400">
+        {/*
+          SEMLEGES SZÜRKE, SZÁNDÉKOSAN NEM PIROS (picasso terve, 2026-09-07):
+          az "Eladva" ténykozlés, nem hibaüzenet. A délelőtti vörösesbe hajló
+          változat helyére ez került.
+        */}
+        <span className="text-sm font-semibold text-neutral-700">
           {availabilityLabel.ELADVA}
+        </span>
+        <span className="text-xs leading-relaxed text-neutral-500">
+          {SOLD_OUT_EXPLANATION}
         </span>
         <LocalizedClientLink href={similarHref}>
           <Button variant="secondary" className="h-10 w-full">
