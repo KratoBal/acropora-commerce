@@ -1,24 +1,5 @@
 # A KIRAKAT KEPE.
 #
-# ============================================================================
-# EZ A KEP MA IDEIGLENES, ES ITT ALL A LEJARATA
-# ============================================================================
-#
-# MA: a kep a BEOLVASZTATLAN agrol epul (feat/storefront-from-dtc-starter),
-# azert, hogy Balazs lassa a kirakatot egy cimen.
-#
-# A LEJARAT: amikor az ag beolvad, a kep a FO AGROL epul, es EZ A BLOKK
-# TORLENDO. Semmi mas nem valtozik benne.
-#
-# MIERT ALL ITT: egy ideiglenes megoldas, aminek nincs kimondva a vege,
-# allando lesz. (acrobot kikotese, 2026-09-07)
-#
-# AMI EDDIG ITT ALLT ES MAR NEM IGAZ: a kep korabban a kirakat konyvtaraban,
-# npm-mel, LOCKFILE NELKUL telepitett, tehat a verziok nem voltak pinnelve.
-# A repo pnpm-re allitasa ezt megszuntette: a telepites a GYOKERBOL megy, a
-# repo sajat lockfile-jabol.
-# ============================================================================
-#
 # === A TELEPITES A GYOKERBOL MEGY, ES EZ MERT DONTES ===
 #
 # A ket alkalmazas KET KULONBOZO React fovezriot igenyel (a hatter admin-ja
