@@ -66,3 +66,55 @@ export const UNIQUE_IN_CART_PROMISE =
 
 /** Az elkelt példány sorában a továbbvivő hivatkozás felirata. */
 export const SIMILAR_PIECES_LABEL = "Hasonló példányok";
+
+/**
+ * MELYIK TERMEK-OBJEKTUMOT OLVASSA EGY KOSAR-SOR.
+ *
+ * === A MERES, EGY VALODI STAGING KOSARON (2026-09-07) ===
+ *
+ * A kirakat sajat mezolistajaval lekerdezve egy sor KET termek-objektumot
+ * hordoz, es a ketto NEM ugyanazt tudja:
+ *
+ *   item.variant.product     1 kulcs:   id
+ *   item.product            28 kulcs:   metadata, collection, collection_id,
+ *                                       categories, handle, title, ...
+ *
+ * A `*items.product` mezo hozza a teljeset; a valtozat alatti termek CSAK a
+ * kapcsolatot jeloli.
+ *
+ * === AMI EMIATT NEM MUKODOTT ===
+ *
+ * A sor eddig a `item.variant?.product` objektumot olvasta, tehat:
+ *
+ *   a `metadata` mindig `undefined` volt  ->  az EGYEDI es az ELKELT allapot
+ *                                             SOHA nem allt elo, minden sor NORMAL
+ *   a `collection` es a `categories` sem   ->  a "hasonlo peldanyok" hivatkozas
+ *                                             mindig a teljes boltra mutatott
+ *
+ * Egyik sem hibazott es egyik sem hasalt el: a jelzo hianya `undefined`, ami
+ * minden logikai vizsgalatban csendben hamis.
+ *
+ * === MIERT FUGGVENY, ES NEM EGY ATIRT SOR A KOMPONENSBEN ===
+ *
+ * Mert igy MERHETO. A kosar-sor komponense kliens-komponens, es a valasztas
+ * egy JSX-sorban lathatatlan marad; itt allitas all ra, es egy visszalepes
+ * NEV SZERINT pirosodik.
+ */
+export interface KosarSorTermekkel {
+  product?: unknown;
+  variant?: { product?: unknown } | null;
+}
+
+export function cartLineProduct(
+  item: KosarSorTermekkel,
+): Record<string, unknown> {
+  const teljes = item.product;
+  if (teljes && typeof teljes === "object") {
+    return teljes as Record<string, unknown>;
+  }
+  const valtozaton = item.variant?.product;
+  if (valtozaton && typeof valtozaton === "object") {
+    return valtozaton as Record<string, unknown>;
+  }
+  return {};
+}

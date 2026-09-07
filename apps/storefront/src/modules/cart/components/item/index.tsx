@@ -16,7 +16,7 @@ import { similarItemsHref } from "@modules/products/components/stock-state/avail
 import { useState } from "react"
 
 import CartLineState, { NotIncrementable } from "../line-state"
-import { cartLineStateOf } from "../line-state/line-state"
+import { cartLineProduct, cartLineStateOf } from "../line-state/line-state"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -61,8 +61,15 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
    * "Elkelt"-et rajzolni, ha egy későbbi kör tényleg megméri. A hazug alak az
    * lenne, ha kitalálnánk egy értéket.
    */
+  /**
+   * A TERMEK-OBJEKTUM A SORHOZ. Merve: a valtozat alatti termek CSAK az
+   * azonositot hordozza, a mezoket az `item.product` hozza. A valasztas a
+   * `cartLineProduct` fuggvenyben all, allitassal.
+   */
+  const sorTermeke = cartLineProduct(item)
+
   const lineState = cartLineStateOf({
-    productMetadata: item.variant?.product?.metadata,
+    productMetadata: sorTermeke.metadata,
     stillAvailable: true,
   })
 
@@ -94,7 +101,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         <LineItemOptions variant={item.variant} data-testid="product-variant" />
         <CartLineState
           state={lineState}
-          similarHref={similarItemsHref(item.variant?.product ?? {})}
+          similarHref={similarItemsHref(sorTermeke)}
         />
       </Table.Cell>
 
