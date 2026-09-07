@@ -1,6 +1,6 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
-import { JetBrains_Mono, Space_Grotesk } from "next/font/google"
+import { JetBrains_Mono, Newsreader, Space_Grotesk } from "next/font/google"
 import "styles/globals.css"
 
 /**
@@ -28,6 +28,23 @@ const jetBrainsMono = JetBrains_Mono({
   variable: "--terv-betu-mono",
 })
 
+/**
+ * A HARMADIK BETU, ES A LEGKISEBB TETEL: a tervben NEGY elemen all, dolt
+ * alcimeken. Ez a legkonnyebben kihagyhato -- es epp ezert kell kimondani,
+ * hogy miert van itt: a tipografia nelkule nem "majdnem kesz", hanem hianyos,
+ * es a kovetkezo olvaso azt hinne, hogy megvan.
+ *
+ * A meres ugyanabbol a forrasbol jon, mint a masik ketto (a megrenderelt terv
+ * szamitott stilusai), es a negyes szam a sulyat is megadja: ez a HANGSULY
+ * betuje, nem a torzsszovege.
+ */
+const newsreader = Newsreader({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  style: ["italic", "normal"],
+  variable: "--terv-betu-kiemelt",
+})
+
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
@@ -47,7 +64,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html
       lang="hu"
       data-mode="light"
-      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable}`}
+      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable}`}
     >
       <body>
         <main className="relative">{props.children}</main>
