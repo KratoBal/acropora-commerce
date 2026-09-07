@@ -13,6 +13,8 @@ import { uniquePieceOf } from "@modules/products/components/stock-state/availabi
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
+import ProductPrice from "@modules/products/components/product-price"
+import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -98,6 +100,43 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 uniquePiece={uniquePieceOf(product.metadata)}
               />
             ) : undefined
+          }
+          /*
+            A RAGADOS SAV TARTALMA -- ES AMI BENNE NEM SAJAT.
+
+            A GOMB UGRIK, nem onallo kosarba-tetel (acrobot dontese, 14504). Az
+            indok a legerosebb alakjaban: ket kosarba-tetel KULON allapottal azt
+            jelentene, hogy a vevo fent beallit harom darabot, lehuz, lent
+            megnyom egy gombot, es EGY darab kerul a kosarba. Nem hibazna, csak
+            mast csinalna -- es csak a kosarnal derulne ki.
+
+            AZ AR a `ProductPrice` VALTOZAT NELKULI alakja, ami a legolcsobbat
+            adja "-tol" alakban, es NEM koveti a valasztast. Ez szandekos: a sav
+            akkor latszik, amikor a vevo mar elgorgetett a valaszto mellol, es
+            egy ar, ami kovetne a valasztast, olyat allitana, amit a vevo eppen
+            nem lat.
+
+            CIMKE NINCS. A tervben "Utolso darab" all ott -- az keszlet-allapot,
+            es a muszaki termeken ma nincs ra forrasunk. Kitalalni nem szabad,
+            tehat a helye osszemegy.
+          */
+          ragadosResz={
+            <RagadosSav
+              ar={<ProductPrice product={product} />}
+              cselekves={
+                <a
+                  href="#vaz-mennyiseg"
+                  data-testid="ragados-sav-ugras"
+                  className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
+                  style={{
+                    background: "var(--terv-kiemel)",
+                    color: "var(--terv-kiemel-szoveg)",
+                  }}
+                >
+                  Kosárba
+                </a>
+              }
+            />
           }
         />
       </>

@@ -89,20 +89,75 @@ type VazSzakasz = {
  * Orzo all ra: `lap-vaz.component.spec.tsx`, "a vevonek szant szoveg magyarul".
  */
 export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
-  { kulcs: "cimsor", cim: "", varakozo: "A termék neve és a fejléc-műveletek", oszlop: "teljes" },
+  {
+    kulcs: "cimsor",
+    cim: "",
+    varakozo: "A termék neve és a fejléc-műveletek",
+    oszlop: "teljes",
+  },
   { kulcs: "foto", cim: "", varakozo: "Termékfotó", oszlop: "bal" },
-  { kulcs: "meretezes-seged", cim: "Méretezés-segéd", varakozo: "Ide jön a méretezés-segéd", oszlop: "bal" },
-  { kulcs: "fulek", cim: "", varakozo: "Műszaki adatok, Leírás, Spektrum, Értékelések, Letöltések", oszlop: "bal" },
-  { kulcs: "muszaki-adatok", cim: "Műszaki adatok", varakozo: "Ide jönnek a termék műszaki adatai", oszlop: "bal" },
+  {
+    kulcs: "meretezes-seged",
+    cim: "Méretezés-segéd",
+    varakozo: "Ide jön a méretezés-segéd",
+    oszlop: "bal",
+  },
+  {
+    kulcs: "fulek",
+    cim: "",
+    varakozo: "Műszaki adatok, Leírás, Spektrum, Értékelések, Letöltések",
+    oszlop: "bal",
+  },
+  {
+    kulcs: "muszaki-adatok",
+    cim: "Műszaki adatok",
+    varakozo: "Ide jönnek a termék műszaki adatai",
+    oszlop: "bal",
+  },
   { kulcs: "ar", cim: "", varakozo: "Ide jön az ár", oszlop: "jobb" },
-  { kulcs: "elerhetoseg", cim: "", varakozo: "Készlet, szállítás, bolti átvétel", oszlop: "jobb" },
+  {
+    kulcs: "elerhetoseg",
+    cim: "",
+    varakozo: "Készlet, szállítás, bolti átvétel",
+    oszlop: "jobb",
+  },
   { kulcs: "valaszto", cim: "", varakozo: "Változat-választó", oszlop: "jobb" },
-  { kulcs: "mennyiseg", cim: "", varakozo: "Mennyiség és kosárba tétel", oszlop: "jobb" },
-  { kulcs: "csomagajanlat", cim: "Csomagajánlat", varakozo: "Ide jön a csomagajánlat", oszlop: "jobb" },
-  { kulcs: "kerdezd", cim: "Kérdezd minket", varakozo: "Kapcsolatfelvétel", oszlop: "jobb" },
-  { kulcs: "kiegeszitok", cim: "Ami még kellhet hozzá", varakozo: "Ide jönnek a tartozékok", oszlop: "teljes" },
-  { kulcs: "hasonlo", cim: "Hasonló lámpák", varakozo: "Ide jönnek a hasonló termékek", oszlop: "teljes" },
-  { kulcs: "ragados-sav", cim: "", varakozo: "A lap alján futó sáv", oszlop: "teljes" },
+  {
+    kulcs: "mennyiseg",
+    cim: "",
+    varakozo: "Mennyiség és kosárba tétel",
+    oszlop: "jobb",
+  },
+  {
+    kulcs: "csomagajanlat",
+    cim: "Csomagajánlat",
+    varakozo: "Ide jön a csomagajánlat",
+    oszlop: "jobb",
+  },
+  {
+    kulcs: "kerdezd",
+    cim: "Kérdezd minket",
+    varakozo: "Kapcsolatfelvétel",
+    oszlop: "jobb",
+  },
+  {
+    kulcs: "kiegeszitok",
+    cim: "Ami még kellhet hozzá",
+    varakozo: "Ide jönnek a tartozékok",
+    oszlop: "teljes",
+  },
+  {
+    kulcs: "hasonlo",
+    cim: "Hasonló lámpák",
+    varakozo: "Ide jönnek a hasonló termékek",
+    oszlop: "teljes",
+  },
+  {
+    kulcs: "ragados-sav",
+    cim: "",
+    varakozo: "A lap alján futó sáv",
+    oszlop: "teljes",
+  },
 ]
 
 type VazDobozProps = {
@@ -131,6 +186,15 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
 
   return (
     <section
+      /**
+       * HORGONY-AZONOSITO MINDEN DOBOZON, NEM CSAK AZON, AMIRE MA MUTATUNK.
+       *
+       * A ragados sav gombja a vasarlo oszlopra ugrik (acrobot dontese,
+       * 2026-09-07). Egyetlen dobozra tenni azonositot kivetel lenne, es a
+       * kovetkezo horgonynal valaki ujra eldontene, hova. Igy a szabaly egy
+       * sor: minden doboz elerheto `#vaz-<kulcs>` alakban.
+       */
+      id={`vaz-${szakasz.kulcs}`}
       data-vaz-szakasz={szakasz.kulcs}
       data-vaz-ures={uresE ? "igen" : "nem"}
       className="p-4"
