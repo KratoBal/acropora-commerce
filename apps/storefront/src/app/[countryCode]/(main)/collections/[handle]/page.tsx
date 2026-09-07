@@ -23,37 +23,58 @@ type Props = {
 
 export const PRODUCT_LIMIT = 12
 
+/**
+ * A build ideje alatt a Medusa API-t hivja. Ha az epp nem valaszol, a build
+ * NEM allhat meg: a lapok akkor is mukodnek, csak nem eloregyartva -- a Next
+ * keresre rendereli oket.
+ *
+ * A termeklap utja ezt MAR igy csinalja (`products/[handle]/page.tsx`), ez a
+ * ket ut viszont kimaradt belole, es emiatt egy stage-kimaradas MINDEN pull
+ * requestet pirosra vitt. Merve 2026-09-07 15:43-kor: `Error: Service
+ * Unavailable, status: 503`, `Failed to collect page data for
+ * /[countryCode]/collections/[handle]` -- a forditas addigra sikeresen lefutott,
+ * az API viszont percekre elment.
+ */
 export async function generateStaticParams() {
-  const { collections } = await listCollections({
-    fields: "*products",
-  })
+  try {
+    const { collections } = await listCollections({
+      fields: "*products",
+    })
 
-  if (!collections) {
+    if (!collections) {
+      return []
+    }
+
+    const countryCodes = await listRegions().then(
+      (regions: StoreRegion[]) =>
+        regions
+          ?.map((r) => r.countries?.map((c) => c.iso_2))
+          .flat()
+          .filter(Boolean) as string[]
+    )
+
+    const collectionHandles = collections.map(
+      (collection: StoreCollection) => collection.handle
+    )
+
+    const staticParams = countryCodes
+      ?.map((countryCode: string) =>
+        collectionHandles.map((handle: string | undefined) => ({
+          countryCode,
+          handle,
+        }))
+      )
+      .flat()
+
+    return staticParams
+  } catch (error) {
+    console.error(
+      `Failed to generate static paths for collection pages: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }.`
+    )
     return []
   }
-
-  const countryCodes = await listRegions().then(
-    (regions: StoreRegion[]) =>
-      regions
-        ?.map((r) => r.countries?.map((c) => c.iso_2))
-        .flat()
-        .filter(Boolean) as string[]
-  )
-
-  const collectionHandles = collections.map(
-    (collection: StoreCollection) => collection.handle
-  )
-
-  const staticParams = countryCodes
-    ?.map((countryCode: string) =>
-      collectionHandles.map((handle: string | undefined) => ({
-        countryCode,
-        handle,
-      }))
-    )
-    .flat()
-
-  return staticParams
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
