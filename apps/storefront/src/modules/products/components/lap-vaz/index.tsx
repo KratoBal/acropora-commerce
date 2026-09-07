@@ -137,7 +137,7 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
   {
     kulcs: "fulek",
     cim: "",
-    varakozo: "Műszaki adatok, Leírás, Spektrum, Értékelések, Letöltések",
+    varakozo: "Leírás és műszaki adatok",
     oszlop: "bal",
   },
   {
@@ -180,7 +180,7 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
   },
   {
     kulcs: "hasonlo",
-    cim: "Hasonló lámpák",
+    cim: "Hasonló termékek",
     varakozo: "Ide jönnek a hasonló termékek",
     oszlop: "teljes",
   },
