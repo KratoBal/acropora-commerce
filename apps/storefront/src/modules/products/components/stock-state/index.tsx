@@ -109,10 +109,13 @@ export default function StockState({
    * a tervbeli 0.55 helyett, a soteten pedig 0.55-ot a 0.62 helyett -- vagyis
    * MINDKET vilagban tevedett, csak ellentetes iranyba.
    *
-   * ES AMI MEG NYITOTT: a terv VILAGOS lapjain a rezen allo szoveg FEHER, a
-   * `--terv-kiemel-szoveg` viszont mindket vilagban `oklch(0.15 0.014 45)`.
-   * Erre ma nincs tokenunk, es a kilences ertek-keszlet Balazs jovahagyasan
-   * all, ezert NEM irom at. A kerdes acrobotnal van (msg_id 14688).
+   * ES A SZOVEG-KERDES AZOTA LEZARULT (acrobot dontese, msg_id 14690): a
+   * terv VILAGOS lapjain a rezen allo felirat FEHER, tehat a
+   * `--terv-kiemel-szoveg` vilagos erteke `oklch(1 0 0)` lett, a soteten
+   * pedig valtozatlanul `oklch(0.15 0.014 45)`. Ez nem a kilences keszlet
+   * felulirasa, hanem annak a meresnek a javitasa, ami a keszletet elohozta:
+   * a "mind az ot rez-hatteru elem ugyanezt hasznalja" levezetes a SOTET (2a)
+   * lapon keszult, es onnan kerult at a vilagos vilagra is.
    *
    * ES AMI UGYANEBBOL A MERESBOL KIDERULT, ES EPP ILYEN FONTOS: a "Köteg
    * kosárba" gomb NEM rez (`oklch(0.95 0.006 250)`), es az ELADVA agunk

@@ -52,15 +52,36 @@
      erteket, ami a kosar tervlapjan egyszer sem szerepel. (murena merese,
      2026-09-08, visszamerve.) */
   --terv-kiemel-sotet: oklch(0.55 0.13 45);
-  /* A REZEN ALLO SZOVEG SOTET, NEM FEHER -- es ez nem izles, hanem meres:
-     a tervben a kilenc rez hatterbol OT visel sajat szoveget, es MIND AZ OT
-     ugyanezt az erteket hasznalja. (A masik negy szoveg nelkuli negyzet:
-     a fejlec jelzese, ket jelmagyarazat-kocka es a MOBIL FEJLEC logo-negyzete.
-     HELYESBITES: elsore "a ragados sav pontja" allt itt -- azt a cimket a mert
-     elem melle TALALGATTAM. Visszamerve a 22x22 negyzet a mobil fejlecben all,
-     az ACROPORA felirat mellett. A sav sajat gombja kulon tetel, es AZ visel
-     szoveget. */
-  --terv-kiemel-szoveg: oklch(0.15 0.014 45);
+  /* A REZEN ALLO SZOVEG A VILAGOS LAPON FEHER -- ES EZ EGY MERESI HIBA JAVITASA.
+     ============================================================================
+     ITT KORABBAN `oklch(0.15 0.014 45)` ALLT, "a kilenc rez hatterbol ot visel
+     sajat szoveget, es MIND AZ OT ugyanezt hasznalja" indoklassal. Az a
+     levezetes IGAZ, csak nem erre a vilagra: A TERV SOTET (2a) LAPJAN keszult,
+     es onnan kerult at a vilagos vilagra is.
+
+     AMIERT PONT KILENC: a tervfajl HAROM lapot tartalmaz egymas alatt (2a sotet
+     korall, 1a es 1b vilagos lampa), es a SOTET szakaszban all pontosan kilenc
+     rez hatteru elem. A "kilenc" tehat sosem az egesz tervrol szolt, hanem
+     EGYETLEN lapjarol -- csak ez akkor nem latszott, mert nem volt eszkozunk a
+     lapok szetvalasztasara.
+
+     UJRAMERVE, SZAKASZONKENT (2026-09-08, a lapokat a terv sajat `section`
+     elemei es sajat margo-cimkei valasztjak el; mindket szakaszban kilenc rez
+     elem, szakaszon belul NULLA kivetel):
+
+       2a  (sotet, korall)    hatter 0.62   a FELIRATOT visel elemek szovege 0.15
+       1a + 1b (vilagos)      hatter 0.55   a FELIRATOT visel elemek szovege FEHER
+
+     Vagyis a rezen allo szoveg MEGFORDUL a ket vilag kozott, es a korabbi
+     "sehol nem all feher rezen" mondat a vilagos lapokra hamis volt.
+
+     A `--terv-kiemel` valtozora is ugyanez all: a fo cselekves mindket vilagban
+     a `--terv-kiemel-sotet` erteket keri. Az indoklas a `stock-state/index.tsx`
+     fejleceben all teljes hosszan.
+
+     (acrobot dontese, msg_id 14690: ez nem a kilences keszlet felulirasa, hanem
+     annak a meresnek a javitasa, amit elé tettunk.) */
+  --terv-kiemel-szoveg: oklch(1 0 0);
   --terv-jelzo: oklch(0.52 0.09 210); /*  6 elem -- kek-zold, jelzesekre */
 
   /* szoveg */
@@ -144,6 +165,9 @@
   --terv-kiemel-sotet: oklch(0.62 0.13 45);
   /* A rezen allo szoveg a sotet lapon is ugyanaz: a kontraszt a REZHEZ szol,
      nem a lap hattereehez, tehat nem fordul meg a ket vilag kozott. */
+  /* A SOTET LAPON SOTET a rezen allo szoveg -- ez a 2a lapon MERT ertek, es
+     szandekosan NEM ugyanaz, mint a vilagos vilagban. A kontraszt a REZHEZ
+     szol, es a ket vilag rezje kulonbozik (soteten 0.62, vilagoson 0.55). */
   --terv-kiemel-szoveg: oklch(0.15 0.014 45);
 
   --terv-szoveg: oklch(0.95 0.006 250); /* 53 elem sotet hatteren */
