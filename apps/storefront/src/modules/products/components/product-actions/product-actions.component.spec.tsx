@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import ProductActions from "./index"
@@ -269,5 +269,64 @@ describe("a választó doboz megjelenése", () => {
       .map((gomb) => gomb.textContent)
 
     expect(gombok).toEqual(["Fekete", "Fehér"])
+  })
+})
+
+/**
+ * A BEKÖTÉS MÉRÉSE: a tiszta függvénynek megvannak a saját állításai
+ * (`minimum-order-quantity.spec.ts`), de azok csak azt mondják meg, hogy a
+ * függvény HELYESEN OLVAS. Azt nem, hogy a léptető használja is.
+ *
+ * Ez ugyanaz a rés, amit murena a készlet-állapotnál megnevezett: mindkét oldal
+ * helyes önmagában, és a összekötés hiánya csendes.
+ */
+function minimumosTermek(minimum: string) {
+  return {
+    id: "prod_min",
+    title: "Aquaforest Energy 50ml",
+    handle: "aquaforest-energy-50ml",
+    metadata: { unas_minimum_order_quantity: minimum },
+    collection: null,
+    options: [],
+    variants: [VALTOZAT],
+  } as never
+}
+
+describe("a minimális rendelési mennyiség bekötése", () => {
+  it("a léptető a termék minimumáról indul, nem 1-ről", () => {
+    render(<ProductActions product={minimumosTermek("10")} region={REGIO} />)
+
+    const mezo = screen.getByLabelText("Mennyiség") as HTMLInputElement
+    expect(mezo.value).toBe("10")
+  })
+
+  /**
+   * A LEFELÉ LÉPÉS A LÉNYEG: enélkül a vevő egyesével levihette a mennyiséget
+   * 1-re, és a lap engedte volna megrendelni.
+   */
+  it("a mínusz gomb nem visz a minimum alá", () => {
+    render(<ProductActions product={minimumosTermek("10")} region={REGIO} />)
+
+    fireEvent.click(screen.getByLabelText("Mennyiség csökkentése"))
+
+    const mezo = screen.getByLabelText("Mennyiség") as HTMLInputElement
+    expect(mezo.value).toBe("10")
+  })
+
+  it("kimondja a lapon, hogy mennyi a minimum", () => {
+    render(<ProductActions product={minimumosTermek("100")} region={REGIO} />)
+
+    expect(screen.getByText(/legalább 100 darab rendelhető/)).toBeTruthy()
+  })
+
+  /**
+   * ÉS A NÉMASÁG IS ÁLLÍTÁS: 1877 terméknél a minimum 1, és ott ez a mondat
+   * zajt csinálna. Enélkül az állítás-pár nem tudná megkülönböztetni a "mindig
+   * írjuk ki" viselkedést a helyestől.
+   */
+  it("egyes minimumnál nem mond semmit", () => {
+    render(<ProductActions product={minimumosTermek("1")} region={REGIO} />)
+
+    expect(screen.queryByText(/darab rendelhető/)).toBeNull()
   })
 })

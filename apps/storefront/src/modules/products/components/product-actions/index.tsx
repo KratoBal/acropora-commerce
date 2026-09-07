@@ -16,6 +16,7 @@ import {
   similarItemsHref,
   uniquePieceOf,
 } from "../stock-state/availability"
+import { minimumOrderQuantity } from "./minimum-order-quantity"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
 
@@ -44,7 +45,13 @@ export default function ProductActions({
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
-  const [quantity, setQuantity] = useState(1)
+  /**
+   * A KEZDŐÉRTÉK A TERMÉK MINIMUMA, nem beégetett 1. Tizenhat terméknél a
+   * minimum nem 1 (nyolcnál 10, hétnél 100, egynél 5), és ott az 1 olyan
+   * mennyiség, amit nem lehet megrendelni.
+   */
+  const minimumQuantity = minimumOrderQuantity(product)
+  const [quantity, setQuantity] = useState(minimumQuantity)
   const countryCode = useParams().countryCode as string
 
   // If there is only 1 variant, preselect the options
@@ -157,9 +164,21 @@ export default function ProductActions({
     selectedVariant?.manage_inventory && !selectedVariant.allow_backorder
       ? Math.max(selectedVariant.inventory_quantity || 0, 1)
       : null
+  /**
+   * A KÉT HATÁR ÜTKÖZHET, és a sorrend eldönti, melyik nyer. A felső határ a
+   * készletből jön, az alsó a termék minimumából -- egy 100-as minimumú termék
+   * két darabos készlettel mindkettőt egyszerre nem tudja teljesíteni.
+   *
+   * Ilyenkor az ALSÓ nyer, mert az a rendelhetőség feltétele: a felső határ
+   * annyit mond, hogy ennyi van raktáron, az alsó azt, hogy ennél kevesebbet
+   * nem lehet megrendelni. A kettő közül a másodikat megsérteni hibás rendelést
+   * ad, az elsőt utánrendelést.
+   */
   const normaliseQuantity = (value: number) => {
-    if (!Number.isInteger(value) || value < 1) return 1
-    return maximumQuantity ? Math.min(value, maximumQuantity) : value
+    if (!Number.isInteger(value) || value < minimumQuantity) return minimumQuantity
+    return maximumQuantity
+      ? Math.max(Math.min(value, maximumQuantity), minimumQuantity)
+      : value
   }
 
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -258,6 +277,17 @@ export default function ProductActions({
               disabled={!!disabled || isAdding}
             />
           </div>
+        )}
+        {/*
+          A LÉPTETŐ MÁR NEM ENGED A MINIMUM ALÁ, DE EGY NÉMA KORLÁT MEGZAVAR: a
+          vevő azt látná, hogy a mínusz gomb nem csinál semmit, és nem tudná,
+          miért. A mondat csak akkor jelenik meg, ha van mit mondania -- 1877
+          terméknél a minimum 1, és ott a hallgatás a helyes.
+        */}
+        {!uniquePiece && minimumQuantity > 1 && (
+          <p className="text-small-regular text-ui-fg-subtle">
+            Ebből a termékből legalább {minimumQuantity} darab rendelhető.
+          </p>
         )}
         <MobileActions
           product={product}
