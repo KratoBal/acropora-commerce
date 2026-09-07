@@ -37,10 +37,27 @@ export default function PlaceholderSection({
       >
         {title}
       </span>
+      {/*
+        A MELEG KERET, NEM A HIDEG -- ES EZ MERES, NEM IZLES.
+
+        A ket token egyetlen szamban ter el, es az a SZINEZET:
+
+          --terv-keret        oklch(0.88 0.005 250)   hideg
+          --terv-keret-meleg  oklch(0.88 0.008 70)    meleg
+
+        A kosar-tervben kiolvasva a keret-szinek MIND meleg szinezetuek
+        (0.88/0.008/70 tizennegy elemen, plusz 0.9, 0.85, 0.89, 0.78, 0.82
+        ugyanezen a szinezeten). A hideg, 250-es szinezetu keret a kosar
+        tervlapjan EGYETLEN elemen sem fordul elo.
+
+        Nautilus jelezte a ket token osszekeveresenek a veszelyet (14462), es
+        igaza volt: itt tenyleg a hideg allt. Nem hibazik es nem hasal el --
+        pontosan az a fajta elteres, ami senkinek nem tunik fel.
+      */}
       <div
         className="min-h-[88px] border"
         style={{
-          borderColor: "var(--terv-keret)",
+          borderColor: "var(--terv-keret-meleg)",
           background: "var(--terv-hatter-lap)",
         }}
         aria-hidden="true"

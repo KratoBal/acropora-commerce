@@ -66,7 +66,7 @@ const EmptyCartMessage = () => {
             href={ajanlo.href}
             className="flex flex-col gap-2 p-4 border h-full"
             style={{
-              borderColor: "var(--terv-keret)",
+              borderColor: "var(--terv-keret-meleg)",
               background: "var(--terv-hatter-lap)",
             }}
             data-testid="empty-cart-ajanlo"
@@ -96,7 +96,7 @@ const EmptyCartMessage = () => {
       <div
         className="p-4 border w-full"
         style={{
-          borderColor: "var(--terv-keret)",
+          borderColor: "var(--terv-keret-meleg)",
           background: "var(--terv-hatter-lap)",
         }}
       >
