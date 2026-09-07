@@ -45,7 +45,8 @@ export function UniquePiecePromise({ className = "" }: { className?: string }) {
   return (
     <p
       data-testid="unique-piece-promise"
-      className={"text-xs leading-relaxed text-neutral-500 " + className}
+      className={"text-xs leading-relaxed " + className}
+      style={{ color: "var(--terv-szoveg-halvany)" }}
     >
       {UNIQUE_PIECE_PROMISE}
     </p>
