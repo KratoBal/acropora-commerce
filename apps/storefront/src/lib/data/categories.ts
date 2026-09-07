@@ -9,6 +9,37 @@ import { getCacheOptions } from "./cookies"
  */
 const CATEGORY_PAGE_SIZE = 100
 
+/**
+ * A MEZOK, ES AMI KIMARADT BELOLUK: A `*products`.
+ *
+ * MERVE 2026-09-07, a teljes katalogus atkoltozese utan. A lekerdezes addig
+ * `*products`-ot is kert, es az ADDIG mukodott, amig 19 termek allt a boltban.
+ * 1492 termeknel ugyanaz a hivas ezt adta (a futo kirakat sajat naploja):
+ *
+ *   .../store/product-categories?fields=*category_children, *products, ...
+ *   &limit=100&offset=0    -> 98 649 197 bajt
+ *   &limit=100&offset=100  -> 45 005 935 bajt
+ *
+ * Vagyis EGY oldalbetoltes kozel 144 megabajtot huzott, es a Next.js EGYIKET
+ * SEM tudta gyorsitotarazni (a hatara 2 megabajt), tehat minden keres ujra
+ * lehuzta az egeszet. A gyokerlap ettol 10 masodpercen tul valaszolt, az
+ * eletjel-ellenorzes idotullepesre futott, es a bolt a kifele 503-at adott.
+ *
+ * MIERT SZABAD ELHAGYNI: a hivok kozul EGY SEM olvassa a `products` mezot.
+ * Vegigmerve mind a negy hivast:
+ *
+ *   footer/index.tsx           csak `parent_category` es `category_children`
+ *   categories/[...]/page.tsx  csak `handle` (generateStaticParams)
+ *   products/[handle]/page.tsx sajat, szukebb mezolistat ad at
+ *   categories.ts:94           sajat, szukebb mezolistat ad at
+ *
+ * AMI EBBOL A KOVETKEZO OLVASONAK SZOL: ha valaha kell a kategoriahoz tartozo
+ * termeklista, azt NE ide vedd vissza, hanem az a hivo kerje kulon, szurve.
+ * Ez a mezo minden hivora hat, es a merete a katalogus meretevel no.
+ */
+const CATEGORY_FIELDS =
+  "*category_children, *parent_category, *parent_category.parent_category"
+
 const fetchCategoryPage = async (query: Record<string, unknown>) => {
   const next = {
     ...(await getCacheOptions("categories")),
@@ -19,8 +50,7 @@ const fetchCategoryPage = async (query: Record<string, unknown>) => {
     count: number
   }>("/store/product-categories", {
     query: {
-      fields:
-        "*category_children, *products, *parent_category, *parent_category.parent_category",
+      fields: CATEGORY_FIELDS,
       ...query,
     },
     next,
