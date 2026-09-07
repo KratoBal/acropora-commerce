@@ -71,21 +71,38 @@ type VazSzakasz = {
  * A `varakozo` szoveg SEMLEGES: megmondja, mi jon ide, es nem allit semmit a
  * termekrol. Ez a kulonbseg a "meg nem kesz" es a "kitalalt adat" kozott.
  */
+/**
+ * MINDEN SZOVEG ITT A VEVONEK SZOL, TEHAT MAGYAR HELYESIRASSAL ALL.
+ *
+ * Ez a lista 2026-09-07-ig EKEZET NELKUL allt, es ugy is jelent meg az elo
+ * lapon -- mind a tizennegy dobozon. Nem allvanyzat volt: Balazs epp azt a
+ * lapot nyitotta meg.
+ *
+ * AZ OK ERDEKESEBB A HIBANAL: mi egesz nap ekezet nelkul irunk EGYMASNAK, mert
+ * a csatorna-kapu es a parancssor miatt ez lett a szokas. Az a SAJAT kozegunk
+ * szabalya. A kodban allo felirat viszont nem nekunk szol. A szokas atlepett
+ * egy hatart, es senki nem vette eszre, mert nekunk termeszetesnek latszott.
+ *
+ * A HATAR: ami a VEVOHOZ megy, az magyar helyesirassal all. A valtozonevek, a
+ * kulcsok es a kommentek maradhatnak ekezet nelkul -- azokat mi olvassuk.
+ *
+ * Orzo all ra: `lap-vaz.component.spec.tsx`, "a vevonek szant szoveg magyarul".
+ */
 export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
-  { kulcs: "cimsor", cim: "", varakozo: "A termek neve es a fejlec-muveletek", oszlop: "teljes" },
-  { kulcs: "foto", cim: "", varakozo: "Termekfoto", oszlop: "bal" },
-  { kulcs: "meretezes-seged", cim: "Meretezes-seged", varakozo: "Ide jon a meretezes-seged", oszlop: "bal" },
-  { kulcs: "fulek", cim: "", varakozo: "Muszaki adatok, Leiras, Spektrum, Ertekelesek, Letoltesek", oszlop: "bal" },
-  { kulcs: "muszaki-adatok", cim: "Muszaki adatok", varakozo: "Ide jonnek a termek muszaki adatai", oszlop: "bal" },
-  { kulcs: "ar", cim: "", varakozo: "Ide jon az ar", oszlop: "jobb" },
-  { kulcs: "elerhetoseg", cim: "", varakozo: "Keszlet, szallitas, bolti atvetel", oszlop: "jobb" },
-  { kulcs: "valaszto", cim: "", varakozo: "Valtozat-valaszto", oszlop: "jobb" },
-  { kulcs: "mennyiseg", cim: "", varakozo: "Mennyiseg es kosarba tetel", oszlop: "jobb" },
-  { kulcs: "csomagajanlat", cim: "Csomagajanlat", varakozo: "Ide jon a csomagajanlat", oszlop: "jobb" },
-  { kulcs: "kerdezd", cim: "Kerdezd minket", varakozo: "Kapcsolatfelvetel", oszlop: "jobb" },
-  { kulcs: "kiegeszitok", cim: "Ami meg kellhet hozza", varakozo: "Ide jonnek a tartozekok", oszlop: "teljes" },
-  { kulcs: "hasonlo", cim: "Hasonlo lampak", varakozo: "Ide jonnek a hasonlo termekek", oszlop: "teljes" },
-  { kulcs: "ragados-sav", cim: "", varakozo: "A lap aljan futo sav", oszlop: "teljes" },
+  { kulcs: "cimsor", cim: "", varakozo: "A termék neve és a fejléc-műveletek", oszlop: "teljes" },
+  { kulcs: "foto", cim: "", varakozo: "Termékfotó", oszlop: "bal" },
+  { kulcs: "meretezes-seged", cim: "Méretezés-segéd", varakozo: "Ide jön a méretezés-segéd", oszlop: "bal" },
+  { kulcs: "fulek", cim: "", varakozo: "Műszaki adatok, Leírás, Spektrum, Értékelések, Letöltések", oszlop: "bal" },
+  { kulcs: "muszaki-adatok", cim: "Műszaki adatok", varakozo: "Ide jönnek a termék műszaki adatai", oszlop: "bal" },
+  { kulcs: "ar", cim: "", varakozo: "Ide jön az ár", oszlop: "jobb" },
+  { kulcs: "elerhetoseg", cim: "", varakozo: "Készlet, szállítás, bolti átvétel", oszlop: "jobb" },
+  { kulcs: "valaszto", cim: "", varakozo: "Változat-választó", oszlop: "jobb" },
+  { kulcs: "mennyiseg", cim: "", varakozo: "Mennyiség és kosárba tétel", oszlop: "jobb" },
+  { kulcs: "csomagajanlat", cim: "Csomagajánlat", varakozo: "Ide jön a csomagajánlat", oszlop: "jobb" },
+  { kulcs: "kerdezd", cim: "Kérdezd minket", varakozo: "Kapcsolatfelvétel", oszlop: "jobb" },
+  { kulcs: "kiegeszitok", cim: "Ami még kellhet hozzá", varakozo: "Ide jönnek a tartozékok", oszlop: "teljes" },
+  { kulcs: "hasonlo", cim: "Hasonló lámpák", varakozo: "Ide jönnek a hasonló termékek", oszlop: "teljes" },
+  { kulcs: "ragados-sav", cim: "", varakozo: "A lap alján futó sáv", oszlop: "teljes" },
 ]
 
 type VazDobozProps = {

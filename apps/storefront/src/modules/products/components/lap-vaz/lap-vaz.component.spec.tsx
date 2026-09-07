@@ -18,7 +18,7 @@ describe("a műszaki lap váza", () => {
     render(<LapVaz />)
 
     const kulcsok = Array.from(
-      document.querySelectorAll("[data-vaz-szakasz]")
+      document.querySelectorAll("[data-vaz-szakasz]"),
     ).map((e) => e.getAttribute("data-vaz-szakasz"))
 
     expect(kulcsok).toEqual([
@@ -94,7 +94,14 @@ describe("a műszaki lap váza", () => {
       expect(oszlopa(k)).toBe("bal")
     }
     // jobb: a vásárlás
-    for (const k of ["ar", "elerhetoseg", "valaszto", "mennyiseg", "csomagajanlat", "kerdezd"]) {
+    for (const k of [
+      "ar",
+      "elerhetoseg",
+      "valaszto",
+      "mennyiseg",
+      "csomagajanlat",
+      "kerdezd",
+    ]) {
       expect(oszlopa(k)).toBe("jobb")
     }
   })
@@ -157,8 +164,8 @@ describe("a műszaki lap váza", () => {
     const kulcsok = (v: "vilagos" | "sotet") => {
       cleanup()
       render(<LapVaz vilag={v} />)
-      return Array.from(document.querySelectorAll("[data-vaz-szakasz]")).map((e) =>
-        e.getAttribute("data-vaz-szakasz")
+      return Array.from(document.querySelectorAll("[data-vaz-szakasz]")).map(
+        (e) => e.getAttribute("data-vaz-szakasz"),
       )
     }
 
@@ -186,7 +193,7 @@ describe("a műszaki lap váza", () => {
 
     // a többi doboz változatlanul üres marad
     expect(document.querySelectorAll('[data-vaz-ures="igen"]')).toHaveLength(
-      MUSZAKI_LAP_SZAKASZAI.length - 1
+      MUSZAKI_LAP_SZAKASZAI.length - 1,
     )
   })
 
@@ -203,4 +210,87 @@ describe("a műszaki lap váza", () => {
       expect(szakasz.varakozo).not.toMatch(/\d/)
     }
   })
+})
+
+/**
+ * A VEVONEK SZANT SZOVEG MAGYARUL ALL -- ES EZ ORZO, NEM STILUS.
+ *
+ * 2026-09-07-ig mind a tizennegy dobozcim EKEZET NELKUL jelent meg az elo
+ * lapon. Az ok nem dontes volt: mi egesz nap ekezet nelkul irunk egymasnak (a
+ * csatorna-kapu es a parancssor miatt), es a szokas atlepett egy hatart. Epp
+ * ezert kell orzo: a kovetkezo doboznal ugyanez a szokas ugyanigy hat.
+ *
+ * KET IRANYBOL MER, es a masodik a fontosabb:
+ *
+ *   1. a MAI cimek pontosan azok, aminek lenniuk kell   -- a visszacsuszast fogja meg
+ *   2. EGYETLEN vevonek szant szoveg sem tartalmazhat    -- az UJ dobozokat is
+ *      ekezet nelkuli magyar alakot                         vedi, amikrol ez a
+ *                                                           fajl meg nem tud
+ *
+ * Az elso onmagaban csak azt orzi, ami MA all itt. A masodik az, ami holnap is
+ * hat.
+ */
+describe("a vevonek szant szoveg magyarul all", () => {
+  const VEVONEK: string[] = MUSZAKI_LAP_SZAKASZAI.flatMap((sz) => [
+    sz.cim,
+    sz.varakozo,
+  ]).filter((x): x is string => Boolean(x))
+
+  /** ISMERT POZITIV KONTROLL: van egyaltalan mit merni. */
+  it("van vevőnek szánt szöveg, és mind a tizennégy doboz ad legalább egyet", () => {
+    expect(VEVONEK.length).toBeGreaterThanOrEqual(MUSZAKI_LAP_SZAKASZAI.length)
+  })
+
+  it("a dobozcímek a helyes magyar alakjukban állnak", () => {
+    const cimek = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.cim).filter(Boolean)
+
+    expect(cimek).toEqual([
+      "Méretezés-segéd",
+      "Műszaki adatok",
+      "Csomagajánlat",
+      "Kérdezd minket",
+      "Ami még kellhet hozzá",
+      "Hasonló lámpák",
+    ])
+  })
+
+  /**
+   * ES A TAGABB HALO. A lista SZANDEKOSAN a jellegzetes alakokat sorolja: olyan
+   * betusorokat, amik magyar szovegben ekezet nelkul NEM helyesek, es amik nem
+   * fordulnak elo veletlenul mas szoban. (Az "ar" vagy a "meg" ezert NINCS
+   * benne: reszszokent barhol felbukkannak.)
+   */
+  const EKEZET_NELKULI_ALAKOK = [
+    "Muszaki",
+    "Leiras",
+    "Ertekelesek",
+    "Letoltesek",
+    "Meretezes",
+    "Hasonlo",
+    "lampak",
+    "Valtozat",
+    "Mennyiseg",
+    "Keszlet",
+    "szallitas",
+    "atvetel",
+    "Csomagajanlat",
+    "Kerdezd",
+    "tartozekok",
+    "Termekfoto",
+    "termek",
+    "fejlec",
+    "muveletek",
+    "aljan",
+    "futo",
+    "jonnek",
+  ]
+
+  it.each(EKEZET_NELKULI_ALAKOK)(
+    "egyetlen vevőnek szánt szöveg sem tartalmazza: %s",
+    (alak) => {
+      const vetkezok = VEVONEK.filter((szoveg) => szoveg.includes(alak))
+
+      expect(vetkezok).toEqual([])
+    },
+  )
 })
