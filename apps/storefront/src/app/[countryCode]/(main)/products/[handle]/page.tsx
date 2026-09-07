@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { listProducts } from "@lib/data/products"
+import { TERMEKLAP_FIELDS } from "@lib/data/termeklap-fields"
 import { getRegion, listRegions } from "@lib/data/regions"
 import { listCategories } from "@lib/data/categories"
 import ProductTemplate from "@modules/products/templates"
@@ -127,7 +128,7 @@ export default async function ProductPage(props: Props) {
     countryCode: params.countryCode,
     queryParams: {
       handle: decodeHandleParam(params.handle),
-      fields: "*categories",
+      fields: TERMEKLAP_FIELDS,
     },
   }).then(({ response }) => response.products[0])
 
