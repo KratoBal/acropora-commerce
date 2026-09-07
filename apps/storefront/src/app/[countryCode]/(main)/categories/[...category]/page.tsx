@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
 import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 
@@ -22,9 +23,8 @@ type Props = {
 }
 
 /**
- * Ugyanaz az ok, mint a gyujtemeny-lapnal: a build ideje alatt az API-t hivja,
- * es egy kimaradas nem allithatja meg az epitest. A lapok kimaradas eseten sem
- * tunnek el, csak keresre rendelodnek.
+ * Ugyanaz az ok, mint a gyujtemeny-lapnal, es ugyanaz a kezeles: a bukas marad,
+ * de az uzenet megmondja, hogy a bolt nem valaszol es nem a kod a hibas.
  */
 export async function generateStaticParams() {
   try {
@@ -53,12 +53,7 @@ export async function generateStaticParams() {
 
     return staticParams
   } catch (error) {
-    console.error(
-      `Failed to generate static paths for category pages: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }.`
-    )
-    return []
+    epitesiHibaMegnevezve("kategoria", error)
   }
 }
 

@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
 import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 
@@ -24,16 +25,18 @@ type Props = {
 export const PRODUCT_LIMIT = 12
 
 /**
- * A build ideje alatt a Medusa API-t hivja. Ha az epp nem valaszol, a build
- * NEM allhat meg: a lapok akkor is mukodnek, csak nem eloregyartva -- a Next
- * keresre rendereli oket.
+ * A build ideje alatt a Medusa API-t hivja, tehat a kapu a bolt
+ * elerhetetlensegetol is pirosra valt. Merve 2026-09-07 15:43-kor: a stage
+ * nehany percre elment egy lemez-takaritas alatt, es a build a lap-adatok
+ * begyujtesenel hasalt el -- a forditas addigra sikeresen lefutott.
  *
- * A termeklap utja ezt MAR igy csinalja (`products/[handle]/page.tsx`), ez a
- * ket ut viszont kimaradt belole, es emiatt egy stage-kimaradas MINDEN pull
- * requestet pirosra vitt. Merve 2026-09-07 15:43-kor: `Error: Service
- * Unavailable, status: 503`, `Failed to collect page data for
- * /[countryCode]/collections/[handle]` -- a forditas addigra sikeresen lefutott,
- * az API viszont percekre elment.
+ * EGY KORRAL KORABBAN URES LISTAT ADTAM VISSZA ilyenkor, hogy a build atmenjen.
+ * ACROBOT DONTESE (2026-09-07 16:37) ez ellen szolt, es az erve erosebb: az
+ * ures lista a VALODI hibat is elnyelne, es a nemasag a rosszabb.
+ *
+ * A MOSTANI ALAK: a bukas MARAD, de a hibauzenet megmondja, hogy nem a kod a
+ * hibas es mit kell megnezni. A reszletek, a HAROMSZORI kiesesig szolo
+ * feltetellel egyutt, a `lib/util/build-time-failure` fejleceben allnak.
  */
 export async function generateStaticParams() {
   try {
@@ -68,12 +71,7 @@ export async function generateStaticParams() {
 
     return staticParams
   } catch (error) {
-    console.error(
-      `Failed to generate static paths for collection pages: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }.`
-    )
-    return []
+    epitesiHibaMegnevezve("gyujtemeny", error)
   }
 }
 

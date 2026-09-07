@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
 import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 
@@ -47,12 +48,7 @@ export async function generateStaticParams() {
       )
       .filter((param) => param.handle)
   } catch (error) {
-    console.error(
-      `Failed to generate static paths for product pages: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }.`
-    )
-    return []
+    epitesiHibaMegnevezve("termek", error)
   }
 }
 
