@@ -1,3 +1,13 @@
+> **EZ A FELADAT ÁLL, NE KEZDJ BELE.**
+>
+> Codex megmérte 2026-09-07-én, és igaza van: a mai adatban nincs két külön
+> kapcsolat, csak egyetlen, gyűjtemény- és címkeegyezésből képzett vegyes lista.
+> A szétválasztás tehát nem a kirakat munkája, hanem az adaté: a régi rendszerben
+> két külön mezőn állt, és a költözés nem hozza át.
+>
+> A feladat akkor indul újra, amikor a két kapcsolat külön megérkezik a boltba.
+> Addig vedd a következő sorszámot.
+
 # Codex feladat: kapcsolódó termékek csoportosítása
 
 ## A repó és az ág
