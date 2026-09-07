@@ -25,7 +25,13 @@ const CATEGORY_PAGE_SIZE = 100
  * lehuzta az egeszet. A gyokerlap ettol 10 masodpercen tul valaszolt, az
  * eletjel-ellenorzes idotullepesre futott, es a bolt a kifele 503-at adott.
  *
- * MIERT SZABAD ELHAGYNI: a hivok kozul EGY SEM olvassa a `products` mezot.
+ * MIERT SZABAD ELHAGYNI: a LISTA-lekerdezes hivoi kozul egy sem olvassa a
+ * `products` mezot.
+ *
+ * PONTOSITAS (2026-09-07): ez a mondat eredetileg MINDEN hivora allt, es
+ * tullott. A `getCategoryByHandle` hivoja OLVASSA -- a `CategoryTemplate` a
+ * hosszat hasznalja a betoltesi helyorzok szamahoz. Ott a mezo azert marad ki,
+ * mert a hivonak MAR VAN tartaleka (8), nem azert, mert senki nem nezi.
  * Vegigmerve mind a negy hivast:
  *
  *   footer/index.tsx           csak `parent_category` es `category_children`
@@ -81,7 +87,10 @@ export const listCategories = async (query?: Record<string, unknown>) => {
   // Ha a hivo KIFEJEZETTEN keri a korlatot, azt tiszteletben tartjuk: van hivo,
   // aki csak nehany kategoriat akar (peldaul egy elonezet).
   if (typeof kert === "number") {
-    const { product_categories } = await fetchCategoryPage({ ...query, limit: kert })
+    const { product_categories } = await fetchCategoryPage({
+      ...query,
+      limit: kert,
+    })
     return product_categories
   }
 
@@ -119,13 +128,14 @@ export const listCategories = async (query?: Record<string, unknown>) => {
  * kell bejarni.
  */
 export const listCategoryIdsWithDescendants = async (
-  categoryId: string
+  categoryId: string,
 ): Promise<string[]> => {
   const mind = await listCategories({ fields: "id,parent_category_id" })
 
   const gyerekek = new Map<string, string[]>()
   for (const c of mind) {
-    const szulo = (c as { parent_category_id?: string | null }).parent_category_id
+    const szulo = (c as { parent_category_id?: string | null })
+      .parent_category_id
     if (!szulo) continue
     if (!gyerekek.has(szulo)) gyerekek.set(szulo, [])
     gyerekek.get(szulo)!.push(c.id)
@@ -158,12 +168,35 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
       `/store/product-categories`,
       {
         query: {
-          fields: "*category_children, *products",
+          /**
+           * A `*products` ITT IS KIMARAD -- ES EZ A MASODIK UT UGYANABBOL A HIBABOL.
+           *
+           * A #85 a LISTA-lekerdezesbol vette ki (az volt a 144 megabajtos ut).
+           * Ez a fuggveny EGY handle-re szol, tehat kisebb -- de a gyoker
+           * kategorian merve NEM kicsi:
+           *
+           *   fields "*category_children, *products"   4 157 493 bajt  (3,96 MB)
+           *   fields "*category_children"                  11 275 bajt
+           *
+           * A Next.js gyorsitotar hatara 2 MB, tehat a regi alak a GYOKER
+           * kategoria lapjan gyorsitotarazhatatlan volt: minden keres ujra
+           * lehuzta a kozel negy megabajtot. Az uj alak belefer.
+           *
+           * ES A HIVO OLVASSA A MEZOT -- ezert nem vaktaban vettem ki:
+           * `CategoryTemplate` a `category.products?.length ?? 8` alakban
+           * hasznalja, a BETOLTESI HELYORZOK darabszamahoz. Egyetlen szam, es
+           * MAR VAN tartaleka. A valodi termeklistat a `PaginatedProducts`
+           * kerdezi le kulon, categoryId alapjan -- az valtozatlan.
+           *
+           * AMI EZZEL VALTOZIK A KEPERNYON: a helyorzok szama mostantol
+           * mindenutt 8. Ez a betoltes alatt latszik, es semmi mas.
+           */
+          fields: "*category_children",
           handle,
         },
         next,
         cache: "force-cache",
-      }
+      },
     )
     .then(({ product_categories }) => product_categories[0])
 }
