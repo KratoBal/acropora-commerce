@@ -12,7 +12,10 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
   const isOpen = searchParams.get("step") === "review"
 
   const paidByGiftcard = !!(
-    (cart as unknown as Record<string, unknown>)?.gift_cards && ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])?.length > 0 && cart?.total === 0
+    (cart as unknown as Record<string, unknown>)?.gift_cards &&
+    ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
+      ?.length > 0 &&
+    cart?.total === 0
   )
 
   const previousStepsCompleted =
@@ -29,10 +32,10 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
             "flex flex-row text-3xl-regular gap-x-2 items-baseline",
             {
               "opacity-50 pointer-events-none select-none": !isOpen,
-            }
+            },
           )}
         >
-          Review
+          Ellenőrzés
         </Heading>
       </div>
       {isOpen && previousStepsCompleted && (
@@ -40,10 +43,10 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
           <div className="flex items-start gap-x-1 w-full mb-6">
             <div className="w-full">
               <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                By clicking the Place Order button, you confirm that you have
-                read, understand and accept our Terms of Use, Terms of Sale and
-                Returns Policy and acknowledge that you have read Medusa
-                Store&apos;s Privacy Policy.
+                A rendelés leadásával megerősíted, hogy elolvastad és elfogadod
+                az általános szerződési feltételeket, az értékesítési és
+                visszaküldési szabályzatot, valamint az adatkezelési
+                tájékoztatót.
               </Text>
             </div>
           </div>

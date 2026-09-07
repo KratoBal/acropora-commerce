@@ -10,12 +10,11 @@ import { Text, clx } from "@modules/common/components/ui"
 import { Fragment } from "react"
 import CountrySelect from "../country-select"
 
-
 const SideMenuItems = {
-  Home: "/",
-  Store: "/store",
-  Account: "/account",
-  Cart: "/cart",
+  Home: { href: "/", label: "Főoldal" },
+  Store: { href: "/store", label: "Bolt" },
+  Account: { href: "/account", label: "Fiók" },
+  Cart: { href: "/cart", label: "Kosár" },
 }
 
 type SideMenuProps = {
@@ -43,7 +42,7 @@ const SideMenu = ({ regions }: SideMenuProps) => {
                   data-testid="nav-menu-button"
                   className="relative h-full flex items-center transition-all ease-out duration-200 focus:outline-none hover:text-ui-fg-base"
                 >
-                  Menu
+                  Menü
                 </Popover.Button>
               </div>
 
@@ -76,20 +75,22 @@ const SideMenu = ({ regions }: SideMenuProps) => {
                       </button>
                     </div>
                     <ul className="flex flex-col gap-6 items-start justify-start">
-                      {Object.entries(SideMenuItems).map(([name, href]) => {
-                        return (
-                          <li key={name}>
-                            <LocalizedClientLink
-                              href={href}
-                              className="text-3xl leading-10 hover:text-ui-fg-disabled"
-                              onClick={close}
-                              data-testid={`${name.toLowerCase()}-link`}
-                            >
-                              {name}
-                            </LocalizedClientLink>
-                          </li>
-                        )
-                      })}
+                      {Object.entries(SideMenuItems).map(
+                        ([name, { href, label }]) => {
+                          return (
+                            <li key={name}>
+                              <LocalizedClientLink
+                                href={href}
+                                className="text-3xl leading-10 hover:text-ui-fg-disabled"
+                                onClick={close}
+                                data-testid={`${name.toLowerCase()}-link`}
+                              >
+                                {label}
+                              </LocalizedClientLink>
+                            </li>
+                          )
+                        },
+                      )}
                     </ul>
                     <div className="flex flex-col gap-y-6">
                       <div
@@ -106,13 +107,13 @@ const SideMenu = ({ regions }: SideMenuProps) => {
                         <ArrowRightMini
                           className={clx(
                             "transition-transform duration-150",
-                            countryToggleState.state ? "-rotate-90" : ""
+                            countryToggleState.state ? "-rotate-90" : "",
                           )}
                         />
                       </div>
                       <Text className="flex justify-between txt-compact-small">
-                        © {new Date().getFullYear()} {STORE_NAME}. All rights
-                        reserved.
+                        © {new Date().getFullYear()} {STORE_NAME}. Minden jog
+                        fenntartva.
                       </Text>
                     </div>
                   </div>
