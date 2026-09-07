@@ -12,7 +12,11 @@ import LineItemUnitPrice from "@modules/common/components/line-item-unit-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Spinner from "@modules/common/icons/spinner"
 import Thumbnail from "@modules/products/components/thumbnail"
+import { similarItemsHref } from "@modules/products/components/stock-state/availability"
 import { useState } from "react"
+
+import CartLineState, { NotIncrementable } from "../line-state"
+import { cartLineStateOf } from "../line-state/line-state"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -44,6 +48,24 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const maxQtyFromInventory = 10
   const maxQuantity = item.variant?.manage_inventory ? 10 : maxQtyFromInventory
 
+  /**
+   * AZ EGYEDI PÉLDÁNY A KOSÁRBAN.
+   *
+   * A jelző KIFEJEZETT, és ugyanabból a függvényből jön, mint a terméklapon
+   * (`uniquePieceOf`) -- egy szabály, két hely. Amíg a vetítés nem hozza át,
+   * minden sor NORMAL, és a kosár pontosan úgy néz ki, mint ma.
+   *
+   * AZ ELKELT ÁLLAPOTOT MA SEMMI NEM ÁLLÍTJA ELŐ: ahhoz a bolt oldalán kellene
+   * megkérdezni, megvehető-e MÉG a példány, és azt a kosár-lekérdezés nem
+   * hozza. Ezért a `stillAvailable` itt IGAZ, és ez a doboz csak akkor fog
+   * "Elkelt"-et rajzolni, ha egy későbbi kör tényleg megméri. A hazug alak az
+   * lenne, ha kitalálnánk egy értéket.
+   */
+  const lineState = cartLineStateOf({
+    productMetadata: item.variant?.product?.metadata,
+    stillAvailable: true,
+  })
+
   return (
     <Table.Row className="w-full" data-testid="product-row">
       <Table.Cell className="!pl-0 p-4 w-24">
@@ -70,12 +92,19 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           {item.product_title}
         </Text>
         <LineItemOptions variant={item.variant} data-testid="product-variant" />
+        <CartLineState
+          state={lineState}
+          similarHref={similarItemsHref(item.variant?.product ?? {})}
+        />
       </Table.Cell>
 
       {type === "full" && (
         <Table.Cell>
           <div className="flex gap-2 items-center w-28">
             <DeleteButton id={item.id} data-testid="product-delete-button" />
+            {lineState !== "NORMAL" ? (
+              <NotIncrementable />
+            ) : (
             <CartItemSelect
               value={item.quantity}
               onChange={(value) => changeQuantity(parseInt(value.target.value))}
@@ -98,6 +127,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                 1
               </option>
             </CartItemSelect>
+            )}
             {updating && <Spinner />}
           </div>
           <ErrorMessage error={error} data-testid="product-error-message" />
