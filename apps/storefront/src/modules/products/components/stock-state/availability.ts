@@ -96,7 +96,27 @@ export function availabilityOf({
 export const availabilityLabel: Record<Availability, string> = {
   KAPHATO: "Kosárba",
   ELFOGYOTT: "Nincs raktáron",
-  ELADVA: "Eladva",
+  /**
+   * "NEM ELERHETO", NEM "ELADVA" -- ES EZ IGEIDO-KERDES, NEM SZOHASZNALAT.
+   *
+   * Az "Eladva" ALLITAS A MULTROL: azt mondja a vevonek, hogy valaki MEGVETTE
+   * ezt a peldanyt. Erre nincs jelunk. Merve (2026-09-07, staging): a bolt
+   * MINDEN termeke nulla keszleten all, tehat a nulla nem meres, hanem az
+   * atvitel hianya -- egy sosem keszletezett korall ugyanugy nullan all, mint
+   * egy tenylegesen elkelt.
+   *
+   * Acrobot dontese a MAGYARAZO MONDATRA szolt (14559): abbol kikerult a mult
+   * ideju allitas. EZT A SORT EN VETTEM HOZZA, mert ugyanaz a hiba all benne,
+   * es a ket szoveg egymas alatt jelenik meg: egy "Eladva" cimke egy "Ez a
+   * darab nem elerheto" mondat folott onmaganak mondana ellent.
+   *
+   * Ha ezt tulzasnak latja, EGY sor cserel vissza.
+   *
+   * ES AMI VALTOZATLAN: az allapot MEGMARAD, es kulonbozik az ELFOGYOTT-tol.
+   * Balazs harom allapotot kert, es ez a harmadik IGAZ resze: ez a peldany nem
+   * elerheto, es nem is potolhato.
+   */
+  ELADVA: "Nem elérhető",
 }
 
 /**
@@ -108,8 +128,23 @@ export const availabilityLabel: Record<Availability, string> = {
  * A tervben két kötőjel áll elválasztójelként; itt két mondat, mert a magyar
  * szedésben a két kötőjel nem helyes alak, és a lapon ez látszik.
  */
+/**
+ * A MAGYARAZAT, ES BENNE EGYETLEN IGEIDO DONT MINDENT (acrobot, 14559).
+ *
+ *   ma:       "Egyedi darab VOLT, nem potolhato. Nem kerul vissza raktarra."
+ *   helyette: "Egyedi peldany, nem potolhato. Ez a darab nem elerheto."
+ *
+ * A "nem potolhato" IGAZ a termek termeszetebol: egy konkret korall-telep vagy
+ * megvan a boltban, vagy nincs -- ujat rendelni ugyanabbol nem lehet.
+ *
+ * Az "Egyedi darab VOLT" viszont ALLITAS A MULTROL: azt mondja, valaki
+ * MEGVETTE. Erre nincs jelunk, es a meres meg is mutatta, miert: a bolt minden
+ * termeke nulla keszleten all, tehat a nulla nem meres.
+ *
+ * Nem az ALLAPOT volt hamis, hanem az IGEIDO.
+ */
 export const SOLD_OUT_EXPLANATION =
-  "Egyedi darab volt, nem pótolható. Nem kerül vissza raktárra."
+  "Egyedi példány, nem pótolható. Ez a darab nem elérhető."
 
 /**
  * A WYSIWYG-ÍGÉRET, KIMONDVA (picasso látványterve, 2026-09-07).

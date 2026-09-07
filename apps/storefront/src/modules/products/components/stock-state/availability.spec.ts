@@ -108,7 +108,7 @@ describe("a három állapot felirata", () => {
 
   it("a nem-végleges eset ÁLLAPOTOT mond, nem véget", () => {
     expect(availabilityLabel.ELFOGYOTT).toBe("Nincs raktáron")
-    expect(availabilityLabel.ELADVA).toBe("Eladva")
+    expect(availabilityLabel.ELADVA).toBe("Nem elérhető")
   })
 })
 
@@ -174,7 +174,15 @@ describe("a továbbvivő gomb címe", () => {
  */
 describe("a vevőnek szánt szövegek", () => {
   it("megjelenik az Eladva magyarázata és a WYSIWYG-ígéret", () => {
-    expect(SOLD_OUT_EXPLANATION.startsWith("Egyedi darab volt")).toBe(true)
+    expect(SOLD_OUT_EXPLANATION.startsWith("Egyedi példány")).toBe(true)
+
+    /**
+     * ES A MULT IDEJU ALAK KIFEJEZETTEN TILOS. Enelkul a fenti allitas egy
+     * visszairt "Egyedi darab volt..." mellett is zold maradna, ha valaki csak
+     * a kezdetet igazitja.
+     */
+    expect(SOLD_OUT_EXPLANATION).not.toContain("volt")
+    expect(SOLD_OUT_EXPLANATION).not.toContain("vissza raktárra")
     expect(UNIQUE_PIECE_PROMISE.startsWith("A fotó pontosan ezt")).toBe(true)
   })
 

@@ -138,7 +138,7 @@ describe("a készlet-állapot kirajzolása", () => {
     expect(link).toHaveAttribute("href", "/hu/collections/elo-korallok")
 
     expect(screen.queryByTestId("add-product-button")).toBeNull()
-    expect(screen.getByText("Eladva")).toBeTruthy()
+    expect(screen.getByText("Nem elérhető")).toBeTruthy()
   })
 
   /**
@@ -156,7 +156,7 @@ describe("a készlet-állapot kirajzolása", () => {
       />,
     )
 
-    expect(screen.getByText(/Egyedi darab volt, nem pótolható/)).toBeTruthy()
+    expect(screen.getByText(/Egyedi példány, nem pótolható/)).toBeTruthy()
   })
 
   /**

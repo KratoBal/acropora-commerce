@@ -57,11 +57,30 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
    * (`uniquePieceOf`) -- egy szabály, két hely. Amíg a vetítés nem hozza át,
    * minden sor NORMAL, és a kosár pontosan úgy néz ki, mint ma.
    *
-   * AZ ELKELT ÁLLAPOTOT MA SEMMI NEM ÁLLÍTJA ELŐ: ahhoz a bolt oldalán kellene
-   * megkérdezni, megvehető-e MÉG a példány, és azt a kosár-lekérdezés nem
-   * hozza. Ezért a `stillAvailable` itt IGAZ, és ez a doboz csak akkor fog
-   * "Elkelt"-et rajzolni, ha egy későbbi kör tényleg megméri. A hazug alak az
-   * lenne, ha kitalálnánk egy értéket.
+   * === AZ ELKELT: MEG NEM ELERT ALLAPOT, ES MEGNEVEZEM A FELOLDASAT ===
+   *
+   * Ma semmi nem allitja elo, es ez nem elmaradas, hanem MERES (2026-09-08):
+   *
+   *   a kosar-lekerdezes NEM hozza a keszlet-mennyiseget, meg akkor sem, ha
+   *   kifejezetten kerem (`items.variant.inventory_quantity` nincs a valaszban)
+   *
+   *   es ami dontobb: egy nulla keszletu EGYEDI peldanyt a bolt BE SEM ENGED a
+   *   kosarba -- probaltam, HTTP 400, `insufficient_inventory`. Ugyanazon a
+   *   nulla keszleten egy normal termek bekerul, mert nala a hatralek
+   *   engedelyezett.
+   *
+   * Vagyis az ELKELT allapot CSAK ugy allhatna elo, ha a peldany MIKOZBEN a
+   * kosarban van, fogy el. Ahhoz valodi keszlet kell egy egyedi peldany mogott,
+   * es ma a bolt egyetlen valodi termeke sem visel keszletet.
+   *
+   * A FELOLDASI FELTETEL, hogy ne felejtsuk el: amikor valodi keszlet all egy
+   * egyedi peldany mogott, ez az allapot eletre kel -- akkor kell egy elohivo,
+   * ami a bolt oldalan megkerdezi, megvehető-e MEG a peldany.
+   *
+   * ADDIG A `stillAvailable` IGAZ, es ez tudatos: egy elohivo, ami nem tud
+   * elsulni, diszlet. (acrobot egyetertett, 14559 -- es hozzatette, hogy ebben
+   * a dobozban ez mar a MASODIK diszlet lett volna, ami azt jelzi, hogy a doboz
+   * a valosag elott jar.)
    */
   /**
    * A TERMEK-OBJEKTUM A SORHOZ. Merve: a valtozat alatti termek CSAK az
