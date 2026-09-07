@@ -97,6 +97,7 @@ type Props = {
   vasarlasiResz?: React.ReactNode
   hasonloResz?: React.ReactNode
   fotoResz?: React.ReactNode
+  ragadosResz?: React.ReactNode
 }
 
 const MuszakiLap = ({
@@ -104,11 +105,18 @@ const MuszakiLap = ({
   vasarlasiResz,
   hasonloResz,
   fotoResz,
+  ragadosResz,
 }: Props) => {
   return (
     <LapVaz
       vilag={vilagaTermeknek(product)}
-      tartalom={vazTartalom(product, vasarlasiResz, hasonloResz, fotoResz)}
+      tartalom={vazTartalom(
+        product,
+        vasarlasiResz,
+        hasonloResz,
+        fotoResz,
+        ragadosResz,
+      )}
     />
   )
 }

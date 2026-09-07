@@ -26,8 +26,25 @@ import { describe, expect, it } from "vitest"
  */
 const CSS = readFileSync(join(__dirname, "globals.css"), "utf-8")
 
-/** Szokoz-fuggetlen osszevetes: a prettier tordelese ne szamitson. */
-const normal = (s: string) => s.replace(/\s+/g, " ")
+/**
+ * SZOKOZ-FUGGETLEN OSSZEVETES, ES EZ NEM KENYELMI KERDES.
+ *
+ * A prettier SZETTORI az erteket, ha a sor tul hosszu lesz:
+ *
+ *   --terv-hatter: oklch(
+ *     0.96 0.006 75
+ *   );
+ *
+ * Egy egyszeru `\s+ -> " "` csere ilyenkor `oklch( 0.96 0.006 75 )` alakot ad,
+ * ami NEM illeszkedik -- es a haló FALSE POZITIVET adna: pirosra valtana egy
+ * olyan valtozastol, ami csak a formazas. Merve: ez ma este meg is tortent,
+ * egy hosszabb komment miatt.
+ *
+ * Ezert a zarojelen BELULI szokozok is kiesnek. Ettol nem lesz lazabb: az
+ * ertekek szamjegyei es a sorrendjuk valtozatlanul szamit.
+ */
+const normal = (s: string) =>
+  s.replace(/\s+/g, " ").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")")
 
 describe("a terv megerositett ertekei", () => {
   /**
