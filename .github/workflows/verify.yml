@@ -57,12 +57,31 @@ jobs:
     # parancsnak. A Dockerfile fejlece MIND A NEGY valtozot felsorolja; ide
     # eloszor csak azt tettem be, amelyikbe eloszor beleutkoztem.
     #
-    # AMIT EZ A CI-ROL ALLIT, ES AMI DONTES, NEM MERES: a Build lepes ettol
-    # kezdve FUGG a staging bolt elerhetosegetol. Ha a stage all, a kapu piros
-    # lesz olyan okbol, aminek a kodhoz semmi koze. A masik ut az lenne, hogy a
-    # `generateStaticParams` hiba eseten ures listat ad (a lapok akkor
-    # keres-idoben rendelodnek) -- de az egy VALODI hibat is elnyelne.
-    # Felirva; a valasztas nem a kirakate.
+    # A BUILD FUGG A STAGING BOLT ELERHETOSEGETOL, ES EZ A KERDES AZOTA EL IS
+    # DOLT. Ez a bekezdes korabban nyitott valasztaskent allt itt ("a masik ut
+    # az lenne, hogy a generateStaticParams ures listat ad, de az egy valodi
+    # hibat is elnyelne -- felirva; a valasztas nem a kirakate"). ATIRVA, mert
+    # egy megjegyzes, ami egy MAR MEGHOZOTT dontest nyitottkent ir le, rosszabb
+    # a semminel: a kovetkezo olvaso egy lezart kerdest keresne.
+    #
+    # 2026-09-07 15:43-kor pontosan az allt elo, amit ez a bekezdes elore
+    # jelzett: a stage nehany percre elment (a lemez takaritasa miatt), es a
+    # Build elhasalt `Error: Service Unavailable` uzenettel, a gyujtemeny-lap
+    # `generateStaticParams` lepesenel. A kod erintetlen volt.
+    #
+    # A #53 ota mind a harom epites-ideju utvonal (termek, kategoria,
+    # gyujtemeny) elkapja ezt es ures listat ad -- a termek-utvonal a starter
+    # ota igy mukodott, a masik ketto kimaradt belole.
+    #
+    # ES AMITOL NEM NYELI EL A VALODI HIBAT (ez volt a fenti aggaly): mindharom
+    # utvonal KULON naplosort ir ki arrol, hogy nem tudta legeneralni az utakat.
+    # Egy igy degradalt build tehat kimondja magarol a kimeneteben, nem csendben
+    # szallit. Az ara: azok a lapok nem eloregyartva keszulnek, hanem keresre --
+    # nem tunnek el es nem tornek el.
+    #
+    # Merve mindket iranyban: elerhetetlen API mellett a javitas NELKUL exit 1,
+    # VELE exit 0 harom naplosorral; elo API mellett MINDKET esetben 244
+    # statikus lap, tehat az egeszseges ut valtozatlan.
     env:
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://commerce-stage.acropora.hu
       NEXT_PUBLIC_DEFAULT_REGION: hu
