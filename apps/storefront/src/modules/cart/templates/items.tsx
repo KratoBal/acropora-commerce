@@ -14,19 +14,32 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   return (
     <div>
       <div className="pb-3 flex items-center">
-        <Heading className="text-[2rem] leading-[2.75rem]">Cart</Heading>
+        {/*
+          A TERV FEJLECE, MAGYARUL. A tetelszam a terv sajat alakja
+          ("4 TETEL"), es valodi adatbol jon -- nem diszites.
+        */}
+        <Heading className="text-[2rem] leading-[2.75rem]">Kosár</Heading>
+        {items?.length ? (
+          <span
+            className="ml-3 text-[11px] font-semibold uppercase tracking-wide"
+            style={{ color: "var(--terv-szoveg-halvany)" }}
+            data-testid="cart-item-count"
+          >
+            {items.length} tétel
+          </span>
+        ) : null}
       </div>
       <Table>
         <Table.Header className="border-t-0">
           <Table.Row className="text-ui-fg-subtle txt-medium-plus">
-            <Table.HeaderCell className="!pl-0">Item</Table.HeaderCell>
+            <Table.HeaderCell className="!pl-0">Termék</Table.HeaderCell>
             <Table.HeaderCell></Table.HeaderCell>
-            <Table.HeaderCell>Quantity</Table.HeaderCell>
+            <Table.HeaderCell>Mennyiség</Table.HeaderCell>
             <Table.HeaderCell className="hidden small:table-cell">
-              Price
+              Egységár
             </Table.HeaderCell>
             <Table.HeaderCell className="!pr-0 text-right">
-              Total
+              Sorösszeg
             </Table.HeaderCell>
           </Table.Row>
         </Table.Header>
