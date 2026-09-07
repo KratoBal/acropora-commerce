@@ -204,7 +204,31 @@ export default function ProductActions({
     <>
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
         <div>
-          {(product.variants?.length ?? 0) > 1 && (
+          {/*
+            A VALASZTO DOBOZ HAROM ALLAPOTA -- ES A LATHATOSAG ELVALIK A
+            VALASZTHATOSAGTOL.
+
+            Eddig a ketto EGYBE volt kotve: egy valtozatnal a doboz el sem
+            keszult. Balazs vaz-kerese ota (2026-09-07) a lap ALLJON OSSZE ugy,
+            ahogy a terv -- tehat a doboz OTT A HELYEN akkor is, ha nincs mit
+            valasztani. Acrobot pontositasa ezt harom allapotra bontja:
+
+              ket vagy tobb valtozat   valodi valaszto, kattinthato gombokkal
+              PONTOSAN egy valtozat    a doboz OTT ALL, de NEM valaszthato
+              nulla opcio              a doboz nem jelenik meg
+
+            A masodik allapotban a gombok LETILTVA allnak. Igy a "egyetlen
+            valtozatnal nincs VALASZTAS" allitas tovabbra is igaz es merheto --
+            csak nem a doboz hianyabol olvassuk ki, hanem abbol, hogy nem lehet
+            valasztani.
+
+            MIERT SZAMIT EZ A KATALOGUSON: 1884 termeknek NINCS valtozata (a
+            vetites `Kivitel` = `Alap` alakot ad nekik), es 9-nek van valodi
+            valasztasa. Az elso csoportnal eddig semmi nem allt a helyen; most
+            ott all a doboz, es a vevo latja, hogy ennel a terméknel nincs mibol
+            valasztani.
+          */}
+          {(product.options?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-y-4">
               {(product.options || []).map((option) => {
                 return (
@@ -215,7 +239,11 @@ export default function ProductActions({
                       updateOption={setOptionValue}
                       title={option.title ?? ""}
                       data-testid="product-options"
-                      disabled={!!disabled || isAdding}
+                      disabled={
+                        !!disabled ||
+                        isAdding ||
+                        (product.variants?.length ?? 0) <= 1
+                      }
                     />
                   </div>
                 )
