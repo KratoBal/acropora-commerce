@@ -70,7 +70,7 @@ describe("a terv megerositett ertekei", () => {
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)"],
     ["--terv-kiemel", "oklch(0.62 0.13 45)"],
     ["--terv-kiemel-sotet", "oklch(0.55 0.13 45)"],
-    ["--terv-kiemel-szoveg", "oklch(0.15 0.014 45)"],
+    ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
   ]
 
   it.each(PAROK)("világos módban %s = %s", (nev, ertek) => {
@@ -108,16 +108,35 @@ describe("a terv megerositett ertekei", () => {
   })
 
   /**
-   * ES A REZEN ALLO SZOVEG NEM FORDUL MEG A KET VILAG KOZOTT.
+   * A REZEN ALLO SZOVEG MEGFORDUL A KET VILAG KOZOTT -- ES EZ AZ ALLITAS
+   * KORABBAN AZ ELLENKEZOJET MONDTA.
    *
-   * A kontraszt a REZHEZ szol, nem a lap hatterehez. Merve a tervfajlbol: a
-   * kilenc rez hatterbol ot visel sajat szoveget, es mind az ot ugyanazt a
-   * sotet erteket hasznalja -- feher SEHOL nem all rezen.
+   * Itt az allt, hogy "feher SEHOL nem all rezen", a kilenc rez hatteru elem
+   * merese alapjan. Az a meres a terv SOTET (2a) lapjan keszult: a tervfajl
+   * harom lapot tartalmaz egymas alatt, es a "kilenc" egyetlen lapra
+   * vonatkozott. Szakaszonkent ujramerve, mindket szakaszban kilenc rez elem,
+   * szakaszon belul nulla kivetellel:
+   *
+   *   2a (sotet)         hatter 0.62   a feliratot viselo elemek szovege 0.15
+   *   1a + 1b (vilagos)  hatter 0.55   a feliratot viselo elemek szovege FEHER
+   *
+   * A kontraszt tehat tovabbra is a REZHEZ szol -- csak a ket vilag rezje
+   * kulonbozik, ezert a rajta allo szoveg is.
+   *
+   * EZ AZ ALLITAS AZERT ALL ITT MEGFORDITVA, es nem torolve: ha valaki
+   * "egysegesiti" a ket erteket, ugyanugy pirosra valt, mint korabban a
+   * megforditas. A vedelem iranya valtozott, a vedelem maga nem.
    */
-  it("a rézen álló szöveg mindkét világban ugyanaz", () => {
+  it("a rézen álló szöveg a két világban KÜLÖNBÖZIK", () => {
     const talalatok = CSS.match(/--terv-kiemel-szoveg:\s*oklch\([^)]+\)/g) ?? []
 
     expect(talalatok).toHaveLength(2)
-    expect(new Set(talalatok).size).toBe(1)
+    expect(new Set(talalatok).size).toBe(2)
+
+    // es nev szerint, hogy egy elgepeles ne csak "kulonbozo"-t adjon
+    const sotetBlokk = CSS.slice(CSS.indexOf('[data-vilag="sotet"]'))
+    expect(normal(sotetBlokk)).toContain(
+      "--terv-kiemel-szoveg: oklch(0.15 0.014 45)",
+    )
   })
 })
