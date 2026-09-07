@@ -34,21 +34,40 @@ const CartTemplate = ({
     <div className="py-12">
       <div className="content-container" data-testid="cart-container">
         {/*
-          A KET OSZLOP A TERVBOL, MERESSEL.
+          A KET OSZLOP A TERVBOL, MERESSEL -- ES A KOZ JAVITVA.
 
-          A tervlapot megrendereltem, es a kosar racsa `856px 452px` alakban
-          all -- vagyis az osszegzo oszlop 452 pixel, nem 360. A koz a mert
-          ertekek kozul a legnagyobb SZERKEZETI koz (24px, hat helyen); a mai
-          `gap-x-40` (160 pixel) sehol nem fordul elo a tervben.
+              BAL   856 px
+              koz    44 px
+              JOBB  452 px      856 + 44 + 452 = 1352
 
-          AMIT EZ NEM ALLIT: hogy a 452 pixel FIX szelesseg-e a tervben, vagy egy
-          arany eredmenye. A meres egy 1440 pixel szeles ablakban keszult, es a
-          racs abszolut ertekeket adott vissza -- ket kulonbozo ablakban kellene
-          ujramerni ahhoz, hogy ezt eldontsuk. Addig a 452 pixel az, amit
-          MERTUNK, nem az, amit kitalaltunk.
+          Nautilus geometriai kinyerese a KOSAR tervlapjarol (a 49 nagy doboz
+          x/y/szelesseg ertekeivel): a 856 szeles doboz x=514-nel all, a jobb
+          szele 1370, a 452 szeles pedig x=1414-nel -- a koz tehat 44.
+          Visszamertem a fajljabol, nem az uzenetebol.
+
+          === AMI ITT KORABBAN ALLT, ES MIERT VOLT ROSSZ ===
+
+          A koz `gap-x-6`, vagyis 24 pixel volt, azzal az indokkal, hogy az "a
+          mert ertekek kozul a legnagyobb szerkezeti koz, hat helyen". A 24 -- de
+          az a MOBIL MAKETTEK kozotti koz: harom 390 pixel szeles telefon all
+          egymas mellett x=56, 470 es 884-nel, a lepeskoz 414, tehat a koz 24.
+
+          Vagyis GYAKORISAG alapjan valasztottam, nem SZEREP alapjan, es egy
+          mobil-makett kozet tettem az asztali racsra.
+
+          === ES AZ ARANY UGYANAZ, MINT A TERMEKLAPON ===
+
+          Ugyanez a harom szam all a TERMEKLAP-tervben is, ahol a vaz mar
+          `856fr 452fr` alakban hasznalja. Ket kulon tervlap, ket kulon
+          kinyeres, azonos szamok: ez kereszt-kontroll, nem ismetles.
+
+          Az `fr` alak szandekos, es az indok nautiluse: igy a FORRAS SZAMA all
+          a kodban es visszakereshetó a meresben; egy "65% / 35%" mar
+          ertelmezes lenne. A korabbi `1fr 452px` ezt a kerdest nyitva hagyta
+          (a sajat kommentem is kimondta, hogy nem tudjuk, fix-e a 452).
         */}
         {cart?.items?.length ? (
-          <div className="grid grid-cols-1 small:grid-cols-[1fr_452px] gap-x-6">
+          <div className="grid grid-cols-1 small:grid-cols-[856fr_452fr] small:gap-x-[44px]">
             <div className="flex flex-col bg-white py-6 gap-y-6">
               {/*
                 AZ ATVETELI SAV A LISTA FOLOTT ALL, es ez a terv kikotese: a

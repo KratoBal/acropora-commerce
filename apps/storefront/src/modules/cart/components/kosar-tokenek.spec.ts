@@ -67,3 +67,48 @@ describe("a kosár keret-tokenjei", () => {
     expect(hidegek.map((f) => f.replace(KOSAR, ""))).toEqual([])
   })
 })
+
+/**
+ * A KOSAR RACSA A MERT ARANYOKAT VISELI.
+ *
+ * Nautilus geometriai kinyerese a kosar tervlapjarol: a 856 szeles doboz
+ * x=514-nel all (jobb szele 1370), a 452 szeles x=1414-nel -- a koz tehat 44.
+ * Visszamertem a fajljabol.
+ *
+ * A KORABBI ERTEK 24 PIXEL VOLT, es az a MOBIL MAKETTEK koze: harom 390 pixel
+ * szeles telefon all egymas mellett, 414-es lepeskozzel. Vagyis gyakorisag
+ * alapjan valasztott ertek kerult a szerep helyere.
+ *
+ * MIERT A FORRAST OLVASSA: a kosar sablonja szerver-komponens, jsdom-ban nem
+ * renderelheto (merve). Amit ez mer: milyen racsot AD AT a sablon.
+ */
+describe("a kosár rácsa", () => {
+  const forras = readFileSync(
+    join(KOSAR, "templates/index.tsx"),
+    "utf-8",
+  )
+
+  /** ISMERT POZITIV KONTROLL: tenyleg a kosar sablonjat olvastuk be. */
+  it("a sablon forrása olvasható, és ez tényleg a kosár", () => {
+    expect(forras).toContain("CartTemplate")
+    expect(forras).toContain("grid-cols-1")
+  })
+
+  it("a két oszlop aránya a mért 856/452", () => {
+    expect(forras).toContain("grid-cols-[856fr_452fr]")
+  })
+
+  /**
+   * A RACS SORAT KULON VESSZUK KI, mert a tagado allitas kulonben egy olyan
+   * sztringre allna, ami sosem fordulna elo -- az halott allitas lenne.
+   */
+  it("a köz a mért 44 pixel, nem a mobil makettek 24-e", () => {
+    const racsSor = forras
+      .split("\n")
+      .find((sor) => sor.includes("grid-cols-1"))
+
+    expect(racsSor).toBeDefined()
+    expect(racsSor).toContain("gap-x-[44px]")
+    expect(racsSor).not.toContain("gap-x-6")
+  })
+})
