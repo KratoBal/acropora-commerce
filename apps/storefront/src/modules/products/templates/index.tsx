@@ -12,7 +12,7 @@ import { HttpTypes } from "@medusajs/types"
 import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 
 import ProductActionsWrapper from "./product-actions-wrapper"
-import MuszakiLap, { hasznaljaVazat } from "./muszaki-lap"
+import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -79,6 +79,25 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 />
               </Suspense>
             </div>
+          }
+          /*
+            A FOTO SLOT ATADASA -- ITT DOL EL, HOGY A JELVENY MEGMARAD-E.
+
+            A galeria viszi a `UniquePieceBadge`-et az elso kepre es a
+            `UniquePiecePromise`-t a galeria ala. A vaz sajat egykepes
+            valtozata egyiket sem ismeri, tehat az elo allat lapja a
+            koltozeskor CSENDBEN vesztette volna el mind a kettot.
+
+            Hogy melyik lap kapja, azt a `galeriatAdunkAt` mondja meg, es a
+            fejlece megindokolja, miert nem mindenki.
+          */
+          fotoResz={
+            galeriatAdunkAt(product) ? (
+              <ImageGallery
+                images={images}
+                uniquePiece={uniquePieceOf(product.metadata)}
+              />
+            ) : undefined
           }
         />
       </>
