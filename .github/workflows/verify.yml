@@ -17,17 +17,79 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # A KIRAKAT PUBLIKALHATO KULCSA, EGY HELYEN, MERT KET LEPESNEK KELL.
+    #
+    # HOL KELL, ES MIERT:
+    #   Lint   -- a `next lint` betolti a `next.config.js` fajlt, az pedig
+    #             meghivja a `check-env-variables` fuggvenyt, es az KILEP, ha
+    #             ez a valtozo hianyzik.
+    #   Build  -- ugyanez, ES azon felul a kirakat `generateStaticParams`
+    #             fuggvenye HAROM oldalon (kategoria, termek, gyujtemeny) MAR
+    #             EPITES KOZBEN lekerdezi a Store API-t.
+    #
+    # MERVE, ES A SAJAT MERESEM HIBAJABOL (2026-09-07): helyben a `turbo build`
+    # zold volt, mert EN mindig atadtam a kulcsot a parancsnak. A CI nem adta,
+    # es a Build lepes elhasalt: "Missing required environment variables". A
+    # zold tehat a KORNYEZETEM tulajdonsaga volt, nem a kode -- es eloszor csak
+    # a Lint lepesre tettem be, mert ott futottam bele eloszor.
+    #
+    # MIERT SZABAD EZ A KULCS ITT, ES MIERT NEM AKARMELYIK:
+    #   - PUBLIKALHATO kulcs: a kirakat build-je amugy is a bongeszo forrasaba
+    #     teszi, tehat aki megnyitja a boltot, latja
+    #   - a repo PRIVAT
+    # ADMIN VAGY TITKOS KULCS SOHA NEM KERULHET IDE. Ott a masolat maga lenne a
+    # szivargas -- egy nyilvanos repoban egy elgepelt kulcs veglegesen kikerul,
+    # es a torles nem segit.
+    #
+    # A GitHub Actions valtozo-felulete helyett azert all itt, mert a tokenunk
+    # azt megtagadta (403, "Resource not accessible by personal access token")
+    # -- nem jogosultsag-hiany a repon, hanem a token hatokore.
+    # ES A KULCS EGYEDUL KEVES: A BUILD TENYLEGESEN LEKERDEZI A BOLTOT.
+    #
+    # A kulcs potlasa utan a Build masodszor is elhasalt, MAS hibaval:
+    # `TypeError: fetch failed ... ECONNREFUSED`, a kategoria-oldal
+    # `generateStaticParams` lepesenel. Az ok: cim hijan a kirakat az
+    # `.env.template` alapertelmezesere esik (`http://localhost:9000`), es a
+    # futtatoban ott nem all semmi.
+    #
+    # Vagyis a hibat ket lepesben talaltam meg, es MIND A KETTOT a CI mondta
+    # meg -- helyben egyik sem allt elo, mert en a teljes kornyezetet atadtam a
+    # parancsnak. A Dockerfile fejlece MIND A NEGY valtozot felsorolja; ide
+    # eloszor csak azt tettem be, amelyikbe eloszor beleutkoztem.
+    #
+    # AMIT EZ A CI-ROL ALLIT, ES AMI DONTES, NEM MERES: a Build lepes ettol
+    # kezdve FUGG a staging bolt elerhetosegetol. Ha a stage all, a kapu piros
+    # lesz olyan okbol, aminek a kodhoz semmi koze. A masik ut az lenne, hogy a
+    # `generateStaticParams` hiba eseten ures listat ad (a lapok akkor
+    # keres-idoben rendelodnek) -- de az egy VALODI hibat is elnyelne.
+    # Felirva; a valasztas nem a kirakate.
+    env:
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://commerce-stage.acropora.hu
+      NEXT_PUBLIC_DEFAULT_REGION: hu
+      NEXT_PUBLIC_BASE_URL: https://shop-staging.acropora.hu
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ba7f178c2b6b94dc96334fc7f24d32c3949b4575fc764658812fcd508a8b7dcc
+
     steps:
       - uses: actions/checkout@v4
+
+      # A pnpm A NODE ELE KELL: a `setup-node` gyorsitotara a csomagkezelo
+      # lockfile-jat keresi, es ha a pnpm meg nincs telepitve, a `cache: pnpm`
+      # lepes elhasal.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
 
       - uses: actions/setup-node@v4
         with:
           # A repo package.json-ja: ^20.19.0 || >=22.12.0
           node-version: '22'
-          cache: npm
+          cache: pnpm
 
       - name: Telepites
-        run: npm ci
+        # `--frozen-lockfile`: a lockfile-bol telepit, es MEGALL, ha az nem illik
+        # a package.json fajlokhoz. Igy egy elfelejtett lockfile-frissites itt
+        # bukik el, nem az eles buildben.
+        run: pnpm install --frozen-lockfile
 
       - name: Titok-kereses a valtozasokban
         # Publikus repo eseten egy elgepelt kulcs veglegesen kikerul, es a
@@ -47,15 +109,15 @@ jobs:
         run: node scripts/scan-secrets.mjs
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Tipusellenorzes
         working-directory: apps/backend
-        run: npx tsc --noEmit -p tsconfig.json
+        run: pnpm exec tsc --noEmit -p tsconfig.json
 
       - name: Unit tesztek
         working-directory: apps/backend
-        run: npm run test:unit
+        run: pnpm run test:unit
 
       - name: Build
-        run: npm run build
+        run: pnpm run build

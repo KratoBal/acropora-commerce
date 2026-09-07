@@ -6,3 +6,25 @@ apps/backend/.medusa
 npm-debug.log
 .env
 apps/backend/.env
+
+# A KIRAKAT FELVETELEVEL A KONTEXTUS TOBB MINDENT TARTALMAZ.
+#
+# Mind a ket kep innen epul (a hatter a gyokeri Dockerfile-lal, a kirakat az
+# apps/storefront/Dockerfile-lal), es mind a ketto csinal egy `COPY . .` lepest.
+# A Docker a KONTEXTUS GYOKEREBOL olvassa ezt a fajlt, tehat egy
+# `apps/storefront/.dockerignore` gyoker-kontextus mellett NEM hatna.
+#
+# Az also ket sor a sulyosabb: a `.env.local` a fejlesztoi gepen ALL. Ma csak a
+# publikalhato kulcs allna benne, de egy fajl, ami "titok is lehet", ne
+# kerulhessen kepbe azert, mert epp ma nem az. (A Coolify a kontextust a gitbol
+# allitja elo, tehat ott ezek amugy sem lennenek ott -- ez a HELYI epitesre ved.)
+apps/storefront/node_modules
+.next
+apps/storefront/.next
+.turbo
+apps/storefront/.turbo
+*.tsbuildinfo
+apps/storefront/*.tsbuildinfo
+.env.local
+apps/backend/.env.local
+apps/storefront/.env.local

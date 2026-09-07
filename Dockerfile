@@ -2,10 +2,24 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json turbo.json ./
-COPY apps/backend/package.json ./apps/backend/package.json
+# A PNPM A REPO CSOMAGKEZELOJE (a gyokeri package.json `packageManager` mezoje),
+# es a kepnek ugyanazt kell hasznalnia -- kulonben a CI zold lehet ugy, hogy az
+# ELES build mas fan epul.
+#
+# A `corepack` a node:22 kepben benne van, tehat nem kell kulon telepites.
+RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
 
-RUN npm ci
+# MIND A KET workspace package.json fajlja kell, nem csak a backende: a
+# `--frozen-lockfile` a lockfile-t a TELJES munkateruleteel veti ossze, es egy
+# hianyzo workspace-nel megtagadja a telepitest. Ez helyes viselkedes -- csak
+# tudni kell rola, mert a korabbi `npm ci` ezt eltürte.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY apps/storefront/package.json ./apps/storefront/package.json
+
+# `--filter @dtc/backend...`: csak a backend es a fuggosegei telepulnek, a
+# kirakate nem. A harom pont a szuro resze, nem elgepeles.
+RUN pnpm install --frozen-lockfile --filter @dtc/backend...
 
 COPY . .
 
@@ -28,6 +42,14 @@ WORKDIR /app
 
 COPY --from=builder /app/apps/backend/.medusa/server ./
 
+# ITT SZANDEKOSAN NPM MARAD, ES EZ NEM FELEDEKENYSEG.
+#
+# Ez a konyvtar NEM a munkateruletunk: a `medusa build` allitja elo, sajat,
+# onallo `package.json` fajllal es lockfile NELKUL. Nincs mit "frozen"-kent
+# ellenorizni, es nincs workspace, amibe illeszkedne.
+#
+# A repo szabalya (AGENTS.md) a REPO parancsaira szol; egy generalt, onallo
+# csomagra a `npm install --omit=dev` a legkevesebb feltetelt tamaszto alak.
 RUN npm install --omit=dev
 
 # Applies pending migrations before the server starts, and refuses to start
