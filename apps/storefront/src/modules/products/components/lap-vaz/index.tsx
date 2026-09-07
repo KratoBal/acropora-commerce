@@ -127,9 +127,19 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
   )
 }
 
+/**
+ * A KET VILAG. Nem izles es nem latogatoi beallitas: a TERMEK FAJTAJA donti el.
+ * A `globals.css` `[data-vilag="sotet"]` blokkja irja felul ugyanazokat a
+ * valtozokat, tehat a vaz szerkezete valtozatlan marad -- ugyanaz a doboz,
+ * masik ertek-keszlet.
+ */
+export type Vilag = "vilagos" | "sotet"
+
 type LapVazProps = {
   /** Szakasz-kulcs szerint a tartalom. Ami hianyzik, az uresen jelenik meg. */
   tartalom?: Partial<Record<string, React.ReactNode>>
+  /** Alapertelmezes a VILAGOS: a katalogus tulnyomo resze muszaki termek. */
+  vilag?: Vilag
 }
 
 /**
@@ -140,7 +150,7 @@ type LapVazProps = {
  * oszlopokba valo BESOROLAS csak akkor donthető el, ha a dobozok tartalma is
  * megvan. Egy sorrend, ami helyes, tobbet er egy elrendezesnel, ami talalgat.
  */
-const LapVaz = ({ tartalom = {} }: LapVazProps) => {
+const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
   return (
     <div
       className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4"
@@ -149,6 +159,7 @@ const LapVaz = ({ tartalom = {} }: LapVazProps) => {
         fontFamily: "var(--terv-betu-fo-lanc)",
       }}
       data-testid="muszaki-lap-vaz"
+      data-vilag={vilag}
     >
       {MUSZAKI_LAP_SZAKASZAI.map((szakasz) => (
         <VazDoboz key={szakasz.kulcs} szakasz={szakasz}>

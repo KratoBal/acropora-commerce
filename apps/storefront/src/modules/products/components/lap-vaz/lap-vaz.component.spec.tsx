@@ -62,6 +62,45 @@ describe("a műszaki lap váza", () => {
    * A sorrend, az üresség jelölése és a "nincs kitalált adat" mind igaz maradt
    * eközben. Három állítás, és egyik sem vette észre, hogy a lényeg eltűnt.
    */
+  /**
+   * A KÉT VILÁG. A váltó nem ízlés és nem látogatói beállítás: a TERMÉK fajtája
+   * dönti el (élő állat sötét, műszaki világos).
+   *
+   * Az alapértelmezés a VILÁGOS, és ez sem véletlen: a katalógus 1884+ terméke
+   * műszaki, az élő állat a kisebbik halmaz. Ha a hívó elfelejti megadni, a
+   * gyakoribb esetet kapja.
+   */
+  it("alapértelmezésben világos", () => {
+    render(<LapVaz />)
+
+    const vaz = screen.getByTestId("muszaki-lap-vaz")
+    expect(vaz.getAttribute("data-vilag")).toBe("vilagos")
+  })
+
+  it("sötét világot kérve a váz azt jelöli", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    const vaz = screen.getByTestId("muszaki-lap-vaz")
+    expect(vaz.getAttribute("data-vilag")).toBe("sotet")
+  })
+
+  /**
+   * EGY VÁZ, KÉT ÉRTÉK-KÉSZLET. Ez az állítás azt védi, ami az egészet
+   * összetartja: a két világ nem két külön lap. Ha valaha valaki a sötét ághoz
+   * más dobozokat vagy más sorrendet ad, ez pirosra vált.
+   */
+  it("a szerkezet mindkét világban ugyanaz", () => {
+    const kulcsok = (v: "vilagos" | "sotet") => {
+      cleanup()
+      render(<LapVaz vilag={v} />)
+      return Array.from(document.querySelectorAll("[data-vaz-szakasz]")).map((e) =>
+        e.getAttribute("data-vaz-szakasz")
+      )
+    }
+
+    expect(kulcsok("sotet")).toEqual(kulcsok("vilagos"))
+  })
+
   it("az üres doboz kiírja, mi jön a helyére", () => {
     render(<LapVaz />)
 
