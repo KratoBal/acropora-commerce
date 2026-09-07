@@ -87,6 +87,78 @@ services:
       - medusa_stage
       - coolify
 
+  # A KIRAKAT (Next.js), SAJAT KEPPEL ES SAJAT CIMMEL.
+  #
+  # MIERT SAJAT KEP: a gyokerben allo Dockerfile csak a hatteret epiti, tehat a
+  # kirakatnak eddig NEM VOLT telepitesi utja -- beolvasztas utan sehol nem
+  # futott volna, nem hibaval, hanem ugy, hogy nincs hova telepiteni.
+  #
+  # MIERT A SAJAT KONYVTARABAN TELEPIT (lasd az apps/storefront/Dockerfile
+  # fejlecet): a ket alkalmazas ket kulonbozo React fovezriot igenyel, es egy
+  # kozos telepitesben a `next build` elhasal. A kirakat konyvtaraban telepitve
+  # mindketto 19.0.5-ot lat -- merve 2026-09-07: 533 csomag, 244 statikus lap,
+  # nulla hiba.
+  storefront:
+    build:
+      context: ../backend/apps/storefront
+      dockerfile: Dockerfile
+      args:
+        # A `next build` a Store API-t MAR BUILD IDOBEN hivja (harom oldal
+        # `generateStaticParams` fuggvenye), tehat ezek EPITESI feltetelek, nem
+        # futasideju beallitasok. Kulcs nelkul a build a kategoria-oldalnal
+        # all meg, 400-as valasszal.
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://commerce-stage.acropora.hu
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY:?a kirakat publikalhato kulcsa nincs beallitva}
+        NEXT_PUBLIC_DEFAULT_REGION: hu
+        NEXT_PUBLIC_BASE_URL: https://${STOREFRONT_HOST:?a kirakat cime nincs beallitva}
+        GIT_SHA: ${GIT_SHA:-unknown}
+    image: acropora-commerce-storefront:stage
+    container_name: acropora-commerce-storefront-stage
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "8000"
+    depends_on:
+      medusa-server:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8001:8000"
+    healthcheck:
+      # A `/hu` cimet kerdezi, nem a gyokeret: a gyoker 307-tel atiranyit, es
+      # egy atiranyitas is "ok", tehat kevesebbet bizonyitana.
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8000/hu').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    labels:
+      # A CIM DONTES ES DNS-BEJEGYZES, NEM BEALLITAS. A `STOREFRONT_HOST`
+      # szandekosan `:?` alakban all: ha nincs beallitva, a compose HANGOSAN
+      # elhasal. Egy ures Host() szabaly csendben epulne fel es soha nem
+      # illeszkedne semmire.
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.middlewares.acropora-storefront-stage-gzip.compress=true"
+      - "traefik.http.middlewares.acropora-storefront-stage-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.acropora-storefront-stage-http.entrypoints=http"
+      - "traefik.http.routers.acropora-storefront-stage-http.rule=Host(`${STOREFRONT_HOST:?a kirakat cime nincs beallitva}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.acropora-storefront-stage-http.middlewares=acropora-storefront-stage-https"
+      - "traefik.http.routers.acropora-storefront-stage-http.service=acropora-storefront-stage"
+      - "traefik.http.routers.acropora-storefront-stage-https.entrypoints=https"
+      - "traefik.http.routers.acropora-storefront-stage-https.rule=Host(`${STOREFRONT_HOST:?a kirakat cime nincs beallitva}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.acropora-storefront-stage-https.middlewares=acropora-storefront-stage-gzip"
+      - "traefik.http.routers.acropora-storefront-stage-https.service=acropora-storefront-stage"
+      - "traefik.http.routers.acropora-storefront-stage-https.tls=true"
+      - "traefik.http.routers.acropora-storefront-stage-https.tls.certresolver=letsencrypt"
+      - "traefik.http.services.acropora-storefront-stage.loadbalancer.server.port=8000"
+    networks:
+      - medusa_stage
+      - coolify
+
   medusa-worker:
     image: acropora-commerce-medusa:stage
     container_name: acropora-commerce-medusa-worker-stage
