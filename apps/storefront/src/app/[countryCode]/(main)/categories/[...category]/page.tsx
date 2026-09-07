@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
@@ -54,12 +55,12 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       decodeHandleParams(params.category)
     )
 
-    const title = productCategory.name + " | Medusa Store"
+    const title = `${productCategory.name} | ${STORE_NAME}`
 
     const description = productCategory.description ?? `${title} category.`
 
     return {
-      title: `${title} | Medusa Store`,
+      title,
       description,
       alternates: {
         canonical: `${params.category.join("/")}`,

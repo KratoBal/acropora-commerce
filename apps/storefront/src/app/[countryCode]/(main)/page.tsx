@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { STORE_NAME } from "@lib/store"
 
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
@@ -6,9 +7,16 @@ import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
 export const metadata: Metadata = {
-  title: "Medusa Next.js Starter Template",
-  description:
-    "A performant frontend ecommerce starter template with Next.js 15 and Medusa.",
+  title: STORE_NAME,
+  /*
+   * A starter leirasa SAJAT MAGAROL szolt ("A performant frontend ecommerce
+   * starter template with Next.js 15 and Medusa"). Az a mondat a keresok
+   * talalati listajaban jelent volna meg a bolt fooldalarol.
+   *
+   * NEM TALALTAM KI HELYETTE MASIKAT: a fooldal leirasa marketing-dontes, es
+   * egy kitalalt mondat ugyanugy tovabbutazna, mint a starter sajatja. Amig
+   * nincs, a Next a cimbol dolgozik.
+   */
 }
 
 export default async function Home(props: {
