@@ -18,35 +18,50 @@ describe("ki kapja már a vázat", () => {
   })
 
   /**
-   * A LÉNYEG, ÉS EZÉRT VAN EGYÁLTALÁN KAPU: az élő állat lapja VÁLTOZATLAN
-   * marad. Ez nem ígéret a pull request szövegében, hanem állítás -- ha valaki
-   * a kaput feltétel nélkülire cseréli, ez pirosra vált, és a döntés látszik.
+   * A KAPU KINYITVA, 2026-09-07. Az elo allat lapja MOSTANTOL a vazat kapja,
+   * mind a harom gyokeren.
+   *
+   * EZ AZ ALLITAS KORABBAN AZ ELLENKEZOJET MONDTA, es pontosan ezert volt jo:
+   * a kapcsolo atbillentese NEM tortenhetett meg eszrevetlenul -- ezt a sort
+   * at kellett irni hozza, tehat a dontes a diffben all.
+   *
+   * AMI A NYITAS FELTETELE VOLT, es mind a ketto megvan:
+   *   #91  a galeria atadasa, kulonben a jelveny es az igeret elveszne
+   *   ez a PR  a sotet vilag sajat feliratai, kulonben "Hasonlo lampak" allna
+   *            egy korall lapon, tartalommal a doboz alatt
    */
-  it("az élő állat NEM, mind a három gyökéren", () => {
-    expect(hasznaljaVazat(termek("Korallok"))).toBe(false)
-    expect(hasznaljaVazat(termek("Halak"))).toBe(false)
-    expect(hasznaljaVazat(termek("Gerinctelenek"))).toBe(false)
+  it("az élő állat IGEN, mind a három gyökéren", () => {
+    expect(hasznaljaVazat(termek("Korallok"))).toBe(true)
+    expect(hasznaljaVazat(termek("Halak"))).toBe(true)
+    expect(hasznaljaVazat(termek("Gerinctelenek"))).toBe(true)
   })
 
   /**
    * A KAPCSOLO MAI ERTEKE, KIMONDVA -- ES EZ NEM FOLOSLEGES ALLITAS.
    *
-   * Az "élő állat NEM" állítás akkor is zöld maradna, ha valaki a kapcsolót
-   * `true`-ra írja ÉS közben a váltót is elrontja. Ez a sor a kapcsolót
-   * MAGÁT rögzíti, tehát a bekapcsolás nem történhet meg észrevétlenül: aki
-   * átállítja, ezt is átírja, és akkor a döntés LÁTSZIK a diffben.
+   * Az "élő állat IGEN" állítás akkor is zöld maradna, ha valaki a kapcsolót
+   * visszaírja ÉS közben a váltót is elrontja. Ez a sor a kapcsolót MAGÁT
+   * rögzíti, tehát a visszakapcsolás sem történhet meg észrevétlenül.
    */
-  it("a költözés-kapcsoló ma KI van kapcsolva", () => {
-    expect(ELO_ALLAT_VAZON).toBe(false)
+  it("a költözés-kapcsoló BE van kapcsolva", () => {
+    expect(ELO_ALLAT_VAZON).toBe(true)
   })
 
   /**
-   * ÉS A KAPU KÉT KÉRDÉSE KÜLÖN ÁLL. A műszaki termék attól kapja a vázat,
-   * hogy világos -- NEM a kapcsolótól. Ha valaki a két ágat összevonná, ez
-   * pirosodik ki: a kapcsoló kikapcsolt állapotában is igaz kell maradjon.
+   * ES AMIT EZ AZ ALLITAS MOSTANTOL NEM TUD MEGMUTATNI -- KIMONDOM.
+   *
+   * Korabban itt az allt, hogy a muszaki termek a KIKAPCSOLT kapcsolo mellett
+   * IS a vazat kapja: ez bizonyitotta, hogy a ket ag fuggetlen egymastol.
+   *
+   * A kapcsolo bekapcsolasa utan ez a bizonyitek MEGSZUNT, mert most mind a
+   * ketto igazat ad, es a fuggveny a modul-szintu konstansbol olvas -- nem
+   * tudom "kikapcsolt" allapotra kerdezni anelkul, hogy atirnam a modult.
+   *
+   * NEM irok helyette olyan allitast, ami ugy nez ki, mintha meg mindig merne.
+   * Ami marad, az a tenymegallapitas; a fuggetlenseg a kod alakjabol latszik
+   * (`vilagaTermeknek(...) === "vilagos"` KULON ag), nem ebbol a sorbol.
    */
-  it("a műszaki termék a kikapcsolt kapcsoló mellett IS a vázat kapja", () => {
-    expect(ELO_ALLAT_VAZON).toBe(false)
+  it("a műszaki termék továbbra is a vázat kapja", () => {
     expect(hasznaljaVazat(termek("Termékek"))).toBe(true)
   })
 

@@ -235,6 +235,103 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  * valtozokat, tehat a vaz szerkezete valtozatlan marad -- ugyanaz a doboz,
  * masik ertek-keszlet.
  */
+/**
+ * AZ ELO ALLAT LAP DOBOZAI -- A TERVBOL MERVE, NEM KITALALVA.
+ *
+ * A tervfajl HAT lap-valtozatot tartalmaz: harom elo allatot es harom
+ * muszakit. A fenti lista a legteljesebb MUSZAKI valtozatot koveti; ez itt a
+ * korall valtozat ("2. KOR WYSIWYG korall termekoldal, sotet").
+ *
+ * === MIERT NEM ELEG UGYANAZ A LISTA ===
+ *
+ * A ket valtozat SZERKEZETE azonos, a FELIRATAI nem. Egy korall lapon a
+ * "Hasonlo lampak" doboz nem uresen allna, hanem TELE lenne -- hamis felirat
+ * alatt. Egy ures doboz azt mondja, hogy meg nincs kesz; egy rossz cim azt,
+ * hogy lampat nezel.
+ *
+ * === AMI MERVE VAN, ES AMI NEM ===
+ *
+ * A tervbol kiolvasva (`exchange/design-balazs/geometria-sorrend-terv.json`,
+ * a korall valtozat dobozai):
+ *
+ *   foto              "SAJAT FOTO -- EZ A PELDANY, 16:10"
+ *   meretezes-seged   "ELHELYEZES-SEGED / Hova tedd ezt a peldanyt?"
+ *   fulek             Gondozas, Leiras, Vizparameterek, Eloallat-szallitas,
+ *                     Ertekelesek
+ *   csomagajanlat     "Kotegajanlat"
+ *   kerdezd           "Kerdezd a boltot"
+ *   hasonlo           "Tovabbi WYSIWYG peldanyok"
+ *   kiegeszitok       NINCS ilyen doboz a korall valtozatban -- de a dobozt
+ *                     MEGIS meghagyjuk, lasd az indoklast lentebb
+ *
+ * EGYETLEN CIM NEM A TERVBOL VALO, ES EZT KIMONDOM: a `muszaki-adatok` doboz
+ * a tervben MINDKET valtozatban cim NELKUL all (a muszakinal "Teljesitmeny 160 W
+ * ...", a korallnal "Nehezseg Halado, Fenyigeny ..."). A "Muszaki adatok" cimet
+ * a mi vazunk tette ra. Korallra az szo szerint rossz, ezért a MERT TARTALOMBOL
+ * vezettem le: tartasi parameterek. Ha ez nem tetszik, EZ AZ EGY sor cserelendo,
+ * es a tobbi a tervbol all.
+ */
+const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
+  foto: { varakozo: "Saját fotó: ez a példány" },
+  "meretezes-seged": {
+    cim: "Elhelyezés-segéd",
+    varakozo: "Hová tedd ezt a példányt?",
+  },
+  fulek: {
+    varakozo:
+      "Gondozás, Leírás, Vízparaméterek, Élőállat-szállítás, Értékelések",
+  },
+  "muszaki-adatok": {
+    cim: "Tartási paraméterek",
+    varakozo: "Nehézség, fényigény, áramlás",
+  },
+  csomagajanlat: { cim: "Kötegajánlat", varakozo: "Ide jön a kötegajánlat" },
+  kerdezd: { cim: "Kérdezd a boltot", varakozo: "Kapcsolatfelvétel" },
+  hasonlo: {
+    cim: "További WYSIWYG példányok",
+    varakozo: "Ide jönnek a további egyedi példányok",
+  },
+}
+
+/**
+ * ES EGY DOBOZ, AMIT A TERV ALAPJAN KI KELLETT VOLNA HAGYNI -- MEGIS BENT MARAD.
+ *
+ * Merve: a korall valtozatban NINCS "Ami meg kellhet hozza" doboz. Eloszor ki is
+ * vettem, es egy MEGLEVO allitas azonnal pirosra valtott:
+ *
+ *   "a szerkezet mindket vilagban ugyanaz"
+ *
+ * Az az allitas SZANDEKOS, es a sajat kommentje ki is mondja, mit ved: hogy a
+ * ket vilag NEM ket kulon lap, csak ket ertek-keszlet ugyanazon a vazon. Ez
+ * szerkezeti dontes, es nem az enyem -- nem irom at azert, hogy az en
+ * valtozasom atmenjen.
+ *
+ * ES A KET BIZONYITEK KOZUL A MASODIK ITT EROSEBB, mert Balazs kikotese pontosan
+ * erre az esetre szol: "ami NINCS, ott a doboz alljon a helyen, uresen". Egy
+ * uresen allo tartozek-doboz tehat NEM hiba a korall lapon, hanem a kimondott
+ * viselkedes. A "Hasonlo lampak" felirat viszont AZ IGEN: az nem ures doboz,
+ * hanem rossz allitas -- es a javitas pontosan azt celozza.
+ */
+
+/**
+ * A LISTA SZARMAZTATVA, NEM MASOLVA.
+ *
+ * Ha valaki uj dobozt vesz fel a muszaki listaba, az ITT IS megjelenik -- egy
+ * masolat eseten csendben kimaradna, es az elteres csak a lapon latszana.
+ * A felirat-elteresek egy helyen allnak, fent.
+ */
+export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] = MUSZAKI_LAP_SZAKASZAI.map(
+  (szakasz) => ({
+    ...szakasz,
+    ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
+  })
+)
+
+/** Melyik vilag melyik dobozlistat kapja. */
+export function szakaszokVilagra(vilag: Vilag): VazSzakasz[] {
+  return vilag === "sotet" ? ELO_ALLAT_LAP_SZAKASZAI : MUSZAKI_LAP_SZAKASZAI
+}
+
 export type Vilag = "vilagos" | "sotet"
 
 type LapVazProps = {
@@ -279,7 +376,7 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
       data-testid="muszaki-lap-vaz"
       data-vilag={vilag}
     >
-      {MUSZAKI_LAP_SZAKASZAI.map((szakasz) => (
+      {szakaszokVilagra(vilag).map((szakasz) => (
         <div
           key={szakasz.kulcs}
           data-vaz-oszlop={szakasz.oszlop}
@@ -287,8 +384,8 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
             szakasz.oszlop === "teljes"
               ? "lg:col-span-2"
               : szakasz.oszlop === "bal"
-                ? "lg:col-start-1"
-                : "lg:col-start-2"
+              ? "lg:col-start-1"
+              : "lg:col-start-2"
           }
         >
           <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>

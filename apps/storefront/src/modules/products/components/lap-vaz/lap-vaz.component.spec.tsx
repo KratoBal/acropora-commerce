@@ -1,7 +1,10 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
+import LapVaz, {
+  ELO_ALLAT_LAP_SZAKASZAI,
+  MUSZAKI_LAP_SZAKASZAI,
+} from "./index"
 
 afterEach(cleanup)
 
@@ -322,5 +325,97 @@ describe("a dobozok horgonyozhatok", () => {
     render(<LapVaz tartalom={{}} />)
 
     expect(document.getElementById("vaz-mennyiseg")).not.toBeNull()
+  })
+})
+
+/**
+ * AZ ÉLŐ ÁLLAT LAP FELIRATAI.
+ *
+ * A váz szerkezete a két világban AZONOS (arra külön állítás áll); ami eltér,
+ * az a FELIRAT. Ez nem szépészet: a "Hasonló lámpák" doboz egy korall lapon
+ * nem üresen állna, hanem TELE lenne, hamis felirat alatt. Egy üres doboz azt
+ * mondja, hogy még nincs kész; egy rossz cím azt, hogy lámpát nézel.
+ */
+describe("az élő állat lap feliratai", () => {
+  const cimek = (lista: typeof MUSZAKI_LAP_SZAKASZAI) =>
+    lista.map((szakasz) => `${szakasz.cim} ${szakasz.varakozo}`).join(" | ")
+
+  /**
+   * ISMERT POZITÍV KONTROLL, ELÖL. A tagadó állítás önmagában akkor is zöld
+   * lenne, ha a keresés soha nem talál semmit -- ezért előbb megmutatjuk, hogy
+   * a VILÁGOS listában ugyanez a keresés MEGTALÁLJA a lámpás szavakat.
+   */
+  it("a világos lista tényleg lámpás szavakat használ", () => {
+    expect(cimek(MUSZAKI_LAP_SZAKASZAI)).toContain("lámpák")
+    expect(cimek(MUSZAKI_LAP_SZAKASZAI)).toContain("Méretezés-segéd")
+  })
+
+  it("a sötét listában nincs lámpás szó", () => {
+    expect(cimek(ELO_ALLAT_LAP_SZAKASZAI)).not.toContain("lámpák")
+    expect(cimek(ELO_ALLAT_LAP_SZAKASZAI)).not.toContain("Méretezés-segéd")
+  })
+
+  /** A tervből mért feliratok, egyenként megnevezve. */
+  it("a tervből mért feliratokat viseli", () => {
+    const sotet = ELO_ALLAT_LAP_SZAKASZAI
+    const cim = (kulcs: string) =>
+      sotet.find((szakasz) => szakasz.kulcs === kulcs)?.cim
+
+    expect(cim("hasonlo")).toBe("További WYSIWYG példányok")
+    expect(cim("meretezes-seged")).toBe("Elhelyezés-segéd")
+    expect(cim("kerdezd")).toBe("Kérdezd a boltot")
+    expect(cim("csomagajanlat")).toBe("Kötegajánlat")
+  })
+
+  /**
+   * ÉS A SZERKEZET ADAT-SZINTEN IS AZONOS. A renderelt állítás ugyanezt méri a
+   * DOM-on; ez itt a lista szintjén fogja meg, tehát egy elcsúszás akkor is
+   * kiderül, ha a renderelés közben valami elnyeli.
+   */
+  it("ugyanazok a dobozok, ugyanabban a sorrendben", () => {
+    expect(ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)).toEqual(
+      MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs),
+    )
+  })
+
+  /** Az oszlop-besorolás sem csúszhat el a másolás során. */
+  it("az oszlop-besorolás változatlan", () => {
+    expect(ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.oszlop)).toEqual(
+      MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.oszlop),
+    )
+  })
+})
+
+/**
+ * ÉS HOGY A VÁZ TÉNYLEG A VILÁGHOZ TARTOZÓ LISTÁT RAJZOLJA.
+ *
+ * EZT A KALIBRÁCIÓ HÍVTA ELŐ, ÉS A NULLA PIROS HÍVTA FEL RÁ A FIGYELMET: a
+ * `szakaszokVilagra` váltót elrontottam (mindig a világos listát adta), és
+ * MINDEN állítás zöld maradt -- mert a listákat közvetlenül néztem, a váltót
+ * senki. Egy törött váltó mellett a korall lapon újra "Hasonló lámpák" állna,
+ * és semmi nem szólt volna.
+ *
+ * A jóslatomban ez a lehetőség előre le volt írva, ezért nem "nincs baj"-nak
+ * olvastam a nulla pirosat, hanem hiányzó állításnak.
+ */
+describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
+  const feliratok = () =>
+    Array.from(document.querySelectorAll("[data-vaz-szakasz]"))
+      .map((e) => e.textContent ?? "")
+      .join(" | ")
+
+  it("sötét világban a WYSIWYG felirat áll, nem a lámpás", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(feliratok()).toContain("További WYSIWYG példányok")
+    expect(feliratok()).not.toContain("Hasonló lámpák")
+  })
+
+  /** ISMERT POZITÍV KONTROLL: világos világban ugyanez a keresés a lámpást találja. */
+  it("világos világban a lámpás felirat áll", () => {
+    render(<LapVaz vilag="vilagos" />)
+
+    expect(feliratok()).toContain("Hasonló lámpák")
+    expect(feliratok()).not.toContain("További WYSIWYG példányok")
   })
 })
