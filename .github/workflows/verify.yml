@@ -44,7 +44,29 @@ jobs:
     # A GitHub Actions valtozo-felulete helyett azert all itt, mert a tokenunk
     # azt megtagadta (403, "Resource not accessible by personal access token")
     # -- nem jogosultsag-hiany a repon, hanem a token hatokore.
+    # ES A KULCS EGYEDUL KEVES: A BUILD TENYLEGESEN LEKERDEZI A BOLTOT.
+    #
+    # A kulcs potlasa utan a Build masodszor is elhasalt, MAS hibaval:
+    # `TypeError: fetch failed ... ECONNREFUSED`, a kategoria-oldal
+    # `generateStaticParams` lepesenel. Az ok: cim hijan a kirakat az
+    # `.env.template` alapertelmezesere esik (`http://localhost:9000`), es a
+    # futtatoban ott nem all semmi.
+    #
+    # Vagyis a hibat ket lepesben talaltam meg, es MIND A KETTOT a CI mondta
+    # meg -- helyben egyik sem allt elo, mert en a teljes kornyezetet atadtam a
+    # parancsnak. A Dockerfile fejlece MIND A NEGY valtozot felsorolja; ide
+    # eloszor csak azt tettem be, amelyikbe eloszor beleutkoztem.
+    #
+    # AMIT EZ A CI-ROL ALLIT, ES AMI DONTES, NEM MERES: a Build lepes ettol
+    # kezdve FUGG a staging bolt elerhetosegetol. Ha a stage all, a kapu piros
+    # lesz olyan okbol, aminek a kodhoz semmi koze. A masik ut az lenne, hogy a
+    # `generateStaticParams` hiba eseten ures listat ad (a lapok akkor
+    # keres-idoben rendelodnek) -- de az egy VALODI hibat is elnyelne.
+    # Felirva; a valasztas nem a kirakate.
     env:
+      NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://commerce-stage.acropora.hu
+      NEXT_PUBLIC_DEFAULT_REGION: hu
+      NEXT_PUBLIC_BASE_URL: https://shop-staging.acropora.hu
       NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ba7f178c2b6b94dc96334fc7f24d32c3949b4575fc764658812fcd508a8b7dcc
 
     steps:
