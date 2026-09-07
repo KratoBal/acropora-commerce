@@ -8,7 +8,32 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  * ugyanúgy néz ki, csak az ígéret nem hangzik el.
  *
  * A jelvény a kép BAL FELSŐ sarkában áll (picasso rajza szerint), tehát a
- * befoglaló elemnek `relative`-nek kell lennie.
+ * befoglaló elemnek `relative`-nek kell lennie. A tervben ugyanez all,
+ * abszolut poziciovall a kepen (top/left 18px) -- vagyis a jelveny
+ * SZERKEZETILEG a kephez tartozik, nem a vasarlasi reszhez.
+ *
+ * === SZOGLETES, NEM PIRULA -- ES EZ MERES ===
+ *
+ * A `rounded-full` a starter szokasa volt, nem a terve. Nautilus a tervfajlbol
+ * merte (2026-09-07): a teljes tervben HUSZONEGY `border-radius` all, ebbol 16
+ * darab `50%` (valodi korok), 2 darab `8px`, 1 darab `6px` -- es a jelveny
+ * EGYIKBEN SINCS BENNE. A tervbeli jelvenyen nincs lekerekites egyaltalan.
+ *
+ * (A "pirula stimmel a terv tizenhat korehez" ervet ez cafolja: az a tizenhat
+ * MASHOL van, es a jelveny nem tartozik hozzajuk.)
+ *
+ * === AMI MEG NEM VALTOZOTT, ES MIERT ===
+ *
+ * A tervben a jelveny REZ hatteren all, SOTET szoveggel
+ * (`--terv-kiemel-szoveg`, merve mind az ot rez-hatteru elemen). A mai
+ * valtozat sotet pirulan all, borostyan szoveggel.
+ *
+ * A ketto EGYUTT mozdul vagy sehogy: a sotet szoveg a mai sotet hatteren
+ * olvashatatlan lenne. Es hogy MELYIK rez-token a helyes, az ma nem
+ * eldontheto -- a `globals.css` kommentje szerint "sotet hatteren vilagosabb
+ * rez all", a sotet blokk viszont a SOTETEBBET (`0.55`) teszi a
+ * `--terv-kiemel` valtozora. A tervbeli jelveny `0.62`, ami a sotet vilagban
+ * ma a `--terv-kiemel-sotet`. Felirva acrobotnak es nautilusnak.
  *
  * TISZTA MEGJELENÍTÉS: nincs adatlekérése és nem tudja, melyik lapon áll --
  * ezért használható a műszaki lapon is, ha ott valaha kell.
@@ -22,7 +47,7 @@ export default function UniquePieceBadge({
     <span
       data-testid="unique-piece-badge"
       className={
-        "absolute left-3 top-3 z-10 rounded-full bg-neutral-900/85 px-3 py-1 " +
+        "absolute left-3 top-3 z-10 bg-neutral-900/85 px-3 py-1 " +
         "text-xs font-semibold uppercase tracking-wide text-amber-200 " +
         "shadow-sm backdrop-blur-sm " +
         className

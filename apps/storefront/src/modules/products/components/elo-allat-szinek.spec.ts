@@ -96,3 +96,27 @@ describe("a két világon megjelenő szövegek színe", () => {
     expect(osztalyok(olvas(FAJLOK[1]))).toContain("bg-neutral-900/85")
   })
 })
+
+/**
+ * A JELVENY ALAKJA: SZOGLETES, NEM PIRULA.
+ *
+ * Nautilus merese a tervfajlbol (2026-09-07): a teljes tervben huszonegy
+ * `border-radius` all -- 16 darab `50%`, 2 darab `8px`, 1 darab `6px` --, es a
+ * jelveny EGYIKBEN SINCS BENNE.
+ *
+ * A `rounded-full` a starter szokasa volt. Az "a pirula stimmel a terv tizenhat
+ * korehez" ervet ugyanez a meres cafolja: az a tizenhat MASHOL van.
+ */
+describe("az egyedi példány jelvényének alakja", () => {
+  const jelveny = () => osztalyok(olvas(FAJLOK[1]))
+
+  /** ISMERT POZITIV KONTROLL: a kinyeres tenyleg a jelveny osztalyait latja. */
+  it("a jelvény osztályai olvashatók", () => {
+    expect(jelveny()).toContain("absolute")
+    expect(jelveny()).toContain("left-3")
+  })
+
+  it("nincs rajta lekerekítés", () => {
+    expect(jelveny()).not.toContain("rounded")
+  })
+})
