@@ -1,3 +1,5 @@
+import PickupNotice from "../components/pickup-notice"
+import { pickupOnlyLines } from "../components/pickup-notice/pickup-notice"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
@@ -18,6 +20,19 @@ const CartTemplate = ({
         {cart?.items?.length ? (
           <div className="grid grid-cols-1 small:grid-cols-[1fr_360px] gap-x-40">
             <div className="flex flex-col bg-white py-6 gap-y-6">
+              {/*
+                AZ ATVETELI SAV A LISTA FOLOTT ALL, es ez a terv kikotese: a
+                magyarazat a KOSARBAN alljon, ne a fizetesi lepesnel. Aki a
+                fizetesnel talalkozik vele eloszor, mar dontott.
+              */}
+              <PickupNotice
+                lines={pickupOnlyLines(
+                  (cart?.items ?? []).map((item) => ({
+                    title: item.product_title ?? item.title ?? "",
+                    productMetadata: item.variant?.product?.metadata,
+                  })),
+                )}
+              />
               {!customer && (
                 <>
                   <SignInPrompt />
