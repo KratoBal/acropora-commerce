@@ -62,6 +62,44 @@ describe("készlet-állapot", () => {
  * A szo maga dontesbol jon (efb09c9a kartya, Balazs szava): "Nincs raktaron",
  * nem "Elfogyott". Az elso allapot, a masodik veg.
  */
+/**
+ * A MERT NULLA ES A HIANYZO SZAM KET KULONBOZO ALLAPOT.
+ *
+ * Merve a stage boltban (acrobot, 2026-09-07): a negy WYSIWYG termekbol
+ * HAROMNAK egyetlen keszlet-sora sincs, es csak a negyediknel all kimondott
+ * nulla. Balazs szabalya a MERT nullara szol; egy soha nem mert termeket
+ * eladottnak nyilvanitani a HANGOS tevedes.
+ */
+describe("a mért nulla és a hiányzó szám", () => {
+  it("kimondott jelző MÉRT nulla mellett ELADVA", () => {
+    expect(
+      availabilityOf({
+        inStock: false,
+        uniquePiece: true,
+        inventoryKnown: true,
+      }),
+    ).toBe("ELADVA")
+  })
+
+  it("ismeretlen készlet mellett ELFOGYOTT, akkor is, ha a jelző ott van", () => {
+    expect(
+      availabilityOf({
+        inStock: false,
+        uniquePiece: true,
+        inventoryKnown: false,
+      }),
+    ).toBe("ELFOGYOTT")
+  })
+
+  /**
+   * ES A REGI HIVOK VISELKEDESE NEM VALTOZIK: a mezo elhagyasa ugyanazt adja,
+   * mint a `true`. Enelkul egy uj mezo CSENDBEN atirna minden meglevo hivast.
+   */
+  it("a mező elhagyása a mért nullával egyenértékű", () => {
+    expect(availabilityOf({ inStock: false, uniquePiece: true })).toBe("ELADVA")
+  })
+})
+
 describe("a három állapot felirata", () => {
   it("mindhárom felirat különbözik", () => {
     const feliratok = Object.values(availabilityLabel)
