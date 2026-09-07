@@ -28,13 +28,13 @@
  */
 export function decodeHandleParam(handle: string): string {
   try {
-    return decodeURIComponent(handle);
+    return decodeURIComponent(handle)
   } catch {
-    return handle;
+    return handle
   }
 }
 
 /** Ugyanaz, a `[...catchAll]` szegmens-listakra. */
 export function decodeHandleParams(handles: string[]): string[] {
-  return handles.map(decodeHandleParam);
+  return handles.map(decodeHandleParam)
 }

@@ -10,4 +10,4 @@
  * mert a starter sajat markajat ki kellett venni, es valaminek ott kell allnia.
  * A BOLT nevet nem en dontom el. Ha mas a helyes alak, EZ AZ EGY SOR valtozik.
  */
-export const STORE_NAME = "Acropora";
+export const STORE_NAME = "Acropora"
