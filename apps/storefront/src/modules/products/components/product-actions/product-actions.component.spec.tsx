@@ -186,6 +186,33 @@ describe("a terméklap bekötése a készlet-állapothoz", () => {
  * üres opció-lista mellett akkor sem jelenne meg. Az állítás MÁS OKBÓL volt zöld,
  * mint amit a neve ígért.
  */
+/**
+ * === A KET FIXTURA HATOKORE, MERVE (2026-09-07 22:3x) ===
+ *
+ * Nautilus a teljes katalogust lapozva merte, es en visszamertem a bolt
+ * vegpontjarol, kulon-kulon az OPCIOKAT es a VALTOZATOKAT (ket kulon mezo):
+ *
+ *   1492 termekbol MINDEGYIKNEK   pontosan 1 opcioja van
+ *   az opcio cime MINDEGYIKEN     "Kivitel"
+ *   az opcio ertekeinek szama     mindenhol 1
+ *   az ertek maga                 mindenhol "Alap"
+ *   a valtozatok szama            mindenhol 1
+ *
+ * EBBOL KET DOLOG KOVETKEZIK, ES MIND A KETTOT JOBB KIMONDVA TUDNI:
+ *
+ * 1. Az `egyValtozatosTermek` alakja nem egy szuk eset, hanem a katalogus
+ *    EGESZE. Amit rajta merunk, az minden termekre all.
+ *
+ * 2. A `ketValtozatosTermek` alakjanak MA NULLA megfeleloje van a boltban.
+ *    A rajta allo allitasok tehat nem meretlenek -- fixtura fedi oket --, de a
+ *    boltban nem allnak elo. Ez nem hiba: a tobb-valtozatos ag megepitese
+ *    szandekos elokeszites. De aki ezt a fajlt olvassa, ne higgye, hogy a ket
+ *    fixtura ket LETEZO termek-csoportot ir le.
+ *
+ * A szam es a datum azert all itt, mert egy hatokor-allitas elavul: ha a
+ * katalogusba valaha tobb-valtozatos termek kerul, a masodik pont megszunik,
+ * es ezt csak ujramerve lehet eszrevenni.
+ */
 const KIVITEL_OPCIO = {
   id: "opt_kivitel",
   title: "Kivitel",
