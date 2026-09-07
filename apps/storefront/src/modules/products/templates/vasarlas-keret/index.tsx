@@ -20,11 +20,38 @@ import { VasarlasProvider } from "@modules/products/components/vasarlas/allapot"
  * ("real time pricing"), es ezert marad meg itt is.
  *
  * A NEV FELREVEZET, es ezt kimondom, mert a kovetkezo olvaso a nevbol azt
- * vonna le, hogy a masodik lekerdezes felesleges. Az egyszerubb alak (a
- * `*variants.calculated_price` felvetele a lap mezoibe) MEGSZUNTETNE ezt a
- * kort -- de az a termeklap lekerdezeset noveli, es a lap adat-merete ma
- * kulon kerdes (a kategoria-lekerdezes ma 4,1 MB-rol 11 kB-ra ment). Ezert az
- * kulon dontes, kulon meressel, nem ennek a kornek a melleklete.
+ * vonna le, hogy a masodik lekerdezes felesleges.
+ *
+ * === AMIERT A MASODIK KOR MEGIS MARAD -- ES NEM A FRISSESSEG MIATT ===
+ *
+ * A kezenfekvo indok az lenne, hogy a kulon kor FRISSEBB arat hoz. Lemertem, es
+ * EZ MA NEM ALL: mind a ket hivas UGYANAZ a `listProducts`, ugyanazzal a
+ * `cache: "force-cache"` beallitassal es ugyanazzal a `getCacheOptions("products")`
+ * cimkejevel. Ket azonos gyorsitotarazasu kor kozul a masodik nem lehet
+ * frissebb. (Az utvonal ezen felul statikus: `generateStaticParams` all rajta,
+ * es sem a lapon, sem a folotte allo layoutokban nincs `dynamic` vagy
+ * `revalidate`.)
+ *
+ * A VALODI OK A MEZOLISTA, ES AZ, HOGY A FELULIRAS VESZTESEGES. A `listProducts`
+ * sajat `fields` erteke a `...queryParams` ELE terul szet, tehat a hivoé
+ * FELULIRJA -- nem bovíti. A fuggveny alapertelmezese ot dolgot ker:
+ *
+ *   *variants.calculated_price   +variants.inventory_quantity
+ *   *variants.images             *variants.options            +tags
+ *
+ * A termeklap `TERMEKLAP_FIELDS` erteke ezzel szemben `*categories,+metadata`,
+ * vagyis MIND AZ OTOT elejti. A `calculated_price` csak a legláthatóbb koztuk.
+ * Az egyszerubb alak (a szamolt ar felvetele a lap mezoibe) tehat NEM egy
+ * token: a teljes alapertelmezest helyre kellene allitani, es ha egy kimarad,
+ * a hiba NEMA -- egy mezo, amit senki nem ker, ugyanugy nez ki, mint egy mezo,
+ * ami ures.
+ *
+ * ES EGY MAR MOST FENNALLO, DE MA MEG ARTALMATLAN KOVETKEZMENY, hogy latszodjon,
+ * mirol van szo: a lap `getImagesForVariant` fuggvenye a `variant.images`
+ * mezobol szur, es azt a feluliras elejti. Ma ez a HELYES eredményt adja, mert
+ * minden termeknek pontosan egy valtozata van, tehat a visszaeses (a termek
+ * osszes kepe) ugyanaz. Az elso TOBBVALTOZATOS terméknel viszont a valtozathoz
+ * kotott kepszures csendben nem tortenne meg.
  *
  * === MIT LAT A VEVO, AMIG EZ TOLT ===
  *

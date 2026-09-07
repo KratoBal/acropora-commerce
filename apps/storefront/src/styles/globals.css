@@ -31,7 +31,17 @@
      (a bekapcsolt bolyegkep kerete es ket bal oldali kiemelo csik) LATHATATLAN
      volt neki. Merve a tervfajlbol, 2026-09-07. */
   --terv-kiemel: oklch(0.62 0.13 45); /* 12 hely -- rez, a fo cselekves */
-  /* A NEVE "SOTET", A KOSARBAN MEGIS AZ ALAP -- es ezt ki kell mondani,
+  /* A NEV A SZEREPET JELOLI, NEM AZ ERTEKET, ES A KET VILAGBAN ELLENTETES
+     IRANYBA MOZDUL:
+
+       vilagos lapon   0.62 -> 0.55   (a lenyomott allapot SOTETEBB)
+       sotet lapon     0.55 -> 0.62   (a lenyomott allapot VILAGOSABB)
+
+     Az irany azert fordul meg, mert egy sotet lapon a tovabbi sotetites
+     belesullyedne a hatterbe: ott a "lenyomva" csak felfele lathato.
+     (acrobot fogalmazasa, msg_id 14649.)
+
+     ES A NEVE "SOTET", A KOSARBAN MEGIS AZ ALAP -- ezt kulon ki kell mondani,
      kulonben valaki "kijavitja". A termeklapon ez a lenyomott allapot; a
      KOSAR tervlapjan viszont az akcent alap erteke ez (merve a kosar
      token-JSON-jabol: `oklch(0.55 0.13 45)` 13 hatter + 9 szoveg, mig a
@@ -115,7 +125,15 @@
  *
  * AZ ERTEKEK a tervbol jonnek, ugyanabbol a merésbol, mint a vilagos keszlet,
  * es a szerep-parositast acrobot adta at (2026-09-07 18:56). A ket akcent
- * SZANDEKOSAN elter: sotet hatteren vilagosabb rez all. Ne egysegesitsd.
+ * SZANDEKOSAN elter, es a ket ertek a tervbol jon: vilagoson 0.62, soteten
+ * 0.55. Ne egysegesitsd.
+ *
+ * HELYESBITES (2026-09-08): itt korabban az allt, hogy "sotet hatteren
+ * VILAGOSABB rez all". Ez az ELLENKEZOJE annak, ami ket sorral lejjebb all
+ * (soteten 0.55, vilagoson 0.62), es ROSSZUL IDEZTE acrobotot: o azt irta,
+ * hogy SZANDEKOSAN MAS (msg_id 14272, 2026-09-07 18:56:31), nem azt, hogy
+ * vilagosabb. A parafrazis adott az allitasnak egy iranyt, es a rosszat --
+ * az ERTEKEK vegig helyesek voltak.
  */
 [data-vilag="sotet"] {
   --terv-hatter: oklch(0.235 0.02 248); /* 16 elem a tervben */
