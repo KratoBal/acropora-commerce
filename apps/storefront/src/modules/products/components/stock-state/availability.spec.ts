@@ -50,6 +50,68 @@ describe("készlet-állapot", () => {
  * lenne, ha a függvény MINDIG hamisat adna. Ezért áll mellette az az eset, ami
  * IGAZAT vár: az bizonyítja, hogy az olvasás egyáltalán talál valamit.
  */
+/**
+ * A HAROM FELIRAT KULONBOZZON EGYMASTOL.
+ *
+ * Nem tautologia: azt allitja, hogy a harom allapot a VEVO SZAMARA is
+ * megkulonboztetheto. Ha ketto kozuluk ugyanazt a szoveget kapna (peldaul mert
+ * valaki visszairja az "Elfogyott" szot az "Eladva" melle), a lapon ket
+ * kulonbozo allapot ugyanugy nezne ki -- es pontosan ez az osszemosas az, ami
+ * ellen az egesz szelet keszult.
+ *
+ * A szo maga dontesbol jon (efb09c9a kartya, Balazs szava): "Nincs raktaron",
+ * nem "Elfogyott". Az elso allapot, a masodik veg.
+ */
+/**
+ * A MERT NULLA ES A HIANYZO SZAM KET KULONBOZO ALLAPOT.
+ *
+ * Merve a stage boltban (acrobot, 2026-09-07): a negy WYSIWYG termekbol
+ * HAROMNAK egyetlen keszlet-sora sincs, es csak a negyediknel all kimondott
+ * nulla. Balazs szabalya a MERT nullara szol; egy soha nem mert termeket
+ * eladottnak nyilvanitani a HANGOS tevedes.
+ */
+describe("a mért nulla és a hiányzó szám", () => {
+  it("kimondott jelző MÉRT nulla mellett ELADVA", () => {
+    expect(
+      availabilityOf({
+        inStock: false,
+        uniquePiece: true,
+        inventoryKnown: true,
+      }),
+    ).toBe("ELADVA")
+  })
+
+  it("ismeretlen készlet mellett ELFOGYOTT, akkor is, ha a jelző ott van", () => {
+    expect(
+      availabilityOf({
+        inStock: false,
+        uniquePiece: true,
+        inventoryKnown: false,
+      }),
+    ).toBe("ELFOGYOTT")
+  })
+
+  /**
+   * ES A REGI HIVOK VISELKEDESE NEM VALTOZIK: a mezo elhagyasa ugyanazt adja,
+   * mint a `true`. Enelkul egy uj mezo CSENDBEN atirna minden meglevo hivast.
+   */
+  it("a mező elhagyása a mért nullával egyenértékű", () => {
+    expect(availabilityOf({ inStock: false, uniquePiece: true })).toBe("ELADVA")
+  })
+})
+
+describe("a három állapot felirata", () => {
+  it("mindhárom felirat különbözik", () => {
+    const feliratok = Object.values(availabilityLabel)
+    expect(new Set(feliratok).size).toBe(feliratok.length)
+  })
+
+  it("a nem-végleges eset ÁLLAPOTOT mond, nem véget", () => {
+    expect(availabilityLabel.ELFOGYOTT).toBe("Nincs raktáron")
+    expect(availabilityLabel.ELADVA).toBe("Eladva")
+  })
+})
+
 describe("a WYSIWYG jelző olvasása a metaadatból", () => {
   it("a kimondott jelző igazat ad -- logikai és szöveges alakban is", () => {
     expect(uniquePieceOf({ unique_piece: true })).toBe(true)

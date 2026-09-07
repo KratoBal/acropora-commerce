@@ -24,6 +24,7 @@ export default async function PaginatedProducts({
   productsIds,
   countryCode,
   optionValueIds,
+  includeDescendants = true,
 }: {
   sortBy?: SortOptions
   page: number
@@ -32,6 +33,7 @@ export default async function PaginatedProducts({
   productsIds?: string[]
   countryCode: string
   optionValueIds?: OptionValueIds
+  includeDescendants?: boolean
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -55,7 +57,9 @@ export default async function PaginatedProducts({
      * a vevo 34 termeket latna 1653 helyett, es het szulo-kategoria lapja
      * teljesen ures lenne, mikozben alattuk 168 termek all.
      */
-    queryParams["category_id"] = await listCategoryIdsWithDescendants(categoryId)
+    queryParams["category_id"] = includeDescendants
+      ? await listCategoryIdsWithDescendants(categoryId)
+      : [categoryId]
   }
 
   if (productsIds) {
@@ -83,6 +87,8 @@ export default async function PaginatedProducts({
   })
 
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
+
+  if (!products.length) return null
 
   return (
     <>

@@ -2,6 +2,113 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/*
+ * A TERV SZINEI ES BETUI, MERESBOL.
+ *
+ * Az ertekek a `exchange/design-balazs/tokenek-termeklap.json` fajlbol jonnek,
+ * amit a MEGRENDERELT tervlapbol olvasott ki egy szkript (getComputedStyle),
+ * nem kepbol becsulte. A zarojelben allo szam azt mondja meg, HANY elemen allt
+ * az az ertek a tervben -- ez donti el, melyik a fo szin es melyik a diszites.
+ *
+ * MIERT `oklch` ES NEM HEX: a terv ebben all, es az atvaltas kerekitene. Amit
+ * a tervbol veszunk at, azt abban az alakban vesszuk at, amiben mertuk.
+ *
+ * MIERT ITT ES NEM A tailwind.config.js-BEN: a kirakat a `@medusajs/ui-preset`
+ * elobeallitast hasznalja, es annak a szineit felulirni tobb, mint amennyit egy
+ * vaz-lepes vallalhat. Ezek a valtozok EGYUTT LETEZNEK a meglevo palettaval, es
+ * csak ott hatnak, ahol hivatkozunk rajuk.
+ */
+:root {
+  /* hatterek */
+  --terv-hatter: oklch(0.96 0.006 75);        /* 20 elem -- a lap alapja, meleg toressel */
+  --terv-hatter-sotet: oklch(0.235 0.02 248); /* 16 elem -- a sotet savok */
+  --terv-hatter-lap: oklch(0.995 0.003 80);   /*  4 elem -- a kartyak lapja */
+  --terv-hatter-halvany: oklch(0.955 0.004 250);
+
+  /* kiemeles */
+  --terv-kiemel: oklch(0.62 0.13 45);         /*  9 elem -- narancs, a fo cselekves */
+  --terv-kiemel-sotet: oklch(0.55 0.13 45);   /*  9 elem -- ugyanaz lenyomva */
+  --terv-jelzo: oklch(0.52 0.09 210);         /*  6 elem -- kek-zold, jelzesekre */
+
+  /* szoveg */
+  --terv-szoveg: oklch(0.2 0.012 60);         /* 60 elem -- a fo szoveg */
+  --terv-szoveg-vilagos: oklch(0.95 0.006 250); /* 53 elem -- sotet hatteren */
+  --terv-szoveg-halvany: oklch(0.5 0.012 60); /* 16 elem -- masodlagos */
+  --terv-szoveg-halvany-sotet: oklch(0.72 0.012 250);
+
+  /* keretek */
+  --terv-keret: oklch(0.88 0.005 250);        /* 12 elem */
+  --terv-keret-meleg: oklch(0.88 0.008 70);   /*  7 elem */
+  --terv-keret-sotet: oklch(0.28 0.014 250);  /*  9 elem */
+
+  /*
+   * A SARKOK: A TERV GYAKORLATILAG SZOGLETES, ES EZ MERES, NEM IZLES.
+   *
+   * A teljes tervben (mind a hat lap-valtozat) OSSZESEN 19 `border-radius`
+   * deklaracio all, es abbol 16 az `50%` -- vagyis korok, nem dobozok. Valodi
+   * doboz-lekerekites HAROM van: ketto 8px, egy 6px.
+   *
+   * A kontroll amellett, hogy ez nem a keresesem tulajdonsaga: ugyanabban a
+   * fajlban a `padding` 155-szor, a `font-size` 320-szor, a `background`
+   * 138-szor fordul elo. A kereso latja a stilusokat; a lekerekites tenyleg
+   * nincs ott.
+   *
+   * MIERT SZAMIT: a starter a `@medusajs/ui-preset` lekerekiteseit hasznalja
+   * majdnem mindenhol. Ez a LEGLATHATOBB kulonbseg a mai lap es a terv kozott,
+   * a szinek utan -- es olcsobb most tudni rola, mint a vaz vegen.
+   */
+  --terv-sugar-doboz: 8px;   /* 2 elofordulas a tervben */
+  --terv-sugar-kicsi: 6px;   /* 1 elofordulas */
+  --terv-sugar-kor: 50%;     /* 16 elofordulas -- avatar, jelzo-pont */
+
+  /*
+   * A BETUK a next/font-bol jonnek (lasd a gyoker layoutot), tehat itt csak
+   * tartalek-lancot adunk hozzajuk. Ha a betu valamiert nem toltodik le, a lap
+   * nem marad betu nelkul.
+   */
+  --terv-betu-fo-lanc: var(--terv-betu-fo), system-ui, sans-serif;
+  --terv-betu-mono-lanc: var(--terv-betu-mono), ui-monospace, monospace;
+  --terv-betu-kiemelt-lanc: var(--terv-betu-kiemelt), Georgia, serif;
+}
+
+/*
+ * A MASODIK ERTEK-KESZLET: A SOTET LAP.
+ *
+ * EGY VAZ, KET ERTEK-KESZLET -- es a valto NEM izles es nem felhasznaloi
+ * beallitas, hanem a TERMEK FAJTAJA. Balazs szo szerint: "a korallokhoz a 2a
+ * valo ami ek sotetek a szinei".
+ *
+ *   elo allat (korall, hal, gerinctelen)   sotet lap  (a terv 2a valtozata)
+ *   muszaki termek                         vilagos    (az 1b valtozat)
+ *
+ * MIERT `data-vilag` ES NEM `prefers-color-scheme`: az utobbi a LATOGATO
+ * beallitasa, ez viszont a TERMEKROL szol. Egy muszaki termek lapja akkor sem
+ * lesz sotet, ha a latogato sotet temat hasznal, es forditva.
+ *
+ * MIERT NEM `dark` OSZTALY: a kirakat Tailwind beallitasaban a `darkMode:
+ * "class"` MAR HASZNALATBAN van, es a `@medusajs/ui-preset` sajat sotet
+ * valtozatait vezerli vele. Ha ide ulnenk ra, ket kulonbozo dolgot mozgatna
+ * ugyanaz a kapcsolo.
+ *
+ * AZ ERTEKEK a tervbol jonnek, ugyanabbol a merésbol, mint a vilagos keszlet,
+ * es a szerep-parositast acrobot adta at (2026-09-07 18:56). A ket akcent
+ * SZANDEKOSAN elter: sotet hatteren vilagosabb rez all. Ne egysegesitsd.
+ */
+[data-vilag="sotet"] {
+  --terv-hatter: oklch(0.235 0.02 248);        /* 16 elem a tervben */
+  --terv-hatter-lap: oklch(0.17 0.016 250);    /*  8 elem -- melyebb felulet */
+  --terv-hatter-halvany: oklch(0.205 0.018 249);
+
+  --terv-kiemel: oklch(0.55 0.13 45);          /*  9 elem -- a sotet valtozat rezje */
+  --terv-kiemel-sotet: oklch(0.62 0.13 45);
+
+  --terv-szoveg: oklch(0.95 0.006 250);        /* 53 elem sotet hatteren */
+  --terv-szoveg-halvany: oklch(0.72 0.012 250);
+
+  --terv-keret: oklch(0.28 0.014 250);         /*  9 elem */
+  --terv-keret-meleg: oklch(0.33 0.016 250);
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {

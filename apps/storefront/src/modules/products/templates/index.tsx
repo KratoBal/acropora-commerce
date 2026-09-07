@@ -12,6 +12,7 @@ import { HttpTypes } from "@medusajs/types"
 import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 
 import ProductActionsWrapper from "./product-actions-wrapper"
+import MuszakiLap, { hasznaljaVazat } from "./muszaki-lap"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -30,6 +31,51 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 }) => {
   if (!product || !product.id) {
     return notFound()
+  }
+
+  /**
+   * A VAZ BEKOTESE, ES A HATAR, AMIT NEM EN DONTOK EL.
+   *
+   * A muszaki termek mostantol a TERV szerinti vazat kapja. Az ELO ALLAT lapja
+   * VALTOZATLAN marad, mert az murena kore -- a vaz doboz-sorrendje mas, mint a
+   * mai lape, es az o lapjat nem irom at anelkul, hogy o ranezett volna.
+   *
+   * A kaput a `hasznaljaVazat` tartja, es allitas all ra (`muszaki-lap.spec`).
+   * Amikor murena keszen all, EGYETLEN fuggveny torzse cserel, egy helyen.
+   *
+   * ES AMI NEM ESIK KI: a kepgaleria es a vasarlasi resz UGYANAZ a komponens,
+   * amit a mai lap hasznal -- a vaz slotjaiba adjuk at oket, nem ujraepitve.
+   * Igy murena harom keszlet-allapota, a jelveny es a lepteto valtozatlanul
+   * mukodik a vazon belul is.
+   */
+  if (hasznaljaVazat(product)) {
+    return (
+      <>
+        <div className="content-container pt-6">
+          <ProductBreadcrumb product={product} categories={categories} />
+        </div>
+        <MuszakiLap
+          product={product}
+          vasarlasiResz={
+            <Suspense
+              fallback={
+                <ProductActions disabled={true} product={product} region={region} />
+              }
+            >
+              <ProductActionsWrapper id={product.id} region={region} />
+            </Suspense>
+          }
+        />
+        <div
+          className="content-container my-16 small:my-32"
+          data-testid="related-products-container"
+        >
+          <Suspense fallback={<SkeletonRelatedProducts />}>
+            <RelatedProducts product={product} countryCode={countryCode} />
+          </Suspense>
+        </div>
+      </>
+    )
   }
 
   return (

@@ -142,9 +142,23 @@ export default function ProductActions({
   */
   const uniquePiece = uniquePieceOf(product.metadata)
   const similarHref = similarItemsHref(product)
+  /**
+   * TUDJUK-E, MENNYI A KESZLET.
+   *
+   * A `manage_inventory` hamis erteke azt jelenti, hogy a bolt nem tart
+   * keszletet erre a valtozatra -- ott a kerdes ertelmetlen, es a lap ugysem az
+   * ELFOGYOTT/ELADVA agon all. Ahol viszont TART keszletet, ott a HIANYZO szam
+   * es a mert nulla ket kulonbozo allapot, es a kettot a `|| 0` alak mossa
+   * ossze. Az ELADVA ag csak a mert nullara szolhat.
+   */
+  const inventoryKnown =
+    !selectedVariant?.manage_inventory ||
+    typeof selectedVariant?.inventory_quantity === "number"
+
   const availability = availabilityOf({
     inStock: inStock && !!isValidVariant,
     uniquePiece,
+    inventoryKnown,
   })
   const maximumQuantity =
     selectedVariant?.manage_inventory && !selectedVariant.allow_backorder

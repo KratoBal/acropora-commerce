@@ -11,7 +11,7 @@ import ProductActions from "./index"
  * A `StockState` négy állítása azt bizonyítja, hogy a doboz HELYESEN RAJZOL, ha
  * megkapja az állapotot. Azt nem, hogy a lap a HELYES állapottal hívja. Ez a
  * kettő két külön hiba, és a második csendes: minden teszt zöld maradna, miközben
- * a lapon egy egyedi példány "Elfogyott" feliratot kapna.
+ * a lapon egy egyedi példány "Nincs raktáron" feliratot kapna.
  *
  * Ez ugyanaz a rés, mint a SZAKADÁS: mindkét oldal helyes önmagában, csak a
  * összekötés rossz.
@@ -60,10 +60,24 @@ vi.mock("@lib/hooks/use-in-view", () => ({
 
 afterEach(cleanup)
 
+/**
+ * A VALODI ADAT ALAKJA, NEM A LEGEGYSZERUBB.
+ *
+ * A stage mind a 19 termeke EGY opciot hordoz (`Kivitel` = `Alap`): a vetites
+ * teszi oda, amikor a forrasban nincs valasztas. Egy ures opcio-lista tehat NEM
+ * a valosag legegyszerubb esete, hanem egy olyan alak, ami a boltban elo sem
+ * fordul.
+ *
+ * MERVE (nautilus lelete, 2026-09-07): nala az ures listan egy allitas akkor is
+ * ZOLD MARADT, amikor az orzot kivette -- vagyis semmit nem mert. Az en ket
+ * allitasom a valodi alakon is all (lemertem, mielott atirtam), de a fixtura
+ * ettol meg tevedes volt: egy kesobbi allitas, amit erre epitenek, ugyanabba a
+ * csapdaba futna.
+ */
 const VALTOZAT = {
   id: "variant_1",
   title: "Egy méret",
-  options: [],
+  options: [{ id: "optval_1", option_id: "opt_1", value: "Alap" }],
   manage_inventory: true,
   allow_backorder: false,
   inventory_quantity: 0,
@@ -86,7 +100,7 @@ function termek(metadata: Record<string, unknown> | null) {
     handle: "acropora-tenuis",
     metadata,
     collection: { id: "col_1", handle: "elo-korallok", title: "Élő korallok" },
-    options: [],
+    options: [{ id: "opt_1", title: "Kivitel" }],
     variants: [VALTOZAT],
   } as never
 }
@@ -106,7 +120,7 @@ describe("a terméklap bekötése a készlet-állapothoz", () => {
 
     const gomb = screen.getByTestId("add-product-button")
     expect(gomb).toBeDisabled()
-    expect(gomb).toHaveTextContent("Elfogyott")
+    expect(gomb).toHaveTextContent("Nincs raktáron")
     expect(screen.queryByRole("link")).toBeNull()
   })
 
@@ -130,6 +144,131 @@ describe("a terméklap bekötése a készlet-állapothoz", () => {
     })
     // A cim a termek sajat gyujtemenyebol jon, orszag-koddal az elejen.
     expect(link).toHaveAttribute("href", "/hu/collections/elo-korallok")
+  })
+})
+
+/**
+ * A VÁLASZTÓ DOBOZ SZABÁLYA -- ÉS AMIT A KATALÓGUS MOND RÓLA.
+ *
+ * Picasso vevői kár szerint az ELSŐ helyre rangsorolta a választó dobozt: enélkül
+ * a vevő nem tudja megmondani, melyik változatot kéri. A starter ezt MÁR kezeli,
+ * a `(product.variants?.length ?? 0) > 1` feltétellel -- de erre eddig EGYETLEN
+ * állítás sem állt, és a feltétel mindkét irányban számít.
+ *
+ * A számok a 2026-09-02-i UNAS exportból, és ez a mérés kétszer futott:
+ *
+ * Elsőre azt kaptam, hogy mind az 1893 terméknek pontosan egy változata van. A
+ * gyanúsan egyenletes eredmény volt a jel: a `Variants` mező 1884 esetben ÜRES
+ * SZTRING, és a számlálóm azt vette egynek. Újramérve:
+ *
+ *     1884 termék    nincs változata          -> NEM szabad választót mutatni
+ *        9 termék    van valódi választása    -> MUTATNI KELL
+ *
+ * A kilencből nyolc Reef Factory lámpa `Szín` = Fekete / Fehér, a kilencedik egy
+ * `Flakon` = Egyedi csomagolás / Flakon, ahol a második +150 felárral jár.
+ *
+ * MIÉRT KELL MIND A KÉT ÁLLÍTÁS, ÉS NEM CSAK A MÁSODIK: egy feltétel értéke az,
+ * amit NEM enged. Ha csak azt mérnénk, hogy két változatnál megjelenik, akkor egy
+ * "mindig mutasd" változtatás zölden átmenne -- és 1884 terméklapon ott állna egy
+ * egygombos választó, amin nincs mit választani.
+ *
+ * AMIT EZ NEM MÉR: a stage-en ma egyetlen több változatú termék sincs (mind a 19
+ * egyváltozatú), tehát a második eset a KÉPERNYŐN nincs bizonyítva. Az első olyan
+ * termék dönti el, ami ténylegesen átkerül.
+ */
+/**
+ * AZ EGYVÁLTOZATÚ TERMÉK NEM ÜRES OPCIÓ-LISTÁVAL JÖN. A stage mind a 19 terméke
+ * pontosan egy opciót hordoz, `Kivitel` = `Alap` -- a vetítés ezt teszi oda,
+ * amikor a forrásban nincs valódi választás.
+ *
+ * Ez a fixtúra ELŐSZÖR üres `options` tömbbel készült, és a kalibráció fogta meg,
+ * hogy úgy semmit nem mér: az őrző kivétele után is zöld maradt, mert választó
+ * üres opció-lista mellett akkor sem jelenne meg. Az állítás MÁS OKBÓL volt zöld,
+ * mint amit a neve ígért.
+ */
+const KIVITEL_OPCIO = {
+  id: "opt_kivitel",
+  title: "Kivitel",
+  values: [{ id: "optval_alap", value: "Alap" }],
+}
+
+function egyValtozatosTermek() {
+  return {
+    id: "prod_1",
+    title: "Amtra TDS/EC digitális TDS mérő",
+    handle: "amtra-tds-ec-digitalis-tds-mero",
+    metadata: null,
+    collection: null,
+    options: [KIVITEL_OPCIO],
+    variants: [
+      {
+        ...VALTOZAT,
+        options: [{ option_id: "opt_kivitel", value: "Alap" }],
+      },
+    ],
+  } as never
+}
+
+const SZIN_OPCIO = {
+  id: "opt_szin",
+  title: "Szín",
+  values: [
+    { id: "optval_fekete", value: "Fekete" },
+    { id: "optval_feher", value: "Fehér" },
+  ],
+}
+
+function ketValtozatosTermek() {
+  return {
+    id: "prod_2",
+    title: "Reef Factory Reef Flare Pro M 160W",
+    handle: "reef-factory-reef-flare-pro-m-160w",
+    metadata: null,
+    collection: null,
+    options: [SZIN_OPCIO],
+    variants: [
+      {
+        ...VALTOZAT,
+        id: "variant_fekete",
+        title: "Fekete",
+        options: [{ option_id: "opt_szin", value: "Fekete" }],
+      },
+      {
+        ...VALTOZAT,
+        id: "variant_feher",
+        title: "Fehér",
+        options: [{ option_id: "opt_szin", value: "Fehér" }],
+      },
+    ],
+  } as never
+}
+
+describe("a választó doboz megjelenése", () => {
+  /**
+   * A KATALÓGUS TÖBBSÉGE: 1884 termék, egyetlen változat. Itt a doboz HIÁNYA a
+   * helyes viselkedés, nem a hiányossága.
+   */
+  it("egyetlen változatnál NINCS választó", () => {
+    render(<ProductActions product={egyValtozatosTermek()} region={REGIO} />)
+
+    expect(screen.queryByTestId("product-options")).toBeNull()
+    expect(screen.queryAllByTestId("option-button")).toHaveLength(0)
+  })
+
+  /**
+   * A KILENC TERMÉK, AMELYIKNÉL VAN MIT VÁLASZTANI. Mindkét értéknek látszania
+   * kell: egy választó, ami csak az egyiket mutatja, rosszabb a hiányzónál.
+   */
+  it("két változatnál megjelenik a választó, mindkét értékkel", () => {
+    render(<ProductActions product={ketValtozatosTermek()} region={REGIO} />)
+
+    expect(screen.getByTestId("product-options")).toBeTruthy()
+
+    const gombok = screen
+      .getAllByTestId("option-button")
+      .map((gomb) => gomb.textContent)
+
+    expect(gombok).toEqual(["Fekete", "Fehér"])
   })
 })
 

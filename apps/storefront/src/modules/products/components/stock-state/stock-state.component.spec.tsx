@@ -56,7 +56,7 @@ describe("a készlet-állapot kirajzolása", () => {
 
     const gomb = screen.getByTestId("add-product-button")
     expect(gomb).toBeDisabled()
-    expect(gomb).toHaveTextContent("Elfogyott")
+    expect(gomb).toHaveTextContent("Nincs raktáron")
   })
 
   /**

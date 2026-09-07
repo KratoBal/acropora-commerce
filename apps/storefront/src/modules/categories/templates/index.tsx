@@ -25,6 +25,8 @@ export default function CategoryTemplate({
 }) {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
+  const children = category.category_children ?? []
+  const hasManyChildren = children.length > 16
 
   if (!category || !countryCode) notFound()
 
@@ -71,13 +73,18 @@ export default function CategoryTemplate({
             <p>{category.description}</p>
           </div>
         )}
-        {category.category_children && (
+        {children.length > 0 && (
           <div className="mb-8 text-base-large">
-            <ul className="grid grid-cols-1 gap-2">
-              {category.category_children?.map((c) => (
+            {hasManyChildren && (
+              <a href="#all-subcategories" className="mb-3 inline-block text-sm underline">
+                Mind a {children.length} megtekintése
+              </a>
+            )}
+            <ul id="all-subcategories" className={`grid grid-cols-1 gap-2 small:grid-cols-2 medium:grid-cols-4 ${hasManyChildren ? "max-h-64 overflow-y-auto" : ""}`}>
+              {children.map((c) => (
                 <li key={c.id}>
                   <InteractiveLink href={`/categories/${c.handle}`}>
-                    {c.name}
+                    {c.name.trim()}
                   </InteractiveLink>
                 </li>
               ))}
@@ -97,6 +104,7 @@ export default function CategoryTemplate({
             categoryId={category.id}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
+            includeDescendants={false}
           />
         </Suspense>
       </div>
