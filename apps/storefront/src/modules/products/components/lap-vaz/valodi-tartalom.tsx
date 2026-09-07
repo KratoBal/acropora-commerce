@@ -235,6 +235,7 @@ export function vazTartalom(
   termek: Termek,
   vasarlasiResz?: React.ReactNode,
   hasonloResz?: React.ReactNode,
+  fotoResz?: React.ReactNode,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,
@@ -244,9 +245,32 @@ export function vazTartalom(
     tartalom.mennyiseg = vasarlasiResz
   }
 
-  const foto = <Foto termek={termek} />
-  if (termek.thumbnail || termek.images?.[0]?.url) {
-    tartalom.foto = foto
+  /**
+   * A FOTO SLOT: ATADHATO, ES A MURENA LAPJAN ATADANDO.
+   *
+   * A vaz sajat `Foto` komponense EGY kepet rendereli, es semmit nem tud arrol,
+   * mi TAPAD a kephez. Az elo allat lapjan viszont ket dolog tapad hozza, es
+   * egyik sincs a `ProductActions`-ben:
+   *
+   *   UniquePieceBadge     az ELSO kepre, a galeria kontenereben (abszolut)
+   *   UniquePiecePromise   a galeria ALATT
+   *
+   * Ha az a lap atallna a vazra ugy, hogy a `Foto` marad, mind a ketto
+   * ELTUNNE -- pontosan az a regresszio, ami a fulekkel ma mar egyszer
+   * megtortent (a vaz megkerulte a `product-info`-t, es a #50 munkaja holt kod
+   * lett a muszaki lapokon).
+   *
+   * Ezert ugyanaz a szerzodes, mint a vasarlasi resznel es a hasonlo listanal:
+   * ha a hivo ATAD tartalmat, azt tesszuk a helyere; ha nem, a vaz sajat
+   * egykepes valtozata all ott. A vaznak nincs forrasa eldonteni, mi tapad a
+   * kephez -- a lapot ossserako oldal tudja.
+   *
+   * (murena kerese, 2026-09-07, msg_id 14373; az erve az oveé, es helyes.)
+   */
+  if (fotoResz) {
+    tartalom.foto = fotoResz
+  } else if (termek.thumbnail || termek.images?.[0]?.url) {
+    tartalom.foto = <Foto termek={termek} />
   }
 
   /**

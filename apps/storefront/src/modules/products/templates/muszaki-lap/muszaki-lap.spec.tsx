@@ -3,7 +3,7 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
-import { hasznaljaVazat } from "./index"
+import { ELO_ALLAT_VAZON, hasznaljaVazat } from "./index"
 
 const termek = (gyoker: string) =>
   ({ categories: [{ name: gyoker, mpath: "c1" }] }) as never
@@ -26,6 +26,28 @@ describe("ki kapja már a vázat", () => {
     expect(hasznaljaVazat(termek("Korallok"))).toBe(false)
     expect(hasznaljaVazat(termek("Halak"))).toBe(false)
     expect(hasznaljaVazat(termek("Gerinctelenek"))).toBe(false)
+  })
+
+  /**
+   * A KAPCSOLO MAI ERTEKE, KIMONDVA -- ES EZ NEM FOLOSLEGES ALLITAS.
+   *
+   * Az "élő állat NEM" állítás akkor is zöld maradna, ha valaki a kapcsolót
+   * `true`-ra írja ÉS közben a váltót is elrontja. Ez a sor a kapcsolót
+   * MAGÁT rögzíti, tehát a bekapcsolás nem történhet meg észrevétlenül: aki
+   * átállítja, ezt is átírja, és akkor a döntés LÁTSZIK a diffben.
+   */
+  it("a költözés-kapcsoló ma KI van kapcsolva", () => {
+    expect(ELO_ALLAT_VAZON).toBe(false)
+  })
+
+  /**
+   * ÉS A KAPU KÉT KÉRDÉSE KÜLÖN ÁLL. A műszaki termék attól kapja a vázat,
+   * hogy világos -- NEM a kapcsolótól. Ha valaki a két ágat összevonná, ez
+   * pirosodik ki: a kapcsoló kikapcsolt állapotában is igaz kell maradjon.
+   */
+  it("a műszaki termék a kikapcsolt kapcsoló mellett IS a vázat kapja", () => {
+    expect(ELO_ALLAT_VAZON).toBe(false)
+    expect(hasznaljaVazat(termek("Termékek"))).toBe(true)
   })
 
   /**

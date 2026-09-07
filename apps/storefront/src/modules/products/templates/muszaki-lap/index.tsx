@@ -33,23 +33,51 @@ import React from "react"
  * Amikor az elo allat lapja is atall, ez a fuggveny `() => true` lesz, es a
  * mellette allo allitas fordul meg vele -- egy helyen, lathatoan.
  */
+/**
+ * AZ ATMENETI KOLTOZES-KAPCSOLO, ES MIERT NEM A VILAG-VALTOBOL OLVASSUK KI.
+ *
+ * A kapu ket kerdest tenne fel egyszerre, es a ketto NEM ugyanaz:
+ *
+ *   "elo allat-e ez a termek"     ALLANDO tulajdonsag; a vilag szinei ebbol jonnek
+ *   "atallt-e mar a lapja a vazra" ATMENETI allapot, ami par nap mulva megszunik
+ *
+ * Ma a ketto EGYBEESIK, es epp ezert veszelyes egy sorba tenni oket: amikor a
+ * koltozes kesz, a feltetel NEM azzal szunik meg, hogy megszunik az elo allat
+ * fogalma -- hanem azzal, hogy nincs mit koltoztetni. Ha egy sor hordozza
+ * mindkettot, valakinek ki kell talalnia, melyik felet torolje.
+ *
+ * Igy viszont a kapcsolo MEGMONDJA MAGAROL, hogy koltozesrol szol: murena
+ * EGYETLEN ertek atirasaval kapcsolja be, es amikor mindenki a vazon van, a
+ * konstans ES a feltetel EGYUTT torolheto, kerdes nelkul.
+ *
+ * (murena kerese, 2026-09-07, msg_id 14358; az erve az oveé.)
+ */
+export const ELO_ALLAT_VAZON = false
+
 export function hasznaljaVazat(
   termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
 ): boolean {
-  return vilagaTermeknek(termek) === "vilagos"
+  if (vilagaTermeknek(termek) === "vilagos") return true
+  return ELO_ALLAT_VAZON
 }
 
 type Props = {
   product: HttpTypes.StoreProduct
   vasarlasiResz?: React.ReactNode
   hasonloResz?: React.ReactNode
+  fotoResz?: React.ReactNode
 }
 
-const MuszakiLap = ({ product, vasarlasiResz, hasonloResz }: Props) => {
+const MuszakiLap = ({
+  product,
+  vasarlasiResz,
+  hasonloResz,
+  fotoResz,
+}: Props) => {
   return (
     <LapVaz
       vilag={vilagaTermeknek(product)}
-      tartalom={vazTartalom(product, vasarlasiResz, hasonloResz)}
+      tartalom={vazTartalom(product, vasarlasiResz, hasonloResz, fotoResz)}
     />
   )
 }
