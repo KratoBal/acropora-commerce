@@ -18,8 +18,22 @@ import {
  * a másik két szállítási módot: a vevő lássa, MELYIK tétel miatt van így. Ezért
  * kap a doboz nevet, nem darabszámot.
  */
-export default function PickupNotice({ lines }: { lines: readonly string[] }) {
-  if (lines.length === 0) return null
+export default function PickupNotice({
+  lines,
+  visible = true,
+}: {
+  lines: readonly string[]
+  /**
+   * MEGJELENJEN-E EGYALTALAN.
+   *
+   * Kulon a `lines` listatol, es ez a hataresetrol szol: ha a hatteroldal
+   * PICKUP_ONLY osztalyt mond, de a sort nem talaljuk a kosarban, a korlatozas
+   * akkor is VALOS -- csak a megnevezes hianyzik. A savot ilyenkor is
+   * megmutatjuk, mert egy elhallgatott korlatozas a fizetesnel derulne ki.
+   */
+  visible?: boolean
+}) {
+  if (!visible) return null
 
   return (
     <section
@@ -48,6 +62,11 @@ export default function PickupNotice({ lines }: { lines: readonly string[] }) {
         A TETELEK NEVVEL. Egy darabszam ("2 tetel miatt") nem elég: a vevo abbol
         nem tudja, MIT kellene kivennie, ha meg akarja kapni postan a tobbit.
       */}
+      {/*
+        A LISTA ELMARAD, HA NINCS MIT MEGNEVEZNI -- de a sav marad. Egy ures
+        felsorolas ugy nezne ki, mintha elfelejtettuk volna kitolteni.
+      */}
+      {lines.length > 0 && (
       <ul
         className="text-[12.5px] leading-relaxed list-disc pl-5"
         style={{ color: "var(--terv-szoveg-halvany)" }}
@@ -57,6 +76,7 @@ export default function PickupNotice({ lines }: { lines: readonly string[] }) {
           <li key={cim}>{cim} · élő állat, csak boltban adjuk át</li>
         ))}
       </ul>
+      )}
 
       <p className="text-[12.5px]" style={{ color: "var(--terv-szoveg)" }}>
         {SHOP_ADDRESS} · {SHOP_HOURS}
