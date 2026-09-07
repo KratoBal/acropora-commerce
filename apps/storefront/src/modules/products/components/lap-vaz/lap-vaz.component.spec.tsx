@@ -171,7 +171,7 @@ describe("a műszaki lap váza", () => {
    * A tanulság nem az, hogy fölösleges kör volt: az állítás mindkét irányban
    * elsült, és pontosan azt mutatta meg, hogy a szerkezet változik.
    */
-  it("a szerkezet mindkét világban ugyanaz", () => {
+  it("a sötét szerkezet a világos RÉSZHALMAZA, azonos sorrendben", () => {
     const kulcsok = (v: "vilagos" | "sotet") => {
       cleanup()
       render(<LapVaz vilag={v} />)
@@ -183,7 +183,13 @@ describe("a műszaki lap váza", () => {
     const sotet = kulcsok("sotet")
     const vilagos = kulcsok("vilagos")
 
-    expect(sotet).toEqual(vilagos)
+    // Nincs UJ doboz a sotet vilagon.
+    for (const kulcs of sotet) {
+      expect(vilagos).toContain(kulcs)
+    }
+
+    // ES A SORREND SEM VALTOZIK: a sotet lista a vilagos SZURT valtozata.
+    expect(sotet).toEqual(vilagos.filter((k) => sotet.includes(k)))
 
     // Ismert pozitiv kontroll: tenyleg kaptunk dobozokat, nem ures listat.
     expect(sotet.length).toBeGreaterThanOrEqual(10)
@@ -415,17 +421,32 @@ describe("az élő állat lap feliratai", () => {
    * DOM-on; ez itt a lista szintjén fogja meg, tehát egy elcsúszás akkor is
    * kiderül, ha a renderelés közben valami elnyeli.
    */
-  it("ugyanazok a dobozok, ugyanabban a sorrendben", () => {
-    expect(ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)).toEqual(
-      MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs),
-    )
+  it("a sötét lista a világos szűrt változata, azonos sorrendben", () => {
+    const sotet = ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)
+    const vilagos = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs)
+
+    expect(sotet).toEqual(vilagos.filter((k) => sotet.includes(k)))
+  })
+
+  /**
+   * ÉS AMIT ELHAGYUNK, AZ NÉVVEL ÁLL. Enélkül a részhalmaz-állítás egy EGYETLEN
+   * dobozból álló sötét listát is elfogadna.
+   */
+  it("pontosan egy doboz marad le, névvel", () => {
+    const sotet = ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)
+    const vilagos = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs)
+
+    expect(vilagos.filter((k) => !sotet.includes(k))).toEqual(["kiegeszitok"])
   })
 
   /** Az oszlop-besorolás sem csúszhat el a másolás során. */
-  it("az oszlop-besorolás változatlan", () => {
-    expect(ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.oszlop)).toEqual(
-      MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.oszlop),
-    )
+  it("a megmaradt dobozok oszlop-besorolása változatlan", () => {
+    for (const sotetSzakasz of ELO_ALLAT_LAP_SZAKASZAI) {
+      const parja = MUSZAKI_LAP_SZAKASZAI.find(
+        (sz) => sz.kulcs === sotetSzakasz.kulcs,
+      )
+      expect(sotetSzakasz.oszlop).toBe(parja?.oszlop)
+    }
   })
 })
 
