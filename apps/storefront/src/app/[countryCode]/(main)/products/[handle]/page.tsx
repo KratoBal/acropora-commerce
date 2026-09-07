@@ -109,9 +109,26 @@ export default async function ProductPage(props: Props) {
     notFound()
   }
 
+  /**
+   * A `*categories` MEZO KERESE NEM DISZ: a lap ebbol donti el, hogy elo allat
+   * vagy muszaki termek all-e elotte, es ezen mulik, melyik vazat kapja.
+   *
+   * MERVE, ES ELSORE ROSSZ VOLT: e nelkul a `product.categories` URES, a valto
+   * pedig ilyenkor -- biztonsagos iranykent -- VILAGOSAT ad. A kovetkezmeny nem
+   * hibauzenet volt, hanem az, hogy MINDEN termek a muszaki vazat kapta, az elo
+   * allat lapja is. A tiszta fuggveny allitasai vegig zoldek voltak, mert azok
+   * kozvetlenul atadott kategoriakkal dolgoznak: a szakadas a KOZOTTUK levo
+   * atadasban allt, es csak a megrenderelt lapon latszott.
+   *
+   * ES A `+` ALAK NEM MUKODIK: a `fields=+categories` URESET ad vissza, a
+   * `*categories` a teljes objektumot, `mpath`-tal egyutt -- azt olvassa a valto.
+   */
   const pricedProduct = await listProducts({
     countryCode: params.countryCode,
-    queryParams: { handle: decodeHandleParam(params.handle) },
+    queryParams: {
+      handle: decodeHandleParam(params.handle),
+      fields: "*categories",
+    },
   }).then(({ response }) => response.products[0])
 
   if (!pricedProduct) {
