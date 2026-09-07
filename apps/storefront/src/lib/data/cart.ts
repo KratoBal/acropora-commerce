@@ -356,7 +356,19 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         country_code: formData.get("billing_address.country_code"),
         province: formData.get("billing_address.province"),
         phone: formData.get("billing_address.phone"),
-      }
+        // UGYANAZ AZ ALLITAS, MINT A SZALLITASI CIMNEL, ES A SAJAT
+        // VALTOZTATASOM TETTE SZUKSEGESSE.
+        //
+        // Amig a fenti objektum `as any` volt, a `data` tipusa is az volt, es
+        // ez a hozzarendeles semmit nem ellenorzott. Az `as unknown as`
+        // bevezetesevel a `data` TIPUST kapott, es a `FormData` ertekei
+        // (`FormDataEntryValue | null`) itt kilenc TS2322-t adtak.
+        //
+        // A helyes javitas a `FormData` ertekeinek rendes kezelese lenne, de
+        // az MEGVALTOZTATNA a viselkedest (a `null` ures szoveggé valna), es
+        // az a penztar munkaja. Amig az nincs meg, ez a sor ugyanazt az
+        // allitast teszi, mint a szallitasi cim -- se tobbet, se kevesebbet.
+      } as unknown as NonNullable<HttpTypes.StoreUpdateCart["billing_address"]>
     await updateCart(data)
   } catch (e) {
     // `unknown`, nem `any`: egy nem-Error dobasnal a `.message` eddig
