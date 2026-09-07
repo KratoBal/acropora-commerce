@@ -215,6 +215,55 @@ describe("a váz valódi tartalma", () => {
    * KÉP NÉLKÜLI TERMÉK: a fotó doboza üres marad, és a többi változatlan. A
    * katalógusban van kép nélküli termék, tehát ez nem elméleti eset.
    */
+  /**
+   * A FOTO SLOT HAROM ALLITASA. A harmadik nem adodik az elso kettobol, es epp
+   * az a fontos: hogy az ATADOTT tartalom NEM MELLE kerul, hanem HELYETTE.
+   * Enelkul egy olyan valtozat is zold maradna, ami mind a kettot kirajzolja --
+   * a galeriat ES a vaz egykepes fotojat.
+   */
+  it("átadott fotó rész a fotó dobozba kerül", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          undefined,
+          undefined,
+          <div data-testid="sajat-galeria">galéria</div>,
+        )}
+      />,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="foto"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(screen.getByTestId("sajat-galeria")).toBeTruthy()
+  })
+
+  it("átadott fotó rész HELYETT áll, nem mellette", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          undefined,
+          undefined,
+          <div data-testid="sajat-galeria">galéria</div>,
+        )}
+      />,
+    )
+
+    // a vaz sajat egykepes fotoja NEM jelenhet meg mellette
+    expect(document.querySelectorAll('[data-testid="vaz-foto"]')).toHaveLength(
+      0,
+    )
+  })
+
+  it("átadott fotó rész nélkül a váz saját fotója áll ott", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="foto"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(document.querySelector('[data-testid="sajat-galeria"]')).toBeNull()
+  })
+
   it("kép nélküli terméknél a fotó doboza üres", () => {
     const kepNelkul = {
       ...(TERMEK as object),
