@@ -305,6 +305,14 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  */
 const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
   foto: { varakozo: "Saját fotó: ez a példány" },
+  "meretezes-seged": {
+    cim: "Elhelyezés-segéd",
+    varakozo: "Hová tedd ezt a példányt?",
+  },
+  "muszaki-adatok": {
+    cim: "Tartási paraméterek",
+    varakozo: "Nehézség, fényigény, áramlás",
+  },
   fulek: {
     varakozo:
       "Gondozás, Leírás, Vízparaméterek, Élőállat-szállítás, Értékelések",
@@ -345,35 +353,27 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * A felirat-elteresek egy helyen allnak, fent.
  */
 /**
- * AMI NEM KERUL A SOTET LISTARA (acrobot dontese, 2026-09-07).
+ * === EGY KOR ODA-VISSZA, ES A REKORD KEDVEERT KIIRVA ===
  *
- * A ket doboznak az elo allat lapjan SEM FORRASA, SEM JELENTESE nincs, es a
- * tervben sem all ott. Acrobot indoka szo szerint: "ha egy doboznak sem
- * forrasa, sem jelentese nincs azon a vilagon, akkor nem varakozo hely, hanem
- * zaj".
+ * A #108-ban ez a ket doboz (`meretezes-seged`, `muszaki-adatok`) LEKERULT a
+ * sotet listarol, acrobot dontese alapjan: "ha egy doboznak sem forrasa, sem
+ * jelentese nincs azon a vilagon, akkor nem varakozo hely, hanem zaj".
  *
- * === ES EZ FELULIR EGY KORABBI SZERKEZETI DONTEST -- KIMONDVA ===
+ * Az a dontes az en TALALGATASOMRA epult -- en javasoltam, hogy a ket doboz
+ * essen ki --, es a tervbol vett meres CAFOLTA: a korall valtozat MINDKET
+ * dobozt tartalmazza, csak MAST kerdez (`ELHELYEZES-SEGED / Hova tedd ezt a
+ * peldanyt?`, illetve a nehezseg-fenyigeny-aramlas tabla).
  *
- * A `lap-vaz.component.spec` allitasa eddig azt vedte, hogy a ket vilag
- * UGYANAZOKAT a dobozokat kapja ("a ket vilag nem ket kulon lap"). Az allitas
- * jo volt, es engem meg is fogott: elsore kivettem a tartozek-dobozt, es
- * pirosra valtott.
+ * Acrobot ezert felulirta a sajat jovahagyasat, es a lista a TERVBOL jon. A ket
+ * doboz visszakerult, felirattal egyutt.
  *
- * Most acrobot dontese felulirja, de NEM torli a vedelmet, csak SZUKITI: a
- * sotet lista tovabbra sem tartalmazhat UJ dobozt es nem valtoztathat
- * SORRENDET -- csak elhagyhat olyat, ami itt fel van sorolva. Igy a "nem ket
- * kulon lap" szandeka megmarad, es a kivetel egy helyen, nevvel all.
- *
- * A TARTOZEK-DOBOZ (`kiegeszitok`) SZANDEKOSAN NINCS ITT: a tervbol merve az
- * sem all a korall valtozaton, de acrobot kifejezetten ezt a KETTOT nevezte
- * meg. Nem tagitom a dontest a sajat meresemre hivatkozva; felirtam neki.
+ * AMI EBBOL TANULSAG, ES EZERT MARAD ITT: a talalgatasom nem csak pontatlan
+ * volt, hanem rossz IRANYBA tevedett -- KEVESEBBET epitett volna, mint amennyi
+ * a tervben keszen all. Egy "vegyuk ki, ugysem tudjuk kitolteni" javaslat
+ * mindig igy nez ki: ovatosnak latszik, es kozben szegenyebb lapot ad.
  */
-const ELO_ALLAT_ELHAGYOTT = new Set(["meretezes-seged", "muszaki-adatok"])
-
-export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
-  MUSZAKI_LAP_SZAKASZAI.filter(
-    (szakasz) => !ELO_ALLAT_ELHAGYOTT.has(szakasz.kulcs)
-  ).map((szakasz) => ({
+export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] = MUSZAKI_LAP_SZAKASZAI.map(
+  (szakasz) => ({
     ...szakasz,
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
   }))
