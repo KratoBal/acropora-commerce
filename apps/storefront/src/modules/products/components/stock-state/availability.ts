@@ -24,6 +24,28 @@ export interface AvailabilityInput {
    * olvasná, hogy a példány elkelt.
    */
   uniquePiece: boolean
+  /**
+   * TUDJUK-E EGYÁLTALÁN, MENNYI A KÉSZLET.
+   *
+   * === A HIÁNYZÓ SOR ÉS A MÉRT NULLA NEM UGYANAZ ===
+   *
+   * Mérve a stage boltban (acrobot, 2026-09-07): a négy WYSIWYG termékből
+   * HÁROMNAK egyetlen készlet-sora sincs, és csak a negyediknél áll kimondott
+   * nulla. Kívülről a kettő egyforma („nincs készlet"), de a második azt is
+   * jelenti, hogy a készlet-vetítés SOHA nem futott rájuk.
+   *
+   * Balázs szabálya (2026-08-31) a MÉRT nullára szól: „a WYSIWYG item at zero
+   * stock is SOLD". Egy soha nem mért termékre ugyanezt mondani annyi, mint
+   * eladottnak nyilvánítani valamit, amiről senki nem tud semmit -- és ez a
+   * HANGOS tévedés: a vevő elmegy, és nem jön vissza megnézni.
+   *
+   * Ezért az ELADVA ághoz MÉRT nulla kell. Ha nem tudjuk, a lap ELFOGYOTT-at
+   * mutat: ugyanaz a halkabb tévedés, amit a hiányzó jelzőnél is választottunk.
+   *
+   * Az alapértelmezés `true`, hogy a meglévő hívók viselkedése ne változzon
+   * attól, hogy ez a mező megjelent.
+   */
+  inventoryKnown?: boolean
 }
 
 /**
@@ -51,9 +73,10 @@ export interface AvailabilityInput {
 export function availabilityOf({
   inStock,
   uniquePiece,
+  inventoryKnown = true,
 }: AvailabilityInput): Availability {
   if (inStock) return "KAPHATO"
-  return uniquePiece ? "ELADVA" : "ELFOGYOTT"
+  return uniquePiece && inventoryKnown ? "ELADVA" : "ELFOGYOTT"
 }
 
 /**
