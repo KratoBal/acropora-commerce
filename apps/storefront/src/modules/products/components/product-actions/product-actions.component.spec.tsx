@@ -11,7 +11,7 @@ import ProductActions from "./index"
  * A `StockState` négy állítása azt bizonyítja, hogy a doboz HELYESEN RAJZOL, ha
  * megkapja az állapotot. Azt nem, hogy a lap a HELYES állapottal hívja. Ez a
  * kettő két külön hiba, és a második csendes: minden teszt zöld maradna, miközben
- * a lapon egy egyedi példány "Elfogyott" feliratot kapna.
+ * a lapon egy egyedi példány "Nincs raktáron" feliratot kapna.
  *
  * Ez ugyanaz a rés, mint a SZAKADÁS: mindkét oldal helyes önmagában, csak a
  * összekötés rossz.
@@ -106,7 +106,7 @@ describe("a terméklap bekötése a készlet-állapothoz", () => {
 
     const gomb = screen.getByTestId("add-product-button")
     expect(gomb).toBeDisabled()
-    expect(gomb).toHaveTextContent("Elfogyott")
+    expect(gomb).toHaveTextContent("Nincs raktáron")
     expect(screen.queryByRole("link")).toBeNull()
   })
 

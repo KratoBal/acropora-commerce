@@ -43,10 +43,23 @@ export function availabilityOf({
   return uniquePiece ? "ELADVA" : "ELFOGYOTT";
 }
 
-/** A vevőnek szánt felirat. Magyar, mert a bolt magyar. */
+/**
+ * A vevőnek szánt felirat. Magyar, mert a bolt magyar.
+ *
+ * === MIÉRT "NINCS RAKTÁRON", ÉS MIÉRT NEM "ELFOGYOTT" ===
+ *
+ * Balázs döntése, szó szerint (efb09c9a kártya): „A tobbinel NIncs raktaron,
+ * rendelheto". A két szó nem szinonima: az **elfogyott** véget jelent, a **nincs
+ * raktáron** állapotot. Ezen a lapon a különbség a vevő elé kerül, mert a
+ * VÉGLEGES esetnek külön állapota van (`ELADVA`).
+ *
+ * Az ÁLLAPOT NEVE marad `ELFOGYOTT`: az a mi belső fogalmunk, és a felirat
+ * cseréje nem szabad, hogy a kód szótárát is átírja. A kettő külön él, ezért
+ * lehet a feliratot egy sorban cserélni.
+ */
 export const availabilityLabel: Record<Availability, string> = {
   KAPHATO: "Kosárba",
-  ELFOGYOTT: "Elfogyott",
+  ELFOGYOTT: "Nincs raktáron",
   ELADVA: "Eladva",
 };
 
