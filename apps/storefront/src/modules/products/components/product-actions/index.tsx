@@ -175,7 +175,8 @@ export default function ProductActions({
    * ad, az elsőt utánrendelést.
    */
   const normaliseQuantity = (value: number) => {
-    if (!Number.isInteger(value) || value < minimumQuantity) return minimumQuantity
+    if (!Number.isInteger(value) || value < minimumQuantity)
+      return minimumQuantity
     return maximumQuantity
       ? Math.max(Math.min(value, maximumQuantity), minimumQuantity)
       : value
@@ -227,8 +228,29 @@ export default function ProductActions({
             valasztasa. Az elso csoportnal eddig semmi nem allt a helyen; most
             ott all a doboz, es a vevo latja, hogy ennel a terméknel nincs mibol
             valasztani.
+
+            ES EGY NEGYEDIK ESET, AMI NEM A VALTOZATOK SZAMAROL SZOL:
+            EGYEDI PELDANYNAL A DOBOZ EGYALTALAN NEM JELENIK MEG.
+
+            A lapon MAR ALL egy allitas: "1 db, Egyedi peldany". Egy doboz --
+            meg letiltva is -- ugyanarra a kerdesre ad MASIK valaszt: azt
+            sugallja, hogy VAN tengely, amin valasztani lehetne, csak most nem
+            szabad. Egy WYSIWYG korallnal nincs ilyen tengely: egy peldany van,
+            es az az. (acrobot dontese, 2026-09-07.)
+
+            SZABALY, NEM PARAMETER: ha a hivo dontene, a ket termeklap ket
+            kulonbozo valaszt adna ugyanarra a kerdesre. A `uniquePiece` itt
+            MAR ismert (abbol dol a keszlet-doboz harom allapota is), tehat a
+            szabaly egy sor, es a komponensben lakik.
+
+            ES AMIT EZ MOSTANTOL TENYLEG VALTOZTAT: a fenti harom allapot ota a
+            doboz EGY valtozatnal is megjelenik -- vagyis a harom WYSIWYG
+            korallon MA MEGJELENNE, ha ez a feltetel nem allna itt. Amikor ezt
+            a sort megirtam, meg nem valtoztatott semmit (a regi feltetel `> 1`
+            volt); a 81 beolvasztasa ota valtoztat. A mondat, ami akkor igaz
+            volt, ma mar nem az.
           */}
-          {(product.options?.length ?? 0) > 0 && (
+          {!uniquePiece && (product.options?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-y-4">
               {(product.options || []).map((option) => {
                 return (
@@ -291,7 +313,9 @@ export default function ProductActions({
                   aria-label="Mennyiség növelése"
                   className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
                   onClick={() => setQuantity(normaliseQuantity(quantity + 1))}
-                  disabled={maximumQuantity !== null && quantity >= maximumQuantity}
+                  disabled={
+                    maximumQuantity !== null && quantity >= maximumQuantity
+                  }
                 >
                   +
                 </button>

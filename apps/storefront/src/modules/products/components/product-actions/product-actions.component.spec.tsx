@@ -218,12 +218,18 @@ const SZIN_OPCIO = {
   ],
 }
 
-function ketValtozatosTermek() {
+/**
+ * A `metadata` PARAMETER lett (murena, 2026-09-07): az egyedi peldany szabalyat
+ * ugyanezen a termeken kell merni, KIZAROLAG a jelzoben elterve. Ket kulon
+ * fixtura ket kulon igazsagot merne, es akkor a ket allitas kulonbsege nem a
+ * jelzo hatasat mutatna, hanem a fixturakét.
+ */
+function ketValtozatosTermek(metadata: Record<string, unknown> | null = null) {
   return {
     id: "prod_2",
     title: "Reef Factory Reef Flare Pro M 160W",
     handle: "reef-factory-reef-flare-pro-m-160w",
-    metadata: null,
+    metadata,
     collection: null,
     options: [SZIN_OPCIO],
     variants: [
@@ -242,6 +248,40 @@ function ketValtozatosTermek() {
     ],
   } as never
 }
+
+/**
+ * AZ EGYEDI PELDANY ES A VALASZTO DOBOZ.
+ *
+ * A ket allitas EGYUTT hatarol be, es kulon-kulon egyik sem er semmit: az elso
+ * ("egyedinel nincs doboz") zold lenne egy olyan megvalositason is, ami SOHA nem
+ * rajzol dobozt; a masodik ("nem egyedinel van") azon, ami MINDIG rajzol.
+ *
+ * A ket termek UGYANAZ, egyetlen mezot kiveve: a jelzot. Igy amit a kulonbseguk
+ * mer, az tenyleg a jelzo hatasa.
+ *
+ * AMIT EZ MA VED, ES AMIT NEM: ma a doboz egy valtozatnal amugy sem jelenik meg
+ * (`> 1`), tehat a WYSIWYG korallokon a viselkedes valtozatlan. Az allitas arra
+ * az esetre szol, amikor a doboz EGY valtozatnal is megjelenik -- akkor sem
+ * kerulhet az egyedi peldany lapjara.
+ */
+describe("az egyedi példány és a választó doboz", () => {
+  it("NEM egyedi terméknél a választó ott van", () => {
+    render(<ProductActions product={ketValtozatosTermek()} region={REGIO} />)
+
+    expect(screen.getAllByTestId("product-options").length).toBeGreaterThan(0)
+  })
+
+  it("egyedi példánynál NINCS választó, akkor sem, ha több változat van", () => {
+    render(
+      <ProductActions
+        product={ketValtozatosTermek({ unique_piece: "true" })}
+        region={REGIO}
+      />,
+    )
+
+    expect(screen.queryByTestId("product-options")).toBeNull()
+  })
+})
 
 describe("a választó doboz megjelenése", () => {
   /**
