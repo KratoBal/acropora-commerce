@@ -156,22 +156,22 @@ describe("a műszaki lap váza", () => {
   })
 
   /**
-   * EGY VÁZ, KÉT ÉRTÉK-KÉSZLET -- ÉS AZ ÁLLÍTÁS SZŰKÜLT, NEM TŰNT EL.
+   * EGY VÁZ, KÉT ÉRTÉK-KÉSZLET -- ÉS AZ ÁLLÍTÁS VISSZAKAPTA AZ EREDETI ALAKJÁT.
    *
-   * Eredetileg azt mondta ki, hogy a két világ PONTOSAN ugyanazokat a dobozokat
-   * kapja. Ez jó állítás volt, és engem meg is fogott: elsőre kivettem a
-   * tartozék-dobozt a sötét listából, és pirosra váltott.
+   * Ez az állítás védi, ami az egészet összetartja: a két világ nem két külön
+   * lap, csak két érték-készlet ugyanazon a vázon. Ha valaha valaki a sötét
+   * ághoz más dobozokat vagy más sorrendet ad, ez pirosra vált.
    *
-   * Acrobot döntése (2026-09-07) két dobozt levett a sötét listáról, mert azon
-   * a világon sem forrásuk, sem jelentésük nincs -- az ő szavával "nem várakozó
-   * hely, hanem zaj". Ez felülírja az eredeti alakot.
+   * EGY KÖR ODA-VISSZA (2026-09-07): a #108-ban SZŰKÍTETTEM ezt az állítást
+   * részhalmaz-alakra, mert acrobot két dobozt levetetett a sötét listáról. A
+   * tervből vett mérés azt a döntést cáfolta -- a terv MINDKÉT dobozt
+   * tartalmazza, csak mást kérdez --, ezért a dobozok visszakerültek, és ezzel
+   * ez az állítás visszakapta az eredeti, ERŐSEBB alakját.
    *
-   * AMIT MEGTARTUNK BELŐLE, ÉS EZ A LÉNYEG: a sötét lista nem tartalmazhat ÚJ
-   * dobozt, és nem változtathat SORRENDET -- csak elhagyhat. Vagyis a "nem két
-   * külön lap" szándék áll, csak a kivétel most egy helyen, névvel szerepel
-   * (`ELO_ALLAT_ELHAGYOTT`).
+   * A tanulság nem az, hogy fölösleges kör volt: az állítás mindkét irányban
+   * elsült, és pontosan azt mutatta meg, hogy a szerkezet változik.
    */
-  it("a sötét szerkezet a világos RÉSZHALMAZA, azonos sorrendben", () => {
+  it("a szerkezet mindkét világban ugyanaz", () => {
     const kulcsok = (v: "vilagos" | "sotet") => {
       cleanup()
       render(<LapVaz vilag={v} />)
@@ -183,13 +183,7 @@ describe("a műszaki lap váza", () => {
     const sotet = kulcsok("sotet")
     const vilagos = kulcsok("vilagos")
 
-    // Nincs UJ doboz a sotet vilagon.
-    for (const kulcs of sotet) {
-      expect(vilagos).toContain(kulcs)
-    }
-
-    // ES A SORREND SEM VALTOZIK: a sotet lista a vilagos SZURT valtozata.
-    expect(sotet).toEqual(vilagos.filter((k) => sotet.includes(k)))
+    expect(sotet).toEqual(vilagos)
 
     // Ismert pozitiv kontroll: tenyleg kaptunk dobozokat, nem ures listat.
     expect(sotet.length).toBeGreaterThanOrEqual(10)
@@ -380,6 +374,7 @@ describe("az élő állat lap feliratai", () => {
       sotet.find((szakasz) => szakasz.kulcs === kulcs)?.cim
 
     expect(cim("hasonlo")).toBe("További WYSIWYG példányok")
+    expect(cim("meretezes-seged")).toBe("Elhelyezés-segéd")
     expect(cim("kerdezd")).toBe("Kérdezd a boltot")
     expect(cim("csomagajanlat")).toBe("Kötegajánlat")
   })
@@ -389,35 +384,17 @@ describe("az élő állat lap feliratai", () => {
    * DOM-on; ez itt a lista szintjén fogja meg, tehát egy elcsúszás akkor is
    * kiderül, ha a renderelés közben valami elnyeli.
    */
-  it("a sötét lista a világos szűrt változata, azonos sorrendben", () => {
-    const sotet = ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)
-    const vilagos = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs)
-
-    expect(sotet).toEqual(vilagos.filter((k) => sotet.includes(k)))
-  })
-
-  /**
-   * ÉS AMIT ELHAGYUNK, AZ NÉVVEL ÁLL. Enélkül a fenti részhalmaz-állítás egy
-   * EGYETLEN dobozból álló sötét listát is elfogadna.
-   */
-  it("pontosan két doboz marad le, névvel", () => {
-    const sotet = ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)
-    const vilagos = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs)
-
-    expect(vilagos.filter((k) => !sotet.includes(k))).toEqual([
-      "meretezes-seged",
-      "muszaki-adatok",
-    ])
+  it("ugyanazok a dobozok, ugyanabban a sorrendben", () => {
+    expect(ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)).toEqual(
+      MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs),
+    )
   })
 
   /** Az oszlop-besorolás sem csúszhat el a másolás során. */
-  it("a megmaradt dobozok oszlop-besorolása változatlan", () => {
-    for (const sotetSzakasz of ELO_ALLAT_LAP_SZAKASZAI) {
-      const parja = MUSZAKI_LAP_SZAKASZAI.find(
-        (sz) => sz.kulcs === sotetSzakasz.kulcs,
-      )
-      expect(sotetSzakasz.oszlop).toBe(parja?.oszlop)
-    }
+  it("az oszlop-besorolás változatlan", () => {
+    expect(ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.oszlop)).toEqual(
+      MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.oszlop),
+    )
   })
 })
 
