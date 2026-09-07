@@ -17,6 +17,8 @@ import { useState } from "react"
 
 import CartLineState, { NotIncrementable } from "../line-state"
 import { cartLineProduct, cartLineStateOf } from "../line-state/line-state"
+import { minimumOrderQuantity } from "@modules/products/components/product-actions/minimum-order-quantity"
+import { kosarMennyisegOpciok } from "./mennyiseg-opciok"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -118,21 +120,30 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
               className="w-14 h-10 p-4"
               data-testid="product-select-button"
             >
-              {/* TODO: Update this with the v2 way of managing inventory */}
-              {Array.from(
-                {
-                  length: Math.min(maxQuantity, 10),
-                },
-                (_, i) => (
-                  <option value={i + 1} key={i}>
-                    {i + 1}
-                  </option>
-                )
-              )}
+              {/*
+                A LISTA A MINIMUMTOL INDUL, NEM EGYTOL.
 
-              <option value={1} key={1}>
-                1
-              </option>
+                A minimalis rendelesi mennyiseget eddig csak a termeklap
+                ismerte; a kosar mindig 1-tol kinalt tizig. Merve a boltban
+                (2026-09-08): tizennegy termeknek van egynel nagyobb minimuma
+                (nyolcnak 10, otnek 100, egynek 5).
+
+                Ket baj kovetkezett belole, es a masodik a sulyosabb: a vevo a
+                minimum ALA vihette a mennyiseget, szazas minimumnal pedig a
+                helyes erteket EL SEM TUDTA ERNI, mert a lista tizig ert.
+
+                A STRAY MASODIK "1" OPCIO IS KIKERULT: a starterbol maradt itt,
+                es a lista elso elemet duplazta.
+              */}
+              {kosarMennyisegOpciok(
+                minimumOrderQuantity(sorTermeke),
+                item.quantity,
+                Math.min(maxQuantity, 10),
+              ).map((mennyiseg) => (
+                <option value={mennyiseg} key={mennyiseg}>
+                  {mennyiseg}
+                </option>
+              ))}
             </CartItemSelect>
             )}
             {updating && <Spinner />}
