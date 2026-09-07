@@ -1,10 +1,26 @@
 import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
 import { legmelyebbKategoria, vazTartalom } from "./valodi-tartalom"
+import { VasarlasProvider } from "../vasarlas/allapot"
 
-const VASARLASI_RESZ = <div data-testid="vaz-vasarlas">vásárlási rész</div>
+/**
+ * A KERET HIVASAIT CSEREJUK KI, NEM A MERT KODOT -- ugyanaz a ket hamis, mint a
+ * `product-actions.component.spec.tsx`-ben, es ugyanabbol az okbol: a
+ * `VasarlasProvider` utvonalat olvas es kosarba tesz, es egyik sem az, amit itt
+ * merunk. A negy doboz, a `vazTartalom` es a vaz VALODI marad.
+ */
+vi.mock("next/navigation", () => ({
+  useParams: () => ({ countryCode: "hu" }),
+  usePathname: () => "/hu/products/amtra-tds-ec-digitalis-tds-mero",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
+
+vi.mock("@lib/data/cart", () => ({
+  addToCart: vi.fn(async () => undefined),
+}))
 
 afterEach(cleanup)
 
@@ -286,14 +302,18 @@ describe("a váz valódi tartalma", () => {
    * Régió nélkül a `mennyiség` doboz üres marad -- ez nem hiba, hanem az, hogy
    * ár és készlet régió nélkül nem értelmezhető.
    */
-  it("átadott vásárlási résszel a mennyiség doboz nem üres", () => {
-    render(<LapVaz tartalom={vazTartalom(TERMEK, VASARLASI_RESZ)} />)
+  it("aktív vásárlási állapottal a mennyiség doboz nem üres", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
 
     const doboz = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
   })
 
-  it("átadott rész nélkül a mennyiség doboz üresen marad", () => {
+  it("vásárlási állapot nélkül a mennyiség doboz üresen marad", () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
     const doboz = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
@@ -337,22 +357,70 @@ describe("a váz valódi tartalma", () => {
    */
   it("a vásárlási rész és a hasonló lista külön dobozba kerül", () => {
     render(
-      <LapVaz
-        tartalom={vazTartalom(
-          TERMEK,
-          <div>vásárlási rész</div>,
-          <div>hasonló lista</div>,
-        )}
-      />,
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz
+          tartalom={vazTartalom(TERMEK, true, <div>hasonló lista</div>)}
+        />
+      </VasarlasProvider>,
     )
 
     const mennyiseg = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
     const hasonlo = document.querySelector('[data-vaz-szakasz="hasonlo"]')
 
-    expect(mennyiseg?.textContent).toContain("vásárlási rész")
     expect(mennyiseg?.textContent).not.toContain("hasonló lista")
     expect(hasonlo?.textContent).toContain("hasonló lista")
-    expect(hasonlo?.textContent).not.toContain("vásárlási rész")
+  })
+
+  /**
+   * A NEGY DOBOZ KULON ALL -- ES EZ AZ AZ ALLITAS, AMIERT EZ A KOR LETEZIK.
+   *
+   * A terv a jobb oszlopot negy dobozra bontja, es eddig mind a negy tartalma
+   * EGY dobozban allt. Egy allitas, ami csak annyit mond, hogy "a mennyiseg
+   * doboz nem ures", ezt a valtozast NEM latta volna: az a doboz eddig is tele
+   * volt. Ezert a negy dobozt KULON-KULON kell megnevezni.
+   */
+  it("az ár, a választó és a mennyiség külön dobozba kerül", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    for (const kulcs of ["ar", "valaszto", "mennyiseg"]) {
+      const doboz = document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)
+      expect(doboz, kulcs).not.toBeNull()
+      expect(doboz?.getAttribute("data-vaz-ures"), kulcs).toBe("nem")
+    }
+
+    // a gomb PONTOSAN a mennyiseg dobozban all, nem az arban
+    const mennyiseg = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
+    const ar = document.querySelector('[data-vaz-szakasz="ar"]')
+    expect(mennyiseg?.querySelector("button")).not.toBeNull()
+    expect(ar?.querySelector("button")).toBeNull()
+  })
+
+  /**
+   * ES A VALASZTO DOBOZ NEM AZ URES AGABOL DOL EL.
+   *
+   * Egy egyedi peldanynal a doboz maga is `null`-t adna -- de ha CSAK az
+   * dontene, a vaz TELINEK jelolne egy uresen rajzolo dobozt. A kulonbseg
+   * latszik a vevonek: egy telinek jelolt ures doboz nem varakozik, hanem
+   * hianyzik.
+   */
+  it("egyedi példánynál a választó doboz üresen marad, nem telinek jelölve", () => {
+    const egyedi = {
+      ...(TERMEK as object),
+      metadata: { unas_unit: "db", unique_piece: "true" },
+    } as never
+
+    render(
+      <VasarlasProvider product={egyedi}>
+        <LapVaz tartalom={vazTartalom(egyedi, true)} />
+      </VasarlasProvider>,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="valaszto"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
   })
 
   it("a tizennégy doboz akkor is mind ott áll, ha csak a fele kap tartalmat", () => {

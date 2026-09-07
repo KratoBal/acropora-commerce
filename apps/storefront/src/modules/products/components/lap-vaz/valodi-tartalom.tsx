@@ -3,6 +3,15 @@ import { sanitizeDescription } from "@lib/util/sanitize-description"
 import ProductDescriptionTabs from "@modules/products/components/product-description-tabs"
 import React from "react"
 
+import {
+  ArDoboz,
+  ElerhetosegDoboz,
+  MennyisegDoboz,
+  ValasztoDoboz,
+} from "../vasarlas/dobozok"
+import { minimumOrderQuantity } from "../product-actions/minimum-order-quantity"
+import { uniquePieceOf } from "../stock-state/availability"
+
 /**
  * A VAZ SLOTJAINAK VALODI TARTALMA -- CSAK OTT, AHOL VAN FORRAS.
  *
@@ -233,7 +242,7 @@ export const Leiras = ({ termek }: { termek: Termek }) => {
  */
 export function vazTartalom(
   termek: Termek,
-  vasarlasiResz?: React.ReactNode,
+  vasarlasAktiv?: boolean,
   hasonloResz?: React.ReactNode,
   fotoResz?: React.ReactNode,
   ragadosResz?: React.ReactNode,
@@ -242,8 +251,40 @@ export function vazTartalom(
     cimsor: <Cimsor termek={termek} />,
   }
 
-  if (vasarlasiResz) {
-    tartalom.mennyiseg = vasarlasiResz
+  /**
+   * A NEGY VASARLASI DOBOZ -- ES MIERT EGYETLEN LOGIKAI ERTEK NYITJA MIND A NEGYET.
+   *
+   * A tobbi slot ONALLO node-ot kap, mert onallo is: a galeria, a hasonlo lista
+   * es a ragados sav kulon-kulon ertelmes. A negy vasarlasi doboz NEM ilyen:
+   * UGYANAZT az allapotot olvassa mind a negy, harom irja is, tehat vagy
+   * mind a negy all, vagy egyik sem. Egy negyfele parameter azt sugallna, hogy
+   * kulon-kulon is atadhatok -- pedig egy fel keszlet nem allapot, hanem hiba.
+   *
+   * AMIT EZ AZ ERTEK TENYLEG ALLIT: a hivo korulvette a lapot a
+   * `VasarlasProvider`-rel. Ha nem tette, a negy doboz `null`-t adna, es a vaz
+   * TELINEK jelolt, de URES dobozokat rajzolna -- rosszabb, mint a varakozas.
+   * Ezert dont ez a sor, es nem a dobozok sajat ures-aga.
+   */
+  const egyediPeldany = uniquePieceOf(termek.metadata)
+
+  if (vasarlasAktiv) {
+    tartalom.ar = <ArDoboz />
+    tartalom.mennyiseg = <MennyisegDoboz />
+
+    /**
+     * A VALASZTO DOBOZ HELYE ADATBOL DOL EL, NEM A DOBOZ URES AGABOL.
+     *
+     * A doboz maga is `null`-t ad egyedi peldanynal es opcio nelkul -- de ha
+     * CSAK az dontene, a vaz TELINEK jelolne egy uresen rajzolo dobozt. A
+     * kulonbseg latszik: egy telinek jelolt ures doboz nem varakozik, hanem
+     * hianyzik.
+     *
+     * A ket feltetel indoka a `product-actions/index.tsx` fejleceben all
+     * teljes hosszan (harom allapot, plusz az egyedi peldany negyedik esete).
+     */
+    if (!egyediPeldany && (termek.options?.length ?? 0) > 0) {
+      tartalom.valaszto = <ValasztoDoboz />
+    }
   }
 
   /**
@@ -293,12 +334,23 @@ export function vazTartalom(
     tartalom.fulek = <ProductDescriptionTabs description={tisztaLeiras} />
   }
 
+  /**
+   * A 7. DOBOZ KET TENYT HORD, ES MINDKETTO MAR MEGVOLT -- csak az egyik rossz
+   * helyen allt. A kiszereles eddig is itt volt; a minimalis rendelesi
+   * mennyiseg a GOMB ALATT, a 9. dobozban. Mindketto keszlet-teny, tehat a
+   * terv szerinti dobozba valo.
+   *
+   * A doboz `null`-t ad, ha egyik sincs -- ilyenkor a vaz varakozo szoveget
+   * mutat, ami a helyes valasz: szallitas es bolti atvetel adatkent MA NINCS.
+   */
   const egyseg = egysegFelirat(termek)
-  if (egyseg) {
+  const minimumMennyiseg = egyediPeldany ? 1 : minimumOrderQuantity(termek)
+  if (egyseg || minimumMennyiseg > 1) {
     tartalom.elerhetoseg = (
-      <p className="text-sm" data-testid="vaz-egyseg">
-        Kiszerelés: {egyseg}
-      </p>
+      <ElerhetosegDoboz
+        kiszereles={egyseg ?? undefined}
+        minimumMennyiseg={minimumMennyiseg}
+      />
     )
   }
 
