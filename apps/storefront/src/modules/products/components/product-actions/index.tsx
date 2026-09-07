@@ -223,6 +223,22 @@ export default function ProductActions({
             csak nem a doboz hianyabol olvassuk ki, hanem abbol, hogy nem lehet
             valasztani.
 
+            ES MIKOR LESZ LATHATO AZ ELSO ALLAPOT (a valodi valaszto):
+            amikor az elso TOBBVALTOZATOS termek webshoposra kerul.
+
+            Merve (acrobot, 2026-09-07): a torzsadatban KILENC tobbvaltozatos
+            termek all (Reef Factory lampak es lampatartok, plusz egy kozeli
+            lejaratu tetel), es MIND A KILENC `webshopSellable = NEM`. Nulla
+            kivetel, es a boltban egyetlen `RF-` cikkszam sem all.
+
+            Vagyis a Medusa "minden termeknek pontosan egy valtozata" allapota
+            NEM a vetites osszevonasa, hanem a valosag: ami tobbvaltozatos, az
+            ki van szurve a webshopbol.
+
+            A KULONBSEG GYAKORLATI: egy NEM LETEZO kepesseghez keszult felulet
+            torlendo; egy MA NEM LATHATO kepesseg viszont az elso ilyen
+            terméknel el. Ezert marad mind a harom allapot.
+
             MIERT SZAMIT EZ A KATALOGUSON -- ES A SZAM HELYESBITVE (2026-09-07
             22:3x, a teljes katalogus bejarva, lapozva):
 
@@ -277,6 +293,14 @@ export default function ProductActions({
 
             Egy redundans vedelem, aminek le van irva, MIERT redundans, mas
             dolog, mint egy felesleges sor. (acrobot kikotese, 2026-09-07.)
+
+            ES MIKOR KELL UJRA RANEZNI: az ELSO OPCIO NELKULI TERMEK
+            megjelenesekor. Ma mind az 1492 termek visel egy opciot
+            (Kivitel = Alap), tehat ez a sor nem sul el; az elso olyan
+            terméknel viszont, aminek NINCS opcioja, ez a feltetel az egyetlen,
+            ami megakadalyozza, hogy ures kontener es egy elvalaszto keruljon a
+            lapra. A komment eddig azt mondta meg, MIERT all itt -- ez a
+            bekezdes azt, MIKOR szamit eloszor.
           */}
           {!uniquePiece && (product.options?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-y-4">

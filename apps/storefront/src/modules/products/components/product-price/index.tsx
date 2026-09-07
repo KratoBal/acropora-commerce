@@ -33,6 +33,14 @@ export default function ProductPrice({
    * allitott valotlant.
    *
    * A magyar alak SUFFIX, nem prefix: "319 000 Ft-tol", nem "-tol 319 000 Ft".
+   *
+   * ES MIKOR LESZ LATHATO A "-TOL" AG: amikor az elso TOBBVALTOZATOS termek
+   * webshoposra kerul. Merve (2026-09-07): a torzsadatban kilenc ilyen termek
+   * all, es MIND A KILENC ki van szurve a webshopbol -- tehat a Medusaban ma
+   * minden termek pontosan egy valtozatot visel.
+   *
+   * Ez NEM azt jelenti, hogy az ag folosleges: a kepesseg letezik, csak ma nem
+   * lathato. Az elso webshoposra allitott Reef Factory lampanal azonnal el.
    */
   const tolAlak = !variant && (product.variants?.length ?? 0) > 1
 
