@@ -171,6 +171,19 @@ export function uniquePieceOf(metadata: unknown): boolean {
  * A legszűkebb hely, ahol hasonló példány állhat: a termék saját gyűjteménye,
  * annak hiányában a kategóriája. Ha egyik sincs, a bolt főoldala -- az mindig
  * létezik, tehát a gomb soha nem visz halott címre.
+ *
+ * === A GYŰJTEMÉNY-ÁG MA NEM PRÓBÁLHATÓ KI VALÓDI ADATON ===
+ *
+ * Mérve 2026-09-07 (acrobot, két irányból): a boltban NULLA gyűjtemény áll, és
+ * az első száz termék mindegyikén `collection_id = null`. A vetítés ma
+ * egyáltalán nem hoz létre gyűjteményt.
+ *
+ * Vagyis a három ág közül az ELSŐ soha nem fut le: minden termék a kategóriára
+ * esik. Ez NEM hiba és nem javítandó -- a sorrend akkor is helyes, ha ma az
+ * első ág nem talál semmit. Ha valaha lesz gyűjtemény, ez az ág lép először.
+ *
+ * A dátum azért áll itt, mert e nélkül fél év múlva ez az ág holt kódnak
+ * látszana, holott csak MÉG NEM ELÉRT állapot.
  */
 export function similarItemsHref(product: {
   collection?: { handle?: string | null } | null
