@@ -13,9 +13,13 @@ A terméklapon ma a teljes leírás egyetlen tömbben áll. Bontsd fülekre.
 
 A fülek, ebben a sorrendben, és csak az jelenjen meg, amelyikhez van tartalom:
 
-1. **Leírás** (a termék leírás mezője)
-2. **Műszaki adatok** (a leírásban álló táblázatok)
-3. **Vízparaméterek** (élő állatnál, ha van ilyen adat)
+1. **Leírás** (a termék leírás mezője, a táblázatok nélkül)
+2. **Műszaki adatok** (a leírásban álló HTML táblázatok)
+
+**Két fül van, nem három.** Egy korábbi változat harmadikként vízparamétereket kért.
+Az kimarad, mert olyan mező ma nem létezik: a vízparaméterek a leírás szövegében állnak,
+nem külön adatként, tehát nincs mire kötni. Amikor a mező elkészül, külön feladat lesz
+belőle. Ne találgass metaadat kulcsot, és ne készíts elő üres harmadik fület.
 
 ## Négy kikötés
 
