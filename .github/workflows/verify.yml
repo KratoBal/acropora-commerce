@@ -47,6 +47,26 @@ jobs:
         run: node scripts/scan-secrets.mjs
 
       - name: Lint
+        # A KIRAKAT LINTJE BETOLTI A `next.config.js` FAJLT, AZ PEDIG MEGHIVJA A
+        # `check-env-variables` FUGGVENYT -- ES AZ KILEP, HA EZ A VALTOZO HIANYZIK.
+        # Merve 2026-09-07: kulcs nelkul a lint a hianyzo valtozo uzenetevel all
+        # meg, kulccsal lefut. Vagyis ez nem a lint tartalmarol szol, hanem arrol,
+        # hogy a config egyaltalan betoltodjon.
+        #
+        # MIERT SZABAD EZ A KULCS ITT, ES MIERT NEM AKARMELYIK:
+        #   - PUBLIKALHATO kulcs, tehat a kirakat build-je amugy is a bongeszo
+        #     forrasaba teszi: aki megnyitja a boltot, latja
+        #   - a repo PRIVAT
+        # ADMIN VAGY TITKOS KULCS SOHA NEM KERULHET IDE. Ott a masolat maga
+        # lenne a szivargas -- egy nyilvanos repoban egy elgepelt kulcs
+        # veglegesen kikerul, es a torles nem segit.
+        #
+        # A GitHub Actions valtozo-felulet helyett azert all itt, mert a
+        # tokenunk azt megtagadta (403, "Resource not accessible by personal
+        # access token") -- nem jogosultsag-hiany a repon, hanem a token
+        # hatokore.
+        env:
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ba7f178c2b6b94dc96334fc7f24d32c3949b4575fc764658812fcd508a8b7dcc
         run: npm run lint
 
       - name: Tipusellenorzes

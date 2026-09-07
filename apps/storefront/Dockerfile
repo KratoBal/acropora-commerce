@@ -102,6 +102,29 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/check-env-variables.js ./check-env-variables.js
 
+# A NEGY VALTOZO A RUNNER SZAKASZBAN IS KELL, ES EZ MERT HIBA VOLT.
+#
+# A `next start` betolti a `next.config.js` fajlt, az pedig meghivja a
+# `check-env-variables` fuggvenyt -- FUTASIDOBEN is, nem csak epiteskor.
+# Merve 2026-09-07 a kesz buildon, a kulcsot kivéve a kornyezetbol:
+#
+#     next start  ->  KILEPESI KOD 1
+#     "Error: Missing required environment variables:
+#      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY"
+#
+# Vagyis a kep SIKERESEN felepult volna, es a kontener INDULASKOR halt volna
+# meg. Ez ugyanaz a szabaly, amit a `GIT_SHA` blokk lentebb mar kimond, es amit
+# a hatter Dockerfile-ja is: a build argumentum NEM OROKLODIK szakaszok kozott,
+# tehat abban a szakaszban kell deklaralni, amelyik OLVASSA.
+ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL
+ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_DEFAULT_REGION=hu
+ARG NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+
 EXPOSE 8000
 
 # Ugyanaz a ket fuggetlen ut, mint a hatter kepenel: a cimke akkor is
