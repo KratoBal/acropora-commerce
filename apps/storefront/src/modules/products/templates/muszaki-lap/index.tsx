@@ -34,7 +34,7 @@ import React from "react"
  * mellette allo allitas fordul meg vele -- egy helyen, lathatoan.
  */
 export function hasznaljaVazat(
-  termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined
+  termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
 ): boolean {
   return vilagaTermeknek(termek) === "vilagos"
 }
@@ -42,13 +42,14 @@ export function hasznaljaVazat(
 type Props = {
   product: HttpTypes.StoreProduct
   vasarlasiResz?: React.ReactNode
+  hasonloResz?: React.ReactNode
 }
 
-const MuszakiLap = ({ product, vasarlasiResz }: Props) => {
+const MuszakiLap = ({ product, vasarlasiResz, hasonloResz }: Props) => {
   return (
     <LapVaz
       vilag={vilagaTermeknek(product)}
-      tartalom={vazTartalom(product, vasarlasiResz)}
+      tartalom={vazTartalom(product, vasarlasiResz, hasonloResz)}
     />
   )
 }

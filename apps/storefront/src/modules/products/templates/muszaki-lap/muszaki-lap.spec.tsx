@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import { hasznaljaVazat } from "./index"
@@ -32,5 +35,41 @@ describe("ki kapja már a vázat", () => {
   it("kategória nélküli termék a vázat kapja", () => {
     expect(hasznaljaVazat({ categories: [] } as never)).toBe(true)
     expect(hasznaljaVazat(null)).toBe(true)
+  })
+})
+
+/**
+ * A HASONLO LISTA HELYE, ES AMIT AZ ELNYOMASNAK NEM SZABAD ELNYOMNIA.
+ *
+ * A `fejlecNelkul` kapcsolo egy KIMENETET nyom el (a starter angol fejlecet).
+ * Egy ilyen orzo KET allitast igenyel, es a masodik nem adodik magatol, mert a
+ * valtoztatas ELOTT is igaz volt: hogy a rossz esetben ne latszodjon, ES hogy a
+ * jo esetben MEGIS latszodjon.
+ *
+ * A masodik fele az ELO ALLAT lapja: ott a lista tovabbra is a sajat fejlecevel
+ * all, mert nincs korulotte cimzett doboz. Ha valaki a kapcsolot "egyszerubb
+ * lesz mindenhol" alapon kiterjeszti, ez pirosra valt.
+ *
+ * MIERT A FORRAST OLVASSA: a `RelatedProducts` aszinkron szerver-komponens,
+ * ami adatot hiv le -- jsdomban nem renderelheto. A ket ag KULONBSEGE viszont
+ * a sablon forrasaban all, es az olvashato. A halo hatara ezzel kimondva: azt
+ * meri, MIT AD AT a sablon, nem azt, mi jelenik meg a kepernyon.
+ */
+describe("a hasonló lista fejléce ágnként", () => {
+  const forras = readFileSync(join(__dirname, "..", "index.tsx"), "utf-8")
+
+  /** ISMERT POZITIV KONTROLL: a fájlt tényleg beolvastuk, és tényleg ez az. */
+  it("a sablon forrása olvasható, és mindkét ág renderel hasonló listát", () => {
+    expect(forras).toContain("MuszakiLap")
+    expect(forras.match(/<RelatedProducts/g)).toHaveLength(2)
+  })
+
+  it("a váz ága fejléc nélkül kéri, az élő állat ága a fejléccel", () => {
+    const hivasok = forras.split("<RelatedProducts").slice(1)
+
+    expect(hivasok).toHaveLength(2)
+    expect(
+      hivasok.filter((h) => h.slice(0, 200).includes("fejlecNelkul")),
+    ).toHaveLength(1)
   })
 })

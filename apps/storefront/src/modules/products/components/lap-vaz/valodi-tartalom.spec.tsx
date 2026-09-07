@@ -31,7 +31,9 @@ const TERMEK = {
     { id: "c3", name: "TDS mérők", mpath: "c1.c2.c3" },
   ],
   variants: [{ id: "v1", sku: "8023222196186", options: [] }],
-  options: [{ id: "o1", title: "Kivitel", values: [{ id: "ov1", value: "Alap" }] }],
+  options: [
+    { id: "o1", title: "Kivitel", values: [{ id: "ov1", value: "Alap" }] },
+  ],
 } as never
 
 /**
@@ -143,7 +145,11 @@ describe("a váz valódi tartalma", () => {
    * katalógusban van kép nélküli termék, tehát ez nem elméleti eset.
    */
   it("kép nélküli terméknél a fotó doboza üres", () => {
-    const kepNelkul = { ...(TERMEK as object), thumbnail: null, images: [] } as never
+    const kepNelkul = {
+      ...(TERMEK as object),
+      thumbnail: null,
+      images: [],
+    } as never
     render(<LapVaz tartalom={vazTartalom(kepNelkul)} />)
 
     const foto = document.querySelector('[data-vaz-szakasz="foto"]')
@@ -174,11 +180,66 @@ describe("a váz valódi tartalma", () => {
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
   })
 
+  /**
+   * A 13. DOBOZ: A HASONLO TERMEKEK.
+   *
+   * Ket allitas, mert az egyik nem adodik a masikbol: hogy a KAPOTT lista a
+   * terv dobozaba kerul, ES hogy forras nelkul a doboz VARAKOZIK. A masodik
+   * nelkul egy olyan valtozat is zold maradna, ami mindig kitoltottnek jeloli
+   * a dobozt.
+   */
+  it("átadott hasonló résszel a hasonló doboz nem üres", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(TERMEK, undefined, <div>hasonló lista</div>)}
+      />,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="hasonlo"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(doboz?.textContent).toContain("hasonló lista")
+  })
+
+  it("átadott hasonló rész nélkül a hasonló doboz üresen marad", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="hasonlo"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  /**
+   * ES A HARMADIK ALLITAS ARROL SZOL, AMIT A SLOT NEM VIHET EL.
+   *
+   * A hasonlo lista a vasarlasi resztol FUGGETLENUL kerul a helyere. Ha a ket
+   * slot valaha egymasba csuszna (ugyanaz a kulcs, elirt sorrend), az EGYIK
+   * doboz csendben elnyelne a masik tartalmat -- es a ket fenti allitas kulon
+   * futtatva ettol meg zold maradna.
+   */
+  it("a vásárlási rész és a hasonló lista külön dobozba kerül", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          <div>vásárlási rész</div>,
+          <div>hasonló lista</div>,
+        )}
+      />,
+    )
+
+    const mennyiseg = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
+    const hasonlo = document.querySelector('[data-vaz-szakasz="hasonlo"]')
+
+    expect(mennyiseg?.textContent).toContain("vásárlási rész")
+    expect(mennyiseg?.textContent).not.toContain("hasonló lista")
+    expect(hasonlo?.textContent).toContain("hasonló lista")
+    expect(hasonlo?.textContent).not.toContain("vásárlási rész")
+  })
+
   it("a tizennégy doboz akkor is mind ott áll, ha csak a fele kap tartalmat", () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
     expect(document.querySelectorAll("[data-vaz-szakasz]")).toHaveLength(
-      MUSZAKI_LAP_SZAKASZAI.length
+      MUSZAKI_LAP_SZAKASZAI.length,
     )
   })
 })
