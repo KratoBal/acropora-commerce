@@ -188,6 +188,17 @@ describe("a sablon átadja-e a fotó slotot", () => {
     expect(forras).toContain("ragados-sav-ugras")
     expect(forras).toContain("var(--terv-kiemel-sotet)")
     expect(forras).not.toContain('background: "var(--terv-kiemel)"')
+
+    /**
+     * ES A SZOVEG SZINE IS, MERT A GOMB KET ERTEKEN AL, NEM EGYEN.
+     *
+     * A hatter allitasa nelkul a szoveg-szin csendben elmozdulhatna: ez a
+     * node a SABLONBAN all, tehat egyetlen komponens-szintu allitas sem
+     * latja. Egy felmeres (2026-09-08) 54 token-hasznalatot talalt tizenket
+     * fajlban, es EZ AZ EGY ertek volt olyan, amit sem forras-olvaso, sem
+     * komponens-allitas nem fedett.
+     */
+    expect(forras).toContain('color: "var(--terv-kiemel-szoveg)"')
   })
 
   it("a forrás olvasható, és mindhárom helyen áll galéria", () => {
