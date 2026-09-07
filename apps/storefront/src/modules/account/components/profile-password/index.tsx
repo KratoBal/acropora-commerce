@@ -10,7 +10,9 @@ type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
 }
 
-const ProfilePassword: React.FC<MyInformationProps> = ({ customer: _customer }) => {
+const ProfilePassword: React.FC<MyInformationProps> = ({
+  customer: _customer,
+}) => {
   const [successState, setSuccessState] = React.useState(false)
 
   // TODO: Add support for password updates
@@ -30,10 +32,8 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer: _customer }) 
       className="w-full"
     >
       <AccountInfo
-        label="Password"
-        currentInfo={
-          <span>The password is not shown for security reasons</span>
-        }
+        label="Jelszó"
+        currentInfo={<span>A jelszó biztonsági okból nem jeleníthető meg</span>}
         isSuccess={successState}
         isError={false}
         errorMessage={undefined}
@@ -42,21 +42,21 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer: _customer }) 
       >
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Old password"
+            label="Régi jelszó"
             name="old_password"
             required
             type="password"
             data-testid="old-password-input"
           />
           <Input
-            label="New password"
+            label="Új jelszó"
             type="password"
             name="new_password"
             required
             data-testid="new-password-input"
           />
           <Input
-            label="Confirm password"
+            label="Jelszó megerősítése"
             type="password"
             name="confirm_password"
             required

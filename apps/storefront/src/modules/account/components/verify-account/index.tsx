@@ -28,7 +28,7 @@ const VerifyAccount = () => {
     }
 
     confirmEmailVerification(token).then(({ success }) =>
-      setState(success ? "success" : "error")
+      setState(success ? "success" : "error"),
     )
   }, [token])
 
@@ -37,21 +37,21 @@ const VerifyAccount = () => {
       className="max-w-sm w-full flex flex-col items-center text-center gap-y-4"
       data-testid="verify-account-page"
     >
-      <h1 className="text-large-semi uppercase">Email verification</h1>
+      <h1 className="text-large-semi uppercase">E-mail-cím ellenőrzése</h1>
 
       {state === "verifying" && (
         <p className="text-base-regular text-ui-fg-base">
-          Verifying your email...
+          Az e-mail-cím ellenőrzése folyamatban...
         </p>
       )}
 
       {state === "success" && (
         <>
           <p className="text-base-regular text-ui-fg-base">
-            Your email is verified. You can now sign in to your account.
+            Az e-mail-címed ellenőrizve. Most már beléphetsz a fiókodba.
           </p>
           <LocalizedClientLink href="/account">
-            <Button variant="primary">Go to sign in</Button>
+            <Button variant="primary">Belépés</Button>
           </LocalizedClientLink>
         </>
       )}
@@ -59,11 +59,11 @@ const VerifyAccount = () => {
       {state === "error" && (
         <>
           <p className="text-base-regular text-ui-fg-base">
-            This verification link is invalid or has expired. Sign in to receive
-            a new verification email.
+            Ez az ellenőrző link érvénytelen vagy lejárt. Jelentkezz be új
+            ellenőrző e-mail kéréséhez.
           </p>
           <LocalizedClientLink href="/account">
-            <Button variant="secondary">Go to sign in</Button>
+            <Button variant="secondary">Belépés</Button>
           </LocalizedClientLink>
         </>
       )}

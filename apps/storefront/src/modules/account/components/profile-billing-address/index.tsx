@@ -34,7 +34,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
   const [successState, setSuccessState] = React.useState(false)
 
   const billingAddress = customer.addresses?.find(
-    (addr) => addr.is_default_billing
+    (addr) => addr.is_default_billing,
   )
 
   const initialState: Record<string, unknown> = {
@@ -50,7 +50,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
 
   const [state, formAction] = useActionState(
     billingAddress ? updateCustomerAddress : addCustomerAddress,
-    initialState
+    initialState,
   )
 
   const clearState = () => {
@@ -63,12 +63,12 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
 
   const currentInfo = useMemo(() => {
     if (!billingAddress) {
-      return "No billing address"
+      return "Nincs számlázási cím"
     }
 
     const country =
       regionOptions?.find(
-        (country) => country?.value === billingAddress.country_code
+        (country) => country?.value === billingAddress.country_code,
       )?.label || billingAddress.country_code?.toUpperCase()
 
     return (
@@ -93,7 +93,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
     <form action={formAction} onReset={() => clearState()} className="w-full">
       <input type="hidden" name="addressId" value={billingAddress?.id} />
       <AccountInfo
-        label="Billing address"
+        label="Számlázási cím"
         currentInfo={currentInfo}
         isSuccess={successState}
         isError={!!state.error}
@@ -103,14 +103,14 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         <div className="grid grid-cols-1 gap-y-2">
           <div className="grid grid-cols-2 gap-x-2">
             <Input
-              label="First name"
+              label="Keresztnév"
               name="first_name"
               defaultValue={billingAddress?.first_name || undefined}
               required
               data-testid="billing-first-name-input"
             />
             <Input
-              label="Last name"
+              label="Vezetéknév"
               name="last_name"
               defaultValue={billingAddress?.last_name || undefined}
               required
@@ -118,13 +118,13 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             />
           </div>
           <Input
-            label="Company"
+            label="Cégnév"
             name="company"
             defaultValue={billingAddress?.company || undefined}
             data-testid="billing-company-input"
           />
           <Input
-            label="Phone"
+            label="Telefonszám"
             name="phone"
             type="phone"
             autoComplete="phone"
@@ -133,28 +133,28 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             data-testid="billing-phone-input"
           />
           <Input
-            label="Address"
+            label="Cím"
             name="address_1"
             defaultValue={billingAddress?.address_1 || undefined}
             required
             data-testid="billing-address-1-input"
           />
           <Input
-            label="Apartment, suite, etc."
+            label="Emelet, ajtó stb."
             name="address_2"
             defaultValue={billingAddress?.address_2 || undefined}
             data-testid="billing-address-2-input"
           />
           <div className="grid grid-cols-[144px_1fr] gap-x-2">
             <Input
-              label="Postal code"
+              label="Irányítószám"
               name="postal_code"
               defaultValue={billingAddress?.postal_code || undefined}
               required
               data-testid="billing-postcal-code-input"
             />
             <Input
-              label="City"
+              label="Város"
               name="city"
               defaultValue={billingAddress?.city || undefined}
               required
@@ -162,7 +162,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             />
           </div>
           <Input
-            label="Province"
+            label="Megye / állam"
             name="province"
             defaultValue={billingAddress?.province || undefined}
             data-testid="billing-province-input"

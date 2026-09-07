@@ -33,21 +33,21 @@ const ShippingAddress = ({
 
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c) => c.iso_2),
-    [cart?.region]
+    [cart?.region],
   )
 
   // check if customer has saved addresses that are in the current region
   const addressesInRegion = useMemo(
     () =>
       customer?.addresses.filter(
-        (a) => a.country_code && countriesInRegion?.includes(a.country_code)
+        (a) => a.country_code && countriesInRegion?.includes(a.country_code),
       ),
-    [customer?.addresses, countriesInRegion]
+    [customer?.addresses, countriesInRegion],
   )
 
   const setFormAddress = (
     address?: HttpTypes.StoreCartAddress,
-    email?: string
+    email?: string,
   ) => {
     if (address) {
       setFormData((prevState: Record<string, string>) => ({
@@ -86,7 +86,7 @@ const ShippingAddress = ({
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLInputElement | HTMLSelectElement
-    >
+    >,
   ) => {
     setFormData({
       ...formData,
@@ -105,7 +105,7 @@ const ShippingAddress = ({
             addresses={customer.addresses}
             addressInput={
               mapKeys(formData, (_, key) =>
-                key.replace("shipping_address.", "")
+                key.replace("shipping_address.", ""),
               ) as unknown as HttpTypes.StoreCartAddress
             }
             onSelect={setFormAddress}
@@ -114,7 +114,7 @@ const ShippingAddress = ({
       )}
       <div className="grid grid-cols-2 gap-4">
         <Input
-          label="First name"
+          label="Keresztnév"
           name="shipping_address.first_name"
           autoComplete="given-name"
           value={formData["shipping_address.first_name"]}
@@ -123,7 +123,7 @@ const ShippingAddress = ({
           data-testid="shipping-first-name-input"
         />
         <Input
-          label="Last name"
+          label="Vezetéknév"
           name="shipping_address.last_name"
           autoComplete="family-name"
           value={formData["shipping_address.last_name"]}
@@ -132,7 +132,7 @@ const ShippingAddress = ({
           data-testid="shipping-last-name-input"
         />
         <Input
-          label="Address"
+          label="Cím"
           name="shipping_address.address_1"
           autoComplete="address-line1"
           value={formData["shipping_address.address_1"]}
@@ -141,7 +141,7 @@ const ShippingAddress = ({
           data-testid="shipping-address-input"
         />
         <Input
-          label="Company"
+          label="Cégnév"
           name="shipping_address.company"
           value={formData["shipping_address.company"]}
           onChange={handleChange}
@@ -149,7 +149,7 @@ const ShippingAddress = ({
           data-testid="shipping-company-input"
         />
         <Input
-          label="Postal code"
+          label="Irányítószám"
           name="shipping_address.postal_code"
           autoComplete="postal-code"
           value={formData["shipping_address.postal_code"]}
@@ -158,7 +158,7 @@ const ShippingAddress = ({
           data-testid="shipping-postal-code-input"
         />
         <Input
-          label="City"
+          label="Város"
           name="shipping_address.city"
           autoComplete="address-level2"
           value={formData["shipping_address.city"]}
@@ -176,7 +176,7 @@ const ShippingAddress = ({
           data-testid="shipping-country-select"
         />
         <Input
-          label="State / Province"
+          label="Megye / állam"
           name="shipping_address.province"
           autoComplete="address-level1"
           value={formData["shipping_address.province"]}
@@ -186,7 +186,7 @@ const ShippingAddress = ({
       </div>
       <div className="my-8">
         <Checkbox
-          label="Billing address same as shipping address"
+          label="A számlázási cím megegyezik a szállítási címmel"
           name="same_as_billing"
           checked={checked}
           onChange={onChange}
@@ -195,10 +195,10 @@ const ShippingAddress = ({
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <Input
-          label="Email"
+          label="E-mail-cím"
           name="email"
           type="email"
-          title="Enter a valid email address."
+          title="Adj meg érvényes e-mail-címet."
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
@@ -206,7 +206,7 @@ const ShippingAddress = ({
           data-testid="shipping-email-input"
         />
         <Input
-          label="Phone"
+          label="Telefonszám"
           name="shipping_address.phone"
           autoComplete="tel"
           value={formData["shipping_address.phone"]}
