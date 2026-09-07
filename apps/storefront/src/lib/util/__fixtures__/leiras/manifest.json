@@ -1,0 +1,79 @@
+{
+  "forras": "/home/marveen/marveen/agents/barracuda/measurement/unas-termekek-0902-2201.jsonl",
+  "bazis": "UNAS export 2026-09-02 22:01, ep idezojelekkel",
+  "fixturak": [
+    {
+      "nev": "tablazat-style",
+      "sku": "xenia",
+      "mezo": "Long",
+      "IsHtml": "1",
+      "mire_pelda": "muszaki tablazat, td/tr style attributummal",
+      "hossz": 1425
+    },
+    {
+      "nev": "iframe-youtube",
+      "sku": "hepa_S",
+      "mezo": "Short",
+      "IsHtml": "1",
+      "mire_pelda": "beagyazott video",
+      "hossz": 4683
+    },
+    {
+      "nev": "meta-charset",
+      "sku": "4260119450493",
+      "mezo": "Short",
+      "IsHtml": "1",
+      "mire_pelda": "forras-szemet a szoveg elejen, cimmel",
+      "hossz": 1644
+    },
+    {
+      "nev": "kulso-link",
+      "sku": "maxspectBio_block",
+      "mezo": "Short",
+      "IsHtml": "1",
+      "mire_pelda": "kulso hivatkozas",
+      "hossz": 2303
+    },
+    {
+      "nev": "beagyazott-kep",
+      "sku": "AFO-10108062",
+      "mezo": "Short",
+      "IsHtml": "1",
+      "mire_pelda": "leirasba agyazott kep",
+      "hossz": 3227
+    },
+    {
+      "nev": "lista",
+      "sku": "0019962013904",
+      "mezo": "Long",
+      "IsHtml": "1",
+      "mire_pelda": "felsorolas, meta NELKUL (a korabbi peldany bajtra azonos volt a meta-charset fixturaval)",
+      "hossz": 2658
+    },
+    {
+      "nev": "sima-szoveg",
+      "sku": "3683080182926",
+      "mezo": "Short",
+      "IsHtml": "0",
+      "mire_pelda": "jelolo nelkuli szoveg",
+      "hossz": 64
+    },
+    {
+      "nev": "nyilas-szoveg",
+      "sku": "Alight_ES38",
+      "mezo": "Short",
+      "IsHtml": "0",
+      "mire_pelda": "sima szoveg NYERS > jellel (ASCII nyil)",
+      "hossz": 1160
+    },
+    {
+      "nev": "ritka-jelolok",
+      "sku": "ITC-PARWISE",
+      "mezo": "Long",
+      "IsHtml": "1",
+      "mire_pelda": "section/article/blockquote",
+      "hossz": 4257
+    }
+  ],
+  "megjegyzes": "A tiz fixtura md5 szerint kulonbozo. A lista-fixtura 2026-09-07-en cserelve: az elso valasztas bajtra azonos volt a meta-charset fixturaval, tehat tiz fajl mellett csak kilenc kulonbozo bemenet allt."
+}
