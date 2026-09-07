@@ -19,11 +19,13 @@ kategória-oldalára mutató hivatkozással.
 
 ## Öt kikötés
 
-1. **A forrás a termék ELSŐDLEGES (base) kategóriája.** Egy termék több
-   kategóriában is szerepelhet (elsődleges/base és másodlagos/alternatív
-   besorolás egyaránt előfordul a mai adatban) - a morzsamenü KIZÁRÓLAG az
-   elsődleges kategória útvonalát mutassa, a másodlagos besorolásokat
-   figyelmen kívül hagyva.
+1. **A morzsamenü a LEGMÉLYEBB kategória útvonalát mutassa.** Egy termék több
+   kategóriában is állhat, és a mai adatban NINCS elsődleges jelölő: a régi
+   rendszerben volt, de a költözés nem hozza át. Ezt megmértük, tehát ne keresd.
+   A szabály helyette ez, és ez döntés, nem találgatás: vedd a termék
+   kategóriái közül azt, amelyiknek a leghosszabb az őseinek a láncolata. Ha
+   több ilyen van azonos mélységben, akkor azt, amelyik a lekérdezés
+   válaszában elsőként áll. Ne rendezz név vagy azonosító szerint.
 
 2. **Az első elem mindig "Főoldal"**, utána a kategória-fa minden szintje
    sorban, a legfelső (gyökér) kategóriától a termék saját, legmélyebb
