@@ -105,7 +105,7 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
   {
     kulcs: "fulek",
     cim: "",
-    varakozo: "Műszaki adatok, Leírás, Spektrum, Értékelések, Letöltések",
+    varakozo: "Leírás és műszaki adatok",
     oszlop: "bal",
   },
   {
@@ -148,7 +148,7 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
   },
   {
     kulcs: "hasonlo",
-    cim: "Hasonló lámpák",
+    cim: "Hasonló termékek",
     varakozo: "Ide jönnek a hasonló termékek",
     oszlop: "teljes",
   },
@@ -324,7 +324,7 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] = MUSZAKI_LAP_SZAKASZAI.map(
   (szakasz) => ({
     ...szakasz,
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
-  })
+  }),
 )
 
 /** Melyik vilag melyik dobozlistat kapja. */
@@ -384,8 +384,8 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
             szakasz.oszlop === "teljes"
               ? "lg:col-span-2"
               : szakasz.oszlop === "bal"
-              ? "lg:col-start-1"
-              : "lg:col-start-2"
+                ? "lg:col-start-1"
+                : "lg:col-start-2"
           }
         >
           <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>

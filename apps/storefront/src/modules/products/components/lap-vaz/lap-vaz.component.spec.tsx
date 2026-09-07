@@ -1,10 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import LapVaz, {
-  ELO_ALLAT_LAP_SZAKASZAI,
-  MUSZAKI_LAP_SZAKASZAI,
-} from "./index"
+import LapVaz, { ELO_ALLAT_LAP_SZAKASZAI, MUSZAKI_LAP_SZAKASZAI } from "./index"
 
 afterEach(cleanup)
 
@@ -253,7 +250,7 @@ describe("a vevonek szant szoveg magyarul all", () => {
       "Csomagajánlat",
       "Kérdezd minket",
       "Ami még kellhet hozzá",
-      "Hasonló lámpák",
+      "Hasonló termékek",
     ])
   })
 
@@ -345,13 +342,11 @@ describe("az élő állat lap feliratai", () => {
    * lenne, ha a keresés soha nem talál semmit -- ezért előbb megmutatjuk, hogy
    * a VILÁGOS listában ugyanez a keresés MEGTALÁLJA a lámpás szavakat.
    */
-  it("a világos lista tényleg lámpás szavakat használ", () => {
-    expect(cimek(MUSZAKI_LAP_SZAKASZAI)).toContain("lámpák")
+  it("a világos lista tényleg műszaki-specifikus szavakat használ", () => {
     expect(cimek(MUSZAKI_LAP_SZAKASZAI)).toContain("Méretezés-segéd")
   })
 
-  it("a sötét listában nincs lámpás szó", () => {
-    expect(cimek(ELO_ALLAT_LAP_SZAKASZAI)).not.toContain("lámpák")
+  it("a sötét listában nincs műszaki-specifikus szó", () => {
     expect(cimek(ELO_ALLAT_LAP_SZAKASZAI)).not.toContain("Méretezés-segéd")
   })
 
@@ -404,18 +399,18 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
       .map((e) => e.textContent ?? "")
       .join(" | ")
 
-  it("sötét világban a WYSIWYG felirat áll, nem a lámpás", () => {
+  it("sötét világban a WYSIWYG felirat áll, nem a műszaki", () => {
     render(<LapVaz vilag="sotet" />)
 
     expect(feliratok()).toContain("További WYSIWYG példányok")
-    expect(feliratok()).not.toContain("Hasonló lámpák")
+    expect(feliratok()).not.toContain("Hasonló termékek")
   })
 
   /** ISMERT POZITÍV KONTROLL: világos világban ugyanez a keresés a lámpást találja. */
-  it("világos világban a lámpás felirat áll", () => {
+  it("világos világban a műszaki felirat áll", () => {
     render(<LapVaz vilag="vilagos" />)
 
-    expect(feliratok()).toContain("Hasonló lámpák")
+    expect(feliratok()).toContain("Hasonló termékek")
     expect(feliratok()).not.toContain("További WYSIWYG példányok")
   })
 })
