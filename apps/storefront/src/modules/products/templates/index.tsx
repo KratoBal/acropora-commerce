@@ -59,28 +59,37 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           vasarlasiResz={
             <Suspense
               fallback={
-                <ProductActions disabled={true} product={product} region={region} />
+                <ProductActions
+                  disabled={true}
+                  product={product}
+                  region={region}
+                />
               }
             >
               <ProductActionsWrapper id={product.id} region={region} />
             </Suspense>
           }
+          hasonloResz={
+            <div data-testid="related-products-container">
+              <Suspense fallback={<SkeletonRelatedProducts />}>
+                <RelatedProducts
+                  product={product}
+                  countryCode={countryCode}
+                  fejlecNelkul
+                />
+              </Suspense>
+            </div>
+          }
         />
-        <div
-          className="content-container my-16 small:my-32"
-          data-testid="related-products-container"
-        >
-          <Suspense fallback={<SkeletonRelatedProducts />}>
-            <RelatedProducts product={product} countryCode={countryCode} />
-          </Suspense>
-        </div>
       </>
     )
   }
 
   return (
     <>
-      <div className="content-container pt-6"><ProductBreadcrumb product={product} categories={categories} /></div>
+      <div className="content-container pt-6">
+        <ProductBreadcrumb product={product} categories={categories} />
+      </div>
       <div
         className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"
         data-testid="product-container"
