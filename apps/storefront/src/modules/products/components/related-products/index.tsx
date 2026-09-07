@@ -15,6 +15,11 @@ type RelatedProductsProps = {
    * lista, a lekerdezes es a szures valtozatlan.
    *
    * Alapertelmezesben HAMIS, tehat a mai (elo allat) lap semmit nem valtozik.
+   *
+   * ES EZERT NEM HOLT KOD A FEJLEC, hanem forditando: merve az elo lapon
+   * (2026-09-07, acropora-divaricata), az elo allat termeklapjan MIND A KET
+   * felirat megjelenik. Ott nincs vaz, tehat nincs doboz-cim, tehat az
+   * elnyomas nem sul el. A muszaki lapon viszont nem latszik.
    */
   fejlecNelkul?: boolean
 }
@@ -63,10 +68,10 @@ export default async function RelatedProducts({
       {fejlecNelkul ? null : (
         <div className="flex flex-col items-center text-center mb-16">
           <span className="text-base-regular text-gray-600 mb-6">
-            Related products
+            Hasonló termékek
           </span>
           <p className="text-2xl-regular text-ui-fg-base max-w-lg">
-            You might also want to check out these products.
+            Ezek is érdekelhetnek.
           </p>
         </div>
       )}

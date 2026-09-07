@@ -17,6 +17,25 @@ export default function ProductPrice({
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
 
+  /**
+   * A "-TOL" ALAK KET FELTETELHEZ KOTOTT, ES A MASODIK AZ UJ.
+   *
+   * Eddig `!variant && "From "` allt itt: angol szo egy magyar lapon, ES a
+   * feltetel csak azt nezte, kaptunk-e valtozatot -- nem azt, hogy VAN-E
+   * TOBB. Merve az elo lapon (2026-09-07): a muszaki termeklapon
+   * "From 319 000 Ft" jelent meg, egyetlen valtozatu ("Alap") termeken.
+   *
+   * Ket baj egyszerre: a felirat angol, es egyetlen ar mellett a "-tol"
+   * FELREVEZETO -- azt igeri, hogy van olcsobb valtozat is.
+   *
+   * A katalogusban 1884 terméknek EGYALTALAN nincs valtozata es 9-nek van
+   * (korabbi meresem), tehat a regi alak a termekek tulnyomo tobbsegen
+   * allitott valotlant.
+   *
+   * A magyar alak SUFFIX, nem prefix: "319 000 Ft-tol", nem "-tol 319 000 Ft".
+   */
+  const tolAlak = !variant && (product.variants?.length ?? 0) > 1
+
   if (!selectedPrice) {
     return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
   }
@@ -28,13 +47,13 @@ export default function ProductPrice({
           "text-ui-fg-interactive": selectedPrice.price_type === "sale",
         })}
       >
-        {!variant && "From "}
         <span
           data-testid="product-price"
           data-value={selectedPrice.calculated_price_number}
         >
           {selectedPrice.calculated_price}
         </span>
+        {tolAlak ? <span data-testid="product-price-tol">-tól</span> : null}
       </span>
       {selectedPrice.price_type === "sale" && (
         <>
