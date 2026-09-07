@@ -44,6 +44,7 @@ export default function ProductActions({
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
+  const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
 
   // If there is only 1 variant, preselect the options
@@ -138,6 +139,14 @@ export default function ProductActions({
     inStock: inStock && !!isValidVariant,
     uniquePiece,
   })
+  const maximumQuantity =
+    selectedVariant?.manage_inventory && !selectedVariant.allow_backorder
+      ? Math.max(selectedVariant.inventory_quantity || 0, 1)
+      : null
+  const normaliseQuantity = (value: number) => {
+    if (!Number.isInteger(value) || value < 1) return 1
+    return maximumQuantity ? Math.min(value, maximumQuantity) : value
+  }
 
   const actionsRef = useRef<HTMLDivElement>(null)
 
@@ -151,7 +160,7 @@ export default function ProductActions({
 
     await addToCart({
       variantId: selectedVariant.id,
-      quantity: 1,
+      quantity,
       countryCode,
     })
 
@@ -195,13 +204,46 @@ export default function ProductActions({
             Válassz változatot
           </Button>
         ) : (
-          <StockState
-            availability={availability}
-            similarHref={similarHref}
-            onAddToCart={handleAddToCart}
-            isAdding={isAdding}
-            disabled={!!disabled || isAdding}
-          />
+          <div className="flex gap-2">
+            {!uniquePiece && (
+              <div className="flex items-center rounded-md border border-ui-border-base">
+                <button
+                  type="button"
+                  aria-label="Mennyiség csökkentése"
+                  className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+                  onClick={() => setQuantity(normaliseQuantity(quantity - 1))}
+                >
+                  −
+                </button>
+                <input
+                  aria-label="Mennyiség"
+                  className="h-10 w-12 bg-transparent text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+                  inputMode="numeric"
+                  value={quantity}
+                  onChange={(event) =>
+                    setQuantity(normaliseQuantity(Number(event.target.value)))
+                  }
+                  onBlur={() => setQuantity(normaliseQuantity(quantity))}
+                />
+                <button
+                  type="button"
+                  aria-label="Mennyiség növelése"
+                  className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+                  onClick={() => setQuantity(normaliseQuantity(quantity + 1))}
+                  disabled={maximumQuantity !== null && quantity >= maximumQuantity}
+                >
+                  +
+                </button>
+              </div>
+            )}
+            <StockState
+              availability={availability}
+              similarHref={similarHref}
+              onAddToCart={handleAddToCart}
+              isAdding={isAdding}
+              disabled={!!disabled || isAdding}
+            />
+          </div>
         )}
         <MobileActions
           product={product}
