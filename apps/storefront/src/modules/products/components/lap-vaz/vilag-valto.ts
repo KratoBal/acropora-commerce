@@ -52,7 +52,40 @@ import type { Vilag } from "./index"
  * azonosito a kovetkezo teljes ujravetitesnel CSENDBEN elavulna: a valto nem
  * hibazna, csak minden termeket vilagosnak mondana.
  */
-export const ELO_ALLAT_GYOKEREK = ["Korallok", "Halak", "Gerinctelenek"] as const
+/**
+ * === HOL LAKIK MEG UGYANEZ A KERDES: NEGY HELY, KET REPO ===
+ *
+ * Az "elo allat-e ez a termek" (es a rokona, az "egyedi darab-e") kerdesre MA
+ * NEGY kulonbozo szabaly valaszol, ket kulon repoban. Kozos konstanst nem lehet
+ * megosztani kozottuk, ezert a szerzodes CSAK KIMONDVA letezik:
+ *
+ *   acropora-os / medusa-wysiwyg.policy.ts
+ *       a "WYSIWYG" kategoria RESZFAJA -> egyedi darab (rendelhetoseg, jelzo)
+ *
+ *   acropora-os / medusa-livestock.policy.ts
+ *       a HAROM ELO ALLAT GYOKER (Korallok, Halak, Gerinctelenek)
+ *       -> bolti atvetel (pickup_only)
+ *
+ *   acropora-commerce / modules/products/components/lap-vaz/vilag-valto.ts
+ *       UGYANAZ A HAROM NEV -> a kirakat sotet-vilagos valtoja
+ *
+ *   acropora-commerce / workflows/utils/livestock.ts
+ *       termek-TIPUS azonositok egy kornyezeti valtozobol (MA URES)
+ *       -> a szallitasi osztaly livestock-aga
+ *
+ * A KETTO, AMI EGYUTT MOZOG: a masodik es a harmadik UGYANAZT a harom nevet
+ * tartalmazza, ket kulon repoban. Ha az egyik valtozik, a masikat AT KELL
+ * NEZNI -- kulonben az egyik oldal mar elo allatnak tart valamit, amit a masik
+ * nem, es a kulonbseg sehol nem hasal el.
+ *
+ * (acrobot kerese, 2026-09-07. A negyedik hely aznap este keletkezett, ezert az
+ * o listajaban meg harom szerepelt.)
+ */
+export const ELO_ALLAT_GYOKEREK = [
+  "Korallok",
+  "Halak",
+  "Gerinctelenek",
+] as const
 
 type Kategoria = {
   name?: string | null
