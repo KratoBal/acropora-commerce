@@ -51,6 +51,29 @@ export const availabilityLabel: Record<Availability, string> = {
 };
 
 /**
+ * AZ ELADVA ÁLLAPOT MAGYARÁZÓ MONDATA (picasso látványterve, 2026-09-07).
+ *
+ * A puszta "Eladva" nem mondja meg, hogy ez VÉGLEGES. E nélkül a vevő ugyanúgy
+ * visszatérhet holnap, mint egy elfogyott termékhez, és hiába.
+ *
+ * A tervben két kötőjel áll elválasztójelként; itt két mondat, mert a magyar
+ * szedésben a két kötőjel nem helyes alak, és a lapon ez látszik.
+ */
+export const SOLD_OUT_EXPLANATION =
+  "Egyedi darab volt, nem pótolható. Nem kerül vissza raktárra.";
+
+/**
+ * A WYSIWYG-ÍGÉRET, KIMONDVA (picasso látványterve, 2026-09-07).
+ *
+ * A jelvény önmagában félreérthető: aki először látja, nem tudja, mit jelent az
+ * "egyedi példány". Ez a mondat a kép ALATT áll, kis betűvel.
+ *
+ * A tervben itt is két kötőjel állt; kettősponttá írva, ugyanabból az okból.
+ */
+export const UNIQUE_PIECE_PROMISE =
+  "A fotó pontosan ezt a példányt mutatja: ezt kapod, nem egy hasonlót.";
+
+/**
  * AZ ELADVA ÁLLAPOTNAK NINCS KOSÁR-GOMBJA, HANEM TOVÁBBVISZ.
  *
  * Balázs döntése (2026-09-07 délelőtt): a helyén "Hasonló példányok megnézése"

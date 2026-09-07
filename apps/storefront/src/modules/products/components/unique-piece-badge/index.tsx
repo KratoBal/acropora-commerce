@@ -1,3 +1,5 @@
+import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
+
 /**
  * "1 DB · EGYEDI PÉLDÁNY" -- A WYSIWYG-ÍGÉRET, KIMONDVA.
  *
@@ -28,5 +30,24 @@ export default function UniquePieceBadge({
     >
       1 db · Egyedi példány
     </span>
+  )
+}
+
+/**
+ * A JELVÉNY MELLÉ TARTOZÓ MONDAT, A KÉP ALATT (picasso terve, 2026-09-07).
+ *
+ * Külön komponens, mert MÁSHOL áll: a jelvény a képen belül, ez a kép alatt.
+ * Egy komponensbe téve az egyik a másik pozicionálását örökölné.
+ *
+ * "Ha ez az egy mondat lemarad, a jelvény önmagában félreérthető marad."
+ */
+export function UniquePiecePromise({ className = "" }: { className?: string }) {
+  return (
+    <p
+      data-testid="unique-piece-promise"
+      className={"text-xs leading-relaxed text-neutral-500 " + className}
+    >
+      {UNIQUE_PIECE_PROMISE}
+    </p>
   )
 }
