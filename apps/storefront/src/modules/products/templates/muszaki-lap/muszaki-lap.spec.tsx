@@ -156,10 +156,25 @@ describe("ki kapja a valódi galériát a fotó slotba", () => {
 describe("a sablon átadja-e a fotó slotot", () => {
   const forras = readFileSync(join(__dirname, "..", "index.tsx"), "utf-8")
 
-  /** ISMERT POZITIV KONTROLL: a fajl tenyleg ez, es tenyleg ket galeria all benne. */
-  it("a forrás olvasható, és mindkét ág renderel galériát", () => {
+  /**
+   * ISMERT POZITIV KONTROLL: a fajl tenyleg ez, es tenyleg all benne galeria.
+   *
+   * A SZAM HAROM, ES A HARMADIK NEM UJ KEPESSEG. A vaz alatt a vasarlasi
+   * allapot `Suspense`-be kerult, es a TARTALEK ugyanaz a vaz -- tehat a
+   * galeria a vazas agon KETSZER szerepel a forrasban (tartalek es valodi),
+   * plusz egyszer a regi agon:
+   *
+   *   1. a vazas ag Suspense-tartaleka
+   *   2. a vazas ag valodi rendereleese
+   *   3. a regi (vaz nelkuli) ag
+   *
+   * A szam beegetve marad, mert ALLITASBAN a beegetett szam maga a vedelem: ha
+   * valaki egy negyedik helyre teszi -- vagy egyet elvesz --, ez pirosra valt,
+   * es valaki megnezi, miert.
+   */
+  it("a forrás olvasható, és mindhárom helyen áll galéria", () => {
     expect(forras).toContain("MuszakiLap")
-    expect(forras.match(/<ImageGallery/g)).toHaveLength(2)
+    expect(forras.match(/<ImageGallery/g)).toHaveLength(3)
   })
 
   it("a váz ága a fotó slotban adja át, a döntést a határ mondja meg", () => {

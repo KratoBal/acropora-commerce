@@ -94,7 +94,14 @@ export function galeriatAdunkAt(
 
 type Props = {
   product: HttpTypes.StoreProduct
-  vasarlasiResz?: React.ReactNode
+  /**
+   * ALL-E MAR A VASARLASI ALLAPOT A LAP FOLOTT (`VasarlasProvider`).
+   *
+   * Nem node, hanem logikai ertek, mert a terv NEGY dobozat ugyanaz az egy
+   * allapot tolti fel -- az indoklas a `valodi-tartalom.tsx`-ben all, annal a
+   * sornal, ahol a negy doboz a helyere kerul.
+   */
+  vasarlasAktiv?: boolean
   hasonloResz?: React.ReactNode
   fotoResz?: React.ReactNode
   ragadosResz?: React.ReactNode
@@ -102,7 +109,7 @@ type Props = {
 
 const MuszakiLap = ({
   product,
-  vasarlasiResz,
+  vasarlasAktiv,
   hasonloResz,
   fotoResz,
   ragadosResz,
@@ -112,7 +119,7 @@ const MuszakiLap = ({
       vilag={vilagaTermeknek(product)}
       tartalom={vazTartalom(
         product,
-        vasarlasiResz,
+        vasarlasAktiv,
         hasonloResz,
         fotoResz,
         ragadosResz,

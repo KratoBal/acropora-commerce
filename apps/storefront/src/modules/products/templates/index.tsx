@@ -13,6 +13,7 @@ import { uniquePieceOf } from "@modules/products/components/stock-state/availabi
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
+import VasarlasKeret from "./vasarlas-keret"
 import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 
@@ -56,33 +57,50 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <div className="content-container pt-6">
           <ProductBreadcrumb product={product} categories={categories} />
         </div>
-        <MuszakiLap
-          product={product}
-          vasarlasiResz={
-            <Suspense
-              fallback={
-                <ProductActions
-                  disabled={true}
-                  product={product}
-                  region={region}
-                />
+        {/*
+          A VASARLASI ALLAPOT A LAP FOLE KERUL, ES A TARTALEK UGYANAZ A VAZ.
+
+          Eddig a `ProductActions` EGY slotba ment, tehat a Suspense is egy
+          dobozt fedett. A terv viszont NEGY dobozra bontja a jobb oszlopot, es
+          mind a negy UGYANAZT az allapotot olvassa -- az allapot tehat mind a
+          negy folott kell, hogy alljon.
+
+          A TARTALEK NEM URES LAP: ugyanaz a tizennegy doboz, `vasarlasAktiv`
+          nelkul, vagyis a negy doboz a varakozo szoveget mutatja, es a tobbi
+          tiz mar a helyen all. A hasonlo lista a tartalekbol kimarad, hogy a
+          lekerdezese ne induljon el ketszer.
+        */}
+        <Suspense
+          fallback={
+            <MuszakiLap
+              product={product}
+              fotoResz={
+                galeriatAdunkAt(product) ? (
+                  <ImageGallery
+                    images={images}
+                    uniquePiece={uniquePieceOf(product.metadata)}
+                  />
+                ) : undefined
               }
-            >
-              <ProductActionsWrapper id={product.id} region={region} />
-            </Suspense>
+            />
           }
-          hasonloResz={
-            <div data-testid="related-products-container">
-              <Suspense fallback={<SkeletonRelatedProducts />}>
-                <RelatedProducts
-                  product={product}
-                  countryCode={countryCode}
-                  fejlecNelkul
-                />
-              </Suspense>
-            </div>
-          }
-          /*
+        >
+          <VasarlasKeret id={product.id} region={region}>
+            <MuszakiLap
+              product={product}
+              vasarlasAktiv
+              hasonloResz={
+                <div data-testid="related-products-container">
+                  <Suspense fallback={<SkeletonRelatedProducts />}>
+                    <RelatedProducts
+                      product={product}
+                      countryCode={countryCode}
+                      fejlecNelkul
+                    />
+                  </Suspense>
+                </div>
+              }
+              /*
             A FOTO SLOT ATADASA -- ITT DOL EL, HOGY A JELVENY MEGMARAD-E.
 
             A galeria viszi a `UniquePieceBadge`-et az elso kepre es a
@@ -93,15 +111,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             Hogy melyik lap kapja, azt a `galeriatAdunkAt` mondja meg, es a
             fejlece megindokolja, miert nem mindenki.
           */
-          fotoResz={
-            galeriatAdunkAt(product) ? (
-              <ImageGallery
-                images={images}
-                uniquePiece={uniquePieceOf(product.metadata)}
-              />
-            ) : undefined
-          }
-          /*
+              fotoResz={
+                galeriatAdunkAt(product) ? (
+                  <ImageGallery
+                    images={images}
+                    uniquePiece={uniquePieceOf(product.metadata)}
+                  />
+                ) : undefined
+              }
+              /*
             A RAGADOS SAV TARTALMA -- ES AMI BENNE NEM SAJAT.
 
             A GOMB UGRIK, nem onallo kosarba-tetel (acrobot dontese, 14504). Az
@@ -120,25 +138,27 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             es a muszaki termeken ma nincs ra forrasunk. Kitalalni nem szabad,
             tehat a helye osszemegy.
           */
-          ragadosResz={
-            <RagadosSav
-              ar={<ProductPrice product={product} />}
-              cselekves={
-                <a
-                  href="#vaz-mennyiseg"
-                  data-testid="ragados-sav-ugras"
-                  className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
-                  style={{
-                    background: "var(--terv-kiemel)",
-                    color: "var(--terv-kiemel-szoveg)",
-                  }}
-                >
-                  Kosárba
-                </a>
+              ragadosResz={
+                <RagadosSav
+                  ar={<ProductPrice product={product} />}
+                  cselekves={
+                    <a
+                      href="#vaz-mennyiseg"
+                      data-testid="ragados-sav-ugras"
+                      className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
+                      style={{
+                        background: "var(--terv-kiemel)",
+                        color: "var(--terv-kiemel-szoveg)",
+                      }}
+                    >
+                      Kosárba
+                    </a>
+                  }
+                />
               }
             />
-          }
-        />
+          </VasarlasKeret>
+        </Suspense>
       </>
     )
   }
