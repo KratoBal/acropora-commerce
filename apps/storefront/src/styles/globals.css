@@ -26,8 +26,17 @@
   --terv-hatter-halvany: oklch(0.955 0.004 250);
 
   /* kiemeles */
-  --terv-kiemel: oklch(0.62 0.13 45);         /*  9 elem -- narancs, a fo cselekves */
-  --terv-kiemel-sotet: oklch(0.55 0.13 45);   /*  9 elem -- ugyanaz lenyomva */
+  /* 9 HATTERKENT + 3 KERETKENT = 12 hely. A token-kiolvaso csak a hattereket
+     szamolta, ezert allt itt korabban 9: a harom `border: 2-3px solid` hasznalat
+     (a bekapcsolt bolyegkep kerete es ket bal oldali kiemelo csik) LATHATATLAN
+     volt neki. Merve a tervfajlbol, 2026-09-07. */
+  --terv-kiemel: oklch(0.62 0.13 45);         /* 12 hely -- rez, a fo cselekves */
+  --terv-kiemel-sotet: oklch(0.55 0.13 45);   /* ugyanaz lenyomva */
+  /* A REZEN ALLO SZOVEG SOTET, NEM FEHER -- es ez nem izles, hanem meres:
+     a tervben a kilenc rez hatterbol OT visel sajat szoveget, es MIND AZ OT
+     ugyanezt az erteket hasznalja. (A masik negy szoveg nelkuli negyzet:
+     a fejlec jelzese, ket jelmagyarazat-kocka es a ragados sav pontja.) */
+  --terv-kiemel-szoveg: oklch(0.15 0.014 45);
   --terv-jelzo: oklch(0.52 0.09 210);         /*  6 elem -- kek-zold, jelzesekre */
 
   /* szoveg */
@@ -99,8 +108,11 @@
   --terv-hatter-lap: oklch(0.17 0.016 250);    /*  8 elem -- melyebb felulet */
   --terv-hatter-halvany: oklch(0.205 0.018 249);
 
-  --terv-kiemel: oklch(0.55 0.13 45);          /*  9 elem -- a sotet valtozat rezje */
+  --terv-kiemel: oklch(0.55 0.13 45);          /* a sotet valtozat rezje */
   --terv-kiemel-sotet: oklch(0.62 0.13 45);
+  /* A rezen allo szoveg a sotet lapon is ugyanaz: a kontraszt a REZHEZ szol,
+     nem a lap hattereehez, tehat nem fordul meg a ket vilag kozott. */
+  --terv-kiemel-szoveg: oklch(0.15 0.014 45);
 
   --terv-szoveg: oklch(0.95 0.006 250);        /* 53 elem sotet hatteren */
   --terv-szoveg-halvany: oklch(0.72 0.012 250);
