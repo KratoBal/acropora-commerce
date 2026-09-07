@@ -1,5 +1,30 @@
 # A KIRAKAT KEPE.
 #
+# ============================================================================
+# EZ A KEP MA IDEIGLENES, ES ITT ALL A LEJARATA
+# ============================================================================
+#
+# MA: a kep a BEOLVASZTATLAN agrol epul (feat/storefront-from-dtc-starter),
+# pinneles NELKUL, azert, hogy Balazs lassa a kirakatot egy cimen. A CI Build
+# lepese a gyokerbol futo `turbo build`-del a kirakatot is epiti, es ott a ket
+# React utkozese miatt ma elhasal -- tehat az ag nem olvaszthato be.
+#
+# A LEJARAT: a repo atallitasa pnpm-re. A pnpm izolalt `node_modules`-a a ket
+# React utkozeset szerkezetileg megszunteti, es akkor
+#   - a kep a FO AGROL epul,
+#   - a fuggosegek a repo lockfile-jabol jonnek, tehat pinnelve lesznek,
+#   - es EZ A BLOKK TORLENDO.
+#
+# MIERT ALL ITT EZ A HAROM SOR: egy ideiglenes megoldas, aminek nincs kimondva
+# a vege, allando lesz. (acrobot kikotese, 2026-09-07)
+#
+# ES MIERT NINCS SAJAT LOCKFILE HELYETTE: egy masodik lockfile a repoban
+# ugyanaz a szag, amitol a kirakat kiemeleset elvetettuk -- utana ki kellene
+# vezetni, es a kivezetes az, ami elmarad. A pinneles hianyat inkabb VISELJUK
+# es LEIRJUK. Az ara most alacsony: egy TESZT gepi kep, amit napokban merunk,
+# nem honapokban.
+# ============================================================================
+#
 # === MIERT KULON DOCKERFILE, ES MIERT A KIRAKAT KONYVTARABAN ===
 #
 # A repo gyokerében allo Dockerfile CSAK a hatteret epiti (`npx medusa build`,
