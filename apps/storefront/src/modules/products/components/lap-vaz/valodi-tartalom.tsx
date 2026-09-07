@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { sanitizeDescription } from "@lib/util/sanitize-description"
+import ProductDescriptionTabs from "@modules/products/components/product-description-tabs"
 import React from "react"
 
 /**
@@ -26,8 +27,12 @@ import React from "react"
  * AMI NINCS, es ezert marad ures:
  *
  *   MARKA            a metaadatban nincs marka-kulcs (a negy letezobol egyik sem az)
- *   MUSZAKI PARAMETER strukturaltan sehol -- a muszaki adatok a LEIRASBA agyazott
- *                    tablazatokban elnek (189 termek a teljes katalogusban)
+ *   MUSZAKI PARAMETER strukturaltan sehol -- KULON MEZOKENT nincsenek. De a
+ *                    korabbi allitasom ("sehol") TUL EROS volt: a leirasba
+ *                    agyazott TABLAZATOKBAN ott allnak (189 termek a teljes
+ *                    katalogusban), es a #50 ful-komponense KI IS EMELI oket egy
+ *                    "Muszaki adatok" fulre. Vagyis nem hianyoznak: a fulek
+ *                    dobozaban jelennek meg, nem kulon dobozban.
  *   CSOMAGAJANLAT    nincs forrasa
  *   TARTOZEKOK       nincs forrasa
  *   HASONLO TERMEKEK nincs forrasa
@@ -193,8 +198,23 @@ export function vazTartalom(
     tartalom.foto = foto
   }
 
-  if (sanitizeDescription(termek.description)) {
-    tartalom.fulek = <Leiras termek={termek} />
+  /**
+   * A FULEK A MAR MEGLEVO KOMPONENSBOL JONNEK, NEM SAJAT LEIRAS-BLOKKBOL.
+   *
+   * A #50 (a kulso Codex fejleszto munkaja) mar megepitette a fuleket: a
+   * leirasbol kiemeli a HTML tablazatokat, es "Leiras" plusz "Muszaki adatok"
+   * fulre bontja. Ha a vaz a SAJAT blokkjat tenne ide, az a mar beolvadt munka
+   * CSENDBEN kiesne pontosan azokrol a lapokrol, amikre keszult.
+   *
+   * ES EZ MEGTORTENT VOLNA: a vaz megkeruli a `product-info` fajlt, ahol a fulek
+   * allnak. Murena komponenseit megneztem, a fuleket nem -- murena szolt.
+   *
+   * A tisztitas a MI oldalunkon marad: a ful-komponens sajat kommentje mondja
+   * ki, hogy mar megtisztitott sztringet var, es nem ertelmezi a tartalmat.
+   */
+  const tisztaLeiras = sanitizeDescription(termek.description)
+  if (tisztaLeiras) {
+    tartalom.fulek = <ProductDescriptionTabs description={tisztaLeiras} />
   }
 
   const egyseg = egysegFelirat(termek)
