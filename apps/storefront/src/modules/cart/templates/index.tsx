@@ -1,5 +1,5 @@
 import PickupNotice from "../components/pickup-notice"
-import { pickupOnlyLines } from "../components/pickup-notice/pickup-notice"
+import { pickupNoticeProps } from "../components/pickup-notice/pickup-notice"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
@@ -10,9 +10,25 @@ import { HttpTypes } from "@medusajs/types"
 const CartTemplate = ({
   cart,
   customer,
+  shippingClass,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
+  /**
+   * A HATTEROLDAL SZALLITASI OSZTALYA ES AZ OKA, a `store/shipping-class`
+   * vegpontrol (#86). `null`, ha a vegpont nem valaszolt: olyankor a sav nem
+   * jelenik meg, mert nem allitunk korlatozast, amirol nem tudunk.
+   *
+   * MIERT NEM A KOSAR TARTALMABOL SZAMOLJUK: eddig az `unique_piece` jelolo
+   * volt a helyettesito. Az azt mondta meg, hogy egy tetel EGYEDI DARAB, nem
+   * azt, hogy ELO ALLAT -- a ketto nagyresztuk fedi egymast, de nem ugyanaz.
+   * A hatteroldal a HAROM ELO ALLAT GYOKERKATEGORIABOL szarmaztatja, es a
+   * `shipping_class_source` megnevezi a KIVALTO SORT.
+   */
+  shippingClass?: {
+    shipping_class: string
+    shipping_class_source: string | null
+  } | null
 }) => {
   return (
     <div className="py-12">
@@ -40,12 +56,7 @@ const CartTemplate = ({
                 fizetesnel talalkozik vele eloszor, mar dontott.
               */}
               <PickupNotice
-                lines={pickupOnlyLines(
-                  (cart?.items ?? []).map((item) => ({
-                    title: item.product_title ?? item.title ?? "",
-                    productMetadata: item.variant?.product?.metadata,
-                  }))
-                )}
+                {...pickupNoticeProps(cart?.items ?? [], shippingClass)}
               />
               {!customer && (
                 <>

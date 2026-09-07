@@ -31,12 +31,38 @@ describe("az átvételi sáv kirajzolása", () => {
   })
 
   /**
-   * ES HA NINCS ELO TETEL, A SAV NEM ALL OTT. Ez NEM az "ures doboz" szabaly
-   * ala esik: nem egy hianyzo adat helye, hanem egy allapot, ami nem all fenn.
+   * ES HA NINCS BOLTI ATVETEL, A SAV NEM ALL OTT. Ez NEM az "ures doboz"
+   * szabaly ala esik: nem egy hianyzo adat helye, hanem egy allapot, ami nem
+   * all fenn.
+   *
+   * A LATHATOSAGOT MOSTANTOL A `visible` DONTI EL, NEM A LISTA HOSSZA, es ez
+   * nem atnevezes. A ket kerdes SZETVALT, amikor a sav a valodi jelre kerult:
+   * a hatteroldal mondja meg, hogy a kosar bolti atveteles-e, a sorok
+   * megnevezese ettol FUGGETLENUL sikerulhet vagy nem. Amig a lista hossza
+   * dontott, egy meg nem nevezheto korlatozas ELTUNT volna.
    */
-  it("élő tétel nélkül nem jelenik meg", () => {
-    const { container } = render(<PickupNotice lines={[]} />)
+  it("bolti átvétel nélkül nem jelenik meg", () => {
+    const { container } = render(<PickupNotice visible={false} lines={[]} />)
 
     expect(container).toBeEmptyDOMElement()
+  })
+
+  /**
+   * A HATARESET, AMI MIATT A KET KERDES SZETVALT.
+   *
+   * Ha a hatteroldal PICKUP_ONLY-t mond, de a kivalto sort nem talaljuk a
+   * kosarban (mas a sor azonositoja, vagy kozben torlodott), a korlatozas
+   * ATTOL MEG VALOS. A sav all, a felsorolas elmarad -- egy ures felsorolas
+   * ugy nezne ki, mintha elfelejtettuk volna kitolteni.
+   *
+   * Az ELHALLGATAS lenne a dragabb hiba: azt a vevo a fizetesnel tudna meg.
+   */
+  it("megnevezés nélkül is áll, ha a korlátozás valós", () => {
+    render(<PickupNotice lines={[]} />)
+
+    expect(screen.getByTestId("pickup-notice")).toHaveTextContent(
+      "Ezt a rendelést a boltban adjuk át.",
+    )
+    expect(screen.queryByTestId("pickup-notice-lines")).toBeNull()
   })
 })

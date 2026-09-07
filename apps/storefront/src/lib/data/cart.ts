@@ -449,6 +449,48 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   redirect(`/${countryCode}${currentPath}`)
 }
 
+/**
+ * A KOSAR SZALLITASI OSZTALYA, ES AZ A TETEL, AMI ELOIDEZTE.
+ *
+ * A hatteroldal donti el, a kirakat kerdez -- ugyanaz a szabaly, mint a
+ * fizetesi modoknal. A vegpontot a commerce oldalan a `store/shipping-class`
+ * route adja (#86), es KET mezot ad: az osztalyt, es a sort okozo TETEL
+ * AZONOSITOJAT.
+ *
+ * A masodik nelkul a kosar csak kovetkeztetni tudna ("csak a szemelyes atvetel
+ * jott vissza"), es egy kovetkeztetes nem tudja MEGNEVEZNI a tetelt. A
+ * megnevezes viszont az egesz dontes indoka volt.
+ *
+ * NEM gyorsitotarazzuk: az osztaly a kosar TARTALMAtol fugg, es a kosar minden
+ * modositassal valtozik. Egy gyorsitotarazott valasz azt allitana a vevonek,
+ * hogy meg mindig bolti atvetel jar, miutan kivette az elo allatot.
+ */
+export async function retrieveCartShippingClass(): Promise<{
+  shipping_class: string
+  shipping_class_source: string | null
+} | null> {
+  const cartId = await getCartId()
+  if (!cartId) return null
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  /**
+   * A HIBAT ELNYELJUK, ES EZT KIMONDJUK: ha a vegpont nem valaszol, a kosar
+   * TOBBI resze attol meg mukodjon. A sav ilyenkor NEM jelenik meg -- vagyis a
+   * hiba iranya a HALKABB fele all: nem allitunk korlatozast, amirol nem
+   * tudunk. A forditott (hiba eseten mutassuk a savot) azt allitana, hogy
+   * bolti atvetel jar, holott epp nem tudjuk.
+   */
+  return await sdk.client
+    .fetch<{ shipping_class: string; shipping_class_source: string | null }>(
+      "/store/shipping-class",
+      { query: { cart_id: cartId }, headers, cache: "no-store" }
+    )
+    .catch(() => null)
+}
+
 export async function listCartOptions() {
   const cartId = await getCartId()
   const headers = {

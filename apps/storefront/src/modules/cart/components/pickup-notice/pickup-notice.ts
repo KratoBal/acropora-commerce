@@ -1,5 +1,3 @@
-import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
-
 /**
  * MIKOR CSAK SZEMÉLYES ÁTVÉTEL VÁLASZTHATÓ (Balázs szabálya, 2026-08-31).
  *
@@ -7,39 +5,129 @@ import { uniquePieceOf } from "@modules/products/components/stock-state/availabi
  * marad. Nem bontjuk két rendelésre, és nem kérdezzük meg, hogy a többit
  * postázzuk-e.
  *
- * === EGY HATÁR, AMI MA EGYBEESIK, DE NEM UGYANAZ ===
+ * === A HELYETTESITO JEL MEGSZUNT, ES EZ A FAJL A BIZONYITEKA ===
  *
- * Amink van, az az EGYEDI PÉLDÁNY jelzője (`unique_piece`, a WYSIWYG
- * kategória-részfából). Amiről a szabály szól, az az ÉLŐ ÁLLAT. A mai
- * katalógusban a kettő egybeesik: a WYSIWYG termékeink korallok.
+ * Ez a modul korabban az EGYEDI PELDANY jelzojebol (`unique_piece`) dolgozott,
+ * mert elo allat jelzo nem volt a boltban. A sajat fejlece akkor KIMONDTA a
+ * korlatjat: "egy hasznalt eszkoz is lehet egyedi darab anelkul, hogy elne",
+ * es megnevezte, mi valtja majd fel.
  *
- * DE NEM UGYANAZ A KÉRDÉS. Egy használt eszköz is lehet egyedi darab anélkül,
- * hogy élne -- és ha valaha ilyen kerül a boltba, ez a szabály tévedésből
- * kötné bolti átvételhez. A helyes megoldás akkor egy ÉLŐ ÁLLAT jelző lesz (az
- * OS-ben létezik: `ProductType.LIVESTOCK`), és ez a függvény azt fogja olvasni.
+ * Az a felvalto megerkezett. Az OS oldalan a `pickupOnly` zaszlo a HAROM ELO
+ * ALLAT GYOKERKATEGORIABOL szarmazik (Korallok, Halak, Gerinctelenek, os #601),
+ * a commerce `#86` pedig kozzeteszi a `store/shipping-class` vegponton -- a
+ * KIVALTO SOR azonositojaval egyutt.
  *
- * Addig a jelző a legjobb, ami van, és acrobot döntése (2026-09-07), hogy erre
- * épüljön. Ezért áll itt KIMONDVA, nem elrejtve egy `uniquePieceOf` hívás
- * mögé: aki a szabályt keresi, itt megtalálja a korlátját is.
+ * A proxy-fuggveny ezzel TOROLVE lett, nem csak megkerulve. Amig egy felvaltott
+ * jel ott all hasznalhato allapotban, valaki ujra bekoti: a kovetkezo olvaso
+ * nem tudja rola, hogy mast mer, mint aminek latszik.
  */
-export interface PickupLine {
-  /** A tétel neve, ahogy a vevő látja: a magyarázat MEGNEVEZI. */
+
+/**
+ * A VALODI JEL: A HATTEROLDAL SZALLITASI OSZTALYA, ES AZ OKA.
+ *
+ * === MIERT VALTJA FEL A PROXYT ===
+ *
+ * A `pickupOnlyLines` a `unique_piece` jelzobol dolgozott, ami EGY DARABOT
+ * jelent, nem elo allatot. Iranyaban biztonsagos volt (egy fagyasztott aru
+ * kimaradt volna, egy egyedi eszkoz feleslegesen bekerult volna), de nem az a
+ * kerdes, amire a szabaly szol.
+ *
+ * A hatteroldal PICKUP_ONLY osztalya viszont pontosan azt allitja: ezt a
+ * kosarat boltban adjuk at. Harom kimondott zaszlobol dol (`pickup_only`,
+ * `is_frozen`, `is_livestock`), es a `pickup_only` maga a harom elo allat
+ * gyoker-kategoriabol szarmazik (os #601).
+ *
+ * === ES AMIT A SOURCE AD, ES A KOVETKEZTETES SOHA NEM TUDNA ===
+ *
+ * A valasz megmondja, MELYIK SOR idezte elo. A kirakat ebbol nevet tud mondani,
+ * mert a kosar sorai a kezeben vannak. Egy kovetkeztetes ("csak a szemelyes
+ * atvetel jott vissza") ugyanezt SOHA nem tudna -- es egy sav, ami annyit mond,
+ * hogy "valamelyik tetel miatt", ugyanolyan hasznalhatatlan a vevonek, mint a
+ * semmi, csak magabiztosabb.
+ */
+export interface CartLineName {
+  id: string;
   title: string;
-  /** A termék metaadata a boltból. */
-  productMetadata: unknown;
 }
 
 /**
- * AZOK A TÉTELEK, AMIK MIATT CSAK BOLTI ÁTVÉTEL VAN -- névvel.
+ * AZOK A TETELEK, AMIK MIATT CSAK BOLTI ATVETEL VAN -- a valodi jelbol.
  *
- * NEM logikai értéket ad vissza, és ez a lényeg: a terv kikötése az, hogy a
- * vevő lássa, MELYIK tétel miatt. Egy `true` érték elrejtené pont azt, amit meg
- * kell mutatni, és a hívó kénytelen lenne másodszor is végigmenni a listán.
+ * A `null` osztaly (a vegpont nem valaszolt) URES listat ad: nem allitunk
+ * korlatozast, amirol nem tudunk.
+ *
+ * ES HA AZ OSZTALY PICKUP_ONLY, DE A SORT NEM TALALJUK: a lista ures marad, a
+ * sav viszont a HIVO dontese szerint akkor is megjelenhet. Ez a hataresetet
+ * NEM elrejti, hanem megnevezi: a korlatozas valos, csak a megnevezes hianyzik.
  */
-export function pickupOnlyLines(lines: readonly PickupLine[]): string[] {
-  return lines
-    .filter((line) => uniquePieceOf(line.productMetadata))
-    .map((line) => line.title);
+export function pickupOnlyLinesFromClass(
+  shippingClass: string | null | undefined,
+  shippingClassSource: string | null | undefined,
+  lines: readonly CartLineName[],
+): string[] {
+  if (shippingClass !== "PICKUP_ONLY") return [];
+  const sor = lines.find((line) => line.id === shippingClassSource);
+  return sor ? [sor.title] : [];
+}
+
+/**
+ * A SAV OSSZES BEMENETE, EGY HELYEN -- ES EZ NEM STILUS, HANEM MERHETOSEG.
+ *
+ * A kosar sablonja SZERVER-komponens: a lancaban `server-only` modul all,
+ * ezert jsdom-ban NEM RENDERELHETO (merve: a rea iranyulo spec module-szinten
+ * elszallt, "This module cannot be imported from a Client Component module").
+ * Amig a bekotes JSX-ben allt, semmilyen teszt nem lathatta.
+ *
+ * Ez a "nem merheto hely" esete, es annak egyetlen feloldasa a KOD
+ * ELMOZDITASA. Ami ide kerult, az mostantol merheto:
+ *
+ *   - a kosar sorainak lekepezese nevre (`product_title` kontra `title`)
+ *   - a forras-sor kivalasztasa
+ *   - a lathatosag
+ *
+ * AMI EZUTAN IS MERETLEN MARAD, ES KIMONDOM: hogy a sablon MEGHIVJA-E ezt a
+ * fuggvenyt. Az egy sor, es a szakadas oda mar nem fer be eszrevetlenul --
+ * de nem allitom, hogy meg van merve.
+ */
+export interface PickupNoticeProps {
+  visible: boolean;
+  lines: string[];
+}
+
+export function pickupNoticeProps(
+  items: readonly {
+    id: string;
+    title?: string | null;
+    product_title?: string | null;
+  }[],
+  shippingClass?: {
+    shipping_class: string;
+    shipping_class_source: string | null;
+  } | null,
+): PickupNoticeProps {
+  return {
+    visible: pickupNoticeVisible(shippingClass?.shipping_class),
+    lines: pickupOnlyLinesFromClass(
+      shippingClass?.shipping_class,
+      shippingClass?.shipping_class_source,
+      items.map((item) => ({
+        id: item.id,
+        /**
+         * A TERMEK NEVE ELOZI MEG A SOR NEVET. A sor `title` mezoje a
+         * VALTOZAT neve ("Kicsi", "Kek") -- az onmagaban nem mondana meg a
+         * vevonek, melyik tetel miatt all a korlatozas.
+         */
+        title: item.product_title ?? item.title ?? "",
+      })),
+    ),
+  };
+}
+
+/** Megjelenjen-e a sav egyaltalan. */
+export function pickupNoticeVisible(
+  shippingClass: string | null | undefined,
+): boolean {
+  return shippingClass === "PICKUP_ONLY";
 }
 
 /** A sáv címe. Ténykozlés, nem tiltás. */
