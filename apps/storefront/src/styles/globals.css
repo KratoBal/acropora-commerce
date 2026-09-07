@@ -20,9 +20,9 @@
  */
 :root {
   /* hatterek */
-  --terv-hatter: oklch(0.96 0.006 75);        /* 20 elem -- a lap alapja, meleg toressel */
+  --terv-hatter: oklch(0.96 0.006 75); /* 20 elem -- a lap alapja */
   --terv-hatter-sotet: oklch(0.235 0.02 248); /* 16 elem -- a sotet savok */
-  --terv-hatter-lap: oklch(0.995 0.003 80);   /*  4 elem -- a kartyak lapja */
+  --terv-hatter-lap: oklch(0.995 0.003 80); /*  4 elem -- a kartyak lapja */
   --terv-hatter-halvany: oklch(0.955 0.004 250);
 
   /* kiemeles */
@@ -30,25 +30,29 @@
      szamolta, ezert allt itt korabban 9: a harom `border: 2-3px solid` hasznalat
      (a bekapcsolt bolyegkep kerete es ket bal oldali kiemelo csik) LATHATATLAN
      volt neki. Merve a tervfajlbol, 2026-09-07. */
-  --terv-kiemel: oklch(0.62 0.13 45);         /* 12 hely -- rez, a fo cselekves */
-  --terv-kiemel-sotet: oklch(0.55 0.13 45);   /* ugyanaz lenyomva */
+  --terv-kiemel: oklch(0.62 0.13 45); /* 12 hely -- rez, a fo cselekves */
+  --terv-kiemel-sotet: oklch(0.55 0.13 45); /* ugyanaz lenyomva */
   /* A REZEN ALLO SZOVEG SOTET, NEM FEHER -- es ez nem izles, hanem meres:
      a tervben a kilenc rez hatterbol OT visel sajat szoveget, es MIND AZ OT
      ugyanezt az erteket hasznalja. (A masik negy szoveg nelkuli negyzet:
-     a fejlec jelzese, ket jelmagyarazat-kocka es a ragados sav pontja.) */
+     a fejlec jelzese, ket jelmagyarazat-kocka es a MOBIL FEJLEC logo-negyzete.
+     HELYESBITES: elsore "a ragados sav pontja" allt itt -- azt a cimket a mert
+     elem melle TALALGATTAM. Visszamerve a 22x22 negyzet a mobil fejlecben all,
+     az ACROPORA felirat mellett. A sav sajat gombja kulon tetel, es AZ visel
+     szoveget. */
   --terv-kiemel-szoveg: oklch(0.15 0.014 45);
-  --terv-jelzo: oklch(0.52 0.09 210);         /*  6 elem -- kek-zold, jelzesekre */
+  --terv-jelzo: oklch(0.52 0.09 210); /*  6 elem -- kek-zold, jelzesekre */
 
   /* szoveg */
-  --terv-szoveg: oklch(0.2 0.012 60);         /* 60 elem -- a fo szoveg */
+  --terv-szoveg: oklch(0.2 0.012 60); /* 60 elem -- a fo szoveg */
   --terv-szoveg-vilagos: oklch(0.95 0.006 250); /* 53 elem -- sotet hatteren */
   --terv-szoveg-halvany: oklch(0.5 0.012 60); /* 16 elem -- masodlagos */
   --terv-szoveg-halvany-sotet: oklch(0.72 0.012 250);
 
   /* keretek */
-  --terv-keret: oklch(0.88 0.005 250);        /* 12 elem */
-  --terv-keret-meleg: oklch(0.88 0.008 70);   /*  7 elem */
-  --terv-keret-sotet: oklch(0.28 0.014 250);  /*  9 elem */
+  --terv-keret: oklch(0.88 0.005 250); /* 12 elem */
+  --terv-keret-meleg: oklch(0.88 0.008 70); /*  7 elem */
+  --terv-keret-sotet: oklch(0.28 0.014 250); /*  9 elem */
 
   /*
    * A SARKOK: A TERV GYAKORLATILAG SZOGLETES, ES EZ MERES, NEM IZLES.
@@ -66,9 +70,9 @@
    * majdnem mindenhol. Ez a LEGLATHATOBB kulonbseg a mai lap es a terv kozott,
    * a szinek utan -- es olcsobb most tudni rola, mint a vaz vegen.
    */
-  --terv-sugar-doboz: 8px;   /* 2 elofordulas a tervben */
-  --terv-sugar-kicsi: 6px;   /* 1 elofordulas */
-  --terv-sugar-kor: 50%;     /* 16 elofordulas -- avatar, jelzo-pont */
+  --terv-sugar-doboz: 8px; /* 2 elofordulas a tervben */
+  --terv-sugar-kicsi: 6px; /* 1 elofordulas */
+  --terv-sugar-kor: 50%; /* 16 elofordulas -- avatar, jelzo-pont */
 
   /*
    * A BETUK a next/font-bol jonnek (lasd a gyoker layoutot), tehat itt csak
@@ -104,20 +108,20 @@
  * SZANDEKOSAN elter: sotet hatteren vilagosabb rez all. Ne egysegesitsd.
  */
 [data-vilag="sotet"] {
-  --terv-hatter: oklch(0.235 0.02 248);        /* 16 elem a tervben */
-  --terv-hatter-lap: oklch(0.17 0.016 250);    /*  8 elem -- melyebb felulet */
+  --terv-hatter: oklch(0.235 0.02 248); /* 16 elem a tervben */
+  --terv-hatter-lap: oklch(0.17 0.016 250); /*  8 elem -- melyebb felulet */
   --terv-hatter-halvany: oklch(0.205 0.018 249);
 
-  --terv-kiemel: oklch(0.55 0.13 45);          /* a sotet valtozat rezje */
+  --terv-kiemel: oklch(0.55 0.13 45); /* a sotet valtozat rezje */
   --terv-kiemel-sotet: oklch(0.62 0.13 45);
   /* A rezen allo szoveg a sotet lapon is ugyanaz: a kontraszt a REZHEZ szol,
      nem a lap hattereehez, tehat nem fordul meg a ket vilag kozott. */
   --terv-kiemel-szoveg: oklch(0.15 0.014 45);
 
-  --terv-szoveg: oklch(0.95 0.006 250);        /* 53 elem sotet hatteren */
+  --terv-szoveg: oklch(0.95 0.006 250); /* 53 elem sotet hatteren */
   --terv-szoveg-halvany: oklch(0.72 0.012 250);
 
-  --terv-keret: oklch(0.28 0.014 250);         /*  9 elem */
+  --terv-keret: oklch(0.28 0.014 250); /*  9 elem */
   --terv-keret-meleg: oklch(0.33 0.016 250);
 }
 

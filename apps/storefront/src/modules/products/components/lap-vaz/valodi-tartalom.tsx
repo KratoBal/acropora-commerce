@@ -236,6 +236,7 @@ export function vazTartalom(
   vasarlasiResz?: React.ReactNode,
   hasonloResz?: React.ReactNode,
   fotoResz?: React.ReactNode,
+  ragadosResz?: React.ReactNode,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,
@@ -319,6 +320,17 @@ export function vazTartalom(
    */
   if (hasonloResz) {
     tartalom.hasonlo = hasonloResz
+  }
+
+  /**
+   * A 14. DOBOZ: A LAP ALJAN FUTO SAV.
+   *
+   * Ugyanaz a szerzodes, mint a tobbi atadott resznel -- es itt a legerosebb az
+   * indok: a sav ARAT mutat, es ha SAJAT arat szamolna, a lapon ket kulonbozo
+   * ar allhatna egyszerre. A ket ar eltevedese nem hibazna, csak mast mutatna.
+   */
+  if (ragadosResz) {
+    tartalom["ragados-sav"] = ragadosResz
   }
 
   return tartalom
