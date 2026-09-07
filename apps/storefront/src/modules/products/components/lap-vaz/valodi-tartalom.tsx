@@ -60,17 +60,61 @@ function cikkszam(termek: Termek): string | null {
 /**
  * A LEGMELYEBB KATEGORIA NEVE. A tervben a cim alatt egy besorolas all; a
  * legmelyebb ut a legbeszedesebb, mert a gyoker mindenkinel ugyanaz
- * ("Termekek"). A melyseget az `mpath` pontjai adjak meg.
+ * ("Termekek").
+ *
+ * === MIERT NEM AZ mpath MEZO, HOLOTT AZ EGYSZERUBB VOLNA ===
+ *
+ * Eredetileg az `mpath` pontjait szamoltam. Az ERTEK ott van (merve az elo
+ * API-n, `fields=*categories`: minden kategoria visel `mpath`-ot,
+ * pont-elvalasztott azonositokkal) -- de a TIPUS nem ismeri: a
+ * `StoreProductCategory` deklaracioja nem tartalmaz `mpath` mezot. Ket
+ * TS2559 allt emiatt a fo agon, es a CI szerkezetileg nem lathatta.
+ *
+ * A javitas NEM a tipus kiszelesitese. Egy sajat bovites azt allitana a
+ * szerverrol, amit en hiszek rola, es a most bekapcsolt tipus-kapu az elso
+ * napon lenne megkerulve.
+ *
+ * Helyette a `parent_category_id` mezo, amit a tipus MAR ISMER
+ * (`BaseProductCategory`, string | null), es amit az API ugyanugy visszaad
+ * (ugyanaz a meres). A legmelyebb kategoria az, AMIRE A HALMAZBAN SENKI NEM
+ * MUTAT SZULOKENT -- vagyis a levél.
+ *
+ * === ES AMIT EZ MASKEPP CSINAL, MERT NEM UGYANAZ A KETTO ===
+ *
+ * Merve ugyanabban a valaszban, ket valodi termeken:
+ *
+ *   ahol a teljes os-lanc visszajon (6 kategoria), az mpath-szamlalas es a
+ *   level-kereses UGYANAZT a halmazt adja
+ *   ahol CSAK a hozzarendelt kategoria jon vissza (1 kategoria, harom szintu
+ *   mpath-tal), a level-kereses ugyanazt az egyet adja
+ *
+ * Marad egy eset, ahol a ketto elterhet: ha a halmazban ket fuggetlen ag
+ * levele all. Ott az mpath a MELYEBBET valasztana, a level-kereses az
+ * ELSOT. Egyik sem "helyesebb" -- a terv egyetlen besorolast mutat, es
+ * mindketto egy valodi, hozzarendelt kategoria neve.
  */
 export function legmelyebbKategoria(termek: Termek): string | null {
   const katok = termek.categories ?? []
   if (katok.length === 0) return null
 
-  const melyseg = (k: { mpath?: string | null }) =>
-    (k.mpath ?? "").split(".").length
+  const szulokent = new Set(
+    katok.map((k) => k.parent_category_id).filter(Boolean),
+  )
+  const levelek = katok.filter((k) => !szulokent.has(k.id))
 
-  const legmelyebb = [...katok].sort((a, b) => melyseg(b) - melyseg(a))[0]
-  const nev = legmelyebb?.name?.trim()
+  /**
+   * A TARTALEK-AG DISZLET, ES EZT KIMONDOM, NEM ELHALLGATOM.
+   *
+   * Kalibralva: az egesz `levelek.length ? ... :` elhagyasa NULLA allitast
+   * dont pirosra. Nem azert, mert az allitasaink gyengek, hanem mert az az ag
+   * valodi adaton NEM TUD ELSULNI: egy fa halmazaban a legfelso visszaadott
+   * kategoria szuloje mindig KIVUL van a halmazon, tehat level mindig van.
+   *
+   * Bent marad, mert egy ures nev rosszabb, mint egy vedelem, ami sosem sul el
+   * -- de aki ezt olvassa, tudja, hogy NINCS MERVE, es ne higgye annak.
+   */
+  const valasztott = (levelek.length ? levelek : katok)[0]
+  const nev = valasztott?.name?.trim()
   return nev ? nev : null
 }
 
@@ -85,7 +129,10 @@ export const Cimsor = ({ termek }: { termek: Termek }) => {
   return (
     <div className="flex flex-col gap-1">
       {kategoria && (
-        <p className="text-xs uppercase tracking-wide" style={{ color: "var(--terv-szoveg-halvany)" }}>
+        <p
+          className="text-xs uppercase tracking-wide"
+          style={{ color: "var(--terv-szoveg-halvany)" }}
+        >
           {kategoria}
         </p>
       )}
@@ -95,7 +142,10 @@ export const Cimsor = ({ termek }: { termek: Termek }) => {
       {sku && (
         <p
           className="text-xs"
-          style={{ color: "var(--terv-szoveg-halvany)", fontFamily: "var(--terv-betu-mono-lanc)" }}
+          style={{
+            color: "var(--terv-szoveg-halvany)",
+            fontFamily: "var(--terv-betu-mono-lanc)",
+          }}
           data-testid="vaz-cikkszam"
         >
           {sku}
@@ -183,7 +233,7 @@ export const Leiras = ({ termek }: { termek: Termek }) => {
  */
 export function vazTartalom(
   termek: Termek,
-  vasarlasiResz?: React.ReactNode
+  vasarlasiResz?: React.ReactNode,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,

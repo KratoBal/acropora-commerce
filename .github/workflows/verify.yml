@@ -134,6 +134,24 @@ jobs:
         working-directory: apps/backend
         run: pnpm exec tsc --noEmit -p tsconfig.json
 
+      # A KIRAKAT TIPUSELLENORZESE KULON LEPES, ES EDDIG EGYALTALAN NEM LETEZETT.
+      #
+      # MERVE (2026-09-07, murena es acrobot): a fenti lepes
+      # `working-directory: apps/backend` alatt fut, a kirakat next.config.js-e
+      # pedig `typescript.ignoreBuildErrors: true` -- vagyis a Build kiirja, hogy
+      # "Skipping validation of types", es a kirakatot SEMMI nem tipusellenorzi.
+      # Ket TS2559 igy allt a fo agon ugy, hogy minden ellenorzes zold volt.
+      #
+      # ES AMIERT A JAVITASSAL EGYUTT MEGY, NEM KESOBB (acrobot dontese): egy
+      # javitas, ami melle nem all kapu, EGYSZER igaz. Ma harom hianyzo kaput
+      # talaltunk a kirakaton egyetlen nap alatt, es mind a harom ugy maradt
+      # fenn, hogy a szam kozben zold volt.
+      #
+      # A `--filter` szandekos, ugyanabbol az okbol, mint a tesztlepesnel: a
+      # backendet a fenti lepes viszi.
+      - name: Kirakat tipusellenorzes
+        run: pnpm --filter @dtc/storefront exec tsc --noEmit -p tsconfig.json
+
       - name: Unit tesztek
         working-directory: apps/backend
         run: pnpm run test:unit
