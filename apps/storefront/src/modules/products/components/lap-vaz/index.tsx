@@ -35,6 +35,25 @@ import React from "react"
  * kitalalt ertekkel feltoltott doboz kesobb tenynek olvasodik.
  */
 
+/**
+ * MELYIK OSZLOPBA KERUL EGY DOBOZ.
+ *
+ * A tervbol merve, fejeless bongeszoben, 1440 pixeles nezetben:
+ *
+ *     tartalom-oszlop   1352 px, x=100-tol
+ *     BAL                856 px  (x=100)
+ *     koz                 44 px
+ *     JOBB               452 px  (x=1000)
+ *
+ *     856 + 44 + 452 = 1352, tehat a szamok zarnak.
+ *
+ * EGY CSAPDA, AMIT KULON MEGNEZTEM: a tervben allnak dobozok x=1520-nal is, ami
+ * ELSORE jobb oszlopnak latszik. Nem az: a nezeten KIVUL vannak, tehat egy
+ * MASIK lap-valtozathoz tartoznak. Ha azokat vettem volna a jobb oszlopnak, a
+ * szamok nem zartak volna.
+ */
+type Oszlop = "teljes" | "bal" | "jobb"
+
 type VazSzakasz = {
   /** A doboz azonositoja, a tervbeli sorrend szerint. */
   kulcs: string
@@ -42,6 +61,8 @@ type VazSzakasz = {
   cim: string
   /** Mit mondunk, amig nincs mogotte tartalom. */
   varakozo: string
+  /** Melyik oszlopba kerul az asztali nezetben. */
+  oszlop: Oszlop
 }
 
 /**
@@ -51,20 +72,20 @@ type VazSzakasz = {
  * termekrol. Ez a kulonbseg a "meg nem kesz" es a "kitalalt adat" kozott.
  */
 export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
-  { kulcs: "cimsor", cim: "", varakozo: "A termek neve es a fejlec-muveletek" },
-  { kulcs: "foto", cim: "", varakozo: "Termekfoto" },
-  { kulcs: "meretezes-seged", cim: "Meretezes-seged", varakozo: "Ide jon a meretezes-seged" },
-  { kulcs: "fulek", cim: "", varakozo: "Muszaki adatok, Leiras, Spektrum, Ertekelesek, Letoltesek" },
-  { kulcs: "muszaki-adatok", cim: "Muszaki adatok", varakozo: "Ide jonnek a termek muszaki adatai" },
-  { kulcs: "ar", cim: "", varakozo: "Ide jon az ar" },
-  { kulcs: "elerhetoseg", cim: "", varakozo: "Keszlet, szallitas, bolti atvetel" },
-  { kulcs: "valaszto", cim: "", varakozo: "Valtozat-valaszto" },
-  { kulcs: "mennyiseg", cim: "", varakozo: "Mennyiseg es kosarba tetel" },
-  { kulcs: "csomagajanlat", cim: "Csomagajanlat", varakozo: "Ide jon a csomagajanlat" },
-  { kulcs: "kerdezd", cim: "Kerdezd minket", varakozo: "Kapcsolatfelvetel" },
-  { kulcs: "kiegeszitok", cim: "Ami meg kellhet hozza", varakozo: "Ide jonnek a tartozekok" },
-  { kulcs: "hasonlo", cim: "Hasonlo lampak", varakozo: "Ide jonnek a hasonlo termekek" },
-  { kulcs: "ragados-sav", cim: "", varakozo: "A lap aljan futo sav" },
+  { kulcs: "cimsor", cim: "", varakozo: "A termek neve es a fejlec-muveletek", oszlop: "teljes" },
+  { kulcs: "foto", cim: "", varakozo: "Termekfoto", oszlop: "bal" },
+  { kulcs: "meretezes-seged", cim: "Meretezes-seged", varakozo: "Ide jon a meretezes-seged", oszlop: "bal" },
+  { kulcs: "fulek", cim: "", varakozo: "Muszaki adatok, Leiras, Spektrum, Ertekelesek, Letoltesek", oszlop: "bal" },
+  { kulcs: "muszaki-adatok", cim: "Muszaki adatok", varakozo: "Ide jonnek a termek muszaki adatai", oszlop: "bal" },
+  { kulcs: "ar", cim: "", varakozo: "Ide jon az ar", oszlop: "jobb" },
+  { kulcs: "elerhetoseg", cim: "", varakozo: "Keszlet, szallitas, bolti atvetel", oszlop: "jobb" },
+  { kulcs: "valaszto", cim: "", varakozo: "Valtozat-valaszto", oszlop: "jobb" },
+  { kulcs: "mennyiseg", cim: "", varakozo: "Mennyiseg es kosarba tetel", oszlop: "jobb" },
+  { kulcs: "csomagajanlat", cim: "Csomagajanlat", varakozo: "Ide jon a csomagajanlat", oszlop: "jobb" },
+  { kulcs: "kerdezd", cim: "Kerdezd minket", varakozo: "Kapcsolatfelvetel", oszlop: "jobb" },
+  { kulcs: "kiegeszitok", cim: "Ami meg kellhet hozza", varakozo: "Ide jonnek a tartozekok", oszlop: "teljes" },
+  { kulcs: "hasonlo", cim: "Hasonlo lampak", varakozo: "Ide jonnek a hasonlo termekek", oszlop: "teljes" },
+  { kulcs: "ragados-sav", cim: "", varakozo: "A lap aljan futo sav", oszlop: "teljes" },
 ]
 
 type VazDobozProps = {
@@ -143,18 +164,34 @@ type LapVazProps = {
 }
 
 /**
- * A LAP VAZA. Egyetlen oszlop, a tervbeli sorrendben.
+ * A LAP VAZA, KET OSZLOPBAN.
  *
- * A KET OSZLOPOS ELRENDEZES KESOBB JON, es ezt kimondom: a tervben a fo blokk
- * `grid-template-columns: 1fr 1fr` alakban all, 26px koz mellett -- de az
- * oszlopokba valo BESOROLAS csak akkor donthető el, ha a dobozok tartalma is
- * megvan. Egy sorrend, ami helyes, tobbet er egy elrendezesnel, ami talalgat.
+ * A #66-ban ez a megjegyzes allt itt: "a ket oszlopos elrendezes KESOBB JON --
+ * az oszlopokba valo besorolas csak akkor donthető el, ha a dobozok tartalma is
+ * megvan". A tartalom azota bekerult, tehat AZ A FELTETEL TELJESULT, es ez a
+ * bekezdes ezert lett atirva, nem kiegeszitve.
+ *
+ * AZ ARANYOK MERTEK, NEM BECSULTEK (1440 pixeles nezet, a tervbol):
+ *
+ *     BAL   856 px   -- foto, meretezes-seged, fulek, muszaki adatok
+ *     koz    44 px
+ *     JOBB  452 px   -- ar, elerhetoseg, valaszto, mennyiseg, csomagajanlat, kerdezd
+ *     teljes szelesseg: cimsor, tartozekok, hasonlo termekek, ragados sav
+ *
+ * A ket oszlop aranyat `856fr 452fr` alakban adjuk at, nem kerekitett
+ * szazalekban: igy a forras SZAMA all a kodban, es barki visszakeresheti a
+ * merésben. Egy "65% / 35%" mar ertelmezes lenne.
+ *
+ * MOBILON EGY OSZLOP, a tervbeli SORRENDBEN. Ez nem dontes, hanem a sorrend
+ * kovetkezmenye: a `flex-col` alatt a dobozok abban a sorrendben allnak, ahogy
+ * a `MUSZAKI_LAP_SZAKASZAI` felsorolja oket -- es az a terv sorrendje.
  */
 const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
   return (
     <div
-      className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4"
+      className="mx-auto w-full p-4 lg:grid lg:grid-cols-[856fr_452fr] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
       style={{
+        maxWidth: "1352px",
         background: "var(--terv-hatter)",
         fontFamily: "var(--terv-betu-fo-lanc)",
       }}
@@ -162,9 +199,19 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
       data-vilag={vilag}
     >
       {MUSZAKI_LAP_SZAKASZAI.map((szakasz) => (
-        <VazDoboz key={szakasz.kulcs} szakasz={szakasz}>
-          {tartalom[szakasz.kulcs]}
-        </VazDoboz>
+        <div
+          key={szakasz.kulcs}
+          data-vaz-oszlop={szakasz.oszlop}
+          className={
+            szakasz.oszlop === "teljes"
+              ? "lg:col-span-2"
+              : szakasz.oszlop === "bal"
+                ? "lg:col-start-1"
+                : "lg:col-start-2"
+          }
+        >
+          <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>
+        </div>
       ))}
     </div>
   )

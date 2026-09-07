@@ -70,6 +70,70 @@ describe("a műszaki lap váza", () => {
    * műszaki, az élő állat a kisebbik halmaz. Ha a hívó elfelejti megadni, a
    * gyakoribb esetet kapja.
    */
+  /**
+   * AZ OSZLOP-BESOROLÁS A TERVBŐL JÖN, mérve: bal 856 px, köz 44, jobb 452, és
+   * a három szám összege pontosan a tartalom-oszlop 1352 pixele.
+   *
+   * Ez az állítás azt védi, hogy a besorolás ne csússzon el észrevétlenül: egy
+   * doboz, ami rossz oszlopba kerül, a lapon látszik, de semmi nem szól róla.
+   */
+  it("a dobozok a tervbeli oszlopukban állnak", () => {
+    render(<LapVaz />)
+
+    const oszlopa = (kulcs: string) =>
+      document
+        .querySelector(`[data-vaz-szakasz="${kulcs}"]`)
+        ?.parentElement?.getAttribute("data-vaz-oszlop")
+
+    // teljes szélesség
+    for (const k of ["cimsor", "kiegeszitok", "hasonlo", "ragados-sav"]) {
+      expect(oszlopa(k)).toBe("teljes")
+    }
+    // bal: a termék megismerése
+    for (const k of ["foto", "meretezes-seged", "fulek", "muszaki-adatok"]) {
+      expect(oszlopa(k)).toBe("bal")
+    }
+    // jobb: a vásárlás
+    for (const k of ["ar", "elerhetoseg", "valaszto", "mennyiseg", "csomagajanlat", "kerdezd"]) {
+      expect(oszlopa(k)).toBe("jobb")
+    }
+  })
+
+  /**
+   * ÉS MINDEN DOBOZNAK VAN OSZLOPA. E nélkül egy új szakasz besorolás nélkül
+   * kerülhetne be, és csendben a rácsban kötne ki valahol.
+   */
+  /**
+   * ÉS A RÁCS MAGA IS KI VAN TÉVE.
+   *
+   * Ezt a kalibráció hívta elő: kivettem a `lg:grid` osztályokat -- vagyis
+   * asztali nézetben a két oszlop MEGSZŰNT --, és a készlet zöld maradt. Az
+   * állításaim az ADATOT nézték (`data-vaz-oszlop`), nem azt, hogy a rács
+   * egyáltalán ki van-e téve.
+   *
+   * ÉS AMIT EZ AZ ÁLLÍTÁS NEM BIZONYÍT, KIMONDVA: a jsdom nem számol
+   * elrendezést, tehát azt NEM tudja megmondani, hogy a doboz tényleg a bal
+   * oldalon áll-e 856 pixel szélesen. Csak azt, hogy az osztályok ott vannak.
+   * A tényleges elrendezést böngészőben kell megnézni -- a mérőeszköz és a terv
+   * geometriája az `agents/nautilus/measurement/terv-geometria/` alatt áll.
+   */
+  it("az asztali két oszlopos rács ki van téve", () => {
+    render(<LapVaz />)
+
+    const vaz = screen.getByTestId("muszaki-lap-vaz")
+    const osztalyok = vaz.className
+
+    expect(osztalyok).toContain("lg:grid")
+    expect(osztalyok).toContain("856fr_452fr")
+    expect(osztalyok).toContain("lg:gap-x-[44px]")
+  })
+
+  it("egyetlen szakasz sem marad besorolás nélkül", () => {
+    for (const szakasz of MUSZAKI_LAP_SZAKASZAI) {
+      expect(["teljes", "bal", "jobb"]).toContain(szakasz.oszlop)
+    }
+  })
+
   it("alapértelmezésben világos", () => {
     render(<LapVaz />)
 
