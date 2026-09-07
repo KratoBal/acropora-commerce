@@ -9,11 +9,11 @@
  *
  * picasso mérése szerint a vevő azt hiheti, kap egy állatot, ami már nem létezik.
  */
-export type Availability = "KAPHATO" | "ELFOGYOTT" | "ELADVA";
+export type Availability = "KAPHATO" | "ELFOGYOTT" | "ELADVA"
 
 export interface AvailabilityInput {
   /** A kirakat mai számítása: rendelhető-e egyáltalán. */
-  inStock: boolean;
+  inStock: boolean
   /**
    * EGY DARAB, EZ A KONKRÉT PÉLDÁNY.
    *
@@ -23,7 +23,7 @@ export interface AvailabilityInput {
    * az előrendelést, az proxyból "Eladva" feliratot kapna, és a vevő azt
    * olvasná, hogy a példány elkelt.
    */
-  uniquePiece: boolean;
+  uniquePiece: boolean
 }
 
 /**
@@ -35,20 +35,46 @@ export interface AvailabilityInput {
  *
  * Amíg a jelző nem érkezik meg a boltba, a halkabb tévedést választjuk.
  */
+/**
+ * ES EGY DOLOG A MAI ARANYOKROL, MERT KULONBEN A KOVETKEZO OLVASO FELREERTI:
+ * AZ `ELFOGYOTT` MA NEM AZ ALTALANOS ESET, HANEM AZ ATMENET.
+ *
+ * A bolt oldalan az `inStock` IGAZ, ha az `allow_backorder` igaz, a vetites
+ * WYSIWYG szabalya pedig a NEM-WYSIWYG termekekre igazra allitja. Vagyis ez az
+ * ag ma pontosan a WYSIWYG termekeket fogja meg -- azokat, amiknel a dontes
+ * szerint majd `ELADVA` all, amint a `unique_piece` jelzo megerkezik.
+ *
+ * (acrobot mondta ki, 2026-09-07. Azert all itt, mert egy ag, ami ma gyakori,
+ * de holnap ritka lesz, konnyen kap folosleges optimalizalast attol, aki csak a
+ * mai szamokat latja.)
+ */
 export function availabilityOf({
   inStock,
   uniquePiece,
 }: AvailabilityInput): Availability {
-  if (inStock) return "KAPHATO";
-  return uniquePiece ? "ELADVA" : "ELFOGYOTT";
+  if (inStock) return "KAPHATO"
+  return uniquePiece ? "ELADVA" : "ELFOGYOTT"
 }
 
-/** A vevőnek szánt felirat. Magyar, mert a bolt magyar. */
+/**
+ * A vevőnek szánt felirat. Magyar, mert a bolt magyar.
+ *
+ * === MIÉRT "NINCS RAKTÁRON", ÉS MIÉRT NEM "ELFOGYOTT" ===
+ *
+ * Balázs döntése, szó szerint (efb09c9a kártya): „A tobbinel NIncs raktaron,
+ * rendelheto". A két szó nem szinonima: az **elfogyott** véget jelent, a **nincs
+ * raktáron** állapotot. Ezen a lapon a különbség a vevő elé kerül, mert a
+ * VÉGLEGES esetnek külön állapota van (`ELADVA`).
+ *
+ * Az ÁLLAPOT NEVE marad `ELFOGYOTT`: az a mi belső fogalmunk, és a felirat
+ * cseréje nem szabad, hogy a kód szótárát is átírja. A kettő külön él, ezért
+ * lehet a feliratot egy sorban cserélni.
+ */
 export const availabilityLabel: Record<Availability, string> = {
   KAPHATO: "Kosárba",
-  ELFOGYOTT: "Elfogyott",
+  ELFOGYOTT: "Nincs raktáron",
   ELADVA: "Eladva",
-};
+}
 
 /**
  * AZ ELADVA ÁLLAPOT MAGYARÁZÓ MONDATA (picasso látványterve, 2026-09-07).
@@ -60,7 +86,7 @@ export const availabilityLabel: Record<Availability, string> = {
  * szedésben a két kötőjel nem helyes alak, és a lapon ez látszik.
  */
 export const SOLD_OUT_EXPLANATION =
-  "Egyedi darab volt, nem pótolható. Nem kerül vissza raktárra.";
+  "Egyedi darab volt, nem pótolható. Nem kerül vissza raktárra."
 
 /**
  * A WYSIWYG-ÍGÉRET, KIMONDVA (picasso látványterve, 2026-09-07).
@@ -71,7 +97,7 @@ export const SOLD_OUT_EXPLANATION =
  * A tervben itt is két kötőjel állt; kettősponttá írva, ugyanabból az okból.
  */
 export const UNIQUE_PIECE_PROMISE =
-  "A fotó pontosan ezt a példányt mutatja: ezt kapod, nem egy hasonlót.";
+  "A fotó pontosan ezt a példányt mutatja: ezt kapod, nem egy hasonlót."
 
 /**
  * AZ ELADVA ÁLLAPOTNAK NINCS KOSÁR-GOMBJA, HANEM TOVÁBBVISZ.
@@ -80,7 +106,7 @@ export const UNIQUE_PIECE_PROMISE =
  * áll. Egy letiltott gomb ugyanazt a zsákutcát adná, mint az "Out of stock":
  * a vevő látja, hogy nem kaphatja meg, és nem kap semmit helyette.
  */
-export const SIMILAR_ITEMS_LABEL = "Hasonló példányok megnézése";
+export const SIMILAR_ITEMS_LABEL = "Hasonló példányok megnézése"
 
 /**
  * A JELZŐ FORRÁSA: A TERMÉK METAADATA, KIFEJEZETTEN.
@@ -108,12 +134,12 @@ export const SIMILAR_ITEMS_LABEL = "Hasonló példányok megnézése";
  * elkelt -- holott csak a raktár ürült ki.
  */
 export function uniquePieceOf(metadata: unknown): boolean {
-  if (typeof metadata !== "object" || metadata === null) return false;
-  const value = (metadata as Record<string, unknown>)["unique_piece"];
+  if (typeof metadata !== "object" || metadata === null) return false
+  const value = (metadata as Record<string, unknown>)["unique_piece"]
   // A metaadat mezői szövegként is megérkezhetnek, ezért a "true" is számít.
   // Minden MÁS érték (hiányzó, üres, "false", 0) hamis: a jelzőt ki kell
   // MONDANI, nem elég, hogy nincs cáfolva.
-  return value === true || value === "true";
+  return value === true || value === "true"
 }
 
 /**
@@ -124,14 +150,14 @@ export function uniquePieceOf(metadata: unknown): boolean {
  * létezik, tehát a gomb soha nem visz halott címre.
  */
 export function similarItemsHref(product: {
-  collection?: { handle?: string | null } | null;
-  categories?: { handle?: string | null }[] | null;
+  collection?: { handle?: string | null } | null
+  categories?: { handle?: string | null }[] | null
 }): string {
-  const collection = product.collection?.handle;
-  if (collection) return "/collections/" + collection;
+  const collection = product.collection?.handle
+  if (collection) return "/collections/" + collection
 
-  const category = product.categories?.find((item) => item.handle)?.handle;
-  if (category) return "/categories/" + category;
+  const category = product.categories?.find((item) => item.handle)?.handle
+  if (category) return "/categories/" + category
 
-  return "/store";
+  return "/store"
 }
