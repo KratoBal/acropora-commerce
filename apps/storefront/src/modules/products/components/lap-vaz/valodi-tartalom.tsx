@@ -234,6 +234,7 @@ export const Leiras = ({ termek }: { termek: Termek }) => {
 export function vazTartalom(
   termek: Termek,
   vasarlasiResz?: React.ReactNode,
+  hasonloResz?: React.ReactNode,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,
@@ -274,6 +275,26 @@ export function vazTartalom(
         Kiszerelés: {egyseg}
       </p>
     )
+  }
+
+  /**
+   * A HASONLO TERMEKEK A 13. DOBOZBA KERULNEK, ES NEM UJ KEPESSEG.
+   *
+   * A lista MA IS megjelenik a vazas lapon -- csak a vazon KIVUL, alatta, a
+   * starter sajat angol fejlecevel. Kozben a terv 13. doboza ("Hasonlo lampak")
+   * URESEN varakozik ugyanazon a lapon. Merve az elo lapon (2026-09-07):
+   * `related-products-container` ott van, es `data-vaz-szakasz="hasonlo"` ures.
+   *
+   * Ez tehat nem szakadas (a kepesseg be VAN kotve), hanem ROSSZ HELY. Ugyanaz
+   * a komponens, ugyanazzal a lekerdezessel, csak a terv szerinti dobozban.
+   *
+   * ES UGYANUGY PARAMETER, NEM IMPORT, mint a vasarlasi resz: a `RelatedProducts`
+   * ASZINKRON szerver-komponens, ami adatot hiv le. Ha ez a fajl importalna, a
+   * rea iranyulo tesztfajl ugyanugy elszallna module-szinten, ahogy a
+   * `ProductActions`-nel merve lett.
+   */
+  if (hasonloResz) {
+    tartalom.hasonlo = hasonloResz
   }
 
   return tartalom

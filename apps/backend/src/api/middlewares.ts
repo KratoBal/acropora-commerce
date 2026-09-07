@@ -2,23 +2,24 @@ import {
   defineMiddlewares,
   validateAndTransformBody,
   validateAndTransformQuery,
-} from "@medusajs/framework/http"
+} from "@medusajs/framework/http";
 
 import {
   AdminGetCommerceSettingsParams,
   AdminUpdateCommerceSetting,
   AdminUpsertCommerceSetting,
-} from "./admin/commerce-settings/validators"
+} from "./admin/commerce-settings/validators";
 import {
   AdminGetShippingAttributesParams,
   AdminShippingAttributeFlags,
   AdminUpsertShippingAttribute,
-} from "./admin/shipping-attributes/validators"
+} from "./admin/shipping-attributes/validators";
 import {
   StoreGetPaymentOptionsParams,
   StorePostPaymentOptions,
-} from "./store/payment-options/validators"
-import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators"
+} from "./store/payment-options/validators";
+import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
+import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators";
 
 export default defineMiddlewares({
   routes: [
@@ -75,5 +76,10 @@ export default defineMiddlewares({
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostPaymentOptions)],
     },
+    {
+      matcher: "/store/shipping-class",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(StoreGetShippingClassParams, {})],
+    },
   ],
-})
+});

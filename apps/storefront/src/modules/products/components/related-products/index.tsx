@@ -6,11 +6,23 @@ import Product from "../product-preview"
 type RelatedProductsProps = {
   product: HttpTypes.StoreProduct
   countryCode: string
+  /**
+   * SAJAT FEJLEC NELKUL, HA MAR VAN CIME A HELYNEK.
+   *
+   * A starter angol fejlece ("Related products") egy magyar lapon all, es a vaz
+   * 13. doboza MAR VISEL magyar cimet a tervbol. A ketto egymas alatt ket cim
+   * lenne ugyanannak a listanak. Ez a kapcsolo csak a fejlecet hagyja el; a
+   * lista, a lekerdezes es a szures valtozatlan.
+   *
+   * Alapertelmezesben HAMIS, tehat a mai (elo allat) lap semmit nem valtozik.
+   */
+  fejlecNelkul?: boolean
 }
 
 export default async function RelatedProducts({
   product,
   countryCode,
+  fejlecNelkul = false,
 }: RelatedProductsProps) {
   const region = await getRegion(countryCode)
 
@@ -38,7 +50,7 @@ export default async function RelatedProducts({
     countryCode,
   }).then(({ response }) => {
     return response.products.filter(
-      (responseProduct) => responseProduct.id !== product.id
+      (responseProduct) => responseProduct.id !== product.id,
     )
   })
 
@@ -48,14 +60,16 @@ export default async function RelatedProducts({
 
   return (
     <div className="product-page-constraint">
-      <div className="flex flex-col items-center text-center mb-16">
-        <span className="text-base-regular text-gray-600 mb-6">
-          Related products
-        </span>
-        <p className="text-2xl-regular text-ui-fg-base max-w-lg">
-          You might also want to check out these products.
-        </p>
-      </div>
+      {fejlecNelkul ? null : (
+        <div className="flex flex-col items-center text-center mb-16">
+          <span className="text-base-regular text-gray-600 mb-6">
+            Related products
+          </span>
+          <p className="text-2xl-regular text-ui-fg-base max-w-lg">
+            You might also want to check out these products.
+          </p>
+        </div>
+      )}
 
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((product) => (
