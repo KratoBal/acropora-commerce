@@ -10,7 +10,13 @@ afterEach(cleanup)
 
 /**
  * A FIXTURA A STAGE VALODI ALAKJAT KOVETI, nem kitalalt mezoket: a metaadat négy
- * kulcsa, a hat kategoria mpath-tal, egy valtozat "Kivitel" opcioval.
+ * kulcsa, a kategoriak SZULO-HIVATKOZASSAL, egy valtozat "Kivitel" opcioval.
+ *
+ * A kategoriak MINDKET mezot viselik (`mpath` ES `parent_category_id`), mert az
+ * elo API is mindkettot visszaadja -- merve 2026-09-07, `fields=*categories`.
+ * A kod ma a `parent_category_id` mezot olvassa (a tipus csak azt ismeri); az
+ * `mpath` azert marad itt, mert a fixtura a VALASZ alakjat koveti, nem azt,
+ * hogy eppen melyik mezot hasznaljuk.
  */
 const TERMEK = {
   id: "prod_1",
@@ -26,9 +32,19 @@ const TERMEK = {
     unas_minimum_order_quantity: "1",
   },
   categories: [
-    { id: "c1", name: "Termékek", mpath: "c1" },
-    { id: "c2", name: "Tesztek, mérés, vezérlés", mpath: "c1.c2" },
-    { id: "c3", name: "TDS mérők", mpath: "c1.c2.c3" },
+    { id: "c1", name: "Termékek", mpath: "c1", parent_category_id: null },
+    {
+      id: "c2",
+      name: "Tesztek, mérés, vezérlés",
+      mpath: "c1.c2",
+      parent_category_id: "c1",
+    },
+    {
+      id: "c3",
+      name: "TDS mérők",
+      mpath: "c1.c2.c3",
+      parent_category_id: "c2",
+    },
   ],
   variants: [{ id: "v1", sku: "8023222196186", options: [] }],
   options: [
@@ -69,6 +85,61 @@ describe("a váz valódi tartalma", () => {
     const feliratok = Array.from(gombok).map((g) => g.textContent)
     expect(feliratok).toContain("Leírás")
     expect(feliratok).toContain("Műszaki adatok")
+  })
+
+  /**
+   * A HALMAZBAN NEM MINDIG JON VISSZA A TELJES OS-LANC.
+   *
+   * Merve az elo API-n (2026-09-07): az egyik termek HAT kategoriat kapott (a
+   * gyokerrel es a kozbulsokkel egyutt), egy masik CSAK EGYET -- azt, amihez
+   * hozza van rendelve, harom szintu `mpath`-tal, es a szuloje NINCS a
+   * halmazban.
+   *
+   * A level-kereses erre a masodik alakra is helyes valaszt kell adjon.
+   * Enelkul az allitasaink csak a "teljes lanc" esetet mernek, es a
+   * gyakoribbat nem.
+   */
+  it("egyetlen, hozzárendelt kategóriánál azt adja, a szülője nélkül is", () => {
+    const termek = {
+      ...(TERMEK as object),
+      categories: [
+        {
+          id: "c9",
+          name: "Hanna fotométerek",
+          mpath: "c1.c7.c9",
+          parent_category_id: "c7",
+        },
+      ],
+    } as never
+
+    expect(legmelyebbKategoria(termek)).toBe("Hanna fotométerek")
+  })
+
+  /**
+   * ES A SORREND NEM SZAMIT. A valasz sorrendje nem szerzodes; ha a level-
+   * kereses helyett barmikor "az elso elem" allna a kodban, ez pirosodik ki.
+   */
+  it("fordított sorrendben is a levelet választja, nem az elsőt", () => {
+    const termek = {
+      ...(TERMEK as object),
+      categories: [
+        { id: "c1", name: "Termékek", mpath: "c1", parent_category_id: null },
+        {
+          id: "c3",
+          name: "TDS mérők",
+          mpath: "c1.c2.c3",
+          parent_category_id: "c2",
+        },
+        {
+          id: "c2",
+          name: "Tesztek, mérés, vezérlés",
+          mpath: "c1.c2",
+          parent_category_id: "c1",
+        },
+      ],
+    } as never
+
+    expect(legmelyebbKategoria(termek)).toBe("TDS mérők")
   })
 
   it("a legmélyebb kategóriát választja, nem a gyökeret", () => {
