@@ -50,10 +50,30 @@ export default function StockState({
           az "Eladva" ténykozlés, nem hibaüzenet. A délelőtti vörösesbe hajló
           változat helyére ez került.
         */}
-        <span className="text-sm font-semibold text-neutral-700">
+        {/*
+          A SZIN TOKENBOL JON, NEM BEIRT SZURKEBOL -- ES EZ MOST MAR NEM
+          KOVETKEZETESSEG, HANEM OLVASHATOSAG.
+
+          A koltozes-kapcsolo bekapcsolasa (#103) ota ez a komponens a SOTET
+          vilagon is megjelenik. Ott a lap hattere `oklch(0.17 0.016 250)`, a
+          beirt `text-neutral-700` pedig sotet szurke: sotet szurke majdnem
+          feketen. A `--terv-szoveg` mindket vilagban helyes (vilagosban
+          `oklch(0.2 ...)`, sotetben `oklch(0.95 ...)`), mert epp ezert token.
+
+          A "semleges szurke, szandekosan nem piros" dontes VALTOZATLAN: az
+          Eladva tenykozles, nem hibauzenet. Csak a szurke forrasa lett a
+          token.
+        */}
+        <span
+          className="text-sm font-semibold"
+          style={{ color: "var(--terv-szoveg)" }}
+        >
           {availabilityLabel.ELADVA}
         </span>
-        <span className="text-xs leading-relaxed text-neutral-500">
+        <span
+          className="text-xs leading-relaxed"
+          style={{ color: "var(--terv-szoveg-halvany)" }}
+        >
           {SOLD_OUT_EXPLANATION}
         </span>
         <LocalizedClientLink href={similarHref}>
