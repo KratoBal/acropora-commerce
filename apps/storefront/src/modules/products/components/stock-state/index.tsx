@@ -88,11 +88,31 @@ export default function StockState({
   /**
    * A FO CSELEKVES REZ -- MERVE A TERVBOL, NEM A TOKEN NEVEBOL KOVETKEZTETVE.
    *
-   * A tervlapot megrenderelve (playwright, ugyanaz a modszer, amivel a
-   * tokeneket kiolvastuk) a "Kosárba" gomb erteke:
+   * === HELYESBITVE 2026-09-08: AZ ELSO MERESEM A ROSSZ LAPRA SZOLT ===
    *
-   *   hatter  oklch(0.62 0.13 45)   = `--terv-kiemel`
-   *   szoveg  oklch(0.15 0.014 45)  = `--terv-kiemel-szoveg`
+   * Eloszor EGYETLEN gombot mertem meg (`y=640`, 402x54), es nem neztem meg,
+   * MELYIK VALTOZAT lapjan all. A tervfajl HAROM lapot tartalmaz egymas alatt
+   * (`2a` sotet korall, `1a` es `1b` vilagos lampa), es az a gomb a SOTET
+   * lapon volt. Szakaszonkent ujramerve, mindket szakaszban kilenc rez elem,
+   * szakaszon belul NULLA kivetel:
+   *
+   *   2a (sotet)        hatter oklch(0.62 0.13 45)   szoveg oklch(0.15 0.014 45)
+   *   1a + 1b (vilagos) hatter oklch(0.55 0.13 45)   szoveg FEHER
+   *
+   * A tokenjeink szerint (`globals.css`) a vilagos vilagban a 0.55 es a sotet
+   * vilagban a 0.62 UGYANAZON a valtozon all: `--terv-kiemel-sotet`. Vagyis a
+   * terv fo cselekvese MINDKET vilagban azt keri -- azt a valtozot, aminek a
+   * NEVE a lenyomott arnyalatot jeloli. Ugyanezt adta murena kosar-merese is
+   * (a kosar akcent alapja 0.55), harmadik fuggetlen forraskent.
+   *
+   * A `--terv-kiemel` HASZNALATA ITT HIBAS VOLT: a vilagos lapon 0.62-t adott
+   * a tervbeli 0.55 helyett, a soteten pedig 0.55-ot a 0.62 helyett -- vagyis
+   * MINDKET vilagban tevedett, csak ellentetes iranyba.
+   *
+   * ES AMI MEG NYITOTT: a terv VILAGOS lapjain a rezen allo szoveg FEHER, a
+   * `--terv-kiemel-szoveg` viszont mindket vilagban `oklch(0.15 0.014 45)`.
+   * Erre ma nincs tokenunk, es a kilences ertek-keszlet Balazs jovahagyasan
+   * all, ezert NEM irom at. A kerdes acrobotnal van (msg_id 14688).
    *
    * ES AMI UGYANEBBOL A MERESBOL KIDERULT, ES EPP ILYEN FONTOS: a "Köteg
    * kosárba" gomb NEM rez (`oklch(0.95 0.006 250)`), es az ELADVA agunk
@@ -127,7 +147,7 @@ export default function StockState({
         letiltva
           ? undefined
           : {
-              background: "var(--terv-kiemel)",
+              background: "var(--terv-kiemel-sotet)",
               color: "var(--terv-kiemel-szoveg)",
             }
       }
