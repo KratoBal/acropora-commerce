@@ -248,21 +248,65 @@ describe("a választó doboz megjelenése", () => {
    * A KATALÓGUS TÖBBSÉGE: 1884 termék, egyetlen változat. Itt a doboz HIÁNYA a
    * helyes viselkedés, nem a hiányossága.
    */
-  it("egyetlen változatnál NINCS választó", () => {
+  /**
+   * EZ AZ ÁLLÍTÁS MEGFORDULT, ÉS AZ INDOK ITT MARAD, MERT KÜLÖNBEN ÚGY NÉZNE KI,
+   * MINTHA SOHA NEM LETT VOLNA MÁSIK SZABÁLY.
+   *
+   * Eredetileg így szólt: "egyetlen változatnál NINCS választó" -- és akkor ez
+   * volt a helyes, mert egy egygombos választó, amin nincs mit választani, zaj.
+   *
+   * Balázs váz-kérése (2026-09-07) ezt felülírta: a lap ÁLLJON ÖSSZE úgy, ahogy
+   * a terv, és ami mögött nincs kész funkció, az legyen ott üresen. Acrobot
+   * pontosítása pedig szétválasztotta, ami eddig egybe volt kötve:
+   *
+   *     LÁTHATÓSÁG      az opciókon múlik
+   *     VÁLASZTHATÓSÁG  a változatok számán
+   *
+   * Így az eredeti mérés nem veszett el: "egyetlen változatnál nincs VÁLASZTÁS"
+   * továbbra is igaz és mérhető -- csak nem a doboz hiányából olvassuk ki.
+   *
+   * A mögötte álló számok változatlanok: 1884 terméknek nincs változata, 9-nek
+   * van valódi választása (8 Reef Factory lámpa Szín szerint, plusz egy flakon).
+   */
+  it("egyetlen változatnál a doboz OTT ÁLL, de nem választható", () => {
     render(<ProductActions product={egyValtozatosTermek()} region={REGIO} />)
 
+    expect(screen.getByTestId("product-options")).toBeTruthy()
+
+    const gombok = screen.getAllByTestId("option-button")
+    expect(gombok.length).toBeGreaterThan(0)
+    for (const gomb of gombok) {
+      expect((gomb as HTMLButtonElement).disabled).toBe(true)
+    }
+  })
+
+  /**
+   * A HARMADIK ÁLLAPOT: opció nélkül nincs mit kirajzolni. E nélkül a doboz üres
+   * kerettel állna ott, cím nélkül, és az rosszabb a hiányzónál.
+   */
+  it("opció nélkül a doboz nem jelenik meg", () => {
+    const opcioNelkul = {
+      ...(egyValtozatosTermek() as object),
+      options: [],
+    } as never
+    render(<ProductActions product={opcioNelkul} region={REGIO} />)
+
     expect(screen.queryByTestId("product-options")).toBeNull()
-    expect(screen.queryAllByTestId("option-button")).toHaveLength(0)
   })
 
   /**
    * A KILENC TERMÉK, AMELYIKNÉL VAN MIT VÁLASZTANI. Mindkét értéknek látszania
    * kell: egy választó, ami csak az egyiket mutatja, rosszabb a hiányzónál.
    */
-  it("két változatnál megjelenik a választó, mindkét értékkel", () => {
+  it("két változatnál megjelenik a választó, mindkét értékkel ÉS választható", () => {
     render(<ProductActions product={ketValtozatosTermek()} region={REGIO} />)
 
     expect(screen.getByTestId("product-options")).toBeTruthy()
+
+    // és itt a gombok NEM tiltottak -- ez választja el a két állapotot
+    for (const gomb of screen.getAllByTestId("option-button")) {
+      expect((gomb as HTMLButtonElement).disabled).toBe(false)
+    }
 
     const gombok = screen
       .getAllByTestId("option-button")
