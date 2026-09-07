@@ -14,6 +14,13 @@ type ProductListQueryParams = (HttpTypes.FindParams &
   option_value_id?: string | string[]
 }
 
+/**
+ * FIGYELEM A HIVOKNAK: a `fields` erteket a `...queryParams` UTAN teritjuk szet,
+ * tehat egy hivo altal megadott `fields` NEM bovul, hanem FELULIR. Aki egyetlen
+ * relaciot akar hozzavenni, csendben elveszi az osszes tobbit -- ez mar
+ * megtortent, es a jelveny tunt el tole. A termeklap keszen kapott ertekkel hiv:
+ * `src/lib/data/termeklap-fields.ts`, ahol a meres es az indoklas all.
+ */
 export const listProducts = async ({
   pageParam = 1,
   queryParams,
