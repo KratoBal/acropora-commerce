@@ -3,6 +3,8 @@ import { HttpTypes } from "@medusajs/types"
 import { Heading, Table } from "@modules/common/components/ui"
 
 import Item from "@modules/cart/components/item"
+import StepIndicator from "@modules/cart/components/step-indicator"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 
 type ItemsTemplateProps = {
@@ -13,6 +15,9 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   const items = cart?.items
   return (
     <div>
+      <div className="pb-3">
+        <StepIndicator active={0} />
+      </div>
       <div className="pb-3 flex items-center">
         {/*
           A TERV FEJLECE, MAGYARUL. A tetelszam a terv sajat alakja
@@ -63,6 +68,27 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
               })}
         </Table.Body>
       </Table>
+      {/*
+        A TERV KET ZARO SORA. A visszavivo hivatkozas azert kell, mert egy
+        kosar, amibol csak elore lehet menni, zsakutca; az afa-mondat pedig a
+        terv sajat szovege, es a vevo szamara az arak ertelmezese.
+      */}
+      <div className="pt-6 flex flex-col gap-2">
+        <LocalizedClientLink
+          href="/store"
+          className="w-fit text-sm underline"
+          style={{ color: "var(--terv-kiemel-sotet)" }}
+          data-testid="continue-shopping-link"
+        >
+          Vásárlás folytatása
+        </LocalizedClientLink>
+        <span
+          className="text-[11px]"
+          style={{ color: "var(--terv-szoveg-halvany)" }}
+        >
+          Az árak bruttó árak, 27% áfával.
+        </span>
+      </div>
     </div>
   )
 }
