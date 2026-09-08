@@ -223,17 +223,17 @@ describe("a terv megerositett ertekei", () => {
  * a 0.68-at a vilagos blokkban is megtalalna, ha valaki oda irja -- es akkor az
  * allitas pont azt nem venne eszre, amit vedeni akar.
  */
+/**
+ * A PUSZTA ERTEK-ALLITAS NEM ITT ALL: a "réz TINTA mind a két világban
+ * definiált, saját értékkel" (a #145-bol) mar blokkonkent ellenorzi mind a ket
+ * erteket. Ide csak az kerult, amit AZ NEM mond meg: hogy a sotet lapon a
+ * felulet es a tinta KULONBOZIK, es hogy a vilagoson SZANDEKOSAN egybeesik.
+ */
 describe("a réz két szerepe", () => {
   const sotetKezd = () => CSS.indexOf('[data-vilag="sotet"]')
 
   const ertek = (blokk: string, nev: string) =>
     new RegExp(`${nev}:\\s*(oklch\\([^)]+\\))`).exec(blokk)?.[1]
-
-  it("sötét módban --terv-kiemel-tinta = oklch(0.68 0.13 45)", () => {
-    const sotetBlokk = CSS.slice(sotetKezd())
-
-    expect(ertek(sotetBlokk, "--terv-kiemel-tinta")).toBe("oklch(0.68 0.13 45)")
-  })
 
   it("a réz tinta és a réz felület a sötét lapon KÜLÖNBÖZIK", () => {
     const sotetBlokk = CSS.slice(sotetKezd())

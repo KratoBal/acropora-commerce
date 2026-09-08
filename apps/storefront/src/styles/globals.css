@@ -92,7 +92,20 @@
      doboz telefonszaman (14px/600):
        2a (sotet)     oklch(0.68 0.13 45)
        1b (vilagos)   oklch(0.55 0.13 45) */
-  --terv-kiemel-tinta: oklch(0.55 0.13 45);
+  /*
+   * MIERT NEM A `-szoveg` KAPTA MEG EZT A SZEREPET: az mar a rezen ALLO
+   * szoveget jeloli (feher vilagoson, 0.15 soteten). Egy MAR LETEZO token neve
+   * soha nem kap uj jelentest -- aki a regi jelentessel irna le, csendben mas
+   * erteket kapna. (acrobot szabalya, msg_id 14816.)
+   *
+   * ES EGY ELEM, AMIT NEM SZABAD HARMADIK REZ-ARNYALATNAK VENNI: a 2a lapon
+   * all egy `oklch(0.5 0.11 45)` szinu elem, aminek a szovege "1b" (y=106,
+   * 17px, Space Grotesk). Ez a tervlap SAJAT cimenek resze ("...az 1b
+   * szerkezete, sotet feluleten"), nem lap-tartalom. Ha valaha halo szamolja a
+   * rez arnyalatokat, ezt nev szerint kell kizarni. (acrobot figyelmeztetese;
+   * visszamerve: egyetlen elem, es Space Grotesk, nem a designer monospace
+   * cimke-retege -- tehat a lap cimehez tartozik.)
+   */
   /* A REZEN ALLO SZOVEG A VILAGOS LAPON FEHER -- ES EZ EGY MERESI HIBA JAVITASA.
      ============================================================================
      ITT KORABBAN `oklch(0.15 0.014 45)` ALLT, "a kilenc rez hatterbol ot visel
@@ -128,34 +141,6 @@
      (acrobot dontese, msg_id 14690: ez nem a kilences keszlet felulirasa, hanem
      annak a meresnek a javitasa, amit elé tettunk.) */
   --terv-kiemel-szoveg: oklch(1 0 0);
-  /*
-   * A REZ SZINU SZOVEG A LAPON -- HARMADIK SZEREP, NEM HARMADIK IZLES.
-   *
-   * A rez a tervben KET szerepben all, es a ket szerep a SOTET lapon
-   * SZETVALIK. Merve nautilus elemenkenti kiolvasasabol (543 elem), es
-   * visszamerve:
-   *
-   *   2a (sotet)    felulet 0.62    a lapon allo rez SZOVEG 0.68   (9 elem)
-   *   1b (vilagos)  felulet 0.55    a lapon allo rez SZOVEG 0.55   (8 elem)
-   *
-   * A vilagos lapon a ketto EGYBEESIK, es pontosan ezert latszott sokaig egy
-   * tokennek. A szerepek nev szerint ugyanazok mindket lapon: "Szakértői
-   * segítség", a szemoldok-felirat, a -8% jelzo, a seged-cimke, a telefonszam
-   * es a nyilas hivatkozas.
-   *
-   * MIERT NEM A `-szoveg` KAPTA MEG: az mar a rezen ALLO szoveget jeloli
-   * (feher vilagoson, 0.15 soteten). Egy MAR LETEZO token neve soha nem kap uj
-   * jelentest -- aki a regi jelentessel irna le, csendben mas erteket kapna.
-   * (acrobot dontese es szabalya, msg_id 14816.)
-   *
-   * EGY ELEM, AMIT NEM SZABAD HARMADIK REZ-ARNYALATNAK VENNI: a 2a lapon all
-   * egy `oklch(0.5 0.11 45)` szinu elem, aminek a szovege "1b" (y=106, 17px,
-   * Space Grotesk). Ez a tervlap SAJAT cimenek resze ("...az 1b szerkezete,
-   * sotet feluleten"), nem lap-tartalom. Ha valaha halo szamolja a rez
-   * arnyalatokat, ezt nev szerint kell kizarni. (acrobot figyelmeztetese;
-   * visszamerve -- egyetlen elem, es nem monospace, tehat a lap cimehez
-   * tartozik, nem a designer cimke-retegehez.)
-   */
   --terv-kiemel-tinta: oklch(0.55 0.13 45);
   --terv-jelzo: oklch(0.52 0.09 210); /*  6 elem -- kek-zold, jelzesekre */
 
@@ -278,9 +263,6 @@
      a kovetkezo sorban allt. Ket egymas melletti komment, ellentetes
      allitassal: a javitas hozzairodott, a hamis fele pedig ottmaradt. */
   --terv-kiemel-szoveg: oklch(0.15 0.014 45);
-  /* A lapon allo rez szoveg a sotet lapon VILAGOSABB, mint a rez felulet:
-     0.68 kontra 0.62. Merve a 2a lap kilenc elemen, nulla kivetellel. */
-  --terv-kiemel-tinta: oklch(0.68 0.13 45);
   /* ES ITT VALIK SZET A KET SZEREP. A felulet 0.62, a rezen allo TINTA 0.68 --
      ez a kulonbseg a vilagos lapon nem letezik, ezert latszott sokaig egy
      dolognak. Merve a 2a lapon, kilenc elemen (Szakertoi segitseg,
