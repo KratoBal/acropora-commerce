@@ -266,7 +266,7 @@ export const listNonEmptyRootCategories = async (
   regionId: string,
 ): Promise<HttpTypes.StoreProductCategory[]> => {
   const mind = await listCategories({
-    fields: "id,name,handle,parent_category_id",
+    fields: "id,name,handle,parent_category_id,rank",
   })
 
   const gyerekek = new Map<string, string[]>()
@@ -309,5 +309,27 @@ export const listNonEmptyRootCategories = async (
     }),
   )
 
-  return gyokerek.filter((_, i) => vane[i])
+  /*
+    A SORREND A BOLT SAJAT `rank` MEZOJEBOL JON, NEM EGY BEEGETETT LISTABOL.
+
+    Merve a teszt bolton (2026-09-08): a hat gyoker rangja 0-tol 5-ig fut, es
+    pontosan azt a sorrendet adja, amit a lablec-spec atmenetikent felsorolt:
+
+        0 Termékek   1 Gerinctelenek   2 Halak   3 Korallok
+        4 Shop 'n the Shop            5 Édesvízi akvarisztika
+
+    Vagyis a sorrendhez nem kell kulon dontes: a boltos mar beallitotta, es a
+    ket kizart gyoker amugy is a vegen all. Ha a boltban atrendezik, a menu es
+    a lablec vele mozdul.
+
+    A `?? 0` azert kell, mert a mezo elvben hianyozhat; olyankor a nev szerinti
+    masodlagos rendezes ad kiszamithato sorrendet a veletlen helyett.
+  */
+  return gyokerek
+    .filter((_, i) => vane[i])
+    .sort((a, b) => {
+      const ra = (a as { rank?: number | null }).rank ?? 0
+      const rb = (b as { rank?: number | null }).rank ?? 0
+      return ra !== rb ? ra - rb : a.name.localeCompare(b.name, "hu")
+    })
 }
