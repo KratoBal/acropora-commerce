@@ -203,7 +203,24 @@ function gyokerNevKatalogusbol(
  * a termek kategoriai kozott, tehat a gyoker ott van a listaban". EZ NEM IGAZ
  * MINDIG, es merve van az elo API-n (2026-09-07, a `valodi-tartalom.spec`
  * rogziti): az egyik termek HAT kategoriat kapott a gyokerrel egyutt, egy masik
- * CSAK EGYET -- a levelet, harom szintu `mpath`-tal, szulo nelkul.
+ * CSAK EGYET -- a levelet, HAROM szintu `mpath`-tal, szulo nelkul.
+ *
+ * A MELYSEG VISZONT NEM SZAMIT, ES EZT KULON KI KELL MONDANI. A fenti harom
+ * szintu pelda egy MUSZAKI termek volt (Hanna fotometerek, `c1.c7.c9`). Az
+ * egyetlen elo allat, amit ez a hiba ma erint, KET szegmensu:
+ *
+ *   periclimenes-brevicarpalis-anemona-garnela-par-him
+ *   egyetlen kategoriaja: "Rakok, Garnelak - Gerinctelenek",
+ *   aminek a szuloje MAGA a Gerinctelenek gyoker
+ *   (acrobot merese a teszt bolton, 2026-09-08 03:02 -- nala van a kulcs)
+ *
+ * Vagyis a feltetel NEM az, hogy harom szintu az `mpath`, hanem hogy nincs
+ * benne EGYSZEGMENSU elem. Ket szinttol felfele barmelyik melyseg ilyen, es a
+ * javitas (az elso szegmens) mindegyiket ugyanugy oldja meg.
+ *
+ * Ezt azert kell kiirni, mert a harom szintu pelda konnyen olvasodik
+ * FELTETELKENT -- es akkor a kovetkezo olvaso egy ket szintu esetnel azt
+ * hinne, hogy az mas hiba.
  *
  * A leveles alaknal nincs egyszegmensu elem, tehat `gyokerNevek` URESET ad, es
  * a termek VILAGOS lesz. Egy elo allat igy csendben a muszaki elrendezest kapja
