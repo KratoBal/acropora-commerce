@@ -143,18 +143,41 @@ type VazSzakasz = {
  * latja, a masik "szurve" -- ez HAMIS, es ketszer allt vissza a helyesbites
  * utan is, mert csak uzenetben volt kimondva:
  *
- *   nautilus   elem-szinten olvas -> a CSONKOLAS nem erinti,
- *              de SULYT (>=600) es MERETET (>=14px) kuszobol
+ *   nautilus   elem-szinten olvas -> a CSONKOLAS nem erinti
  *   murena     kontener-CIMKET olvas -> a suly nem erinti,
  *              de 60 KARAKTERNEL kemenyen vag
  *
+ * JAVITVA 2026-09-08: ez a tabla korabban azt allitotta, hogy nautilus
+ * olvasasa SULYT (>=600) es MERETET (>=14px) kuszobol. Ez TUL TAG volt, es a
+ * sajat mondatom eppen az ellen a hiba ellen szolt, amit elkovettem vele.
+ *
+ * A kuszob EGY KIOLVASASE, nem az olvasasi modszere. Merve a nyers anyagon:
+ *
+ *   terv-cimek/           >=600 suly, >=14px, LEVEL elem, <=46 karakter
+ *                         (a sajat OLVASSEL.md-je ki is mondja, es hozzateszi,
+ *                          hogy "a hiany NEM bizonyitek")
+ *   terv-valtozatok/      SZURES NELKUL, 405 elem. Ebbol 108 all 14px ALATT:
+ *   teljes-lapok...json     9px:5  10px:4  11px:48  12px:16  13px:35
+ *                         es 500-as sulyu elemek is bennevannak
+ *
+ * A KULONBSEG NEM AKADEMIKUS: eppen a szuretlen kiolvasas adja azokat a
+ * szamokat, amiken az alabbi haromfele bontas all (1b 15px/500). Ha a kuszob
+ * altalanos lenne, az a lelet nem is letezhetne -- vagyis a ket allitas
+ * ELLENTMONDOTT egymasnak a fo agon, amig ez a bekezdes igy allt.
+ *
  * Merve: 252 dobozcimkebol 95 eri el a 60 karakteres hatart (a korall lapon
- * 35). Vagyis nem az egyikunk lat tobbet: SULYRA VAK kontra HOSSZRA VAK.
+ * 35). Az en korlatom tehat ALLANDO: minden olvasasomra all.
+ *
+ * Nautilus korlata viszont KIOLVASASONKENT valtozik, es ezert nem lehet egy
+ * szoval elintezni. A helyes kerdes nem az, hogy "mit lat nautilus", hanem
+ * hogy MELYIK KIOLVASASBOL jon a szam. Egy cim-listabol vett nulla nem
+ * ugyanaz, mint a szuretlen kinyeresbol vett nulla.
  *
  * A KOVETKEZMENY, AMI A GYAKORLATBAN SZAMIT: egy SZAKASZ-CIM ellenorzesehez az
  * en oldalam eleg, mert egy szakasz a sajat cimevel KEZDODIK, tehat a vagas
  * utan is ott all az eleje. Egy BEAGYAZOTT elofordulast (egy cimke KOZEPEN
- * allo szoveget) viszont elrejthet -- arra nautilus olvasasa kell.
+ * allo szoveget) viszont elrejthet -- arra nautilus olvasasa kell, es akkor a
+ * SZURETLEN kinyeres, nem a cim-lista.
  *
  * ES AMIERT EZ ITT ALL, NEM EGY UZENETBEN: ez a negy sor mar ketszer elveszett
  * egy kontextus-hataron, es utana MINDKETTEN visszaestunk a "teljes kontra
