@@ -270,8 +270,22 @@ describe("a terv megerositett ertekei", () => {
     /** ISMERT POZITIV KONTROLL: van egyaltalan vilagonkent eltero token. */
     expect(elteroek.length).toBeGreaterThan(0)
 
+    /**
+     * A TOKEN NEVE TABLA-SORBAN ALLJON, NE CSAK A FAJLBAN VALAHOL.
+     *
+     * AZ ELSO VALTOZAT `SAJAT_FORRAS.includes(ertek)`-et nezett, es azt EGY
+     * KOMMENT IS KIELEGITETTE. Sajat merese, 2026-09-08: felvettem egy uj
+     * vilag-fuggo tokent, az ertekeit CSAK egy kommentbe irtam, es az allitas
+     * ZOLD MARADT. Egy orzo, amit prozaval ki lehet elegiteni, nem orzo.
+     *
+     * A `["--terv-x"` alak az, ami ALLITAST hordoz: a PAROK es a VILAGONKENT
+     * tabla sorai. Ma mind a tiz vilagonkent eltero token igy all.
+     */
     const hianyzo = elteroek.filter(
-      (k) => !SAJAT_FORRAS.includes(v[k]) || !SAJAT_FORRAS.includes(s[k]),
+      (k) =>
+        !SAJAT_FORRAS.includes(`["${k}"`) ||
+        !SAJAT_FORRAS.includes(v[k]) ||
+        !SAJAT_FORRAS.includes(s[k]),
     )
     expect(hianyzo).toEqual([])
   })
