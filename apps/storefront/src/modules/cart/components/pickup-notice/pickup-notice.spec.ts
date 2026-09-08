@@ -30,6 +30,28 @@ describe("az átvételi sáv szövege", () => {
     expect(PICKUP_REASON).toContain("nem adunk fel csomagként")
   })
 
+  /**
+   * A TARTALOM, AMI EGYSZER MAR KIESETT -- ES SEMMI NEM SZOLT.
+   *
+   * A mondat korabban a terv tomoritese volt, es a tomoritesben elveszett,
+   * hogy a rendelest NEM BONTJUK KET RENDELESRE. Ez nem stilus: a vevo
+   * legelso kerdese az, hogy a muszaki tetelek kulon jonnek-e postan.
+   *
+   * A felette allo allitas ezt NEM fogta meg, es helyesen nem: az a mondat
+   * LETEZESET meri ("nem adunk fel csomagkent"), nem a TARTALMAT. A ket
+   * allitas kulonbozo dolgot ved, ezert all itt mind a ketto.
+   *
+   * (Nautilus merese, 2026-09-08: a kosar mind a 22 ember-olvasta szoveget a
+   * tervhez merte, es ez a mondat ugy jott ki, mint hianyos atvetel. A
+   * mondat masik hianyzo fele -- hogy a peldanyt a vevo elott emelik ki --
+   * SZANDEKOSAN nincs benne: az a bolt gyakorlatarol szolo igeret, amit a
+   * kirakat nem tud garantalni.)
+   */
+  it("megmondja, hogy a rendelés EGYBEN marad", () => {
+    expect(PICKUP_REASON).toContain("nem bontjuk két rendelésre")
+    expect(PICKUP_REASON).toContain("teljes kosarat")
+  })
+
   it("nincs két kötőjel a vevőnek szánt szövegekben", () => {
     for (const szoveg of [PICKUP_TITLE, PICKUP_LEAD, PICKUP_REASON]) {
       expect(szoveg).not.toContain("--")
