@@ -919,7 +919,30 @@ const LapVaz = ({
                     padding: "16px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "16px",
+                    /**
+                     * A KOZOS PANELEN BELUL A SZAKASZOK KOZOTT 18 PIXEL ALL,
+                     * ES EZ MERVE VAN, NEM VALASZTVA (2026-09-08).
+                     *
+                     * A tervben a vasarlasi panel HET belso sorbol all, es a
+                     * kozottuk levo tavolsag NEM egyseges:
+                     *
+                     *   ar -> brutto/cikkszam        6 px
+                     *   brutto -> keszlet           18 px
+                     *   keszlet -> atvetel          18 px
+                     *   atvetel -> Kosarba          18 px
+                     *   Kosarba -> foglalas         10 px
+                     *   foglalas -> DOA             16 px + egy FELSO VONAL
+                     *
+                     * A mi NEGY szakaszunk hatara pontosan a harom 18-as
+                     * helyen van (ar | keszlet | atvetel | kosarba), tehat a
+                     * SZAKASZOK KOZOTTI ritmus egyseges 18. A 6, a 10 es a 16
+                     * a szakaszokon BELUL all, es azok mas komponensek
+                     * tulajdona -- ide nem tartoznak.
+                     *
+                     * Elozoleg 16 allt itt, kerekitve. Ket pixel, de a lenyeg
+                     * nem a kulonbseg merete: a 16 VALASZTAS volt, a 18 MERES.
+                     */
+                    gap: "18px",
                   }
                 : undefined
             }
