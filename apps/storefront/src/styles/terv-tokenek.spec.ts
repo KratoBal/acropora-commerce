@@ -173,4 +173,29 @@ describe("a terv megerositett ertekei", () => {
       "--terv-kiemel-szoveg: oklch(0.15 0.014 45)",
     )
   })
+
+  /**
+   * A REZ TINTA MIND A KET VILAGBAN DEFINIALT -- ES EZT MERT RES ZARJA BE.
+   *
+   * A bejaro halo (`terv-token-hasznalat.spec.ts`) azt kerdezi, hogy egy
+   * HASZNALT token letezik-e valahol. Lemertem, mit NEM lat: a sotet blokkbol
+   * kitorolve a definiciot 273 teszt fut le es NULLA piros -- mert a vilagos
+   * definicio ott marad, tehat a token "letezik".
+   *
+   * A KAR VISZONT NEMA ES LATHATO: a sotet lapon a telefonszam a vilagos
+   * erteket (0.55) orokolne 0.68 helyett -- halvanyabban, sotet hatteren, es
+   * semmi nem szolna. Pontosan az az alak, amit ez a fajl gyujt.
+   *
+   * Ezert all itt nev szerint MIND A KET ertek. A ket szam kulonbsege nem
+   * elirás: a `--terv-kiemel` FELULET (a gomb all rajta), ez pedig TINTA (a
+   * szoveg all benne), es a ket szerep a sotet lapon szetvalik.
+   */
+  it("a réz TINTA mind a két világban definiált, saját értékkel", () => {
+    const sotetKezd = CSS.indexOf('[data-vilag="sotet"]')
+    const vilagosBlokk = normal(CSS.slice(0, sotetKezd))
+    const sotetBlokk = normal(CSS.slice(sotetKezd))
+
+    expect(vilagosBlokk).toContain("--terv-kiemel-tinta: oklch(0.55 0.13 45)")
+    expect(sotetBlokk).toContain("--terv-kiemel-tinta: oklch(0.68 0.13 45)")
+  })
 })

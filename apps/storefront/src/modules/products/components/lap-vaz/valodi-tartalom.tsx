@@ -202,6 +202,48 @@ export const Leiras = ({ termek }: { termek: Termek }) => {
 }
 
 /**
+ * A KAPCSOLATFELVETEL DOBOZ -- ES AMI SZANDEKOSAN HIANYZIK BELOLE.
+ *
+ * A tervben HAROM sor all ebben a dobozban, es csak KETTOT irunk meg:
+ *
+ *   cim              a doboz sajat felirata, lapcsaladonkent mas
+ *   egy mondat       TERMEK-SPECIFIKUS, es NEM irjuk meg
+ *   telefonszam      14px/600, rez SZINU szoveg
+ *
+ * A KOZEPSO MONDAT AZERT MARAD KI, mert termek-tudast igenyel, ami nincs meg.
+ * A tervbeli ket peldany: "Ez a torzs 2019 ota nalunk no. Ha bizonytalan vagy a
+ * viz parametereiben, hivj minket." (2a) es "Tobb mint 20 akvariumot
+ * szereltunk fel ezzel a lampaval..." (1b). Egyik sem vezetheto le semmilyen
+ * mezobol, tehat kitalalas lenne. Ugyanaz a szabaly, mint a meretezes-segednel.
+ *
+ * A TELEFONSZAM VISZONT NEM UJ ADAT: mar ELESBEN all a kirakatban, az ures
+ * kosar uzenetben, `tel:+36202676801` alakban, allitassal egyutt. Masodszori
+ * felhasznalas, nem talalgatas.
+ *
+ * A SZIN A `--terv-kiemel-tinta`, NEM a `--terv-kiemel`. Az elso a rezen allo
+ * TINTA (a szoveg all benne), a masodik a FELULET (a gomb all rajta). A ket
+ * szerep a vilagos lapon egybeesik (0.55), a soteten NEM (0.68 kontra 0.62) --
+ * es ez a doboz a token elso hivohelye. (acrobot dontese, msg_id 14872.)
+ *
+ * A CIM NEM ITT ALL: a `lap-vaz/index.tsx` szakasz-listaja adja, vilagonkent
+ * kulon ("Kerdezd minket" a vilagos lapon, "Kerdezd a boltot" a soteten) --
+ * mind a ketto a terv sajat szava.
+ */
+export const TELEFON_MEGJELENITVE = "+36 20 267 6801"
+export const TELEFON_HIVAS = "tel:+36202676801"
+
+export const Kerdezd = () => (
+  <a
+    href={TELEFON_HIVAS}
+    className="text-sm font-semibold underline"
+    style={{ color: "var(--terv-kiemel-tinta)" }}
+    data-testid="vaz-kerdezd-telefon"
+  >
+    {TELEFON_MEGJELENITVE}
+  </a>
+)
+
+/**
  * A VAZ SLOT-TERKEPE. Ami `undefined`, az uresen marad -- a `LapVaz` akkor a
  * varakozo szoveget mutatja.
  *
@@ -249,6 +291,11 @@ export function vazTartalom(
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,
+    /**
+     * AZ EGYETLEN SLOT, AMI NEM TERMEK-ADATON ALL, tehat feltetel nelkul all a
+     * helyen: a bolt telefonszama minden termeknel ugyanaz.
+     */
+    kerdezd: <Kerdezd />,
   }
 
   /**

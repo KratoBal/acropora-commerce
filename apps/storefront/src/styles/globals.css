@@ -53,11 +53,29 @@
      `oklch(0.68 0.13 45)`, kilenc elemen (Szakertoi segitseg, a szemoldok-
      felirat, a -8% jelzo, a seged-cimke, a telefonszam, a "->" hivatkozas).
      A vilagos lapon a ket szerep EGYBEESIK (mind a ketto 0.55), es pontosan
-     ezert nem latszott sokaig. Ma ez nem okoz hibat: minden rez SZOVEG
-     hasznalatunk a kosarban all, ami a vilagos vilag. Az elso rez szoveg egy
-     sotet lapon viszont 0.62-t kapna 0.68 helyett -- csendben, halvanyabban.
-     Felirva, nem beepitve: a nev es a bevezetese acrobot dontese. */
+     ezert nem latszott sokaig. A masodik szerep 2026-09-08 ota SAJAT TOKENT
+     visel: `--terv-kiemel-tinta`, kozvetlenul ez alatt. */
   --terv-kiemel: oklch(0.55 0.13 45); /* 12 hely -- rez: 9 hatter + 3 keret */
+  /* REZ SZINU SZOVEG -- MASIK SZEREP, NEM MASIK ARNYALAT.
+     ============================================================================
+     A `--terv-kiemel` FELULET: a gomb ALL rajta. Ez TINTA: a szoveg all BENNE.
+
+     A vilagos lapon a ket ertek EGYBEESIK (mind a ketto 0.55), tehat ez a token
+     ma nem valtoztat a kepen -- es epp ezert kell kulon allnia. Ha a ket
+     szerepet egy tokenre huznank, akkor amikor valaha sotetiteni kell a gomb
+     feluletet, a telefonszam is elmozdulna vele, indok nelkul. (acrobot
+     dontese, msg_id 14872, harom indokkal; ez a harmadik, es az az erosebb:
+     akkor is igy lenne helyes, ha a ket szam egyezne.)
+
+     A SOTET lapon a ket ertek KULONBOZIK: 0.62 kontra 0.68 -- lasd a sotet
+     blokkot. Sotet alapon a 0.68 vilagosabb, tehat a terv valasztasa egybeesik
+     az olvashatobbal.
+
+     MERVE a tervlap 2a es 1b lapjan, a `Kerdezd a boltot` / `Kerdezd minket`
+     doboz telefonszaman (14px/600):
+       2a (sotet)     oklch(0.68 0.13 45)
+       1b (vilagos)   oklch(0.55 0.13 45) */
+  --terv-kiemel-tinta: oklch(0.55 0.13 45);
   /* A REZEN ALLO SZOVEG A VILAGOS LAPON FEHER -- ES EZ EGY MERESI HIBA JAVITASA.
      ============================================================================
      ITT KORABBAN `oklch(0.15 0.014 45)` ALLT, "a kilenc rez hatterbol ot visel
@@ -189,6 +207,11 @@
      a kovetkezo sorban allt. Ket egymas melletti komment, ellentetes
      allitassal: a javitas hozzairodott, a hamis fele pedig ottmaradt. */
   --terv-kiemel-szoveg: oklch(0.15 0.014 45);
+  /* ES ITT VALIK SZET A KET SZEREP. A felulet 0.62, a rezen allo TINTA 0.68 --
+     ez a kulonbseg a vilagos lapon nem letezik, ezert latszott sokaig egy
+     dolognak. Merve a 2a lapon, kilenc elemen (Szakertoi segitseg,
+     szemoldok-felirat, -8% jelzo, seged-cimke, telefonszam, "->" hivatkozas). */
+  --terv-kiemel-tinta: oklch(0.68 0.13 45);
 
   --terv-szoveg: oklch(0.95 0.006 250); /* 53 elem sotet hatteren */
   --terv-szoveg-halvany: oklch(0.72 0.012 250);
