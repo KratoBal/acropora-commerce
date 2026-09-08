@@ -42,6 +42,26 @@ export default async function Footer() {
                   data-testid="footer-categories"
                 >
                   {/*
+                    EZ AZ OSZLOP MARAD, ES A FELTETELT KIMONDJUK, HOGY NE
+                    KELLJEN VISSZAKERESNI (acrobot dontese, 2026-09-08).
+
+                    A lablec TARTALMA a shop.acropora.hu-bol jon, es az eles
+                    bolt lableceben nincs kategoria-oszlop. Huseg alapjan
+                    tehat torlendo lenne. MEGSEM toroljuk, es az indok nem az,
+                    hogy senki nem kerte:
+
+                    A KIRAKATBAN MA EZ AZ EGYETLEN UT A KATEGORIAKHOZ, amit a
+                    VEVO tenylegesen lat. A fejlec kategoria-savja MEGEPULT es
+                    a fo agon all, de a kitelepitett lapon meg NINCS kint --
+                    merve 2026-09-08 este: a nyitolapon nulla kategoria-link
+                    all a `<footer>` ELOTT, es 53 a lableceben. Amig ez igy
+                    van, a torles nulla utat hagyna a bongeszesnek.
+
+                    A FELTETEL, AMIKOR A KERDES UJRA ELOJON: amikor a
+                    fejlec-menu KITELEPITVE is all. Attol kezdve ez az oszlop
+                    mar nem az egyetlen ut, es a torles valoban csak
+                    huseg-kerdes lesz. Addig nem az.
+
                     ELOSZOR SZURUNK GYOKERRE, AZUTAN VAGUNK.
 
                     A starterben forditva allt: `slice(0, 6)` a NYERS listan,
