@@ -177,6 +177,37 @@ describe("a terv megerositett ertekei", () => {
    * prefers-color-scheme: a termek fajtaja donti el, nem a latogato
    * beallitasa -- ezert kell sajat blokk, es ezert allitas is ra.
    */
+  /**
+   * A NYUGDIJAZOTT NEVEK: NINCS DEFINICIO, NINCS HIVOHELY, ES AZ ERTEK MEGVAN.
+   *
+   * A `-sotet` vegu nevsema (`--terv-kiemel-sotet`, `--terv-keret-sotet`,
+   * `--terv-szoveg-halvany-sotet`) megszunt: a sotet vilag ertekét nem kulon
+   * NEV hordozza, hanem a `[data-vilag="sotet"]` blokk irja felul UGYANAZT a
+   * nevet.
+   *
+   * A HARMADIK ALLITAS A LENYEG, es enelkul a masik ketto veszelyes lenne: azt
+   * bizonyitja, hogy az ertek nem VESZETT EL, csak atkerult. Egy torles-allitas
+   * onmagaban akkor is zold, ha valaki a definicioval EGYUTT az erteket is
+   * kidobta -- pontosan az a nema kar, amit ma este vegig gyujtottunk.
+   *
+   * A DEFINICIO-KERESES `:`-ra kot, nem a puszta nevre: a nev TORTENETI
+   * idezetkent ott all a `globals.css` nyugdijazo kommentjeben, es ott a helye.
+   * Egy puszta nev-kereses azt is talalatnak venne, es a mercenk ketto: nulla
+   * ELO elofordulas, de a visszavono idezet MARADHAT.
+   */
+  it("a nyugdíjazott -sotet nevek eltűntek, az értékük nem", () => {
+    const sotetKezd = CSS.indexOf('[data-vilag="sotet"]')
+    const sotetBlokk = normal(CSS.slice(sotetKezd))
+
+    for (const nev of ["--terv-keret-sotet", "--terv-szoveg-halvany-sotet"]) {
+      expect(normal(CSS)).not.toContain(`${nev}:`)
+      expect(CSS).not.toContain(`var(${nev})`)
+    }
+
+    expect(sotetBlokk).toContain("--terv-keret: oklch(0.28 0.014 250)")
+    expect(sotetBlokk).toContain("--terv-szoveg-halvany: oklch(0.72 0.012 250)")
+  })
+
   it("a sötét világnak saját érték-készlete van", () => {
     expect(CSS).toContain('[data-vilag="sotet"]')
 
