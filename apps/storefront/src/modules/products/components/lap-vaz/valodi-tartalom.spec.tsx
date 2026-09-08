@@ -2,7 +2,12 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
-import { legmelyebbKategoria, vazTartalom } from "./valodi-tartalom"
+import {
+  legmelyebbKategoria,
+  TELEFON_HIVAS,
+  TELEFON_MEGJELENITVE,
+  vazTartalom,
+} from "./valodi-tartalom"
 import { VasarlasProvider } from "../vasarlas/allapot"
 
 /**
@@ -421,6 +426,46 @@ describe("a váz valódi tartalma", () => {
 
     const doboz = document.querySelector('[data-vaz-szakasz="valaszto"]')
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  /**
+   * A KAPCSOLATFELVETEL DOBOZ -- HAROM ALLITAS, ES A HARMADIK TAGADO.
+   *
+   * Az elso ketto azt meri, ami OTT VAN. A harmadik azt, ami szandekosan NINCS:
+   * a terv termek-specifikus mondata. Enelkul egy kesobbi kor "kiegeszithetne" a
+   * dobozt egy kitalalt mondattal, es semmi nem szolna -- a doboz tovabbra is
+   * telinek szamitana, es a ket meglevo allitas zold maradna.
+   */
+  it("a kapcsolatfelvétel doboz a bolt telefonszámát viseli, hívható linkként", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const link = screen.getByTestId("vaz-kerdezd-telefon")
+    expect(link).toHaveTextContent(TELEFON_MEGJELENITVE)
+    expect(link).toHaveAttribute("href", TELEFON_HIVAS)
+  })
+
+  it("a telefonszám réz SZÍNŰ szövegen áll, nem a felület tokenjén", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    expect(screen.getByTestId("vaz-kerdezd-telefon")).toHaveStyle({
+      color: "var(--terv-kiemel-tinta)",
+    })
+  })
+
+  it("a doboz NEM tartalmaz termék-specifikus mondatot", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="kerdezd"]')
+    const szoveg = (doboz?.textContent ?? "").replace(/\s+/g, " ").trim()
+
+    /*
+     * A doboz szovege a CIME es a TELEFONSZAM, semmi mas. Barmi tovabbi mondat
+     * csak kitalalt lehet: a tervbeli ket valtozat ("Ez a torzs 2019 ota nalunk
+     * no...", "Tobb mint 20 akvariumot szereltunk fel...") termek-tudason all,
+     * ami egyetlen mezobol sem vezetheto le.
+     */
+    const cim = "Kérdezd minket"
+    expect(szoveg).toBe(`${cim}${TELEFON_MEGJELENITVE}`)
   })
 
   it("a tizennégy doboz akkor is mind ott áll, ha csak a fele kap tartalmat", () => {
