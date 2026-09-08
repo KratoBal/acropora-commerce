@@ -1046,6 +1046,20 @@ const LapVaz = ({
                        * terv LAP-erteke, nem a panelé. Emiatt a panel SOTETEBB
                        * volt a lapnal, holott a tervben VILAGOSABB -- a viszony
                        * meg volt forditva, es ezt egyetlen allitas sem merte.
+                       *
+                       * === A KET VILAG ELLENTETES IRANYBA VALASZT EL, ES EZ NEM ELIRAS ===
+                       *
+                       * SOTETBEN a panel (0.205) VILAGOSABB a lapnal (0.17).
+                       * VILAGOSBAN a panel (0.955) SOTETEBB a lapnal (0.99).
+                       *
+                       * Nem javitjuk, mert nincs mihez: a tervben KET vilagos lap
+                       * all (1a es 1b), es EGYIKEN SINCS ilyen panel (nulla darab
+                       * `border` plusz `padding:24px` doboz, merve 2026-09-08). A
+                       * tervnek tehat NINCS allitasa a vilagos panel tonusarol.
+                       *
+                       * Ha most "kijavitanank", egy sajat dontes kerulne a terv
+                       * helyere, es a kovetkezo olvaso tervbeli ertekkent olvasna.
+                       * Amikor lesz vilagos panel a tervben, AKKOR dol el.
                        */
                       background: "var(--terv-hatter-halvany)",
                       padding: "16px",
