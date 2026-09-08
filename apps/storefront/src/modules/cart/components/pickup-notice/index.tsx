@@ -46,7 +46,7 @@ export default function PickupNotice({
     >
       <span
         className="text-[10.5px] font-semibold uppercase tracking-wide"
-        style={{ color: "var(--terv-kiemel)" }}
+        style={{ color: "var(--terv-kiemel-tinta)" }}
       >
         {PICKUP_TITLE}
       </span>

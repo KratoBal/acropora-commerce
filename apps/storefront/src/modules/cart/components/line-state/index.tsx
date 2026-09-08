@@ -41,7 +41,7 @@ export default function CartLineState({
         <LocalizedClientLink
           href={similarHref}
           className="w-fit text-xs underline"
-          style={{ color: "var(--terv-kiemel)" }}
+          style={{ color: "var(--terv-kiemel-tinta)" }}
         >
           {SIMILAR_PIECES_LABEL}
         </LocalizedClientLink>
