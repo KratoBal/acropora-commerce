@@ -246,6 +246,34 @@ describe("a terv megerositett ertekei", () => {
    * MIND A KET epulo lap akcentje, csak vilagonkent mas ertekkel -- es epp ezert
    * van a `--terv-kiemel` tokennek ket erteke (0.55 vilagos, 0.62 sotet).
    *
+   * === ES A KERDES, AMI A NYUGDIJAZAS INDOKAT UJRANYITOTTA (acrobot, msg 15318) ===
+   *
+   * Az indok ez volt: "ket akcent egy lapon rosszabb, mint egy kovetkezetes".
+   * Ezt akkor hoztuk, amikor a SAJAT szin-dontesunkon alltunk. Amikor a terv
+   * szineit is atvettuk, a premissza megvaltozott: mar nem mi valasztunk,
+   * hanem a terv mondja meg -- tehat le kellett merni, HANY akcent all EGY
+   * lapon a tervben.
+   *
+   * A MERES BARMILYEN akcentre keres, nem csak a rezre es a kekre. Minden
+   * `oklch` erteket telitettseg szerint valogat: a semleges szurkek kromaja
+   * 0.02 alatt van, az akcenteke 0.09 folott.
+   *
+   *   2a  hue 45  (rez)                    21 elofordulas   -> EGY akcent
+   *   1b  hue 45  (rez)                    20 elofordulas   -> EGY akcent
+   *   1a  hue 210 (kek) 18 es hue 150 (zold) 2               -> KETTO
+   *
+   * KONTROLL A KUSZOBRE: a 0.02 es 0.05 kozotti sav MIND A HAROM lapon URES.
+   * Nincs hatareset, amit a kuszob csendben az egyik oldalra tett volna -- a
+   * tervben a szinek vagy semlegesek, vagy hatarozottan akcentek.
+   *
+   * VAGYIS A NYUGDIJAZAS INDOKA ALL, es most mar nem a mi izlesunkon: a KET
+   * lap, amit epitunk, egyenkent EGY akcentet hasznal. A masodik akcent
+   * kizarolag az 1a-n all, ami az elvetett valtozat.
+   *
+   * Ezert nem hozzuk vissza. Ha valaha megis felmerul, ez a bekezdes mondja
+   * meg, mit kell ujramerni: nem azt, hogy letezik-e a szin, hanem hogy egy
+   * EPULO lapon all-e ketto.
+   *
    * Ez KIEGESZITES, nem helyesbites: a mondat nem volt hamis, csak kevesebbet
    * mondott, mint amennyit sugallt. A ketto kozott a rekordban kulonbseg van --
    * egy kiegeszites, ami "helyesbitesnek" nevezi magat, azt hiteti a kesobbi
