@@ -342,12 +342,31 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  *   kiegeszitok       NINCS ilyen doboz a korall valtozatban -- de a dobozt
  *                     MEGIS meghagyjuk, lasd az indoklast lentebb
  *
- * EGYETLEN CIM NEM A TERVBOL VALO, ES EZT KIMONDOM: a `muszaki-adatok` doboz
- * a tervben MINDKET valtozatban cim NELKUL all (a muszakinal "Teljesitmeny 160 W
- * ...", a korallnal "Nehezseg Halado, Fenyigeny ..."). A "Muszaki adatok" cimet
- * a mi vazunk tette ra. Korallra az szo szerint rossz, ezért a MERT TARTALOMBOL
- * vezettem le: tartasi parameterek. Ha ez nem tetszik, EZ AZ EGY sor cserelendo,
- * es a tobbi a tervbol all.
+ * EGYETLEN CIM NEM A TERVBOL VALO: a `muszaki-adatok` doboz SOTET valtozata.
+ * A 2a lapon nincs cimzett parameter-szakasz -- azon a magassagon a fulsor all
+ * (top=1387), a parameter-doboz pedig cim nelkul kezdodik, rogton a "Nehezseg"
+ * cellaval (top=1423). A "Tartasi parameterek" cimet ezert a MERT TARTALOMBOL
+ * vezettem le. Ha ez nem tetszik, EZ AZ EGY sor cserelendo.
+ *
+ * A VILAGOS CIM VISZONT A TERVBOL VALO, ES EZ EGY JAVITAS.
+ *
+ * Ez a bekezdes korabban azt allitotta, hogy a doboz a tervben MINDKET
+ * valtozatban cim nelkul all, tehat a "Muszaki adatok" cimet is mi tettuk ra.
+ * Hamis: az 1a lapon SZAKASZCIM (top=3626, 1352x233, cimmel es alcimmel), az
+ * 1b-n FUL, es csak a 2a-n nincs sehol. Ez a harmas bontas ott all fentebb, a
+ * laponkenti listaban -- vagyis a cafolat KETSZAZ SORRAL FELJEBB, UGYANEBBEN A
+ * FEJLECBEN keletkezett, es a hamis mondat mellette maradt eletben.
+ *
+ * MIERT CSUSZTAM EL: az 1a lapon HAROM helyen allnak muszaki cellak -- a
+ * cimzett szakasz (3626), egy oldalsavi blokk (5667) es a fulsor alatti tabla
+ * (5972). Az utobbi ketto CIM NELKUL kezdodik, rogton a "Teljesitmeny 160 W"
+ * cellaval, es en ezt a kettot lattam. Harombol kettot mertem, es "mindket
+ * valtozatra" mondtam ki: a hatokoromnel TAGABB allitast tettem.
+ *
+ * A KOD EGY SORA SEM VALTOZIK ettol: a vilagos cim eddig is "Muszaki adatok"
+ * volt, csak rossz indokkal allt itt. A tervbeli alcim ("Gyartoi adatlap
+ * alapjan. Kerdes eseten hivj minket") nalunk nincs meg -- felirva, nem
+ * potolva, mert kitalalni nem szabad.
  */
 const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
   foto: { varakozo: "Saját fotó: ez a példány" },
