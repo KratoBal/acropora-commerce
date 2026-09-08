@@ -69,7 +69,7 @@ describe("a kosár keret-tokenjei", () => {
 })
 
 /**
- * A KOSAR RACSA A MERT ARANYOKAT VISELI.
+ * A KOSAR RACSA A MERT SZAMOKAT VISELI -- ES FIX SAVKENT, NEM ARANYKENT.
  *
  * Nautilus geometriai kinyerese a kosar tervlapjarol: a 856 szeles doboz
  * x=514-nel all (jobb szele 1370), a 452 szeles x=1414-nel -- a koz tehat 44.
@@ -91,8 +91,27 @@ describe("a kosár rácsa", () => {
     expect(forras).toContain("grid-cols-1")
   })
 
-  it("a két oszlop aránya a mért 856/452", () => {
-    expect(forras).toContain("grid-cols-[856fr_452fr]")
+  /**
+   * A JOBB OSZLOP FIX SAV, NEM ARANY.
+   *
+   * Korabban `856fr_452fr` allt itt, es ez az allitas azt rogzitette. A terv
+   * nyers forrasa mind a ket lapon a FIX alakot adja (`minmax(0,1fr) 452px`);
+   * a 856 a BAL oszlop kovetkezmenye 1440 pixelen (1440 - 44 - 452), amit
+   * aranykent olvastunk vissza. Egy szelessegen a ketto majdnem egyforma
+   * (440,953 kontra 452), ezert allt evekig eszrevetlen.
+   *
+   * A TAGADAST A RACS SORARA MERJUK, NEM A FAJLRA: a sablon kommentje IDEZI a
+   * regi alakot, hogy elmondja, mi volt ott. Egy fajl-szintu `not.toContain`
+   * ettol pirosodna, holott a kod helyes -- a javito szoveg idezi a regit.
+   */
+  it("a jobb oszlop fix 452 pixeles sáv, nem arány", () => {
+    const racsSor = forras
+      .split("\n")
+      .find((sor) => sor.includes("grid-cols-1"))
+
+    expect(racsSor).toBeDefined()
+    expect(racsSor).toContain("grid-cols-[minmax(0,1fr)_452px]")
+    expect(racsSor).not.toContain("856fr")
   })
 
   /**

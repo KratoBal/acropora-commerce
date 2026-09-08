@@ -74,18 +74,24 @@ const CartTemplate = ({
           osztas 440,953-at ad. KET szelessegen derul ki, hogy azonos marad az
           arany (1,894), ami fix savnal lehetetlen. (picasso merese.)
 
-          === A KOD ITT MEGIS VALTOZATLAN, ES EZ TUDATOS ===
+          === ES A KOSAR IS ATALLT A FIX ALAKRA (2026-09-08) ===
 
-          A termeklap vaza 2026-09-08-tol a mert fix alakot viseli. A KOSAR nem:
-          az elrendezes-valtozas latszik a vevonek, es ez a kor a termeklaprol
-          szolt. A javitas egy sor, es acrobot dontesere var.
+          Itt korabban az allt, hogy a javitas acrobot dontesere var. Megjott
+          (msg 15684: kulon PR-ben, a termeklap visszamerese utan), es ez az.
 
-          Amit viszont nem lehetett igy hagyni, az a fenti mondat: egy hamis
-          allitas, ami MERESNEK nevezi magat ("kereszt-kontroll"), tobbet art,
-          mint a hianyzo javitas -- a kovetkezo olvaso nem merne ujra.
+          MIT VALTOZTAT EZ A VEVONEK: a jobb oszlop eddig egyutt nott a
+          kepernyovel, mostantol minden szelessegen 452 pixel, a bal oszlop
+          nyeli el a kulonbseget. 1440 pixelen a valtozas 30 pixel korul van
+          (az aranyos osztas ott 440,953-at adott), szelesebb kepernyon tobb.
+
+          A TORESPONT (`small:`) SZANDEKOSAN VALTOZATLAN. Ez a kor az OSZTAS
+          alakjarol szol, nem arrol, HOL all ket oszlopba a lap -- ket dolgot
+          egy korben megvaltoztatni annyi, hogy egyik meresrol sem tudni, melyik
+          okozta. A `line-state` szerif-toresponja ugyanerre a `small:`-re
+          hivatkozik, tehat az az indoklas is all tovabb.
         */}
         {cart?.items?.length ? (
-          <div className="grid grid-cols-1 small:grid-cols-[856fr_452fr] small:gap-x-[44px]">
+          <div className="grid grid-cols-1 small:grid-cols-[minmax(0,1fr)_452px] small:gap-x-[44px]">
             <div className="flex flex-col bg-white py-6 gap-y-6">
               {/*
                 AZ ATVETELI SAV A LISTA FOLOTT ALL, es ez a terv kikotese: a
