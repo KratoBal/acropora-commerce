@@ -1,0 +1,107 @@
+/**
+ * A GONDOZOTT KAPCSOLATOK OLVASASA A TERMEK METAADATABOL.
+ *
+ * === MIERT LETEZIK EZ A FAJL, ES MIERT TISZTA FUGGVENYEKBOL ALL ===
+ *
+ * A kapcsolatok az Acropora OS adatbazisaban keletkeznek (`ProductRelation`), es
+ * a Medusa Store termekenek NINCS termek-termek kapcsolat fogalma: a
+ * `StoreProduct` harminchat mezoje kozott egy sincs. Merve 2026-09-08 a
+ * tipuscsomagon. A lehetseges hordozok: `metadata`, `tags`, `collection`,
+ * `categories`, `type`, `external_id`.
+ *
+ * A dontes az "A" ut lett (acrobot, msg_id 14892): a `metadata` AZONOSITOKAT
+ * hordoz, es a kirakat egy MASODIK lista-lekerdezessel hozza el a termekeket.
+ * Egy lekerdezessel szerkezetileg nem megy: a kapcsolodo termek cime, kepe es
+ * ara a SAJAT rekordjan all.
+ *
+ * A `tags` utat egy MERT korlat zarta ki, nem izles: a `tag_id` szuro
+ * HALMAZ-TAGSAGOT mer, a "hasonlo" es a "kiegeszito" viszont ket kulonbozo,
+ * IRANYITOTT relacio ugyanazon termekek kozott.
+ *
+ * === A SZERZODES, ES HOGY KET OLDALON KELL EGYEZNIE ===
+ *
+ * A kulcs nevet ITT egyetlen konstans mondja meg, es a MEDUSA-VETITESNEK (az
+ * Acropora OS oldalan) UGYANEZT a sztringet kell irnia. Ez pontosan az az alak,
+ * amit a repo jegyzetei "egy szabaly ket helyen" neven gyujtenek: ha a ket
+ * oldal elcsuszik, semmi nem hibazik -- a doboz egyszeruen nem jelenik meg,
+ * es a hiba NEMA.
+ *
+ * Amit ez a fajl tehet ellene: a nevet EGY helyen mondja ki, exportalva, hogy a
+ * masik oldal hivatkozhasson ra, ne masolja.
+ *
+ * === A TIZENKETTES HATAR NEM ESZTETIKA ===
+ *
+ * A `metadata` MINDEN termek-valaszon utazik, a LISTAKON is. A katalogusban
+ * termekenkent atlagosan ~17 kapcsolat all (acrobot es barracuda merese), es
+ * van mert precedensunk arra, mi tortenik, ha egy valasz elszall: a
+ * kategoria-lekerdezes `*products`-szal 144 megabajtot huzott, a Next.js
+ * gyorsitotar hatara 2 megabajt, es a bolt kifele 503-at adott.
+ *
+ * Ezert a hatar itt all, az OLVASO oldalon is: ha az iro oldal valaha tobbet
+ * tenne bele, a kirakat akkor sem visz tobbet a lekerdezesbe.
+ */
+
+/**
+ * A METAADAT-KULCS. Az iro oldalnak (a Medusa-vetitesnek) ugyanezt kell irnia.
+ *
+ * Az `unas_` elotag a vetites mai konvencioja minden UNAS-bol szarmazo mezore
+ * (`unas_unit`, `unas_minimum_order_quantity`, `unas_product_url`), es a
+ * kapcsolatok is onnan jonnek.
+ */
+export const HASONLO_KULCS = "unas_similar_ids"
+
+/** A doboz ennyit tud megmutatni, es ennyi utazhat a metaadatban. */
+export const KAPCSOLAT_HATAR = 12
+
+/**
+ * AZONOSITOK KIOLVASASA -- ES MINDEN LEPES EGY MERT OKBOL VAN ITT.
+ *
+ * A `metadata` erteke a Medusaban SZTRING, tehat a lista elvalasztott alakban
+ * utazik. A tisztitas nem ovatoskodas: egy ures elem a lekerdezesben ures
+ * `id` szurot adna, es az a szuro NEM szur -- vagyis a doboz ujra a katalogus
+ * elejet mutatna, pontosan azt az allapotot, amit ez a valtozas megszuntet.
+ */
+export function hasonloAzonositok(
+  metadata: Record<string, unknown> | null | undefined,
+): string[] {
+  const nyers = metadata?.[HASONLO_KULCS]
+  if (typeof nyers !== "string") return []
+
+  const latott = new Set<string>()
+  const ki: string[] = []
+  for (const darab of nyers.split(",")) {
+    const id = darab.trim()
+    if (!id || latott.has(id)) continue
+    latott.add(id)
+    ki.push(id)
+    if (ki.length === KAPCSOLAT_HATAR) break
+  }
+  return ki
+}
+
+/**
+ * A KERT SORRENd HELYREALLITASA -- ES EZ NEM KENYELMI LEPES.
+ *
+ * Merve a bolt vegpontjan (acrobot, msg_id 14892): a tobbertekes `id` szuro
+ * MINDET visszaadja (negyvenes kotegig mérve, nulla hianyzoval), de a valasz
+ * SORRENDJE FUGGETLEN a kert sorrendtol -- forditva megadott azonositokra
+ * ugyanazt a valasz-sorrendet adta.
+ *
+ * A gondozott listanak van sorrendje. Ha ez a lepes kimarad, a doboz MUKODIK,
+ * csak mas sorrendben -- es senki nem veszi eszre. Ezert all ra kulon allitas.
+ *
+ * Ami a kert azonositok kozott nincs a valaszban (torolt vagy nem publikalt
+ * termek), az KIMARAD: a lista rovidebb lesz, nem lyukas.
+ */
+export function kertSorrendben<T extends { id: string }>(
+  termekek: readonly T[],
+  azonositok: readonly string[],
+): T[] {
+  const idSzerint = new Map(termekek.map((t) => [t.id, t]))
+  const ki: T[] = []
+  for (const id of azonositok) {
+    const talalat = idSzerint.get(id)
+    if (talalat) ki.push(talalat)
+  }
+  return ki
+}
