@@ -55,8 +55,32 @@
  *                export const MEDUSA_SIMILAR_IDS_KEY = "unas_similar_ids"
  *
  * A ket repo kozott NINCS kozos csomag (a kirakat 42 fuggosege kozott nulla
- * workspace-fuggoseg all), tehat nincs kozos futas, amibe egy allitas
- * beleferne. Ha a ket sztring elter, a hasonlo-doboz CSENDBEN ures marad.
+ * workspace-fuggoseg all), tehat egyik repo SAJAT futasaba sem fer bele egy
+ * allitas, ami a masikat is latna. Ha a ket sztring elter, a hasonlo-doboz
+ * CSENDBEN ures marad.
+ *
+ * DE ATTOL MEG VAN ORZO, ES EZT A MEGJEGYZES ELOSZOR ELHALLGATTA -- HELYESBITVE.
+ *
+ * Barracuda 2026-09-08 delelott megirta, es a kozos mappaban all:
+ *
+ *     bash /home/marveen/marveen/scripts/hasonlo-kulcs-orzo.sh
+ *
+ * A GitHub API-rol olvassa MINDKET repo fo agat (nincs klon, nincs ref, tehat
+ * nincs mihez kepest elavulni), es nem csak a KULCSOT veti ossze, hanem az
+ * ELVALASZTOT is -- annak az elcsuszasa meg nemabb lenne: a doboz megjelenne,
+ * csak nulla termekkel. Harom kilepesi kodja van, es a harmadik a lenyeg:
+ * 0 egyezik, 1 elcsusztak (nev szerint), 2 NEM MERHETO -- mert egy atnevezett
+ * konstans nulla talalatot ad, es a naiv osszevetes ilyenkor ZOLDET adna.
+ * Mindket irany kulon kalibralva. Napi utemezesben fut.
+ *
+ * AMIT AZ ORZO MA NEM FED: a `KIEGESZITO_KULCS`-ot (lasd lentebb) -- arra ma
+ * nulla emlites all benne, ismert pozitiv kontrollal merve (a hasonlo kulcsra
+ * ot). Es azt sem, hogy az adat TENYLEGESEN atmegy-e; azt csak a bolt oldalan
+ * lehet megnezni.
+ *
+ * EZ A MEGJEGYZES TEHAT NEM AZ EGYETLEN VEDELEM, HANEM A MASODIK: az orzo a
+ * SZTRINGEK egyezeset meri, ez a sor pedig annak szol, aki ATNEVEZ -- hogy
+ * tudja, hol a masik fele, mielott a napi futas rasz olna.
  *
  * MERVE 2026-09-08 (nautilus), ket kalibracioval:
  *   ha CSAK ez a konstans csuszik el, ket allitas pirosodik nev szerint a
