@@ -371,6 +371,27 @@
 }
 
 /*
+ * A LAP FOLDJE, ES AMIERT EZ NEM A VAZ DOLGA (2026-09-08).
+ *
+ * A vaz sajat, teljes szelessegu feluletet fest (a #203 ota), de az CSAK a
+ * termeklap tartalmi sikjara terjed ki. A fejlec FOLOTTE, a lablec ALATTA all,
+ * es azok alatt eddig a bongeszo alapertelmezese latszott: TISZTA FEHER. A lap
+ * teteje es alja igy nem a terv foldjen ult.
+ *
+ * ITT A VILAGOS ERTEK SZOLGAL KI MINDEN LAPOT, es ez szandekos: a `data-vilag`
+ * jelolot a vaz teszi ki a lapon BELUL, tehat ide nem er el. A termeklap
+ * tartalmi sikjat amugy is a vaz festi -- ez a szabaly azt a savot rendezi,
+ * ami a vazon KIVUL esik, es az minden lapon vilagos.
+ *
+ * CSAK A HATTER, A SZOVEGSZIN NEM. Egy globalis `color` a starter osszes
+ * `text-ui-*` osztalyaval versenyezne, es a valtozas ott latszana, ahol senki
+ * nem keresne. A szoveg szinet a komponensek adjak, ahol az ertek LAKIK.
+ */
+body {
+  background: var(--terv-hatter);
+}
+
+/*
  * A MASODIK ERTEK-KESZLET: A SOTET LAP.
  *
  * EGY VAZ, KET ERTEK-KESZLET -- es a valto NEM izles es nem felhasznaloi
