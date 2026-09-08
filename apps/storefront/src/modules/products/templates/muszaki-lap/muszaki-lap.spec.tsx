@@ -405,3 +405,57 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
     expect(forras).toContain("availabilityLabel.KAPHATO")
   })
 })
+
+/**
+ * A MORZSAMENU ATADASA -- ES AMIT KULON MERNI KELL: A REGI HELYE ELTUNT-E.
+ *
+ * A slot megepitese onmagaban nem mozditja el a morzsamenut. Ha a sablon
+ * ATADJA a slotot, DE a regi `content-container` doboz is ottmarad, akkor a
+ * lapon KET morzsamenu all: egy a vilagos savban, egy a sotet feluleten. Ez
+ * nem hibazna es nem hasalna el -- csak ketszer latszana.
+ *
+ * Ezert ket allitas all itt, nem egy: hogy a slot MEGY, es hogy a regi hely
+ * CSAK a masik agban maradt meg.
+ */
+describe("a morzsamenü átadása a váznak", () => {
+  const forras = kodSzoveg(
+    readFileSync(join(__dirname, "..", "index.tsx"), "utf-8"),
+  )
+
+  /**
+   * ISMERT POZITIV KONTROLL -- ES AZ ELSO ALAKJA NEM AZ VOLT.
+   *
+   * Eloszor a morzsamenuk SZAMAT is ez az allitas tartalmazta, es a
+   * kalibracion kiderult, hogy ettol nem kontroll: mind a harom rontas
+   * elvitte, mert mind a harom epp azt a szamot mozditja. Egy kontroll, ami a
+   * vizsgalt dologgal egyutt mozdul, nem mond semmit arrol, hogy a meres
+   * megtortent-e.
+   *
+   * Igy most CSAK azt allitja, hogy a fajlt tenyleg beolvastuk, es tenyleg a
+   * termeklap sablonja az. A szam kulon allitas lett alatta.
+   */
+  it("a forrás olvasható, és tényleg a termékoldal sablonja", () => {
+    expect(forras).toContain("MuszakiLap")
+    expect(forras).toContain("hasznaljaVazat")
+  })
+
+  it("három helyen áll morzsamenü: két váz-példány és az élő állat ága", () => {
+    expect(forras.match(/<ProductBreadcrumb/g)).toHaveLength(3)
+  })
+
+  it("a váz mindkét példánya megkapja a morzsamenüt", () => {
+    expect(forras.match(/morzsaResz=\{/g)).toHaveLength(2)
+  })
+
+  /**
+   * A REGI HELY CSAK EGYSZER MARADT MEG, ES AZ A MASIK AG.
+   *
+   * A `kodSzoveg` kiszedi a megjegyzeseket, tehat az a bekezdes, amelyik ezt a
+   * koltozest INDOKOLJA es kozben leirja a regi alakot, nem szamit bele. Ez
+   * nem reszletkerdes: egy javito szoveg, ami idezi a regit, mar tobbszor
+   * dontott el nalam hamisan egy hiany-allitast.
+   */
+  it("a régi hely csak az élő állat ágában maradt", () => {
+    expect(forras.match(/className="content-container pt-6"/g)).toHaveLength(1)
+  })
+})

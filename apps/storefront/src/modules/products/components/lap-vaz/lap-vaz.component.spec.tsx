@@ -933,3 +933,50 @@ describe("a panel és a lap tónusa", () => {
     expect(kozosPanel().style.background).not.toBe(lap.style.background)
   })
 })
+
+/**
+ * A MORZSAMENU A SOTET FELULETEN BELUL ALL, NEM FOLOTTE.
+ *
+ * AMIT MER: a BEFOGLALAST. Nem azt, hogy letezik a slot, hanem hogy a tartalma
+ * a teljes szelessegu felulet LESZARMAZOTTJA. Ez a kulonbseg a lenyeg: a
+ * morzsamenu eddig is megjelent a lapon, csak a felulet FOLOTT, a vilagos
+ * savban.
+ *
+ * AMIT NEM MER: a festett szint, es azt sem, hogy a morzsamenu maga tokenbol
+ * veszi-e a szineit -- azt a `product-breadcrumb.component.spec` allitja, a
+ * #210 ota. A ketto egyutt ad teljes lancot: ott a SZIN, itt a HELY.
+ */
+describe("a morzsamenü helye a sötét felületen", () => {
+  it("a morzsamenü a teljes szélességű felület LESZÁRMAZOTTJA", () => {
+    render(<LapVaz vilag="sotet" morzsa={<span>Korallok</span>} />)
+
+    const felulet = screen.getByTestId("lap-teljes-szelesseg")
+    const sav = screen.getByTestId("lap-morzsa-sav")
+
+    expect(felulet.contains(sav)).toBe(true)
+    expect(sav.textContent).toContain("Korallok")
+  })
+
+  /**
+   * A MASIK AG. Enelkul az elso allitas nem mondana meg, hogy a sav a MORZSA
+   * miatt all ott, vagy mindig. Egy `getByTestId`, ami mindig talal, nem meri
+   * a feltetelt -- csak azt, hogy a lap felepul.
+   */
+  it("morzsamenü nélkül nincs sáv", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(screen.queryByTestId("lap-morzsa-sav")).toBeNull()
+  })
+
+  /**
+   * A SAV SZELESSEGE A RACSEVAL EGYEZIK, es ez nem kozmetika: ha a morzsamenu
+   * a burok szelere futna ki, a lap teteje mas margoval indulna, mint a
+   * tartalom alatta.
+   */
+  it("a sáv ugyanazt az 1352 pixeles mértéket tartja, mint a rács", () => {
+    render(<LapVaz vilag="sotet" morzsa={<span>x</span>} />)
+
+    expect(screen.getByTestId("lap-morzsa-sav").style.maxWidth).toBe("1352px")
+    expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1352px")
+  })
+})
