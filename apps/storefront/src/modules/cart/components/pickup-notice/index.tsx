@@ -53,7 +53,10 @@ export default function PickupNotice({
       <p className="text-[15px] font-semibold">{PICKUP_LEAD}</p>
       <p
         className="text-[12.5px] leading-relaxed"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
+        style={{
+          color: "var(--terv-szoveg-halvany)",
+          fontFamily: "var(--terv-betu-kiemelt-lanc)",
+        }}
       >
         {PICKUP_REASON}
       </p>
