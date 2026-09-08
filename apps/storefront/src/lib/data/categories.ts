@@ -220,9 +220,39 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
  * van mit nezni.
  *
  * A SZAM A TELJES RESZFARA ERTENDO, nem a kozvetlenul rakotott termekekre.
- * Az "Edesvizi akvarisztika" ag onmaga plusz negy alkategoria, es MIND ures --
- * a kozvetlen szamlalas ugyanezt adna, de a "Termekek" gyokeret 1337 helyett
- * 9-nek latna, es kiesne a legfontosabb tetel.
+ *
+ * === ITT KORABBAN EGY ROSSZ INDOK ALLT (javitva 2026-09-08 este) ===
+ *
+ * Az allt itt, hogy a kozvetlen szamlalas a "Termekek" gyokeret "1337 helyett
+ * 9-nek latna, es kiesne a legfontosabb tetel". Visszamerve MIND A KET fele
+ * hibas:
+ *
+ *   a kozvetlen szam nem 9, hanem 1279 (merve a teszt bolton, a gyokerhez
+ *     KOZVETLENUL rendelt termekek szama)
+ *   es 9 is atmenne a "nulla felett" szuron, tehat nem esne ki semmi
+ *
+ * A MAI ADATON a ket szamolas UGYANAZT a negy gyokeret valasztja ki:
+ *
+ *     gyoker                  kozvetlen   reszfa
+ *     Termekek                     1279     1337
+ *     Halak                         125      125
+ *     Gerinctelenek                  27       28
+ *     Korallok                        8        8
+ *     Shop 'n the Shop                0        0
+ *     Edesvizi akvarisztika           0        0
+ *
+ * === AMIERT A RESZFA MEGIS A HELYES SZABALY ===
+ *
+ * Nem azert, mert ma kulonbseget tesz -- ma nem tesz. Hanem mert egy olyan
+ * gyoker, aminek MINDEN termeke alkategoriaban ul, kozvetlen szamlalassal
+ * nullat adna, es CSENDBEN kiesne a menubol. Ez ma nem all fenn, de a szabaly
+ * ELORE vedi ki, es nem kerul semmibe: ugyanaz az egy lekerdezes.
+ *
+ * (Egy meresi buktato hozza, hogy ne kelljen ujra felfedezni: a reszfa szamat
+ * NEM szabad a kozvetlen szamok OSSZEADASAVAL kiszamolni. Egy termek tobb
+ * szinten is be van sorolva, tehat az osszeg duplan szamol -- nalam igy
+ * "Termekek" 4473-at adott 1337 helyett. A helyes szam az API `count` mezoje
+ * a teljes reszfara kerdezve, es a lenti kod epp azt teszi.)
  *
  * === A LEKERDEZESEK SZAMA SZANDEKOSAN ALACSONY ===
  *
