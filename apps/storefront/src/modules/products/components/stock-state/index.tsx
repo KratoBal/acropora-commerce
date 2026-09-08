@@ -64,15 +64,29 @@ export default function StockState({
           Eladva tenykozles, nem hibauzenet. Csak a szurke forrasa lett a
           token.
         */}
+        {/*
+          AZONOSITO MIND A KETTON, HOGY ALLITAST LEHESSEN RAJUK IRNI.
+
+          A ket span eddig azonosito NELKUL allt, es emiatt EGYETLEN allitas sem
+          mutatott rajuk: a token-fedettseg merese (2026-09-08) huszonharom
+          fedetlen style-node-ot talalt, es ez ketto volt kozuluk.
+
+          Az azonosito nem dekoracio: azonosito nelkul a spec csak a SZOVEGRE
+          tud hivatkozni, es akkor egy felirat-javitas ELVISZI a szin-allitast
+          is -- vagyis a ket dolog egyutt romlana el, holott kulon-kulon
+          valtoznak.
+        */}
         <span
           className="text-sm font-semibold"
           style={{ color: "var(--terv-szoveg)" }}
+          data-testid={testId + "-eladva-cimke"}
         >
           {availabilityLabel.ELADVA}
         </span>
         <span
           className="text-xs leading-relaxed"
           style={{ color: "var(--terv-szoveg-halvany)" }}
+          data-testid={testId + "-eladva-magyarazat"}
         >
           {SOLD_OUT_EXPLANATION}
         </span>

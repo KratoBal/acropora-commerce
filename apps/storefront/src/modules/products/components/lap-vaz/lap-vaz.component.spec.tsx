@@ -471,6 +471,36 @@ describe("az élő állat lap feliratai", () => {
  * A jóslatomban ez a lehetőség előre le volt írva, ezért nem "nincs baj"-nak
  * olvastam a nulla pirosat, hanem hiányzó állításnak.
  */
+/**
+ * A VARAKOZO SZOVEG A MASODLAGOS SZOVEG-TOKENEN ALL -- ES EZ A HARMADIK
+ * FEDETLEN NODE.
+ *
+ * A token-fedettseg merese (2026-09-08) huszonharom style-node-ot talalt, amire
+ * semmilyen allitas nem mutat. Ketto a `stock-state`-ben allt (azoknak
+ * azonositot is kellett adni), ez a harmadik viszont MAR VISELT azonositot
+ * (`vaz-varakozo`) -- csak nem allitott rola senki semmit.
+ *
+ * MIERT EPP EZ A TOKEN, ES MIERT NEM A BETU-LANC: az elso valtozatom a
+ * betu-lancot allitotta, es KALIBRACIOVAL derult ki, hogy DISZLET -- a lancot
+ * elveve NULLA allitas fordult pirosra. A `vaz-varakozo` elem nem visel
+ * betu-lancot; azt a doboz CIME (`h2`) es a kulso kontener viseli. Az elso
+ * allitasom tehat olyat mert, ami nincs ott.
+ *
+ * MIERT SZAMIT EZ AZ ALLITAS: a varakozo szoveg SZANDEKOSAN halvanyabb a
+ * kesznel -- ez kulonbozteti meg a meg ures dobozt a tolttol. Ha a token
+ * elcsuszik a fo szoveg-szintre, a doboz KESZNEK latszik, es epp azt veszitjuk
+ * el, amit a szaggatott keret is jelol.
+ */
+describe("a váz várakozó szövege", () => {
+  it("a várakozó szöveg a másodlagos szöveg-tokenen áll", () => {
+    render(<LapVaz />)
+
+    expect(screen.getAllByTestId("vaz-varakozo")[0]).toHaveStyle({
+      color: "var(--terv-szoveg-halvany)",
+    })
+  })
+})
+
 describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
   const feliratok = () =>
     Array.from(document.querySelectorAll("[data-vaz-szakasz]"))
