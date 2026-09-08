@@ -188,6 +188,25 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
    *     visszabillentesekor tehat NINCS halo alatta: az elso dolog egy olyan
    *     allitas legyen, ami RENDERELI.
    *
+   *   MI RENDEREL ROSSZUL, AMINT FELEBRED
+   *     A `RelatedProducts` fejlece (`Hasonlo termekek`) egy BEIRT vilagos
+   *     szurke erteken all (`text-gray-600`, a komponens 88. sora). Az elo ag
+   *     ezt nem mutatja, mert a vaz aga a `fejlecNelkul` kapcsoloval hivja --
+   *     EZ az ag viszont kapcsolo nelkul hivja, tehat a fejlec megjelenik, es
+   *     a sotet lapon vilagos szurke szoveg lesz sotet hatteren.
+   *
+   *     Merve 2026-09-08, import-lezarassal a sablon belepesi pontjabol: ez az
+   *     EGYETLEN olyan beirt szin-ertek, amit a visszagordules KAPCSOL BE. A
+   *     tobbi 21, ami a sotet lapon ma is renderel, mindket agon ugyanaz (a
+   *     `common/components/ui` Button es Container ertekei, a mobil sav, a ket
+   *     varakozo vaz es a valaszto vonal) -- azok nem ehhez a kapcsolohoz
+   *     tartoznak, es nem is a termeklap sajatjai.
+   *
+   *     AMIERT EZ ITT ALL, ES NEM EGY KARTYAN: a visszagordules az a pillanat,
+   *     amikor a legkevesbe nezi meg valaki a szineket -- baj van, vissza kell
+   *     allni. Aki akkor atbillenti a kapcsolot, ezt a fejlecet olvassa, nem
+   *     egy hetekkel korabbi meresi jelentest.
+   *
    * ES AMIERT EZ MA MEGIS SPOROL: aki egy javitast vegez a termeklapon, ezen az
    * agon NEM kell atvezetnie. Egy "ott is javitani kell" kor felesleges --
    * egeszen addig, amig a kapcsolo all.
