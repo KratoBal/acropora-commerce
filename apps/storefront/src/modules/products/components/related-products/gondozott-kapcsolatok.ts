@@ -76,6 +76,31 @@
 export const HASONLO_KULCS = "unas_similar_ids"
 
 /**
+ * A KIEGESZITOK KULCSA. UGYANAZ A SZABALY, MASIK LISTA.
+ *
+ * PAR: acropora-os apps/api/src/integrations/medusa/medusa-relations.policy.ts:88
+ *      export const MEDUSA_ACCESSORY_IDS_KEY = "unas_accessory_ids"
+ *
+ * Ugyanaz a helyzet, mint a hasonlo kulcsnal: ket repo, kozos csomag nelkul, es
+ * ha a ket sztring elter, a doboz CSENDBEN ures marad. Az indok, amiert a par
+ * a sor mellett all es nem a fajl fejlecben, egy bekezdessel feljebb.
+ *
+ * ES EGY KULONBSEG, AMI SZAMIT: a hasonlo kulcs mar KIMEGY a boltba, ez MEG NEM.
+ * Merve 2026-09-08 19:23:05-kor a teszt bolton, a teljes katalogust
+ * vegiglapozva: 1492 termek, `unas_similar_ids` EGYEN, `unas_accessory_ids`
+ * NULLAN.
+ *
+ * ES EZ NEM IDOZITES, HANEM ADAT: a vetites a kulcsot csak NEM URES listara
+ * irja ki (`medusa-product-projection.service.ts`, `length > 0` feltetel).
+ * Vagyis ugyanaz a termek, amelyik megkapta a hasonlo kulcsot, kiegeszito
+ * kapcsolat NELKUL all -- nem az tortent, hogy a vetites meg nem ert oda.
+ *
+ * Amit ez az olvaso oldalrol jelent: a doboz addig nem jelenik meg, amig a
+ * forrasban nincs ilyen kapcsolat. Ez a HELYES viselkedes, nem hiany.
+ */
+export const KIEGESZITO_KULCS = "unas_accessory_ids"
+
+/**
  * A LISTA ROVIDEBB LEHET, MINT AHANY KAPCSOLAT AZ ACROPORA OS-BEN ALL -- ES EZ
  * A HELYES MUKODES, NEM HIANY.
  *
@@ -111,10 +136,11 @@ export const KAPCSOLAT_HATAR = 12
  * `id` szurot adna, es az a szuro NEM szur -- vagyis a doboz ujra a katalogus
  * elejet mutatna, pontosan azt az allapotot, amit ez a valtozas megszuntet.
  */
-export function hasonloAzonositok(
+export function kapcsolatAzonositok(
   metadata: Record<string, unknown> | null | undefined,
+  kulcs: string,
 ): string[] {
-  const nyers = metadata?.[HASONLO_KULCS]
+  const nyers = metadata?.[kulcs]
   if (typeof nyers !== "string") return []
 
   const latott = new Set<string>()
@@ -127,6 +153,30 @@ export function hasonloAzonositok(
     if (ki.length === KAPCSOLAT_HATAR) break
   }
   return ki
+}
+
+/**
+ * A KET NEVESITETT ALAK. UGYANAZ A MECHANIZMUS, KET KULONBOZO LISTA.
+ *
+ * Nem egy fuggveny "valtozatai", hanem ket kulon dolog: egy termeknek lehet
+ * hasonloja kiegeszito nelkul es forditva. Az iro oldal ugyanigy KET kulon
+ * konstanst tart (`MEDUSA_SIMILAR_IDS_KEY` es `MEDUSA_ACCESSORY_IDS_KEY`), es
+ * ott a megjegyzes kulon kimondja, hogy ez szandekos.
+ *
+ * A kozos TORZS viszont egy, mert a kiolvasas szabalyai azonosak (elvalaszto,
+ * duplikatum-szures, hatar). Ha ketto lenne, az epp az "egy szabaly ket helyen"
+ * alak keletkezne -- ugyanabban a fajlban.
+ */
+export function hasonloAzonositok(
+  metadata: Record<string, unknown> | null | undefined,
+): string[] {
+  return kapcsolatAzonositok(metadata, HASONLO_KULCS)
+}
+
+export function kiegeszitoAzonositok(
+  metadata: Record<string, unknown> | null | undefined,
+): string[] {
+  return kapcsolatAzonositok(metadata, KIEGESZITO_KULCS)
 }
 
 /**
