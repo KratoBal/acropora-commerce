@@ -80,15 +80,48 @@ export default function PickupNotice({
         </ul>
       )}
 
-      <p className="text-[12.5px]" style={{ color: "var(--terv-szoveg)" }}>
-        {SHOP_ADDRESS} · {SHOP_HOURS}
-      </p>
-      <p
-        className="text-[11px]"
+      {/*
+        A HAROM ELEM EGY SORBAN, EGYFORMA SULLYAL (acrobot dontese, msg 15411).
+
+        === MI VOLT ELOTTE, ES MIERT NEM CSAK MERET-KERDES ===
+
+        A cim es a nyitvatartas egy 12.5 pixeles bekezdesben allt `--terv-szoveg`
+        szinnel, a tartas-mondat kulon, 11 pixelen, HALVANY szinnel. Nalunk tehat
+        a tartas HALKABB volt a masik kettonel.
+
+        A tervben mind a harom EGY SOR harom egyenrangu eleme (13.5px, 28 pixel
+        koz, egyetlen szin). Vagyis ma azt uzentuk, hogy a tartas mellekes
+        reszlet; a terv szerint ugyanolyan fontos, mint hogy HOL vagyunk es
+        MIKOR. Egy elo allatot vasarlo vevonek az utobbi a helyes.
+
+        === A MERET A TERV UGYANAZON ELEMEBOL JON, MINT A KEZELES ===
+
+        13.5 pixel, es nem a mi 11-unk vagy 12.5-unk. A kikotes acrobote volt, es
+        az indoka all: ha csak a meret megy at es a kezeles marad a mienk, egy
+        hibrid keletkezik, ami egyikre sem hasonlit.
+
+        A tervbeli HAROM elofordulasbol ezt valasztottuk, mert a HELY dont, nem a
+        meret: ez az egyetlen, ami a fo (856 pixeles) oszlopban all. A masik
+        ketto a jobb oldali osszegzo panelben es a keskeny valtozatban.
+
+        === AMIT SZANDEKOSAN NEM VESZUNK AT: A SZIN ===
+
+        A terv itt `oklch(0.42 0.012 60)` erteket ad, a mi `--terv-szoveg-halvany`
+        tokenunk 0.5. Merve a vilagos lap masodlagos szoveg-csaladjan: 0.42
+        kilencszer, 0.45 tizenegyszer, 0.46 tizenketszer, 0.48 hatszor, 0.5
+        TIZENHETSZER. A mi ertekunk a csalad MODUSZA, a 0.42 egy tagja.
+
+        Egy uj token ebbol a terv SZORASAT masolna at, nem a tervet.
+      */}
+      <div
+        className="flex flex-wrap gap-x-7 gap-y-1 text-[13.5px]"
         style={{ color: "var(--terv-szoveg-halvany)" }}
+        data-testid="pickup-notice-sor"
       >
-        {HOLD_PROMISE}
-      </p>
+        <span>{SHOP_ADDRESS}</span>
+        <span>{SHOP_HOURS}</span>
+        <span>{HOLD_PROMISE}</span>
+      </div>
     </section>
   )
 }
