@@ -29,6 +29,31 @@ export default function CartLineState({
   if (state === "ELKELT") {
     return (
       <div className="mt-1 flex flex-col gap-1" data-testid="cart-line-elkelt">
+        {/*
+          EZ A CSIP SZANDEKOSAN VALTOZATLAN, ES A MERES MONDJA MEG, MIERT.
+
+          Az ELKELT csipnek NINCS asztali tervbeli parja. A kosar-tervben az
+          asztali keret (1440 px) EGYETLEN csipet tartalmaz, az egyedi-peldany
+          csipet; az "ELKELT" nagybetuvel NULLASZOR fordul elo benne. Az egyetlen
+          kisbetus talalat egy szakasz-felirat ("Három állapot -- üres kosár,
+          elfogyott műszaki tétel, elkelt példány"), vagyis a dokumentum sajat
+          annotacioja, nem kosar-tartalom.
+
+          A harom allapotot a terv csak MOBIL szelessegen (390 px) rajzolja meg,
+          es ott a csip igy all: padding 6px 10px, background oklch(0.35 0.018 250),
+          color oklch(0.95 0.006 250), JetBrains Mono 10px/500, betukoz 0.12em.
+
+          AZT NEM VESSZUK AT, mert az MASIK KERETBOL valo -- es epp az a keveres,
+          amit a kikotes kizar. A tinta egyebkent MAR EGYEZIK: a mi
+          `--terv-szoveg-vilagos` tokenunk betuere az az ertek.
+
+          AMI EBBOL KOVETKEZIK, ES NEM ELHALLGATVA: amig ez igy all, a ket csip
+          KULONBOZO BETUT visel egy kosarban -- az egyedi mono, ez a torzs-betu.
+          Egyszerre ritkan latszik (ahhoz egy egyedi es egy elkelt sor kell
+          ugyanabban a kosarban), de latszhat. Ket feloldas van, es egyik sem az
+          enyem: vagy a mobil ertekek jonnek at tudatosan, vagy a terv kap egy
+          asztali ELKELT csipet.
+        */}
         <span
           className="w-fit px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide"
           style={{
@@ -51,11 +76,35 @@ export default function CartLineState({
 
   return (
     <div className="mt-1 flex flex-col gap-1" data-testid="cart-line-egyedi">
+      {/*
+        A CSIP TIPOGRAFIAJA EGYETLEN TERVELEMBOL JON (acrobot kikotese, 2026-09-08).
+
+        Az ASZTALI kosar-kereten (1440 px) pontosan EGY csip all, es ez az:
+
+            display:inline-flex; padding:9px 12px;
+            background:oklch(0.55 0.13 45);      -> --terv-kiemel        (betuere)
+            color:#fff;                          -> --terv-kiemel-szoveg (betuere)
+            font-family:'JetBrains Mono';        -> --terv-betu-mono-lanc
+            font-size:10.5px; font-weight:500; letter-spacing:0.12em
+
+        A BETU ES A MERET UGYANABBOL A SORBOL VALO, nem kevertem a mai
+        ertekunkkel. Ami valtozott a korabbihoz kepest: a betu (eddig a
+        torzs-betu allt itt), a vastagsag (600 helyett 500), a betukoz
+        (0.025em helyett 0.12em), a belso margo (8/2 helyett 9/12) es a tinta.
+
+        A TINTA CSERELODOTT A LEGCSENDESEBBEN: eddig `--terv-szoveg-vilagos`
+        allt itt (oklch(0.95 0.006 250)), a terv viszont TISZTA FEHERET ker,
+        ami a `--terv-kiemel-szoveg` -- es az a token neve szerint is ez:
+        a rez feluleten allo tinta. A ketto kozott alig van kulonbseg, es
+        pontosan ezert nem tunt volna fel senkinek.
+      */}
       <span
-        className="w-fit px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide"
+        className="w-fit px-3 py-[9px] text-[10.5px] font-medium uppercase"
         style={{
           background: "var(--terv-kiemel)",
-          color: "var(--terv-szoveg-vilagos)",
+          color: "var(--terv-kiemel-szoveg)",
+          fontFamily: "var(--terv-betu-mono-lanc)",
+          letterSpacing: "0.12em",
         }}
       >
         {CART_LINE_LABEL.EGYEDI}

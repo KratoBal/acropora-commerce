@@ -64,3 +64,60 @@ describe("a kosársor állapotának kirajzolása", () => {
     )
   })
 })
+
+/**
+ * A KET CSIP TIPOGRAFIAJA, ES AMIERT CSAK AZ EGYIKRE ALL ALLITAS A TERVBOL.
+ *
+ * Az EGYEDI csipnek van asztali tervbeli parja (a kosar-terv 1440 pixeles
+ * keretében egyetlen csip all, es ez az). Az ELKELT csipnek NINCS: a harom
+ * allapotot a terv csak mobil szelessegen rajzolja meg.
+ *
+ * Ezert az elso ket allitas a TERVET meri, a harmadik viszont csak azt rogziti,
+ * hogy az ELKELT csip NEM vette at az egyedi ertekeit -- vagyis nem csusztunk
+ * bele egy olyan egysegesitesbe, amit senki nem dontott el.
+ *
+ * AMIT NEM MER: a festett kepet. A jsdom nem oldja fel a CSS-valtozokat, tehat
+ * a token NEVE merheto; a konkret ertek a `terv-tokenek.spec.ts`-ben all.
+ */
+describe("a kosársor csipjeinek tipográfiája", () => {
+  const egyedi = () =>
+    screen.getByTestId("cart-line-egyedi").querySelector("span")!
+
+  it("az egyedi csip a mono betűt és a tervbeli méretet viseli", () => {
+    render(<CartLineState state="EGYEDI" similarHref="/x" />)
+
+    const cs = egyedi()
+
+    expect(cs.style.fontFamily).toBe("var(--terv-betu-mono-lanc)")
+    expect(cs.className).toContain("text-[10.5px]")
+    expect(cs.style.letterSpacing).toBe("0.12em")
+    expect(cs.className).toContain("font-medium")
+  })
+
+  /**
+   * A TINTA A REZ SAJAT TOKENJE, NEM AZ ALTALANOS VILAGOS SZOVEG. A ketto kozott
+   * alig van kulonbseg (tiszta feher kontra oklch(0.95 0.006 250)), es epp ezert
+   * kell allitas: egy visszacsuszas senkinek nem tunne fel.
+   */
+  it("az egyedi csip tintája a réz saját tokenje", () => {
+    render(<CartLineState state="EGYEDI" similarHref="/x" />)
+
+    expect(egyedi().style.color).toBe("var(--terv-kiemel-szoveg)")
+    expect(egyedi().style.background).toBe("var(--terv-kiemel)")
+  })
+
+  /**
+   * AZ ELKELT CSIP NEM VETTE AT AZ EGYEDI ERTEKEIT. Ez nem a terv allitasa,
+   * hanem a mienk: amig nincs asztali tervbeli parja, nem egysegesitunk
+   * talalgatasbol. Ha valaha atvesszuk, ez pirosodik, es akkor a dontesnek
+   * kell melle allnia.
+   */
+  it("az elkelt csip NEM vette át az egyedi csip betűjét", () => {
+    render(<CartLineState state="ELKELT" similarHref="/x" />)
+
+    const cs = screen.getByTestId("cart-line-elkelt").querySelector("span")!
+
+    expect(cs.style.fontFamily).toBe("")
+    expect(cs.style.color).toBe("var(--terv-szoveg-vilagos)")
+  })
+})
