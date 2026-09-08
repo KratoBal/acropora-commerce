@@ -32,8 +32,20 @@ describe("minimális rendelési mennyiség", () => {
   })
 
   /**
-   * A HIÁNY A GYAKORI ESET, NEM A KIVÉTEL: 1877 termék nem hoz értelmes
-   * minimumot, és mindegyiknek 1-et kell adnia.
+   * A HIÁNY A GYAKORI ESET, NEM A KIVÉTEL: a 2026-09-02-i UNAS exportban 1877
+   * termék nem hoz értelmes minimumot, és mindegyiknek 1-et kell adnia.
+   *
+   * A FORRÁS ÉS A DÁTUM AZÉRT ÁLL ITT IS, holott a fájl fejlécében is szerepel:
+   * a fejléc a legelső `describe` ELŐTT van, tehát ez a szám nem hatókörből
+   * örökölte az attribúciót, hanem abból, hogy VÉLETLENÜL az volt a
+   * legközelebbi szöveg. A fájlban öt `describe` áll; egy új blokk közéjük, vagy
+   * a sorrend átrendezése elvinné a szomszédot anélkül, hogy ez a mondat
+   * megmozdulna.
+   *
+   * (Nautilus mérése, 2026-09-08. Én korábban azt írtam, hogy a `describe`
+   * fejléce adja az öröklést -- az téves volt: a fejléc nem a blokkon BELÜL
+   * áll. A javítás ezért nem a fejlécet mozgatja, hanem a számot teszi
+   * önállóvá.)
    */
   it("hiányzó metaadatnál 1", () => {
     expect(minimumOrderQuantity({ metadata: null } as never)).toBe(1)
