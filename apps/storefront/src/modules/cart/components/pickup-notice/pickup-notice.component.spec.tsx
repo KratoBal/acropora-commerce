@@ -128,3 +128,44 @@ describe("a cím, a nyitvatartás és a tartás egy sorban", () => {
     }
   })
 })
+
+/**
+ * A KET NODE, AMIT A #207-BEN MAR MEGERINTETTEM, DE NEM NEVEZTEM MEG.
+ *
+ * Acrobot dontese az `a546e0bc` kartyan: NINCS onallo sopresi kor a husz
+ * azonosito nelkuli kosar-node-ra -- az azonosito akkor jar, amikor UGYIS
+ * hozzanyulunk a komponenshez. A #207-ben hozzanyultam ehhez a komponenshez,
+ * es ezt a kettot kihagytam.
+ *
+ * MERVE (2026-09-08): a `modules/cart` alatt 25 style-node visel terv-tokent,
+ * ebbol a #207 utan 18 allt azonosito nelkul. Ez a ketto abbol valo.
+ *
+ * AMIT AZ AZONOSITO ONMAGABAN NEM AD: allitast. Ezert nem csak a `data-testid`
+ * kerult be, hanem az a ket allitas is, ami hasznalja -- kulonben csak a
+ * "fedettseg" szama nott volna, a vedelem nem.
+ */
+describe("a sáv címkéje és indoka tokenből színez", () => {
+  /** ISMERT POZITIV KONTROLL: mind a ketto megjelenik. */
+  it("a címke és az indok is megjelenik", () => {
+    render(<PickupNotice lines={["Acropora tenuis"]} />)
+
+    expect(screen.getByTestId("pickup-notice-cimke")).toBeTruthy()
+    expect(screen.getByTestId("pickup-notice-indok")).toBeTruthy()
+  })
+
+  it("a címke a réz TINTA tokent viseli, nem a felületet", () => {
+    render(<PickupNotice lines={["Acropora tenuis"]} />)
+
+    expect(screen.getByTestId("pickup-notice-cimke").style.color).toBe(
+      "var(--terv-kiemel-tinta)",
+    )
+  })
+
+  it("az indok a halvány szöveg tokenjét viseli", () => {
+    render(<PickupNotice lines={["Acropora tenuis"]} />)
+
+    expect(screen.getByTestId("pickup-notice-indok").style.color).toBe(
+      "var(--terv-szoveg-halvany)",
+    )
+  })
+})
