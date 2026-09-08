@@ -46,9 +46,21 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       })
   }
 
-  // TODO: Update this to grab the actual max inventory
-  const maxQtyFromInventory = 10
-  const maxQuantity = item.variant?.manage_inventory ? 10 : maxQtyFromInventory
+  /*
+    A KESZLET FELSO HATARA MA NEM ISMERT, ES EZT KI KELL MONDANI.
+
+    Itt korabban ket sor allt (`maxQtyFromInventory = 10` es egy `maxQuantity`,
+    ami a `manage_inventory` agtol fuggetlenul SZINTEN 10-et adott), plusz a
+    starter TODO-ja, hogy a valodi keszletet kellene ide hozni. A ket ag azonos
+    erteke miatt a valtozo nem hordozott informaciot: egy helykitolto volt, ami
+    KESZLET-KORLATNAK latszott.
+
+    Ezert nem adunk at semmit: a `kosarMennyisegOpciok` harmadik argumentuma
+    FELSO HATAR, es hianyaban vegtelen -- egy nem ismert korlat ne szukitsen.
+
+    TODO: amikor a valodi keszlet elerheto lesz, AZT kell harmadik
+    argumentumkent atadni (a darabszamot a fuggveny maga korlatozza tizre).
+  */
 
   /**
    * AZ EGYEDI PÉLDÁNY A KOSÁRBAN.
@@ -176,7 +188,6 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
               {kosarMennyisegOpciok(
                 minimumOrderQuantity(sorTermeke),
                 item.quantity,
-                Math.min(maxQuantity, 10),
               ).map((mennyiseg) => (
                 <option value={mennyiseg} key={mennyiseg}>
                   {mennyiseg}
