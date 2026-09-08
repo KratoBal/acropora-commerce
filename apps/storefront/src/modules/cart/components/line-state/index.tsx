@@ -62,7 +62,10 @@ export default function CartLineState({
       </span>
       <span
         className="text-[11px] leading-relaxed"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
+        style={{
+          color: "var(--terv-szoveg-halvany)",
+          fontFamily: "var(--terv-betu-kiemelt-lanc)",
+        }}
       >
         {UNIQUE_IN_CART_PROMISE}
       </span>

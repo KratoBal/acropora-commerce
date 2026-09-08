@@ -53,7 +53,10 @@ const EmptyCartMessage = () => {
         <Heading level="h1" className="text-3xl-regular">
           A kosár még üres
         </Heading>
-        <Text className="text-base-regular">
+        <Text
+          className="text-base-regular"
+          style={{ fontFamily: "var(--terv-betu-kiemelt-lanc)" }}
+        >
           Kezdd ott, ahol a legtöbben: a heti új korallpéldányoknál, vagy a
           technikánál, ha most építesz.
         </Text>
