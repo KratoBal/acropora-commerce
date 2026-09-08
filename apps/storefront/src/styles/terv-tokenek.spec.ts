@@ -217,11 +217,72 @@ describe("a terv megerositett ertekei", () => {
   /**
    * A HARMADIK NYUGDIJAZAS MAS FAJTA, ES EZERT MAS PAR JAR MELLE.
    *
-   * A `--terv-jelzo` az 1a lap melytenger-kek akcentje volt. Merve a tervlapok
-   * teljes elem-kiolvasasan: 17 elem, MIND az 1a lapon; a rez 18 eleme MIND az
-   * 1b-n. Mi az 1b akcentjet vettuk at, tehat ez a szin egyaltalan nem all a
-   * lapunkon. acrobot dontese (msg 15273): nyugdijazzuk, mert KET akcent egy
-   * lapon rosszabb, mint egy kovetkezetes.
+   * A `--terv-jelzo` az 1a lap melytenger-kek akcentje volt. acrobot dontese
+   * (msg 15273): nyugdijazzuk, mert KET akcent egy lapon rosszabb, mint egy
+   * kovetkezetes.
+   *
+   * === EZ A BEKEZDES KET LAPOT NEVEZETT MEG HAROMBOL, ES A HALLGATAS ALLITOTT ===
+   *
+   * Az allt itt, hogy "17 elem, MIND az 1a lapon; a rez 18 eleme MIND az 1b-n".
+   * A 2a lapot meg sem emlitette -- es egy ket soros tabla, ami hallgat a
+   * harmadik esetrol, ALTALANOS SZABALYKENT olvasodik. (nautilus fogalmazta meg,
+   * 2026-09-08: a hallgatas is allitas, ha tablaban all.)
+   *
+   * A HAROM LAP, VISSZAMERVE A NYERS FORRASBOL:
+   *
+   *   melytenger-kek  oklch(0.52 0.09 210)   1a: 18    1b: 0    2a: 0
+   *   rez             oklch(0.55 0.13 45)    1b: 20    1a: 0    2a: 0
+   *   rez             oklch(0.62 0.13 45)    2a: 12
+   *   rez             oklch(0.68 0.13 45)    2a:  9
+   *   rez-tinta       oklch(0.15 0.014 45)   2a:  5
+   *
+   * AMI EBBOL KOVETKEZIK, ES AMI NEM:
+   *
+   * A DONTES ALL, es erosebben, mint elotte: a kek akcent KIZAROLAG az 1a lapon
+   * van, es az az elvetett valtozat. Nulla elofordulas a masik ketton.
+   *
+   * A MASIK FELE VISZONT HIANYOS VOLT. A rez nem "az 1b akcentje": a 2a lapon
+   * TOBB rez all (26 elofordulas harom erteken), mint az 1b-n (20). A rez tehat
+   * MIND A KET epulo lap akcentje, csak vilagonkent mas ertekkel -- es epp ezert
+   * van a `--terv-kiemel` tokennek ket erteke (0.55 vilagos, 0.62 sotet).
+   *
+   * === ES A KERDES, AMI A NYUGDIJAZAS INDOKAT UJRANYITOTTA (acrobot, msg 15318) ===
+   *
+   * Az indok ez volt: "ket akcent egy lapon rosszabb, mint egy kovetkezetes".
+   * Ezt akkor hoztuk, amikor a SAJAT szin-dontesunkon alltunk. Amikor a terv
+   * szineit is atvettuk, a premissza megvaltozott: mar nem mi valasztunk,
+   * hanem a terv mondja meg -- tehat le kellett merni, HANY akcent all EGY
+   * lapon a tervben.
+   *
+   * A MERES BARMILYEN akcentre keres, nem csak a rezre es a kekre. Minden
+   * `oklch` erteket telitettseg szerint valogat: a semleges szurkek kromaja
+   * 0.02 alatt van, az akcenteke 0.09 folott.
+   *
+   *   2a  hue 45  (rez)                    21 elofordulas   -> EGY akcent
+   *   1b  hue 45  (rez)                    20 elofordulas   -> EGY akcent
+   *   1a  hue 210 (kek) 18 es hue 150 (zold) 2               -> KETTO
+   *
+   * KONTROLL A KUSZOBRE: a 0.02 es 0.05 kozotti sav MIND A HAROM lapon URES.
+   * Nincs hatareset, amit a kuszob csendben az egyik oldalra tett volna -- a
+   * tervben a szinek vagy semlegesek, vagy hatarozottan akcentek.
+   *
+   * VAGYIS A NYUGDIJAZAS INDOKA ALL, es most mar nem a mi izlesunkon: a KET
+   * lap, amit epitunk, egyenkent EGY akcentet hasznal. A masodik akcent
+   * kizarolag az 1a-n all, ami az elvetett valtozat.
+   *
+   * Ezert nem hozzuk vissza. Ha valaha megis felmerul, ez a bekezdes mondja
+   * meg, mit kell ujramerni: nem azt, hogy letezik-e a szin, hanem hogy egy
+   * EPULO lapon all-e ketto.
+   *
+   * Ez KIEGESZITES, nem helyesbites: a mondat nem volt hamis, csak kevesebbet
+   * mondott, mint amennyit sugallt. A ketto kozott a rekordban kulonbseg van --
+   * egy kiegeszites, ami "helyesbitesnek" nevezi magat, azt hiteti a kesobbi
+   * olvasoval, hogy ott egyszer hazugsag allt.
+   *
+   * A SZAMOK ELTERESE PEDIG MODSZERBELI, NEM HIBA: a regi 17 es 18 ELEM-szintu
+   * kiolvasasbol jott (a renderelt tervlap elemeit szamolva), a fenti 18 es 20 a
+   * NYERS FORRAS deklaracioibol. Ugyanaz a jelenseg, mint a `--terv-szoveg`
+   * "60 elem" megjegyzesenel, ahol a forrasban 11 deklaracio all.
    *
    * === MIERT NEM UGYANAZ AZ ALLITAS, MINT A FENTI KETTONEL ===
    *
