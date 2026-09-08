@@ -9,6 +9,7 @@ import {
   vazTartalom,
 } from "./valodi-tartalom"
 import { VasarlasProvider } from "../vasarlas/allapot"
+import { LEPTETO_GOMB_MERET, LEPTETO_MEZO_MERET } from "../vasarlas/dobozok"
 
 /**
  * A KERET HIVASAIT CSEREJUK KI, NEM A MERT KODOT -- ugyanaz a ket hamis, mint a
@@ -590,5 +591,76 @@ describe("a váz valódi tartalma", () => {
     expect(document.querySelectorAll("[data-vaz-szakasz]")).toHaveLength(
       MUSZAKI_LAP_SZAKASZAI.length,
     )
+  })
+})
+
+/**
+ * A LEPTETO MERETE A TERVBOL -- ES AMIERT EPP EBBEN A SPECBEN ALL.
+ *
+ * === EGY SZABALY, KET HELY, ES AZ ALLITASOM ELOSZOR A HALOTT FELERE ULT ===
+ *
+ * A leptetobol KETTO letezik: egy a `product-actions/index.tsx`-ben (a regi
+ * ag) es egy a `vasarlas/dobozok.tsx`-ben (a vaz). A ket alak ma beture
+ * ugyanaz volt.
+ *
+ * Eloszor a `product-actions.component.spec.tsx`-be irtam az allitast, mert
+ * ott mar renderelodik lepteto. A teszt PIROSAT adott -- es helyesen: az a
+ * spec a `ProductActions`-t rendereli KOZVETLENUL, tehat a REGI ag leptetojet
+ * kapja. Az a lepteto ma a vevo ele SOHA nem kerul: a kapu a sablon szintjen
+ * all (`templates/index.tsx`), es a `hasznaljaVazat` mindket agan igazat ad.
+ *
+ * Vagyis egy zold allitas ott azt bizonyitotta volna, hogy a HALOTT masolat
+ * helyes -- es kozben az elo alak barmikor elmozdulhatott volna nemán.
+ *
+ * Ezert all itt: ez a spec a `VasarlasProvider`-en at a VAZAT rendereli,
+ * ugyanazt, amit a vevo lat.
+ *
+ * === AMIT NEM MER ===
+ *
+ * A festett meretet nem: a jsdom nem forditja le a Tailwind osztalyokat. Egy
+ * elirt osztalynev (`h-[54pxx]`) ezen atmenne. A jeloles meglétet meri, nem a
+ * kirajzolt pixelt.
+ */
+describe("a léptető mérete a tervből", () => {
+  it("a mínusz és a plusz gomb viseli a mért méretet", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    for (const cimke of ["Mennyiség csökkentése", "Mennyiség növelése"]) {
+      const gomb = screen.getByLabelText(cimke)
+      for (const jeloles of LEPTETO_GOMB_MERET.split(" ")) {
+        expect(gomb.className).toContain(jeloles)
+      }
+    }
+  })
+
+  it("a mennyiség mezője viseli a mért méretet", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    const mezo = screen.getByLabelText("Mennyiség")
+    for (const jeloles of LEPTETO_MEZO_MERET.split(" ")) {
+      expect(mezo.className).toContain(jeloles)
+    }
+  })
+
+  /**
+   * A SZAMOK LITERALKENT, szandekosan: a konstansbol olvasva az allitas
+   * onmagat igazolna vissza, es barmilyen ertekre zold maradna.
+   *
+   * Az 54 UGYANAZ, mint a fo gombe (`FO_GOMB_MERET`). A tervben a ket elem
+   * egy sorban all, es egy vonalban zar -- ha valaha kulonboznenek, az hiba.
+   */
+  it("a mért értékek: 54 magas, 42 széles gomb, 34 széles mező", () => {
+    expect(LEPTETO_GOMB_MERET).toContain("h-[54px]")
+    expect(LEPTETO_GOMB_MERET).toContain("w-[42px]")
+    expect(LEPTETO_MEZO_MERET).toContain("h-[54px]")
+    expect(LEPTETO_MEZO_MERET).toContain("w-[34px]")
   })
 })

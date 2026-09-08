@@ -9,6 +9,20 @@ import {
 } from "./availability"
 
 /**
+ * A FO CSELEKVES MERETE A PANELBEN -- A TERVBOL MERVE, EGY HELYEN.
+ *
+ * Konstans, hogy a szam egy helyen alljon, es hogy allitas mutathasson ra.
+ * A `h-[54px]` a terv `height:54px` erteke, a `text-base` a 16px, a
+ * `font-semibold` a 600 -- mind a harom UGYANABBOL az elembol, mindket
+ * epulo lapon azonos.
+ *
+ * A SZELESSEG (`w-full`) NEM a tervbol jon: ott a gomb `flex:1` egy sorban,
+ * ahol a lepteto is all. Nalunk a szulo adja a sort, tehat a gomb a sajat
+ * dobozat tolti ki. Ugyanaz az eredmeny, mas uton -- es ezert all itt kulon.
+ */
+export const FO_GOMB_MERET = "h-[54px] w-full text-base font-semibold"
+
+/**
  * A KÉSZLET-ÁLLAPOT MEGJELENÍTÉSE, HÁROM ÁLLAPOTTAL.
  *
  * TISZTA MEGJELENÍTÉS: a döntés az `availabilityOf`-ban áll, itt csak a
@@ -180,12 +194,45 @@ export default function StockState({
    * viselkedes megtagadja. Ilyenkor a keszlet sajat letiltott stilusa marad,
    * es a rez elmarad -- a felirat pedig amugy is megmondja, mi az allapot.
    *
-   * === KET ELTERES, AMIT MERTEM ES NEM VALTOZTATOK MEG ===
+   * === A MAGASSAG AZOTA MEGJOTT, A SUGAR NEM (2026-09-08) ===
    *
-   * A tervben a gomb 402x54 es a sugara 0px; nalunk 40 magas, es a sugarat a
-   * keszlet adja. Mindketto kulon kerdes (a magassag a jobb oszlop egeszet
-   * erinti, a sugar a keszlet gomb-stilusat), es egy szin-javitas nem viheti
-   * el oket csendben. Ezert allnak itt leirva.
+   * Itt korabban ket elteres allt "mertem es nem valtoztatok meg" cimmel: a
+   * magassag es a sugar. A magassag indoka az volt, hogy "a jobb oszlop
+   * egeszet erinti" -- es a jobb oszlop azota MAGA A FELADAT lett (31183035
+   * negyedik tetele, Balazs 13:32-es mondata: "legalabb a belso oldalakon
+   * lehetne az ami a terveken van"). Az indok tehat elfogyott, nem az allitas
+   * dolt meg.
+   *
+   * A MERES, MINDKET EPULO LAPON, a cselekves-sor teljes alakja:
+   *
+   *     sor      margin-top:18px; display:flex; gap:10px
+   *     gomb     flex:1; height:54px; font-size:16px; font-weight:600
+   *     2a       background oklch(0.62 0.13 45)  color oklch(0.15 0.014 45)
+   *     1b       background oklch(0.55 0.13 45)  color #fff
+   *
+   * A ket szin BETURE a mar meglevo tokenek ket vilag-erteke, tehat a
+   * magassag es a betu az EGYETLEN, ami hianyzott. Nem kellett hozza sem uj
+   * token, sem dontes.
+   *
+   * ES EGY FUGGETLEN MEGEROSITES, amit erdemes tudni: az ELVETETT 1a lapon
+   * ugyanez a gomb 52px. Vagyis az 54 nem "kerekitett" ertek, hanem a ket
+   * epulo lap kozos ertekét adja, es az elvetett valtozattol meg is
+   * kulonbozteti.
+   *
+   * === A SUGAR MARAD, ES MOST MAR TUDOM, MIERT ===
+   *
+   * A tervben a gomb sugara 0px, nalunk a keszlet gomb-stilusa adja. Ez nem
+   * ennek a gombnak a kerdese, hanem minden gombe a lapon -- egy helyen
+   * megvaltoztatva ez a gomb kilogna a tobbi kozul.
+   *
+   * === A HATOKOR, KIMONDVA: EZ MA A PANEL GOMBJA ===
+   *
+   * Harom hivohely importalja a `StockState`-et, de ma egy renderelodik: a
+   * `mobile-actions.tsx` a regi agon all (`hasznaljaVazat` feltetel nelkul
+   * igazat ad), a lebegő sav pedig a SAJAT cselekveset rajzolja, nem ezt a
+   * dobozt. A terv a lebego savra MAS meretet ad (50px, 15px/600, padding
+   * 0 24px) -- vagyis ha a regi ag valaha visszaterne, ez a magassag ott
+   * ROSSZ lenne. Ezert all itt a szam mellett, hogy melyik uthoz tartozik.
    */
   const letiltva = disabled || availability === "ELFOGYOTT"
 
@@ -194,7 +241,7 @@ export default function StockState({
       onClick={onAddToCart}
       disabled={letiltva}
       variant="primary"
-      className="h-10 w-full"
+      className={FO_GOMB_MERET}
       isLoading={isAdding}
       data-testid={testId}
       style={
