@@ -211,6 +211,52 @@ describe("a terv megerositett ertekei", () => {
   })
 
   /**
+   * A HARMADIK NYUGDIJAZAS MAS FAJTA, ES EZERT MAS PAR JAR MELLE.
+   *
+   * A `--terv-jelzo` az 1a lap melytenger-kek akcentje volt. Merve a tervlapok
+   * teljes elem-kiolvasasan: 17 elem, MIND az 1a lapon; a rez 18 eleme MIND az
+   * 1b-n. Mi az 1b akcentjet vettuk at, tehat ez a szin egyaltalan nem all a
+   * lapunkon. acrobot dontese (msg 15273): nyugdijazzuk, mert KET akcent egy
+   * lapon rosszabb, mint egy kovetkezetes.
+   *
+   * === MIERT NEM UGYANAZ AZ ALLITAS, MINT A FENTI KETTONEL ===
+   *
+   * Ott a harmadik allitas azt bizonyitja, hogy az ERTEK nem veszett el, csak
+   * mas neven all. Itt ilyen par NINCS: az ertek szandekosan sehol nem all.
+   *
+   * Ezert a torles-allitas melle ISMERT POZITIV KONTROLL jar: ugyanaz a
+   * kereses talalja meg az ELO akcentet. Enelkul ez az allitas egy URES
+   * stiluslapon is zold lenne -- pontosan az a hiba, amit a hianyt mero
+   * allitasoknal mar egyszer megfogtunk.
+   *
+   * A DEFINICIO-KERESES itt is `:`-ra kot: a nev TORTENETI idezetkent ott all a
+   * `globals.css` nyugdijazo kommentjeben, ertekestul, hogy egy kesobbi dontes
+   * ne meressel induljon ujra. A merce ketto: nulla ELO elofordulas, de a
+   * visszavono idezet MARADHAT.
+   *
+   * === ES AMI ITT SZANDEKOSAN NINCS: A HIVOHELY-ALLITAS ===
+   *
+   * Elsore ide irtam egy masodik sort is, ami a `var(...)` alakra allitott
+   * hianyt. AZ NEM MENT AT, es nem veletlenul: a
+   * `terv-token-hasznalat.spec.ts` MINDEN forrasfajlban keresi a `var(--terv-*)`
+   * hivatkozasokat, es az EN hianyt allito sztringem is hivohelynek szamit.
+   * Egy allitas, ami azt mondja, hogy valami nincs hasznalva, szoveg szerint
+   * ugyanugy nez ki, mint a hasznalat.
+   *
+   * Nem trukkoztem ki (osszefuzott sztringgel), mert a sor amugy is REDUNDANS
+   * volt: az a masik spec ERŐSEBBET mer. Ha valaki visszateszi a `var(...)`
+   * hivatkozast definicio NELKUL, ott pirosodik; ha definicioval EGYUTT teszi
+   * vissza, itt pirosodik a fenti sor. A ketto egyutt zar, es egyik sem az en
+   * masodik sorom volt.
+   */
+  it("a nem választott akcent eltűnt, és az élő akcent a helyén van", () => {
+    expect(normal(CSS)).not.toContain("--terv-jelzo:")
+
+    // ISMERT POZITIV KONTROLL: ugyanez a kereses megtalalja az ELO akcentet.
+    expect(normal(CSS)).toContain("--terv-kiemel:")
+  })
+
+  /**
    * MINDEN VILAG-FUGGO TOKENNEK KELL NEVESITETT PAR -- ES A HELYCSERE A KOCKAZAT.
    *
    * MIERT MOST (murena merese, 2026-09-08): a bongeszos merohely (`lap-szin.sh
