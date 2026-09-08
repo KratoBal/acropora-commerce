@@ -20,7 +20,27 @@
  */
 :root {
   /* hatterek */
-  --terv-hatter: oklch(0.96 0.006 75); /* 20 elem -- a lap alapja */
+  /*
+    A VILAGOS LAP ERTEKE AZ 1b SZAKASZE, ES EZT KET LEPESBEN LEHETETT CSAK
+    ELDONTENI (2026-09-08).
+
+    A tervfajlban HAROM 1440 pixeles keret all, mindegyik a sajat lapjanak a
+    hatterevel:
+
+      2a  sotet, rez              oklch(0.17 0.016 250)
+      1a  nagy kep, turkiz        oklch(0.985 0.003 250)   hideg
+      1b  meretezes-seged, rez    oklch(0.99 0.004 80)     MELEG
+
+    A MERES ket erteket adott, es kozottuk nem meres valaszt: Balazs 1b-t
+    valasztott (2026-09-08 13:56). A 0.985 az ELVETETT 1a szakasze.
+
+    ITT KORABBAN 0.96 ALLT, ES AZ SEM VOLT LAP-HATTER, ugyanugy, ahogy a sotet
+    oldalon a 0.235 sem: a tervben ez a csikos KEP-HELYKITOLTOK szine
+    (`repeating-linear-gradient`), husz elofordulassal. Husz sokkal tobb, mint
+    egy -- es a lap hattere pontosan EGYSZER fordul elo. Egy gyakorisag szerint
+    rendezett token-kivonat tehat a legfontosabb erteket teszi a lista aljara.
+  */
+  --terv-hatter: oklch(0.99 0.004 80); /* az 1b tervlap sajat hattere */
   --terv-hatter-sotet: oklch(0.235 0.02 248); /* 16 elem -- a sotet savok */
   --terv-hatter-lap: oklch(0.995 0.003 80); /*  4 elem -- a kartyak lapja */
   --terv-hatter-halvany: oklch(0.955 0.004 250);
