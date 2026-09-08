@@ -2,6 +2,7 @@ import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { HttpTypes } from "@medusajs/types"
 import Product from "../product-preview"
+import { hasonloAzonositok, kertSorrendben } from "./gondozott-kapcsolatok"
 
 type RelatedProductsProps = {
   product: HttpTypes.StoreProduct
@@ -35,29 +36,46 @@ export default async function RelatedProducts({
     return null
   }
 
-  // edit this function to define your related products logic
-  const queryParams: HttpTypes.StoreProductListParams = {}
-  if (region?.id) {
-    queryParams.region_id = region.id
-  }
-  if (product.collection_id) {
-    queryParams.collection_id = [product.collection_id]
-  }
-  if (product.tags) {
-    queryParams.tag_id = product.tags
-      .map((t) => t.id)
-      .filter(Boolean) as string[]
-  }
-  queryParams.is_giftcard = false
+  /**
+   * A LISTA A GONDOZOTT KAPCSOLATOKBOL JON, ES CSAK ABBOL.
+   *
+   * ITT KORABBAN A STARTER SZUROJE ALLT: gyujtemeny, cimke, regio,
+   * `is_giftcard: false`. Lemertem, mit adott ez MA (2026-09-08, a2fda8d):
+   *
+   *   collection_id   soha nem allt be -- a boltban NULLA gyujtemeny van
+   *   tag_id          soha nem allt be -- a vetites egyetlen tag-et sem ir
+   *
+   * Marad a regio es az `is_giftcard`, a lapmeret pedig 12. Vagyis a lekerdezes
+   * ezt kerdezte: "add az elso tizenket termeket a boltbol, kiveve ezt" -- a
+   * doboz cime kozben azt allitotta, hogy hasonlo termekek.
+   *
+   * Ez nem gyenge tartalom volt, hanem VALOTLAN allitas a vevo fele, es
+   * rosszabb az ures doboznal, mert ugy nezett ki, mintha mukodne.
+   * (acrobot dontese, msg_id 14892.)
+   *
+   * MOSTANTOL: gondozott kapcsolat nelkul a doboz NEM RENDERELODIK, es
+   * lekerdezes SEM INDUL. A ketto egyutt fontos -- egy ures szuro nem szur.
+   */
+  const azonositok = hasonloAzonositok(
+    product.metadata as Record<string, unknown> | null,
+  )
 
-  const products = await listProducts({
-    queryParams,
+  if (azonositok.length === 0) {
+    return null
+  }
+
+  const valasz = await listProducts({
+    queryParams: {
+      id: azonositok,
+      limit: azonositok.length,
+    },
     countryCode,
-  }).then(({ response }) => {
-    return response.products.filter(
-      (responseProduct) => responseProduct.id !== product.id,
-    )
-  })
+  }).then(({ response }) => response.products)
+
+  const products = kertSorrendben(
+    valasz.filter((responseProduct) => responseProduct.id !== product.id),
+    azonositok,
+  )
 
   if (!products.length) {
     return null
