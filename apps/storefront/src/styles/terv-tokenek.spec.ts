@@ -432,6 +432,39 @@ describe("a terv megerositett ertekei", () => {
     expect(hianyzo).toEqual([])
   })
 
+  /**
+   * A LAP FOLDJE A TOKENBOL JON, NEM A BONGESZO ALAPERTELMEZESEBOL.
+   *
+   * A vaz teljes szelessegu felulete csak a TERMEKLAP tartalmi sikjara terjed
+   * ki; a fejlec folotte, a lablec alatta all. Azok alatt eddig tiszta feher
+   * latszott, tehat a lap teteje es alja nem a terv foldjen ult.
+   *
+   * AMIT MER: hogy a `body` szabaly LETEZIK es TOKENT visel. Azt nem, hogy mit
+   * fest a bongeszo -- az erteket a fenti allitasok rogzitik.
+   */
+  it("a lap földjét a body a tokenből kapja", () => {
+    const test = normal(CSS.slice(CSS.indexOf("body {")))
+
+    expect(CSS).toContain("body {")
+    expect(test).toContain("background: var(--terv-hatter)")
+  })
+
+  /**
+   * ES A SZOVEGSZIN SZANDEKOSAN NINCS OTT. Egy globalis `color` a starter
+   * `text-ui-*` osztalyaival versenyezne. Ha valaki egyszer hozzaadja, ez
+   * pirosodik, es akkor a dontesnek kell melle allnia.
+   *
+   * A POZITIV KONTROLL a fenti allitas: enelkul ez a sor egy `body` szabaly
+   * NELKUL is zold lenne.
+   */
+  it("a body NEM allit globalis szovegszint", () => {
+    const test = normal(
+      CSS.slice(CSS.indexOf("body {"), CSS.indexOf("}", CSS.indexOf("body {"))),
+    )
+
+    expect(test).not.toContain("color:")
+  })
+
   it("a sötét világnak saját érték-készlete van", () => {
     expect(CSS).toContain('[data-vilag="sotet"]')
 
