@@ -83,3 +83,43 @@ describe("a lap alján futó sáv", () => {
     expect(sav.className).not.toContain("fixed")
   })
 })
+
+/**
+ * A SAV TONUSA, ES AMIERT EZ AZ ALLITAS UTOLAG SZULETETT.
+ *
+ * A sav hatteret eddig SEMMI nem merte. Ez onmagaban is eleg ok lenne, de a
+ * konkret kiváltó ok rosszabb: a sav fejleceben egy HAMIS mondat allt (a
+ * tervbeli erteket 0.17-nek nevezte), es arra epult egy jelentes es egy dontes,
+ * mielott barki visszamerte volna.
+ *
+ * A TERV NYERS FORRASABOL MERVE (2026-09-08): a sav a sotet lapon
+ * `background:oklch(0.205 0.018 249)` erteket visel, `border-top` mellett --
+ * ugyanazt, mint a panelek, es VILAGOSABBAT a lapnal (0.17).
+ *
+ * AMIT MER: a token NEVET. Az erteket a `terv-tokenek.spec.ts` allitja.
+ */
+describe("a ragadós sáv tónusa", () => {
+  it("a sáv a panelek tokenjét viseli, nem a lapét", () => {
+    render(<RagadosSav ar={<span>289 900 Ft</span>} />)
+
+    const sav = screen.getByTestId("ragados-sav")
+
+    expect(sav.style.background).toBe("var(--terv-hatter-halvany)")
+  })
+
+  /*
+    ITT ALLT EGY MASODIK ALLITAS ("a sav tokenje NEM a lap tokenje"), ES
+    KIVETTEM, MIELOTT BEKULDTEM VOLNA.
+
+    A kalibracion vegiggondolva nincs olyan rontas, amitol az pirosodna a
+    fenti nelkul: barmi, ami a lap tokenjere allitja a savot, MAR a fenti
+    allitast is elviszi. Vagyis nem egy masodik meres volt, hanem ugyanaz
+    masodszor -- es egy allitas, ami sosem sul el egyedul, nem noveli a
+    vedelmet, csak a szamot.
+
+    Ami TENYLEG hianyzott: hogy a ket token ERTEKE kulonbozik-e. Ha valaki a
+    stiluslapon egyenlove tenne oket, mind a ket komponens-allitas zold
+    maradna, es a savot megsem lehetne latni a lapon. Az az allitas a
+    `terv-tokenek.spec.ts`-ben all, mert ott van az ertek.
+  */
+})

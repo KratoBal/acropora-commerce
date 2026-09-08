@@ -861,9 +861,14 @@ describe("a lap teljes szélességű sötét felülete", () => {
  * azt, hogy 0.205 all-e a 0.17 helyett, a `terv-tokenek.spec.ts` allitja a
  * stiluslapon. A ket meres egyutt ad teljes lancot: itt a HIVAS, ott az ERTEK.
  *
- * ES AMIT MEG NEM MER: a LAP tonusat. A lap ma a `--terv-hatter` tokenen all
- * (sotetben 0.235), a terv viszont 0.17-et ker. Az a lepes acrobot dontesere
- * var (15599), mert az erintene ot olyan hivohelyet is, ami nem a lap.
+ * A LAP TONUSA AZOTA A HELYERE KERULT, ES EZ A BEKEZDES EZERT AT VAN IRVA.
+ * Az allt itt, hogy a lap sotetben 0.235-on all es a javitas dontesre var. A
+ * `--terv-hatter` sotet erteke azota 0.17, vagyis a sotet tervlap sajat
+ * hattere -- es a valtozas EGYETLEN masik hivohelyet sem mozditott, mert ezt a
+ * tokent csak a lap viseli.
+ *
+ * A ket felulet viszonya ezzel megfordult a helyes iranyba: a panel (0.205)
+ * mostantol VILAGOSABB a lapnal (0.17), ahogy a terv keri.
  */
 describe("a panel és a lap tónusa", () => {
   const kozosPanel = () =>
