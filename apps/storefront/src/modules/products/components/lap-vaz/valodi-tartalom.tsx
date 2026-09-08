@@ -19,7 +19,7 @@ import {
   orderQuantityHint,
   orderQuantityStep,
 } from "../product-actions/minimum-order-quantity"
-import { uniquePieceOf } from "../stock-state/availability"
+import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
 
 /**
  * A VAZ SLOTJAINAK VALODI TARTALMA -- CSAK OTT, AHOL VAN FORRAS.
@@ -424,11 +424,22 @@ export function vazTartalom(
         step: orderQuantityStep(termek),
         orderMaximum: maximumOrderQuantity(termek),
       })
-  if (egyseg || rendelesiMondat) {
+  /**
+   * A SZUKOSSEG-SOR A BOLT BEALLITASABOL JON, nem a WYSIWYG jelzobol -- a
+   * dontes es az indoka a `scarcityCountOf` fejlecben all.
+   *
+   * Az ELSO valtozatot nezzuk: a teszt bolt mind az 1492 termeke pontosan egy
+   * valtozatu (merve 2026-09-08), tehat ma nincs mit valasztani kozottuk. Ha
+   * ez valaha megvaltozik, a kivalasztott valtozat kell ide -- de az a
+   * vasarlasi kontextusban all, nem itt.
+   */
+  const keszlet = scarcityCountOf(termek.variants?.[0])
+  if (egyseg || rendelesiMondat || typeof keszlet === "number") {
     tartalom.elerhetoseg = (
       <ElerhetosegDoboz
         kiszereles={egyseg ?? undefined}
         rendelesiMondat={rendelesiMondat}
+        keszlet={keszlet}
       />
     )
   }

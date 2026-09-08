@@ -90,3 +90,47 @@ describe("az elérhetőség-doboz mélyedése", () => {
     ).toBeTruthy()
   })
 })
+
+/**
+ * A SZUKOSSEG-SOR KIRAJZOLASA -- ES EZ MASIK ALLITAS, MINT A DONTES.
+ *
+ * A `scarcityCountOf` allitasai azt merik, MIKOR van szam. Ezek azt, hogy a
+ * szambol lesz-e SOR a lapon. A ketto fuggetlenul romolhat el: a dontes
+ * maradhat helyes ugy, hogy a doboz nem rajzolja ki -- es akkor a fuggveny
+ * harom zold allitasa semmit nem er a vevo szempontjabol.
+ *
+ * (Ezt a kalibracio mondta meg: a JSX ag torlese ELOSZOR egyetlen allitast sem
+ * suttetett el.)
+ */
+describe("a szűkösség-sor a dobozban", () => {
+  it("egy darabnál kiírja, hogy ez az utolsó", () => {
+    render(<ElerhetosegDoboz keszlet={1} />)
+
+    const sor = screen.getByTestId("vaz-keszlet")
+    const reszek = Array.from(sor.querySelectorAll("span"))
+
+    expect(reszek).toHaveLength(2)
+    expect(reszek[0].textContent).toBe("Készlet")
+    expect(reszek[1].textContent).toBe("1 db · utolsó")
+  })
+
+  /** Tobb darabnal nincs "utolso": az allitas a SZAMBOL kovetkezik, nem a sorbol. */
+  it("több darabnál csak a darabszám áll ott", () => {
+    render(<ElerhetosegDoboz keszlet={3} />)
+
+    expect(
+      Array.from(screen.getByTestId("vaz-keszlet").querySelectorAll("span"))[1]
+        .textContent,
+    ).toBe("3 db")
+  })
+
+  /**
+   * A TAGADO ESET, es mellette all a fenti KET pozitiv -- azok bizonyitjak,
+   * hogy a kereses meg tudja talalni a sort, amikor OTT VAN.
+   */
+  it("szám nélkül nincs sor", () => {
+    render(<ElerhetosegDoboz kiszereles="1 db" keszlet={null} />)
+
+    expect(screen.queryByTestId("vaz-keszlet")).toBeNull()
+  })
+})
