@@ -434,8 +434,9 @@ describe("a minimális rendelési mennyiség bekötése", () => {
   })
 
   /**
-   * ÉS A NÉMASÁG IS ÁLLÍTÁS: 1877 terméknél a minimum 1, és ott ez a mondat
-   * zajt csinálna. Enélkül az állítás-pár nem tudná megkülönböztetni a "mindig
+   * ÉS A NÉMASÁG IS ÁLLÍTÁS: a teszt bolt 1492 termékéből 1478-nál nincs mit
+   * mondani (mérve 2026-09-08), és ott ez a mondat zajt csinálna. A szám a BOLT
+   * populációján kelt, nem az UNAS exporton -- a lap viselkedéséről szól. Enélkül az állítás-pár nem tudná megkülönböztetni a "mindig
    * írjuk ki" viselkedést a helyestől.
    */
   it("egyes minimumnál nem mond semmit", () => {
