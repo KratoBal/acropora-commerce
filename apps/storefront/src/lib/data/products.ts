@@ -109,7 +109,8 @@ export const listProducts = async ({
  * visszaadott darabszam a lehivott lista hossza volt, tehat legfeljebb szaz.
  *
  * Harom kovetkezmenye volt, es MIND A HAROM NEMA:
- *   - a "Termékek" lapon 1893 termekbol 100 volt elerheto,
+ *   - a "Termékek" lapon a katalogus toredeke volt elerheto (a 2026-09-02-i
+ *     UNAS export 1893 termeke kozul 100),
  *   - a lapozo a kilencedik lap utan egyszeruen veget ert,
  *   - es az ar szerinti rendezes is csak azt a szazat rendezte.
  *
@@ -129,8 +130,8 @@ export const listProducts = async ({
  *                   valodi darabszamot adjuk vissza
  *
  * Az ar-agban a lehivas ara merve: egy szazas lap 54 ms a teszt boltban.
- * 1893 termeknel ez tizenkilenc keres, tehat masodperc-nagysagrend, es a Next
- * gyorsitotara mogotte all. Ez tobb, mint a mai egyetlen keres -- de a mai
+ * A TESZT BOLT 1492 termekenel (merve 2026-09-08) ez tizenot keres, tehat
+ * masodperc-nagysagrend, es a Next gyorsitotara mogotte all. Ez tobb, mint a mai egyetlen keres -- de a mai
  * egyetlen keres ROSSZ VALASZT ad, nem gyorsat.
  *
  * === EGY CSAPDA, AMI A JAVITAS KOZBEN DERULT KI ===
@@ -191,8 +192,20 @@ export const listProductsWithSort = async ({
   // AR SZERINTI RENDEZES: a szerver nem tudja, tehat MINDEN lapot lehivunk.
   //
   // A felso hatar nem a katalogus merete, hanem vedelem egy vegtelen ciklus
-  // ellen, ha a `count` valaha hazudna. Huszonot lap szazasaval 2500 termek,
-  // a mai katalogus 1893.
+  // ellen, ha a `count` valaha hazudna. Huszonot lap szazasaval 2500 termek.
+  //
+  // A KATALOGUS MERETE MELLE DATUM ES POPULACIO KELL, kulonben nem
+  // osszevetheto (nautilus szabalya, 2026-09-08). Ez a ciklus a MEDUSA boltot
+  // jarja be, tehat az a populacio szamit:
+  //
+  //     a teszt Medusa bolt      1492 termek   (merve 2026-09-08)
+  //     a 2026-09-02-i UNAS export 1893        <- MAS populacio, nem ez
+  //
+  // Itt korabban "a mai katalogus 1893" allt, datum es populacio nelkul. Az a
+  // szam a MASIK rendszere, es a "mai" szo egy nappal kesobb mar nem igaz.
+  //
+  // AMI ERVENYTELENITI EZT A HATART: ha a Medusa bolt 2500 termek fole no. Nem
+  // hibazna, csak CSENDBEN levagna a listat -- ezert all itt szam, nem erzes.
   const LAPOK_FELSO_HATARA = 25
   const LAP_MERET = 100
   const mind: HttpTypes.StoreProduct[] = []
