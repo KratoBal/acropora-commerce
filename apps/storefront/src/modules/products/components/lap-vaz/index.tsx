@@ -379,13 +379,27 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  */
 const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
   foto: { varakozo: "Saját fotó: ez a példány" },
+  /**
+   * LELET, NEM DONTES: EZEN A DOBOZON KET TERVBELI SZOVEG ALL EGYMAS FOLOTT.
+   *
+   * Merve a 2a lapon, a `measurement/terv-valtozatok/` kiolvasasaval:
+   *
+   *   y=1191  x=126  11px monospace   "ELHELYEZÉS-SEGÉD"           a doboz NEVE
+   *   y=1215  x=126  20px felkover    "Hová tedd ezt a példányt?"  a LATHATO cim
+   *
+   * MA A ROVID NEV ALL A CIMBEN, ES A LATHATO CIM A VARAKOZOBAN -- szandekosan.
+   * Amig a doboz URES VAZ, a h2 nem vevoi felirat, hanem szerkezeti cimke, es
+   * arra a rovid nev valo. A vevoi cim akkor jon, amikor a doboz valodi
+   * tartalmat kap, es akkor MIND A KET lapcsaladon egyszerre valt (a vilagos
+   * oldalon ugyanez a doboz "MÉRETEZÉS-SEGÉD" neven all). Egy fel atallas
+   * rosszabb, mint egyik sem. (acrobot dontese, msg_id 14812 es 14817.)
+   *
+   * Ez a ket koordinata azert marad itt, hogy a kovetkezo kornek ne kelljen
+   * ujra kimernie: a lathato cim MEGVAN a tervben, nem kell kitalalni.
+   */
   "meretezes-seged": {
     cim: "Elhelyezés-segéd",
     varakozo: "Hová tedd ezt a példányt?",
-  },
-  "muszaki-adatok": {
-    cim: "Tartási paraméterek",
-    varakozo: "Nehézség, fényigény, áramlás",
   },
   fulek: {
     varakozo:
@@ -474,7 +488,30 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * a muszaki kontener KEZDODIK -- nem ahol a korall nominalisan vegzodik, mert
  * a ketto atfed.)
  */
-const ELO_ALLAT_ELHAGYOTT = new Set(["kiegeszitok"])
+/**
+ * AMIT A SOTET LISTA ELHAGY -- KET DOBOZ, MIND A KETTO MERESSEL.
+ *
+ * A tervfajl 2a (korall) lapjan egyik sem all, es ezt KIMERITOEN merte a
+ * `measurement/terv-valtozatok/` anyaga: mind a 141 szoveges elem atnezve, KET
+ * fuggetlen retegben (a lathato cimek ES a designer sajat monospace cimkei),
+ * mikozben a kontroll ugyanabban a halmazban TALAL.
+ *
+ *   kiegeszitok      "Ami még kellhet hozzá"  -- 1a-n es 1b-n szakaszcim, 2a-n sehol
+ *   muszaki-adatok   "Műszaki adatok"          -- 1a-n szakaszcim, 1b-n ful, 2a-n sehol
+ *
+ * A 2a lapon a tartasi adat NEM tunik el: a FUL-SOR alatt all (Gondozás |
+ * Leírás | Vízparaméterek | ...), cim nelkuli adat-tablaban. Vagyis nem
+ * tartalmat veszunk el, hanem egy kulon dobozt, ami ugyanazt a helyet jelolne
+ * ki masodszor.
+ *
+ * ES AMIERT MOST SZABAD ELHAGYNI: mind a ketto ma URES vaz. Ha valodi
+ * tartalmat vinne, a levetel lathato dolgot vinne el, es akkor mas dontes
+ * kellene.
+ *
+ * Ez terv-kovetes, nem terv-modositas, ezert nem megy a gazda ele. (acrobot
+ * dontese, msg_id 14734, megerositve 14812-ben es 14827-ben.)
+ */
+const ELO_ALLAT_ELHAGYOTT = new Set(["muszaki-adatok", "kiegeszitok"])
 
 export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
   MUSZAKI_LAP_SZAKASZAI.filter(

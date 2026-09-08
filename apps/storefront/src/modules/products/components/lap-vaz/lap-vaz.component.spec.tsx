@@ -401,12 +401,18 @@ describe("az élő állat lap feliratai", () => {
     expect(doboz("meretezes-seged")?.cim).toBe("Elhelyezés-segéd")
     expect(doboz("kerdezd")?.cim).toBe("Kérdezd a boltot")
     expect(doboz("csomagajanlat")?.cim).toBe("Kötegajánlat")
-    expect(doboz("muszaki-adatok")?.cim).toBe("Tartási paraméterek")
+
+    /**
+     * ES AMI MAR NINCS: a `muszaki-adatok` doboz a sotet listarol lekerult,
+     * tehat NINCS felirata. Ez az allitas MEGFORDITVA all itt, nem torolve:
+     * ha valaki visszateszi a dobozt, ez pirosra valt, es akkor a feliratarol
+     * is donteni kell -- a tervben ugyanis a 2a lapon nincs neki.
+     */
+    expect(doboz("muszaki-adatok")).toBeUndefined()
 
     // A varakozo szovegek is felul vannak irva, es eddig egyiket sem fedte semmi.
     expect(doboz("foto")?.varakozo).toBe("Saját fotó: ez a példány")
     expect(doboz("meretezes-seged")?.varakozo).toBe("Hová tedd ezt a példányt?")
-    expect(doboz("muszaki-adatok")?.varakozo).toBe("Nehézség, fényigény, áramlás")
     expect(doboz("csomagajanlat")?.varakozo).toBe("Ide jön a kötegajánlat")
     expect(doboz("hasonlo")?.varakozo).toBe(
       "Ide jönnek a további egyedi példányok",
@@ -432,11 +438,14 @@ describe("az élő állat lap feliratai", () => {
    * ÉS AMIT ELHAGYUNK, AZ NÉVVEL ÁLL. Enélkül a részhalmaz-állítás egy EGYETLEN
    * dobozból álló sötét listát is elfogadna.
    */
-  it("pontosan egy doboz marad le, névvel", () => {
+  it("pontosan két doboz marad le, névvel", () => {
     const sotet = ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)
     const vilagos = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs)
 
-    expect(vilagos.filter((k) => !sotet.includes(k))).toEqual(["kiegeszitok"])
+    expect(vilagos.filter((k) => !sotet.includes(k))).toEqual([
+      "muszaki-adatok",
+      "kiegeszitok",
+    ])
   })
 
   /** Az oszlop-besorolás sem csúszhat el a másolás során. */
