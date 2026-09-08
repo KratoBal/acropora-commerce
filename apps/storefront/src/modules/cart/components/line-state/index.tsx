@@ -60,6 +60,32 @@ export default function CartLineState({
       >
         {CART_LINE_LABEL.EGYEDI}
       </span>
+      {/*
+       * A BETUJE NYITOTT KERDES, ES A TERV NEM DONTI EL (merve 2026-09-08).
+       *
+       * Ugyanez a mondat a kosar tervlapjan KETSZER all, UGYANAZON a lapon,
+       * ket kulonbozo betuvel es egymas kozeleben:
+       *
+       *   y=833  x=174  12px/400  Space Grotesk
+       *   y=926  x=630  16px/400  Newsreader
+       *
+       * Mind a ketto korul kosarsor-elemek allnak (mennyiseg-lepteto, ar,
+       * "Nem novelheto"), tehat nem ket reszponziv valtozat, hanem KET KEZELES
+       * ugyanarra az elemre. A tervbol tehat nem VEZETHETO LE, melyik a mienk.
+       *
+       * A #174 a Newsreadert valasztotta, es a #184 visszavonta -- nem azert,
+       * mert a masik biztosan helyes, hanem mert a valasztas DONTES, es nem a
+       * kirakat talalja ki. A mai alak a #174 ELOTTI allapot.
+       *
+       * AMI A KET IRANYBA HUZ, ES ELLENTMOND EGYMASNAK:
+       *   a MERETUNK (11px) a 12px-es Space Grotesk alakhoz all kozelebb
+       *   a HELYUNK viszont a szeles fo oszlop (a kosar racsa 856fr_452fr,
+       *     es a tetelek a 856-osban allnak), ami a masik kezeleshez huz
+       *
+       * Ezert nem dontottem el magam. (nautilus merese, msg 14993; a masodik
+       * elofordulast en mertem hozza, es a sajat elozo, meret-alapu ervemet
+       * ezzel gyengitem.)
+       */}
       <span
         className="text-[11px] leading-relaxed"
         style={{
