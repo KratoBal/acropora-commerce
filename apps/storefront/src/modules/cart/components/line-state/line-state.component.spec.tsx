@@ -80,8 +80,15 @@ describe("a kosársor állapotának kirajzolása", () => {
  * a token NEVE merheto; a konkret ertek a `terv-tokenek.spec.ts`-ben all.
  */
 describe("a kosársor csipjeinek tipográfiája", () => {
-  const egyedi = () =>
-    screen.getByTestId("cart-line-egyedi").querySelector("span")!
+  /**
+   * A CSIP SAJAT AZONOSITON AT, NEM `querySelector("span")`-nal.
+   *
+   * A regi alak a doboz ELSO spanjat vette. Ma egy van benne, tehat mukodott --
+   * de barmi, ami ele kerul (egy uj cimke, egy ikon), CSENDBEN elvinne mind a
+   * harom allitast egy masik elemre. Nem pirosodna: egy masik span is van olyan
+   * allapotban, hogy egyik-masik allitas ratalaljon.
+   */
+  const egyedi = () => screen.getByTestId("cart-line-egyedi-csip")
 
   it("az egyedi csip a mono betűt és a tervbeli méretet viseli", () => {
     render(<CartLineState state="EGYEDI" similarHref="/x" />)
@@ -112,10 +119,25 @@ describe("a kosársor csipjeinek tipográfiája", () => {
    * talalgatasbol. Ha valaha atvesszuk, ez pirosodik, es akkor a dontesnek
    * kell melle allnia.
    */
+  /**
+   * A HASONLO-LINK TINTAJA -- EDDIG EGYETLEN ALLITAS SEM MERTE.
+   *
+   * A `--terv-kiemel-tinta` a rez sajat szoveg-tokenje. A link a sotet lapon
+   * all, tehat egy altalanos link-szinre visszacsuszas nem lenne feltuno: a
+   * ket ertek kozel van egymashoz, es a kulonbseg csak egymas mellett latszik.
+   */
+  it("a hasonló termékek linkje a réz tintáját viseli", () => {
+    render(<CartLineState state="ELKELT" similarHref="/x" />)
+
+    expect(screen.getByTestId("cart-line-hasonlo-link").style.color).toBe(
+      "var(--terv-kiemel-tinta)",
+    )
+  })
+
   it("az elkelt csip NEM vette át az egyedi csip betűjét", () => {
     render(<CartLineState state="ELKELT" similarHref="/x" />)
 
-    const cs = screen.getByTestId("cart-line-elkelt").querySelector("span")!
+    const cs = screen.getByTestId("cart-line-elkelt-csip")
 
     expect(cs.style.fontFamily).toBe("")
     expect(cs.style.color).toBe("var(--terv-szoveg-vilagos)")
@@ -164,7 +186,7 @@ describe("a szerif minden nézetben", () => {
   it("a csip NEM kapta meg a szerifet", () => {
     render(<CartLineState state="EGYEDI" similarHref="/x" />)
 
-    const cs = screen.getByTestId("cart-line-egyedi").querySelector("span")!
+    const cs = screen.getByTestId("cart-line-egyedi-csip")
 
     expect(cs.className).not.toContain("font-kiemelt")
   })

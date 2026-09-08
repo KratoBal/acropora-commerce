@@ -60,6 +60,7 @@ export default function CartLineState({
             background: "var(--terv-hatter-sotet)",
             color: "var(--terv-szoveg-vilagos)",
           }}
+          data-testid="cart-line-elkelt-csip"
         >
           {CART_LINE_LABEL.ELKELT}
         </span>
@@ -67,6 +68,7 @@ export default function CartLineState({
           href={similarHref}
           className="w-fit text-xs underline"
           style={{ color: "var(--terv-kiemel-tinta)" }}
+          data-testid="cart-line-hasonlo-link"
         >
           {SIMILAR_PIECES_LABEL}
         </LocalizedClientLink>
@@ -99,6 +101,7 @@ export default function CartLineState({
         pontosan ezert nem tunt volna fel senkinek.
       */}
       <span
+        data-testid="cart-line-egyedi-csip"
         className="w-fit px-3 py-[9px] text-[10.5px] font-medium uppercase"
         style={{
           background: "var(--terv-kiemel)",
