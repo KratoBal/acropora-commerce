@@ -187,6 +187,31 @@
  * peldaul az 1a-n all, nem az 1b-n. (nautilus merese, msg_id 14683; a
  * laponkenti bontas a `lap-vaz/index.tsx` fejlecben all.)
  *
+ * ES AZ UNIO NEM ELTERES A TERVTOL, HANEM SZUKSEG. Egyetlen vilagos sablonunk
+ * van, es annak olyan termeket is ki kell szolgalnia, aminek adat-csempe kell
+ * (1a), meg olyat is, aminek kotegajanlat (1b). Ugyanez az indok all a
+ * "Hasonlo lampak" -> "Hasonlo termekek" javitas mogott: az 1b szo szerint
+ * lampat mond, a sablonunk viszont minden muszaki termeket visz.
+ *
+ * EZT AZERT KELL KIIRNI, MERT A REGI MONDAT FELIG IGAZ VOLT, es egy felig igaz
+ * fejlec makacsabb, mint egy teljesen rossz: aki ellenorzi, talal benne igazat
+ * es abbahagyja. Az "1b" a SOTET lapra all, a vilagosra nem. Aki a mi
+ * listankat az 1b laphoz meri, hibat fog talalni ott, ahol nincs -- es a
+ * "javitasa" fel tucat dobozunkat vinne el. (acrobot fogalmazasa, msg_id
+ * 14735 es 14748.)
+ *
+ * A TERV SAJAT LAP-CIMEI MONDJAK KI MIND A KET FELET, tehat egyik sem a mi
+ * kovetkeztetesunk:
+ *
+ *   "2. KOR WYSIWYG korall termekoldal - az 1b szerkezete, sotet ..."
+ *   "1. KOR Termekoldal - technikai termek (LED lampa), vilagos ... ket valtozat"
+ *
+ * A HATAR A MERESEN: az elso cimet a sajat kiolvasasombol is latom (59
+ * karakter, teljes). A masodik nalam 60 karakternel VAGOTT, tehat a "ket
+ * valtozat" veget NEM en olvastam, hanem nautilus (msg_id 14748). A
+ * kiolvasasom cimke-mezoje 60 karakternel keményen vag: 252 dobozbol 95 eri el
+ * a vagast.
+ *
  * MIERT `data-vilag` ES NEM `prefers-color-scheme`: az utobbi a LATOGATO
  * beallitasa, ez viszont a TERMEKROL szol. Egy muszaki termek lapja akkor sem
  * lesz sotet, ha a latogato sotet temat hasznal, es forditva.
