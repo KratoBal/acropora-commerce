@@ -13,7 +13,7 @@ export default function NotFound() {
     <div className="flex flex-col gap-4 items-center justify-center min-h-[calc(100vh-64px)]">
       <h1 className="text-2xl-semi text-ui-fg-base">Nincs ilyen oldal</h1>
       <p className="text-small-regular text-ui-fg-base">
-        The page you tried to access does not exist.
+        A keresett oldal nem található.
       </p>
       <Link className="flex gap-x-1 items-center group" href="/">
         <Text className="text-ui-fg-interactive">Vissza a főoldalra</Text>
