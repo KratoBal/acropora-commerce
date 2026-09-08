@@ -109,7 +109,7 @@
   /*
    * A SARKOK: A TERV GYAKORLATILAG SZOGLETES, ES EZ MERES, NEM IZLES.
    *
-   * A teljes tervben (mind a hat lap-valtozat) OSSZESEN 19 `border-radius`
+   * A teljes tervben (mind a HAROM lap: 2a, 1a, 1b) OSSZESEN 19 `border-radius`
    * deklaracio all, es abbol 16 az `50%` -- vagyis korok, nem dobozok. Valodi
    * doboz-lekerekites HAROM van: ketto 8px, egy 6px.
    *
@@ -143,8 +143,14 @@
  * beallitas, hanem a TERMEK FAJTAJA. Balazs szo szerint: "a korallokhoz a 2a
  * valo ami ek sotetek a szinei".
  *
- *   elo allat (korall, hal, gerinctelen)   sotet lap  (a terv 2a valtozata)
- *   muszaki termek                         vilagos    (az 1b valtozat)
+ *   elo allat (korall, hal, gerinctelen)   sotet lap  (a terv 2a lapja)
+ *   muszaki termek                         vilagos    (a terv 1a ES 1b lapja)
+ *
+ * A MUSZAKI OLDAL KET LAP, NEM EGY, es ez a sor 2026-09-08-ig "az 1b valtozat"
+ * alakban allt. A tervfajl harom lapot tartalmaz (2a sotet, 1a es 1b vilagos),
+ * es a vaz doboz-listaja a KET VILAGOS lap unioja -- a "Muszaki adatok" felirat
+ * peldaul az 1a-n all, nem az 1b-n. (nautilus merese, msg_id 14683; a
+ * laponkenti bontas a `lap-vaz/index.tsx` fejlecben all.)
  *
  * MIERT `data-vilag` ES NEM `prefers-color-scheme`: az utobbi a LATOGATO
  * beallitasa, ez viszont a TERMEKROL szol. Egy muszaki termek lapja akkor sem

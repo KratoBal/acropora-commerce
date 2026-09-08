@@ -25,8 +25,16 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  * === AMI MEG NEM VALTOZOTT, ES MIERT ===
  *
  * A tervben a jelveny REZ hatteren all, SOTET szoveggel
- * (`--terv-kiemel-szoveg`, merve mind az ot rez-hatteru elemen). A mai
- * valtozat sotet pirulan all, borostyan szoveggel.
+ * (`--terv-kiemel-szoveg`). A mai valtozat sotet pirulan all, borostyan
+ * szoveggel.
+ *
+ * A HIVATKOZOTT MERES SZAMA ITT ELAVULT VOLT: "mind az ot rez-hatteru elem"
+ * allt itt, holott az az ot egy szures elotti reszhalmaz. Szakaszonkent
+ * ujramerve KILENC rez hatteru elem all lapon belul, es a rajtuk allo szoveg
+ * MEGFORDUL a ket vilag kozott: a sotet (2a) lapon 0.15, a vilagosokon FEHER.
+ * A jelvenyre a sotet ertek all, mert a jelveny csak elo allat lapjan
+ * jelenik meg -- vagyis a KOVETKEZTETES valtozatlan, csak a hivatkozott szam
+ * es a hatokore pontosabb.
  *
  * A ketto EGYUTT mozdul vagy sehogy: a sotet szoveg a mai sotet hatteren
  * olvashatatlan lenne.
