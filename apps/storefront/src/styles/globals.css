@@ -42,7 +42,24 @@
 
      A hatara kimondva: a terv statikus makett, egy lenyomott allapotot nem
      is rajzolna ki -- tehat nem azt allitjuk, hogy nincs lenyomott allapot,
-     hanem hogy nincs ra MERESUNK. Amig nincs, egy token all itt, es az
+     hanem hogy nincs ra MERESUNK.
+
+     ES HOGY MIERT VOLT A KET ERTEK VILAGHOZ RENDELESE FORDITVA: a forras nem
+     tudta megmondani. Az eredeti atadas a `tokenek-termeklap.json`-bol jott,
+     ami az EGESZ tervfajlra osszesit (765 elem), es a rez ket bejegyzese igy
+     all benne:
+
+         ["oklch(0.62 0.13 45)", 9]
+         ["oklch(0.55 0.13 45)", 9]
+
+     A fajl szerkezeteben SEHOL nincs lap- vagy vilag-jelolo kulcs (a felso
+     szint: cim, elemek, hatter, szoveg, keret, betu, meret, sugar, arnyek).
+     Vagyis a "melyik ertek melyik vilage" kerdesre az a forras nem tudott
+     valaszolni -- a hozzarendeles KOVETKEZTETES volt, nem meres, es forditva
+     sikerult. A kilenc-kilenc pedig pontosan a ket szakasz kilenc-kilenc
+     eleme, amit csak a SZAKASZONKENTI meres tud szetvalasztani.
+
+     (nautilus vetette fel, msg_id 14700; a token-JSON alakjat visszamertem.) Amig nincs, egy token all itt, es az
      ertekei a MERT ertekek.
 
      A ket ertek NEM elirasbol kulonbozik: ugyanaz a szerep, ket vilagban.
