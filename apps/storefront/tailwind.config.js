@@ -57,6 +57,21 @@ module.exports = {
       fontSize: {
         "3xl": "2rem",
       },
+      textColor: {
+        /*
+          A TERV SZOVEG-TOKENJE UTILITY-KENT -- ES AZERT ITT, MERT EGY
+          LEBEGTETETT ALLAPOTOT NEM LEHET BEAGYAZOTT `style`-ban leirni.
+
+          A repo idiomaja: a tokenek beagyazott `style`-ban allnak, a Tailwind
+          osztalyok az elrendezest viszik. Ez az idioma egy `:hover` allapotra
+          nem mukodik, mert a beagyazott stilus allapotot nem ismer.
+
+          Ugyanaz a megoldas, mint a `kiemelt` betunel: a token EGY nevet kap
+          itt, es a lanc maga valtozatlan. Nem uj ertek, csak masodik ut
+          ugyanahhoz.
+        */
+        "terv-szoveg": "var(--terv-szoveg)",
+      },
       fontFamily: {
         /*
           A KIEMELT (SZERIF) BETU UTILITY-KENT -- ES AZERT ITT, MERT A TERV
