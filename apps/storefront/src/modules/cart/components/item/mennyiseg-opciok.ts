@@ -1,5 +1,5 @@
 /** Hany mennyiseget kinalunk legfeljebb. A mai viselkedes, kulon dontes nelkul. */
-const LEGFELJEBB_OPCIO = 10;
+const LEGFELJEBB_OPCIO = 10
 
 /**
  * MILYEN MENNYISEGEKET KINALHAT A KOSAR EGY SORNAL.
@@ -66,16 +66,16 @@ export function kosarMennyisegOpciok(
   jelenlegi: number,
   keszlet: number = Number.POSITIVE_INFINITY,
 ): number[] {
-  const also = Math.max(1, Math.floor(minimum) || 1);
+  const also = Math.max(1, Math.floor(minimum) || 1)
   const felso = Math.min(
     also + LEGFELJEBB_OPCIO - 1,
     Number.isFinite(keszlet) ? Math.floor(keszlet) : Number.POSITIVE_INFINITY,
-  );
+  )
 
-  const opciok = new Set<number>();
-  for (let ertek = also; ertek <= felso; ertek += 1) opciok.add(ertek);
+  const opciok = new Set<number>()
+  for (let ertek = also; ertek <= felso; ertek += 1) opciok.add(ertek)
   if (Number.isFinite(jelenlegi) && jelenlegi > 0) {
-    opciok.add(Math.floor(jelenlegi));
+    opciok.add(Math.floor(jelenlegi))
   }
-  return Array.from(opciok).sort((a, b) => a - b);
+  return Array.from(opciok).sort((a, b) => a - b)
 }

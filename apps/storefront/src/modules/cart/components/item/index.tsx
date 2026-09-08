@@ -164,13 +164,15 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             {lineState !== "NORMAL" ? (
               <NotIncrementable />
             ) : (
-            <CartItemSelect
-              value={item.quantity}
-              onChange={(value) => changeQuantity(parseInt(value.target.value))}
-              className="w-14 h-10 p-4"
-              data-testid="product-select-button"
-            >
-              {/*
+              <CartItemSelect
+                value={item.quantity}
+                onChange={(value) =>
+                  changeQuantity(parseInt(value.target.value))
+                }
+                className="w-14 h-10 p-4"
+                data-testid="product-select-button"
+              >
+                {/*
                 A LISTA A MINIMUMTOL INDUL, NEM EGYTOL.
 
                 A minimalis rendelesi mennyiseget eddig csak a termeklap
@@ -185,15 +187,15 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                 A STRAY MASODIK "1" OPCIO IS KIKERULT: a starterbol maradt itt,
                 es a lista elso elemet duplazta.
               */}
-              {kosarMennyisegOpciok(
-                minimumOrderQuantity(sorTermeke),
-                item.quantity,
-              ).map((mennyiseg) => (
-                <option value={mennyiseg} key={mennyiseg}>
-                  {mennyiseg}
-                </option>
-              ))}
-            </CartItemSelect>
+                {kosarMennyisegOpciok(
+                  minimumOrderQuantity(sorTermeke),
+                  item.quantity,
+                ).map((mennyiseg) => (
+                  <option value={mennyiseg} key={mennyiseg}>
+                    {mennyiseg}
+                  </option>
+                ))}
+              </CartItemSelect>
             )}
             {updating && <Spinner />}
           </div>
