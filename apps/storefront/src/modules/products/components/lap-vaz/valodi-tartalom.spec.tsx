@@ -773,10 +773,44 @@ describe("a léptető mérete a tervből", () => {
    * Az 54 UGYANAZ, mint a fo gombe (`FO_GOMB_MERET`). A tervben a ket elem
    * egy sorban all, es egy vonalban zar -- ha valaha kulonboznenek, az hiba.
    */
-  it("a mért értékek: 54 magas, 42 széles gomb, 34 széles mező", () => {
+  it("a mért értékek: 54 magas, 42 széles gomb, 34 széles mező, 15 pixeles szám", () => {
     expect(LEPTETO_GOMB_MERET).toContain("h-[54px]")
     expect(LEPTETO_GOMB_MERET).toContain("w-[42px]")
     expect(LEPTETO_MEZO_MERET).toContain("h-[54px]")
     expect(LEPTETO_MEZO_MERET).toContain("w-[34px]")
+    /**
+     * A BETUMERET IS LITERAL, ES EDDIG KIMARADT.
+     *
+     * A fenti ciklus a konstansbol olvas, tehat ha valaki a konstansban irja at
+     * a `text-[15px]`-et, a ciklus VELE EGYUTT MOZDUL es zold marad. Pontosan
+     * az az eset, amit ez a doboz kizarni hivatott -- csak erre az egy ertekre
+     * nem allt allitas.
+     */
+    expect(LEPTETO_MEZO_MERET).toContain("text-[15px]")
+  })
+
+  /**
+   * A CSELEKVES-SOR KOZE 10 PIXEL, a terv 2a lapjarol (`display:flex; gap:10px`).
+   *
+   * ITT ALL, ES NEM A `dobozok.component.spec.tsx`-ben: a `MennyisegDoboz` a
+   * vasarlasi kontextusbol olvas, es provider nelkul `null`-t ad. Kozvetlenul
+   * renderelve tehat nem lenne mit merni -- a sort csak a felepitett lapon
+   * lehet elerni.
+   */
+  it("a léptető és a fő gomb közt 10 pixel a köz", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    // SZERKEZETI UT, NEM NEV SZERINTI: a mezo szuloje a lepteto kerete, annak
+    // a szuloje a sor. Egy `closest(".gap-\\[10px\\]")` korben forogna --
+    // azt keresne, amit allitani akar, es sosem tudna elbukni.
+    const mezo = screen.getByLabelText("Mennyiség")
+    const sor = mezo.parentElement?.parentElement
+
+    expect(sor?.className).toContain("flex")
+    expect(sor?.className).toContain("gap-[10px]")
   })
 })

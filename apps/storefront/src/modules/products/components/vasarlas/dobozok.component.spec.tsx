@@ -22,6 +22,62 @@ afterEach(cleanup)
  * a CSS-valtozokat, tehat itt a token NEVE merheto, az ERTEKE a
  * `terv-tokenek.spec.ts`-ben all.
  */
+/**
+ * A DOBOZ MERT GEOMETRIAJA -- ES AMIERT KULON ALL A TOKEN-ALLITASOKTOL.
+ *
+ * A meresek forrasa a terv 2a lapja, a
+ * `vasarlasi-panel-belso-elrendezes-2026-09-08.md` leletben tetelesen:
+ * `padding:14px`, `gap:6px`, es a sorok `13.5px`-en allnak.
+ *
+ * MIERT KELLETT: mind a harom ertek benne allt a kodban, es EGYETLEN allitas
+ * sem merte oket. A `13.5px` ugyan szerepelt egy spec fajlban, de a KOSAR
+ * atveteli savjaera -- mas komponens, mas doboz. Egy ilyen talalat ugy nez ki,
+ * mint lefedettseg, es nem az: a kereses a fajlra megy, nem az elemre.
+ *
+ * AMIT NEM MER: a kirajzolt meretet. A jsdom nem forditja le a Tailwind
+ * osztalyokat, tehat ez a JELOLES meglete, nem a festett pixel.
+ */
+describe("az elérhetőség-doboz mért geometriája", () => {
+  it("a mélyedés belső margója 14, a sorköze 6 pixel", () => {
+    render(<ElerhetosegDoboz kiszereles="1 db" />)
+
+    const melyedes = screen.getByTestId("elerhetoseg-melyedes")
+
+    expect(melyedes.className).toContain("p-[14px]")
+    expect(melyedes.className).toContain("gap-[6px]")
+  })
+
+  /**
+   * MIND A HAROM SORT KULON MERJUK, mert kulon elemek es kulon is
+   * elmozdulhatnak. Egy ciklus egyetlen allitasban ugyanezt merne, de a piros
+   * nem mondana meg, MELYIK sor csuszott el -- es a kalibraciobol tudjuk, hogy
+   * a piros NEVE a bizonyitek, nem a szama.
+   */
+  it("a rendelési mondat 13.5 pixelen áll", () => {
+    render(<ElerhetosegDoboz rendelesiMondat="Legalább 2 darab rendelhető." />)
+
+    expect(screen.getByTestId("vaz-rendelesi-mondat").className).toContain(
+      "text-[13.5px]",
+    )
+  })
+
+  it("a készlet-sor 13.5 pixelen áll", () => {
+    render(<ElerhetosegDoboz keszlet={3} />)
+
+    expect(screen.getByTestId("vaz-keszlet").className).toContain(
+      "text-[13.5px]",
+    )
+  })
+
+  it("a kiszerelés-sor 13.5 pixelen áll", () => {
+    render(<ElerhetosegDoboz kiszereles="1 db" />)
+
+    expect(screen.getByTestId("vaz-egyseg").className).toContain(
+      "text-[13.5px]",
+    )
+  })
+})
+
 describe("az elérhetőség-doboz mélyedése", () => {
   it("a mélyedés a lap tokenjét viseli, nem a panelét", () => {
     render(<ElerhetosegDoboz kiszereles="1 db" />)
