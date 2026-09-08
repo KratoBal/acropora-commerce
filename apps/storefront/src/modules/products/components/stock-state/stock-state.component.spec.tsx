@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import StockState from "./index"
+import StockState, { FO_GOMB_MERET } from "./index"
 
 /**
  * A KIRAJZOLÁS MÉRÉSE -- AZ AZ ÁG, AMI A VEVŐ ELÉ KERÜL.
@@ -219,5 +219,50 @@ describe("a készlet-állapot kirajzolása", () => {
     )
 
     expect(screen.getByTestId("mobile-cart-button-eladva")).toBeTruthy()
+  })
+})
+
+/**
+ * A FO CSELEKVES MERETE -- KET ALLITAS, ES KULON-KULON MAST FOGNAK MEG.
+ *
+ * A kettot nem lehet osszevonni, mert KET FUGGETLEN modon romolhat el:
+ *
+ *   a gomb elveszti az osztalyt  -> az elso pirosodik
+ *   az ertek megvaltozik (54->44) -> a masodik pirosodik
+ *
+ * Ha csak az elso allna itt, egy `h-[44px]`-re irt konstanssal is zold
+ * maradna: a gomb tovabbra is "a konstansot viseli". Ha csak a masodik,
+ * akkor a konstans helyes erteken allna, mikozben senki nem hasznalja.
+ *
+ * === AMIT EZ AZ ALLITAS NEM GARANTAL, ES KI KELL MONDANI ===
+ *
+ * Azt meri, hogy a gomb VISELI a jelolest, nem azt, hogy a bongeszo 54
+ * pixelt RAJZOL. A jsdom nem forditja le a Tailwind osztalyokat. Egy elirt
+ * osztalynev (`h-[54pxx]`) ezen atmenne, es csak a lapon latszana.
+ */
+describe("a fő cselekvés mérete a tervből", () => {
+  it("a kosár-gomb viseli a panel mért méretét", () => {
+    render(
+      <StockState
+        availability="KAPHATO"
+        similarHref="/collections/elo-korallok"
+        onAddToCart={vi.fn()}
+      />,
+    )
+
+    const gomb = screen.getByTestId("add-product-button")
+    for (const jeloles of FO_GOMB_MERET.split(" ")) {
+      expect(gomb.className).toContain(jeloles)
+    }
+  })
+
+  /**
+   * A SZAM ITT LITERALKENT ALL, SZANDEKOSAN. Ha a konstansbol olvasnam ki,
+   * az allitas onmagat igazolna vissza, es barmilyen ertekre zold maradna.
+   */
+  it("a mért érték 54 pixel, 16 pixeles félkövér felirattal", () => {
+    expect(FO_GOMB_MERET).toContain("h-[54px]")
+    expect(FO_GOMB_MERET).toContain("text-base")
+    expect(FO_GOMB_MERET).toContain("font-semibold")
   })
 })

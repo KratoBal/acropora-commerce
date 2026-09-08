@@ -196,6 +196,17 @@ export function ValasztoDoboz() {
  * nincs `ref` es nincs lathatosag-figyelo -- a regi lap lebego sávja az, ami
  * ilyet igenyelt, es az a `ProductActions`-ben maradt, a regi uton.
  */
+/**
+ * A LEPTETO MERETEI -- A TERV 1b LAPJAROL MERVE, EGY HELYEN.
+ *
+ * A magassag SZANDEKOSAN azonos a fo gomb magassagaval (`FO_GOMB_MERET`):
+ * a tervben a ket elem egy sorban all, es egy vonalban zar. Ha valaki az
+ * egyiket elmozditja, a masikat is mozditania kell -- ezert all a ket szam
+ * egymas mellett a fejlecben, nem szet szorva a jelolesben.
+ */
+export const LEPTETO_GOMB_MERET = "h-[54px] w-[42px] text-lg"
+export const LEPTETO_MEZO_MERET = "h-[54px] w-[34px] text-[15px]"
+
 export function MennyisegDoboz() {
   const a = useVasarlas()
   if (!a) return null
@@ -215,14 +226,53 @@ export function MennyisegDoboz() {
     )
   }
 
+  /*
+    A LEPTETO A TERV MERETET VESZI FEL (31183035 negyedik tetele).
+
+    === A MERES, ES HOGY MELYIK LAPON ALL ===
+
+    A lepteto CSAK az 1b (vilagos, lampa) lapon letezik. A 2a (sotet, korall)
+    lapon nincs, es ez NEM hiany: egy egyedi peldanybol egy darab van, tehat
+    ott nincs mit lepteni. A mi felteteliink (`!a.uniquePiece`) pontosan ezt
+    a kulonbseget rajzolja ki, tehat a szerkezet mar egyezett -- csak a
+    meretek nem.
+
+        sor       display:flex; gap:10px      (a gomb-sor koze)
+        keret     1px solid oklch(0.85 0.008 70)
+        - es +    width:42px; height:54px; font-size:18px
+        a szam    width:34px; JetBrains Mono; font-size:15px
+
+    === AMIT ATVESZEK, ES AMIT NEM ===
+
+    A GEOMETRIAT atveszem: az 54 a gomb magassaga mellett all, ugyanabban a
+    sorban, tehat a ket elem egy vonalban zar. A 42 es a 34 ugyanezt a sort
+    tolti ki.
+
+    A SZINEKET NEM. Ket okbol, es a masodik a fontosabb:
+
+    1. A mert ertekek (`oklch(0.85 0.008 70)` keret, `oklch(0.45 0.012 60)`
+       jel) kozel allnak a meglevo tokenekhez (`--terv-keret-meleg` vilagos
+       0.88, `--terv-szoveg-halvany` vilagos 0.5), de nem egyeznek beture.
+    2. ES CSAK EGY VILAGRA VANNAK MERVE. A sotet lapon nincs lepteto, tehat
+       a sotet ertekre NINCS meresem. Egy egy-vilagra mert szin beirasa
+       ugyanaz a hiba lenne, mint amit a rez-tokeneknel mar egyszer
+       elkovettunk: a sotet lapon mert keszlet atkerult a vilagosra is.
+
+    A keret ezert a keszlet sajat tokenjén marad, amig valaki a sotet
+    ertekre is ad merest, vagy kimondja, hogy a meglevo token a valasz.
+
+    A MONO BETU KIVETEL, es azert az: a `--terv-betu-mono-lanc` MINDKET
+    vilagban ugyanaz (a betukeszlet nem vilagfuggo), tehat ott nincs mit
+    kitalalni.
+  */
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-[10px]">
       {!a.uniquePiece && (
         <div className="flex items-center rounded-md border border-ui-border-base">
           <button
             type="button"
             aria-label="Mennyiség csökkentése"
-            className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+            className={`${LEPTETO_GOMB_MERET} focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive`}
             onClick={() =>
               a.setQuantity(a.normaliseQuantity(a.quantity - a.quantityStep))
             }
@@ -231,7 +281,8 @@ export function MennyisegDoboz() {
           </button>
           <input
             aria-label="Mennyiség"
-            className="h-10 w-12 bg-transparent text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+            className={`${LEPTETO_MEZO_MERET} bg-transparent text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive`}
+            style={{ fontFamily: "var(--terv-betu-mono-lanc)" }}
             inputMode="numeric"
             value={a.quantity}
             onChange={(event) =>
@@ -242,7 +293,7 @@ export function MennyisegDoboz() {
           <button
             type="button"
             aria-label="Mennyiség növelése"
-            className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+            className={`${LEPTETO_GOMB_MERET} focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive`}
             onClick={() =>
               a.setQuantity(a.normaliseQuantity(a.quantity + a.quantityStep))
             }
