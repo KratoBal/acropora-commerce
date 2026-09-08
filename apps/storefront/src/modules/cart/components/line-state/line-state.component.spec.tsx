@@ -123,12 +123,17 @@ describe("a kosársor csipjeinek tipográfiája", () => {
 })
 
 /**
- * A SZERIF AZ ASZTALI NEZETBEN -- KET ALLITAS, ES A MASODIK A KONTROLL.
+ * A SZERIF MINDEN NEZETBEN -- HAROM ALLITAS, ES KETTO KOZULUK KONTROLL.
  *
  * A terv a kosar 3a lapjan ezt a mondatot KETSZER rajzolja: a 390-es mobil
- * kereten belul orokolt betuvel, az 1440-es asztalin Newsreaderrel. A
- * `small:` (1024) toresponthoz kotott jeloles ezt a ket allapotot adja
- * vissza, es ugyanott valt, ahol a kosar racsa ketoszloposra all.
+ * kereten belul orokolt betuvel, az 1440-es asztalin Newsreaderrel. Eddig
+ * ezert `small:` (1024) toresponthoz volt kotve.
+ *
+ * PICASSO CAFOLTA A SZELESSEG-MAGYARAZATOT (2026-09-08): a tervben van egy
+ * MASIK 390 pixeles keret is, az "Ures kosar" allapote, es abban szerif fut
+ * ugyanebben a szerepben. Tehat nem a hasab szelessege a kulonbseg oka, es a
+ * jeloles feltetel nelkul all. Amit ez NEM mond meg: miert maradt le a
+ * frissites a 3a mobil kereterol.
  *
  * A MASODIK ALLITAS NEM DISZ: enelkul egy valtozas, ami a szerifet a KOMPONENS
  * MINDEN szovegere raviszi, ugyanugy zold maradna -- es akkor a jeloles nem
@@ -136,16 +141,24 @@ describe("a kosársor csipjeinek tipográfiája", () => {
  * az, aminek NEM szabad megkapnia.
  *
  * AMIT NEM MER: hogy a bongeszo mit fest. A jsdom nem forditja le a Tailwind
- * osztalyokat, es a toresponthoz kotott alakot vegkepp nem ertelmezi -- ez a
- * jeloles MEGLETET meri, nem a kirajzolt betut.
+ * osztalyokat -- ez a jeloles MEGLETET meri, nem a kirajzolt betut.
  */
-describe("a szerif az asztali nézetben", () => {
-  it("az egyedi példány ígérete a törésponttól szerifet visel", () => {
+describe("a szerif minden nézetben", () => {
+  /**
+   * A MASODIK ALLITAS NEM UGYANAZ, MINT AZ ELSO TAGADASA.
+   *
+   * A `"small:font-kiemelt".includes("font-kiemelt")` IGAZ, tehat a puszta
+   * `toContain("font-kiemelt")` a toresponthoz kotott alakra IS zold. Vagyis
+   * epp azt a visszaesest nem venne eszre, ami itt egyaltalan szoba johet.
+   * A ket allitas egyutt kulonboztet.
+   */
+  it("az egyedi példány ígérete feltétel nélkül szerifet visel", () => {
     render(<CartLineState state="EGYEDI" similarHref="/x" />)
 
-    expect(screen.getByTestId("egyedi-kosar-igeret").className).toContain(
-      "small:font-kiemelt",
-    )
+    const igeret = screen.getByTestId("egyedi-kosar-igeret")
+
+    expect(igeret.className).toContain("font-kiemelt")
+    expect(igeret.className).not.toContain("small:font-kiemelt")
   })
 
   it("a csip NEM kapta meg a szerifet", () => {
