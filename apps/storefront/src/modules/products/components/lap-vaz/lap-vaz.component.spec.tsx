@@ -793,3 +793,54 @@ describe("a szakaszok csoportokba vonása", () => {
     expect(ki.map((cs) => cs.length)).toEqual([1, 1])
   })
 })
+
+/**
+ * A LAP SOTET FELULETE, NEM EGY DOBOZ BENNE (picasso atnezese, 2026-09-08).
+ *
+ * A korabbi alakban a sotet hatter a KOZEPRE IGAZITOTT, 1352 pixelre
+ * korlatozott dobozon allt, tehat egy sotet kartya lebegett feher lapon.
+ *
+ * AMIT EZ MER: hogy van teljes szelessegu felulet, hogy AZ viszi a hattert, es
+ * hogy a vilag jelolot O IS hordozza (enelkul a sajat hattere a VILAGOS
+ * ertekbol oldodna fel).
+ *
+ * AMIT NEM MER: a festett szint. A jsdom nem oldja fel a CSS-valtozokat, tehat
+ * itt a token NEVE merheto. Es NEM meri a fejlecet meg a lablecet: azok a
+ * `(main)` elrendezesben allnak, a lap folott, kulon tetelkent.
+ */
+describe("a lap teljes szélességű sötét felülete", () => {
+  const teljes = () => screen.getByTestId("lap-teljes-szelesseg")
+
+  /** ISMERT POZITIV KONTROLL: a vaz tovabbra is megrajzolodik alatta. */
+  it("a teljes szélességű felület és a váz is megjelenik", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(teljes()).toBeTruthy()
+    expect(screen.getByTestId("muszaki-lap-vaz")).toBeTruthy()
+  })
+
+  it("a teljes szélességű felület viseli a világ jelölőjét", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(teljes().getAttribute("data-vilag")).toBe("sotet")
+  })
+
+  it("a hátteret a teljes szélességű felület viszi, tokenből", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(teljes().style.background).toBe("var(--terv-hatter)")
+  })
+
+  /**
+   * EZ A LENYEG: a felulet NEM lehet szelessegre korlatozva. A regi hiba
+   * pontosan az volt, hogy a sotet felulet 1352 pixelnel veget ert.
+   *
+   * A merteket a BELSO doboz tartja, es arra kulon allitas all.
+   */
+  it("a teljes szélességű felület NINCS szélességre korlátozva", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(teljes().style.maxWidth).toBe("")
+    expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1352px")
+  })
+})

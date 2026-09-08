@@ -909,80 +909,122 @@ const LapVaz = ({
   egyediPeldany = false,
 }: LapVazProps) => {
   return (
+    /**
+     * A LAP SOTET, NEM EGY DOBOZ BENNE (picasso atnezese, 2026-09-08).
+     *
+     * A tervben az EGESZ oldal sotet. Nalunk egy sotet kartya lebegett feher
+     * lapon. Picasso szava: "onmagaban ettol nez ki minden mas olcsobbnak".
+     * Ezert megy elsonek: a tobbi javitas is ezen a hattéren fog latszani.
+     *
+     * Az ok szerkezeti volt: a `data-vilag` es a sotet hatter EGYUTT alltak a
+     * kozepre igazitott, 1352 pixelre korlatozott dobozon. Ami azon kivul
+     * esett, az a lap alapszinet viselte.
+     *
+     * === MIERT KET ELEM, ES MIERT ALL A JELOLO MIND A KETTON ===
+     *
+     * A kulso TELJES SZELESSEGU, es o viszi a hattert. A belso tartja a
+     * tervbeli 1352 pixeles merteket es a racsot.
+     *
+     * A `data-vilag` mind a kettoen all, es ez nem duplikacio:
+     *   a KULSO azert, hogy a SAJAT hattere a helyes vilagbol oldodjon fel
+     *     (enelkul a teljes szelessegu sav a VILAGOS erteket kapna)
+     *   a BELSO azert marad, mert allitas all ra (`lap-vaz.component.spec`
+     *     a `muszaki-lap-vaz` elemen keri a jelolot)
+     *
+     * A `vilag-jelolo.spec` orzoje ettol NEM sertul: az FAJLOKAT szamol, nem
+     * elofordulasokat, es a szandeka az, hogy egy helyen DOLJON EL a vilag --
+     * ez a ket sor ugyanabban a komponensben, ugyanabbol az egy ertekbol all.
+     *
+     * === AMIT EZ NEM OLD MEG, ES MIERT NEM ITT ===
+     *
+     * A FEJLEC es a LABLEC tovabbra is vilagos: azok a `(main)` elrendezesben
+     * allnak, a lap FOLOTT, tehat ez a komponens nem eri el oket. Mind a ketto
+     * KULON tetel, es mindegyik a sajat feluletet hozza magaval, amikor
+     * ujraepul. Egy ide eroltetett megoldas (kliens-oldali attributum a `html`
+     * elemen) VILLANAST adna elso festeskor -- eppen azt, ami ellen ez a
+     * javitas szol.
+     */
     <div
-      className="mx-auto w-full p-4 lg:grid lg:grid-cols-[856fr_452fr] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
-      style={{
-        maxWidth: "1352px",
-        background: "var(--terv-hatter)",
-        fontFamily: "var(--terv-betu-fo-lanc)",
-      }}
-      data-testid="muszaki-lap-vaz"
+      data-testid="lap-teljes-szelesseg"
       data-vilag={vilag}
+      className="w-full"
+      style={{ background: "var(--terv-hatter)" }}
     >
-      {csoportokba(szakaszokVilagra(vilag, egyediPeldany)).map((csoport) => {
-        const elso = csoport[0]
-        const kozos = csoport.length > 1 || Boolean(elso.csoport)
+      <div
+        className="mx-auto w-full p-4 lg:grid lg:grid-cols-[856fr_452fr] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
+        style={{
+          maxWidth: "1352px",
+          background: "var(--terv-hatter)",
+          fontFamily: "var(--terv-betu-fo-lanc)",
+        }}
+        data-testid="muszaki-lap-vaz"
+        data-vilag={vilag}
+      >
+        {csoportokba(szakaszokVilagra(vilag, egyediPeldany)).map((csoport) => {
+          const elso = csoport[0]
+          const kozos = csoport.length > 1 || Boolean(elso.csoport)
 
-        return (
-          <div
-            key={elso.kulcs}
-            data-vaz-oszlop={elso.oszlop}
-            data-vaz-csoport={elso.csoport}
-            className={
-              elso.oszlop === "teljes"
-                ? "lg:col-span-2"
-                : elso.oszlop === "bal"
-                  ? "lg:col-start-1"
-                  : "lg:col-start-2"
-            }
-            style={
-              kozos
-                ? {
-                    border: "1px solid var(--terv-keret)",
-                    background: "var(--terv-hatter-lap)",
-                    padding: "16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    /**
-                     * A KOZOS PANELEN BELUL A SZAKASZOK KOZOTT 18 PIXEL ALL,
-                     * ES EZ MERVE VAN, NEM VALASZTVA (2026-09-08).
-                     *
-                     * A tervben a vasarlasi panel HET belso sorbol all, es a
-                     * kozottuk levo tavolsag NEM egyseges:
-                     *
-                     *   ar -> brutto/cikkszam        6 px
-                     *   brutto -> keszlet           18 px
-                     *   keszlet -> atvetel          18 px
-                     *   atvetel -> Kosarba          18 px
-                     *   Kosarba -> foglalas         10 px
-                     *   foglalas -> DOA             16 px + egy FELSO VONAL
-                     *
-                     * A mi NEGY szakaszunk hatara pontosan a harom 18-as
-                     * helyen van (ar | keszlet | atvetel | kosarba), tehat a
-                     * SZAKASZOK KOZOTTI ritmus egyseges 18. A 6, a 10 es a 16
-                     * a szakaszokon BELUL all, es azok mas komponensek
-                     * tulajdona -- ide nem tartoznak.
-                     *
-                     * Elozoleg 16 allt itt, kerekitve. Ket pixel, de a lenyeg
-                     * nem a kulonbseg merete: a 16 VALASZTAS volt, a 18 MERES.
-                     */
-                    gap: "18px",
-                  }
-                : undefined
-            }
-          >
-            {csoport.map((szakasz) => (
-              <VazDoboz
-                key={szakasz.kulcs}
-                szakasz={szakasz}
-                keretNelkul={kozos}
-              >
-                {tartalom[szakasz.kulcs]}
-              </VazDoboz>
-            ))}
-          </div>
-        )
-      })}
+          return (
+            <div
+              key={elso.kulcs}
+              data-vaz-oszlop={elso.oszlop}
+              data-vaz-csoport={elso.csoport}
+              className={
+                elso.oszlop === "teljes"
+                  ? "lg:col-span-2"
+                  : elso.oszlop === "bal"
+                    ? "lg:col-start-1"
+                    : "lg:col-start-2"
+              }
+              style={
+                kozos
+                  ? {
+                      border: "1px solid var(--terv-keret)",
+                      background: "var(--terv-hatter-lap)",
+                      padding: "16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      /**
+                       * A KOZOS PANELEN BELUL A SZAKASZOK KOZOTT 18 PIXEL ALL,
+                       * ES EZ MERVE VAN, NEM VALASZTVA (2026-09-08).
+                       *
+                       * A tervben a vasarlasi panel HET belso sorbol all, es a
+                       * kozottuk levo tavolsag NEM egyseges:
+                       *
+                       *   ar -> brutto/cikkszam        6 px
+                       *   brutto -> keszlet           18 px
+                       *   keszlet -> atvetel          18 px
+                       *   atvetel -> Kosarba          18 px
+                       *   Kosarba -> foglalas         10 px
+                       *   foglalas -> DOA             16 px + egy FELSO VONAL
+                       *
+                       * A mi NEGY szakaszunk hatara pontosan a harom 18-as
+                       * helyen van (ar | keszlet | atvetel | kosarba), tehat a
+                       * SZAKASZOK KOZOTTI ritmus egyseges 18. A 6, a 10 es a 16
+                       * a szakaszokon BELUL all, es azok mas komponensek
+                       * tulajdona -- ide nem tartoznak.
+                       *
+                       * Elozoleg 16 allt itt, kerekitve. Ket pixel, de a lenyeg
+                       * nem a kulonbseg merete: a 16 VALASZTAS volt, a 18 MERES.
+                       */
+                      gap: "18px",
+                    }
+                  : undefined
+              }
+            >
+              {csoport.map((szakasz) => (
+                <VazDoboz
+                  key={szakasz.kulcs}
+                  szakasz={szakasz}
+                  keretNelkul={kozos}
+                >
+                  {tartalom[szakasz.kulcs]}
+                </VazDoboz>
+              ))}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
