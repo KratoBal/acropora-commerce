@@ -83,6 +83,19 @@ const TABLAZATOS = {
     "<p>Bevezető szöveg</p><table><tr><td>Teljesítmény</td><td>160 W</td></tr></table>",
 } as never
 
+/**
+ * UGYANAZ A TERMEK, GONDOZOTT KAPCSOLATTAL. A `hasonlo` doboz ket allapota
+ * KET KULONBOZO BEMENETEN mérheto, nem ugyanazon: a doboz csak akkor teli, ha
+ * a termek metaadataban all azonosito.
+ */
+const TERMEK_KAPCSOLATTAL = {
+  ...(TERMEK as object),
+  metadata: {
+    ...(TERMEK as { metadata: Record<string, string> }).metadata,
+    unas_similar_ids: "prod_2,prod_3",
+  },
+} as never
+
 describe("a váz valódi tartalma", () => {
   /**
    * A FÜL-SÁV MEGJELENIK, HA A LEÍRÁSBAN TÁBLÁZAT ÁLL.
@@ -336,7 +349,11 @@ describe("a váz valódi tartalma", () => {
   it("átadott hasonló résszel a hasonló doboz nem üres", () => {
     render(
       <LapVaz
-        tartalom={vazTartalom(TERMEK, undefined, <div>hasonló lista</div>)}
+        tartalom={vazTartalom(
+          TERMEK_KAPCSOLATTAL,
+          undefined,
+          <div>hasonló lista</div>,
+        )}
       />,
     )
 
@@ -362,9 +379,13 @@ describe("a váz valódi tartalma", () => {
    */
   it("a vásárlási rész és a hasonló lista külön dobozba kerül", () => {
     render(
-      <VasarlasProvider product={TERMEK}>
+      <VasarlasProvider product={TERMEK_KAPCSOLATTAL}>
         <LapVaz
-          tartalom={vazTartalom(TERMEK, true, <div>hasonló lista</div>)}
+          tartalom={vazTartalom(
+            TERMEK_KAPCSOLATTAL,
+            true,
+            <div>hasonló lista</div>,
+          )}
         />
       </VasarlasProvider>,
     )
@@ -466,6 +487,36 @@ describe("a váz valódi tartalma", () => {
      */
     const cim = "Kérdezd minket"
     expect(szoveg).toBe(`${cim}${TELEFON_MEGJELENITVE}`)
+  })
+
+  /**
+   * A HASONLO DOBOZ CSAK AKKOR TELI, HA VAN MIT MUTATNIA.
+   *
+   * A hivo egy BURKOLO ELEMET ad at (`<div>` a Suspense korul), es az MINDIG
+   * letezik -- a `VazDoboz` uressegi vizsgalata pedig a `children` letezeset
+   * nezi, nem azt, hogy a benne allo szerver-komponens vegul rajzol-e valamit.
+   *
+   * A #147 ota a `RelatedProducts` gondozott kapcsolat nelkul `null`-t ad, ami
+   * ma MINDEN termeknel igy van. A burkolo attol meg atmegy, tehat a doboz
+   * TELINEK jelolt (folytonos keret, hatter, cim) es URESEN rajzol -- pontosan
+   * az, amit a `VazDoboz` sajat fejlece tilt: "egy ures doboz, ami kesznek
+   * latszik, rosszabb a hianyzonal".
+   *
+   * Ezert a dontes az ADATBOL jon, nem a doboz sajat ures againak eredmenyebol.
+   */
+  it("gondozott kapcsolat nélkül a hasonló doboz üresen marad, nem telinek jelölve", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          undefined,
+          <div data-testid="related-products-container" />,
+        )}
+      />,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="hasonlo"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
   })
 
   it("a tizennégy doboz akkor is mind ott áll, ha csak a fele kap tartalmat", () => {
