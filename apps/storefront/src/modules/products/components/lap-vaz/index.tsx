@@ -74,12 +74,58 @@ type VazSzakasz = {
  * === HONNAN JOTT A LISTA, ES MIERT SZAMIT ===
  *
  * A tervfajl (`exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html`)
- * MUSZAKI (1b) valtozatabol. A sotet (2a) valtozat ugyanezt a doboz-sort
- * hasznalja, mas ertek-keszlettel.
+ * MUSZAKI lapjaibol -- es ez a mondat 2026-09-08-ig pontatlan volt, ezert all
+ * itt reszletesen.
+ *
+ * A FAJLBAN HAROM LAP ALL EGYMAS ALATT, nem ketto. A terv sajat bal-margos
+ * cimkei nevezik meg oket, es a legkulso konteneek sajat szoveges cimet
+ * viselnek:
+ *
+ *   2a   "2. KOR WYSIWYG korall termekoldal -- az 1b szerkezete, sotet feluleten"
+ *   1a   "1. KOR Termekoldal -- technikai termek (LED lampa), vilagos irany,
+ *         ket valtozat"  (ezen belul az elso lap)
+ *   1b   ugyanaz a szakasz, masodik lap
+ *
+ * ES A LISTA A KET VILAGOS LAP UNIOJA, nem az 1b-e egyedul. Merve, laponkent
+ * (a lap-hovatartozas DOM-beli, nem y-koordinata: a ket szakasz-kontener
+ * ATFED, a korall magassaga 2400, a muszaki mar 2243-nal indul):
+ *
+ *   csak 1a-n:   a negy adat-csempe, "Műszaki adatok",
+ *                "Nem vagy biztos a méretben?"
+ *   csak 1b-n:   "Csomagajánlat", "Kérdezd minket", "Hasonló lámpák",
+ *                "Elég lesz ez a lámpa az akváriumodra?"
+ *   mindketton:  a termek neve, az ar, a "Kosárba", "Ami még kellhet hozzá"
+ *
+ * A LISTA IGY MARAD (acrobot dontese, 2026-09-08): Balazs a vazat ebben az
+ * alakban latta es hagyta jova, es egy dobozlista-szukites nem kod-pontositas
+ * lenne, hanem a jovahagyott allapot megvaltoztatasa. A MONDAT javul, nem a
+ * lista.
+ *
+ * === ES A SOTET (2a) LAP NEM PONTOSAN UGYANEZT A SORT HASZNALJA ===
+ *
+ * A terv sajat cime szerint a 2a "az 1b szerkezete", de a MAKETTJEN ket doboz
+ * nem all ott. Kimeritoen atnezve mind a 141 szoveges elemet, ket fuggetlen
+ * retegben (lathato cimek ES a designer sajat monospace cimkei):
+ *
+ *   "Ami még kellhet hozzá"   a 2a lapon SEHOL      (1a-n es 1b-n szakaszcim)
+ *   "Műszaki adatok"          a 2a lapon SEHOL      (1a-n szakaszcim, 1b-n ful)
+ *
+ * A kontroll ugyanabban a halmazban TALAL (wysiwyg 5, kotegajanlat 1,
+ * kerdezd 1), tehat a nulla nem a kereses tulajdonsaga.
+ *
+ * A meretezes-seged viszont OTT VAN, mas felirattal -- es a felirat a designer
+ * sajat cimkeje, nem a mienk:
+ *
+ *   2a   y=1191  "ELHELYEZÉS-SEGÉD"   a "Hová tedd ezt a példányt?" cim folott
+ *   1b   y=5740  "MÉRETEZÉS-SEGÉD"    az "Elég lesz ez a lámpa..." cim folott
  *
  * Ezt azert kell kiirni, mert a tervfajl TOBB valtozatot tartalmaz, es egy
  * "hianyzo doboz" bejelentesnel az elso kerdes az, hogy ugyanabbol a
- * valtozatbol nezzuk-e.
+ * valtozatbol nezzuk-e -- a masodik pedig az, hogy nem MAS FELIRATTAL all-e ott.
+ *
+ * A meresek es a kiolvasok:
+ * `agents/nautilus/measurement/terv-valtozatok/` (OLVASSEL.md, 2a-TELJES-LISTA.md,
+ * VILAGOS-LAPOK.md, DESIGNER-JEGYZETEK.md).
  *
  * === EGY KONKRET ESET, AMI EBBOL MAR ELOJOTT: A VIDEO ===
  *
@@ -404,7 +450,7 @@ const ELO_ALLAT_ELHAGYOTT = new Set(["kiegeszitok"])
 
 export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
   MUSZAKI_LAP_SZAKASZAI.filter(
-    (szakasz) => !ELO_ALLAT_ELHAGYOTT.has(szakasz.kulcs)
+    (szakasz) => !ELO_ALLAT_ELHAGYOTT.has(szakasz.kulcs),
   ).map((szakasz) => ({
     ...szakasz,
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
@@ -467,8 +513,8 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
             szakasz.oszlop === "teljes"
               ? "lg:col-span-2"
               : szakasz.oszlop === "bal"
-              ? "lg:col-start-1"
-              : "lg:col-start-2"
+                ? "lg:col-start-1"
+                : "lg:col-start-2"
           }
         >
           <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>
