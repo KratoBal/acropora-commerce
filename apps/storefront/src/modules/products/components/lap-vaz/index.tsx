@@ -203,6 +203,30 @@ type VazSzakasz = {
  * (Ellenorzes: 2276 + 2651 = 4927, a kozos kontener 4983 magas -- 56 pixel
  * margoval ugyanaz a ketto.)
  *
+ * ES A SOTET LAP MASKEPP VISELKEDIK -- EZ A KORLAT NEM ALL MIND A HAROM LAPRA
+ * (nautilus vette eszre, hogy a fenti tabla csak kettot nevez meg; a szamokat
+ * a sajat futtatasommal igazoltam vissza, nem atvettem).
+ *
+ * A teljes lanc, harom cimkere:
+ *
+ *   2a   sajat kontener  1328 x 2140    a folotte allo  1440 x 2243
+ *   1a   sajat kontener  1854 x 2276    a folotte allo  1328 x 4983
+ *   1b   sajat kontener  1854 x 2651    a folotte allo  1328 x 4983
+ *
+ * A 2a SAJAT kontenere tehat 1328 szeles, nem 1854 -- vagyis BENNE VAN a
+ * szurom ablakaban, es atmegy rajta. A sotet lapnal nem a kozos kontener
+ * olvasodik, hanem a lap sajatja.
+ *
+ * AMI EBBOL KOVETKEZIK, ES AMI NEM. Kovetkezik, hogy a harom lapot a szurom
+ * KETFELE latja: a ket vilagosat egyben (a kozos kontenerben), a soteteet
+ * onmagaban. NEM kovetkezik, hogy ez res: a sotet lapnal epp ez a kivant
+ * bontas. A kulonbseget azert kell kiirni, mert a fenti tabla ket sora
+ * konnyen olvasodik ugy, mintha a harmadik is ugyanigy allna.
+ *
+ * A merohely: `agents/nautilus/measurement/terv-valtozatok/kontener-lanc.cjs`,
+ * ujrafuttathato. (Elotte ezek a szamok CSAK egy uzenetben alltak -- egy szam,
+ * aminek nincs ujrafuttathato helye, egy ev mulva allitas, nem bizonyitek.)
+ *
  * A KULONBSEG NEM SZOSZAPORITAS: "a forrasom nem tudja" azt jelenti, hogy
  * masik forrast kell keresni; "a szurom kizarja" azt, hogy egy szamon mulik.
  * Ket kulonbozo kovetkezo lepes.
