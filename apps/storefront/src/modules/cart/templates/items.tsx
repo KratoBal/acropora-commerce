@@ -77,7 +77,7 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
         <LocalizedClientLink
           href="/store"
           className="w-fit text-sm underline"
-          style={{ color: "var(--terv-kiemel)" }}
+          style={{ color: "var(--terv-kiemel-tinta)" }}
           data-testid="continue-shopping-link"
         >
           Vásárlás folytatása

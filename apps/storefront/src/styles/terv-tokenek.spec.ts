@@ -70,6 +70,7 @@ describe("a terv megerositett ertekei", () => {
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)"],
     ["--terv-kiemel", "oklch(0.55 0.13 45)"],
     ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
+    ["--terv-kiemel-tinta", "oklch(0.55 0.13 45)"],
   ]
 
   /**
@@ -202,5 +203,60 @@ describe("a terv megerositett ertekei", () => {
 
     expect(vilagosBlokk).toContain("--terv-kiemel-tinta: oklch(0.55 0.13 45)")
     expect(sotetBlokk).toContain("--terv-kiemel-tinta: oklch(0.68 0.13 45)")
+  })
+})
+
+/**
+ * A REZ KET SZEREPE -- ES AZ ALLITAS, AMI A SOTET LAPON SZETVALASZTJA OKET.
+ *
+ * A tervben a rez FELULETKENT es SZOVEGKENT is szerepel, es a ket ertek a
+ * sotet lapon KULONBOZIK:
+ *
+ *   2a (sotet)    felulet 0.62   a lapon allo rez szoveg 0.68   (9 elem)
+ *   1b (vilagos)  felulet 0.55   a lapon allo rez szoveg 0.55   (8 elem)
+ *
+ * A VILAGOS LAPON EGYBEESNEK, es epp ezert kell allitas ra: egy vilagos lapon
+ * merve a ket szerep egy tokennek latszik, es a szetvalasztas "folosleges
+ * bonyolitasnak". A kulonbseg csak a soteten latszik.
+ *
+ * MIERT BLOKKONKENT, ES NEM A TELJES FAJLBAN: egy teljes fajlra szolo kereses
+ * a 0.68-at a vilagos blokkban is megtalalna, ha valaki oda irja -- es akkor az
+ * allitas pont azt nem venne eszre, amit vedeni akar.
+ */
+describe("a réz két szerepe", () => {
+  const sotetKezd = () => CSS.indexOf('[data-vilag="sotet"]')
+
+  const ertek = (blokk: string, nev: string) =>
+    new RegExp(`${nev}:\\s*(oklch\\([^)]+\\))`).exec(blokk)?.[1]
+
+  it("sötét módban --terv-kiemel-tinta = oklch(0.68 0.13 45)", () => {
+    const sotetBlokk = CSS.slice(sotetKezd())
+
+    expect(ertek(sotetBlokk, "--terv-kiemel-tinta")).toBe("oklch(0.68 0.13 45)")
+  })
+
+  it("a réz tinta és a réz felület a sötét lapon KÜLÖNBÖZIK", () => {
+    const sotetBlokk = CSS.slice(sotetKezd())
+
+    const felulet = ertek(sotetBlokk, "--terv-kiemel")
+    const tinta = ertek(sotetBlokk, "--terv-kiemel-tinta")
+
+    expect(felulet).toBe("oklch(0.62 0.13 45)")
+    expect(tinta).toBe("oklch(0.68 0.13 45)")
+    expect(felulet).not.toBe(tinta)
+  })
+
+  /**
+   * ES A VILAGOS LAPON EGYBEESNEK -- ez nem elirás, hanem a terv. Enelkul
+   * valaki "kijavitana" a vilagos tintat egy masik ertekre, hogy "kovetkezetes"
+   * legyen a sotettel.
+   */
+  it("a világos lapon a két szerep SZÁNDÉKOSAN egybeesik", () => {
+    const vilagosBlokk = CSS.slice(0, sotetKezd())
+
+    expect(ertek(vilagosBlokk, "--terv-kiemel")).toBe("oklch(0.55 0.13 45)")
+    expect(ertek(vilagosBlokk, "--terv-kiemel-tinta")).toBe(
+      "oklch(0.55 0.13 45)",
+    )
   })
 })
