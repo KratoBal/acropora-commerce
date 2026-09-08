@@ -65,7 +65,24 @@ export default function ProductBreadcrumb({
 
         A `hover:text-ui-fg-base` KIKERULT: a lebegtetett allapot ma a
         rogzitett alapszinre valtott volna, ami a sotet lapon eppen olvashatatlan.
-        Amig nincs dontes a lebegtetes szinerol, a link a lista szinet orokli.
+
+        === ES MEGJOTT A DONTES (acrobot, msg 15614) ===
+
+        "A link a lista szinet orokolje, ahogy most csinaltad, ES a lebegtetes
+        a `--terv-szoveg` tokent kapja."
+
+        Ez UGYANAZ a token, amit a sor VEGE visel (a mai termek neve). Vagyis a
+        lebegtetes nem egy harmadik hangero, hanem a lista felhozasa arra a
+        szintre, amin a jelenlegi elem all -- es epp ezert nem kellett hozza uj
+        token.
+
+        MIND A KET VILAGBAN ERTELMES, es ez a lenyeg: a `--terv-szoveg` vilagosban
+        sotet (0.2), soteten vilagos (0.95), tehat a lebegtetes mindket lapon
+        "kicsit hangosabb". A regi rogzitett szin csak az egyiken volt az.
+
+        MIERT OSZTALY ES NEM BEAGYAZOTT STILUS: egy beagyazott `style` nem ismer
+        allapotot. A tokent ezert a Tailwind konfig nevesiti
+        (`textColor: { "terv-szoveg" }`), ugyanugy, mint a szerif betut a #235-ben.
       */}
       <ol
         className="flex min-w-max items-center gap-2 text-sm"
@@ -74,7 +91,7 @@ export default function ProductBreadcrumb({
       >
         <li>
           <LocalizedClientLink
-            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+            className="hover:text-terv-szoveg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
             href="/"
           >
             Főoldal
@@ -84,7 +101,7 @@ export default function ProductBreadcrumb({
           <li key={category.id} className="flex items-center gap-2">
             <span aria-hidden="true">/</span>
             <LocalizedClientLink
-              className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+              className="hover:text-terv-szoveg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
               href={`/categories/${category.handle}`}
             >
               {category.name.trim()}

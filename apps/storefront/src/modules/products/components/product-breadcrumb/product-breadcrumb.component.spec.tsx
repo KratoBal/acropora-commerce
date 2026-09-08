@@ -1,8 +1,37 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+/**
+ * A DUPLA ATADJA A `className`-t ES A `href`-et -- ES EZ NEM RESZLET.
+ *
+ * Az eredeti dupla CSAK a gyerekeket adta tovabb, a tobbi tulajdonsagot
+ * eldobta. Ettol a link-elemek osztalya a renderelt fabana URES lett, es ennek
+ * ket kovetkezmenye volt:
+ *
+ *   1. egy lebegtetesre irt allitas a DUPLAT merte volna, nem a komponenst;
+ *   2. es a lenti "egyetlen rogzitett szin-osztaly sem maradt" allitas VAK
+ *      volt a linkekre -- ha valaki visszatenne rajuk a `text-ui-fg-base`
+ *      osztalyt, az allitas ZOLD maradna, mert az az osztaly a dupla miatt
+ *      sosem kerult a kimenetbe.
+ *
+ * Vagyis a dupla nem csak egy allitast gyengitett, hanem egy MEGLEVO vedelmet
+ * is: pontosan az az alak, amit a jegyzeteink ugy hivnak, hogy a hivo hasznal
+ * egy erteket, amit a teszt nem allit.
+ */
 vi.mock("@modules/common/components/localized-client-link", () => ({
-  default: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+  default: ({
+    children,
+    className,
+    href,
+  }: {
+    children: React.ReactNode
+    className?: string
+    href?: string
+  }) => (
+    <a className={className} href={href}>
+      {children}
+    </a>
+  ),
 }))
 
 import ProductBreadcrumb from "./index"
@@ -63,5 +92,48 @@ describe("a morzsamenü színei", () => {
 
     expect(container.innerHTML).not.toContain("text-ui-fg-base")
     expect(container.innerHTML).not.toContain("text-ui-fg-muted")
+  })
+})
+
+/**
+ * A LEBEGTETES SZINE -- KET ALLITAS, ES A MASODIK A KONTROLL.
+ *
+ * A dontes (acrobot, msg 15614): a link a lista szinet orokli, a lebegtetes a
+ * `--terv-szoveg` tokent kapja. Ugyanaz a token, amit a sor VEGE visel, tehat
+ * a lebegtetes a listat arra a szintre hozza fel, amin a mai termek all.
+ *
+ * A MASODIK ALLITAS NEM DISZ: a mai termek eleme MAR ezen a szinen all, es NEM
+ * link. Ha a jeloles ravandorolna, az egy nem letezo lebegtetett allapotot
+ * igerne egy nem kattinthato elemen -- es az elso allitas ettol meg zold
+ * maradna.
+ *
+ * AMIT NEM MER: a festett szint. A jsdom nem forditja le a Tailwind
+ * osztalyokat; ez a jeloles MEGLETET meri.
+ */
+describe("a lebegtetés színe", () => {
+  it("a morzsamenü linkjei lebegtetéskor az erősebb tokent kapják", () => {
+    render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
+
+    /*
+      `Array.from`, nem kozvetlen bejaras: a `NodeListOf` bejarasa a repo
+      forditasi celjan TS2802-t ad (`--downlevelIteration` nelkul). A teszt
+      ettol meg ZOLDEN futott -- epp ezert kell a ket kaput kulon nezni.
+    */
+    const linkek = Array.from(
+      screen.getByTestId("morzsamenu-lista").querySelectorAll("a"),
+    )
+
+    expect(linkek.length).toBeGreaterThan(0)
+    for (const link of linkek) {
+      expect(link.className).toContain("hover:text-terv-szoveg")
+    }
+  })
+
+  it("a mai termék eleme NEM kapja meg, mert nem link", () => {
+    render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
+
+    expect(screen.getByTestId("morzsamenu-jelenlegi").className).not.toContain(
+      "hover:text-terv-szoveg",
+    )
   })
 })
