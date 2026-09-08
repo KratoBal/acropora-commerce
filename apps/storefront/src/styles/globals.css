@@ -141,7 +141,22 @@
      elem, szakaszon belul NULLA kivetel):
 
        2a  (sotet, korall)    hatter 0.62   a FELIRATOT visel elemek szovege 0.15
-       1a + 1b (vilagos)      hatter 0.55   a FELIRATOT visel elemek szovege FEHER
+       1b  (vilagos)          hatter 0.55   a FELIRATOT visel elemek szovege FEHER
+       1a  (vilagos)          NULLA rez hatteru elem
+
+     A HARMADIK SOR NEM KIEGESZITES, HANEM A MASODIK JAVITASA. Itt korabban
+     "1a + 1b (vilagos)" allt, es az a NEV felrevezet: a kilenc vilagos rez elem
+     MIND az 1b lapon all, az 1a-n egy sincs. Aki az 1a lapon ellenorizne, nem
+     talalna semmit, es azt hinne, hogy a meres megdolt.
+
+     A NULLA MELLE KONTROLL JAR, kulonben nem lehet megkulonboztetni a
+     "nincs rajta rez" es a "ez a lap ki sem kerult a meresbe" esetet. Az 1a
+     kontenere 215 elemet tartalmaz a kiolvasasban, tehat a lap BENNE VAN az
+     adatban, es a nulla valodi.
+
+     KET FUGGETLEN MERES, KET KULONBOZO LAP-SZETVALASZTASSAL (murena a terv
+     sajat `section` elemeibol, nautilus a margo-cimkek legkozelebbi magas
+     felmenojebol): 2a 9 darab 0.62, 1b 9 darab 0.55, 1a nulla. Beture ugyanaz.
 
      Vagyis a rezen allo szoveg MEGFORDUL a ket vilag kozott, es a korabbi
      "sehol nem all feher rezen" mondat a vilagos lapokra hamis volt.
