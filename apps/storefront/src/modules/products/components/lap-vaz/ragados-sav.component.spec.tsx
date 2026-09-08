@@ -99,12 +99,28 @@ describe("a lap alján futó sáv", () => {
  * AMIT MER: a token NEVET. Az erteket a `terv-tokenek.spec.ts` allitja.
  */
 describe("a ragadós sáv tónusa", () => {
-  it("a sáv a panelek tokenjét viseli, nem a lapét", () => {
+  /**
+   * A SAV A LAP TOKENJET VISELI, ES EZ EGY VISSZAVONAS VISSZAVONASA.
+   *
+   * Ez az allitas eloszor `--terv-hatter-halvany` erteket kert (a #214-ben),
+   * hibas meresre epitve: a savot a MERETE es a MARGOJA alapjan kerestem a
+   * tervben, nem a sajat megkulonbozteto jegye (`position:sticky; bottom:0`)
+   * alapjan -- es egy MASIK savot talaltam meg.
+   *
+   * A terv sticky save mind a harom lapon a SAJAT LAPJANAK a hatteret viseli:
+   * sotetben 0.17, vilagosban 0.99 -- vagyis pontosan a `--terv-hatter`, mind a
+   * ket vilagban betuere.
+   *
+   * A NEVE IS SZUKEBB LETT. Az elozo alak ("a panelek tokenjét viseli, nem a
+   * lapét") KET dolgot allitott egy nevben, es a masodik fele volt a hamis.
+   * Ez most egyet allit: azt, amit mer.
+   */
+  it("a sáv a lap tokenjét viseli", () => {
     render(<RagadosSav ar={<span>289 900 Ft</span>} />)
 
     const sav = screen.getByTestId("ragados-sav")
 
-    expect(sav.style.background).toBe("var(--terv-hatter-halvany)")
+    expect(sav.style.background).toBe("var(--terv-hatter)")
   })
 
   /*

@@ -28,26 +28,44 @@ import React from "react"
  * alapszinet viselte volna a melyebb feluleti szin helyett. Nem hibazik, csak
  * mast mutat.
  *
- * EZ A BEKEZDES HAMIS VOLT, ES EN IRTAM. Az allt itt, hogy a tervbeli ertek
- * sotetben oklch(0.17 0.016 250), es hogy az a `--terv-hatter-lap`.
+ * === EGY VISSZAVONAS VISSZAVONASA, ES A MASODIK MERES A HELYES ===
  *
- * VISSZAMERVE A TERV NYERS FORRASABOL (2026-09-08) a sav ezt viseli:
+ * Itt eredetileg az allt, hogy a tervbeli ertek sotetben oklch(0.17 0.016 250).
+ * AZ IGAZ VOLT. 2026-09-08 delutan "helyesbitettem" 0.205-re, es a helyesbites
+ * volt a hibas -- a #214 ezzel a savot a `--terv-hatter-halvany` tokenre vitte.
+ * Ez a valtozas allitja vissza.
  *
- *     margin-top:56px; padding:20px 44px;
- *     border-top:1px solid oklch(0.28 0.014 250);
- *     background:oklch(0.205 0.018 249)
+ * A TERV RAGADOS SAVJA, a sajat, megkulonbozteto jegye szerint keresve
+ * (`position:sticky; bottom:0`), mind a harom tervlapon:
  *
- * Vagyis 0.205, ugyanaz, mint a panelekе -- nem 0.17. A 0.17 nyolc helyen all a
- * tervben, de azok a KERESO MEZOK (`flex:1;height:46px`) es maga a LAP kerete.
+ *     2a sotet    background: oklch(0.17 0.016 250)     margin-top:24px
+ *     1b vilagos  background: oklch(0.99 0.004 80)      margin-top:24px
+ *     1a vilagos  background: oklch(0.995 0.002 250)    margin-top:28px
  *
- * HOGYAN LETT BELOLE 0.17: a nyolc elofordulast egyben nezteem, es a sav
- * kereseset a MERETRE alapoztam, nem a sav sajat jegyeire (a `margin-top:56px`
- * es a `border-top` parosra). Egy tul tag kereses hihetoen nezo talalatot ad.
+ * Mind a harom a SAJAT LAPJANAK a hattere. A sav tehat nem emelkedik ki es nem
+ * melyed: ugyanaz a felulet, amit a felso kerete valaszt el.
  *
- * ES AMIERT EZ TOBB EGY ELIRASNAL: erre a hamis mondatra epitve azt jelentettem
- * acrobotnak, hogy amikor a lap 0.17-re megy, a sav ES a lap azonos tonusa
- * SZANDEKOS. Nem az. A tervben a sav VILAGOSABB a lapnal, ugyanugy, mint a
- * panelek. Az allitas at is ment egy dontesbe, mielott visszamertem.
+ * === HOGYAN TEVEDTEM, MERT AZ ALAKJA FONTOSABB A SZAMNAL ===
+ *
+ * A savot a MERETE es a MARGOJA alapjan kerestem: `margin-top:56px` plusz
+ * `border-top`. Talaltam is ilyen elemet, ket lapon, hihető ertekekkel (0.205
+ * es 0.975) -- csak epp AZ NEM A RAGADOS SAV. Az egy masik, szelesebb belso
+ * margoju sav (`padding:20px 44px`); a sticky save `padding:14px 18px`.
+ *
+ * A megkulonbozteto jegy a `position:sticky`, es epp azt nem kerestem. Egy tul
+ * tag kereses nem uresen ter vissza, hanem ROSSZ talalattal -- es az sokkal
+ * meggyozobb, mint a semmi.
+ *
+ * === ES A DRAGABB FELE: A CAFOLATOT NEM MERTEM VISSZA ===
+ *
+ * Az EREDETI allitast meresre alapoztam. A CAFOLATOT viszont elfogadtam, amint
+ * eloallt, es azonnal jelentettem is -- holott ugyanaz a ket kerdes jart volna
+ * neki: mit kerestem pontosan, es tudott volna-e mast hozni.
+ *
+ * A tokent MOSTANTOL a `--terv-hatter` adja, es az a #214 es a #216 ota MIND A
+ * KET vilagban betuere egyezik a tervvel (0.17 es 0.99). A ket korabbi
+ * helyesbitesem tehat nem volt haszontalan: a lap tokenje azota pontos, es epp
+ * ezert ez ma jobb valasz, mint az eredeti `--terv-hatter-lap` is volt.
  *
  * === MIERT PARAMETEREK, ES NEM SAJAT TARTALOM ===
  *
@@ -90,7 +108,7 @@ const RagadosSav = ({ cimke, ar, cselekves }: RagadosSavProps) => {
       className="sticky bottom-0 flex items-center gap-[10px] border-t px-[18px] py-[14px] lg:gap-5 lg:px-11 lg:py-5"
       style={{
         borderColor: "var(--terv-keret)",
-        background: "var(--terv-hatter-halvany)",
+        background: "var(--terv-hatter)",
       }}
     >
       <div className="flex-1">
