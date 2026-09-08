@@ -648,6 +648,25 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
  * ESET szerint: az egy WYSIWYG korall termekoldal. A sotet felirat tehat az
  * ESETHEZ tartozik, nem az elo allat aghoz.
  *
+ * ES AMI EZT AZ ERVET NEM TAMASZTJA ALA, HOLOTT KEZENFEKVO LENNE: a harom
+ * felirat NEM azonos szerkezetu. Merve a nyers kiolvasason (2026-09-08):
+ *
+ *   2a   y=  56  x=126  15px / 400    <- ez maga a LAP CIME
+ *   1a   y=2349  x=111  17px / 600
+ *   1b   y=4681  x=111  17px / 600
+ *
+ * Az 1a es az 1b parhuzamos EGYMASSAL; a 2a mas meret, mas suly, mas pozicio,
+ * es ugyanaz az elem, amit a lap cimekent azonositottunk. Vagyis nem harom
+ * egyenrangu cimke, amibol az egyik kilog.
+ *
+ * AZ ERV EZZEL EGYUTT IS ALL, DE MAS ALAPON: a TARTALMUKON, nem a
+ * szerkezetukon. Mind a harom megnevezi, MI EZ A LAP, es a 2a valasza egy ESET
+ * ("WYSIWYG korall termekoldal"), nem egy elrendezes.
+ *
+ * Azert all itt kiirva, mert a "harom parhuzamos cimke" alak kezenfekvo es
+ * HAMIS -- ha valaki igy hivatkozik ra, a meres nem tamasztja ala, es akkor az
+ * egesz ervet gyengenek fogja hinni, holott csak az alatamasztasa volt rossz.
+ *
  * NEM UJ LISTA, HANEM EGY PREDIKATUM (acrobot dontese, msg_id 14775): ugyanaz a
  * `unique_piece`, ami ma a jelvenyt is vezerli. Ha nem egyedi peldany, ez az EGY
  * doboz visszaesik a VILAGOS lap sajat feliratara -- ami szinten a tervbol valo,
