@@ -37,7 +37,47 @@
  *   +metadata     az `unique_piece` jelzo, es rajta a jelveny, az igeret es az
  *                 "Eladva" allapot.
  */
-export const TERMEKLAP_FIELDS = "*categories,+metadata"
+/**
+ * === ES AZ OT MEZO, AMIT A FELULIRAS ELEJTETT (2026-09-08) ===
+ *
+ * A fenti szabaly ("a hivo fields-e felulir") nem csak a `metadata`-t erinti: a
+ * `listProducts` sajat alapertelmezese OT dolgot ker, es a lap MIND AZ OTOT
+ * elejtette, amikor sajat `fields` erteket adott at:
+ *
+ *   *variants.calculated_price     a szamolt ar
+ *   +variants.inventory_quantity   a keszlet szama
+ *   *variants.images               a valtozathoz kotott kepek
+ *   *variants.options              a valtozat opcioi
+ *   +tags                          a cimkek
+ *
+ * A `calculated_price` volt koztuk a leglathatobb, es EMIATT maradt a lapon egy
+ * MASODIK lekerdezes (`VasarlasKeret`), ami a teljes alapertelmezessel kerdez
+ * ujra. A nev ("real time pricing") felrevezet: nem frissesseget vedett -- mind
+ * a ket hivas ugyanaz a `listProducts`, ugyanazzal a `force-cache` beallitassal
+ * es ugyanazzal a cimkevel, egy statikusan general utvonalon.
+ *
+ * ES EGY KOVETKEZMENY, AMI MA MEG ARTALMATLAN: a lap `getImagesForVariant`
+ * fuggvenye a `variant.images` mezobol szur, es azt a feluliras elejtette --
+ * ma a HELYES eredmenyt adja, mert minden termeknek pontosan egy valtozata van.
+ * Az elso TOBBVALTOZATOS terméknel viszont a szures csendben nem tortenne meg.
+ *
+ * AMIERT MIND AZ OT VISSZAKERUL, ES NEM CSAK AZ AR: ha egy kimarad, a hiba
+ * NEMA -- egy mezo, amit senki nem ker, ugyanugy nez ki, mint egy mezo, ami
+ * ures. (acrobot dontese, msg_id 14740.)
+ *
+ * A MERET NEM ELLENERV ITT: ez EGY termek lekerdezese, nem lista. A korabban
+ * mert meret-kockazat (`*products` 19 sornal rendben, 1492-nel 4,1 MB) a
+ * KOLLEKCIOS lekerdezesekre all, ahol sorszorzo van; itt nincs.
+ *
+ * ES AMI SZANDEKOSAN NEM VALTOZIK EBBEN A KORBEN: a masodik lekerdezes MARAD.
+ * A mezok visszaadasaval elhagyhatova valik, de az mar viselkedes-valtozas,
+ * sajat meressel -- ket dolog egy korben azt jelentene, hogy egy hiba eseten
+ * nem tudjuk, melyiktol.
+ */
+export const TERMEKLAP_FIELDS =
+  "*categories,+metadata," +
+  "*variants.calculated_price,+variants.inventory_quantity," +
+  "*variants.images,*variants.options,+tags"
 
 /**
  * A ket resz kulon is megnevezve, hogy az allitasok NE a teljes sztringet
@@ -47,3 +87,17 @@ export const TERMEKLAP_FIELDS = "*categories,+metadata"
  */
 export const TERMEKLAP_MEZO_KATEGORIAK = "*categories"
 export const TERMEKLAP_MEZO_METAADAT = "+metadata"
+
+/**
+ * A `listProducts` alapertelmezesenek ot mezoje, kulon nevesitve. Azert
+ * egyesevel, es nem egy sztringkent, hogy egy allitas MEGNEVEZHESSE, melyik
+ * hianyzik -- egy teljes-sztring osszevetes csak annyit mondana, hogy "nem
+ * egyezik".
+ */
+export const TERMEKLAP_ALAPMEZOK = [
+  "*variants.calculated_price",
+  "+variants.inventory_quantity",
+  "*variants.images",
+  "*variants.options",
+  "+tags",
+] as const
