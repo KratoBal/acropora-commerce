@@ -14,6 +14,18 @@ type PaginatedProductsParams = {
   category_id?: string[]
   id?: string[]
   order?: string
+  /**
+   * A SZABAD SZAVAS KERESES. A Medusa `q` parametere a NEVET es a LEIRAST is
+   * nezi, es a valtozatok cikkszamat is -- ez merve van a teszt bolton
+   * (2026-09-08), ismert pozitiv es negativ kontrollal:
+   *
+   *   q=DMBS1KG   1 talalat, es pont az a termek   (cikkszam)
+   *   q=austea    1                                 (faj a nevben)
+   *   q=karbolit  1                                 (szo CSAK egy leirasban)
+   *   q=Dupla    32                                 POZITIV KONTROLL
+   *   q=zzzzqqqqxxxx  0                             NEGATIV KONTROLL
+   */
+  q?: string
 }
 
 export default async function PaginatedProducts({
@@ -25,6 +37,7 @@ export default async function PaginatedProducts({
   countryCode,
   optionValueIds,
   includeDescendants = true,
+  kereses,
 }: {
   sortBy?: SortOptions
   page: number
@@ -34,6 +47,8 @@ export default async function PaginatedProducts({
   countryCode: string
   optionValueIds?: OptionValueIds
   includeDescendants?: boolean
+  /** A kereses szovege. Ures kereses eseten `undefined`. */
+  kereses?: string
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -66,6 +81,10 @@ export default async function PaginatedProducts({
     queryParams["id"] = productsIds
   }
 
+  if (kereses) {
+    queryParams["q"] = kereses
+  }
+
   if (sortBy === "created_at") {
     queryParams["order"] = "created_at"
   }
@@ -88,7 +107,26 @@ export default async function PaginatedProducts({
 
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 
-  if (!products.length) return null
+  /**
+   * A NULLA TALALAT KERESESKOR NEM UGYANAZ, MINT EGY URES LISTA-LAP.
+   *
+   * A `null` eddig helyes volt: egy ures kategoria-lapon nincs mit mondani, a
+   * lap tobbi resze all. Egy KERESES utan viszont a vevo bepotyogott valamit,
+   * es egy uresen maradt lap nem valasz -- nem tudja meg, hogy nincs ilyen
+   * termekunk, vagy elromlott valami.
+   *
+   * Ezert kereseskor mondat all a `null` helyen. Kereses NELKUL a viselkedes
+   * betuere valtozatlan.
+   */
+  if (!products.length) {
+    if (!kereses) return null
+
+    return (
+      <p data-testid="kereses-nincs-talalat" className="text-base-regular">
+        Erre a keresésre nincs találat: {kereses}
+      </p>
+    )
+  }
 
   return (
     <>
