@@ -477,11 +477,43 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
       .map((e) => e.textContent ?? "")
       .join(" | ")
 
-  it("sötét világban a WYSIWYG felirat áll, nem a műszaki", () => {
-    render(<LapVaz vilag="sotet" />)
+  /**
+   * A WYSIWYG FELIRAT AZ ESETHEZ TARTOZIK, NEM A VILAGHOZ -- ES EZ HAROM
+   * ALLITAS, MERT KETTO NEM ELEG.
+   *
+   * A ket vilag kozotti kulonbseget a harmadik allitas nelkul is latnank. Amit
+   * CSAK a par mutat meg: hogy a sotet lapon a felirat a `unique_piece`
+   * predikatumon mulik, nem a sotet listan.
+   *
+   * MERVE (murena, 2026-09-08): a 160 sotet lapbol HAROM egyedi peldany, tehat
+   * 157 lapon a "tovabbi" szo valotlant allitott.
+   */
+  it("sötét világban, EGYEDI példánynál a WYSIWYG felirat áll", () => {
+    render(<LapVaz vilag="sotet" egyediPeldany />)
 
     expect(feliratok()).toContain("További WYSIWYG példányok")
     expect(feliratok()).not.toContain("Hasonló termékek")
+  })
+
+  it("sötét világban, NEM egyedi példánynál a WYSIWYG felirat NEM áll", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(feliratok()).not.toContain("További WYSIWYG példányok")
+    expect(feliratok()).not.toContain("további egyedi példányok")
+    expect(feliratok()).toContain("Hasonló termékek")
+  })
+
+  /**
+   * ES A TOBBI SOTET FELIRAT NEM MOZDUL VELE. Enelkul egy olyan valtozat is
+   * zold maradna, ami nem-egyedi peldanynal az EGESZ sotet listat eldobja --
+   * es akkor a korall lapon ujra a muszaki feliratok allnanak.
+   */
+  it("a nem egyedi példány CSAK a hasonló doboz feliratát mozdítja", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(feliratok()).toContain("Elhelyezés-segéd")
+    expect(feliratok()).toContain("Kérdezd a boltot")
+    expect(feliratok()).toContain("Kötegajánlat")
   })
 
   /** ISMERT POZITÍV KONTROLL: világos világban ugyanez a keresés a lámpást találja. */
