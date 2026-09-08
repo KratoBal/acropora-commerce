@@ -174,7 +174,6 @@
      annak a meresnek a javitasa, amit elé tettunk.) */
   --terv-kiemel-szoveg: oklch(1 0 0);
   --terv-kiemel-tinta: oklch(0.55 0.13 45);
-  --terv-jelzo: oklch(0.52 0.09 210); /*  6 elem -- kek-zold, jelzesekre */
 
   /* NYUGDIJAZVA 2026-09-08: `--terv-keret-sotet` es `--terv-szoveg-halvany-sotet`
      ============================================================================
@@ -205,28 +204,51 @@
                        mashol vannak. Egy definialt, meg nem hasznalt token
                        legitim allapot. (acrobot dontese, ugyanott.)
 
-       MASIK VALTOZAT  --terv-jelzo. EZT A SORT 2026-09-08-AN JAVITOTTUK, es a
-       AKCENTJE        javitas iranya fontos: elobb "MEG NEM EPULT"-kent allt
-                       itt, azzal, hogy be kell kotni. NEM KELL.
+       NYUGDIJAZVA     --terv-jelzo. EZ A BESOROLAS 2026-09-08-AN KETSZER
+       (a valtozat      valtozott, es a masodik valtozas DONTES volt, nem meres.
+        akcentje, amit
+        nem valasztottunk)  Eloszor "MEG NEM EPULT"-kent allt itt, azzal, hogy be
+                       kell kotni. Aztan "MARAD, mert keszen van, ha valaha
+                       kellene". Vegul: NYUGDIJAZVA.
 
-                       Merve a tervlapok teljes elem-kiolvasasan: a harom akcent
-                       LAPONKENT KULON all, es egyik sem keveredik.
+                       A MERES, AMI VEGIG UGYANAZ VOLT. A tervlapok teljes
+                       elem-kiolvasasan a harom akcent LAPONKENT KULON all, es
+                       egyik sem keveredik:
 
                          --terv-jelzo   0.52 0.09 210   17 elem, MIND 1a
                          rez vilagos    0.55 0.13 45    18 elem, MIND 1b
                          rez sotet      0.62 0.13 45    10 elem, MIND 2a
 
-                       Es a lapok sajat leirasa ugyanezt mondja: az 1a
+                       A lapok sajat leirasa ugyanezt mondja: az 1a
                        "melytenger-kek akcent", az 1b "rez akcent". Mi az 1b
-                       akcentjet vettuk at. A `--terv-jelzo` tehat annak a
-                       valtozatnak a szine, amit AKCENTBEN nem valasztottunk.
+                       akcentjet vettuk at.
 
-                       MIERT MARAD MEGIS: a vazunk doboz-listaja a KET vilagos
-                       lap UNIOJA, tehat 1a-bol szarmazo elemek is allnak rajta.
-                       Ha valaha ugy dontunk, hogy azok az 1a akcentjet
-                       viseljek, a token keszen van. Ez DONTES, nem elmaradt
-                       munka -- es epp ezert nem szabad "bekotendo"-kent
-                       hivatkozni ra.
+                       ES AMIERT MEGIS TOROLVE, HOLOTT A MERES NEM VALTOZOTT
+                       (acrobot dontese, msg 15273): nem az az indok, hogy nincs
+                       ra szukseg, hanem hogy KET AKCENT egy lapon rosszabb,
+                       mint egy kovetkezetes. A vazunk doboz-listaja tenyleg a
+                       ket vilagos lap unioja, tehat allnak rajta 1a-bol
+                       szarmazo elemek is -- de amit epitunk, az EGY lap, es
+                       azon az 1b akcentje all.
+
+                       MIERT NEM ELEG "KESZEN HAGYNI". Egy definialt token
+                       hasznalat nelkul KESZENLETNEK latszik, nem dontesnek: a
+                       kovetkezo olvaso (vagy en, harmadszor) ujra lemeri, es
+                       ujra felteszi a kerdest, hogy be kell-e kotni. A meres
+                       ugyanazt fogja adni, mert a meres nem is volt hibas. A
+                       token TORLESE az, ami a dontest lathatova teszi.
+
+                       AZ ERTEKE NEM KERUL AT SEHOVA, es ez KULONBSEG a fenti
+                       ket nyugdijazott nevhez kepest. Azok egy megszunt nevsema
+                       maradvanyai voltak, es az ertekuk ma is el, mas neven.
+                       Ez a szin viszont EGYALTALAN nem all a lapon. Ezert a
+                       torles-allitas melle nem "az ertek megvan" par jar, hanem
+                       egy ismert POZITIV kontroll: hogy ugyanaz a kereses
+                       megtalalja az ELO akcentet.
+
+                       HA VALAHA VISSZAKERUL: nem ezt a sort kell visszaallitani,
+                       hanem ujra donteni, hogy ket akcentet akarunk-e. Az
+                       ertek fent all, ebben a bekezdesben.
 
                        AMIERT ELSORE ROSSZUL SOROLTAM BE: a token sajat
                        megjegyzeset olvastam ("6 elem"), es a SZAMOT vettem a
@@ -234,9 +256,18 @@
                        es hamis lett, amint feltetelkent olvastam. Azt nem
                        kerdeztem meg, MELYIK LAPON all az a hat.
 
-     A KULONBSEG NEM SZOHASZNALAT: az elsot torolni kell, a masodikat hagyni, a
-     harmadikat BEKOTNI. Aki mind a hatot "hasznalatlan"-nak konyveli, vagy
-     tul sokat torol, vagy egyet sem mer hozzajuk nyulni. */
+     A KULONBSEG NEM SZOHASZNALAT: az elso ketto TOROLVE (megszunt nevsema,
+     az ertekuk mas neven el), a szandekosan uresek MARADNAK, a harmadik pedig
+     szinten TOROLVE, de mas okbol: ott dontes szuletett arrol, hogy nem
+     akarjuk. Aki mind a hatot "hasznalatlan"-nak konyveli, vagy tul sokat
+     torol, vagy egyet sem mer hozzajuk nyulni.
+
+     ES EGY FIGYELMEZTETES ERROL A ZARO MONDATROL MAGAROL. Ez a sor 2026-09-08-ig
+     azt allitotta, hogy "a harmadikat BEKOTNI" -- husz sorral azutan, hogy a
+     torzs mar kimondta, hogy NEM kell bekotni. A torzset javitottuk, a
+     osszefoglalot nem, es a hamis mondat a blokk VEGEN maradt, ahol egy sietos
+     olvaso eloszor nezi. Ha ebbol a bekezdesbol barmit atirsz, olvasd vegig a
+     TELJES blokkot, az osszefoglaloval egyutt. */
 
   /* szoveg */
   --terv-szoveg: oklch(0.2 0.012 60); /* 60 elem -- a fo szoveg */
