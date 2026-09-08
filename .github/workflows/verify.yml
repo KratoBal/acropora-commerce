@@ -127,6 +127,37 @@ jobs:
         # a szkript fejlecében allnak.
         run: node scripts/scan-secrets.mjs
 
+      # A FORMAZAS ELLENORZESE -- ES A HELYE SZANDEKOS: A LINT ELOTT.
+      #
+      # MIERT LETEZIK: 2026-09-07-ig ket prettier verzio elt egy repoban (a
+      # gyoker 3-as, az `apps/storefront` 2.8.8), es a verify a formazast NEM
+      # nezte. Ugyanazt a fajlt ket ember oda-vissza formazhatta, es semmi nem
+      # szolt. Nem elmeleti: a #103 es a #104 UGYANAZT A KET SORT mozgatta
+      # ellentetes iranyba, harom perc kulonbseggel, es mind a ketto zold volt.
+      #
+      # A VERZIO-EGYSEGESITES ONMAGABAN NEM ELEG: az egy PILLANATOT rendez el.
+      # Ez a lepes az, ami megtartja -- onnantol a kerdes nem izles, hanem
+      # piros vagy zold.
+      #
+      # ES EGY HARMADIK ALLAPOTOT IS MEGSZUNTET, ami a verzio-lepesnel derult
+      # ki: a repo egy resze SOHA nem ment at formazon (pontosvesszos fajlok
+      # alltak benne, holott a helyi `.prettierrc.json` `semi: false`-ot ir
+      # elo). Nem ket allapot volt, hanem harom.
+      #
+      # MIERT A LINT ELOTT: masodpercekben fut, es a repo sajat sorrend-elve
+      # szerint "a gyorsak elol, hogy egy elgepeles ne varjon a buildre".
+      #
+      # A HATOKORE KIMONDVA: a kirakat forrasat nezi (`apps/storefront/src`),
+      # nem a teljes repot. A tobbi csomag formazasa kulon kerdes, es nem ez a
+      # lepes donti el -- egy szelesebb minta itt olyan fajlokat hozna be,
+      # amikre nem futott meg a formazo.
+      #
+      # ES A BEVEZETES FELTETELE MERVE VOLT, NEM FELTETELEZVE: a friss fo agon
+      # (`a2fda8d`) ugyanez a parancs NULLA elteresre fut. Egy kapu, ami a
+      # bevezetese napjan pirosat ad, nem kaput mutat, hanem zajt.
+      - name: Formazas
+        run: pnpm exec prettier --check "apps/storefront/src/**/*.{ts,tsx,css}"
+
       - name: Lint
         run: pnpm run lint
 
