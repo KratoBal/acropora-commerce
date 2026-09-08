@@ -241,7 +241,11 @@ function gyokerNevKatalogusbol(
  *   periclimenes-brevicarpalis-anemona-garnela-par-him
  *   egyetlen kategoriaja: "Rakok, Garnelak - Gerinctelenek",
  *   aminek a szuloje MAGA a Gerinctelenek gyoker
- *   (acrobot merese a teszt bolton, 2026-09-08 03:02 -- nala van a kulcs)
+ *   (acrobot merese a teszt bolton, 2026-09-08 03:02. A zarojelben itt az allt,
+ *   hogy "nala van a kulcs" -- ez 2026-09-08 06:20-ra MEGSZUNT: a teszt bolt
+ *   PUBLIKALHATO kulcsa bekerult az `exchange` konyvtarba, tehat a
+ *   `medusa-stage.sh` barmelyikunknek fut, es van `query` aga tetszoleges
+ *   /store lekerdezesre. Ugyanezt a szamot azota en is visszamertem.)
  *
  * Vagyis a feltetel NEM az, hogy harom szintu az `mpath`, hanem hogy nincs
  * benne EGYSZEGMENSU elem. Ket szinttol felfele barmelyik melyseg ilyen, es a
