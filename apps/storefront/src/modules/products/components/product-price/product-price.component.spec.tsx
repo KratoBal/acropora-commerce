@@ -145,3 +145,100 @@ describe("az ár színe", () => {
     expect(doboz.className).not.toContain("text-ui-fg-")
   })
 })
+
+/**
+ * AZ AKCIOS AG -- AMIT EDDIG EGYETLEN ALLITAS SEM LATOTT.
+ *
+ * === MIERT KELL EZ A FIXTURA, ES MIT LEPLEZETT LE ===
+ *
+ * A keszlet eddig CSAK nem-akcios termeket renderelt, tehat a `price_type ===
+ * "sale"` ag soha nem futott le. Ket dolog bujt meg emiatt:
+ *
+ *   egy ROGZITETT szin (`text-ui-fg-interactive`) az aron es a szazalekon,
+ *     ami ugyanugy nem ismeri a vilag-kapcsolot, mint a mellette allo
+ *     `text-ui-fg-base` (415f455c)
+ *   egy ANGOL felirat ("Original: ") a magyar lapon
+ *
+ * A masodik a tanulsagosabb. A keszletben AZ ELSO PILLANATTOL allt egy allitas
+ * azzal a cimmel, hogy "sehol nem jelenik meg angol felirat az ar mellett" --
+ * es igaz is volt, csak a SAJAT HATOKOREN belul: egy nem-akcios terméket
+ * renderelt. Az allitas szovege az egesz komponensrol beszelt, a merese egy
+ * agrol.
+ *
+ * Ez ugyanaz az alak, mint amikor egy hianyt mero allitast egy URES VILAG is
+ * kielegit -- csak itt nem ures a vilag, hanem a fixtura nem er el az egyik
+ * ágába.
+ */
+const akciosTermek = () =>
+  ({
+    id: "prod_akcios",
+    variants: [
+      {
+        id: "v1",
+        calculated_price: {
+          calculated_amount: 92000,
+          original_amount: 100000,
+          currency_code: "huf",
+          calculated_price: { price_list_type: "sale" },
+        },
+      },
+    ],
+  }) as never
+
+describe("az akciós ár", () => {
+  /**
+   * ISMERT POZITIV KONTROLL, ES ITT EZ A LEGFONTOSABB ALLITAS A HAROM KOZUL.
+   *
+   * Enelkul mind a ket alabbi allitas zold lenne akkor is, ha a fixturam NEM
+   * hozza elo az akcios agat -- pontosan az a hiba, amit ez a szakasz leplez le.
+   */
+  it("a fixtúra tényleg előhozza az akciós ágat", () => {
+    render(<ProductPrice product={akciosTermek()} />)
+
+    expect(screen.getByTestId("original-product-price")).toBeTruthy()
+    expect(screen.getByTestId("product-price-szazalek")).toBeTruthy()
+  })
+
+  /**
+   * A REZ EGY DOLGOT JELOLJON EGY LAPON: HOVA KATTINTS (picasso dontese,
+   * acrobot msg 15302). A Kosarba gomb es a jelveny mar ezt teszik, tehat az ar
+   * nem kaphat rezet -- ket egyenrangu hangos pont kioltana egymast.
+   *
+   * Az "akcios" jelentest a FELKOVER szedes es az athuzott regi ar hordozza.
+   */
+  it("az akciós ár nem visel réz akcentet, hanem félkövér", () => {
+    render(<ProductPrice product={akciosTermek()} />)
+    const ar = screen.getByTestId("product-price")
+    const burok = ar.parentElement
+
+    expect(burok?.className).toContain("font-bold")
+    expect(burok?.className).not.toContain("text-ui-fg-")
+    expect(burok?.style.color).toBe("")
+  })
+
+  /**
+   * A SZAZALEK ES A "MELLETTE" FELIRAT IS TOKENBOL JON, NEM ROGZITETT SZINBOL.
+   *
+   * A jsdom nem oldja fel a CSS-valtozokat, tehat ez a TOKEN NEVET meri.
+   */
+  it("a százalék a halvány szöveg tokenjét viseli", () => {
+    render(<ProductPrice product={akciosTermek()} />)
+
+    expect(screen.getByTestId("product-price-szazalek").style.color).toBe(
+      "var(--terv-szoveg-halvany)",
+    )
+  })
+
+  /**
+   * ES AZ ANGOL FELIRAT, MOST MAR OLYAN AGON, AHOL LATSZIK IS.
+   *
+   * A keszlet masik ilyen allitasa nem-akcios terméket renderel. A ketto egyutt
+   * fedi le a komponenst; kulon-kulon egyik sem allithatja azt, amit a cime igér.
+   */
+  it("az akciós ágon sem jelenik meg angol felirat", () => {
+    const { container } = render(<ProductPrice product={akciosTermek()} />)
+
+    expect(container.textContent).not.toContain("Original")
+    expect(container.textContent).toContain("Eredeti ár")
+  })
+})

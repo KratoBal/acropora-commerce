@@ -103,9 +103,27 @@ export default function ProductPrice({
       className="flex flex-col"
       style={{ color: "var(--terv-szoveg)" }}
     >
+      {/*
+        AZ AKCIOS AR NEM REZ, ES AZ INDOK NEM SZINIZLES (picasso dontese,
+        acrobot msg 15302).
+
+        Itt `text-ui-fg-interactive` allt az akcios agon: rogzitett szin, ami
+        ugyanugy nem ismeri a `data-vilag` kapcsolot, mint a mellette allo
+        `text-ui-fg-base` (415f455c). De a javitas NEM az, hogy a rez akcens
+        (`--terv-kiemel`) kerul a helyere.
+
+        A rez EGY dolgot jeloljon egy lapon: hogy HOVA KATTINTS. A Kosarba gomb
+        es a jelveny mar ezt a szerepet toltik be. Ha az ar is rez lenne, ket
+        egyenrangu hangos pont versenyezne ugyanazon a panelen, es epp az veszne
+        el, amiert a rez ott all.
+
+        Ezert az akcios ar ugyanazt a szoveg-tokent viseli, mint a nem-akcios --
+        a FELKOVER szedes es a mellette allo athuzott regi ar hordozza az
+        "akcios" jelentest, nem a szin.
+      */}
       <span
         className={clx("text-xl-semi", {
-          "text-ui-fg-interactive": selectedPrice.price_type === "sale",
+          "font-bold": selectedPrice.price_type === "sale",
         })}
       >
         <span
@@ -119,8 +137,15 @@ export default function ProductPrice({
       {selectedPrice.price_type === "sale" && (
         <>
           <p>
+            {/*
+              MAGYARUL, MERT A BOLT MAGYAR. Itt "Original: " allt, angolul, es
+              EGYETLEN allitas sem latta: a keszlet "sehol nem jelenik meg angol
+              felirat az ar mellett" allitasa egy NEM AKCIOS termeket renderel,
+              tehat ez az ag soha nem futott le benne. Az allitas igaz volt --
+              csak szukebb hatokoron, mint amit a szovege igert.
+            */}
             <span style={{ color: "var(--terv-szoveg-halvany)" }}>
-              Original:{" "}
+              Eredeti ár:{" "}
             </span>
             <span
               className="line-through"
@@ -130,7 +155,24 @@ export default function ProductPrice({
               {selectedPrice.original_price}
             </span>
           </p>
-          <span className="text-ui-fg-interactive">
+          {/*
+            A SZAZALEK IS HALVANY, ES EZ A DONTES CSENDESEBB FELE.
+
+            picasso azt mondta, hogy HA a athuzott regi ar keves, akkor egy
+            KICSI kulon jelveny kaphat rezet -- NEM az ar. A szazalek pontosan
+            az a kicsi jelveny, tehat a rez ITT lenne a helyen, ha kell.
+
+            Megsem azt teszem ide, mert a mondat FELTETELES volt ("ha ez
+            keves"), es a feltetel eldontese nem az en dolgom. Az alapertelmezes
+            az, ami a fenti indokbol kovetkezik: egy rez pont a panelen.
+
+            HA PICASSO TUL CSENDESNEK TALALJA, egyetlen sor cserel:
+            var(--terv-szoveg-halvany) helyett var(--terv-kiemel-tinta).
+          */}
+          <span
+            data-testid="product-price-szazalek"
+            style={{ color: "var(--terv-szoveg-halvany)" }}
+          >
             -{selectedPrice.percentage_diff}%
           </span>
         </>
