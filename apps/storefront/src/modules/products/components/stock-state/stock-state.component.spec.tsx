@@ -179,6 +179,35 @@ describe("a készlet-állapot kirajzolása", () => {
    * Ha mind a kettő ugyanazt az azonosítót viselné, a végponti keresés
    * kétértelmű lenne -- és az a hiba csendes: a teszt az elsőt találná meg.
    */
+  /**
+   * AZ ELADVA AG KET SZOVEGE TOKENEN ALL, ES EZ EDDIG MERETLEN VOLT.
+   *
+   * A token-fedettseg merese (2026-09-08) huszonharom olyan style-node-ot
+   * talalt a kirakatban, amire SEMMILYEN allitas nem mutat -- ez ketto volt
+   * kozuluk. Nem azert maradtak ki, mert valaki elfelejtette: nem volt
+   * azonositojuk, tehat egy allitas csak a SZOVEGRE tudott volna hivatkozni.
+   *
+   * A KETTO KULON ALL, mert kulon romolhat el: a cimke a fo szoveg-szint
+   * (`--terv-szoveg`), a magyarazat a masodlagos (`--terv-szoveg-halvany`).
+   * Egy allitas, ami csak az egyiket nezi, a masik elcsuszasat nem latna.
+   */
+  it("az ELADVA címke és a magyarázat külön szöveg-tokenen áll", () => {
+    render(
+      <StockState
+        availability="ELADVA"
+        similarHref="/collections/elo-korallok"
+        onAddToCart={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId("add-product-button-eladva-cimke")).toHaveStyle({
+      color: "var(--terv-szoveg)",
+    })
+    expect(
+      screen.getByTestId("add-product-button-eladva-magyarazat"),
+    ).toHaveStyle({ color: "var(--terv-szoveg-halvany)" })
+  })
+
   it("a testId paraméter az ELADVA ágon is végigmegy", () => {
     render(
       <StockState
