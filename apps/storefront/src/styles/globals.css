@@ -205,11 +205,34 @@
                        mashol vannak. Egy definialt, meg nem hasznalt token
                        legitim allapot. (acrobot dontese, ugyanott.)
 
-       MEG NEM EPULT   --terv-jelzo. A sajat merese szerint a tervben HAT elemen
-                       all, nalunk nulla hivohellyel -- vagyis nem holt suly,
-                       hanem be nem kotott kepesseg. Ugyanaz az alak, mint a
-                       harmadik betue volt a #174 elott: a torlese elvenne egy
-                       meg elvegzendo munka nyomat.
+       MASIK VALTOZAT  --terv-jelzo. EZT A SORT 2026-09-08-AN JAVITOTTUK, es a
+       AKCENTJE        javitas iranya fontos: elobb "MEG NEM EPULT"-kent allt
+                       itt, azzal, hogy be kell kotni. NEM KELL.
+
+                       Merve a tervlapok teljes elem-kiolvasasan: a harom akcent
+                       LAPONKENT KULON all, es egyik sem keveredik.
+
+                         --terv-jelzo   0.52 0.09 210   17 elem, MIND 1a
+                         rez vilagos    0.55 0.13 45    18 elem, MIND 1b
+                         rez sotet      0.62 0.13 45    10 elem, MIND 2a
+
+                       Es a lapok sajat leirasa ugyanezt mondja: az 1a
+                       "melytenger-kek akcent", az 1b "rez akcent". Mi az 1b
+                       akcentjet vettuk at. A `--terv-jelzo` tehat annak a
+                       valtozatnak a szine, amit AKCENTBEN nem valasztottunk.
+
+                       MIERT MARAD MEGIS: a vazunk doboz-listaja a KET vilagos
+                       lap UNIOJA, tehat 1a-bol szarmazo elemek is allnak rajta.
+                       Ha valaha ugy dontunk, hogy azok az 1a akcentjet
+                       viseljek, a token keszen van. Ez DONTES, nem elmaradt
+                       munka -- es epp ezert nem szabad "bekotendo"-kent
+                       hivatkozni ra.
+
+                       AMIERT ELSORE ROSSZUL SOROLTAM BE: a token sajat
+                       megjegyzeset olvastam ("6 elem"), es a SZAMOT vettem a
+                       fuggo munka jelenek. A szam igaz volt arra, amit mert --
+                       es hamis lett, amint feltetelkent olvastam. Azt nem
+                       kerdeztem meg, MELYIK LAPON all az a hat.
 
      A KULONBSEG NEM SZOHASZNALAT: az elsot torolni kell, a masodikat hagyni, a
      harmadikat BEKOTNI. Aki mind a hatot "hasznalatlan"-nak konyveli, vagy
