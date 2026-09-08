@@ -10,7 +10,12 @@ import {
   ValasztoDoboz,
 } from "../vasarlas/dobozok"
 import { hasonloAzonositok } from "../related-products/gondozott-kapcsolatok"
-import { minimumOrderQuantity } from "../product-actions/minimum-order-quantity"
+import {
+  maximumOrderQuantity,
+  minimumOrderQuantity,
+  orderQuantityHint,
+  orderQuantityStep,
+} from "../product-actions/minimum-order-quantity"
 import { uniquePieceOf } from "../stock-state/availability"
 
 /**
@@ -392,12 +397,23 @@ export function vazTartalom(
    * mutat, ami a helyes valasz: szallitas es bolti atvetel adatkent MA NINCS.
    */
   const egyseg = egysegFelirat(termek)
-  const minimumMennyiseg = egyediPeldany ? 1 : minimumOrderQuantity(termek)
-  if (egyseg || minimumMennyiseg > 1) {
+  /**
+   * EGYEDI PELDANYNAL NINCS RENDELESI SZABALY: abbol egy darab van, tehat sem
+   * a minimum, sem a lepeskoz, sem a maximum nem mond semmit. Ez a korabbi
+   * `egyediPeldany ? 1 : ...` alak kiterjesztese mind a harom parameterre.
+   */
+  const rendelesiMondat = egyediPeldany
+    ? null
+    : orderQuantityHint({
+        minimum: minimumOrderQuantity(termek),
+        step: orderQuantityStep(termek),
+        orderMaximum: maximumOrderQuantity(termek),
+      })
+  if (egyseg || rendelesiMondat) {
     tartalom.elerhetoseg = (
       <ElerhetosegDoboz
         kiszereles={egyseg ?? undefined}
-        minimumMennyiseg={minimumMennyiseg}
+        rendelesiMondat={rendelesiMondat}
       />
     )
   }

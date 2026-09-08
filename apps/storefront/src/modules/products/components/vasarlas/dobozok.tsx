@@ -47,23 +47,26 @@ export function ArDoboz() {
  */
 export function ElerhetosegDoboz({
   kiszereles,
-  minimumMennyiseg,
+  rendelesiMondat,
 }: {
   kiszereles?: string
-  minimumMennyiseg?: number
+  rendelesiMondat?: string | null
 }) {
-  const minimumSor =
-    minimumMennyiseg && minimumMennyiseg > 1 ? (
-      /**
-       * A LEPTETO MAR NEM ENGED A MINIMUM ALA, DE EGY NEMA KORLAT MEGZAVAR: a
-       * vevo azt latna, hogy a minusz gomb nem csinal semmit, es nem tudna,
-       * miert. A mondat csak akkor jelenik meg, ha van mit mondania -- 1877
-       * terméknel a minimum 1, es ott a hallgatas a helyes.
-       */
-      <p className="text-small-regular text-ui-fg-subtle">
-        Ebből a termékből legalább {minimumMennyiseg} darab rendelhető.
-      </p>
-    ) : null
+  /**
+   * A MONDAT KESZEN ERKEZIK, ES EZ A VALTOZAS LENYEGE.
+   *
+   * Eddig a doboz a MINIMUM SZAMAT kapta, es maga fogalmazta meg a mondatot.
+   * Harom parameter (minimum, lepeskoz, maximum) mellett ez azt jelentene,
+   * hogy a szoveg KET helyen all: itt es a `product-actions/index.tsx`-ben --
+   * es a ketto szet tudna csuszni ugy, hogy semmi nem hibazik, csak mast
+   * mondanak ugyanarrol a termekrol.
+   *
+   * Ezert a szoveget az `orderQuantityHint` allitja elo, es a doboz csak
+   * megjeleniti. A `null` tovabbra is azt jelenti, hogy nincs mit mondani.
+   */
+  const minimumSor = rendelesiMondat ? (
+    <p className="text-small-regular text-ui-fg-subtle">{rendelesiMondat}</p>
+  ) : null
 
   /**
    * TISZTA MEGJELENITES, KONTEXT NELKUL -- ES EZ SZANDEKOS.
@@ -157,7 +160,9 @@ export function MennyisegDoboz() {
             type="button"
             aria-label="Mennyiség csökkentése"
             className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
-            onClick={() => a.setQuantity(a.normaliseQuantity(a.quantity - 1))}
+            onClick={() =>
+              a.setQuantity(a.normaliseQuantity(a.quantity - a.quantityStep))
+            }
           >
             −
           </button>
@@ -175,10 +180,10 @@ export function MennyisegDoboz() {
             type="button"
             aria-label="Mennyiség növelése"
             className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
-            onClick={() => a.setQuantity(a.normaliseQuantity(a.quantity + 1))}
-            disabled={
-              a.maximumQuantity !== null && a.quantity >= a.maximumQuantity
+            onClick={() =>
+              a.setQuantity(a.normaliseQuantity(a.quantity + a.quantityStep))
             }
+            disabled={!a.novelheto}
           >
             +
           </button>
