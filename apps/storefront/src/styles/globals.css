@@ -100,11 +100,28 @@
    *
    * ES EGY ELEM, AMIT NEM SZABAD HARMADIK REZ-ARNYALATNAK VENNI: a 2a lapon
    * all egy `oklch(0.5 0.11 45)` szinu elem, aminek a szovege "1b" (y=106,
-   * 17px, Space Grotesk). Ez a tervlap SAJAT cimenek resze ("...az 1b
-   * szerkezete, sotet feluleten"), nem lap-tartalom. Ha valaha halo szamolja a
-   * rez arnyalatokat, ezt nev szerint kell kizarni. (acrobot figyelmeztetese;
-   * visszamerve: egyetlen elem, es Space Grotesk, nem a designer monospace
-   * cimke-retege -- tehat a lap cimehez tartozik.)
+   * x=464, 17px, suly 600, Space Grotesk). Ha valaha halo szamolja a rez
+   * arnyalatokat, ezt NEV SZERINT kell kizarni.
+   *
+   * A KIZARAS ALL, AZ INDOKA 2026-09-08-IG HAMIS VOLT. Itt az allt, hogy "a
+   * tervlap SAJAT cimenek resze". Nem az: a lap cime KULON elem, es minden
+   * tulajdonsagban elter (nautilus merese, visszamerve a nyers kinyeresen):
+   *
+   *   y= 56  x=126  15px  suly 400   "WYSIWYG korall termekoldal - az 1b ..."
+   *   y=103  x= 56  12px  suly 400   "2a"     <- lap-cimke, majdnem feher
+   *   y=106  x=464  17px  suly 600   "1b"     <- EZ, es rez arnyalatu
+   *
+   * Harom kulon elem. A "1b" nem tordelt darabja a cimnek, es a lap-cimkek
+   * sorozataba sem tartozik (azok 12px/400-asok es majdnem feherek).
+   *
+   * MIERT NEM SZORSZALHASOGATAS: ha az indok az marad, hogy "a cim resze",
+   * akkor a kovetkezo ember a CIM-elemeket zarja ki, es EZT bent hagyja --
+   * mert ez nem cim-elem. Egy helyes szabaly rossz indokkal ugy megy tovabb,
+   * hogy a kovetkezo lepes mar nem talal ra.
+   *
+   * HOGY PONTOSAN MI EZ AZ ELEM, AZT NEM TUDJUK. Nem mertuk meg, es ezt
+   * kimondani olcsobb, mint kitalalni: annyi biztos, hogy egyetlen elem, rez
+   * arnyalatu, nem cim es nem a monospace cimke-reteg tagja.
    */
   /* A REZEN ALLO SZOVEG A VILAGOS LAPON FEHER -- ES EZ EGY MERESI HIBA JAVITASA.
      ============================================================================
