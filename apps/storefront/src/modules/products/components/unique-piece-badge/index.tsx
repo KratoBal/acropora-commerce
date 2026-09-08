@@ -87,6 +87,22 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  *
  * TISZTA MEGJELENÍTÉS: nincs adatlekérése és nem tudja, melyik lapon áll --
  * ezért használható a műszaki lapon is, ha ott valaha kell.
+ *
+ * === A `backdrop-blur-sm` 2026-09-08-IG ITT ALLT, ES HALOTT EFFEKT VOLT ===
+ *
+ * A regi jelveny ATLATSZO sotet fatyol volt (`bg-neutral-900/85`), es a blur
+ * ahhoz tartozott: volt mit atengedni. A #157 ota a hatter a `--terv-kiemel`
+ * TOMOR erteke, tehat a blur azt homalyositja, amit egy atlatszatlan felulet
+ * amugy is takar. Senki nem latja.
+ *
+ * NEM KOZOMBOS, HOGY OTTMARAD: a `backdrop-filter` sajat kompozicios reteget
+ * kenyszerit ki, es -- ami tobbet szamit -- azt SUGALLJA a kovetkezo
+ * olvasonak, hogy a felulet atlatszo. Aki ezt hiszi, mast fog javitani,
+ * amikor a jelveny olvashatosagat kell allitani.
+ *
+ * (acrobot dontese, msg 15106, 2. pont: "LEGYEN TELJESEN ATLATSZATLAN. A mai
+ * 85 szazalek es a backdrop-blur azert all ott, mert atlatszo sotet fatyol
+ * volt a szandek." A 85 szazalek a #157-tel mar elment, a blur ittmaradt.)
  */
 export default function UniquePieceBadge({
   className = "",
@@ -99,7 +115,7 @@ export default function UniquePieceBadge({
       className={
         "absolute left-3 top-3 z-10 px-3 py-1 " +
         "text-xs font-semibold uppercase tracking-wide " +
-        "shadow-sm backdrop-blur-sm " +
+        "shadow-sm " +
         className
       }
       style={{
