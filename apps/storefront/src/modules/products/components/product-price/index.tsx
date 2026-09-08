@@ -45,7 +45,30 @@ export default function ProductPrice({
   const tolAlak = !variant && (product.variants?.length ?? 0) > 1
 
   if (!selectedPrice) {
-    return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />
+    /**
+     * A HELYKITOLTO SZINE TOKENBOL JON, MERT A SOTET LAPON IS MEGJELENIK.
+     *
+     * Itt `bg-gray-100` allt, egy VILAGOSSZURKE tomb. A koltozes-kapcsolo
+     * bekapcsolasa ota ez a komponens a sotet vilagon is renderelodik --
+     * ket helyen: a vaz ardobozaban (`vasarlas/dobozok.tsx`) es a ragados
+     * savban (`templates/index.tsx`). Ott egy vilagos tomb allt a sotet
+     * lapon, valahanyszor az ar meg nem erkezett meg.
+     *
+     * A `--terv-hatter-halvany` MINDKET vilagban letezik (vilagos
+     * `oklch(0.955 0.004 250)`, ami gyakorlatilag ugyanaz a szurke, mint
+     * eddig; sotet `oklch(0.205 0.018 249)`), tehat a vilagos lap kepe nem
+     * valtozik, csak a sotete javul.
+     *
+     * AMIT EZ NEM ALLIT: hogy gyakran latszik. Csak akkor all elo, ha nincs
+     * szamolt ar -- de akkor a sotet lapon feltuno volt.
+     */
+    return (
+      <div
+        data-testid="product-price-helykitolto"
+        className="block w-32 h-9 animate-pulse"
+        style={{ background: "var(--terv-hatter-halvany)" }}
+      />
+    )
   }
 
   return (
