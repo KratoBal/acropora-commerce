@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
@@ -56,6 +59,50 @@ describe("a jelvény színei", () => {
 
     const jelveny = screen.getByTestId("unique-piece-badge")
     expect(jelveny.style.color).toBe("var(--terv-kiemel-szoveg)")
+  })
+
+  /**
+   * A TOKENT FELOLDVA: A SOTET LAPON A TERV SZAMANAK KELL KIJONNIE.
+   *
+   * A fenti ket allitas a NEVET meri. Az kevés: ha valaki a ket rez-token
+   * SZEREPET atrendezi, a jelveny CSENDBEN mas szint kap, es egyik nev-alapu
+   * sor sem szol. Pontosan az a hibafajta, amit ma este vegig gyujtottunk.
+   *
+   * EZ A SOR A NEVTOL AZ ERTEKIG MEGY: kiveszi, melyik tokent hasznalja a
+   * jelveny, es a `globals.css` SOTET blokkjabol feloldja. A ket szam a
+   * tervbol valo (nautilus ket kulon merese a 2a lapon):
+   *
+   *   hatter  oklch(0.62 0.13 45)
+   *   szoveg  oklch(0.15 0.014 45)
+   *
+   * (acrobot kerese, msg 15125: "melle egy allitast, ami NEM a neven all".)
+   *
+   * A HATARA, KIMONDVA: ez a DEKLARALT erteket koveti, nem a KISZAMOLTAT. Azt,
+   * hogy a bongeszo tenyleg ezt festi, a kaszkad donti el -- arra a
+   * `scripts/lap-szin.sh` valo. Ez a sor viszont bongeszo nelkul fut, es a
+   * szerep-atrendezest MEGFOGJA, ami a nev-alapu allitasokon atmenne.
+   */
+  it("a jelvény tokenjei a SÖTÉT blokkban a terv értékét adják", () => {
+    render(<UniquePieceBadge />)
+    const jelveny = screen.getByTestId("unique-piece-badge")
+
+    const css = readFileSync(
+      join(__dirname, "..", "..", "..", "..", "styles", "globals.css"),
+      "utf-8",
+    )
+    const sotetKezd = css.indexOf('[data-vilag="sotet"]')
+    expect(sotetKezd).toBeGreaterThan(-1)
+    const sotetBlokk = css.slice(sotetKezd)
+
+    const feloldva = (ertek: string) => {
+      const nev = /var\((--terv-[a-z0-9-]+)\)/.exec(ertek)?.[1]
+      expect(nev).toBeTruthy()
+      const m = new RegExp(`${nev}:\\s*([^;]+);`).exec(sotetBlokk)
+      return m?.[1].trim()
+    }
+
+    expect(feloldva(jelveny.style.background)).toBe("oklch(0.62 0.13 45)")
+    expect(feloldva(jelveny.style.color)).toBe("oklch(0.15 0.014 45)")
   })
 
   /**
