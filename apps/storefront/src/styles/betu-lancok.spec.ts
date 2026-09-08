@@ -57,6 +57,8 @@ function forrasFajlok(mappa: string): string[] {
 const CSS = readFileSync(join(GYOKER, "styles", "globals.css"), "utf-8")
 const LAYOUT = readFileSync(join(GYOKER, "app", "layout.tsx"), "utf-8")
 const FORRASOK = forrasFajlok(GYOKER).map((ut) => readFileSync(ut, "utf-8"))
+/** A Tailwind-konfig: innen derul ki, melyik lanc kap utility-nevet is. */
+const TAILWIND = readFileSync(join(GYOKER, "..", "tailwind.config.js"), "utf-8")
 
 /** A `-lanc` vegu betu-tokenek: ezeket kellene hivni, nem a nyers valtozot. */
 const LANC_TOKENEK = Array.from(
@@ -81,11 +83,44 @@ describe("a betöltött betűtípusoknak van hívóhelye", () => {
     }
   })
 
+  /**
+   * A HIVOHELY KET ALAKBAN ALLHAT, ES EZ AZ ALLITAS EDDIG CSAK AZ EGYIKET
+   * ISMERTE (murena merese, 2026-09-08).
+   *
+   *   beagyazott:  style={{ fontFamily: "var(--terv-betu-kiemelt-lanc)" }}
+   *   Tailwind:    className="... font-kiemelt"
+   *
+   * A masodik ugyanugy hivohely: a `tailwind.config.js` a `kiemelt` nevet
+   * pontosan erre a lancra kepezi le. Amikor az utolso beagyazott hasznalat
+   * atkerult az osztalyra, ez a sor HAMIS PIROSAT adott -- azt allitotta, hogy
+   * a Newsreadernek nulla hivohelye van, holott volt harom.
+   *
+   * EZ AZ ALLITAS TEHAT MIND A KET IRANYBAN HAMIS PIROSAT ADOTT VOLNA, ZOLDET
+   * SOHA: egy csak-osztalyon-at hivott lancra is nullat latott. A hamis ZOLD
+   * kockazata egy masik specben lakik (`szerif-egy-mechanizmus.spec.ts`): az
+   * arra vigyaz, hogy a ket mechanizmus ne bujjon el egymas elol.
+   *
+   * A lekepezest a konfigbol olvassuk ki, nem beegetve: ha valaki atnevezi az
+   * utility-t, ez a sor vele mozdul.
+   */
+  const OSZTALY_NEV = new Map(
+    Array.from(
+      TAILWIND.matchAll(/(\w+):\s*\["var\((--terv-betu-[a-z-]*lanc)\)"\]/g),
+    ).map((m) => [m[2], m[1]]),
+  )
+
+  it("a Tailwind-konfig legalább egy láncot utility-ként is kiajánl", () => {
+    expect(OSZTALY_NEV.size).toBeGreaterThan(0)
+  })
+
   it.each(Array.from(new Set(LANC_TOKENEK)))(
     "%s legalább egy helyen hívva van",
     (token) => {
-      const hivohelyek = FORRASOK.filter((forras) =>
-        forras.includes(`var(${token})`),
+      const osztaly = OSZTALY_NEV.get(token)
+      const hivohelyek = FORRASOK.filter(
+        (forras) =>
+          forras.includes(`var(${token})`) ||
+          (osztaly !== undefined && forras.includes(`font-${osztaly}`)),
       ).length
 
       expect(hivohelyek).toBeGreaterThan(0)

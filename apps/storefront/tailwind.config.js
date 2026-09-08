@@ -74,17 +74,30 @@ module.exports = {
       },
       fontFamily: {
         /*
-          A KIEMELT (SZERIF) BETU UTILITY-KENT -- ES AZERT ITT, MERT A TERV
-          TORESPONTONKENT MAST MOND.
+          A KIEMELT (SZERIF) BETU UTILITY-KENT.
 
-          A `--terv-betu-kiemelt-lanc` eddig csak beagyazott `style`-ban volt
-          hasznalhato, es egy beagyazott stilus nem tud toresponthoz kotodni.
-          A terv viszont a kosar 3a lapjan a MOBIL nezetben orokolt betut, az
-          ASZTALIBAN Newsreadert mutat ugyanarra a ket mondatra -- vagyis a
-          betu-valasztas itt szelesseg-fuggo, es utility nelkul nem irhato le.
+          === AMIERT LETREJOTT, ES AMIERT AZ AZ INDOK MA MAR NEM ALL ===
 
-          A lanc maga valtozatlan; ez csak egy masodik ut ugyanahhoz az
-          ertekhez.
+          Eredetileg azert kellett, mert a betu-valasztas SZELESSEG-FUGGONEK
+          latszott: a terv 3a lapjan a mobil nezet orokolt betut mutatott, az
+          asztali Newsreadert, es egy beagyazott `style` nem tud toresponthoz
+          kotodni.
+
+          PICASSO EZT CAFOLTA (2026-09-08, a #250-ben atvezetve): a tervben van
+          egy MASODIK 390 pixeles keret is (az "Ures kosar" allapote), es abban
+          szerif fut ugyanabban a szerepben. Nem a hasab szelessege az ok, tehat
+          a jeloles feltetel nelkul all, es a `small:` elotag mindket helyrol
+          kikerult.
+
+          === ES MEGIS EZ MARAD AZ EGYETLEN UT, MAS INDOKKAL ===
+
+          Nem a torespont miatt, hanem mert KET MECHANIZMUS volt ugyanarra: ez
+          az osztaly es a beagyazott `style`. Egy meres, ami a szerif-koteseket
+          keresi, csak az egyiket latja -- 2026-09-08-an pontosan igy szamoltam
+          alul (ket kotest talaltam, harom volt). Az utolso beagyazott alak az
+          `empty-cart-message`-ben allt, es ugyanabban a korben atkerult ide.
+
+          A lanc maga valtozatlan; ez nem uj ertek.
         */
         kiemelt: ["var(--terv-betu-kiemelt-lanc)"],
         sans: [

@@ -68,10 +68,7 @@ const EmptyCartMessage = () => {
          * (Merve a `measurement/terv-kosar/KOSAR-SZOVEGEK.md` anyagon,
          * 2026-09-08. A szam a terv EGY kiolvasasabol valo.)
          */}
-        <Text
-          className="text-base-regular"
-          style={{ fontFamily: "var(--terv-betu-kiemelt-lanc)" }}
-        >
+        <Text className="text-base-regular font-kiemelt">
           Kezdd ott, ahol a legtöbben: a heti új korallpéldányoknál, vagy a
           technikánál, ha most építesz.
         </Text>
