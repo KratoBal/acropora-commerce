@@ -63,6 +63,28 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  * kellene ra irni -- de a valtas MAGA meg nem tortent meg, mert a hatter es a
  * szoveg egyutt mozdul, es az acrobot dontese.
  *
+ * === EGY KOCKAZAT, AMIT A TERV NEM TUDOTT MEGMUTATNI ===
+ *
+ * A jelveny egy FENYKEPEN all (az elso kep bal felso sarkaban). A korabbi
+ * majdnem fekete alap (`bg-neutral-900/85`) BARMILYEN fotorol elvalt. A rez nem
+ * feltetlenul: egy meleg tonusu korall-fotón a rez hatter beleolvadhat.
+ *
+ * ES A TERV EZT NEM IS MUTATHATTA MEG: a tervlap EGYETLEN fotoval keszult,
+ * tehat a kockazat rajta nem latszhatott. Ez nem a terv hibaja -- egy makett
+ * egy peldat mutat, nem eloszlast.
+ *
+ * A DONTES KET RESZBOL ALL (acrobot, msg_id 14884), es a SORREND szandekos:
+ *
+ *   1. a valtas megy, a terv szerint -- a terv kovetese az alapertelmezes
+ *   2. telepites utan HAROM valodi korall lapon meg kell nezni a jelvenyt
+ *
+ * ES HA BELEOLVAD, A JAVITAS NEM A REGI BOROSTYAN VISSZAALLITASA, hanem egy
+ * ELVALASZTO RETEG a rez ALATT (arnyék vagy vekony keret). Ezt azert kell itt
+ * kimondani, mert a kezenfekvo lepes a visszaallitas lenne -- es az a tervtol
+ * vinne el, holott a problema nem a szinnel van, hanem a HATTERREL, amin all.
+ *
+ * Csak MERT adaton terunk el a tervtol, nem feltetelezesre.
+ *
  * TISZTA MEGJELENÍTÉS: nincs adatlekérése és nem tudja, melyik lapon áll --
  * ezért használható a műszaki lapon is, ha ott valaha kell.
  */
