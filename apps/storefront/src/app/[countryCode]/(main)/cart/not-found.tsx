@@ -12,8 +12,8 @@ export default function NotFound() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)]">
       <h1 className="text-2xl-semi text-ui-fg-base">Nincs ilyen oldal</h1>
       <p className="text-small-regular text-ui-fg-base">
-        The cart you tried to access does not exist. Clear your cookies and try
-        again.
+        A keresett kosár nem található. Töröld a böngésző sütijeit, és próbáld
+        újra.
       </p>
       <InteractiveLink href="/">Vissza a főoldalra</InteractiveLink>
     </div>
