@@ -121,6 +121,36 @@ describe("a cég adatai a lábléc negyedik oszlopában", () => {
  * megjegyzeseket, tehat az a bekezdes, amelyik ezt a szabalyt INDOKOLJA, nem
  * dontii el hamisan a sajat allitasat.
  */
+/**
+ * AZ OSZLOPCIMEK NAGYBETUSEK -- ES EZ AZ EGYETLEN ALLITAS, AMIT A HTML-BOL NEM
+ * LEHETETT VOLNA MEGIRNI.
+ *
+ * A lablec mintaja az elo bolt, es a szerkezetet meg a tartalmat a bolt
+ * HTML-jebol fejtettem ki. Ott a cimek VEGYES kisbetusek. A kepernyokepen
+ * viszont nagybetuvel allnak: a bolt stiluslapja alakitja at oket.
+ *
+ * Ket kiolvasas ugyanarrol a forrasrol, ket kulonbozo valasz -- es a kerdes
+ * dontotte el, melyik a helyes: a vevo azt latja, amit a kep mutat.
+ */
+describe("a lábléc oszlopcímei", () => {
+  const lablec = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+
+  /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es ez a lablec. */
+  it("a forrás olvasható, és tényleg a lábléc", () => {
+    expect(lablec).toContain("export default async function Footer")
+  })
+
+  /**
+   * NEGY CIM, NEGY `uppercase`: a harom hivatkozas-oszlop egy ismetlodo
+   * elembol jon, a ceg-oszlop kulon all -- tehat a forrasban KETTO szerepel.
+   * A szamot azert allitjuk, mert egy hianyzo `uppercase` a negyedik oszlopon
+   * nem hibazna, csak masként nezne ki.
+   */
+  it("a címek nagybetűvel állnak, mind a négy oszlopban", () => {
+    expect(lablec.match(/uppercase tracking-wide/g)).toHaveLength(2)
+  })
+})
+
 describe("a külső címek egyetlen helyen állnak", () => {
   const lablec = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
   const lista = kodSzoveg(
