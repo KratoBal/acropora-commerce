@@ -138,6 +138,29 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                   </Suspense>
                 </div>
               }
+              /**
+               * A MASODIK LISTA. UGYANAZ A KOMPONENS, MASIK KULCS.
+               *
+               * A terv a bal oszlop vegen KET listat ker, es a vaz `kiegeszitok`
+               * doboza eddig URESEN allt: a kepesseg megvolt (a vetites irja a
+               * `unas_accessory_ids` kulcsot), csak senki nem olvasta.
+               *
+               * Sajat `data-testid`-t kap, mert a ket doboz kulon allitasokat
+               * hordoz -- egy kozos azonositoval egy ures kiegeszito-lista
+               * ugyanugy nezne ki, mint egy ures hasonlo-lista.
+               */
+              kiegeszitoResz={
+                <div data-testid="kiegeszito-products-container">
+                  <Suspense fallback={<SkeletonRelatedProducts />}>
+                    <RelatedProducts
+                      product={product}
+                      countryCode={countryCode}
+                      kapcsolat="kiegeszito"
+                      fejlecNelkul
+                    />
+                  </Suspense>
+                </div>
+              }
               /*
             A FOTO SLOT ATADASA -- ITT DOL EL, HOGY A JELVENY MEGMARAD-E.
 

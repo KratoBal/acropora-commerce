@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest"
 import {
   HASONLO_KULCS,
   KAPCSOLAT_HATAR,
+  KIEGESZITO_KULCS,
   hasonloAzonositok,
   kertSorrendben,
+  kiegeszitoAzonositok,
 } from "./gondozott-kapcsolatok"
 
 describe("a gondozott kapcsolatok olvasasa", () => {
@@ -104,5 +106,63 @@ describe("a kért sorrend helyreállítása", () => {
     expect(kertSorrendben(valasz, ["prod_1"]).map((t) => t.id)).toEqual([
       "prod_1",
     ])
+  })
+})
+
+/**
+ * A KET LISTA FUGGETLENSEGE -- ES EZ AZ AZ ALLITAS, AMIERT EZ A KESZLET LETEZIK.
+ *
+ * A tobbi allitas azt meri, hogy a KIOLVASAS mukodik. Egyik sem tud kulonbseget
+ * tenni a helyes viselkedes es az kozott, ha a ket fuggveny UGYANAZT a kulcsot
+ * olvasna: akkor is kijonnenek az azonositok, csak a rossz dobozba.
+ *
+ * Ezert a bemenet itt olyan, ahol MINDEN MAS FELTETEL IGAZ, es csak a kulcs ter
+ * el: egy termek, amin CSAK kiegeszito all, es egy masik, amin CSAK hasonlo.
+ * Egy kozos bemenet (mindketto egyszerre) ezt NEM merne -- ott mindket fuggveny
+ * talalna valamit akkor is, ha ugyanarra a kulcsra nez.
+ */
+describe("a hasonlo es a kiegeszito lista fuggetlen", () => {
+  it("a két kulcs KÜLÖNBÖZŐ", () => {
+    expect(KIEGESZITO_KULCS).not.toBe(HASONLO_KULCS)
+  })
+
+  it("csak kiegészítő azonosítókkal a hasonló lista ÜRES", () => {
+    const metadata = { [KIEGESZITO_KULCS]: "prod_a,prod_b" }
+
+    expect(kiegeszitoAzonositok(metadata)).toEqual(["prod_a", "prod_b"])
+    expect(hasonloAzonositok(metadata)).toEqual([])
+  })
+
+  it("csak hasonló azonosítókkal a kiegészítő lista ÜRES", () => {
+    const metadata = { [HASONLO_KULCS]: "prod_x,prod_y" }
+
+    expect(hasonloAzonositok(metadata)).toEqual(["prod_x", "prod_y"])
+    expect(kiegeszitoAzonositok(metadata)).toEqual([])
+  })
+
+  it("mindkettő jelen van: mindegyik a SAJÁTJÁT adja vissza", () => {
+    const metadata = {
+      [HASONLO_KULCS]: "prod_x,prod_y",
+      [KIEGESZITO_KULCS]: "prod_a",
+    }
+
+    expect(hasonloAzonositok(metadata)).toEqual(["prod_x", "prod_y"])
+    expect(kiegeszitoAzonositok(metadata)).toEqual(["prod_a"])
+  })
+
+  /**
+   * A KIEGESZITO AGRA IS ALL A TISZTITAS ES A HATAR -- es ezt kulon ki kell
+   * mondani, mert a ket burkolo KOZOS torzset hasznal: ha valaha szetvalna,
+   * a kiegeszito ag csendben elveszitene a duplikatum-szurest es a hatart.
+   */
+  it("a kiegészítő ág ugyanúgy tisztít és ugyanúgy vág", () => {
+    expect(
+      kiegeszitoAzonositok({
+        [KIEGESZITO_KULCS]: " prod_1 ,prod_2,, prod_1 ,prod_3",
+      }),
+    ).toEqual(["prod_1", "prod_2", "prod_3"])
+
+    const sok = Array.from({ length: 30 }, (_, i) => `prod_${i}`).join(",")
+    expect(kiegeszitoAzonositok({ [KIEGESZITO_KULCS]: sok })).toHaveLength(12)
   })
 })

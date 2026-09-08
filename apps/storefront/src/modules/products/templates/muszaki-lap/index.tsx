@@ -125,6 +125,7 @@ type Props = {
   hasonloResz?: React.ReactNode
   fotoResz?: React.ReactNode
   ragadosResz?: React.ReactNode
+  kiegeszitoResz?: React.ReactNode
   /** A morzsamenu. A vaz a sotet felulet tetejere teszi. */
   morzsaResz?: React.ReactNode
 }
@@ -136,6 +137,7 @@ const MuszakiLap = ({
   hasonloResz,
   fotoResz,
   ragadosResz,
+  kiegeszitoResz,
   morzsaResz,
 }: Props) => {
   return (
@@ -154,6 +156,7 @@ const MuszakiLap = ({
         hasonloResz,
         fotoResz,
         ragadosResz,
+        kiegeszitoResz,
       )}
     />
   )

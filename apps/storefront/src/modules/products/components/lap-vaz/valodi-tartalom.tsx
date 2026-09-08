@@ -9,7 +9,10 @@ import {
   MennyisegDoboz,
   ValasztoDoboz,
 } from "../vasarlas/dobozok"
-import { hasonloAzonositok } from "../related-products/gondozott-kapcsolatok"
+import {
+  hasonloAzonositok,
+  kiegeszitoAzonositok,
+} from "../related-products/gondozott-kapcsolatok"
 import {
   maximumOrderQuantity,
   minimumOrderQuantity,
@@ -294,6 +297,18 @@ export function vazTartalom(
   hasonloResz?: React.ReactNode,
   fotoResz?: React.ReactNode,
   ragadosResz?: React.ReactNode,
+  /**
+   * A HATODIK, ES A VEGERE KERULT, NEM KOZEPRE.
+   *
+   * Ez a szignatura POZICIONALIS, es minden parametere elhagyhato
+   * `React.ReactNode` -- vagyis egy KOZEPRE szurt uj parameter a mogotte
+   * allokat CSENDBEN eltolna: a lap rendereleodne, csak mas resz kerulne mas
+   * dobozba. Ugyanaz az alak, amit a `mennyiseg-opciok.ts` fejlece rogzit, ahol
+   * egy pozicionalis argumentum jelentese valtozott meg eszrevetlenul.
+   *
+   * A vegere teve egyetlen meglevo hivas sem mozdul (ma ketto van).
+   */
+  kiegeszitoResz?: React.ReactNode,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} />,
@@ -457,6 +472,25 @@ export function vazTartalom(
    */
   if (hasonloResz && hasonloAzonositok(termek.metadata).length > 0) {
     tartalom.hasonlo = hasonloResz
+  }
+
+  /**
+   * A "AMI MEG KELLHET HOZZA" DOBOZ. UGYANAZ A SZERZODES, MASIK LISTA.
+   *
+   * A doboz a vazban MAR ALLT, es URESEN varakozott: az iro oldal irja a
+   * `unas_accessory_ids` kulcsot, a kirakat nem olvasta. Ez a szakadas-alak --
+   * mind a ket fel helyes onmagaban, es senki nem hivja.
+   *
+   * A FELTETEL UGYANAZ ES UGYANAZERT: a hivo egy BURKOLO elemet ad at, ami
+   * mindig letezik, a `VazDoboz` uressegi vizsgalata pedig a `children`
+   * letezeset nezi. Burkoloval egyutt a doboz TELINEK jelolt es URESEN
+   * rajzolna -- pontosan az, amit a `VazDoboz` sajat fejlece tilt.
+   *
+   * ES A KET LISTA FUGGETLEN: egy termeknek lehet kiegeszitoje hasonlo nelkul
+   * es forditva, tehat ez KULON feltetel, nem egy kozos ag masik fele.
+   */
+  if (kiegeszitoResz && kiegeszitoAzonositok(termek.metadata).length > 0) {
+    tartalom.kiegeszitok = kiegeszitoResz
   }
 
   /**

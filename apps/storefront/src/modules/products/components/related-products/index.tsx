@@ -2,7 +2,11 @@ import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { HttpTypes } from "@medusajs/types"
 import Product from "../product-preview"
-import { hasonloAzonositok, kertSorrendben } from "./gondozott-kapcsolatok"
+import {
+  hasonloAzonositok,
+  kertSorrendben,
+  kiegeszitoAzonositok,
+} from "./gondozott-kapcsolatok"
 
 type RelatedProductsProps = {
   product: HttpTypes.StoreProduct
@@ -23,12 +27,24 @@ type RelatedProductsProps = {
    * elnyomas nem sul el. A muszaki lapon viszont nem latszik.
    */
   fejlecNelkul?: boolean
+  /**
+   * MELYIK LISTAT MUTATJA. Ket KULONBOZO dolog, nem egy dolog ket valtozata:
+   * egy termeknek lehet hasonloja kiegeszito nelkul es forditva.
+   *
+   * A terv a muszaki lap bal oszlopanak vegen KET listat ker ("Ami meg kellhet
+   * hozza" es "Hasonlo lampak"), es a vaznak MINDKETTOHOZ van doboza -- a
+   * `kiegeszitok` eddig URESEN allt.
+   *
+   * ALAPERTELMEZESBEN `hasonlo`, tehat az elo allat lapja betuere valtozatlan.
+   */
+  kapcsolat?: "hasonlo" | "kiegeszito"
 }
 
 export default async function RelatedProducts({
   product,
   countryCode,
   fejlecNelkul = false,
+  kapcsolat = "hasonlo",
 }: RelatedProductsProps) {
   const region = await getRegion(countryCode)
 
@@ -56,9 +72,9 @@ export default async function RelatedProducts({
    * MOSTANTOL: gondozott kapcsolat nelkul a doboz NEM RENDERELODIK, es
    * lekerdezes SEM INDUL. A ketto egyutt fontos -- egy ures szuro nem szur.
    */
-  const azonositok = hasonloAzonositok(
-    product.metadata as Record<string, unknown> | null,
-  )
+  const kiolvas =
+    kapcsolat === "kiegeszito" ? kiegeszitoAzonositok : hasonloAzonositok
+  const azonositok = kiolvas(product.metadata as Record<string, unknown> | null)
 
   if (azonositok.length === 0) {
     return null
@@ -86,10 +102,14 @@ export default async function RelatedProducts({
       {fejlecNelkul ? null : (
         <div className="flex flex-col items-center text-center mb-16">
           <span className="text-base-regular text-gray-600 mb-6">
-            Hasonló termékek
+            {kapcsolat === "kiegeszito"
+              ? "Ami még kellhet hozzá"
+              : "Hasonló termékek"}
           </span>
           <p className="text-2xl-regular text-ui-fg-base max-w-lg">
-            Ezek is érdekelhetnek.
+            {kapcsolat === "kiegeszito"
+              ? "Ezekkel egészítik ki."
+              : "Ezek is érdekelhetnek."}
           </p>
         </div>
       )}

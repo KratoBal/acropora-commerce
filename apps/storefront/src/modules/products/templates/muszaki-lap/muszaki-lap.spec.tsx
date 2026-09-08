@@ -151,17 +151,54 @@ describe("a hasonló lista fejléce ágnként", () => {
   )
 
   /** ISMERT POZITIV KONTROLL: a fájlt tényleg beolvastuk, és tényleg ez az. */
-  it("a sablon forrása olvasható, és mindkét ág renderel hasonló listát", () => {
+  it("a sablon forrása olvasható, és renderel kapcsolat-listát", () => {
     expect(forras).toContain("MuszakiLap")
-    expect(forras.match(/<RelatedProducts/g)).toHaveLength(2)
+    expect((forras.match(/<RelatedProducts/g) ?? []).length).toBeGreaterThan(0)
   })
 
-  it("a váz ága fejléc nélkül kéri, az élő állat ága a fejléccel", () => {
+  /**
+   * AZ ARANY, NEM A DARABSZAM -- ES EZT EGY VALODI ESET IRTA AT.
+   *
+   * Itt korabban `toHaveLength(2)` allt, ket helyen. Amikor a `kiegeszitok`
+   * doboz bekotesevel egy HARMADIK, teljesen legitim hivas kerult a sablonba,
+   * mind a ketto pirosra valt -- holott semmi nem romlott el.
+   *
+   * A kesertes ilyenkor az, hogy a szamot 2-rol 3-ra irjuk at. Az viszont
+   * ELTUNTETNE azt, amit ez a par valojaban ved: nem a hivasok SZAMAT, hanem
+   * azt, hogy a `fejlecNelkul` elnyomas NE terjedjen at az elo allat lapjara.
+   * (Ugyanez az indok all ebben a fajlban a `vilagaTermeknek` allitasanal is:
+   * egy darabszam egy legitim uj fogyasztonal is pirosodik, es aki ilyet lat,
+   * atirja a szamot ahelyett, hogy gondolkodna.)
+   *
+   * Az INVARIANS: PONTOSAN EGY hivas all fejlec-elnyomas NELKUL, es az az elo
+   * allat aga -- ott nincs korulotte cimzett doboz, tehat a lista sajat fejlece
+   * az egyetlen cime. Ha valaki "egyszerubb lesz mindenhol" alapon rateszi az
+   * elnyomast, ez a szam nullara esik, es pirosra valt. Egy negyedik, vazas
+   * hivas viszont NEM bukik el rajta, mert az ugyanugy elnyomott.
+   */
+  it("pontosan egy hívás áll fejléc-elnyomás nélkül: az élő állat ága", () => {
     const hivasok = forras.split("<RelatedProducts").slice(1)
 
-    expect(hivasok).toHaveLength(2)
+    /** ISMERT POZITIV KONTROLL: van mit szurni, nem ures halmazon merunk. */
+    expect(hivasok.length).toBeGreaterThan(1)
+
     expect(
-      hivasok.filter((h) => h.slice(0, 200).includes("fejlecNelkul")),
+      hivasok.filter((h) => !h.slice(0, 250).includes("fejlecNelkul")),
+    ).toHaveLength(1)
+  })
+
+  /**
+   * A KET LISTA KULON HIVAS, ES A MASODIK NEVESITVE KERI A MASIK KULCSOT.
+   *
+   * Enelkul a fenti allitas akkor is zold lenne, ha a `kiegeszitok` doboz a
+   * HASONLO listat kapna: harom hivas, ketto elnyomott, egy nem -- minden
+   * stimmel, es a lapon ketszer ugyanaz a lista allna, ket kulonbozo cim alatt.
+   */
+  it("a kiegészítő doboz a MÁSIK kulcsot kéri, nem ugyanazt", () => {
+    const hivasok = forras.split("<RelatedProducts").slice(1)
+
+    expect(
+      hivasok.filter((h) => h.slice(0, 250).includes('kapcsolat="kiegeszito"')),
     ).toHaveLength(1)
   })
 })

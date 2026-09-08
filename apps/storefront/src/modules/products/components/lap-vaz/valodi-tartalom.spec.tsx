@@ -97,6 +97,22 @@ const TERMEK_KAPCSOLATTAL = {
   },
 } as never
 
+/**
+ * ES KET TOVABBI BEMENET, MERT A KET DOBOZ FUGGETLENSEGET CSAK KULON-KULON
+ * BEMENETEN LEHET MERNI.
+ *
+ * Egy olyan termek, amin MINDKET lista all, NEM merne semmit: ott mind a ket
+ * doboz megtelne akkor is, ha a ket slot ugyanarra a kulcsra nez. A kulonbseg
+ * csak ott latszik, ahol az EGYIK lista all es a masik nem.
+ */
+const TERMEK_CSAK_KIEGESZITOVEL = {
+  ...(TERMEK as object),
+  metadata: {
+    ...(TERMEK as { metadata: Record<string, string> }).metadata,
+    unas_accessory_ids: "prod_7,prod_8",
+  },
+} as never
+
 describe("a váz valódi tartalma", () => {
   /**
    * A FÜL-SÁV MEGJELENIK, HA A LEÍRÁSBAN TÁBLÁZAT ÁLL.
@@ -433,6 +449,106 @@ describe("a váz valódi tartalma", () => {
 
     const doboz = document.querySelector('[data-vaz-szakasz="hasonlo"]')
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  /**
+   * A KIEGESZITO DOBOZ UGYANAZ A SZERZODES, MASIK LISTA -- ES A DOBOZ MAR ALLT.
+   *
+   * A vazban a `kiegeszitok` doboz ("Ami meg kellhet hozza") a kezdetektol ott
+   * volt, es URESEN varakozott: az iro oldal irja a kulcsot, a kirakat nem
+   * olvasta. Szakadas, nem hianyzo kepesseg.
+   */
+  it("átadott kiegészítő résszel a kiegészítő doboz nem üres", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK_CSAK_KIEGESZITOVEL,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          <div>kiegészítő lista</div>,
+        )}
+      />,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="kiegeszitok"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(doboz?.textContent).toContain("kiegészítő lista")
+  })
+
+  it("kiegészítő azonosító NÉLKÜL a doboz üresen marad, a rész átadása ellenére", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          <div>kiegészítő lista</div>,
+        )}
+      />,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="kiegeszitok"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  /**
+   * A KET LISTA FUGGETLENSEGE -- ES EZ AZ AZ ALLITAS, AMIERT A KET FENTI LETEZIK.
+   *
+   * Mind a ketto zold maradna akkor is, ha a ket slot ugyanarra a kulcsra nez:
+   * egy hasonlo-azonositokkal all termek megtoltene a kiegeszito dobozt is.
+   *
+   * Ezert a bemenet olyan, ahol MINDEN MAS FELTETEL IGAZ, es csak a kulcs ter
+   * el -- es MIND A KET reszt atadjuk, hogy a dontes tenyleg az azonositokon
+   * alljon, ne azon, mit adtunk at.
+   */
+  it("csak kiegészítővel: a kiegészítő doboz telik meg, a hasonló ÜRES marad", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK_CSAK_KIEGESZITOVEL,
+          undefined,
+          <div>hasonló lista</div>,
+          undefined,
+          undefined,
+          <div>kiegészítő lista</div>,
+        )}
+      />,
+    )
+
+    const kiegeszitok = document.querySelector(
+      '[data-vaz-szakasz="kiegeszitok"]',
+    )
+    const hasonlo = document.querySelector('[data-vaz-szakasz="hasonlo"]')
+
+    expect(kiegeszitok?.textContent).toContain("kiegészítő lista")
+    expect(hasonlo?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  it("csak hasonlóval: a hasonló doboz telik meg, a kiegészítő ÜRES marad", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK_KAPCSOLATTAL,
+          undefined,
+          <div>hasonló lista</div>,
+          undefined,
+          undefined,
+          <div>kiegészítő lista</div>,
+        )}
+      />,
+    )
+
+    const kiegeszitok = document.querySelector(
+      '[data-vaz-szakasz="kiegeszitok"]',
+    )
+    const hasonlo = document.querySelector('[data-vaz-szakasz="hasonlo"]')
+
+    expect(hasonlo?.textContent).toContain("hasonló lista")
+    expect(kiegeszitok?.getAttribute("data-vaz-ures")).toBe("igen")
   })
 
   /**
