@@ -188,15 +188,38 @@ export const SIMILAR_ITEMS_LABEL = "Hasonló példányok megnézése"
  * NEM mondja meg, hogy a termék valóban egyedi példány-e: azt az OS oldalán a
  * WYSIWYG kapcsoló dönti el, és a vetítésnek kell áthoznia.
  *
- * === A MÉRT ÁLLAPOT (2026-09-07, staging) ===
+ * === A MÉRT ÁLLAPOT, KÉT DÁTUMMAL ===
  *
- * A vetítés ma EGYETLEN ilyen jelzőt sem ír a termék metaadatába: a WYSIWYG
- * szabály csak `allow_backorder = false`-t állít, aminek a jelentése "nem
- * rendelhető előre", NEM "egy darab". Ezért ez a függvény ma minden terméknél
- * hamisat ad, és a lap az ELFOGYOTT ágat rajzolja.
+ * **2026-09-07-én mérve (staging):** a vetítés EGYETLEN ilyen jelzőt sem írt a
+ * termék metaadatába. A WYSIWYG szabály csak `allow_backorder = false`-t
+ * állított, aminek a jelentése "nem rendelhető előre", NEM "egy darab". Ezért
+ * ez a függvény akkor minden terméknél hamisat adott, és a lap az ELFOGYOTT
+ * ágat rajzolta. Ez SZÁNDÉKOS volt, nem hiányosság: amíg a jelző nem érkezik
+ * meg, a halkabb tévedést választjuk.
  *
- * Ez SZÁNDÉKOS, nem hiányosság: amíg a jelző nem érkezik meg, a halkabb tévedést
- * választjuk. A vetítés kiegészítése külön tétel az OS oldalán.
+ * **2026-09-08-án mérve: A JELZŐ MEGÉRKEZETT.** A kiszolgált lapon ott áll a
+ * metaadatban `unique_piece: "true"` alakban (szövegként, ezért számít a "true"
+ * a lenti összehasonlításban).
+ *
+ * A MAI MÉRÉS PONTOS HATÓKÖRE, mert egy jelzőről szóló állítás könnyen lesz
+ * tágabb, mint amit mértek. Négy lapot hívtam le, és az egyik ELDOBANDÓ:
+ *
+ *   acropora-austea-tricolor      WYSIWYG korall   a jelző OTT VAN
+ *   aquaforest-af-vitality-10ml   technikai        nincs jelző (helyes)
+ *   teszt-termek-001              technikai        nincs jelző (helyes)
+ *   ecotech-...-rms-track-l       404              NEM kontroll, hanem
+ *                                                  hiányzó lap: a listából
+ *                                                  csonkán vettem ki az
+ *                                                  azonosítót
+ *
+ * Vagyis EGY pozitív és KÉT valódi negatív. Ez azt mutatja, hogy a jelző
+ * megérkezik és NEM megy ki mindenre -- de azt NEM mondja meg, hogy minden
+ * WYSIWYG terméken ott áll. Ahhoz a WYSIWYG termékek listája kellene, és azt
+ * nem mértem.
+ *
+ * ===> AMI EBBŐL KÖVETKEZIK A LAPRA: az ELADVA ág ma ELŐ TUD ÁLLNI, tehát a
+ * fenti "minden terméknél hamisat ad" mondat elavult. A régi szám azért marad
+ * itt múlt időben, mert a döntést, ami alatta áll, a törlése vinné el.
  *
  * === MIÉRT NEM AZ `allow_backorder`-BŐL SZÁRMAZTATJUK ===
  *
