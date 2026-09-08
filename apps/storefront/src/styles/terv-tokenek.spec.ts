@@ -371,9 +371,42 @@ describe("a terv megerositett ertekei", () => {
     expect(CSS).toContain('[data-vilag="sotet"]')
 
     const sotetBlokk = CSS.slice(CSS.indexOf('[data-vilag="sotet"]'))
-    expect(normal(sotetBlokk)).toContain("--terv-hatter: oklch(0.235 0.02 248)")
+    /*
+      MERVE A TERV NYERS FORRASABOL (2026-09-08): a sotet tervlap sajat kerete
+      `background:oklch(0.17 0.016 250)` erteket visel. A korabban itt allo
+      0.235 a csikos kep-helykitoltok szine volt, nem lap-hatter.
+    */
+    expect(normal(sotetBlokk)).toContain("--terv-hatter: oklch(0.17 0.016 250)")
     expect(normal(sotetBlokk)).toContain("--terv-szoveg: oklch(0.95 0.006 250)")
     expect(normal(sotetBlokk)).toContain("--terv-keret: oklch(0.28 0.014 250)")
+  })
+
+  /**
+   * A LAP ES A PANEL ERTEKE KULONBOZIK -- ES EZT SEHOL MASHOL NEM LEHET MERNI.
+   *
+   * A komponensek szintjen az all, hogy a ket felulet mas TOKENT visel (a
+   * `lap-vaz.component.spec` es a `ragados-sav.component.spec` allitja). Az a
+   * ket allitas viszont ZOLD MARADNA akkor is, ha valaki a stiluslapon a ket
+   * tokennek UGYANAZT az erteket adna: a nevek kulonboznenek, a lap egyszinu
+   * lenne, es semmi nem szolna.
+   *
+   * A jsdom nem oldja fel a CSS-valtozokat, tehat ezt csak itt, a stiluslap
+   * szovegen lehet allitani.
+   */
+  it("a sötét lapon a lap és a panel értéke különbözik", () => {
+    const sotetBlokk = normal(CSS.slice(CSS.indexOf('[data-vilag="sotet"]')))
+
+    const ertek = (nev: string) =>
+      sotetBlokk.match(new RegExp(`${nev}: (oklch\\([^)]*\\))`))?.[1]
+
+    const lap = ertek("--terv-hatter")
+    const panel = ertek("--terv-hatter-halvany")
+
+    /* ISMERT POZITIV KONTROLL: a kiolvasas tenyleg talalt ket erteket. */
+    expect(lap).toBeTruthy()
+    expect(panel).toBeTruthy()
+
+    expect(lap).not.toBe(panel)
   })
 
   /**

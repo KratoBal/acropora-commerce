@@ -28,8 +28,26 @@ import React from "react"
  * alapszinet viselte volna a melyebb feluleti szin helyett. Nem hibazik, csak
  * mast mutat.
  *
- * A tervbeli ertek (sotetben oklch(0.17 0.016 250)) MAR MEGVAN, `--terv-hatter-lap`
- * neven, es a szerepe is stimmel: a kartyak lapja, vagyis ami a lap FOLOTT ul.
+ * EZ A BEKEZDES HAMIS VOLT, ES EN IRTAM. Az allt itt, hogy a tervbeli ertek
+ * sotetben oklch(0.17 0.016 250), es hogy az a `--terv-hatter-lap`.
+ *
+ * VISSZAMERVE A TERV NYERS FORRASABOL (2026-09-08) a sav ezt viseli:
+ *
+ *     margin-top:56px; padding:20px 44px;
+ *     border-top:1px solid oklch(0.28 0.014 250);
+ *     background:oklch(0.205 0.018 249)
+ *
+ * Vagyis 0.205, ugyanaz, mint a panelekе -- nem 0.17. A 0.17 nyolc helyen all a
+ * tervben, de azok a KERESO MEZOK (`flex:1;height:46px`) es maga a LAP kerete.
+ *
+ * HOGYAN LETT BELOLE 0.17: a nyolc elofordulast egyben nezteem, es a sav
+ * kereseset a MERETRE alapoztam, nem a sav sajat jegyeire (a `margin-top:56px`
+ * es a `border-top` parosra). Egy tul tag kereses hihetoen nezo talalatot ad.
+ *
+ * ES AMIERT EZ TOBB EGY ELIRASNAL: erre a hamis mondatra epitve azt jelentettem
+ * acrobotnak, hogy amikor a lap 0.17-re megy, a sav ES a lap azonos tonusa
+ * SZANDEKOS. Nem az. A tervben a sav VILAGOSABB a lapnal, ugyanugy, mint a
+ * panelek. Az allitas at is ment egy dontesbe, mielott visszamertem.
  *
  * === MIERT PARAMETEREK, ES NEM SAJAT TARTALOM ===
  *
@@ -72,7 +90,7 @@ const RagadosSav = ({ cimke, ar, cselekves }: RagadosSavProps) => {
       className="sticky bottom-0 flex items-center gap-[10px] border-t px-[18px] py-[14px] lg:gap-5 lg:px-11 lg:py-5"
       style={{
         borderColor: "var(--terv-keret)",
-        background: "var(--terv-hatter-lap)",
+        background: "var(--terv-hatter-halvany)",
       }}
     >
       <div className="flex-1">

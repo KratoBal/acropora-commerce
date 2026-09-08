@@ -387,7 +387,34 @@
  * az ERTEKEK vegig helyesek voltak.
  */
 [data-vilag="sotet"] {
-  --terv-hatter: oklch(0.235 0.02 248); /* 16 elem a tervben */
+  /*
+    A LAP HATTERE A TERVLAP SAJAT HATTERE, ES EZT A NYERS FORRASBOL MERTEM
+    (2026-09-08). A tervfajlban harom 1440 pixeles keret all egymas mellett,
+    es mindegyik a SAJAT lapjanak a hatteret viseli:
+
+      flex:none;width:1440px;background:oklch(0.17 0.016 250)     <- a sotet lap
+      flex:none;width:1440px;background:oklch(0.985 0.003 250)
+      flex:none;width:1440px;background:oklch(0.99 0.004 80)
+
+    ITT KORABBAN 0.235 ALLT, ES AZ NEM LAP-HATTER VOLT. Az az ertek a tervben a
+    CSIKOS KEP-HELYKITOLTOKON all (`repeating-linear-gradient`, `aspect-ratio:1`),
+    tehat egy fotó helyet jelolo minta szine. Tizenhat elofordulassal, ami sokkal
+    tobb, mint a lape -- es epp ez tevesztett meg: a gyakorisagbol nem kovetkezik
+    a SZEREP.
+
+    Ebbol az is kovetkezik, hogy a 0.235 elvesztesevel NEM marad tizenhat
+    tervbeli elem token nelkul (ettol tartottunk): azok kep-helykitoltok, amiket
+    nem epitunk meg.
+
+    A FELTETEL, AMIT MEGIS IDE IRUNK, mert altalanosan igaz: ha valaki egy uj
+    feluletnek tokent vesz fel, a SZEREPEBOL szulessen, ne egy tervlapon mert
+    ertek gyakorisagabol visszafejtve.
+
+    A VILAGOS ERTEKHEZ NEM NYULTAM. A terv vilagos lapja 0.985 vagy 0.99 (ket
+    kulon valtozat), a mai 0.96 pedig szinten kep-helykitolto szin. Melyik a
+    helyes, az dontes, nem meres -- kulon tetel.
+  */
+  --terv-hatter: oklch(0.17 0.016 250); /* a sotet tervlap sajat hattere */
   --terv-hatter-lap: oklch(0.17 0.016 250); /*  8 elem -- melyebb felulet */
   --terv-hatter-halvany: oklch(0.205 0.018 249);
 
