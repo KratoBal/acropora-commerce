@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   anyVariantPurchasable,
   availabilityLabel,
+  scarcityCountOf,
   availabilityOf,
   inventoryKnownOf,
   SIMILAR_ITEMS_LABEL,
@@ -389,5 +390,42 @@ describe("a ragadós sáv állapota a mért lapon", () => {
         ],
       }),
     ).toBe("ELFOGYOTT")
+  })
+})
+
+/**
+ * A SZUKOSSEG-SOR SZAMA -- ES A HAROM ALLITAS HAROM KULONBOZO MODON ROMOLHAT EL.
+ *
+ * Nem egy allitas harom esettel: a feltetel KET fele (a beallitas es a nulla)
+ * fuggetlenul mozdulhat, es a harmadik azt merí, hogy a pozitiv eset egyaltalan
+ * atmegy. Egy osszevont allitas barmelyik ket fele romolhatna ugy, hogy a
+ * harmadik elfedi.
+ */
+describe("a szűkösség-sor száma", () => {
+  it("hátralékot engedő terméken NEM áll a sor", () => {
+    expect(
+      scarcityCountOf({ allow_backorder: true, inventory_quantity: 4 }),
+    ).toBeNull()
+  })
+
+  it("nulla készleten nem áll a sor, akkor sem, ha nincs hátralék", () => {
+    expect(
+      scarcityCountOf({ allow_backorder: false, inventory_quantity: 0 }),
+    ).toBeNull()
+  })
+
+  /**
+   * A POZITIV ESET, es enelkul a ket fenti `toBeNull` semmit nem erne: azokat
+   * egy fuggveny is kielegitene, ami MINDIG `null`-t ad.
+   */
+  it("hátralék nélkül, pozitív készleten a darabszámot adja", () => {
+    expect(
+      scarcityCountOf({ allow_backorder: false, inventory_quantity: 1 }),
+    ).toBe(1)
+  })
+
+  /** Hianyzo mezo nem nulla: ott NEM tudunk semmit, tehat nem allitunk. */
+  it("ismeretlen készleten nem áll a sor", () => {
+    expect(scarcityCountOf({ allow_backorder: false })).toBeNull()
   })
 })

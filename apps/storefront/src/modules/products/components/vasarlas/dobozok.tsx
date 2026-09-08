@@ -48,9 +48,16 @@ export function ArDoboz() {
 export function ElerhetosegDoboz({
   kiszereles,
   rendelesiMondat,
+  keszlet,
 }: {
   kiszereles?: string
   rendelesiMondat?: string | null
+  /**
+   * A SZUKOSSEG SZAMA, VAGY `null`. A dontest a hivo hozza
+   * (`scarcityCountOf`), es itt csak kirajzolas van -- ugyanaz a szabaly,
+   * mint a rendelesi mondatnal: a szoveg NE ket helyen alljon.
+   */
+  keszlet?: number | null
 }) {
   /**
    * A MONDAT KESZEN ERKEZIK, ES EZ A VALTOZAS LENYEGE.
@@ -90,7 +97,13 @@ export function ElerhetosegDoboz({
    * kontextbol venne oket, egy provider nelkuli lapon URESEN allna ugy, hogy a
    * vaz TELINEK jeloli -- rosszabb, mint a varakozas.
    */
-  if (!kiszereles && !minimumSor) return null
+  /*
+    A SZUKOSSEG-SOR IS ADAT, tehat az ures-orzonek szamitania kell ra.
+    Enelkul a doboz `null`-t adna egy olyan termeken, aminek CSAK keszlet-sora
+    van -- es a hivo oldali dontes (`scarcityCountOf`) hiaba lenne helyes.
+    Ezt a sajat doboz-szintu allitasom fogta meg, nem a fuggveny harom zoldje.
+  */
+  if (!kiszereles && !minimumSor && typeof keszlet !== "number") return null
 
   /**
    * A DOBOZ MELYEDES A PANELEN BELUL, ES EZ A TERVBOL MERT ALAK (2026-09-08).
@@ -137,6 +150,15 @@ export function ElerhetosegDoboz({
       style={{ background: "var(--terv-hatter)" }}
       data-testid="elerhetoseg-melyedes"
     >
+      {typeof keszlet === "number" ? (
+        <div
+          className="flex items-baseline justify-between gap-4 text-[13.5px]"
+          data-testid="vaz-keszlet"
+        >
+          <span style={{ color: "var(--terv-szoveg-halvany)" }}>Készlet</span>
+          <span>{keszlet === 1 ? "1 db · utolsó" : `${keszlet} db`}</span>
+        </div>
+      ) : null}
       {kiszereles ? (
         <div
           className="flex items-baseline justify-between gap-4 text-[13.5px]"

@@ -11,6 +11,67 @@
  */
 export type Availability = "KAPHATO" | "ELFOGYOTT" | "ELADVA"
 
+/**
+ * A SZUKOSSEG-SOR SZAMA -- ES A BOLT BEALLITASA DONTI EL, NEM A JELZO.
+ *
+ * A terv keszlet-doboza egy "Keszlet" sort mutat ("1 db, utolso"). Ez a
+ * fuggveny mondja meg, MIKOR van egyaltalan mit kiirni oda.
+ *
+ * === A FELTETEL AZ `allow_backorder`, ES NEM A `unique_piece` (acrobot 15874) ===
+ *
+ * Ma a ketto UGYANAZT a harom korallt adja (merve 2026-09-08 a teszt bolton:
+ * 1492 termekbol 3 -- es a ket mezo fuggetlenul ugyanazt a harmat), de MAST
+ * JELENTENEK:
+ *
+ *   allow_backorder === false   nem rendelheto elore  -> KESZLET-allitas
+ *   unique_piece                egyedi darab          -> WYSIWYG-allitas
+ *
+ * A szukosseg a keszletrol szol, tehat a keszlet-beallitast kell kovetnie. Ha
+ * a ketto valaha szetvalik, ez a sor a beallitassal megy.
+ *
+ * ES EZ NEM MOND ELLENT ANNAK, amit a `uniquePiece` mezo fejlece rogzit
+ * ("az `allow_backorder` NEM jelzo: onmagaban hamisat ad"). Az arrol szol,
+ * hogy EGYEDISEGET nem vezetunk le belole. Itt nem egyediseget vezetunk le,
+ * hanem keszlet-allitast -- amirol ez a mezo tenylegesen szol.
+ *
+ * === MIERT NEM ALL A SOR MINDENHOL ===
+ *
+ * A bolt ma a katalogus 99,8 szazalekan ENGED hatralekot, vagyis korlatlan
+ * keszletkent kezeli oket. Egy "utolso darab" sor ott nem hianyzo adat, hanem
+ * TEVES ALLITAS -- es a ketto kozott az a kulonbseg, hogy az elsot ki lehet
+ * varni, a masodikat nem szabad a vevo ele tenni.
+ *
+ * === ES A MASODIK FELTETEL (nulla feletti keszlet) AZ ENYEM, KIMONDVA ===
+ *
+ * A harom termek, amire a beallitas ma illik, MIND nulla keszleten all, es a
+ * lapjuk emiatt "Nem elerheto" allapotban van. Egy "Keszlet: 0 db" sor ott
+ * vagy megismetli az allapotot, vagy -- a terv szovegevel -- egyenesen
+ * ellentmond neki.
+ *
+ * Ezert a sor CSAK pozitiv keszletnel jelenik meg. Ennek egy mellekhaszna is
+ * van: a fenti `inventoryKnown` fejlec szerint a MERT nulla es a SOHA NEM
+ * VETITETT sor kivulrol egyforma -- a nullat kihagyva ez a kulonbseg nem is
+ * er el a vevoig.
+ *
+ * MA EZZEL A SOR NULLA TERMEKEN JELENIK MEG. Ez nem hiba: abban a
+ * pillanatban all elo, amikor egy WYSIWYG korall pozitiv keszlettel kerul ki.
+ */
+export function scarcityCountOf(
+  variant:
+    | {
+        allow_backorder?: boolean | null
+        inventory_quantity?: number | null
+      }
+    | null
+    | undefined,
+): number | null {
+  if (!variant) return null
+  if (variant.allow_backorder !== false) return null
+  const db = variant.inventory_quantity
+  if (typeof db !== "number" || db <= 0) return null
+  return db
+}
+
 export interface AvailabilityInput {
   /** A kirakat mai számítása: rendelhető-e egyáltalán. */
   inStock: boolean
