@@ -675,6 +675,27 @@ describe("a jobb oszlop panel-szerkezete", () => {
    * szakaszt, a gomb egy nem letezo horgonyra mutatna -- es NEM hibazna, csak
    * nem csinalna semmit.
    */
+  /**
+   * A PANEL BELSO RITMUSA A TERVBOL JON, NEM KEREKITESBOL.
+   *
+   * A tervben a negy szakasz hatarain egyseges 18 pixel all (a 6, a 10 es a 16
+   * a szakaszokon BELUL van, mas komponensek tulajdona). Korabban 16 allt itt,
+   * kerekitve -- ket pixel, de a kulonbseg nem a merete, hanem hogy a 16
+   * valasztas volt, a 18 meres.
+   *
+   * A jsdom nem oldja fel a CSS-valtozokat, de ez KONKRET ertek, tehat itt a
+   * mert szam allithato, nem csak egy nev.
+   */
+  it("a közös panel belső térköze a tervbeli 18 pixel", () => {
+    render(<LapVaz />)
+
+    const kozos = document.querySelector(
+      '[data-vaz-csoport="vasarlas"]',
+    ) as HTMLElement
+
+    expect(kozos.style.gap).toBe("18px")
+  })
+
   it("minden vásárlási szakasz megtartja a saját horgonyát", () => {
     render(<LapVaz />)
 
