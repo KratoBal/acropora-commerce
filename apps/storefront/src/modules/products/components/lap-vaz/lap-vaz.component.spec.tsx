@@ -515,8 +515,14 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
    * CSAK a par mutat meg: hogy a sotet lapon a felirat a `unique_piece`
    * predikatumon mulik, nem a sotet listan.
    *
-   * MERVE (murena, 2026-09-08): a 160 sotet lapbol HAROM egyedi peldany, tehat
-   * 157 lapon a "tovabbi" szo valotlant allitott.
+   * MERVE (acrobot, 2026-09-08 04:05, a stage Store API-jan, lapozva): a harom
+   * elo allat gyoker alatt 161 lap all, es ebbol HAROM egyedi peldany -- tehat
+   * 158 lapon a "tovabbi" szo valotlant allitott. A harmat ket egymastol
+   * fuggetlen jel adja (`unique_piece` es a `wysiwyg---korallok` kategoria),
+   * es ugyanazt a harmat.
+   *
+   * A korabbi 160 a REGI vilag-valto predikatumon allt; a kulonbseg az az egy
+   * termek, amit a leveles kategoria-alak a rossz vilagba sorolt.
    */
   it("sötét világban, EGYEDI példánynál a WYSIWYG felirat áll", () => {
     render(<LapVaz vilag="sotet" egyediPeldany />)

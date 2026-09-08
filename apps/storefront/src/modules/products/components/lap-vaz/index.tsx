@@ -602,9 +602,21 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
  * alatta "Ide jönnek a további egyedi példányok". Mind a ketto azt allitja, hogy
  * EZ a termek is egyedi peldany volt.
  *
- * MERVE (murena, 2026-09-08): a 160 sotet lapbol HAROM egyedi peldany. Vagyis
- * 157 lapon a "tovabbi" szo olyat allit a vevonek, ami nem igaz -- egy
- * Helfrich-tuzgeb lapjan azt sugallja, hogy az is WYSIWYG tetel volt.
+ * MERVE (acrobot, 2026-09-08 04:05, a stage Store API-jan, lapozva): a harom
+ * elo allat gyoker alatt 161 lap all (Halak 125, Gerinctelenek 28, Korallok 8),
+ * es ebbol HAROM egyedi peldany. Vagyis 158 lapon a "tovabbi" szo olyat allit a
+ * vevonek, ami nem igaz -- egy Helfrich-tuzgeb lapjan azt sugallja, hogy az is
+ * WYSIWYG tetel volt.
+ *
+ * A HAROM KET EGYMASTOL FUGGETLEN JELBOL JON, es ez tobb, mint egy mezo
+ * egyetlen olvasata: a `unique_piece: true` harom termeket ad, a
+ * `wysiwyg---korallok` kategoria szinten harmat, es PONTOSAN ugyanazt a harmat.
+ *
+ * ES A 161 NEM ELIRAS A KORABBI 160 HELYETT. Ez a bekezdes 160-at mondott,
+ * murena merese alapjan, es az a szam a REGI vilag-valto predikatumon allt. Az
+ * uj predikatum egy termekkel tobbet lat: a leveles kategoria-alak azt az egyet
+ * a rossz vilagba sorolta. A ket szam kulonbsege tehat nem meresi szoras, hanem
+ * PONTOSAN az a javitas -- a levezetese a `vilag-valto.ts` fejlecben all.
  *
  * ES A TERV MAGA DONTI EL A HATOKORT, a sajat lap-leirasaban (merve a 2a lap
  * tetején, y=56):
