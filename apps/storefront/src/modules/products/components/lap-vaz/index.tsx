@@ -622,6 +622,27 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
  * doboz visszaesik a VILAGOS lap sajat feliratara -- ami szinten a tervbol valo,
  * tehat nem talalunk ki semmit.
  */
+/**
+ * AMELYIK FELIRAT EGYEDI PELDANYT ALLIT, ES EZERT FELTETELHEZ VAN KOTVE.
+ *
+ * Nem minden elo allat egyedi peldany. Ezek a feliratok KIJELENTIK, hogy a lap
+ * egy konkret, megfoghato darabrol szol -- ha nem az, a mondat valotlan, es a
+ * vevo azt olvassa, hogy a kepen AZ a peldany all, amit megrendel.
+ *
+ *   hasonlo   "További WYSIWYG példányok"   (a #151 kotoette fel)
+ *   foto      "Saját fotó: ez a példány"    (acrobot dontese, msg 14947)
+ *
+ * A KETTO UGYANAZ AZ ALLITAS, ket helyen. Nem hataresetek: mind a ketto ALLIT
+ * valamit a termekrol. Ezzel szemben a "Hová tedd ezt a példányt?" MEGSZOLIT,
+ * es az marad -- az elso lehet hamis, a masodik legfeljebb szokatlan (acrobot
+ * dontese ugyanabban az uzenetben, es a mondat a tervbol valo: 2a lap, y=1215).
+ *
+ * MIERT SET ES NEM KET `if`: a kovetkezo ilyen felirat egy sor lesz, nem egy uj
+ * ag. A ket eset kozott a kulonbseg csak a kulcs, a kezeles azonos -- a vilagos
+ * lap ugyanazon kulcsu szakaszanak semleges szovegere esunk vissza.
+ */
+const EGYEDI_PELDANYT_ALLIT = new Set(["hasonlo", "foto"])
+
 export function szakaszokVilagra(
   vilag: Vilag,
   egyediPeldany = false,
@@ -629,13 +650,16 @@ export function szakaszokVilagra(
   if (vilag !== "sotet") return MUSZAKI_LAP_SZAKASZAI
   if (egyediPeldany) return ELO_ALLAT_LAP_SZAKASZAI
 
-  const vilagosPar = MUSZAKI_LAP_SZAKASZAI.find((sz) => sz.kulcs === "hasonlo")
+  return ELO_ALLAT_LAP_SZAKASZAI.map((szakasz) => {
+    if (!EGYEDI_PELDANYT_ALLIT.has(szakasz.kulcs)) return szakasz
 
-  return ELO_ALLAT_LAP_SZAKASZAI.map((szakasz) =>
-    szakasz.kulcs === "hasonlo" && vilagosPar
-      ? { ...szakasz, cim: vilagosPar.cim, varakozo: vilagosPar.varakozo }
-      : szakasz,
-  )
+    const vilagosPar = MUSZAKI_LAP_SZAKASZAI.find(
+      (sz) => sz.kulcs === szakasz.kulcs,
+    )
+    if (!vilagosPar) return szakasz
+
+    return { ...szakasz, cim: vilagosPar.cim, varakozo: vilagosPar.varakozo }
+  })
 }
 
 export type Vilag = "vilagos" | "sotet"
