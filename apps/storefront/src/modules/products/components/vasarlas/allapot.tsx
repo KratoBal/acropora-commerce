@@ -74,6 +74,39 @@ const optionsAsKeymap = (
   }, {})
 }
 
+/**
+ * AZ EGYETLEN VALTOZAT MAR A KISZOLGALON KIVALASZTVA -- KULON FUGGVENY, HOGY
+ * ALLITAS MUTATHASSON RA.
+ *
+ * === MI VOLT A BAJ, ES MEKKORA ===
+ *
+ * A starter a kivalasztast `useEffect`-ben vegezte ("If there is only 1
+ * variant, preselect the options"). Egy effekt CSAK HIDRATALAS UTAN fut, tehat
+ * a kiszolgalt HTML-ben nem volt kivalasztott valtozat -- es a
+ * `MennyisegDoboz` ilyenkor a letiltott "Válassz változatot" gombot rajzolja.
+ *
+ * Merve a teszt bolton (2026-09-08): MIND A 1492 TERMEKNEK PONTOSAN EGY
+ * valtozata es EGY opcioja van. Vagyis nem szeleseset volt, hanem a
+ * terméklapok SZAZ SZAZALEKA: minden lap elso festese egy letiltott gombot
+ * mutatott, olyan termeken, ahol nincs is mit valasztani.
+ *
+ * Visszamerve a kitelepitett lapon: a kiszolgalt HTML-ben a gomb
+ * `disabled` volt es "Válassz változatot" allt rajta, ket kulonbozo termeken
+ * (egy WYSIWYG korall es egy egyszeru kiegeszito).
+ *
+ * === AMIT EZ NEM OLD MEG ===
+ *
+ * Ha egy termeknek egyszer TOBB valtozata lesz, ott tovabbra is valasztani
+ * kell, es a letiltott gomb HELYES. A fuggveny ezert a darabszamra kerdez, nem
+ * arra, hogy "van-e valtozat".
+ */
+export function kezdoOpciok(
+  product: Pick<HttpTypes.StoreProduct, "variants">,
+): Record<string, string | undefined> {
+  if (product.variants?.length !== 1) return {}
+  return optionsAsKeymap(product.variants[0].options) ?? {}
+}
+
 export function VasarlasProvider({
   product,
   disabled,
@@ -87,7 +120,13 @@ export function VasarlasProvider({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  /*
+    LUSTA KEZDOERTEK, NEM URES OBJEKTUM: igy a KISZOLGALON is ki van valasztva
+    az egyetlen valtozat, es a lap elso festese mar a valodi gombot mutatja.
+  */
+  const [options, setOptions] = useState<Record<string, string | undefined>>(
+    () => kezdoOpciok(product),
+  )
   const [isAdding, setIsAdding] = useState(false)
   /**
    * A KEZDŐÉRTÉK A TERMÉK MINIMUMA, nem beégetett 1. Tizenhat terméknél a
@@ -104,13 +143,23 @@ export function VasarlasProvider({
   const [quantity, setQuantity] = useState(minimumQuantity)
   const countryCode = useParams().countryCode as string
 
-  // If there is only 1 variant, preselect the options
+  /*
+    AZ EFFEKT MARAD, DE MOSTANTOL NEM FUT FELESLEGESEN.
+
+    A kezdoertek mar helyes, tehat ez az ag csak akkor tesz valamit, ha a
+    `product` KESOBB valtozik anelkul, hogy a komponens ujra beallna. Ezert
+    hasonlit ELOBB, es csak elteresnel ir: enelkul minden bejovo termek-objektum
+    egy UJ objektumot tolt be azonos tartalommal, es az felesleges ujrarajzolast
+    okoz.
+
+    Nem toroltem: az, hogy a lap-valtas mindig ujra beallitja a komponenst, a
+    keret viselkedesere vonatkozo FELTEVES lenne, es nem mertem le.
+  */
   useEffect(() => {
-    if (product.variants?.length === 1) {
-      const variantOptions = optionsAsKeymap(product.variants[0].options)
-      setOptions(variantOptions ?? {})
-    }
-  }, [product.variants])
+    const kezdo = kezdoOpciok(product)
+    if (!Object.keys(kezdo).length) return
+    setOptions((elozo) => (isEqual(elozo, kezdo) ? elozo : kezdo))
+  }, [product])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
