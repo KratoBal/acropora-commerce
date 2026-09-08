@@ -48,6 +48,31 @@
  * (`unas_unit`, `unas_minimum_order_quantity`, `unas_product_url`), es a
  * kapcsolatok is onnan jonnek.
  */
+/**
+ * A PARJA MASIK REPOBAN ALL, ES A KETTOT SEMMILYEN FORDITAS NEM KOTI OSSZE:
+ *
+ *   acropora-os  apps/api/src/integrations/medusa/medusa-relations.policy.ts:72
+ *                export const MEDUSA_SIMILAR_IDS_KEY = "unas_similar_ids"
+ *
+ * A ket repo kozott NINCS kozos csomag (a kirakat 42 fuggosege kozott nulla
+ * workspace-fuggoseg all), tehat nincs kozos futas, amibe egy allitas
+ * beleferne. Ha a ket sztring elter, a hasonlo-doboz CSENDBEN ures marad.
+ *
+ * MERVE 2026-09-08 (nautilus), ket kalibracioval:
+ *   ha CSAK ez a konstans csuszik el, ket allitas pirosodik nev szerint a
+ *     `lap-vaz/valodi-tartalom.spec.tsx`-ben -- mert annak a FIXTURE-je a
+ *     literalt irja, mikozben a kod ezen a konstanson at olvas;
+ *   ha viszont valaki KOVETKEZETESEN nevezi at (ezt a sort ES a fixture-t),
+ *     479 teszt fut le nulla pirossal, es a repo semmit nem vesz eszre.
+ *
+ * A masodik a valodi kockazat, es ez a megjegyzes az egyetlen dolog, ami
+ * ellene szol. Ezert all A SOR MELLETT es nem a fajl fejlecben: aki atnevez,
+ * kereses-cserevel dolgozik, es a TALALT SORT latja, nem a fajl tetejet.
+ *
+ * ES AMIERT NEM VENNE ESZRE SENKI: 2026-09-08-an a stage 1492 termekebol
+ * EGY viseli ezt a kulcsot. Az ures hasonlo-doboz ma a normal latvany, tehat
+ * egy elcsuszott kulcs pontosan ugy nezne ki, mint a mai allapot.
+ */
 export const HASONLO_KULCS = "unas_similar_ids"
 
 /**
