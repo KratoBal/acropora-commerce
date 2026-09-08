@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import {
+  TERMEKLAP_ALAPMEZOK,
   TERMEKLAP_FIELDS,
   TERMEKLAP_MEZO_KATEGORIAK,
   TERMEKLAP_MEZO_METAADAT,
@@ -31,6 +32,32 @@ describe("a termeklap mezoi", () => {
    */
   it("a kategóriákat csillaggal kéri, nem plusszal", () => {
     expect(TERMEKLAP_FIELDS).not.toContain("+categories")
+  })
+
+  /**
+   * ES A LISTPRODUCTS OT ALAPMEZOJE, EGYESEVEL NEVESITVE.
+   *
+   * A `fields` FELULIR, nem bovit: amint a lap sajat erteket ad at, a fuggveny
+   * alapertelmezese eltunik. Ez egyszer mar megtortent, es MIND AZ OT mezot
+   * elvitte -- kozottuk a szamolt arat, amiert a lapon egy MASODIK lekerdezes
+   * all.
+   *
+   * A HIBA NEMA: egy mezo, amit senki nem ker, ugyanugy nez ki a valaszban,
+   * mint egy mezo, ami ures. Ezert all itt allitas mind az otre, KULON-KULON:
+   * egy teljes-sztring osszevetes csak annyit mondana, hogy "nem egyezik", ez
+   * viszont megnevezi, MELYIK veszett el.
+   */
+  it.each(TERMEKLAP_ALAPMEZOK)("kéri a(z) %s mezőt is", (mezo) => {
+    expect(TERMEKLAP_FIELDS).toContain(mezo)
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL: a lista nem ures. Egy ures `it.each` NULLA tesztet
+   * indit, es a futas ugyanugy zold -- vagyis a fenti allitas-csokor eltunhetne
+   * anelkul, hogy barmi szolna.
+   */
+  it("az alapmező-lista nem üres", () => {
+    expect(TERMEKLAP_ALAPMEZOK.length).toBe(5)
   })
 })
 
