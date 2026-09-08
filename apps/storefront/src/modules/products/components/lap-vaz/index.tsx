@@ -72,6 +72,24 @@ type VazSzakasz = {
   varakozo: string
   /** Melyik oszlopba kerul az asztali nezetben. */
   oszlop: Oszlop
+  /**
+   * EGY KOZOS KERETES PANEL AZONOSITOJA, HA A TERV IGY TARTJA OSSZE.
+   *
+   * A tervben a jobb oszlop NEM annyi keretes doboz, ahany szakaszunk van.
+   * Merve a tervlap jelolojen (2026-09-08, pontos tag-parositassal): a jobb
+   * oszlopnak HAROM kozvetlen, keretes gyereke van, nem hat:
+   *
+   *   1. ar + brutto/cikkszam + keszlet + szallitas + atvetel + Kosarba + DOA
+   *   2. Kotegajanlat            -- KULON panel
+   *   3. Kerdezd a boltot        -- KULON panel
+   *
+   * Az EGYMAS UTAN allo, azonos `csoport` erteku szakaszok egyetlen keretes
+   * panelbe kerulnek. A szakaszok maguk megmaradnak: a horgonyuk
+   * (`#vaz-<kulcs>`), az azonositoik es az ures-allapotuk valtozatlan, csak a
+   * sajat keretuket nem rajzoljak ki. Ez azert fontos, mert a ragados sav
+   * gombja a `#vaz-mennyiseg` horgonyra ugrik.
+   */
+  csoport?: string
 }
 
 /**
@@ -294,19 +312,33 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     varakozo: "Ide jönnek a termék műszaki adatai",
     oszlop: "bal",
   },
-  { kulcs: "ar", cim: "", varakozo: "Ide jön az ár", oszlop: "jobb" },
+  {
+    kulcs: "ar",
+    cim: "",
+    varakozo: "Ide jön az ár",
+    oszlop: "jobb",
+    csoport: "vasarlas",
+  },
   {
     kulcs: "elerhetoseg",
     cim: "",
     varakozo: "Készlet, szállítás, bolti átvétel",
     oszlop: "jobb",
+    csoport: "vasarlas",
   },
-  { kulcs: "valaszto", cim: "", varakozo: "Változat-választó", oszlop: "jobb" },
+  {
+    kulcs: "valaszto",
+    cim: "",
+    varakozo: "Változat-választó",
+    oszlop: "jobb",
+    csoport: "vasarlas",
+  },
   {
     kulcs: "mennyiseg",
     cim: "",
     varakozo: "Mennyiség és kosárba tétel",
     oszlop: "jobb",
+    csoport: "vasarlas",
   },
   {
     kulcs: "csomagajanlat",
@@ -343,6 +375,14 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
 type VazDobozProps = {
   szakasz: VazSzakasz
   children?: React.ReactNode
+  /**
+   * A KOZOS PANELEN BELUL A SZAKASZ NEM RAJZOL SAJAT KERETET.
+   *
+   * Nem torlom a szakaszt es nem vonom ossze a tartalmat: az azonositoja, a
+   * horgonya es az ures-allapota valtozatlan marad. Csak a keret, a hatter es a
+   * belso margo kerul at a kozos panelre -- kulonben ket keret allna egymasban.
+   */
+  keretNelkul?: boolean
 }
 
 /**
@@ -352,7 +392,11 @@ type VazDobozProps = {
  * tehat aki a lapot nezi, latja, mi all mar es mi csak a helyet foglalja. Egy
  * ures doboz, ami kesznek latszik, rosszabb a hianyzonal.
  */
-export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
+export const VazDoboz = ({
+  szakasz,
+  children,
+  keretNelkul = false,
+}: VazDobozProps) => {
   /**
    * A JSX gyerek-atadasnal a `children` akkor is letezhet, ha nincs benne semmi
    * (ures kifejezes, `undefined` a terkepbol). Ezert nem a MEZO meglétét
@@ -377,14 +421,18 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
       id={`vaz-${szakasz.kulcs}`}
       data-vaz-szakasz={szakasz.kulcs}
       data-vaz-ures={uresE ? "igen" : "nem"}
-      className="p-4"
-      style={{
-        border: uresE
-          ? "1px dashed var(--terv-keret)"
-          : "1px solid var(--terv-keret)",
-        background: uresE ? "transparent" : "var(--terv-hatter-lap)",
-        color: "var(--terv-szoveg)",
-      }}
+      className={keretNelkul ? "" : "p-4"}
+      style={
+        keretNelkul
+          ? { color: "var(--terv-szoveg)" }
+          : {
+              border: uresE
+                ? "1px dashed var(--terv-keret)"
+                : "1px solid var(--terv-keret)",
+              background: uresE ? "transparent" : "var(--terv-hatter-lap)",
+              color: "var(--terv-szoveg)",
+            }
+      }
     >
       {szakasz.cim && (
         <h2
@@ -805,6 +853,32 @@ type LapVazProps = {
  * kovetkezmenye: a `flex-col` alatt a dobozok abban a sorrendben allnak, ahogy
  * a `MUSZAKI_LAP_SZAKASZAI` felsorolja oket -- es az a terv sorrendje.
  */
+/**
+ * EGYMAS UTAN ALLO, AZONOS CSOPORTU SZAKASZOK EGY PANELBE.
+ *
+ * A SORREND SZAMIT, es ezert nem `groupBy`: a tervben a kozos panel EGYBEFUGGO.
+ * Ha ket azonos csoportu szakasz koze valaha bekerul egy harmadik, akkor KET
+ * panel lesz belole, nem egy osszevont -- ami helyes, mert a lap sorrendjet a
+ * `MUSZAKI_LAP_SZAKASZAI` adja, nem ez a fuggveny.
+ *
+ * Csoport nelkuli szakaszbol mindig egyelemu csoport lesz, tehat a mai
+ * viselkedes valtozatlan mindenutt, ahol nincs `csoport` megadva.
+ */
+export const csoportokba = (szakaszok: VazSzakasz[]): VazSzakasz[][] =>
+  szakaszok.reduce<VazSzakasz[][]>((ki, szakasz) => {
+    const utolso = ki[ki.length - 1]
+    if (
+      utolso &&
+      szakasz.csoport &&
+      utolso[0].csoport === szakasz.csoport &&
+      utolso[0].oszlop === szakasz.oszlop
+    ) {
+      utolso.push(szakasz)
+      return ki
+    }
+    return [...ki, [szakasz]]
+  }, [])
+
 const LapVaz = ({
   tartalom = {},
   vilag = "vilagos",
@@ -821,21 +895,47 @@ const LapVaz = ({
       data-testid="muszaki-lap-vaz"
       data-vilag={vilag}
     >
-      {szakaszokVilagra(vilag, egyediPeldany).map((szakasz) => (
-        <div
-          key={szakasz.kulcs}
-          data-vaz-oszlop={szakasz.oszlop}
-          className={
-            szakasz.oszlop === "teljes"
-              ? "lg:col-span-2"
-              : szakasz.oszlop === "bal"
-                ? "lg:col-start-1"
-                : "lg:col-start-2"
-          }
-        >
-          <VazDoboz szakasz={szakasz}>{tartalom[szakasz.kulcs]}</VazDoboz>
-        </div>
-      ))}
+      {csoportokba(szakaszokVilagra(vilag, egyediPeldany)).map((csoport) => {
+        const elso = csoport[0]
+        const kozos = csoport.length > 1 || Boolean(elso.csoport)
+
+        return (
+          <div
+            key={elso.kulcs}
+            data-vaz-oszlop={elso.oszlop}
+            data-vaz-csoport={elso.csoport}
+            className={
+              elso.oszlop === "teljes"
+                ? "lg:col-span-2"
+                : elso.oszlop === "bal"
+                  ? "lg:col-start-1"
+                  : "lg:col-start-2"
+            }
+            style={
+              kozos
+                ? {
+                    border: "1px solid var(--terv-keret)",
+                    background: "var(--terv-hatter-lap)",
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                  }
+                : undefined
+            }
+          >
+            {csoport.map((szakasz) => (
+              <VazDoboz
+                key={szakasz.kulcs}
+                szakasz={szakasz}
+                keretNelkul={kozos}
+              >
+                {tartalom[szakasz.kulcs]}
+              </VazDoboz>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }
