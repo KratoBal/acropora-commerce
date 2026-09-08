@@ -216,9 +216,21 @@ describe("a váz valódi tartalma", () => {
    * hogy legyen. Egy kuszob kezenfekvo lenne (a legrovidebb leiras hat
    * karakter), es EPP A LEGHASZNOSABB adatot rejtene el.
    *
-   * MERVE a teljes bolton (acrobot, 2026-09-08, mind az 1492 termek): negyven
-   * karakter alatt 25 termek all, szaz alatt 81 -- es ezek nem torott sorok,
-   * hanem tomor muszaki specek:
+   * MERVE a teljes bolton (acrobot, 2026-09-08, mind az 1492 termek), A
+   * MEGTISZTITOTT SZOVEGEN: negyven karakter alatt 25 termek all, szaz alatt
+   * 82 -- es ezek nem torott sorok, hanem tomor muszaki specek:
+   *
+   * A "MEGTISZTITOTT" JELOLES NEM SZORSZALHASOGATAS, ES EPP A FENTI ERVET ERINTI.
+   * Ugyanez a ket szam a NYERS `description` mezon 19 es 70. A doboz a
+   * MEGTISZTITOTT szoveget jeleniti meg, tehat egy kesobbi hossz-kuszob is azon
+   * vagna -- vagyis a 25 az ervenyes szam ehhez az ervhez, a 19 nem. Aki a nyers
+   * mezon ellenorizne, 19-et kapna, es nem csak a szamot tartana gyanusnak,
+   * hanem az ervet is.
+   *
+   * (A korabbi valtozat 81-et irt a szaz alatti sorra. Az a szam egyik meressel
+   * sem all elo: tisztitottan 82, kisebb-egyenlovel 83. Valoszinuleg egy
+   * korabbi, mas alaku tisztitassal keszult -- de mivel nem tudom reprodukalni,
+   * a mert ertek all a helyen, nem a regi.)
    *
    *   eheim-skim-350-felszinleszivo            9 karakter   "300l/h 5W"
    *   megaveggiemag-magneses-algalap-csipesz  20 karakter   "19mm uvegvastagsagig"
