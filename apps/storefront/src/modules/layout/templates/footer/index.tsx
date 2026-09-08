@@ -1,4 +1,8 @@
-import { listCategories } from "@lib/data/categories"
+import {
+  listCategories,
+  listNonEmptyRootCategories,
+} from "@lib/data/categories"
+import { getRegion } from "@lib/data/regions"
 import { STORE_NAME } from "@lib/store"
 import { listCollections } from "@lib/data/collections"
 import { Text, clx } from "@modules/common/components/ui"
@@ -13,11 +17,24 @@ import {
   SAJAT_HIVATKOZASOK,
 } from "./hivatkozasok"
 
-export default async function Footer() {
+export default async function Footer({
+  countryCode,
+}: {
+  /**
+   * AZ ORSZAGKOD A GYOKEREK SZURESEHEZ KELL, es ugyanabbol az okbol, mint a
+   * fejlecnek: a "van-e benne termek" kerdes REGIO-fuggo. Nelkule nem
+   * talalgatunk -- ures listat adunk, es a kategoria-szakasz kimarad.
+   */
+  countryCode?: string
+}) {
   const { collections } = await listCollections({
     fields: "*products",
   })
   const productCategories = await listCategories()
+  const region = countryCode ? await getRegion(countryCode) : null
+  const gyokerOszlopok = region
+    ? await listNonEmptyRootCategories(region.id)
+    : []
 
   return (
     /*
@@ -67,6 +84,91 @@ export default async function Footer() {
       data-testid="lablec-sik"
     >
       <div className="content-container flex flex-col w-full">
+        {/*
+          A KATEGORIA-OSZLOPOK: GYOKERENKENT EGY, ES A RACS A DARABSZAMRA VAN
+          HUZALOZVA, NEM ROGZITETT NEGYRE.
+
+          Forras: `agents/picasso/lablec-spec-2026-09-08.md`. Amit ez lecserel:
+          egyetlen oszlop, amiben mind az 53 kategoria-link egymas alatt futott
+          (2067 pixel, picasso merese 22:07-kor).
+
+          === MIERT NEM ROGZITETT NEGY (acrobot kikotese) ===
+
+          Ma negy gyoker all, mert ketto (Shop 'n the Shop, Edesvizi
+          akvarisztika) kiesik. Ha az a dontes megfordul (73038a32 kartya,
+          Balazsnal), a lablecnek NEM kell atirodnia: az oszlopszam a halmaz
+          merete, egy CSS-valtozon at.
+
+          === ES EGY KULONBSEG, AMIT KI KELL MONDANI ===
+
+          A spec a NEM REJTETT gyokerekrol beszel (a bolt `Display.Menu`
+          mezoje), a kirakat viszont a Medusat olvassa, es ott ilyen mezo
+          NINCS. Amit valojaban szurunk, az a NEM URES gyoker
+          (`listNonEmptyRootCategories`).
+
+          A KETTO MA UGYANAZT A NEGYET ADJA -- ez a fuggveny sajat fejleceben
+          merve all --, de NEM ugyanaz a szabaly. Ha egyszer egy rejtett
+          gyokerbe termek kerul, a lablecben megjelenne, a fomenuben nem. Ezt
+          nem javitom talalgatasbol: a jelolo hianya adat-kerdes, nem
+          elrendezes.
+
+          === A SORREND ADAT, NEM LISTA ===
+
+          A `rank` mezobol jon, amit a boltos allitott be, es pontosan azt a
+          sorrendet adja, amit a spec atmenetikent felsorolt (Termekek,
+          Gerinctelenek, Halak, Korallok). Nem kellett kulon dontes.
+
+          === A FUGGOLEGES BELSO MARGO: NEM UJ ERTEK ===
+
+          A spec ezt az EGY erteket hagyta rám, mert a tervben nincs lablec, es
+          a legkozelebbi nagy szekcio-terkozt (160px) javasolta kiindulasnak.
+          Megmertem: a starter `py-40`-je PONTOSAN 160 pixel, tehat az ertek
+          mar itt all, es egyezik a javaslattal. Nem veszek fel ujat.
+        */}
+        {gyokerOszlopok.length > 0 && (
+          <section
+            className="grid grid-cols-2 gap-x-[44px] gap-y-[24px] pt-40 lg:grid-cols-[repeat(var(--lablec-oszlopok),minmax(0,1fr))]"
+            style={
+              {
+                "--lablec-oszlopok": gyokerOszlopok.length,
+              } as React.CSSProperties
+            }
+            data-testid="lablec-kategoria-racs"
+          >
+            {gyokerOszlopok.map((gyoker) => {
+              const gyerekek =
+                productCategories?.find((c) => c.id === gyoker.id)
+                  ?.category_children ?? []
+
+              return (
+                <div className="flex flex-col gap-y-2" key={gyoker.id}>
+                  <LocalizedClientLink
+                    href={`/categories/${gyoker.handle}`}
+                    className="text-[14px] font-semibold hover:text-terv-kiemel-tinta"
+                    style={{ color: "var(--terv-szoveg)" }}
+                    data-testid="lablec-oszlopcim"
+                  >
+                    {gyoker.name}
+                  </LocalizedClientLink>
+                  <ul className="grid grid-cols-1 gap-2">
+                    {gyerekek.map((gyerek) => (
+                      <li key={gyerek.id}>
+                        <LocalizedClientLink
+                          href={`/categories/${gyerek.handle}`}
+                          className="text-[13.5px] hover:text-terv-kiemel-tinta"
+                          style={{ color: "var(--terv-szoveg-halvany)" }}
+                          data-testid="category-link"
+                        >
+                          {gyerek.name}
+                        </LocalizedClientLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </section>
+        )}
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
           <div>
             <LocalizedClientLink
@@ -77,98 +179,6 @@ export default async function Footer() {
             </LocalizedClientLink>
           </div>
           <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-            {productCategories && productCategories?.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Kategóriák
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2"
-                  data-testid="footer-categories"
-                >
-                  {/*
-                    EZ AZ OSZLOP MARAD, ES A FELTETELT KIMONDJUK, HOGY NE
-                    KELLJEN VISSZAKERESNI (acrobot dontese, 2026-09-08).
-
-                    A lablec TARTALMA a shop.acropora.hu-bol jon, es az eles
-                    bolt lableceben nincs kategoria-oszlop. Huseg alapjan
-                    tehat torlendo lenne. MEGSEM toroljuk, es az indok nem az,
-                    hogy senki nem kerte:
-
-                    A KIRAKATBAN MA EZ AZ EGYETLEN UT A KATEGORIAKHOZ, amit a
-                    VEVO tenylegesen lat. A fejlec kategoria-savja MEGEPULT es
-                    a fo agon all, de a kitelepitett lapon meg NINCS kint --
-                    merve 2026-09-08 este: a nyitolapon nulla kategoria-link
-                    all a `<footer>` ELOTT, es 53 a lableceben. Amig ez igy
-                    van, a torles nulla utat hagyna a bongeszesnek.
-
-                    A FELTETEL, AMIKOR A KERDES UJRA ELOJON: amikor a
-                    fejlec-menu KITELEPITVE is all. Attol kezdve ez az oszlop
-                    mar nem az egyetlen ut, es a torles valoban csak
-                    huseg-kerdes lesz. Addig nem az.
-
-                    ELOSZOR SZURUNK GYOKERRE, AZUTAN VAGUNK.
-
-                    A starterben forditva allt: `slice(0, 6)` a NYERS listan,
-                    es a szures utana. Merve 2026-09-07 a teszt bolton: a lista
-                    elso hat eleme kozott PONTOSAN EGY gyoker van ("Termékek"),
-                    a masik ot az O leszarmazottja -- azokat a szures eldobta.
-                    A lablec igy 219 kategoriabol 24 linket mutatott, es a bolt
-                    ot masik gyokere (Halak, Korallok, Gerinctelenek, Édesvízi
-                    akvarisztika, Shop 'n the Shop) SEHOL nem jelent meg.
-
-                    Vagyis a hiba nem a darabszamban volt, hanem a SORRENDBEN:
-                    ugyanaz a hat, mast jelent a szures elott es utana.
-                    Szures utan vagva: 6 gyoker, 53 link.
-                  */}
-                  {productCategories
-                    ?.filter((c) => !c.parent_category)
-                    .slice(0, 6)
-                    .map((c) => {
-                      const children =
-                        c.category_children?.map((child) => ({
-                          name: child.name,
-                          handle: child.handle,
-                          id: child.id,
-                        })) || null
-
-                      return (
-                        <li
-                          className="flex flex-col gap-2 text-ui-fg-subtle txt-small"
-                          key={c.id}
-                        >
-                          <LocalizedClientLink
-                            className={clx(
-                              "hover:text-ui-fg-base",
-                              children && "txt-small-plus",
-                            )}
-                            href={`/categories/${c.handle}`}
-                            data-testid="category-link"
-                          >
-                            {c.name}
-                          </LocalizedClientLink>
-                          {children && (
-                            <ul className="grid grid-cols-1 ml-3 gap-2">
-                              {children &&
-                                children.map((child) => (
-                                  <li key={child.id}>
-                                    <LocalizedClientLink
-                                      className="hover:text-ui-fg-base"
-                                      href={`/categories/${child.handle}`}
-                                      data-testid="category-link"
-                                    >
-                                      {child.name}
-                                    </LocalizedClientLink>
-                                  </li>
-                                ))}
-                            </ul>
-                          )}
-                        </li>
-                      )
-                    })}
-                </ul>
-              </div>
-            )}
             {collections && collections.length > 0 && (
               <div className="flex flex-col gap-y-2">
                 <span className="txt-small-plus txt-ui-fg-base">

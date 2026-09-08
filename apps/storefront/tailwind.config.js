@@ -71,6 +71,14 @@ module.exports = {
           ugyanahhoz.
         */
         "terv-szoveg": "var(--terv-szoveg)",
+        /*
+          A REZ TINTA UGYANEZERT: a lablec kategoria-linkjei lebegtetesre erre
+          valtanak (lablec-spec, 2026-09-08), es egy `:hover` allapot itt sem
+          irhato le beagyazott stilusban. Nem uj ertek -- a
+          `--terv-kiemel-tinta` mar hasznalatban van, csak eddig nem kellett
+          allapothoz kotni.
+        */
+        "terv-kiemel-tinta": "var(--terv-kiemel-tinta)",
       },
       fontFamily: {
         /*
