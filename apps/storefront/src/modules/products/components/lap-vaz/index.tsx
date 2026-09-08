@@ -391,6 +391,29 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     varakozo: "Kapcsolatfelvétel",
     oszlop: "jobb",
   },
+  /*
+    EZ A KET DOBOZ ADAT HIANYABAN MARAD URES, NEM HIBA MIATT -- ES EZERT ALL ITT.
+
+    A kapcsolat-lanc mind a harom fokan megmerve (acrobot merese, 2026-09-08
+    este; a szamok tole valok, nem sajat meresbol):
+
+      UNAS          1310 termek visel hasonlot, 1007 kiegeszitot
+      Acropora OS      7 termek, 48 kapcsolat, KIEGESZITO nulla
+      teszt bolt       1 termek
+
+    Vagyis az OS-ben ma nincs mit kivinni: a lanc a FORRASNAL szakad, nem itt.
+    Amig az import meg nem tortenik, ez a ket doboz akkor is ures marad, ha a
+    kirakat oldalan minden helyes -- barmit epitunk ra.
+
+    AMIERT A KODBAN ALL ES NEM CSAK A KARTYAN: aki azt latja, hogy a doboz nem
+    jelenik meg, eloszor a kodban fogja keresni az okot. Ez a megjegyzes epp azt
+    a kort sporolja meg. A ket kartya: d2dd5557 (az import) es a71496e4 (a
+    hianyzo idobelyeg).
+
+    HA EZ A MEGJEGYZES ELAVUL (megjott az adat), TOROLNI KELL: egy megjegyzes,
+    ami egy mar megszunt hianyt ir le, ugyanugy felrevezet, mint egy elavult
+    korlat -- csak epp senki nem meri ujra.
+  */
   {
     kulcs: "kiegeszitok",
     cim: "Ami még kellhet hozzá",
