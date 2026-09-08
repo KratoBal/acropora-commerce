@@ -1,0 +1,104 @@
+import { readFileSync, readdirSync, statSync } from "node:fs"
+import { join } from "node:path"
+
+import { describe, expect, it } from "vitest"
+
+/**
+ * MINDEN HASZNALT TERV-TOKEN LETEZZEN -- BEJARO HALO, NEM KEZZEL IRT LISTA.
+ *
+ * === MIERT LETEZIK ===
+ *
+ * Egy `var(--terv-valami)`, aminek nincs definicioja, NEM HIBAZIK: a bongeszo
+ * egyszeruen nem alkalmaz erteket. A gomb hatter nelkul marad, a szoveg
+ * orokolt szint kap -- es a lap tovabb mukodik. Nema kar.
+ *
+ * Ez nem elmeleti: egy token ATNEVEZESE vagy KIVEZETESE pontosan igy sul el.
+ * Ha kilenc hasznalatbol egy kimarad, a tobbi nyolc helyesen valtozik, es a
+ * kilencedik csendben elveszti a szinet.
+ *
+ * === MIERT BEJARO, ES NEM FELSOROLAS ===
+ *
+ * A repo tobbi halojanak tanulsaga (`kosar-tokenek.spec.ts`,
+ * `confirm-usage.component.test.ts`): egy KEZZEL irt fajl-lista pontosan az UJ
+ * esetet hagyja ki -- azt, amiert a halo letezik. Ezert ez a keszlet a
+ * FORRASBOL olvassa mind a ket oldalt: a definiciokat a `globals.css`-bol, a
+ * hasznalatokat a fa bejarasabol.
+ *
+ * === A HATARA, KIMONDVA ===
+ *
+ * Azt meri, hogy a hasznalt token LETEZIK-E, nem azt, hogy a HELYES token-e.
+ * A rossz, de letezo token (peldaul a fo cselekvesen a lenyomott arnyalat) ezen
+ * atmegy -- azt komponens-szintu allitasok fogjak meg, nev szerint.
+ */
+const GYOKER = join(__dirname, "..")
+const CSS = join(__dirname, "globals.css")
+
+/**
+ * A HALO NEM MERI SAJAT MAGAT -- ES EZT MOST MASODSZOR TANULTAM MEG.
+ *
+ * Az elso futasa EGY arvat talalt, es az a SAJAT KOMMENTEMBOL jott: a fenti
+ * magyarazat egy pelda-tokent idez. Ugyanez tortent a kornyezeti valtozok
+ * halojanal is (2026-09-08): a bejaro a sajat fixture-jet olvasta be, es negy
+ * nem letezo valtozot jelentett.
+ *
+ * KET JAVITAS LETEZIK, ES A KULONBSEGUK A LENYEG:
+ *
+ *   a pelda-token nevenek kizarasa  ->  KEZZEL karbantartott kivetel; a
+ *                                       kovetkezo pelda mas nevet kap, es
+ *                                       ujra atcsuszik
+ *   a SAJAT FAJL kizarasa           ->  SZERKEZETI; nem veszit semmit, mert
+ *                                       egy halo nem hasznal terv-tokent
+ *
+ * Ezert az onmaga kizarasa all itt, nem a nev-kivetel.
+ */
+const ONMAGA = join(__dirname, "terv-token-hasznalat.spec.ts")
+
+const forrasok = (mappa: string): string[] => {
+  const ki: string[] = []
+  for (const nev of readdirSync(mappa)) {
+    const ut = join(mappa, nev)
+    if (statSync(ut).isDirectory()) {
+      ki.push(...forrasok(ut))
+      continue
+    }
+    if (/\.(ts|tsx|css)$/.test(nev) && ut !== CSS && ut !== ONMAGA) ki.push(ut)
+  }
+  return ki
+}
+
+const DEFINIALT = new Set(
+  Array.from(
+    readFileSync(CSS, "utf-8").matchAll(/(--terv-[a-z0-9-]+)\s*:/g),
+    (m) => m[1],
+  ),
+)
+
+const FAJLOK = forrasok(GYOKER)
+
+const HASZNALAT = FAJLOK.flatMap((ut) =>
+  Array.from(
+    readFileSync(ut, "utf-8").matchAll(/var\((--terv-[a-z0-9-]+)\)/g),
+    (m) => ({ token: m[1], ut: ut.replace(GYOKER + "/", "") }),
+  ),
+)
+
+describe("a terv-tokenek hasznalata", () => {
+  /**
+   * ISMERT POZITIV KONTROLL, ELOL. Egy ures bejaras ugyanugy nezne ki, mint egy
+   * tiszta eredmeny: nulla arva token. Ezert eloszor azt mutatjuk meg, hogy a
+   * bejaras LAT fajlokat, es LAT bennuk token-hivatkozast.
+   */
+  it("a bejárás lát fájlokat, definíciókat és használatokat", () => {
+    expect(FAJLOK.length).toBeGreaterThanOrEqual(50)
+    expect(DEFINIALT.size).toBeGreaterThanOrEqual(15)
+    expect(HASZNALAT.length).toBeGreaterThanOrEqual(20)
+  })
+
+  it("minden használt terv-token létezik a globals.css-ben", () => {
+    const arvak = HASZNALAT.filter((h) => !DEFINIALT.has(h.token)).map(
+      (h) => `${h.token} (${h.ut})`,
+    )
+
+    expect(arvak).toEqual([])
+  })
+})
