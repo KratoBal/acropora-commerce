@@ -121,3 +121,38 @@ describe("a kosársor csipjeinek tipográfiája", () => {
     expect(cs.style.color).toBe("var(--terv-szoveg-vilagos)")
   })
 })
+
+/**
+ * A SZERIF AZ ASZTALI NEZETBEN -- KET ALLITAS, ES A MASODIK A KONTROLL.
+ *
+ * A terv a kosar 3a lapjan ezt a mondatot KETSZER rajzolja: a 390-es mobil
+ * kereten belul orokolt betuvel, az 1440-es asztalin Newsreaderrel. A
+ * `small:` (1024) toresponthoz kotott jeloles ezt a ket allapotot adja
+ * vissza, es ugyanott valt, ahol a kosar racsa ketoszloposra all.
+ *
+ * A MASODIK ALLITAS NEM DISZ: enelkul egy valtozas, ami a szerifet a KOMPONENS
+ * MINDEN szovegere raviszi, ugyanugy zold maradna -- es akkor a jeloles nem
+ * jelolne semmit. A csip a szomszedja, es sajat betuje van (mono), tehat pont
+ * az, aminek NEM szabad megkapnia.
+ *
+ * AMIT NEM MER: hogy a bongeszo mit fest. A jsdom nem forditja le a Tailwind
+ * osztalyokat, es a toresponthoz kotott alakot vegkepp nem ertelmezi -- ez a
+ * jeloles MEGLETET meri, nem a kirajzolt betut.
+ */
+describe("a szerif az asztali nézetben", () => {
+  it("az egyedi példány ígérete a törésponttól szerifet visel", () => {
+    render(<CartLineState state="EGYEDI" similarHref="/x" />)
+
+    expect(screen.getByTestId("egyedi-kosar-igeret").className).toContain(
+      "small:font-kiemelt",
+    )
+  })
+
+  it("a csip NEM kapta meg a szerifet", () => {
+    render(<CartLineState state="EGYEDI" similarHref="/x" />)
+
+    const cs = screen.getByTestId("cart-line-egyedi").querySelector("span")!
+
+    expect(cs.className).not.toContain("font-kiemelt")
+  })
+})

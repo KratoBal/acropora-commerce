@@ -134,12 +134,54 @@ export default function CartLineState({
        * Ezert nem dontottem el magam. (nautilus merese, msg 14993; a masodik
        * elofordulast en mertem hozza, es a sajat elozo, meret-alapu ervemet
        * ezzel gyengitem.)
+       *
+       * === A PREMISSZA MEGDOLT (murena merese, 2026-09-08) ===
+       *
+       * A fenti ervelés abbol indult ki, hogy a ket elofordulas "nem ket
+       * reszponziv valtozat, hanem KET KEZELES ugyanarra az elemre". Ez
+       * TEVES, es a tervlap sajat szerkezete mondja meg:
+       *
+       *   a 3a lap PONTOSAN ket nezet-keretet tartalmaz,
+       *     width:390px  (mobil)   es  width:1440px (asztali)
+       *   a mondat ket elofordulasa:
+       *     a 390-esen BELUL  -> orokolt betu, 12px
+       *     az 1440-esen BELUL -> Newsreader, 15.5px
+       *
+       * Kosarsor-elemek azert allnak mind a ketto korul, mert a MOBIL nezetben
+       * IS vannak kosarsorok. Ugyanez all egy MASODIK mondatra is, fuggetlenul:
+       * az atveteli indoklas (`pickup-notice`) szinten orokolt a mobilon es
+       * Newsreader az asztalin.
+       *
+       * KONTROLL, hogy ne a makett altalanos tulajdonsagat merjem: a terv
+       * MASHOL nem valt betucsaladot a ket nezet kozott (az "ÉLŐ ÁLLAT A
+       * KOSÁRBAN" cimke mind a kettoben JetBrains Mono, a tobbi vizsgalt
+       * szoveg mind a kettoben orokolt -- csak a MERETUK valtozik).
+       *
+       * === AMI EZUTAN IS NYITOTT MARADT, ES EZERT CSAK A FELET KOTOM BE ===
+       *
+       * A 3b lapon a szerif a MOBIL kereten belul IS ott van. Tehat a "szerif
+       * csak asztalin" NEM a terv szabalya, es ket olvasat all:
+       *
+       *   A) SZANDEKOS: a 3a keskeny hasabjaban a dolt szerif rosszul olvasna,
+       *      ezert ott nincs. Akkor a torespont a helyes alak.
+       *   B) ELAVULT: a 3a mobil kerete a legkorabbi a negy nezet kozul, es a
+       *      szerif kesobb kerult a tervbe. Akkor a bekotes feltetel nelkuli.
+       *
+       * MIND A KET OLVASAT SZERINT az ASZTALI nezetben szerif all. Ezert a
+       * `small:` toresponthoz kotom: (A) alatt pontos, (B) alatt hianyos, de
+       * EGYIK alatt sem rossz. A mobil fele Balazs vagy picasso egy mondatara
+       * var, es addig a mai allapotban marad.
+       *
+       * A `small:` a kosar racsanak sajat toresponja is (`templates/index.tsx`,
+       * `small:grid-cols-[856fr_452fr]`), tehat ugyanott valt, ahol a lap
+       * ketoszloposra all -- nem egy kulon, kitalalt hatar.
        */}
       <span
-        className="text-[11px] leading-relaxed"
+        className="text-[11px] leading-relaxed small:font-kiemelt"
         style={{
           color: "var(--terv-szoveg-halvany)",
         }}
+        data-testid="egyedi-kosar-igeret"
       >
         {UNIQUE_IN_CART_PROMISE}
       </span>

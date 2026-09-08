@@ -52,8 +52,21 @@ export default function PickupNotice({
         {PICKUP_TITLE}
       </span>
       <p className="text-[15px] font-semibold">{PICKUP_LEAD}</p>
+      {/*
+        A SZERIF AZ ASZTALI NEZETBEN -- ugyanaz a meres es ugyanaz a fenntartas,
+        mint a `line-state` egyedi-igeretenel, es a ket hely EGYUTT mozdul.
+
+        A terv 3a lapjan ez a bekezdes ketszer all: a 390-es mobil kereten
+        belul orokolt betuvel 13.5px-en, az 1440-es asztalin Newsreaderrel
+        17px-en.
+
+        A MERETET NEM VESZEM AT ebben a korben, es ezt kimondom: nalunk 12.5px
+        all, ami sem a mobil 13.5-nek, sem az asztali 17-nek nem felel meg. Az
+        kulon mert elteres, kulon kerdessel (melyik nezet a mienk), es egy
+        betu-bekotes ne vigye el csendben.
+      */}
       <p
-        className="text-[12.5px] leading-relaxed"
+        className="text-[12.5px] leading-relaxed small:font-kiemelt"
         style={{
           color: "var(--terv-szoveg-halvany)",
         }}
