@@ -422,7 +422,22 @@ describe("az élő állat lap feliratai", () => {
 
     // A varakozo szovegek is felul vannak irva, es eddig egyiket sem fedte semmi.
     expect(doboz("foto")?.varakozo).toBe("Saját fotó: ez a példány")
-    expect(doboz("meretezes-seged")?.varakozo).toBe("Hová tedd ezt a példányt?")
+    /**
+     * EZ AZ ERTEK MA VALTOZOTT (acrobot 15766), es a REGI a tervbeli LATHATO
+     * CIM volt ("Hová tedd ezt a példányt?").
+     *
+     * Az indok nem az, hogy a regi hamis lett volna, hanem hogy VALODI
+     * TARTALOMNAK latszott: egy vevo megprobalna hasznalni. A vilagos parja
+     * ranezesre helykitolto, ez nem volt az.
+     *
+     * ES EGY MERES, AMIT ERDEMES TUDNI: amikor a komponenst atirtam es a
+     * specet MEG NEM, EZ AZ ALLITAS PIROSODOTT KI. Vagyis a szoveg fedve volt
+     * -- nem tudott volna csendben elmozdulni. A csere tehat nem "eszrevetlen
+     * javitas", hanem egy nevesitett dontes, ami egy allitast is mozgatott.
+     */
+    expect(doboz("meretezes-seged")?.varakozo).toBe(
+      "Ide jön az elhelyezés-segéd",
+    )
     expect(doboz("csomagajanlat")?.varakozo).toBe("Ide jön a kötegajánlat")
     expect(doboz("hasonlo")?.varakozo).toBe(
       "Ide jönnek a további egyedi példányok",
