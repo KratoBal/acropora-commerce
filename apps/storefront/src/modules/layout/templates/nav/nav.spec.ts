@@ -155,3 +155,69 @@ describe("a kosár gomb felirata", () => {
     expect(kosar).not.toContain("Cart (")
   })
 })
+
+/**
+ * A FEJLEC GEOMETRIAJA -- ES AMIERT MOST KAPJA MEG.
+ *
+ * Merve (2026-09-08): a kirakatban a terv-eredetu GEOMETRIAI ertekek 15
+ * szazalekara all allitas, a szin-tokenek 72 szazalekara. Ez a fajl volt a
+ * legnagyobb egybefuggo hiany: tizenegy jelolobol kilencet nem tartott semmi.
+ *
+ * A MERT ERTEKEK, a terv 1b (vilagos) fejlecebol, egy bejarassal kiolvasva:
+ *
+ *     fo sav        height:78px  gap:40px  padding:0 44px
+ *     logo negyzet  30 x 30
+ *     szovegjel     21px / 700 / letter-spacing 0.1em
+ *     kereso        height:46px  padding:0 16px  gap:12px  font-size:14px
+ *     nagyito       13 x 13
+ *     menu          gap:22px  font-size:14px / 500
+ *     kosar gomb    height:46px  padding:0 20px  gap:10px  14px / 600
+ *
+ * A 44 PIXELES OLDALMARGO NEM PADDINGKENT ALL NALUNK, es ezt kimondom, hogy ne
+ * latszodjon hianynak: a sav `maxWidth: 1352px` erteken kozepre igazodik, es
+ * 1440-en ez pontosan 44 pixelt hagy ket oldalt. Ugyanaz az ertek, masik uton --
+ * es igy kisebb szelessegen is helyesen viselkedik.
+ *
+ * AMIT NEM MER: hogy a lapon jol NEZ KI. Ez a fajl forras-szoveget olvas, tehat
+ * a JELOLES meglétét meri. Ugyanaz a hatar, ami a fenti allitasokra is all.
+ */
+describe("a fejléc geometriája a tervből", () => {
+  const nav = forras("index.tsx")
+
+  it("a logó-négyzet a tervbeli 30 pixel", () => {
+    expect(nav).toContain("h-[30px]")
+    expect(nav).toContain("w-[30px]")
+  })
+
+  it("a szóvédjegy mérete és betűköze a tervből", () => {
+    expect(nav).toContain("text-[21px]")
+    expect(nav).toContain("tracking-[0.1em]")
+  })
+
+  /**
+   * A KERESO MAGASSAGA BEAGYAZOTT STILUSBAN ALL, nem osztalyban -- ezert mas
+   * alakra keresunk. Nem kovetkezetlenseg: a mezo magassagat a doboz adja.
+   */
+  it("a kereső-mező a tervbeli 46 pixel, 12 pixeles közzel", () => {
+    expect(nav).toContain('height: "46px"')
+    expect(nav).toContain("gap-3")
+  })
+
+  it("a nagyító-jel a tervbeli 13 pixel", () => {
+    expect(nav).toContain("h-[13px]")
+    expect(nav).toContain("w-[13px]")
+  })
+
+  it("a menü köze a tervbeli 22 pixel", () => {
+    expect(nav).toContain("gap-[22px]")
+  })
+
+  /**
+   * A KOSAR-GOMB A KERESOVEL AZONOS MAGASSAGU (46), es ez a tervben is igy all
+   * -- a ket elem egy vonalban zar. Kulon allitas, mert kulon is elromolhat.
+   */
+  it("a kosár-gomb magassága és margója a tervből", () => {
+    expect(nav).toContain("h-[46px]")
+    expect(nav).toContain("px-5")
+  })
+})
