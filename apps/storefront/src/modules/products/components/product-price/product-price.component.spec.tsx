@@ -74,3 +74,38 @@ describe("a termék ára", () => {
     expect(container.textContent).toContain("-tól")
   })
 })
+
+/**
+ * AZ AR-HELYKITOLTO SZINE -- ES MIERT KELL RA ALLITAS.
+ *
+ * A helykitolto akkor all elo, ha nincs szamolt ar. Ket helyen renderelodik,
+ * es MIND A KETTO megjelenik a sotet lapon is: a vaz ardoboza
+ * (`vasarlas/dobozok.tsx`) es a ragados sav (`templates/index.tsx`). Beirt
+ * `bg-gray-100` allt rajta, vagyis egy vilagosszurke tomb a sotet lapon.
+ *
+ * A KET ALLITAS EGYUTT ER VALAMIT, KULON EGYIK SEM:
+ *
+ * Az elso azt meri, hogy a helykitolto AG EGYALTALAN ELOALL. Enelkul a
+ * masodik allitas akkor is zold lenne, ha soha semmi nem renderelodne --
+ * egy hianyt mero allitast egy URES VILAG is kielegit.
+ *
+ * A masodik a tokent meri. Nem a beirt osztaly hianyat: azt egy ures
+ * elem is teljesitene.
+ */
+describe("az ár helykitöltője", () => {
+  /** ISMERT POZITIV KONTROLL: valtozat nelkul tenyleg a helykitolto jon. */
+  it("változat nélkül a helykitöltő jelenik meg, ár helyett", () => {
+    render(<ProductPrice product={termek(0)} />)
+
+    expect(screen.getByTestId("product-price-helykitolto")).toBeTruthy()
+    expect(screen.queryByTestId("product-price-tol")).toBeNull()
+  })
+
+  it("az ár-helykitöltő a halvány felület tokenjét viseli", () => {
+    render(<ProductPrice product={termek(0)} />)
+    const elem = screen.getByTestId("product-price-helykitolto")
+
+    expect(elem.style.background).toBe("var(--terv-hatter-halvany)")
+    expect(elem.className).not.toContain("bg-gray-")
+  })
+})
