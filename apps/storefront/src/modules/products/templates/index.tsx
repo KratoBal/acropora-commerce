@@ -210,6 +210,19 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
    * ES AMIERT EZ MA MEGIS SPOROL: aki egy javitast vegez a termeklapon, ezen az
    * agon NEM kell atvezetnie. Egy "ott is javitani kell" kor felesleges --
    * egeszen addig, amig a kapcsolo all.
+   *
+   *   MIKOR TOROLHETO EZ AZ AG (acrobot dontese, msg 14964)
+   *     Egy visszaut FELTETEL NELKUL orokre megmarad, ezert a feltetel itt all,
+   *     nevesitve. Mind a HAROM kell, nem barmelyik:
+   *
+   *       1. a teszt kirakat telepitese KIMENT
+   *       2. a lapon VISSZAMERVE mind a harom nautilus-fele allitas a VART
+   *          erteket adja
+   *       3. Balazs LATTA a lapot, es nem kert visszaallast
+   *
+   *     Igy a kovetkezo olvaso (vagy mi magunk, ket het mulva) nem azt kerdezi,
+   *     hogy "kell-e meg ez", hanem hogy "teljesult-e a harom" -- es az utobbi
+   *     MERHETO, az elobbi velemeny.
    */
   return (
     <>

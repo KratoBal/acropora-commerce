@@ -73,6 +73,40 @@ describe("ki kapja már a vázat", () => {
     expect(hasznaljaVazat({ categories: [] } as never)).toBe(true)
     expect(hasznaljaVazat(null)).toBe(true)
   })
+
+  /**
+   * MIT JELENT A KAPCSOLO MAI ERTEKE -- A KOVETKEZMENY, NEM A KAPCSOLO.
+   *
+   * A fenti sorok azt mondjak, hogy a `hasznaljaVazat` MINDEN bemenetre igazat
+   * ad. Amit ebbol KOVETKEZIK, es ami eddig csak a fejunkben allt: a sablon
+   * REGI aga nem fut, tehat a `ProductActions`, a `MobileActions` es a
+   * `ProductActionsWrapper` ma egyaltalan nem renderelodik.
+   *
+   * A FORRAST OLVASSA, es megmondom, miert: a `ProductTemplate` aszinkron
+   * szerver-komponens, es EGYETLEN spec sem rendereli. Amit meg lehet merni,
+   * az az, hogy a ket komponens a HOLT ag `return`-je UTAN all -- vagyis az
+   * elo agon nincs is ott.
+   *
+   * A `MobileActions` szandekosan nincs a listaban: az nem ebben a fajlban
+   * all, hanem a `ProductActions` renderel belul (product-actions/index.tsx).
+   * Ha az elsot nem eri el a vezerles, a masodikat sem -- egy allitas, ami
+   * itt keresne, NULLA talalattal lenne zold, rossz okbol.
+   *
+   * ES AMIT EZ NEM BIZONYIT: nem azt, hogy a holt ag HELYES lenne, ha
+   * felebredne. Arra ma semmi nincs -- ez all a sablon fejleceben is, a
+   * torles harom feltetelevel egyutt.
+   */
+  it("a régi ág két belépési pontja a holt ág után áll", () => {
+    const forras = readFileSync(join(__dirname, "..", "index.tsx"), "utf-8")
+
+    const holtAgKezdete = forras.indexOf("MIKOR TOROLHETO EZ AZ AG")
+    expect(holtAgKezdete).toBeGreaterThan(-1)
+
+    for (const belepes of ["<ProductActions", "<ProductActionsWrapper"]) {
+      const hol = forras.indexOf(belepes)
+      expect(hol).toBeGreaterThan(holtAgKezdete)
+    }
+  })
 })
 
 /**
