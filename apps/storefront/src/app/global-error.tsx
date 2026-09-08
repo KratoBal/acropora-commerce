@@ -19,6 +19,11 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  // A NAPLOBA MEGY, A LAPRA NEM -- ugyanaz a szabaly, mint a `(main)` hataron.
+  // Itt ez az EGYETLEN nyom: a gyoker-elrendezes bukasanal nincs mas, ami
+  // osszekotne a szerver-oldali hibat ezzel a lappal.
+  console.error("Storefront gyoker-hiba:", error.digest ?? error.message)
+
   return (
     <html lang="hu">
       <body>
@@ -49,6 +54,19 @@ export default function GlobalError({
           >
             Próbáld újra
           </button>
+          {/*
+            SZANDEKOSAN `<a>`, NEM `next/link` -- es a szabalyt nevvel oldom fel.
+
+            A `Link` KLIENS-OLDALI navigacio: ugyanabban a React-futasban marad.
+            Itt viszont epp a GYOKER-ELRENDEZES hasalt el, tehat az a futas MAR
+            hibas allapotban van -- egy kliens-oldali lepes ugyanoda vinne
+            vissza. Egy `<a>` TELJES lap-ujratoltest kér, es az az egyetlen
+            dolog, ami ebbol a helyzetbol tenylegesen kivezet.
+
+            A lint-szabaly a szokasos lapokra helyes; ez az egy hely a kivetel,
+            es azert all itt az indok, hogy a kovetkezo olvaso ne "javitsa ki".
+          */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/">Vissza a főoldalra</a>
         </div>
       </body>
