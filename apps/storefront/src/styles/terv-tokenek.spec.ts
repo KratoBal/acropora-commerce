@@ -217,11 +217,44 @@ describe("a terv megerositett ertekei", () => {
   /**
    * A HARMADIK NYUGDIJAZAS MAS FAJTA, ES EZERT MAS PAR JAR MELLE.
    *
-   * A `--terv-jelzo` az 1a lap melytenger-kek akcentje volt. Merve a tervlapok
-   * teljes elem-kiolvasasan: 17 elem, MIND az 1a lapon; a rez 18 eleme MIND az
-   * 1b-n. Mi az 1b akcentjet vettuk at, tehat ez a szin egyaltalan nem all a
-   * lapunkon. acrobot dontese (msg 15273): nyugdijazzuk, mert KET akcent egy
-   * lapon rosszabb, mint egy kovetkezetes.
+   * A `--terv-jelzo` az 1a lap melytenger-kek akcentje volt. acrobot dontese
+   * (msg 15273): nyugdijazzuk, mert KET akcent egy lapon rosszabb, mint egy
+   * kovetkezetes.
+   *
+   * === EZ A BEKEZDES KET LAPOT NEVEZETT MEG HAROMBOL, ES A HALLGATAS ALLITOTT ===
+   *
+   * Az allt itt, hogy "17 elem, MIND az 1a lapon; a rez 18 eleme MIND az 1b-n".
+   * A 2a lapot meg sem emlitette -- es egy ket soros tabla, ami hallgat a
+   * harmadik esetrol, ALTALANOS SZABALYKENT olvasodik. (nautilus fogalmazta meg,
+   * 2026-09-08: a hallgatas is allitas, ha tablaban all.)
+   *
+   * A HAROM LAP, VISSZAMERVE A NYERS FORRASBOL:
+   *
+   *   melytenger-kek  oklch(0.52 0.09 210)   1a: 18    1b: 0    2a: 0
+   *   rez             oklch(0.55 0.13 45)    1b: 20    1a: 0    2a: 0
+   *   rez             oklch(0.62 0.13 45)    2a: 12
+   *   rez             oklch(0.68 0.13 45)    2a:  9
+   *   rez-tinta       oklch(0.15 0.014 45)   2a:  5
+   *
+   * AMI EBBOL KOVETKEZIK, ES AMI NEM:
+   *
+   * A DONTES ALL, es erosebben, mint elotte: a kek akcent KIZAROLAG az 1a lapon
+   * van, es az az elvetett valtozat. Nulla elofordulas a masik ketton.
+   *
+   * A MASIK FELE VISZONT HIANYOS VOLT. A rez nem "az 1b akcentje": a 2a lapon
+   * TOBB rez all (26 elofordulas harom erteken), mint az 1b-n (20). A rez tehat
+   * MIND A KET epulo lap akcentje, csak vilagonkent mas ertekkel -- es epp ezert
+   * van a `--terv-kiemel` tokennek ket erteke (0.55 vilagos, 0.62 sotet).
+   *
+   * Ez KIEGESZITES, nem helyesbites: a mondat nem volt hamis, csak kevesebbet
+   * mondott, mint amennyit sugallt. A ketto kozott a rekordban kulonbseg van --
+   * egy kiegeszites, ami "helyesbitesnek" nevezi magat, azt hiteti a kesobbi
+   * olvasoval, hogy ott egyszer hazugsag allt.
+   *
+   * A SZAMOK ELTERESE PEDIG MODSZERBELI, NEM HIBA: a regi 17 es 18 ELEM-szintu
+   * kiolvasasbol jott (a renderelt tervlap elemeit szamolva), a fenti 18 es 20 a
+   * NYERS FORRAS deklaracioibol. Ugyanaz a jelenseg, mint a `--terv-szoveg`
+   * "60 elem" megjegyzesenel, ahol a forrasban 11 deklaracio all.
    *
    * === MIERT NEM UGYANAZ AZ ALLITAS, MINT A FENTI KETTONEL ===
    *
