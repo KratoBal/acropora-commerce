@@ -88,29 +88,116 @@ export const ELO_ALLAT_GYOKEREK = [
 ] as const
 
 type Kategoria = {
+  id?: string | null
   name?: string | null
   mpath?: string | null
+  parent_category_id?: string | null
 }
 
 /**
  * A GYOKER a termek kategoria-listajabol: az az elem, aminek az `mpath`-ja
- * egyetlen szegmensbol all. A Medusa minden ost is felsorol a termek
- * kategoriai kozott, tehat a gyoker ott van a listaban.
+ * egyetlen szegmensbol all.
+ *
+ * A HIANYZO `mpath` NEM GYOKER, es ez egy sajat hiba javitasa. A regi feltetel
+ * csak a szegmensek szamat nezte, es egy hianyzo `mpath`-bol ures sztring lesz,
+ * abbol pedig `[""]` -- vagyis EGY szegmens. Egy kategoria, ami nem hozott
+ * `mpath`-ot, igy GYOKERKENT viselkedett, a sajat neven.
+ *
+ * Ket kart okozott. Egy: egy tetszoleges melysegu kategoria neve gyokernek
+ * szamitott. Ketto (es ez vezetett ide): mivel a lista igy NEM volt ures, a
+ * katalogusbol valo feloldas el sem indult.
+ *
+ * A sajat uj allitasom fogta meg, meg a beadas elott: a szulo-lancos eset
+ * pirosra valt, mert idaig el sem jutott.
  */
 function gyokerNevek(katok: Kategoria[]): string[] {
   return katok
-    .filter((k) => (k.mpath ?? "").split(".").length === 1)
+    .filter((k) => {
+      const utvonal = (k.mpath ?? "").split(".").filter(Boolean)
+      return utvonal.length === 1
+    })
     .map((k) => (k.name ?? "").trim())
     .filter(Boolean)
 }
 
+/**
+ * A GYOKER NEVE A KATALOGUSBOL, HA A TERMEK NEM HOZTA MAGAVAL.
+ *
+ * Az `mpath` szegmensei kategoria-AZONOSITOK, tehat az elso szegmens a gyoker
+ * azonositoja. Nevet csak a teljes kategoria-lista tud adni ra -- azt a lap
+ * amugy is lekeri (`listCategories({ fields: "id,name,handle,
+ * parent_category_id" })`), es atadja a sablonnak.
+ *
+ * Ha `mpath` sincs, a `parent_category_id` lancan megyunk felfele. A korokre
+ * van halo: legfeljebb annyi lepes, ahany kategoria van.
+ */
+function gyokerNevKatalogusbol(
+  katok: Kategoria[],
+  katalogus: Kategoria[]
+): string[] {
+  if (katalogus.length === 0) return []
+
+  const nevAzonositora = new Map<string, string>()
+  const szuloAzonositora = new Map<string, string | null>()
+  for (const k of katalogus) {
+    if (!k.id) continue
+    nevAzonositora.set(k.id, (k.name ?? "").trim())
+    szuloAzonositora.set(k.id, k.parent_category_id ?? null)
+  }
+
+  const nevek: string[] = []
+  for (const k of katok) {
+    const utvonal = (k.mpath ?? "").split(".").filter(Boolean)
+    let gyokerAzonosito = utvonal[0]
+
+    if (!gyokerAzonosito && k.id) {
+      let mostani: string | null = k.id
+      for (let lepes = 0; lepes <= katalogus.length && mostani; lepes += 1) {
+        const szulo: string | null = szuloAzonositora.get(mostani) ?? null
+        if (!szulo) break
+        mostani = szulo
+      }
+      gyokerAzonosito = mostani ?? undefined
+    }
+
+    const nev = gyokerAzonosito ? nevAzonositora.get(gyokerAzonosito) : undefined
+    if (nev) nevek.push(nev)
+  }
+  return nevek
+}
+
+/**
+ * === MIERT KELL A KATALOGUS, ES MIT ROMLOTT EL NELKULE ===
+ *
+ * A fenti `gyokerNevek` abbol indult ki, hogy "a Medusa minden ost is felsorol
+ * a termek kategoriai kozott, tehat a gyoker ott van a listaban". EZ NEM IGAZ
+ * MINDIG, es merve van az elo API-n (2026-09-07, a `valodi-tartalom.spec`
+ * rogziti): az egyik termek HAT kategoriat kapott a gyokerrel egyutt, egy masik
+ * CSAK EGYET -- a levelet, harom szintu `mpath`-tal, szulo nelkul.
+ *
+ * A leveles alaknal nincs egyszegmensu elem, tehat `gyokerNevek` URESET ad, es
+ * a termek VILAGOS lesz. Egy elo allat igy csendben a muszaki elrendezest kapja
+ * -- es mivel a `galeriatAdunkAt` UGYANEZEN a fuggvenyen all, a JELVENYT es az
+ * IGERETET is elveszti, vagyis pont azt, aminek a megorzesere a #89 es a #91
+ * epult.
+ *
+ * A LENYOMATA EGY SZAMBAN: acrobot a Gerinctelenek gyoker alatt 28 termeket mert
+ * (adminban ES a boltban is), en ugyanarra a valaszra a valtot futtatva 27-et.
+ * A hianyzo egy nem tunt el, hanem rossz vilagba sorolodott.
+ *
+ * A KATALOGUS NEM UJ LEKERDEZES: a termeklap mar ma is lekeri es atadja.
+ */
 export function vilagaTermeknek(
-  termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined
+  termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
+  katalogus: Kategoria[] = []
 ): Vilag {
   const katok = (termek?.categories ?? []) as Kategoria[]
-  const gyokerek = gyokerNevek(katok)
 
-  const eloAllat = gyokerek.some((nev) =>
+  const gyokerek = gyokerNevek(katok)
+  const nevek =
+    gyokerek.length > 0 ? gyokerek : gyokerNevKatalogusbol(katok, katalogus)
+
+  const eloAllat = nevek.some((nev) =>
     (ELO_ALLAT_GYOKEREK as readonly string[]).includes(nev)
   )
 

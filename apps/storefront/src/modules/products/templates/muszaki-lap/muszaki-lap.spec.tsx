@@ -224,7 +224,20 @@ describe("a sablon átadja-e a fotó slotot", () => {
     )
 
     expect(vazAg).toContain("fotoResz={")
-    expect(vazAg).toContain("galeriatAdunkAt(product)")
+
+    /**
+     * A HIVAS ALAKJA A KATALOGUST IS TARTALMAZZA, ES EZ NEM KOZOMBOS RESZLET.
+     *
+     * A `galeriatAdunkAt` masodik argumentuma a teljes kategoria-lista. Nelkule
+     * a fuggveny a termek sajat kategoriaira szorul, es egy LEVELES alaknal
+     * (amikor a Medusa nem kuldi vissza az os-lancot) vilagosnak mondja az elo
+     * allatot -- vagyis a galeria, a jelveny es az igeret elmaradna.
+     *
+     * A puszta `galeriatAdunkAt(product)` alakra allitani tehat kevesebb lenne,
+     * mint amit vedeni akarunk: az akkor is zold, ha valaki a katalogust
+     * kiveszi.
+     */
+    expect(vazAg).toContain("galeriatAdunkAt(product, categories)")
     expect(vazAg).toContain("uniquePiece={uniquePieceOf(product.metadata)}")
   })
 })

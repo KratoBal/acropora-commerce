@@ -51,7 +51,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
    * Igy murena harom keszlet-allapota, a jelveny es a lepteto valtozatlanul
    * mukodik a vazon belul is.
    */
-  if (hasznaljaVazat(product)) {
+  if (hasznaljaVazat(product, categories)) {
     return (
       <>
         <div className="content-container pt-6">
@@ -74,8 +74,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           fallback={
             <MuszakiLap
               product={product}
+              kategoriak={categories}
               fotoResz={
-                galeriatAdunkAt(product) ? (
+                galeriatAdunkAt(product, categories) ? (
                   <ImageGallery
                     images={images}
                     uniquePiece={uniquePieceOf(product.metadata)}
@@ -88,6 +89,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           <VasarlasKeret id={product.id} region={region}>
             <MuszakiLap
               product={product}
+              kategoriak={categories}
               vasarlasAktiv
               hasonloResz={
                 <div data-testid="related-products-container">
@@ -112,7 +114,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             fejlece megindokolja, miert nem mindenki.
           */
               fotoResz={
-                galeriatAdunkAt(product) ? (
+                galeriatAdunkAt(product, categories) ? (
                   <ImageGallery
                     images={images}
                     uniquePiece={uniquePieceOf(product.metadata)}

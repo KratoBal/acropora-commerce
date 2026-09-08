@@ -56,8 +56,9 @@ export const ELO_ALLAT_VAZON = true
 
 export function hasznaljaVazat(
   termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
+  kategoriak?: KategoriaKatalogus,
 ): boolean {
-  if (vilagaTermeknek(termek) === "vilagos") return true
+  if (vilagaTermeknek(termek, kategoriak) === "vilagos") return true
   return ELO_ALLAT_VAZON
 }
 
@@ -88,12 +89,30 @@ export function hasznaljaVazat(
  */
 export function galeriatAdunkAt(
   termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
+  kategoriak?: KategoriaKatalogus,
 ): boolean {
-  return vilagaTermeknek(termek) === "sotet"
+  return vilagaTermeknek(termek, kategoriak) === "sotet"
 }
+
+/**
+ * A KATALOGUS MINDHAROM HIVASNAL OPCIONALIS, ES EZ SZANDEKOS.
+ *
+ * Enelkul a viselkedes BETURE a mai: aki nem adja at, ugyanazt kapja, mint
+ * eddig. A termeklap atadja, mert ott amugy is kez alatt van -- egy masik hivo
+ * (teszt, jovobeli lista) pedig nem kenyszerul egy lekerdezesre, ami neki nem
+ * kell.
+ */
+
+type KategoriaKatalogus = Array<{
+  id?: string | null
+  name?: string | null
+  parent_category_id?: string | null
+}>
 
 type Props = {
   product: HttpTypes.StoreProduct
+  /** A teljes kategoria-lista, a gyoker feloldasahoz. Lasd `vilag-valto.ts`. */
+  kategoriak?: KategoriaKatalogus
   /**
    * ALL-E MAR A VASARLASI ALLAPOT A LAP FOLOTT (`VasarlasProvider`).
    *
@@ -109,6 +128,7 @@ type Props = {
 
 const MuszakiLap = ({
   product,
+  kategoriak,
   vasarlasAktiv,
   hasonloResz,
   fotoResz,
@@ -116,7 +136,7 @@ const MuszakiLap = ({
 }: Props) => {
   return (
     <LapVaz
-      vilag={vilagaTermeknek(product)}
+      vilag={vilagaTermeknek(product, kategoriak)}
       tartalom={vazTartalom(
         product,
         vasarlasAktiv,
