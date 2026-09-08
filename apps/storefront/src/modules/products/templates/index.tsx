@@ -147,7 +147,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       data-testid="ragados-sav-ugras"
                       className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
                       style={{
-                        background: "var(--terv-kiemel-sotet)",
+                        background: "var(--terv-kiemel)",
                         color: "var(--terv-kiemel-szoveg)",
                       }}
                     >

@@ -26,32 +26,38 @@
   --terv-hatter-halvany: oklch(0.955 0.004 250);
 
   /* kiemeles */
-  /* 9 HATTERKENT + 3 KERETKENT = 12 hely. A token-kiolvaso csak a hattereket
-     szamolta, ezert allt itt korabban 9: a harom `border: 2-3px solid` hasznalat
-     (a bekapcsolt bolyegkep kerete es ket bal oldali kiemelo csik) LATHATATLAN
-     volt neki. Merve a tervfajlbol, 2026-09-07. */
-  --terv-kiemel: oklch(0.62 0.13 45); /* 12 hely -- rez, a fo cselekves */
-  /* A NEV A SZEREPET JELOLI, NEM AZ ERTEKET, ES A KET VILAGBAN ELLENTETES
-     IRANYBA MOZDUL:
+  /* A REZ EGY TOKEN, ES A NEVE A SZEREPET JELOLI, NEM AZ ERTEKET.
+     ============================================================
+     Itt korabban KET valtozo allt: `--terv-kiemel` (vilagoson 0.62) es
+     `--terv-kiemel-sotet` (vilagoson 0.55), azzal az indoklassal, hogy a
+     masodik a LENYOMOTT allapot, es hogy az irany a ket vilag kozott
+     megfordul.
 
-       vilagos lapon   0.62 -> 0.55   (a lenyomott allapot SOTETEBB)
-       sotet lapon     0.55 -> 0.62   (a lenyomott allapot VILAGOSABB)
+     A "lenyomott allapot" parjara NINCS MERESUNK. Nautilus elemenkenti
+     kiolvasasa (543 elem, sajat szinekkel, 2026-09-08) szerint egy lapon
+     BELUL pontosan EGY rez ertek all, nulla kivetellel:
 
-     Az irany azert fordul meg, mert egy sotet lapon a tovabbi sotetites
-     belesullyedne a hatterbe: ott a "lenyomva" csak felfele lathato.
-     (acrobot fogalmazasa, msg_id 14649.)
+       1b (vilagos)   hatter 0.55   keret 0.55
+       2a (sotet)     hatter 0.62   keret 0.62
 
-     ES A NEVE "SOTET", A KOSARBAN MEGIS AZ ALAP -- ezt kulon ki kell mondani,
-     kulonben valaki "kijavitja". A termeklapon ez a lenyomott allapot; a
-     KOSAR tervlapjan viszont az akcent alap erteke ez (merve a kosar
-     token-JSON-jabol: `oklch(0.55 0.13 45)` 13 hatter + 9 szoveg, mig a
-     `0.62` NULLASZOR fordul elo ott). A kosar a vilagos vilagban all -- a
-     `data-vilag` egyetlen helyen kerul ki, a vaz sajat konteneren --, tehat
-     ott ennek az erteke tenyleg 0.55.
-     Aki tehat a kosarban `--terv-kiemel`-re irna at, 0.62-t kapna: olyan
-     erteket, ami a kosar tervlapjan egyszer sem szerepel. (murena merese,
-     2026-09-08, visszamerve.) */
-  --terv-kiemel-sotet: oklch(0.55 0.13 45);
+     A hatara kimondva: a terv statikus makett, egy lenyomott allapotot nem
+     is rajzolna ki -- tehat nem azt allitjuk, hogy nincs lenyomott allapot,
+     hanem hogy nincs ra MERESUNK. Amig nincs, egy token all itt, es az
+     ertekei a MERT ertekek.
+
+     A ket ertek NEM elirasbol kulonbozik: ugyanaz a szerep, ket vilagban.
+     A hasznalat mind a kilenc helyen ezt a valtozot keri.
+
+     ES AMIROL EZ A TOKEN HALLGAT, MERT NINCS RA DONTES: a rez SZOVEGKENT is
+     szerepel a tervben, es a sotet lapon MAS ertekkel, mint feluletkent --
+     `oklch(0.68 0.13 45)`, kilenc elemen (Szakertoi segitseg, a szemoldok-
+     felirat, a -8% jelzo, a seged-cimke, a telefonszam, a "->" hivatkozas).
+     A vilagos lapon a ket szerep EGYBEESIK (mind a ketto 0.55), es pontosan
+     ezert nem latszott sokaig. Ma ez nem okoz hibat: minden rez SZOVEG
+     hasznalatunk a kosarban all, ami a vilagos vilag. Az elso rez szoveg egy
+     sotet lapon viszont 0.62-t kapna 0.68 helyett -- csendben, halvanyabban.
+     Felirva, nem beepitve: a nev es a bevezetese acrobot dontese. */
+  --terv-kiemel: oklch(0.55 0.13 45); /* 12 hely -- rez: 9 hatter + 3 keret */
   /* A REZEN ALLO SZOVEG A VILAGOS LAPON FEHER -- ES EZ EGY MERESI HIBA JAVITASA.
      ============================================================================
      ITT KORABBAN `oklch(0.15 0.014 45)` ALLT, "a kilenc rez hatterbol ot visel
@@ -75,9 +81,14 @@
      Vagyis a rezen allo szoveg MEGFORDUL a ket vilag kozott, es a korabbi
      "sehol nem all feher rezen" mondat a vilagos lapokra hamis volt.
 
-     A `--terv-kiemel` valtozora is ugyanez all: a fo cselekves mindket vilagban
-     a `--terv-kiemel-sotet` erteket keri. Az indoklas a `stock-state/index.tsx`
+     A `--terv-kiemel` valtozora is ugyanez all: a fo cselekves mindket
+     vilagban ugyanazt a valtozot keri, csak a valtozo ERTEKE mas a ket
+     blokkban (vilagos 0.55, sotet 0.62). Az indoklas a `stock-state/index.tsx`
      fejleceben all teljes hosszan.
+
+     (Ez a mondat 2026-09-08-ig a `--terv-kiemel-sotet` nevre hivatkozott. Az a
+     valtozo megszunt: a ket rez-valtozo egybe kerult, mert a masodikra -- a
+     "lenyomott allapotra" -- sehol nem volt meresunk.)
 
      (acrobot dontese, msg_id 14690: ez nem a kilences keszlet felulirasa, hanem
      annak a meresnek a javitasa, amit elé tettunk.) */
@@ -161,13 +172,16 @@
   --terv-hatter-lap: oklch(0.17 0.016 250); /*  8 elem -- melyebb felulet */
   --terv-hatter-halvany: oklch(0.205 0.018 249);
 
-  --terv-kiemel: oklch(0.55 0.13 45); /* a sotet valtozat rezje */
-  --terv-kiemel-sotet: oklch(0.62 0.13 45);
-  /* A rezen allo szoveg a sotet lapon is ugyanaz: a kontraszt a REZHEZ szol,
-     nem a lap hattereehez, tehat nem fordul meg a ket vilag kozott. */
+  --terv-kiemel: oklch(0.62 0.13 45); /* a sotet lap rezje, merve a 2a-n */
   /* A SOTET LAPON SOTET a rezen allo szoveg -- ez a 2a lapon MERT ertek, es
      szandekosan NEM ugyanaz, mint a vilagos vilagban. A kontraszt a REZHEZ
-     szol, es a ket vilag rezje kulonbozik (soteten 0.62, vilagoson 0.55). */
+     szol, es a ket vilag rezje kulonbozik (soteten 0.62, vilagoson 0.55).
+
+     ITT KORABBAN EGY MASODIK KOMMENT IS ALLT, KOZVETLENUL EZ ELOTT, es az
+     ELLENKEZOJET mondta: hogy a rezen allo szoveg "a sotet lapon is ugyanaz",
+     tehat nem fordul meg a ket vilag kozott. Az a mondat hamis, es a cafolata
+     a kovetkezo sorban allt. Ket egymas melletti komment, ellentetes
+     allitassal: a javitas hozzairodott, a hamis fele pedig ottmaradt. */
   --terv-kiemel-szoveg: oklch(0.15 0.014 45);
 
   --terv-szoveg: oklch(0.95 0.006 250); /* 53 elem sotet hatteren */

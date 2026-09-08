@@ -80,7 +80,7 @@ const EmptyCartMessage = () => {
             </span>
             <span
               className="mt-auto pt-2 text-[12.5px]"
-              style={{ color: "var(--terv-kiemel-sotet)" }}
+              style={{ color: "var(--terv-kiemel)" }}
               aria-hidden="true"
             >
               Megnézem →
