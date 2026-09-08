@@ -71,6 +71,8 @@ describe("a terv megerositett ertekei", () => {
     ["--terv-kiemel", "oklch(0.55 0.13 45)"],
     ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
     ["--terv-kiemel-tinta", "oklch(0.55 0.13 45)"],
+    ["--terv-hatter-halvany", "oklch(0.955 0.004 250)"],
+    ["--terv-szoveg-halvany", "oklch(0.5 0.012 60)"],
   ]
 
   /**
@@ -126,6 +128,48 @@ describe("a terv megerositett ertekei", () => {
     expect(vilagos).toBe("oklch(0.55 0.13 45)")
     expect(sotet).toBe("oklch(0.62 0.13 45)")
     expect(vilagos).not.toBe(sotet)
+  })
+
+  /**
+   * A KET HALVANY TOKEN ERTEKE VILAGONKENT, NEV SZERINT.
+   *
+   * MIERT KERULT BE (murena merese, 2026-09-08): a komponens-tesztek het helyen
+   * allitanak `var(--...)` erteket, es a jsdom NEM oldja fel a valtozot, tehat
+   * azok a NEVET merik, nem az erteket. Ez onmagaban nem baj, amig a lanc masik
+   * fele -- ez a fajl -- megmondja, mit jelent a nev. Otre megmondta. KETTORE
+   * NEM: a `--terv-hatter-halvany` es a `--terv-szoveg-halvany` erteket eddig
+   * SEMMI nem allitotta, egyik vilagban sem.
+   *
+   * VAGYIS A LANC MIND A KET VEGEN NYITVA VOLT: a komponens bizonyitotta, hogy
+   * a helyes nevre hivatkozik, es semmi nem bizonyitotta, hogy a nev barmit is
+   * jelent. Ket allitas, egyutt nulla fedes.
+   *
+   * ES EZ NEM MELLEKES TOKEN: a `--terv-szoveg-halvany` a fa legtobbet
+   * hasznalt terv-valtozoja, HUSZONEGY hivohellyel a kosarban es a
+   * termeklapon. Mind a ketto MINDKET blokkban ujra van definialva, tehat
+   * ugyanaz a "egy nev, ket blokk" helyzet all rajtuk, ami ma este a PAROK
+   * sorait csendben halotta tette.
+   *
+   * A NEV SZERINTI ALAK KELL, NEM A PUSZTA "kulonbozik": egy helycsere is
+   * kulonbozo maradna, es a sotet lapon vilagos hatter allna. Ugyanaz az ok,
+   * amiert a rez-allitas is megmondja, MELYIK MELYIK.
+   */
+  it("a két halvány token értéke világonként KÜLÖNBÖZIK, név szerint", () => {
+    const sotetKezd = CSS.indexOf('[data-vilag="sotet"]')
+    expect(sotetKezd).toBeGreaterThan(-1)
+
+    const vilagosBlokk = normal(CSS.slice(0, sotetKezd))
+    const sotetBlokk = normal(CSS.slice(sotetKezd))
+
+    expect(vilagosBlokk).toContain(
+      "--terv-hatter-halvany: oklch(0.955 0.004 250)",
+    )
+    expect(sotetBlokk).toContain(
+      "--terv-hatter-halvany: oklch(0.205 0.018 249)",
+    )
+
+    expect(vilagosBlokk).toContain("--terv-szoveg-halvany: oklch(0.5 0.012 60)")
+    expect(sotetBlokk).toContain("--terv-szoveg-halvany: oklch(0.72 0.012 250)")
   })
 
   /**
