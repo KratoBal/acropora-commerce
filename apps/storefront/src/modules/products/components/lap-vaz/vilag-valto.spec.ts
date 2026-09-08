@@ -272,14 +272,40 @@ describe("a katalógus, amiből a gyökér feloldódik", () => {
     "utf-8",
   )
 
-  /** ISMERT POZITIV KONTROLL: a hivas tenyleg ott van, es tenyleg ezt a fajlt olvassuk. */
+  /**
+   * ISMERT POZITIV KONTROLL: a hivas tenyleg ott van, es tenyleg ezt a fajlt
+   * olvassuk.
+   *
+   * ES EZ A SOR NEM FELESLEGES, HABAR ANNAK LATSZIK. A `hivasObjektuma` URES
+   * sztringet ad, ha nem talal `listCategories({` alakot -- egy szokoz is eleg
+   * hozza (`listCategories( {`). Egy ures sztring pedig nem tartalmaz
+   * `limit`-et, tehat az alatta allo allitas NEMAN atmenne.
+   *
+   * Ha valaha takaritas folyik ebben a fajlban: ez a sor marad. (acrobot
+   * talalta, msg 15047 -- o kereste a lyukat, es azt latta, hogy mar be van
+   * zarva, csak nem ott, ahol nezte.)
+   */
   it("a terméklap forrásában ott a listCategories hívás", () => {
     expect(lapForras).toContain("listCategories({")
     expect(lapForras).toContain("parent_category_id")
   })
 
   it("a terméklap a TELJES katalógust kéri, limit nélkül", () => {
-    expect(hivasObjektuma(lapForras, "listCategories")).not.toContain("limit")
+    const hivas = hivasObjektuma(lapForras, "listCategories")
+
+    /**
+     * AZ URES SZELET KIZARASA, UGYANEBBEN AZ ALLITASBAN.
+     *
+     * A fenti pozitiv kontroll ezt MA is megfogja -- de az egy MASIK teszt, es
+     * egy kesobbi olvaso torolheti "duplikatumkent". Ez a sor helyben teszi
+     * szerkezetive: ha a szeletelo nem talal semmit, EZ az allitas bukik el,
+     * nem egy masik.
+     *
+     * A ket vedelem nem duplikatum: a kontroll a FAJLROL allit (ott van-e a
+     * hivas), ez a SZELETELOROL (talalt-e valamit). Ket kulonbozo hiba.
+     */
+    expect(hivas.length).toBeGreaterThan(0)
+    expect(hivas).not.toContain("limit")
   })
 
   /**

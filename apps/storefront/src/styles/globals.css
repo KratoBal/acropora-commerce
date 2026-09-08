@@ -176,16 +176,76 @@
   --terv-kiemel-tinta: oklch(0.55 0.13 45);
   --terv-jelzo: oklch(0.52 0.09 210); /*  6 elem -- kek-zold, jelzesekre */
 
+  /* NYUGDIJAZVA 2026-09-08: `--terv-keret-sotet` es `--terv-szoveg-halvany-sotet`
+     ============================================================================
+     Annak a nevsemanak a testverei voltak, amit a #137 mar nyugdijazott
+     (`--terv-kiemel-sotet`): kulon `-sotet` vegu nev a sotet vilag ertekere.
+     A sema helyett a sotet vilag sajat blokkja irja felul UGYANAZT a nevet,
+     tehat ezek soha nem kaptak hivohelyet. (acrobot kerese, msg 14964.)
+
+     A blokk valasztojat SZANDEKOSAN nem irom le itt betuszerint: a
+     `terv-tokenek.spec.ts` a vilagos blokkot ugy szeleteli, hogy megkeresi a
+     valaszto ELSO elofordulasat -- egy komment, ami leirja, a definiciok ELE
+     tolna a hatart, es a vilagos tabla MINDEN sora elbukna. Ez egyszer meg is
+     tortent, e komment elso valtozataval.
+
+     A regi ertekuk nem vesz el: a sotet blokkban ott all ugyanaz a ket ertek a
+     `--terv-keret` es a `--terv-szoveg-halvany` neven.
+
+     === ES AMI HASZNALAT NELKUL ALL, AZ HAROMFELE, NEM EGYFELE ===
+
+     Ezt azert kell kiirni, mert "hat hasznalatlan token" alakban mind a harom
+     egyforman nez ki, es a masodik ketto TORLESE HIBA lenne:
+
+       NYUGDIJAZANDO   a fenti ketto -- egy megszunt nevsema maradvanya, a
+                       helyettesitoje mar mukodik. Torolve.
+
+       SZANDEKOSAN URES  --terv-sugar-doboz, -kicsi, -kor. A terv SZOGLETES: a
+                       tizenkilenc radiuszbol tizenhat valodi kor, es azok
+                       mashol vannak. Egy definialt, meg nem hasznalt token
+                       legitim allapot. (acrobot dontese, ugyanott.)
+
+       MASIK VALTOZAT  --terv-jelzo. EZT A SORT 2026-09-08-AN JAVITOTTUK, es a
+       AKCENTJE        javitas iranya fontos: elobb "MEG NEM EPULT"-kent allt
+                       itt, azzal, hogy be kell kotni. NEM KELL.
+
+                       Merve a tervlapok teljes elem-kiolvasasan: a harom akcent
+                       LAPONKENT KULON all, es egyik sem keveredik.
+
+                         --terv-jelzo   0.52 0.09 210   17 elem, MIND 1a
+                         rez vilagos    0.55 0.13 45    18 elem, MIND 1b
+                         rez sotet      0.62 0.13 45    10 elem, MIND 2a
+
+                       Es a lapok sajat leirasa ugyanezt mondja: az 1a
+                       "melytenger-kek akcent", az 1b "rez akcent". Mi az 1b
+                       akcentjet vettuk at. A `--terv-jelzo` tehat annak a
+                       valtozatnak a szine, amit AKCENTBEN nem valasztottunk.
+
+                       MIERT MARAD MEGIS: a vazunk doboz-listaja a KET vilagos
+                       lap UNIOJA, tehat 1a-bol szarmazo elemek is allnak rajta.
+                       Ha valaha ugy dontunk, hogy azok az 1a akcentjet
+                       viseljek, a token keszen van. Ez DONTES, nem elmaradt
+                       munka -- es epp ezert nem szabad "bekotendo"-kent
+                       hivatkozni ra.
+
+                       AMIERT ELSORE ROSSZUL SOROLTAM BE: a token sajat
+                       megjegyzeset olvastam ("6 elem"), es a SZAMOT vettem a
+                       fuggo munka jelenek. A szam igaz volt arra, amit mert --
+                       es hamis lett, amint feltetelkent olvastam. Azt nem
+                       kerdeztem meg, MELYIK LAPON all az a hat.
+
+     A KULONBSEG NEM SZOHASZNALAT: az elsot torolni kell, a masodikat hagyni, a
+     harmadikat BEKOTNI. Aki mind a hatot "hasznalatlan"-nak konyveli, vagy
+     tul sokat torol, vagy egyet sem mer hozzajuk nyulni. */
+
   /* szoveg */
   --terv-szoveg: oklch(0.2 0.012 60); /* 60 elem -- a fo szoveg */
   --terv-szoveg-vilagos: oklch(0.95 0.006 250); /* 53 elem -- sotet hatteren */
   --terv-szoveg-halvany: oklch(0.5 0.012 60); /* 16 elem -- masodlagos */
-  --terv-szoveg-halvany-sotet: oklch(0.72 0.012 250);
 
   /* keretek */
   --terv-keret: oklch(0.88 0.005 250); /* 12 elem */
   --terv-keret-meleg: oklch(0.88 0.008 70); /*  7 elem */
-  --terv-keret-sotet: oklch(0.28 0.014 250); /*  9 elem */
 
   /*
    * A SARKOK: A TERV GYAKORLATILAG SZOGLETES, ES EZ MERES, NEM IZLES.

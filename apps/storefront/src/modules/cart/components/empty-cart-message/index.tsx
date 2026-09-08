@@ -53,6 +53,21 @@ const EmptyCartMessage = () => {
         <Heading level="h1" className="text-3xl-regular">
           A kosár még üres
         </Heading>
+        {/*
+         * A HANGSULY BETUJE, ES EZ AZ EGYETLEN HELY, AHOL MERESSEL ALL.
+         *
+         * A #174 harom mondatot kotott a Newsreader lancra. Kettot 2026-09-08-an
+         * VISSZAVONTUNK: azoknal ugyanaz a mondat KETSZER all a tervben, ket
+         * KULONBOZO betuvel, oszloponkent (nautilus helyesbitese, msg 14993).
+         *
+         * EZ A MONDAT MAS: a tervben szinten ketszer all, de MIND A KETSZER
+         * Newsreader -- 18px (x=1338) es 17px (x=74). Nincs olyan elrendezes,
+         * amelyikben Space Grotesk lenne, tehat a valasztas nem fugg attol,
+         * hogy a mi lapunk melyik oszlopnak felel meg.
+         *
+         * (Merve a `measurement/terv-kosar/KOSAR-SZOVEGEK.md` anyagon,
+         * 2026-09-08. A szam a terv EGY kiolvasasabol valo.)
+         */}
         <Text
           className="text-base-regular"
           style={{ fontFamily: "var(--terv-betu-kiemelt-lanc)" }}

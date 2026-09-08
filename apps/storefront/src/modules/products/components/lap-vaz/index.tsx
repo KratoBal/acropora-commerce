@@ -555,43 +555,49 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
 /**
  * AMIT A SOTET LISTA ELHAGY -- KET DOBOZ, MIND A KETTO MERESSEL.
  *
- * A tervfajl 2a (korall) lapjan egyik sem all, es ezt KIMERITOEN merte a
- * `measurement/terv-valtozatok/` anyaga: a lap minden szoveges eleme atnezve,
+ * A tervfajl 2a (korall) lapjan egyik sem all. A meres a
+ * `measurement/terv-valtozatok/` anyaga: mind a 141 szoveges elem atnezve,
  * mikozben a kontroll ugyanabban a halmazban TALAL.
  *
- * ITT KORABBAN "KET FUGGETLEN RETEG" ALLT, ES AZ TULZAS VOLT (murena merese,
- * msg_id 14958; visszamerve nautilus). A masodiknak nevezett reteg -- a
- * designer sajat monospace cimkei -- NEM doboz-leltar, tehat a hianya nem
- * bizonyitek:
+ * ITT 2026-09-08-IG "KET FUGGETLEN RETEG" ALLT, ES AZ TOBBET IGERT A MERESNEL.
+ * A masodik reteg (a designer sajat monospace cimkei) NEM doboz-leltar: a
+ * huszbol csak NEGYET nevez meg, es hianyzik belole a Kotegajanlat meg a
+ * Kerdezd a boltot is -- olyan dobozok, amik BIZONYITHATOAN ott allnak.
+ * Vagyis abbol a retegbol valo hianyzas semmit nem bizonyit.
  *
- *   a 2a lapon 21 monospace cimke all, es a LEGALSO y=1191-nel -- a lap
- *     viszont 2140 magas. A lap also fele (fulsor, parameter-tabla, hasonlo
- *     sor, ragados sav) EGYETLEN monospace cimket sem visel.
- *   es amit visel, az tulnyomorest NEM doboznev: jelvenyek (1 DB EGYEDI, -8%,
- *     DOA, ATVETEL), foto-jegyzetek (// SAJAT FOTO, 14 000 K FENY ALATT
- *     FOTOZVA) es morzsa-sor. Doboznevnek ketto latszik belole.
+ * A KOVETKEZTETES VALTOZATLAN, DE EGY RETEG ALL MOGOTTE, NEM KETTO: a lathato
+ * cimek kiolvasasa, ismert pozitiv kontrollal. (nautilus sajat helyesbitese,
+ * msg 14967; o kerte, hogy ahol "ket fuggetlen reteg"-kent all, ott javitsuk.)
  *
- * Vagyis egy doboz hianya ebbol a retegbol ugyanugy elofordul olyan doboznal
- * is, ami BIZONYITHATOAN ott van -- tehat a reteg nem tud tavolletet igazolni.
+ * ES AMIERT EZ NEM SZOROSAN VEVE STILUS: a "ket fuggetlen meres egyetert" a
+ * legerosebb allitas-fajta, amit tenni tudunk. Ha egy ilyet alaptalanul irunk
+ * le, a kovetkezo olvaso NEM fogja ujra megnezni -- epp azert nem, mert
+ * ketszeresen alatamasztottnak latszik.
  *
- * A LELET ETTOL ALL, csak EGY reteg all mogotte: a LATHATO cimek. Azt murena
- * fuggetlenul, a doboz-cimkekbol is megmerte (korall 0, muszaki 2), pozitiv
- * kontrollal -- es kimondta a sajat hatarat is: az o kiolvasoja 60 karakternel
- * vag, tehat egy beagyazott elofordulast elrejthet. A level-szintu olvasas ezt
- * fedi; forditva pedig az en suly- es meret-kuszobom (>=600, >=14px) nem latja
- * azt, amit az ove igen.
+ * ES EGY MERT SZAM A "NEM DOBOZ-LELTAR" ALLITAS ALA, ami a fenti indoklasban
+ * nem all (nautilus, 2026-09-08): a 2a lapon 21 monospace cimke van, es a
+ * LEGALSO y=1191-nel -- a lap viszont 2140 magas. A lap ALSO FELE (fulsor,
+ * parameter-tabla, hasonlo sor, ragados sav) EGYETLEN monospace cimket sem
+ * visel.
  *
- * A KET MODSZER TEHAT TENYLEG KIEGESZITI EGYMAST -- csak nem ott, ahol a "ket
- * fuggetlen reteg" mondat sugallta.
+ * Ez erosebb, mint a "huszbol negyet nevez meg": a reteg nem VALOGAT a dobozok
+ * kozott, hanem a lap egy egesz feleig el sem er. Egy reteg, ami a lap felet
+ * nem fedi, SZERKEZETILEG nem tud tavolletet igazolni -- nem csak gyengebb
+ * bizonyitek.
  *
  *   kiegeszitok      "Ami még kellhet hozzá"  -- 1a-n es 1b-n szakaszcim, 2a-n sehol
  *   muszaki-adatok   "Műszaki adatok"          -- 1a-n szakaszcim, 1b-n ful, 2a-n sehol
  *
- * A "SZAKASZCIM KONTRA FUL" NEM BESOROLAS, HANEM MERT TIPOGRAFIA (nautilus
- * elem-szintu olvasasa). Ez teszi a fenti sort mas altal ellenorizhetove:
+ * A "SZAKASZCIM KONTRA FUL" NEM BESOROLAS, HANEM MERT TIPOGRAFIA. Ez teszi a
+ * fenti sort mas altal ellenorizhetove (nautilus elem-szintu olvasasa, a
+ * SZURETLEN kinyeresbol; murena visszamerte 2026-09-08-an):
  *
  *   1a   22px / 600 suly    ezert szakaszcim
  *   1b   15px / 500 suly    ezert fulsor-elem
+ *
+ * A MERES NAPJA AZERT ALL ITT, mert ezek a szamok a tervfajl EGY KIOLVASASABOL
+ * valok. Ha a tervet ujraexportaljak, a szamok elavulhatnak, es a fejlecben
+ * semmi nem mutatna. Egy leirt szam nem allapot, hanem egy pillanat.
  *
  * A kulonbseg a MERETBEN es a SULYBAN all, nem a helyzetben -- egy ful es egy
  * szakaszcim allhat ugyanabban a sav-pozicioban. Aki a harmas bontast
@@ -652,6 +658,25 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
  * A ket vilagos lapot a designer ELRENDEZES szerint nevezi meg, a 2a-t viszont
  * ESET szerint: az egy WYSIWYG korall termekoldal. A sotet felirat tehat az
  * ESETHEZ tartozik, nem az elo allat aghoz.
+ *
+ * ES AMI EZT AZ ERVET NEM TAMASZTJA ALA, HOLOTT KEZENFEKVO LENNE: a harom
+ * felirat NEM azonos szerkezetu. Merve a nyers kiolvasason (2026-09-08):
+ *
+ *   2a   y=  56  x=126  15px / 400    <- ez maga a LAP CIME
+ *   1a   y=2349  x=111  17px / 600
+ *   1b   y=4681  x=111  17px / 600
+ *
+ * Az 1a es az 1b parhuzamos EGYMASSAL; a 2a mas meret, mas suly, mas pozicio,
+ * es ugyanaz az elem, amit a lap cimekent azonositottunk. Vagyis nem harom
+ * egyenrangu cimke, amibol az egyik kilog.
+ *
+ * AZ ERV EZZEL EGYUTT IS ALL, DE MAS ALAPON: a TARTALMUKON, nem a
+ * szerkezetukon. Mind a harom megnevezi, MI EZ A LAP, es a 2a valasza egy ESET
+ * ("WYSIWYG korall termekoldal"), nem egy elrendezes.
+ *
+ * Azert all itt kiirva, mert a "harom parhuzamos cimke" alak kezenfekvo es
+ * HAMIS -- ha valaki igy hivatkozik ra, a meres nem tamasztja ala, es akkor az
+ * egesz ervet gyengenek fogja hinni, holott csak az alatamasztasa volt rossz.
  *
  * NEM UJ LISTA, HANEM EGY PREDIKATUM (acrobot dontese, msg_id 14775): ugyanaz a
  * `unique_piece`, ami ma a jelvenyt is vezerli. Ha nem egyedi peldany, ez az EGY
