@@ -555,19 +555,38 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
 /**
  * AMIT A SOTET LISTA ELHAGY -- KET DOBOZ, MIND A KETTO MERESSEL.
  *
- * A tervfajl 2a (korall) lapjan egyik sem all, es ezt KIMERITOEN merte a
- * `measurement/terv-valtozatok/` anyaga: mind a 141 szoveges elem atnezve, KET
- * fuggetlen retegben (a lathato cimek ES a designer sajat monospace cimkei),
+ * A tervfajl 2a (korall) lapjan egyik sem all. A meres a
+ * `measurement/terv-valtozatok/` anyaga: mind a 141 szoveges elem atnezve,
  * mikozben a kontroll ugyanabban a halmazban TALAL.
+ *
+ * ITT 2026-09-08-IG "KET FUGGETLEN RETEG" ALLT, ES AZ TOBBET IGERT A MERESNEL.
+ * A masodik reteg (a designer sajat monospace cimkei) NEM doboz-leltar: a
+ * huszbol csak NEGYET nevez meg, es hianyzik belole a Kotegajanlat meg a
+ * Kerdezd a boltot is -- olyan dobozok, amik BIZONYITHATOAN ott allnak.
+ * Vagyis abbol a retegbol valo hianyzas semmit nem bizonyit.
+ *
+ * A KOVETKEZTETES VALTOZATLAN, DE EGY RETEG ALL MOGOTTE, NEM KETTO: a lathato
+ * cimek kiolvasasa, ismert pozitiv kontrollal. (nautilus sajat helyesbitese,
+ * msg 14967; o kerte, hogy ahol "ket fuggetlen reteg"-kent all, ott javitsuk.)
+ *
+ * ES AMIERT EZ NEM SZOROSAN VEVE STILUS: a "ket fuggetlen meres egyetert" a
+ * legerosebb allitas-fajta, amit tenni tudunk. Ha egy ilyet alaptalanul irunk
+ * le, a kovetkezo olvaso NEM fogja ujra megnezni -- epp azert nem, mert
+ * ketszeresen alatamasztottnak latszik.
  *
  *   kiegeszitok      "Ami még kellhet hozzá"  -- 1a-n es 1b-n szakaszcim, 2a-n sehol
  *   muszaki-adatok   "Műszaki adatok"          -- 1a-n szakaszcim, 1b-n ful, 2a-n sehol
  *
- * A "SZAKASZCIM KONTRA FUL" NEM BESOROLAS, HANEM MERT TIPOGRAFIA (nautilus
- * elem-szintu olvasasa). Ez teszi a fenti sort mas altal ellenorizhetove:
+ * A "SZAKASZCIM KONTRA FUL" NEM BESOROLAS, HANEM MERT TIPOGRAFIA. Ez teszi a
+ * fenti sort mas altal ellenorizhetove (nautilus elem-szintu olvasasa, a
+ * SZURETLEN kinyeresbol; murena visszamerte 2026-09-08-an):
  *
  *   1a   22px / 600 suly    ezert szakaszcim
  *   1b   15px / 500 suly    ezert fulsor-elem
+ *
+ * A MERES NAPJA AZERT ALL ITT, mert ezek a szamok a tervfajl EGY KIOLVASASABOL
+ * valok. Ha a tervet ujraexportaljak, a szamok elavulhatnak, es a fejlecben
+ * semmi nem mutatna. Egy leirt szam nem allapot, hanem egy pillanat.
  *
  * A kulonbseg a MERETBEN es a SULYBAN all, nem a helyzetben -- egy ful es egy
  * szakaszcim allhat ugyanabban a sav-pozicioban. Aki a harmas bontast
