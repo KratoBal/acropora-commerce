@@ -171,23 +171,30 @@ describe("a sáv címkéje és indoka tokenből színez", () => {
 })
 
 /**
- * A SZERIF AZ ASZTALI NEZETBEN -- UGYANAZ A MERES, MINT A `line-state`-nel,
+ * A SZERIF MINDEN NEZETBEN -- UGYANAZ A MERES, MINT A `line-state`-nel,
  * es a ket hely EGYUTT mozdul.
  *
  * A terv 3a lapjan ez a bekezdes a 390-es mobil kereten belul orokolt betuvel
- * all (13.5px), az 1440-es asztalin Newsreaderrel (17px).
+ * all (13.5px), az 1440-es asztalin Newsreaderrel (17px). A toresponthoz kotest
+ * picasso merese oldotta fel: egy MASIK 390-es keretben (az "Ures kosar"
+ * allapote) szerif fut ugyanebben a szerepben, tehat nem a szelesseg az ok.
+ *
+ * A MERETET EZ A KOR NEM VESZI AT: nalunk 12.5px all, ami sem a mobil 13.5-nek,
+ * sem az asztali 17-nek nem felel meg. Kulon kerdes, kulon kartyan.
  *
  * A MASODIK ALLITAS A KONTROLL: a cimke ugyanabban a dobozban all, es SAJAT
  * kezelese van (nagybetus, rez tinta). Ha valaki a szerifet a teljes dobozra
  * vinne, az elso allitas akkor is zold maradna -- ez pirosodik.
  */
-describe("a szerif az asztali nézetben", () => {
-  it("az átvétel indoklása a törésponttól szerifet visel", () => {
+describe("a szerif minden nézetben", () => {
+  /** A ket allitas egyutt kulonboztet: lasd a `line-state` parjat. */
+  it("az átvétel indoklása feltétel nélkül szerifet visel", () => {
     render(<PickupNotice lines={["Acropora tenuis"]} />)
 
-    expect(screen.getByTestId("pickup-notice-indok").className).toContain(
-      "small:font-kiemelt",
-    )
+    const indok = screen.getByTestId("pickup-notice-indok")
+
+    expect(indok.className).toContain("font-kiemelt")
+    expect(indok.className).not.toContain("small:font-kiemelt")
   })
 
   it("a sáv címkéje NEM kapta meg a szerifet", () => {

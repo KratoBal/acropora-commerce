@@ -157,32 +157,31 @@ export default function CartLineState({
        * KOSÁRBAN" cimke mind a kettoben JetBrains Mono, a tobbi vizsgalt
        * szoveg mind a kettoben orokolt -- csak a MERETUK valtozik).
        *
-       * === AMI EZUTAN IS NYITOTT MARADT, ES EZERT CSAK A FELET KOTOM BE ===
+       * === A TORESPONT ELDOLT, ES ELMARADT (picasso merese, 2026-09-08) ===
        *
-       * A 3b lapon a szerif a MOBIL kereten belul IS ott van. Tehat a "szerif
-       * csak asztalin" NEM a terv szabalya, es ket olvasat all:
+       * A 3b lapon a szerif a MOBIL kereten belul IS ott van, tehat a "szerif
+       * csak asztalin" nem a terv szabalya. Ket olvasat allt:
        *
-       *   A) SZANDEKOS: a 3a keskeny hasabjaban a dolt szerif rosszul olvasna,
-       *      ezert ott nincs. Akkor a torespont a helyes alak.
-       *   B) ELAVULT: a 3a mobil kerete a legkorabbi a negy nezet kozul, es a
-       *      szerif kesobb kerult a tervbe. Akkor a bekotes feltetel nelkuli.
+       *   A) SZANDEKOS: a 3a keskeny hasabjaban a dolt szerif rosszul olvasna.
+       *      Akkor a `small:` torespont a helyes alak.
+       *   B) ELAVULT: a 3a mobil kerete a legkorabbi nezet, es a szerif kesobb
+       *      kerult a tervbe. Akkor a bekotes feltetel nelkuli.
        *
-       * MIND A KET OLVASAT SZERINT az ASZTALI nezetben szerif all. Ezert a
-       * `small:` toresponthoz kotom: (A) alatt pontos, (B) alatt hianyos, de
-       * EGYIK alatt sem rossz. A mobil fele Balazs vagy picasso egy mondatara
-       * var, es addig a mai allapotban marad.
+       * Addig a toresponthoz kotottem, mert MIND A KETTO alatt helyes volt.
        *
-       * A `small:` a kosar racsanak sajat toresponja is (`templates/index.tsx`,
-       * `small:grid-cols-[minmax(0,1fr)_452px]`), tehat ugyanott valt, ahol a
-       * lap ketoszloposra all -- nem egy kulon, kitalalt hatar.
+       * PICASSO AZ (A)-T CAFOLTA, es nem hajlassal, hanem egy MASODIK 390
+       * pixeles kerettel: az "Ures kosar" allapote (796470-802959), amiben
+       * Newsreader szerif fut ugyanebben a szerepben (dolt, leiro bekezdes, h1
+       * alatt, 16,5px). Ha a keskeny hasab olvashatosaga lenne az ok, annak is
+       * kerulnie kellene a szerifet. Nem keruli. Marad a (B), tehat a jeloles
+       * feltetel nelkul all.
        *
-       * (A racs alakja 2026-09-08-an aranyosrol fix savra valt; a TORESPONT
-       * nem valtozott, tehat ez az indoklas erintetlen. Azert irom ide, mert a
-       * korabbi alak neve itt allt, es egy elavult idezet ugy nez ki, mint egy
-       * meres.)
+       * A CAFOLAT HATARA: ez azt zarja ki, hogy a SZELESSEG lenne az ok. Azt
+       * NEM bizonyitja, MIERT maradt le a frissites a 3a mobil kereterol. Egy
+       * kizart magyarazat nem ugyanaz, mint egy megtalalt ok.
        */}
       <span
-        className="text-[11px] leading-relaxed small:font-kiemelt"
+        className="text-[11px] leading-relaxed font-kiemelt"
         style={{
           color: "var(--terv-szoveg-halvany)",
         }}
