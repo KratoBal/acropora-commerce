@@ -55,7 +55,6 @@ export default function PickupNotice({
         className="text-[12.5px] leading-relaxed"
         style={{
           color: "var(--terv-szoveg-halvany)",
-          fontFamily: "var(--terv-betu-kiemelt-lanc)",
         }}
       >
         {PICKUP_REASON}
