@@ -245,3 +245,89 @@ export function similarItemsHref(product: {
 
   return "/store"
 }
+
+/**
+ * A SAV GOMBJA VALTOZAT NELKUL KERDEZ, ES EZ NEM PONTATLANSAG.
+ *
+ * === A MERT HIBA, AMI EZT ELOHOZTA (picasso talalta, acrobot merte vissza,
+ * 2026-09-08, kartya 415f455c) ===
+ *
+ * Az `acropora-austea-tricolor` lapjan a fo oszlop mar a "Hasonló példányok
+ * megnézése" gombot mutatta (ELADVA ag), az also ragados savban viszont AKTIV,
+ * rez hatteru "Kosárba" allt. Egy peldany, amibol EGY darab van es elkelt, ket
+ * kulonbozo dolgot mondott ugyanazon a lapon.
+ *
+ * Visszamerve a kiszolgalt lapon (2026-09-08): a "Kosárba" ketszer szerepel a
+ * HTML-ben, mind a ketto a sav ugro linkje, es a metaadatban ott all a
+ * `unique_piece: "true"`.
+ *
+ * === MIERT VALTOZAT NELKUL, HOLOTT A FO OSZLOP A VALASZTOTT VALTOZATOT NEZI ===
+ *
+ * A sav gombja NEM kosarba tesz, hanem A VALASZTORA UGRIK (acrobot dontese,
+ * 14504). Ezert a helyes kerdes nem az, hogy a most valasztott valtozat
+ * megveheto-e, hanem hogy a valaszto vezet-e BARHOVA: ha egyetlen valtozat sem
+ * megveheto, akkor a valasztas nem tud ezen valtoztatni, tehat a "Kosárba"
+ * felirat MINDEN valasztas mellett hamis.
+ *
+ * Ugyanaz az alak, mint az arnal: a sav a `ProductPrice` VALTOZAT NELKULI
+ * alakjat mutatja, mert a vevo a savot akkor latja, amikor a valasztotol mar
+ * elgorgetett.
+ *
+ * === A SZABALY BETU SZERINT UGYANAZ, MINT A FO OSZLOPE ===
+ *
+ * A harom feltetel az `allapot.tsx` `inStock` szamitasabol jon, valtoztatas
+ * nelkul. Ha az ott valaha modosul, ennek is modosulnia kell: a ket helyen allo
+ * EGY szabaly az a hibafajta, amit a lapunk kulon nevesit.
+ */
+export function variantPurchasable(variant: {
+  manage_inventory?: boolean | null
+  allow_backorder?: boolean | null
+  inventory_quantity?: number | null
+}): boolean {
+  if (!variant.manage_inventory) return true
+  if (variant.allow_backorder) return true
+  return (variant.inventory_quantity || 0) > 0
+}
+
+/**
+ * MEGVEHETO-E A TERMEK BARMELYIK VALTOZATA.
+ *
+ * A VALTOZAT NELKULI termek (ures vagy hianyzo lista) HAMIS: nincs mit a
+ * kosarba tenni, es a valaszto sem vezet sehova. Ez NEM ugyanaz, mint a
+ * "nem tudjuk" -- azt az `inventoryKnownOf` mondja meg kulon.
+ */
+export function anyVariantPurchasable(product: {
+  variants?:
+    | {
+        manage_inventory?: boolean | null
+        allow_backorder?: boolean | null
+        inventory_quantity?: number | null
+      }[]
+    | null
+}): boolean {
+  return (product.variants ?? []).some(variantPurchasable)
+}
+
+/**
+ * TUDJUK-E A KESZLETET MINDEN OLYAN VALTOZATNAL, AMELYIKNEL EZ KERDES.
+ *
+ * MINDEN valtozatot megkovetel, nem csak egyet, es ez SZANDEKOS: ha akar egy
+ * keszletezett valtozatnal hianyzik a szam, a lap ELFOGYOTT-at mutat ELADVA
+ * helyett. Ez a modul mar kimondta, melyik tevedes olcsobb: a teves
+ * "elfogyott" HALK (a vevo visszater), a teves "eladva" HANGOS (a vevo elmegy).
+ * A szigorubb feltetel tehat a halkabb tevedes fele visz.
+ */
+export function inventoryKnownOf(product: {
+  variants?:
+    | {
+        manage_inventory?: boolean | null
+        inventory_quantity?: number | null
+      }[]
+    | null
+}): boolean {
+  return (product.variants ?? []).every(
+    (variant) =>
+      !variant.manage_inventory ||
+      typeof variant.inventory_quantity === "number",
+  )
+}

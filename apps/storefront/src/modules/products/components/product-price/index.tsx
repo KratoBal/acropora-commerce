@@ -71,8 +71,38 @@ export default function ProductPrice({
     )
   }
 
+  /**
+   * AZ AR SZINE TOKENBOL JON, MERT A SOTET LAPON IS MEGJELENIK (415f455c).
+   *
+   * === A MERT HIBA (picasso talalta, acrobot merte vissza, 2026-09-08) ===
+   *
+   * Itt `text-ui-fg-base` allt, ami ROGZITETT `rgb(24, 24, 27)`. A
+   * koltozes-kapcsolo ota ez a komponens a sotet vilagon is renderelodik, es a
+   * doboz hattere ott `oklch(0.17 0.016 250)`. Vagyis sotet szoveg allt sotet
+   * feluleten, KET helyen egyszerre: a vasarlasi oldalsavban es a ragados
+   * savban. A vilagos lapon ugyanez az ertek helyes volt, ezert nem tunt fel.
+   *
+   * A `--terv-szoveg` MINDKET vilagban letezik (vilagos `oklch(0.2 ...)`,
+   * sotet `oklch(0.95 ...)`), es a vilagos lap kepe gyakorlatilag nem valtozik.
+   *
+   * === MIERT NEM EGY MASIK OSZTALY ===
+   *
+   * A `text-ui-fg-*` csalad a Medusa sajat szotara: nem ismeri a
+   * `data-vilag` kapcsolonkat, tehat barmelyik tagja ugyanezt a hibat adja. A
+   * ket rendszert nem osszehangolni kell, hanem a lap sajat tokenjeit
+   * hasznalni ott, ahol a lap rajzol.
+   *
+   * UGYANEZ MAR MEGTORTENT egyszer, a keszlet-allapot dobozaban
+   * (`text-neutral-700` -> `--terv-szoveg`). Ez a MASODIK elofordulas, tehat a
+   * mintat erdemes kulon keresni, nem esetenkent javitani -- a mereset a
+   * 415f455c kartyara irtam.
+   */
   return (
-    <div className="flex flex-col text-ui-fg-base">
+    <div
+      data-testid="product-price-doboz"
+      className="flex flex-col"
+      style={{ color: "var(--terv-szoveg)" }}
+    >
       <span
         className={clx("text-xl-semi", {
           "text-ui-fg-interactive": selectedPrice.price_type === "sale",
@@ -89,7 +119,9 @@ export default function ProductPrice({
       {selectedPrice.price_type === "sale" && (
         <>
           <p>
-            <span className="text-ui-fg-subtle">Original: </span>
+            <span style={{ color: "var(--terv-szoveg-halvany)" }}>
+              Original:{" "}
+            </span>
             <span
               className="line-through"
               data-testid="original-product-price"

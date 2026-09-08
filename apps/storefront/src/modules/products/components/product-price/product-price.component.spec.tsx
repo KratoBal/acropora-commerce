@@ -109,3 +109,39 @@ describe("az ár helykitöltője", () => {
     expect(elem.className).not.toContain("bg-gray-")
   })
 })
+
+/**
+ * AZ AR SZINE A SOTET LAPON (415f455c, 2026-09-08).
+ *
+ * A HATARA, KIMONDVA: a jsdom nem oldja fel a CSS-valtozokat, tehat ez a
+ * TOKEN NEVET meri, nem a festett szint. Amit bizonyit: az ar nem visel
+ * rogzitett szint. Amit nem: hogy a token erteke helyes -- azt a
+ * `terv-tokenek.spec.ts` mondja meg, vilagonkent nevesitett parral.
+ *
+ * A KETTO EGYUTT fedi le a lancot, kulon-kulon egyik sem: egy helyes token
+ * rossz nevvel ugyanugy olvashatatlan, mint egy rossz erteku token.
+ */
+describe("az ár színe", () => {
+  /** ISMERT POZITIV KONTROLL: a doboz tenyleg megjelenik, es ar all benne. */
+  it("az ár doboza megjelenik, és tartalmazza az árat", () => {
+    render(<ProductPrice product={termek(1)} />)
+
+    expect(screen.getByTestId("product-price-doboz")).toBeTruthy()
+    expect(screen.getByTestId("product-price")).toBeTruthy()
+  })
+
+  /**
+   * A MERT HIBA: itt `text-ui-fg-base` allt, ami ROGZITETT rgb(24, 24, 27),
+   * es a sotet lapon sotet szoveg lett belole sotet feluleten.
+   *
+   * A HIANY-ALLITAS ONMAGABAN GYENGE (egy ures className is kielegitene),
+   * ezert all mellette a token NEVERE szolo pozitiv allitas.
+   */
+  it("az ár a szöveg tokenjét viseli, nem rögzített színt", () => {
+    render(<ProductPrice product={termek(1)} />)
+    const doboz = screen.getByTestId("product-price-doboz")
+
+    expect(doboz.style.color).toBe("var(--terv-szoveg)")
+    expect(doboz.className).not.toContain("text-ui-fg-")
+  })
+})
