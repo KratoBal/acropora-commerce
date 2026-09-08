@@ -556,9 +556,33 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * AMIT A SOTET LISTA ELHAGY -- KET DOBOZ, MIND A KETTO MERESSEL.
  *
  * A tervfajl 2a (korall) lapjan egyik sem all, es ezt KIMERITOEN merte a
- * `measurement/terv-valtozatok/` anyaga: mind a 141 szoveges elem atnezve, KET
- * fuggetlen retegben (a lathato cimek ES a designer sajat monospace cimkei),
+ * `measurement/terv-valtozatok/` anyaga: a lap minden szoveges eleme atnezve,
  * mikozben a kontroll ugyanabban a halmazban TALAL.
+ *
+ * ITT KORABBAN "KET FUGGETLEN RETEG" ALLT, ES AZ TULZAS VOLT (murena merese,
+ * msg_id 14958; visszamerve nautilus). A masodiknak nevezett reteg -- a
+ * designer sajat monospace cimkei -- NEM doboz-leltar, tehat a hianya nem
+ * bizonyitek:
+ *
+ *   a 2a lapon 21 monospace cimke all, es a LEGALSO y=1191-nel -- a lap
+ *     viszont 2140 magas. A lap also fele (fulsor, parameter-tabla, hasonlo
+ *     sor, ragados sav) EGYETLEN monospace cimket sem visel.
+ *   es amit visel, az tulnyomorest NEM doboznev: jelvenyek (1 DB EGYEDI, -8%,
+ *     DOA, ATVETEL), foto-jegyzetek (// SAJAT FOTO, 14 000 K FENY ALATT
+ *     FOTOZVA) es morzsa-sor. Doboznevnek ketto latszik belole.
+ *
+ * Vagyis egy doboz hianya ebbol a retegbol ugyanugy elofordul olyan doboznal
+ * is, ami BIZONYITHATOAN ott van -- tehat a reteg nem tud tavolletet igazolni.
+ *
+ * A LELET ETTOL ALL, csak EGY reteg all mogotte: a LATHATO cimek. Azt murena
+ * fuggetlenul, a doboz-cimkekbol is megmerte (korall 0, muszaki 2), pozitiv
+ * kontrollal -- es kimondta a sajat hatarat is: az o kiolvasoja 60 karakternel
+ * vag, tehat egy beagyazott elofordulast elrejthet. A level-szintu olvasas ezt
+ * fedi; forditva pedig az en suly- es meret-kuszobom (>=600, >=14px) nem latja
+ * azt, amit az ove igen.
+ *
+ * A KET MODSZER TEHAT TENYLEG KIEGESZITI EGYMAST -- csak nem ott, ahol a "ket
+ * fuggetlen reteg" mondat sugallta.
  *
  *   kiegeszitok      "Ami még kellhet hozzá"  -- 1a-n es 1b-n szakaszcim, 2a-n sehol
  *   muszaki-adatok   "Műszaki adatok"          -- 1a-n szakaszcim, 1b-n ful, 2a-n sehol
