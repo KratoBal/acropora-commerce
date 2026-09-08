@@ -24,6 +24,8 @@ import { describe, expect, it } from "vitest"
  * adott elem tenyleg azt a szint viseli. Az utobbi kulon kerdes, es a lapon
  * merheto.
  */
+const SAJAT_FORRAS = readFileSync(__filename, "utf-8")
+
 const CSS = readFileSync(join(__dirname, "globals.css"), "utf-8")
 
 /**
@@ -206,6 +208,86 @@ describe("a terv megerositett ertekei", () => {
 
     expect(sotetBlokk).toContain("--terv-keret: oklch(0.28 0.014 250)")
     expect(sotetBlokk).toContain("--terv-szoveg-halvany: oklch(0.72 0.012 250)")
+  })
+
+  /**
+   * MINDEN VILAG-FUGGO TOKENNEK KELL NEVESITETT PAR -- ES A HELYCSERE A KOCKAZAT.
+   *
+   * MIERT MOST (murena merese, 2026-09-08): a bongeszos merohely (`lap-szin.sh
+   * --allit`) a KITELEPITETT lapon ZOLDET adott, mikozben a rez ket erteke a
+   * ROSSZ vilagban allt. Az allitasa azt kovetelte, hogy a ket ertek TERJEN EL
+   * -- egy helycsere pedig eltér. Ugyanez a vaksag allt itt is, ket tokenen:
+   *
+   *   --terv-hatter-lap     EGYIK vilagban sem volt nevesitve -> a csere NULLA
+   *                         pirosat adott volna
+   *   --terv-keret-meleg    csak a VILAGOS oldalon (a PAROK tablaban); a sotet
+   *                         erteket semmi nem allitotta
+   *
+   * A `--terv-hatter-lap` a kartyak lapja: egy csere utan a vilagos lapon
+   * majdnem fekete, a soteten majdnem feher kartyak allnanak. Latszo hiba,
+   * amit semmi nem fogott volna meg.
+   */
+  const VILAGONKENT: ReadonlyArray<readonly [string, string, string]> = [
+    ["--terv-hatter-lap", "oklch(0.995 0.003 80)", "oklch(0.17 0.016 250)"],
+    ["--terv-keret-meleg", "oklch(0.88 0.008 70)", "oklch(0.33 0.016 250)"],
+  ]
+
+  it.each(VILAGONKENT)("%s a helyes világban áll", (nev, vilagos, sotet) => {
+    const sotetKezd = CSS.indexOf('[data-vilag="sotet"]')
+
+    expect(normal(CSS.slice(0, sotetKezd))).toContain(`${nev}: ${vilagos}`)
+    expect(normal(CSS.slice(sotetKezd))).toContain(`${nev}: ${sotet}`)
+    expect(vilagos).not.toBe(sotet)
+  })
+
+  /**
+   * ES A TELJESSEG, KULONBEN A KOVETKEZO UJ TOKEN UGYANIGY KIMARAD.
+   *
+   * A fenti ket sort egy MERES hozta elo, nem egy szabaly. Ez az allitas a
+   * szabaly: ha egy token a ket blokkban KULONBOZO erteket kap, akkor
+   * valahol ebben a fajlban szerepelnie kell MIND A KET ertekevel.
+   *
+   * Igy egy uj vilag-fuggo token felvetele pirosra valt, es a felvevo dont --
+   * nem az tortenik, hogy csendben orizetlen marad.
+   */
+  it("minden világonként eltérő token neve ÉS mindkét értéke szerepel itt", () => {
+    const sotetKezd = CSS.indexOf('[data-vilag="sotet"]')
+    const ertekek = (blokk: string) => {
+      const ki: Record<string, string> = {}
+      const minta = /^\s*(--terv-[a-z0-9-]+)\s*:\s*([^;]+);/gm
+      let m: RegExpExecArray | null = minta.exec(blokk)
+      while (m !== null) {
+        ki[m[1]] = m[2].split("/*")[0].trim()
+        m = minta.exec(blokk)
+      }
+      return ki
+    }
+    const v = ertekek(CSS.slice(0, sotetKezd))
+    const s = ertekek(CSS.slice(sotetKezd))
+
+    const elteroek = Object.keys(v).filter((k) => k in s && v[k] !== s[k])
+
+    /** ISMERT POZITIV KONTROLL: van egyaltalan vilagonkent eltero token. */
+    expect(elteroek.length).toBeGreaterThan(0)
+
+    /**
+     * A TOKEN NEVE TABLA-SORBAN ALLJON, NE CSAK A FAJLBAN VALAHOL.
+     *
+     * AZ ELSO VALTOZAT `SAJAT_FORRAS.includes(ertek)`-et nezett, es azt EGY
+     * KOMMENT IS KIELEGITETTE. Sajat merese, 2026-09-08: felvettem egy uj
+     * vilag-fuggo tokent, az ertekeit CSAK egy kommentbe irtam, es az allitas
+     * ZOLD MARADT. Egy orzo, amit prozaval ki lehet elegiteni, nem orzo.
+     *
+     * A `["--terv-x"` alak az, ami ALLITAST hordoz: a PAROK es a VILAGONKENT
+     * tabla sorai. Ma mind a tiz vilagonkent eltero token igy all.
+     */
+    const hianyzo = elteroek.filter(
+      (k) =>
+        !SAJAT_FORRAS.includes(`["${k}"`) ||
+        !SAJAT_FORRAS.includes(v[k]) ||
+        !SAJAT_FORRAS.includes(s[k]),
+    )
+    expect(hianyzo).toEqual([])
   })
 
   it("a sötét világnak saját érték-készlete van", () => {
