@@ -47,6 +47,16 @@ describe("leírás-tisztítás: a valódi katalógus alakjai", () => {
   /**
    * A `<meta charset>` 1563 helyen áll, 431 leírás-mezőben, 400 terméknél, a
    * szöveg elején maradt szemétként. Egy termékleírásban semmit nem jelent.
+   *
+   * ÉS EZ A SZÁM A NYERS LEÍRÁSRA VONATKOZIK -- A RENDEZETT LAPON NULLA. A két
+   * szám nem mond ellent egymásnak: ez a függvény SZÁNDÉKOSAN dobja el, tehát
+   * aki a boltból lekért `description` mezőt méri, 1563-at kap, aki a lapon
+   * megjelenő szöveget, nullát.
+   *
+   * AZÉRT ÁLL ITT, ÉS NEM KÜLÖN JEGYZETBEN: aki egyszer a két mérést egymás
+   * mellé teszi, ELLENTMONDÁST fog látni, és a gyanú nem ezt az egy számot
+   * fogja érinteni, hanem az egész mérést. A feloldás neve RÉTEG, és a helye
+   * ott van, ahol az állítás lakik.
    */
   it("a meta kiesik, a körülötte álló tartalom marad", () => {
     const ki = sanitizeDescription(fixtura("meta-charset"))!

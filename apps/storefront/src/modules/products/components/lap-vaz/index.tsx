@@ -574,6 +574,17 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * le, a kovetkezo olvaso NEM fogja ujra megnezni -- epp azert nem, mert
  * ketszeresen alatamasztottnak latszik.
  *
+ * ES EGY MERT SZAM A "NEM DOBOZ-LELTAR" ALLITAS ALA, ami a fenti indoklasban
+ * nem all (nautilus, 2026-09-08): a 2a lapon 21 monospace cimke van, es a
+ * LEGALSO y=1191-nel -- a lap viszont 2140 magas. A lap ALSO FELE (fulsor,
+ * parameter-tabla, hasonlo sor, ragados sav) EGYETLEN monospace cimket sem
+ * visel.
+ *
+ * Ez erosebb, mint a "huszbol negyet nevez meg": a reteg nem VALOGAT a dobozok
+ * kozott, hanem a lap egy egesz feleig el sem er. Egy reteg, ami a lap felet
+ * nem fedi, SZERKEZETILEG nem tud tavolletet igazolni -- nem csak gyengebb
+ * bizonyitek.
+ *
  *   kiegeszitok      "Ami még kellhet hozzá"  -- 1a-n es 1b-n szakaszcim, 2a-n sehol
  *   muszaki-adatok   "Műszaki adatok"          -- 1a-n szakaszcim, 1b-n ful, 2a-n sehol
  *
