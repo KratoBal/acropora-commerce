@@ -142,9 +142,37 @@ export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át."
  * A terv kikötése: a vevőnek EL KELL MAGYARÁZNI, a kosárban, nem a fizetésnél,
  * és nem hibaüzenetként. Egy élő állatot nem adunk fel csomagként -- ha ez nincs
  * kimondva, a korlátozás önkényesnek látszik.
+ *
+ * === EGY TARTALMI RESZ HIANYZOTT INNEN, ES A KIHAGYAS NEM VOLT SZANDEKOS ===
+ *
+ * Nautilus a kosar mind a 22 ember-olvasta szoveget a tervhez merte
+ * (`measurement/terv-kosar/KOSAR-SZOVEGEK.md`), es ez a mondat ugy jott ki,
+ * mint a terv mondatanak TOMORITESE. A terv szava (y=342, 14px/400):
+ *
+ *   "Élő korallt és halat nem adunk fel csomagként: a példányt előtted emeljük
+ *    ki az akváriumból, és együtt nézzük meg, hogy rendben van. Ezért a teljes
+ *    kosarat a boltban veszed át - nem bontjuk két rendelésre, a műszaki
+ *    tételeket is ide készítjük össze."
+ *
+ * KET DOLOG MARADT KI, ES A KETTO NEM EGYFORMA SULYU:
+ *
+ *   "nem bontjuk ket rendelesre"   -> ALLITAS A RENDSZERROL. Balazs szabalya,
+ *      2026-08-31, es ott all e FAJL fejleceben is. A kod pontosan ezt teszi:
+ *      a PICKUP_ONLY osztaly az EGESZ kosarra all. Vagyis a vevo ma sem kap
+ *      mast, csak nem mondtuk meg neki. EZ A RESZ BEKERULT.
+ *
+ *   "a peldanyt elotted emeljuk ki ... es egyutt megnezzuk"  -> ALLITAS A BOLT
+ *      GYAKORLATAROL. Ezt semmilyen kodbol nem tudom megmerni, es igeret a
+ *      vevo fele. EZ A RESZ NEM KERULT BE, es a hianya szandekos: egy
+ *      szolgaltatasi igeretet nem a kirakat talal ki. Ha a bolt tenyleg igy
+ *      dolgozik, egy sor, es bekerul.
+ *
+ * A KULONBSEG, AMIERT EZ KET DONTES ES NEM EGY: az elso azt irja le, amit a
+ * rendszer MAR CSINAL (merheto, es merve is van); a masodik olyat igerne,
+ * aminek a teljesuleset a kod nem tudja garantalni.
  */
 export const PICKUP_REASON =
-  "Egy élő példányt nem adunk fel csomagként, ezért a rendelés többi tételét is a boltban adjuk át."
+  "Egy élő példányt nem adunk fel csomagként, ezért a teljes kosarat a boltban veszed át: nem bontjuk két rendelésre, a műszaki tételeket is ide készítjük össze."
 
 /** A bolt címe és nyitvatartása, a tervből. */
 export const SHOP_ADDRESS = "1106 Budapest, Pesti Gábor utca 35"
