@@ -364,7 +364,7 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  * (top=1387), a parameter-doboz pedig cim nelkul kezdodik, rogton a "Nehezseg"
  * cellaval (top=1423).
  *
- * (Nem torlom a regi mondatot, hanem megnevezem: aki egy PR-lerasban vagy egy
+ * (Nem torlom a regi mondatot, hanem megnevezem: aki egy PR-leirasban vagy egy
  * uzenetben a "Tartasi parameterek" cimre hivatkozik, itt latja, hogy mikor es
  * mi miatt szunt meg. Egy csendes torles ezt a kort ujra lefuttatna valakivel.)
  *
