@@ -41,7 +41,33 @@
     rendezett token-kivonat tehat a legfontosabb erteket teszi a lista aljara.
   */
   --terv-hatter: oklch(0.99 0.004 80); /* az 1b tervlap sajat hattere */
-  --terv-hatter-sotet: oklch(0.235 0.02 248); /* 16 elem -- a sotet savok */
+  /*
+    EZ A TOKEN NEM A TERV EGYIK FELULETE, ES A REGI MEGJEGYZESE FELREVEZETETT.
+    Az allt itt, hogy "16 elem -- a sotet savok". Visszamerve a nyers forrasbol
+    (2026-09-08): a `oklch(0.235 0.02 248)` ertek TIZENHATSZOR fordul elo, es
+    MIND A TIZENHAT csikos KEP-HELYKITOLTO (`repeating-linear-gradient`). Sotet
+    sav nincs kozottuk.
+
+    Ugyanez a hiba allt a `--terv-hatter` regi vilagos erteken (0.96, 20-bol 20
+    helykitolto) es sotet erteken (ugyanez a 0.235) -- azokat a #214 es a #216
+    javitotta. Ez a harmadik es utolso ilyen hely.
+
+    A TOKEN MEGIS MARAD, MERT VAN SZEREPE -- csak nem a tervbol jon. A kosarsor
+    "ELKELT" csipjenek felulete, vilagos szoveggel: egy sotet csip a vilagos
+    lapon. Az ertek erre jo, es a csip mukodik; ami hamis volt, az az INDOKLAS.
+
+    A KULONBSEGET AZERT IRJUK KI, MERT MASKENT KELL RA HIVATKOZNI: egy tervbol
+    mert ertekre lehet ugy hivatkozni, hogy "a terv ezt keri". Erre nem lehet.
+    Ha valaki egyszer megkerdezi, mit mond a terv errol a csiprol, a valasz az,
+    hogy SEMMIT.
+
+    ES EGY HIANY, AMIT NEM POTOLOK KITALALASSAL: ez a token CSAK a vilagos
+    blokkban all. Sotet vilagban a vilagos erteke oroklodne, tehat egy 0.235-os
+    csip allna egy 0.17-es lapon -- alig lathatoan. Ma nem all elo (a kosar
+    vilagos), es a helyes ertek nem meres kerdese, mert a terv nem ismeri ezt a
+    csipet. Amikor a kosar vilagot valt, AKKOR kell dontes.
+  */
+  --terv-hatter-sotet: oklch(0.235 0.02 248);
   --terv-hatter-lap: oklch(0.995 0.003 80); /*  4 elem -- a kartyak lapja */
   --terv-hatter-halvany: oklch(0.955 0.004 250);
 
