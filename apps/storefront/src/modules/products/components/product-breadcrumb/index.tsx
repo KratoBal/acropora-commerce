@@ -38,10 +38,43 @@ export default function ProductBreadcrumb({
 
   return (
     <nav aria-label="Morzsamenü" className="overflow-x-auto whitespace-nowrap">
-      <ol className="flex min-w-max items-center gap-2 text-sm text-ui-fg-muted">
+      {/*
+        A MORZSAMENU SZINEI TOKENBOL JONNEK -- ES MA EZ MEG NEM LATSZIK.
+
+        === MIERT MEGY MEGIS ELSONEK ===
+
+        Picasso negyedik pontja szerint a morzsamenunek ugyanabban a sotet
+        sikban kell allnia, mint a fejlecnek es a tartalomnak. Ma a vazon KIVUL
+        all, vilagos hatteren, tehat a rogzitett szinei helyesek.
+
+        AMINT VISZONT A SOTET FELULETRE KERUL, ugyanaz tortenne, mint az arral
+        (415f455c): a `text-ui-fg-muted` es a `text-ui-fg-base` ROGZITETT szin,
+        nem ismeri a `data-vilag` kapcsolot, tehat sotet szoveg allna sotet
+        feluleten.
+
+        Ezert ez a valtozas ELOBB megy, mint az athelyezes: onmagaban semmit nem
+        ront el (a vilagos lapon a token gyakorlatilag ugyanazt adja), es az
+        athelyezes utan mar nem lehet elfelejteni. Forditva egy ismert hibat
+        szallitanank ki ujra.
+
+        === AMI SZANDEKOSAN MARAD ===
+
+        A `focus-visible:outline-ui-fg-interactive` fokusz-gyuru. Az nem
+        szoveg-szin, es hogy a fokusz milyen szint kapjon, tervezoi dontes --
+        nem vezetem le magamtol egy szoveg-token cserejebol.
+
+        A `hover:text-ui-fg-base` KIKERULT: a lebegtetett allapot ma a
+        rogzitett alapszinre valtott volna, ami a sotet lapon eppen olvashatatlan.
+        Amig nincs dontes a lebegtetes szinerol, a link a lista szinet orokli.
+      */}
+      <ol
+        className="flex min-w-max items-center gap-2 text-sm"
+        style={{ color: "var(--terv-szoveg-halvany)" }}
+        data-testid="morzsamenu-lista"
+      >
         <li>
           <LocalizedClientLink
-            className="hover:text-ui-fg-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+            className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
             href="/"
           >
             Főoldal
@@ -51,7 +84,7 @@ export default function ProductBreadcrumb({
           <li key={category.id} className="flex items-center gap-2">
             <span aria-hidden="true">/</span>
             <LocalizedClientLink
-              className="hover:text-ui-fg-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
+              className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
               href={`/categories/${category.handle}`}
             >
               {category.name.trim()}
@@ -59,7 +92,9 @@ export default function ProductBreadcrumb({
           </li>
         ))}
         <li
-          className="flex min-w-0 items-center gap-2 text-ui-fg-base"
+          className="flex min-w-0 items-center gap-2"
+          style={{ color: "var(--terv-szoveg)" }}
+          data-testid="morzsamenu-jelenlegi"
           aria-current="page"
         >
           <span aria-hidden="true">/</span>
