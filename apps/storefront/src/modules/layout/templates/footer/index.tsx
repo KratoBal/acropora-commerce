@@ -161,7 +161,20 @@ export default async function Footer() {
 
               return (
                 <div className="flex flex-col gap-y-2" key={oszlop}>
-                  <span className="txt-small-plus txt-ui-fg-base">
+                  {/*
+                    AZ OSZLOPCIMEK NAGYBETUSEK, ES EZT CSAK A KEP MUTATTA MEG.
+
+                    A lablec szerkezetet es tartalmat a bolt HTML-jebol fejtettem
+                    ki -- ott a cimek VEGYES kisbetusek ("Oldaltérkép"). A
+                    kepernyokepen viszont NAGYBETUVEL allnak, tehat a bolt
+                    stiluslapja alakitja at oket, es a vevo azt latja.
+
+                    KET KIOLVASAS UGYANARROL A FORRASROL, KET KULONBOZO
+                    VALASZ: a HTML a szoveget mondja meg, a kep azt, ami
+                    megjelenik. Egy CSS-transzformaciot a forras-szoveg
+                    szerkezetileg nem tud elarulni.
+                  */}
+                  <span className="txt-small-plus txt-ui-fg-base uppercase tracking-wide">
                     {OSZLOP_CIMEK[oszlop]}
                   </span>
                   <ul
@@ -207,7 +220,10 @@ export default async function Footer() {
               className="flex flex-col gap-y-2 lg:col-span-2"
               data-testid="footer-ceg"
             >
-              <span className="txt-small-plus txt-ui-fg-base">{CEG.nev}</span>
+              {/* A negyedik oszlop cime ugyanugy nagybetus a mintan. */}
+              <span className="txt-small-plus txt-ui-fg-base uppercase tracking-wide">
+                {CEG.nev}
+              </span>
               <address className="not-italic text-ui-fg-subtle txt-small flex flex-col gap-y-1">
                 <span>{CEG.cim}</span>
                 <a
