@@ -171,3 +171,37 @@ describe("a külső címek egyetlen helyen állnak", () => {
     expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toHaveLength(7)
   })
 })
+
+/**
+ * A LABLEC SIKJA -- TOKEN, NEM BEEGETETT ERTEK.
+ *
+ * acrobot kikotese (2026-09-08): "ne egesz szamokat egessunk bele", hogy egy
+ * kesobbi valtoztatas ADAT legyen, ne ATIRAS. Ez a ket allitas ezt orzi.
+ *
+ * A MASODIK A FONTOSABB, es a `kodSzoveg` miatt tud egyaltalan letezni: a
+ * komponens MEGJEGYZESE idezi a tervbeli `oklch(0.17 0.016 250)` erteket, mert
+ * a dontes indokat rogziti. Egy fajl-szintu tagadas ettol pirosodna, holott a
+ * KOD helyes -- ugyanaz az alak, mint amikor egy javito szoveg idezi a regit.
+ *
+ * AMIT NEM MER: hogy a lablec SOTET-e. Nem is merheti: a `--terv-hatter`
+ * vilagonkent mas erteket vesz fel, es hogy melyiket, azt a lablec FOLOTT allo
+ * `data-vilag` donti el -- ma egy sincs. Ez az allitas azt orzi, hogy a szin a
+ * VILAGTOL fuggjon, nem azt, hogy melyik vilagban allunk.
+ */
+describe("a lábléc síkja", () => {
+  const kod = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+
+  /** ISMERT POZITIV KONTROLL: tenyleg a lablecet olvastuk be. */
+  it("a forrás olvasható, és tényleg a lábléc", () => {
+    expect(kod).toContain("<footer")
+    expect(kod).toContain("lablec-sik")
+  })
+
+  it("a sík a világfüggő háttér-tokenen áll", () => {
+    expect(kod).toContain('background: "var(--terv-hatter)"')
+  })
+
+  it("egyetlen oklch érték sincs beégetve a kódba", () => {
+    expect(kod).not.toContain("oklch(")
+  })
+})

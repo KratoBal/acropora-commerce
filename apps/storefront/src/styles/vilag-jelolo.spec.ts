@@ -51,8 +51,23 @@ function forrasFajlok(mappa: string): string[] {
 
 const JELOLO = "data-vilag"
 
+/**
+ * A MEGJEGYZESEKET KISZEDJUK, MERT EGY EMLITES NEM HASZNALAT.
+ *
+ * Merve 2026-09-08: a lablec kapott egy megjegyzest, ami ELMAGYARAZZA, hogy a
+ * `data-vilag="sotet"` csak a lapon BELUL all -- es ettol ez a spec ket
+ * hasznalot latott egy helyett. A kod valtozatlan volt: egy prozai mondat
+ * idezte a jelolot.
+ *
+ * Ugyanaz az alak, mint amikor egy javito szoveg idezi a regi alakot: a
+ * MERESNEK a kodra kell mennie, nem a fajl szovegere. A repo mar ket helyen
+ * hasznalja ezt (`hivatkozasok.spec.ts`, `betu-lancok` kornyeke).
+ */
+const kodSzoveg = (szoveg: string) =>
+  szoveg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+
 const hasznalok = forrasFajlok(GYOKER)
-  .filter((ut) => readFileSync(ut, "utf-8").includes(`${JELOLO}=`))
+  .filter((ut) => kodSzoveg(readFileSync(ut, "utf-8")).includes(`${JELOLO}=`))
   .map((ut) => ut.slice(GYOKER.length + 1))
 
 describe("ki állítja be a világot", () => {
