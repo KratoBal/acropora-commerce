@@ -584,19 +584,48 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
    *   y=1191  x=126  11px monospace   "ELHELYEZÉS-SEGÉD"           a doboz NEVE
    *   y=1215  x=126  20px felkover    "Hová tedd ezt a példányt?"  a LATHATO cim
    *
-   * MA A ROVID NEV ALL A CIMBEN, ES A LATHATO CIM A VARAKOZOBAN -- szandekosan.
-   * Amig a doboz URES VAZ, a h2 nem vevoi felirat, hanem szerkezeti cimke, es
-   * arra a rovid nev valo. A vevoi cim akkor jon, amikor a doboz valodi
-   * tartalmat kap, es akkor MIND A KET lapcsaladon egyszerre valt (a vilagos
-   * oldalon ugyanez a doboz "MÉRETEZÉS-SEGÉD" neven all). Egy fel atallas
-   * rosszabb, mint egyik sem. (acrobot dontese, msg_id 14812 es 14817.)
+   * A ROVID NEV ALL A CIMBEN, es ez valtozatlan: amig a doboz URES VAZ, a h2
+   * nem vevoi felirat, hanem szerkezeti cimke. A vevoi cim akkor jon, amikor a
+   * doboz valodi tartalmat kap, es akkor MIND A KET lapcsaladon egyszerre valt.
+   * (acrobot dontese, msg_id 14812 es 14817.)
+   *
+   * === A VARAKOZO SZOVEG VISZONT MEGVALTOZOTT (acrobot 15766, 2026-09-08) ===
+   *
+   * Korabban a tervbeli LATHATO CIM allt itt ("Hová tedd ezt a példányt?"), es
+   * az indok az volt, hogy az MEGSZOLIT, nem ALLIT -- tehat legfeljebb
+   * szokatlan, de nem lehet hamis.
+   *
+   * EZ AZ ERV MEGDOLT, es nem az allitas-oldalrol: a mondat VALODI TARTALOMNAK
+   * latszik. Egy vevo megprobalna hasznalni -- rakattintana, keresne a mezot --
+   * es nem talalna semmit. A vilagos parja ("Ide jön a méretezés-segéd")
+   * ranezesre helykitolto; ez nem az.
+   *
+   * A repo mashol mar kimondja ugyanezt a szabalyt, a leiras-doboz fejleceben:
+   * "egy ures doboz, ami keszneklatszik, ROSSZABB a hianyzonal". Ugyanaz a
+   * szabaly, masik dobozon -- csak itt eddig a masik oldalrol neztuk.
+   *
+   * A tervbeli mondat AKKOR kerul be, amikor a seged MEGEPUL. Addig egy
+   * tervbeli mondat a lapon igeret, amit nem tudunk teljesiteni.
+   *
+   * === ES AMIT A SEGED MEGEPITESEKOR TUDNI KELL: NEM LESZ KOZOS SZOVEG ===
+   *
+   * A terv KET KULONBOZO mondatot ad a ket vilagra, es a ketto FORDITOTT
+   * LOGIKAJU (picasso megfogalmazasa):
+   *
+   *   2a (korall)  "Add meg az akváriumod méretét és a lámpát" -- a MEGLEVO
+   *                lampahoz igazitja a korall helyet
+   *   1b (lampa)   "Add meg a méreteket és a korallállományt"  -- a MEGLEVO
+   *                korallallomanyhoz igazitja a lampa meretet
+   *
+   * Vagyis a ket doboz nem ugyanaz a szoveg mas cimkevel. Egy egyseges,
+   * semleges mondat mind a ket helyen TARTALMILAG rosszat mondana.
    *
    * Ez a ket koordinata azert marad itt, hogy a kovetkezo kornek ne kelljen
    * ujra kimernie: a lathato cim MEGVAN a tervben, nem kell kitalalni.
    */
   "meretezes-seged": {
     cim: "Elhelyezés-segéd",
-    varakozo: "Hová tedd ezt a példányt?",
+    varakozo: "Ide jön az elhelyezés-segéd",
   },
   fulek: {
     varakozo:
@@ -828,9 +857,17 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
  *   foto      "Saját fotó: ez a példány"    (acrobot dontese, msg 14947)
  *
  * A KETTO UGYANAZ AZ ALLITAS, ket helyen. Nem hataresetek: mind a ketto ALLIT
- * valamit a termekrol. Ezzel szemben a "Hová tedd ezt a példányt?" MEGSZOLIT,
- * es az marad -- az elso lehet hamis, a masodik legfeljebb szokatlan (acrobot
- * dontese ugyanabban az uzenetben, es a mondat a tervbol valo: 2a lap, y=1215).
+ * valamit a termekrol.
+ *
+ * ITT KORABBAN EGY HARMADIK PELDA IS ALLT, ELLENPELDAKENT: a "Hová tedd ezt a
+ * példányt?" MEGSZOLIT, nem ALLIT, "es az marad". EZ AZ ERV MEGDOLT (acrobot
+ * 15766): a baj nem az volt, hogy allit-e, hanem hogy VALODI TARTALOMNAK
+ * latszik. A mondat azota semleges varakozora cserelt, az indok pedig a
+ * `meretezes-seged` bejegyzes fejlecebe kerult.
+ *
+ * Azert nem toroltem nyom nelkul, mert egy ELLENPELDA eltunese eszrevetlen:
+ * aki a szabalyt olvassa, nem tudja meg, hogy egyszer volt egy eset, ami
+ * kivetelnek latszott, es kiderult, hogy nem az.
  *
  * MIERT SET ES NEM KET `if`: a kovetkezo ilyen felirat egy sor lesz, nem egy uj
  * ag. A ket eset kozott a kulonbseg csak a kulcs, a kezeles azonos -- a vilagos
