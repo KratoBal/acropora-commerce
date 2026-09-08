@@ -65,7 +65,21 @@ export function ElerhetosegDoboz({
    * megjeleniti. A `null` tovabbra is azt jelenti, hogy nincs mit mondani.
    */
   const minimumSor = rendelesiMondat ? (
-    <p className="text-small-regular text-ui-fg-subtle">{rendelesiMondat}</p>
+    /**
+     * A RENDELESI MONDAT NEM CIMKE-ERTEK PAR, TEHAT NEM IS AZ LESZ.
+     *
+     * A tervbeli sorok mind ketreszuek (bal oldalt cimke, jobb oldalt ertek).
+     * Ez egy MONDAT ("legalabb 2 darab rendelheto"), aminek nincs cimkeje. Ha
+     * eroltetnenk ra egyet, kitalalt szoveg kerulne a lapra -- ezert teljes
+     * szelessegben all a melyedesen belul.
+     */
+    <p
+      className="text-[13.5px]"
+      style={{ color: "var(--terv-szoveg-halvany)" }}
+      data-testid="vaz-rendelesi-mondat"
+    >
+      {rendelesiMondat}
+    </p>
   ) : null
 
   /**
@@ -78,12 +92,61 @@ export function ElerhetosegDoboz({
    */
   if (!kiszereles && !minimumSor) return null
 
+  /**
+   * A DOBOZ MELYEDES A PANELEN BELUL, ES EZ A TERVBOL MERT ALAK (2026-09-08).
+   *
+   * A terv sotet lapjan a keszlet-sor igy all:
+   *
+   *     margin-top:18px; padding:14px;
+   *     background:oklch(0.17 0.016 250);
+   *     display:flex; flex-direction:column; gap:6px
+   *
+   * es a benne allo sorok ketreszuek: `justify-content:space-between`,
+   * 13,5 pixel, a cimke halvany, az ertek 600-as vastagsagu.
+   *
+   * A 0.17 a `--terv-hatter`, vagyis a LAP erteke -- a doboz tehat a panelbol
+   * KIVAGOTT melyedes, nem egy rateett kartya. Uj token nem kellett hozza.
+   * A `margin-top:18px` sem kerul ide: a kozos panel belso terkoze mar 18 pixel.
+   *
+   * === A KET VILAG ITT IS ELLENTETES IRANYBA MEGY, UGYANABBOL AZ OKBOL ===
+   *
+   * Sotetben a melyedes (0.17) SOTETEBB a panelnel (0.205). Vilagosban a
+   * `--terv-hatter` 0.99, a panel 0.955, tehat VILAGOSABB lesz -- kiemelkedes,
+   * nem melyedes. Nem javitjuk: a terv ket vilagos lapjan NINCS ilyen panel,
+   * tehat nincs mihez igazodni, es egy kitalalt ertek tervbelinek latszana.
+   *
+   * === A CIMKE SZINE A MEGLEVO TOKEN, ES A KULONBSEG MERVE 0,02 ===
+   *
+   * A tervben a cimke `oklch(0.74 0.012 250)`, a tokenunk `oklch(0.72 ...)`.
+   * A sotet tervlap HAT kulonbozo halvany szovegszint hasznal 0.68 es 0.74
+   * kozott (13, 12, 9, 9, 7 es 6 elofordulassal). Hat ertek egy ilyen szuk
+   * savban nem hat szerep, hanem a tervfajl zaja -- ezert a meglevo token megy
+   * ide, nem egy uj a 0,02-ert.
+   *
+   * === ES AMI SZANDEKOSAN NEM KERUL IDE, VALTOZATLANUL ===
+   *
+   * A tervbeli harom sorbol ("Keszlet", "Eloallat-szallitas", "Bolti atvetel")
+   * ma egyiknek sincs adata ilyen alakban. A szallitas es az atvetel nem
+   * letezik adatkent, a keszlet SZOVEGET pedig a 9. doboz gombja mondja ki --
+   * ha ide is kiirnank, ket allitas allna ugyanarrol. A melyedes tehat a
+   * MEGLEVO ket tenyt kapja meg, uj sor nelkul.
+   */
   return (
-    <div className="flex flex-col gap-y-2">
+    <div
+      className="flex flex-col gap-[6px] p-[14px]"
+      style={{ background: "var(--terv-hatter)" }}
+      data-testid="elerhetoseg-melyedes"
+    >
       {kiszereles ? (
-        <p className="text-sm" data-testid="vaz-egyseg">
-          Kiszerelés: {kiszereles}
-        </p>
+        <div
+          className="flex items-baseline justify-between gap-4 text-[13.5px]"
+          data-testid="vaz-egyseg"
+        >
+          <span style={{ color: "var(--terv-szoveg-halvany)" }}>
+            Kiszerelés
+          </span>
+          <span className="font-semibold">{kiszereles}</span>
+        </div>
       ) : null}
       {minimumSor}
     </div>
