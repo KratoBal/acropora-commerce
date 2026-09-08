@@ -468,7 +468,10 @@ export const VazDoboz = ({
               border: uresE
                 ? "1px dashed var(--terv-keret)"
                 : "1px solid var(--terv-keret)",
-              background: uresE ? "transparent" : "var(--terv-hatter-lap)",
+              /* Ugyanaz a token, mint a kozos panelnel, es ugyanabbol
+                 az okbol -- lasd az ottani jegyzetet. Az ures szakasz
+                 tovabbra is attetszo marad: ott a szaggatott keret a jel. */
+              background: uresE ? "transparent" : "var(--terv-hatter-halvany)",
               color: "var(--terv-szoveg)",
             }
       }
@@ -995,7 +998,21 @@ const LapVaz = ({
                 kozos
                   ? {
                       border: "1px solid var(--terv-keret)",
-                      background: "var(--terv-hatter-lap)",
+                      /**
+                       * A PANEL A `--terv-hatter-halvany` TOKENT VISELI, ES EZ
+                       * NEM VALASZTAS, HANEM EGYEZES (acrobot 15599, 2026-09-08).
+                       *
+                       * A terv a panelre sotetben oklch(0.205 ...) erteket ker.
+                       * A `--terv-hatter-halvany` sotet erteke PONTOSAN 0.205 --
+                       * betüre ugyanaz. Uj tokent felvenni tehat nem kellett.
+                       *
+                       * AMI ELOTTE ALLT ITT, ES MIERT VOLT ROSSZ: a
+                       * `--terv-hatter-lap`, aminek a sotet erteke 0.17. Az a
+                       * terv LAP-erteke, nem a panelé. Emiatt a panel SOTETEBB
+                       * volt a lapnal, holott a tervben VILAGOSABB -- a viszony
+                       * meg volt forditva, es ezt egyetlen allitas sem merte.
+                       */
+                      background: "var(--terv-hatter-halvany)",
                       padding: "16px",
                       display: "flex",
                       flexDirection: "column",
