@@ -182,6 +182,22 @@
      A sema helyett a sotet vilag sajat blokkja irja felul UGYANAZT a nevet,
      tehat ezek soha nem kaptak hivohelyet. (acrobot kerese, msg 14964.)
 
+     ES ITT KETFELE ALLITAS ALL EGYMAS MELLETT -- KULON KELL OLVASNI OKET
+     (acrobot kerese, 2026-09-08, a sajat olvasatarol):
+
+       MERVE      hogy a ket nev HASZNALATLAN volt (nulla `var(...)` hivohely),
+                  es hogy a torlesuk semmit nem valtoztatott. Ezt a torles
+                  MAGA igazolta: a kapuk zoldek maradtak.
+
+       FELTEVES   hogy MIERT keletkeztek -- vagyis hogy egy megszunt nevsema
+                  maradvanyai. Ezt SENKI nem merte le. A git tortenete mondana
+                  meg, es azt nem neztuk meg.
+
+     A kulonbseg nem szoszaporitas: a masodik egy HIHETO tortenet, es egy het
+     mulva tenykent olvasodna, ha nincs mellette ez a fel mondat. A torles
+     helyessege az ELSOTOL fugg, nem a masodiktol -- egy hasznalatlan nevet
+     akkor is helyes torolni, ha mas okbol keletkezett.
+
      A blokk valasztojat SZANDEKOSAN nem irom le itt betuszerint: a
      `terv-tokenek.spec.ts` a vilagos blokkot ugy szeleteli, hogy megkeresi a
      valaszto ELSO elofordulasat -- egy komment, ami leirja, a definiciok ELE
