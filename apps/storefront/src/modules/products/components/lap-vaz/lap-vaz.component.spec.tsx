@@ -847,6 +847,50 @@ describe("a lap teljes szélességű sötét felülete", () => {
    *
    * A merteket a BELSO doboz tartja, es arra kulon allitas all.
    */
+  /**
+   * A VIZSZINTES MARGO A KULSO BURKON ALL, A BELSO DOBOZON NEM -- ES EZ 32
+   * PIXELT ERT (merve 2026-09-08).
+   *
+   * A belso doboz maxWidth-je 1352, ami a terv 1440 pixeles oldalmargoibol jon
+   * (1440 - 2*44). Ha ezen BELUL is all egy vizszintes margo, a TARTALOM 1320
+   * lesz, es a bal oszlop a tervbeli 856 helyett 824-et kap. A stagingen ez
+   * merve is igy allt: 835,047 + 44 + 440,953 = 1320,000.
+   *
+   * A HIANY-ALLITAS MELLE POZITIV KONTROLL JAR: a fuggoleges margo megmarad,
+   * kulonben egy "nincs benne semmilyen margo" allapot is kielegitene.
+   */
+  it("a vízszintes margót a külső burok viszi, a belső doboz nem", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    const belso = screen.getByTestId("muszaki-lap-vaz")
+
+    /*
+      OSZTALY-LISTARA MERUNK, NEM RESZSZORA. Az elso alakom
+      `not.toContain("p-4 ")` volt, szokozzel -- az a sor VEGEN allo `p-4`
+      osztalyt csendben atengedne. Ugyanaz a fajta tul szuk kereses, amitol
+      ma delelott egy allitas azert lett zold, mert a keresett szovegbol
+      hianyzott egy karakter.
+    */
+    const osztalyok = (e: Element) => e.className.split(/\s+/)
+
+    expect(osztalyok(teljes())).toContain("px-4")
+    expect(osztalyok(belso)).toContain("py-4")
+    expect(osztalyok(belso)).not.toContain("px-4")
+    expect(osztalyok(belso)).not.toContain("p-4")
+  })
+
+  it("a morzsamenü sávja sem visz saját vízszintes margót", () => {
+    render(<LapVaz vilag="sotet" morzsa={<span>Korallok</span>} />)
+
+    const sav = screen.getByTestId("lap-morzsa-sav")
+
+    const osztalyok = sav.className.split(/\s+/)
+
+    expect(osztalyok).toContain("pt-4")
+    expect(osztalyok).not.toContain("px-4")
+    expect(osztalyok).not.toContain("p-4")
+  })
+
   it("a teljes szélességű felület NINCS szélességre korlátozva", () => {
     render(<LapVaz vilag="sotet" />)
 
