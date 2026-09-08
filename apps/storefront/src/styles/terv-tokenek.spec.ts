@@ -313,8 +313,39 @@ describe("a terv megerositett ertekei", () => {
 
     const elteroek = Object.keys(v).filter((k) => k in s && v[k] !== s[k])
 
-    /** ISMERT POZITIV KONTROLL: van egyaltalan vilagonkent eltero token. */
-    expect(elteroek.length).toBeGreaterThan(0)
+    /**
+     * ISMERT POZITIV KONTROLL -- ES A SZAMMAL EGYUTT, NEM CSAK "TOBB MINT NULLA".
+     *
+     * === MIERT NEM ELEG A `toBeGreaterThan(0)` (nautilus leletе, 2026-09-08) ===
+     *
+     * A regi alak azt bizonyitotta, hogy a feldolgozas talal VALAMIT. Azt nem,
+     * hogy MENNYIT. Ha a fenti regex valaha elromlik -- mas behuzas, egy `/*` a
+     * sor elejen, a `:root` blokk atrendezese -- es tiz helyett kettot talal, a
+     * kontroll ATMEGY, es a maradek nyolc token CSENDBEN orizetlen marad.
+     *
+     * Ugyanaz az alak, mint amit ugyanebben az allitasban mar egyszer
+     * megfogtunk: a kontroll a MECHANIZMUST bizonyitja, nem a HATOKORT.
+     *
+     * === MIERT PONTOS SZAM, ES NEM `>=` ===
+     *
+     * A `>=` alak a regex-romlast megfogja, a TORLEST nem: ha egy token kikerul
+     * a stiluslapbol, a tabla-sora ittmarad, es semmi nem szol. A pontos szam
+     * mind a kettot megfogja.
+     *
+     * === ES AMIT TENNI KELL, HA EZ A SZAM JOGOSAN VALTOZIK ===
+     *
+     * Ha egy TIZENEGYEDIK vilag-fuggo token kerul be, ez az allitas pirosra
+     * valt. AZ NEM HIBA, hanem a szandek: a szam atirasa elott gondold vegig,
+     * hogy az uj tokennek van-e NEVESITETT PARJA a `PAROK` vagy a `VILAGONKENT`
+     * tablaban. A szam atirasa magaban a guard kiuresitese.
+     *
+     * (A ket tabla unioja ma PONTOSAN ez a tiz token, egyik iranyban sincs
+     * tobblet. A szamot megis nem szarmaztatom beloluk: a `PAROK` szerzodese
+     * "a kilenc ertek SZEREPENKENT", nem a vilag-fuggoseg -- ma egybeesik, de
+     * nem ugyanaz az allitas, es egy jovobeli vilagos-only sor ott hamis
+     * pirosat adna itt.)
+     */
+    expect(elteroek).toHaveLength(10)
 
     /**
      * A TOKEN NEVE TABLA-SORBAN ALLJON, NE CSAK A FAJLBAN VALAHOL.
