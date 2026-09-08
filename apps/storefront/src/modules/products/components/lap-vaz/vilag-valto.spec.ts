@@ -52,12 +52,22 @@ describe("melyik világot kapja egy termék", () => {
      *
      * Így viszont mind a három név kimondva áll, és bármelyik eltűnése pirosat ad.
      */
-    expect(vilagaTermeknek(termek([{ name: "Korallok", mpath: "c_x" }]))).toBe("sotet")
-    expect(vilagaTermeknek(termek([{ name: "Halak", mpath: "c_x" }]))).toBe("sotet")
-    expect(vilagaTermeknek(termek([{ name: "Gerinctelenek", mpath: "c_x" }]))).toBe("sotet")
+    expect(vilagaTermeknek(termek([{ name: "Korallok", mpath: "c_x" }]))).toBe(
+      "sotet",
+    )
+    expect(vilagaTermeknek(termek([{ name: "Halak", mpath: "c_x" }]))).toBe(
+      "sotet",
+    )
+    expect(
+      vilagaTermeknek(termek([{ name: "Gerinctelenek", mpath: "c_x" }])),
+    ).toBe("sotet")
 
     // és a lista sem tartalmazhat többet vagy kevesebbet
-    expect([...ELO_ALLAT_GYOKEREK]).toEqual(["Korallok", "Halak", "Gerinctelenek"])
+    expect([...ELO_ALLAT_GYOKEREK]).toEqual([
+      "Korallok",
+      "Halak",
+      "Gerinctelenek",
+    ])
   })
 
   /**
@@ -66,8 +76,14 @@ describe("melyik világot kapja egy termék", () => {
    * megfordítás látszani fog.
    */
   it("az Édesvízi és a Shop 'n the Shop egyelőre világos", () => {
-    expect(vilagaTermeknek(termek([{ name: "Édesvízi akvarisztika", mpath: "c_e" }]))).toBe("vilagos")
-    expect(vilagaTermeknek(termek([{ name: "Shop 'n the Shop", mpath: "c_s" }]))).toBe("vilagos")
+    expect(
+      vilagaTermeknek(
+        termek([{ name: "Édesvízi akvarisztika", mpath: "c_e" }]),
+      ),
+    ).toBe("vilagos")
+    expect(
+      vilagaTermeknek(termek([{ name: "Shop 'n the Shop", mpath: "c_s" }])),
+    ).toBe("vilagos")
   })
 
   /**
@@ -111,15 +127,25 @@ const LEVELES_MUSZAKI = termek([
 
 /** Ugyanaz, `mpath` NELKUL: a szulo-lancon kell felmenni. */
 const LEVELES_MPATH_NELKUL = {
-  categories: [{ id: "c_sps", name: "SPS - WYSIWYG", parent_category_id: "c_kor" }],
+  categories: [
+    { id: "c_sps", name: "SPS - WYSIWYG", parent_category_id: "c_kor" },
+  ],
 } as never
 
 const KATALOGUS = [
   { id: "c_kor", name: "Korallok", parent_category_id: null },
   { id: "c_sps", name: "SPS - WYSIWYG", parent_category_id: "c_kor" },
   { id: "c_term", name: "Termékek", parent_category_id: null },
-  { id: "c_teszt", name: "Tesztek, mérés, vezérlés - Termékek", parent_category_id: "c_term" },
-  { id: "c_tds", name: "TDS, Ph mérők - Tesztek", parent_category_id: "c_teszt" },
+  {
+    id: "c_teszt",
+    name: "Tesztek, mérés, vezérlés - Termékek",
+    parent_category_id: "c_term",
+  },
+  {
+    id: "c_tds",
+    name: "TDS, Ph mérők - Tesztek",
+    parent_category_id: "c_teszt",
+  },
 ]
 
 describe("a gyökér feloldása, ha a termék nem hozta magával", () => {

@@ -133,7 +133,7 @@ function gyokerNevek(katok: Kategoria[]): string[] {
  */
 function gyokerNevKatalogusbol(
   katok: Kategoria[],
-  katalogus: Kategoria[]
+  katalogus: Kategoria[],
 ): string[] {
   if (katalogus.length === 0) return []
 
@@ -160,7 +160,9 @@ function gyokerNevKatalogusbol(
       gyokerAzonosito = mostani ?? undefined
     }
 
-    const nev = gyokerAzonosito ? nevAzonositora.get(gyokerAzonosito) : undefined
+    const nev = gyokerAzonosito
+      ? nevAzonositora.get(gyokerAzonosito)
+      : undefined
     if (nev) nevek.push(nev)
   }
   return nevek
@@ -189,7 +191,7 @@ function gyokerNevKatalogusbol(
  */
 export function vilagaTermeknek(
   termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
-  katalogus: Kategoria[] = []
+  katalogus: Kategoria[] = [],
 ): Vilag {
   const katok = (termek?.categories ?? []) as Kategoria[]
 
@@ -198,7 +200,7 @@ export function vilagaTermeknek(
     gyokerek.length > 0 ? gyokerek : gyokerNevKatalogusbol(katok, katalogus)
 
   const eloAllat = nevek.some((nev) =>
-    (ELO_ALLAT_GYOKEREK as readonly string[]).includes(nev)
+    (ELO_ALLAT_GYOKEREK as readonly string[]).includes(nev),
   )
 
   return eloAllat ? "sotet" : "vilagos"

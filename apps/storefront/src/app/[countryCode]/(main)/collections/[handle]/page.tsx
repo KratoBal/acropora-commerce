@@ -53,11 +53,11 @@ export async function generateStaticParams() {
         regions
           ?.map((r) => r.countries?.map((c) => c.iso_2))
           .flat()
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
     )
 
     const collectionHandles = collections.map(
-      (collection: StoreCollection) => collection.handle
+      (collection: StoreCollection) => collection.handle,
     )
 
     const staticParams = countryCodes
@@ -65,7 +65,7 @@ export async function generateStaticParams() {
         collectionHandles.map((handle: string | undefined) => ({
           countryCode,
           handle,
-        }))
+        })),
       )
       .flat()
 
@@ -78,7 +78,7 @@ export async function generateStaticParams() {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const collection = await getCollectionByHandle(
-    decodeHandleParam(params.handle)
+    decodeHandleParam(params.handle),
   )
 
   if (!collection) {
@@ -100,7 +100,7 @@ export default async function CollectionPage(props: Props) {
   const optionValueIds = parseOptionValueIds(searchParams)
 
   const collection = await getCollectionByHandle(
-    decodeHandleParam(params.handle)
+    decodeHandleParam(params.handle),
   ).then((collection) => collection)
 
   if (!collection) {

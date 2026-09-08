@@ -14,7 +14,10 @@ type Tab = {
 const TABLE_PATTERN = /<table\b[^>]*>[\s\S]*?<\/table\s*>/gi
 
 const hasVisibleContent = (html: string) =>
-  html.replace(/<[^>]+>/g, "").replace(/&nbsp;/gi, " ").trim().length > 0
+  html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim().length > 0
 
 /**
  * The description has already been sanitized before it reaches the storefront.
@@ -29,7 +32,9 @@ const ProductDescriptionTabs = ({
   const prose = description?.replace(TABLE_PATTERN, "") ?? ""
   const tabs: Tab[] = [
     ...(hasVisibleContent(prose) ? [{ label: "Leírás", html: prose }] : []),
-    ...(tables.length ? [{ label: "Műszaki adatok", html: tables.join("") }] : []),
+    ...(tables.length
+      ? [{ label: "Műszaki adatok", html: tables.join("") }]
+      : []),
   ]
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -47,7 +52,11 @@ const ProductDescriptionTabs = ({
   const activeTab = tabs[activeIndex] ?? tabs[0]
   return (
     <div data-testid="product-description-tabs">
-      <div className="flex border-b border-ui-border-base" role="tablist" aria-label="Termékadatok">
+      <div
+        className="flex border-b border-ui-border-base"
+        role="tablist"
+        aria-label="Termékadatok"
+      >
         {tabs.map((tab, index) => {
           const selected = index === activeIndex
           return (

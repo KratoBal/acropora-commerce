@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
@@ -81,11 +81,11 @@ describe("a kosársor termék-objektuma", () => {
     const eredmeny = cartLineProduct({
       product: { metadata: { unique_piece: "true" }, collection_id: "coll_1" },
       variant: { product: { id: "prod_1" } },
-    });
+    })
 
-    expect(eredmeny.metadata).toEqual({ unique_piece: "true" });
-    expect(eredmeny.collection_id).toBe("coll_1");
-  });
+    expect(eredmeny.metadata).toEqual({ unique_piece: "true" })
+    expect(eredmeny.collection_id).toBe("coll_1")
+  })
 
   /**
    * ES A MASIK IRANY, KULON ALLITASSAL: ha az `item.product` HIANYZIK, a
@@ -93,15 +93,15 @@ describe("a kosársor termék-objektuma", () => {
    * ado" valtozat is zold maradna.
    */
   it("item.product híján a változat alattira esik vissza", () => {
-    expect(
-      cartLineProduct({ variant: { product: { id: "prod_1" } } }),
-    ).toEqual({ id: "prod_1" });
-  });
+    expect(cartLineProduct({ variant: { product: { id: "prod_1" } } })).toEqual(
+      { id: "prod_1" },
+    )
+  })
 
   it("egyik sincs: üres objektum, nem hibázik", () => {
-    expect(cartLineProduct({})).toEqual({});
-    expect(cartLineProduct({ variant: null })).toEqual({});
-  });
+    expect(cartLineProduct({})).toEqual({})
+    expect(cartLineProduct({ variant: null })).toEqual({})
+  })
 
   /**
    * ES A VEGE: a jelzo TENYLEG atmegy a valasztason. Ez koti ossze a ket
@@ -111,16 +111,16 @@ describe("a kosársor termék-objektuma", () => {
     const sor = {
       product: { metadata: { unique_piece: true } },
       variant: { product: { id: "prod_1" } },
-    };
+    }
 
     expect(
       cartLineStateOf({
         productMetadata: cartLineProduct(sor).metadata,
         stillAvailable: true,
       }),
-    ).toBe("EGYEDI");
-  });
-});
+    ).toBe("EGYEDI")
+  })
+})
 
 /**
  * ES HOGY A SOR KOMPONENSE TENYLEG A FUGGVENYT HASZNALJA.
@@ -136,17 +136,17 @@ describe("a kosársor komponense a közös választást használja", () => {
   const forras = readFileSync(
     join(process.cwd(), "src/modules/cart/components/item/index.tsx"),
     "utf-8",
-  );
+  )
 
   /** ISMERT POZITIV KONTROLL: tenyleg a kosarsor komponenset olvastuk be. */
   it("a forrás olvasható, és ez tényleg a kosársor", () => {
-    expect(forras).toContain("cartLineStateOf");
-    expect(forras).toContain("data-testid=\"product-row\"");
-  });
+    expect(forras).toContain("cartLineStateOf")
+    expect(forras).toContain('data-testid="product-row"')
+  })
 
   it("nem a változat alatti terméket olvassa", () => {
-    expect(forras).toContain("cartLineProduct(item)");
-    expect(forras).not.toContain("item.variant?.product?.metadata");
-    expect(forras).not.toContain("similarItemsHref(item.variant?.product");
-  });
-});
+    expect(forras).toContain("cartLineProduct(item)")
+    expect(forras).not.toContain("item.variant?.product?.metadata")
+    expect(forras).not.toContain("similarItemsHref(item.variant?.product")
+  })
+})

@@ -47,13 +47,13 @@ describe("pickupOnlyLinesFromClass", () => {
   const sorok = [
     { id: "item_01", title: "Acropora tenuis" },
     { id: "item_02", title: "Tengeri só 20 kg" },
-  ];
+  ]
 
   it("megnevezi azt a sort, amelyik a korlátozást előidézte", () => {
-    expect(
-      pickupOnlyLinesFromClass("PICKUP_ONLY", "item_01", sorok),
-    ).toEqual(["Acropora tenuis"]);
-  });
+    expect(pickupOnlyLinesFromClass("PICKUP_ONLY", "item_01", sorok)).toEqual([
+      "Acropora tenuis",
+    ])
+  })
 
   /**
    * ES NEM A LISTA ELSO SORAT, NEM IS AZ OSSZESET. Ha a forras a masodik
@@ -61,23 +61,23 @@ describe("pickupOnlyLinesFromClass", () => {
    * ami valojaban talalgatas.
    */
   it("a forrás szerinti sort nevezi meg, nem az elsőt", () => {
-    expect(
-      pickupOnlyLinesFromClass("PICKUP_ONLY", "item_02", sorok),
-    ).toEqual(["Tengeri só 20 kg"]);
-  });
+    expect(pickupOnlyLinesFromClass("PICKUP_ONLY", "item_02", sorok)).toEqual([
+      "Tengeri só 20 kg",
+    ])
+  })
 
   it("más szállítási osztálynál nem nevez meg semmit", () => {
-    expect(pickupOnlyLinesFromClass("NORMAL", "item_01", sorok)).toEqual([]);
-  });
+    expect(pickupOnlyLinesFromClass("NORMAL", "item_01", sorok)).toEqual([])
+  })
 
   /**
    * A VEGPONT NEM VALASZOLT. Iranyaban ez a csendesebb tevedes: nem allitunk
    * korlatozast, amirol nem tudunk.
    */
   it("ismeretlen osztálynál nem nevez meg semmit", () => {
-    expect(pickupOnlyLinesFromClass(null, null, sorok)).toEqual([]);
-    expect(pickupOnlyLinesFromClass(undefined, undefined, sorok)).toEqual([]);
-  });
+    expect(pickupOnlyLinesFromClass(null, null, sorok)).toEqual([])
+    expect(pickupOnlyLinesFromClass(undefined, undefined, sorok)).toEqual([])
+  })
 
   /**
    * A HATARESET: az osztaly PICKUP_ONLY, de a forras nem talalhato a kosarban.
@@ -85,26 +85,26 @@ describe("pickupOnlyLinesFromClass", () => {
    * `pickupNoticeVisible` mondja meg, kulon.
    */
   it("nem található forrásnál üres listát ad, de az osztály marad", () => {
-    expect(
-      pickupOnlyLinesFromClass("PICKUP_ONLY", "item_99", sorok),
-    ).toEqual([]);
-    expect(pickupNoticeVisible("PICKUP_ONLY")).toBe(true);
-  });
-});
+    expect(pickupOnlyLinesFromClass("PICKUP_ONLY", "item_99", sorok)).toEqual(
+      [],
+    )
+    expect(pickupNoticeVisible("PICKUP_ONLY")).toBe(true)
+  })
+})
 
 describe("pickupNoticeVisible", () => {
   it("a bolti átvételes osztálynál igaz", () => {
-    expect(pickupNoticeVisible("PICKUP_ONLY")).toBe(true);
-  });
+    expect(pickupNoticeVisible("PICKUP_ONLY")).toBe(true)
+  })
 
   it("minden más osztálynál hamis", () => {
-    expect(pickupNoticeVisible("NORMAL")).toBe(false);
-    expect(pickupNoticeVisible("HEAVY")).toBe(false);
-    expect(pickupNoticeVisible("NO_FOXPOST")).toBe(false);
-    expect(pickupNoticeVisible(null)).toBe(false);
-    expect(pickupNoticeVisible(undefined)).toBe(false);
-  });
-});
+    expect(pickupNoticeVisible("NORMAL")).toBe(false)
+    expect(pickupNoticeVisible("HEAVY")).toBe(false)
+    expect(pickupNoticeVisible("NO_FOXPOST")).toBe(false)
+    expect(pickupNoticeVisible(null)).toBe(false)
+    expect(pickupNoticeVisible(undefined)).toBe(false)
+  })
+})
 
 /**
  * A BEKOTES MERHETO RESZE. A pozitiv eset elol: enelkul a tobbi allitas egy
@@ -114,7 +114,7 @@ describe("pickupNoticeProps", () => {
   const TETELEK = [
     { id: "item_01", title: "Kicsi", product_title: "Acropora tenuis" },
     { id: "item_02", title: "20 kg", product_title: "Tengeri só" },
-  ];
+  ]
 
   it("látható sávot ad, a kiváltó tétel nevével", () => {
     expect(
@@ -122,8 +122,8 @@ describe("pickupNoticeProps", () => {
         shipping_class: "PICKUP_ONLY",
         shipping_class_source: "item_01",
       }),
-    ).toEqual({ visible: true, lines: ["Acropora tenuis"] });
-  });
+    ).toEqual({ visible: true, lines: ["Acropora tenuis"] })
+  })
 
   /**
    * A VALTOZAT NEVE NEM A TERMEK NEVE. Ha a lekepezes a sor `title` mezojet
@@ -133,11 +133,11 @@ describe("pickupNoticeProps", () => {
     const eredmeny = pickupNoticeProps(TETELEK, {
       shipping_class: "PICKUP_ONLY",
       shipping_class_source: "item_02",
-    });
+    })
 
-    expect(eredmeny.lines).toEqual(["Tengeri só"]);
-    expect(eredmeny.lines).not.toEqual(["20 kg"]);
-  });
+    expect(eredmeny.lines).toEqual(["Tengeri só"])
+    expect(eredmeny.lines).not.toEqual(["20 kg"])
+  })
 
   /** Ha nincs termeknev, a sor neve a tartalek -- nem ures sor. */
   it("terméknév híján a sor nevére esik vissza", () => {
@@ -146,8 +146,8 @@ describe("pickupNoticeProps", () => {
         shipping_class: "PICKUP_ONLY",
         shipping_class_source: "item_03",
       }),
-    ).toEqual({ visible: true, lines: ["Egyedi darab"] });
-  });
+    ).toEqual({ visible: true, lines: ["Egyedi darab"] })
+  })
 
   it("más osztálynál nem látszik és nem nevez meg semmit", () => {
     expect(
@@ -155,20 +155,20 @@ describe("pickupNoticeProps", () => {
         shipping_class: "NORMAL",
         shipping_class_source: null,
       }),
-    ).toEqual({ visible: false, lines: [] });
-  });
+    ).toEqual({ visible: false, lines: [] })
+  })
 
   /** A vegpont nem valaszolt: nem allitunk korlatozast, amirol nem tudunk. */
   it("hiányzó osztálynál nem látszik", () => {
     expect(pickupNoticeProps(TETELEK, null)).toEqual({
       visible: false,
       lines: [],
-    });
+    })
     expect(pickupNoticeProps(TETELEK, undefined)).toEqual({
       visible: false,
       lines: [],
-    });
-  });
+    })
+  })
 
   /** A hatareset egyben: latszik, de nincs mit megnevezni. */
   it("nem található forrásnál látszik, megnevezés nélkül", () => {
@@ -177,6 +177,6 @@ describe("pickupNoticeProps", () => {
         shipping_class: "PICKUP_ONLY",
         shipping_class_source: "item_99",
       }),
-    ).toEqual({ visible: true, lines: [] });
-  });
-});
+    ).toEqual({ visible: true, lines: [] })
+  })
+})

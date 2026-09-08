@@ -83,7 +83,7 @@ export const listProducts = async ({
         headers,
         next,
         cache: "force-cache",
-      }
+      },
     )
     .then(({ products, count }) => {
       const nextPage = count > offset + limit ? pageParam + 1 : null
@@ -160,7 +160,7 @@ export const listProductsWithSort = async ({
 }> => {
   const limit = queryParams?.limit || 12
   const optionFilters = Array.from(
-    new Set((optionValueIds || []).filter(Boolean))
+    new Set((optionValueIds || []).filter(Boolean)),
   )
 
   const kozosParams = {

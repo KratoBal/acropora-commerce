@@ -12,7 +12,9 @@ import {
 
 describe("készlet-állapot", () => {
   it("készleten lévő termék KAPHATÓ", () => {
-    expect(availabilityOf({ inStock: true, uniquePiece: false })).toBe("KAPHATO")
+    expect(availabilityOf({ inStock: true, uniquePiece: false })).toBe(
+      "KAPHATO",
+    )
   })
 
   /**
@@ -38,7 +40,7 @@ describe("készlet-állapot", () => {
    */
   it("jelző nélkül ELFOGYOTT, soha nem ELADVA", () => {
     expect(availabilityOf({ inStock: false, uniquePiece: false })).toBe(
-      "ELFOGYOTT"
+      "ELFOGYOTT",
     )
   })
 })
@@ -158,7 +160,9 @@ describe("a továbbvivő gomb címe", () => {
    */
   it("besorolás nélkül a bolt főoldalára visz", () => {
     expect(similarItemsHref({})).toBe("/store")
-    expect(similarItemsHref({ collection: null, categories: [] })).toBe("/store")
+    expect(similarItemsHref({ collection: null, categories: [] })).toBe(
+      "/store",
+    )
   })
 })
 

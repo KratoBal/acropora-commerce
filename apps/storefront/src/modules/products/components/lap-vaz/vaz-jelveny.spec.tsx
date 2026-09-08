@@ -83,7 +83,9 @@ describe("az egyedi példány jelvénye a vázon", () => {
     vazzal(true)
 
     const fotoDoboz = document.querySelector('[data-vaz-szakasz="foto"]')
-    expect(fotoDoboz?.querySelector('[data-testid="unique-piece-badge"]')).toBeTruthy()
+    expect(
+      fotoDoboz?.querySelector('[data-testid="unique-piece-badge"]'),
+    ).toBeTruthy()
   })
 
   /**

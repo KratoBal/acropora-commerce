@@ -11,7 +11,7 @@ import { clx } from "@modules/common/components/ui"
  * TISZTA MEGJELENÍTÉS: nem tudja, melyik oldalon áll, csak azt, hogy hányadik
  * lépés aktív. Így a fizetési menet további lapjai is használhatják.
  */
-export const CART_STEPS = ["Kosár", "Adatok", "Fizetés"] as const;
+export const CART_STEPS = ["Kosár", "Adatok", "Fizetés"] as const
 
 export default function StepIndicator({
   active = 0,

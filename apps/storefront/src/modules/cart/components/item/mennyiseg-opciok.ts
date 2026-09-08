@@ -35,13 +35,13 @@ export function kosarMennyisegOpciok(
   jelenlegi: number,
   maximum = 10,
 ): number[] {
-  const also = Math.max(1, Math.floor(minimum) || 1);
-  const darab = Math.max(1, Math.floor(maximum) || 1);
+  const also = Math.max(1, Math.floor(minimum) || 1)
+  const darab = Math.max(1, Math.floor(maximum) || 1)
 
-  const opciok = new Set<number>();
-  for (let i = 0; i < darab; i += 1) opciok.add(also + i);
+  const opciok = new Set<number>()
+  for (let i = 0; i < darab; i += 1) opciok.add(also + i)
   if (Number.isFinite(jelenlegi) && jelenlegi > 0) {
-    opciok.add(Math.floor(jelenlegi));
+    opciok.add(Math.floor(jelenlegi))
   }
-  return Array.from(opciok).sort((a, b) => a - b);
+  return Array.from(opciok).sort((a, b) => a - b)
 }

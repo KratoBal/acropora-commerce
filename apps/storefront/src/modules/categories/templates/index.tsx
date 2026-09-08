@@ -76,11 +76,17 @@ export default function CategoryTemplate({
         {children.length > 0 && (
           <div className="mb-8 text-base-large">
             {hasManyChildren && (
-              <a href="#all-subcategories" className="mb-3 inline-block text-sm underline">
+              <a
+                href="#all-subcategories"
+                className="mb-3 inline-block text-sm underline"
+              >
                 Mind a {children.length} megtekintése
               </a>
             )}
-            <ul id="all-subcategories" className={`grid grid-cols-1 gap-2 small:grid-cols-2 medium:grid-cols-4 ${hasManyChildren ? "max-h-64 overflow-y-auto" : ""}`}>
+            <ul
+              id="all-subcategories"
+              className={`grid grid-cols-1 gap-2 small:grid-cols-2 medium:grid-cols-4 ${hasManyChildren ? "max-h-64 overflow-y-auto" : ""}`}
+            >
               {children.map((c) => (
                 <li key={c.id}>
                   <InteractiveLink href={`/categories/${c.handle}`}>

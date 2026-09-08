@@ -16,10 +16,11 @@ import { HttpTypes } from "@medusajs/types"
  * vissza. Ez a biztonságos irány: egy hibás metaadat ne zárja el a terméket.
  */
 export function minimumOrderQuantity(
-  product: Pick<HttpTypes.StoreProduct, "metadata"> | null | undefined
+  product: Pick<HttpTypes.StoreProduct, "metadata"> | null | undefined,
 ): number {
-  const nyers = (product?.metadata as Record<string, unknown> | null | undefined)
-    ?.unas_minimum_order_quantity
+  const nyers = (
+    product?.metadata as Record<string, unknown> | null | undefined
+  )?.unas_minimum_order_quantity
 
   if (typeof nyers !== "string" && typeof nyers !== "number") {
     return 1

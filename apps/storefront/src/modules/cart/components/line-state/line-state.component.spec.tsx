@@ -47,9 +47,7 @@ describe("a kosársor állapotának kirajzolása", () => {
    * NEM allhat ott: az egy megvehető peldanyrol beszelne.
    */
   it("ELKELT állapotban továbbvivő hivatkozás áll, ígéret-mondat nélkül", () => {
-    render(
-      <CartLineState state="ELKELT" similarHref="/collections/wysiwyg" />,
-    )
+    render(<CartLineState state="ELKELT" similarHref="/collections/wysiwyg" />)
 
     expect(screen.getByTestId("cart-line-elkelt")).toHaveTextContent("Elkelt")
     expect(

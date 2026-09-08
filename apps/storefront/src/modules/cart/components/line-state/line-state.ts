@@ -10,16 +10,16 @@ import { uniquePieceOf } from "@modules/products/components/stock-state/availabi
  *   EGYEDI   egy darab, ez a példány: a mennyiség NEM növelhető
  *   ELKELT   amíg a kosárban volt, valaki más megvette
  */
-export type CartLineState = "NORMAL" | "EGYEDI" | "ELKELT";
+export type CartLineState = "NORMAL" | "EGYEDI" | "ELKELT"
 
 export interface CartLineInput {
   /** A termék metaadata a boltból: innen jön a kifejezett jelző. */
-  productMetadata: unknown;
+  productMetadata: unknown
   /**
    * MEGVEHETŐ-E MÉG. A kosársornál ez NEM ugyanaz a kérdés, mint a terméklapon:
    * ott a lap betöltésekor nézzük, itt a vevő döntése UTÁN.
    */
-  stillAvailable: boolean;
+  stillAvailable: boolean
 }
 
 /**
@@ -33,9 +33,9 @@ export function cartLineStateOf({
   productMetadata,
   stillAvailable,
 }: CartLineInput): CartLineState {
-  const egyedi = uniquePieceOf(productMetadata);
-  if (egyedi && !stillAvailable) return "ELKELT";
-  return egyedi ? "EGYEDI" : "NORMAL";
+  const egyedi = uniquePieceOf(productMetadata)
+  if (egyedi && !stillAvailable) return "ELKELT"
+  return egyedi ? "EGYEDI" : "NORMAL"
 }
 
 /**
@@ -50,10 +50,10 @@ export const CART_LINE_LABEL: Record<CartLineState, string> = {
   NORMAL: "",
   EGYEDI: "1 db · Egyedi",
   ELKELT: "Elkelt",
-};
+}
 
 /** A mennyiség-léptető helyén álló szöveg egyedi példánynál. */
-export const NOT_INCREMENTABLE = "Nem növelhető";
+export const NOT_INCREMENTABLE = "Nem növelhető"
 
 /**
  * A WYSIWYG-ígéret KOSÁR-BELI alakja, a tervből szó szerint.
@@ -62,10 +62,10 @@ export const NOT_INCREMENTABLE = "Nem növelhető";
  * még választ, itt már a kosarába tette, ezért a mondat a KOSÁRRÓL beszél.
  */
 export const UNIQUE_IN_CART_PROMISE =
-  "A fotón pontosan ezt a példányt látod: ez kerül a kosaradba";
+  "A fotón pontosan ezt a példányt látod: ez kerül a kosaradba"
 
 /** Az elkelt példány sorában a továbbvivő hivatkozás felirata. */
-export const SIMILAR_PIECES_LABEL = "Hasonló példányok";
+export const SIMILAR_PIECES_LABEL = "Hasonló példányok"
 
 /**
  * MELYIK TERMEK-OBJEKTUMOT OLVASSA EGY KOSAR-SOR.
@@ -101,20 +101,20 @@ export const SIMILAR_PIECES_LABEL = "Hasonló példányok";
  * NEV SZERINT pirosodik.
  */
 export interface KosarSorTermekkel {
-  product?: unknown;
-  variant?: { product?: unknown } | null;
+  product?: unknown
+  variant?: { product?: unknown } | null
 }
 
 export function cartLineProduct(
   item: KosarSorTermekkel,
 ): Record<string, unknown> {
-  const teljes = item.product;
+  const teljes = item.product
   if (teljes && typeof teljes === "object") {
-    return teljes as Record<string, unknown>;
+    return teljes as Record<string, unknown>
   }
-  const valtozaton = item.variant?.product;
+  const valtozaton = item.variant?.product
   if (valtozaton && typeof valtozaton === "object") {
-    return valtozaton as Record<string, unknown>;
+    return valtozaton as Record<string, unknown>
   }
-  return {};
+  return {}
 }

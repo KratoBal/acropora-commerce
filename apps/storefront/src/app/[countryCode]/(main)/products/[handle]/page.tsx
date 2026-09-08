@@ -19,7 +19,7 @@ type Props = {
 export async function generateStaticParams() {
   try {
     const countryCodes = await listRegions().then((regions) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
+      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat(),
     )
 
     if (!countryCodes) {
@@ -45,7 +45,7 @@ export async function generateStaticParams() {
         countryData.products.map((product) => ({
           countryCode: countryData.country,
           handle: product.handle,
-        }))
+        })),
       )
       .filter((param) => param.handle)
   } catch (error) {
@@ -55,7 +55,7 @@ export async function generateStaticParams() {
 
 function getImagesForVariant(
   product: HttpTypes.StoreProduct,
-  selectedVariantId?: string
+  selectedVariantId?: string,
 ) {
   if (!selectedVariantId || !product.variants) {
     return product.images
@@ -137,7 +137,9 @@ export default async function ProductPage(props: Props) {
   }
 
   const images = getImagesForVariant(pricedProduct, selectedVariantId)
-  const categories = await listCategories({ fields: "id,name,handle,parent_category_id" })
+  const categories = await listCategories({
+    fields: "id,name,handle,parent_category_id",
+  })
 
   return (
     <ProductTemplate

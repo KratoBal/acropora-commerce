@@ -46,8 +46,8 @@
  * semmi, csak magabiztosabb.
  */
 export interface CartLineName {
-  id: string;
-  title: string;
+  id: string
+  title: string
 }
 
 /**
@@ -65,9 +65,9 @@ export function pickupOnlyLinesFromClass(
   shippingClassSource: string | null | undefined,
   lines: readonly CartLineName[],
 ): string[] {
-  if (shippingClass !== "PICKUP_ONLY") return [];
-  const sor = lines.find((line) => line.id === shippingClassSource);
-  return sor ? [sor.title] : [];
+  if (shippingClass !== "PICKUP_ONLY") return []
+  const sor = lines.find((line) => line.id === shippingClassSource)
+  return sor ? [sor.title] : []
 }
 
 /**
@@ -90,19 +90,19 @@ export function pickupOnlyLinesFromClass(
  * de nem allitom, hogy meg van merve.
  */
 export interface PickupNoticeProps {
-  visible: boolean;
-  lines: string[];
+  visible: boolean
+  lines: string[]
 }
 
 export function pickupNoticeProps(
   items: readonly {
-    id: string;
-    title?: string | null;
-    product_title?: string | null;
+    id: string
+    title?: string | null
+    product_title?: string | null
   }[],
   shippingClass?: {
-    shipping_class: string;
-    shipping_class_source: string | null;
+    shipping_class: string
+    shipping_class_source: string | null
   } | null,
 ): PickupNoticeProps {
   return {
@@ -120,21 +120,21 @@ export function pickupNoticeProps(
         title: item.product_title ?? item.title ?? "",
       })),
     ),
-  };
+  }
 }
 
 /** Megjelenjen-e a sav egyaltalan. */
 export function pickupNoticeVisible(
   shippingClass: string | null | undefined,
 ): boolean {
-  return shippingClass === "PICKUP_ONLY";
+  return shippingClass === "PICKUP_ONLY"
 }
 
 /** A sáv címe. Ténykozlés, nem tiltás. */
-export const PICKUP_TITLE = "Élő állat a kosárban";
+export const PICKUP_TITLE = "Élő állat a kosárban"
 
 /** A mondat, ami megmondja, mi történik. */
-export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át.";
+export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át."
 
 /**
  * A MAGYARÁZAT, ÉS EZ NEM UDVARIASSÁG.
@@ -144,11 +144,11 @@ export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át.";
  * kimondva, a korlátozás önkényesnek látszik.
  */
 export const PICKUP_REASON =
-  "Egy élő példányt nem adunk fel csomagként, ezért a rendelés többi tételét is a boltban adjuk át.";
+  "Egy élő példányt nem adunk fel csomagként, ezért a rendelés többi tételét is a boltban adjuk át."
 
 /** A bolt címe és nyitvatartása, a tervből. */
-export const SHOP_ADDRESS = "1106 Budapest, Pesti Gábor utca 35";
-export const SHOP_HOURS = "Kedd–Péntek 10–18, Szombat 10–14";
+export const SHOP_ADDRESS = "1106 Budapest, Pesti Gábor utca 35"
+export const SHOP_HOURS = "Kedd–Péntek 10–18, Szombat 10–14"
 
 /** Meddig tartjuk fenn a példányt. A tervben álló ígéret. */
-export const HOLD_PROMISE = "Az élő példányt 5 munkanapig tartjuk fenn.";
+export const HOLD_PROMISE = "Az élő példányt 5 munkanapig tartjuk fenn."
