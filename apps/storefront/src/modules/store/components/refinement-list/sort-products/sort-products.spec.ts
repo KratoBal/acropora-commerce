@@ -89,8 +89,25 @@ describe("a store lap címe", () => {
     expect(forras).toContain('data-testid="store-page-title"')
   })
 
-  it("a lap címe magyarul áll", () => {
-    expect(forras).toContain(">Minden termék<")
-    expect(forras).not.toContain(">All products<")
+  /**
+   * A CIM MOSTANTOL KET AGU (2026-09-08), es ezert nem a `>szoveg<` alakra mer.
+   *
+   * A `/store` lap kereshetove valt, tehat a cim vagy a kereses szoveget
+   * mutatja, vagy a teljes listaet. A regi allitas a `>Minden termék<` alakra
+   * kereseett, ami egy JSX KIFEJEZES melle nem illik -- es jogosan pirosodott
+   * ki, amikor a cim kifejezes lett.
+   *
+   * A MEGJEGYZESEKET KISZEDJUK: enelkul egy magyarazo bekezdes, ami idezi a
+   * cimet, kielegitene a sajat allitasat. Ez ma tobbszor is elofordult.
+   */
+  it("a lap címe magyarul áll, mindkét ágon", () => {
+    const kod = forras
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "")
+
+    expect(kod).toContain('"Minden termék"')
+    expect(kod).toContain("Keresés:")
+    expect(kod).not.toContain("All products")
+    expect(kod).not.toContain("Search:")
   })
 })
