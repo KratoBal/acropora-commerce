@@ -201,6 +201,38 @@ describe("ki kapja a valódi galériát a fotó slotba", () => {
     expect(hasznaljaVazat(termek("Termékek"))).toBe(true)
     expect(galeriatAdunkAt(termek("Termékek"))).toBe(false)
   })
+
+  /**
+   * EGYETLEN VILAG-FELOLDAS SEM HAGYHATJA EL A KATALOGUST.
+   *
+   * A `vilagaTermeknek` masodik argumentuma a teljes kategoria-lista. Nelkule a
+   * fuggveny a termek SAJAT kategoriaira szorul, es egy LEVELES alaknal (amikor
+   * a Medusa nem kuldi vissza az os-lancot) VILAGOSNAK mondja az elo allatot.
+   *
+   * A KAR NEM EGY DOBOZ: mind a HAROM fogyasztoja ebbol az egy fuggvenybol
+   * dolgozik (a kapu, a galeria-atadas es a `vilag=` prop), tehat egy hianyos
+   * lista egyszerre viszi el a sotet elrendezest, a JELVENYT es az IGERETET.
+   * (acrobot merese, msg 15007: "egyetlen hianyos lista mind a harmat elviszi".)
+   *
+   * MIERT AZ ARANY, ES NEM A DARABSZAM: egy "pontosan harom hivas" allitas egy
+   * legitim NEGYEDIK fogyasztonal is pirosra valtana, es aki ilyet lat, atirja
+   * a szamot ahelyett, hogy gondolkodna. Az INVARIANS az, hogy EGYIK hivas sem
+   * hagyja el a katalogust -- egy uj fogyaszto akkor is atmegy, ha helyes.
+   *
+   * ES AMIERT NEM A SABLONBAN MEREM: ott KET helyen all
+   * `galeriatAdunkAt(product, categories)`, es a meglevo `toContain` allitas az
+   * ELSOT talalja meg -- a masodikbol kieso katalogus mellett is zold maradna.
+   * A valodi elagazas itt van, egy fajlban, harom soron.
+   */
+  it("egyetlen világ-feloldás sem hagyja el a katalógust", () => {
+    const forras = readFileSync(join(__dirname, "index.tsx"), "utf-8")
+    const hivasok = forras.match(/vilagaTermeknek\([^)]*\)/g) ?? []
+
+    /** ISMERT POZITIV KONTROLL: tenyleg talalunk hivasokat, nem ures a halmaz. */
+    expect(hivasok.length).toBeGreaterThan(0)
+
+    expect(hivasok.filter((h) => h.includes(","))).toHaveLength(hivasok.length)
+  })
 })
 
 /**
