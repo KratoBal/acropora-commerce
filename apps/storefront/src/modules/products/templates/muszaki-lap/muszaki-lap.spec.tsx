@@ -92,8 +92,29 @@ describe("ki kapja már a vázat", () => {
  * a sablon forrasaban all, es az olvashato. A halo hatara ezzel kimondva: azt
  * meri, MIT AD AT a sablon, nem azt, mi jelenik meg a kepernyon.
  */
+/**
+ * A SZAMOLAS A KODOT NEZI, NEM A KOMMENTEKET -- ES EZT EGY VALODI ESET HIVTA ELO.
+ *
+ * Ezek az allitasok a forras SZOVEGEBEN szamoltak `<RelatedProducts`
+ * elofordulast. Amikor a sablonba komment kerult, ami IDEZI ezt a mintat (a
+ * holt ag dokumentaciojaba, epp arrol, hogy mit nem mer ott semmi), a szam
+ * kettorol haromra ment, es a ket allitas pirosra valt -- holott a KOD nem
+ * valtozott.
+ *
+ * A hiba nem a kommenté: egy kereses, ami a kommenteket is szamolja, a MULTAT
+ * meri a jelen helyett (acrobot megfogalmazasa, msg_id 14823). Ezert a szamolas
+ * elott a komment-blokkok es a sorvegi kommentek kikerulnek.
+ *
+ * A HATARA VALTOZATLAN: ez tovabbra is FORRAST olvas, nem megrenderelt lapot.
+ * Azt meri, MIT AD AT a sablon, nem azt, mi jelenik meg.
+ */
+const kodSzoveg = (szoveg: string) =>
+  szoveg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+
 describe("a hasonló lista fejléce ágnként", () => {
-  const forras = readFileSync(join(__dirname, "..", "index.tsx"), "utf-8")
+  const forras = kodSzoveg(
+    readFileSync(join(__dirname, "..", "index.tsx"), "utf-8"),
+  )
 
   /** ISMERT POZITIV KONTROLL: a fájlt tényleg beolvastuk, és tényleg ez az. */
   it("a sablon forrása olvasható, és mindkét ág renderel hasonló listát", () => {
@@ -154,7 +175,9 @@ describe("ki kapja a valódi galériát a fotó slotba", () => {
  * MIT AD AT a sablon, nem azt, mi jelenik meg a kepernyon.
  */
 describe("a sablon átadja-e a fotó slotot", () => {
-  const forras = readFileSync(join(__dirname, "..", "index.tsx"), "utf-8")
+  const forras = kodSzoveg(
+    readFileSync(join(__dirname, "..", "index.tsx"), "utf-8"),
+  )
 
   /**
    * ISMERT POZITIV KONTROLL: a fajl tenyleg ez, es tenyleg all benne galeria.

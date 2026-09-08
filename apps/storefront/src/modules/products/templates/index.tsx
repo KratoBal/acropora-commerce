@@ -165,6 +165,33 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     )
   }
 
+  /**
+   * A REGI AG -- MA EGYETLEN SORA SEM FUT, ES EZ NEM ELIRAS.
+   *
+   * A `hasznaljaVazat` ma FELTETEL NELKUL igazat ad: vilagos vilagra igaz, es
+   * minden mas esetben a kapcsolot adja vissza, ami BE van kapcsolva. Vagyis
+   * ide a vezerles nem jut el -- sem a `ProductActions`, sem a
+   * `MobileActions`, sem a `ProductActionsWrapper` nem renderelodik.
+   *
+   * NEM TOROLJUK: ez a visszaut, ha a kapcsolo valaha visszabillen. De a "ma
+   * nem fut" allitas magaban ELAVUL, ezert ide tartozik a ket dolog, ami
+   * nelkul a kovetkezo olvasonal "torolheto" lesz belole:
+   *
+   *   MI KAPCSOLJA VISSZA
+   *     `ELO_ALLAT_VAZON` a `templates/muszaki-lap/index.tsx` 56. soran.
+   *     Ha az hamisra valt, ez az ag AZONNAL el, minden elo allat lapjan.
+   *
+   *   MIT NEM MER MA SEMMI EZEN AZ AGON
+   *     EGYETLEN spec sem rendereli a `ProductTemplate`-et. Ami rola szol
+   *     (`muszaki-lap.spec.tsx`), az a FORRAS SZOVEGET olvassa es szamolja --
+   *     vagyis zold marad akkor is, ha ez az ag torott. A kapcsolo
+   *     visszabillentesekor tehat NINCS halo alatta: az elso dolog egy olyan
+   *     allitas legyen, ami RENDERELI.
+   *
+   * ES AMIERT EZ MA MEGIS SPOROL: aki egy javitast vegez a termeklapon, ezen az
+   * agon NEM kell atvezetnie. Egy "ott is javitani kell" kor felesleges --
+   * egeszen addig, amig a kapcsolo all.
+   */
   return (
     <>
       <div className="content-container pt-6">
