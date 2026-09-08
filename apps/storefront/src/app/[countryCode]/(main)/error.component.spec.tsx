@@ -34,7 +34,9 @@ describe("a nyilvanos lapok hiba-hatara", () => {
     render(<HibaHatar error={hiba()} reset={vi.fn()} />)
 
     expect(screen.getByText("Hiba történt")).toBeTruthy()
-    expect(screen.getByText(/Az oldal betöltése közben hiba történt/)).toBeTruthy()
+    expect(
+      screen.getByText(/Az oldal betöltése közben hiba történt/),
+    ).toBeTruthy()
     expect(screen.getByText("Vissza a főoldalra")).toBeTruthy()
     expect(screen.getByText("Termékek")).toBeTruthy()
   })
