@@ -1,6 +1,7 @@
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies"
+import { listProducts } from "./products"
 
 /**
  * A LEKERDEZES EGY LAPJA. A Medusa alapertelmezett `limit` erteke szaz, es a
@@ -199,4 +200,84 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
       },
     )
     .then(({ product_categories }) => product_categories[0])
+}
+
+/**
+ * A GYOKER-KATEGORIAK, AMIKBEN VAN TERMEK -- A FEJLEC MENUJEHEZ.
+ *
+ * MIERT NEM ELEG A GYOKEREK LISTAJA (acrobot merese, 2026-09-08): a hat
+ * gyokerbol NEGY hordoz termeket a teljes reszfajaban.
+ *
+ *     Termekek              1337
+ *     Halak                  125
+ *     Gerinctelenek           28
+ *     Korallok                 8
+ *     Shop 'n the Shop         0
+ *     Edesvizi akvarisztika    0
+ *
+ * ES A SZURO NEM KOZMETIKAI. Egy ures kategoria a menuben a vevot egy ures
+ * lapra viszi, es az rosszabb, mint ha ott sem lenne: a menu azt igeri, hogy
+ * van mit nezni.
+ *
+ * A SZAM A TELJES RESZFARA ERTENDO, nem a kozvetlenul rakotott termekekre.
+ * Az "Edesvizi akvarisztika" ag onmaga plusz negy alkategoria, es MIND ures --
+ * a kozvetlen szamlalas ugyanezt adna, de a "Termekek" gyokeret 1337 helyett
+ * 9-nek latna, es kiesne a legfontosabb tetel.
+ *
+ * === A LEKERDEZESEK SZAMA SZANDEKOSAN ALACSONY ===
+ *
+ * A fejlec MINDEN lapon fut. Ezert a kategoria-fat EGYSZER kerjuk le, a
+ * leszarmazottakat abbol az egy valaszbol szamoljuk (nem gyokerenkent ujra),
+ * es gyokerenkent egyetlen `limit: 1` termek-lekerdezes megy ki, parhuzamosan.
+ * A `count` mezo a teljes talalatszamot adja, tehat egy termeket sem kell
+ * lehozni ahhoz, hogy tudjuk, van-e.
+ */
+export const listNonEmptyRootCategories = async (
+  regionId: string,
+): Promise<HttpTypes.StoreProductCategory[]> => {
+  const mind = await listCategories({
+    fields: "id,name,handle,parent_category_id",
+  })
+
+  const gyerekek = new Map<string, string[]>()
+  for (const c of mind) {
+    const szulo = (c as { parent_category_id?: string | null })
+      .parent_category_id
+    if (!szulo) continue
+    if (!gyerekek.has(szulo)) gyerekek.set(szulo, [])
+    gyerekek.get(szulo)!.push(c.id)
+  }
+
+  /** Szelessegi bejaras LATOTT halmazzal -- ugyanaz az ok, mint fentebb: kor. */
+  const reszfa = (gyoker: string): string[] => {
+    const ki: string[] = []
+    const latott = new Set<string>()
+    const sor = [gyoker]
+    while (sor.length > 0) {
+      const id = sor.shift()!
+      if (latott.has(id)) continue
+      latott.add(id)
+      ki.push(id)
+      sor.push(...(gyerekek.get(id) ?? []))
+    }
+    return ki
+  }
+
+  const gyokerek = mind.filter(
+    (c) => !(c as { parent_category_id?: string | null }).parent_category_id,
+  )
+
+  const vane = await Promise.all(
+    gyokerek.map(async (gy) => {
+      const {
+        response: { count },
+      } = await listProducts({
+        regionId,
+        queryParams: { limit: 1, category_id: reszfa(gy.id) },
+      })
+      return count > 0
+    }),
+  )
+
+  return gyokerek.filter((_, i) => vane[i])
 }

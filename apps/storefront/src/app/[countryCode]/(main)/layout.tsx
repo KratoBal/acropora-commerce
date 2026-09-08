@@ -13,7 +13,19 @@ export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
 
-export default async function PageLayout(props: { children: React.ReactNode }) {
+/**
+ * AZ ORSZAGKOD A FEJLECNEK KELL, ES KET DOLOGHOZ (2026-09-08):
+ * a kereso urlapja a `/{orszagkod}/store` cimre kuld, es a menu a REGIO
+ * azonositojaval kerdezi le, melyik gyokerben van egyaltalan termek.
+ *
+ * Az elrendezes eddig nem kerte el, mert nem volt ra szuksege. A Next.js
+ * atadja, csak deklaralni kell.
+ */
+export default async function PageLayout(props: {
+  children: React.ReactNode
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
   const customer = await retrieveCustomer()
   const cart = await retrieveCart()
   let shippingOptions: StoreCartShippingOption[] = []
@@ -26,7 +38,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <>
-      <Nav />
+      <Nav countryCode={countryCode} />
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />
       )}

@@ -80,12 +80,27 @@ const CartDropdown = ({
       onMouseLeave={close}
     >
       <Popover className="relative h-full">
+        {/*
+          A FELIRAT MAGYAR, ES A TERV ALAKJAT VISELI (2026-09-08).
+
+          Eddig `Cart (0)` allt itt, angolul, egy magyar boltban -- es ez nem
+          hianyzo forditas volt, hanem egy at nem nezett starter-szoveg a
+          fejlecben, vagyis a lap legjobban lathato pontjan.
+
+          A terv alakja `Kosár · 2`: kozepponttal, nem zarojellel. A gomb
+          geometriaja is a terve (46 pixel magas, 20-as belso margo, a SZOVEG
+          szine a hatter es a HATTER szine a szoveg -- forditott gomb).
+        */}
         <PopoverButton className="h-full">
           <LocalizedClientLink
-            className="hover:text-ui-fg-base"
+            className="flex h-[46px] items-center px-5 text-[14px] font-semibold"
+            style={{
+              background: "var(--terv-szoveg)",
+              color: "var(--terv-hatter)",
+            }}
             href="/cart"
             data-testid="nav-cart-link"
-          >{`Cart (${totalItems})`}</LocalizedClientLink>
+          >{`Kosár · ${totalItems}`}</LocalizedClientLink>
         </PopoverButton>
         <Transition
           show={cartDropdownOpen}
