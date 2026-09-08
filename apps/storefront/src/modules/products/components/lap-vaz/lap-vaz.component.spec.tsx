@@ -844,3 +844,92 @@ describe("a lap teljes szélességű sötét felülete", () => {
     expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1352px")
   })
 })
+
+/**
+ * A PANEL ES A LAP KET KULONBOZO TOKENEN ALL, ES EDDIG EGYIKET SEM MERTE SEMMI.
+ *
+ * MIERT KERULT IDE (sajat meres, 2026-09-08): a csere elott a panel a
+ * `--terv-hatter-lap` tokent viselte, aminek a sotet erteke 0.17 -- az a terv
+ * LAP-erteke. A panel igy SOTETEBB volt a lapnal, holott a tervben
+ * VILAGOSABB. A viszony meg volt forditva, es a teljes spec fajlban egyetlen
+ * allitas sem erintette a panel hatteret: a csere barmelyik iranyban nemán
+ * ment volna at.
+ *
+ * AMIT MER: a token NEVET, mind a ket feluleten, es hogy a KETTO KULONBOZIK.
+ *
+ * AMIT NEM MER: a festett szint. A jsdom nem oldja fel a CSS-valtozokat, tehat
+ * azt, hogy 0.205 all-e a 0.17 helyett, a `terv-tokenek.spec.ts` allitja a
+ * stiluslapon. A ket meres egyutt ad teljes lancot: itt a HIVAS, ott az ERTEK.
+ *
+ * ES AMIT MEG NEM MER: a LAP tonusat. A lap ma a `--terv-hatter` tokenen all
+ * (sotetben 0.235), a terv viszont 0.17-et ker. Az a lepes acrobot dontesere
+ * var (15599), mert az erintene ot olyan hivohelyet is, ami nem a lap.
+ */
+describe("a panel és a lap tónusa", () => {
+  const kozosPanel = () =>
+    document.querySelector('[data-vaz-csoport="vasarlas"]') as HTMLElement
+
+  it("a közös panel a tervvel betűre egyező tokent viseli", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(kozosPanel().style.background).toBe("var(--terv-hatter-halvany)")
+  })
+
+  /**
+   * A DOBOZNAK TARTALOM KELL, ES EZT EGY SAJAT PIROS TANITOTTA MEG.
+   *
+   * Eloszor tartalom nelkul kerdeztem le, es a teszt elbukott: az URES szakasz
+   * hattere szandekosan `transparent`, ott a szaggatott keret a jel. A pirosat
+   * tehat nem a kod adta, hanem a kerdesem -- a token csak a TARTALMAS agon
+   * jelenik meg, es epp az az ag valtozott.
+   */
+  it("a csoportba nem vont doboz ugyanazt a tokent viseli", () => {
+    render(
+      <LapVaz
+        vilag="sotet"
+        tartalom={{ csomagajanlat: <span>Két korall együtt</span> }}
+      />,
+    )
+
+    const doboz = document.querySelector(
+      '[data-vaz-szakasz="csomagajanlat"]',
+    ) as HTMLElement
+
+    expect(doboz.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(doboz.style.background).toBe("var(--terv-hatter-halvany)")
+  })
+
+  /**
+   * ES A MASIK AG IS ALLITVA VAN, kulonben a fenti allitas nem mondana meg,
+   * hogy a `transparent` valasztas tulelte-e a cseret. Ez az ismert pozitiv
+   * kontroll parja: ott a token JELENIK MEG, itt NEM SZABAD megjelennie.
+   */
+  it("az üres doboz továbbra is áttetsző marad", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    const doboz = document.querySelector(
+      '[data-vaz-szakasz="csomagajanlat"]',
+    ) as HTMLElement
+
+    expect(doboz.getAttribute("data-vaz-ures")).toBe("igen")
+    expect(doboz.style.background).toBe("transparent")
+  })
+
+  /**
+   * A KULONBSEG ALLITASA MELLE MIND A KET KONKRET ERTEK ODAKERUL.
+   *
+   * Egy magaban allo `not.toBe` parost egy URES stilus is kielegitene: ha
+   * egyik elem sem kapna hattert, a ket ures string kulonbozne... nem, epp
+   * hogy EGYEZNE -- de ha csak az egyik lenne ures, a teszt zold maradna, es
+   * pont azt nem venne eszre, hogy az egyik felulet elvesztette a tokenjet.
+   */
+  it("a panel és a lap NEM ugyanazt a tokent viseli", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    const lap = screen.getByTestId("lap-teljes-szelesseg")
+
+    expect(lap.style.background).toBe("var(--terv-hatter)")
+    expect(kozosPanel().style.background).toBe("var(--terv-hatter-halvany)")
+    expect(kozosPanel().style.background).not.toBe(lap.style.background)
+  })
+})
