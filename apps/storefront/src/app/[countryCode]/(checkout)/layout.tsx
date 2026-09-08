@@ -18,10 +18,10 @@ export default function CheckoutLayout({
           >
             <ChevronDown className="rotate-90" size={16} />
             <span className="mt-px hidden small:block txt-compact-plus text-ui-fg-subtle hover:text-ui-fg-base ">
-              Back to shopping cart
+              Vissza a kosárhoz
             </span>
             <span className="mt-px block small:hidden txt-compact-plus text-ui-fg-subtle hover:text-ui-fg-base">
-              Back
+              Vissza
             </span>
           </LocalizedClientLink>
           <LocalizedClientLink

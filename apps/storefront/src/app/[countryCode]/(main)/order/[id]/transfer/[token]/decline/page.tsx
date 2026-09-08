@@ -18,21 +18,19 @@ export default async function TransferPage({
         {success && (
           <>
             <Heading level="h1" className="text-xl text-zinc-900">
-              Order transfer declined!
+              Az átadást elutasítottad.
             </Heading>
             <Text className="text-zinc-600">
-              Transfer of order {id} has been successfully declined.
+              A(z) {id} rendelés átadását sikeresen elutasítottad.
             </Text>
           </>
         )}
         {!success && (
           <>
             <Text className="text-zinc-600">
-              There was an error declining the transfer. Please try again.
+              Az átadás elutasítása nem sikerült. Próbáld meg újra.
             </Text>
-            {error && (
-              <Text className="text-red-500">Error message: {error}</Text>
-            )}
+            {error && <Text className="text-red-500">Hibaüzenet: {error}</Text>}
           </>
         )}
       </div>

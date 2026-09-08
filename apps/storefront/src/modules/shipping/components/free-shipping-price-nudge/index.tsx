@@ -268,14 +268,14 @@ function FreeShippingPopup({
             className="rounded-2xl bg-transparent shadow-none outline-none border-[1px] border-white text-[15px] py-2.5 px-4"
             href="/cart"
           >
-            View cart
+            Kosár megtekintése
           </LocalizedClientLink>
 
           <LocalizedClientLink
             className="flex-grow rounded-2xl bg-white text-neutral-950 shadow-none outline-none border-[1px] border-white text-[15px] py-2.5 px-4 text-center"
             href="/store"
           >
-            View products
+            Termékek megtekintése
           </LocalizedClientLink>
         </div>
       </div>
