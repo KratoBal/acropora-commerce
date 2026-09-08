@@ -53,11 +53,57 @@ describe("a fejléc fő sávja", () => {
     expect(nav).not.toContain("Árukereső")
   })
 
-  it("a színek tokenből jönnek, nyers érték nélkül", () => {
+  /**
+   * A NEV OLYAN SZUK, AMILYEN A FIXTURA -- ES EZ JAVITAS (acrobot kerese,
+   * 2026-09-08, msg 15332).
+   *
+   * Az allitas eloszor "a színek tokenből jönnek, nyers érték nélkül" nevet
+   * viselte, es CSAK a `nav/index.tsx` fajlt olvasta. A nev a fejlec szineirol
+   * beszelt, a merese egy fajlrol -- vagyis szukebb volt, mint a neve.
+   *
+   * Ez a legrosszabb fajta zold: nem hamis, csak kevesebbet mer, mint amit
+   * igér, es epp azt a teruletet fedi el, amit sosem nezett. Egy piros allitas
+   * megall es kerdez; egy tul tag NEVU zold megnyugtat.
+   *
+   * A nev mostantol a FO SAV FAJLJARA szol. Ami a fejlec tobbi fajljara igaz,
+   * az kulon allitas, sajat nevvel, alabb.
+   */
+  it("a fő sáv fájlja tokent használ, nyers érték nélkül", () => {
     expect(nav).toContain("var(--terv-keret)")
     expect(nav).toContain("var(--terv-kiemel)")
     expect(nav).toContain("var(--terv-szoveg)")
     expect(nav.match(/oklch\(/g)).toBeNull()
+  })
+
+  /**
+   * ES AMIT A TAG NEV IGERT, AZ ITT ALL, MERVE -- MIND A HAROM FAJLRA.
+   *
+   * A fejlec nem egy fajl: a fo sav mellett a kosar-legordulo es az oldalso
+   * menu is benne all. Nyers `oklch` ertek EGYIKBEN SINCS, tehat ez az allitas
+   * a tag nevet MEGERDEMLI.
+   *
+   * AMIT VISZONT EZ SEM MER, ES KIMONDOM: a ROGZITETT osztalyokat
+   * (`text-ui-fg-base` es tarsai). Azokbol ma a kosar-legordulo egyet, az
+   * oldalso menu harmat visel. Nem hiba, amig a fejlec vilagos -- de a fejlec
+   * vilag-kovetese mar el van dontve, es akkor pontosan ezek nem fognak
+   * atvaltani. Ugyanaz az alak, amit a #193 a termeklapon es a #210 a
+   * morzsamenunel javitott.
+   *
+   * Allitast NEM irok ra, mert az ma pirosodna: a javitas a vilag-kor resze,
+   * es oda tartozik a dontes is, hogy melyik osztaly mire cserelodik.
+   */
+  it("a fejléc EGYIK fájljában sincs nyers oklch érték", () => {
+    const kosar = forras("..", "..", "components", "cart-dropdown", "index.tsx")
+    const oldalso = forras("..", "..", "components", "side-menu", "index.tsx")
+
+    /* ISMERT POZITIV KONTROLL: mind a harom fajlt tenyleg beolvastuk. */
+    expect(nav).toContain("export default async function Nav")
+    expect(kosar).toContain("CartDropdown")
+    expect(oldalso.length).toBeGreaterThan(0)
+
+    expect(nav.match(/oklch\(/g)).toBeNull()
+    expect(kosar.match(/oklch\(/g)).toBeNull()
+    expect(oldalso.match(/oklch\(/g)).toBeNull()
   })
 })
 
