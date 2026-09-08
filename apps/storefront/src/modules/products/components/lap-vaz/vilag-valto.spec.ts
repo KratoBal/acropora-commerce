@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import { ELO_ALLAT_GYOKEREK, vilagaTermeknek } from "./vilag-valto"
@@ -175,6 +178,14 @@ describe("a gyökér feloldása, ha a termék nem hozta magával", () => {
    * A feloldas csak HOZZAAD: egy leveles muszaki termek gyokere `Termékek`,
    * ami nem elo allat, tehat VILAGOS marad. Enelkul a fenti ket allitas azzal
    * a valtozattal is zold lenne, ami MINDENT sotetnek mond.
+   *
+   * ES EZ NEM ELMELETI HATAR -- MERVE (acrobot, 2026-09-08 03:02, teszt bolt,
+   * 1492 termek): otvenkilenc termeknek van ugy kategoriaja, hogy nincs kozte
+   * gyoker-elem, es ebbol OTVENNYOLC NEM elo allat. Vagyis ez az egy allitas
+   * otvennyolc valodi lapot ved meg attol, hogy sotetre valtson.
+   *
+   * Ha a javitas utan a sotet lapok szama tobb lenne, mint 161, akkor pont ez
+   * a hatar engedett.
    */
   it("leveles kategória NEM élő állat gyökér alatt világos marad", () => {
     expect(vilagaTermeknek(LEVELES_MUSZAKI, KATALOGUS)).toBe("vilagos")
@@ -184,5 +195,62 @@ describe("a gyökér feloldása, ha a termék nem hozta magával", () => {
   it("a teljes ős-lánccal a katalógus nem mozdít a válaszon", () => {
     expect(vilagaTermeknek(KORALL, KATALOGUS)).toBe("sotet")
     expect(vilagaTermeknek(MUSZAKI, KATALOGUS)).toBe("vilagos")
+  })
+})
+
+/**
+ * A KATALOGUS CSAK AKKOR TELJES, HA A HIVO NEM AD `limit`-ET.
+ *
+ * A gyoker feloldasa a teljes kategoria-listan all: az `mpath` elso szegmense
+ * egy AZONOSITO, es a nevet csak a katalogusbol lehet megkapni. Ha a lista
+ * hianyos, a keresett gyoker egyszeruen nincs benne.
+ *
+ * ES A `listCategories` CSAK LIMIT NELKUL LAPOZ VEGIG (a `lib/data/categories`
+ * a hivo `limit` mezojet nezi: ha kap egyet, EGY lapot ad vissza, egyebkent
+ * mind a 219 kategoriat). Vagyis ha valaha valaki limitet tesz a termeklap
+ * hivasaba, a feloldas NEM hibara fut -- csendben visszaall a javitas ELOTTI
+ * viselkedesre: a gyoker nem talalhato, es a lap VILAGOS lesz.
+ *
+ * A KAR NEM ELMELETI: egy igy felresorolt elo allat nem csak a muszaki
+ * elrendezest kapja, hanem elveszti a JELVENYT es az IGERETET is -- a
+ * `galeriatAdunkAt` ugyanezen a fuggvenyen all.
+ *
+ * (acrobot merese, 2026-09-08 03:02, a teszt bolton: o nevezte meg ezt a
+ * kockazatot, es o merte meg, hogy a mai hivas limit nelkul all.)
+ *
+ * A HATAR: ez a spec a FORRAST olvassa. Azt bizonyitja, hogy a hivas nem KER
+ * limitet, nem azt, hogy a valasz teljes volt.
+ */
+describe("a katalógus, amiből a gyökér feloldódik", () => {
+  const lapForras = readFileSync(
+    join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "..",
+      "app",
+      "[countryCode]",
+      "(main)",
+      "products",
+      "[handle]",
+      "page.tsx",
+    ),
+    "utf-8",
+  )
+
+  /** ISMERT POZITIV KONTROLL: a hivas tenyleg ott van, es tenyleg ezt a fajlt olvassuk. */
+  it("a terméklap forrásában ott a listCategories hívás", () => {
+    expect(lapForras).toContain("listCategories({")
+    expect(lapForras).toContain("parent_category_id")
+  })
+
+  it("a terméklap a TELJES katalógust kéri, limit nélkül", () => {
+    const hivas = lapForras.slice(
+      lapForras.indexOf("listCategories({"),
+      lapForras.indexOf(")", lapForras.indexOf("listCategories({")),
+    )
+
+    expect(hivas).not.toContain("limit")
   })
 })
