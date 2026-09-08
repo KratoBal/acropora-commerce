@@ -1090,6 +1090,21 @@ const LapVaz = ({
                   ? {
                       border: "1px solid var(--terv-keret)",
                       /**
+                       * A KET VILAG ELLENTETES IRANYBA VALASZTJA EL A PANELT
+                       * A LAPTOL, ES EZ NEM ELIRAS (acrobot 15702, mérve).
+                       *
+                       * Soteten a panel VILAGOSABB a lapnal (0.205 a 0.17-en),
+                       * vilagosban SOTETEBB (0.955 a 0.99-en). Elsore ez
+                       * hibanak latszik -- de a ket VILAGOS tervlapon NULLA
+                       * olyan panel all, amilyen a soteten. A tervnek tehat
+                       * NINCS allitasa errol, es ha most "kijavitanank", egy
+                       * sajat dontest tennenk a terv helyere, amit a kovetkezo
+                       * olvaso tervbeli ertekkent olvasna.
+                       *
+                       * Ha egyszer lesz vilagos panel a tervben, AKKOR dol el.
+                       * Ugyanaz a szabaly, mint a keszlet-sor mobil ertekenel:
+                       * nem talalunk ki erteket oda, ahol nincs meres.
+                       *
                        * A PANEL A `--terv-hatter-halvany` TOKENT VISELI, ES EZ
                        * NEM VALASZTAS, HANEM EGYEZES (acrobot 15599, 2026-09-08).
                        *

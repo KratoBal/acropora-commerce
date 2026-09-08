@@ -153,6 +153,26 @@ export function ElerhetosegDoboz({
     asztali a lap tonusara MELYIT (a panel 0.205-nel vilagosabb), a mobil
     fole EMEL (0.215 a 0.17-es lapon). Egy sima "ket ertek van" nem lett
     volna eleg gyanu ahhoz, hogy megnezzuk, miben kulonboznek.
+
+    === ES EGY NYITOTT ELTERES A VILAGOS VILAGBAN, KIMONDVA ===
+
+    Ez a doboz a `--terv-hatter`-t viseli, es a SOTET lapon ez BETURE pontos:
+    ott a melyedes es a lap alapja UGYANAZ az ertek (mindketto 0.17). A
+    vilagos lapon viszont NEM ugyanaz:
+
+      2a  lap alapja  oklch(0.17 0.016 250)   doboz  oklch(0.17 0.016 250)
+      1b  lap alapja  oklch(0.99 0.004 80)    doboz  oklch(0.965 0.008 70)
+
+    (A dobozt az ALAKJA azonositja mind a ket lapon: `padding:14px` es
+    `gap:6px` -- ugyanaz a ketto, amit ez a komponens visel.)
+
+    Vagyis vilagosban a terv egy KULON, sotetebb erteket ad a doboznak, mi
+    pedig a lap alapjat adjuk neki. A sotet lapon a ketto veletlenul egybeesik,
+    es epp ezert nem latszik a hiba onmagaban.
+
+    NEM JAVITOM, mert az uj token-ertek kerdese, nem elrendezes -- es mert a
+    sotet oldal ma helyes. Merve 2026-09-08; ha valaki hozzanyul, ez a ket sor
+    a kiindulas.
   */
   return (
     <div
