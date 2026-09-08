@@ -20,7 +20,52 @@ export default async function Footer() {
   const productCategories = await listCategories()
 
   return (
-    <footer className="border-t border-ui-border-base w-full">
+    /*
+      A LABLEC SIKJA A TERV TOKENJEN ALL, NEM A STARTER OSZTALYAN.
+
+      === MIERT NEM EGY BEEGETETT SOTET ERTEK ===
+
+      acrobot 2026-09-08 22:21-kor a SOTET valtozatot dontotte el
+      (`oklch(0.17 0.016 250)`), es az indoka a KOVETKEZETESSEG volt: a
+      fejlec-sav mar sotet, tehat a lap ket vege ne kulonbozzon ugyanabban a
+      szerepben (navigacio).
+
+      A PREMISSZAT LEMERTEM AZ ELO LAPON (2026-09-08 22:34, staging,
+      `agents/murena/scripts/sikok.cjs`), es MA NEM ALL:
+
+          FEJLEC   rgb(255, 255, 255)   -- feher
+          a fejlec osei kozott NINCS data-vilag
+          a `data-vilag="sotet"` csak a lapon BELUL all
+
+      A fejlec sajat fejlece ugyanezt mondja: "MA A FEJLEC MINDIG VILAGOS...
+      a `data-vilag` jelolot a vaz teszi ki a lapon BELUL, a fejlec pedig a
+      `(main)` elrendezesben all, a lap FOLOTT."
+
+      Vagyis egy beegetett sotet lablec MA a feher fejlec ala kerulne, es a lap
+      ket vege epp attol kulonbozne, amit a dontes el akart kerulni.
+
+      === EZERT AMIT EZ A KOR CSINAL: A SIKOT VILAG-FUGGOVE TESZI ===
+
+      A `--terv-hatter` vilagonkent MAS erteket vesz fel (0.99 vilagosban,
+      0.17 sotetben), es a fejlec is PONTOSAN ezt hasznalja. Ugyanaz a token,
+      ugyanaz a mechanizmus: ha a lablec valaha sotet vilagba kerul, magatol
+      sotet lesz -- egy szam beegetese nelkul.
+
+      MA EZ NEM VALTOZTAT SEMMIT LATHATOAN, es ez merve van, nem feltetelezve:
+      a `globals.css` `body` szabalya MAR `background: var(--terv-hatter)`, es a
+      lablec sajat hattere eddig atlatszo volt (merve az elo lapon:
+      `rgba(0, 0, 0, 0)`). Vagyis pontosan ezt a szint mutatta at eddig is --
+      most csak sajat jogan viseli, ahelyett hogy a body-tol orokolne.
+
+      A KULONBSEG AKKOR JON ELO, amikor a lablec sotet vilagba kerul: a body
+      globalis, a lablec pedig sajat hatokort kaphat. A sotetre allitas ezutan
+      EGY jelolo, nem egy atiras.
+    */
+    <footer
+      className="border-t border-ui-border-base w-full"
+      style={{ background: "var(--terv-hatter)" }}
+      data-testid="lablec-sik"
+    >
       <div className="content-container flex flex-col w-full">
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
           <div>
