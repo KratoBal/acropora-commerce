@@ -444,3 +444,127 @@ describe("a minimális rendelési mennyiség bekötése", () => {
     expect(screen.queryByText(/darab rendelhető/)).toBeNull()
   })
 })
+
+/**
+ * A LEPESKOZ ES A MAXIMUM BEKOTESE -- ES AMIERT EZ KULON ALL A TISZTA
+ * FUGGVENY ALLITASAITOL.
+ *
+ * A `minimum-order-quantity.spec.ts` azt meri, hogy a szabaly HELYES. Ez azt,
+ * hogy a lepteto HASZNALJA is: a plusz gomb a lepeskozzel lep, es a maximumnal
+ * megall. A ket allitas-keszlet kozott epp az a varrat all, amit egy tiszta
+ * fuggveny sosem lat.
+ */
+/**
+ * SAJAT VALTOZAT, KESZLETTEL -- ES EZT A TESZT ELSO FUTASA DERITETTE KI.
+ *
+ * A kozos `VALTOZAT` fixtura `inventory_quantity: 0` erteket visel (a
+ * keszlet-allapotokat meri), es a lapon EBBOL felso hatar lesz: a keszletbol
+ * szamolt maximum 1, ami a tizes minimum ALATT all. Ilyenkor -- a dokumentalt
+ * szabaly szerint -- az ALSO hatar nyer, a mennyiseg 10 marad, es a plusz gomb
+ * joggal tiltott.
+ *
+ * Vagyis a lepeskoz azon a fixturan MEGFIGYELHETETLEN. Nem a kod volt hibas,
+ * hanem a bemenetem: olyan esetet kell adni, ahol a tobbi feltetel IGAZ, es
+ * csak az all fenn, amit merni akarok.
+ */
+const KESZLETES_VALTOZAT = { ...VALTOZAT, inventory_quantity: 1000 }
+
+function rendelesiTermek(mezok: Record<string, string>) {
+  return {
+    id: "prod_rend",
+    title: "Triton Boron 100 ml",
+    handle: "triton-boron-100-ml",
+    metadata: mezok,
+    collection: null,
+    options: [],
+    variants: [KESZLETES_VALTOZAT],
+  } as never
+}
+
+describe("a lépésköz és a rendelési maximum bekötése", () => {
+  it("a plusz gomb a LÉPÉSKÖZZEL lép, nem egyesével", () => {
+    render(
+      <ProductActions
+        product={rendelesiTermek({
+          unas_minimum_order_quantity: "10",
+          unas_order_quantity_step: "10",
+        })}
+        region={REGIO}
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText("Mennyiség növelése"))
+
+    const mezo = screen.getByLabelText("Mennyiség") as HTMLInputElement
+    expect(mezo.value).toBe("20")
+  })
+
+  /**
+   * A MINUSZ GOMB IS A RACSON MOZOG: 20-rol 10-re, nem 19-re.
+   */
+  it("a mínusz gomb is a rácson lép vissza", () => {
+    render(
+      <ProductActions
+        product={rendelesiTermek({
+          unas_minimum_order_quantity: "10",
+          unas_order_quantity_step: "10",
+        })}
+        region={REGIO}
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText("Mennyiség növelése"))
+    fireEvent.click(screen.getByLabelText("Mennyiség csökkentése"))
+
+    const mezo = screen.getByLabelText("Mennyiség") as HTMLInputElement
+    expect(mezo.value).toBe("10")
+  })
+
+  /**
+   * A MAXIMUMNAL A GOMB TILTVA VAN, ES NEM CSAK "nem csinal semmit". Egy aktiv
+   * gomb, ami nem hat, NEMA KORLAT -- pontosan az, amit a mondat is elkerul.
+   */
+  it("a rendelési maximumnál a plusz gomb tiltva van", () => {
+    render(
+      <ProductActions
+        product={rendelesiTermek({
+          unas_minimum_order_quantity: "10",
+          unas_order_quantity_step: "10",
+          unas_maximum_order_quantity: "20",
+        })}
+        region={REGIO}
+      />,
+    )
+
+    const novel = screen.getByLabelText(
+      "Mennyiség növelése",
+    ) as HTMLButtonElement
+
+    expect(novel.disabled).toBe(false)
+
+    fireEvent.click(novel)
+
+    const mezo = screen.getByLabelText("Mennyiség") as HTMLInputElement
+    expect(mezo.value).toBe("20")
+    expect(
+      (screen.getByLabelText("Mennyiség növelése") as HTMLButtonElement)
+        .disabled,
+    ).toBe(true)
+  })
+
+  it("a lapon kimondja a lépésközt és a maximumot is", () => {
+    render(
+      <ProductActions
+        product={rendelesiTermek({
+          unas_minimum_order_quantity: "100",
+          unas_order_quantity_step: "100",
+          unas_maximum_order_quantity: "1000",
+        })}
+        region={REGIO}
+      />,
+    )
+
+    expect(screen.getByText(/100 darabonként növelhető/)).toBeTruthy()
+    expect(screen.getByText(/legfeljebb 1000 darab rendelhető/)).toBeTruthy()
+  })
+})

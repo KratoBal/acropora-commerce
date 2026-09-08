@@ -36,6 +36,9 @@ export type VasarlasAllapot = {
   normaliseQuantity: (value: number) => number
   minimumQuantity: number
   maximumQuantity: number | null
+  quantityStep: number
+  novelheto: boolean
+  rendelesiMondat: string | null
   availability: Availability
   uniquePiece: boolean
   similarHref: string

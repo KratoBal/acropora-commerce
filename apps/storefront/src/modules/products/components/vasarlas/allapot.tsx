@@ -11,7 +11,14 @@ import {
 } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
-import { minimumOrderQuantity } from "../product-actions/minimum-order-quantity"
+import {
+  canIncreaseOrderQuantity,
+  maximumOrderQuantity,
+  minimumOrderQuantity,
+  normaliseOrderQuantity,
+  orderQuantityHint,
+  orderQuantityStep,
+} from "../product-actions/minimum-order-quantity"
 import { VasarlasKontextus, type VasarlasAllapot } from "./kontextus"
 import {
   availabilityOf,
@@ -88,6 +95,12 @@ export function VasarlasProvider({
    * mennyiség, amit nem lehet megrendelni.
    */
   const minimumQuantity = minimumOrderQuantity(product)
+  /**
+   * A LÉPÉSKÖZ ÉS A RENDELÉSI MAXIMUM UGYANONNAN JÖN, MINT A MINIMUM, és
+   * ugyanabból a modulból: a három paraméter egy szabálycsalád.
+   */
+  const quantityStep = orderQuantityStep(product)
+  const orderMaximum = maximumOrderQuantity(product)
   const [quantity, setQuantity] = useState(minimumQuantity)
   const countryCode = useParams().countryCode as string
 
@@ -211,13 +224,28 @@ export function VasarlasProvider({
    * nem lehet megrendelni. A kettő közül a másodikat megsérteni hibás rendelést
    * ad, az elsőt utánrendelést.
    */
-  const normaliseQuantity = (value: number) => {
-    if (!Number.isInteger(value) || value < minimumQuantity)
-      return minimumQuantity
-    return maximumQuantity
-      ? Math.max(Math.min(value, maximumQuantity), minimumQuantity)
-      : value
-  }
+  const normaliseQuantity = (value: number) =>
+    normaliseOrderQuantity({
+      value,
+      minimum: minimumQuantity,
+      step: quantityStep,
+      orderMaximum,
+      stockMaximum: maximumQuantity,
+    })
+
+  const novelheto = canIncreaseOrderQuantity({
+    quantity,
+    minimum: minimumQuantity,
+    step: quantityStep,
+    orderMaximum,
+    stockMaximum: maximumQuantity,
+  })
+
+  const rendelesiMondat = orderQuantityHint({
+    minimum: minimumQuantity,
+    step: quantityStep,
+    orderMaximum,
+  })
 
   // add the selected variant to the cart
   const handleAddToCart = async () => {
@@ -245,6 +273,9 @@ export function VasarlasProvider({
     normaliseQuantity,
     minimumQuantity,
     maximumQuantity,
+    quantityStep,
+    novelheto,
+    rendelesiMondat,
     availability,
     uniquePiece,
     similarHref,

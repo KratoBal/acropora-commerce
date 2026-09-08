@@ -16,7 +16,14 @@ import {
   similarItemsHref,
   uniquePieceOf,
 } from "../stock-state/availability"
-import { minimumOrderQuantity } from "./minimum-order-quantity"
+import {
+  canIncreaseOrderQuantity,
+  maximumOrderQuantity,
+  minimumOrderQuantity,
+  normaliseOrderQuantity,
+  orderQuantityHint,
+  orderQuantityStep,
+} from "./minimum-order-quantity"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
 
@@ -51,6 +58,12 @@ export default function ProductActions({
    * mennyiség, amit nem lehet megrendelni.
    */
   const minimumQuantity = minimumOrderQuantity(product)
+  /**
+   * A LÉPÉSKÖZ ÉS A RENDELÉSI MAXIMUM UGYANONNAN JÖN, MINT A MINIMUM. A
+   * kezdőérték továbbra is a minimum: az mindig rajta van a rácson.
+   */
+  const quantityStep = orderQuantityStep(product)
+  const orderMaximum = maximumOrderQuantity(product)
   const [quantity, setQuantity] = useState(minimumQuantity)
   const countryCode = useParams().countryCode as string
 
@@ -174,13 +187,20 @@ export default function ProductActions({
    * nem lehet megrendelni. A kettő közül a másodikat megsérteni hibás rendelést
    * ad, az elsőt utánrendelést.
    */
-  const normaliseQuantity = (value: number) => {
-    if (!Number.isInteger(value) || value < minimumQuantity)
-      return minimumQuantity
-    return maximumQuantity
-      ? Math.max(Math.min(value, maximumQuantity), minimumQuantity)
-      : value
-  }
+  const normaliseQuantity = (value: number) =>
+    normaliseOrderQuantity({
+      value,
+      minimum: minimumQuantity,
+      step: quantityStep,
+      orderMaximum,
+      stockMaximum: maximumQuantity,
+    })
+
+  const rendelesiMondat = orderQuantityHint({
+    minimum: minimumQuantity,
+    step: quantityStep,
+    orderMaximum,
+  })
 
   const actionsRef = useRef<HTMLDivElement>(null)
 
@@ -346,7 +366,9 @@ export default function ProductActions({
                   type="button"
                   aria-label="Mennyiség csökkentése"
                   className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
-                  onClick={() => setQuantity(normaliseQuantity(quantity - 1))}
+                  onClick={() =>
+                    setQuantity(normaliseQuantity(quantity - quantityStep))
+                  }
                 >
                   −
                 </button>
@@ -364,9 +386,17 @@ export default function ProductActions({
                   type="button"
                   aria-label="Mennyiség növelése"
                   className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
-                  onClick={() => setQuantity(normaliseQuantity(quantity + 1))}
+                  onClick={() =>
+                    setQuantity(normaliseQuantity(quantity + quantityStep))
+                  }
                   disabled={
-                    maximumQuantity !== null && quantity >= maximumQuantity
+                    !canIncreaseOrderQuantity({
+                      quantity,
+                      minimum: minimumQuantity,
+                      step: quantityStep,
+                      orderMaximum,
+                      stockMaximum: maximumQuantity,
+                    })
                   }
                 >
                   +
@@ -383,14 +413,16 @@ export default function ProductActions({
           </div>
         )}
         {/*
-          A LÉPTETŐ MÁR NEM ENGED A MINIMUM ALÁ, DE EGY NÉMA KORLÁT MEGZAVAR: a
-          vevő azt látná, hogy a mínusz gomb nem csinál semmit, és nem tudná,
-          miért. A mondat csak akkor jelenik meg, ha van mit mondania -- 1877
-          terméknél a minimum 1, és ott a hallgatás a helyes.
+          A LÉPTETŐ HÁROM NÉMA KORLÁTOT HORD: a minimumot, a lépésközt és a
+          rendelési maximumot. A vevő mindháromnál azt látná, hogy a gomb nem
+          csinál semmit, és nem tudná, miért. A mondatot a metaadatból egy
+          tiszta függvény állítja elő, és `null`-t ad, ha nincs mit mondania --
+          1877 terméknél a minimum 1 és nincs lépésköz, ott a hallgatás a
+          helyes válasz.
         */}
-        {!uniquePiece && minimumQuantity > 1 && (
+        {!uniquePiece && rendelesiMondat && (
           <p className="text-small-regular text-ui-fg-subtle">
-            Ebből a termékből legalább {minimumQuantity} darab rendelhető.
+            {rendelesiMondat}
           </p>
         )}
         <MobileActions

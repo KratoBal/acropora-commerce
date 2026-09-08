@@ -17,7 +17,11 @@ import { useState } from "react"
 
 import CartLineState, { NotIncrementable } from "../line-state"
 import { cartLineProduct, cartLineStateOf } from "../line-state/line-state"
-import { minimumOrderQuantity } from "@modules/products/components/product-actions/minimum-order-quantity"
+import {
+  maximumOrderQuantity,
+  minimumOrderQuantity,
+  orderQuantityStep,
+} from "@modules/products/components/product-actions/minimum-order-quantity"
 import { kosarMennyisegOpciok } from "./mennyiseg-opciok"
 
 type ItemProps = {
@@ -186,11 +190,18 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
 
                 A STRAY MASODIK "1" OPCIO IS KIKERULT: a starterbol maradt itt,
                 es a lista elso elemet duplazta.
+
+                ES 2026-09-08 OTA A LEPESKOZT ES A RENDELESI MAXIMUMOT IS
+                OLVASSA. A harom parameter ugyanannak a szabalynak a resze, es
+                ugyanabbol a modulbol jon, mint a termeklapon -- kulonben a
+                kosar mas mennyisegeket kinalna, mint amit a lap enged.
               */}
-                {kosarMennyisegOpciok(
-                  minimumOrderQuantity(sorTermeke),
-                  item.quantity,
-                ).map((mennyiseg) => (
+                {kosarMennyisegOpciok({
+                  minimum: minimumOrderQuantity(sorTermeke),
+                  jelenlegi: item.quantity,
+                  lepes: orderQuantityStep(sorTermeke),
+                  rendelesiMaximum: maximumOrderQuantity(sorTermeke),
+                }).map((mennyiseg) => (
                   <option value={mennyiseg} key={mennyiseg}>
                     {mennyiseg}
                   </option>
