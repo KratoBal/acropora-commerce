@@ -26,10 +26,11 @@ export default async function Addresses(props: {
   return (
     <div className="w-full" data-testid="addresses-page-wrapper">
       <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Shipping Addresses</h1>
+        <h1 className="text-2xl-semi">Szállítási címek</h1>
         <p className="text-base-regular">
-          View and update your shipping addresses, you can add as many as you
-          like. Saving your addresses will make them available during checkout.
+          Itt nézheted meg és módosíthatod a szállítási címeidet, és annyit
+          veszel fel, amennyit szeretnél. A mentett címek a pénztárnál is
+          elérhetők.
         </p>
       </div>
       <AddressBook customer={customer} region={region} />
