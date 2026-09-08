@@ -73,9 +73,9 @@ import type { Vilag } from "./index"
  *      (nincs elo allat gyokere), ami a biztonsagos irany -- de ha valaha
  *      elo allat kerul be kategoria nelkul, csendben a rossz lapot kapja.
  *
- *      Beture ugyanaz. ES MAS UTON: en a `parent_category_id` lancan setaltam
- *      fel a gyokerig, nem az `mpath` elso szegmensebol. Ket kulonbozo
- *      feloldas, ket kulonbozo mero, ugyanaz a szam.
+ *      Beture ugyanaz. ES MAS UTON: MURENA (2026-09-08, #169) a
+ *      `parent_category_id` lancan setalt fel a gyokerig, nem az `mpath` elso
+ *      szegmensebol. Ket kulonbozo feloldas, ket kulonbozo mero, ugyanaz a szam.
  *
  *      A nyers osszeg is 161, tehat egyetlen termek sem szamit ketszer (nincs
  *      olyan, ami ket elo allat gyoker ala is beesne).
@@ -245,7 +245,8 @@ function gyokerNevKatalogusbol(
  *   hogy "nala van a kulcs" -- ez 2026-09-08 06:20-ra MEGSZUNT: a teszt bolt
  *   PUBLIKALHATO kulcsa bekerult az `exchange` konyvtarba, tehat a
  *   `medusa-stage.sh` barmelyikunknek fut, es van `query` aga tetszoleges
- *   /store lekerdezesre. Ugyanezt a szamot azota en is visszamertem.)
+ *   /store lekerdezesre. Ugyanezt a szamot azota MURENA is visszamerte
+ *   (2026-09-08, #185).)
  *
  * Vagyis a feltetel NEM az, hogy harom szintu az `mpath`, hanem hogy nincs
  * benne EGYSZEGMENSU elem. Ket szinttol felfele barmelyik melyseg ilyen, es a
