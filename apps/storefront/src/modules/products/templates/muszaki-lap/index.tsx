@@ -125,6 +125,8 @@ type Props = {
   hasonloResz?: React.ReactNode
   fotoResz?: React.ReactNode
   ragadosResz?: React.ReactNode
+  /** A morzsamenu. A vaz a sotet felulet tetejere teszi. */
+  morzsaResz?: React.ReactNode
 }
 
 const MuszakiLap = ({
@@ -134,6 +136,7 @@ const MuszakiLap = ({
   hasonloResz,
   fotoResz,
   ragadosResz,
+  morzsaResz,
 }: Props) => {
   return (
     <LapVaz
@@ -144,6 +147,7 @@ const MuszakiLap = ({
        * egyedi peldany. (acrobot dontese, msg_id 14775.)
        */
       egyediPeldany={uniquePieceOf(product.metadata)}
+      morzsa={morzsaResz}
       tartalom={vazTartalom(
         product,
         vasarlasAktiv,

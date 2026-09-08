@@ -76,9 +76,17 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   if (hasznaljaVazat(product, categories)) {
     return (
       <>
-        <div className="content-container pt-6">
-          <ProductBreadcrumb product={product} categories={categories} />
-        </div>
+        {/*
+          A MORZSAMENU MAR NEM ITT ALL, HANEM A VAZON BELUL (2026-09-08).
+
+          Eddig ebben a `content-container` dobozban allt, a vaz FOLOTT, tehat
+          a vilagos lapon -- a sotet felulet alatta kezdodott. A tervben a
+          sotet felulet a morzsamenuvel kezdodik, ezert slotkent megy at.
+
+          A MASIK AG (elo allat) VALTOZATLAN: ott a morzsamenu tovabbra is a
+          sablonban all, mert ott nincs teljes szelessegu sotet felulet, ami ala
+          be lehetne vinni.
+        */}
         {/*
           A VASARLASI ALLAPOT A LAP FOLE KERUL, ES A TARTALEK UGYANAZ A VAZ.
 
@@ -97,6 +105,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             <MuszakiLap
               product={product}
               kategoriak={categories}
+              morzsaResz={
+                <ProductBreadcrumb product={product} categories={categories} />
+              }
               fotoResz={
                 galeriatAdunkAt(product, categories) ? (
                   <ImageGallery
@@ -112,6 +123,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             <MuszakiLap
               product={product}
               kategoriak={categories}
+              morzsaResz={
+                <ProductBreadcrumb product={product} categories={categories} />
+              }
               vasarlasAktiv
               hasonloResz={
                 <div data-testid="related-products-container">

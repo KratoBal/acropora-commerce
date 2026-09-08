@@ -870,6 +870,15 @@ type LapVazProps = {
    * feliratot kapja, nem a WYSIWYG-allitast.
    */
   egyediPeldany?: boolean
+  /**
+   * A MORZSAMENU, A SOTET FELULET TETEJEN.
+   *
+   * Slot, nem sajat tartalom, ugyanabbol az okbol, mint a foto es a vasarlasi
+   * resz: a morzsamenu a termeket ES a kategoria-katalogust olvassa, es azokat
+   * a vaz nem tulajdonolja. Ha itt epitene fel, a lapon KET forras mondana meg,
+   * hol all a termek -- es a ketto eltevedese nem hibazna, csak mast mutatna.
+   */
+  morzsa?: React.ReactNode
 }
 
 /**
@@ -925,6 +934,7 @@ const LapVaz = ({
   tartalom = {},
   vilag = "vilagos",
   egyediPeldany = false,
+  morzsa,
 }: LapVazProps) => {
   return (
     /**
@@ -968,6 +978,31 @@ const LapVaz = ({
       className="w-full"
       style={{ background: "var(--terv-hatter)" }}
     >
+      {/*
+        A MORZSAMENU A SOTET FELULETEN BELUL ALL, NEM FOLOTTE (2026-09-08).
+
+        Eddig a termeklap sablonjaban allt, egy `content-container` dobozban, a
+        vaz FOLOTT -- vagyis a vilagos lapon. A tervben a sotet felulet a
+        morzsamenuvel KEZDODIK.
+
+        A sajat szelesseg-korlatja megismetli a racset (1352 px), mert az
+        igazitasnak egyeznie kell: ha a morzsamenu a burok szelere futna ki, a
+        lap tetején mas margoval indulna, mint a tartalom alatta.
+
+        A SORREND SZAMIT, ES EZ NEM ELRENDEZESI IZLES: a morzsamenu szinei
+        elozoleg kulon tetelkent kerultek tokenre (#210). Ha ez a lepes ment
+        volna elsonek, a morzsamenu ROGZITETT szurke szoveggel kerult volna a
+        sotet feluletre -- pontosan az a hiba, amit a #193 javitott.
+      */}
+      {morzsa ? (
+        <div
+          className="mx-auto w-full px-4 pt-4"
+          style={{ maxWidth: "1352px" }}
+          data-testid="lap-morzsa-sav"
+        >
+          {morzsa}
+        </div>
+      ) : null}
       <div
         className="mx-auto w-full p-4 lg:grid lg:grid-cols-[856fr_452fr] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
         style={{
