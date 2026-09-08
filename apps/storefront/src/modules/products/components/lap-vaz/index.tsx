@@ -254,6 +254,21 @@ type VazSzakasz = {
  * egyebkent a suly- es meret-kuszobon. A hossz-korlat vak foltja tehat ket
  * elem, nem huszonhat.
  *
+ * ES A HAROM SZAM MEROHELYE, MERT ENELKUL EGY EV MULVA CSAK ALLITAS
+ * (nautilus kerese, 2026-09-08 -- ugyanaz a szabaly, amit reggel EN kertem
+ * szamon rajta: ha egy szam tartos helyen all, a BEMENETNEK is tartos helyen
+ * kell allnia):
+ *
+ *   agents/nautilus/measurement/terv-cimek/VAK-FOLT.md            a levezetes
+ *   agents/nautilus/measurement/terv-cimek/vakfolt-kiolvaso.cjs   a mero
+ *   agents/nautilus/measurement/terv-cimek/vakfolt-2026-09-08.json a nyers kimenet
+ *
+ * MIND A HAROM SZAMOT VISSZAMERTEM a nyers kimenetbol, MURENA (2026-09-08):
+ * 395 elem a listaban, ebbol 26 hosszabb 46 karakternel, es azok kozul ketto
+ * all >=600 sulyon ES >=14 pixelen -- a ket lap-cimke ("Galleriás ..." es
+ * "Adatvezérelt ...", mind a ketto w=600, px=17). Vagyis a harom szam nem
+ * atvett allitas, hanem ket fuggetlen olvasas ugyanarrol az anyagrol.
+ *
  * Nautilus korlata viszont KIOLVASASONKENT valtozik, es ezert nem lehet egy
  * szoval elintezni. A helyes kerdes nem az, hogy "mit lat nautilus", hanem
  * hogy MELYIK KIOLVASASBOL jon a szam. Egy cim-listabol vett nulla nem
