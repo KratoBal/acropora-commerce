@@ -1,7 +1,11 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import LapVaz, { ELO_ALLAT_LAP_SZAKASZAI, MUSZAKI_LAP_SZAKASZAI } from "./index"
+import LapVaz, {
+  csoportokba,
+  ELO_ALLAT_LAP_SZAKASZAI,
+  MUSZAKI_LAP_SZAKASZAI,
+} from "./index"
 
 afterEach(cleanup)
 
@@ -589,5 +593,182 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
 
     expect(feliratok()).toContain("Hasonló termékek")
     expect(feliratok()).not.toContain("További WYSIWYG példányok")
+  })
+})
+
+/**
+ * A JOBB OSZLOP PANEL-SZERKEZETE, A TERVBOL MERVE (2026-09-08).
+ *
+ * === A MERES, ES MIERT NEM AZ VOLT, AMIT ATVETTEM ===
+ *
+ * Ugy kaptam tovabb, hogy a jobb oszlop "egyetlen dobozban tartja az arat, a
+ * keszletet, az atvetel-valasztot, a Kosarba gombot es a Kotegajanlatot". A
+ * tervlap jelolojen, pontos tag-parositassal visszamerve ez NEM egy doboz: a
+ * jobb oszlopnak HAROM kozvetlen, keretes gyereke van.
+ *
+ *   1. ar + brutto/cikkszam + keszlet + szallitas + atvetel + Kosarba + DOA
+ *   2. Kotegajanlat        -- KULON panel, nem az arral egyutt
+ *   3. Kerdezd a boltot    -- KULON panel
+ *
+ * A mi vazunk ugyanezt HAT kulon keretes dobozkent rajzolta. A negy vasarlasi
+ * szakasz mostantol egy kozos panelbe kerul, a masik ketto marad onalloan.
+ *
+ * === AMIT EZ MER, ES AMIT NEM ===
+ *
+ * A panelek SZAMAT es a szakaszok csoportositasat meri. NEM meri a festett
+ * kepet: a jsdom nem oldja fel a CSS-valtozokat, es media-lekerdezest sem
+ * ertekel.
+ */
+describe("a jobb oszlop panel-szerkezete", () => {
+  const jobbPanelek = () =>
+    Array.from(document.querySelectorAll('[data-vaz-oszlop="jobb"]'))
+
+  /**
+   * ISMERT POZITIV KONTROLL: a vaz tenyleg megrajzolodik, es all benne jobb
+   * oszlop. Enelkul a lenti darabszam-allitas egy URES lapon is zold lenne.
+   */
+  it("a váz megrajzolódik, és van jobb oszlopa", () => {
+    render(<LapVaz />)
+
+    expect(jobbPanelek().length).toBeGreaterThan(0)
+    expect(screen.getByTestId("muszaki-lap-vaz")).toBeTruthy()
+  })
+
+  it("a jobb oszlopban HÁROM panel áll, nem hat", () => {
+    render(<LapVaz />)
+
+    expect(jobbPanelek()).toHaveLength(3)
+  })
+
+  it("a közös panel a négy vásárlási szakaszt tartja, ebben a sorrendben", () => {
+    render(<LapVaz />)
+
+    const kozos = document.querySelector('[data-vaz-csoport="vasarlas"]')
+    expect(kozos).toBeTruthy()
+
+    const bent = Array.from(kozos!.querySelectorAll("[data-vaz-szakasz]")).map(
+      (e) => e.getAttribute("data-vaz-szakasz"),
+    )
+
+    expect(bent).toEqual(["ar", "elerhetoseg", "valaszto", "mennyiseg"])
+  })
+
+  /**
+   * A KOTEGAJANLAT ES A KERDEZD KULON PANEL, es ez nem reszletkerdes: eppen ez
+   * az, amiben az atvett mondat tevedett.
+   */
+  it("a csomagajánlat és a kérdezd NEM a közös panelben áll", () => {
+    render(<LapVaz />)
+
+    const kozos = document.querySelector('[data-vaz-csoport="vasarlas"]')
+    for (const kulcs of ["csomagajanlat", "kerdezd"]) {
+      expect(kozos!.querySelector(`[data-vaz-szakasz="${kulcs}"]`)).toBeNull()
+      expect(
+        document.querySelector(`[data-vaz-szakasz="${kulcs}"]`),
+      ).toBeTruthy()
+    }
+  })
+
+  /**
+   * A HORGONYOK TULELIK A CSOPORTOSITAST, es ez nem kozmetika: a ragados sav
+   * gombja a `#vaz-mennyiseg` cimre ugrik. Ha a csoportositas elvinne a
+   * szakaszt, a gomb egy nem letezo horgonyra mutatna -- es NEM hibazna, csak
+   * nem csinalna semmit.
+   */
+  it("minden vásárlási szakasz megtartja a saját horgonyát", () => {
+    render(<LapVaz />)
+
+    for (const kulcs of ["ar", "elerhetoseg", "valaszto", "mennyiseg"]) {
+      expect(document.getElementById(`vaz-${kulcs}`)).toBeTruthy()
+    }
+  })
+})
+
+/**
+ * A CSOPORTOSITO MAGA, TISZTA FUGGVENYKENT.
+ *
+ * A renderelt allitasok a MAI szakasz-listan allnak. Ezek a szabalyt merik,
+ * fuggetlenul attol, mi all ma a listaban.
+ */
+/**
+ * A TORESPONT KET OLDALA -- ES EGY KORLAT, AMIT KI KELL MONDANI.
+ *
+ * === A TORESPONT NEM A TERVBOL JON, MERT A TERVBEN NINCS ===
+ *
+ * A feltoltott tervlap EGYETLEN szelessegen all: nulla `@media`, nulla
+ * `min-width` (merve 2026-09-08). Egy fix szelessegu rendereles szerkezetileg
+ * nem hordozhat torespontot. A `lg` (1024 px) tehat DONTES, a repo sajat
+ * konvencioja szerint, nem mert ertek -- es azert all itt kiirva, hogy senki ne
+ * hivatkozzon ra ugy, mintha a tervbol jonne.
+ *
+ * AMI VISZONT A TERVBOL JON, es merve van: a ket oszlop aranya (856 es 452,
+ * koztuk 44), es hogy a jobb oszlop egy FIX szelessegu savot kap
+ * (`minmax(0,1fr) 452px`), nem aranyost.
+ *
+ * === AMIT EZ AZ ALLITAS MER, ES AMIT NEM ===
+ *
+ * A jsdom nem ertekel media-lekerdezest, tehat ez az OSZTALYNEVEKET meri, nem a
+ * festett elrendezest. Ugyanaz az alak, mint a tokeneknel: a nev fele a lanc,
+ * a masik felet (hogy a `lg` tenyleg 1024) a keret adja.
+ */
+describe("a törésponti elrendezés", () => {
+  const vaz = () => screen.getByTestId("muszaki-lap-vaz")
+
+  /**
+   * A TORESPONT FOLOTTI FELET NEM IROM MEG UJRA.
+   *
+   * Ezt mar meri az "az asztali ket oszlopos racs ki van teve" allitas
+   * ugyanebben a fajlban: `lg:grid`, `856fr_452fr`, `lg:gap-x-[44px]`. Egy
+   * masodik, ugyanolyan allitas nem ad fedest, csak ket helyen kellene
+   * karbantartani -- es a kalibraciokor ket pirosat adna egy hibara, amitol az
+   * ember azt hiszi, ket dolog romlott el.
+   *
+   * AMI HIANYZOTT, az a torespont ALATTI fele: arra egyetlen allitas sem allt.
+   * Ezert ez a szakasz EGY allitast tesz hozza, nem harmat.
+   */
+  it("a töréspont ALATT egy oszlop áll", () => {
+    render(<LapVaz />)
+
+    expect(vaz().className).toContain("max-lg:flex")
+    expect(vaz().className).toContain("max-lg:flex-col")
+    expect(vaz().className).not.toContain("grid-cols-2")
+  })
+})
+
+describe("a szakaszok csoportokba vonása", () => {
+  const sz = (kulcs: string, csoport?: string, oszlop = "jobb") =>
+    ({ kulcs, cim: "", varakozo: "", oszlop, csoport }) as never
+
+  it("csoport nélküli szakaszokból egyelemű csoportok lesznek", () => {
+    const ki = csoportokba([sz("a"), sz("b")])
+
+    expect(ki.map((cs) => cs.length)).toEqual([1, 1])
+  })
+
+  it("az egymás után álló, azonos csoportúak összevonódnak", () => {
+    const ki = csoportokba([sz("a", "v"), sz("b", "v"), sz("c")])
+
+    expect(ki.map((cs) => cs.map((x) => x.kulcs))).toEqual([["a", "b"], ["c"]])
+  })
+
+  /**
+   * A SORREND SZAMIT, ES EZ SZANDEKOS. Ha egy harmadik szakasz kozejuk kerul,
+   * KET panel lesz belole, nem egy osszevont: a lap sorrendjet a szakasz-lista
+   * adja, nem a csoportosito.
+   */
+  it("a megszakított csoportból KÉT panel lesz, nem egy összevont", () => {
+    const ki = csoportokba([sz("a", "v"), sz("kozbe"), sz("b", "v")])
+
+    expect(ki.map((cs) => cs.map((x) => x.kulcs))).toEqual([
+      ["a"],
+      ["kozbe"],
+      ["b"],
+    ])
+  })
+
+  it("a más oszlopban álló azonos csoport NEM vonódik össze", () => {
+    const ki = csoportokba([sz("a", "v"), sz("b", "v", "bal")])
+
+    expect(ki.map((cs) => cs.length)).toEqual([1, 1])
   })
 })
