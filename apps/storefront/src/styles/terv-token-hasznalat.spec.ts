@@ -154,7 +154,19 @@ describe("a terv-tokenek hasznalata", () => {
     }
   })
 
-  it("minden használt terv-token létezik a globals.css-ben", () => {
+  /**
+   * A NEV NEM NEVEZ MEG FORRAST, ES EZ SZANDEKOS.
+   *
+   * Eddig "letezik a globals.css-ben" volt, es az a valtoztatas ELOTTI vilagot
+   * irta le: a `DEFINIALT` mostantol KET forrasbol all, tehat egy token akkor
+   * is definialt, ha a stiluslapban SEHOL nem szerepel. Egy piros allitas
+   * azzal a nevvel egyetlen fajlhoz kuldene a kovetkezo embert, es ott nem
+   * talalna meg semmit -- a hianyzo definicio a layoutban lenne.
+   *
+   * Forrast azert nem nevez meg, mert a forrasok SZAMA epp most valtozott, es
+   * valtozhat megint. (acrobot javaslata, msg_id 14851.)
+   */
+  it("minden használt terv-token definiálva van", () => {
     const arvak = HASZNALAT.filter((h) => !DEFINIALT.has(h.token)).map(
       (h) => `${h.token} (${h.ut})`,
     )
