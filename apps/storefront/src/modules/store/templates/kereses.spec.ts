@@ -106,12 +106,39 @@ describe("a keresés eljut a hívóktól a lekérdezésig", () => {
     expect(utvonal).toContain("keresesSzovege(searchParams.q)")
   })
 
-  it("az útvonal átadja a keresést a sablonnak", () => {
-    expect(utvonal).toContain("kereses={kereses}")
+  /**
+   * AZ ATADAST AZ ELEMHEZ KOTVE MERJUK, NEM A FAJL SZOVEGEBEN.
+   *
+   * A `kereses={kereses}` sztring onmagaban csak annyit mond, hogy VALAHOL a
+   * fajlban all egy ilyen atadas. Ma mind a ket lapon EGY fogyaszto van, tehat
+   * nem tud rossz helyre csuszni -- de ha egy masodik komponens is megkapja a
+   * keresest, a sztring AZON is teljesulne, mikozben a cimzett (StoreTemplate,
+   * illetve PaginatedProducts) mar nem kapna meg.
+   *
+   * Nautilus vetette fel a varrat-kerdest, es a leletet en mertem hozza: ez az
+   * a szem, ahol az atadas es a CIMZETT valik szet. A javitas egy sor -- a
+   * hatokor a cimzett nyito tagja, nem a fajl.
+   *
+   * (Ugyanaz az alak, mint a lablec racs-tagadasanal es a kosarsor csipjeinél:
+   * az ellenorzes annyira szuk, amennyire a KERESESE.)
+   */
+  const elemBlokk = (forras: string, elem: string) => {
+    const kezdet = forras.indexOf(`<${elem}`)
+    return kezdet < 0 ? "" : forras.slice(kezdet, forras.indexOf("/>", kezdet))
+  }
+
+  it("az útvonal a SABLONNAK adja át a keresést", () => {
+    const blokk = elemBlokk(utvonal, "StoreTemplate")
+
+    expect(blokk).not.toBe("")
+    expect(blokk).toContain("kereses={kereses}")
   })
 
-  it("a sablon átadja a keresést a lekérdezésnek", () => {
-    expect(sablon).toContain("kereses={kereses}")
+  it("a sablon a LEKÉRDEZÉSNEK adja át a keresést", () => {
+    const blokk = elemBlokk(sablon, "PaginatedProducts")
+
+    expect(blokk).not.toBe("")
+    expect(blokk).toContain("kereses={kereses}")
   })
 })
 
