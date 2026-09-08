@@ -151,8 +151,13 @@ describe("a terv megerositett ertekei", () => {
    * vonatkozott. Szakaszonkent ujramerve, mindket szakaszban kilenc rez elem,
    * szakaszon belul nulla kivetellel:
    *
-   *   2a (sotet)         hatter 0.62   a feliratot viselo elemek szovege 0.15
-   *   1a + 1b (vilagos)  hatter 0.55   a feliratot viselo elemek szovege FEHER
+   *   2a (sotet)    hatter 0.62   a feliratot viselo elemek szovege 0.15
+   *   1b (vilagos)  hatter 0.55   a feliratot viselo elemek szovege FEHER
+   *   1a            NULLA rez hatteru elem
+   *
+   * A VILAGOS KILENC EGYETLEN LAPON ALL (1b), es itt 2026-09-08-ig "1a + 1b"
+   * allt. Az 1a lapon nincs rez felulet -- a kiolvasasban 156 eleme van, tehat
+   * a nulla nem az adat hianya. A kovetkeztetes valtozatlan.
    *
    * A kontraszt tehat tovabbra is a REZHEZ szol -- csak a ket vilag rezje
    * kulonbozik, ezert a rajta allo szoveg is.

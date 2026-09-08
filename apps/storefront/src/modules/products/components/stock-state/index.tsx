@@ -96,8 +96,17 @@ export default function StockState({
    * lapon volt. Szakaszonkent ujramerve, mindket szakaszban kilenc rez elem,
    * szakaszon belul NULLA kivetel:
    *
-   *   2a (sotet)        hatter oklch(0.62 0.13 45)   szoveg oklch(0.15 0.014 45)
-   *   1a + 1b (vilagos) hatter oklch(0.55 0.13 45)   szoveg FEHER
+   *   2a (sotet)   hatter oklch(0.62 0.13 45)   szoveg oklch(0.15 0.014 45)
+   *   1b (vilagos) hatter oklch(0.55 0.13 45)   szoveg FEHER
+   *   1a           NULLA rez hatteru elem
+   *
+   * A VILAGOS KILENC EGYETLEN LAPON ALL, ES EZ 2026-09-08-ig "1a + 1b" alakban
+   * allt itt. Az 1a lapon nincs egyetlen rez hatteru elem sem -- nem azert,
+   * mert hianyzik az adatbol (156 eleme van a kiolvasasban), hanem mert azon a
+   * lapon nincs rez felulet. A kovetkeztetes valtozatlan (vilagos 0.55), de a
+   * halmaz neve pontatlan volt: aki az 1a lapon ellenorizne, nem talalna
+   * semmit, es azt hinne, hogy a meres megdolt. (nautilus pontositasa,
+   * msg_id 14799; kontrollal visszamerve.)
    *
    * A tokenjeink szerint (`globals.css`) mind a ketto UGYANAZON a valtozon
    * all: `--terv-kiemel`, aminek az ERTEKE blokkonkent mas (vilagos 0.55,
