@@ -534,11 +534,42 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
   })
 
   /**
-   * ES A TOBBI SOTET FELIRAT NEM MOZDUL VELE. Enelkul egy olyan valtozat is
+   * A FOTO VARAKOZOJA UGYANEZ AZ ALLITAS, MASIK DOBOZON (acrobot dontese,
+   * msg 14947): a "Saját fotó: ez a példány" KIJELENTI, hogy a kep ezt a
+   * darabot mutatja.
+   *
+   * MERVE, ES A LELET BELSO, NEM VEVOI: a sotet vilag 161 termeke kozul
+   * NULLANAK nincs kepe (a bolt vegpontjan merve, mind az 1492 termeken; kep
+   * nelkul osszesen negy termek all, mind a vilagos vilagban). A foto doboz
+   * tehat elo sotet lapon SOHA nem ures, vagyis ez a mondat ma egyetlen vevoi
+   * lapon sem jelenik meg -- csak vaz-allapotban. A javitas ettol ugyanugy
+   * kell, de a kartyan a helyes allitas fog allni.
+   */
+  it("sötét világban, EGYEDI példánynál a saját fotó felirat áll", () => {
+    render(<LapVaz vilag="sotet" egyediPeldany />)
+
+    expect(feliratok()).toContain("Saját fotó: ez a példány")
+    expect(feliratok()).not.toContain("Termékfotó")
+  })
+
+  it("sötét világban, NEM egyedi példánynál a saját fotó felirat NEM áll", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(feliratok()).not.toContain("Saját fotó: ez a példány")
+    expect(feliratok()).toContain("Termékfotó")
+  })
+
+  /**
+   * ES A TOBBI SOTET FELIRAT NEM MOZDUL VELUK. Enelkul egy olyan valtozat is
    * zold maradna, ami nem-egyedi peldanynal az EGESZ sotet listat eldobja --
    * es akkor a korall lapon ujra a muszaki feliratok allnanak.
+   *
+   * A NEVE 2026-09-08-IG "CSAK a hasonlo doboz feliratat" volt, es a foto
+   * felteteles kotesevel HAMISSA valt: ma KET doboz mozdul. Nem a szamot
+   * irtam at benne, hanem a mondatot -- egy allitas, aminek a neve mast mond,
+   * mint amit mer, ugyanolyan makacs, mint egy elavult komment.
    */
-  it("a nem egyedi példány CSAK a hasonló doboz feliratát mozdítja", () => {
+  it("a nem egyedi példány CSAK a két állító feliratot mozdítja", () => {
     render(<LapVaz vilag="sotet" />)
 
     expect(feliratok()).toContain("Elhelyezés-segéd")
