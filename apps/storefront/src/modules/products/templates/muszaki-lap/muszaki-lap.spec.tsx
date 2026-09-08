@@ -178,16 +178,25 @@ describe("a sablon átadja-e a fotó slotot", () => {
    * A sav gombja a SABLONBAN all (node-kent adjuk at), nem a komponensben,
    * tehat a `stock-state` allitasa nem fedi. Merve a tervlapon, szakaszonkent:
    * a sav gombja is a fo cselekves szinet viseli (sotet lapon 0.62, vilagoson
-   * 0.55) -- vagyis ugyanaz a `--terv-kiemel-sotet`.
+   * 0.55) -- vagyis a `--terv-kiemel`.
    *
-   * A `--terv-kiemel` rovidebb neve MINDKET vilagban tevedne, csak ellentetes
-   * iranyba, es ezt egy forras-olvaso allitas tudja megfogni: a sablon nem
-   * renderelheto jsdomban, a forrasa viszont olvashato.
+   * ITT KORABBAN EGY TILTO ALLITAS IS ALLT, ES SZANDEKOSAN VETTEM KI.
+   *
+   * Az a sor azt tiltotta, hogy a gomb a ROVIDEBB `--terv-kiemel` nevet
+   * viselje, mert akkor ket rez-valtozo letezett, es a rovidebb MINDKET
+   * vilagban tevedett volna, csak ellentetes iranyba.
+   *
+   * A ket valtozo 2026-09-08-tol EGY (a "lenyomott allapot" parjara sehol nem
+   * volt meresunk), tehat a rovid nev mostantol a HELYES -- a tiltas nem
+   * elavult, hanem az ELLENKEZOJET mondana. A kockazatot nem en szuntettem
+   * meg, hanem az osszevonas: nincs mibol rosszat valasztani.
+   *
+   * Ami MARAD belole, az a pozitiv fele: hogy a gomb tenyleg a token erteket
+   * keri, es nem beirt szint. Az meg tud bukni, tehat allitas.
    */
   it("a ragadós sáv gombja a fő cselekvés tokenjét viseli", () => {
     expect(forras).toContain("ragados-sav-ugras")
-    expect(forras).toContain("var(--terv-kiemel-sotet)")
-    expect(forras).not.toContain('background: "var(--terv-kiemel)"')
+    expect(forras).toContain('background: "var(--terv-kiemel)"')
 
     /**
      * ES A SZOVEG SZINE IS, MERT A GOMB KET ERTEKEN AL, NEM EGYEN.

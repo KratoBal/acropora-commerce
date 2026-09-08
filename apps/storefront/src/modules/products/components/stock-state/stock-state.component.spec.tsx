@@ -71,11 +71,17 @@ describe("a készlet-állapot kirajzolása", () => {
    * Ezert all mellette a ket TILTO eset, nev szerint.
    */
   /**
-   * A TOKEN NEVE MEGLEPO, ES EZERT ALL ITT KULON MONDAT: a fo cselekves
-   * MINDKET vilagban a `--terv-kiemel-sotet` erteket viseli (vilagoson 0.55,
-   * soteten 0.62) -- merve a tervlap harom lapjan, szakaszonkent, nulla
-   * kivetellel. A `--terv-kiemel` MINDKET vilagban tevedne, csak ellentetes
-   * iranyba. Aki "kijavitja" a rovidebb nevre, a tervtol tavolodik.
+   * A FO CSELEKVES MINDKET VILAGBAN a `--terv-kiemel` erteket viseli
+   * (vilagoson 0.55, soteten 0.62) -- merve a tervlap harom lapjan,
+   * szakaszonkent, nulla kivetellel. Egy valtozo, ket blokk, ket ertek.
+   *
+   * ITT KORABBAN AZ ALLT, hogy a helyes nev a hosszabbik
+   * (`--terv-kiemel-sotet`), es hogy aki "kijavitja" a rovidebbre, a tervtol
+   * tavolodik. Az akkor igaz volt, ma az ELLENKEZOJE: a ket rez-valtozo
+   * 2026-09-08-tol egy, mert a masodikra sehol nem volt meresunk, es a rovid
+   * nev az egyetlen. A figyelmeztetest nem torlom, mert a szam (0.55/0.62)
+   * valtozatlan -- csak a nev mozdult, es epp ez az, amit egy fel-emlekezet
+   * rosszul potolna.
    */
   it("a kapható kosár-gomb rezet visel", () => {
     render(
@@ -86,7 +92,7 @@ describe("a készlet-állapot kirajzolása", () => {
       />,
     )
     expect(screen.getByTestId("add-product-button")).toHaveStyle({
-      background: "var(--terv-kiemel-sotet)",
+      background: "var(--terv-kiemel)",
     })
   })
 

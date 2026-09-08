@@ -29,11 +29,17 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  * valtozat sotet pirulan all, borostyan szoveggel.
  *
  * A ketto EGYUTT mozdul vagy sehogy: a sotet szoveg a mai sotet hatteren
- * olvashatatlan lenne. Es hogy MELYIK rez-token a helyes, az ma nem
- * eldontheto -- a `globals.css` kommentje szerint "sotet hatteren vilagosabb
- * rez all", a sotet blokk viszont a SOTETEBBET (`0.55`) teszi a
- * `--terv-kiemel` valtozora. A tervbeli jelveny `0.62`, ami a sotet vilagban
- * ma a `--terv-kiemel-sotet`. Felirva acrobotnak es nautilusnak.
+ * olvashatatlan lenne.
+ *
+ * ES A "MELYIK REZ-TOKEN" KERDES AZOTA MEGSZUNT, NEM MEGOLDODOTT. Itt korabban
+ * az allt, hogy ez ma nem eldontheto, mert ket rez-valtozo letezett, es a
+ * `globals.css` kommentje az egyikrol mast sugallt, mint amit a sotet blokk
+ * tett ra. A ket valtozo 2026-09-08-tol EGY: a sotet blokkban a `--terv-kiemel`
+ * erteke `oklch(0.62 0.13 45)`, ami PONTOSAN a tervbeli jelveny hattere.
+ *
+ * Vagyis a jelveny a helyes szint kapna anelkul, hogy barmi kulonlegeset
+ * kellene ra irni -- de a valtas MAGA meg nem tortent meg, mert a hatter es a
+ * szoveg egyutt mozdul, es az acrobot dontese.
  *
  * TISZTA MEGJELENÍTÉS: nincs adatlekérése és nem tudja, melyik lapon áll --
  * ezért használható a műszaki lapon is, ha ott valaha kell.

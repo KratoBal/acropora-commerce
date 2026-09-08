@@ -41,7 +41,7 @@ export default function CartLineState({
         <LocalizedClientLink
           href={similarHref}
           className="w-fit text-xs underline"
-          style={{ color: "var(--terv-kiemel-sotet)" }}
+          style={{ color: "var(--terv-kiemel)" }}
         >
           {SIMILAR_PIECES_LABEL}
         </LocalizedClientLink>
@@ -54,7 +54,7 @@ export default function CartLineState({
       <span
         className="w-fit px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide"
         style={{
-          background: "var(--terv-kiemel-sotet)",
+          background: "var(--terv-kiemel)",
           color: "var(--terv-szoveg-vilagos)",
         }}
       >

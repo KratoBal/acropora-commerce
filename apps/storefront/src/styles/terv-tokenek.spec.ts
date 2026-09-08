@@ -68,13 +68,27 @@ describe("a terv megerositett ertekei", () => {
     ["--terv-szoveg", "oklch(0.2 0.012 60)"],
     ["--terv-keret", "oklch(0.88 0.005 250)"],
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)"],
-    ["--terv-kiemel", "oklch(0.62 0.13 45)"],
-    ["--terv-kiemel-sotet", "oklch(0.55 0.13 45)"],
+    ["--terv-kiemel", "oklch(0.55 0.13 45)"],
     ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
   ]
 
+  /**
+   * A KERESES A VILAGOS BLOKKRA SZUKUL, ES EZT EGY KALIBRACIO KENYSZERITETTE KI.
+   *
+   * Eddig ez a sor a TELJES fajlban keresett, holott "vilagos modban" allit.
+   * Amig minden token neve vilagonkent kulonbozott, ez nem latszott. A ket
+   * rez-valtozo egybevonasa utan viszont ugyanaz a NEV all mind a ket
+   * blokkban -- es amikor probakeppen FELCSERELTEM a ket blokk rez-erteket,
+   * ez a sor ZOLD MARADT: a keresett `0.55` ott volt, csak a MASIK blokkban.
+   *
+   * Vagyis egy tul TAG kereses nem hibazik, hanem csendben atmegy. A szukites
+   * mind a het sort erositi, nem csak a rezet: ugyanez a lyuk allt a
+   * hatterre, a szovegre es a keretekre is.
+   */
+  const VILAGOS_BLOKK = CSS.slice(0, CSS.indexOf('[data-vilag="sotet"]'))
+
   it.each(PAROK)("világos módban %s = %s", (nev, ertek) => {
-    expect(normal(CSS)).toContain(`${nev}: ${ertek}`)
+    expect(normal(VILAGOS_BLOKK)).toContain(`${nev}: ${ertek}`)
   })
 
   /**
@@ -83,14 +97,34 @@ describe("a terv megerositett ertekei", () => {
    * Ez a keszlet legfontosabb sora, mert a kesobbi "egyszerusites" pontosan ezt
    * a kulonbseget vinne el -- es a kulonbseg elvesztese NEM hibazik: a lap
    * tovabb mukodik, csak egy arnyalattal mast mutat. Nema kar.
+   *
+   * A KIKOTES VALTOZATLAN, A MERES MODJA VALTOZOTT (2026-09-08). Eddig ez a sor
+   * KET VALTOZONEVET hasonlitott ossze (`--terv-kiemel` es
+   * `--terv-kiemel-sotet`), mind a kettot ugyanabban a `:root` blokkban. A ket
+   * rez-valtozo azota egybe kerult, tehat a ket ertek most ugyanazon a NEVEN
+   * all, ket kulonbozo BLOKKBAN -- a regi regex-par erre vakon nullat adna.
+   *
+   * Ez a valtozat ERISEBB, mint a regi: nem csak azt mondja, hogy a ketto
+   * kulonbozik, hanem azt is, MELYIK MELYIK. A puszta "nem egyenlo" alak akkor
+   * is zold maradna, ha a ket vilag rezje HELYET CSERELNE -- es az pontosan az
+   * a nema kar, amirol a fenti bekezdes szol.
    */
   it("a világos és a sötét akcent NEM ugyanaz az érték", () => {
-    const vilagos = /--terv-kiemel:\s*(oklch\([^)]+\))/.exec(CSS)?.[1]
-    const lenyomott = /--terv-kiemel-sotet:\s*(oklch\([^)]+\))/.exec(CSS)?.[1]
+    const sotetKezd = CSS.indexOf('[data-vilag="sotet"]')
+    expect(sotetKezd).toBeGreaterThan(-1)
 
-    expect(vilagos).toBeTruthy()
-    expect(lenyomott).toBeTruthy()
-    expect(vilagos).not.toBe(lenyomott)
+    const vilagosBlokk = CSS.slice(0, sotetKezd)
+    const sotetBlokk = CSS.slice(sotetKezd)
+
+    const kiemel = (blokk: string) =>
+      /--terv-kiemel:\s*(oklch\([^)]+\))/.exec(blokk)?.[1]
+
+    const vilagos = kiemel(vilagosBlokk)
+    const sotet = kiemel(sotetBlokk)
+
+    expect(vilagos).toBe("oklch(0.55 0.13 45)")
+    expect(sotet).toBe("oklch(0.62 0.13 45)")
+    expect(vilagos).not.toBe(sotet)
   })
 
   /**

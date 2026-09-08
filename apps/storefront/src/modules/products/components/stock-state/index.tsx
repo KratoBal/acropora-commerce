@@ -99,15 +99,20 @@ export default function StockState({
    *   2a (sotet)        hatter oklch(0.62 0.13 45)   szoveg oklch(0.15 0.014 45)
    *   1a + 1b (vilagos) hatter oklch(0.55 0.13 45)   szoveg FEHER
    *
-   * A tokenjeink szerint (`globals.css`) a vilagos vilagban a 0.55 es a sotet
-   * vilagban a 0.62 UGYANAZON a valtozon all: `--terv-kiemel-sotet`. Vagyis a
-   * terv fo cselekvese MINDKET vilagban azt keri -- azt a valtozot, aminek a
-   * NEVE a lenyomott arnyalatot jeloli. Ugyanezt adta murena kosar-merese is
-   * (a kosar akcent alapja 0.55), harmadik fuggetlen forraskent.
+   * A tokenjeink szerint (`globals.css`) mind a ketto UGYANAZON a valtozon
+   * all: `--terv-kiemel`, aminek az ERTEKE blokkonkent mas (vilagos 0.55,
+   * sotet 0.62). Ugyanezt adta murena kosar-merese is (a kosar akcent alapja
+   * 0.55), harmadik fuggetlen forraskent.
    *
-   * A `--terv-kiemel` HASZNALATA ITT HIBAS VOLT: a vilagos lapon 0.62-t adott
-   * a tervbeli 0.55 helyett, a soteten pedig 0.55-ot a 0.62 helyett -- vagyis
-   * MINDKET vilagban tevedett, csak ellentetes iranyba.
+   * EZ A BEKEZDES 2026-09-08-IG MAST MONDOTT, es a valtozas nem az ertekekben
+   * van, hanem a NEVEKBEN. Akkor ket rez-valtozo letezett, es a helyes a
+   * hosszabbik (`--terv-kiemel-sotet`) volt: a rovidebb MINDKET vilagban
+   * tevedett, csak ellentetes iranyba. A ket valtozo azota EGY, mert a
+   * masodikra -- a "lenyomott allapotra" -- sehol nem volt meresunk: egy lapon
+   * belul pontosan egy rez ertek all, nulla kivetellel.
+   *
+   * Vagyis a "ne a rovid nevet hasznald" figyelmeztetes MEGFORDULT: ma a rovid
+   * nev az egyetlen, es a helyes.
    *
    * ES A SZOVEG-KERDES AZOTA LEZARULT (acrobot dontese, msg_id 14690): a
    * terv VILAGOS lapjain a rezen allo felirat FEHER, tehat a
@@ -150,7 +155,7 @@ export default function StockState({
         letiltva
           ? undefined
           : {
-              background: "var(--terv-kiemel-sotet)",
+              background: "var(--terv-kiemel)",
               color: "var(--terv-kiemel-szoveg)",
             }
       }
