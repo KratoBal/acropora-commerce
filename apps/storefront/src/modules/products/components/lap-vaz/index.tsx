@@ -643,6 +643,34 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
  */
 const EGYEDI_PELDANYT_ALLIT = new Set(["hasonlo", "foto"])
 
+/**
+ * A SOTET LAP SAJAT FELIRATA, HA A TERMEK NEM EGYEDI PELDANY.
+ *
+ * EDDIG EZEK A DOBOZOK A VILAGOS LAP FELIRATAT VETTEK AT, es az technikailag
+ * mukodott: a "Hasonló termékek" nem allit semmit, ami hamis lenne egy halra.
+ * Csak epp a MUSZAKI lap szava, egy elo allat lapjan.
+ *
+ * MERVE (acrobot, 2026-09-08, a stage Store API-jan, lapozva): a harom elo
+ * allat gyoker alatt 161 lap all, es ebbol HAROM az egyedi peldany. A ket jel
+ * egymastol fuggetlenul ugyanazt a harmat adja (`unique_piece: true` es a
+ * `wysiwyg---korallok` kategoria), tehat nem egy mezo egyetlen olvasata.
+ *
+ * Vagyis 158 lap kap ma olyan feliratot, ami nem rola szol.
+ *
+ * A TABLA CSAK AZT SOROLJA FEL, AMINEK SAJAT ALAKJA VAN. Ami nincs benne, az
+ * tovabbra is a vilagos parjara esik vissza -- a `foto` doboz ilyen, annak a
+ * felirata kulon dontes (msg 14947), es ez a valtozas nem nyul hozza.
+ */
+const ELO_ALLAT_NEM_EGYEDI_CIMEK: Record<
+  string,
+  { cim: string; varakozo: string }
+> = {
+  hasonlo: {
+    cim: "Hasonló élőlények",
+    varakozo: "Ide jönnek a hasonló élőlények",
+  },
+}
+
 export function szakaszokVilagra(
   vilag: Vilag,
   egyediPeldany = false,
@@ -652,6 +680,15 @@ export function szakaszokVilagra(
 
   return ELO_ALLAT_LAP_SZAKASZAI.map((szakasz) => {
     if (!EGYEDI_PELDANYT_ALLIT.has(szakasz.kulcs)) return szakasz
+
+    /**
+     * A SAJAT ALAK ELOBBRE VALO A VILAGOS PARJANAL. A visszaeses megmarad
+     * azoknak a dobozoknak, amiknek nincs sajat, elo allat-ra szabott
+     * feliratuk -- egy hianyzo bejegyzes tehat a MAI viselkedest adja, nem
+     * ures cimet.
+     */
+    const sajat = ELO_ALLAT_NEM_EGYEDI_CIMEK[szakasz.kulcs]
+    if (sajat) return { ...szakasz, cim: sajat.cim, varakozo: sajat.varakozo }
 
     const vilagosPar = MUSZAKI_LAP_SZAKASZAI.find(
       (sz) => sz.kulcs === szakasz.kulcs,

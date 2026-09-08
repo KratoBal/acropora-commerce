@@ -522,7 +522,7 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
     render(<LapVaz vilag="sotet" egyediPeldany />)
 
     expect(feliratok()).toContain("További WYSIWYG példányok")
-    expect(feliratok()).not.toContain("Hasonló termékek")
+    expect(feliratok()).not.toContain("Hasonló élőlények")
   })
 
   it("sötét világban, NEM egyedi példánynál a WYSIWYG felirat NEM áll", () => {
@@ -530,7 +530,29 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
 
     expect(feliratok()).not.toContain("További WYSIWYG példányok")
     expect(feliratok()).not.toContain("további egyedi példányok")
-    expect(feliratok()).toContain("Hasonló termékek")
+  })
+
+  /**
+   * ES A HELYEBE NEM A MUSZAKI LAP SZAVA KERUL -- KULON ALLITAS, MERT A FENTI
+   * KETTO EZT NEM MERI.
+   *
+   * A "WYSIWYG felirat nem all" a valtozas ELOTT is zold volt: akkor a doboz a
+   * vilagos lap "Hasonló termékek" feliratat vette at, ami szinten nem
+   * tartalmazza a WYSIWYG szot. Vagyis az a ket allitas a mai es a tegnapi
+   * viselkedest NEM kulonbozteti meg.
+   *
+   * Ez az allitas igen: a sotet lap sajat, elo allat-ra szabott feliratat meri,
+   * es kimondja, hogy a muszaki lap szava NEM all ott.
+   *
+   * ES A FELIRAT KERDESE FUGGETLEN A DOBOZ URESSEGETOL (acrobot kikotese):
+   * ezert all a `szakaszokVilagra` KIMENETEN, tartalom nelkul renderelve -- egy
+   * ures vaz feliratai ugyanugy merhetok, mint egy teli lape.
+   */
+  it("sötét világban, NEM egyedi példánynál az ÉLŐLÉNY felirat áll", () => {
+    render(<LapVaz vilag="sotet" />)
+
+    expect(feliratok()).toContain("Hasonló élőlények")
+    expect(feliratok()).not.toContain("Hasonló termékek")
   })
 
   /**
