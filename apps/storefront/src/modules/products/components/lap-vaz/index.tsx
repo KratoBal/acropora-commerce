@@ -991,7 +991,24 @@ const LapVaz = ({
     <div
       data-testid="lap-teljes-szelesseg"
       data-vilag={vilag}
-      className="w-full"
+      /*
+        A VIZSZINTES MARGO ITT ALL, NEM A BELSO DOBOZON -- ES EZ 32 PIXELT ER
+        (merve 2026-09-08).
+
+        A terv 1440 pixelen 44 pixeles oldalmargot ad, tehat a tartalom 1352
+        szeles. Nalunk a belso doboz maxWidth-je 1352 VOLT, es azon BELUL allt
+        meg egy `p-4`: a tartalom igy 1320 lett, es a bal oszlop a tervbeli 856
+        helyett 824-et kapott.
+
+        Merve a stagingen, 1440 pixelen: 835,047 + 44 + 440,953 = 1320,000.
+        Pontosan ketszer 16, vagyis a `p-4` ket oldala.
+
+        A margo a KULSO burokra valo, mert az fut vegig a lap teljes
+        szelessegeben. Igy 1440-en a belso doboz 1352 TISZTA tartalom (16 + 28
+        = 44 pixel bal oldalt), keskenyebb nezeten pedig a 16 pixeles margo
+        ugyanugy megmarad, mint eddig.
+      */
+      className="w-full px-4"
       style={{ background: "var(--terv-hatter)" }}
     >
       {/*
@@ -1012,7 +1029,7 @@ const LapVaz = ({
       */}
       {morzsa ? (
         <div
-          className="mx-auto w-full px-4 pt-4"
+          className="mx-auto w-full pt-4"
           style={{ maxWidth: "1352px" }}
           data-testid="lap-morzsa-sav"
         >
@@ -1020,7 +1037,7 @@ const LapVaz = ({
         </div>
       ) : null}
       <div
-        className="mx-auto w-full p-4 lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
+        className="mx-auto w-full py-4 lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
         style={{
           maxWidth: "1352px",
           background: "var(--terv-hatter)",
