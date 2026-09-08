@@ -9,6 +9,7 @@ import {
   MennyisegDoboz,
   ValasztoDoboz,
 } from "../vasarlas/dobozok"
+import { hasonloAzonositok } from "../related-products/gondozott-kapcsolatok"
 import { minimumOrderQuantity } from "../product-actions/minimum-order-quantity"
 import { uniquePieceOf } from "../stock-state/availability"
 
@@ -417,7 +418,28 @@ export function vazTartalom(
    * rea iranyulo tesztfajl ugyanugy elszallna module-szinten, ahogy a
    * `ProductActions`-nel merve lett.
    */
-  if (hasonloResz) {
+  /**
+   * ES A DONTES AZ ADATBOL JON, NEM A BURKOLO LETEZESEBOL.
+   *
+   * A hivo egy BURKOLO ELEMET ad at (`<div>` a Suspense korul), es az MINDIG
+   * letezik. A `VazDoboz` uressegi vizsgalata viszont a `children` letezeset
+   * nezi -- nem azt, hogy a benne allo szerver-komponens vegul rajzol-e.
+   *
+   * A #147 ota a `RelatedProducts` gondozott kapcsolat nelkul `null`-t ad, ami
+   * MA MINDEN TERMEKNEL igy van. Burkoloval egyutt a doboz TELINEK jelolt
+   * (folytonos keret, hatter, cim) es URESEN rajzol -- pontosan az, amit a
+   * `VazDoboz` sajat fejlece tilt: "egy ures doboz, ami kesznek latszik,
+   * rosszabb a hianyzonal".
+   *
+   * A ket fel kulon-kulon helyes volt, es a KOZOTTUK levo allitas hianyzott:
+   * ugyanaz az alak, mint amikor a vaz kapuja a `categories` mezot olvasta, es
+   * a lap nem kerte le azt a mezot.
+   *
+   * Ezert ugyanazt a fuggvenyt kerdezzuk meg, amit a komponens is: ha nincs
+   * gondozott azonosito, a slot ki sem kerul, es a doboz a varakozo szoveget
+   * mutatja.
+   */
+  if (hasonloResz && hasonloAzonositok(termek.metadata).length > 0) {
     tartalom.hasonlo = hasonloResz
   }
 
