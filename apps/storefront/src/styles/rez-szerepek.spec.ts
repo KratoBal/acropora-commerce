@@ -43,6 +43,14 @@ function forrasFajlok(mappa: string): string[] {
   return talalt
 }
 
+/** Minden `background: "var(--terv-kiemel...)"` hasznalat, fajllal egyutt. */
+const hatterHasznalatok = forrasFajlok(GYOKER).flatMap((ut) => {
+  const tartalom = readFileSync(ut, "utf-8")
+  return Array.from(
+    tartalom.matchAll(/background:\s*"var\((--terv-kiemel[a-z-]*)\)"/g),
+  ).map((m) => ({ fajl: ut.slice(GYOKER.length + 1), token: m[1] }))
+})
+
 const szinHasznalatok = forrasFajlok(GYOKER).flatMap((ut) => {
   const tartalom = readFileSync(ut, "utf-8")
   return Array.from(
@@ -70,6 +78,30 @@ describe("a réz tokenek szerepe a pozíciójukból", () => {
    * ES AMI `color:` POZICIOBAN ALLHAT: csak a ket szoveg-szerepu token. Egy uj
    * rez-token bevezetese igy nem csuszhat be ide eszrevetlenul.
    */
+
+  /**
+   * ES A TUKRE, AMIT EGY KALIBRACIO KENYSZERITETT KI: a ket SZOVEG-szerepu
+   * token soha nem allhat `background:` poziciban.
+   *
+   * A jelveny hatteret probakeppen a TINTA tokenre allitottam (letezo, de
+   * rossz szerepu rez -- a legelethubb tevedes, mert mind a ketto "rez", es a
+   * vilagos lapon egyforma). A komponens sajat allitasa megfogta; EZ a spec
+   * NEM, mert csak a `color:` poziciot nezte.
+   *
+   * Egy orzo, ami a szerepekrol szol, de csak az egyik iranyt meri, a masik
+   * iranyban pont olyan nema, mint ha nem letezne.
+   */
+  it("a szöveg-szerepű tokenek soha nem állnak background: pozícióban", () => {
+    const rosszak = hatterHasznalatok.filter((h) => h.token !== "--terv-kiemel")
+
+    expect(rosszak).toEqual([])
+  })
+
+  /** ISMERT POZITIV KONTROLL a masik iranyra is: talal-e egyaltalan hattereket. */
+  it("a keresés talál réz background: használatokat", () => {
+    expect(hatterHasznalatok.length).toBeGreaterThanOrEqual(3)
+  })
+
   it("color: pozícióban csak a két szöveg-szerepű token áll", () => {
     const nevek = Array.from(
       new Set(szinHasznalatok.map((h) => h.token)),

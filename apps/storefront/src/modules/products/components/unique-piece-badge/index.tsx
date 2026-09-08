@@ -22,22 +22,36 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  * (A "pirula stimmel a terv tizenhat korehez" ervet ez cafolja: az a tizenhat
  * MASHOL van, es a jelveny nem tartozik hozzajuk.)
  *
- * === AMI MEG NEM VALTOZOTT, ES MIERT ===
+ * === A SZINEK A TERVBOL JONNEK (2026-09-08) ===
  *
- * A tervben a jelveny REZ hatteren all, SOTET szoveggel
- * (`--terv-kiemel-szoveg`). A mai valtozat sotet pirulan all, borostyan
- * szoveggel.
+ * A jelveny REZ hatteren all, SOTET szoveggel -- a tervbol merve, a 2a lapon:
  *
- * A HIVATKOZOTT MERES SZAMA ITT ELAVULT VOLT: "mind az ot rez-hatteru elem"
- * allt itt, holott az az ot egy szures elotti reszhalmaz. Szakaszonkent
+ *   hatter   oklch(0.62 0.13 45)   a sotet blokkban a `--terv-kiemel`
+ *   szoveg   oklch(0.15 0.014 45)  a sotet blokkban a `--terv-kiemel-szoveg`
+ *   sugar    0
+ *
+ * ES EZ SZEMRE MAS JELVENY, NEM ARNYALAT-IGAZITAS. Aki ranez es meglepodik,
+ * itt lassa, hogy szandekos volt:
+ *
+ *   eddig   sotet pirula (`bg-neutral-900/85`), vilagos borostyan szoveggel
+ *   mostol  REZ hatter, SOTET szoveggel
+ *
+ * MIERT MOST, ES MIERT NEM KORABBAN: a valtas 02:13-tol TARTASBAN allt, es a
+ * tartas oka egy NYITOTT kerdes volt -- akkor meg ket rez-valtozo allt egymas
+ * mellett, es nem volt eldontve, melyik a helyes. Ezt a #137 zarta le: egy
+ * token van, es a sotet blokkban pontosan az a ket ertek all, amit a tervbeli
+ * jelvenyen mertunk. A tartas OKA jart le, nem a velemeny valtozott.
+ * (acrobot feloldasa, msg_id 14842.)
+ *
+ * A KET ERTEK EGYUTT MOZDUL VAGY SEHOGY: a sotet szoveg a REGI sotet hatteren
+ * olvashatatlan lett volna -- ezert nem lehetett csak az egyiket atvinni.
+ *
+ * ES EGY MERES, AMI KORABBAN ITT ALLT, PONTOSITVA: a "mind az ot rez-hatteru
+ * elem" levezetes egy szures elotti reszhalmazra vonatkozott. Szakaszonkent
  * ujramerve KILENC rez hatteru elem all lapon belul, es a rajtuk allo szoveg
- * MEGFORDUL a ket vilag kozott: a sotet (2a) lapon 0.15, a vilagosokon FEHER.
- * A jelvenyre a sotet ertek all, mert a jelveny csak elo allat lapjan
- * jelenik meg -- vagyis a KOVETKEZTETES valtozatlan, csak a hivatkozott szam
- * es a hatokore pontosabb.
- *
- * A ketto EGYUTT mozdul vagy sehogy: a sotet szoveg a mai sotet hatteren
- * olvashatatlan lenne.
+ * MEGFORDUL a ket vilag kozott: a sotet (2a) lapon 0.15, a vilagoson FEHER. A
+ * jelvenyre a sotet ertek all, mert a jelveny csak elo allat lapjan jelenik
+ * meg.
  *
  * ES A "MELYIK REZ-TOKEN" KERDES AZOTA MEGSZUNT, NEM MEGOLDODOTT. Itt korabban
  * az allt, hogy ez ma nem eldontheto, mert ket rez-valtozo letezett, es a
@@ -61,11 +75,15 @@ export default function UniquePieceBadge({
     <span
       data-testid="unique-piece-badge"
       className={
-        "absolute left-3 top-3 z-10 bg-neutral-900/85 px-3 py-1 " +
-        "text-xs font-semibold uppercase tracking-wide text-amber-200 " +
+        "absolute left-3 top-3 z-10 px-3 py-1 " +
+        "text-xs font-semibold uppercase tracking-wide " +
         "shadow-sm backdrop-blur-sm " +
         className
       }
+      style={{
+        background: "var(--terv-kiemel)",
+        color: "var(--terv-kiemel-szoveg)",
+      }}
     >
       1 db · Egyedi példány
     </span>

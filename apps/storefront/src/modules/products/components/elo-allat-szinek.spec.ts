@@ -88,12 +88,28 @@ describe("a két világon megjelenő szövegek színe", () => {
   })
 
   /**
-   * ES A JELVENY SAJAT PIRULAJA MARAD -- ez nem elnezes, hanem a fenti
-   * megkulonboztetes masik fele. Ha valaki ezt is tokenre viszi, az DONTES,
-   * es akkor ez a sor pirosodik, hogy a dontes latszodjon.
+   * A JELVENY MAR NEM SAJAT PIRULA -- ES EZ AZ ALLITAS PONTOSAN UGY MUKODOTT,
+   * AHOGY MEGIRTUK.
+   *
+   * Itt korabban az allt, hogy a jelveny hattere TOVABBRA IS beirt
+   * (`bg-neutral-900/85`), es a sajat kommentje kimondta: "ha valaki ezt is
+   * tokenre viszi, az DONTES, es akkor ez a sor pirosodik, hogy a dontes
+   * latszodjon".
+   *
+   * A dontes 2026-09-08-on megszuletett (acrobot feloldasa, msg_id 14842), a
+   * sor pirosra valt, es a valtozas emiatt NEM tudott csendben atmenni. Ezert
+   * nem toroljuk, hanem MEGFORDITJUK: mostantol azt vedi, hogy a beirt szin ne
+   * jojjon VISSZA.
+   *
+   * A valtas SZEMRE MAS jelvenyt ad (sotet pirula, borostyan szoveg helyett rez
+   * hatter, sotet szoveggel), es a ket ertek EGYUTT mozdul: a sotet szoveg a
+   * regi sotet hatteren olvashatatlan lenne.
    */
-  it("a jelvény saját pirulája továbbra is beírt háttér", () => {
-    expect(osztalyok(olvas(FAJLOK[1]))).toContain("bg-neutral-900/85")
+  it("a jelvény háttere tokenből jön, nem beírt osztályból", () => {
+    const jelveny = osztalyok(olvas(FAJLOK[1]))
+
+    expect(jelveny).not.toContain("bg-neutral-900/85")
+    expect(olvas(FAJLOK[1])).toContain('background: "var(--terv-kiemel)"')
   })
 })
 
