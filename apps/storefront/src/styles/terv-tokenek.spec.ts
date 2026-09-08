@@ -34,10 +34,10 @@ const CSS = readFileSync(join(__dirname, "globals.css"), "utf-8")
  * A prettier SZETTORI az erteket, ha a sor tul hosszu lesz:
  *
  *   --terv-hatter: oklch(
- *     0.96 0.006 75
+ *     0.99 0.004 80
  *   );
  *
- * Egy egyszeru `\s+ -> " "` csere ilyenkor `oklch( 0.96 0.006 75 )` alakot ad,
+ * Egy egyszeru `\s+ -> " "` csere ilyenkor `oklch( 0.99 0.004 80 )` alakot ad,
  * ami NEM illeszkedik -- es a haló FALSE POZITIVET adna: pirosra valtana egy
  * olyan valtozastol, ami csak a formazas. Merve: ez ma este meg is tortent,
  * egy hosszabb komment miatt.
@@ -66,7 +66,11 @@ describe("a terv megerositett ertekei", () => {
    * cserelne.
    */
   const PAROK: ReadonlyArray<readonly [string, string]> = [
-    ["--terv-hatter", "oklch(0.96 0.006 75)"],
+    /*
+      A VILAGOS LAP ERTEKE AZ 1b SZAKASZE (Balazs valasztotta, 2026-09-08).
+      A korabbi 0.96 a csikos kep-helykitoltok szine volt, nem lap-hatter.
+    */
+    ["--terv-hatter", "oklch(0.99 0.004 80)"],
     ["--terv-szoveg", "oklch(0.2 0.012 60)"],
     ["--terv-keret", "oklch(0.88 0.005 250)"],
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)"],
