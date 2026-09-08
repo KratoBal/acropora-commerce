@@ -131,6 +131,49 @@ export function ElerhetosegDoboz({
    * ha ide is kiirnank, ket allitas allna ugyanarrol. A melyedes tehat a
    * MEGLEVO ket tenyt kapja meg, uj sor nelkul.
    */
+  /*
+    A MELYEDES A LAP TOKENJET VISELI, ES A TERVBEN VAN EGY MASIK ERTEK IS --
+    ez a mondat azert all itt, hogy ket het mulva ne kelljen ujra lemerni
+    (acrobot merese, 2026-09-08).
+
+    A 2a szakasz KET keretet tartalmaz, es a keszlet-sor MIND A KETTOBEN ott
+    van, KULONBOZO hatterrel:
+
+      a 1440 pixeles ASZTALI kereten belul   oklch(0.17 0.016 250)  <- ez all itt
+      a  390 pixeles MOBIL   kereten belul   oklch(0.215 0.018 249)
+
+    Nem ket VALTOZAT, hanem ugyanaz a lap ket MERETBEN: a mobil blokk sajat
+    fejleccel indul, es ott az elhelyezes-seged GOMB, nem beagyazott doboz.
+
+    Mi az asztali nezetet epitjuk, tehat a 0.17 -- es az a `--terv-hatter`,
+    uj token nelkul. A 0.215 AKKOR kap tokent, amikor a mobil nezet epul, es
+    AKKOR a szerepebol levezetve, nem ebbol az ertekbol visszafejtve.
+
+    ES AMIERT A KET ERTEK GYANUT KELTETT: ellentetes iranyba emelnek ki. Az
+    asztali a lap tonusara MELYIT (a panel 0.205-nel vilagosabb), a mobil
+    fole EMEL (0.215 a 0.17-es lapon). Egy sima "ket ertek van" nem lett
+    volna eleg gyanu ahhoz, hogy megnezzuk, miben kulonboznek.
+
+    === ES EGY NYITOTT ELTERES A VILAGOS VILAGBAN, KIMONDVA ===
+
+    Ez a doboz a `--terv-hatter`-t viseli, es a SOTET lapon ez BETURE pontos:
+    ott a melyedes es a lap alapja UGYANAZ az ertek (mindketto 0.17). A
+    vilagos lapon viszont NEM ugyanaz:
+
+      2a  lap alapja  oklch(0.17 0.016 250)   doboz  oklch(0.17 0.016 250)
+      1b  lap alapja  oklch(0.99 0.004 80)    doboz  oklch(0.965 0.008 70)
+
+    (A dobozt az ALAKJA azonositja mind a ket lapon: `padding:14px` es
+    `gap:6px` -- ugyanaz a ketto, amit ez a komponens visel.)
+
+    Vagyis vilagosban a terv egy KULON, sotetebb erteket ad a doboznak, mi
+    pedig a lap alapjat adjuk neki. A sotet lapon a ketto veletlenul egybeesik,
+    es epp ezert nem latszik a hiba onmagaban.
+
+    NEM JAVITOM, mert az uj token-ertek kerdese, nem elrendezes -- es mert a
+    sotet oldal ma helyes. Merve 2026-09-08; ha valaki hozzanyul, ez a ket sor
+    a kiindulas.
+  */
   return (
     <div
       className="flex flex-col gap-[6px] p-[14px]"

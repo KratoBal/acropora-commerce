@@ -79,6 +79,36 @@ import SideMenu from "@modules/layout/components/side-menu"
  * "markara" helyett -- lap-fajta szerinti elteres, amit egy KOZOS fejlec ma nem
  * tud kifejezni. Az 1b a valasztott valtozat, tehat az o szovege all itt.
  */
+/**
+ * A HELYKITOLTO SZOVEG HAROM DOLGOT IGER, ES MIND A HAROM MAS ALAPON IGAZ.
+ *
+ * Ez nem szormeszalhasogatas: egy helykitolto KEPESSEGET iger a vevonek, es
+ * ugyanolyan allitas, mint egy szam egy jelentesben -- csak senki nem gondol
+ * ra ugy. Ezert all itt, hogy melyik miert all.
+ *
+ * Merve a teszt bolton (2026-09-08), a `/store/products?q=...` uton:
+ *
+ *   "cikkszámra"  A MECHANIZMUSBOL KOVETKEZIK. A kereses a `sku` mezore is
+ *                 illeszkedik. A ket legerosebb eset: `q=156161` es
+ *                 `q=4011708350249` -- tisztan szamjegyes cikkszamok, amik a
+ *                 termek NEVEBEN es cimeben sehol nem szerepelnek, tehat CSAK
+ *                 a cikkszam-mezore talalhattak. Mind az ot probalt cikkszam a
+ *                 helyes termeket adta.
+ *
+ *   "termékre"    a cimre illeszkedik. Ez a szabadszavas kereses alapesete.
+ *
+ *   "fajra"       MA IGAZ, DE NEM A MECHANIZMUSBOL. Nincs strukturalt
+ *                 faj-mezo: a tizenegy metaadat-kulcs kozott egy sincs, ami
+ *                 fajt vagy latin nevet hordozna. A faj-kereses azert mukodik,
+ *                 mert a faj neve a TERMEK CIMEBEN all (`q=austea` -> 1,
+ *                 `q=Acropora` -> 64, `q=tricolor` -> 2; negativ kontroll:
+ *                 `q=zzzzqqqq` -> 0).
+ *
+ *                 AMI EBBOL KOVETKEZIK: ha egy termek valaha faj-nev nelkuli
+ *                 cimet kap, ez az igeret RA NEZVE csendben megszunik -- nem
+ *                 hibazik, csak nem talal. Az igeret tehat az adat alakjan
+ *                 all, nem a keresoen.
+ */
 const KERESO_HELYKITOLTO = "Keresés termékre, márkára, cikkszámra"
 
 export default async function Nav({ countryCode }: { countryCode?: string }) {
