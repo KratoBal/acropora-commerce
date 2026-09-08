@@ -60,13 +60,42 @@ import type { Vilag } from "./index"
  *      fo agon van, a teszt kirakat a meres pillanataban meg nem kapta meg.
  *   2. A meres acroboté: a bolt vegpontjahoz kulcs kell, ami nincs nalam. En a
  *      MECHANIZMUST mertem kodbol, o a SZAMOT az adaton.
+ *
+ *      EZ A KORLAT 2026-09-08 06:20-RA LEJART, ES A SZAMOK AZOTA FUGGETLENUL
+ *      IGAZOLVA VANNAK. A teszt bolt publikalhato kulcsa bekerult az
+ *      `exchange` konyvtarba, tehat a `medusa-stage.sh` nekem is fut. Merve,
+ *      mind az 1492 termeken:
+ *
+ *        Korallok 8 | Halak 125 | Gerinctelenek 28 | KULON 161
+ *
+ *      EGY MELLEKLELET, AMI NEM VOLT A KERDESBEN: pontosan EGY termek all a
+ *      boltban KATEGORIA NELKUL. A mai predikatum azt a VILAGOS lapra kuldi
+ *      (nincs elo allat gyokere), ami a biztonsagos irany -- de ha valaha
+ *      elo allat kerul be kategoria nelkul, csendben a rossz lapot kapja.
+ *
+ *      Beture ugyanaz. ES MAS UTON: en a `parent_category_id` lancan setaltam
+ *      fel a gyokerig, nem az `mpath` elso szegmensebol. Ket kulonbozo
+ *      feloldas, ket kulonbozo mero, ugyanaz a szam.
+ *
+ *      A nyers osszeg is 161, tehat egyetlen termek sem szamit ketszer (nincs
+ *      olyan, ami ket elo allat gyoker ala is beesne).
  *   3. A meres CSAK az `mpath` elso szegmenset hasznalta. A masik ag (a
  *      `parent_category_id` lancan felfele) ezekben a szamokban NEM szerepel --
  *      es merve NEM IS SZAMIT MA: a bolt valaszaban nulla olyan kategoria all,
  *      aminek hianyzik az `mpath`-ja.
  *
+ * A HARMADIK PONTHOZ EGY PONTOSITAS, A FENTI FUGGETLEN MERESBOL: az a meres
+ * VEGIG a szulo-lancot hasznalta, es ugyanazt a 161-et adta. Vagyis a ket
+ * feloldas a mai adaton EGYETERT.
+ *
+ * AMIT EZ NEM BIZONYIT, es a kulonbseg szamit: nem azt, hogy a tartalek ag a
+ * FUTO alkalmazasban elsul. Ott csak akkor kerul sorra, ha egy kategoriabol
+ * HIANYZIK az `mpath` -- es ilyen ma nulla van. A ket allitas tehat: a
+ * mechanizmus HELYES (most mar adaton is), de a kodban levo agat a mai bolt
+ * nem jarja be.
+ *
  * A HARMADIK PONTBOL NEM AZ KOVETKEZIK, HOGY AZ AZ AG FOLOSLEGES, hanem hogy a
- * mai adat nem igazolja es nem is cafolja. Ha valaha bekerul egy ilyen alak,
+ * mai adat nem igazolja es nem is cafolja azt, hogy VALAHA szukseg lesz ra. Ha valaha bekerul egy ilyen alak,
  * csendben fog dolgozni -- ezert all rajta allitas ("mpath nelkul a szulo-
  * lancon talalja meg a gyokeret"), kulonben senki nem venne eszre, ha elromlik.
  */
