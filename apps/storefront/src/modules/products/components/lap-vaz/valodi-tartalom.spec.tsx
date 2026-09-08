@@ -209,6 +209,71 @@ describe("a váz valódi tartalma", () => {
   })
 
   /**
+   * A HATAR-ALLITAS: EGY KILENC KARAKTERES LEIRAS IS MEGJELENIK.
+   *
+   * MIERT KELL, ES MIERT EPP EZ AZ ALAK. A doboz feltetele ma az, hogy a
+   * megtisztitott leiras NEM ures -- nincs benne hossz-kuszob, es nem is szabad,
+   * hogy legyen. Egy kuszob kezenfekvo lenne (a legrovidebb leiras hat
+   * karakter), es EPP A LEGHASZNOSABB adatot rejtene el.
+   *
+   * MERVE a teljes bolton (acrobot, 2026-09-08, mind az 1492 termek), A
+   * MEGTISZTITOTT SZOVEGEN: negyven karakter alatt 25 termek all, szaz alatt
+   * 82 -- es ezek nem torott sorok, hanem tomor muszaki specek:
+   *
+   * A "MEGTISZTITOTT" JELOLES NEM SZORSZALHASOGATAS, ES EPP A FENTI ERVET ERINTI.
+   * Ugyanez a ket szam a NYERS `description` mezon 19 es 70. A doboz a
+   * MEGTISZTITOTT szoveget jeleniti meg, tehat egy kesobbi hossz-kuszob is azon
+   * vagna -- vagyis a 25 az ervenyes szam ehhez az ervhez, a 19 nem. Aki a nyers
+   * mezon ellenorizne, 19-et kapna, es nem csak a szamot tartana gyanusnak,
+   * hanem az ervet is.
+   *
+   * (A korabbi valtozat 81-et irt a szaz alatti sorra. Az a szam egyik meressel
+   * sem all elo: tisztitottan 82, kisebb-egyenlovel 83. Valoszinuleg egy
+   * korabbi, mas alaku tisztitassal keszult -- de mivel nem tudom reprodukalni,
+   * a mert ertek all a helyen, nem a regi.)
+   *
+   *   eheim-skim-350-felszinleszivo            9 karakter   "300l/h 5W"
+   *   megaveggiemag-magneses-algalap-csipesz  20 karakter   "19mm uvegvastagsagig"
+   *   resun-wave-maker-hwm2000-600l-h         31 karakter   "3 Watt 600 liter/ora 60 literig"
+   *
+   * Egy kesobbi kor "megtisztitana" a dobozt egy minimum-hosszal, es senki nem
+   * venne eszre, hogy huszonot termekrol tuntette el az EGYETLEN muszaki adatot.
+   * Ez az allitas azert all itt, hogy az a kor PIROSAT kapjon.
+   *
+   * ES A JELOLO NELKULI ALAK KULON SZAMIT: a tisztito 1175 termeknel jelolot lat,
+   * de ezeknel a rovideknel NEM -- ha valaha a jelolo megletetol fugghetne a
+   * megjelenes, ez az allitas fogja meg.
+   */
+  it("kilenc karakteres, jelölő nélküli leírás is megjelenik", () => {
+    const rovid = {
+      ...(TERMEK as object),
+      description: "300l/h 5W",
+    } as never
+
+    render(<LapVaz tartalom={vazTartalom(rovid)} />)
+
+    const fulek = document.querySelector('[data-vaz-szakasz="fulek"]')
+    expect(fulek?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(fulek?.textContent).toContain("300l/h 5W")
+  })
+
+  /**
+   * ES A MASIK OLDAL: MEZO NELKUL A DOBOZ VARAKOZIK.
+   *
+   * A ket allitas egyutt mondja meg a hatart: nem a HOSSZ dont, hanem hogy VAN-E
+   * mezo. A boltban 266 termeknek nincs (1492-bol), es URES sztring EGY SINCS --
+   * vagyis a "van, de semmi" eset nem letezik.
+   */
+  it("leírás nélkül a fülek doboz üresen marad", () => {
+    const nincs = { ...(TERMEK as object), description: null } as never
+
+    render(<LapVaz tartalom={vazTartalom(nincs)} />)
+
+    const fulek = document.querySelector('[data-vaz-szakasz="fulek"]')
+    expect(fulek?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  /**
    * A LÉNYEG: AMINEK NINCS FORRÁSA, AZ ÜRESEN MARAD. Ez nem hiányosság, hanem a
    * kikötés -- kitalált adat nem kerül a lapra.
    *
