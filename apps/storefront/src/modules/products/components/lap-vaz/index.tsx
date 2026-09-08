@@ -136,6 +136,32 @@ type VazSzakasz = {
  * `agents/nautilus/measurement/terv-valtozatok/` (OLVASSEL.md, 2a-TELJES-LISTA.md,
  * VILAGOS-LAPOK.md, DESIGNER-JEGYZETEK.md).
  *
+ * === A KET OLVASO KET KULONBOZO DOLOGRA VAK, ES EZ NEM "TELJES KONTRA SZURT" ===
+ *
+ * A tervlapot ketten olvassuk, ket kulonbozo modszerrel, es MINDKETTO vak
+ * valamire. Sokaig ugy hivatkoztunk erre, hogy az egyik "a teljes szoveget"
+ * latja, a masik "szurve" -- ez HAMIS, es ketszer allt vissza a helyesbites
+ * utan is, mert csak uzenetben volt kimondva:
+ *
+ *   nautilus   elem-szinten olvas -> a CSONKOLAS nem erinti,
+ *              de SULYT (>=600) es MERETET (>=14px) kuszobol
+ *   murena     kontener-CIMKET olvas -> a suly nem erinti,
+ *              de 60 KARAKTERNEL kemenyen vag
+ *
+ * Merve: 252 dobozcimkebol 95 eri el a 60 karakteres hatart (a korall lapon
+ * 35). Vagyis nem az egyikunk lat tobbet: SULYRA VAK kontra HOSSZRA VAK.
+ *
+ * A KOVETKEZMENY, AMI A GYAKORLATBAN SZAMIT: egy SZAKASZ-CIM ellenorzesehez az
+ * en oldalam eleg, mert egy szakasz a sajat cimevel KEZDODIK, tehat a vagas
+ * utan is ott all az eleje. Egy BEAGYAZOTT elofordulast (egy cimke KOZEPEN
+ * allo szoveget) viszont elrejthet -- arra nautilus olvasasa kell.
+ *
+ * ES AMIERT EZ ITT ALL, NEM EGY UZENETBEN: ez a negy sor mar ketszer elveszett
+ * egy kontextus-hataron, es utana MINDKETTEN visszaestunk a "teljes kontra
+ * szurt" alakra. Egy uzenetben elhelyezett helyesbites pontosan addig el,
+ * ameddig a beszelgetes; az eredeti allitas viszont a fejlecekben all, tehat
+ * tulel. Ezert tud egy javitas visszafordulni anelkul, hogy barki visszavonna.
+ *
  * === EGY KONKRET ESET, AMI EBBOL MAR ELOJOTT: A VIDEO ===
  *
  * Murena a terv dobozlistajat kiolvasva talalt egy VIDEO elemet a foto es a
