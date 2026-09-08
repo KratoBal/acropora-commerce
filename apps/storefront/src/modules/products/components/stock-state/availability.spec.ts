@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  anyVariantPurchasable,
   availabilityLabel,
   availabilityOf,
+  inventoryKnownOf,
   SIMILAR_ITEMS_LABEL,
   similarItemsHref,
   SOLD_OUT_EXPLANATION,
   UNIQUE_PIECE_PROMISE,
   uniquePieceOf,
+  variantPurchasable,
 } from "./availability"
 
 describe("készlet-állapot", () => {
@@ -222,5 +225,169 @@ describe("a vevőnek szánt szövegek", () => {
     ]) {
       expect(szoveg).not.toContain("--")
     }
+  })
+})
+
+/**
+ * A VALTOZAT NELKULI KERDES, AMIN A RAGADOS SAV GOMBJA All (415f455c).
+ *
+ * Ezek VALODI viselkedest mernek, nem forrast: tiszta fuggvenyek, tehat itt
+ * nincs szukseg a sablon-olvasasra.
+ */
+describe("megvehető-e a termék bármelyik változata", () => {
+  const keszletezett = (darab: number | null) => ({
+    manage_inventory: true,
+    allow_backorder: false,
+    inventory_quantity: darab,
+  })
+
+  it("készlet nélkül kezelt változat mindig megvehető", () => {
+    expect(variantPurchasable({ manage_inventory: false })).toBe(true)
+  })
+
+  it("előrendelhető változat akkor is megvehető, ha nulla a készlete", () => {
+    expect(
+      variantPurchasable({
+        manage_inventory: true,
+        allow_backorder: true,
+        inventory_quantity: 0,
+      }),
+    ).toBe(true)
+  })
+
+  it("készletezett változat pozitív darabszámmal megvehető, nullával nem", () => {
+    expect(variantPurchasable(keszletezett(3))).toBe(true)
+    expect(variantPurchasable(keszletezett(0))).toBe(false)
+  })
+
+  /**
+   * A KETTO KOZUL AZ EGYIK ELEG. Ez a sav gombjanak a lenyege: a gomb a
+   * VALASZTORA ugrik, tehat akkor helyes, ha a valasztas vezet valahova.
+   */
+  it("egyetlen megvehető változat elég az egész termékhez", () => {
+    expect(
+      anyVariantPurchasable({
+        variants: [keszletezett(0), keszletezett(2)],
+      }),
+    ).toBe(true)
+  })
+
+  it("ha egyetlen változat sem megvehető, a termék sem az", () => {
+    expect(
+      anyVariantPurchasable({
+        variants: [keszletezett(0), keszletezett(0)],
+      }),
+    ).toBe(false)
+  })
+
+  /**
+   * A VALTOZAT NELKULI TERMEK HAMIS, ES EZ NEM ELIRAS: nincs mit a kosarba
+   * tenni. A `some` ures listan hamisat ad, tehat a viselkedes egybeesik a
+   * szandekkal -- de az allitas AZERT all itt, hogy egy kesobbi atiras
+   * (peldaul `every`-re) ne fordithassa meg csendben.
+   */
+  it("változat nélküli termék nem megvehető", () => {
+    expect(anyVariantPurchasable({ variants: [] })).toBe(false)
+    expect(anyVariantPurchasable({})).toBe(false)
+  })
+})
+
+describe("tudjuk-e a készletet minden változatnál", () => {
+  it("a nem készletezett változat nem tesz ismeretlenné semmit", () => {
+    expect(inventoryKnownOf({ variants: [{ manage_inventory: false }] })).toBe(
+      true,
+    )
+  })
+
+  it("a mért nulla ISMERT készlet", () => {
+    expect(
+      inventoryKnownOf({
+        variants: [{ manage_inventory: true, inventory_quantity: 0 }],
+      }),
+    ).toBe(true)
+  })
+
+  /**
+   * EGYETLEN hianyzo szam elég az ismeretlenhez, mert a szigorubb feltetel a
+   * HALKABB tevedes fele visz (ELFOGYOTT, nem ELADVA).
+   */
+  it("egyetlen hiányzó szám az egész terméket ismeretlenné teszi", () => {
+    expect(
+      inventoryKnownOf({
+        variants: [
+          { manage_inventory: true, inventory_quantity: 0 },
+          { manage_inventory: true },
+        ],
+      }),
+    ).toBe(false)
+  })
+})
+
+/**
+ * A MERT LAP ALLAPOTA, OSSZERAKVA -- ES MELLETTE A POZITIV KONTROLL.
+ *
+ * A mert eset (2026-09-08, shop-staging, acropora-austea-tricolor): a
+ * metaadatban `unique_piece: "true"`, a valtozat keszletezett es nullan all.
+ * Ebbol ELADVA kell kijojjon, mert a fo oszlop is azt mutatta.
+ *
+ * A KONTROLL AZ ALLITAS FELE, NEM DISZ: egy "nem KAPHATO" allitast egy olyan
+ * vilag is kielegitene, amiben SEMMI nem kaphato. A masodik eset ugyanezzel a
+ * szamitassal KAPHATO-t ad, tehat a szamitas kepes megkulonboztetni.
+ */
+describe("a ragadós sáv állapota a mért lapon", () => {
+  const allapot = (
+    termek: Parameters<typeof anyVariantPurchasable>[0] & {
+      metadata?: unknown
+    },
+  ) =>
+    availabilityOf({
+      inStock: anyVariantPurchasable(termek),
+      uniquePiece: uniquePieceOf(termek.metadata),
+      inventoryKnown: inventoryKnownOf(termek),
+    })
+
+  it("elkelt egyedi példány: ELADVA", () => {
+    expect(
+      allapot({
+        metadata: { unique_piece: "true" },
+        variants: [
+          {
+            manage_inventory: true,
+            allow_backorder: false,
+            inventory_quantity: 0,
+          },
+        ],
+      }),
+    ).toBe("ELADVA")
+  })
+
+  it("ISMERT POZITÍV KONTROLL: ugyanez a számítás készleten KAPHATÓ-t ad", () => {
+    expect(
+      allapot({
+        metadata: { unique_piece: "true" },
+        variants: [
+          {
+            manage_inventory: true,
+            allow_backorder: false,
+            inventory_quantity: 1,
+          },
+        ],
+      }),
+    ).toBe("KAPHATO")
+  })
+
+  it("nem egyedi példány nulla készleten: ELFOGYOTT, nem ELADVA", () => {
+    expect(
+      allapot({
+        metadata: {},
+        variants: [
+          {
+            manage_inventory: true,
+            allow_backorder: false,
+            inventory_quantity: 0,
+          },
+        ],
+      }),
+    ).toBe("ELFOGYOTT")
   })
 })

@@ -9,7 +9,15 @@ import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-relat
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
-import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
+import {
+  anyVariantPurchasable,
+  availabilityLabel,
+  availabilityOf,
+  inventoryKnownOf,
+  SIMILAR_ITEMS_LABEL,
+  similarItemsHref,
+  uniquePieceOf,
+} from "@modules/products/components/stock-state/availability"
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
@@ -35,6 +43,20 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   if (!product || !product.id) {
     return notFound()
   }
+
+  /**
+   * A SAV CSELEKVESE UGYANAZT AZ ALLAPOTOT KAPJA, MINT A FO OSZLOP.
+   *
+   * A `ragadosSavAllapota` ugyanazt az `availabilityOf` dontest futtatja, csak a
+   * VALTOZAT NELKULI bemenettel -- az indoklas a fuggvenyek fejleceben all.
+   * Azert ITT szamolom es nem a JSX-ben, hogy egyetlen ertek legyen belole: ket
+   * kulon szamitas ket kulon valaszt adhatna ugyanarra a kerdesre.
+   */
+  const ragadosSavAllapota = availabilityOf({
+    inStock: anyVariantPurchasable(product),
+    uniquePiece: uniquePieceOf(product.metadata),
+    inventoryKnown: inventoryKnownOf(product),
+  })
 
   /**
    * A VAZ BEKOTESE, ES A HATAR, AMIT NEM EN DONTOK EL.
@@ -139,22 +161,60 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             CIMKE NINCS. A tervben "Utolso darab" all ott -- az keszlet-allapot,
             es a muszaki termeken ma nincs ra forrasunk. Kitalalni nem szabad,
             tehat a helye osszemegy.
+
+            ES A GOMB MOSTANTOL KOVETI A FO CSELEKVEST (415f455c, 2026-09-08).
+            Korabban FELTETEL NELKUL "Kosárba" allt itt, akkor is, amikor fent
+            mar a "Hasonló példányok megnézése" gomb volt: egy elkelt egyedi
+            peldany ket kulonbozo dolgot mondott ugyanazon a lapon.
+
+            EZ NEM HIANYZO KEPESSEG VOLT, HANEM SZAKADAS. A harom allapot
+            dontese (`availabilityOf`) es a feliratai (`availabilityLabel`,
+            `SIMILAR_ITEMS_LABEL`) mar hetek ota alltak, es a fo oszlop hasznalta
+            is oket. Ez a sav egyszeruen nem hivta meg egyiket sem. A `StockState`
+            fejlece ma is azt allitja, hogy a lap "KET helyen" rajzolja ki ezt a
+            dobozt -- az a REGI, ma nem futo agra volt igaz.
+
+            AMIT NEM TESZUNK: a `StockState`-et magat nem hasznaljuk itt, mert az
+            kosarba-tetel visszahivast var, ez a gomb pedig UGRIK. A FELIRATOT es
+            a CELT vesszuk at, nem a komponenst.
           */
               ragadosResz={
                 <RagadosSav
                   ar={<ProductPrice product={product} />}
                   cselekves={
-                    <a
-                      href="#vaz-mennyiseg"
-                      data-testid="ragados-sav-ugras"
-                      className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
-                      style={{
-                        background: "var(--terv-kiemel)",
-                        color: "var(--terv-kiemel-szoveg)",
-                      }}
-                    >
-                      Kosárba
-                    </a>
+                    ragadosSavAllapota === "KAPHATO" ? (
+                      <a
+                        href="#vaz-mennyiseg"
+                        data-testid="ragados-sav-ugras"
+                        className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
+                        style={{
+                          background: "var(--terv-kiemel)",
+                          color: "var(--terv-kiemel-szoveg)",
+                        }}
+                      >
+                        {availabilityLabel.KAPHATO}
+                      </a>
+                    ) : ragadosSavAllapota === "ELADVA" ? (
+                      <a
+                        href={similarItemsHref(product)}
+                        data-testid="ragados-sav-hasonlo"
+                        className="flex h-[50px] items-center border px-6 text-[15px] font-semibold"
+                        style={{
+                          borderColor: "var(--terv-keret)",
+                          color: "var(--terv-szoveg)",
+                        }}
+                      >
+                        {SIMILAR_ITEMS_LABEL}
+                      </a>
+                    ) : (
+                      <span
+                        data-testid="ragados-sav-elfogyott"
+                        className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
+                        style={{ color: "var(--terv-szoveg-halvany)" }}
+                      >
+                        {availabilityLabel.ELFOGYOTT}
+                      </span>
+                    )
                   }
                 />
               }

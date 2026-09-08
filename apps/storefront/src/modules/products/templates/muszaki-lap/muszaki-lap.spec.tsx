@@ -330,3 +330,78 @@ describe("a sablon átadja-e a fotó slotot", () => {
     expect(vazAg).toContain("uniquePiece={uniquePieceOf(product.metadata)}")
   })
 })
+
+/**
+ * A RAGADOS SAV GOMBJA KOVETI-E A FO CSELEKVEST (415f455c, 2026-09-08).
+ *
+ * === A HATARA, KIMONDVA ===
+ *
+ * Ez FORRAST olvas, nem megrenderelt lapot, ugyanabbol az okbol, mint a fenti
+ * ket szakasz: a `ProductTemplate` aszinkron kiszolgalo-komponens. Amit tehat
+ * bizonyit: a sav cselekvese a szamitott ALLAPOTTOL fugg, es nincs benne
+ * feltetel nelkuli kosar-felirat. Amit NEM bizonyit: hogy a bongeszoben melyik
+ * ag rajzolodik ki.
+ *
+ * A DONTES MAGA valodi viselkedeskent van merve, az `availability.spec.ts`-ben
+ * (harom allapot, ismert pozitiv kontrollal). A ketto egyutt fedi le a lancot:
+ * ott a szamitas, itt a bekotes.
+ */
+describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
+  const forras = kodSzoveg(
+    readFileSync(join(__dirname, "..", "index.tsx"), "utf-8"),
+  )
+
+  /** ISMERT POZITIV KONTROLL: a fajlt tenyleg beolvastuk, es all benne sav. */
+  it("a sablon forrása olvasható, és renderel ragadós sávot", () => {
+    expect(forras).toContain("<RagadosSav")
+    expect(forras).toContain("ragadosSavAllapota")
+  })
+
+  /**
+   * A HAROM AG MINDEGYIKE MEGVAN. Ha egy kesobbi egyszerusites kiveszi
+   * valamelyiket, a sav megint mondhat mast, mint a fo oszlop.
+   */
+  it("mindhárom állapotnak van saját cselekvése", () => {
+    for (const azonosito of [
+      "ragados-sav-ugras",
+      "ragados-sav-hasonlo",
+      "ragados-sav-elfogyott",
+    ]) {
+      expect(forras).toContain(azonosito)
+    }
+  })
+
+  /**
+   * A LENYEG: az UGRO ag a KAPHATO allapothoz van kotve.
+   *
+   * Nem eleg, hogy a harom azonosito ott all: az elozo allitas akkor is zold
+   * lenne, ha a harom ag KOZOTT nem allna feltetel. Ezert a felteteles alakra
+   * is allitunk, a valtozo NEVEVEL egyutt.
+   */
+  it("az ugró gomb csak a KAPHATÓ ághoz tartozik", () => {
+    const ugras = forras.indexOf("ragados-sav-ugras")
+    expect(ugras).toBeGreaterThan(0)
+
+    const elotte = forras.slice(0, ugras)
+    const feltetel = elotte.lastIndexOf('ragadosSavAllapota === "KAPHATO"')
+    expect(feltetel).toBeGreaterThan(0)
+
+    // A feltetel KOZVETLENUL az ugro ag elott all, nem valahol feljebb.
+    expect(ugras - feltetel).toBeLessThan(400)
+  })
+
+  /**
+   * ES A HIANY-ALLITAS, AMI A MAI HIBAT FOGTA VOLNA MEG.
+   *
+   * A regi alakban a felirat BE VOLT EGETVE a JSX-be. Mostantol a
+   * `availabilityLabel.KAPHATO` konstansbol jon, tehat a szo szerinti alak
+   * eltunt a sablonbol.
+   *
+   * EGY HIANY-ALLITAS ONMAGABAN GYENGE (egy ures fajl is kielegitene), ezert a
+   * fenti pozitiv kontroll all mellette ugyanebben a szakaszban.
+   */
+  it("nincs feltétel nélküli kosár-felirat a sablonban", () => {
+    expect(forras).not.toContain(">Kosárba<")
+    expect(forras).toContain("availabilityLabel.KAPHATO")
+  })
+})
