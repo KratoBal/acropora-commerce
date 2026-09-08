@@ -139,3 +139,57 @@ describe("a ragadós sáv tónusa", () => {
     `terv-tokenek.spec.ts`-ben all, mert ott van az ertek.
   */
 })
+
+/**
+ * A SAV GEOMETRIAJA -- ES AMIERT EPP EZ AZ ELEM KAPTA ELOSZOR.
+ *
+ * Merve (2026-09-08): a kirakatban a terv-eredetu geometriai ertekek 15
+ * szazalekara all allitas, a szin-tokenek 72 szazalekara. A meret tehat
+ * nagysagrenddel kevesbe vedett -- es epp az romlik nemán, mert egy elcsuszott
+ * pixel nem hibazik, csak maskepp nez ki.
+ *
+ * ES EZ AZ ELEM A LEGJOBB ELSO FALAT, mert ma KETSZER mertem el:
+ * eloszor MERET alapjan kerestem meg a tervben (es egy masik savot talaltam),
+ * aztan a szakaszhataron KIVUL alltam neki keresni. A geometriaja a tervbol
+ * van, a komponens fejleceben le is van irva -- es eddig egyetlen allitas sem
+ * allt rajta.
+ *
+ * A MERT ERTEKEK, mind a harom tervlapon azonosak:
+ *
+ *     belso margo   14px 18px
+ *     koz           10px
+ *
+ * AMIT NEM MER: a festett pixelt. A jsdom nem forditja le a Tailwind
+ * osztalyokat; ez a JELOLES meglétét meri.
+ */
+describe("a sáv geometriája a tervből", () => {
+  const sav = () => {
+    render(<RagadosSav ar="24 900 Ft" />)
+    return screen.getByTestId("ragados-sav")
+  }
+
+  it("a keskeny nézet belső margója a tervből", () => {
+    const cs = sav().className
+    expect(cs).toContain("px-[18px]")
+    expect(cs).toContain("py-[14px]")
+  })
+
+  it("a közök a tervbeli tíz pixel", () => {
+    expect(sav().className).toContain("gap-[10px]")
+  })
+
+  /**
+   * A SZELES NEZET KULON ALLITAS, ES NEM RESZLETEZES.
+   *
+   * A ket ertek EGY osztaly-lancban all egymas mellett, tehat egy allitassal
+   * "lefedheto" lenne mind a ketto -- de akkor a kettot egyutt lehetne
+   * elrontani. A tervben a szeles nezet SAJAT erteket kap (20px 44px), es ez
+   * fuggetlen dontes a keskenytol.
+   */
+  it("a széles nézet saját margót és közt kap", () => {
+    const cs = sav().className
+    expect(cs).toContain("lg:px-11")
+    expect(cs).toContain("lg:py-5")
+    expect(cs).toContain("lg:gap-5")
+  })
+})
