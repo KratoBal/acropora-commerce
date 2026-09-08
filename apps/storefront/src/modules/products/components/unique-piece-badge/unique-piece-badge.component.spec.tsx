@@ -27,3 +27,48 @@ describe("az egyedi példány jelölése", () => {
     )
   })
 })
+
+/**
+ * A JELVENY SZINEI A TERVBOL, TOKENEN KERESZTUL.
+ *
+ * A tervbeli jelveny a 2a lapon REZ hatteren all, SOTET szoveggel. A sotet
+ * blokkban a `--terv-kiemel` = oklch(0.62 0.13 45) es a `--terv-kiemel-szoveg`
+ * = oklch(0.15 0.014 45) -- pontosan a mert ket ertek.
+ *
+ * A HATAR: jsdom nem oldja fel a CSS-valtozot, tehat ez a NEVET meri, nem a
+ * kiszamolt szint. Amit bizonyit: hogy a jelveny TOKENT ker, es a HELYES
+ * szerepu tokent -- nem azt, hogy a kepernyon rez lesz.
+ *
+ * MIERT KELL RA ALLITAS: a ket ertek EGYUTT mozdul vagy sehogy. Ha valaki csak
+ * a hattert allitja vissza beirt szinre, a sotet szoveg olvashatatlan lesz --
+ * es ez nem hibauzenettel jelentkezik, hanem a lapon.
+ */
+describe("a jelvény színei", () => {
+  it("a jelvény a felület-tokent viseli háttérként", () => {
+    render(<UniquePieceBadge />)
+
+    const jelveny = screen.getByTestId("unique-piece-badge")
+    expect(jelveny.style.background).toBe("var(--terv-kiemel)")
+  })
+
+  it("a rezen álló szöveg a saját tokenjét viseli", () => {
+    render(<UniquePieceBadge />)
+
+    const jelveny = screen.getByTestId("unique-piece-badge")
+    expect(jelveny.style.color).toBe("var(--terv-kiemel-szoveg)")
+  })
+
+  /**
+   * ES A KET BEIRT SZIN NEM JOHET VISSZA. Ez nem ismetles: a fenti ketto a
+   * TOKENT rogziti, ez azt, hogy a regi alak ne alljon MELLETTE -- egy
+   * ottfelejtett `bg-neutral-900/85` osztaly a stilus fole kerulne vagy ala,
+   * es a ketto kozott a sorrend donteneen.
+   */
+  it("a beírt színek nem állnak az osztályok között", () => {
+    render(<UniquePieceBadge />)
+
+    const jelveny = screen.getByTestId("unique-piece-badge")
+    expect(jelveny.className).not.toContain("bg-neutral")
+    expect(jelveny.className).not.toContain("text-amber")
+  })
+})
