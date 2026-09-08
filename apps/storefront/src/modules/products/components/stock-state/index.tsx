@@ -30,9 +30,32 @@ export default function StockState({
   isAdding?: boolean
   disabled?: boolean
   /**
-   * A KOSÁR-GOMB AZONOSÍTÓJA. Azért paraméter, mert a lap KÉT helyen rajzolja
-   * ki ezt a dobozt (a lapon és a lebegő sávon), és két azonos azonosító
-   * kétértelművé tenné a végponti keresést.
+   * A KOSÁR-GOMB AZONOSÍTÓJA.
+   *
+   * === EZ A MONDAT TÚLÉLTE AZT AZ ÁLLAPOTOT, AMIRŐL SZÓLT (javítva 2026-09-08) ===
+   *
+   * Korábban jelen időben ez állt itt: "a lap KÉT helyen rajzolja ki ezt a
+   * dobozt (a lapon és a lebegő sávon)". Ez a RÉGI ágra volt igaz, ahol a
+   * `ProductActions` és a `MobileActions` párban rajzolta ki, és a két azonos
+   * azonosító kétértelművé tette volna a végponti keresést. A paraméter ezért
+   * született, és az indok a maga idejében helyes volt.
+   *
+   * A MAI ÁLLAPOT, mérve: három hívóhely létezik (`product-actions/index.tsx`,
+   * `product-actions/mobile-actions.tsx`, `vasarlas/dobozok.tsx`), de a régi ág
+   * MA EGYETLEN SORA SEM FUT (`hasznaljaVazat` feltétel nélkül igazat ad),
+   * tehát ebből egy renderelődik. A lebegő sáv pedig azóta a SAJÁT cselekvését
+   * rajzolja, az állapotot tükrözve, nem ezt a dobozt (415f455c).
+   *
+   * === MIÉRT NEM TÖRLÖM A PARAMÉTERT, ÉS MIÉRT NEM HAGYOM ÍGY ===
+   *
+   * Nem törlöm: a `MobileActions` ma is átadja, és a régi ág törlése külön
+   * döntés, nem ennek a fejlécnek a dolga.
+   *
+   * De nem is hagyom jelen időben. Ez a mondat pontosan azért volt drága, mert
+   * NEM hibázott: azt állította, hogy a sáv már kezelve van, és emiatt a sáv
+   * hibája hetekig úgy nézett ki, mintha meg lenne oldva. Egy dokumentáció,
+   * ami egy megszűnt bekötést ír le, nem elavult jegyzet, hanem HAMIS
+   * biztonság.
    */
   testId?: string
 }) {
