@@ -532,9 +532,47 @@ export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
     ...(ELO_ALLAT_CIMEK[szakasz.kulcs] ?? {}),
   }))
 
-/** Melyik vilag melyik dobozlistat kapja. */
-export function szakaszokVilagra(vilag: Vilag): VazSzakasz[] {
-  return vilag === "sotet" ? ELO_ALLAT_LAP_SZAKASZAI : MUSZAKI_LAP_SZAKASZAI
+/**
+ * A WYSIWYG SZO CSAK OTT ALL, AHOL IGAZ -- ES EZ EGY PREDIKATUMON MULIK.
+ *
+ * A `hasonlo` doboz sotet felirata a tervbol valo: "További WYSIWYG példányok",
+ * alatta "Ide jönnek a további egyedi példányok". Mind a ketto azt allitja, hogy
+ * EZ a termek is egyedi peldany volt.
+ *
+ * MERVE (murena, 2026-09-08): a 160 sotet lapbol HAROM egyedi peldany. Vagyis
+ * 157 lapon a "tovabbi" szo olyat allit a vevonek, ami nem igaz -- egy
+ * Helfrich-tuzgeb lapjan azt sugallja, hogy az is WYSIWYG tetel volt.
+ *
+ * ES A TERV MAGA DONTI EL A HATOKORT, a sajat lap-leirasaban (merve a 2a lap
+ * tetején, y=56):
+ *
+ *   2a   "WYSIWYG korall termékoldal – az 1b szerkezete, sötét felületen"
+ *   1a   "Galleriás – nagy kép, karcsú vásárlási sáv, mélytenger-kék akcent"
+ *   1b   "Adatvezérelt – méretezés-segéd, kötegajánlat, réz akcent"
+ *
+ * A ket vilagos lapot a designer ELRENDEZES szerint nevezi meg, a 2a-t viszont
+ * ESET szerint: az egy WYSIWYG korall termekoldal. A sotet felirat tehat az
+ * ESETHEZ tartozik, nem az elo allat aghoz.
+ *
+ * NEM UJ LISTA, HANEM EGY PREDIKATUM (acrobot dontese, msg_id 14775): ugyanaz a
+ * `unique_piece`, ami ma a jelvenyt is vezerli. Ha nem egyedi peldany, ez az EGY
+ * doboz visszaesik a VILAGOS lap sajat feliratara -- ami szinten a tervbol valo,
+ * tehat nem talalunk ki semmit.
+ */
+export function szakaszokVilagra(
+  vilag: Vilag,
+  egyediPeldany = false,
+): VazSzakasz[] {
+  if (vilag !== "sotet") return MUSZAKI_LAP_SZAKASZAI
+  if (egyediPeldany) return ELO_ALLAT_LAP_SZAKASZAI
+
+  const vilagosPar = MUSZAKI_LAP_SZAKASZAI.find((sz) => sz.kulcs === "hasonlo")
+
+  return ELO_ALLAT_LAP_SZAKASZAI.map((szakasz) =>
+    szakasz.kulcs === "hasonlo" && vilagosPar
+      ? { ...szakasz, cim: vilagosPar.cim, varakozo: vilagosPar.varakozo }
+      : szakasz,
+  )
 }
 
 export type Vilag = "vilagos" | "sotet"
@@ -544,6 +582,12 @@ type LapVazProps = {
   tartalom?: Partial<Record<string, React.ReactNode>>
   /** Alapertelmezes a VILAGOS: a katalogus tulnyomo resze muszaki termek. */
   vilag?: Vilag
+  /**
+   * EGYEDI PELDANY-E. Csak a sotet lap `hasonlo` dobozanak feliratat donti el,
+   * es SZANDEKOSAN hamis az alapertelmezese: aki nem adja meg, a semlegesebb
+   * feliratot kapja, nem a WYSIWYG-allitast.
+   */
+  egyediPeldany?: boolean
 }
 
 /**
@@ -569,7 +613,11 @@ type LapVazProps = {
  * kovetkezmenye: a `flex-col` alatt a dobozok abban a sorrendben allnak, ahogy
  * a `MUSZAKI_LAP_SZAKASZAI` felsorolja oket -- es az a terv sorrendje.
  */
-const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
+const LapVaz = ({
+  tartalom = {},
+  vilag = "vilagos",
+  egyediPeldany = false,
+}: LapVazProps) => {
   return (
     <div
       className="mx-auto w-full p-4 lg:grid lg:grid-cols-[856fr_452fr] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
@@ -581,7 +629,7 @@ const LapVaz = ({ tartalom = {}, vilag = "vilagos" }: LapVazProps) => {
       data-testid="muszaki-lap-vaz"
       data-vilag={vilag}
     >
-      {szakaszokVilagra(vilag).map((szakasz) => (
+      {szakaszokVilagra(vilag, egyediPeldany).map((szakasz) => (
         <div
           key={szakasz.kulcs}
           data-vaz-oszlop={szakasz.oszlop}

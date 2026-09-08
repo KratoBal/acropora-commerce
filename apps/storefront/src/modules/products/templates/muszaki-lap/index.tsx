@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import LapVaz from "@modules/products/components/lap-vaz"
+import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 import { vazTartalom } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 import React from "react"
@@ -137,6 +138,12 @@ const MuszakiLap = ({
   return (
     <LapVaz
       vilag={vilagaTermeknek(product, kategoriak)}
+      /*
+       * UGYANAZ A PREDIKATUM, AMI A JELVENYT IS VEZERLI -- nem masodik forras.
+       * A `hasonlo` doboz WYSIWYG-felirata csak akkor all, ha a termek TENYLEG
+       * egyedi peldany. (acrobot dontese, msg_id 14775.)
+       */
+      egyediPeldany={uniquePieceOf(product.metadata)}
       tartalom={vazTartalom(
         product,
         vasarlasAktiv,
