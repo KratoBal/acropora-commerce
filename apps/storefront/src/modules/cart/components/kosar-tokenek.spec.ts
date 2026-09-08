@@ -83,10 +83,7 @@ describe("a kosár keret-tokenjei", () => {
  * renderelheto (merve). Amit ez mer: milyen racsot AD AT a sablon.
  */
 describe("a kosár rácsa", () => {
-  const forras = readFileSync(
-    join(KOSAR, "templates/index.tsx"),
-    "utf-8",
-  )
+  const forras = readFileSync(join(KOSAR, "templates/index.tsx"), "utf-8")
 
   /** ISMERT POZITIV KONTROLL: tenyleg a kosar sablonjat olvastuk be. */
   it("a sablon forrása olvasható, és ez tényleg a kosár", () => {

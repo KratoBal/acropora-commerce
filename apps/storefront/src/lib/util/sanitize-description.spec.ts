@@ -128,7 +128,9 @@ describe("leírás-tisztítás: a valódi katalógus alakjai", () => {
  */
 describe("leírás-tisztítás: amit nem szabad átengednie", () => {
   it("a script eltűnik, a körülötte álló szöveg marad", () => {
-    const ki = sanitizeDescription("<p>elotte</p><script>alert(1)</script><p>utana</p>")!
+    const ki = sanitizeDescription(
+      "<p>elotte</p><script>alert(1)</script><p>utana</p>",
+    )!
     expect(ki).toContain("elotte")
     expect(ki).toContain("utana")
     expect(ki).not.toContain("<script")
@@ -140,7 +142,9 @@ describe("leírás-tisztítás: amit nem szabad átengednie", () => {
    * Képnél és iframe-nél fordítva, lásd lentebb.
    */
   it("a javascript: cím kiesik, a link szövege marad", () => {
-    const ki = sanitizeDescription('<a href="javascript:alert(1)">kattints</a>')!
+    const ki = sanitizeDescription(
+      '<a href="javascript:alert(1)">kattints</a>',
+    )!
     expect(ki).toContain("kattints")
     expect(ki).not.toContain("javascript:")
   })
@@ -152,7 +156,10 @@ describe("leírás-tisztítás: amit nem szabad átengednie", () => {
   })
 
   it("a data: URL nem lehet képforrás", () => {
-    const ki = sanitizeDescription('<img src="data:text/html,<script>alert(1)</script>" alt="x">') ?? ""
+    const ki =
+      sanitizeDescription(
+        '<img src="data:text/html,<script>alert(1)</script>" alt="x">',
+      ) ?? ""
     expect(ki).not.toContain("data:text/html")
   })
 
@@ -163,7 +170,9 @@ describe("leírás-tisztítás: amit nem szabad átengednie", () => {
    * Ezért van a modulban `exclusiveFilter`.
    */
   it("az idegen gépre mutató iframe eltűnik, nem üres dobozként marad", () => {
-    const ki = sanitizeDescription('<p>elotte</p><iframe src="https://evil.example/x"></iframe>')!
+    const ki = sanitizeDescription(
+      '<p>elotte</p><iframe src="https://evil.example/x"></iframe>',
+    )!
     expect(ki).toContain("elotte")
     expect(ki).not.toContain("evil.example")
     expect(ki).not.toContain("<iframe")
@@ -175,21 +184,27 @@ describe("leírás-tisztítás: amit nem szabad átengednie", () => {
    * Egyik sem tud elemet a lap fölé pozicionálni vagy URL-t betölteni.
    */
   it("a ráfedésre alkalmas CSS kiesik, a színezés marad", () => {
-    const ki = sanitizeDescription('<div style="position:fixed;top:0;color:#ff0000">szoveg</div>')!
+    const ki = sanitizeDescription(
+      '<div style="position:fixed;top:0;color:#ff0000">szoveg</div>',
+    )!
     expect(ki).toContain("szoveg")
     expect(ki).toContain("color")
     expect(ki).not.toContain("position")
   })
 
   it("az object és az embed eltűnik", () => {
-    const ki = sanitizeDescription('<object data="x"></object><embed src="y"><p>marad</p>')!
+    const ki = sanitizeDescription(
+      '<object data="x"></object><embed src="y"><p>marad</p>',
+    )!
     expect(ki).toContain("marad")
     expect(ki).not.toContain("<object")
     expect(ki).not.toContain("<embed")
   })
 
   it("a style blokk eltűnik a tartalmával együtt", () => {
-    const ki = sanitizeDescription("<style>body{display:none}</style><p>marad</p>")!
+    const ki = sanitizeDescription(
+      "<style>body{display:none}</style><p>marad</p>",
+    )!
     expect(ki).toContain("marad")
     expect(ki).not.toContain("<style")
     expect(ki).not.toContain("display:none")

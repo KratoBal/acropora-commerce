@@ -134,7 +134,10 @@ describe("a terméklap bekötése a készlet-állapothoz", () => {
    */
   it("kimondott jelzővel ELADVA, továbbvivő hivatkozással", () => {
     render(
-      <ProductActions product={termek({ unique_piece: true })} region={REGIO} />,
+      <ProductActions
+        product={termek({ unique_piece: true })}
+        region={REGIO}
+      />,
     )
 
     expect(screen.queryByTestId("add-product-button")).toBeNull()

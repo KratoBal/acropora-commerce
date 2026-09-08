@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const countryCode = searchParams.get("country_code")
   const paymentIntent = searchParams.get("payment_intent")
   const paymentIntentClientSecret = searchParams.get(
-    "payment_intent_client_secret"
+    "payment_intent_client_secret",
   )
   const redirectStatus = searchParams.get("redirect_status")
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     .catch(() => null)
 
   const paymentSession = cart?.payment_collection?.payment_sessions?.find(
-    (session) => session.data?.id === paymentIntent
+    (session) => session.data?.id === paymentIntent,
   )
 
   if (

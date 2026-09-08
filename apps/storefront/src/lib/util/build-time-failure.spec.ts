@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  boltHibanakLatszik,
-  epitesiHibaMegnevezve,
-} from "./build-time-failure"
+import { boltHibanakLatszik, epitesiHibaMegnevezve } from "./build-time-failure"
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -18,7 +15,7 @@ describe("a bolt-kiesés felismerése", () => {
     expect(boltHibanakLatszik(new Error("Service Unavailable"))).toBe(true)
     expect(boltHibanakLatszik(new Error("TypeError: fetch failed"))).toBe(true)
     expect(
-      boltHibanakLatszik(new Error("connect ECONNREFUSED 127.0.0.1:9000"))
+      boltHibanakLatszik(new Error("connect ECONNREFUSED 127.0.0.1:9000")),
     ).toBe(true)
   })
 
@@ -29,7 +26,7 @@ describe("a bolt-kiesés felismerése", () => {
    */
   it("egy valódi kód-hibát NEM nevez bolt-kiesésnek", () => {
     expect(
-      boltHibanakLatszik(new TypeError("Cannot read properties of undefined"))
+      boltHibanakLatszik(new TypeError("Cannot read properties of undefined")),
     ).toBe(false)
     expect(boltHibanakLatszik(new Error("Invalid handle"))).toBe(false)
     expect(boltHibanakLatszik("valami szöveg")).toBe(false)
@@ -55,8 +52,8 @@ describe("az építés-idejű hiba megnevezése", () => {
       epitesiHibaMegnevezve(
         "gyujtemeny",
         new Error("fetch failed"),
-        "https://pelda.hu"
-      )
+        "https://pelda.hu",
+      ),
     ).toThrow()
 
     const szoveg = naplo.mock.calls.map((c) => String(c[0])).join("\n")
@@ -71,7 +68,7 @@ describe("az építés-idejű hiba megnevezése", () => {
     const naplo = vi.spyOn(console, "error").mockImplementation(() => {})
 
     expect(() =>
-      epitesiHibaMegnevezve("termek", new TypeError("Cannot read properties"))
+      epitesiHibaMegnevezve("termek", new TypeError("Cannot read properties")),
     ).toThrow()
 
     const szoveg = naplo.mock.calls.map((c) => String(c[0])).join("\n")

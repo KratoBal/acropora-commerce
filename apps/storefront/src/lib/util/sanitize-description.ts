@@ -35,7 +35,11 @@ const ALLOWED_STYLES = {
   "*": {
     width: [/^\d+(\.\d+)?(px|%|em|rem)$/],
     height: [/^\d+(\.\d+)?(px|%|em|rem)$/],
-    "background-color": [/^#[0-9a-f]{3,8}$/i, /^rgba?\([\d\s.,%]+\)$/i, /^[a-z]+$/i],
+    "background-color": [
+      /^#[0-9a-f]{3,8}$/i,
+      /^rgba?\([\d\s.,%]+\)$/i,
+      /^[a-z]+$/i,
+    ],
     color: [/^#[0-9a-f]{3,8}$/i, /^rgba?\([\d\s.,%]+\)$/i, /^[a-z]+$/i],
     "caret-color": [/^#[0-9a-f]{3,8}$/i, /^[a-z]+$/i],
     "font-weight": [/^(\d{3}|normal|bold|bolder|lighter)$/i],
@@ -50,17 +54,47 @@ const ALLOWED_STYLES = {
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
     // text
-    "p", "br", "strong", "b", "em", "i", "u", "span", "sup", "sub", "pre",
+    "p",
+    "br",
+    "strong",
+    "b",
+    "em",
+    "i",
+    "u",
+    "span",
+    "sup",
+    "sub",
+    "pre",
     // headings -- h1 through h5 all occur
-    "h1", "h2", "h3", "h4", "h5",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
     // lists
-    "ul", "ol", "li",
+    "ul",
+    "ol",
+    "li",
     // tables: the single most important group, 189 products depend on them
-    "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+    "table",
+    "thead",
+    "tbody",
+    "tfoot",
+    "tr",
+    "th",
+    "td",
     // structure
-    "div", "section", "article", "blockquote", "figure", "figcaption", "hr",
+    "div",
+    "section",
+    "article",
+    "blockquote",
+    "figure",
+    "figcaption",
+    "hr",
     // links, images and embedded video, each narrowed below
-    "a", "img", "iframe",
+    "a",
+    "img",
+    "iframe",
   ],
   // <meta> is dropped deliberately. It occurs 1563 times across 431 description
   // fields (400 products) as a leftover <meta charset> at the start of the text,
@@ -70,7 +104,15 @@ const OPTIONS: sanitizeHtml.IOptions = {
     "*": ["style", "class"],
     a: ["href", "title", "target", "rel"],
     img: ["src", "alt", "title", "width", "height"],
-    iframe: ["src", "width", "height", "title", "allow", "allowfullscreen", "frameborder"],
+    iframe: [
+      "src",
+      "width",
+      "height",
+      "title",
+      "allow",
+      "allowfullscreen",
+      "frameborder",
+    ],
     td: ["colspan", "rowspan"],
     th: ["colspan", "rowspan", "scope"],
     table: ["border", "cellpadding", "cellspacing"],
@@ -85,11 +127,17 @@ const OPTIONS: sanitizeHtml.IOptions = {
   allowProtocolRelative: true,
   // A narrow and measured concession: all 27 embedded videos are YouTube, and an
   // iframe pointing anywhere else does not get through.
-  allowedIframeHostnames: ["www.youtube.com", "youtube.com", "www.youtube-nocookie.com"],
+  allowedIframeHostnames: [
+    "www.youtube.com",
+    "youtube.com",
+    "www.youtube-nocookie.com",
+  ],
   // A description is not trusted content, so outbound links do not get to reach
   // back into the page that opened them.
   transformTags: {
-    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer nofollow" }),
+    a: sanitizeHtml.simpleTransform("a", {
+      rel: "noopener noreferrer nofollow",
+    }),
   },
   // Stripping a disallowed src leaves the element behind, and an <iframe> or an
   // <img> with no src is an empty box on the page rather than nothing. Measured
@@ -109,7 +157,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
  * should render nothing rather than an empty block.
  */
 export function sanitizeDescription(
-  description: string | null | undefined
+  description: string | null | undefined,
 ): string | null {
   if (!description) {
     return null
@@ -122,7 +170,11 @@ export function sanitizeDescription(
   }
 
   // Tags with no text and no media left behind are not worth a block on the page.
-  const hasText = clean.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0
+  const hasText =
+    clean
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim().length > 0
   const hasMedia = /<(img|iframe|hr)\b/i.test(clean)
 
   return hasText || hasMedia ? clean : null

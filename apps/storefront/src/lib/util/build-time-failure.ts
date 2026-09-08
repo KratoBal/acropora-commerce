@@ -58,7 +58,7 @@ export function boltHibanakLatszik(error: unknown): boolean {
       : String(error)
 
   return SZOLGALTATAS_JELEI.some((jel) =>
-    szoveg.toLowerCase().includes(jel.toLowerCase())
+    szoveg.toLowerCase().includes(jel.toLowerCase()),
   )
 }
 
@@ -71,7 +71,8 @@ export function boltHibanakLatszik(error: unknown): boolean {
 export function epitesiHibaMegnevezve(
   utvonal: string,
   error: unknown,
-  boltCime = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ?? "(nincs cim beallitva)"
+  boltCime = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ??
+    "(nincs cim beallitva)",
 ): never {
   const ok = error instanceof Error ? error.message : String(error)
 
@@ -89,11 +90,11 @@ export function epitesiHibaMegnevezve(
         "",
         `A nyers hiba: ${ok}`,
         "",
-      ].join("\n")
+      ].join("\n"),
     )
   } else {
     console.error(
-      `A(z) ${utvonal} lapjainak begyujtese elhasalt, es ez NEM a bolt elerhetetlensegere vall: ${ok}`
+      `A(z) ${utvonal} lapjainak begyujtese elhasalt, es ez NEM a bolt elerhetetlensegere vall: ${ok}`,
     )
   }
 

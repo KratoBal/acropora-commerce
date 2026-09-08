@@ -15,7 +15,7 @@ async function getRegionMap(cacheId: string) {
 
   if (!BACKEND_URL) {
     throw new Error(
-      "Middleware.ts: Error fetching regions. Did you set up regions in your Medusa Admin and define a NEXT_PUBLIC_MEDUSA_BACKEND_URL environment variable."
+      "Middleware.ts: Error fetching regions. Did you set up regions in your Medusa Admin and define a NEXT_PUBLIC_MEDUSA_BACKEND_URL environment variable.",
     )
   }
 
@@ -68,14 +68,16 @@ async function getRegionMap(cacheId: string) {
  */
 async function getCountryCode(
   request: NextRequest,
-  regionMap: Map<string, HttpTypes.StoreRegion | number>
+  regionMap: Map<string, HttpTypes.StoreRegion | number>,
 ) {
   let countryCode
 
   const urlCountryCode = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
 
   // Cloudflare Workers provides country via request.cf.country
-  const cloudflareCountryCode = (request as { cf?: { country?: string } }).cf?.country?.toLowerCase()
+  const cloudflareCountryCode = (
+    request as { cf?: { country?: string } }
+  ).cf?.country?.toLowerCase()
 
   // Vercel provides x-vercel-ip-country header
   const vercelCountryCode = request.headers

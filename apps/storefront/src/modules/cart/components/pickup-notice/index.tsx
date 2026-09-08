@@ -67,15 +67,15 @@ export default function PickupNotice({
         felsorolas ugy nezne ki, mintha elfelejtettuk volna kitolteni.
       */}
       {lines.length > 0 && (
-      <ul
-        className="text-[12.5px] leading-relaxed list-disc pl-5"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
-        data-testid="pickup-notice-lines"
-      >
-        {lines.map((cim) => (
-          <li key={cim}>{cim} · élő állat, csak boltban adjuk át</li>
-        ))}
-      </ul>
+        <ul
+          className="text-[12.5px] leading-relaxed list-disc pl-5"
+          style={{ color: "var(--terv-szoveg-halvany)" }}
+          data-testid="pickup-notice-lines"
+        >
+          {lines.map((cim) => (
+            <li key={cim}>{cim} · élő állat, csak boltban adjuk át</li>
+          ))}
+        </ul>
       )}
 
       <p className="text-[12.5px]" style={{ color: "var(--terv-szoveg)" }}>

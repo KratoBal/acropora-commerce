@@ -17,7 +17,7 @@ const originalFetch = sdk.client.fetch.bind(sdk.client)
 
 sdk.client.fetch = async <T>(
   input: FetchInput,
-  init?: FetchArgs
+  init?: FetchArgs,
 ): Promise<T> => {
   /**
    * EGYNYELVU BOLT: a starter itt egy `x-medusa-locale` fejlecet tett MINDEN

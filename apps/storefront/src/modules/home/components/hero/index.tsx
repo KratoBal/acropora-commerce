@@ -1,6 +1,6 @@
-import { Heading } from "@modules/common/components/ui";
+import { Heading } from "@modules/common/components/ui"
 
-import { STORE_NAME } from "@lib/store";
+import { STORE_NAME } from "@lib/store"
 
 /**
  * A FOOLDAL FEJLECE.
@@ -26,7 +26,7 @@ const Hero = () => {
         </Heading>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Hero;
+export default Hero
