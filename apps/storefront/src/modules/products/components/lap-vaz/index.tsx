@@ -357,10 +357,13 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  *
  * === MIERT NEM ELEG UGYANAZ A LISTA ===
  *
- * A ket valtozat SZERKEZETE azonos, a FELIRATAI nem. Egy korall lapon a
- * "Hasonlo lampak" doboz nem uresen allna, hanem TELE lenne -- hamis felirat
- * alatt. Egy ures doboz azt mondja, hogy meg nincs kesz; egy rossz cim azt,
- * hogy lampat nezel.
+ * A KORALL es a MUSZAKI VILAG szerkezete azonos, a FELIRATAI nem. (Itt a "ket
+ * valtozat" a ket VILAG, nem a terv ket vilagos LAPJA -- a ketto ket sorral
+ * feljebb egymas mellett all, es ezert kell kiirni, melyik kettorol van szo.)
+ *
+ * Egy korall lapon a "Hasonlo lampak" doboz nem uresen allna, hanem TELE
+ * lenne -- hamis felirat alatt. Egy ures doboz azt mondja, hogy meg nincs
+ * kesz; egy rossz cim azt, hogy lampat nezel.
  *
  * === AMI MERVE VAN, ES AMI NEM ===
  *
@@ -521,7 +524,8 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * lehetne: ha teljes szelessegu dobozt egyaltalan nem talalnank a korall
  * savban, a nulla semmit nem mondana.
  *
- * (A hatar maga: a ket valtozat CIMKEZETT konteneere, es a vagas ott van, ahol
+ * (A hatar maga: a korall es a muszaki SAV cimkezett kontenere -- megint a ket
+ * VILAG, nem a ket vilagos lap --, es a vagas ott van, ahol
  * a muszaki kontener KEZDODIK -- nem ahol a korall nominalisan vegzodik, mert
  * a ketto atfed.)
  */
@@ -535,6 +539,16 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  *
  *   kiegeszitok      "Ami még kellhet hozzá"  -- 1a-n es 1b-n szakaszcim, 2a-n sehol
  *   muszaki-adatok   "Műszaki adatok"          -- 1a-n szakaszcim, 1b-n ful, 2a-n sehol
+ *
+ * A "SZAKASZCIM KONTRA FUL" NEM BESOROLAS, HANEM MERT TIPOGRAFIA (nautilus
+ * elem-szintu olvasasa). Ez teszi a fenti sort mas altal ellenorizhetove:
+ *
+ *   1a   22px / 600 suly    ezert szakaszcim
+ *   1b   15px / 500 suly    ezert fulsor-elem
+ *
+ * A kulonbseg a MERETBEN es a SULYBAN all, nem a helyzetben -- egy ful es egy
+ * szakaszcim allhat ugyanabban a sav-pozicioban. Aki a harmas bontast
+ * visszamerne, ezt a ket szamot keresse, ne a koordinatat.
  *
  * A 2a lapon a tartasi adat NEM tunik el: a FUL-SOR alatt all (Gondozás |
  * Leírás | Vízparaméterek | ...), cim nelkuli adat-tablaban. Vagyis nem
