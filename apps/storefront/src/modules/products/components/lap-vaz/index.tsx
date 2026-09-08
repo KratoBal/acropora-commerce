@@ -146,7 +146,8 @@ type VazSzakasz = {
  *   nautilus   elem-szinten olvas -> a CSONKOLAS nem erinti, DE 46 karakter
  *              felett ELDOBJA az elemet (lasd lentebb: ez MAS, mint a vagas)
  *   murena     kontener-CIMKET olvas -> a suly nem erinti,
- *              de 60 KARAKTERNEL kemenyen vag
+ *              de 60 KARAKTERNEL kemenyen vag, ES a szelesseg-szuroje
+ *              (1300-1400) kizarja a lap-kontenereket -- lasd lentebb
  *
  * JAVITVA 2026-09-08: ez a tabla korabban azt allitotta, hogy nautilus
  * olvasasa SULYT (>=600) es MERETET (>=14px) kuszobol. Ez TUL TAG volt, es a
@@ -168,6 +169,34 @@ type VazSzakasz = {
  *
  * Merve: 252 dobozcimkebol 95 eri el a 60 karakteres hatart (a korall lapon
  * 35). Az en korlatom tehat ALLANDO: minden olvasasomra all.
+ *
+ * ES VAN EGY MASODIK KORLATOM, AMI NEM CSONKOLAS, HANEM EGY SZAM (nautilus
+ * merese, 2026-09-08). Sokaig ugy neveztem meg, hogy "a forrasom nem tudja
+ * szetvalasztani az 1a-t es az 1b-t". Ez TUL ERŐS volt, es rossz iranyba visz:
+ * azt sugallja, hogy MASIK forras kell.
+ *
+ * A valodi ok a szelesseg-szurom felso hatara. A kontenerek merve:
+ *
+ *   az 1a sajat kontenere    1854 szeles    -> KIESIK a szurombol
+ *   az 1b sajat kontenere    1854 szeles    -> KIESIK
+ *   a kozos, mindkettot tarto  1328 szeles  -> ATMEGY
+ *
+ * Ezert latom a ket muszaki lapot EGYBEN. Az adat ott van, a szuro vagja el.
+ * (Ellenorzes: 2276 + 2651 = 4927, a kozos kontener 4983 magas -- 56 pixel
+ * margoval ugyanaz a ketto.)
+ *
+ * A KULONBSEG NEM SZOSZAPORITAS: "a forrasom nem tudja" azt jelenti, hogy
+ * masik forrast kell keresni; "a szurom kizarja" azt, hogy egy szamon mulik.
+ * Ket kulonbozo kovetkezo lepes.
+ *
+ * ES A MARGO-CIMKEK IS OTT VANNAK NALAM, csak nem kontener-cimkekent: LEVEL
+ * elemek (JetBrains Mono, 12px, x=56, y=103 / 2346 / 4678). A kontener-cimke
+ * retegben a SZULO cimkeje olvasodik, ezert kaptam rajuk nullat.
+ *
+ * A SZURON NEM VALTOZTATOK: a felso hatar azert all ott, hogy a belso dobozok
+ * kimaradjanak, es nautilus kiolvasoja (`measurement/terv-cimek/
+ * rez-laponkent.cjs`) ezt a bontast amugy is elvegzi. A korlat MEGNEVEZESE
+ * kellett, nem a megszuntetese.
  *
  * ES A HARMADIK KORLAT, AMIT EN NEM NEVEZTEM MEG (nautilus helyesbitese,
  * 2026-09-08, a sajat kiolvasojan merve): a `cimek-kiolvaso.cjs` a 46
