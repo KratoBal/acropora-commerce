@@ -36,11 +36,39 @@ import type { Vilag } from "./index"
  * is sotet lesz. Ez nem "majd megnezzuk", hanem megnevezett esemeny, amit a
  * kovetkezo ember fel tud ismerni -- es a ket nulla mondja meg, mibol kovetkezett.
  *
- * === ES EGY HATAR, AMIT KIMONDOK ===
+ * === MIND A HAROM AG VALODI ADATON ALL (2026-09-08) ===
  *
- * A Halak (15 alkategoria) es a Gerinctelenek (7) alatt MA SZINTEN NULLA termek
- * all. A sotet vilagot tehat ma EGYEDUL a Korallok harom termeke valtja ki -- a
- * masik ket ag szabalya megirva all, de a mai adaton nem probalhato ki.
+ * Itt 2026-09-08-ig az allt, hogy a Halak es a Gerinctelenek alatt SZINTEN
+ * NULLA termek van, tehat a sotet vilagot egyedul a Korallok harom termeke
+ * valtja ki. Az a mondat a teljes migracio ELOTT kelt, es ma mar hamis.
+ *
+ * Merve a bolt vegpontjanak teljes valaszan (mind az 1492 termek), a JAVITOTT
+ * predikatummal:
+ *
+ *   Korallok          8
+ *   Halak           125
+ *   Gerinctelenek    28
+ *   ---------------------
+ *   osszesen        161 KULON termek (ellenorizve, hogy egy sem szamit ketszer)
+ *
+ * A regi predikatum ugyanezen az adaton 160-at ad. A kulonbseg az az EGY
+ * termek, amit a leveles kategoria-alak a rossz vilagba sorolt.
+ *
+ * A MERES HATARA, ES EZ HAROM KULON DOLOG:
+ *
+ *   1. A szam a JAVITAS VARHATO eredmenye, nem a megepitett lape. A javitas a
+ *      fo agon van, a teszt kirakat a meres pillanataban meg nem kapta meg.
+ *   2. A meres acroboté: a bolt vegpontjahoz kulcs kell, ami nincs nalam. En a
+ *      MECHANIZMUST mertem kodbol, o a SZAMOT az adaton.
+ *   3. A meres CSAK az `mpath` elso szegmenset hasznalta. A masik ag (a
+ *      `parent_category_id` lancan felfele) ezekben a szamokban NEM szerepel --
+ *      es merve NEM IS SZAMIT MA: a bolt valaszaban nulla olyan kategoria all,
+ *      aminek hianyzik az `mpath`-ja.
+ *
+ * A HARMADIK PONTBOL NEM AZ KOVETKEZIK, HOGY AZ AZ AG FOLOSLEGES, hanem hogy a
+ * mai adat nem igazolja es nem is cafolja. Ha valaha bekerul egy ilyen alak,
+ * csendben fog dolgozni -- ezert all rajta allitas ("mpath nelkul a szulo-
+ * lancon talalja meg a gyokeret"), kulonben senki nem venne eszre, ha elromlik.
  */
 
 /**
