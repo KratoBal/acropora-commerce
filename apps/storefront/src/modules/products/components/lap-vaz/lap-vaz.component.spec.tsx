@@ -135,7 +135,13 @@ describe("a műszaki lap váza", () => {
     const osztalyok = vaz.className
 
     expect(osztalyok).toContain("lg:grid")
-    expect(osztalyok).toContain("856fr_452fr")
+    /*
+      A JOBB OSZLOP FIX SAV, NEM ARANY. Korabban `856fr_452fr` allt itt, es a
+      kulonbseget egyetlen szelesseg nem mutatja meg: 1440 pixelen az aranyos
+      osztas 440,953-at ad. Ket szelessegen viszont az arany AZONOS marad
+      (1,894), ami fix savnal lehetetlen. (picasso merese, 2026-09-08.)
+    */
+    expect(osztalyok).toContain("minmax(0,1fr)_452px")
     expect(osztalyok).toContain("lg:gap-x-[44px]")
   })
 
@@ -722,9 +728,13 @@ describe("a jobb oszlop panel-szerkezete", () => {
  * konvencioja szerint, nem mert ertek -- es azert all itt kiirva, hogy senki ne
  * hivatkozzon ra ugy, mintha a tervbol jonne.
  *
- * AMI VISZONT A TERVBOL JON, es merve van: a ket oszlop aranya (856 es 452,
+ * AMI VISZONT A TERVBOL JON, es merve van: a ket oszlop merteke (856 es 452,
  * koztuk 44), es hogy a jobb oszlop egy FIX szelessegu savot kap
  * (`minmax(0,1fr) 452px`), nem aranyost.
+ *
+ * EZ A BEKEZDES KORABBAN MEGNEVEZTE A RESt, ES A KOD MEGSEM KOVETTE: a fix sav
+ * itt le volt irva, a racs pedig `856fr 452fr` aranyt hasznalt. 2026-09-08 ota
+ * a kod a mert alakot viseli. Egy megnevezett res nem vedelem, csak leiras.
  *
  * === AMIT EZ AZ ALLITAS MER, ES AMIT NEM ===
  *
@@ -739,7 +749,7 @@ describe("a törésponti elrendezés", () => {
    * A TORESPONT FOLOTTI FELET NEM IROM MEG UJRA.
    *
    * Ezt mar meri az "az asztali ket oszlopos racs ki van teve" allitas
-   * ugyanebben a fajlban: `lg:grid`, `856fr_452fr`, `lg:gap-x-[44px]`. Egy
+   * ugyanebben a fajlban: `lg:grid`, a fix jobb sav, `lg:gap-x-[44px]`. Egy
    * masodik, ugyanolyan allitas nem ad fedest, csak ket helyen kellene
    * karbantartani -- es a kalibraciokor ket pirosat adna egy hibara, amitol az
    * ember azt hiszi, ket dolog romlott el.

@@ -896,9 +896,25 @@ type LapVazProps = {
  *     JOBB  452 px   -- ar, elerhetoseg, valaszto, mennyiseg, csomagajanlat, kerdezd
  *     teljes szelesseg: cimsor, tartozekok, hasonlo termekek, ragados sav
  *
- * A ket oszlop aranyat `856fr 452fr` alakban adjuk at, nem kerekitett
- * szazalekban: igy a forras SZAMA all a kodban, es barki visszakeresheti a
- * merésben. Egy "65% / 35%" mar ertelmezes lenne.
+ * A JOBB OSZLOP FIX, NEM ARANYOS -- ES EZ MERES, NEM IZLES (2026-09-08).
+ *
+ * Korabban `856fr 452fr` allt itt, vagyis egy ARANY. A terv mind a ket
+ * szakaszban (2a es 1b) ezt keri:
+ *
+ *     grid-template-columns: minmax(0, 1fr) 452px
+ *
+ * A kulonbseg egyetlen szelessegen NEM latszik: 1440 pixelen az aranyos osztas
+ * 440,953-at ad, ami a 452-hoz kozel all. KET szelessegen derul ki, hogy nem
+ * kozeli ertek, hanem MASIK SZABALY: 1100 pixelen 353,859 jon, es az arany
+ * mindket szelessegen azonos (1,894). Egy fix sav nem viselkedne igy.
+ *
+ * A BAL OSZLOP 856-os szama ezzel nem tunt el, csak nem a kodban all: a jobb
+ * sav fix, a maradek a bale, es 1440 pixelen (44 pixel kozzel) ez pontosan a
+ * tervbeli 856-ot adja vissza.
+ *
+ * A `minmax(0, 1fr)` es nem a puszta `1fr`: az utobbi `minmax(auto, 1fr)`,
+ * vagyis egy szeles tartalom (kep, hosszu szo) SZETFESZITHETI az oszlopot. A
+ * terv is a minmax alakot hasznalja.
  *
  * MOBILON EGY OSZLOP, a tervbeli SORRENDBEN. Ez nem dontes, hanem a sorrend
  * kovetkezmenye: a `flex-col` alatt a dobozok abban a sorrendben allnak, ahogy
@@ -1004,7 +1020,7 @@ const LapVaz = ({
         </div>
       ) : null}
       <div
-        className="mx-auto w-full p-4 lg:grid lg:grid-cols-[856fr_452fr] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
+        className="mx-auto w-full p-4 lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
         style={{
           maxWidth: "1352px",
           background: "var(--terv-hatter)",

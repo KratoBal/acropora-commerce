@@ -55,16 +55,34 @@ const CartTemplate = ({
           Vagyis GYAKORISAG alapjan valasztottam, nem SZEREP alapjan, es egy
           mobil-makett kozet tettem az asztali racsra.
 
-          === ES AZ ARANY UGYANAZ, MINT A TERMEKLAPON ===
+          === ES ITT EGY HAMIS MONDAT ALLT, AMIT VISSZAMERTEM (2026-09-08) ===
 
-          Ugyanez a harom szam all a TERMEKLAP-tervben is, ahol a vaz mar
-          `856fr 452fr` alakban hasznalja. Ket kulon tervlap, ket kulon
-          kinyeres, azonos szamok: ez kereszt-kontroll, nem ismetles.
+          Az allt itt, hogy a TERMEKLAP-terv `856fr 452fr` alakban hasznalja
+          ugyanezt a harom szamot, es hogy ez kereszt-kontroll.
 
-          Az `fr` alak szandekos, es az indok nautiluse: igy a FORRAS SZAMA all
-          a kodban es visszakereshetó a meresben; egy "65% / 35%" mar
-          ertelmezes lenne. A korabbi `1fr 452px` ezt a kerdest nyitva hagyta
-          (a sajat kommentem is kimondta, hogy nem tudjuk, fix-e a 452).
+          NEM AZ. Mind a ket tervlapon a FIX alak all, es ezt a nyers forrasbol
+          merteem, ugyanazzal a keresessel:
+
+              termeklap-terv    minmax(0,1fr) 452px      2 elofordulas
+              kosar-terv        minmax(0,1fr) 452px      1 elofordulas
+
+          A `856fr 452fr` alak EGYIK tervlapon sem szerepel. A 856-os szam a
+          BAL oszlop mert szelessege 1440 pixelen -- vagyis egy KOVETKEZMENY
+          (1440 mínusz 44 mínusz 452), amit aranykent olvastunk vissza.
+
+          A kulonbseg egyetlen szelessegen nem latszik: 1440 pixelen az aranyos
+          osztas 440,953-at ad. KET szelessegen derul ki, hogy azonos marad az
+          arany (1,894), ami fix savnal lehetetlen. (picasso merese.)
+
+          === A KOD ITT MEGIS VALTOZATLAN, ES EZ TUDATOS ===
+
+          A termeklap vaza 2026-09-08-tol a mert fix alakot viseli. A KOSAR nem:
+          az elrendezes-valtozas latszik a vevonek, es ez a kor a termeklaprol
+          szolt. A javitas egy sor, es acrobot dontesere var.
+
+          Amit viszont nem lehetett igy hagyni, az a fenti mondat: egy hamis
+          allitas, ami MERESNEK nevezi magat ("kereszt-kontroll"), tobbet art,
+          mint a hianyzo javitas -- a kovetkezo olvaso nem merne ujra.
         */}
         {cart?.items?.length ? (
           <div className="grid grid-cols-1 small:grid-cols-[856fr_452fr] small:gap-x-[44px]">
