@@ -131,6 +131,29 @@ export function ElerhetosegDoboz({
    * ha ide is kiirnank, ket allitas allna ugyanarrol. A melyedes tehat a
    * MEGLEVO ket tenyt kapja meg, uj sor nelkul.
    */
+  /*
+    A MELYEDES A LAP TOKENJET VISELI, ES A TERVBEN VAN EGY MASIK ERTEK IS --
+    ez a mondat azert all itt, hogy ket het mulva ne kelljen ujra lemerni
+    (acrobot merese, 2026-09-08).
+
+    A 2a szakasz KET keretet tartalmaz, es a keszlet-sor MIND A KETTOBEN ott
+    van, KULONBOZO hatterrel:
+
+      a 1440 pixeles ASZTALI kereten belul   oklch(0.17 0.016 250)  <- ez all itt
+      a  390 pixeles MOBIL   kereten belul   oklch(0.215 0.018 249)
+
+    Nem ket VALTOZAT, hanem ugyanaz a lap ket MERETBEN: a mobil blokk sajat
+    fejleccel indul, es ott az elhelyezes-seged GOMB, nem beagyazott doboz.
+
+    Mi az asztali nezetet epitjuk, tehat a 0.17 -- es az a `--terv-hatter`,
+    uj token nelkul. A 0.215 AKKOR kap tokent, amikor a mobil nezet epul, es
+    AKKOR a szerepebol levezetve, nem ebbol az ertekbol visszafejtve.
+
+    ES AMIERT A KET ERTEK GYANUT KELTETT: ellentetes iranyba emelnek ki. Az
+    asztali a lap tonusara MELYIT (a panel 0.205-nel vilagosabb), a mobil
+    fole EMEL (0.215 a 0.17-es lapon). Egy sima "ket ertek van" nem lett
+    volna eleg gyanu ahhoz, hogy megnezzuk, miben kulonboznek.
+  */
   return (
     <div
       className="flex flex-col gap-[6px] p-[14px]"
