@@ -348,16 +348,27 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
  *   csomagajanlat     "Kotegajanlat"
  *   kerdezd           "Kerdezd a boltot"
  *   hasonlo           "Tovabbi WYSIWYG peldanyok"
- *   kiegeszitok       NINCS ilyen doboz a korall valtozatban -- de a dobozt
- *                     MEGIS meghagyjuk, lasd az indoklast lentebb
+ *   kiegeszitok       NINCS ilyen doboz a korall valtozatban -- es a #134 ota
+ *                     a sotet listarol is LEKERULT
  *
- * EGYETLEN CIM NEM A TERVBOL VALO: a `muszaki-adatok` doboz SOTET valtozata.
- * A 2a lapon nincs cimzett parameter-szakasz -- azon a magassagon a fulsor all
+ * MA EGYETLEN CIMUNK SINCS A TERVEN KIVUL, ES EZ A #134 UTAN IGAZ.
+ *
+ * Ez a bekezdes 2026-09-08-ig azt mondta, hogy egy cim nem a tervbol valo: a
+ * `muszaki-adatok` doboz sotet valtozata, amit "Tartasi parameterek" nevre
+ * vezettem le a mert cella-tartalombol -- es hogy "EZ AZ EGY sor cserelendo".
+ * A #134 azota levette ezt a dobozt a sotet listarol, a cim-felulirassal
+ * egyutt: a szoveg ma mar SEHOL nem all a fajlban, tehat nincs is mit cserelni.
+ *
+ * A MERES VISZONT MARAD, mert epp az a doboz LEVETELENEK a bizonyiteka: a 2a
+ * lapon nincs cimzett parameter-szakasz -- azon a magassagon a fulsor all
  * (top=1387), a parameter-doboz pedig cim nelkul kezdodik, rogton a "Nehezseg"
- * cellaval (top=1423). A "Tartasi parameterek" cimet ezert a MERT TARTALOMBOL
- * vezettem le. Ha ez nem tetszik, EZ AZ EGY sor cserelendo.
+ * cellaval (top=1423).
  *
- * A VILAGOS CIM VISZONT A TERVBOL VALO, ES EZ EGY JAVITAS.
+ * (Nem torlom a regi mondatot, hanem megnevezem: aki egy PR-lerasban vagy egy
+ * uzenetben a "Tartasi parameterek" cimre hivatkozik, itt latja, hogy mikor es
+ * mi miatt szunt meg. Egy csendes torles ezt a kort ujra lefuttatna valakivel.)
+ *
+ * A VILAGOS CIM A TERVBOL VALO, ES EZ EGY JAVITAS.
  *
  * Ez a bekezdes korabban azt allitotta, hogy a doboz a tervben MINDKET
  * valtozatban cim nelkul all, tehat a "Muszaki adatok" cimet is mi tettuk ra.
