@@ -398,7 +398,7 @@ describe("az élő állat lap feliratai", () => {
       sotet.find((szakasz) => szakasz.kulcs === kulcs)
 
     expect(doboz("hasonlo")?.cim).toBe("További WYSIWYG példányok")
-    expect(doboz("meretezes-seged")?.cim).toBe("Hová tedd ezt a példányt?")
+    expect(doboz("meretezes-seged")?.cim).toBe("Elhelyezés-segéd")
     expect(doboz("kerdezd")?.cim).toBe("Kérdezd a boltot")
     expect(doboz("csomagajanlat")?.cim).toBe("Kötegajánlat")
 
@@ -412,9 +412,7 @@ describe("az élő állat lap feliratai", () => {
 
     // A varakozo szovegek is felul vannak irva, es eddig egyiket sem fedte semmi.
     expect(doboz("foto")?.varakozo).toBe("Saját fotó: ez a példány")
-    expect(doboz("meretezes-seged")?.varakozo).toBe(
-      "Ide jön az elhelyezés-segéd",
-    )
+    expect(doboz("meretezes-seged")?.varakozo).toBe("Hová tedd ezt a példányt?")
     expect(doboz("csomagajanlat")?.varakozo).toBe("Ide jön a kötegajánlat")
     expect(doboz("hasonlo")?.varakozo).toBe(
       "Ide jönnek a további egyedi példányok",

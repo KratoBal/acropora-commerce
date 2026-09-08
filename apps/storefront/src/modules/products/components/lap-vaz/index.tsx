@@ -380,25 +380,26 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
 const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
   foto: { varakozo: "Saját fotó: ez a példány" },
   /**
-   * A CIM A TERV LATHATO CIME, NEM A DESIGNER DOBOZ-NEVE.
+   * LELET, NEM DONTES: EZEN A DOBOZON KET TERVBELI SZOVEG ALL EGYMAS FOLOTT.
    *
-   * A tervlapon KET szoveg all egymas folott, es mind a ketto a tervezoe:
+   * Merve a 2a lapon, a `measurement/terv-valtozatok/` kiolvasasaval:
    *
-   *   y=1191  x=126  11px monospace   "ELHELYEZÉS-SEGÉD"    a doboz NEVE
+   *   y=1191  x=126  11px monospace   "ELHELYEZÉS-SEGÉD"           a doboz NEVE
    *   y=1215  x=126  20px felkover    "Hová tedd ezt a példányt?"  a LATHATO cim
    *
-   * A mi lapunk a vevonek szol, tehat a LATHATO cim jar ide. A monospace nev a
-   * tervezo sajat leltara -- ugyanaz a szerep, mint a "2a" vagy az "1. KÖR"
-   * cimke. (acrobot dontese, msg_id 14734.)
+   * MA A ROVID NEV ALL A CIMBEN, ES A LATHATO CIM A VARAKOZOBAN -- szandekosan.
+   * Amig a doboz URES VAZ, a h2 nem vevoi felirat, hanem szerkezeti cimke, es
+   * arra a rovid nev valo. A vevoi cim akkor jon, amikor a doboz valodi
+   * tartalmat kap, es akkor MIND A KET lapcsaladon egyszerre valt (a vilagos
+   * oldalon ugyanez a doboz "MÉRETEZÉS-SEGÉD" neven all). Egy fel atallas
+   * rosszabb, mint egyik sem. (acrobot dontese, msg_id 14812 es 14817.)
    *
-   * ES A VARAKOZO SZOVEG EZERT VALTOZOTT: eddig ez volt a "Hová tedd ezt a
-   * példányt?", vagyis pontosan az, ami most a CIM. Ket azonos szoveg egy
-   * dobozon nem allitas, hanem ismetles -- a varakozo mostantol azt mondja meg,
-   * MI jon a helyere, ahogy a tobbi dobozban is.
+   * Ez a ket koordinata azert marad itt, hogy a kovetkezo kornek ne kelljen
+   * ujra kimernie: a lathato cim MEGVAN a tervben, nem kell kitalalni.
    */
   "meretezes-seged": {
-    cim: "Hová tedd ezt a példányt?",
-    varakozo: "Ide jön az elhelyezés-segéd",
+    cim: "Elhelyezés-segéd",
+    varakozo: "Hová tedd ezt a példányt?",
   },
   fulek: {
     varakozo:
@@ -505,7 +506,10 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  *
  * ES AMIERT MOST SZABAD ELHAGYNI: mind a ketto ma URES vaz. Ha valodi
  * tartalmat vinne, a levetel lathato dolgot vinne el, es akkor mas dontes
- * kellene. (acrobot merese es dontese, msg_id 14734.)
+ * kellene.
+ *
+ * Ez terv-kovetes, nem terv-modositas, ezert nem megy a gazda ele. (acrobot
+ * dontese, msg_id 14734, megerositve 14812-ben es 14827-ben.)
  */
 const ELO_ALLAT_ELHAGYOTT = new Set(["muszaki-adatok", "kiegeszitok"])
 
