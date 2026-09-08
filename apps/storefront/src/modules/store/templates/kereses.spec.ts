@@ -52,6 +52,69 @@ describe("a keresés szövegének kiolvasása", () => {
  * jsdomban nem futtathato. A `kodSzoveg` kiszedi a megjegyzeseket, tehat az a
  * bekezdes, amelyik a `q` merest INDOKOLJA, nem elegiti ki sajat magat.
  */
+/**
+ * A LANC KET VARRATA -- ES EZEK NELKUL A KERESES NEMAN MEGSZUNHET.
+ *
+ * MIERT KERULT IDE (nautilus modszerevel, 2026-09-08): a lekerdezesre allo
+ * allitas a `paginated-products.tsx` FORRASAT olvassa. Az a fajl akkor is
+ * valtozatlan marad, ha a HIVOJA nem adja at az erteket -- vagyis a szures
+ * megszunik, es minden allitasom zold marad.
+ *
+ * LEMERTEM, nem feltetelezem: a `kereses={kereses}` propot kivettem a
+ * sablonbol, es MIND A TIZENHAROM teszt zold maradt. A varrat fedetlen volt.
+ *
+ * Ez ugyanaz az alak, amit nautilus a vetites runnerenel talalt: ott a
+ * modul-szintu import miatt nem futott a torzs, itt a forras-olvasas miatt nem
+ * latszik a hivo. Mind a ketto NULLA pirosat ad, es mind a ketto ugy nez ki,
+ * mintha a kod lenne merhetetlen -- holott a MERES nem eri el a varratot.
+ *
+ * KET allitas all itt, nem egy: a lanc KET szemen csuszhat el, es egy kozos
+ * allitas nem mondana meg, MELYIKEN.
+ */
+describe("a keresés eljut a hívóktól a lekérdezésig", () => {
+  const sablon = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+  const utvonal = kodSzoveg(
+    readFileSync(
+      join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "app",
+        "[countryCode]",
+        "(main)",
+        "store",
+        "page.tsx",
+      ),
+      "utf-8",
+    ),
+  )
+
+  /** ISMERT POZITIV KONTROLL: mind a ket fajlt beolvastuk, es ezek azok. */
+  it("mindkét hívó forrása olvasható", () => {
+    expect(sablon).toContain("StoreTemplate")
+    expect(utvonal).toContain("StorePage")
+  })
+
+  /**
+   * HAROM ALLITAS, MERT A LANCNAK HAROM SZEME VAN -- es a kalibracio mondta meg,
+   * hogy ketto keves. Az elso alakban egy allitas mondta ki, hogy az utvonal
+   * KISZAMOLJA es AT IS ADJA a keresest; ket kulonbozo rontas ugyanazt a nevet
+   * dontotte pirosra, tehat a nev nem mondta meg, MELYIK szemen csuszott el.
+   */
+  it("az útvonal kiszámolja a keresést", () => {
+    expect(utvonal).toContain("keresesSzovege(searchParams.q)")
+  })
+
+  it("az útvonal átadja a keresést a sablonnak", () => {
+    expect(utvonal).toContain("kereses={kereses}")
+  })
+
+  it("a sablon átadja a keresést a lekérdezésnek", () => {
+    expect(sablon).toContain("kereses={kereses}")
+  })
+})
+
 describe("a keresés eljut a lekérdezésig", () => {
   const forras = kodSzoveg(
     readFileSync(join(__dirname, "paginated-products.tsx"), "utf-8"),
