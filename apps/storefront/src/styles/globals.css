@@ -477,9 +477,21 @@ body {
     feluletnek tokent vesz fel, a SZEREPEBOL szulessen, ne egy tervlapon mert
     ertek gyakorisagabol visszafejtve.
 
-    A VILAGOS ERTEKHEZ NEM NYULTAM. A terv vilagos lapja 0.985 vagy 0.99 (ket
-    kulon valtozat), a mai 0.96 pedig szinten kep-helykitolto szin. Melyik a
-    helyes, az dontes, nem meres -- kulon tetel.
+    A VILAGOS ERTEK AZOTA LEZARULT (2026-09-08). Itt korabban az allt, hogy
+    "nem nyultam hozza... melyik a helyes, az dontes, nem meres -- kulon tetel".
+    Az akkor igaz volt; ma mar nem, es egy megjegyzes, ami egy azota eldolt
+    kerdest nyitottkent ir le, ugyanolyan felrevezeto, mint egy rossz ertek.
+
+    A dontes Balazse (2026-09-08 13:56, egy szoval: 1b), es ezzel a ket
+    valtozat kozotti valasztas megszunt kerdes lenni. A vilagos ertek azota
+    `oklch(0.99 0.004 80)`, ami az 1b lap SAJAT hattere -- a fenti harom sorbol
+    a harmadik. A 0.985 az ELVETETT 1a szakasze.
+
+    EGY ERTEK, AMIVEL EZT KONNYU OSSZETEVESZTENI, ezert ide is leirjuk:
+    `oklch(0.955 0.006 75)` NEM lap-hatter. Az a fejlec KERESO-MEZOJENEK
+    hattere (46 pixel magas, nagyito-jellel, "Keresés termékre, ..."), es a
+    `--terv-hatter-halvany` all hozzá kozel. Egy lap-alapot arra az ertekre
+    allitani azt jelentene, hogy az egesz lap a kereso-mezo tonusat viseli.
   */
   --terv-hatter: oklch(0.17 0.016 250); /* a sotet tervlap sajat hattere */
   --terv-hatter-lap: oklch(0.17 0.016 250); /*  8 elem -- melyebb felulet */
