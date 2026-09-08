@@ -177,8 +177,16 @@ export function normaliseOrderQuantity(input: {
  * csinál semmit, és nem tudja, miért. Az eredeti kód ezt a minimumra már
  * kimondta; a lépésköz és a maximum ugyanezt igényli.
  *
- * A mondat csak akkor jelenik meg, ha VAN mit mondania. 1877 terméknél a
- * minimum 1 és nincs lépésköz -- ott a hallgatás a helyes válasz.
+ * A mondat csak akkor jelenik meg, ha VAN mit mondania. MÉRVE A TESZT BOLT
+ * SAJÁT POPULÁCIÓJÁN (2026-09-08, mind az 1492 termék a Store API-n): 1478
+ * terméknél nincs mit mondani (minimum 1, lépésköz 1, nincs maximum), és 14-nél
+ * jelenik meg a mondat.
+ *
+ * A SZÁM SZÁNDÉKOSAN INNEN JÖN, ÉS NEM AZ UNAS EXPORTBÓL. Korábban 1877 állt
+ * itt, ami a 2026-09-02-i UNAS export 1893 termékéből számolt érték -- MÁSIK
+ * RENDSZER, másik populáció. A következtetés attól még állt (a többségnél a
+ * hallgatás a helyes), de egy másik rendszer számával indokolni egy itteni
+ * viselkedést pontosan az a hiba, amit a fenti populáció-bekezdés kizár.
  *
  * TISZTA FÜGGVÉNY, mert két világ két külön JSX-fájlban rendereli
  * (`product-actions/index.tsx` és `vasarlas/dobozok.tsx`). Ha a szöveg a

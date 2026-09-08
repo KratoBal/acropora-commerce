@@ -417,8 +417,8 @@ export default function ProductActions({
           rendelési maximumot. A vevő mindháromnál azt látná, hogy a gomb nem
           csinál semmit, és nem tudná, miért. A mondatot a metaadatból egy
           tiszta függvény állítja elő, és `null`-t ad, ha nincs mit mondania --
-          1877 terméknél a minimum 1 és nincs lépésköz, ott a hallgatás a
-          helyes válasz.
+          a teszt bolt 1492 termékéből 1478-nál nincs mit mondani (mérve
+          2026-09-08), ott a hallgatás a helyes válasz.
         */}
         {!uniquePiece && rendelesiMondat && (
           <p className="text-small-regular text-ui-fg-subtle">
