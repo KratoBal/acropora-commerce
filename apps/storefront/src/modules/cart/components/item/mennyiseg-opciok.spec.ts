@@ -59,3 +59,39 @@ describe("a kosársor mennyiség-választéka", () => {
     expect(new Set(opciok).size).toBe(opciok.length)
   })
 })
+
+/**
+ * A HARMADIK ARGUMENTUM JELENTESE -- ES MIERT NEM VOLT ELOTTE ALLITAS RA.
+ *
+ * A fenti hat allitas kozul EGY SEM ad at harmadik argumentumot. Ezert tudott
+ * a jelentese csendben megvaltozni (darabszamrol felso hatarra es vissza)
+ * anelkul, hogy barmi pirosra valtott volna.
+ *
+ * A HAROM ERTEK ITT SZANDEKOSAN OLYAN, AHOL A KET OLVASAT ELTER. Minimum 1
+ * mellett a darabszam es a felso hatar EGYBEESIK -- egy (1, 1, 3) alaku
+ * allitas mind a ket megvalositason zold lenne, tehat semmit nem merne.
+ */
+describe("a harmadik argumentum: készlet mint felső határ", () => {
+  it("a készlet FELSŐ HATÁR, nem darabszám", () => {
+    // darabszamkent 10-tol 21-ig kinalna, a keszlet FOLE
+    expect(kosarMennyisegOpciok(10, 10, 12)).toEqual([10, 11, 12])
+  })
+
+  it("készlet a minimum ALATT: csak a jelenlegi érték marad", () => {
+    // nincs rendelheto mennyiseg; a legordulo viszont nem mutathat mast,
+    // mint ami a kosarban all
+    expect(kosarMennyisegOpciok(10, 10, 5)).toEqual([10])
+  })
+
+  it("a tíz opció korlátja a készlettől függetlenül áll", () => {
+    expect(kosarMennyisegOpciok(1, 1, 100)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ])
+  })
+
+  /** ISMERT POZITIV KONTROLL: keszlet nelkul a mai viselkedes beture ugyanaz. */
+  it("készlet nélkül a mai viselkedés változatlan", () => {
+    expect(kosarMennyisegOpciok(1, 1)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(kosarMennyisegOpciok(100, 1)).toContain(109)
+  })
+})
