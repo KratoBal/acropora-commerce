@@ -50,6 +50,31 @@
  */
 export const HASONLO_KULCS = "unas_similar_ids"
 
+/**
+ * A LISTA ROVIDEBB LEHET, MINT AHANY KAPCSOLAT AZ ACROPORA OS-BEN ALL -- ES EZ
+ * A HELYES MUKODES, NEM HIANY.
+ *
+ * A kapcsolat celpontja lehet olyan termek, ami MEG NINCS a boltban: a
+ * katalogusnak csak egy resze kelt at. Ilyenkor a vetitesnek nincs
+ * Medusa-azonositoja hozza, es KIHAGYJA -- nem talal ki azonositot, es nem hagy
+ * ures helyet. Egy nem letezo termekre mutato kapcsolat a vevonek 404 lenne.
+ *
+ * (acrobot kikotese, msg_id 14911. Az iro oldalon megvalositva:
+ * `apps/api/src/integrations/medusa/medusa-relations.policy.ts`, acropora-os
+ * #604 -- a kihagyottak SZAMA a vetites kimenetere kerul, kulon sorban.)
+ *
+ * AMIERT EZ ITT ALL, ES NEM CSAK AZ IRO OLDALON: aki ezt a fajlt olvassa, azt
+ * latja, hogy egy termekhez tizenhet kapcsolat all az OS-ben, es a lapon ot
+ * jelenik meg. A ket szam kulonbsegenek HAROM oka lehet, es csak az egyik hiba:
+ *
+ *   a celpont meg nincs a boltban    <- varhato, atmeneti, magatol megszunik
+ *   a celpont torolve vagy nem publikalt <- `kertSorrendben` hagyja ki, lentebb
+ *   a KAPCSOLAT_HATAR levagta         <- szandekos, ez a fajl donti el
+ *
+ * A harom kozul egyik sem hibazik, es mind a harom rovidebb listat ad. Enelkul
+ * a megjegyzes nelkul a kovetkezo olvaso a hianyt keresne, nem a magyarazatot.
+ */
+
 /** A doboz ennyit tud megmutatni, es ennyi utazhat a metaadatban. */
 export const KAPCSOLAT_HATAR = 12
 
