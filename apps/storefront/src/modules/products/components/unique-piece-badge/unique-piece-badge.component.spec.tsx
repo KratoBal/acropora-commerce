@@ -71,4 +71,31 @@ describe("a jelvény színei", () => {
     expect(jelveny.className).not.toContain("bg-neutral")
     expect(jelveny.className).not.toContain("text-amber")
   })
+
+  /**
+   * A FELULET TELJESEN ATLATSZATLAN -- ES EZ DONTES, NEM RESZLET.
+   *
+   * acrobot dontese (msg 15106, 2. pont): a jelveny TOMOR rez felulet legyen.
+   * A regi alak atlatszo sotet fatyol volt, es ket resze volt: a 85 szazalek
+   * ES a `backdrop-blur-sm`. Az elsot a #157 elvitte, a masodik ITTMARADT --
+   * mert semmi nem allitott rola.
+   *
+   * ES A REGI ALLITASOK VAKOK VOLTAK RA, ezt megmertem: a blur oraknyi ideig
+   * ott allt a fo agon, 322 ZOLD teszt mellett. A ket token-allitas a
+   * HATTERSZINT nezi, a fenti sor a BEIRT SZINEKET -- egyik sem lat egy
+   * atlatszosagot sugallo effektet.
+   *
+   * MIERT NEM CSAK A `backdrop-blur`-RA ALLIT: a dontes az ATLATSZATLANSAGROL
+   * szol, nem egy osztaly nevrol. Egy `bg-white/50` vagy egy `opacity-*`
+   * ugyanugy megszegné, es egy szuk allitas mellettuk zold maradna.
+   */
+  it("a felület nem visel átlátszóságot sugalló osztályt", () => {
+    render(<UniquePieceBadge />)
+
+    const osztalyok = screen.getByTestId("unique-piece-badge").className
+
+    for (const tiltott of ["backdrop-", "opacity-", "/"]) {
+      expect(osztalyok).not.toContain(tiltott)
+    }
+  })
 })
