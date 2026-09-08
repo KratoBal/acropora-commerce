@@ -896,6 +896,29 @@ type LapVazProps = {
  *     JOBB  452 px   -- ar, elerhetoseg, valaszto, mennyiseg, csomagajanlat, kerdezd
  *     teljes szelesseg: cimsor, tartozekok, hasonlo termekek, ragados sav
  *
+ * === A TERVBEN KET KULONBOZO RACS ALL, NEM EGY (2026-09-08) ===
+ *
+ * Ez azert all itt, mert kulonben egy kesobbi olvaso ranez az 1a lapra, HAROM
+ * oszlopot lat, es azt hiszi, elrontottuk. A harom tervlap fo termek-racsa,
+ * a nyers forrasbol:
+ *
+ *   2a  sotet, rez        grid-template-columns: minmax(0,1fr) 452px   gap 44
+ *   1b  vilagos, rez      grid-template-columns: minmax(0,1fr) 452px   gap 44
+ *   1a  vilagos, kek      grid-template-columns: 112px minmax(0,1fr) 400px   gap 32
+ *
+ * A KET LAP, AMIT EPITUNK, BETUERE UGYANAZT A RACSOT HASZNALJA -- meg a felso
+ * margojuk is azonos (`padding:18px 44px 0`). Az 1a ter el: harom oszlop, egy
+ * 112 pixeles kepsavval elol, keskenyebb jobb oszlop (400) es kisebb koz (32),
+ * plusz 22 pixeles felso margo.
+ *
+ * MIERT AZ 1b ALAKJA A MIENK, ES NEM VALASZTAS KERDESE: Balazs az 1b-t
+ * valasztotta (2026-09-08 13:56), es a 2a ugyanezt a racsot viseli. Vagyis a
+ * ketoszlopos alak MIND A KET epulo lapon a terve -- az 1a a harmadik,
+ * elvetett valtozat, es a harom oszlopa vele egyutt esett ki.
+ *
+ * Ugyanez all a rez akcentre: az 1a a kek akcentu valtozat volt. A racs es a
+ * szin EGYUTT jart, nem kulon-kulon dontottuk el oket.
+ *
  * A JOBB OSZLOP FIX, NEM ARANYOS -- ES EZ MERES, NEM IZLES (2026-09-08).
  *
  * Korabban `856fr 452fr` allt itt, vagyis egy ARANY. A terv mind a ket
