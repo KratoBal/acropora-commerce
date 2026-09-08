@@ -143,7 +143,8 @@ type VazSzakasz = {
  * latja, a masik "szurve" -- ez HAMIS, es ketszer allt vissza a helyesbites
  * utan is, mert csak uzenetben volt kimondva:
  *
- *   nautilus   elem-szinten olvas -> a CSONKOLAS nem erinti
+ *   nautilus   elem-szinten olvas -> a CSONKOLAS nem erinti, DE 46 karakter
+ *              felett ELDOBJA az elemet (lasd lentebb: ez MAS, mint a vagas)
  *   murena     kontener-CIMKET olvas -> a suly nem erinti,
  *              de 60 KARAKTERNEL kemenyen vag
  *
@@ -167,6 +168,20 @@ type VazSzakasz = {
  *
  * Merve: 252 dobozcimkebol 95 eri el a 60 karakteres hatart (a korall lapon
  * 35). Az en korlatom tehat ALLANDO: minden olvasasomra all.
+ *
+ * ES A HARMADIK KORLAT, AMIT EN NEM NEVEZTEM MEG (nautilus helyesbitese,
+ * 2026-09-08, a sajat kiolvasojan merve): a `cimek-kiolvaso.cjs` a 46
+ * karakternel hosszabb szoveget nem csonkolja, hanem ELDOBJA
+ * (`if (!t || t.length > 46) continue`).
+ *
+ * A KETTO NEM UGYANAZ, es az ove a rosszabb alak: az EN kimenetemen LATSZIK,
+ * hogy vagtam (a cimke ott all, csak rovidebben); az ovenel az elem NYOM
+ * NELKUL hianyzik. Egy csonka sor gyanut kelt, egy hianyzo nem.
+ *
+ * A SAJAT HOZZAJARULASA VISZONT KICSI, es ezt is o mérte szet: a 395 szoveges
+ * level-elembol 26 hosszabb 46 karakternel, de ebbol csak KETTO ment volna at
+ * egyebkent a suly- es meret-kuszobon. A hossz-korlat vak foltja tehat ket
+ * elem, nem huszonhat.
  *
  * Nautilus korlata viszont KIOLVASASONKENT valtozik, es ezert nem lehet egy
  * szoval elintezni. A helyes kerdes nem az, hogy "mit lat nautilus", hanem
