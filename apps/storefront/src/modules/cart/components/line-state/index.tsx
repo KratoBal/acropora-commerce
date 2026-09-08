@@ -128,8 +128,8 @@ export default function CartLineState({
        *
        * AMI A KET IRANYBA HUZ, ES ELLENTMOND EGYMASNAK:
        *   a MERETUNK (11px) a 12px-es Space Grotesk alakhoz all kozelebb
-       *   a HELYUNK viszont a szeles fo oszlop (a kosar racsa 856fr_452fr,
-       *     es a tetelek a 856-osban allnak), ami a masik kezeleshez huz
+       *   a HELYUNK viszont a szeles fo oszlop (a kosar racsa bal oszlopa,
+       *     ami a jobb 452-es sav mellett marad), ami a masik kezeleshez huz
        *
        * Ezert nem dontottem el magam. (nautilus merese, msg 14993; a masodik
        * elofordulast en mertem hozza, es a sajat elozo, meret-alapu ervemet
@@ -173,8 +173,13 @@ export default function CartLineState({
        * var, es addig a mai allapotban marad.
        *
        * A `small:` a kosar racsanak sajat toresponja is (`templates/index.tsx`,
-       * `small:grid-cols-[856fr_452fr]`), tehat ugyanott valt, ahol a lap
-       * ketoszloposra all -- nem egy kulon, kitalalt hatar.
+       * `small:grid-cols-[minmax(0,1fr)_452px]`), tehat ugyanott valt, ahol a
+       * lap ketoszloposra all -- nem egy kulon, kitalalt hatar.
+       *
+       * (A racs alakja 2026-09-08-an aranyosrol fix savra valt; a TORESPONT
+       * nem valtozott, tehat ez az indoklas erintetlen. Azert irom ide, mert a
+       * korabbi alak neve itt allt, es egy elavult idezet ugy nez ki, mint egy
+       * meres.)
        */}
       <span
         className="text-[11px] leading-relaxed small:font-kiemelt"
