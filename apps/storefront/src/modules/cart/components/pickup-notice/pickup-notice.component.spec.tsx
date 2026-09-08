@@ -169,3 +169,32 @@ describe("a sáv címkéje és indoka tokenből színez", () => {
     )
   })
 })
+
+/**
+ * A SZERIF AZ ASZTALI NEZETBEN -- UGYANAZ A MERES, MINT A `line-state`-nel,
+ * es a ket hely EGYUTT mozdul.
+ *
+ * A terv 3a lapjan ez a bekezdes a 390-es mobil kereten belul orokolt betuvel
+ * all (13.5px), az 1440-es asztalin Newsreaderrel (17px).
+ *
+ * A MASODIK ALLITAS A KONTROLL: a cimke ugyanabban a dobozban all, es SAJAT
+ * kezelese van (nagybetus, rez tinta). Ha valaki a szerifet a teljes dobozra
+ * vinne, az elso allitas akkor is zold maradna -- ez pirosodik.
+ */
+describe("a szerif az asztali nézetben", () => {
+  it("az átvétel indoklása a törésponttól szerifet visel", () => {
+    render(<PickupNotice lines={["Acropora tenuis"]} />)
+
+    expect(screen.getByTestId("pickup-notice-indok").className).toContain(
+      "small:font-kiemelt",
+    )
+  })
+
+  it("a sáv címkéje NEM kapta meg a szerifet", () => {
+    render(<PickupNotice lines={["Acropora tenuis"]} />)
+
+    expect(screen.getByTestId("pickup-notice-cimke").className).not.toContain(
+      "font-kiemelt",
+    )
+  })
+})

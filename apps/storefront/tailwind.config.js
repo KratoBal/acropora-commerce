@@ -58,6 +58,20 @@ module.exports = {
         "3xl": "2rem",
       },
       fontFamily: {
+        /*
+          A KIEMELT (SZERIF) BETU UTILITY-KENT -- ES AZERT ITT, MERT A TERV
+          TORESPONTONKENT MAST MOND.
+
+          A `--terv-betu-kiemelt-lanc` eddig csak beagyazott `style`-ban volt
+          hasznalhato, es egy beagyazott stilus nem tud toresponthoz kotodni.
+          A terv viszont a kosar 3a lapjan a MOBIL nezetben orokolt betut, az
+          ASZTALIBAN Newsreadert mutat ugyanarra a ket mondatra -- vagyis a
+          betu-valasztas itt szelesseg-fuggo, es utility nelkul nem irhato le.
+
+          A lanc maga valtozatlan; ez csak egy masodik ut ugyanahhoz az
+          ertekhez.
+        */
+        kiemelt: ["var(--terv-betu-kiemelt-lanc)"],
         sans: [
           "Inter",
           "-apple-system",
