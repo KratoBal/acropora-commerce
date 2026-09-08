@@ -20,8 +20,17 @@ import React from "react"
  * valodi jelolo 562 karakter. A jelolo escape-elt sztringkent van a kotegben;
  * kibontva 839 528 karakter olvashato HTML, es abbol jon az alabbi sorrend.
  *
- * A tervben hat lap-valtozat all (harom az elo allat, harom a muszaki); ez a
- * vaz a legteljesebb MUSZAKI valtozatot koveti.
+ * A tervben HAROM lap all, ket szakaszban: a sotet korall lap (2a), es a
+ * "1. KOR" szakasz KET vilagos muszaki lapja (1a es 1b). Ez a vaz a ket
+ * vilagos lap UNIOJAT koveti -- a reszletes bontas lentebb, a dobozlistanal.
+ *
+ * (Itt korabban az allt, hogy a tervben HAT lap-valtozat van, harom elo allat
+ * es harom muszaki, es hogy a vaz "a legteljesebb muszaki valtozatot" koveti.
+ * Mind a ketto hamis, es mind a ketto tullepte a sajat hatokoret: a terv sajat
+ * "N. KOR" cimei ketto szakaszt neveznek meg, a geometrian a muszaki savon TUL
+ * nulla doboz all, es a lista nem egy valtozate, hanem ketto union. Kontroll: a
+ * "KOR" szora negy doboz jon, ketto szakaszba esve, tehat a nulla nem a kereses
+ * tulajdonsaga.)
  *
  * === MIERT SLOTOK, ES NEM KESZ TARTALOM ===
  *
@@ -316,8 +325,8 @@ export const VazDoboz = ({ szakasz, children }: VazDobozProps) => {
 /**
  * AZ ELO ALLAT LAP DOBOZAI -- A TERVBOL MERVE, NEM KITALALVA.
  *
- * A tervfajl HAT lap-valtozatot tartalmaz: harom elo allatot es harom
- * muszakit. A fenti lista a legteljesebb MUSZAKI valtozatot koveti; ez itt a
+ * A tervfajl HAROM lapot tartalmaz: a sotet korall lapot (2a) es ket vilagos
+ * muszaki lapot (1a, 1b). A fenti lista a ket VILAGOS lap unioja; ez itt a
  * korall valtozat ("2. KOR WYSIWYG korall termekoldal, sotet").
  *
  * === MIERT NEM ELEG UGYANAZ A LISTA ===
