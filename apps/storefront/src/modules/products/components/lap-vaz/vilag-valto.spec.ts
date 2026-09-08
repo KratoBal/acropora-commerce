@@ -199,6 +199,39 @@ describe("a gyökér feloldása, ha a termék nem hozta magával", () => {
 })
 
 /**
+ * A HIVAS OBJEKTUMANAK SZELETE, KAPCSOS ZAROJEL SZAMLALASSAL.
+ *
+ * A `fuggveny({` elso elofordulasatol a HOZZA TARTOZO zaro `}`-ig ad vissza,
+ * a mélységet szamolva -- tehat a hivas objektuma akkor is egyben marad, ha
+ * belsejeben zarojeles kifejezes, beagyazott objektum vagy tomb all.
+ *
+ * MIERT NEM ELEG AZ ELSO `)`: lasd a kalibraciot a describe aljan. Roviden:
+ * egy `fields: mezoket()` alak eseten az elso `)` a MEZOLISTA zarojele, nem a
+ * hivase, es minden utana allo mezo (koztuk a `limit`) kimarad a szeletbol.
+ *
+ * A HATARA, hogy ez SZOVEGET olvas, nem szintaxisfat: egy sztring-literalban
+ * allo kapcsos zarojel felrevinne. A vizsgalt hivasokban ilyen nincs, es ha
+ * valaha lesz, ez a fuggveny az a hely, ahol kiderul.
+ */
+function hivasObjektuma(forras: string, fuggveny: string): string {
+  const kezd = forras.indexOf(`${fuggveny}({`)
+  if (kezd < 0) return ""
+
+  const nyit = forras.indexOf("{", kezd)
+  let melyseg = 0
+
+  for (let i = nyit; i < forras.length; i += 1) {
+    if (forras[i] === "{") melyseg += 1
+    else if (forras[i] === "}") {
+      melyseg -= 1
+      if (melyseg === 0) return forras.slice(nyit, i + 1)
+    }
+  }
+
+  return forras.slice(nyit)
+}
+
+/**
  * A KATALOGUS CSAK AKKOR TELJES, HA A HIVO NEM AD `limit`-ET.
  *
  * A gyoker feloldasa a teljes kategoria-listan all: az `mpath` elso szegmense
@@ -246,11 +279,39 @@ describe("a katalógus, amiből a gyökér feloldódik", () => {
   })
 
   it("a terméklap a TELJES katalógust kéri, limit nélkül", () => {
-    const hivas = lapForras.slice(
-      lapForras.indexOf("listCategories({"),
-      lapForras.indexOf(")", lapForras.indexOf("listCategories({")),
-    )
+    expect(hivasObjektuma(lapForras, "listCategories")).not.toContain("limit")
+  })
 
-    expect(hivas).not.toContain("limit")
+  /**
+   * A SZELETELO KALIBRACIOJA -- MAGAT A MEROT MERI, NEM A LAPOT.
+   *
+   * Az elso alak az ELSO `)`-ig vagott. Ma az veletlenul a hivas zaro
+   * zarojele volt, tehat mukodott. De ha barmi zarojeles kerul a `limit` ELE
+   * az objektumban, a szelet ott er veget, es a `limit` KIMARAD a vizsgalt
+   * szovegbol -- vagyis az allitas zold marad, mikozben a lap egyetlen lapot
+   * ker. Pont az a viselkedes, ami ellen az orzo epult, es pont olyan neman.
+   *
+   * ES EZ NEM ELMELETI EBBEN A REPOBAN: van `lib/data/termeklap-fields.ts`,
+   * tehat a "mezolista fuggvenybol jon" alak a haz szokasa, nem kitalalt eset.
+   *
+   * A ket allitas EGYUTT bizonyit, es ezert all mind a ketto itt:
+   * az UJ alak megtalalja a limitet a romlott forrasban, a REGI alak pedig
+   * NEM talalja meg. Az elso magaban csak annyit mondana, hogy a szeletelo
+   * mukodik; a masodik nevezi meg, mi volt a vaksag, amit lezar.
+   *
+   * (acrobot merese, 2026-09-08 05:16, msg 15007 -- o szimulalta a valodi
+   * fajlon, es o nevezte meg a javitas alakjat is.)
+   */
+  it("a szeletelő a limitet zárójeles kifejezés MÖGÖTT is megtalálja", () => {
+    const romlott =
+      "const kategoriak = await listCategories({ fields: mezoket(), limit: 5 })"
+
+    expect(hivasObjektuma(romlott, "listCategories")).toContain("limit")
+
+    const regiAlak = romlott.slice(
+      romlott.indexOf("listCategories({"),
+      romlott.indexOf(")", romlott.indexOf("listCategories({")),
+    )
+    expect(regiAlak).not.toContain("limit")
   })
 })
