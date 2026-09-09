@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import { listNonEmptyRootCategories } from "@lib/data/categories"
+import { KosarLink } from "@modules/layout/components/cart-dropdown/kosar-link"
 import { getRegion } from "@lib/data/regions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { FejlecMenu } from "./fejlec-menu"
@@ -330,19 +331,13 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
 
           <div className="ml-auto flex shrink-0 items-center lg:ml-0">
             <Suspense
-              fallback={
-                <LocalizedClientLink
-                  href="/cart"
-                  className="flex h-[46px] items-center px-5 text-[14px] font-semibold"
-                  style={{
-                    background: "var(--terv-szoveg)",
-                    color: "var(--terv-hatter)",
-                  }}
-                  data-testid="nav-cart-link"
-                >
-                  Kosár · 0
-                </LocalizedClientLink>
-              }
+              /*
+                A TARTALEK UGYANAZ A KOMPONENS, MINT A VALODI GOMB -- csak
+                nullaval. Korabban egy MASOLAT allt itt, sajat osztalyokkal es
+                sajat felirattal, tehat a ket alak kulon romolhatott el, es a
+                tartalek csak a betoltes elso pillanataiban latszik.
+              */
+              fallback={<KosarLink darab={0} />}
             >
               <CartButton />
             </Suspense>

@@ -329,25 +329,19 @@ describe("a fejléc keresője", () => {
   })
 })
 
-describe("a kosár gomb felirata", () => {
-  const kosar = forras("..", "..", "components", "cart-dropdown", "index.tsx")
+/*
+  A KOSAR GOMB FELIRATANAK ES GEOMETRIAJANAK ALLITASAI ATKERULTEK.
 
-  /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es ez a kosar-legordulo. */
-  it("a forrás olvasható, és tényleg a kosár", () => {
-    expect(kosar).toContain("CartDropdown")
-    expect(kosar).toContain('data-testid="nav-cart-link"')
-  })
+  Uj helyuk: `components/cart-dropdown/kosar-link.spec.tsx`, es nem azert, mert
+  a fajl atrendezodott, hanem mert a gomb egy RENDERELHETO komponensbe kerult.
+  Amig a jeloles ket fajlban allt szetszorva (a legordulo es a nav tartaleka),
+  a forras SZOVEGE volt az egyetlen kozos merohely. Most mar van kozos
+  komponens, es azon a viselkedes merheto.
 
-  /**
-   * MAGYARUL, ES A TERV ALAKJABAN. Eddig `Cart (0)` allt itt -- angolul, a lap
-   * legjobban lathato pontjan. A tervbeli alak kozeppontot hasznal, nem
-   * zarojelet.
-   */
-  it("a felirat magyar, a terv alakjában", () => {
-    expect(kosar).toContain("Kosár · ${totalItems}")
-    expect(kosar).not.toContain("Cart (")
-  })
-})
+  A csere pillanataban ez a harom allitas PIROSRA MENT, es helyesen: a
+  pozitiv kontrolljuk sult el, mert a keresett sorok mar nem ott alltak.
+  Nem a fajlnevet irtam at bennuk -- renderelesre allitottam oket.
+*/
 
 /**
  * A FEJLEC GEOMETRIAJA -- ES AMIERT MOST KAPJA MEG.
@@ -404,14 +398,5 @@ describe("a fejléc geometriája a tervből", () => {
 
   it("a menüpanel a teljes fejléc alatt indul", () => {
     expect(menu).toContain('PANEL_TOP = "calc(var(--fejlec-magassag) + 36px)"')
-  })
-
-  /**
-   * A KOSAR-GOMB A KERESOVEL AZONOS MAGASSAGU (46), es ez a tervben is igy all
-   * -- a ket elem egy vonalban zar. Kulon allitas, mert kulon is elromolhat.
-   */
-  it("a kosár-gomb magassága és margója a tervből", () => {
-    expect(nav).toContain("h-[46px]")
-    expect(nav).toContain("px-5")
   })
 })

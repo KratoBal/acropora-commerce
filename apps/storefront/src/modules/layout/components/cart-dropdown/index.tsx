@@ -14,6 +14,8 @@ import LineItemOptions from "@modules/common/components/line-item-options"
 import LineItemPrice from "@modules/common/components/line-item-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
+
+import { KosarLink } from "./kosar-link"
 import { usePathname } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
 
@@ -92,15 +94,7 @@ const CartDropdown = ({
           szine a hatter es a HATTER szine a szoveg -- forditott gomb).
         */}
         <PopoverButton className="h-full">
-          <LocalizedClientLink
-            className="flex h-[46px] items-center px-5 text-[14px] font-semibold"
-            style={{
-              background: "var(--terv-szoveg)",
-              color: "var(--terv-hatter)",
-            }}
-            href="/cart"
-            data-testid="nav-cart-link"
-          >{`Kosár · ${totalItems}`}</LocalizedClientLink>
+          <KosarLink darab={totalItems} />
         </PopoverButton>
         <Transition
           show={cartDropdownOpen}
