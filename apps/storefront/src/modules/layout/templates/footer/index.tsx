@@ -8,6 +8,7 @@ import { listCollections } from "@lib/data/collections"
 import { Text, clx } from "@modules/common/components/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { sorrendbeRakva } from "@lib/util/kategoria-sorrend"
 
 import {
   CEG,
@@ -32,9 +33,9 @@ export default async function Footer({
   })
   const productCategories = await listCategories()
   const region = countryCode ? await getRegion(countryCode) : null
-  const gyokerOszlopok = region
-    ? await listNonEmptyRootCategories(region.id)
-    : []
+  const gyokerOszlopok = sorrendbeRakva(
+    region ? await listNonEmptyRootCategories(region.id) : [],
+  )
 
   return (
     /*
@@ -125,11 +126,21 @@ export default async function Footer({
           nem javitom talalgatasbol: a jelolo hianya adat-kerdes, nem
           elrendezes.
 
-          === A SORREND ADAT, NEM LISTA ===
+          === A SORREND MOSTANTOL LISTA, ES EZ EGY MEGVALTOZOTT ALLITAS ===
 
-          A `rank` mezobol jon, amit a boltos allitott be, es pontosan azt a
-          sorrendet adja, amit a spec atmenetikent felsorolt (Termekek,
-          Gerinctelenek, Halak, Korallok). Nem kellett kulon dontes.
+          ITT KORABBAN AZ ALLT, hogy a sorrend a bolt `rank` mezojebol jon es
+          nem kellett kulon dontes. Ez 2026-09-09-ig igaz volt, es azota NEM:
+          Balazs megnevezte a sorrendet ("MIndenhol: Termékek, Halak, Korallok,
+          Gerinctelenek"), a `rank` pedig mast ad (Termekek, Gerinctelenek,
+          Halak, Korallok). A ket sorrend a masodik elemtol eltér.
+
+          A lista a `lib/util/kategoria-sorrend` modulban all, kozosen a fejlec
+          menujevel -- a "mindenhol" epp ezt a ket helyet jelenti.
+
+          A `rank` NEM tunt el: a nevezett negyen KIVULI gyokerek sorrendjet
+          tovabbra is az adja, mert a rendezes stabil. Ha egyszer egy otodik
+          gyoker termeket kap, a lablec vegen jelenik meg -- LATHATOAN, nem
+          csendben, es errol kulon lehet donteni.
 
           === A FUGGOLEGES BELSO MARGO: NEM UJ ERTEK ===
 

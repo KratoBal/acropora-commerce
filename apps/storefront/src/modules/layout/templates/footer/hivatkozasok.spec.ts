@@ -272,4 +272,16 @@ describe("a lábléc kategória-rácsa", () => {
   it("a gyökerek a szűrt halmazból jönnek", () => {
     expect(kod).toMatch(/await listNonEmptyRootCategories\(/)
   })
+
+  /**
+   * ES A SORREND A KOZOS LISTABOL JON, NEM a `rank` mezobol.
+   *
+   * A HIVAS ALAKJARA merunk, nem a nevre -- ugyanabbol az okbol, mint fentebb:
+   * az `import` sor is tartalmazza a nevet, tehat egy `toContain` akkor is
+   * zold maradna, ha a hivast kivennenk. A megjegyzeseket a `kodSzoveg` mar
+   * kiszedte, tehat ez a MAGYARAZO szovegre sem illeszkedik.
+   */
+  it("a sorrend a közös listából jön", () => {
+    expect(kod).toMatch(/sorrendbeRakva\(/)
+  })
 })

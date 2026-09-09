@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { KATEGORIA_SORREND } from "@lib/util/kategoria-sorrend"
 
 /**
  * A FEJLEC KATEGORIA-SAVJA: LENYILO, ES GORGETESRE ELTUNIK.
@@ -33,15 +34,15 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * A NEGY MENUPONT, BALAZS SZAVAVAL ES AZ O SORRENDJEBEN (2026-09-09 09:54):
  * "MIndenhol: Termékek, Halak, Korallok, Gerinctelenek".
  *
- * === MIERT ROGZITETT LISTA, ES NEM SZAMOLT SORREND ===
+ * === A LISTA MOSTANTOL KOZOS, ES EZ NEM ATSZERVEZES ===
  *
- * A sorrend NEM vezetheto le semmilyen adatbol: meret szerint sem jon ki
- * (Korallok 8 termek, Gerinctelenek 27, tehat a Korallok ELOREBB all a
- * kisebbik ellenere), es a bolt `rank` mezoje is mast ad
- * (Termekek, Gerinctelenek, Halak, Korallok).
+ * A nevek a `lib/util/kategoria-sorrend` modulban allnak, mert a "mindenhol"
+ * KET helyet jelent: ezt a menut es a lablec oszlopait. Ket masolatbol egy
+ * kesobbi sorrend-valtoztatas csendben csak az egyiken menne at.
  *
- * Egy szamolt sorrend tehat CSENDBEN mast adna, mint amit kertek. Ezert all
- * itt nev szerint, rogzitve -- es ezert nem "javitja ki" senki veletlenul.
+ * A KULONBSEG A KET HELY KOZOTT MEGMARAD: ez a menu SZUR (Balazs negy tetelt
+ * kert), a lablec RENDEZ (ott egy uj gyoker a vegen jelenjen meg, ne tunjon
+ * el). Az indoklas a kozos modulban all.
  *
  * === ES AMIT EZ NEM MOND MEG ===
  *
@@ -49,12 +50,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * kimarad. Nem talalunk ki helyette masikat: egy hianyzo kategoria adat-kerdes,
  * nem elrendezesi.
  */
-export const MENU_SORREND = [
-  "Termékek",
-  "Halak",
-  "Korallok",
-  "Gerinctelenek",
-] as const
+export const MENU_SORREND = KATEGORIA_SORREND
 
 export const menuSorrendben = (
   kategoriak: HttpTypes.StoreProductCategory[],
