@@ -1,5 +1,6 @@
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
+import { gyokerekKetSzintel } from "@lib/util/kategoria-fa"
 import { getCacheOptions } from "./cookies"
 import { listProducts } from "./products"
 
@@ -305,18 +306,36 @@ export const listNonEmptyRootCategories = async (
     (lablec, fejlec) amugy is azt olvassak -- igy nem keletkezik masodik
     fogalom ugyanarra.
   */
-  const gyokerek = mind
-    .filter(
-      (c) => !(c as { parent_category_id?: string | null }).parent_category_id,
-    )
-    .map((gy) => ({
-      ...gy,
-      category_children: mind.filter(
-        (c) =>
-          (c as { parent_category_id?: string | null }).parent_category_id ===
-          gy.id,
-      ),
-    })) as HttpTypes.StoreProductCategory[]
+  /*
+    KET SZINT MEGY AT, NEM EGY -- ES EZ SEM UJ LEKERDEZES.
+
+    A fejlec panelje a mai UNAS bolt mega-menujenek alakjat koveti: a
+    CSOPORT-FEJLEC egy kozvetlen gyerek, alatta pedig annak a sajat gyerekei
+    allnak. Ehhez harom szint kell (gyoker, gyerek, unoka), es mind a harom
+    ITT VAN mar a `mind` tombben.
+
+    A FA ALAKJA MERVE (2026-09-09, a kitelepitett kategoria-lapokrol, mert a
+    Medusa kulcs nem jut ki a bongeszobe):
+
+        gyoker          gyerek   unoka
+        Termekek            23      86
+        Halak               15       0
+        Gerinctelenek        7       0
+        Korallok             1       1
+
+    A meres a lap sajat linkjeit szamolta, es MINDEN kategoria-lapon all egy
+    allando SZULO-hivatkozas -- azt le kellett vonni. A kontroll a mai bolt
+    kepernyokepe volt: az "Eledelek" ott is pontosan harom elemet mutat
+    (Haleledelek, Fagyasztott eledelek, Koralltapok), a "Futes/Hutes" pedig
+    fejlecet elem nelkul. Mindketto egyezik.
+
+    AMI EBBOL KOVETKEZIK AZ ELRENDEZESRE: a csoportos alak CSAK a Termekek
+    alatt ertelmes. A masik harom gyokernek nincs unokaja, tehat ott a panel
+    csupa fejlec es nulla elem lenne. A komponens ezert az ADATBOL dont, nem
+    a gyoker NEVEBOL: egy beegetett "ha Termekek" a katalogus elso
+    atrendezesenel csendben rossz lapot adna.
+  */
+  const gyokerek = gyokerekKetSzintel(mind)
 
   const vane = await Promise.all(
     gyokerek.map(async (gy) => {
