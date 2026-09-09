@@ -2,12 +2,9 @@ import { Suspense } from "react"
 
 import { listNonEmptyRootCategories } from "@lib/data/categories"
 import { getRegion } from "@lib/data/regions"
-import { listRegions } from "@lib/data/regions"
-import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { FejlecMenu } from "./fejlec-menu"
 import CartButton from "@modules/layout/components/cart-button"
-import SideMenu from "@modules/layout/components/side-menu"
 
 /**
  * A FEJLEC FO SAVJA, A TERV SZERINT (2026-09-08).
@@ -182,8 +179,6 @@ const BIZALMI_SEGITSEG = "Szakértői segítség"
 const KERESO_HELYKITOLTO = "Keresés termékre, fajra, márkára, cikkszámra"
 
 export default async function Nav({ countryCode }: { countryCode?: string }) {
-  const regions = await listRegions().then((regions: StoreRegion[]) => regions)
-
   /**
    * A MENU A VALODI GYOKEREKBOL EPUL, DE CSAK A NEM URESEKBOL.
    *
@@ -271,12 +266,6 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
             fontFamily: "var(--terv-betu-fo-lanc)",
           }}
         >
-          {/* A TORESPONT ALATT a meglevo oldalso menu marad: a terv mobil
-              kerete sajat fejlecet ir le, es az kulon tetel. */}
-          <div className="lg:hidden">
-            <SideMenu regions={regions} />
-          </div>
-
           <LocalizedClientLink
             href="/"
             className="flex shrink-0 items-center gap-3"

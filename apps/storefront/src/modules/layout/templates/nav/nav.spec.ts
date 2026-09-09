@@ -44,7 +44,7 @@ describe("a fejléc fő sávja", () => {
   /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es tenyleg a fejlec az. */
   it("a forrás olvasható, és tényleg a fejléc", () => {
     expect(nav).toContain("export default async function Nav")
-    expect(nav).toContain("SideMenu")
+    expect(nav).toContain("FejlecMenu")
   })
 
   /**
@@ -389,19 +389,8 @@ describe("a fejléc geometriája a tervből", () => {
     expect(nav).toContain("w-[13px]")
   })
 
-  /**
-   * A MENU-SAV ATKERULT EGY KLIENS KOMPONENSBE, ES AZ ERTEK NEM VALTOZOTT.
-   *
-   * Balazs kerese (2026-09-09) szerint a menupontok NYILNAK, es a sav
-   * gorgetesre eltunik -- mind a ketto allapotot igenyel, tehat a sav a
-   * `fejlec-menu.tsx`-be kerult, ami `use client`.
-   *
-   * A 22 pixeles koz UGYANAZ maradt; csak a fajl mas. Ezert olvassa ez az
-   * allitas mostantol a MENU forrasat -- egy fajl-szintu kereses a regi helyen
-   * pirosat adott volna egy VALTOZATLAN ertekre.
-   */
-  it("a menü köze a tervbeli 22 pixel", () => {
-    expect(menu).toContain("gap-[22px]")
+  it("a menüpanel a teljes fejléc alatt indul", () => {
+    expect(menu).toContain('PANEL_TOP = "calc(var(--fejlec-magassag) + 36px)"')
   })
 
   /**
