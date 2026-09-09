@@ -676,7 +676,36 @@ body {
   hagyna sotet feluleten -- rosszabb allapot, mint a mai. Ezert a lablec
   szinosztalyai ugyanabban a korben tokenre valtanak.
 */
+/*
+  ES A LAP FOLDJE MAGA -- EZ A HARMADIK ESET, ES ELOSZOR KIMARADT A MERESEMBOL.
+
+  A `body` sajat hatterkent a `--terv-hatter` tokent viseli (lasd fentebb), es
+  a `html` atlatszo -- vagyis a BONGESZO VASZNA a body hatteret veszi at.
+
+  MERVE 2026-09-09, a kitelepitett SOTET lapon:
+
+      a vaz hattere    oklch(0.17 0.016 250)     helyes
+      a body hattere   oklch(0.99 0.004 80)      a VILAGOS ertek
+
+  Vagyis a vaszon vilagos maradt egy sotet lapon. Ma ez csak ott latszik, ahol a
+  tartalom nem fedi (tulgorgetes, es minden olyan lap, ami rovidebb a nezetnel).
+
+  MIERT MARADT KI AZ ELSO MERESEMBOL: a hatokort ugy mertem, hogy kihagytam
+  MINDEN elemet, ami a vazat TARTALMAZZA (`e.contains(vaz)`) -- es a `body`
+  pontosan ilyen. A szuro, ami a "kivul allo" elemeket kereste, epp az OSOKET
+  hagyta ki. A 166 / 1 eredmenyem tehat helyes volt arra a halmazra, amit
+  neztem, es a halmaz volt hianyos. (acrobot kerte, hogy keressem meg a
+  harmadikat -- ez az.)
+
+  A HATOKOR, KIMONDVA: ez a valaszto a body OSSZES leszarmazottjara viszi a
+  sotet keszletet, nem csak a foldre. Ma ez nem valtoztat semmit azon felul,
+  amit a masik ket valaszto mar megtett (merve: a jelolon kivul 166 elem all,
+  es kozuluk EGY viselt vilagos terv-erteket, a lablec, ami azota bent van).
+  Ha valaha egy SZANDEKOSAN vilagos elem kerul egy sotet lapra, ez a sor fogja
+  atszinezni -- akkor az az elem kap sajat kivetelt, nem ez a sor kerul ki.
+*/
 [data-vilag="sotet"],
+body:has([data-vilag="sotet"]),
 body:has([data-vilag="sotet"]) header[data-testid="fejlec"],
 body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
   /*
