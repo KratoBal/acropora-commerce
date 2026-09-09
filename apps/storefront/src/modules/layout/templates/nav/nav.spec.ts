@@ -457,7 +457,16 @@ describe("a fejléc geometriája a tervből", () => {
     expect(nav).toContain("w-[13px]")
   })
 
+  /**
+   * A MENUPANEL A TELJES FEJLEC ALATT INDUL -- ES MOSTANTOL VALTOZOBOL.
+   *
+   * Itt korabban a kezzel beirt `+ 36px` alakot allitottuk. Az EREDMENYE
+   * helyes volt (115), de ugyanaz a 36 a bizalmi sav sajat stilusaban is ott
+   * allt, es a tapado panel keplebeol HIANYZOTT -- ott a panel 20 pixellel a
+   * fejlec ala csuszott. Egy szam harom helyen, az egyikbol hianyozva.
+   */
   it("a menüpanel a teljes fejléc alatt indul", () => {
-    expect(menu).toContain('PANEL_TOP = "calc(var(--fejlec-magassag) + 36px)"')
+    expect(menu).toContain('PANEL_TOP = "var(--fejlec-teljes-magassag)"')
+    expect(menu).not.toContain("36px")
   })
 })

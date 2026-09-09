@@ -260,7 +260,7 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
           */
           className="mx-auto flex w-full items-center justify-between border-b text-[12.5px]"
           style={{
-            height: "36px",
+            height: "var(--fejlec-bizalmi-magassag)",
             maxWidth: "1352px",
             borderColor: "var(--terv-keret)",
             color: "var(--terv-szoveg-halvany)",
@@ -306,11 +306,14 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
           /*
             A SAV MAGASSAGA A KOZOS VALTOZOBOL JON, MINUSZ AZ ALSO KERET.
 
-            A `--fejlec-magassag` a TELJES fejlecet jelenti (sav plusz az 1
-            pixeles keret). Ket olvasoja van: ez a sor es a termeklap jobb
-            paneljenek tapadasi eltolasa. Ket kulon szam egyszer mar
-            szetcsuszott: a panel 16 pixelre tapadt, a fejlec 79 magas volt, es
-            a panel tetejebol 63 pixel eltunt alatta.
+            A `--fejlec-magassag` EZT A SORT jelenti (a nav sav plusz az 1
+            pixeles keret), NEM a teljes fejlecet -- folotte all meg a bizalmi
+            sav is. Ez a megjegyzes korabban "TELJES fejlecet" mondott, es az
+            merhetoen nem allt: 79 kontra 115 (merve 2026-09-09).
+
+            A teljes magassag kulon valtozo (`--fejlec-teljes-magassag`), es a
+            ketto kulonbsege pontosan a bizalmi sav. Az indoklas a
+            `globals.css`-ben all, a valtozok mellett.
           */
           className="mx-auto flex w-full items-center gap-4 lg:gap-10"
           style={{

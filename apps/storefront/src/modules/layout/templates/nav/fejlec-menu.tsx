@@ -10,7 +10,14 @@ type Category = HttpTypes.StoreProductCategory
 /** Explicit navigation decision; this is not derived from the category tree. */
 const HEADER_MENU_ITEMS = ["Termékek", "Halak", "Korallok", "Gerinctelenek"]
 const QUICK_LINKS = ["Akciók", "Új termékek"]
-const PANEL_TOP = "calc(var(--fejlec-magassag) + 36px)"
+/*
+  A PANEL A TELJES FEJLEC ALATT KEZDODIK.
+
+  Itt korabban `calc(var(--fejlec-magassag) + 36px)` allt: a 36 a bizalmi sav
+  magassaga volt, KEZZEL beirva. Az eredmeny helyes volt (115), de ugyanaz a
+  szam a sav sajat stilusaban is ott allt -- ket hely, egy szabaly.
+*/
+const PANEL_TOP = "var(--fejlec-teljes-magassag)"
 
 const sortedChildren = (category: Category | undefined) =>
   [...(category?.category_children ?? [])].sort((a, b) =>
