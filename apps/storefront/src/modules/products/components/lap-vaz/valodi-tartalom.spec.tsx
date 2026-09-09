@@ -282,7 +282,7 @@ describe("a váz valódi tartalma", () => {
    * onmagaban tehat NEM allitja be a sorkozt -- enelkul az allitas nelkul a
    * meret helyes lenne es a sorkoz nem, es semmi nem szolna.
    */
-  it("a törésport alatt a terv 24 pixeles alakját viseli", () => {
+  it("a töréspont alatt a terv 24 pixeles alakját viseli", () => {
     const osztaly = cimet()
 
     expect(osztaly).toContain("text-2xl")
