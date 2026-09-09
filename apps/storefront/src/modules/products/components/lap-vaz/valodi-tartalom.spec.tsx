@@ -187,7 +187,27 @@ describe("a váz valódi tartalma", () => {
     const gombok = fulek?.querySelectorAll('[role="tab"]') ?? []
 
     expect(gombok.length).toBe(2)
-    const feliratok = Array.from(gombok).map((g) => g.textContent)
+
+    /*
+      AZ ASZTALI FELIRATOT OLVASSUK KI NEVESITVE, NEM A PUSZTA `textContent`-et.
+
+      2026-09-09 ota az adat-ful KET feliratot hordoz: a rovidet telefonra
+      (`lg:hidden`) es a teljeset asztalira (`hidden lg:inline`). A
+      `textContent` MIND A KETTOT visszaadja egymas utan
+      ("AdatokMűszaki adatok") -- a jsdom nem szamol stilust.
+
+      Ez az allitas ezert PIROSRA MENT, amikor a kod JOBB LETT. Nem a vart
+      erteket igazitottam a konkatenacióhoz (az a gyengebb mérés lenne),
+      hanem a merohelyet emeltem: a nevesitett asztali cimket olvassa.
+    */
+    const asztaliCimke = (e: Element) =>
+      (
+        e.querySelector(".lg\\:inline")?.textContent ??
+        e.textContent ??
+        ""
+      ).trim()
+
+    const feliratok = Array.from(gombok).map(asztaliCimke)
     expect(feliratok).toContain("Leírás")
     expect(feliratok).toContain("Műszaki adatok")
   })
