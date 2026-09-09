@@ -301,7 +301,39 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
           <form
             action={countryCode ? `/${countryCode}/store` : "/store"}
             method="get"
-            className="hidden flex-1 items-center gap-3 px-4 sm:flex"
+            /*
+              A FOKUSZ-GYURU A DOBOZON ALL, NEM A MEZON.
+
+              === A MERT HIBA ===
+
+              A mezo `outline-none` osztalyt visel, ami a Tailwindben NEM a
+              gyuru eltuntetese, hanem `outline: 2px solid transparent` --
+              es semmi nem allt a helyere. Elo bongeszoben, VALODI Tab
+              lenyomasokkal merve (2026-09-09): a fejlec minden mas eleme
+              megkapja a bongeszo alapertelmezett gyurujet (`outline-style:
+              auto`), ez az EGY nem: `2px solid rgba(0, 0, 0, 0)`, arnyek
+              nelkul. Billentyuzettel a latogato nem latja, hogy a keresoben
+              all.
+
+              === MIERT A DOBOZON, ES NEM A MEZON ===
+
+              A mezo atlatszo hatteru es a doboz TOLTI KI a savot: egy gyuru a
+              mezo korul a doboz BELSEJEBEN futna, a keret es a szoveg kozott.
+              A `focus-within` a LATHATO elemre teszi, oda, ahova a szem nez.
+
+              === EZT A SZINT NEM A TERV MONDJA MEG ===
+
+              A tervlap nem rajzol fokusz-allapotot -- egy makett ritkan
+              teszi. A `--terv-kiemel` az arculat kiemelo szine, tehat nem uj
+              ertek, de a VALASZTAS az enyem, nem meres. Ha mas kell, egy
+              token-nev csereje.
+            */
+            className={
+              "hidden flex-1 items-center gap-3 px-4 sm:flex " +
+              "focus-within:outline focus-within:outline-2 " +
+              "focus-within:outline-offset-2 " +
+              "focus-within:[outline-color:var(--terv-kiemel)]"
+            }
             style={{
               height: "46px",
               background: "var(--terv-hatter-halvany)",
