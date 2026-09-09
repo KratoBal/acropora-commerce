@@ -63,6 +63,63 @@ export const menuSorrendben = (
     (k): k is HttpTypes.StoreProductCategory => Boolean(k),
   )
 
+/**
+ * A PANEL ALAKJA A MAI BOLT MEGA-MENUJEBOL JON, A SZAMAI PEDIG MERESBOL.
+ *
+ * Balazs kepernyokepet kuldott a mai UNAS bolt menujerol, egy mondattal:
+ * "valami hasonlo kell csak szebben". Amit a kep a VISELKEDESROL mond, es amit
+ * ez a komponens atvesz:
+ *
+ *   szeles, tobb oszlopos panel nyilik, nem szuk egyoszlopos lista
+ *   a panelben CSOPORTOK allnak: egy nagybetus fejlec, alatta nehany elem
+ *   ha egy csoportnak tobb eleme van, mint amennyi kifer, a lista alatt
+ *     egy "Tobb" hivatkozas all -- NEM sorolja fel mindet
+ *   a panel a lapot LEFELE TAKARJA, nem tolja szet
+ *
+ * AMI A KEPEN VAN, DE NEM VESSZUK AT: a HET menupont (Akciok, Blog, Rolunk is
+ * all rajta) es a mai bolt kekesege. A menupontok szamat Balazs kulon mondta
+ * meg (negy, a `MENU_SORREND` szerint), a szineket pedig a terv-tokenjeink.
+ *
+ * === A KET SZAM, ES HONNAN JON ===
+ *
+ * OSZLOPOK: 5. A kepen ot oszlop all.
+ *
+ * CSOPORTONKENTI ELEMSZAM: 5, es ez NEM talalgatas. A kepen hat csoport
+ * ellenorizheto, es mind a hat egybevag a "legfeljebb otot mutat, aztan Tobb"
+ * szaballyal:
+ *
+ *     csoport                        a kepen        nalunk
+ *     Akvarium epitesi eszkozok      5 + Tobb          6
+ *     Aramoltatok                    5 + Tobb         12
+ *     Akvariumkarbantartas           5, nincs Tobb     5
+ *     Aminosavak es vitaminok        4, nincs Tobb     4
+ *     Lehabzok                       4, nincs Tobb     4
+ *     Eledelek                       3, nincs Tobb     3
+ *
+ * Vagyis a hatar pontosan ott van, ahol az otodik elem utan meg jonne tovabbi.
+ * Ha valaha mast kernek, ez az egy szam cserelodik.
+ */
+const OSZLOPOK = 5
+const CSOPORT_MAX = 5
+
+/**
+ * CSOPORTOS ALAK VAGY SIMA LISTA -- ES A DONTES AZ ADATBOL JON, NEM A NEVBOL.
+ *
+ * A fa merve (2026-09-09): a Termekek alatt 23 gyerek es 86 unoka all, a Halak
+ * (15), a Gerinctelenek (7) es a Korallok (1) alatt viszont GYAKORLATILAG
+ * nincs unoka. Csoportos alakban azok a panelek csupa fejlec es nulla elem
+ * lennenek.
+ *
+ * Ezert a komponens megkerdezi, hordoz-e a gyerekek TOBBSEGE sajat gyereket.
+ * Egy beegetett "ha Termekek" ugyanezt adna ma, es a katalogus elso
+ * atrendezesenel csendben rossz lapot adna.
+ */
+export const csoportosAlak = (
+  gyerekek: HttpTypes.StoreProductCategory[],
+): boolean =>
+  gyerekek.filter((gy) => (gy.category_children ?? []).length > 0).length >
+  gyerekek.length / 2
+
 export const FejlecMenu = ({
   kategoriak,
 }: {
@@ -107,13 +164,10 @@ export const FejlecMenu = ({
       {sorrendben.map((k) => {
         const gyerekek = k.category_children ?? []
         const nyitva = nyitott === k.id
+        const csoportos = csoportosAlak(gyerekek)
 
         return (
-          <div
-            key={k.id}
-            className="relative"
-            onMouseLeave={() => setNyitott(null)}
-          >
+          <div key={k.id} onMouseLeave={() => setNyitott(null)}>
             <button
               type="button"
               aria-expanded={nyitva}
@@ -127,32 +181,106 @@ export const FejlecMenu = ({
             </button>
 
             {nyitva && gyerekek.length > 0 && (
+              /*
+                A PANEL A FEJLECHEZ IGAZODIK, NEM A MENUPONTHOZ.
+
+                Az `absolute` a legkozelebbi POZICIONALT osnek szol, es az itt a
+                `header` (`relative`). Ezert nem all `relative` a menupont
+                burkolatan: ha ott allna, a panel egy 60 pixeles gomb szelesseget
+                orokolne. A `left-0 right-0` igy a fejlec teljes szelessege.
+
+                A `z-50` es a fejlec sajat `z-50`-je nem utkozik: a panel a
+                fejlec GYEREKE, tehat vele egy retegben all, es a lap tartalma
+                (ami alacsonyabb) alatta marad. Ez a "lefele takarja, nem tolja
+                szet" viselkedes.
+              */
               <div
-                className="absolute left-0 top-full z-50 mt-2 flex min-w-[220px] flex-col gap-2 border p-4"
+                className="absolute inset-x-0 top-full z-50 max-h-[70vh] overflow-y-auto border-b border-t px-4 py-8"
                 style={{
                   borderColor: "var(--terv-keret)",
                   background: "var(--terv-hatter)",
                 }}
                 data-testid="fejlec-menu-lenyilo"
+                data-alak={csoportos ? "csoportos" : "listas"}
               >
-                <LocalizedClientLink
-                  href={`/categories/${k.handle}`}
-                  className="text-[13.5px] font-semibold hover:text-terv-kiemel-tinta"
-                  data-testid="fejlec-menu-gyoker-link"
+                <div
+                  className="mx-auto flex w-full flex-col gap-6"
+                  style={{ maxWidth: "1352px" }}
                 >
-                  {k.name}
-                </LocalizedClientLink>
-                {gyerekek.map((gy) => (
                   <LocalizedClientLink
-                    key={gy.id}
-                    href={`/categories/${gy.handle}`}
-                    className="whitespace-nowrap text-[13.5px] hover:text-terv-kiemel-tinta"
-                    style={{ color: "var(--terv-szoveg-halvany)" }}
-                    data-testid="fejlec-menu-gyerek"
+                    href={`/categories/${k.handle}`}
+                    className="text-[13.5px] font-semibold hover:text-terv-kiemel-tinta"
+                    data-testid="fejlec-menu-gyoker-link"
                   >
-                    {gy.name}
+                    {k.name}
                   </LocalizedClientLink>
-                ))}
+
+                  <div
+                    className="grid gap-x-8 gap-y-8"
+                    style={{
+                      gridTemplateColumns: `repeat(${OSZLOPOK}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {gyerekek.map((gy) => {
+                      const unokak = gy.category_children ?? []
+                      const mutatott = csoportos
+                        ? unokak.slice(0, CSOPORT_MAX)
+                        : []
+
+                      return (
+                        <div
+                          key={gy.id}
+                          className="flex flex-col gap-2"
+                          data-testid="fejlec-menu-csoport"
+                        >
+                          <LocalizedClientLink
+                            href={`/categories/${gy.handle}`}
+                            className={
+                              csoportos
+                                ? "text-[13px] font-semibold uppercase tracking-[0.04em] hover:text-terv-kiemel-tinta"
+                                : "text-[13.5px] hover:text-terv-kiemel-tinta"
+                            }
+                            style={
+                              csoportos
+                                ? undefined
+                                : { color: "var(--terv-szoveg-halvany)" }
+                            }
+                            data-testid={
+                              csoportos
+                                ? "fejlec-menu-csoport-cim"
+                                : "fejlec-menu-gyerek"
+                            }
+                          >
+                            {gy.name}
+                          </LocalizedClientLink>
+
+                          {mutatott.map((u) => (
+                            <LocalizedClientLink
+                              key={u.id}
+                              href={`/categories/${u.handle}`}
+                              className="text-[13.5px] hover:text-terv-kiemel-tinta"
+                              style={{ color: "var(--terv-szoveg-halvany)" }}
+                              data-testid="fejlec-menu-gyerek"
+                            >
+                              {u.name}
+                            </LocalizedClientLink>
+                          ))}
+
+                          {csoportos && unokak.length > CSOPORT_MAX && (
+                            <LocalizedClientLink
+                              href={`/categories/${gy.handle}`}
+                              className="text-[13px] hover:text-terv-kiemel-tinta"
+                              style={{ color: "var(--terv-szoveg-halvany)" }}
+                              data-testid="fejlec-menu-tobb"
+                            >
+                              Több
+                            </LocalizedClientLink>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             )}
           </div>
