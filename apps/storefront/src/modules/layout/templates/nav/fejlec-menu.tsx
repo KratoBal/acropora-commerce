@@ -177,9 +177,40 @@ export const FejlecMenu = ({
   if (sorrendben.length === 0) return null
 
   return (
+    /*
+      A ZARAS A TELJES SAVROL SZOL, NEM MENUPONTONKENT -- ES EZ MERT HIBA
+      JAVITASA.
+
+      Balazs szava: "a felso menusor lenyilik de ha lehozom onna az egeret akkor
+      eltunik tehat nem kattinthato".
+
+      A MERES (kitelepitett lap, 1440 pixel, 2026-09-09 12:3x):
+
+          a gomb alja        50 px
+          a panel teteje     78 px
+          RES                28 px
+
+      A panel a FEJLECHEZ igazodik (`top-full`), a gomb viszont a 78 pixeles sav
+      KOZEPEN all. A koztuk levo 28 pixel egyik elemhez sem tartozott, tehat
+      lefele indulva a mutato ELHAGYTA a menupontot, es a `mouseleave` bezarta a
+      panelt, mielott elerte volna. Merve: mar 55 pixelnel bezarult.
+
+      A JAVITAS KET RESZE, ES MIND A KETTO KELL:
+
+        - a zaras a KULSO savra kerul, nem az egyes menupontokra. Igy a
+          menupontok kozotti 22 pixeles kozok is a savhoz tartoznak, tehat egy
+          ATLOS mozgas sem zar be.
+        - a sav `h-full`, vagyis a 78 pixeles fejlec TELJES magassagat elfoglalja.
+          Ezzel a sav alja pontosan ott van, ahol a panel teteje: nincs res.
+
+      A panel a savon BELUL all a DOM-ban, tehat a bele lepes nem `mouseleave`.
+      Ez a resze mar eddig is igy volt -- csak a res miatt sosem jutott el odaig
+      a mutato.
+    */
     <div
-      className="hidden items-center gap-[22px] lg:flex"
+      className="hidden h-full items-center gap-[22px] lg:flex"
       data-testid="fejlec-menu"
+      onMouseLeave={() => setNyitott(null)}
     >
       {sorrendben.map((k) => {
         const gyerekek = k.category_children ?? []
@@ -188,7 +219,7 @@ export const FejlecMenu = ({
         const oszlopok = oszlopSzam(gyerekek.length)
 
         return (
-          <div key={k.id} onMouseLeave={() => setNyitott(null)}>
+          <div key={k.id} className="flex h-full items-center">
             <button
               type="button"
               aria-expanded={nyitva}
