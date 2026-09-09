@@ -72,12 +72,25 @@ describe("a terv megerositett ertekei", () => {
     */
     ["--terv-hatter", "oklch(0.99 0.004 80)"],
     ["--terv-szoveg", "oklch(0.2 0.012 60)"],
-    ["--terv-keret", "oklch(0.88 0.005 250)"],
+    /*
+      A KET KERET ERTEKE A VILAGOS VILAGBAN AZONOS, ES EZ SZANDEKOS.
+
+      A `--terv-keret` erteke 2026-09-09-ig az ELVETETT 1a tervlaprol jott
+      (ott 13-szor all, az 1b-n nullaszor). Az 1b sajat keretszine
+      `oklch(0.88 0.008 70)`, ami mar bent volt a fajlban, `--terv-keret-meleg`
+      neven. A ket token a SOTET vilagban tovabbra is KULONBOZIK (0.28 kontra
+      0.33), tehat nem vonhatok ossze; az indoklas a globals.css-ben all.
+
+      AMIT EZ A KET SOR EGYUTT NEM TUD MEGFOGNI: ha valaki mind a kettot
+      ugyanarra a HIBAS ertekre allitja. Azt a `VILAGONKENT` tabla fogja meg,
+      ami a sotet erteket is neven nevezi.
+    */
+    ["--terv-keret", "oklch(0.88 0.008 70)"],
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)"],
     ["--terv-kiemel", "oklch(0.55 0.13 45)"],
     ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
     ["--terv-kiemel-tinta", "oklch(0.55 0.13 45)"],
-    ["--terv-hatter-halvany", "oklch(0.955 0.004 250)"],
+    ["--terv-hatter-halvany", "oklch(0.955 0.006 75)"],
     ["--terv-szoveg-halvany", "oklch(0.5 0.012 60)"],
   ]
 
@@ -168,7 +181,7 @@ describe("a terv megerositett ertekei", () => {
     const sotetBlokk = normal(CSS.slice(sotetKezd))
 
     expect(vilagosBlokk).toContain(
-      "--terv-hatter-halvany: oklch(0.955 0.004 250)",
+      "--terv-hatter-halvany: oklch(0.955 0.006 75)",
     )
     expect(sotetBlokk).toContain(
       "--terv-hatter-halvany: oklch(0.205 0.018 249)",
