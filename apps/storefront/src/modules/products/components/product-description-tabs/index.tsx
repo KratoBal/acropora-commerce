@@ -8,6 +8,18 @@ type ProductDescriptionTabsProps = {
 
 type Tab = {
   label: string
+  /**
+   * A TELEFONON HASZNALT, ROVIDEBB FELIRAT -- CSAK OTT, AHOL A TERV MAST AD.
+   *
+   * A tervlap mobil kerete a ful-cimkeket NEM csak rovidíti, hanem AT IS
+   * NEVEZI: az 1b lapon "Műszaki adatok" helyett "Adatok" all. (picasso
+   * leirasa a terv mobil szakaszarol, 2026-09-09.)
+   *
+   * Ahol a ket alak AZONOS (a "Leírás" mindket kereten ugyanaz), ott ez a
+   * mezo hianyzik -- egy `rovidCimke: "Leírás"` sor azt sugallna, hogy van
+   * kulonbseg, holott nincs.
+   */
+  rovidCimke?: string
   html: string
 }
 
@@ -55,7 +67,13 @@ const ProductDescriptionTabs = ({
   */
   const tabs: Tab[] = [
     ...(tables.length
-      ? [{ label: "Műszaki adatok", html: tables.join("") }]
+      ? [
+          {
+            label: "Műszaki adatok",
+            rovidCimke: "Adatok",
+            html: tables.join(""),
+          },
+        ]
       : []),
     ...(hasVisibleContent(prose) ? [{ label: "Leírás", html: prose }] : []),
   ]
@@ -94,7 +112,25 @@ const ProductDescriptionTabs = ({
               onClick={() => setActiveIndex(index)}
               className={`px-4 py-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ui-fg-interactive ${selected ? "border-b-2 border-ui-fg-interactive text-ui-fg-base" : "text-ui-fg-muted hover:text-ui-fg-base"}`}
             >
-              {tab.label}
+              {/*
+                KET FELIRAT, EGY GOMB -- ES NEM KET GOMB.
+
+                A rovid alak `lg:hidden`, a teljes `hidden lg:inline`. Ket
+                KULON gomb eseten a szerep-jeloles (`role="tab"`,
+                `aria-selected`, `aria-controls`) es a fokusz-kezeles KETSZER
+                allna itt, es a felolvaso KET fület latna egy helyett.
+
+                A toresponti hatar `lg`, ugyanaz, ahol a termeklap egy
+                oszlopbol kettobe valt.
+              */}
+              {tab.rovidCimke ? (
+                <>
+                  <span className="lg:hidden">{tab.rovidCimke}</span>
+                  <span className="hidden lg:inline">{tab.label}</span>
+                </>
+              ) : (
+                tab.label
+              )}
             </button>
           )
         })}
