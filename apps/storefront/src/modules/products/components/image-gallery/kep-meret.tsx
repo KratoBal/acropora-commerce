@@ -1,3 +1,5 @@
+"use client"
+
 import { HttpTypes } from "@medusajs/types"
 
 /**
@@ -89,10 +91,36 @@ export const BOLYEGKEP_OSZLOP_MOBIL = 3
  * termekek tobbsegen ez a sor MEG SEM JELENIK MEG -- egy ures, de meglevo sav
  * ott helyet foglalna es semmit nem mondana.
  */
+/**
+ * A KIVALASZTOTT CSEMPE KERETE A TERVBOL JON.
+ *
+ * A tervlapon a sor ELSO csempeje `border:2px solid <rez>` erteket visel, a
+ * tobbi keret nelkul all -- vagyis a KIVALASZTOTT allapot ki van rajzolva.
+ * Nem dontes kerdese tehat, hogy legyen-e valasztas: a terv mutatja.
+ *
+ * A rez itt FELULET-szerepben all (keret), nem szovegben, ezert a
+ * `--terv-kiemel` a helyes token, nem a `-tinta`.
+ */
+const KIVALASZTOTT_KERET = "2px solid var(--terv-kiemel)"
+const KERET = "1px solid var(--terv-keret)"
+
 export const TovabbiKepek = ({
   kepek,
+  kivalasztott,
+  onValaszt,
 }: {
   kepek: HttpTypes.StoreProductImage[]
+  /** Melyik csempe all kivalasztva. Kezelo nelkul nincs ertelme. */
+  kivalasztott?: number
+  /**
+   * HA NINCS KEZELO, A SOR UGYANAZ MARAD, AMI EDDIG VOLT.
+   *
+   * A MASIK kep-ut (`Foto` a `lap-vaz/valodi-tartalom.tsx`-ben) SZERVER
+   * komponens, es nem tud fuggvenyt atadni. Ott a sor egyelore nem
+   * kattinthato -- az indoklas a `image-gallery/index.tsx` fejleceben all,
+   * es kulon tetel.
+   */
+  onValaszt?: (index: number) => void
 }) => {
   if (kepek.length === 0) return null
 
@@ -101,18 +129,42 @@ export const TovabbiKepek = ({
       className="grid grid-cols-3 gap-2.5 lg:grid-cols-6"
       data-testid="tovabbi-kepek"
     >
-      {kepek.map((kep, i) =>
-        kep.url ? (
+      {kepek.map((kep, i) => {
+        if (!kep.url) return null
+
+        const kivalasztva = kivalasztott === i
+        const kepElem = (
           <img
-            key={kep.id ?? i}
             src={kep.url}
             alt=""
-            className="aspect-square w-full border object-cover"
-            style={{ borderColor: "var(--terv-keret)" }}
+            className="aspect-square w-full object-cover"
             data-testid="tovabbi-kep"
           />
-        ) : null,
-      )}
+        )
+
+        return onValaszt ? (
+          <button
+            key={kep.id ?? i}
+            type="button"
+            onClick={() => onValaszt(i)}
+            aria-label={`${i + 1}. fotó megjelenítése`}
+            aria-current={kivalasztva ? "true" : undefined}
+            className="block w-full"
+            style={{ border: kivalasztva ? KIVALASZTOTT_KERET : KERET }}
+            data-testid="tovabbi-kep-gomb"
+          >
+            {kepElem}
+          </button>
+        ) : (
+          <span
+            key={kep.id ?? i}
+            className="block w-full"
+            style={{ border: KERET }}
+          >
+            {kepElem}
+          </span>
+        )
+      })}
     </div>
   )
 }

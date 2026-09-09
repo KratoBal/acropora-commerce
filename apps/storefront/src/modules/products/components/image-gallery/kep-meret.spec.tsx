@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import ImageGallery from "./index"
@@ -24,10 +24,27 @@ const kep = (i: number) => ({ id: `k${i}`, url: `https://pelda/k${i}.jpg` })
  * allitas nem tudna, mit jelent az, hogy nincs sor.
  */
 describe("a nagy kép kisebb, a többi alatta", () => {
-  it("három képnél egy nagy áll, és kettő a sorban", () => {
-    render(<ImageGallery images={[kep(1), kep(2), kep(3)] as never} />)
+  /**
+   * A SOR A TELJES KESZLETET MUTATJA, NEM A MARADEKOT.
+   *
+   * 2026-09-09-ig a sor a nagy kep NELKULI maradekot mutatta (haromnal
+   * kettot). A tervlapon a sorban HAT csempe all, es az ELSO 2 pixeles rez
+   * keretet visel -- vagyis a sor a TELJES keszlet, es a kivalasztott meg van
+   * jelolve benne.
+   *
+   * Egy csempe, ami eltunik, amikor ranyomsz, a valasztast is elrejti.
+   */
+  it("három képnél a sor mind a hármat mutatja", () => {
+    const { container } = render(
+      <ImageGallery images={[kep(1), kep(2), kep(3)] as never} />,
+    )
 
-    expect(screen.getAllByTestId("tovabbi-kep")).toHaveLength(2)
+    expect(container.querySelectorAll('[data-testid="nagy-kep"]')).toHaveLength(
+      1,
+    )
+    expect(
+      container.querySelectorAll('[data-testid="tovabbi-kep"]'),
+    ).toHaveLength(3)
   })
 
   /**
@@ -71,6 +88,73 @@ describe("a nagy kép kisebb, a többi alatta", () => {
     expect(doboz!.style.maxWidth).toBe("")
     expect(doboz!.style.width).toBe("")
     expect(doboz!.className).toContain("w-full")
+  })
+
+  /**
+   * A SOR CSEREL: KATTINTASRA A KIVALASZTOTT KEP KERUL FOLULRE.
+   *
+   * Ez az allitas a KARTYA targya (`1fa28d5b`): a sor 2026-09-09-ig HOLT volt
+   * -- nulla `onClick`, nulla `button` --, ugyanazon a napon, amikor
+   * megepitettem. Egy sor, ami kattinthatonak LATSZIK es nem az, rosszabb,
+   * mint a hianya.
+   *
+   * A MERES A NAGY KEP FORRASARA MEGY, nem a csempere: azt akarjuk tudni, hogy
+   * a valasztas ATERT a nagy kepre, nem azt, hogy a gomb megkapta a fokuszt.
+   */
+  it("a sorra kattintva a nagy kép a választott fotóra vált", () => {
+    const { container } = render(
+      <ImageGallery images={[kep(1), kep(2), kep(3)] as never} />,
+    )
+
+    const nagyForras = () =>
+      container
+        .querySelector('[data-testid="nagy-kep"] img')
+        ?.getAttribute("src") ?? ""
+
+    /* ISMERT POZITIV KONTROLL: indulaskor az ELSO kep all folul. */
+    expect(nagyForras()).toContain("k1")
+
+    const gombok = container.querySelectorAll<HTMLElement>(
+      '[data-testid="tovabbi-kep-gomb"]',
+    )
+    expect(gombok).toHaveLength(3)
+
+    /*
+      `fireEvent` es nem `.click()`: a React ujrarendereles az `act` hataran
+      belul fut le. A nyers DOM-hivas eltuzeli az esemenyt, de az allitas
+      MEG A REGI fan futna -- elso valtozatomban epp ez tortent, es a piros a
+      merohely hatarat mutatta, nem a kodet.
+    */
+    fireEvent.click(gombok[2])
+
+    expect(nagyForras()).toContain("k3")
+  })
+
+  /**
+   * ES A KIVALASZTOTT CSEMPE MEG VAN JELOLVE -- A TERV EZT KIRAJZOLJA.
+   *
+   * A tervlapon az elso csempe `border:2px solid <rez>` erteket visel. A
+   * jeloles nelkul a vevo nem latja, melyik kepet nezi eppen.
+   *
+   * A jeloles KET csatornan all: a keret (latas) es az `aria-current`
+   * (felolvaso). A masodik nelkul a valasztas csak vizualis lenne -- ugyanaz a
+   * hiba, amit ma a ful-savnal kerestunk, es ott szerencsere nem talaltunk.
+   */
+  it("a kiválasztott csempe jelölve van, látásra és felolvasónak is", () => {
+    const { container } = render(
+      <ImageGallery images={[kep(1), kep(2)] as never} />,
+    )
+
+    const gombok = container.querySelectorAll<HTMLElement>(
+      '[data-testid="tovabbi-kep-gomb"]',
+    )
+
+    expect(gombok[0].style.border).toContain("2px")
+    expect(gombok[0].style.border).toContain("var(--terv-kiemel)")
+    expect(gombok[0].getAttribute("aria-current")).toBe("true")
+
+    expect(gombok[1].style.border).not.toContain("2px")
+    expect(gombok[1].getAttribute("aria-current")).toBeNull()
   })
 
   /**
