@@ -90,6 +90,59 @@ describe("a kis lenyíló kategóriamenü", () => {
    * A SZAMOT ELO BONGESZOBEN merem, telepites utan; a javitast a kiszolgalt
    * lapon elore ki is probaltam (575 -> 390).
    */
+  /**
+   * A GYORSLINKEK: AMELYIKNEK VAN CELPONTJA, AZ LINK -- A MASIK NEM UGY NEZ KI.
+   *
+   * Merve 2026-09-09: a gyorslinkek oszlopban KET sima `li` allt, nulla `a`
+   * elemmel, `font-semibold` szoveggel a kiemelo szinen. Vagyis linknek
+   * latszott, es nem volt az -- ugyanaz a fajta, mint a holt bolyegkep-sor.
+   *
+   * A ket tetel MAS allapotban van, es ezert ket kulon allitas:
+   *
+   *   "Új termékek"   VAN celpont (a lista datum szerinti rendezese)
+   *   "Akciók"        NINCS: nulla gyujtemeny a boltban, es nincs
+   *                   akcio-szuro a kirakatban
+   */
+  it("az Új termékek a lista dátum szerinti rendezésére visz", () => {
+    open()
+
+    const link = screen.getByTestId("category-menu-quick-link")
+
+    expect(link.textContent?.trim()).toBe("Új termékek")
+    expect(link.getAttribute("href")).toContain("sortBy=created_at")
+  })
+
+  /**
+   * ES A TAGADAS, AMI A LENYEG: az Akciók NEM link, es NEM IS NEZ KI ANNAK.
+   *
+   * A meglet-allitas onmagaban atengedne egy olyan valtozatot, ami kitalal egy
+   * celpontot (peldaul `/store`-t) -- az MINDEN terméket mutatna "Akciók" nev
+   * alatt, vagyis hamis igeret lenne.
+   */
+  it("az Akciók nem link, és nem is néz ki annak", () => {
+    open()
+
+    const varakozo = screen.getByTestId("category-menu-quick-varakozo")
+
+    expect(varakozo.textContent?.trim()).toBe("Akciók")
+    expect(varakozo.tagName).toBe("SPAN")
+    expect(varakozo.className).not.toContain("font-semibold")
+    expect(varakozo.className).not.toContain("underline")
+  })
+
+  /**
+   * ES PONTOSAN EGY LINK ALL OTT, NEM KETTO. Egy harmadik ertek: ha valaki
+   * celpontot ad az Akcióknak, ez pirosodik, es akkor a fenti tagadas melle
+   * odakerul a DONTES is, nem helyette.
+   */
+  it("a gyorslinkek közül pontosan egynek van célpontja", () => {
+    open()
+
+    expect(
+      screen.getByTestId("category-menu-quick-links").querySelectorAll("a"),
+    ).toHaveLength(1)
+  })
+
   it("a kategória-sáv magán belül görget", () => {
     render(<FejlecMenu kategoriak={categories} />)
 
