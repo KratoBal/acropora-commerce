@@ -6,6 +6,7 @@ import React from "react"
 
 import {
   ArDoboz,
+  DoaGarancia,
   ElerhetosegDoboz,
   MennyisegDoboz,
   ValasztoDoboz,
@@ -22,6 +23,7 @@ import {
 } from "../product-actions/minimum-order-quantity"
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
 import { KepBlokk } from "../image-gallery/kep-blokk"
+import { vilagaTermeknek } from "./vilag-valto"
 
 /**
  * A VAZ SLOTJAINAK VALODI TARTALMA -- CSAK OTT, AHOL VAN FORRAS.
@@ -466,9 +468,35 @@ export function vazTartalom(
    */
   const egyediPeldany = uniquePieceOf(termek.metadata)
 
+  /**
+   * A DOA-SOR CSAK AZ ELO ALLAT LAPJAN ALL, ES EZ NEM STILUS-DONTES.
+   *
+   * A tervlapon a sor a 2a (elo allat) szakaszban all, es CSAK ott: az 1b
+   * (muszaki) lapon nincs. Ez a domenbol is kovetkezik -- "dead on arrival"
+   * egy szallitott ELO allatra ertelmezheto, egy lampara nem.
+   *
+   * === AMIT EZ A FELTETEL ALLIT, ES AMIT NEM ===
+   *
+   * A `vilagaTermeknek` azt mondja meg, hogy a termek elo allat-e. AMIT NEM
+   * mond meg: hogy a garancia MINDEN elo allatra szol-e, vagy csak az egyedi
+   * peldanyokra. A tervlap erre nem valaszol, mert a rajta allo termek
+   * VELETLENUL mind a ketto (WYSIWYG korall).
+   *
+   * A tagabb alakot valasztottam (minden elo allat), mert a DOA fogalma a
+   * szallitasrol szol, nem a peldany egyedisegerol. Ez FELTEVES, nem meres --
+   * ha szukebb kell, egy `uniquePieceOf` hivas a helye, es akkor ez a
+   * bekezdes valtozik.
+   */
+  const eloAllat = vilagaTermeknek(termek, kategoriak) === "sotet"
+
   if (vasarlasAktiv) {
     tartalom.ar = <ArDoboz />
-    tartalom.mennyiseg = <MennyisegDoboz />
+    tartalom.mennyiseg = (
+      <>
+        <MennyisegDoboz />
+        {eloAllat && <DoaGarancia />}
+      </>
+    )
 
     /**
      * A VALASZTO DOBOZ HELYE ADATBOL DOL EL, NEM A DOBOZ URES AGABOL.
