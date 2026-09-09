@@ -216,6 +216,49 @@ jobs:
           }
           "
 
+      # A MASODIK BEMENET: MI VAN A FAN, ES MIT LAT A FORDITO.
+      #
+      # A verziok (fent) azt mondjak meg, MELYIK csomagbol dolgozunk. Ez a lepes
+      # azt, hogy MILYEN BEMENETET kap a fordito -- es a ketto kulon romolhat el.
+      #
+      # MIERT EZ A KET SOR, ES MIERT NEM MAS:
+      #
+      # A `tsconfig.json` `include` listaja hivatkozik a `.medusa/types/*`
+      # konyvtarra, ami GENERALT es nincs a tarhazban. Merve helyben (murena,
+      # 2026-09-10), harom allapotban, a kilepesi kodot kozvetlenul olvasva:
+      #
+      #     a types HIANYZIK                          tsc exit 0
+      #     a types REGI (ket napos generalas)        tsc exit 0
+      #     a types FRISSEN generalva (medusa build)  tsc exit 0
+      #
+      # Es a donto resz nem a harmadik sor: a `Lint` lepes (`medusa lint`) NEM
+      # allitja elo a konyvtarat -- ezt is lemertem, torolt `.medusa/types`
+      # mellett. Vagyis a CI-ben EBBEN a pillanatban nincs types, es helyben
+      # sincs: a valtozo a ket kornyezetben AZONOS, nem csak valoszinutlen.
+      #
+      # A ket sor tehat NEM a mai pirosnak szol -- azt egy billego adta, es a
+      # 334 ujrafuttatasa zolden hozta ugyanazon a backend tartalmon. Azert all
+      # itt, hogy a KOVETKEZO piros tobbet mondjon magarol: ha a types egyszer
+      # OTT lesz, vagy a `files` lista mast fog be, az EGY sor lesz a naploban,
+      # nem nyomozas.
+      #
+      # `continue-on-error`, mert ez MEROESZKOZ, nem kapu: ha a kiiras elszall,
+      # az nem teheti pirossa a futast -- kulonben pont azt a zajt csinalna,
+      # ami ellen keszult. A `showConfig` kimenete helyben 127 sor (6 kB), tehat
+      # elfer a naploban.
+      - name: A tipusellenorzes bemenete (fa es feloldott config)
+        working-directory: apps/backend
+        continue-on-error: true
+        run: |
+          if [ -d .medusa/types ]; then
+            echo ".medusa/types   LETEZIK"
+            ls -1 .medusa/types
+          else
+            echo ".medusa/types   NINCS"
+          fi
+          echo "--- tsc --showConfig ---"
+          pnpm exec tsc --showConfig -p tsconfig.json
+
       - name: Tipusellenorzes
         working-directory: apps/backend
         run: pnpm exec tsc --noEmit -p tsconfig.json
