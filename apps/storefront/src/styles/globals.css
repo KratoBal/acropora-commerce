@@ -118,6 +118,21 @@
    * mostantol a haromfele felulet erteke all itt es a kereso mezo ter el.
    * Ha egyszer megfordul, egyetlen sor -- de akkor is HAROM helyre hat, nem
    * egyre, es ezt erdemes tudni a dontes elott.
+   *
+   * === ES A HOSSZU TAVU HELYES ALAK KET TOKEN LENNE, NEM EGY ===
+   *
+   * FELULET kontra BEVITELI MEZO. A terv ket kulonbozo erteket ad nekik, es a
+   * mai egyetlen token azert eleg, mert a kulonbseg 0.01 vilagossag -- nem
+   * azert, mert ugyanaz a szerep.
+   *
+   * EZERT ALL ITT EZ A BEKEZDES, ES NEM DISZ (acrobot kikotese, 2026-09-09,
+   * uzenet 16746): egy 0.01-es elteres ELIRASNAK latszik. Aki fel ev mulva
+   * "kijavitja" a kereso mezo erteket erre a tokenre, HAROM feluletet ront el
+   * EGY mezoert -- es a valtozas olyan kicsi lesz, hogy senki nem veszi eszre.
+   *
+   * Ha valaki a ket tokenre bontast elvegzi, az NEM ertek-valtozas, hanem
+   * szerep-szetvalasztas: a mai ertek marad a feluleteknel, es a kereso mezo
+   * kapja meg a sajatjat.
    */
   --terv-hatter-halvany: oklch(0.965 0.008 70); /* 1b: a halvany feluletek */
 
