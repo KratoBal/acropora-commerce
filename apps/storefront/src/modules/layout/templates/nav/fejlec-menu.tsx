@@ -29,6 +29,40 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * ezert ott all a gyoker sajat hivatkozasa is, kulon soron -- aki a teljes
  * kategoriat akarja, eleri, csak nem veletlenul.
  */
+/**
+ * A NEGY MENUPONT, BALAZS SZAVAVAL ES AZ O SORRENDJEBEN (2026-09-09 09:54):
+ * "MIndenhol: Termékek, Halak, Korallok, Gerinctelenek".
+ *
+ * === MIERT ROGZITETT LISTA, ES NEM SZAMOLT SORREND ===
+ *
+ * A sorrend NEM vezetheto le semmilyen adatbol: meret szerint sem jon ki
+ * (Korallok 8 termek, Gerinctelenek 27, tehat a Korallok ELOREBB all a
+ * kisebbik ellenere), es a bolt `rank` mezoje is mast ad
+ * (Termekek, Gerinctelenek, Halak, Korallok).
+ *
+ * Egy szamolt sorrend tehat CSENDBEN mast adna, mint amit kertek. Ezert all
+ * itt nev szerint, rogzitve -- es ezert nem "javitja ki" senki veletlenul.
+ *
+ * === ES AMIT EZ NEM MOND MEG ===
+ *
+ * Ha egy nev nem szerepel a bolt gyokerei kozott, az a menupont egyszeruen
+ * kimarad. Nem talalunk ki helyette masikat: egy hianyzo kategoria adat-kerdes,
+ * nem elrendezesi.
+ */
+export const MENU_SORREND = [
+  "Termékek",
+  "Halak",
+  "Korallok",
+  "Gerinctelenek",
+] as const
+
+export const menuSorrendben = (
+  kategoriak: HttpTypes.StoreProductCategory[],
+): HttpTypes.StoreProductCategory[] =>
+  MENU_SORREND.map((nev) => kategoriak.find((k) => k.name === nev)).filter(
+    (k): k is HttpTypes.StoreProductCategory => Boolean(k),
+  )
+
 export const FejlecMenu = ({
   kategoriak,
 }: {
@@ -58,7 +92,9 @@ export const FejlecMenu = ({
     return () => window.removeEventListener("scroll", figyel)
   }, [])
 
-  if (kategoriak.length === 0) return null
+  const sorrendben = menuSorrendben(kategoriak)
+
+  if (sorrendben.length === 0) return null
 
   return (
     <div
@@ -68,7 +104,7 @@ export const FejlecMenu = ({
       data-testid="fejlec-menu"
       data-latszik={latszik ? "igen" : "nem"}
     >
-      {kategoriak.map((k) => {
+      {sorrendben.map((k) => {
         const gyerekek = k.category_children ?? []
         const nyitva = nyitott === k.id
 

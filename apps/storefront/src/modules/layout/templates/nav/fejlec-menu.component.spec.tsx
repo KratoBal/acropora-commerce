@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { FejlecMenu } from "./fejlec-menu"
+import { FejlecMenu, MENU_SORREND, menuSorrendben } from "./fejlec-menu"
 
 /**
  * UGYANAZ A HAMIS, AMIT A REPO MAR HASZNAL (stock-state, product-actions,
@@ -113,5 +113,71 @@ describe("a kategória-sáv görgetésre eltűnik", () => {
     gorget(400)
 
     expect(screen.queryByTestId("fejlec-menu-lenyilo")).toBeNull()
+  })
+})
+
+/**
+ * A NEGY MENUPONT ES A SORRENDJUK BALAZS SZAVABOL JON, NEM ADATBOL.
+ *
+ * "MIndenhol: Termékek, Halak, Korallok, Gerinctelenek" (2026-09-09 09:54).
+ *
+ * MIERT ALL ITT KULON ALLITAS A SORRENDRE: mert a sorrend semmilyen adatbol
+ * NEM vezetheto le. Meret szerint sem (Korallok 8, Gerinctelenek 27, megis a
+ * Korallok all elorebb), es a bolt `rank` mezojebol sem (az
+ * Termekek, Gerinctelenek, Halak, Korallok sorrendet ad). Egy szamolt sorrend
+ * tehat CSENDBEN mast adna -- ez az allitas epp azt fogja meg.
+ */
+describe("a menü négy pontja, Balázs sorrendjében", () => {
+  it("a rögzített lista pontosan a kért négy név, ebben a sorrendben", () => {
+    expect([...MENU_SORREND]).toEqual([
+      "Termékek",
+      "Halak",
+      "Korallok",
+      "Gerinctelenek",
+    ])
+  })
+
+  it("a kapott halmazt a rögzített sorrendbe rakja, nem a saját sorrendjében hagyja", () => {
+    /* A bolt `rank` szerinti sorrendje -- szandekosan MAS, mint a kert. */
+    const boltSzerint = [
+      kat("Termékek"),
+      kat("Gerinctelenek"),
+      kat("Halak"),
+      kat("Korallok"),
+    ]
+
+    expect(menuSorrendben(boltSzerint).map((k) => k.name)).toEqual([
+      "Termékek",
+      "Halak",
+      "Korallok",
+      "Gerinctelenek",
+    ])
+  })
+
+  /**
+   * EGY HIANYZO NEV KIMARAD, ES NEM HELYETTESITUNK. Ha egy kategoria nincs a
+   * boltban, az adat-kerdes -- nem talalunk ki helyette masikat.
+   */
+  it("hiányzó kategória egyszerűen kimarad", () => {
+    const csakKetto = [kat("Termékek"), kat("Korallok")]
+
+    expect(menuSorrendben(csakKetto).map((k) => k.name)).toEqual([
+      "Termékek",
+      "Korallok",
+    ])
+  })
+
+  it("a sávban is ebben a sorrendben rajzolódnak", () => {
+    render(
+      <FejlecMenu
+        kategoriak={[kat("Gerinctelenek"), kat("Termékek"), kat("Halak")]}
+      />,
+    )
+
+    const nevek = screen
+      .getAllByTestId("fejlec-menu-tetel")
+      .map((e) => e.textContent)
+
+    expect(nevek).toEqual(["Termékek", "Halak", "Gerinctelenek"])
   })
 })
