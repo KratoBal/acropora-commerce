@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@modules/common/components/ui"
 import Image from "next/image"
@@ -30,8 +34,38 @@ type ImageGalleryProps = {
  * A szam es a mobil viselkedes indoklasa a `kep-meret.tsx` fajlban all, mert
  * a MASIK kep-ut (a technikai termekek `Foto` komponense) ugyanazt hasznalja.
  */
+/**
+ * A BOLYEGKEP-SOR CSERELI A NAGY KEPET.
+ *
+ * === MIERT KLIENS KOMPONENS ===
+ *
+ * A valasztas ALLAPOT, es a nagy kep meg a sor UGYANAZT az allapotot olvassa.
+ * Egy szerver komponens nem tud fuggvenyt atadni a sornak, tehat a ketto
+ * kozott nem lenne kapcsolat -- pontosan ezert allt a sor 2026-09-09-ig
+ * HOLTAN, azon a napon, amikor megepitettem.
+ *
+ * A propok szerializalhatok (kep-objektumok es egy logikai ertek), tehat a
+ * hataron atmennek.
+ *
+ * === MIERT AZ EGESZ KESZLET ALL A SORBAN, NEM A TOBBI ===
+ *
+ * Eddig a sor a nagy kep NELKULI maradekot mutatta. A tervlapon a sorban HAT
+ * csempe all, es az ELSO 2 pixeles rez keretet visel -- vagyis a sor a TELJES
+ * keszlet, es a kivalasztott meg van jelolve benne. Egy csempe, ami eltunik,
+ * amikor ranyomsz, a valasztast is elrejti.
+ *
+ * === ES A MASIK KEP-UT EGYELORE NEM VALTOZIK ===
+ *
+ * A technikai lapok a `lap-vaz/valodi-tartalom.tsx` `Foto` komponensen mennek
+ * (merve 2026-09-09 a kitelepitett lapon: a korall lapon `nagy-kep`, a
+ * muszaki es adalek lapokon `vaz-foto`). Ott a nagy kep sima `<img>`, itt
+ * `next/image` -- a ket ut EGYESITESE azt jelentene, hogy az egyik oldal
+ * kep-megjelenitese megvaltozik, es azt NEM ez a kor donti el. Kulon tetel,
+ * es addig a technikai lapokon a sor nem kattinthato.
+ */
 const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
-  const [nagy, ...tobbi] = images
+  const [kivalasztott, setKivalasztott] = useState(0)
+  const nagy = images[kivalasztott] ?? images[0]
 
   return (
     <div className="flex items-start relative">
@@ -102,7 +136,18 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
           </Container>
         )}
 
-        <TovabbiKepek kepek={tobbi} />
+        {/*
+          EGYETLEN KEPNEL NINCS SOR, ES EZ NEM A REGI VISELKEDES MARADVANYA.
+
+          Egy egy-csempes sor semmit nem kinal: nincs mire valtani, es a
+          csempe pontosan azt mutatja, ami folotte all. A tervlapon a sor
+          HAT csempet mutat -- valasztasrol szol, nem ismetlesrol.
+        */}
+        <TovabbiKepek
+          kepek={images.length > 1 ? images : []}
+          kivalasztott={kivalasztott}
+          onValaszt={setKivalasztott}
+        />
         {/*
           AZ ÍGÉRET-MONDAT A KÉP ALATT ÁLL, EGYSZER (picasso terve, 2026-09-07).
           A jelvény a kép sarkában, ez a galéria alatt: a kettő külön helyen, mert

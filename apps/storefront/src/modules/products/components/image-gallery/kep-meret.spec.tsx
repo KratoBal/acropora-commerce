@@ -1,10 +1,8 @@
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
-
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import ImageGallery from "./index"
+import { KepBlokk } from "./kep-blokk"
 import { KEP_ARANY, TovabbiKepek } from "./kep-meret"
 
 vi.mock("next/navigation", () => ({
@@ -24,10 +22,27 @@ const kep = (i: number) => ({ id: `k${i}`, url: `https://pelda/k${i}.jpg` })
  * allitas nem tudna, mit jelent az, hogy nincs sor.
  */
 describe("a nagy kép kisebb, a többi alatta", () => {
-  it("három képnél egy nagy áll, és kettő a sorban", () => {
-    render(<ImageGallery images={[kep(1), kep(2), kep(3)] as never} />)
+  /**
+   * A SOR A TELJES KESZLETET MUTATJA, NEM A MARADEKOT.
+   *
+   * 2026-09-09-ig a sor a nagy kep NELKULI maradekot mutatta (haromnal
+   * kettot). A tervlapon a sorban HAT csempe all, es az ELSO 2 pixeles rez
+   * keretet visel -- vagyis a sor a TELJES keszlet, es a kivalasztott meg van
+   * jelolve benne.
+   *
+   * Egy csempe, ami eltunik, amikor ranyomsz, a valasztast is elrejti.
+   */
+  it("három képnél a sor mind a hármat mutatja", () => {
+    const { container } = render(
+      <ImageGallery images={[kep(1), kep(2), kep(3)] as never} />,
+    )
 
-    expect(screen.getAllByTestId("tovabbi-kep")).toHaveLength(2)
+    expect(container.querySelectorAll('[data-testid="nagy-kep"]')).toHaveLength(
+      1,
+    )
+    expect(
+      container.querySelectorAll('[data-testid="tovabbi-kep"]'),
+    ).toHaveLength(3)
   })
 
   /**
@@ -71,6 +86,73 @@ describe("a nagy kép kisebb, a többi alatta", () => {
     expect(doboz!.style.maxWidth).toBe("")
     expect(doboz!.style.width).toBe("")
     expect(doboz!.className).toContain("w-full")
+  })
+
+  /**
+   * A SOR CSEREL: KATTINTASRA A KIVALASZTOTT KEP KERUL FOLULRE.
+   *
+   * Ez az allitas a KARTYA targya (`1fa28d5b`): a sor 2026-09-09-ig HOLT volt
+   * -- nulla `onClick`, nulla `button` --, ugyanazon a napon, amikor
+   * megepitettem. Egy sor, ami kattinthatonak LATSZIK es nem az, rosszabb,
+   * mint a hianya.
+   *
+   * A MERES A NAGY KEP FORRASARA MEGY, nem a csempere: azt akarjuk tudni, hogy
+   * a valasztas ATERT a nagy kepre, nem azt, hogy a gomb megkapta a fokuszt.
+   */
+  it("a sorra kattintva a nagy kép a választott fotóra vált", () => {
+    const { container } = render(
+      <ImageGallery images={[kep(1), kep(2), kep(3)] as never} />,
+    )
+
+    const nagyForras = () =>
+      container
+        .querySelector('[data-testid="nagy-kep"] img')
+        ?.getAttribute("src") ?? ""
+
+    /* ISMERT POZITIV KONTROLL: indulaskor az ELSO kep all folul. */
+    expect(nagyForras()).toContain("k1")
+
+    const gombok = container.querySelectorAll<HTMLElement>(
+      '[data-testid="tovabbi-kep-gomb"]',
+    )
+    expect(gombok).toHaveLength(3)
+
+    /*
+      `fireEvent` es nem `.click()`: a React ujrarendereles az `act` hataran
+      belul fut le. A nyers DOM-hivas eltuzeli az esemenyt, de az allitas
+      MEG A REGI fan futna -- elso valtozatomban epp ez tortent, es a piros a
+      merohely hatarat mutatta, nem a kodet.
+    */
+    fireEvent.click(gombok[2])
+
+    expect(nagyForras()).toContain("k3")
+  })
+
+  /**
+   * ES A KIVALASZTOTT CSEMPE MEG VAN JELOLVE -- A TERV EZT KIRAJZOLJA.
+   *
+   * A tervlapon az elso csempe `border:2px solid <rez>` erteket visel. A
+   * jeloles nelkul a vevo nem latja, melyik kepet nezi eppen.
+   *
+   * A jeloles KET csatornan all: a keret (latas) es az `aria-current`
+   * (felolvaso). A masodik nelkul a valasztas csak vizualis lenne -- ugyanaz a
+   * hiba, amit ma a ful-savnal kerestunk, es ott szerencsere nem talaltunk.
+   */
+  it("a kiválasztott csempe jelölve van, látásra és felolvasónak is", () => {
+    const { container } = render(
+      <ImageGallery images={[kep(1), kep(2)] as never} />,
+    )
+
+    const gombok = container.querySelectorAll<HTMLElement>(
+      '[data-testid="tovabbi-kep-gomb"]',
+    )
+
+    expect(gombok[0].style.border).toContain("2px")
+    expect(gombok[0].style.border).toContain("var(--terv-kiemel)")
+    expect(gombok[0].getAttribute("aria-current")).toBe("true")
+
+    expect(gombok[1].style.border).not.toContain("2px")
+    expect(gombok[1].getAttribute("aria-current")).toBeNull()
   })
 
   /**
@@ -127,26 +209,31 @@ describe("a nagy kép kisebb, a többi alatta", () => {
    * egyik hordozta a dontest -- ez az allitas azt orzi, hogy ne csusszanak
    * megint szet.
    *
-   * A FORRAS SZOVEGET olvassa, mert a ket komponens kulon fajlban all, es egy
-   * kozos rendereles nem hozna ossze oket. A megjegyzeseket kiszedjuk: a
-   * fenti magyarazat SZO SZERINT idezi mind a ket modot.
+   * === MIERT RENDERELES, ES NEM FORRAS-OLVASAS (2026-09-09) ===
+   *
+   * Ez az allitas korabban a `valodi-tartalom.tsx` SZOVEGET olvasta, mert a
+   * mod egy szerver komponensben allt, es a ket utat egy rendereles nem hozta
+   * ossze. Amikor a masik ut kep-blokkja kulon KLIENS komponensbe kerult
+   * (`KepBlokk`), a mod egy renderelheto helyre kerult -- es a szoveg-olvaso
+   * allitas AZONNAL pirosra ment, mert a keresett sorok mar nem ott alltak.
+   *
+   * A piros HELYES volt: a kod tenyleg elmozdult. De a tanulsag nem az, hogy
+   * at kell irni a fajlnevet, hanem hogy a szoveg-olvasas addig indokolt, amig
+   * NINCS renderelheto hely. Amint van, az a merce -- az nem a fajl
+   * elhelyezeserol szol, hanem a viselkedesrol.
    */
   it("a másik kép-út ugyanezt a módot használja", () => {
-    const kodSzoveg = (szoveg: string) =>
-      szoveg.replace(/\/\*[\s\S]*?\*\//g, "")
+    const { container } = render(<KepBlokk kepek={[kep(1)]} alt="teszt" />)
 
-    const masik = kodSzoveg(
-      readFileSync(
-        join(__dirname, "..", "lap-vaz", "valodi-tartalom.tsx"),
-        "utf-8",
-      ),
-    )
+    const img = container.querySelector(
+      '[data-testid="vaz-foto"]',
+    ) as HTMLElement | null
 
-    /* ISMERT POZITIV KONTROLL: tenyleg a kep-utat olvastuk be. */
-    expect(masik).toContain('data-testid="vaz-foto"')
+    /* ISMERT POZITIV KONTROLL: tenyleg a masik ut nagy kepet fogtuk meg. */
+    expect(img).toBeTruthy()
 
-    expect(masik).toContain('objectFit: "contain"')
-    expect(masik).not.toContain('objectFit: "cover"')
+    expect(img!.style.objectFit).toBe("contain")
+    expect(img!.style.objectFit).not.toBe("cover")
   })
 
   /**
@@ -164,5 +251,80 @@ describe("a nagy kép kisebb, a többi alatta", () => {
 
     expect(sor.className).toContain("lg:grid-cols-6")
     expect(sor.className).toContain("grid-cols-3")
+  })
+})
+
+/**
+ * A MASIK KEP-UT: A MUSZAKI LAPOK BLOKKJA.
+ *
+ * Balazs kerese (2026-09-09 16:37) NEM a galeriara szolt kulon: "A kis kepek
+ * ott vannak a nagy kep alatt a termekeknel de nem kattinthato." A galeria
+ * ut ugyanaznap megkapta a kattinthatosagot -- ez az ut nem, es a sor
+ * ATTOL FUGGETLENUL OTT ALLT. Merve a teszt bolton: a `vaz-foto-blokk`
+ * sor 23 termeken lathato negyvennyolcbol, es `tovabbi-kep-gomb` NULLA
+ * volt mindegyiken.
+ *
+ * Egy sor, ami kattinthatonak LATSZIK es nem az, rosszabb, mint a hianya --
+ * ugyanaz a mondat, mint a galeria oldalan, es pontosan ezert kell KET
+ * helyen allitas: a ket ut kulon romolhat el, ahogy a `contain` modnal mar
+ * egyszer szet is csusztak.
+ */
+describe("a műszaki lapok kép-blokkja", () => {
+  /**
+   * A KATTINTAS VALTOZTAT -- ES AZ ALLITAS A NAGY KEP FORRASARA MER.
+   *
+   * Nem arra, hogy letezik egy kezelo: egy `onClick`, ami nem valt kepet,
+   * ugyanugy atmenne egy kezelo-letet mero allitason.
+   */
+  it("a sorra kattintva a nagy kép a választott fotóra vált", () => {
+    const { container } = render(
+      <KepBlokk kepek={[kep(1), kep(2), kep(3)]} alt="teszt" />,
+    )
+
+    const nagyForras = () =>
+      container
+        .querySelector('[data-testid="vaz-foto"]')
+        ?.getAttribute("src") ?? ""
+
+    /* ISMERT POZITIV KONTROLL: indulaskor az ELSO kep all folul. */
+    expect(nagyForras()).toContain("k1")
+
+    const gombok = container.querySelectorAll<HTMLElement>(
+      '[data-testid="tovabbi-kep-gomb"]',
+    )
+    expect(gombok).toHaveLength(3)
+
+    fireEvent.click(gombok[2])
+
+    expect(nagyForras()).toContain("k3")
+  })
+
+  /**
+   * EGYETLEN KEPNEL ITT SINCS SOR. Ket okbol all kulon a galeria ugyanilyen
+   * allitasatol: mas komponens, es a `Foto` egy MASIK listat ad at neki (a
+   * bolyegkeppel osszefuzve), tehat az egy-elemuseg mas helyen dolhet el.
+   */
+  it("egyetlen képnél nincs sor", () => {
+    render(<KepBlokk kepek={[kep(1)]} alt="teszt" />)
+
+    expect(screen.queryByTestId("tovabbi-kepek")).toBeNull()
+    expect(screen.queryByTestId("vaz-foto")).toBeTruthy()
+  })
+
+  /**
+   * URL NELKULI KEP NEM SZAMIT KEPNEK. A Medusa valasza ad `images` elemet
+   * ures `url`-lel; ha azt beszamitanank, egy egykepes termek ketcsempes
+   * sort kapna, es a masodik csempe egy nem letezo kepre mutatna.
+   */
+  it("url nélküli kép nem számít képnek", () => {
+    render(<KepBlokk kepek={[kep(1), { id: "ures", url: null }]} alt="teszt" />)
+
+    expect(screen.queryByTestId("tovabbi-kepek")).toBeNull()
+  })
+
+  it("kép nélkül semmit nem rajzol", () => {
+    const { container } = render(<KepBlokk kepek={[]} alt="teszt" />)
+
+    expect(container.innerHTML).toBe("")
   })
 })
