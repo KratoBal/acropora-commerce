@@ -20,6 +20,7 @@ import {
   orderQuantityStep,
 } from "../product-actions/minimum-order-quantity"
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
+import { KEP_ARANY, TovabbiKepek } from "../image-gallery/kep-meret"
 
 /**
  * A VAZ SLOTJAINAK VALODI TARTALMA -- CSAK OTT, AHOL VAN FORRAS.
@@ -177,19 +178,38 @@ export const Cimsor = ({ termek }: { termek: Termek }) => {
  * A FOTO. A tervben 16:10 arany all; a kirakat `unoptimized` modban dolgozik,
  * tehat sima `img` megy ki. Ha nincs kep, a doboz URES marad -- a hivo dolga,
  * hogy ilyenkor ne adjon tartalmat.
+ *
+ * === A TOBBI KEP ITT KORABBAN SEHOL NEM LATSZOTT ===
+ *
+ * Ez az ut a NEM elo-allat termekeke, es eddig PONTOSAN EGY kepet mutatott (a
+ * bolyegkepet vagy az elsot). A tobbi kep letezett az adatban, es nem jelent
+ * meg sehol: a teszt bolton merve szaz termekbol harmincnyolcnak van egynel
+ * tobb kepe.
+ *
+ * Balazs kerese ("a tobbi kep a nagy kep ala kicsiben") tehat itt nem
+ * atrendezes, hanem egy nem lathato adat megjelenitese. A szam es a mobil
+ * viselkedes indoklasa a `kep-meret.tsx` fajlban all, kozosen a galeriaval.
  */
 export const Foto = ({ termek }: { termek: Termek }) => {
-  const kep = termek.thumbnail ?? termek.images?.[0]?.url
-  if (!kep) return null
+  const kepek = termek.images ?? []
+  const nagy = termek.thumbnail ?? kepek[0]?.url
+  if (!nagy) return null
+
+  /* A nagy kep NEM ismetlodik a sorban: ha a bolyegkep az elso kep, azt
+     kihagyjuk, kulonben mind mehet. */
+  const tobbi = kepek.filter((k) => k.url && k.url !== nagy)
 
   return (
-    <img
-      src={kep}
-      alt={termek.title ?? ""}
-      className="w-full"
-      style={{ aspectRatio: "16 / 10", objectFit: "contain" }}
-      data-testid="vaz-foto"
-    />
+    <div className="flex flex-col gap-2" data-testid="vaz-foto-blokk">
+      <img
+        src={nagy}
+        alt={termek.title ?? ""}
+        className="w-full"
+        style={{ aspectRatio: KEP_ARANY, objectFit: "contain" }}
+        data-testid="vaz-foto"
+      />
+      <TovabbiKepek kepek={tobbi as never} />
+    </div>
   )
 }
 
