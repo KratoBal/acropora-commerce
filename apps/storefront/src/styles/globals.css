@@ -427,6 +427,29 @@
    * lenne, rosszabb, mint a mai kozelites.
    */
   --terv-utvonal: oklch(0.52 0.012 60); /* 1b: az utvonal-sor szine */
+   * A KERETES DOBOZ HATTERE -- ES A VILAGOS ERTEKE SZANDEKOSAN "NINCS".
+   *
+   * Merve 2026-09-09 a tervforrasbol, a racs ket oszlopat szetvalasztva:
+   *
+   *     2a JOBB panel   border:1px + BACKGROUND + padding:24px    3 doboz
+   *     1b JOBB panel   border:1px +            + padding:24px    3 doboz
+   *
+   * Vagyis a doboznak a tervben CSAK A SOTET lapon van hattere. A vilagoson a
+   * keret hordozza a doboz-jelleget.
+   *
+   * MIERT `transparent`, ES MIERT NEM EGY VILAGOS SZIN: a terv ott nem egy
+   * halvanyabb erteket ad, hanem SEMMIT. Egy "majdnem feher" ertek beirasa nem
+   * a tervet kovetne, hanem kitalalna egy erteket oda, ahol a terv hallgat.
+   *
+   * A SOTET ERTEK NEM UJ SZIN: pontosan a `--terv-hatter-halvany` sotet erteke
+   * (oklch(0.205 0.018 249)), es a tervben is ugyanaz a felulet. Ezert
+   * hivatkozassal all, nem masolattal -- egy masolt szam ket helyen elobb-utobb
+   * szetcsuszik.
+   *
+   * (acrobot dontese, 2026-09-09, uzenet 16891: "ha a terv a sotet lapon ad
+   * hatteret es a vilagoson nem, akkor ez SZANDEK, nem hianyossag".)
+   */
+  --terv-doboz-hatter: transparent;
 
   /* keretek */
   /*
@@ -681,6 +704,9 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
   --terv-hatter: oklch(0.17 0.016 250); /* a sotet tervlap sajat hattere */
   --terv-hatter-lap: oklch(0.17 0.016 250); /*  8 elem -- melyebb felulet */
   --terv-hatter-halvany: oklch(0.205 0.018 249);
+  --terv-doboz-hatter: var(
+    --terv-hatter-halvany
+  ); /* 2a: 0.205, a panel felulete */
 
   --terv-kiemel: oklch(0.62 0.13 45); /* a sotet lap rezje, merve a 2a-n */
   /* A SOTET LAPON SOTET a rezen allo szoveg -- ez a 2a lapon MERT ertek, es

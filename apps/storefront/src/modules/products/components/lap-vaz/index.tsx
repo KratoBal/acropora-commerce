@@ -557,10 +557,11 @@ export const VazDoboz = ({
               border: uresE
                 ? "1px dashed var(--terv-keret)"
                 : "1px solid var(--terv-keret)",
-              /* Ugyanaz a token, mint a kozos panelnel, es ugyanabbol
-                 az okbol -- lasd az ottani jegyzetet. Az ures szakasz
-                 tovabbra is attetszo marad: ott a szaggatott keret a jel. */
-              background: uresE ? "transparent" : "var(--terv-hatter-halvany)",
+              /* A DOBOZ HATTERE VILAGONKENT MAS, ES A VILAGOSBAN NINCS.
+                 A tervben a keretes doboznak csak a SOTET lapon van hattere;
+                 az indoklas a `globals.css`-ben all, a token mellett. Az ures
+                 szakasz tovabbra is attetszo: ott a szaggatott keret a jel. */
+              background: uresE ? "transparent" : "var(--terv-doboz-hatter)",
               color: "var(--terv-szoveg)",
             }
       }
@@ -1303,8 +1304,22 @@ const LapVaz = ({
                          * volt a lapnal, holott a tervben VILAGOSABB -- a viszony
                          * meg volt forditva, es ezt egyetlen allitas sem merte.
                          */
-                        background: "var(--terv-hatter-halvany)",
-                        padding: "16px",
+                        background: "var(--terv-doboz-hatter)",
+                        /*
+                          HUSZONNEGY PIXEL, ES A 287 EZT KIHAGYTA.
+
+                          A 287 a SZAKASZOK belso terkozet allitotta at a jobb
+                          oszlopban (`p-6`), de ez a KOZOS panel a sajat
+                          beagyazott `padding` erteket viseli, tehat kimaradt:
+                          a `csomagajanlat` es a `kerdezd` 24-et kapott, ez a
+                          doboz 16-on maradt. Merve a kitelepitett lapon.
+
+                          A tervben mind a HAROM jobb oldali doboz 24 pixeles,
+                          es nalunk is harom van (a vasarlasi csoport, a
+                          csomagajanlat es a kerdezd) -- tehat a harom
+                          ugyanazt kapja.
+                        */
+                        padding: "24px",
                         display: "flex",
                         flexDirection: "column",
                         /**
