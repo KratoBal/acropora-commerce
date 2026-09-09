@@ -95,25 +95,31 @@
    * Merve 2026-09-09, lapokent bontva:
    *
    *     a REGI ertek, 0.955 chroma 0.004 hue 250    2a: 0   1a: 6   1b: 0
-   *     a MOSTANI,    0.955 chroma 0.006 hue  75    2a: 0   1a: 0   1b: 1
+   *     a MOSTANI,    0.965 chroma 0.008 hue  70    2a: 0   1a: 0   1b: 3
+   *     a masik szerep, 0.955 chroma 0.006 hue 75   2a: 0   1a: 0   1b: 1
    *
-   * A MOSTANI ERTEK SZEREPE MAR 2026-09-08 OTA LE VOLT IRVA a sotet blokk
-   * fejleceben: az az 1b lap fejlecebeli KERESO-MEZOJENEK hattere. Vagyis a
-   * szerep tisztazva volt, csak az ide beirt ertek nem 1b-rol jott.
+   * A HARMADIK SOR SZEREPE MAR 2026-09-08 OTA LE VOLT IRVA a sotet blokk
+   * fejleceben: az az 1b lap fejlecebeli KERESO-MEZOJENEK hattere.
    *
    * EGY TOKEN, KET TERVBELI SZEREP -- ES EZT KI KELL MONDANI. A negy
-   * hasznalata: a fejlec kereso mezoje (a tervben 0.955 chroma 0.006 hue 75),
-   * valamint az ar doboza, a szakasz-dobozok felulete es a panel egy belso
-   * doboza (a tervben mind 0.965 chroma 0.008 hue 70). A ket tervbeli ertek
-   * 0.01 vilagossagban ter el.
+   * hasznalata: HAROM felulet (az ar doboza, a szakasz-dobozok es a panel
+   * belso doboza, a tervben mind 0.965 chroma 0.008 hue 70), es EGY kereso
+   * mezo (0.955 chroma 0.006 hue 75). A ket tervbeli ertek 0.01
+   * vilagossagban ter el.
    *
-   * A VALASZTAS ACROBOTE (2026-09-09, uzenet 16742): a kereso mezo erteke.
-   * Az en ellenervem a naplo kedveert: harom hasznalatbol harom FELULET es
-   * csak egy a kereso mezo, tehat a masik ertek tobb helyre illene. A kereso
-   * mezo viszont MINDEN lapon latszik, a szakasz-dobozok csak a termeklapon.
-   * Ha valaha megfordul a dontes, egyetlen sor.
+   * A VALASZTAS A FELULET-ERTEK (acrobot, 2026-09-09, uzenet 16766), es az
+   * indok az, hogy a negy hasznalatbol HAROM felulet: az ar doboza, a
+   * szakasz-dobozok es a panel belso doboza. A negyedik, a fejlec kereso
+   * mezoje, a tervben `oklch(0.955 0.006 75)` -- 0.01-gyel vilagosabb, es
+   * MOST AZ a token masodik szerepe.
+   *
+   * A KET SZEREP KOZOTTI KULONBSEG TEHAT MEGMARAD, csak a masik iranyban:
+   * eddig a kereso mezo erteke allt itt es a haromfele felulet tert el,
+   * mostantol a haromfele felulet erteke all itt es a kereso mezo ter el.
+   * Ha egyszer megfordul, egyetlen sor -- de akkor is HAROM helyre hat, nem
+   * egyre, es ezt erdemes tudni a dontes elott.
    */
-  --terv-hatter-halvany: oklch(0.955 0.006 75); /* 1b: a kereso mezo hattere */
+  --terv-hatter-halvany: oklch(0.965 0.008 70); /* 1b: a halvany feluletek */
 
   /* kiemeles */
   /* A REZ EGY TOKEN, ES A NEVE A SZEREPET JELOLI, NEM AZ ERTEKET.

@@ -90,7 +90,7 @@ describe("a terv megerositett ertekei", () => {
     ["--terv-kiemel", "oklch(0.55 0.13 45)"],
     ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
     ["--terv-kiemel-tinta", "oklch(0.55 0.13 45)"],
-    ["--terv-hatter-halvany", "oklch(0.955 0.006 75)"],
+    ["--terv-hatter-halvany", "oklch(0.965 0.008 70)"],
     ["--terv-szoveg-halvany", "oklch(0.5 0.012 60)"],
   ]
 
@@ -181,7 +181,7 @@ describe("a terv megerositett ertekei", () => {
     const sotetBlokk = normal(CSS.slice(sotetKezd))
 
     expect(vilagosBlokk).toContain(
-      "--terv-hatter-halvany: oklch(0.955 0.006 75)",
+      "--terv-hatter-halvany: oklch(0.965 0.008 70)",
     )
     expect(sotetBlokk).toContain(
       "--terv-hatter-halvany: oklch(0.205 0.018 249)",
