@@ -101,6 +101,18 @@ type VazSzakasz = {
    * szakasz melle kerul egy panelbe, a `csoport` dontene, nem ez.
    */
   keretNelkul?: boolean
+  /**
+   * MELYIK KARTYA HOZZA A TARTALMAT, HA A SZAKASZ URES.
+   *
+   * A BAL OSZLOP szakaszai 2026-09-09 ota keret es helykitolto SZOVEG nelkul
+   * allnak (a tervben ott nincs keretes doboz), tehat egy ures szakasz a lapon
+   * LATHATATLAN. Ez szandekos -- de egy lathatatlan ures doboz csendben
+   * allandova valhat, es fel ev mulva senki nem tudja, mire vart.
+   *
+   * Ezert a jelolo NEM azt mondja, hogy "ures", hanem hogy MIRE VAR: a kanban
+   * kartya azonositojat viseli. (acrobot kikotese, 2026-09-09, uzenet 16922.)
+   */
+  varakozoKartya?: string
 }
 
 /**
@@ -361,15 +373,25 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     */
     keretNelkul: true,
   },
-  { kulcs: "foto", cim: "", varakozo: "Termékfotó", oszlop: "bal" },
+  {
+    kulcs: "foto",
+    cim: "",
+    varakozo: "Termékfotó",
+    oszlop: "bal",
+    varakozoKartya:
+      "a6cbda61" /* a harom WYSIWYG korall lapja harom helyen ures */,
+  },
   {
     kulcs: "meretezes-seged",
+    varakozoKartya: "273e0bbb" /* az elhelyezes-seged adatalapja */,
     cim: "Méretezés-segéd",
     varakozo: "Ide jön a méretezés-segéd",
     oszlop: "bal",
   },
   {
     kulcs: "fulek",
+    varakozoKartya:
+      "dac410ea" /* a ful-sor akkor epul meg, ha ket fulnek van tartalma */,
     cim: "",
     varakozo: "Leírás és műszaki adatok",
     oszlop: "bal",
@@ -512,6 +534,29 @@ export const VazDoboz = ({
    * (ures kifejezes, `undefined` a terkepbol). Ezert nem a MEZO meglétét
    * nezzuk, hanem hogy van-e MIT kirajzolni.
    */
+  /*
+    KERETES DOBOZ CSAK OTT, AHOL A TERVBEN IS VAN: a JOBB panelen. A `keretNelkul`
+    a regi, szakasz-szintu kivetel (a cimsor, es a kozos panelbe vont
+    szakaszok); az oszlop-feltetel az uj, terv-alapu szabaly. A ketto KULON all,
+    mert kulon is valtozhat.
+  */
+  const vanDoboz = !keretNelkul && szakasz.oszlop !== "bal"
+
+  /*
+    A HELYKITOLTO SZOVEG MASHOL DOL EL, MINT A DOBOZ -- ES EZT EGY SAJAT PIROS
+    TANITOTTA MEG.
+
+    Elso valtozatomban a szoveg is a `vanDoboz` ertekehez kotodott, es ezzel a
+    KOZOS panelbe vont szakaszok (ar, elerhetoseg, valaszto, mennyiseg) is
+    elvesztettek a helykitoltojuket -- azok `keretNelkul` allnak, de a JOBB
+    oszlopban. Tiz helykitolto helyett ot maradt, es ezt a szamlalo allitas
+    fogta meg.
+
+    A ket dolog kulon feltetel: a DOBOZ attol fugg, van-e sajat kerete
+    (a kozos panelbe vontaknak nincs), a SZOVEG attol, melyik oszlopban all.
+  */
+  const helykitoltotRajzol = szakasz.oszlop !== "bal"
+
   const uresE =
     children === undefined ||
     children === null ||
@@ -532,7 +577,18 @@ export const VazDoboz = ({
       data-vaz-szakasz={szakasz.kulcs}
       data-vaz-ures={uresE ? "igen" : "nem"}
       /*
-        A BELSO TERKOZ A JOBB PANELEN 24 PIXEL, A TERVBOL.
+        A JELOLO NEM AZT MONDJA, HOGY "URES", HANEM HOGY MIRE VAR.
+
+        A bal oszlop szakaszai keret es helykitolto SZOVEG nelkul allnak, tehat
+        egy ures szakasz a lapon LATHATATLAN. Egy lathatatlan ures doboz viszont
+        csendben allandova valhat -- ezert all itt a kartya azonositoja, ami a
+        tartalmat hozza. (acrobot kikotese, 2026-09-09, uzenet 16922.)
+      */
+      data-vaz-varakozo-kartya={
+        uresE && szakasz.varakozoKartya ? szakasz.varakozoKartya : undefined
+      }
+      /*
+        A DOBOZ CSAK A JOBB PANELEN ALL -- A TERVBEN A BAL OSZLOPBAN NINCS.
 
         Merve 2026-09-09, a tervforras ket valasztott lapjan, oszloponkent
         szetvalasztva (a racs ket kozvetlen gyereket ad):
@@ -542,18 +598,21 @@ export const VazDoboz = ({
             2a BAL oszlop   NULLA keretes doboz
             1b BAL oszlop   NULLA keretes doboz
 
-        A BAL OSZLOP EZERT MARAD 16 PIXELEN, ES EZ NEM FELEDEKENYSEG: a terv
-        ott nem 16-ot ir, hanem SEMMIT -- a bal oszlopban nincs keretes doboz.
-        A mi keretes dobozaink ott a MEG NEM KESZ szakaszok jelolesei
-        (szaggatott keret, helykitolto szoveg), tehat vaz-eszkozok, nem
-        terv-elemek. Hogy azok eltunjenek-e, KULON dontes, es amig all, addig
-        a bal oszlop erteket nem a tervbol vesszuk, mert nincs honnan.
+        ITT KORABBAN MIND A KET OSZLOP DOBOZT KAPOTT, es a bal oszlopé nem
+        terv-elem volt, hanem VAZ-ESZKOZ: megmutatta, mi nincs kesz. Az a
+        szerepet 2026-09-09 delutanjara MAR MAS HORDOZZA -- a kanban tabla es
+        picasso lapjai fulenkent megmondjak, mibol keszulne az adat --, tehat a
+        doboz mar nem az egyetlen nyoma a hianynak, csak a leglathatobb, es epp
+        a vevo elott. (acrobot dontese, 2026-09-09, uzenet 16891.)
+
+        AMI EZZEL EGYUTT JAR: az ures BAL oszlopos szakasz nem rajzol
+        helykitolto szoveget sem. Egy keret nelkuli doboz szovege csupaszon
+        allna a lapon, ami rosszabb, mint a hianya.
       */
-      className={keretNelkul ? "" : szakasz.oszlop === "jobb" ? "p-6" : "p-4"}
+      className={vanDoboz ? (szakasz.oszlop === "jobb" ? "p-6" : "p-4") : ""}
       style={
-        keretNelkul
-          ? { color: "var(--terv-szoveg)" }
-          : {
+        vanDoboz
+          ? {
               border: uresE
                 ? "1px dashed var(--terv-keret)"
                 : "1px solid var(--terv-keret)",
@@ -564,6 +623,7 @@ export const VazDoboz = ({
               background: uresE ? "transparent" : "var(--terv-doboz-hatter)",
               color: "var(--terv-szoveg)",
             }
+          : { color: "var(--terv-szoveg)" }
       }
     >
       {szakasz.cim && (
@@ -575,13 +635,15 @@ export const VazDoboz = ({
         </h2>
       )}
       {uresE ? (
-        <p
-          className="text-sm"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
-          data-testid="vaz-varakozo"
-        >
-          {szakasz.varakozo}
-        </p>
+        helykitoltotRajzol ? (
+          <p
+            className="text-sm"
+            style={{ color: "var(--terv-szoveg-halvany)" }}
+            data-testid="vaz-varakozo"
+          >
+            {szakasz.varakozo}
+          </p>
+        ) : null
       ) : (
         children
       )}

@@ -2,9 +2,10 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import LapVaz, {
-  csoportokba,
   ELO_ALLAT_LAP_SZAKASZAI,
   MUSZAKI_LAP_SZAKASZAI,
+  csoportokba,
+  szakaszokVilagra,
 } from "./index"
 
 afterEach(cleanup)
@@ -18,6 +19,18 @@ describe("a műszaki lap váza", () => {
    * A SORREND A TERVBŐL JÖN, és ez az az állítás, ami elbukik, ha valaki
    * átrendezi a lapot anélkül, hogy a tervhez mérné.
    */
+  /*
+    AMIT EZ AZ ALLITAS 2026-09-09 OTA JELENT: hogy a VAZ ep, NEM hogy a lap
+    kesz.
+
+    A bal oszlop szakaszai keret es helykitolto szoveg nelkul allnak, tehat egy
+    URES bal oszlopos szakasz a lapon lathatatlan -- de a DOM-ban ott van, es
+    ez a sor szamolja. A "tizenharom doboz" tehat a szerkezetrol szol.
+
+    A kulonbseget azert kell kiirni, mert egy szamlalo allitas KESZNEK olvasodik.
+    Ma mar egyszer megfizettem: a besorolas-sort keszne konyveltem el, holott
+    tizenharom lapbol nullan latszott. (acrobot kikotese, uzenet 16922.)
+  */
   it("a tizenhárom doboz a tervbeli sorrendben áll", () => {
     render(<LapVaz />)
 
@@ -162,8 +175,13 @@ describe("a műszaki lap váza", () => {
     const { dobozOsztaly } = vaz()
 
     expect(dobozOsztaly("csomagajanlat")).toContain("p-6")
-    expect(dobozOsztaly("fulek")).toContain("p-4")
-    expect(dobozOsztaly("fulek")).not.toContain("p-6")
+
+    /*
+      A BAL OSZLOPNAK 2026-09-09 OTA NINCS DOBOZA, tehat belso terkoze sincs:
+      az osztalya URES. Korabban itt `p-4` allt -- az a sor a doboz meglétét
+      is bizonyitotta, ez a tagadas a hianyat.
+    */
+    expect(dobozOsztaly("fulek")).toBe("")
   })
 
   it("a dobozok a tervbeli oszlopukban állnak", () => {
@@ -346,16 +364,61 @@ describe("a műszaki lap váza", () => {
     expect(sotet.length).toBeGreaterThanOrEqual(10)
   })
 
-  it("az üres doboz kiírja, mi jön a helyére", () => {
+  /**
+   * A HELYKITOLTO SZOVEG MOSTANTOL CSAK A JOBB PANELEN ALL.
+   *
+   * 2026-09-09 ota a BAL oszlop szakaszainak nincs keretuk (a tervben ott
+   * nulla keretes doboz all), es egy keret nelkuli doboz helykitolto szovege
+   * csupaszon allna a lapon. Ezert az ures BAL oszlopos szakasz semmit nem
+   * rajzol.
+   *
+   * AZ ALLITAS NEM GYENGULT, HANEM KETTEVALT: ez a sor a jobb panelt meri, a
+   * kovetkezo azt, hogy a bal oszlop URES szakasza JELOLOT visel a kartya
+   * azonositojaval -- vagyis a hianya nem tunt el, csak nem a vevo elott all.
+   */
+  it("az üres doboz a jobb panelen kiírja, mi jön a helyére", () => {
     render(<LapVaz />)
 
+    const jobbak = MUSZAKI_LAP_SZAKASZAI.filter((sz) => sz.oszlop !== "bal")
     const varakozok = screen.getAllByTestId("vaz-varakozo")
-    expect(varakozok).toHaveLength(MUSZAKI_LAP_SZAKASZAI.length)
+
+    expect(varakozok).toHaveLength(jobbak.length)
 
     const szovegek = varakozok.map((e) => e.textContent)
-    for (const szakasz of MUSZAKI_LAP_SZAKASZAI) {
+    for (const szakasz of jobbak) {
       expect(szovegek).toContain(szakasz.varakozo)
     }
+  })
+
+  /**
+   * ES A BAL OSZLOP URES SZAKASZA JELOLOT VISEL, NEM SZOVEGET.
+   *
+   * Egy lathatatlan ures doboz csendben allandova valhat: fel ev mulva senki
+   * nem tudna, mire vart. A jelolo a kanban kartya azonositoja, tehat a
+   * hianyt egy KATTINTASSAL vissza lehet keresni.
+   */
+  it("a bal oszlop üres szakasza a kártya azonosítóját viseli", () => {
+    render(<LapVaz />)
+
+    const seged = document.querySelector('[data-vaz-szakasz="meretezes-seged"]')
+
+    expect(seged?.getAttribute("data-vaz-ures")).toBe("igen")
+    expect(seged?.getAttribute("data-vaz-varakozo-kartya")).toBe("273e0bbb")
+    expect(seged?.querySelector('[data-testid="vaz-varakozo"]')).toBeNull()
+  })
+
+  /**
+   * ES AMI NEM URES, AZ NEM VISEL JELOLOT. Enelkul a fenti allitas egy olyan
+   * valtozatot is elfogadna, ami MINDEN szakaszra kiirja a kartyat -- akkor a
+   * jelolo nem a varakozast jelentene, hanem csak a hovatartozast.
+   */
+  it("a tartalommal álló szakasz NEM visel kártya-jelölőt", () => {
+    render(<LapVaz tartalom={{ "meretezes-seged": <span>Kész</span> }} />)
+
+    const seged = document.querySelector('[data-vaz-szakasz="meretezes-seged"]')
+
+    expect(seged?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(seged?.getAttribute("data-vaz-varakozo-kartya")).toBeNull()
   })
 
   it("ahol van tartalom, ott azt mutatja, és nem a várakozó szöveget", () => {
@@ -719,18 +782,27 @@ describe("a váz a világhoz tartozó feliratokat rajzolja", () => {
    * lapon sem jelenik meg -- csak vaz-allapotban. A javitas ettol ugyanugy
    * kell, de a kartyan a helyes allitas fog allni.
    */
-  it("sötét világban, EGYEDI példánynál a saját fotó felirat áll", () => {
-    render(<LapVaz vilag="sotet" egyediPeldany />)
+  /*
+    A FOTO KET ALLITASA A SZAKASZ-LISTAT MERI, NEM A KIRAJZOLT SZOVEGET.
 
-    expect(feliratok()).toContain("Saját fotó: ez a példány")
-    expect(feliratok()).not.toContain("Termékfotó")
+    2026-09-09 ota a BAL oszlop szakaszai keret es helykitolto SZOVEG nelkul
+    allnak, tehat a `foto` varakozo szovege nem kerul a lapra. A LEKEPEZES
+    viszont valtozatlan: a `szakaszokVilagra` valto adja, es ott merheto.
+
+    A KET ALLITAS EZZEL NEM GYENGULT, HANEM ATKERULT ARRA A SZINTRE, AHOL A
+    SZABALY LAKIK. Ami elveszett: hogy a szoveg a lapon LATSZIK -- de az mar
+    nem is szandek.
+  */
+  const fotoVarakozo = (egyedi: boolean) =>
+    szakaszokVilagra("sotet", egyedi).find((sz) => sz.kulcs === "foto")
+      ?.varakozo
+
+  it("sötét világban, EGYEDI példánynál a saját fotó felirat áll", () => {
+    expect(fotoVarakozo(true)).toBe("Saját fotó: ez a példány")
   })
 
   it("sötét világban, NEM egyedi példánynál a saját fotó felirat NEM áll", () => {
-    render(<LapVaz vilag="sotet" />)
-
-    expect(feliratok()).not.toContain("Saját fotó: ez a példány")
-    expect(feliratok()).toContain("Termékfotó")
+    expect(fotoVarakozo(false)).toBe("Termékfotó")
   })
 
   /**
@@ -1264,9 +1336,15 @@ describe("a címblokk nem dobozban áll", () => {
    * maradna -- a fenti ket allitas attol meg zold lenne. Egy MASIK, keretes
    * szakasz tehat bizonyitja, hogy a keret-rajzolas egyaltalan mukodik.
    */
+  /*
+    A HORGONY 2026-09-09-EN ATKERULT a `meretezes-seged`-rol a
+    `csomagajanlat`-ra: a bal oszlop szakaszainak MAR NINCS keretuk, tehat az
+    a szakasz ma ugyanazt allitana, mint a fenti tagadas -- ket allitas
+    ugyanarrol, es egyik sem mondana meg, hogy a keret VALAHOL all.
+  */
   it("egy másik szakasznak viszont VAN kerete", () => {
     render(<LapVaz />)
 
-    expect(doboz("meretezes-seged").style.border).toContain("1px")
+    expect(doboz("csomagajanlat").style.border).toContain("1px")
   })
 })
