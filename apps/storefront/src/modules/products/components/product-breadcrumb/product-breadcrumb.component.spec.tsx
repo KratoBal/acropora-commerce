@@ -208,6 +208,83 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
    * Enelkul az allitas nelkul a ket mezo felcserelheto lenne csendben: merve
    * 2026-09-09, a csere NULLA pirosat adott.
    */
+  /**
+   * A SOR NEM ELVALASZTOVAL KEZDODIK.
+   *
+   * A tervben a jel a tagok KOZE kerul (`KORALLOK / WYSIWYG / SPS / A-1042`),
+   * nalunk minden `li` a sajat jelevel kezdodott, tehat a sor egy felesleges
+   * karakterrel indult. Merve a kitelepitett lapon 2026-09-09:
+   * `/ KORALLOK / WYSIWYG - KORALLOK / ...`.
+   *
+   * AZ ALLITAS AZ ELSO KARAKTERRE MER, nem a jelek SZAMARA: egy szam-allitas
+   * akkor is teljesulne, ha a jel az elso elem ele es a masodik moge kerulne.
+   */
+  it("a sor nem elválasztóval kezdődik", () => {
+    render(
+      <ProductBreadcrumb
+        product={termek_ketszintu}
+        categories={kategoriak_ketszintu}
+      />,
+    )
+
+    const szoveg = screen.getByTestId("morzsamenu-lista").textContent ?? ""
+
+    expect(szoveg.trim().startsWith("/")).toBe(false)
+
+    /* ISMERT POZITIV KONTROLL: a jel LETEZIK a sorban, csak nem az elejen.
+       Enelkul a fenti allitas egy jel nelkuli sort is elfogadna. */
+    expect(szoveg).toContain("/")
+  })
+
+  /**
+   * ES KATEGORIA NELKUL SEM: ott a jelenlegi elem az ELSO, tehat ele sem kerul
+   * jel. Ez az az ag, amit a fenti allitas nem er el.
+   */
+  it("kategória nélkül sem kezdődik elválasztóval", () => {
+    const kategoria_nelkul = {
+      id: "p3",
+      title: "Acropora tenuis",
+      categories: [],
+      variants: [{ sku: "A-1042" }],
+    } as never
+
+    render(
+      <ProductBreadcrumb product={kategoria_nelkul} categories={[] as never} />,
+    )
+
+    const szoveg = screen.getByTestId("morzsamenu-lista").textContent ?? ""
+
+    expect(szoveg.trim().startsWith("/")).toBe(false)
+    expect(szoveg).toContain("A-1042")
+  })
+
+  /**
+   * A MERET, A BETUKOZ ES A KOZ A TERVBOL JON.
+   *
+   *     font-size:11px   letter-spacing:0.08em   gap:9px
+   *
+   * Ugyanez a ket valasztott lapon (2a es 1b), beture azonos deklaracioval.
+   * Korabban `text-sm` (14 px) allt, betukoz nelkul, `gap-2` (8 px) kozzel.
+   *
+   * A jsdom nem szamol elrendezest, tehat ez a kirajzolt OSZTALYT meri, nem a
+   * festett meretet.
+   */
+  it("a sor a terv méretét, betűközét és közét viseli", () => {
+    render(
+      <ProductBreadcrumb
+        product={termek_ketszintu}
+        categories={kategoriak_ketszintu}
+      />,
+    )
+
+    const osztaly = screen.getByTestId("morzsamenu-lista").className
+
+    expect(osztaly).toContain("text-[11px]")
+    expect(osztaly).toContain("tracking-[0.08em]")
+    expect(osztaly).toContain("gap-[9px]")
+    expect(osztaly).not.toContain("text-sm")
+  })
+
   it("a teljes nevet mutatja, a szülő utótagjával", () => {
     render(
       <ProductBreadcrumb
