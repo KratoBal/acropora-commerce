@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-import { KEP_ARANY, TovabbiKepek } from "./kep-meret"
+import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
 
 type Kep = { id?: string | null; url?: string | null }
 
@@ -51,8 +51,8 @@ export const KepBlokk = ({
       <img
         src={nagy.url ?? ""}
         alt={alt}
-        className="w-full"
-        style={{ aspectRatio: KEP_ARANY, objectFit: "contain" }}
+        className={`w-full ${KEP_ARANY_OSZTALY}`}
+        style={{ objectFit: "contain" }}
         data-testid={jelolo}
       />
       {/*
