@@ -237,6 +237,44 @@ describe("a váz valódi tartalma", () => {
    * kategoria nelkuli termeknel a sor MEG SEM JELENIK, es akkor a fenti
    * allitas `getByTestId` hivasa hasal el, nem az allitas mond valamit.
    */
+  /**
+   * A CIM MERETE A TERVBOL JON, ES AZ ALLITAS A KIRAJZOLT OSZTALYRA MER.
+   *
+   * === MIERT A KIRAJZOLT OSZTALY, ES NEM A FORRAS SZOVEGE ===
+   *
+   * A komponens megjegyzese SZO SZERINT idezi az elvetett 1a lap erteket
+   * (`-0.015em`), mert azt ki kell mondani, hogy azt NE hasznaljuk. Egy
+   * forras-szovegre mero tagadas ezen azonnal elbukna -- a sajat magyarazatunk
+   * elegitene ki. A kirajzolt `className` ezt a kerdest fel sem veti.
+   *
+   * === AMIT MER, ES AMIT NEM ===
+   *
+   * A jsdom nem szamol elrendezest: azt, hogy a cim TENYLEG 36 pixel, csak a
+   * kitelepitett lapon lehet megnezni. Amit ez bizonyit: a toresponthoz kotott
+   * ertek OTT VAN, es az elvetett lap erteke NINCS ott.
+   */
+  it("a cím a terv méretét viseli, a törésponthoz kötve", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const cim = screen.getByTestId("vaz-termek-nev")
+
+    /* asztali: 36 pixel, 1.1 sorkoz, -0.02em betukoz -- a 2a ES az 1b lapon */
+    expect(cim.className).toContain("lg:text-[36px]")
+    expect(cim.className).toContain("lg:leading-[1.1]")
+    expect(cim.className).toContain("lg:tracking-[-0.02em]")
+
+    /* mobil: 24 pixel, 1.15 sorkoz. A `text-2xl` sajat sorkoze 32 pixel
+       (1.333), ezert a `leading` kulon all -- enelkul a meret helyes lenne es
+       a sorkoz nem. */
+    expect(cim.className).toContain("text-2xl")
+    expect(cim.className).toContain("leading-[1.15]")
+
+    /* AZ ELVETETT 1a LAP ERTEKEI. Ket tokenunk mar jott onnan; ez a harmadik
+       hely, ahol ugyanaz a tevedes megtortenhetne. */
+    expect(cim.className).not.toContain("29px")
+    expect(cim.className).not.toContain("-0.015em")
+  })
+
   it("kategória nélkül a lánc üres", () => {
     expect(besorolasLanc({ id: "p", title: "x" } as never)).toEqual([])
   })

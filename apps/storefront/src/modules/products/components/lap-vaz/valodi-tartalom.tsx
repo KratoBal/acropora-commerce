@@ -206,7 +206,8 @@ export const Cimsor = ({ termek }: { termek: Termek }) => {
   const lanc = besorolasLanc(termek)
 
   return (
-    <div className="flex flex-col gap-1">
+    /* A HEZAG A TERVBOL: a cim `margin-top` erteke 8 px mobilon, 10 asztalon. */
+    <div className="flex flex-col gap-2 lg:gap-2.5">
       {/*
         A BESOROLAS SORA REZ SZINU, ES A LANCOT MUTATJA, NEM EGY NEVET.
 
@@ -234,7 +235,27 @@ export const Cimsor = ({ termek }: { termek: Termek }) => {
           {lanc.join(" · ")}
         </p>
       )}
-      <h1 className="text-2xl font-semibold" data-testid="vaz-termek-nev">
+      {/*
+        A CIM MERETE A TERVBOL JON, ES A KET CHOSEN LAP UGYANAZT MONDJA.
+
+        Merve a tervforrasbol (2026-09-09), lapokent es nezetenkent bontva:
+
+            2a asztali   36 px   sorkoz 1.1    betukoz -0.02em
+            1b asztali   36 px   sorkoz 1.1    betukoz -0.02em
+            2a mobil     24 px   sorkoz 1.15   betukoz nincs
+            1b mobil     24 px   sorkoz 1.15   betukoz nincs
+
+        A HARMADIK LAP ERTEKE SZANDEKOSAN NINCS ITT: az 1a (elvetett) cime
+        29 pixeles, -0.015em betukozzel. Ugyanaz a csapda, mint a ket
+        token-ertekunk, ami az 1a laprol jott -- ezert all ra allitas is.
+
+        A `text-2xl` sajat sorkoze 32 pixel (1.333), ezert kell a `leading`
+        kulon: a meret onmagaban nem allitja be a terv sorkozet.
+      */}
+      <h1
+        className="text-2xl font-semibold leading-[1.15] lg:text-[36px] lg:leading-[1.1] lg:tracking-[-0.02em]"
+        data-testid="vaz-termek-nev"
+      >
         {termek.title}
       </h1>
       {/*
