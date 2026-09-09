@@ -285,7 +285,23 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
    * A jsdom nem szamol elrendezest, tehat ez a kirajzolt OSZTALYT meri, nem a
    * festett meretet.
    */
-  it("a sor a terv méretét, betűközét és közét viseli", () => {
+  /**
+   * HAROM ERTEK, HAROM NEV -- ES EZT A SAJAT SZABALYUNK KENYSZERITI KI.
+   *
+   * Ez az allitas 2026-09-09-ig egy `it()`-ben orizte a meretet, a betukozt es
+   * a kozt. A kalibracioban a meret es a betukoz rontasa UGYANAZT a piros
+   * NEVET adta -- vagyis a nev nem mondta meg, MELYIK ertek mozdult.
+   *
+   * Ugyanaznap ket masik helyen (a cim merete, a vaz terkozei) mar
+   * szetbontottam oket, ITT viszont nem vettem eszre. A szabalyt a sajat
+   * munkamra alkalmazva talaltam meg. (acrobot, uzenet 16891: "ha egy allitas
+   * TOBB FUGGETLEN erteket orz, akkor annyi NEVET is kap".)
+   *
+   * A negyedik `expect` (a tagadas a regi `text-sm`-re) a MERET allitasahoz
+   * tartozik, mert ugyanarrol az ertekrol szol -- ket meret egymas mellett a
+   * keret sorrendjere bizna a dontest.
+   */
+  const morzsaOsztaly = () => {
     render(
       <ProductBreadcrumb
         product={termek_ketszintu}
@@ -293,12 +309,22 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
       />,
     )
 
-    const osztaly = screen.getByTestId("morzsamenu-lista").className
+    return screen.getByTestId("morzsamenu-lista").className
+  }
+
+  it("a sor a terv 11 pixeles betűméretét viseli", () => {
+    const osztaly = morzsaOsztaly()
 
     expect(osztaly).toContain("text-[11px]")
-    expect(osztaly).toContain("tracking-[0.08em]")
-    expect(osztaly).toContain("gap-[9px]")
     expect(osztaly).not.toContain("text-sm")
+  })
+
+  it("a sor a terv 0.08em betűközét viseli", () => {
+    expect(morzsaOsztaly()).toContain("tracking-[0.08em]")
+  })
+
+  it("a sor a terv 9 pixeles közét viseli", () => {
+    expect(morzsaOsztaly()).toContain("gap-[9px]")
   })
 
   it("a teljes nevet mutatja, a szülő utótagjával", () => {
