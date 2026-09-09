@@ -71,6 +71,43 @@ describe("a kis lenyíló kategóriamenü", () => {
       document.querySelectorAll('[data-testid^="category-menu-trigger-"]'),
     ).map((e) => (e.textContent ?? "").trim())
 
+  /**
+   * A KATEGORIA-SAV NEM FESZITI SZET A LAPOT.
+   *
+   * === A MERT HIBA ===
+   *
+   * 390 keppontos nezetben a lap `scrollWidth`-je 575 volt (kliens 390),
+   * MINDEN lapon. A lanc a kategoria-savtol indult: a `shrink-0` miatt a negy
+   * menupont 313 keppontot foglalt, es kitolta a kosar-linket.
+   *
+   * === AMIT ITT MERNI LEHET, ES AMIT NEM ===
+   *
+   * A KIRAJZOLT szelesseget nem: a jsdom nem szamol elrendezest, tehat a
+   * `scrollWidth` itt mindig nulla. Amit merni lehet, az a JELOLES, ami a
+   * viselkedest eloallitja -- es a tagadas a fontosabb fele: a `shrink-0`
+   * NEM kerulhet vissza, mert pontosan az okozta.
+   *
+   * A SZAMOT ELO BONGESZOBEN merem, telepites utan; a javitast a kiszolgalt
+   * lapon elore ki is probaltam (575 -> 390).
+   */
+  it("a kategória-sáv magán belül görget", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+
+    const sav = document.querySelector('nav[aria-label="Kategóriák"]')
+
+    expect(sav).toBeTruthy()
+    expect(sav!.className).toContain("overflow-x-auto")
+    expect(sav!.className).toContain("min-w-0")
+  })
+
+  it("a sáv nem visel shrink-0 osztályt", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+
+    const sav = document.querySelector('nav[aria-label="Kategóriák"]')
+
+    expect(sav!.className).not.toMatch(/\bshrink-0\b/)
+  })
+
   it("a fejléc négy gyökeret kínál, névre pontosan", () => {
     render(<FejlecMenu kategoriak={categories} />)
 

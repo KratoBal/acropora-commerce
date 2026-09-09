@@ -67,7 +67,44 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
 
   return (
     <>
-      <nav className="flex shrink-0 items-center gap-4" aria-label="Kategóriák">
+      {/*
+        A SAV MAGAN BELUL GORGET, ES NEM FESZITI SZET A LAPOT.
+
+        === A MERT HIBA (2026-09-09, kitelepitett lap, 390 keppontos nezet) ===
+
+            a nezet szelessege       390
+            a lap scrollWidth-je     575
+            tullogo elem             9, a lanc a kategoria-savtol indul
+
+        Vagyis a TELJES lap vizszintesen gorgethetove valt egy telefonon --
+        MINDEN lapon, nem csak a termeklapon (a nyitolapon es a listan is
+        merve, ugyanaz a 575).
+
+        Az ok a `shrink-0` volt ezen a savon: a negy menupont 313 keppontot
+        foglal, es 390-nel nem zsugorodott, hanem KITOLTA a kosar-linket
+        575-ig.
+
+        === A LEGKISEBB VALTOZAS, ES AMIT SZANDEKOSAN NEM DONT EL ===
+
+        `min-w-0` plusz `overflow-x-auto`: a sav a sajat hataran belul gorget,
+        es SEMMI nem tunik el. Ez NEM a mobil fejlec vegleges alakja -- az
+        kulon dontes (osszecsukott menu, gorgetheto sav, vagy a negy nev
+        elrejtese), es a `f62f4061` kartyan all.
+
+        Amit ez a valtozas allit: egy lap ne legyen vizszintesen gorgetheto egy
+        telefonon. Az nem izles-kerdes, es nem var a mobil nezet dontesere.
+
+        === A JAVITAST A KISZOLGALT LAPON PROBALTAM KI, MIELOTT MEGIRTAM ===
+
+        Ugyanezt a harom osztaly-valtozast futtattam ra a kitelepitett lapra
+        bongeszobol: a scrollWidth 575-rol 390-re esett, es a sav magan belul
+        gorgetheto lett (112 keppont szeles). Vagyis nem a jelolesbol
+        kovetkeztetek a hatasra.
+      */}
+      <nav
+        className="flex min-w-0 items-center gap-4 overflow-x-auto"
+        aria-label="Kategóriák"
+      >
         {HEADER_MENU_ITEMS.map((name) => (
           <button
             key={name}
