@@ -40,20 +40,37 @@ import SideMenu from "@modules/layout/components/side-menu"
  * A kuldott KEPBOL ez nem olvashato ki, mert a kep a sav TETEJET levagja: a
  * lathato resz 60 kep-pixel (27 CSS pixel), tehat kilenc pixel hianyzik.
  *
- * BETUMERET 12 pixel: a kepbol szamolva. A kep leptekét a fo sav adja meg --
- * ott 175 kep-pixel all a 63. es a 238. sor kozott, ami a tervbeli 78 CSS
- * pixellel 2.2222-es leptekét jelent (3200 / 1440 = 2.2222, tehat a vaszon
- * 1440 szeles). A sav szovege ezen a leptekén nagyjabol 10 CSS pixel magas
- * betutesttel all, ami 12 pixeles betumeretnek felel meg.
+ * BETUMERET 12.5 pixel: a tervFORRASBOL, es EZ FELULIRT EGY KEPBOL SZAMOLT
+ * SZAMOT.
  *
- * SZINEK a tokenekbol, es a meres IGAZOLJA a parositast:
+ * Itt korabban 12 pixel allt, kepbol szamolva: a kep leptekét a fo sav adja
+ * meg (175 kep-pixel a 63. es a 238. sor kozott, ami a tervbeli 78 CSS
+ * pixellel 2.2222-es leptek), es a sav szovege ezen nagyjabol 10 CSS pixel
+ * magas betutesttel allt, amibol 12 pixel jott ki.
  *
- *     a sav halvany szovege   a kepen rgb(159,164,170)
- *     --terv-szoveg-halvany   sotetben rgb(159,165,172)     -- ket egyseg
- *     a kiemelt szoveg        a kepen rgb(204,128,89)
- *     --terv-kiemel-tinta     sotetben rgb(217,124,80)      -- a ket akcent
- *                             kozul ez a kozelebbi, es szerep szerint is ez a
- *                             "tinta" valtozat
+ * A LEVEZETES JO VOLT, AZ EREDMENY MEGIS FEL PIXELLEL MELLE. A forras
+ * `font-size:12.5px` erteket ir, mind a ket valasztott lapon. Egy kepbol
+ * SZAMOLT ertek soha nem lehet pontosabb, mint a raszter, amibol jon.
+ *
+ * EZERT ALL ITT, ES NEM CSAK A SZAM VALTOZOTT: amit KEPBOL veszunk, azt meg
+ * kell jelolni, mert a forras barmikor felulirja -- es forditva soha. Ez a
+ * bekezdes maga a jelolés. (acrobot megfogalmazasa, 2026-09-09, uzenet 16852.)
+ *
+ * SZINEK a tokenekbol, es a parositast a FORRAS igazolja, BETURE:
+ *
+ *     a sav szovege           a tervben oklch(0.72 0.012 250)
+ *     --terv-szoveg-halvany   soteten  oklch(0.72 0.012 250)   -- azonos
+ *     a kiemelt szoveg        a tervben oklch(0.68 0.13 45)
+ *     --terv-kiemel-tinta     soteten  oklch(0.68 0.13 45)     -- azonos
+ *
+ * ITT KORABBAN A KEPBOL MERT RGB-ERTEKEK ALLTAK (a sav szovege rgb(159,164,170)
+ * a tokenunk rgb(159,165,172) erteke mellett, "ket egyseg" elteressel). Az a
+ * parositas HELYES volt, de KOZELITO: egy raszterbol vett szin sosem lesz
+ * pontosabb, mint a tomorites, amin atment.
+ *
+ * A forras EXAKT egyezest ad, tehat az erosebb allitas -- es ha valaha
+ * elcsuszik, egy beture pontos par elcsuszasa LATSZIK, egy "ket egysegnyi"
+ * kozelitese nem.
  *
  * === A SZINEK TOKENBOL JONNEK, ES EZ NEM STILUS-KERDES ===
  *
