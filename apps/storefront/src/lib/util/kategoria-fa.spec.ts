@@ -85,18 +85,33 @@ describe("a kategória-fa két szint gyereket ad át", () => {
  * a bolt MA, nem azt, mit csinal a szabaly.
  */
 describe("a megjelenítendő nevek ütközés-tudatosak", () => {
+  /*
+    A FIXTURA A VALODI UTKOZES ALAKJAT KOVETI, ES AZ ELSO VALTOZATA NEM AZT
+    KOVETTE.
+
+    Ott a ket "utkozo" elem neve `Koralltápok - Aquaforest` volt, a SZULOJUK
+    viszont a gyoker (`Termékek`). A vagas pontos egyezest keres, tehat egyik
+    nev sem rovidult -- az allitas ZOLDEN allt, de nem azert, amiert irtam. A
+    kalibracio fogta meg: a szabaly kivetele NULLA pirosat adott.
+    (Merve 2026-09-09.)
+
+    A valodi alak a bolt adatabol: a marka neve all elol, es UGYANAZ a marka
+    tobb szulo alatt is szerepel. Igy a rovid nev tenylegesen utkozik.
+  */
   const mind = [
     { id: "gy", name: "Termékek", parent_category_id: null },
-    { id: "af1", name: "Koralltápok - Aquaforest", parent_category_id: "gy" },
-    { id: "af2", name: "Haleledelek - Aquaforest", parent_category_id: "gy" },
+    { id: "kt", name: "Koralltápok - Termékek", parent_category_id: "gy" },
+    { id: "he", name: "Haleledelek - Termékek", parent_category_id: "gy" },
+    { id: "af1", name: "Aquaforest - Koralltápok", parent_category_id: "kt" },
+    { id: "af2", name: "Aquaforest - Haleledelek", parent_category_id: "he" },
     { id: "egy", name: "Világítás - Termékek", parent_category_id: "gy" },
   ]
 
   it("ütköző rövid névnél EGYIK sem rövidül", () => {
     const nevek = megjelenitendoNevek(mind)
 
-    expect(nevek.get("af1")).toBe("Koralltápok - Aquaforest")
-    expect(nevek.get("af2")).toBe("Haleledelek - Aquaforest")
+    expect(nevek.get("af1")).toBe("Aquaforest - Koralltápok")
+    expect(nevek.get("af2")).toBe("Aquaforest - Haleledelek")
   })
 
   /**
