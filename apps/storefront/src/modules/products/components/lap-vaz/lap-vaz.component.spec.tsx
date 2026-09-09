@@ -128,11 +128,23 @@ describe("a műszaki lap váza", () => {
    * A tényleges elrendezést böngészőben kell megnézni -- a mérőeszköz és a terv
    * geometriája az `agents/nautilus/measurement/terv-geometria/` alatt áll.
    */
+  /**
+   * A RACS MOSTANTOL A KETOSZLOPOS FUTAMON ALL, NEM A KULSO TAROLON.
+   *
+   * Balazs kerese (2026-09-09): a jobb panel csusszon fel a kep melle. Az ok
+   * szerkezeti volt: egy lapos racsban minden `bal` szakasz megelozte az
+   * OSSZES `jobb`-ot, es a CSS automatikus elhelyezes nem toltekezik
+   * visszafele -- a jobb oszlop elso doboza a bal UTOLSO doboza ala kerult
+   * (merve: 238 kontra 1243 pixel, harom szelessegen azonosan).
+   *
+   * A megoldas ket kulon oszlop-halom egy kozos racsban. Az allitas ezert a
+   * `vaz-ket-oszlop` elemre mer -- ugyanaz a ket ertek (fix 452-es sav, 44
+   * pixeles koz), csak eggyel beljebb.
+   */
   it("az asztali két oszlopos rács ki van téve", () => {
     render(<LapVaz />)
 
-    const vaz = screen.getByTestId("muszaki-lap-vaz")
-    const osztalyok = vaz.className
+    const osztalyok = screen.getByTestId("vaz-ket-oszlop").className
 
     expect(osztalyok).toContain("lg:grid")
     /*
@@ -143,6 +155,50 @@ describe("a műszaki lap váza", () => {
     */
     expect(osztalyok).toContain("minmax(0,1fr)_452px")
     expect(osztalyok).toContain("lg:gap-x-[44px]")
+  })
+
+  /**
+   * A KET OSZLOP KET KULON HALOM, ES A BESOROLAS DONTI EL, MELYIKBE KERUL.
+   *
+   * Ez a ket allitas egyutt bizonyitja, hogy a szetvalasztas a `oszlop` mezo
+   * szerint tortenik, nem veletlenul: a foto BALRA, az ar JOBBRA kerul.
+   * Enelkul a ket halom letezhetne uresen vagy forditva is.
+   */
+  it("a fotó a bal halomba kerül, az ár a jobba", () => {
+    render(<LapVaz />)
+
+    const bal = screen.getByTestId("vaz-bal-halom")
+    const jobb = screen.getByTestId("vaz-jobb-halom")
+
+    expect(bal.querySelector('[data-vaz-szakasz="foto"]')).not.toBeNull()
+    expect(jobb.querySelector('[data-vaz-szakasz="ar"]')).not.toBeNull()
+    expect(jobb.querySelector('[data-vaz-szakasz="foto"]')).toBeNull()
+  })
+
+  /**
+   * A JOBB HALOM TAPAD, ES A TAPADAS FELTETELE KET OSZTALY, NEM EGY.
+   *
+   * Balazs kerese: "a jobb oldali resz tapadjon addig amig nem jon a kovetkezo
+   * modul". A `sticky` onmagaban NEM eleg: ha a racs-cella nyujtozik (az
+   * alapertelmezett `stretch`), a tapado elem magassaga kitolti a cellat, es
+   * nincs mihez kepest elmozdulnia. Ezert kell a futamra `lg:items-start`.
+   *
+   * A tapadas VEGE nem kulon szabaly: a jobb halom a ketoszlopos futamon belul
+   * all, tehat ott er veget, ahol a futam -- vagyis a kovetkezo teljes
+   * szelessegu modulnal. Ez a szerkezet kovetkezmenye, nem egy beallitott ertek.
+   *
+   * AMIT EZ NEM MER: hogy a bongeszo tenyleg tapaszt-e. A jsdom nem szamol
+   * elrendezest -- ez a ket osztaly MEGLETET meri.
+   */
+  it("a jobb halom tapad, és a futam nem nyújtja ki a cellát", () => {
+    render(<LapVaz />)
+
+    expect(screen.getByTestId("vaz-jobb-halom").className).toContain(
+      "lg:sticky",
+    )
+    expect(screen.getByTestId("vaz-ket-oszlop").className).toContain(
+      "lg:items-start",
+    )
   })
 
   it("egyetlen szakasz sem marad besorolás nélkül", () => {
@@ -772,12 +828,27 @@ describe("a törésponti elrendezés", () => {
    * AMI HIANYZOTT, az a torespont ALATTI fele: arra egyetlen allitas sem allt.
    * Ezert ez a szakasz EGY allitast tesz hozza, nem harmat.
    */
+  /**
+   * A TORESPONT ALATT EGY OSZLOP ALL -- ES EZ MOSTANTOL KET ELEMEN MULIK.
+   *
+   * A kulso taroló mar nem racs (a racs a ketoszlopos futamba kerult), tehat
+   * az egy-oszlopos viselkedes ket helyen dol el: a kulso taroló FUGGOLEGES
+   * halom, es a ketoszlopos futam a torespont ALATT szinten az.
+   *
+   * MIERT MER MIND A KETTORE: ha csak a kulsot nezne, a futam barmikor
+   * ketoszloposra valthatna mobilon anelkul, hogy barmi szolna -- es a mobil
+   * sorrend epp az, amit a mostani atalakitas VALTOZATLANUL hagyott.
+   */
   it("a töréspont ALATT egy oszlop áll", () => {
     render(<LapVaz />)
 
-    expect(vaz().className).toContain("max-lg:flex")
-    expect(vaz().className).toContain("max-lg:flex-col")
+    expect(vaz().className).toContain("flex-col")
     expect(vaz().className).not.toContain("grid-cols-2")
+
+    const futam = screen.getByTestId("vaz-ket-oszlop").className
+    expect(futam).toContain("max-lg:flex")
+    expect(futam).toContain("max-lg:flex-col")
+    expect(futam).not.toContain("max-lg:grid")
   })
 })
 

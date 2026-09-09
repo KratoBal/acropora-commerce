@@ -83,7 +83,20 @@ export default async function Footer({
       style={{ background: "var(--terv-hatter)" }}
       data-testid="lablec-sik"
     >
-      <div className="content-container flex flex-col w-full">
+      {/*
+        A LABLEC TELJES SZELESSEGBEN ALL, NEM KOZEPRE ZART SAVBAN.
+
+        Balazs kerese (2026-09-09 07:43): "a lablec a teljes szelessegben
+        latszodjon". A `content-container` osztaly `max-w-[1440px] mx-auto
+        px-6` -- vagyis szeles kepernyon a lablec TARTALMA egy kozepre zart
+        savban allt, mikozben a SIKJA (a `<footer>` hattere) mar eddig is
+        szeltol szelig ert. A kettot konnyu osszekeverni: a hatter teljes
+        szelessegu volt, a tartalom nem.
+
+        A vizszintes belso margo MEGMARAD (`px-6`), kulonben a szoveg a
+        kepernyo szelehez tapadna. Csak a felso korlat kerul le.
+      */}
+      <div className="flex w-full flex-col px-6">
         {/*
           A KATEGORIA-OSZLOPOK: GYOKERENKENT EGY, ES A RACS A DARABSZAMRA VAN
           HUZALOZVA, NEM ROGZITETT NEGYRE.
