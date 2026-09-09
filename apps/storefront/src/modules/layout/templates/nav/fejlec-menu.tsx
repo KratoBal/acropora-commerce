@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -103,6 +103,35 @@ const OSZLOPOK = 5
 const CSOPORT_MAX = 5
 
 /**
+ * AZ OSZLOPSZAM A TOLTOTT CELLAK SZAMA, LEGFELJEBB OT.
+ *
+ * === MIERT NEM ALLANDO OT, HOLOTT A KEPEN OT ALL ===
+ *
+ * A kepen huszonharom csoport van, tehat ot oszlop TELE van. A mi fankban nem
+ * mindenhol: merve 2026-09-09 a kitelepitett kategoria-lapokrol,
+ *
+ *     gyoker           cella   allando ot oszlop mellett
+ *     Termekek            23   mind az ot tele
+ *     Halak               15   mind az ot tele
+ *     Gerinctelenek        7   ot, majd ketto
+ *     Korallok             1   EGY toltott, NEGY URES
+ *
+ * A Korallok panelje igy egy teljes szelessegu sav lenne, benne EGYETLEN
+ * csoportcimmel es egy elemmel. Nem hibazik, csak toresnek latszik.
+ *
+ * A hiba nem a csoportos/listas dontesben volt (az az adatbol helyesen jon),
+ * hanem abban, hogy az oszlopszamot a MINTAROL vettem at szam szerint, ahelyett
+ * hogy a sajat adatunkbol szamolnam. Ugyanaz a csalad, mint a beegetett
+ * kategoria-nev: ma egybeesik a helyes eredmennyel, de nem AZERT adja azt.
+ *
+ * A `Math.max(1, ...)` azert kell, mert egy nulla oszlopos racs ervenytelen
+ * CSS -- ures gyerek-lista mellett a panel amugy sem jelenik meg, de a racs
+ * ertelmes marad.
+ */
+export const oszlopSzam = (cellak: number): number =>
+  Math.min(OSZLOPOK, Math.max(1, cellak))
+
+/**
  * CSOPORTOS ALAK VAGY SIMA LISTA -- ES A DONTES AZ ADATBOL JON, NEM A NEVBOL.
  *
  * A fa merve (2026-09-09): a Termekek alatt 23 gyerek es 86 unoka all, a Halak
@@ -165,6 +194,7 @@ export const FejlecMenu = ({
         const gyerekek = k.category_children ?? []
         const nyitva = nyitott === k.id
         const csoportos = csoportosAlak(gyerekek)
+        const oszlopok = oszlopSzam(gyerekek.length)
 
         return (
           <div key={k.id} onMouseLeave={() => setNyitott(null)}>
@@ -215,11 +245,25 @@ export const FejlecMenu = ({
                     {k.name}
                   </LocalizedClientLink>
 
+                  {/*
+                    AZ OSZLOPSZAM CSS-VALTOZON MEGY AT, ES EZ NEM STILUS-KERDES.
+
+                    Az elso valtozatban a szam KETSZER allt: egyszer a racs
+                    stilusaban, egyszer egy `data-oszlopok` jelolon, amit a spec
+                    olvasott. A kalibracio ezt azonnal megfogta: elrontottam a
+                    STILUST, es nulla teszt lett piros, mert az allitas a
+                    JELOLOT nezte. Ket hely, egy szam, es a teszt a rossz felet
+                    orizte.
+
+                    Igy egyetlen helyen all, es a spec ugyanazt olvassa, amit a
+                    bongeszo hasznal. A lablec ugyanezt a mintat hasznalja
+                    (`--lablec-oszlopok`), tehat nem uj alak a repoban.
+                  */}
                   <div
-                    className="grid gap-x-8 gap-y-8"
-                    style={{
-                      gridTemplateColumns: `repeat(${OSZLOPOK}, minmax(0, 1fr))`,
-                    }}
+                    className="grid gap-x-8 gap-y-8 grid-cols-[repeat(var(--panel-oszlopok),minmax(0,1fr))]"
+                    style={
+                      { "--panel-oszlopok": oszlopok } as React.CSSProperties
+                    }
                   >
                     {gyerekek.map((gy) => {
                       const unokak = gy.category_children ?? []

@@ -6,6 +6,7 @@ import {
   FejlecMenu,
   MENU_SORREND,
   menuSorrendben,
+  oszlopSzam,
 } from "./fejlec-menu"
 
 /**
@@ -327,5 +328,150 @@ describe("a lenyíló széles panel, csoportokkal", () => {
     expect(
       screen.getAllByTestId("fejlec-menu-gyerek").map((e) => e.textContent),
     ).toEqual(["Gébek", "Íjhalak"])
+  })
+})
+
+/**
+ * A VALODI FA ALAKJA, NEM KEZZEL KITALALT FIXTURA.
+ *
+ * A darabszamok merve vannak (2026-09-09, a kitelepitett kategoria-lapokrol, az
+ * allando szulo-hivatkozas levonasaval). A kezzel irt fixturaim epp azert nem
+ * hoztak elo az egy-csoportos panelt, mert mindig kettot-hármat adtam neki --
+ * a valodi fan viszont a Korallok EGY gyereket hordoz.
+ *
+ *     gyoker           gyerek   ebbol unokas
+ *     Termekek             23             17
+ *     Halak                15              0
+ *     Gerinctelenek         7              0
+ *     Korallok              1              1
+ */
+const valodiAlak = (nev: string, gyerek: number, unokas: number) =>
+  ({
+    id: `id-${nev}`,
+    name: nev,
+    handle: nev.toLowerCase(),
+    category_children: Array.from({ length: gyerek }, (_, i) => ({
+      id: `${nev}-cs${i}`,
+      name: `${nev} csoport ${i}`,
+      handle: `${nev.toLowerCase()}-cs${i}`,
+      category_children:
+        i < unokas
+          ? [{ id: `${nev}-u${i}`, name: `unoka ${i}`, handle: `u${i}` }]
+          : [],
+    })),
+  }) as never
+
+/**
+ * A RACS OSZLOPSZAMA ONNAN JON, AHONNAN A BONGESZO IS VESZI.
+ *
+ * Az elso valtozat egy `data-oszlopok` jelolot olvasott. A kalibracio
+ * megmutatta, hogy az PROXY: elrontottam a racs STILUSAT, a jelolo pedig
+ * valtozatlan maradt, tehat nulla teszt lett piros. Azota a szam egyetlen
+ * helyen all, egy CSS-valtozoban, es ez a segedfuggveny AZT olvassa.
+ */
+const panelOszlopok = () => {
+  const racs = screen
+    .getByTestId("fejlec-menu-lenyilo")
+    .querySelector(".grid") as HTMLElement | null
+
+  return racs?.style.getPropertyValue("--panel-oszlopok").trim() ?? null
+}
+
+describe("a panel csak annyi oszlopot vesz fel, amennyit kitölt", () => {
+  it("a cellák számát adja, legfeljebb ötöt", () => {
+    expect(oszlopSzam(23)).toBe(5)
+    expect(oszlopSzam(15)).toBe(5)
+    expect(oszlopSzam(7)).toBe(5)
+    expect(oszlopSzam(5)).toBe(5)
+    expect(oszlopSzam(1)).toBe(1)
+  })
+
+  it("üres listánál sem ad nulla oszlopot", () => {
+    expect(oszlopSzam(0)).toBe(1)
+  })
+
+  /**
+   * A MASIK FELE, ES A KALIBRACIO KENYSZERITETTE KI.
+   *
+   * A szam egy CSS-valtozoban all, a racs pedig abbol veszi az oszlopokat. Ket
+   * fel, es egy allitas csak az EGYIKET fogja: ha valaki a `grid-cols-5`
+   * alakra cserelne az osztalyt, a valtozo valtozatlan maradna, es minden fenti
+   * allitas zold lenne -- kozben a panel mindig ot oszlopos.
+   */
+  it("a rács a változóból veszi az oszlopszámot, nem rögzített értékből", () => {
+    render(<FejlecMenu kategoriak={[valodiAlak("Korallok", 1, 1)]} />)
+
+    fireEvent.click(screen.getByTestId("fejlec-menu-tetel"))
+
+    const racs = screen
+      .getByTestId("fejlec-menu-lenyilo")
+      .querySelector(".grid") as HTMLElement
+
+    expect(racs.className).toContain("repeat(var(--panel-oszlopok)")
+  })
+
+  /**
+   * EZ AZ ALLITAS A LELET MAGA: a Korallok egyetlen gyereket hordoz, es
+   * allando ot oszlop mellett negy ures oszlop maradna mellette.
+   */
+  it("a Korallok valódi alakja EGY oszlopot kap, nem ötöt", () => {
+    render(<FejlecMenu kategoriak={[valodiAlak("Korallok", 1, 1)]} />)
+
+    fireEvent.click(screen.getByTestId("fejlec-menu-tetel"))
+
+    expect(panelOszlopok()).toBe("1")
+  })
+
+  /**
+   * ES A MASIK IRANY, KULONBEN AZ ALLITAS "MINDIG EGY OSZLOP" MELLETT IS ZOLD
+   * LENNE: a Termekek valodi alakja tovabbra is otot kap.
+   */
+  it("a Termékek valódi alakja öt oszlopot kap", () => {
+    render(<FejlecMenu kategoriak={[valodiAlak("Termékek", 23, 17)]} />)
+
+    fireEvent.click(screen.getByTestId("fejlec-menu-tetel"))
+
+    const lenyilo = screen.getByTestId("fejlec-menu-lenyilo")
+
+    expect(panelOszlopok()).toBe("5")
+    expect(lenyilo.getAttribute("data-alak")).toBe("csoportos")
+  })
+
+  /**
+   * A NEGY GYOKER VALODI ALAKJA EGYUTT, mert a lelet abbol jott elo, hogy a
+   * negyet egymas mellett neztem, nem kulon-kulon.
+   */
+  it("mind a négy gyökér a mért alakjával", () => {
+    const vart = [
+      {
+        nev: "Termékek",
+        gyerek: 23,
+        unokas: 17,
+        alak: "csoportos",
+        oszlop: "5",
+      },
+      { nev: "Halak", gyerek: 15, unokas: 0, alak: "listas", oszlop: "5" },
+      {
+        nev: "Gerinctelenek",
+        gyerek: 7,
+        unokas: 0,
+        alak: "listas",
+        oszlop: "5",
+      },
+      { nev: "Korallok", gyerek: 1, unokas: 1, alak: "csoportos", oszlop: "1" },
+    ]
+
+    for (const v of vart) {
+      cleanup()
+      render(
+        <FejlecMenu kategoriak={[valodiAlak(v.nev, v.gyerek, v.unokas)]} />,
+      )
+      fireEvent.click(screen.getByTestId("fejlec-menu-tetel"))
+
+      const lenyilo = screen.getByTestId("fejlec-menu-lenyilo")
+
+      expect(lenyilo.getAttribute("data-alak")).toBe(v.alak)
+      expect(panelOszlopok()).toBe(v.oszlop)
+    }
   })
 })
