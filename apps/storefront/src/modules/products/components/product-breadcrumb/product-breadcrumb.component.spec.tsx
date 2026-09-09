@@ -66,9 +66,16 @@ const kategoriak = [
  * `teljesNev` mezot `nev`-re cserelve NULLA allitas fordult pirosra.
  *
  * A bolt neveiben a szulo neve ott all (`NEV - SZULONEV`, a menu 92
- * gyermek-nevebol 92). A morzsamenu SZANDEKOSAN a teljes nevet mutatja: ott az
- * UT szamit. A cim folotti besorolas-sor a rovidet mutatja. Hogy a ketto
- * kozeledjen-e, kulon tetel (acrobot, 2026-09-09).
+ * gyermek-nevebol 92). 2026-09-09-ig a morzsamenu a TELJES nevet mutatta, a
+ * cim folotti besorolas-sor a rovidet -- es a ketto egymas ALATT allt a lapon.
+ * A ket sor egymas melletti merese utan a dontes az lett, hogy a morzsamenu is
+ * a ROVID nevre valt (acrobot, 2026-09-09).
+ *
+ * ES EZ A FIXTURA MOST MER, ELLENTETBEN A KORABBIVAL: a `nev` mezot
+ * `teljesNev`-re cserelve EGY allitas fordul pirosra ("a rovid nevet
+ * mutatja"). A masik ("a szulo kulon lepeskent ott marad") ZOLD MARAD, es ez
+ * helyes: a teljes nev is tartalmazza mind a ket szot, tehat az az allitas nem
+ * a rovidites, hanem az UT megletet orzi. Ket kulon ertek, ket nev.
  */
 const termek_ketszintu = {
   id: "p2",
@@ -327,7 +334,20 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
     expect(morzsaOsztaly()).toContain("gap-[9px]")
   })
 
-  it("a teljes nevet mutatja, a szülő utótagjával", () => {
+  /**
+   * MEGFORDITOTT ALLITAS, NEM TOROLT.
+   *
+   * Itt korabban ez allt: "a teljes nevet mutatja, a szulo utotagjaval", es
+   * `toContain("SPS - Korallok")` volt a torzse. A dontes 2026-09-09-en
+   * megfordult (acrobot, ket sor egymas melletti merese utan): a morzsamenu a
+   * ROVID nevet mutatja.
+   *
+   * AZ ALLITAS MEGFORDULT, NEM ELTUNT -- es ez acrobot kikotese volt, jo okkal:
+   * egy megforditott allitas ORZI a dontest, egy torolt allitas helyen csak
+   * ures hely marad, es a kovetkezo olvaso nem tudja, hogy ott valaha dontes
+   * volt. Ha valaki visszateszi a teljes nevet, ez pirosodik.
+   */
+  it("a rövid nevet mutatja, a szülő utótagja nélkül", () => {
     render(
       <ProductBreadcrumb
         product={termek_ketszintu}
@@ -337,7 +357,31 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
 
     const szoveg = screen.getByTestId("morzsamenu-lista").textContent
 
-    expect(szoveg).toContain("SPS - Korallok")
+    /* ISMERT POZITIV KONTROLL: a kategoria egyaltalan kirajzolodott. */
+    expect(szoveg).toContain("SPS")
+
+    expect(szoveg).not.toContain("SPS - Korallok")
+  })
+
+  /**
+   * ES A SZULO KULON LEPESKENT OTT MARAD -- ez a masik fele, es kulon ertek.
+   *
+   * A rovidites NEM veszi el az informaciot: amit az utotag mondott, azt az
+   * UT mondja ki. Ha a levagas mellett a szulo-lepes is eltunne, a sor
+   * rovidebb lenne ES kevesebbet mondana.
+   */
+  it("a szülő külön lépésként ott marad", () => {
+    render(
+      <ProductBreadcrumb
+        product={termek_ketszintu}
+        categories={kategoriak_ketszintu}
+      />,
+    )
+
+    const szoveg = screen.getByTestId("morzsamenu-lista").textContent
+
+    expect(szoveg).toContain("Korallok")
+    expect(szoveg).toContain("SPS")
   })
 
   it("a kategória továbbra is ott áll, linkként", () => {

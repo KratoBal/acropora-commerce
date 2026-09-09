@@ -155,7 +155,28 @@ export default function ProductBreadcrumb({
               className="hover:text-terv-szoveg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
               href={`/categories/${byId.get(category.id)?.handle ?? ""}`}
             >
-              {category.teljesNev}
+              {/*
+                A ROVID NEV ALL ITT, A SZULO UTOTAGJA NELKUL.
+
+                A bolt neveiben a szulo neve is ott all (`SPS - Korallok`), a
+                menu 92 gyermek-nevebol 92-nel. A morzsamenuben ez azt jelenti,
+                hogy MINDEN lepesben masodszor is kiirodik az elozo lepes neve:
+
+                    elotte   Termékek / Lehabzók - Termékek / Nyos - Lehabzók
+                    mostol   Termékek / Lehabzók / Nyos
+
+                Az indok nem a rovidseg magaban, hanem hogy az UT MAGA mondja
+                ki a szulot: a morzsamenuben a bal szomszed EPP az a kategoria,
+                aminek a nevet az utotag megismetli.
+
+                Merve az adalek-lapon: 96 karakter allt 34 helyett, UGYANAZOKKAL
+                a fogalmakkal.
+
+                (acrobot dontese, 2026-09-09, ket sor egymas melletti merese
+                utan. A `rovidNev` pontos egyezest vag le, es a levagas
+                indoklasa a `kategoria-fa.ts` fajlban all.)
+              */}
+              {category.nev}
             </LocalizedClientLink>
           </li>
         ))}
