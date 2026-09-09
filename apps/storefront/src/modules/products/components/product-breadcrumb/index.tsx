@@ -94,27 +94,56 @@ export default function ProductBreadcrumb({
           allo szelessegu betu   ugyanaz a `--terv-betu-mono-lanc`, amit a
                                  cikkszam is visel a cim alatt
 
-        AMIT NEM VETTEM AT: a betukozt. A terven van, de a kuldott kepbol NEM
-        szamolhato ki: a fo sav ott 128 pixel magas, a terv szerinti 78 CSS
-        pixel helyett, tehat a leptek 1.64 -- egy nem egesz nagyitasu kivagas.
-        Ebbol CSS-erteket olvasni hamis pontossag lenne. Ha kell, kulon meres.
+        A BETUKOZ 2026-09-09 OTA MEGVAN, ES EZ A BEKEZDES AZERT VALTOZOTT MEG.
+
+        Itt korabban az allt, hogy a betukoz "a kuldott kepbol NEM szamolhato
+        ki", mert a kep leptekét 1.64-nek mertem. Ket dolog dontotte meg: a
+        leptek valojaban 2.2222 (a savok hatarait mertem, nem a kereso mezo
+        eleit), es a tervFORRAS azota megvan, ami kiirja az erteket
+        (`letter-spacing:0.08em`). A korlat tehat nem "elavult" -- soha nem a
+        vilagrol szolt, hanem a meresemrol.
 
         A NAGYBETUS ALAK CSS-BEN VAN, NEM AZ ADATBAN: a kategoria neve tovabbra
         is ugy megy at, ahogy a boltban all. Egy `toUpperCase()` a szovegen a
         cimkeket is atirna, es a magyar ekezetes kisbetuk visszaalakitasa a
         kereso es a masolas szempontjabol is rosszabb.
       */}
+      {/*
+        A MERET, A BETUKOZ ES A KOZ A TERVFORRASBOL JON.
+
+            padding:20px 44px 0
+            font-family:'JetBrains Mono',monospace
+            font-size:11px
+            letter-spacing:0.08em
+            gap:9px
+
+        Ugyanez a ket valasztott lapon (2a es 1b), beture azonos deklaracioval.
+
+        ITT KORABBAN `text-sm` (14 px) ALLT, betukoz nelkul, es a fajl egy
+        megjegyzese azt allitotta, hogy a betukoz "a kuldott kepbol NEM
+        szamolhato ki". Az akkor igaz volt; a forras viszont KIIRJA. Egy
+        korlat, amit egy ujabb meres megdont, nem marad allo -- ezert kerult
+        ki az a bekezdes is.
+      */}
       <ol
-        className="flex min-w-max items-center gap-2 text-sm uppercase"
+        className="flex min-w-max items-center gap-[9px] text-[11px] uppercase tracking-[0.08em]"
         style={{
           color: "var(--terv-szoveg-halvany)",
           fontFamily: "var(--terv-betu-mono-lanc)",
         }}
         data-testid="morzsamenu-lista"
       >
-        {path.map((category) => (
-          <li key={category.id} className="flex items-center gap-2">
-            <span aria-hidden="true">/</span>
+        {/*
+          AZ ELVALASZTO A TAGOK KOZE KERUL, NEM MINDEGYIK ELE.
+
+          A tervben a sor igy all: `KORALLOK / WYSIWYG / SPS / A-1042` -- az
+          elso elem elott NINCS jel. Nalunk minden `li` a sajat `/` jelevel
+          kezdodott, tehat a sor egy felesleges karakterrel indult:
+          `/ KORALLOK / WYSIWYG ...`. Merve a kitelepitett lapon, 2026-09-09.
+        */}
+        {path.map((category, index) => (
+          <li key={category.id} className="flex items-center gap-[9px]">
+            {index > 0 && <span aria-hidden="true">/</span>}
             <LocalizedClientLink
               className="hover:text-terv-szoveg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
               href={`/categories/${byId.get(category.id)?.handle ?? ""}`}
@@ -137,12 +166,17 @@ export default function ProductBreadcrumb({
           all.
         */}
         <li
-          className="flex min-w-0 items-center gap-2"
+          className="flex min-w-0 items-center gap-[9px]"
           style={{ color: "var(--terv-szoveg)" }}
           data-testid="morzsamenu-jelenlegi"
           aria-current="page"
         >
-          <span aria-hidden="true">/</span>
+          {/*
+            A JELENLEGI ELEM ELE IS JEL KERUL -- DE CSAK HA VAN ELOTTE VALAMI.
+            Kategoria nelkuli termeknel ez az elso elem, es akkor a sor megint
+            egy felesleges karakterrel indulna.
+          */}
+          {path.length > 0 && <span aria-hidden="true">/</span>}
           <span className="max-w-48 truncate">
             {cikkszam(product) ?? product.title}
           </span>
