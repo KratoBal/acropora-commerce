@@ -198,18 +198,28 @@ describe("a terv megerositett ertekei", () => {
     "oklch(0.965 0.008 70)",
   ]
 
-  it("az elvetett 1a tervlap egyetlen értéke sem áll a kódban", () => {
-    const kod = CSS.replace(/\/\*[\s\S]*?\*\//g, "")
-    const bentmaradt = ELVETETT_1a.filter((ertek) => kod.includes(ertek))
+  /**
+   * A KET ALLITAS UGYANAZT A KERESEST HASZNALJA -- ES EZT EGY KALIBRACIO
+   * KENYSZERITETTE KI.
+   *
+   * Elso valtozatomban mind a ketto SAJAT `kod.includes` hivast irt. Amikor a
+   * tagado allitas keresesét szandekosan elrontottam (`filter(() => false)`),
+   * NULLA piros jott: a "pozitiv kontroll" a MASIK kereses epsegét
+   * bizonyitotta, nem azet, amelyiktol a vedelem fugg.
+   *
+   * Egy kontroll, ami nem ugyanazt a kodutat jarja, disz. Most egy fuggveny
+   * all, es mind a ketto azt hivja -- a kalibracio ezutan a KONTROLLT dontotte
+   * pirosra, ahogy kell.
+   */
+  const kodban = (ertek: string) =>
+    CSS.replace(/\/\*[\s\S]*?\*\//g, "").includes(ertek)
 
-    expect(bentmaradt).toEqual([])
+  it("az elvetett 1a tervlap egyetlen értéke sem áll a kódban", () => {
+    expect(ELVETETT_1a.filter(kodban)).toEqual([])
   })
 
   it("ugyanez a keresés megtalálja az 1b értékeket, amik ott vannak", () => {
-    const kod = CSS.replace(/\/\*[\s\S]*?\*\//g, "")
-    const megvan = VART_1b_A_KODBAN.filter((ertek) => kod.includes(ertek))
-
-    expect(megvan).toEqual(VART_1b_A_KODBAN)
+    expect(VART_1b_A_KODBAN.filter(kodban)).toEqual(VART_1b_A_KODBAN)
   })
 
   it.each(PAROK)("világos módban %s = %s", (nev, ertek) => {
