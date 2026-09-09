@@ -207,12 +207,46 @@ describe("a fejléc keresője", () => {
   })
 
   /**
-   * A HELYKITOLTO A TERV SZOVEGE, es mind a harom igerete merve all a teszt
-   * bolton (termek, marka/faj, cikkszam). Ha valaki atirja, ez pirosodik, es
-   * akkor ujra le kell merni, hogy az uj szoveg igaz-e.
+   * A HELYKITOLTO NEGY IGERETE, ES MIND A NEGY MERVE ALL.
+   *
+   * A terv 2a lapja "fajra", az 1b "markara" szot ir -- ott KET KULON fejlec
+   * allt. A mienk mind a ket vilagot kiszolgalja, tehat mind a ketto kell:
+   * egy elo allat lapjan az egyik a hasznos szo, egy muszaki termeken a masik.
+   *
+   * A MERES a komponens fejlecebe van beirva, szamokkal (ATB 111, Aquaforest
+   * 79, austea 1, es a nulla-kontroll). Ha valaki atirja a szoveget, ez
+   * pirosodik, es akkor ujra le kell merni, hogy az uj szo igaz-e.
    */
-  it("a helykitöltő szöveg a tervé", () => {
-    expect(nav).toContain("Keresés termékre, márkára, cikkszámra")
+  it("a helykitöltő négy ígérete", () => {
+    expect(nav).toContain("Keresés termékre, fajra, márkára, cikkszámra")
+  })
+
+  /**
+   * ES A HATAR IS OTT ALL A KODBAN, NEM CSAK AZ IGERET.
+   *
+   * A negybol harom (termek, faj, marka) UGYANAZON az alapon mukodik: a szo a
+   * cimben vagy a leirasban all. Egy megjegyzes, ami csak az igeretet mondja
+   * ki, fel ev mulva ugyanolyan ellenorizhetetlen -- ezert allnak ott a mert
+   * szamok, es ezert orzi ez az allitas, hogy ott is maradjanak.
+   */
+  it("a keresés határa és a mérése a kódban áll", () => {
+    /*
+      EZ AZ EGYETLEN ALLITAS, AMI A NYERS FORRAST OLVASSA, ES MEGMONDOM MIERT.
+
+      A fajl tobbi allitasa a `kodSzoveg`-en mer, mert ott a megjegyzes HAMIS
+      TALALATOT adna. Itt forditva all: az allitas TARGYA maga a megjegyzes --
+      azt orzi, hogy a meres ott marad a kod mellett. Komment-szuressel ez az
+      allitas SOHA nem tudna teljesulni, es epp ezt tapasztaltam: elso alakja a
+      szurt szovegen mert, es pirosra fordult egy helyes fajlon.
+
+      Ugyanaz a ket iranya egy dolognak: a megjegyzes VESZELY, amikor a kodrol
+      allitunk valamit, es TARGY, amikor a dokumentaciorol.
+    */
+    const nyers = readFileSync(join(__dirname, "index.tsx"), "utf-8")
+
+    expect(nyers).toContain("NINCS strukturalt marka-mezo")
+    expect(nyers).toContain("q=zzzzqqqq")
+    expect(nyers).toContain("111 talalat")
   })
 
   /** A mezonek cimkeje is van, kulonben csak a helykitolto azonositja. */
