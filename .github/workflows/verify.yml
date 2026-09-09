@@ -173,6 +173,49 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      # MIERT ALL ITT EGY VERZIO-KIIRAS, ES MIERT NEM JAVITAS (murena merese es
+      # javaslata, 2026-09-09 este; acrobot vezette be).
+      #
+      # A MERT ESET: a fo ag tipusellenorzese PIROS lett olyan fajlokon, amikhez
+      # aznap senki nem nyult, majd JAVITAS NELKUL, a kovetkezo futason magatol
+      # ZOLD. Ket egymastol fuggetlen adatpont mondja ugyanezt (a 334 ujraalapozott
+      # futasa es utana a fo ag 0c14db4c-n), tehat nem veletlen egybeeses.
+      #
+      # AMIT EZ A LEPES NEM CSINAL: nem javitja meg. Az ok ismeretlen, es amig
+      # ismeretlen, a leggyakoribb magyarazat a KULONBOZOKEPP FELOLDOTT verzio
+      # ket futas kozott. Ez a lepes ezt teszi lathatova, semmi mast.
+      #
+      # AMIERT NEM VARHAT A JAVITASRA: egy kapu, ami ket futasbol egyszer hazudik,
+      # MINDKET IRANYBA hazudik. Ma egy jo tartalmat vitt pirosra -- az feltuno.
+      # Holnap egy rosszat vihet zoldre, es AZT nem latnank. A piros iranyu hazugsag
+      # zajt csinal, a zold iranyu kart.
+      #
+      # A MODSZER SZANDEKOSAN NEM `require('csomagnev/package.json')`: sok csomag
+      # `exports` terkepe nem engedi a package.json lekereset, es akkor a lepes
+      # maga hasalna el. Ehelyett a node_modules fat jarjuk fel a munkakonyvtartol,
+      # ahogy a feloldas is tortenik -- pnpm alatt ez symlink, es a kovetese
+      # ugyanazt a peldanyt adja, amit a tsc lat.
+      #
+      # A `continue-on-error` szandekos: ez MEROESZKOZ, nem kapu. Ha maga a kiiras
+      # elhasal, az nem teheti pirossa a futast, kulonben pont azt a zajt csinalna,
+      # ami ellen keszult.
+      - name: A tipusellenorzes bemenete (feloldott verziok)
+        working-directory: apps/backend
+        continue-on-error: true
+        run: |
+          node -e "
+          const fs=require('fs'),path=require('path');
+          for (const name of ['typescript','@medusajs/framework','@medusajs/medusa']) {
+            let dir=process.cwd(), found=null, hol=null;
+            while (dir!==path.dirname(dir)) {
+              const p=path.join(dir,'node_modules',name,'package.json');
+              if (fs.existsSync(p)) { found=JSON.parse(fs.readFileSync(p,'utf8')).version; hol=p; break; }
+              dir=path.dirname(dir);
+            }
+            console.log(name.padEnd(24)+(found||'NEM TALALHATO')+(hol?'   '+hol:''));
+          }
+          "
+
       - name: Tipusellenorzes
         working-directory: apps/backend
         run: pnpm exec tsc --noEmit -p tsconfig.json
