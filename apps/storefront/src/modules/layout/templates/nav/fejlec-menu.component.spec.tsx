@@ -262,6 +262,61 @@ describe("a kis lenyíló kategóriamenü", () => {
     expect(screen.queryByTestId("category-menu-panel")).toBeNull()
   })
 
+  /**
+   * KELL LENNIE OLYAN FELULETNEK, AMI A HATTERLAPRA ESIK -- A KEZELO ONMAGABAN
+   * NEM ELEG.
+   *
+   * === MIERT KULON ALLITAS, ES MIERT NEM ELMELETI ===
+   *
+   * A `fireEvent.click(backdrop)` allitas HONAPOKIG zolden allt, mikozben a
+   * bezaras elesben NEM MUKODOTT: a regi panel PONTOSAN ugyanazt a teglalapot
+   * foglalta el, mint a hatterlap, folotte allt, es atlatszatlan volt. A jsdom
+   * nem szamol elrendezest, tehat rakattintott egy olyan elemre, amit valodi
+   * bongeszoben teljesen elfedett egy masik.
+   *
+   * Az a zold nem elmulasztotta megfogni a hibat, hanem SZENTESITETTE: aki
+   * ranezett, azt latta, hogy a bezaras merve van, es epp ezert nem nezte meg
+   * elesben.
+   *
+   * === AMIT EZ AZ ALLITAS MER, ES AMIT NEM ===
+   *
+   * NEM a kirajzolt geometriat -- azt jsdom alatt nem lehet. A SZERKEZETI
+   * feltetelt meri, ami a szabad feluletet garantalja: a hatterlap a TELJES
+   * nezetet lefedi, a panel viszont SZELESSEG-KORLATOS. Amig ez a ketto igaz,
+   * a nezet szelesebb reszen marad hatterlap-felulet.
+   *
+   * A PIXELT ELO BONGESZOBEN MERTEM (2026-09-09, 1440x900):
+   *
+   *     hatterlap   x=0    y=0    1440 x 900
+   *     panel       x=360  y=115  1064 x 1166
+   *     elementFromPoint(20,130) -> a hatterlap
+   *     oda kattintva            -> a panel BEZART
+   */
+  it("a háttérlap a teljes nézetet lefedi", () => {
+    open()
+
+    expect(screen.getByTestId("category-menu-backdrop").className).toContain(
+      "inset-0",
+    )
+  })
+
+  it("a panel szélessége korlátos, tehát nem fedheti el a háttérlapot", () => {
+    open()
+
+    const panel = screen.getByTestId("category-menu-panel")
+
+    expect(panel.className).toMatch(/w-\[min\(/)
+
+    /*
+      ES A TAGADAS: a panel NEM feszulhet ki a nezet szelere. Ha egyszer
+      `inset-x-0` vagy `w-full` kerul ra, a hatterlapnak megint nem marad
+      szabad felulete -- pontosan az a hiba, ami a regi panelnel allt.
+    */
+    expect(panel.className).not.toContain("inset-0")
+    expect(panel.className).not.toMatch(/\binset-x-0\b/)
+    expect(panel.className).not.toMatch(/\bw-full\b/)
+  })
+
   it("a tényleges külső háttérre kattintva bezár", () => {
     open()
 
