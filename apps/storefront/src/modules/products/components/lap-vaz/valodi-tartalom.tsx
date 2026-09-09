@@ -21,7 +21,7 @@ import {
   orderQuantityStep,
 } from "../product-actions/minimum-order-quantity"
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
-import { KEP_ARANY, TovabbiKepek } from "../image-gallery/kep-meret"
+import { KepBlokk } from "../image-gallery/kep-blokk"
 
 /**
  * A VAZ SLOTJAINAK VALODI TARTALMA -- CSAK OTT, AHOL VAN FORRAS.
@@ -296,25 +296,22 @@ export const Cimsor = ({
  */
 export const Foto = ({ termek }: { termek: Termek }) => {
   const kepek = termek.images ?? []
-  const nagy = termek.thumbnail ?? kepek[0]?.url
-  if (!nagy) return null
 
-  /* A nagy kep NEM ismetlodik a sorban: ha a bolyegkep az elso kep, azt
-     kihagyjuk, kulonben mind mehet. */
-  const tobbi = kepek.filter((k) => k.url && k.url !== nagy)
+  /*
+    A BOLYEGKEP A LISTA ELEJERE KERUL, HA NINCS BENNE.
 
-  return (
-    <div className="flex flex-col gap-2" data-testid="vaz-foto-blokk">
-      <img
-        src={nagy}
-        alt={termek.title ?? ""}
-        className="w-full"
-        style={{ aspectRatio: KEP_ARANY, objectFit: "contain" }}
-        data-testid="vaz-foto"
-      />
-      <TovabbiKepek kepek={tobbi as never} />
-    </div>
-  )
+    A `thumbnail` nem feltetlenul azonos a kepek elsojevel; ha kulon all,
+    akkor is o a nagy kep indulaskor. A sor ezert a TELJES keszletet kapja, a
+    bolyegkeppel egyutt -- egy csempe, ami eltunik, amikor ranyomsz, a
+    valasztast is elrejti.
+  */
+  const bolyeg = termek.thumbnail
+  const teljes =
+    bolyeg && !kepek.some((k) => k.url === bolyeg)
+      ? [{ id: "bolyeg", url: bolyeg }, ...kepek]
+      : kepek
+
+  return <KepBlokk kepek={teljes} alt={termek.title ?? ""} />
 }
 
 /**

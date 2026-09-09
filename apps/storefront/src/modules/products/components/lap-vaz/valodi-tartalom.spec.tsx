@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
 import {
   besorolasLanc,
+  Foto,
   legmelyebbKategoria,
   TELEFON_HIVAS,
   TELEFON_MEGJELENITVE,
@@ -1056,5 +1057,75 @@ describe("a léptető mérete a tervből", () => {
 
     expect(sor?.className).toContain("flex")
     expect(sor?.className).toContain("gap-[10px]")
+  })
+})
+
+/**
+ * A FOTO KESZLETE: A BOLYEGKEP IS A SORBA TARTOZIK.
+ *
+ * A `thumbnail` nem feltetlenul szerepel az `images` listaban -- a Medusa
+ * kulon mezokent adja. Ha csak az `images` menne a sorba, akkor egy olyan
+ * terméken, ahol a bolyegkep KULON all, a nagy kep indulaskor egy olyan fotot
+ * mutatna, amire a sorbol NEM lehet visszakattintani.
+ *
+ * Ez a ket allitas KET FUGGETLEN erteket orz (a keszlet OSSZETETELE es a
+ * SORRENDJE), ezert ket nevet kap.
+ */
+describe("a műszaki lap fotójának készlete", () => {
+  const kepekkel = (thumbnail: string | null, urlek: string[]) =>
+    ({
+      title: "Teszt termék",
+      thumbnail,
+      images: urlek.map((u, i) => ({ id: `i${i}`, url: u })),
+    }) as never
+
+  it("a külön álló bélyegkép is bekerül a sorba", () => {
+    const { container } = render(
+      <Foto
+        termek={kepekkel("https://pelda.hu/bolyeg.jpg", [
+          "https://pelda.hu/a.jpg",
+          "https://pelda.hu/b.jpg",
+        ])}
+      />,
+    )
+
+    expect(
+      container.querySelectorAll('[data-testid="tovabbi-kep"]'),
+    ).toHaveLength(3)
+  })
+
+  it("a bélyegkép áll elöl, tehát az látszik nagyban induláskor", () => {
+    const { container } = render(
+      <Foto
+        termek={kepekkel("https://pelda.hu/bolyeg.jpg", [
+          "https://pelda.hu/a.jpg",
+        ])}
+      />,
+    )
+
+    expect(
+      container.querySelector('[data-testid="vaz-foto"]')?.getAttribute("src"),
+    ).toContain("bolyeg")
+  })
+
+  /**
+   * ES A TAGADAS: HA A BOLYEGKEP MAR BENNE VAN, NEM KERUL BE MEGEGYSZER.
+   *
+   * Enelkul a legtobb termek -- ahol a bolyegkep az elso kep -- egy
+   * ketcsempes sort kapna EGY fotobol, es a ket csempe ugyanoda vinne.
+   */
+  it("a listában már szereplő bélyegkép nem duplázódik", () => {
+    const { container } = render(
+      <Foto
+        termek={kepekkel("https://pelda.hu/a.jpg", [
+          "https://pelda.hu/a.jpg",
+          "https://pelda.hu/b.jpg",
+        ])}
+      />,
+    )
+
+    expect(
+      container.querySelectorAll('[data-testid="tovabbi-kep"]'),
+    ).toHaveLength(2)
   })
 })
