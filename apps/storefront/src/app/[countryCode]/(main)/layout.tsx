@@ -51,7 +51,7 @@ export default async function PageLayout(props: {
         />
       )}
       {props.children}
-      <Footer countryCode={countryCode} />
+      <Footer />
     </>
   )
 }
