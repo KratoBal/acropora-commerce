@@ -109,6 +109,109 @@ describe("a terv megerositett ertekei", () => {
    */
   const VILAGOS_BLOKK = CSS.slice(0, CSS.indexOf('[data-vilag="sotet"]'))
 
+  /**
+   * AZ ELVETETT 1a TERVLAP ERTEKEI NEM KERULHETNEK VISSZA.
+   *
+   * === MIERT KELL EZ, HOLOTT MA EGY SINCS A KODBAN ===
+   *
+   * A tervfajlban HAROM 1440 pixeles lap all EGYMAS MELLETT, es az 1a az,
+   * amit Balazs ELVETETT (2026-09-08). Aki egy erteket keres benne -- egy
+   * keretszint, egy cimmeretet --, HAROMFELET fog talalni, es a kozepso a
+   * rossz.
+   *
+   * Ez 2026-09-09-en HAROMSZOR jott elo: a `--terv-keret` (1a-n 13-szor, 1b-n
+   * nullaszor), a `--terv-hatter-halvany` (6 kontra 0), es majdnem a cim
+   * merete is (29 px / -0.015em). Az elso ketto MAR BENT VOLT a kodban, es
+   * hetekig allt ott.
+   *
+   * (acrobot kikotese, 2026-09-09, uzenet 16843: "a TAGADO allitas maradjon
+   * meg minden ilyen helyen ... nem azert, mert ma rossz, hanem mert a forras
+   * szerkezete miatt barmikor visszakerulhet".)
+   *
+   * === A LISTA EGY PILLANAT, ES EZT KI KELL MONDANI ===
+   *
+   * A harminchat ertek a `Termekoldal Technika.dc.html` 2026-09-09-i
+   * allapotabol jon, gepi kivonassal: az 1a lapon allo `oklch(...)` ertekek
+   * halmaza, MINUSZ ami a 2a vagy az 1b lapon is szerepel. Ha a tervet
+   * ujraexportaljak, ez a lista elavulhat -- de az elavulasa csak annyit
+   * jelent, hogy KEVESEBBET ved, nem azt, hogy hamisat allit.
+   *
+   * A tervfajl a repon KIVUL all (`exchange/`), ezert nem tudjuk futasidoben
+   * szarmaztatni.
+   *
+   * === ISMERT POZITIV KONTROLL, ES NEM ELHAGYHATO ===
+   *
+   * Egy tagado allitast egy URES VILAG is kielegit: ha a kereses elromlik, ez
+   * a sor akkor is zold, ha minden elvetett ertek visszakerult. Ezert a
+   * masodik allitas azt meri, hogy ugyanez a kereses MEGTALALJA az 1b
+   * ertekeket, amik ott VANNAK.
+   */
+  const ELVETETT_1a: ReadonlyArray<string> = [
+    "oklch(0.22 0.015 250)",
+    "oklch(0.24 0.02 235)",
+    "oklch(0.3 0.01 250)",
+    "oklch(0.34 0.012 250)",
+    "oklch(0.35 0.012 250)",
+    "oklch(0.4 0.01 250)",
+    "oklch(0.45 0.012 250)",
+    "oklch(0.48 0.012 250)",
+    "oklch(0.5 0.01 250)",
+    "oklch(0.5 0.012 250)",
+    "oklch(0.52 0.09 210)",
+    "oklch(0.55 0.01 250)",
+    "oklch(0.55 0.012 250)",
+    "oklch(0.62 0.01 250)",
+    "oklch(0.62 0.15 150)",
+    "oklch(0.72 0.01 250)",
+    "oklch(0.75 0.01 250)",
+    "oklch(0.8 0.008 250)",
+    "oklch(0.8 0.01 250)",
+    "oklch(0.8 0.012 240)",
+    "oklch(0.82 0.01 250)",
+    "oklch(0.85 0.008 250)",
+    "oklch(0.85 0.01 240)",
+    "oklch(0.87 0.005 250)",
+    "oklch(0.88 0.005 250)",
+    "oklch(0.9 0.005 250)",
+    "oklch(0.9 0.01 240)",
+    "oklch(0.91 0.005 250)",
+    "oklch(0.92 0.01 240)",
+    "oklch(0.93 0.004 250)",
+    "oklch(0.94 0.004 250)",
+    "oklch(0.94 0.008 240)",
+    "oklch(0.955 0.004 250)",
+    "oklch(0.97 0.004 250)",
+    "oklch(0.985 0.003 250)",
+    "oklch(0.995 0.002 250)",
+  ]
+
+  /**
+   * AZ 1b ERTEKEK, AMIK MA A KODBAN ALLNAK -- a fenti kereses kontrollja.
+   * Gepi kivonas ugyanabbol a forrasbol, ugyanazon a napon.
+   */
+  const VART_1b_A_KODBAN = [
+    "oklch(0.2 0.012 60)",
+    "oklch(0.5 0.012 60)",
+    "oklch(0.52 0.012 60)",
+    "oklch(0.55 0.13 45)",
+    "oklch(0.88 0.008 70)",
+    "oklch(0.965 0.008 70)",
+  ]
+
+  it("az elvetett 1a tervlap egyetlen értéke sem áll a kódban", () => {
+    const kod = CSS.replace(/\/\*[\s\S]*?\*\//g, "")
+    const bentmaradt = ELVETETT_1a.filter((ertek) => kod.includes(ertek))
+
+    expect(bentmaradt).toEqual([])
+  })
+
+  it("ugyanez a keresés megtalálja az 1b értékeket, amik ott vannak", () => {
+    const kod = CSS.replace(/\/\*[\s\S]*?\*\//g, "")
+    const megvan = VART_1b_A_KODBAN.filter((ertek) => kod.includes(ertek))
+
+    expect(megvan).toEqual(VART_1b_A_KODBAN)
+  })
+
   it.each(PAROK)("világos módban %s = %s", (nev, ertek) => {
     expect(normal(VILAGOS_BLOKK)).toContain(`${nev}: ${ertek}`)
   })
