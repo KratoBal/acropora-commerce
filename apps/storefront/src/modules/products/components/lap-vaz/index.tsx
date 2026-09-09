@@ -1514,7 +1514,9 @@ const LapVaz = ({
         })()}
       </div>
       {/*
-        A SAV A LAP TELJES SZELESSEGEBEN ALL, ES EZ A TERVBOL MERT ERTEK.
+        A SAV MOBILON A LAP TELJES SZELESSEGEBEN ALL, ES EZ A TERVBOL MERT
+        ERTEK. ASZTALIN MINDEN MARAD, AHOGY VOLT -- az indok a burok
+        osztalyai mellett all.
 
         Merve 2026-09-09, a tervfajl harom lapjan, a sav SAJAT megkulonbozteto
         jegyere keresve (`position:sticky; bottom:0`), es a talalt elem
@@ -1560,7 +1562,34 @@ const LapVaz = ({
       */}
       {savSzakasz ? (
         <div
-          className="-mx-4 mt-[24px]"
+          /*
+            A SZELESSEG-VALTOZAS CSAK MOBILON SZOL, ES EZ NEM OVATOSSAG.
+
+            A terv MOBIL keretere all a "teljes lapszelesseg" (390 a 390-bol,
+            mind a harom lapon). Az ASZTALI savrol a terv NEM allit ilyet --
+            ott egyaltalan nincs ragados sav, es az asztali sav sorsa nyitott
+            kerdes (`db0417af`). Egy asztali szelesseg-valtoztatas tehat nem a
+            tervet kovetne, hanem elore eldontene valamit helyette.
+
+            Ezert az `lg` feletti alak a VALTOZAS ELOTTI geometriat allitja
+            vissza, ugyanazokkal az ertekekkel, amiket eddig a racs es a
+            vaz-doboz adott: 1352 pixeles korlat, 16 pixeles belso margo, 1
+            pixeles keret, es a doboz hattere. Merve a valtozas elott 1600
+            pixeles nezetben: a sav 1318 -- ez az a szam, aminek meg kell
+            maradnia.
+
+            A keret es a hatter azert kerul a BUROKRA es nem marad a
+            szakaszon: a szakasz keretet beagyazott stilus adja, azt pedig egy
+            `lg:` toresponti osztaly nem tudja felulirni. Igy viszont a
+            szakasz keret nelkul all (nincs ket vonal), a burok pedig
+            toresponkent MASKENT.
+          */
+          className={
+            tartalom[savSzakasz.kulcs]
+              ? "-mx-4 mt-[24px] lg:mx-auto lg:mt-4 lg:max-w-[1352px] lg:border lg:bg-[var(--terv-doboz-hatter)] lg:p-4"
+              : "-mx-4 mt-[24px] lg:mx-auto lg:mt-4 lg:max-w-[1352px]"
+          }
+          style={{ borderColor: "var(--terv-keret)" }}
           data-vaz-oszlop={savSzakasz.oszlop}
           data-testid="vaz-ragados-sav-burok"
         >
