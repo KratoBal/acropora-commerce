@@ -268,29 +268,24 @@ export const listNonEmptyRootCategories = async (
     fields: "id,name,handle,parent_category_id,rank",
   })
 
-  const gyerekek = new Map<string, string[]>()
-  for (const c of mind) {
-    const szulo = (c as { parent_category_id?: string | null })
-      .parent_category_id
-    if (!szulo) continue
-    if (!gyerekek.has(szulo)) gyerekek.set(szulo, [])
-    gyerekek.get(szulo)!.push(c.id)
-  }
+  /*
+    A RESZFA-BEJARAS A MERT FUGGVENYBOL JON, NEM EGY HELYI MASOLATBOL.
 
-  /** Szelessegi bejaras LATOTT halmazzal -- ugyanaz az ok, mint fentebb: kor. */
-  const reszfa = (gyoker: string): string[] => {
-    const ki: string[] = []
-    const latott = new Set<string>()
-    const sor = [gyoker]
-    while (sor.length > 0) {
-      const id = sor.shift()!
-      if (latott.has(id)) continue
-      latott.add(id)
-      ki.push(id)
-      sor.push(...(gyerekek.get(id) ?? []))
-    }
-    return ki
-  }
+    ITT KORABBAN EGY HARMADIK PELDANY ALLT ugyanabbol a szelessegi bejarasbol:
+    sajat latott-halmazzal, gyoker beleertve, ciklus-vedelemmel -- beture az,
+    amit a `leszarmazottAzonositok` csinal, csak teszt nelkul.
+
+    A #260 KETTOT nevezett meg (a hasznalt, de nem mert adatretegbelit es a
+    mert, de nem hasznalt tisztat), es a masodikra allitotta at az elo utat.
+    HAROM volt, es ez a harmadik ugyanabban a fajlban ult, huszonot sorral
+    lejjebb. A PR torzsebe utolag beirtam a helyesbitest; ez a valtozas az, ami
+    tenylegesen lezarja.
+
+    A HELYI PELDANNYAL EGYUTT A `gyerekek` TERKEP IS ELTUNIK: azt kizarolag a
+    bejaras hasznalta, a tiszta fuggveny pedig magat epiti fel a kapott
+    listabol. Ugyanaz a lekerdezes, ugyanaz az eredmeny, eggyel kevesebb hely,
+    ahol elromolhat.
+  */
 
   /*
     A GYEREKEKET IS ATADJUK, ES EZ NEM UJ LEKERDEZES.
@@ -341,7 +336,10 @@ export const listNonEmptyRootCategories = async (
         response: { count },
       } = await listProducts({
         regionId,
-        queryParams: { limit: 1, category_id: reszfa(gy.id) },
+        queryParams: {
+          limit: 1,
+          category_id: leszarmazottAzonositok(mind, gy.id),
+        },
       })
       return count > 0
     }),
