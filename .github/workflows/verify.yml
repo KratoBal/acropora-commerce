@@ -205,7 +205,7 @@ jobs:
         run: |
           node -e "
           const fs=require('fs'),path=require('path');
-          for (const name of ['typescript','@medusajs/framework','@medusajs/medusa']) {
+          for (const name of ['typescript','@medusajs/framework','@medusajs/medusa','@medusajs/types']) {
             let dir=process.cwd(), found=null, hol=null;
             while (dir!==path.dirname(dir)) {
               const p=path.join(dir,'node_modules',name,'package.json');
