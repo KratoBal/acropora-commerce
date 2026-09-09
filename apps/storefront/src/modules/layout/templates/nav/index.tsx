@@ -205,7 +205,12 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
         data-testid="fejlec"
       >
         <div
-          className="mx-auto flex w-full items-center justify-between border-b text-xs"
+          /*
+            A BETUMERET A TERVBOL: 12.5 pixel. A `text-xs` 12-t ad, tehat fel
+            pixellel kisebbet -- kicsi kulonbseg, de a savban ez az EGYETLEN
+            szovegmeret, es a terv kiirja.
+          */
+          className="mx-auto flex w-full items-center justify-between border-b text-[12.5px]"
           style={{
             height: "36px",
             maxWidth: "1352px",
@@ -222,10 +227,29 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
           data-tanusitvany-allapot={BIZALMI_TANUSITVANY_DATUM}
         >
           <p>{BIZALMI_BAL}</p>
-          <p className="flex items-center gap-2">
+          {/*
+            A JOBB OLDAL KET SZOVEG, HUSZONNEGY PIXEL KOZZEL, ELVALASZTO NELKUL.
+
+            A tervforrasban (2026-09-09) ez all:
+
+                <span style="display:flex;gap:24px">
+                  <span>...</span>
+                  <span style="color:REZ;font-weight:600">Szakértői segítség</span>
+                </span>
+
+            ITT KORABBAN EGY `·` PONT ALLT a ket szoveg kozott, nyolc pixeles
+            kozzel. Az en betoldasom volt, kep alapjan, es a forrasban nincs.
+            A tervben a ket szoveget a KOZ valasztja el, nem egy karakter.
+
+            A `font-weight:600` is a forrasbol jon: a segitseg-felirat nem csak
+            rez szinu, hanem felkover is.
+          */}
+          <p className="flex items-center gap-6">
             <span>{BIZALMI_TANUSITVANY}</span>
-            <span aria-hidden="true">·</span>
-            <span style={{ color: "var(--terv-kiemel-tinta)" }}>
+            <span
+              className="font-semibold"
+              style={{ color: "var(--terv-kiemel-tinta)" }}
+            >
               {BIZALMI_SEGITSEG}
             </span>
           </p>
