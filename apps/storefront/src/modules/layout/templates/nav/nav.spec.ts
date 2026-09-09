@@ -27,6 +27,20 @@ const forras = (...ut: string[]) =>
 describe("a fejléc fő sávja", () => {
   const nav = forras("index.tsx")
 
+  /**
+   * A TAPADAS BALAZS KIMONDOTT KERESE (2026-09-09): "a fejlec menusav
+   * tapadjon". A mai bolt is ezt csinalja: nullatol kilencszaz pixelig gorgetve
+   * a sav feltapad a lap tetejere es vegig ott marad.
+   *
+   * A `sticky top-0` MAR KORABBAN IS ITT ALLT -- ez az allitas nem uj
+   * viselkedest ir le, hanem MEGFOGJA, ha valaki elveszi. Epp ez tortent az
+   * ellenkezo iranyban: egy rejto mechanizmus kerult a menu-komponensbe, es a
+   * savot gorgetesre eltuntette. Az visszavonva, es ide orzo kerult.
+   */
+  it("a fejléc tapad a lap tetejéhez", () => {
+    expect(nav).toMatch(/sticky\s+top-0/)
+  })
+
   /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es tenyleg a fejlec az. */
   it("a forrás olvasható, és tényleg a fejléc", () => {
     expect(nav).toContain("export default async function Nav")

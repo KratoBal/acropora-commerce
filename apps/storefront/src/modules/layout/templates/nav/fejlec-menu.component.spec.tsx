@@ -82,35 +82,41 @@ describe("a fejléc menüje nyílik, nem ugrik", () => {
   })
 })
 
-describe("a kategória-sáv görgetésre eltűnik", () => {
+/**
+ * A SAV GORGETESKOR IS OTT MARAD -- ES EZ EGY VISSZAVONT VISELKEDES HELYEN ALL.
+ *
+ * Itt korabban harom allitas volt arrol, hogy a sav a 120. pixel folott
+ * ELTUNIK. Az felreolvasas volt: a "kategoria fa", aminek el kell tunnie, a
+ * LABLEC racsa (harom kitelepitett lapon merve), a mai bolt menusavja pedig
+ * feltapad es vegig latszik. Balazs dontese: "a fejlec menusav tapadjon".
+ *
+ * A REJTES HELYERE NEM SEMMI KERUL, HANEM A TAGADASA: ha valaki visszateszi a
+ * gorgetes-figyelot, ezek az allitasok pirosra fordulnak. Egy torolt teszt
+ * helyen ures hely marad, es az ures hely nem orzo.
+ */
+describe("a kategória-sáv görgetéskor is ott marad", () => {
   const gorget = (y: number) => {
     Object.defineProperty(window, "scrollY", { value: y, configurable: true })
     fireEvent.scroll(window)
   }
 
-  it("a lap tetején látszik", () => {
-    render(<FejlecMenu kategoriak={[kat("Korallok")]} />)
-
-    expect(screen.getByTestId("fejlec-menu").getAttribute("data-latszik")).toBe(
-      "igen",
-    )
-  })
-
-  it("lejjebb görgetve eltűnik", () => {
+  it("lejjebb görgetve is látszik, és nem kap rejtő osztályt", () => {
     render(<FejlecMenu kategoriak={[kat("Korallok")]} />)
 
     gorget(400)
 
-    expect(screen.getByTestId("fejlec-menu").getAttribute("data-latszik")).toBe(
-      "nem",
-    )
+    const sav = screen.getByTestId("fejlec-menu")
+
+    expect(sav).toBeTruthy()
+    expect(sav.className).not.toContain("lg:hidden")
   })
 
   /**
-   * ES A NYITOTT LENYILO IS BEZARUL. Enelkul egy lebego panel maradna a
-   * kepernyon, mikozben a sav, amihez tartozik, mar nem latszik.
+   * ES A NYITOTT PANEL SEM ZARUL BE GORGETESRE. A regi viselkedes epp ezt
+   * csinalta, mert a sav maga tunt el alola; tapado savnal a panel vele
+   * mozdul, tehat nincs mi elol bezarni.
    */
-  it("görgetéskor a nyitott lenyíló is bezárul", () => {
+  it("görgetéskor a nyitott panel nyitva marad", () => {
     render(<FejlecMenu kategoriak={[kat("Korallok", ["SPS"])]} />)
 
     fireEvent.click(screen.getByTestId("fejlec-menu-tetel"))
@@ -118,7 +124,7 @@ describe("a kategória-sáv görgetésre eltűnik", () => {
 
     gorget(400)
 
-    expect(screen.queryByTestId("fejlec-menu-lenyilo")).toBeNull()
+    expect(screen.getByTestId("fejlec-menu-lenyilo")).toBeTruthy()
   })
 })
 
