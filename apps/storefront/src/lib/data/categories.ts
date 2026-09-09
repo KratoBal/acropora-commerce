@@ -293,9 +293,30 @@ export const listNonEmptyRootCategories = async (
     return ki
   }
 
-  const gyokerek = mind.filter(
-    (c) => !(c as { parent_category_id?: string | null }).parent_category_id,
-  )
+  /*
+    A GYEREKEKET IS ATADJUK, ES EZ NEM UJ LEKERDEZES.
+
+    A fenti `listCategories` MAR lehozza mind a 219 kategoriat -- eddig csak a
+    gyokereket tartottuk meg belole, a tobbit eldobtuk. A fejlec lenyilo
+    menujehez viszont kellenek a kozvetlen gyerekek, es azok itt MAR a kezunkben
+    vannak. Egy kulon hivas ugyanazt hozna le megegyszer, MINDEN lapbetolteskor.
+
+    A mezot a Medusa sajat `category_children` nevere tesszuk, mert a hivok
+    (lablec, fejlec) amugy is azt olvassak -- igy nem keletkezik masodik
+    fogalom ugyanarra.
+  */
+  const gyokerek = mind
+    .filter(
+      (c) => !(c as { parent_category_id?: string | null }).parent_category_id,
+    )
+    .map((gy) => ({
+      ...gy,
+      category_children: mind.filter(
+        (c) =>
+          (c as { parent_category_id?: string | null }).parent_category_id ===
+          gy.id,
+      ),
+    })) as HttpTypes.StoreProductCategory[]
 
   const vane = await Promise.all(
     gyokerek.map(async (gy) => {

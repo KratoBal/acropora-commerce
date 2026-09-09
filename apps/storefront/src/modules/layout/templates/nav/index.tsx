@@ -5,6 +5,7 @@ import { getRegion } from "@lib/data/regions"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { FejlecMenu } from "./fejlec-menu"
 import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
 
@@ -190,23 +191,7 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
             />
           </form>
 
-          {kategoriak.length > 0 && (
-            <div
-              className="hidden items-center gap-[22px] lg:flex"
-              data-testid="fejlec-menu"
-            >
-              {kategoriak.map((k) => (
-                <LocalizedClientLink
-                  key={k.id}
-                  href={`/categories/${k.handle}`}
-                  className="whitespace-nowrap text-[14px] font-medium"
-                  data-testid="fejlec-menu-tetel"
-                >
-                  {k.name}
-                </LocalizedClientLink>
-              ))}
-            </div>
-          )}
+          <FejlecMenu kategoriak={kategoriak} />
 
           <div className="ml-auto flex shrink-0 items-center lg:ml-0">
             <Suspense
