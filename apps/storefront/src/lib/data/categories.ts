@@ -3,6 +3,7 @@ import { HttpTypes } from "@medusajs/types"
 import { gyokerekKetSzintel } from "@lib/util/kategoria-fa"
 import { getCacheOptions } from "./cookies"
 import { listProducts } from "./products"
+import { leszarmazottAzonositok } from "@lib/util/kategoria-leszarmazottak"
 
 /**
  * A LEKERDEZES EGY LAPJA. A Medusa alapertelmezett `limit` erteke szaz, es a
@@ -134,28 +135,25 @@ export const listCategoryIdsWithDescendants = async (
 ): Promise<string[]> => {
   const mind = await listCategories({ fields: "id,parent_category_id" })
 
-  const gyerekek = new Map<string, string[]>()
-  for (const c of mind) {
-    const szulo = (c as { parent_category_id?: string | null })
-      .parent_category_id
-    if (!szulo) continue
-    if (!gyerekek.has(szulo)) gyerekek.set(szulo, [])
-    gyerekek.get(szulo)!.push(c.id)
-  }
-
-  // Szelessegi bejaras, LATOTT halmazzal: a `parent_category_id` nem zarja ki a
-  // kort, es egy kor vegtelen ciklust adna.
-  const eredmeny: string[] = []
-  const latott = new Set<string>()
-  const sor = [categoryId]
-  while (sor.length) {
-    const id = sor.shift()!
-    if (latott.has(id)) continue
-    latott.add(id)
-    eredmeny.push(id)
-    sor.push(...(gyerekek.get(id) ?? []))
-  }
-  return eredmeny
+  /**
+   * A BEJARAS TISZTA FUGGVENYBEN AL, ES EZ NEM STILUS-KERDES.
+   *
+   * Ugyanez a szelessegi bejaras KETSZER allt a repoban: itt, es a #256-ban
+   * (`leszarmazottAzonositok`). A ketto betuere ugyanazt csinalta, es a
+   * kulonbseguk NEM az volt, hogy melyik a szebb:
+   *
+   *   ez a fuggveny   HASZNALATBAN volt, es NEM VOLT rá teszt -- mert I/O-t
+   *                   vegez (`await listCategories`), tehat mockolas nelkul
+   *                   nem merheto
+   *   a tiszta alak   MERVE volt (ciklus-vedelemmel egyutt, kalibralva), es
+   *                   SENKI nem hivta
+   *
+   * Vagyis a lefedettseg es a hasznalat KET KULON fuggvenyen allt. A duplikatum
+   * megszuntetesenek helyes iranya ezert nem a torles, hanem ez: az I/O marad
+   * itt, a dontes atkerul a mert fuggvenybe. Onnantol az eles ut is a
+   * `kategoria-leszarmazottak.spec.ts` allitasai ala esik.
+   */
+  return leszarmazottAzonositok(mind, categoryId)
 }
 
 export const getCategoryByHandle = async (categoryHandle: string[]) => {
