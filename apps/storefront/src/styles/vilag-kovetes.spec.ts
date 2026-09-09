@@ -16,6 +16,11 @@ const kodSzoveg = (szoveg: string) => szoveg.replace(/\/\*[\s\S]*?\*\//g, "")
 const css = kodSzoveg(readFileSync(join(__dirname, "globals.css"), "utf-8"))
 
 /**
+ * A FAJL NEVE 2026-09-09-EN VALTOZOTT (`fejlec-vilag` -> `vilag-kovetes`), mert
+ * a lablec ugyanezt a szabalyt kapta meg. Egy `fejlec` nevu fajl, amiben a
+ * lablec allitasai is allnak, pontosan az a fajta felrevezetes, amit a repo
+ * mashol mar gyujtott: a nev tullel azt a feltetelt, ami letrehozta.
+ *
  * A FEJLEC A TERMEK VILAGAT KOVETI.
  *
  * Merve a kitelepitett lapon (2026-09-09): a korall lap vaza sotet
@@ -63,5 +68,40 @@ describe("a fejléc a termék világát követi", () => {
    */
   it("a kapcsolat CSS-ben áll, nem effektben", () => {
     expect(css).toContain("body:has(")
+  })
+})
+
+/**
+ * ES A LABLEC UGYANIGY -- HARMADIK ESET UGYANARRA A HIBAOSZTALYRA.
+ *
+ * Merve a kitelepitett sotet lapon (2026-09-09): a `data-vilag` jelolon KIVUL
+ * 166 elem all, es kozuluk PONTOSAN EGY viselt vilagos terv-erteket -- a
+ * lablec hattere (oklch(0.99 0.004 80), a vilagos `--terv-hatter`).
+ *
+ * A MEROHELY ISMERT POZITIV KONTROLLAL MENT: ugyanaz a kereses a VILAGOS lapon
+ * 35 talalatot ad (ott a vilagos ertek a helyes, tehat a talalat nem hiba).
+ * A sotet lap egyetlen talalata igy nem a kereses tulajdonsaga.
+ *
+ * AMIT EZ A SPEC MER: hogy a lablec BENNE VAN a sotet szabaly valasztojaban.
+ * Azt, hogy a kepernyon tenyleg sotet lesz, csak a kitelepitett lapon lehet
+ * megnezni -- ugyanaz a hatar, mint a fejlecnel.
+ */
+describe("a lábléc is a termék világát követi", () => {
+  it("a lábléc síkja a sötét világ szabályában is szerepel", () => {
+    expect(css).toMatch(
+      /body:has\(\[data-vilag="sotet"\]\)\s+footer\[data-testid="lablec-sik"\]/,
+    )
+  })
+
+  /**
+   * ES A KETTO UGYANABBAN A BLOKKBAN ALL. A "egyetlen blokk" allitas fentebb
+   * ezt mar orzi; ez a sor azt mondja meg, hogy a lablec NEM egy masodik,
+   * sajat blokkot kapott ugyanazokkal a szamokkal.
+   */
+  it("a fejléc és a lábléc ugyanabban a szabályban áll", () => {
+    const blokk = css.slice(0, css.indexOf("{", css.indexOf('[data-vilag="sotet"]')))
+
+    expect(blokk).toContain('header[data-testid="fejlec"]')
+    expect(blokk).toContain('footer[data-testid="lablec-sik"]')
   })
 })

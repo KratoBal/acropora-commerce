@@ -501,8 +501,30 @@ body {
   allnak. Egy masodik blokk ugyanezekkel a szamokkal pontosan az a hiba lenne,
   amit ma delelott ketszer javitottunk (ket szam, ami kesobb szetcsuszik).
 */
+/*
+  ES A LABLEC UGYANIGY -- HARMADIK ESET UGYANARRA A HIBAOSZTALYRA.
+
+  A jelolo a vazon all, a lablec a vaz ALATT: testverek, oroklés nem eri el
+  oket. Ugyanaz a mechanizmus, mint a fejlecnel es a kosar gombnal.
+
+  A HATOKORT MEGMERTEM, NEM BECSULTEM (2026-09-09, kitelepitett sotet lap): a
+  jelolon KIVUL 166 elem all, es kozuluk PONTOSAN EGY viselt vilagos
+  terv-erteket -- a lablec hattere. A merohely ismert pozitiv kontrollal ment:
+  ugyanaz a kereses a VILAGOS lapon 35 talalatot ad (ott a vilagos ertek a
+  helyes), tehat a sotet lap egyetlen talalata nem a kereses tulajdonsaga.
+
+  Vagyis ezzel a harmadik esettel az osztaly LEZARUL: nincs negyedik elem, ami
+  a vazon kivul terv-erteket viselne.
+
+  ES AMIERT A HATTER ONMAGABAN KEVES LENNE: a lablec szovegszinei ma NEM
+  tokenbol jonnek (merve: rgb(0,0,0) 12 helyen, rgb(82,82,91) 22 helyen,
+  rgb(113,113,122) 2 helyen). Egy sotette tett hatter alattuk fekete szoveget
+  hagyna sotet feluleten -- rosszabb allapot, mint a mai. Ezert a lablec
+  szinosztalyai ugyanabban a korben tokenre valtanak.
+*/
 [data-vilag="sotet"],
-body:has([data-vilag="sotet"]) header[data-testid="fejlec"] {
+body:has([data-vilag="sotet"]) header[data-testid="fejlec"],
+body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
   /*
     A LAP HATTERE A TERVLAP SAJAT HATTERE, ES EZT A NYERS FORRASBOL MERTEM
     (2026-09-08). A tervfajlban harom 1440 pixeles keret all egymas mellett,

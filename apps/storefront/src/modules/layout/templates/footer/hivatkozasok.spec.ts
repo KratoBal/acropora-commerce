@@ -204,6 +204,59 @@ describe("a lábléc síkja", () => {
   it("egyetlen oklch érték sincs beégetve a kódba", () => {
     expect(kod).not.toContain("oklch(")
   })
+
+  /**
+   * A SZOVEGSZINEK IS TOKENBOL JONNEK -- ES A HATTER NELKULUK ROSSZABB LENNE.
+   *
+   * Merve a kitelepitett SOTET lapon (2026-09-09), MIELOTT a lablec vilagfuggo
+   * lett volna: a lablec szovegszinei rgb(0,0,0) 12 helyen, rgb(82,82,91) 22
+   * helyen, rgb(113,113,122) 2 helyen alltak. Egyik sem tokenbol jott.
+   *
+   * Vagyis ha CSAK a hatteret tettuk volna sotette, fekete szoveg allna sotet
+   * feluleten -- rosszabb allapot, mint a mai vilagos lablec. A ket valtozas
+   * ezert egy korben ment.
+   *
+   * A KERESES CSALADRA MER, NEM A TIZENHAROM KONKRET OSZTALYRA: egy uj
+   * `text-ui-fg-interactive` ugyanugy rogzitett szin lenne, es egy nevsorolo
+   * allitas azt atengedne.
+   *
+   * ES EGY ELGEPELES IS KIDERULT KOZBEN: harom oszlopcim `txt-ui-fg-base`
+   * osztalyt viselt (`txt-` az `text-` helyett), ami nem letezik -- azok a
+   * cimek szin nelkul alltak, feketet orokolve. A minta ezert a `txt-ui-` alakot
+   * is nezi.
+   */
+  const ROGZITETT_SZIN =
+    /\b(?:text|txt|bg|border)-ui-|\btext-(?:zinc|gray|neutral|slate)-\d|\btext-(?:black|white)\b/
+
+  it("a lábléc szövegszínei tokenből jönnek, nem rögzített osztályból", () => {
+    expect(kod).not.toMatch(ROGZITETT_SZIN)
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL A FENTI MINTAHOZ. Egy tagado allitast egy URES
+   * VILAG is kielegit: ha a regex elromlik, a sor akkor is zold, ha a lablec
+   * tele van rogzitett szinnel. Ez a sor egy olyan fajlon sul el, amirol
+   * tudjuk, hogy vannak benne.
+   */
+  it("ugyanez a minta megtalálja a rögzített színt ott, ahol van", () => {
+    const mas = kodSzoveg(
+      readFileSync(
+        join(
+          __dirname,
+          "..",
+          "..",
+          "..",
+          "products",
+          "components",
+          "product-preview",
+          "index.tsx",
+        ),
+        "utf-8",
+      ),
+    )
+
+    expect(mas).toMatch(ROGZITETT_SZIN)
+  })
 })
 
 /**

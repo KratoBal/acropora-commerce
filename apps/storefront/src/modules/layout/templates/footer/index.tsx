@@ -60,8 +60,11 @@ export default async function Footer() {
       EGY jelolo, nem egy atiras.
     */
     <footer
-      className="border-t border-ui-border-base w-full"
-      style={{ background: "var(--terv-hatter)" }}
+      className="w-full border-t"
+      style={{
+        background: "var(--terv-hatter)",
+        borderColor: "var(--terv-keret)",
+      }}
       data-testid="lablec-sik"
     >
       {/*
@@ -103,7 +106,8 @@ export default async function Footer() {
           <div>
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
+              className="txt-compact-xlarge-plus hover:text-terv-szoveg uppercase"
+              style={{ color: "var(--terv-szoveg-halvany)" }}
             >
               {STORE_NAME}
             </LocalizedClientLink>
@@ -111,12 +115,15 @@ export default async function Footer() {
           <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {collections && collections.length > 0 && (
               <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
+                <span
+                  className="txt-small-plus"
+                  style={{ color: "var(--terv-szoveg)" }}
+                >
                   Kollekciók
                 </span>
                 <ul
                   className={clx(
-                    "grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small",
+                    "grid grid-cols-1 gap-2 txt-small",
                     {
                       "grid-cols-2": (collections?.length || 0) > 3,
                     },
@@ -125,7 +132,7 @@ export default async function Footer() {
                   {collections?.slice(0, 6).map((c) => (
                     <li key={c.id}>
                       <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
+                        className="hover:text-terv-szoveg"
                         href={`/collections/${c.handle}`}
                       >
                         {c.title}
@@ -179,11 +186,15 @@ export default async function Footer() {
                     megjelenik. Egy CSS-transzformaciot a forras-szoveg
                     szerkezetileg nem tud elarulni.
                   */}
-                  <span className="txt-small-plus txt-ui-fg-base uppercase tracking-wide">
+                  <span
+                    className="txt-small-plus uppercase tracking-wide"
+                    style={{ color: "var(--terv-szoveg)" }}
+                  >
                     {OSZLOP_CIMEK[oszlop]}
                   </span>
                   <ul
-                    className="grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small"
+                    className="grid grid-cols-1 gap-2 txt-small"
+                    style={{ color: "var(--terv-szoveg-halvany)" }}
                     data-testid={`footer-oszlop-${oszlop}`}
                   >
                     {tetelek.map((t) => (
@@ -196,7 +207,7 @@ export default async function Footer() {
                         */}
                         {t.sajat ? (
                           <LocalizedClientLink
-                            className="hover:text-ui-fg-base"
+                            className="hover:text-terv-szoveg"
                             href={t.cim}
                             data-testid="footer-sajat-link"
                           >
@@ -204,7 +215,7 @@ export default async function Footer() {
                           </LocalizedClientLink>
                         ) : (
                           <a
-                            className="hover:text-ui-fg-base"
+                            className="hover:text-terv-szoveg"
                             href={t.cim}
                             data-testid="footer-regi-bolt-link"
                           >
@@ -226,26 +237,33 @@ export default async function Footer() {
               data-testid="footer-ceg"
             >
               {/* A negyedik oszlop cime ugyanugy nagybetus a mintan. */}
-              <span className="txt-small-plus txt-ui-fg-base uppercase tracking-wide">
+              <span
+                className="txt-small-plus uppercase tracking-wide"
+                style={{ color: "var(--terv-szoveg)" }}
+              >
                 {CEG.nev}
               </span>
-              <address className="not-italic text-ui-fg-subtle txt-small flex flex-col gap-y-1">
+              <address
+                className="not-italic txt-small flex flex-col gap-y-1"
+                style={{ color: "var(--terv-szoveg-halvany)" }}
+              >
                 <span>{CEG.cim}</span>
                 <a
-                  className="hover:text-ui-fg-base"
+                  className="hover:text-terv-szoveg"
                   href={`tel:${CEG.telefon.replace(/[^+\d]/g, "")}`}
                 >
                   {CEG.telefon}
                 </a>
                 <a
-                  className="hover:text-ui-fg-base"
+                  className="hover:text-terv-szoveg"
                   href={`mailto:${CEG.email}`}
                 >
                   {CEG.email}
                 </a>
               </address>
               <div
-                className="text-ui-fg-subtle txt-small flex flex-col gap-y-1"
+                className="txt-small flex flex-col gap-y-1"
+                style={{ color: "var(--terv-szoveg-halvany)" }}
                 data-testid="footer-nyitvatartas"
               >
                 <span>Nyitvatartás:</span>
@@ -256,7 +274,10 @@ export default async function Footer() {
             </div>
           </div>
         </div>
-        <div className="flex w-full mb-16 justify-between text-ui-fg-muted">
+        <div
+          className="flex w-full mb-16 justify-between"
+          style={{ color: "var(--terv-szoveg-halvany)" }}
+        >
           <Text className="txt-compact-small">
             © {new Date().getFullYear()} {STORE_NAME}. Minden jog fenntartva.
           </Text>
