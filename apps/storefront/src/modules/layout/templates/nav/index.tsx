@@ -15,23 +15,45 @@ import SideMenu from "@modules/layout/components/side-menu"
  * A tervben a fejlec KET savbol all: egy 36 pixeles felso csikbol es egy 78
  * pixeles fo savbol. ITT CSAK A FO SAV EPUL MEG.
  *
- * === MIERT NEM EPUL MEG A FELSO SAV ===
+ * === A FELSO SAV MEGEPULT, ES MIND A HAROM SZOVEGNEK VAN DONTESE ===
  *
- * Harom szoveg all benne, es MIND A HAROMHOZ hianyzik valami:
+ * ITT KORABBAN AZ ALLT, HOGY A SAV NEM EPUL MEG, mert harom szovegehez hianyzik
+ * valami. Mind a harom feloldodott, kulon-kulon:
  *
  *   "Elo megerkezesi garancia · Eloallat-szallitas minden szerdan"
- *       IGERET a vevonek, penzugyi tartalommal. Ugyanaz az osztaly, mint a DOA
- *       sor: egy tervlapon allo mondat nem kotelezettsegvallalas, egy
- *       kitelepitett lapon allo IGEN. Balazs dontese.
- *   "Arukereso 4,9 / 5 · 312 ertekeles"
- *       KULSO szolgaltatas adata, amihez nincs forrasunk. Egy ertekeles-szam,
- *       amit nem a szolgaltatotol kapunk, kitalalt szam a vevo elott -- nem
- *       hianyzo funkcio, hanem allitas valakirol.
+ *       Balazs kikotese szerint ott, ahol a tartalom meg nincs eldontve, a TERV
+ *       SZOVEGE all. Ez a mondat a tervbol jon, valtoztatas nelkul.
+ *   az ARUKERESO-sor HELYETT "Fogyasztobarat tanusitvany"
+ *       A regi sor kulso szolgaltatas adata volt, forras nelkul -- azt nem
+ *       irtuk ki. Balazs valasza (2026-09-09): "van fogyasztobarat
+ *       ertekelesunk. az keruljon oda".
+ *       SZAM NINCS MELLETTE. A terven az Arukereso mellett 4,9 / 5 es 312
+ *       ertekeles all; Balazs a tanusitvanyt nevezte meg, szamot nem adott
+ *       hozza, es egy kitalalt szam ugyanaz a hiba lenne, mint az eredeti volt.
  *   "Szakertoi segitseg"
- *       link, aminek nincs celja.
+ *       Kiirjuk, de NEM LINK. Egy felirat, ami nem visz sehova, elfogadhato;
+ *       egy link, ami rossz helyre visz, nem. Amint van cime, link lesz belole.
  *
- * Egy URES 36 pixeles csik rosszabb, mint a hianya: helyet foglal es semmit nem
- * mond. A sav akkor epul meg, amikor mind a haromnak van forrasa vagy dontese.
+ * === A MERETEK, ES HOGY MELYIK HONNAN JON ===
+ *
+ * MAGASSAG 36 pixel: a tervFAJLBOL, ahogy eddig is ebben a fejlecben allt.
+ * A kuldott KEPBOL ez nem olvashato ki, mert a kep a sav TETEJET levagja: a
+ * lathato resz 60 kep-pixel (27 CSS pixel), tehat kilenc pixel hianyzik.
+ *
+ * BETUMERET 12 pixel: a kepbol szamolva. A kep leptekét a fo sav adja meg --
+ * ott 175 kep-pixel all a 63. es a 238. sor kozott, ami a tervbeli 78 CSS
+ * pixellel 2.2222-es leptekét jelent (3200 / 1440 = 2.2222, tehat a vaszon
+ * 1440 szeles). A sav szovege ezen a leptekén nagyjabol 10 CSS pixel magas
+ * betutesttel all, ami 12 pixeles betumeretnek felel meg.
+ *
+ * SZINEK a tokenekbol, es a meres IGAZOLJA a parositast:
+ *
+ *     a sav halvany szovege   a kepen rgb(159,164,170)
+ *     --terv-szoveg-halvany   sotetben rgb(159,165,172)     -- ket egyseg
+ *     a kiemelt szoveg        a kepen rgb(204,128,89)
+ *     --terv-kiemel-tinta     sotetben rgb(217,124,80)      -- a ket akcent
+ *                             kozul ez a kozelebbi, es szerep szerint is ez a
+ *                             "tinta" valtozat
  *
  * === A SZINEK TOKENBOL JONNEK, ES EZ NEM STILUS-KERDES ===
  *
@@ -110,6 +132,40 @@ import SideMenu from "@modules/layout/components/side-menu"
  *                 hibazik, csak nem talal. Az igeret tehat az adat alakjan
  *                 all, nem a keresoen.
  */
+/**
+ * A FELSO SAV HAROM SZOVEGE. Kulon allandok, mert kulon dontes all mindegyik
+ * mogott, es a kovetkezo olvaso ne egy hosszu JSX-bol probalja kihamozni,
+ * melyik honnan jon.
+ */
+const BIZALMI_BAL =
+  "Élő megérkezési garancia · Élőállat-szállítás minden szerdán"
+/**
+ * A TANUSITVANY ES A KET SZAMA -- STATIKUS ERTEK, MERT NINCS LEKERDEZESUNK.
+ *
+ * Balazs szava (2026-09-09 11:06:53Z): "az jelenleg 4.8 213 ertekelesbol", es
+ * ket masodperccel kesobb: "aztan majd bekotjuk, addig legyen statikus".
+ *
+ * A SZOVEG AZ O SZAVAT KOVETI: "ertekelesbol", nem "velemenybol". Elso
+ * valtozatomban az utobbi allt, egy masodkezi atirasbol -- a szo ket kezen at
+ * megvaltozott, es a forras mondja meg, melyik a helyes.
+ *
+ * A ket szam A FENTI NAP ALLAPOTA, es NEM frissul magatol: nincs olyan
+ * hivasunk, ami a tanusitvany oldalarol lehozna. Ez BALAZS DONTESE, nem a mi
+ * kenyelmunk -- es ezert nem is epitettunk hozza sem lehivast, sem helyet egy
+ * jovobeli adatforrasnak. A bekotes kesobb jon, es akkor dol el, honnan.
+ *
+ * EZERT ALL ITT A DATUM, ES NEM DISZ: egy szam, ami a vevo elott all es nem
+ * frissul, egy ev mulva is ugyanezt fogja mondani. Aki ide nez, lassa, mikori.
+ *
+ * AMI EZZEL LEZARULT: az eredeti tervbeli sor ("Arukereso 4,9 / 5 · 312
+ * ertekeles") azert nem epult meg, mert KULSO szolgaltatas adata volt, forras
+ * nelkul. Ez a ket szam a SAJAT tanusitvanyunke, es a gazdatol jon.
+ */
+const BIZALMI_TANUSITVANY_DATUM = "2026-09-09"
+const BIZALMI_TANUSITVANY =
+  "Fogyasztóbarát tanúsítvány · 4,8 · 213 értékelésből"
+const BIZALMI_SEGITSEG = "Szakértői segítség"
+
 const KERESO_HELYKITOLTO = "Keresés termékre, márkára, cikkszámra"
 
 export default async function Nav({ countryCode }: { countryCode?: string }) {
@@ -135,6 +191,32 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
         }}
         data-testid="fejlec"
       >
+        <div
+          className="mx-auto flex w-full items-center justify-between border-b text-xs"
+          style={{
+            height: "36px",
+            maxWidth: "1352px",
+            borderColor: "var(--terv-keret)",
+            color: "var(--terv-szoveg-halvany)",
+            fontFamily: "var(--terv-betu-fo-lanc)",
+          }}
+          data-testid="fejlec-bizalmi-sav"
+          /*
+            A DATUM JELOLOKENT ALL, NEM SZOVEGKENT: a vevonek nem mond semmit,
+            de aki a lapot megnezi, latja, MIKORI a ket szam. Egy csak
+            megjegyzesben allo datum a kitelepitett lapon nem letezik.
+          */
+          data-tanusitvany-allapot={BIZALMI_TANUSITVANY_DATUM}
+        >
+          <p>{BIZALMI_BAL}</p>
+          <p className="flex items-center gap-2">
+            <span>{BIZALMI_TANUSITVANY}</span>
+            <span aria-hidden="true">·</span>
+            <span style={{ color: "var(--terv-kiemel-tinta)" }}>
+              {BIZALMI_SEGITSEG}
+            </span>
+          </p>
+        </div>
         <nav
           /*
             A SAV MAGASSAGA A KOZOS VALTOZOBOL JON, MINUSZ AZ ALSO KERET.

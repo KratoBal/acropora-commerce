@@ -67,19 +67,75 @@ describe("a fejléc fő sávja", () => {
   })
 
   /**
-   * A FELSO SAV NINCS MEGEPITVE, ES EZ ALLITAS, NEM ELMULASZTAS.
+   * A FELSO SAV MEGEPULT -- ES A REGI ALLITAS NEM VETTE ESZRE.
    *
-   * Mind a harom szovege blokkolt (igeret, kulso adat, cel nelkuli link), es egy
-   * ures 36 pixeles csik rosszabb, mint a hianya. Ha valaki egyszer megepiti,
-   * ennek pirosodnia KELL -- akkor ujra el kell dontenie, van-e mar forrasa a
-   * harom szovegnek.
+   * Itt korabban ez allt: "a felső 36 pixeles sáv NINCS megépítve", ezzel a ket
+   * meressel:
    *
-   * A POZITIV KONTROLL a fenti 78-as allitas: enelkul ez a sor egy URES
-   * fajlon is zold lenne.
+   *     expect(nav).not.toContain("h-[36px]")
+   *     expect(nav).not.toContain("Árukereső")
+   *
+   * A sajat megjegyzese kimondta: "Ha valaki egyszer megepiti, ennek pirosodnia
+   * KELL". MEGEPULT, ES NEM PIROSODOTT. A magassag beagyazott stilusban all
+   * (`height: "36px"`), nem osztalykent, es az Arukereso-sor helyere Balazs
+   * dontese szerint a Fogyasztobarat tanusitvany kerult -- vagyis a szo sem
+   * szerepel. Mind a ket meres egy-egy IRASMODRA szolt, nem az allapotra.
+   *
+   * Ez ugyanaz a csalad, mint a tukor-allitas: a nev helyes volt, a targya nem.
+   *
+   * A HELYERE AZ UJ ALLAPOT ALLITASAI KERULNEK, es kozottuk kulon all a KET
+   * dolog, amit Balazs kikotott: nincs kitalalt szam, es a segitseg-felirat nem
+   * link, amig nincs cime.
    */
-  it("a felső 36 pixeles sáv NINCS megépítve", () => {
-    expect(nav).not.toContain("h-[36px]")
+  it("a felső sáv megépült, a terv három szövegével", () => {
+    expect(nav).toContain('data-testid="fejlec-bizalmi-sav"')
+    expect(nav).toContain("Élő megérkezési garancia")
+    expect(nav).toContain("Fogyasztóbarát tanúsítvány")
+    expect(nav).toContain("Szakértői segítség")
+  })
+
+  /**
+   * A KET SZAM BALAZSTOL VAN, ES A DATUMUK IS KI VAN IRVA.
+   *
+   * ITT KORABBAN EGY TAGADAS ALLT ("nincs értékelés-szám a sávban"), amikor meg
+   * nem volt szam. Amikor Balazs megadta oket (4,8 · 213 velemenybol), a
+   * tagadas NEM PIROSODOTT -- pedig szam kerult a savba.
+   *
+   * AZ OK UGYANAZ, AMIT EGY ORAVAL KORABBAN MASNAL TALALTAM: a tagadas a TERV
+   * IRASMODJARA szolt (`4,9 / 5`, `N értékelés`), nem arra, hogy van-e szam. A
+   * "4,8 · 213 értékelésből" egyik mintara sem illeszkedik. Sajat magamon
+   * ismetlem meg a hibat, amit epp elotte irtam le.
+   *
+   * A HELYERE MEGLET-ALLITAS KERUL: a ket ERTEK es a datum. Igy ha barmelyik
+   * elcsuszik, az pirosodik -- es a datum arra szolgal, hogy egy ev mulva
+   * lassa valaki, hogy ezek a szamok NEM frissulnek maguktol.
+   */
+  it("a tanúsítvány két száma és a dátuma ki van írva", () => {
+    expect(nav).toContain("4,8")
+    expect(nav).toContain("213 értékelésből")
+    expect(nav).toContain('BIZALMI_TANUSITVANY_DATUM = "2026-09-09"')
+    expect(nav).toContain("data-tanusitvany-allapot")
+  })
+
+  /** ES AMI NEM KERULT VISSZA: a kulso szolgaltatas, amire nincs forrasunk. */
+  it("az Árukereső-sor nem jött vissza", () => {
     expect(nav).not.toContain("Árukereső")
+  })
+
+  /**
+   * ES A FELIRAT NEM LINK. Egy felirat, ami nem visz sehova, elfogadhato; egy
+   * link, ami rossz helyre visz, nem. Amint van cime, ez az allitas fog
+   * pirosodni -- es akkor kell ujra eldonteni.
+   */
+  it("a segítség-felirat nem link", () => {
+    const sav = nav.slice(
+      nav.indexOf("fejlec-bizalmi-sav"),
+      nav.indexOf("</div>", nav.indexOf("fejlec-bizalmi-sav")),
+    )
+
+    expect(sav).toContain("BIZALMI_SEGITSEG")
+    expect(sav).not.toContain("href")
+    expect(sav).not.toContain("LocalizedClientLink")
   })
 
   /**
