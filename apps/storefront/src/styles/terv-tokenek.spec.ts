@@ -361,6 +361,14 @@ describe("a terv megerositett ertekei", () => {
       az indoklas a `globals.css`-ben all.
     */
     ["--terv-utvonal", "oklch(0.52 0.012 60)", "oklch(0.66 0.014 250)"],
+    /*
+      A KERETES DOBOZ HATTERE. A VILAGOS ERTEKE NEM SZIN, HANEM A HIANYA: a
+      terv a vilagos lapon nem ad hatteret a doboznak, csak keretet. A sotet
+      ertek HIVATKOZAS, nem masolat -- ugyanaz a felulet, amit a
+      `--terv-hatter-halvany` visel, es egy masolt szam ket helyen
+      elobb-utobb szetcsuszna.
+    */
+    ["--terv-doboz-hatter", "transparent", "var(--terv-hatter-halvany)"],
   ]
 
   it.each(VILAGONKENT)("%s a helyes világban áll", (nev, vilagos, sotet) => {
@@ -448,12 +456,13 @@ describe("a terv megerositett ertekei", () => {
      * pirosat adna itt.)
      */
     /*
-      TIZENEGY, MERT A `--terv-utvonal` 2026-09-09-en bekerult. A szam
-      atirasa akkor helyes, ha az uj tokennek van NEVESITETT PARJA a
-      `VILAGONKENT` tablaban -- van, kozvetlenul felette. A szam atirasa
-      magaban a guard kiuresitese lenne.
+      TIZENKETTO, ES A KET UJ TOKEN UGYANAZON A NAPON JOTT (2026-09-09):
+      a `--terv-utvonal` (az utvonal-sor szine) es a `--terv-doboz-hatter`
+      (a keretes doboz hattere). Mind a ketto NEVESITETT PARRAL all a
+      `VILAGONKENT` tablaban -- a szam atirasa a par felvetele NELKUL a guard
+      kiuresitese lenne.
     */
-    expect(elteroek).toHaveLength(11)
+    expect(elteroek).toHaveLength(12)
 
     /**
      * A TOKEN NEVE TABLA-SORBAN ALLJON, NE CSAK A FAJLBAN VALAHOL.

@@ -135,6 +135,29 @@ describe("a műszaki lap váza", () => {
    * "minden doboz 24" valtozat tehat NEM a terv kovetese lenne, hanem egy
    * kiterjesztes oda, ahol a terv hallgat.
    */
+  /**
+   * A KOZOS PANEL BELSO TERKOZE IS 24 PIXEL -- ES EZT A 287 KIHAGYTA.
+   *
+   * A 287 a SZAKASZOK osztalyat allitotta at a jobb oszlopban (`p-6`), de a
+   * kozos panel a sajat BEAGYAZOTT `padding` erteket viseli, tehat kimaradt:
+   * a `csomagajanlat` es a `kerdezd` 24-et kapott, ez a doboz 16-on maradt.
+   * Merve a kitelepitett lapon, 2026-09-09.
+   *
+   * A tervben mind a HAROM jobb oldali doboz 24 pixeles, es nalunk is harom
+   * van -- ezert all rajta allitas, kulon nevvel.
+   */
+  it("a közös panel belső térköze is a terv 24 pixele", () => {
+    render(<LapVaz />)
+
+    const panel = document.querySelector(
+      "[data-vaz-csoport]",
+    ) as HTMLElement | null
+
+    /* ISMERT POZITIV KONTROLL: a kozos panel megrajzolodott. */
+    expect(panel).toBeTruthy()
+    expect(panel?.style.padding).toBe("24px")
+  })
+
   it("a jobb panel doboza 24 pixeles, a bal oszlopé nem", () => {
     const { dobozOsztaly } = vaz()
 
@@ -1078,10 +1101,17 @@ describe("a panel és a lap tónusa", () => {
   const kozosPanel = () =>
     document.querySelector('[data-vaz-csoport="vasarlas"]') as HTMLElement
 
-  it("a közös panel a tervvel betűre egyező tokent viseli", () => {
+  it("a közös panel a doboz-háttér tokenjét viseli", () => {
     render(<LapVaz vilag="sotet" />)
 
-    expect(kozosPanel().style.background).toBe("var(--terv-hatter-halvany)")
+    /*
+      ITT KORABBAN A `--terv-hatter-halvany` ALLT, es az helyes volt: a terv
+      sotet paneljenek erteke beture ugyanaz. 2026-09-09 ota a doboz sajat
+      tokent visel, mert a VILAGOS lapon a tervben NINCS hattere -- a
+      `--terv-doboz-hatter` sotetben ugyanarra a felületre mutat, vilagosban
+      `transparent`. Az ertek tehat nem valtozott, a SZEREP valt kulon.
+    */
+    expect(kozosPanel().style.background).toBe("var(--terv-doboz-hatter)")
   })
 
   /**
@@ -1105,7 +1135,7 @@ describe("a panel és a lap tónusa", () => {
     ) as HTMLElement
 
     expect(doboz.getAttribute("data-vaz-ures")).toBe("nem")
-    expect(doboz.style.background).toBe("var(--terv-hatter-halvany)")
+    expect(doboz.style.background).toBe("var(--terv-doboz-hatter)")
   })
 
   /**
@@ -1138,8 +1168,15 @@ describe("a panel és a lap tónusa", () => {
     const lap = screen.getByTestId("lap-teljes-szelesseg")
 
     expect(lap.style.background).toBe("var(--terv-hatter)")
-    expect(kozosPanel().style.background).toBe("var(--terv-hatter-halvany)")
+    expect(kozosPanel().style.background).toBe("var(--terv-doboz-hatter)")
     expect(kozosPanel().style.background).not.toBe(lap.style.background)
+
+    /*
+      ES AMIT EZ A SOR NEM BIZONYIT: hogy a ket token ERTEKE is kulonbozik. A
+      jsdom nem oldja fel a valtozokat, tehat ket kulonbozo NEV allhatna
+      ugyanarra az ertekre. Azt a `terv-tokenek.spec` allitja, a stiluslap
+      szovegen -- ott all, hogy a sotet blokkban a lap 0.17, a panel 0.205.
+    */
   })
 })
 
