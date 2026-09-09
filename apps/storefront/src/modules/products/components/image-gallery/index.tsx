@@ -3,7 +3,6 @@
 import { useState } from "react"
 
 import { HttpTypes } from "@medusajs/types"
-import { Container } from "@modules/common/components/ui"
 import Image from "next/image"
 
 import UniquePieceBadge, {
@@ -71,9 +70,35 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
     <div className="flex items-start relative">
       <div className="flex flex-col flex-1 gap-y-4">
         {nagy && (
-          <Container
+          <div
             key={nagy.id}
             className={`relative w-full overflow-hidden ${KEP_ARANY_OSZTALY}`}
+            /*
+            SIMA `div`, NEM A KOZOS `Container` -- ES EZT MERES KERTE.
+
+            A `Container` komponensunk BEEGETVE viszi a `bg-white rounded-lg
+            p-4` osztalyokat. A kep-doboznal mind a harom felesleges vagy
+            karos, es a hatasuk KULONBOZIK -- ezert nem eleg egyet kivenni:
+
+              rounded-lg   LATSZIK: 8 pixeles lekerekites all a foton, es a
+                           tervlapon a foto doboza `position:relative;
+                           aspect-ratio:16/10; background:...` -- lekerekites
+                           NINCS rajta. (Merve a kitelepitett lapon: a
+                           szamitott `border-radius` 8px volt.)
+              p-4          NEM LATSZIK: a `next/image` `fill` modban
+                           abszolut pozicioval all, tehat a belso margot
+                           atlepi. Merve: a doboz 822x514, a kep 822x514,
+                           bal+0 jobb+0.
+              bg-white     NEM LATSZIK: a beagyazott `background` felulirja.
+                           Merve: a szamitott hatter a sotet lapon
+                           `oklch(0.17 0.016 250)`, vagyis a lap foldje.
+
+            A ket LATHATATLAN osztaly nem artalmatlan: amig ott allnak, egy
+            tagadas, ami rogzitett hattereket tilt, NEM irhato meg -- azonnal
+            pirosat adna egy helyes fan. Ez a valtozas ezert nem csak egy
+            lekerekitest vesz le, hanem KINYITJA a mérhetőséget is (kartya
+            `c9d3cec8`).
+            */
             /*
               A DOBOZ FOLDJE A LAP FOLDJE, NEM EGY ROGZITETT SZURKE.
 
@@ -133,7 +158,7 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
                 }}
               />
             )}
-          </Container>
+          </div>
         )}
 
         {/*

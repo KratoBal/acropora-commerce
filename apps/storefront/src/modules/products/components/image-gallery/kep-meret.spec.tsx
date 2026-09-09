@@ -250,7 +250,44 @@ describe("a nagy kép kisebb, a többi alatta", () => {
     ) as HTMLElement | null
 
     expect(doboz!.style.background).toBe("var(--terv-hatter)")
-    expect(doboz!.className).not.toContain("bg-ui-")
+
+    /*
+      A TAGADAS MOSTANTOL TAGABB, ES EZ EDDIG NEM VOLT MEGIRHATO.
+
+      Korabban csak a `bg-ui-` elotagot tiltottuk -- a `bg-white`-ot NEM latta.
+      Kiterjeszteni viszont nem lehetett, mert a doboz a kozos `Container`
+      komponenst hasznalta, ami BEEGETVE viszi a `bg-white rounded-lg p-4`
+      osztalyokat: egy tagabb tagadas AZONNAL pirosat adott volna egy helyes
+      fan.
+
+      A `Container` kicserelese sima `div`-re ezt a korlatot szuntette meg --
+      vagyis a valtozas nem csak egy lekerekitest vett le, hanem MERHETOVE
+      tette azt, amit eddig csak kartyan lehetett szamon tartani (`c9d3cec8`).
+    */
+    expect(doboz!.className).not.toMatch(/\bbg-(ui-|white|gray-|neutral-)/)
+  })
+
+  /**
+   * A FOTO SARKA NEM LEKEREKITETT.
+   *
+   * A tervlapon a foto doboza `position:relative; aspect-ratio:16/10;
+   * background:...` -- lekerekites NINCS rajta. Nalunk a kozos `Container`
+   * hozta be a `rounded-lg` osztalyt, es a kitelepitett lapon merve 8 pixeles
+   * `border-radius` allt a foton.
+   *
+   * Ez a lekerekites LATSZIK, ellentetben a masik ket Container-osztallyal
+   * (`p-4`, `bg-white`), amiket a `fill` modu kep, illetve a beagyazott
+   * hatter semlegesített.
+   */
+  it("a nagy kép doboza nem lekerekített", () => {
+    const { container } = render(<ImageGallery images={[kep(1)] as never} />)
+
+    const doboz = container.querySelector(
+      '[data-testid="nagy-kep"]',
+    ) as HTMLElement | null
+
+    expect(doboz!.className).not.toMatch(/\brounded/)
+    expect(doboz!.className).not.toMatch(/\bp-4\b/)
   })
 
   /**
