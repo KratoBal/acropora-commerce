@@ -90,6 +90,17 @@ type VazSzakasz = {
    * gombja a `#vaz-mennyiseg` horgonyra ugrik.
    */
   csoport?: string
+  /**
+   * NINCS KORULOTTE DOBOZ, MERT A TERVEN SINCS.
+   *
+   * A `csoport` is keret nelkulive tesz egy szakaszt, de MAS okbol: ott tobb
+   * szakasz egyetlen KOZOS keretes panelbe kerul. Itt nincs kozos panel: a
+   * szakasz egyszeruen a lapon all, keret es hatter nelkul.
+   *
+   * A ket ok kulon all, mert kulon is valtozhat: ha a cimsor egyszer masik
+   * szakasz melle kerul egy panelbe, a `csoport` dontene, nem ez.
+   */
+  keretNelkul?: boolean
 }
 
 /**
@@ -331,6 +342,24 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     cim: "",
     varakozo: "A termék neve és a fejléc-műveletek",
     oszlop: "teljes",
+    /*
+      A TERVEN A CIM NEM DOBOZBAN ALL, ES EZT MERTEM, NEM SZEMRE MONDOM.
+
+      A kitelepitett lapon a `cimsor` szakasz igy allt (2026-09-09):
+
+          keret        1px solid oklch(0.28 0.014 250)
+          hatter       oklch(0.205 0.018 249)
+          belso margo  16px
+
+      A tervlapon a cim, a folotte allo besorolas es az alcim KOZVETLENUL a
+      lapon all: nincs korulottuk keret, hatter es belso margo. picasso
+      elteres-listaja is ezt emelte ki.
+
+      A BELSO MARGO ELTUNESE NEM MELLEKHATAS, HANEM A LENYEG MASIK FELE: a 16
+      pixel miatt a cim BELJEBB kezdodott, mint alatta a foto. A terven a ketto
+      egy vonalban all.
+    */
+    keretNelkul: true,
   },
   { kulcs: "foto", cim: "", varakozo: "Termékfotó", oszlop: "bal" },
   {
@@ -1267,7 +1296,7 @@ const LapVaz = ({
                   <VazDoboz
                     key={szakasz.kulcs}
                     szakasz={szakasz}
-                    keretNelkul={kozos}
+                    keretNelkul={kozos || Boolean(szakasz.keretNelkul)}
                   >
                     {tartalom[szakasz.kulcs]}
                   </VazDoboz>
