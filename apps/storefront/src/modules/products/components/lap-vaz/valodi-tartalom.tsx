@@ -486,6 +486,23 @@ export function vazTartalom(
    * szallitasrol szol, nem a peldany egyedisegerol. Ez FELTEVES, nem meres --
    * ha szukebb kell, egy `uniquePieceOf` hivas a helye, es akkor ez a
    * bekezdes valtozik.
+   *
+   * === ES A HATOKOR JOVAHAGYASRA VAR (acrobot, 2026-09-09 19:13) ===
+   *
+   * A fenti felteves NEM az en dontesem lezarasa, hanem egy ideiglenes alak.
+   * A sor szovege PENZUGYI IGERET a vevo fele ("a teljes vetelarat
+   * visszateritjuk"), nem elrendezes -- tehat sem a SZOVEGET, sem a HATOKORT
+   * (mely termekekre all) nem hagyhatjuk jova magunk kozott.
+   *
+   * A kartya: `61f9b067`. Amig azon nincs Balazs jovahagyasa:
+   *
+   *   a teszt bolton      LATSZHAT
+   *   eles boltba         NEM MEHET KI
+   *
+   * Ez a bekezdes azert all itt es nem csak a kartyan, mert aki a lapot
+   * elesbe viszi, a KODOT olvassa, nem a tablat. Ha a jovahagyas megjon, ez a
+   * szakasz torolheto -- de a torles akkor a jovahagyas TENYET rogzitse,
+   * ne csak tunjon el.
    */
   const eloAllat = vilagaTermeknek(termek, kategoriak) === "sotet"
 

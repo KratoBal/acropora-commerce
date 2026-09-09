@@ -422,6 +422,19 @@ export function MennyisegDoboz() {
  *
  * A DOA-sor ezzel szemben KIJELENTES: nincs mogotte muvelet, tehat a szoveg
  * megjelenitese a teljes viselkedese.
+ *
+ * === DE A KIJELENTES PENZUGYI IGERET, ES JOVAHAGYASRA VAR ===
+ *
+ * "A teljes vetelarat visszateritjuk" -- ez a mondat a vevo fele tett igeret,
+ * nem elrendezes. Sem a SZOVEGET, sem a HATOKORT (mely termekekre all) nem
+ * hagyhatjuk jova magunk kozott, meg akkor sem, ha szo szerint a tervlaprol
+ * valo. (acrobot, 2026-09-09 19:13; kartya `61f9b067`.)
+ *
+ *   a teszt bolton   LATSZHAT
+ *   eles boltba      NEM MEHET KI, amig Balazs jova nem hagyja
+ *
+ * A hatokor felteveserol a `lap-vaz/valodi-tartalom.tsx` szol, ott, ahol a
+ * feltetel all.
  */
 export const DOA_JELOLES = "DOA"
 export const DOA_MONDAT =
