@@ -40,6 +40,75 @@ const open = () => {
 }
 
 describe("a kis lenyíló kategóriamenü", () => {
+  /**
+   * A FEJLEC NEGY GYOKERE KEZZEL VALOGATOTT LISTA, ES EDDIG SEMMI NEM ORIZTE.
+   *
+   * === A MERT RES ===
+   *
+   * A `HEADER_MENU_ITEMS` egy beegetett negy-elemu lista a komponensben; a
+   * panel TARTALMA jon a kategoria-fabol, a NEGY NEV nem. Merve 2026-09-09:
+   * egy OTODIK nev hozzaadasa NULLA allitast vitt pirosra, es a sorrend
+   * megforditasa szinten NULLAT. Vagyis a valogatas barmikor elmozdulhatott
+   * volna, csendben.
+   *
+   * === AMIT EZ AZ ALLITAS NEM DONT EL ===
+   *
+   * Azt NEM, hogy EZ a negy nev a helyes. A tervlap egy valogatott listat ir
+   * elo, a ket jovahagyott lap ketfelet mutat, es hogy a negy nev Balazstol
+   * jovo TARTALMI szabaly volt-e, ma nem tudjuk -- a kerdes a `659272df`
+   * kartyan all, `waiting` allapotban.
+   *
+   * Ez az allitas tehat a MAI allapotot rogziti, hogy egy valtozas LATSZODJON.
+   * Ha a dontes megszuletik es mas listat ad, ez pirosodik, es akkor a
+   * valtozas MELLE odakerul a dontes -- nem helyette.
+   *
+   * KET FUGGETLEN ERTEK, KET NEV: a HALMAZ (mely nevek) es a SORREND. A
+   * masodik nelkul egy atrendezes eszrevetlen maradna, holott a fejlecben a
+   * sorrend maga is allitas.
+   */
+  const gyokerNevek = () =>
+    Array.from(
+      document.querySelectorAll('[data-testid^="category-menu-trigger-"]'),
+    ).map((e) => (e.textContent ?? "").trim())
+
+  it("a fejléc négy gyökeret kínál, névre pontosan", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+
+    expect(gyokerNevek().slice().sort()).toEqual(
+      ["Gerinctelenek", "Halak", "Korallok", "Termékek"].sort(),
+    )
+  })
+
+  it("a négy gyökér ebben a sorrendben áll", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+
+    expect(gyokerNevek()).toEqual([
+      "Termékek",
+      "Halak",
+      "Korallok",
+      "Gerinctelenek",
+    ])
+  })
+
+  /**
+   * ES A TAGADAS: a lista NEM a kategoria-fabol epul.
+   *
+   * A fixtura NEGY gyokeret ad, tehat a fenti ket allitas akkor is teljesulne,
+   * ha a komponens a FABOL venne a neveket. Ez az allitas ad a fanak EGY
+   * OTODIK gyokeret, es azt varja, hogy a fejlecben NE jelenjen meg -- ez a
+   * kulonbseg a valogatott lista es a fa kozott.
+   */
+  it("a fa ötödik gyökere NEM kerül a fejlécbe", () => {
+    render(
+      <FejlecMenu
+        kategoriak={[...categories, root("Édesvízi akvarisztika")] as never}
+      />,
+    )
+
+    expect(gyokerNevek()).toHaveLength(4)
+    expect(gyokerNevek()).not.toContain("Édesvízi akvarisztika")
+  })
+
   it("a rögzített menüpont alatt megjelenik a három hasáb", () => {
     open()
     expect(screen.getByTestId("category-menu-panel").textContent).toContain(
