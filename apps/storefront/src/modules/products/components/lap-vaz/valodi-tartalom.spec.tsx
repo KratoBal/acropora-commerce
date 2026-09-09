@@ -343,6 +343,74 @@ describe("a váz valódi tartalma", () => {
    * kategoria nelkuli termeknel a sor MEG SEM JELENIK, es akkor a fenti
    * allitas `getByTestId` hivasa hasal el, nem az allitas mond valamit.
    */
+  /**
+   * A CIM MERETE A TERVBOL JON, ES AZ ALLITAS A KIRAJZOLT OSZTALYRA MER.
+   *
+   * === MIERT A KIRAJZOLT OSZTALY, ES NEM A FORRAS SZOVEGE ===
+   *
+   * A komponens megjegyzese SZO SZERINT idezi az elvetett 1a lap erteket
+   * (`-0.015em`), mert azt ki kell mondani, hogy azt NE hasznaljuk. Egy
+   * forras-szovegre mero tagadas ezen azonnal elbukna -- a sajat magyarazatunk
+   * elegitene ki. A kirajzolt `className` ezt a kerdest fel sem veti.
+   *
+   * === AMIT MER, ES AMIT NEM ===
+   *
+   * A jsdom nem szamol elrendezest: azt, hogy a cim TENYLEG 36 pixel, csak a
+   * kitelepitett lapon lehet megnezni. Amit ez bizonyit: a toresponthoz kotott
+   * ertek OTT VAN, es az elvetett lap erteke NINCS ott.
+   */
+  /**
+   * HAROM ALLITAS, HAROM NEVVEL -- ES EZ NEM SZOROSZAPORITAS.
+   *
+   * Elso valtozatban mind a het `expect` EGY `it`-ben allt. A kalibracio
+   * ekkor haromfele rontasra HAROMSZOR ugyanazt a nevet adta vissza, tehat a
+   * piros NEVE nem mondta meg, MELYIK ertek romlott el -- csak a sor. A
+   * mercenk viszont a nev: "a pirosak szama egyezhet, mikozben a halmaz mas".
+   *
+   * Harom nevvel a kalibracio maga bizonyitja, hogy a harom ertek KULON all.
+   */
+  const cimet = () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    return screen.getByTestId("vaz-termek-nev").className
+  }
+
+  it("a cím asztalon a terv 36 pixeles alakját viseli", () => {
+    const osztaly = cimet()
+
+    expect(osztaly).toContain("lg:text-[36px]")
+    expect(osztaly).toContain("lg:leading-[1.1]")
+    expect(osztaly).toContain("lg:tracking-[-0.02em]")
+  })
+
+  /**
+   * A `text-2xl` sajat sorkoze 32 pixel (1.333), a terve 1.15. A meret
+   * onmagaban tehat NEM allitja be a sorkozt -- enelkul az allitas nelkul a
+   * meret helyes lenne es a sorkoz nem, es semmi nem szolna.
+   */
+  it("a töréspont alatt a terv 24 pixeles alakját viseli", () => {
+    const osztaly = cimet()
+
+    expect(osztaly).toContain("text-2xl")
+    expect(osztaly).toContain("leading-[1.15]")
+  })
+
+  /**
+   * AZ ELVETETT 1a LAP ERTEKEI. Ket token-ertekunk mar jott onnan (a keret es
+   * a halvany felulet); ez a harmadik hely, ahol ugyanaz a tevedes
+   * megtortenhetne.
+   *
+   * A TAGADAS A KIRAJZOLT OSZTALYRA MER, nem a forras szovegere: a komponens
+   * megjegyzese SZO SZERINT idezi a `-0.015em` erteket, mert ki kell mondani,
+   * hogy azt ne hasznaljuk. Egy forras-szovegre mero tagadas ezen elbukna.
+   */
+  it("az elvetett tervlap címméretét nem viseli", () => {
+    const osztaly = cimet()
+
+    expect(osztaly).not.toContain("29px")
+    expect(osztaly).not.toContain("-0.015em")
+  })
+
   it("kategória nélkül a lánc üres", () => {
     expect(besorolasLanc({ id: "p", title: "x" } as never)).toEqual([])
   })
