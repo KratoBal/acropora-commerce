@@ -157,6 +157,7 @@ const MuszakiLap = ({
         fotoResz,
         ragadosResz,
         kiegeszitoResz,
+        kategoriak,
       )}
     />
   )

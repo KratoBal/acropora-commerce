@@ -58,6 +58,35 @@ const kategoriak = [
 ] as never
 
 /**
+ * EGY KETSZINTU FIXTURA, A BOLT VALODI NEVADASAVAL.
+ *
+ * A `kategoriak` fenti alakja egyetlen GYOKERBOL all, tehat nincs benne
+ * szulo-utotag -- es epp ezert nem tudott merni semmit arrol, hogy a
+ * morzsamenu a TELJES vagy a ROVID nevet mutatja-e. Merve 2026-09-09: a
+ * `teljesNev` mezot `nev`-re cserelve NULLA allitas fordult pirosra.
+ *
+ * A bolt neveiben a szulo neve ott all (`NEV - SZULONEV`, a menu 92
+ * gyermek-nevebol 92). A morzsamenu SZANDEKOSAN a teljes nevet mutatja: ott az
+ * UT szamit. A cim folotti besorolas-sor a rovidet mutatja. Hogy a ketto
+ * kozeledjen-e, kulon tetel (acrobot, 2026-09-09).
+ */
+const termek_ketszintu = {
+  id: "p2",
+  title: "Acropora tenuis",
+  categories: [{ id: "c3" }],
+  variants: [{ sku: "A-1042" }],
+} as never
+const kategoriak_ketszintu = [
+  { id: "c1", name: "Korallok", handle: "korallok", parent_category_id: null },
+  {
+    id: "c3",
+    name: "SPS - Korallok",
+    handle: "sps",
+    parent_category_id: "c1",
+  },
+] as never
+
+/**
  * A MORZSAMENU SZINEI TOKENBOL JONNEK (a sotet lap 4. pontja).
  *
  * === AMIT EZ MER, ES AMIT NEM ===
@@ -169,6 +198,29 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
   })
 
   /** POZITIV KONTROLL a fentihez: a kategoria-link viszont OTT van. */
+  /**
+   * A MORZSAMENU A TELJES NEVET MUTATJA, A SZULO UTOTAGJAVAL EGYUTT.
+   *
+   * A cim folotti besorolas-sor ugyanabbol a levezetesbol dolgozik, de a ROVID
+   * nevet veszi. A ket alak egy MEZO kulonbsege, nem ket szamitas -- es hogy
+   * itt a teljes all, az DONTES: a morzsamenuben az UT szamit.
+   *
+   * Enelkul az allitas nelkul a ket mezo felcserelheto lenne csendben: merve
+   * 2026-09-09, a csere NULLA pirosat adott.
+   */
+  it("a teljes nevet mutatja, a szülő utótagjával", () => {
+    render(
+      <ProductBreadcrumb
+        product={termek_ketszintu}
+        categories={kategoriak_ketszintu}
+      />,
+    )
+
+    const szoveg = screen.getByTestId("morzsamenu-lista").textContent
+
+    expect(szoveg).toContain("SPS - Korallok")
+  })
+
   it("a kategória továbbra is ott áll, linkként", () => {
     render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
 
