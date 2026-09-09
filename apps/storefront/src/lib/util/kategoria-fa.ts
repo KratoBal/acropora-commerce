@@ -73,6 +73,29 @@ export const rovidNev = (
 }
 
 /**
+ * EGY OS-LANC ROVID NEVEI, A GYOKERTOL LEFELE.
+ *
+ * Ugyanaz a levezetes, mint a `besorolasUt` belsejeben -- de az a TERMEK
+ * kategoriaibol indul, ez pedig egy MAR MEGLEVO lancbol. A kategoria-lap a
+ * sajat felmenoit a `parent_category` mezobol epiti, tehat nincs szuksege a
+ * teljes katalogusra.
+ *
+ * MIERT LANCBAN, ES NEM ELEMENKENT: minden szint rovid neve a SZULO ROVID
+ * nevetol fugg. Egy `rovidNev(nev, szulo.name)` hivas a masodik szinten mar
+ * rosszat adna, mert a szulo nevében is benne all a nagyszulo.
+ */
+export const rovidNevekLancban = <T extends { name?: string | null }>(
+  lanc: T[],
+): string[] => {
+  const ki: string[] = []
+  for (const elem of lanc) {
+    const szuloRovid = ki.length ? ki[ki.length - 1] : null
+    ki.push(rovidNev(elem.name ?? "", szuloRovid))
+  }
+  return ki
+}
+
+/**
  * A TERMEK BESOROLASI UTJA, A GYOKERTOL A LEGMELYEBB KATEGORIAIG.
  *
  * === MIERT A TELJES LISTABOL, ES NEM A TERMEK SAJAT MEZOJEBOL ===
