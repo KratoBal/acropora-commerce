@@ -201,10 +201,50 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
           <section
             id={panelId}
             aria-label={`${openName} kategóriamenü`}
-            className="fixed z-[61] w-[min(1064px,calc(100vw-2rem))] overflow-hidden rounded-b-xl border shadow-xl"
+            /*
+              A PANEL SAJAT MAGAN BELUL GORGET, MERT AZ ALJA MA ELERHETETLEN.
+
+              MERVE 2026-09-09, a kitelepitett lapon:
+
+                  a panel pozicioja           fixed
+                  a panel teteje              y=115 gorgetes ELOTT ES UTAN
+                  az utolso link alja         1260, mind a ket allapotban
+                  a lap maga                  1259 magas
+                  vagyis osszesen gorgetheto  359 keppont
+
+              A panel FIX, tehat a lap gorgetese nem mozditja: a huszonharom
+              kategoriabol az also resz SEHOGY nem erheto el. Nem
+              kenyelmetlenseg, hanem elerhetetlen tartalom.
+
+              Ket nezetmagassagon merve, mennyi log ki a nezet aljan:
+
+                  900 magas nezet    381 keppont
+                  700 magas nezet    581 keppont -- a lista tobb mint fele
+
+              A KORLAT A MEGLEVO VALTOZOBOL SZAMOL, nem egy talalt szambol: a
+              panel teteje `--fejlec-teljes-magassag`, tehat pontosan annyi
+              hely marad neki, amennyi a fejlec alatt van. Az `1rem` a lap
+              aljan hagyott levegő, ugyanaz az ertek, mint a jobb oldali
+              vasarlasi panelnel.
+
+              ES AMI EZ NEM: nem a vegleges alak. Hogy a menu tobb oszlopba
+              keruljon-e, vagy rovidebb listat mutasson, KULON dontes, es
+              Balazsnal all. Ez a valtozas csak azt szunteti meg, hogy addig is
+              elerhetetlen legyen valami -- mind a harom ut mellett all: ha a
+              lista rovid lesz, ez a gorgetes egyszeruen nem sul el.
+
+              ES AZ `overflow-x-hidden` NEM DISZ: itt korabban `overflow-hidden`
+              allt (a lekerekitett also sarkok levagasahoz). Ha csak az
+              `overflow-y-auto` maradna, a masik tengely a CSS szabalya szerint
+              `visible`-rol `auto`-ra valtana -- vagyis a panel VIZSZINTESEN is
+              gorgethetove valna. Pontosan az a hiba, amit ma a fejlecen
+              javitottunk (`ff12ccb4`), csak egy szinttel beljebb.
+            */
+            className="fixed z-[61] w-[min(1064px,calc(100vw-2rem))] overflow-x-hidden overflow-y-auto rounded-b-xl border shadow-xl"
             style={{
               top: PANEL_TOP,
               left: `${panelLeft}px`,
+              maxHeight: "calc(100vh - var(--fejlec-teljes-magassag) - 1rem)",
               background: "var(--terv-hatter)",
               borderColor: "var(--terv-keret)",
               color: "var(--terv-szoveg)",

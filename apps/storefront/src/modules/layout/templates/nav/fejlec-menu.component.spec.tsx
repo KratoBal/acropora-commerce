@@ -333,6 +333,43 @@ describe("a kis lenyíló kategóriamenü", () => {
     expect(panel.getAttribute("aria-modal")).toBeNull()
   })
 
+  /**
+   * A PANEL SAJAT MAGAN BELUL GORGET.
+   *
+   * AMIT EZ NEM MER, ES KIMONDOM: a jsdom nem szamol elrendezest, tehat azt
+   * NEM tudom allitani, hogy az also link tenyleg lathatova valik. Amit merni
+   * tudok, az a ket fele annak a mechanizmusnak, ami ezt eloallitja, es a
+   * kettő kulon romolhat el: a MAGASSAG-KORLAT es a GORGETES engedelye.
+   *
+   * A tenyleges elerhetoseget elo bongeszoben mertuk (a panel fix, a teteje
+   * y=115 gorgetes elott es utan is, az utolso link alja 1260 egy 900 magas
+   * nezetben) -- azok a szamok a komponens megjegyzeseben allnak.
+   */
+  it("a panel magassága a fejléc alatti helyre korlátozódik", () => {
+    open()
+
+    const panel = screen.getByTestId("category-menu-panel")
+
+    expect(panel.style.maxHeight).toContain("--fejlec-teljes-magassag")
+    expect(panel.style.maxHeight).toContain("100vh")
+  })
+
+  it("a panel függőlegesen görget, vízszintesen nem", () => {
+    open()
+
+    const osztalyok = screen.getByTestId("category-menu-panel").className
+
+    expect(osztalyok).toMatch(/overflow-y-auto(?![-\w])/)
+
+    /*
+      ES A MASODIK ALLITAS NEM ISMETLES: ha a vizszintes tengely `visible`
+      maradna, a CSS szabalya szerint AUTO-ra valtana a fuggoleges korlat
+      mellett -- vagyis a panel vizszintesen is gorgethetove valna. Az
+      `overflow-y-auto` megléte errol semmit nem mond.
+    */
+    expect(osztalyok).toMatch(/overflow-x-hidden(?![-\w])/)
+  })
+
   it("a nyitó gomb a panelre mutat, és jelzi, hogy nyitva van", () => {
     open()
 
