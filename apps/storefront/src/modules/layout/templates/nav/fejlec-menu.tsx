@@ -9,7 +9,42 @@ type Category = HttpTypes.StoreProductCategory
 
 /** Explicit navigation decision; this is not derived from the category tree. */
 const HEADER_MENU_ITEMS = ["Termékek", "Halak", "Korallok", "Gerinctelenek"]
-const QUICK_LINKS = ["Akciók", "Új termékek"]
+/**
+ * A GYORSLINKEK -- ES CSAK AZ EGYIKNEK VAN CELPONTJA.
+ *
+ * Balazs kerese (2026-09-09 17:42, acrobot atadasaban): "a Gyorslikek is kell
+ * a bal oldalra ahogy most is van csak ugyanugy kicsiben ott elso korben
+ * Akciok, Új termékek".
+ *
+ * === A MERES, MIELOTT BARMIT BEKOTOTTEM ===
+ *
+ *   "Új termékek"   VAN CELPONT: a lista mar ma is tud rendezni datum
+ *                   szerint (`sortBy=created_at`, a felulet "Legújabbak"
+ *                   neven kinalja). A hivatkozas tehat nem uj kepesseg,
+ *                   csak egy MEGLEVO ut rovidebb eleresе.
+ *
+ *   "Akciók"        NINCS CELPONT, es ezt megmertem, nem feltetelezem:
+ *                     a bolt gyujtemenyeinek szama          NULLA
+ *                     akcio/kedvezmeny szuro a kirakatban   NINCS
+ *                   Vagyis nem egy hivatkozas hianyzik, hanem az a felulet,
+ *                   ami az akcios termekeket kilistazna.
+ *
+ * === ES AMIT EBBOL NEM CSINALOK ===
+ *
+ * NEM talalok ki celpontot. Egy `/store` hivatkozas "Akciók" nev alatt olyan
+ * lapra vinne, ami MINDEN terméket mutat -- az nem rovidebb ut, hanem hamis
+ * igeret. Hogy mi legyen az akcios lap, Balazs dontese.
+ *
+ * Amig nincs, a tetel NEM NEZ KI LINKNEK. Ez ugyanaz a hatar, amit ma a
+ * bolyegkep-sornal es a ket gombnal is huztunk: ami kattinthatonak latszik es
+ * nem az, rosszabb a hianyanal.
+ */
+type Gyorslink = { cimke: string; ut?: string }
+
+const QUICK_LINKS: Gyorslink[] = [
+  { cimke: "Akciók" },
+  { cimke: "Új termékek", ut: "/store?sortBy=created_at" },
+]
 /*
   A PANEL A TELJES FEJLEC ALATT KEZDODIK.
 
@@ -185,9 +220,29 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                 data-testid="category-menu-quick-links"
               >
                 <h2 className="text-lg font-semibold">Gyorslinkek</h2>
-                <ul className="mt-5 space-y-3 text-sm font-semibold">
-                  {QUICK_LINKS.map((label) => (
-                    <li key={label}>{label}</li>
+                <ul className="mt-5 space-y-3 text-sm">
+                  {QUICK_LINKS.map((gyors) => (
+                    <li key={gyors.cimke}>
+                      {gyors.ut ? (
+                        <LocalizedClientLink
+                          className="font-semibold hover:underline"
+                          href={gyors.ut}
+                          onClick={close}
+                          data-testid="category-menu-quick-link"
+                        >
+                          {gyors.cimke}
+                        </LocalizedClientLink>
+                      ) : (
+                        /*
+                          CELPONT NELKUL NEM LINK-KINEZET: nincs `font-semibold`
+                          es nincs alahuzas lebegtetesre. A szoveg ott all --
+                          Balazs kerte --, de nem iger kattintast.
+                        */
+                        <span data-testid="category-menu-quick-varakozo">
+                          {gyors.cimke}
+                        </span>
+                      )}
+                    </li>
                   ))}
                 </ul>
               </aside>
