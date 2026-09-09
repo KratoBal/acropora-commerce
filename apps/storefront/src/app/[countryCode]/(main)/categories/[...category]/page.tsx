@@ -10,6 +10,7 @@ import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
+import { megjelenitendoNevek } from "@lib/util/kategoria-fa"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -125,9 +126,30 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
+  /*
+    A TELJES KATEGORIA-LISTA A NEVEK MIATT KELL, ES EZ EGY UJ LEKERDEZES.
+
+    A lap eddig CSAK a sajat kategoriajat kerte le (a felmenoivel es a
+    gyerekeivel). A roviditesrol viszont nem lehet a lancbol dontenni: az, hogy
+    egy rovid nev EGYEDI-e, a teljes katalogus tulajdonsaga.
+
+    A mezolista szandekosan szuk (`id,name,parent_category_id`): a szabalyhoz
+    ennel tobb nem kell, es egy szeles lekerdezes minden kategoria-lapon
+    fizetne a tobbletet.
+
+    MIERT NEM HAGYJUK KI: enelkul a lap feltetel nelkul vagna, a termeklap
+    morzsamenuje es a fejlec-menu viszont mar nem -- vagyis UGYANAZ a kategoria
+    KET kulonbozo nevvel jelenne meg ket lapon. Egy felig alkalmazott szabaly
+    rosszabb, mint ha egyaltalan nem lenne.
+  */
+  const mindenKategoria = await listCategories({
+    fields: "id,name,parent_category_id",
+  })
+
   return (
     <CategoryTemplate
       category={productCategory}
+      nevek={megjelenitendoNevek(mindenKategoria)}
       sortBy={sortBy}
       page={page}
       countryCode={params.countryCode}

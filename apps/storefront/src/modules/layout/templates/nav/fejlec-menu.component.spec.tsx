@@ -40,8 +40,21 @@ const categories = [
   root("Korallok", [{ name: "SPS" }]),
   root("Gerinctelenek", [{ name: "Rákok" }]),
 ]
+/**
+ * A MEGJELENITENDO NEVEK TERKEPE, KEZZEL -- ES SZANDEKOSAN NEM A SZABALYBOL.
+ *
+ * A roviditesi szabalyt (`megjelenitendoNevek`) a sajat specje meri. ITT az a
+ * kerdes, hogy a menu HASZNALJA-E a kapott terkepet. Ha a terkepet is a
+ * szabaly allitana elo, a ket allitas ugyanazt a kodot jarna be, es a menu
+ * sajat hibaja (peldaul hogy megis helyben vag) eszrevetlen maradna.
+ */
+const NEVEK = new Map<string, string>([
+  ["Halak-Gébek - Halak", "Gébek"],
+  ["Halak-Gébek - Halak-Sárga gébek - Gébek", "Sárga gébek"],
+])
+
 const open = () => {
-  render(<FejlecMenu kategoriak={categories} />)
+  render(<FejlecMenu kategoriak={categories} nevek={NEVEK} />)
   fireEvent.click(screen.getByTestId("category-menu-trigger-Termékek"))
 }
 
@@ -177,8 +190,8 @@ describe("a kis lenyíló kategóriamenü", () => {
    * A HARMADIK SZINT KULON ERTEK: ott a szulo a MASODIK szint ROVID neve, nem
    * a teljes. Egy elemenkenti levezetes epp ott adna rosszat.
    */
-  it("a második hasáb a rövid nevet mutatja", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+  it("a második hasáb a kapott rövid nevet mutatja", () => {
+    render(<FejlecMenu kategoriak={categories} nevek={NEVEK} />)
     fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
 
     const link = screen.getByTestId("category-menu-category-link")
@@ -186,8 +199,8 @@ describe("a kis lenyíló kategóriamenü", () => {
     expect(link.textContent?.trim()).toBe("Gébek")
   })
 
-  it("a harmadik szint a második szint rövid nevéhez képest vág", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+  it("a harmadik szint is a kapott nevet mutatja", () => {
+    render(<FejlecMenu kategoriak={categories} nevek={NEVEK} />)
     fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
     fireEvent.click(screen.getByTestId("category-menu-category-expand"))
 
@@ -197,6 +210,43 @@ describe("a kis lenyíló kategóriamenü", () => {
     expect(panel.textContent).toContain("Sárga gébek")
 
     expect(panel.textContent).not.toContain("Sárga gébek - Gébek")
+  })
+
+  /**
+   * UTKOZO NEVNEL A TELJES ALAK MARAD -- ES EZT A MENU NEM MAGA DONTI EL.
+   *
+   * A terkep ilyenkor a TELJES nevet adja vissza, es a menunek azt kell
+   * mutatnia. Enelkul a fenti ket allitas akkor is zold lenne, ha a menu
+   * TOVABBRA IS helyben vagna: a vart eredmeny ugyanaz.
+   */
+  it("ütköző névnél a teljes alakot mutatja", () => {
+    render(
+      <FejlecMenu
+        kategoriak={categories}
+        nevek={new Map([["Halak-Gébek - Halak", "Gébek - Halak"]])}
+      />,
+    )
+    fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
+
+    expect(
+      screen.getByTestId("category-menu-category-link").textContent?.trim(),
+    ).toBe("Gébek - Halak")
+  })
+
+  /**
+   * TERKEP NELKUL A TELJES NEV ALL, NEM A ROVID.
+   *
+   * A hianyzo adatra visszaesni a rovid alakra azt jelentene, hogy a feltetel
+   * nelkuli vagas CSENDBEN visszajon -- pontosan az, amit ez a valtozas
+   * megszuntet. A teljes nev sosem ketertelmu.
+   */
+  it("térkép nélkül a teljes nevet mutatja", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+    fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
+
+    expect(
+      screen.getByTestId("category-menu-category-link").textContent?.trim(),
+    ).toBe("Gébek - Halak")
   })
 
   it("a fejléc négy gyökeret kínál, névre pontosan", () => {

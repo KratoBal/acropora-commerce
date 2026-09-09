@@ -32,6 +32,19 @@ const KORALLOK = kategoria("Korallok", "korallok")
 const WYSIWYG = kategoria("WYSIWYG - Korallok", "wysiwyg", KORALLOK)
 const SPS = kategoria("SPS - WYSIWYG", "sps", WYSIWYG)
 
+/**
+ * A MEGJELENITENDO NEVEK TERKEPE, KEZZEL -- ES SZANDEKOSAN NEM A SZABALYBOL.
+ *
+ * A roviditesi szabalyt (`megjelenitendoNevek`) a sajat specje meri. ITT az a
+ * kerdes, hogy a morzsamenu HASZNALJA-E a kapott terkepet. Ha a terkepet is a
+ * szabaly allitana elo, a ket allitas ugyanazt a kodot jarna be.
+ */
+const TERKEP = new Map<string, string>([
+  ["korallok", "Korallok"],
+  ["wysiwyg", "WYSIWYG"],
+  ["sps", "SPS"],
+])
+
 describe("a kategória-lap morzsamenüje", () => {
   const nevek = () =>
     Array.from(screen.getByLabelText("Morzsamenü").querySelectorAll("li")).map(
@@ -45,10 +58,44 @@ describe("a kategória-lap morzsamenüje", () => {
    * `rovidNev(nev, szulo.name)` hivas ott mar rosszat adna, mert a szulo
    * nevében is benne all a nagyszulo.
    */
-  it("mindhárom szint a rövid nevét mutatja", () => {
-    render(<Breadcrumbs category={SPS} />)
+  it("mindhárom szint a kapott rövid nevét mutatja", () => {
+    render(<Breadcrumbs category={SPS} nevek={TERKEP} />)
 
     expect(nevek()).toEqual(["Korallok", "WYSIWYG", "SPS"])
+  })
+
+  /**
+   * UTKOZO NEVNEL A TELJES ALAK MARAD, ES EZT A MORZSAMENU NEM MAGA DONTI EL.
+   *
+   * A terkep ilyenkor a TELJES nevet adja vissza. Enelkul a fenti allitas
+   * akkor is zold lenne, ha a komponens TOVABBRA IS helyben vagna.
+   */
+  it("ütköző névnél a teljes alakot mutatja", () => {
+    render(
+      <Breadcrumbs
+        category={SPS}
+        nevek={
+          new Map([
+            ["korallok", "Korallok"],
+            ["wysiwyg", "WYSIWYG"],
+            ["sps", "SPS - WYSIWYG"],
+          ])
+        }
+      />,
+    )
+
+    expect(nevek()).toEqual(["Korallok", "WYSIWYG", "SPS - WYSIWYG"])
+  })
+
+  /**
+   * TERKEP NELKUL A TELJES NEV ALL, NEM A ROVID. A hianyzo adatra a rovid
+   * alakra visszaesni azt jelentene, hogy a feltetel nelkuli vagas csendben
+   * visszajon.
+   */
+  it("térkép nélkül a teljes neveket mutatja", () => {
+    render(<Breadcrumbs category={SPS} />)
+
+    expect(nevek()).toEqual(["Korallok", "WYSIWYG - Korallok", "SPS - WYSIWYG"])
   })
 
   /**
@@ -59,7 +106,7 @@ describe("a kategória-lap morzsamenüje", () => {
    * "megvolna".
    */
   it("a szülő utótagja sehol nem áll ott", () => {
-    render(<Breadcrumbs category={SPS} />)
+    render(<Breadcrumbs category={SPS} nevek={TERKEP} />)
 
     const szoveg = screen.getByLabelText("Morzsamenü").textContent ?? ""
 
@@ -73,7 +120,7 @@ describe("a kategória-lap morzsamenüje", () => {
    * itt latszana eloszor.
    */
   it("a gyökér neve változatlan", () => {
-    render(<Breadcrumbs category={KORALLOK} />)
+    render(<Breadcrumbs category={KORALLOK} nevek={TERKEP} />)
 
     expect(nevek()).toEqual(["Korallok"])
   })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { gyokerekKetSzintel } from "./kategoria-fa"
+import { gyokerekKetSzintel, megjelenitendoNevek } from "./kategoria-fa"
 
 /**
  * A MENU PANELJENEK HAROM SZINT KELL, ES A HARMADIK KONNYEN ELMARAD.
@@ -73,5 +73,90 @@ describe("a kategória-fa két szint gyereket ad át", () => {
     const gebek = (gyokerekKetSzintel(mind)[1].category_children ?? [])[0]
 
     expect(gebek.category_children).toEqual([])
+  })
+})
+
+/**
+ * A ROVIDITES CSAK AKKOR VAG, HA A ROVID NEV EGYEDI.
+ *
+ * A HAROM ESET A SZABALYT MERI, NEM A MAI ADAT ALLAPOTAT -- ezert a
+ * kategoria-betoltes utan is ugyanezt fogja mondani. A fixtura szandekosan
+ * kicsi es szintetikus: valodi katalogusra epitve az allitas azt merne, milyen
+ * a bolt MA, nem azt, mit csinal a szabaly.
+ */
+describe("a megjelenítendő nevek ütközés-tudatosak", () => {
+  /*
+    A FIXTURA A VALODI UTKOZES ALAKJAT KOVETI, ES AZ ELSO VALTOZATA NEM AZT
+    KOVETTE.
+
+    Ott a ket "utkozo" elem neve `Koralltápok - Aquaforest` volt, a SZULOJUK
+    viszont a gyoker (`Termékek`). A vagas pontos egyezest keres, tehat egyik
+    nev sem rovidult -- az allitas ZOLDEN allt, de nem azert, amiert irtam. A
+    kalibracio fogta meg: a szabaly kivetele NULLA pirosat adott.
+    (Merve 2026-09-09.)
+
+    A valodi alak a bolt adatabol: a marka neve all elol, es UGYANAZ a marka
+    tobb szulo alatt is szerepel. Igy a rovid nev tenylegesen utkozik.
+  */
+  const mind = [
+    { id: "gy", name: "Termékek", parent_category_id: null },
+    { id: "kt", name: "Koralltápok - Termékek", parent_category_id: "gy" },
+    { id: "he", name: "Haleledelek - Termékek", parent_category_id: "gy" },
+    { id: "af1", name: "Aquaforest - Koralltápok", parent_category_id: "kt" },
+    { id: "af2", name: "Aquaforest - Haleledelek", parent_category_id: "he" },
+    { id: "egy", name: "Világítás - Termékek", parent_category_id: "gy" },
+  ]
+
+  it("ütköző rövid névnél EGYIK sem rövidül", () => {
+    const nevek = megjelenitendoNevek(mind)
+
+    expect(nevek.get("af1")).toBe("Aquaforest - Koralltápok")
+    expect(nevek.get("af2")).toBe("Aquaforest - Haleledelek")
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL, ES ITT NEM DISZ: a fenti allitas akkor is zold
+   * lenne, ha a fuggveny SOHA nem roviditene. Ez a masodik eset bizonyitja,
+   * hogy a rovidites egyaltalan mukodik.
+   */
+  it("egyedi rövid névnél viszont rövidül", () => {
+    expect(megjelenitendoNevek(mind).get("egy")).toBe("Világítás")
+  })
+
+  /**
+   * ES A GYOKER SEM VESZIT: nincs szuloje, tehat nincs mit levagni, es az
+   * egyedisege sem tesz vele semmit.
+   */
+  it("a gyökér neve változatlan", () => {
+    expect(megjelenitendoNevek(mind).get("gy")).toBe("Termékek")
+  })
+
+  /**
+   * A LANC HARMADIK SZINTJE A SZULO ROVID NEVETOL FUGG, es ez az a hely, ahol
+   * egy szintenkenti (`rovidNev(nev, szulo.name)`) hivas mar rosszat adna: a
+   * szulo NEVEBEN is ott all a nagyszulo.
+   */
+  it("a harmadik szint a szülő RÖVID nevéből vág", () => {
+    const nevek = megjelenitendoNevek([
+      { id: "gy", name: "Termékek", parent_category_id: null },
+      { id: "v", name: "Világítás - Termékek", parent_category_id: "gy" },
+      { id: "led", name: "LED - Világítás", parent_category_id: "v" },
+    ])
+
+    expect(nevek.get("led")).toBe("LED")
+  })
+
+  /**
+   * SERULT SZULO-HIVATKOZAS: a fuggveny nem all be, es a nevet adja vissza. A
+   * ciklus-vedelem nelkul ez vegtelen rekurzio lenne, es a LAP nem tolteni be
+   * -- nem a teszt bukna el.
+   */
+  it("körkörös szülő-hivatkozásnál sem áll be", () => {
+    const nevek = megjelenitendoNevek([
+      { id: "a", name: "A - B", parent_category_id: "b" },
+      { id: "b", name: "B - A", parent_category_id: "a" },
+    ])
+
+    expect(nevek.size).toBe(2)
   })
 })

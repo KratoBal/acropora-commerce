@@ -3,7 +3,6 @@
 import { ArrowRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { rovidNev } from "@lib/util/kategoria-fa"
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react"
 
 type Category = HttpTypes.StoreProductCategory
@@ -60,12 +59,43 @@ const sortedChildren = (category: Category | undefined) =>
     a.name.localeCompare(b.name, "hu"),
   )
 
-export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
+export const FejlecMenu = ({
+  kategoriak,
+  nevek,
+}: {
+  kategoriak: Category[]
+  /**
+   * A MEGJELENITENDO NEVEK, AZONOSITO SZERINT -- A BETOLTOTOL, NEM ITT SZAMOLVA.
+   *
+   * A menu eddig FELTETEL NELKUL vagta le a szulo nevet (`rovidNev`). Az a
+   * vagas a mai adaton helyes, a kategoria-betoltes UTAN viszont pont azt a
+   * szulo-utotagot vinne el a 77 UTKOZO kategoriarol, amit a dontes
+   * szandekosan megtart -- es a hiba akkor jelenne meg, tehat regressziónak
+   * latszana, holott ma keletkezne.
+   *
+   * Az egyedisegrol csak a TELJES katalogus tud dontenni, es az itt nincs meg:
+   * a menu a NEM URES GYOKEREKET kapja. Ezert jon a terkep keszen, a
+   * betoltobol, ahol a teljes lista amugy is a kezben van -- uj lekerdezes
+   * nelkul.
+   */
+  nevek?: Map<string, string>
+}) => {
   const [openName, setOpenName] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [panelLeft, setPanelLeft] = useState(16)
   const categoryButtons = useRef<(HTMLButtonElement | null)[]>([])
   const panelId = useId()
+  /*
+    A TARTALEK NEM A ROVID ALAK, HANEM A TELJES NEV.
+
+    Ha egy azonosito nincs a terkepen (peldaul mert a hivo nem adott terkepet),
+    a TELJES nev a biztonsagos valasztas: az sosem ketertelmu. A rovid alakra
+    esni vissza azt jelentene, hogy a hianyzo adat CSENDBEN visszahozza a
+    feltetel nelkuli vagast -- pontosan azt, amit ez a valtozas megszuntet.
+  */
+  const nev = (category: Category) =>
+    nevek?.get(category.id) ?? (category.name ?? "").trim()
+
   const root = kategoriak.find((category) => category.name === openName)
   const categories = sortedChildren(root)
 
@@ -324,7 +354,7 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                                 Egy szint eleg, nem kell lanc: a szulo maga a
                                 nyitott gyoker, aminek nincs felette semmi.
                               */}
-                              {rovidNev(category.name ?? "", openName)}
+                              {nev(category)}
                             </LocalizedClientLink>
                             <button
                               ref={(element) => {
@@ -333,7 +363,7 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                               type="button"
                               className="m-1 grid h-8 w-8 place-items-center rounded border"
                               style={{ borderColor: "var(--terv-keret)" }}
-                              aria-label={`${rovidNev(category.name ?? "", openName)} alkategóriái`}
+                              aria-label={`${nev(category)} alkategóriái`}
                               aria-expanded={expanded}
                               onClick={() =>
                                 setExpandedId(expanded ? null : category.id)
@@ -368,10 +398,7 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                                         ROVID neve, nem a teljes -- kulonben a
                                         levagas nem talalna.
                                       */}
-                                      {rovidNev(
-                                        child.name ?? "",
-                                        rovidNev(category.name ?? "", openName),
-                                      )}
+                                      {nev(child)}
                                     </LocalizedClientLink>
                                   </li>
                                 ))}

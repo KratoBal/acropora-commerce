@@ -8,19 +8,33 @@ import { HttpTypes } from "@medusajs/types"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import CategoryProducts from "./category-products"
 import { categoryPageKind, helperCopyFor } from "./category-page-data"
-import { rovidNev, rovidNevekLancban } from "@lib/util/kategoria-fa"
 import { Breadcrumbs } from "./category-breadcrumbs"
 
 const PRODUCT_LIMIT = 12
 
 export default function CategoryTemplate({
   category,
+  nevek,
   sortBy,
   page,
   countryCode,
   optionValueIds,
 }: {
   category: HttpTypes.StoreProductCategory
+  /**
+   * A MEGJELENITENDO NEVEK, AZONOSITO SZERINT -- A LAPTOL, NEM ITT SZAMOLVA.
+   *
+   * A rovidites eddig FELTETEL NELKUL vagott. A betoltes utan az pont azt a
+   * szulo-utotagot vinne el a 77 UTKOZO kategoriarol, amit a dontes
+   * szandekosan megtart. Az egyedisegrol csak a teljes katalogus tud
+   * dontenni, es az ennek a komponensnek nincs a kezeben: a sajat lancat es a
+   * gyerekeit kapja.
+   *
+   * A TARTALEK A TELJES NEV, nem a rovid. Hianyzo terkepnel a rovid alakra
+   * esni vissza azt jelentene, hogy a feltetel nelkuli vagas csendben
+   * visszajon.
+   */
+  nevek?: Map<string, string>
   sortBy?: SortOptions
   page?: string
   countryCode: string
@@ -34,30 +48,27 @@ export default function CategoryTemplate({
   const helper = helperCopyFor(kind)
 
   /*
-    A CIM ES A CSEMPEK IS A ROVID NEVET VISELIK.
+    A CIM ES A CSEMPEK IS A MEGJELENITENDO NEVET VISELIK.
 
     A lap NEGY helyen mutat kategoria-nevet: a sajat morzsamenujeben ketto (a
-    felmenok es a jelenlegi), a H1-ben, es a gyermek-csempeken. Mind a negy a
-    rovid alakra all -- kulonben a lapon BELUL allna elteres, ami rosszabb,
-    mint a lapok kozotti.
+    felmenok es a jelenlegi), a H1-ben, es a gyermek-csempeken. Mind a negy
+    UGYANABBOL a terkepbol dolgozik -- kulonben a lapon BELUL allna elteres,
+    ami rosszabb, mint a lapok kozotti.
 
-    A gyermek-csempeknel a szulo maga a JELENLEGI kategoria, tehat ott egy
-    szint eleg (`rovidNev`), nem kell a teljes lanc.
+    ITT KORABBAN A LANC SAJAT LEVEZETESE ALLT (`rovidNevekLancban` a
+    felmenokre, `rovidNev` a csempekre). Az a levezetes FELTETEL NELKUL vagott,
+    es a lanc nem is tudott volna mast: az egyediseg a teljes katalogus
+    tulajdonsaga. A lanc-epites ezzel egyutt eltunt -- a terkep azonosito
+    szerint valaszol, tehat a felmenoket nem kell vegigjarni ahhoz, hogy a
+    JELENLEGI kategoria nevet megtudjuk.
   */
-  const sajatLanc: HttpTypes.StoreProductCategory[] = []
-  {
-    let futo: HttpTypes.StoreProductCategory | undefined | null = category
-    while (futo) {
-      sajatLanc.unshift(futo)
-      futo = futo.parent_category
-    }
-  }
-  const sajatRovidek = rovidNevekLancban(sajatLanc)
-  const sajatRovid = sajatRovidek[sajatRovidek.length - 1]
+  const nev = (elem: { id?: string | null; name?: string | null }) =>
+    (elem.id ? nevek?.get(elem.id) : undefined) ?? (elem.name ?? "").trim()
+  const sajatRovid = nev(category)
 
   return (
     <main className="content-container py-8" data-testid="category-container">
-      <Breadcrumbs category={category} />
+      <Breadcrumbs category={category} nevek={nevek} />
       <section
         className="grid gap-6 border-b pb-8 medium:grid-cols-[minmax(0,1fr)_320px]"
         style={{ borderColor: "var(--terv-keret)" }}
@@ -141,9 +152,7 @@ export default function CategoryTemplate({
                     color: "var(--terv-szoveg)",
                   }}
                 >
-                  <span className="font-semibold">
-                    {rovidNev(child.name ?? "", sajatRovid)}
-                  </span>
+                  <span className="font-semibold">{nev(child)}</span>
                 </LocalizedClientLink>
               </li>
             ))}

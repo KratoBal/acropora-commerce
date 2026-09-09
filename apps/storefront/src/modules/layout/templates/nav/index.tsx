@@ -239,7 +239,9 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
    * talalgatott regio: egy rossz regio arakat es elerhetoseget valtoztat.
    */
   const region = countryCode ? await getRegion(countryCode) : null
-  const kategoriak = region ? await listNonEmptyRootCategories(region.id) : []
+  const menuAdat = region
+    ? await listNonEmptyRootCategories(region.id)
+    : { gyokerek: [], nevek: new Map<string, string>() }
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
@@ -397,7 +399,18 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
             />
           </form>
 
-          <FejlecMenu kategoriak={kategoriak} />
+          <FejlecMenu
+            kategoriak={menuAdat.gyokerek}
+            /*
+              A NEVEK A BETOLTOTOL JONNEK, NEM A MENU SZAMOLJA.
+
+              A roviditest a menu eddig helyben vegezte, feltetel nelkul. Az
+              egyedisegrol csak a TELJES katalogus tud dontenni, es az a
+              betoltoben mar megvan -- ott keszul a terkep, uj lekerdezes
+              nelkul.
+            */
+            nevek={menuAdat.nevek}
+          />
 
           <div className="ml-auto flex shrink-0 items-center lg:ml-0">
             <Suspense
