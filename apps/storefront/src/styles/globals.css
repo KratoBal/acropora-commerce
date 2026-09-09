@@ -386,6 +386,48 @@
   --terv-szoveg-vilagos: oklch(0.95 0.006 250); /* 53 elem -- sotet hatteren */
   --terv-szoveg-halvany: oklch(0.5 0.012 60); /* 16 elem -- masodlagos */
 
+  /*
+   * AZ UTVONAL-SOR SZINE, ES EZ NEM A HALVANY SZOVEG MASIK ARNYALATA.
+   *
+   * === MIERT KULON TOKEN, ES NEM A `--terv-szoveg-halvany` ===
+   *
+   * A terv MIND A KET valasztott lapon MASKEPP allitja be az utvonal-sort,
+   * mint a halvany szoveget -- es KULONBOZO IRANYBA:
+   *
+   *     lap   utvonal-sor              halvany szoveg
+   *     2a    oklch(0.66 0.014 250)    oklch(0.72 0.012 250)    sotetebb
+   *     1b    oklch(0.52 0.012 60)     oklch(0.5 0.012 60)      vilagosabb
+   *
+   * Ha csak az EGYIK vilagban ternenek el, az lehetne pontatlansag a terven.
+   * Hogy mind a kettoben elternek, es ellentetes iranyba, az SZANDEKOT mutat:
+   * ez mas SZEREP, nem ugyanannak a szerepnek a masik arnyalata.
+   * (acrobot dontese, 2026-09-09, uzenet 16873.)
+   *
+   * ES EGY MAI TAPASZTALAT, AMIERT NEM AZ OSSZEVONAST VALASZTJUK: a
+   * `--terv-hatter-halvany` EGY tokenje ket tervbeli szerepet visel, es emiatt
+   * valasztani kellett, majd megjegyzesben megmagyarazni, hogy a masik szerep
+   * 0.01-gyel elter. Ugyanazt tudatosan masodszor nem csinaljuk meg.
+   *
+   * === A NEV SZEREP SZERINT ALL, NEM KOMPONENS SZERINT ===
+   *
+   * Nem "morzsamenu-szin": ez a NAVIGACIOS UT szine. Ha holnap a
+   * kategoria-lapon is kell egy utvonal-sor, ugyanez a token kell hozza.
+   *
+   * A nev-valasztas oka egy MAI lelet: a `--terv-keret-meleg` azert valt
+   * felrevezetove, mert MODUL-hatart kodolt (kosar kontra termeklap) szerep
+   * helyett. Egy komponens-nev ugyanezt tenne.
+   *
+   * === AMIT EZ A TOKEN NEM FED, ES AMIT NEM TALALUNK KI ===
+   *
+   * A sor UTOLSO, jelenlegi eleme a 2a lapon sajat szint kap
+   * (`oklch(0.88 0.008 250)`), a mienknel a `--terv-szoveg` all (0.95 soteten).
+   * A KULONBSEG VALODI -- de az 1b lapon a sornak NINCS jelenlegi eleme
+   * (harom kategoria-link all, cikkszam nelkul), tehat a VILAGOS erteket nem
+   * lehet a tervbol venni. Egy token, aminek az egyik vilagban kitalalt erteke
+   * lenne, rosszabb, mint a mai kozelites.
+   */
+  --terv-utvonal: oklch(0.52 0.012 60); /* 1b: az utvonal-sor szine */
+
   /* keretek */
   /*
    * A VILAGOS KERET ERTEKE AZ ELVETETT 1a LAPROL JOTT, ES EZ A HARMADIK
@@ -659,6 +701,7 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
 
   --terv-szoveg: oklch(0.95 0.006 250); /* 53 elem sotet hatteren */
   --terv-szoveg-halvany: oklch(0.72 0.012 250);
+  --terv-utvonal: oklch(0.66 0.014 250); /* 2a: az utvonal-sor szine */
 
   --terv-keret: oklch(0.28 0.014 250); /*  9 elem */
   --terv-keret-meleg: oklch(0.33 0.016 250);
