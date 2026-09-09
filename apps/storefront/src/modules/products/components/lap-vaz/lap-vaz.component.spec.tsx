@@ -96,23 +96,48 @@ describe("a műszaki lap váza", () => {
    * jelolesei, nem terv-elemek -- ez az allitas tehat a KULONBSEGET rogziti,
    * nem azt, hogy a 16 helyes lenne.
    */
-  it("a két oszlop köze és a jobb panel doboza a terv értékeit viseli", () => {
+  /**
+   * A KIRAJZOLT VAZ, EGY HELYEN. Harom allitas hasznalja, es igy a kirajzolas
+   * egyszer all -- a HATAROK viszont kulon nevet kapnak.
+   */
+  const vaz = () => {
     render(<LapVaz />)
 
-    const bal = document.querySelector('[data-testid="vaz-bal-halom"]')
-    const jobb = document.querySelector('[data-testid="vaz-jobb-halom"]')
+    return {
+      bal: document.querySelector('[data-testid="vaz-bal-halom"]'),
+      jobb: document.querySelector('[data-testid="vaz-jobb-halom"]'),
+      dobozOsztaly: (kulcs: string) =>
+        document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)?.className ??
+        "",
+    }
+  }
 
-    /* ISMERT POZITIV KONTROLL: mind a ket oszlop megrajzolodott. */
+  it("a bal oszlop köze a terv 14 pixele", () => {
+    const { bal } = vaz()
+
+    /* ISMERT POZITIV KONTROLL: az oszlop megrajzolodott. */
     expect(bal).toBeTruthy()
-    expect(jobb).toBeTruthy()
-
     expect(bal?.className).toContain("gap-[14px]")
+  })
+
+  it("a jobb panel köze a terv 16 pixele", () => {
+    const { jobb } = vaz()
+
+    expect(jobb).toBeTruthy()
     expect(jobb?.className).toContain("gap-4")
+  })
 
-    const dobozOsztaly = (kulcs: string) =>
-      document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)?.className ?? ""
+  /**
+   * A JOBB PANEL DOBOZA 24 PIXELES, A BAL OSZLOPE NEM.
+   *
+   * A tagadas ITT a lenyeg: a 24 pixel a terv JOBB paneljenek erteke, es a bal
+   * oszlopban a terv nem 16-ot ir, hanem SEMMIT -- ott nincs keretes doboz. Egy
+   * "minden doboz 24" valtozat tehat NEM a terv kovetese lenne, hanem egy
+   * kiterjesztes oda, ahol a terv hallgat.
+   */
+  it("a jobb panel doboza 24 pixeles, a bal oszlopé nem", () => {
+    const { dobozOsztaly } = vaz()
 
-    /* a jobb panel egy doboza 24 pixeles, a bal oszlope 16 marad */
     expect(dobozOsztaly("csomagajanlat")).toContain("p-6")
     expect(dobozOsztaly("fulek")).toContain("p-4")
     expect(dobozOsztaly("fulek")).not.toContain("p-6")
