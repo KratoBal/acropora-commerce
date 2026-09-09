@@ -117,6 +117,67 @@ describe("a fejléc fő sávja", () => {
     expect(nav).toContain("data-tanusitvany-allapot")
   })
 
+  /**
+   * A SAV SZELETE, EGY HELYEN. Tobb allitas hasznalja, es egy elcsuszo hatar
+   * mindegyiket egyszerre tenne hamissa.
+   *
+   * A KEZDET A NYITO `<div`, NEM A JELOLO. A `data-testid` a JSX-ben a
+   * `className` UTAN all, tehat egy jeloloneél kezdodo szelet epp az
+   * osztalyokat hagyna ki -- es a betumeret-allitas emiatt bukott el eloszor,
+   * egy helyes fajlon. A visszalepes az utolso `<div`-ig ezt lezarja.
+   */
+  const bizalmiSav = () => {
+    const jelolo = nav.indexOf("fejlec-bizalmi-sav")
+    const nyito = nav.lastIndexOf("<div", jelolo)
+
+    return nav.slice(nyito, nav.indexOf("</div>", jelolo))
+  }
+
+  /**
+   * A BETUMERET A TERVBOL JON, FEL PIXEL PONTOSSAGGAL.
+   *
+   * A terv 12.5 pixelt ir, a `text-xs` 12-t ad. Kicsi kulonbseg, de a savban ez
+   * az EGYETLEN szovegmeret, es a forras kiirja -- tehat nincs miert becsulni.
+   *
+   * A TAGADAS AZERT KELL, mert a `text-xs` visszairasa ONMAGABAN nem venne el a
+   * `text-[12.5px]` jelenletet, ha valaki mind a kettot ott hagyja: akkor ket
+   * meret allna egymas mellett, es a Tailwind sorrendje dontene.
+   */
+  it("a felső sáv a terv betűméretét viseli", () => {
+    expect(bizalmiSav()).toContain("text-[12.5px]")
+    expect(bizalmiSav()).not.toContain("text-xs")
+  })
+
+  /**
+   * A JOBB OLDALT KOZ VALASZTJA EL, NEM KARAKTER.
+   *
+   * A tervforrasban a ket szoveg `gap:24px` kozzel all egymas mellett, es NINCS
+   * kozottuk elvalaszto. En egy `·` pontot tettem oda kep alapjan, nyolc
+   * pixeles kozzel -- mind a ketto az en betoldasom volt.
+   *
+   * A TAGADAS SZUK, ES SZANDEKOSAN AZ: magaban a tanusitvany szovegeben KET `·`
+   * all ("Fogyasztóbarát tanúsítvány · 4,8 · 213 értékelésből"). Egy "nincs `·`
+   * a savban" allitas tehat mindig piros lenne, es semmit nem mondana. Amit
+   * kizarunk, az az ONALLO elvalaszto ELEM.
+   */
+  it("a jobb oldalt köz választja el, nem karakter", () => {
+    expect(bizalmiSav()).toContain("gap-6")
+    expect(bizalmiSav()).not.toContain('aria-hidden="true">·<')
+  })
+
+  /**
+   * A SEGITSEG-FELIRAT FELKOVER IS, NEM CSAK REZ SZINU. A tervforras
+   * `font-weight:600` erteket ad neki, es ez a savban az egyetlen kiemelt
+   * szoveg -- a szin onmagaban nem adja vissza.
+   */
+  it("a segítség-felirat félkövér, nem csak réz színű", () => {
+    const sav = bizalmiSav()
+    const felirat = sav.slice(sav.indexOf("BIZALMI_SEGITSEG") - 260)
+
+    expect(felirat).toContain("font-semibold")
+    expect(felirat).toContain("var(--terv-kiemel-tinta)")
+  })
+
   /** ES AMI NEM KERULT VISSZA: a kulso szolgaltatas, amire nincs forrasunk. */
   it("az Árukereső-sor nem jött vissza", () => {
     expect(nav).not.toContain("Árukereső")
