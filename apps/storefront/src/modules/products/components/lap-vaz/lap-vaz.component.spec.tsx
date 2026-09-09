@@ -231,7 +231,20 @@ describe("a műszaki lap váza", () => {
 
     const osztalyok = screen.getByTestId("vaz-ket-oszlop").className
 
-    expect(osztalyok).toContain("lg:grid")
+    /*
+      SZOHATARRA MERUNK, NEM RESZSZORA.
+
+      A `toContain("lg:grid")` alak VAK volt: a mellette allo
+      `lg:grid-cols-[...]` reszszokent tartalmazza ugyanazt, tehat a `lg:grid`
+      (vagyis maga a `display: grid`) kivetele NEM vitte pirosra. Merve
+      2026-09-09: mindket osztalyt kivettem a hosszabb rokonaikat meghagyva,
+      es a fajl 83 allitasabol EGY sem bukott el.
+
+      Ez nem elmeleti: `lg:grid` nelkul a `lg:grid-cols-[...]` nem csinal
+      semmit, es az asztali ket oszlop osszeomlik -- pontosan az, amit ez az
+      allitas őrizni hivatott.
+    */
+    expect(osztalyok).toMatch(/lg:grid(?![-\w])/)
     /*
       A JOBB OSZLOP FIX SAV, NEM ARANY. Korabban `856fr_452fr` allt itt, es a
       kulonbseget egyetlen szelesseg nem mutatja meg: 1440 pixelen az aranyos
@@ -933,7 +946,12 @@ describe("a törésponti elrendezés", () => {
     expect(vaz().className).not.toContain("grid-cols-2")
 
     const futam = screen.getByTestId("vaz-ket-oszlop").className
-    expect(futam).toContain("max-lg:flex")
+    /*
+      SZOHATARRA, ugyanabbol az okbol, mint feljebb: a `max-lg:flex-col`
+      tartalmazza a `max-lg:flex` szoveget, tehat a ket sor kozul az elso
+      eddig SEMMIT nem allitott a masodikon felul.
+    */
+    expect(futam).toMatch(/max-lg:flex(?![-\w])/)
     expect(futam).toContain("max-lg:flex-col")
     expect(futam).not.toContain("max-lg:grid")
   })
