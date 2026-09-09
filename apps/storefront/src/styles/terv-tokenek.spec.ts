@@ -361,6 +361,7 @@ describe("a terv megerositett ertekei", () => {
       az indoklas a `globals.css`-ben all.
     */
     ["--terv-utvonal", "oklch(0.52 0.012 60)", "oklch(0.66 0.014 250)"],
+    /*
       A KERETES DOBOZ HATTERE. A VILAGOS ERTEKE NEM SZIN, HANEM A HIANYA: a
       terv a vilagos lapon nem ad hatteret a doboznak, csak keretet. A sotet
       ertek HIVATKOZAS, nem masolat -- ugyanaz a felulet, amit a
