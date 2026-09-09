@@ -1,8 +1,6 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
 
-import { rovidNevekLancban } from "@lib/util/kategoria-fa"
-
 /**
  * A KATEGORIA-LAP MORZSAMENUJE -- KULON FAJLBAN, HOGY MERHETO LEGYEN.
  *
@@ -21,8 +19,11 @@ import { rovidNevekLancban } from "@lib/util/kategoria-fa"
  */
 export function Breadcrumbs({
   category,
+  nevek,
 }: {
   category: HttpTypes.StoreProductCategory
+  /** A megjelenitendo nevek azonosito szerint; lasd a lentebbi indoklast. */
+  nevek?: Map<string, string>
 }) {
   const parents: HttpTypes.StoreProductCategory[] = []
   let current = category.parent_category
@@ -33,7 +34,7 @@ export function Breadcrumbs({
   }
 
   /*
-    A ROVID NEVEK, A TELJES LANCON.
+    A MEGJELENITENDO NEVEK, AZONOSITO SZERINT.
 
     A bolt neveiben a szulo neve is ott all (`SPS - Korallok`). A morzsamenu a
     ROVID nevet mutatja (#315), es acrobot dontese szerint a kategoria-lap
@@ -43,11 +44,19 @@ export function Breadcrumbs({
     megnyitott lapon lat, a vevo nem tudja eldonteni, ugyanoda jutott-e. Ez
     hiba, nem stilus.
 
-    LANCBAN szamolunk, nem elemenkent: minden szint rovid neve a SZULO ROVID
-    nevetol fugg.
+    ITT KORABBAN A LANC SAJAT LEVEZETESE ALLT (`rovidNevekLancban`), ami
+    FELTETEL NELKUL vagott. A betoltes utan az pont azt a szulo-utotagot vitte
+    volna el a 77 UTKOZO kategoriarol, amit a dontes szandekosan megtart. Az
+    egyedisegrol a lanc nem tud dontenni: ahhoz a teljes katalogus kell, es azt
+    a LAP adja at.
+
+    A TARTALEK A TELJES NEV. Terkep nelkul a rovid alakra visszaesni azt
+    jelentene, hogy a feltetel nelkuli vagas csendben visszajon.
   */
   const lanc = [...parents, category]
-  const rovidek = rovidNevekLancban(lanc)
+  const nev = (elem: { id?: string | null; name?: string | null }) =>
+    (elem.id ? nevek?.get(elem.id) : undefined) ?? (elem.name ?? "").trim()
+  const rovidek = lanc.map(nev)
 
   return (
     <nav aria-label="Morzsamenü" className="mb-6 text-sm">

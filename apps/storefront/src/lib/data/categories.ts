@@ -1,6 +1,6 @@
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
-import { gyokerekKetSzintel } from "@lib/util/kategoria-fa"
+import { gyokerekKetSzintel, megjelenitendoNevek } from "@lib/util/kategoria-fa"
 import { getCacheOptions } from "./cookies"
 import { listProducts } from "./products"
 import { leszarmazottAzonositok } from "@lib/util/kategoria-leszarmazottak"
@@ -264,7 +264,18 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
  */
 export const listNonEmptyRootCategories = async (
   regionId: string,
-): Promise<HttpTypes.StoreProductCategory[]> => {
+): Promise<{
+  gyokerek: HttpTypes.StoreProductCategory[]
+  /**
+   * A MEGJELENITENDO NEVEK, AZONOSITO SZERINT -- ES NEM UJ LEKERDEZES.
+   *
+   * A roviditest a menu eddig helyben vegezte (`rovidNev(nev, gyokerNeve)`),
+   * feltetel nelkul. Az egyedisegrol viszont csak a TELJES lista tud dontenni,
+   * es az itt mar a kezunkben van: ugyanaz a `mind`, amibol a gyokereket
+   * szurjuk. A menu igy nem kap uj hivast, csak egy kesz terkepet.
+   */
+  nevek: Map<string, string>
+}> => {
   const mind = await listCategories({
     fields: "id,name,handle,parent_category_id,rank",
   })
@@ -362,11 +373,20 @@ export const listNonEmptyRootCategories = async (
     A `?? 0` azert kell, mert a mezo elvben hianyozhat; olyankor a nev szerinti
     masodlagos rendezes ad kiszamithato sorrendet a veletlen helyett.
   */
-  return gyokerek
-    .filter((_, i) => vane[i])
-    .sort((a, b) => {
-      const ra = (a as { rank?: number | null }).rank ?? 0
-      const rb = (b as { rank?: number | null }).rank ?? 0
-      return ra !== rb ? ra - rb : a.name.localeCompare(b.name, "hu")
-    })
+  return {
+    gyokerek: gyokerek
+      .filter((_, i) => vane[i])
+      .sort((a, b) => {
+        const ra = (a as { rank?: number | null }).rank ?? 0
+        const rb = (b as { rank?: number | null }).rank ?? 0
+        return ra !== rb ? ra - rb : a.name.localeCompare(b.name, "hu")
+      }),
+    /*
+      A TERKEP A TELJES LISTABOL KESZUL, NEM A MEGSZURT GYOKEREKBOL. Az
+      egyedisegnek a KATALOGUS az alapja: ha csak a menuben latszo neveket
+      neznenk, egy nev "egyedinek" latszana attol, hogy a mellette allo
+      utkozo tarsa nem fer be a menube.
+    */
+    nevek: megjelenitendoNevek(mind),
+  }
 }
