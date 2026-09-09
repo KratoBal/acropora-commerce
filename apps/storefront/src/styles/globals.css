@@ -89,7 +89,37 @@
   */
   --terv-hatter-sotet: oklch(0.235 0.02 248);
   --terv-hatter-lap: oklch(0.995 0.003 80); /*  4 elem -- a kartyak lapja */
-  --terv-hatter-halvany: oklch(0.955 0.004 250);
+  /*
+   * A HALVANY HATTER ERTEKE IS AZ ELVETETT 1a LAPROL JOTT.
+   *
+   * Merve 2026-09-09, lapokent bontva:
+   *
+   *     a REGI ertek, 0.955 chroma 0.004 hue 250    2a: 0   1a: 6   1b: 0
+   *     a MOSTANI,    0.965 chroma 0.008 hue  70    2a: 0   1a: 0   1b: 3
+   *     a masik szerep, 0.955 chroma 0.006 hue 75   2a: 0   1a: 0   1b: 1
+   *
+   * A HARMADIK SOR SZEREPE MAR 2026-09-08 OTA LE VOLT IRVA a sotet blokk
+   * fejleceben: az az 1b lap fejlecebeli KERESO-MEZOJENEK hattere.
+   *
+   * EGY TOKEN, KET TERVBELI SZEREP -- ES EZT KI KELL MONDANI. A negy
+   * hasznalata: HAROM felulet (az ar doboza, a szakasz-dobozok es a panel
+   * belso doboza, a tervben mind 0.965 chroma 0.008 hue 70), es EGY kereso
+   * mezo (0.955 chroma 0.006 hue 75). A ket tervbeli ertek 0.01
+   * vilagossagban ter el.
+   *
+   * A VALASZTAS A FELULET-ERTEK (acrobot, 2026-09-09, uzenet 16766), es az
+   * indok az, hogy a negy hasznalatbol HAROM felulet: az ar doboza, a
+   * szakasz-dobozok es a panel belso doboza. A negyedik, a fejlec kereso
+   * mezoje, a tervben `oklch(0.955 0.006 75)` -- 0.01-gyel vilagosabb, es
+   * MOST AZ a token masodik szerepe.
+   *
+   * A KET SZEREP KOZOTTI KULONBSEG TEHAT MEGMARAD, csak a masik iranyban:
+   * eddig a kereso mezo erteke allt itt es a haromfele felulet tert el,
+   * mostantol a haromfele felulet erteke all itt es a kereso mezo ter el.
+   * Ha egyszer megfordul, egyetlen sor -- de akkor is HAROM helyre hat, nem
+   * egyre, es ezt erdemes tudni a dontes elott.
+   */
+  --terv-hatter-halvany: oklch(0.965 0.008 70); /* 1b: a halvany feluletek */
 
   /* kiemeles */
   /* A REZ EGY TOKEN, ES A NEVE A SZEREPET JELOLI, NEM AZ ERTEKET.
@@ -357,8 +387,50 @@
   --terv-szoveg-halvany: oklch(0.5 0.012 60); /* 16 elem -- masodlagos */
 
   /* keretek */
-  --terv-keret: oklch(0.88 0.005 250); /* 12 elem */
-  --terv-keret-meleg: oklch(0.88 0.008 70); /*  7 elem */
+  /*
+   * A VILAGOS KERET ERTEKE AZ ELVETETT 1a LAPROL JOTT, ES EZ A HARMADIK
+   * TULELOJE UGYANANNAK A KIOLVASASNAK.
+   *
+   * Merve 2026-09-09, a tervforras HAROM lapjara kulon bontva (a szam azt
+   * mondja meg, hanyszor all az az ertek az adott lapon):
+   *
+   *     a REGI ertek, 0.88 chroma 0.005 hue 250    2a: 0   1a: 13   1b: 0
+   *     a MOSTANI,    0.88 chroma 0.008 hue  70    2a: 0   1a:  0   1b: 9
+   *
+   * Vagyis a regi ertek EGYETLENEGYSZER sem all azon a lapon, amit Balazs
+   * valasztott (1b, 2026-09-08), viszont tizenharomszor azon, amit elvetettunk.
+   * A vilagossag azonos (0.88), a tonus fordul meg: hidegrol melegre.
+   *
+   * MIERT EPP EZ A LEGDRAGABB A HAROM KOZUL: Balazs szo szerint a "blokkok
+   * korvonalat" nevezte meg, es ez a token a lap MINDEN keretere hat -- a
+   * fejlec ket vonalatol a szakasz-dobozokon at a bolyegkepekig, kilenc helyen.
+   *
+   * A REGI `12 elem` es `7 elem` megjegyzes IS ebbol a hibabol szuletett: azok
+   * a szamok a HAROM lapra osszesitve alltak, tehat egy elvetett lap sulyat is
+   * hordoztak. Ezert allnak most lapokent.
+   *
+   * === AMIT EZ NEM JAVIT, ES NEM IS AKAR ===
+   *
+   * A terv vilagos lapja HAT kulonbozo keretszint hasznal (0.88 / 0.9 / 0.92 /
+   * 0.87 / 0.85 / 0.82, mind 70 korul), a sotet szinten hatot. Mi kettore
+   * vontuk ossze. AZ OSSZEVONAS DONTES VOLT, NEM HIBA -- amit itt javitunk, az
+   * kizarolag az, hogy az ALAPNAK valasztott ertek egy elvetett lape volt.
+   * Aki ezt olvassa, ne alljon neki visszaallitani a hat erteket.
+   *
+   * === ES EGY NYITOTT KERDES, AMIT NEM DONTOK EL ===
+   *
+   * Ezzel a ket token VILAGOS erteke azonossa valt, es a `-meleg` utotag a
+   * nevben felrevezetove: mind a ketto meleg. A ketto ma nem SZEREP szerint
+   * valik szet, hanem MODUL szerint (merve: a `--terv-keret` kilenc hasznalata
+   * a termeklapon es a fejlecben, a `--terv-keret-meleg` negy hasznalata mind a
+   * KOSAR moduljaban).
+   *
+   * Osszevonni megsem lehet meresbol: a SOTET vilagban a ket ertek kulonbozik
+   * (0.28 kontra 0.33), tehat egy osszevonas eldontene, milyen keretet kap a
+   * kosar, amikor sotet vilagra kerul. Az dontes, nem meres, es kulon tetel.
+   */
+  --terv-keret: oklch(0.88 0.008 70); /* 1b: 9 hely -- a fo keret */
+  --terv-keret-meleg: oklch(0.88 0.008 70); /* 1b: ugyanaz; a sotetben nem */
 
   /*
    * A SARKOK: A TERV GYAKORLATILAG SZOGLETES, ES EZ MERES, NEM IZLES.

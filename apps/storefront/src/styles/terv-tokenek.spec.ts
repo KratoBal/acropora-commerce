@@ -72,12 +72,25 @@ describe("a terv megerositett ertekei", () => {
     */
     ["--terv-hatter", "oklch(0.99 0.004 80)"],
     ["--terv-szoveg", "oklch(0.2 0.012 60)"],
-    ["--terv-keret", "oklch(0.88 0.005 250)"],
+    /*
+      A KET KERET ERTEKE A VILAGOS VILAGBAN AZONOS, ES EZ SZANDEKOS.
+
+      A `--terv-keret` erteke 2026-09-09-ig az ELVETETT 1a tervlaprol jott
+      (ott 13-szor all, az 1b-n nullaszor). Az 1b sajat keretszine
+      `oklch(0.88 0.008 70)`, ami mar bent volt a fajlban, `--terv-keret-meleg`
+      neven. A ket token a SOTET vilagban tovabbra is KULONBOZIK (0.28 kontra
+      0.33), tehat nem vonhatok ossze; az indoklas a globals.css-ben all.
+
+      AMIT EZ A KET SOR EGYUTT NEM TUD MEGFOGNI: ha valaki mind a kettot
+      ugyanarra a HIBAS ertekre allitja. Azt a `VILAGONKENT` tabla fogja meg,
+      ami a sotet erteket is neven nevezi.
+    */
+    ["--terv-keret", "oklch(0.88 0.008 70)"],
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)"],
     ["--terv-kiemel", "oklch(0.55 0.13 45)"],
     ["--terv-kiemel-szoveg", "oklch(1 0 0)"],
     ["--terv-kiemel-tinta", "oklch(0.55 0.13 45)"],
-    ["--terv-hatter-halvany", "oklch(0.955 0.004 250)"],
+    ["--terv-hatter-halvany", "oklch(0.965 0.008 70)"],
     ["--terv-szoveg-halvany", "oklch(0.5 0.012 60)"],
   ]
 
@@ -168,7 +181,7 @@ describe("a terv megerositett ertekei", () => {
     const sotetBlokk = normal(CSS.slice(sotetKezd))
 
     expect(vilagosBlokk).toContain(
-      "--terv-hatter-halvany: oklch(0.955 0.004 250)",
+      "--terv-hatter-halvany: oklch(0.965 0.008 70)",
     )
     expect(sotetBlokk).toContain(
       "--terv-hatter-halvany: oklch(0.205 0.018 249)",
@@ -368,7 +381,24 @@ describe("a terv megerositett ertekei", () => {
       const minta = /^\s*(--terv-[a-z0-9-]+)\s*:\s*([^;]+);/gm
       let m: RegExpExecArray | null = minta.exec(blokk)
       while (m !== null) {
-        ki[m[1]] = m[2].split("/*")[0].trim()
+        /*
+          A KIOLVASOTT ERTEK NORMALIZALVA MEGY TOVABB, ES EZT EGY KONTROLL
+          KENYSZERITETTE KI (murena merese, 2026-09-09).
+
+          A kalibracioban NULLA pirosat jósoltam arra a rontasra, ami az
+          erteket VALTOZATLANUL hagyja, csak a zarojelen belul tesz szokozt
+          (`oklch( 0.88 0.008 70 )`). A tobbi allitas tenyleg zold maradt --
+          azok `normal()`-on at nezik a szoveget --, EZ AZ EGY viszont
+          pirosra valtott. Vagyis a fajlban ket kulonbozo turesu allitas allt
+          egymas mellett, es ez a formazasra is elsult volna: egy prettier
+          reflow (`[^;]` az ujsort is atlepi) ugyanezt a hamis pirosat adna.
+
+          A `normal()` a zarojelen beluli szokozoket es az ujsorokat vagja ki,
+          a szamjegyeket es a sorrendjuket nem -- tehat az orzo NEM lesz
+          lazabb, csak a formazasra vak, aminek eddig sem kellett volna
+          latnia.
+        */
+        ki[m[1]] = normal(m[2].split("/*")[0]).trim()
         m = minta.exec(blokk)
       }
       return ki
@@ -426,8 +456,8 @@ describe("a terv megerositett ertekei", () => {
     const hianyzo = elteroek.filter(
       (k) =>
         !SAJAT_FORRAS.includes(`["${k}"`) ||
-        !SAJAT_FORRAS.includes(v[k]) ||
-        !SAJAT_FORRAS.includes(s[k]),
+        !normal(SAJAT_FORRAS).includes(v[k]) ||
+        !normal(SAJAT_FORRAS).includes(s[k]),
     )
     expect(hianyzo).toEqual([])
   })
