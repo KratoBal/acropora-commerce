@@ -103,7 +103,7 @@ describe("a fejléc fő sávja", () => {
    *
    * AZ OK UGYANAZ, AMIT EGY ORAVAL KORABBAN MASNAL TALALTAM: a tagadas a TERV
    * IRASMODJARA szolt (`4,9 / 5`, `N értékelés`), nem arra, hogy van-e szam. A
-   * "4,8 · 213 véleményből" egyik mintara sem illeszkedik. Sajat magamon
+   * "4,8 · 213 értékelésből" egyik mintara sem illeszkedik. Sajat magamon
    * ismetlem meg a hibat, amit epp elotte irtam le.
    *
    * A HELYERE MEGLET-ALLITAS KERUL: a ket ERTEK es a datum. Igy ha barmelyik
@@ -112,7 +112,7 @@ describe("a fejléc fő sávja", () => {
    */
   it("a tanúsítvány két száma és a dátuma ki van írva", () => {
     expect(nav).toContain("4,8")
-    expect(nav).toContain("213 véleményből")
+    expect(nav).toContain("213 értékelésből")
     expect(nav).toContain('BIZALMI_TANUSITVANY_DATUM = "2026-09-09"')
     expect(nav).toContain("data-tanusitvany-allapot")
   })

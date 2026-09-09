@@ -142,9 +142,17 @@ const BIZALMI_BAL =
 /**
  * A TANUSITVANY ES A KET SZAMA -- STATIKUS ERTEK, MERT NINCS LEKERDEZESUNK.
  *
- * Balazs adta meg (2026-09-09): Fogyasztobarat, 4,8, 213 velemenybol. A ket
- * szam A FENTI NAP ALLAPOTA, es NEM frissul magatol: nincs olyan hivasunk, ami
- * a tanusitvany oldalarol lehozna.
+ * Balazs szava (2026-09-09 11:06:53Z): "az jelenleg 4.8 213 ertekelesbol", es
+ * ket masodperccel kesobb: "aztan majd bekotjuk, addig legyen statikus".
+ *
+ * A SZOVEG AZ O SZAVAT KOVETI: "ertekelesbol", nem "velemenybol". Elso
+ * valtozatomban az utobbi allt, egy masodkezi atirasbol -- a szo ket kezen at
+ * megvaltozott, es a forras mondja meg, melyik a helyes.
+ *
+ * A ket szam A FENTI NAP ALLAPOTA, es NEM frissul magatol: nincs olyan
+ * hivasunk, ami a tanusitvany oldalarol lehozna. Ez BALAZS DONTESE, nem a mi
+ * kenyelmunk -- es ezert nem is epitettunk hozza sem lehivast, sem helyet egy
+ * jovobeli adatforrasnak. A bekotes kesobb jon, es akkor dol el, honnan.
  *
  * EZERT ALL ITT A DATUM, ES NEM DISZ: egy szam, ami a vevo elott all es nem
  * frissul, egy ev mulva is ugyanezt fogja mondani. Aki ide nez, lassa, mikori.
@@ -154,7 +162,8 @@ const BIZALMI_BAL =
  * nelkul. Ez a ket szam a SAJAT tanusitvanyunke, es a gazdatol jon.
  */
 const BIZALMI_TANUSITVANY_DATUM = "2026-09-09"
-const BIZALMI_TANUSITVANY = "Fogyasztóbarát tanúsítvány · 4,8 · 213 véleményből"
+const BIZALMI_TANUSITVANY =
+  "Fogyasztóbarát tanúsítvány · 4,8 · 213 értékelésből"
 const BIZALMI_SEGITSEG = "Szakértői segítség"
 
 const KERESO_HELYKITOLTO = "Keresés termékre, márkára, cikkszámra"
