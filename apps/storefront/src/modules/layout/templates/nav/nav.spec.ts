@@ -145,6 +145,19 @@ describe("a fejléc fő sávja", () => {
    */
   it("a felső sáv a terv betűméretét viseli", () => {
     expect(bizalmiSav()).toContain("text-[12.5px]")
+
+    /*
+      EZ A TAGADAS A KOMMENT-SZURESEN AL, ES EZ NEM ELMELETI.
+
+      A `nav/index.tsx` sajat megjegyzese SZO SZERINT kiirja a `text-xs`
+      nevet (megmondja, hogy 12-t adna a terv 12.5-e helyett), es az a
+      megjegyzes a sav szeleten BELUL all. Merve 2026-09-09: a NYERS szeletben
+      benne van, a `kodSzoveg`-gel szurtben nincs.
+
+      Vagyis ha valaki egyszer kiveszi a szurest a fajl tetejerol, ez a sor
+      egy HELYES fajlon fog pirosra valtani. A szures itt teherhordo, nem
+      kenyelem.
+    */
     expect(bizalmiSav()).not.toContain("text-xs")
   })
 
