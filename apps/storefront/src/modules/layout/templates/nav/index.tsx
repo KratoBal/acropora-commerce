@@ -194,6 +194,41 @@ const BIZALMI_TANUSITVANY =
   "Fogyasztóbarát tanúsítvány · 4,8 · 213 értékelésből"
 const BIZALMI_SEGITSEG = "Szakértői segítség"
 
+/**
+ * A KERESO HELYKITOLTOJE -- SZANDEKOS ELTERES A TERVTOL.
+ *
+ * EZT A SORT AZERT KELL ITT LEIRNI, mert enelkul valaki egyszer "kijavitja" a
+ * terv szerintire, es azzal az elo allat lapokrol eltunik a "márkára".
+ *
+ * === MIT AD A TERV, ES MIT ADUNK MI ===
+ *
+ *     2a (elo allat)   Keresés termékre, fajra, cikkszámra
+ *     1b (muszaki)     Keresés termékre, márkára, cikkszámra
+ *     nalunk           Keresés termékre, fajra, márkára, cikkszámra
+ *
+ * A terv tehat HAROM szot ad, es LAPONKENT MAST: a fajt csak az elo allat
+ * lapjan, a markat csak a muszakin. A mi alakunk a ketto egyesitese, vagyis
+ * egy HARMADIK valtozat -- ezt picasso merte a kitelepitett lapon
+ * (2026-09-09), es nem elnezes.
+ *
+ * === MIERT MARAD IGY (acrobot dontese, 2026-09-09 16:55) ===
+ *
+ * Egy KOZOS fejlec-komponensunk van. A helykitolto termek-tipustol valo
+ * fuggese olyan agat nyitna (a fejlecnek tudnia kellene, milyen lapon all),
+ * ami tobbe kerul, mint amennyit er -- a kereso mindket esetben ugyanabba a
+ * boltba keres.
+ *
+ * ES A NEGYSZAVAS ALAK IGAZ MIND A KET VILAGRA, mig a terv ket alakja
+ * kulon-kulon HIANYOS: a 2a valtozat elhallgatja, hogy markara is lehet
+ * keresni, az 1b pedig azt, hogy fajra. Egy helykitolto, ami kevesebbet
+ * iger, mint amit a kereso tud, nem pontosabb, hanem szegenyebb.
+ *
+ * === MI VALTOZTATNA EZEN ===
+ *
+ * Ha a fejlec valaha MEGIS megtudja, milyen lapon all (peldaul mert mas okbol
+ * kell neki), akkor ez a dontes ujranyithato -- de akkor sem magatol: a fenti
+ * "hianyos" erv a terv KET alakjara akkor is all.
+ */
 const KERESO_HELYKITOLTO = "Keresés termékre, fajra, márkára, cikkszámra"
 
 export default async function Nav({ countryCode }: { countryCode?: string }) {

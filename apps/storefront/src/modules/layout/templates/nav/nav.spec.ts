@@ -296,6 +296,28 @@ describe("a fejléc keresője", () => {
   })
 
   /**
+   * ES A TAGADAS: A TERV KET HAROMSZAVAS ALAKJA NEM LEP A HELYERE.
+   *
+   * A negyszavas alak SZANDEKOS elteres a tervtol (acrobot dontese,
+   * 2026-09-09 16:55), es az indoka a komponens fejleceben all. A veszely
+   * nem az elgepeles, hanem a JOSZANDEKU javitas: valaki osszeveti a tervvel,
+   * "hibat" talal, es visszaallitja a harom szora -- amivel az elo allat
+   * lapokrol eltunik a "márkára", a muszakirol a "fajra".
+   *
+   * A meglet-allitas ezt NEM fogja meg onmagaban: egy olyan valtozat is
+   * atmenne rajta, ami MIND A HARMAT ott hagyja egymas mellett. Ez a ket sor
+   * arra szol, hogy a terv alakjai ne alljanak a helyere.
+   *
+   * A `nav` a `kodSzoveg`-en at jon, tehat a megjegyzesek KI VANNAK SZEDVE --
+   * enelkul a komponens fejlecebe irt magyarazat (ami mind a ket alakot
+   * IDEZI) sajat maga sutne el ezt az allitast.
+   */
+  it("a terv két háromszavas alakja nem lép a helyére", () => {
+    expect(nav).not.toContain("Keresés termékre, fajra, cikkszámra")
+    expect(nav).not.toContain("Keresés termékre, márkára, cikkszámra")
+  })
+
+  /**
    * ES A HATAR IS OTT ALL A KODBAN, NEM CSAK AZ IGERET.
    *
    * A negybol harom (termek, faj, marka) UGYANAZON az alapon mukodik: a szo a
