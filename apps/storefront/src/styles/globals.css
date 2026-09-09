@@ -19,6 +19,26 @@
  * csak ott hatnak, ahol hivatkozunk rajuk.
  */
 :root {
+  /*
+    A FEJLEC TELJES MAGASSAGA -- EGY SZAM, KET OLVASO.
+
+    A 78 pixeles sav ES az alatta allo 1 pixeles keret egyutt. Ket hely olvassa:
+    a fejlec maga allitja be belole a sav magassagat, es a termeklap JOBB
+    PANELJE ebbol szamolja a tapadasi eltolast.
+
+    MIERT KELL EGY HELYEN ALLNIA (merve 2026-09-09, kitelepitett lap, 1440x900):
+
+        fejlec magassaga    79 px
+        a panel tapadasa    top: 16px
+        gorgetes kozben     a panel tetejebol 63 PIXEL a fejlec ALATT tunt el
+
+    Balazs szava: "a jobb oldali panel tapad de nem jol". A 16 pixel egy
+    talalt szam volt, ami a fejlec nelkuli allapothoz illett -- a fejlec viszont
+    a 268 ota VEGIG lathato. Ket kulon szam egy kesobbi fejlec-magassag
+    valtozasnal ujra szetcsuszna, es megint csendben.
+  */
+  --fejlec-magassag: 79px;
+
   /* hatterek */
   /*
     A VILAGOS LAP ERTEKE AZ 1b SZAKASZE, ES EZT KET LEPESBEN LEHETETT CSAK

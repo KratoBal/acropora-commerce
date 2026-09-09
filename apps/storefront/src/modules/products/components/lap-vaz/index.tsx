@@ -1294,7 +1294,31 @@ const LapVaz = ({
                   {szeg.bal.map(doboz)}
                 </div>
                 <div
-                  className="flex flex-col gap-4 lg:sticky lg:top-4"
+                  /*
+                    A TAPADAS A FEJLEC ALJAHOZ IGAZODIK, NEM EGY TALALT SZAMHOZ.
+
+                    Merve 2026-09-09 a kitelepitett lapon (1440x900): a fejlec
+                    79 pixel magas es a 268 ota VEGIG lathato, a panel viszont
+                    16 pixelre tapadt a nezet tetejetol. Gorgetes kozben a panel
+                    tetejebol 63 PIXEL a fejlec ala csuszott -- ott all az ar es
+                    a panel felso kerete.
+
+                    A `--fejlec-magassag` a fejlec sajat valtozoja; a 16 pixel
+                    marad, de mostantol a fejlec ALJATOL szamolodik, nem a nezet
+                    tetejetol.
+
+                    A MAGASSAG-KORLAT A MASODIK KERDESRE VALASZ: ha a panel
+                    magasabb, mint a nezet, a tapadas ALUL vagna le, es a
+                    "Kosarba" gomb elerhetetlenne valna. Ma a panel 496 pixel,
+                    tehat ez nem all fenn -- de a terven tobb sor van benne,
+                    mint nalunk, tehat elore szol. A korlat alatt a panel
+                    BELUL gorget.
+                  */
+                  className="flex flex-col gap-4 lg:sticky lg:overflow-y-auto"
+                  style={{
+                    top: "calc(var(--fejlec-magassag) + 1rem)",
+                    maxHeight: "calc(100vh - var(--fejlec-magassag) - 2rem)",
+                  }}
                   data-testid="vaz-jobb-halom"
                 >
                   {szeg.jobb.map(doboz)}
