@@ -6,7 +6,7 @@ import UniquePieceBadge, {
   UniquePiecePromise,
 } from "@modules/products/components/unique-piece-badge"
 
-import { NAGY_KEP_MAX, TovabbiKepek } from "./kep-meret"
+import { KEP_ARANY, TovabbiKepek } from "./kep-meret"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
@@ -39,9 +39,10 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
         {nagy && (
           <Container
             key={nagy.id}
-            className="relative aspect-[29/34] w-full overflow-hidden bg-ui-bg-subtle"
-            style={{ maxWidth: `${NAGY_KEP_MAX}px` }}
+            className="relative w-full overflow-hidden bg-ui-bg-subtle"
+            style={{ aspectRatio: KEP_ARANY }}
             id={nagy.id}
+            data-testid="nagy-kep"
           >
             {uniquePiece && <UniquePieceBadge />}
             {!!nagy.url && (
@@ -56,7 +57,7 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
                    allando szoveg lett belole, azonnal pirosra fordult. */
                 alt="Termékfotó"
                 fill
-                sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, 452px"
+                sizes="(max-width: 576px) 100vw, (max-width: 992px) 100vw, 856px"
                 style={{
                   objectFit: "cover",
                 }}

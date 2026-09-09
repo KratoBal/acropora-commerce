@@ -20,7 +20,7 @@ import {
   orderQuantityStep,
 } from "../product-actions/minimum-order-quantity"
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
-import { NAGY_KEP_MAX, TovabbiKepek } from "../image-gallery/kep-meret"
+import { KEP_ARANY, TovabbiKepek } from "../image-gallery/kep-meret"
 
 /**
  * A VAZ SLOTJAINAK VALODI TARTALMA -- CSAK OTT, AHOL VAN FORRAS.
@@ -205,11 +205,7 @@ export const Foto = ({ termek }: { termek: Termek }) => {
         src={nagy}
         alt={termek.title ?? ""}
         className="w-full"
-        style={{
-          aspectRatio: "16 / 10",
-          objectFit: "contain",
-          maxWidth: `${NAGY_KEP_MAX}px`,
-        }}
+        style={{ aspectRatio: KEP_ARANY, objectFit: "contain" }}
         data-testid="vaz-foto"
       />
       <TovabbiKepek kepek={tobbi as never} />

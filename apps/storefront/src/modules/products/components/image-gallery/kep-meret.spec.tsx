@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import ImageGallery from "./index"
-import { NAGY_KEP_MAX, TovabbiKepek } from "./kep-meret"
+import { KEP_ARANY, TovabbiKepek } from "./kep-meret"
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
@@ -45,26 +45,45 @@ describe("a nagy kép kisebb, a többi alatta", () => {
   })
 
   /**
-   * A KORLAT MAXIMUM, NEM ROGZITETT SZELESSEG -- ES EZ A MOBIL VISELKEDES.
+   * A NAGY KEP ARANYA A TERVLAPROL JON, ES A SZELESSEGE NINCS KORLATOZVA.
    *
-   * `w-full` plusz `maxWidth`: a toresrpont alatt a kep TELJES szelessegu
-   * marad (egy 375 pixeles telefonon 375), mert a korlat csak akkor lep
-   * eletbe, ha van hova. Ha valaki rogzitett szelessegre cserelne, a kep a
-   * telefonon is 452 pixel maradna, es ez az allitas fogja meg.
+   * A tervlapon a foto KITOLTI a bal oszlopot, es 16:10 all rajta kiirva. Az
+   * elso valtozatom egy 452 pixeles maximumot tett ra -- azt ez az allitas
+   * fogja meg, ha valaha visszakerulne.
    *
-   * jsdom nem szamol elrendezest, tehat a MODOT merjuk (maximum kontra
-   * rogzitett), nem a kirajzolt pixelt.
+   * jsdom nem szamol elrendezest, tehat a MODOT merjuk (arany plusz teljes
+   * szelesseg), nem a kirajzolt pixelt.
    */
-  it("a nagy kép maximumot kap, és teljes szélességű marad alatta", () => {
+  it("a nagy kép 16:10, és nincs szélesség-korlátja", () => {
     const { container } = render(<ImageGallery images={[kep(1)] as never} />)
 
     const doboz = container.querySelector(
-      '[class*="aspect-"]',
+      '[data-testid="nagy-kep"]',
     ) as HTMLElement | null
 
     expect(doboz).toBeTruthy()
-    expect(doboz!.style.maxWidth).toBe(`${NAGY_KEP_MAX}px`)
+    expect(doboz!.style.aspectRatio.replace(/\s/g, "")).toBe(
+      KEP_ARANY.replace(/\s/g, ""),
+    )
+    expect(doboz!.style.maxWidth).toBe("")
     expect(doboz!.style.width).toBe("")
     expect(doboz!.className).toContain("w-full")
+  })
+
+  /**
+   * A SOR A TERVLAP SZERINT HAT OSZLOPOS ASZTALON, ES HAROM TELEFONON.
+   *
+   * A hat a tervlapon all (hat csempe egy sorban). A harom az en dontesem: hat
+   * csempe egy 375 pixeles telefonon egyenkent 55 pixel lenne, es azon a
+   * kepbol nem latszik semmi. A sor tehat nem gorget es nem zsugorodik
+   * olvashatatlanra, hanem kevesebb oszlopot hasznal.
+   */
+  it("a sor hat oszlopos asztalon, három telefonon", () => {
+    render(<ImageGallery images={[kep(1), kep(2)] as never} />)
+
+    const sor = screen.getByTestId("tovabbi-kepek")
+
+    expect(sor.className).toContain("lg:grid-cols-6")
+    expect(sor.className).toContain("grid-cols-3")
   })
 })
