@@ -1,3 +1,4 @@
+import type { Logger } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createOrderWorkflow } from "@medusajs/medusa/core-flows"
 
@@ -79,7 +80,7 @@ export const warnOnDuplicateCashOnDeliveryFee = (
 }
 
 createOrderWorkflow.hooks.orderCreated(async ({ order }, { container }) => {
-  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  const logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
 
   try {
     warnOnDuplicateCashOnDeliveryFee(order, logger)
