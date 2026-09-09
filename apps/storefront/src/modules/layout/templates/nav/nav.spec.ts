@@ -47,8 +47,23 @@ describe("a fejléc fő sávja", () => {
     expect(nav).toContain("SideMenu")
   })
 
-  it("a fő sáv a tervbeli 78 pixel", () => {
-    expect(nav).toContain("h-[78px]")
+  /**
+   * A 78 PIXEL MEGVAN, CSAK MAR NEM ITT ALL SZAM SZERINT.
+   *
+   * Ez az allitas eddig a `h-[78px]` osztalyt kereste, es JOGGAL bukott el,
+   * amikor a magassag kozos valtozoba kerult. Az ERTEK nem valtozott: a
+   * `--fejlec-magassag` 79 pixel (a 78 pixeles sav plusz az 1 pixeles also
+   * keret), es a sav ebbol vonja le a keretet.
+   *
+   * MIERT KERULT KOZOS VALTOZOBA: a termeklap jobb panelje ugyanebbol szamolja
+   * a tapadasi eltolast. Ket kulon szam egyszer mar szetcsuszott -- a panel 16
+   * pixelre tapadt, es a tetejebol 63 pixel a fejlec ala kerult.
+   *
+   * A magat az ERTEKET a `lap-vaz/panel-tapadas.spec.ts` orzi, egy helyen.
+   */
+  it("a fő sáv magassága a közös változóból jön", () => {
+    expect(nav).toMatch(/calc\(var\(--fejlec-magassag\) - 1px\)/)
+    expect(nav).not.toContain("h-[78px]")
   })
 
   /**

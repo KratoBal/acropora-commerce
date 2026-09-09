@@ -136,8 +136,18 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
         data-testid="fejlec"
       >
         <nav
-          className="mx-auto flex h-[78px] w-full items-center gap-4 lg:gap-10"
+          /*
+            A SAV MAGASSAGA A KOZOS VALTOZOBOL JON, MINUSZ AZ ALSO KERET.
+
+            A `--fejlec-magassag` a TELJES fejlecet jelenti (sav plusz az 1
+            pixeles keret). Ket olvasoja van: ez a sor es a termeklap jobb
+            paneljenek tapadasi eltolasa. Ket kulon szam egyszer mar
+            szetcsuszott: a panel 16 pixelre tapadt, a fejlec 79 magas volt, es
+            a panel tetejebol 63 pixel eltunt alatta.
+          */
+          className="mx-auto flex w-full items-center gap-4 lg:gap-10"
           style={{
+            height: "calc(var(--fejlec-magassag) - 1px)",
             maxWidth: "1352px",
             fontFamily: "var(--terv-betu-fo-lanc)",
           }}
