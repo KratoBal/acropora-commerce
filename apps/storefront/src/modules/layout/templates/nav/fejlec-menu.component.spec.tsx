@@ -66,7 +66,19 @@ describe("a kis lenyíló kategóriamenü", () => {
    * Ez nem a kirajzolt helyet meri, hanem a SZAMITAST, es a nevek is ezt
    * mondjak.
    */
+  /*
+    MINDEN MERES SAJAT RENDERELESBOL INDUL -- ES EZT EGY MERES KERTE.
+
+    Az elso valtozat egy renderelesen belul mert tobb helyzetet, es Escape-pel
+    zart kozottuk. Emiatt az Escape-figyelo KIVETELE ezt a szoritas-allitast is
+    pirosra vitte -- egy olyan allitast, aminek semmi koze a zarashoz.
+
+    Egy segedfuggveny, ami egy MASIK mechanizmuson at jut el a merohelyig,
+    atvezeti annak a mechanizmusnak a hibait a sajat allitasaba.
+  */
   const balSzelre = (px: number) => {
+    cleanup()
+    render(<FejlecMenu kategoriak={categories} />)
     const gomb = screen.getByTestId("category-menu-trigger-Termékek")
     gomb.getBoundingClientRect = () =>
       ({
@@ -80,20 +92,10 @@ describe("a kis lenyíló kategóriamenü", () => {
         y: 0,
       }) as DOMRect
     fireEvent.click(gomb)
-    const bal = screen.getByTestId("category-menu-panel").style.left
-    /*
-      ZARUNK A MERES UTAN: ugyanarra a gombra a masodik kattintas ATKAPCSOL
-      (bezar), tehat egy tesztben tobb helyzetet csak igy lehet vegigmerni.
-      Az elso valtozatom ezt nem tette, es a masodik hivas mar nem talalt
-      panelt -- a piros a merohelyrol szolt, nem a szoritasrol.
-    */
-    fireEvent.keyDown(window, { key: "Escape" })
-    return bal
+    return screen.getByTestId("category-menu-panel").style.left
   }
 
   it("a panel nem csúszik a bal széle mögé", () => {
-    render(<FejlecMenu kategoriak={categories} />)
-
     /* ISMERT POZITIV KONTROLL: egy bosegesen fero helyen a gomb helyet veszi fel. */
     window.innerWidth = 1920
     expect(balSzelre(400)).toBe("400px")
@@ -102,8 +104,6 @@ describe("a kis lenyíló kategóriamenü", () => {
   })
 
   it("a panel nem lóg ki a nézet jobb szélén", () => {
-    render(<FejlecMenu kategoriak={categories} />)
-
     window.innerWidth = 1200
 
     /* 1200 - 1080 = 120: ennel jobbra nem kezdodhet. */
@@ -159,15 +159,45 @@ describe("a kis lenyíló kategóriamenü", () => {
     ).toContain("Termékek")
   })
 
-  it("Escape, az újrakattintott menüpont és a tényleges külső háttér is bezár", () => {
+  /**
+   * A HAROM ZARASI UT HAROM KULON NEV -- KORABBAN EGY ALLITAS VOLT MIND A HAROM.
+   *
+   * MERVE (2026-09-09): mindharom mechanizmus kivetele UGYANAZT az egy
+   * allitast vitte pirosra. Vagyis a nev IGAZAT mondott, es a vedelem is allt
+   * -- de a piros nem mondta meg, MELYIK ut szakadt el, es ha az allitas
+   * barmelyik feleben gyengul, a masik ketto vele megy.
+   *
+   * Harom fuggetlen ertek: a NYITO GOMB atkapcsolasa, az ESCAPE, es a
+   * HATTERLAPRA kattintas. Egyik sem kovetkezik a masikbol.
+   *
+   * Es MINDEGYIK sajat renderelesbol indul, nem egy elozo allitas
+   * maradvanyabol: egy tesztben egymas utan futtatva a masodik meres mar egy
+   * MASIK ut eredmenyet mérné.
+   */
+  it("az újrakattintott menüpont bezár", () => {
     open()
+
+    /* ISMERT POZITIV KONTROLL: a panel tenyleg nyitva volt. */
+    expect(screen.getByTestId("category-menu-panel")).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId("category-menu-trigger-Termékek"))
+
+    expect(screen.queryByTestId("category-menu-panel")).toBeNull()
+  })
+
+  it("Escape bezár", () => {
+    open()
+
     fireEvent.keyDown(window, { key: "Escape" })
+
     expect(screen.queryByTestId("category-menu-panel")).toBeNull()
-    fireEvent.click(screen.getByTestId("category-menu-trigger-Termékek"))
-    fireEvent.click(screen.getByTestId("category-menu-trigger-Termékek"))
-    expect(screen.queryByTestId("category-menu-panel")).toBeNull()
-    fireEvent.click(screen.getByTestId("category-menu-trigger-Termékek"))
+  })
+
+  it("a tényleges külső háttérre kattintva bezár", () => {
+    open()
+
     fireEvent.click(screen.getByTestId("category-menu-backdrop"))
+
     expect(screen.queryByTestId("category-menu-panel")).toBeNull()
   })
   it("a nyíl helyben nyit csempéket és nem navigál, a szöveg saját lapra mutat", () => {
