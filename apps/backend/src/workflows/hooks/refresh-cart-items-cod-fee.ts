@@ -1,3 +1,4 @@
+import type { Logger } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { refreshCartItemsWorkflow } from "@medusajs/medusa/core-flows"
 
@@ -32,7 +33,7 @@ import { loadCartCashOnDeliveryFeeState } from "../utils/load-cart-cod-fee-state
  */
 refreshCartItemsWorkflow.hooks.beforeRefreshingPaymentCollection(
   async ({ input }, { container }) => {
-    const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+    const logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
     const cartId = input?.cart_id
 
     if (!cartId) {
