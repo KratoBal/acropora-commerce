@@ -1,20 +1,37 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
- * A FEJLEC KATEGORIA-SAVJA: LENYILO, ES GORGETESRE ELTUNIK.
+ * A FEJLEC KATEGORIA-SAVJA: LENYILO, ES GORGETESKOR IS OTT MARAD.
  *
  * Balazs kerese (2026-09-09 09:51): "a fejlecben a menusoron nyiljanak a
  * kategoriak es ne egybol ugorjon a termekek fokategoriara, pl. a lap alsobb
  * reszen tunjon el a kategoria fa".
  *
- * KET KULON VISELKEDES, ES A MASODIK KONNYEN ELSIKLIK:
- *   a menupont NYIT, nem navigal
- *   a sav ELTUNIK, ahogy a latogato lejjebb gorget
+ * === ITT KORABBAN EGY MASODIK VISELKEDES IS ALLT, ES AZ FELREOLVASAS VOLT ===
+ *
+ * A mondat masodik felet ("tunjon el a kategoria fa") ugy epitettem meg, hogy
+ * ez a sav a 120. pixel folott ELREJTOZIK. Ket meres cafolta:
+ *
+ *   a "kategoria fa", amit Balazs nem akar latni, a LABLEC racsa volt, nem ez
+ *     a sav -- harom kitelepitett lapon merve egyetlen elem felelt meg a
+ *     leirasnak (50 link, 917 pixel, a fooldalon gorgetes nelkul lathato)
+ *   a mai bolt, amirol azt mondta, hogy "valami hasonlo kell", a sav
+ *     ELLENKEZOJET csinalja: nullatol kilencszaz pixelig gorgetve feltapad a
+ *     lap tetejere, es vegig ott marad
+ *
+ * Balazs dontese ezutan: "a fejlec menusav tapadjon". A rejtes tehat kikerult,
+ * a nyilo menu maradt.
+ *
+ * A TAPADAS NEM ITT VAN, hanem a fejlec burkolatan (`index.tsx`, `sticky
+ * top-0`), es az mar korabban is allt. Ez a komponens csak annyit tesz, hogy
+ * NEM REJTI EL magat -- pontosan ez a valtozas.
+ *
+ * AMI MEGMARADT: a menupont NYIT, nem navigal.
  *
  * === AMI SZANDEKOSAN NEM VALTOZIK: A TARTALOM ===
  *
@@ -155,40 +172,14 @@ export const FejlecMenu = ({
   kategoriak: HttpTypes.StoreProductCategory[]
 }) => {
   const [nyitott, setNyitott] = useState<string | null>(null)
-  const [latszik, setLatszik] = useState(true)
-
-  useEffect(() => {
-    /**
-     * A KUSZOB 120 PIXEL, ES EZ NEM MERT ERTEK, HANEM VALASZTOTT.
-     *
-     * A terv nem mond semmit arrol, HOL tunjon el a sav -- a keres annyi, hogy
-     * "a lap alsobb reszen". A 120 nagyjabol egy fejlec-magassagnyi gorgetes,
-     * tehat a sav addig marad, amig a latogato a lap TETEJEN van.
-     *
-     * Ha valaha mert ertek jon ra, ez az egy szam cserelodik.
-     */
-    const KUSZOB = 120
-    const figyel = () => {
-      const y = window.scrollY
-      setLatszik(y < KUSZOB)
-      if (y >= KUSZOB) setNyitott(null)
-    }
-    figyel()
-    window.addEventListener("scroll", figyel, { passive: true })
-    return () => window.removeEventListener("scroll", figyel)
-  }, [])
-
   const sorrendben = menuSorrendben(kategoriak)
 
   if (sorrendben.length === 0) return null
 
   return (
     <div
-      className={`hidden items-center gap-[22px] lg:flex ${
-        latszik ? "" : "lg:hidden"
-      }`}
+      className="hidden items-center gap-[22px] lg:flex"
       data-testid="fejlec-menu"
-      data-latszik={latszik ? "igen" : "nem"}
     >
       {sorrendben.map((k) => {
         const gyerekek = k.category_children ?? []
