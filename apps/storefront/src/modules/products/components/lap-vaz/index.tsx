@@ -1014,6 +1014,65 @@ type LapVazProps = {
  * Csoport nelkuli szakaszbol mindig egyelemu csoport lesz, tehat a mai
  * viselkedes valtozatlan mindenutt, ahol nincs `csoport` megadva.
  */
+/**
+ * A SZAKASZOKAT FUTAMOKRA BONTJA: teljes szelessegu futamok es EGY ketoszlopos
+ * futam. Ez a jobb panel "felcsuszasanak" a szerkezeti feltetele.
+ *
+ * === MIERT KELLETT, ES MIT JAVIT ===
+ *
+ * Korabban EGY lapos racs allt, es minden doboz csak `col-start` erteket
+ * kapott. A kibocsatasi sorrendben viszont MINDEN bal szakasz megelozi az
+ * OSSZES jobbot -- a CSS automatikus elhelyezes pedig nem toltekezik
+ * visszafele. Ezert a jobb oszlop elso doboza a bal oszlop UTOLSO doboza ALA
+ * kerult: merve 238 kontra 1243 pixel, harom szelessegen azonosan.
+ *
+ * === A HAROM FELOLDAS KOZUL EZ A HARMADIK, ES AZ INDOK A KARBANTARTAS ===
+ *
+ *   a kibocsatasi sorrend atrendezese  -- a legkisebb CSS-valtozas, DE a mobil
+ *     nezet sorrendjet is atirja (ott minden egy oszlopban, forras-rendben fut),
+ *     tehat egy asztali javitas csendben elmozditana a mobil olvasast
+ *   explicit `grid-row` ertekek          -- pontos, de MINDEN uj doboznal karban
+ *     kell tartani egy sorszamot; a legdragabb hosszu tavon
+ *   ket kulon oszlop-konteneren belul    -- EZ. Uj szakasznal ugyanannyi a
+ *     teendo, mint ma (az `oszlop` mezot kell beallitani), es a mobil sorrend
+ *     VALTOZATLAN marad: a ket halom egymas ala kerul, ugyanabban a sorrendben,
+ *     ahogy ma a lapos racs adja
+ *
+ * Amit a harmadik ELVESZIT: a ket oszlop sorai nem igazodnak egymashoz. Ez ma
+ * nem veszteseg -- a lapos racsban sem igazodtak, epp ez volt a hiba.
+ *
+ * ES AMIT RAADASUL AD: a jobb halom EGYETLEN elem lett, tehat a tapadas
+ * (sticky) ratehető, es magatol ott er veget, ahol a ketoszlopos futam --
+ * vagyis a kovetkezo teljes szelessegu modul kezdetenel.
+ */
+export type VazSzegmens =
+  | { tipus: "teljes"; elemek: VazSzakasz[][] }
+  | { tipus: "oszlopos"; bal: VazSzakasz[][]; jobb: VazSzakasz[][] }
+
+export const szegmensek = (csoportok: VazSzakasz[][]): VazSzegmens[] => {
+  const ki: VazSzegmens[] = []
+  for (const csoport of csoportok) {
+    const oszlop = csoport[0].oszlop
+    const utolso = ki[ki.length - 1]
+    if (oszlop === "teljes") {
+      if (utolso && utolso.tipus === "teljes") utolso.elemek.push(csoport)
+      else ki.push({ tipus: "teljes", elemek: [csoport] })
+      continue
+    }
+    if (!utolso || utolso.tipus !== "oszlopos") {
+      ki.push({ tipus: "oszlopos", bal: [], jobb: [] })
+    }
+    const cel = ki[ki.length - 1] as {
+      tipus: "oszlopos"
+      bal: VazSzakasz[][]
+      jobb: VazSzakasz[][]
+    }
+    if (oszlop === "bal") cel.bal.push(csoport)
+    else cel.jobb.push(csoport)
+  }
+  return ki
+}
+
 export const csoportokba = (szakaszok: VazSzakasz[]): VazSzakasz[][] =>
   szakaszok.reduce<VazSzakasz[][]>((ki, szakasz) => {
     const utolso = ki[ki.length - 1]
@@ -1120,7 +1179,7 @@ const LapVaz = ({
         </div>
       ) : null}
       <div
-        className="mx-auto w-full py-4 lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:gap-y-4 max-lg:flex max-lg:flex-col max-lg:gap-4"
+        className="mx-auto flex w-full flex-col gap-4 py-4"
         style={{
           maxWidth: "1352px",
           background: "var(--terv-hatter)",
@@ -1129,99 +1188,121 @@ const LapVaz = ({
         data-testid="muszaki-lap-vaz"
         data-vilag={vilag}
       >
-        {csoportokba(szakaszokVilagra(vilag, egyediPeldany)).map((csoport) => {
-          const elso = csoport[0]
-          const kozos = csoport.length > 1 || Boolean(elso.csoport)
+        {(() => {
+          const doboz = (csoport: VazSzakasz[]) => {
+            const elso = csoport[0]
+            const kozos = csoport.length > 1 || Boolean(elso.csoport)
 
-          return (
-            <div
-              key={elso.kulcs}
-              data-vaz-oszlop={elso.oszlop}
-              data-vaz-csoport={elso.csoport}
-              className={
-                elso.oszlop === "teljes"
-                  ? "lg:col-span-2"
-                  : elso.oszlop === "bal"
-                    ? "lg:col-start-1"
-                    : "lg:col-start-2"
-              }
-              style={
-                kozos
-                  ? {
-                      border: "1px solid var(--terv-keret)",
-                      /**
-                       * A KET VILAG ELLENTETES IRANYBA VALASZTJA EL A PANELT
-                       * A LAPTOL, ES EZ NEM ELIRAS (acrobot 15702, mérve).
-                       *
-                       * Soteten a panel VILAGOSABB a lapnal (0.205 a 0.17-en),
-                       * vilagosban SOTETEBB (0.955 a 0.99-en). Elsore ez
-                       * hibanak latszik -- de a ket VILAGOS tervlapon NULLA
-                       * olyan panel all, amilyen a soteten. A tervnek tehat
-                       * NINCS allitasa errol, es ha most "kijavitanank", egy
-                       * sajat dontest tennenk a terv helyere, amit a kovetkezo
-                       * olvaso tervbeli ertekkent olvasna.
-                       *
-                       * Ha egyszer lesz vilagos panel a tervben, AKKOR dol el.
-                       * Ugyanaz a szabaly, mint a keszlet-sor mobil ertekenel:
-                       * nem talalunk ki erteket oda, ahol nincs meres.
-                       *
-                       * A PANEL A `--terv-hatter-halvany` TOKENT VISELI, ES EZ
-                       * NEM VALASZTAS, HANEM EGYEZES (acrobot 15599, 2026-09-08).
-                       *
-                       * A terv a panelre sotetben oklch(0.205 ...) erteket ker.
-                       * A `--terv-hatter-halvany` sotet erteke PONTOSAN 0.205 --
-                       * betüre ugyanaz. Uj tokent felvenni tehat nem kellett.
-                       *
-                       * AMI ELOTTE ALLT ITT, ES MIERT VOLT ROSSZ: a
-                       * `--terv-hatter-lap`, aminek a sotet erteke 0.17. Az a
-                       * terv LAP-erteke, nem a panelé. Emiatt a panel SOTETEBB
-                       * volt a lapnal, holott a tervben VILAGOSABB -- a viszony
-                       * meg volt forditva, es ezt egyetlen allitas sem merte.
-                       */
-                      background: "var(--terv-hatter-halvany)",
-                      padding: "16px",
-                      display: "flex",
-                      flexDirection: "column",
-                      /**
-                       * A KOZOS PANELEN BELUL A SZAKASZOK KOZOTT 18 PIXEL ALL,
-                       * ES EZ MERVE VAN, NEM VALASZTVA (2026-09-08).
-                       *
-                       * A tervben a vasarlasi panel HET belso sorbol all, es a
-                       * kozottuk levo tavolsag NEM egyseges:
-                       *
-                       *   ar -> brutto/cikkszam        6 px
-                       *   brutto -> keszlet           18 px
-                       *   keszlet -> atvetel          18 px
-                       *   atvetel -> Kosarba          18 px
-                       *   Kosarba -> foglalas         10 px
-                       *   foglalas -> DOA             16 px + egy FELSO VONAL
-                       *
-                       * A mi NEGY szakaszunk hatara pontosan a harom 18-as
-                       * helyen van (ar | keszlet | atvetel | kosarba), tehat a
-                       * SZAKASZOK KOZOTTI ritmus egyseges 18. A 6, a 10 es a 16
-                       * a szakaszokon BELUL all, es azok mas komponensek
-                       * tulajdona -- ide nem tartoznak.
-                       *
-                       * Elozoleg 16 allt itt, kerekitve. Ket pixel, de a lenyeg
-                       * nem a kulonbseg merete: a 16 VALASZTAS volt, a 18 MERES.
-                       */
-                      gap: "18px",
-                    }
-                  : undefined
-              }
-            >
-              {csoport.map((szakasz) => (
-                <VazDoboz
-                  key={szakasz.kulcs}
-                  szakasz={szakasz}
-                  keretNelkul={kozos}
+            return (
+              <div
+                key={elso.kulcs}
+                data-vaz-oszlop={elso.oszlop}
+                data-vaz-csoport={elso.csoport}
+                style={
+                  kozos
+                    ? {
+                        border: "1px solid var(--terv-keret)",
+                        /**
+                         * A KET VILAG ELLENTETES IRANYBA VALASZTJA EL A PANELT
+                         * A LAPTOL, ES EZ NEM ELIRAS (acrobot 15702, mérve).
+                         *
+                         * Soteten a panel VILAGOSABB a lapnal (0.205 a 0.17-en),
+                         * vilagosban SOTETEBB (0.955 a 0.99-en). Elsore ez
+                         * hibanak latszik -- de a ket VILAGOS tervlapon NULLA
+                         * olyan panel all, amilyen a soteten. A tervnek tehat
+                         * NINCS allitasa errol, es ha most "kijavitanank", egy
+                         * sajat dontest tennenk a terv helyere, amit a kovetkezo
+                         * olvaso tervbeli ertekkent olvasna.
+                         *
+                         * Ha egyszer lesz vilagos panel a tervben, AKKOR dol el.
+                         * Ugyanaz a szabaly, mint a keszlet-sor mobil ertekenel:
+                         * nem talalunk ki erteket oda, ahol nincs meres.
+                         *
+                         * A PANEL A `--terv-hatter-halvany` TOKENT VISELI, ES EZ
+                         * NEM VALASZTAS, HANEM EGYEZES (acrobot 15599, 2026-09-08).
+                         *
+                         * A terv a panelre sotetben oklch(0.205 ...) erteket ker.
+                         * A `--terv-hatter-halvany` sotet erteke PONTOSAN 0.205 --
+                         * betüre ugyanaz. Uj tokent felvenni tehat nem kellett.
+                         *
+                         * AMI ELOTTE ALLT ITT, ES MIERT VOLT ROSSZ: a
+                         * `--terv-hatter-lap`, aminek a sotet erteke 0.17. Az a
+                         * terv LAP-erteke, nem a panelé. Emiatt a panel SOTETEBB
+                         * volt a lapnal, holott a tervben VILAGOSABB -- a viszony
+                         * meg volt forditva, es ezt egyetlen allitas sem merte.
+                         */
+                        background: "var(--terv-hatter-halvany)",
+                        padding: "16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        /**
+                         * A KOZOS PANELEN BELUL A SZAKASZOK KOZOTT 18 PIXEL ALL,
+                         * ES EZ MERVE VAN, NEM VALASZTVA (2026-09-08).
+                         *
+                         * A tervben a vasarlasi panel HET belso sorbol all, es a
+                         * kozottuk levo tavolsag NEM egyseges:
+                         *
+                         *   ar -> brutto/cikkszam        6 px
+                         *   brutto -> keszlet           18 px
+                         *   keszlet -> atvetel          18 px
+                         *   atvetel -> Kosarba          18 px
+                         *   Kosarba -> foglalas         10 px
+                         *   foglalas -> DOA             16 px + egy FELSO VONAL
+                         *
+                         * A mi NEGY szakaszunk hatara pontosan a harom 18-as
+                         * helyen van (ar | keszlet | atvetel | kosarba), tehat a
+                         * SZAKASZOK KOZOTTI ritmus egyseges 18. A 6, a 10 es a 16
+                         * a szakaszokon BELUL all, es azok mas komponensek
+                         * tulajdona -- ide nem tartoznak.
+                         *
+                         * Elozoleg 16 allt itt, kerekitve. Ket pixel, de a lenyeg
+                         * nem a kulonbseg merete: a 16 VALASZTAS volt, a 18 MERES.
+                         */
+                        gap: "18px",
+                      }
+                    : undefined
+                }
+              >
+                {csoport.map((szakasz) => (
+                  <VazDoboz
+                    key={szakasz.kulcs}
+                    szakasz={szakasz}
+                    keretNelkul={kozos}
+                  >
+                    {tartalom[szakasz.kulcs]}
+                  </VazDoboz>
+                ))}
+              </div>
+            )
+          }
+
+          return szegmensek(
+            csoportokba(szakaszokVilagra(vilag, egyediPeldany)),
+          ).map((szeg, i) =>
+            szeg.tipus === "teljes" ? (
+              szeg.elemek.map(doboz)
+            ) : (
+              <div
+                key={`oszlopos-${i}`}
+                className="lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:items-start max-lg:flex max-lg:flex-col max-lg:gap-4"
+                data-testid="vaz-ket-oszlop"
+              >
+                <div
+                  className="flex flex-col gap-4"
+                  data-testid="vaz-bal-halom"
                 >
-                  {tartalom[szakasz.kulcs]}
-                </VazDoboz>
-              ))}
-            </div>
+                  {szeg.bal.map(doboz)}
+                </div>
+                <div
+                  className="flex flex-col gap-4 lg:sticky lg:top-4"
+                  data-testid="vaz-jobb-halom"
+                >
+                  {szeg.jobb.map(doboz)}
+                </div>
+              </div>
+            ),
           )
-        })}
+        })()}
       </div>
     </div>
   )
