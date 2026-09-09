@@ -1388,4 +1388,66 @@ describe("a címblokk nem dobozban áll", () => {
 
     expect(doboz("ragados-sav").style.border).toContain("dashed")
   })
+
+  /**
+   * A MOBIL SORREND. AMIT EZ NEM MÉR, ÉS KIMONDOM: a jsdom nem számol
+   * elrendezést, tehát a tényleges FÜGGŐLEGES helyet nem tudom állítani. Amit
+   * mérni tudok, az a mechanizmus két fele, és külön romolhatnak el:
+   *
+   *   1. a két halom mobilon `contents` -- enélkül a dobozok nem is válnak
+   *      rendezhető elemmé, és az `order` osztályok hatástalanok maradnak
+   *   2. a dobozokon ott a mobil sorrend osztálya
+   */
+  const csoportDoboza = (kulcs: string) =>
+    doboz(kulcs).parentElement as HTMLElement
+
+  it("a két oszlop halma mobilon feloldódik", () => {
+    render(<LapVaz />)
+
+    for (const testid of ["vaz-bal-halom", "vaz-jobb-halom"]) {
+      expect(screen.getByTestId(testid).className).toMatch(
+        /max-lg:contents(?![-\w])/,
+      )
+    }
+  })
+
+  /**
+   * A FOTÓ ELŐBBRE KERÜL, MINT AZ ÁR -- ez a változás lényege, mérve: az ár
+   * korábban 877 pixelen állt a lap tetejétől 390 pixeles nézetben.
+   */
+  it("a mobil sorrendben a fotó megelőzi az árat", () => {
+    render(<LapVaz />)
+
+    expect(csoportDoboza("foto").className).toMatch(/max-lg:order-1(?![-\w])/)
+    expect(csoportDoboza("ar").className).toMatch(/max-lg:order-2(?![-\w])/)
+  })
+
+  it("a segéd és a fülek az ár MÖGÉ kerülnek", () => {
+    render(<LapVaz />)
+
+    expect(csoportDoboza("meretezes-seged").className).toMatch(
+      /max-lg:order-3(?![-\w])/,
+    )
+    expect(csoportDoboza("fulek").className).toMatch(/max-lg:order-4(?![-\w])/)
+  })
+
+  /**
+   * ÉS A TAGADÁS, AMI NÉLKÜL A FENTIEK HAMIS BIZTONSÁGOT ADNAK: a rendezés
+   * CSAK mobilon szól. Egy `order-2` a `max-lg:` előtag nélkül az ASZTALI
+   * elrendezést is átrendezné -- és a fenti állítások attól még zöldek
+   * maradnának, mert a szűkebb alak tartalmazza a tágabbat.
+   */
+  it("a rendezés nem szivárog át az asztali nézetre", () => {
+    render(<LapVaz />)
+
+    for (const kulcs of ["foto", "ar", "meretezes-seged", "fulek"]) {
+      const osztalyok = csoportDoboza(kulcs).className.split(/\s+/)
+      const rendezok = osztalyok.filter((o) => /(^|:)order-/.test(o))
+
+      expect(rendezok.length).toBeGreaterThan(0)
+      for (const o of rendezok) {
+        expect(o.startsWith("max-lg:")).toBe(true)
+      }
+    }
+  })
 })

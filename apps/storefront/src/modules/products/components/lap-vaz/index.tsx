@@ -1082,9 +1082,18 @@ type LapVazProps = {
  * vagyis egy szeles tartalom (kep, hosszu szo) SZETFESZITHETI az oszlopot. A
  * terv is a minmax alakot hasznalja.
  *
- * MOBILON EGY OSZLOP, a tervbeli SORRENDBEN. Ez nem dontes, hanem a sorrend
- * kovetkezmenye: a `flex-col` alatt a dobozok abban a sorrendben allnak, ahogy
- * a `MUSZAKI_LAP_SZAKASZAI` felsorolja oket -- es az a terv sorrendje.
+ * MOBILON EGY OSZLOP, ES A SORREND ONALLO ALLITAS (atirva 2026-09-09).
+ *
+ * Itt korabban az allt, hogy a mobil sorrend "nem dontes, hanem a sorrend
+ * kovetkezmenye": a `flex-col` alatt a dobozok a `MUSZAKI_LAP_SZAKASZAI`
+ * sorrendjeben allnak. A MECHANIZMUS leirasa igaz volt, a KOVETKEZTETES nem --
+ * a terv MOBIL kerete sajat sorrendet ad, es az nem egyezett azzal, amit egy
+ * oszlopba lapitva kaptunk. Merve: az ar 877 pixelre allt a lap tetejetol.
+ *
+ * A mobil sorrendet mostantol a `MOBIL_SORREND` terkep adja, es a meresek ott
+ * allnak mellette. Egy megjegyzes, ami egy azota megvaltozott szerkezetet ir
+ * le, rosszabb a semminel: a kovetkezo olvaso azt hinne, hogy a mobil alak
+ * magatol koveti a listat.
  */
 /**
  * EGYMAS UTAN ALLO, AZONOS CSOPORTU SZAKASZOK EGY PANELBE.
@@ -1154,6 +1163,72 @@ export const szegmensek = (csoportok: VazSzakasz[][]): VazSzegmens[] => {
     else cel.jobb.push(csoport)
   }
   return ki
+}
+
+/**
+ * A MOBIL SORREND A TERVBOL JON, ES ONALLO ALLITAS -- NEM AZ ASZTALI SORREND
+ * KOVETKEZMENYE.
+ *
+ * Eddig a komponens sajat megjegyzese ezt allt: "MOBILON EGY OSZLOP, a tervbeli
+ * SORRENDBEN. Ez nem dontes, hanem a sorrend kovetkezmenye." Az elso fele igaz
+ * volt, a masodik nem: a terv MOBIL kerete SAJAT sorrendet ad, es a mienk nem
+ * az volt, hanem az asztali elrendezes egy oszlopba lapitva.
+ *
+ * A TERV MOBIL KERETE, SAJAT MERESBOL (2026-09-09, a 390 pixeles felmeno
+ * kozvetlen gyerekei, fentrol lefele, geometria szerint):
+ *
+ *     y=0     h=57    fejlec
+ *     y=57    h=390   FOTO -- teljes szelesseg, negyzet
+ *     y=447   h=697   eyebrow + cim + alcim + AR + valaszto + info + seged + fulek
+ *     y=774   h=79    also sav
+ *
+ * ES AMI NALUNK ALLT, UGYANAZON A SZELESSEGEN:
+ *
+ *     cimsor      164
+ *     foto        231
+ *     AR          877     a sotet lapon
+ *     AR         1106     a vilagos lapon
+ *
+ * Vagyis a vevo a fotot, a meretezes-segedet ES a ful-sort vegiggorgette,
+ * mielott arat latott. Az ok szerkezeti: az ar a JOBB oszlop halmaban all, es
+ * mobilon a jobb halom a BAL halom UTAN kovetkezik, egeszben.
+ *
+ * === MIERT `contents` ES `order`, ES MIERT NEM MASODIK JELOLO ===
+ *
+ * A ket halom (`vaz-bal-halom`, `vaz-jobb-halom`) mobilon `display: contents`
+ * lesz, tehat a dobozaik KOZVETLEN flex-elemekke valnak a kozos oszlopban --
+ * igy lehet oket egymas koze rendezni. Egy masodik DOM-fa (kulon mobil jelolo)
+ * ugyanezt adna, de KETSZER kellene karbantartani, es a ket alak elteveDESE nem
+ * hibazna, csak mast mutatna.
+ *
+ * A `contents` egy dolgot ELVESZ: a halmok sajat `gap` erteket. Mobilon ezert a
+ * kozos oszlop `gap-4` erteke all minden szakasz kozott, egysegesen. Ez ma is
+ * 16 pixel volt a halmok kozott, tehat a valtozas a halmokon BELULI 14 pixelt
+ * viszi 16-ra.
+ *
+ * === AMI EBBOL MEG NEM A TERV, ES KIMONDOM ===
+ *
+ * A `cimsor` a tervben a foto ALATT all; nalunk marad felette, mert az egy
+ * kulon, teljes szelessegu szegmens, nem ennek a racsnak a resze. A tervben az
+ * eyebrow, a cim es az ar EGY blokkban all -- azt egy kesobbi lepes hozza.
+ *
+ * Es a panelen BELUL a terv sorrendje ar -> valaszto -> info, nalunk
+ * ar -> info -> valaszto. Ezt szandekosan nem mozditom: a negy szakasz egy
+ * KOZOS panelt alkot, es a panel belso sorrendje az asztali lapon is latszik.
+ */
+const MOBIL_SORREND: Record<string, string> = {
+  /*
+    A KULCSOK BETUSZERINT ALLNAK ITT, ES EZ NEM STILUS: a Tailwind a FORRAST
+    olvassa, tehat egy osszefuzott (`max-lg:order-${n}`) osztalyt nem latna meg,
+    es a szabaly SOHA nem kerulne bele a keszletbe. Nem hibazna: a sorrend
+    egyszeruen nem valtozna.
+  */
+  foto: "max-lg:order-1",
+  ar: "max-lg:order-2",
+  "meretezes-seged": "max-lg:order-3",
+  fulek: "max-lg:order-4",
+  csomagajanlat: "max-lg:order-5",
+  kerdezd: "max-lg:order-6",
 }
 
 export const csoportokba = (szakaszok: VazSzakasz[]): VazSzakasz[][] =>
@@ -1287,6 +1362,7 @@ const LapVaz = ({
             return (
               <div
                 key={elso.kulcs}
+                className={MOBIL_SORREND[elso.kulcs] ?? ""}
                 data-vaz-oszlop={elso.oszlop}
                 data-vaz-csoport={elso.csoport}
                 style={
@@ -1396,7 +1472,7 @@ const LapVaz = ({
                     valasztott lapon `gap:14px`). A JOBB panele 16, es az
                     egyezik a maival -- ezert csak ez az egy sor valtozik.
                   */
-                  className="flex flex-col gap-[14px]"
+                  className="flex flex-col gap-[14px] max-lg:contents"
                   data-testid="vaz-bal-halom"
                 >
                   {szeg.bal.map(doboz)}
@@ -1422,7 +1498,7 @@ const LapVaz = ({
                     mint nalunk, tehat elore szol. A korlat alatt a panel
                     BELUL gorget.
                   */
-                  className="flex flex-col gap-4 lg:sticky lg:overflow-y-auto"
+                  className="flex flex-col gap-4 max-lg:contents lg:sticky lg:overflow-y-auto"
                   style={{
                     top: "var(--fejlec-teljes-magassag)",
                     maxHeight:
