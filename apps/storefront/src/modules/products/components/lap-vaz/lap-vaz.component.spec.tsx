@@ -1340,6 +1340,42 @@ describe("a címblokk nem dobozban áll", () => {
   })
 
   /**
+   * ES A TELJES SZELESSEG CSAK MOBILON SZOL. Az asztali sav sorsa nyitott
+   * kerdes, tehat ott a valtozas ELOTTI geometria all vissza: 1352 pixeles
+   * korlat es kozepre igazitas. A `lg:mx-auto` nelkul a fenti `-mx-4` az
+   * asztali lapon is szelesitene -- es a fenti allitas attol meg zold lenne.
+   */
+  it("az asztali nézetben visszaáll a rács korlátja", () => {
+    render(<LapVaz />)
+
+    const burok = screen.getByTestId("vaz-ragados-sav-burok")
+
+    expect(burok.className).toMatch(/lg:mx-auto(?![-\w])/)
+    expect(burok.className).toMatch(/lg:max-w-\[1352px\]/)
+  })
+
+  /**
+   * ES A DOBOZ KERETE IS VISSZAALL, DE CSAK TARTALOMMAL -- ures allapotban a
+   * szaggatott helykitolto a szakaszon marad, es ket keret allna egymasban.
+   */
+  it("tartalommal az asztali burok viseli a doboz keretét", () => {
+    render(<LapVaz tartalom={{ "ragados-sav": <span>proba</span> }} />)
+
+    const burok = screen.getByTestId("vaz-ragados-sav-burok")
+
+    expect(burok.className).toMatch(/lg:border(?![-\w])/)
+    expect(burok.className).toMatch(/lg:p-4(?![-\w])/)
+  })
+
+  it("üresen viszont a burok nem visel keretet", () => {
+    render(<LapVaz />)
+
+    expect(screen.getByTestId("vaz-ragados-sav-burok").className).not.toMatch(
+      /lg:border(?![-\w])/,
+    )
+  })
+
+  /**
    * A FELSŐ MARGÓ 24 PIXEL, A TERVBŐL. A rácsból kiemelve a sáv elveszti a
    * rács `gap-4` térközét, tehát ez az érték mostantól KIMONDOTT -- és ha
    * kimondott, akkor mérni is kell, különben a következő átrendezéskor
