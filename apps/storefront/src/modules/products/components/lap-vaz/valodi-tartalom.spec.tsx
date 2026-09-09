@@ -76,6 +76,58 @@ const TERMEK = {
 } as never
 
 /**
+ * A TELJES KATEGORIA-LISTA, AHOGY A LAP MEGKAPJA.
+ *
+ * A neveken RAJTA VAN a szulo neve (`TDS mérők - Tesztek, mérés, vezérlés`),
+ * mert a bolt igy adja: 2026-09-09-en a mega-menu 92 gyermek-nevebol 92 kovette
+ * ezt a mintat. A rovid alakot a megjelenites szamolja, nem az adat hordozza.
+ */
+const KATEGORIAK = [
+  { id: "c1", name: "Termékek", parent_category_id: null },
+  {
+    id: "c2",
+    name: "Tesztek, mérés, vezérlés - Termékek",
+    parent_category_id: "c1",
+  },
+  {
+    id: "c3",
+    name: "TDS mérők - Tesztek, mérés, vezérlés",
+    parent_category_id: "c2",
+  },
+]
+
+/**
+ * A TERMEK ABBAN AZ ALAKBAN, AHOGY A BOLT TENYLEG ADJA: CSAK A LEVEL.
+ *
+ * === MIERT KELL EZ A MASODIK FIXTURA, ES MIERT NEM A REGI JAVITASA ===
+ *
+ * A `TERMEK` fixtura `categories` mezoje a TELJES lancot tartalmazza, a
+ * gyokerrel egyutt. A bolt NEM igy valaszol: a termekhez rendelt (level)
+ * kategoriakat adja vissza, az oseiket nem.
+ *
+ * EZ A KULONBSEG REJTETTE EL A HIBAT. A regi `besorolasLanc` a termek sajat
+ * mezojeben keresett szulo nelkuli elemet, a fixturaban ott is volt, tehat a
+ * teszt ZOLD volt -- kozben elesben TIZENHAROM megmert termeklapbol NULLA-n
+ * jelent meg a sor. A dupla TOBBET adott, mint a valosag, es epp azt a mezot,
+ * amin az egesz mulott.
+ *
+ * A REGI FIXTURA MARAD, ES EZT KI KELL MONDANI: rajta all a fajl tobbi
+ * allitasa, es az atallitasuk kulon tetel. Vagyis a fajlban MOST KETFELE
+ * vilagkep all egyszerre -- ez tudatos, nem feledekenyseg, es addig igy marad,
+ * amig a tobbi allitas at nem kerul a bolti alakra.
+ */
+const TERMEK_BOLTI_ALAK = {
+  ...(TERMEK as object),
+  categories: [
+    {
+      id: "c3",
+      name: "TDS mérők - Tesztek, mérés, vezérlés",
+      parent_category_id: "c2",
+    },
+  ],
+} as never
+
+/**
  * TÁBLÁZATOS LEÍRÁS: a katalógusban 189 terméknél a műszaki adatok a leírásba
  * ágyazott táblázatokban állnak. A fül-komponens EZEKET emeli ki külön fülre.
  */
@@ -220,7 +272,19 @@ describe("a váz valódi tartalma", () => {
    * puszta "nincs cikkszam" allitast egy URES cimsor is kielegitene.
    */
   it("a névvel és a besorolás láncával tölti a címsort, cikkszám nélkül", () => {
-    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK_BOLTI_ALAK,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KATEGORIAK,
+        )}
+      />,
+    )
 
     expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
 
@@ -233,6 +297,48 @@ describe("a váz valódi tartalma", () => {
   })
 
   /**
+   * ES A LANC A BOLTI ALAKON EPUL FEL -- EZ AZ ALLITAS FOGTA VOLNA MEG A HIBAT.
+   *
+   * A fenti sor a kirajzolast meri, ez a BEMENET alakjat: a termek csak a
+   * LEVELET hozza, az oseit a katalogus adja. A regi valtozat itt ures listat
+   * adott volna, mert szulo nelkuli elemet keresett a termek sajat mezojeben.
+   */
+  it("a lánc a bolti alakon is felépül, ahol csak a levél jön a termékkel", () => {
+    expect(besorolasLanc(TERMEK_BOLTI_ALAK, KATEGORIAK)).toEqual([
+      "Tesztek, mérés, vezérlés",
+      "TDS mérők",
+    ])
+  })
+
+  /**
+   * A ROVIDITES CSAK PONTOS EGYEZESRE MEGY, ES EZ NEM ELMELETI KIKOTES.
+   *
+   * Ha a nevadas egyszer megvaltozik, a fuggveny NE rosszul rovidits, hanem NE
+   * rovidits. Itt a szulo neve `Tesztek, mérés, vezérlés`, a gyerek utotagja
+   * viszont MAS (`Valami más`) -- a nev teljes egeszeben all a lancban.
+   */
+  it("nem rövidít, ha az utótag NEM a szülő neve", () => {
+    const masUtotag = [
+      { id: "c1", name: "Termékek", parent_category_id: null },
+      {
+        id: "c2",
+        name: "Tesztek, mérés, vezérlés - Termékek",
+        parent_category_id: "c1",
+      },
+      {
+        id: "c3",
+        name: "TDS mérők - Valami más",
+        parent_category_id: "c2",
+      },
+    ]
+
+    expect(besorolasLanc(TERMEK_BOLTI_ALAK, masUtotag)).toEqual([
+      "Tesztek, mérés, vezérlés",
+      "TDS mérők - Valami más",
+    ])
+  })
+
+  /**
    * ES A TISZTA FUGGVENY KULON, MERT A KIRAJZOLAS NEM MINDIG ELERHETO: egy
    * kategoria nelkuli termeknel a sor MEG SEM JELENIK, es akkor a fenti
    * allitas `getByTestId` hivasa hasal el, nem az allitas mond valamit.
@@ -242,7 +348,7 @@ describe("a váz valódi tartalma", () => {
   })
 
   it("a lánc a gyökér nélkül, sorrendben áll elő", () => {
-    expect(besorolasLanc(TERMEK)).toEqual([
+    expect(besorolasLanc(TERMEK, KATEGORIAK)).toEqual([
       "Tesztek, mérés, vezérlés",
       "TDS mérők",
     ])

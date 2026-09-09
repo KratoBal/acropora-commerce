@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { besorolasUt } from "@lib/util/kategoria-fa"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 
 type Category = Pick<
@@ -14,28 +15,25 @@ export default function ProductBreadcrumb({
   product: HttpTypes.StoreProduct
   categories: Category[]
 }) {
+  /*
+    A LEVEZETES KOZOS A BESOROLAS SORAVAL, ES EZ NEM TAKARITAS.
+
+    Ugyanez a felmeno-kereses allt itt es (2026-09-09 ota) a cim folotti
+    besorolas soraban is. Ket levezetes ugyanarra elobb-utobb elcsuszik, es a
+    ket sor a lapon EGYMAS ALATT all: egy elteres azonnal latszana, es senki
+    nem tudna, melyik a helyes.
+
+    AMI VISZONT KULONBOZIK, ES SZANDEKOSAN: a morzsamenu a TELJES nevet mutatja
+    (`WYSIWYG - KORALLOK`), a besorolas sora a rovidet (`WYSIWYG`). Itt az UT
+    szamit, ott a besorolas. A ket alak ugyanabbol a hivasbol jon, tehat a
+    kulonbseg egy MEZO, nem egy masodik szamitas.
+
+    Hogy a morzsamenu is rovidre valtson-e, KULON tetel (acrobot, 2026-09-09):
+    eloszor a besorolas sora megy ki, aztan a ket sort EGYUTT nezzuk meg a
+    kitelepitett lapon.
+  */
   const byId = new Map(categories.map((category) => [category.id, category]))
-  const ancestry = (category: Category) => {
-    const path: Category[] = []
-    const seen = new Set<string>()
-    let current: Category | undefined = category
-    while (current && !seen.has(current.id)) {
-      seen.add(current.id)
-      path.unshift(current)
-      current = current.parent_category_id
-        ? byId.get(current.parent_category_id)
-        : undefined
-    }
-    return path
-  }
-  const path = (product.categories ?? []).reduce<Category[]>(
-    (deepest, category) => {
-      const local = byId.get(category.id)
-      const candidate = local ? ancestry(local) : []
-      return candidate.length > deepest.length ? candidate : deepest
-    },
-    [],
-  )
+  const path = besorolasUt(product, categories)
 
   return (
     <nav aria-label="Morzsamenü" className="overflow-x-auto whitespace-nowrap">
@@ -119,9 +117,9 @@ export default function ProductBreadcrumb({
             <span aria-hidden="true">/</span>
             <LocalizedClientLink
               className="hover:text-terv-szoveg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
-              href={`/categories/${category.handle}`}
+              href={`/categories/${byId.get(category.id)?.handle ?? ""}`}
             >
-              {category.name.trim()}
+              {category.teljesNev}
             </LocalizedClientLink>
           </li>
         ))}

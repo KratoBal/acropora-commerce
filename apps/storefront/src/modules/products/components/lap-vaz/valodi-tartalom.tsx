@@ -1,4 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
+import { besorolasUt } from "@lib/util/kategoria-fa"
 import { sanitizeDescription } from "@lib/util/sanitize-description"
 import ProductDescriptionTabs from "@modules/products/components/product-description-tabs"
 import React from "react"
@@ -65,6 +66,21 @@ import { KEP_ARANY, TovabbiKepek } from "../image-gallery/kep-meret"
 
 type Termek = HttpTypes.StoreProduct
 
+/**
+ * A LANCHOZ ELEG EZ A HAROM MEZO, es szandekosan nem a teljes Medusa tipus:
+ * igy a fuggveny fixtura-baratabb, es a szerzodese is olvashato marad.
+ *
+ * A MEZOK ELHAGYHATOK, mert a hivo (`KategoriaKatalogus`) is ilyet ad. A
+ * szukitest a `besorolasUt` vegzi, egy helyen -- egy szigorubb tipus itt csak
+ * annyit erne el, hogy a hivonak kellene kasztolnia, es a kaszt pont azt a
+ * ellenorzest utne ki, amiert a tipus letezik.
+ */
+type BesorolasKategoria = {
+  id?: string | null
+  name?: string | null
+  parent_category_id?: string | null
+}
+
 /** A vevonek szant, semleges mertekegyseg-felirat. */
 function egysegFelirat(termek: Termek): string | null {
   const egyseg = (termek.metadata as Record<string, unknown> | null)?.unas_unit
@@ -121,58 +137,35 @@ export function cikkszam(termek: Termek): string | null {
  * mindketto egy valodi, hozzarendelt kategoria neve.
  */
 /**
- * A BESOROLAS LANCA, A GYOKER NELKUL -- A CIM FOLOTTI SORHOZ.
+ * A BESOROLAS LANCA, A GYOKER NELKUL, ROVID NEVEKKEL.
  *
- * A tervlapon a cim folott ez all: `WYSIWYG · SPS · ACROPORIDAE`, rez szinnel.
- * A mi adatunkbol EBBOL KETTO all elo, es a harmadik NEM -- ezt kimondom,
- * mert kulonben a kovetkezo olvaso hianynak nezi:
+ * A levezetes a `besorolasUt` kozos fuggvenyben all: ugyanazt hasznalja a
+ * morzsamenu is. Itt csak ket dolog tortenik: a gyoker lekerul (a tervlapon a
+ * cim folotti sor nem ismetli meg), es a ROVID nevet vesszuk.
  *
- *     WYSIWYG, SPS      a kategoria-lanc, a gyoker ("Korallok") nelkul
- *     ACROPORIDAE       CSALAD-nev, es ilyen adatunk NINCS. A `nav/index.tsx`
- *                       fejlece mar rogziti: a tizenegy metaadat-kulcs kozott
- *                       egy sincs, ami fajt vagy latin nevet hordozna.
+ * === ITT KORABBAN A TERMEK SAJAT KATEGORIAI ALLTAK, ES A SOR SOHA NEM LATSZOTT ===
  *
- * Nem talalunk ki helyette semmit: egy csalad-nev termekenkent MAS, tehat a
- * terv szovegevel kitolteni ugyanaz a hiba lenne, mint egy ertekeles-szamot.
+ * A regi valtozat a `termek.categories` tombben keresett SZULO NELKULI elemet.
+ * A bolt viszont csak a hozzarendelt (LEVEL) kategoriakat adja vissza, tehat
+ * gyoker soha nem volt kozottuk, es a fuggveny mindig ures listat adott.
  *
- * === A GYOKER AZERT MARAD KI, MERT A TERVEN SINCS OTT ===
+ * MERVE 2026-09-09, a kitelepitett bolton: TIZENHAROM termeklapbol NULLA-n
+ * jelent meg a sor. Ismert pozitiv kontrollal (a szomszedos jelolok ugyanazzal
+ * a keresessel megvoltak), tehat a nulla nem a keresesem tulajdonsaga volt.
  *
- * A tervlapon a sor a masodik szinttel kezdodik. A gyoker amugy is a
- * morzsamenuben all, es minden termeknel ugyanaz a nehany ertek -- a cim
- * folott nem mond semmit.
- *
- * === AZ ADAT ELERHETO A TERMEKROL, ES EZT MERTEM ===
- *
- * A termek sajat `categories` tombje a TELJES lancot hordozza, nem csak a
- * levelet (merve a teszt bolton, 2026-09-09: a korall lapjan Korallok ->
- * WYSIWYG - Korallok -> SPS - WYSIWYG, mind a harom a termeken). Ezert nem
- * kell hozza a teljes kategoria-lista, mint a morzsamenuben.
+ * A HIBA FAJTAJA: nem hianyzo vegpont es nem jogosultsag. A mechanika kesz
+ * volt, csak nem arra a bemenetre epult, ami rendelkezesre all -- es a hianya
+ * NEMA volt, mert egy meg nem jeleno sor pontosan ugy nez ki, mint egy sor,
+ * aminek nincs mit mutatnia.
  */
-export function besorolasLanc(termek: Termek): string[] {
-  const kategoriak = termek.categories ?? []
-  if (kategoriak.length === 0) return []
-
-  const szuloje = (c: (typeof kategoriak)[number]) =>
-    (c as { parent_category_id?: string | null }).parent_category_id ?? null
-
-  const gyoker = kategoriak.find((c) => !szuloje(c))
-  if (!gyoker) return []
-
-  const lanc: string[] = []
-  let jelenlegi = gyoker
-  const latott = new Set<string>([gyoker.id])
-  for (;;) {
-    const kovetkezo = kategoriak.find(
-      (c) => szuloje(c) === jelenlegi.id && !latott.has(c.id),
-    )
-    if (!kovetkezo) break
-    latott.add(kovetkezo.id)
-    lanc.push(kovetkezo.name.trim())
-    jelenlegi = kovetkezo
-  }
-  return lanc
+export function besorolasLanc(
+  termek: Termek,
+  kategoriak: BesorolasKategoria[] = [],
+): string[] {
+  return besorolasUt(termek, kategoriak)
+    .slice(1)
+    .map((elem) => elem.nev)
 }
-
 export function legmelyebbKategoria(termek: Termek): string | null {
   const katok = termek.categories ?? []
   if (katok.length === 0) return null
@@ -202,8 +195,14 @@ export function legmelyebbKategoria(termek: Termek): string | null {
  * A CIMSOR TARTALMA. A nev mindig van; a besorolas es a cikkszam nem, es ha
  * nincs, nem irunk a helyukre semmit.
  */
-export const Cimsor = ({ termek }: { termek: Termek }) => {
-  const lanc = besorolasLanc(termek)
+export const Cimsor = ({
+  termek,
+  kategoriak,
+}: {
+  termek: Termek
+  kategoriak?: BesorolasKategoria[]
+}) => {
+  const lanc = besorolasLanc(termek, kategoriak)
 
   return (
     <div className="flex flex-col gap-1">
@@ -413,9 +412,19 @@ export function vazTartalom(
    * A vegere teve egyetlen meglevo hivas sem mozdul (ma ketto van).
    */
   kiegeszitoResz?: React.ReactNode,
+  /**
+   * A HETEDIK, ES UGYANAZERT A VEGERE, mint a hatodik: a szignatura
+   * POZICIONALIS, tehat egy kozepre szurt parameter a mogotte allokat
+   * csendben eltolna.
+   *
+   * ES EZ AZ ELSO, AMI NEM `React.ReactNode`, hanem ADAT. Azert kell adatnak
+   * lennie, mert a `Cimsor` a lancot SZAMOLJA belole -- egy kesz node-ot a
+   * hivo nem tudna eloallitani anelkul, hogy a lanc-logika ketfele allna.
+   */
+  kategoriak?: BesorolasKategoria[],
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
-    cimsor: <Cimsor termek={termek} />,
+    cimsor: <Cimsor termek={termek} kategoriak={kategoriak} />,
     /**
      * AZ EGYETLEN SLOT, AMI NEM TERMEK-ADATON ALL, tehat feltetel nelkul all a
      * helyen: a bolt telefonszama minden termeknel ugyanaz.
