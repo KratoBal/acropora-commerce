@@ -101,6 +101,26 @@ type VazSzakasz = {
    * szakasz melle kerul egy panelbe, a `csoport` dontene, nem ez.
    */
   keretNelkul?: boolean
+  /**
+   * MOBILON A LAP TELJES SZELESSEGET FOGLALJA, KERET ES BELSO MARGO NELKUL.
+   *
+   * === A TERV, MERVE (2026-09-09, a foto elemre ES a szulojere) ===
+   *
+   *     390-es keret    390 x 390   keret 0   belso margo 0   kerekites 0
+   *     1440-es keret   856 x 535   keret 0   belso margo 0   kerekites 0
+   *
+   * Vagyis a tervben a foto korul EGYIK nezetben sincs doboz. Nalunk 390-en
+   * 324 all a 390-bol: a kulonbseg 33 pixel oldalankent (16 a kulso burok
+   * margoja, 16 a szakasz belso margoja, 1 a kerete).
+   *
+   * === ES MIERT CSAK MOBILON ===
+   *
+   * Asztalin a kulonbseg 34 pixel (a szakasz 16+1 margoja ket oldalt), tehat a
+   * keret levetele ott a tervbeli 856-ot adna vissza -- de a bal oszlop
+   * keretes dobozainak SORSA nyitott kerdes (a 290-es pull request, Balazsnal).
+   * Ugyanaz a 34 pixel, ugyanaz a dontes: itt nem dontom el helyette.
+   */
+  mobilTeljesSzelesseg?: boolean
 }
 
 /**
@@ -361,7 +381,13 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     */
     keretNelkul: true,
   },
-  { kulcs: "foto", cim: "", varakozo: "Termékfotó", oszlop: "bal" },
+  {
+    kulcs: "foto",
+    cim: "",
+    varakozo: "Termékfotó",
+    oszlop: "bal",
+    mobilTeljesSzelesseg: true,
+  },
   {
     kulcs: "meretezes-seged",
     cim: "Méretezés-segéd",
@@ -559,14 +585,58 @@ export const VazDoboz = ({
         terv-elemek. Hogy azok eltunjenek-e, KULON dontes, es amig all, addig
         a bal oszlop erteket nem a tervbol vesszuk, mert nincs honnan.
       */
-      className={keretNelkul ? "" : szakasz.oszlop === "jobb" ? "p-6" : "p-4"}
+      /*
+        A MOBIL TELJES SZELESSEG HAROM DOLGOT VESZ LE EGYSZERRE, ES MINDHAROM
+        KELL: a kulso burok 16 pixeles margojat (`-mx-4`), a szakasz sajat 16
+        pixeles belso margojat (`p-0`) es az 1 pixeles keretet (`border-0`).
+        Egyutt ez 33 pixel oldalankent -- pontosan a mert kulonbseg a tervhez
+        kepest (324 a 390-bol).
+
+        ES A KERET EZERT KERUL OSZTALYBA: beagyazott stilusban all(t), es egy
+        `max-lg:` toresponti osztaly a beagyazott stilust NEM tudja felulirni.
+        A SZINE marad a stilusban -- azt nem kell toresponkent valtani.
+      */
+      className={[
+        keretNelkul ? "" : szakasz.oszlop === "jobb" ? "p-6" : "p-4",
+        keretNelkul || !szakasz.mobilTeljesSzelesseg
+          ? ""
+          : "border max-lg:-mx-4 max-lg:border-0 max-lg:p-0",
+        keretNelkul || !szakasz.mobilTeljesSzelesseg
+          ? ""
+          : uresE
+            ? "border-dashed"
+            : "border-solid",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={
         keretNelkul
           ? { color: "var(--terv-szoveg)" }
           : {
-              border: uresE
-                ? "1px dashed var(--terv-keret)"
-                : "1px solid var(--terv-keret)",
+              /*
+                A KERET SZELESSEGE OSZTALYBOL JON OTT, AHOL TORESPONKENT VALT
+                (lasd fent). Mindenhol maskor marad a beagyazott alak: az egy
+                helyen mondja meg a szelességet, a mintat es a szint.
+              */
+              /*
+                A KERET KET ALAKBAN ALLHAT, ES A KETTO NEM KEVERHETO.
+
+                Ahol a szelesseg toresponkent valt, ott az OSZTALY adja a
+                szelesseget es a mintat, a stilus csak a SZINT. Mindenhol
+                maskor a rovid alak all, egyben.
+
+                Es ez nem stilus-kerdes: ha mind a ketto ki van irva, a
+                `style.border` visszaolvasasa URESET ad (a rovid alak nem
+                allithato ossze belole) -- ket meglevo allitas emiatt
+                pirosodott ki, mielott a ket agat szetvalasztottam.
+              */
+              ...(szakasz.mobilTeljesSzelesseg
+                ? { borderColor: "var(--terv-keret)" }
+                : {
+                    border: uresE
+                      ? "1px dashed var(--terv-keret)"
+                      : "1px solid var(--terv-keret)",
+                  }),
               /* A DOBOZ HATTERE VILAGONKENT MAS, ES A VILAGOSBAN NINCS.
                  A tervben a keretes doboznak csak a SOTET lapon van hattere;
                  az indoklas a `globals.css`-ben all, a token mellett. Az ures

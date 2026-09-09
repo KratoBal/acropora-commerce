@@ -1289,6 +1289,55 @@ describe("a címblokk nem dobozban áll", () => {
   })
 
   /**
+   * A FOTO MOBILON A LAP TELJES SZELESSEGET FOGLALJA.
+   *
+   * AMIT EZ NEM MER, ES KIMONDOM: a jsdom nem szamol elrendezest, tehat a
+   * tenyleges 390 pixelt nem tudom allitani. A MECHANIZMUS harom fele all, es
+   * kulon-kulon romolhat el -- mindharom kell a mert 33 pixelhez oldalankent:
+   *
+   *     -mx-4        a kulso burok 16 pixeles margoja
+   *     p-0          a szakasz sajat 16 pixeles belso margoja
+   *     border-0     az 1 pixeles keret
+   */
+  it("a fotó mobilon kilép a lap margói közül", () => {
+    render(<LapVaz />)
+
+    const kod = doboz("foto").className
+
+    expect(kod).toMatch(/max-lg:-mx-4(?![-\w])/)
+    expect(kod).toMatch(/max-lg:p-0(?![-\w])/)
+    expect(kod).toMatch(/max-lg:border-0(?![-\w])/)
+  })
+
+  /**
+   * ES ASZTALIN MINDEN MARAD: a keret es a belso margo ott van. A bal oszlop
+   * keretes dobozainak sorsa NYITOTT kerdes (a 290-es pull request), tehat itt
+   * nem dontjuk el helyette -- ugyanaz a 34 pixel.
+   */
+  it("asztali nézetben a fotónak marad kerete és belső margója", () => {
+    render(<LapVaz />)
+
+    const foto = doboz("foto")
+
+    expect(foto.className).toMatch(/(^|\s)p-4(?![-\w])/)
+    expect(foto.className).toMatch(/(^|\s)border(?![-\w])/)
+    expect(foto.style.borderColor).toBe("var(--terv-keret)")
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL, ES ITT NEM DISZ: a teljes szelesseg OPT-IN. Ha
+   * valaki a VazDoboz-ban altalanossa tenne, a fenti ket allitas zold maradna
+   * -- es minden bal oszlopos doboz kilogna a lap szelere mobilon.
+   */
+  it("a szomszédos szakasz viszont NEM lép ki", () => {
+    render(<LapVaz />)
+
+    expect(doboz("meretezes-seged").className).not.toMatch(
+      /max-lg:-mx-4(?![-\w])/,
+    )
+  })
+
+  /**
    * A RAGADÓS SÁV A LAP TELJES SZÉLESSÉGÉBEN ÁLL.
    *
    * AMIT EZ NEM MÉR, ÉS KIMONDOM: a jsdom nem számol elrendezést, tehát a
