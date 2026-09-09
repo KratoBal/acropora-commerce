@@ -207,69 +207,51 @@ describe("a lábléc síkja", () => {
 })
 
 /**
- * A KATEGORIA-RACS A GYOKEREK SZAMARA VAN HUZALOZVA.
+ * A KATEGORIA-RACS KIKERULT A LABLECBOL, ES A HELYERE TAGADAS JON.
  *
- * acrobot kikotese (2026-09-08): "ne egesz szamokat egessunk bele", hogy egy
- * kesobbi valtozas (a ket rejtett gyoker sorsa a 73038a32 kartyan all) ADAT
- * legyen, ne ATIRAS.
+ * ITT KORABBAN OT ALLITAS ALLT arrol, hogy a racs benne van, hogy az
+ * oszlopszama a gyokerek szamabol jon, es hogy nincs beegetett oszlopszam.
+ * Mind az ot HELYES volt, es mind az ot TARGYTALAN lett: Balazs dontese
+ * (2026-09-09) az, hogy a racs teljesen eltunik.
  *
- * A TAGADO ALLITAS A LENYEG: egy `lg:grid-cols-4` ugyanugy MUKODNE ma, es
- * pontosan akkor romlana el, amikor senki nem nezne oda -- amikor a gyokerek
- * szama valtozik. A pozitiv allitas onmagaban ezt nem zarja ki.
+ * NEM TOROLTEM OKET NYOMTALANUL. Egy torolt allitas helyen ures hely marad, es
+ * az ures hely nem orzo: ha valaki visszaepiti a racsot, semmi nem szolna. A
+ * helyukre az kerul, hogy a racs NINCS ott -- ugyanazokra a jelekre merve,
+ * amiket a regi allitasok kerestek.
  *
- * A `kodSzoveg` itt nem kenyelem: a komponens megjegyzese SZO SZERINT leirja,
- * hogy miert nem rogzitett negy. Fajl-szinten merve a tagadas a sajat
- * magyarazatunkon bukna el.
+ * ES EGY POZITIV KONTROLL IS KELL MELLE, kulonben a tagadas akkor is teljesulne,
+ * ha a fajlt egyaltalan nem olvastuk be, vagy ha ures.
  */
-describe("a lábléc kategória-rácsa", () => {
+describe("a lábléc kategória-rácsa kikerült", () => {
   const kod = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
 
-  /** ISMERT POZITIV KONTROLL: tenyleg a lablecet olvastuk, es all benne a racs. */
-  it("a forrás olvasható, és a rács benne van", () => {
-    expect(kod).toContain("lablec-kategoria-racs")
+  /** ISMERT POZITIV KONTROLL: tenyleg a lablecet olvastuk. */
+  it("a forrás olvasható, és tényleg a lábléc", () => {
+    expect(kod).toContain("lablec-sik")
   })
 
-  it("az oszlopszám a gyökerek számából jön", () => {
-    expect(kod).toContain("repeat(var(--lablec-oszlopok)")
-    expect(kod).toContain('"--lablec-oszlopok": gyokerOszlopok.length')
-  })
-
-  /**
-   * A TAGADAST A KATEGORIA-RACS SZAKASZARA MERJUK, NEM A FAJLRA.
-   *
-   * Elso alakja a teljes fajlra ment, es JOGGAL bukott el: a lablecben all egy
-   * MASIK racs is (az info-oszlopoke), `lg:grid-cols-6` ertekkel. Az nem resze
-   * ennek a munkanak (a kartya kifejezetten kimondja), es rogzitett
-   * oszlopszama ott helyes -- azok az oszlopok nem adatbol jonnek.
-   *
-   * Egy fajl-szintu tagadas tehat egy HELYES sort tiltana meg. A hatokort a
-   * szakasz nyito tagja adja.
-   */
-  const racsSzakasz = kod.slice(
-    kod.indexOf("<section"),
-    kod.indexOf("lablec-kategoria-racs"),
-  )
-
-  it("nincs rögzített oszlopszám a törésponton", () => {
-    expect(racsSzakasz).toContain("grid")
-    expect(racsSzakasz).not.toMatch(/lg:grid-cols-\d/)
-  })
-
-  it("a töréspont alatt két oszlop áll, nem egy", () => {
-    expect(kod).toContain("grid-cols-2")
+  it("nincs kategória-rács a láblécben", () => {
+    expect(kod).not.toContain("lablec-kategoria-racs")
+    expect(kod).not.toContain("--lablec-oszlopok")
   })
 
   /**
-   * A GYOKEREK A SZURT HALMAZBOL JONNEK, NEM KEZI LISTABOL. Egy beegetett
-   * nevsor ugyanugy negy oszlopot adna ma, es ugyanugy nemán avulna el.
-   *
-   * A HIVAS ALAKJARA MERUNK, NEM A NEVRE -- es ezt a kalibracio kenyszeritette
-   * ki. Az elso alak `toContain("listNonEmptyRootCategories")` volt, es amikor
-   * a hivast kezi nevsorra csereltem, ZOLD MARADT: az IMPORT sor is tartalmazza
-   * a nevet. Az allitas tehat pont az ellen a regresszio ellen volt halott,
-   * amiert megirtam.
+   * A HAROM HIVAS IS ELTUNT, ES EZ KULON ALLITAS: a racs kirajzolasa nelkul is
+   * ottmaradhatna a lekerdezes, es akkor minden lapbetoltes fizetne erte
+   * ugy, hogy senki nem hasznalja.
    */
-  it("a gyökerek a szűrt halmazból jönnek", () => {
-    expect(kod).toMatch(/await listNonEmptyRootCategories\(/)
+  it("a lábléc nem kérdezi le a kategóriákat és a régiót", () => {
+    expect(kod).not.toMatch(/listNonEmptyRootCategories\(/)
+    expect(kod).not.toMatch(/listCategories\(/)
+    expect(kod).not.toMatch(/getRegion\(/)
+  })
+
+  /**
+   * ES AMI MEGMARADT: a MASIK racs (az info-oszlopoke) a helyen van. Enelkul a
+   * fenti tagadasok akkor is zoldek lennenek, ha valaki az egesz lablecet
+   * kiuritette volna.
+   */
+  it("az info-oszlopok rácsa a helyén maradt", () => {
+    expect(kod).toContain("lg:grid-cols-6")
   })
 })

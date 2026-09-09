@@ -1,8 +1,3 @@
-import {
-  listCategories,
-  listNonEmptyRootCategories,
-} from "@lib/data/categories"
-import { getRegion } from "@lib/data/regions"
 import { STORE_NAME } from "@lib/store"
 import { listCollections } from "@lib/data/collections"
 import { Text, clx } from "@modules/common/components/ui"
@@ -17,24 +12,10 @@ import {
   SAJAT_HIVATKOZASOK,
 } from "./hivatkozasok"
 
-export default async function Footer({
-  countryCode,
-}: {
-  /**
-   * AZ ORSZAGKOD A GYOKEREK SZURESEHEZ KELL, es ugyanabbol az okbol, mint a
-   * fejlecnek: a "van-e benne termek" kerdes REGIO-fuggo. Nelkule nem
-   * talalgatunk -- ures listat adunk, es a kategoria-szakasz kimarad.
-   */
-  countryCode?: string
-}) {
+export default async function Footer() {
   const { collections } = await listCollections({
     fields: "*products",
   })
-  const productCategories = await listCategories()
-  const region = countryCode ? await getRegion(countryCode) : null
-  const gyokerOszlopok = region
-    ? await listNonEmptyRootCategories(region.id)
-    : []
 
   return (
     /*
@@ -98,90 +79,26 @@ export default async function Footer({
       */}
       <div className="flex w-full flex-col px-6">
         {/*
-          A KATEGORIA-OSZLOPOK: GYOKERENKENT EGY, ES A RACS A DARABSZAMRA VAN
-          HUZALOZVA, NEM ROGZITETT NEGYRE.
+          A KATEGORIA-RACS KIKERULT, ES EZ NEM EGYSZERUSITES, HANEM DONTES.
 
-          Forras: `agents/picasso/lablec-spec-2026-09-08.md`. Amit ez lecserel:
-          egyetlen oszlop, amiben mind az 53 kategoria-link egymas alatt futott
-          (2067 pixel, picasso merese 22:07-kor).
+          2026-09-08 este epult meg: negy oszlop, gyokerenkent egy, alattuk
+          negyvenhat alkategoria-link. 2026-09-09-en Balazs kepernyokepet
+          kuldott rola, es azt mondta ra: "ez nem legordul ez ott van. nem
+          kell". A racsot harom kitelepitett lapon merve azonositottuk (50
+          link, 917 pixel, a fooldalon a 581. pixelen, tehat gorgetes nelkul
+          lathato) -- egyetlen elem felelt meg a leirasnak. A dontes ezutan:
+          "az a utat kerem", vagyis a racs TELJESEN eltunik.
 
-          === MIERT NEM ROGZITETT NEGY (acrobot kikotese) ===
+          AMI VELE MENT, ES AMIERT TOBB EGY TORLESNEL: a lablecnek ezzel nem
+          kell tobbe sem a regio, sem a kategoria-fa. Harom halozati hivas
+          szunt meg MINDEN lapbetolteskor (`listCategories`, `getRegion`,
+          `listNonEmptyRootCategories`), es a komponens `countryCode` propja
+          feleslegesse valt -- a hivo (`(main)/layout.tsx`) sem adja at.
 
-          Ma negy gyoker all, mert ketto (Shop 'n the Shop, Edesvizi
-          akvarisztika) kiesik. Ha az a dontes megfordul (73038a32 kartya,
-          Balazsnal), a lablecnek NEM kell atirodnia: az oszlopszam a halmaz
-          merete, egy CSS-valtozon at.
-
-          === ES EGY KULONBSEG, AMIT KI KELL MONDANI ===
-
-          A spec a NEM REJTETT gyokerekrol beszel (a bolt `Display.Menu`
-          mezoje), a kirakat viszont a Medusat olvassa, es ott ilyen mezo
-          NINCS. Amit valojaban szurunk, az a NEM URES gyoker
-          (`listNonEmptyRootCategories`).
-
-          A KETTO MA UGYANAZT A NEGYET ADJA -- ez a fuggveny sajat fejleceben
-          merve all --, de NEM ugyanaz a szabaly. Ha egyszer egy rejtett
-          gyokerbe termek kerul, a lablecben megjelenne, a fomenuben nem. Ezt
-          nem javitom talalgatasbol: a jelolo hianya adat-kerdes, nem
-          elrendezes.
-
-          === A SORREND ADAT, NEM LISTA ===
-
-          A `rank` mezobol jon, amit a boltos allitott be, es pontosan azt a
-          sorrendet adja, amit a spec atmenetikent felsorolt (Termekek,
-          Gerinctelenek, Halak, Korallok). Nem kellett kulon dontes.
-
-          === A FUGGOLEGES BELSO MARGO: NEM UJ ERTEK ===
-
-          A spec ezt az EGY erteket hagyta rám, mert a tervben nincs lablec, es
-          a legkozelebbi nagy szekcio-terkozt (160px) javasolta kiindulasnak.
-          Megmertem: a starter `py-40`-je PONTOSAN 160 pixel, tehat az ertek
-          mar itt all, es egyezik a javaslattal. Nem veszek fel ujat.
+          AMI MARAD: a kollekciok, a sajat es a bolti hivatkozasok, es a
+          ceg-adatok. A kategoriak a FEJLEC menujeben allnak, ahol Balazs
+          kerte, hogy nyiljanak.
         */}
-        {gyokerOszlopok.length > 0 && (
-          <section
-            className="grid grid-cols-2 gap-x-[44px] gap-y-[24px] pt-40 lg:grid-cols-[repeat(var(--lablec-oszlopok),minmax(0,1fr))]"
-            style={
-              {
-                "--lablec-oszlopok": gyokerOszlopok.length,
-              } as React.CSSProperties
-            }
-            data-testid="lablec-kategoria-racs"
-          >
-            {gyokerOszlopok.map((gyoker) => {
-              const gyerekek =
-                productCategories?.find((c) => c.id === gyoker.id)
-                  ?.category_children ?? []
-
-              return (
-                <div className="flex flex-col gap-y-2" key={gyoker.id}>
-                  <LocalizedClientLink
-                    href={`/categories/${gyoker.handle}`}
-                    className="text-[14px] font-semibold hover:text-terv-kiemel-tinta"
-                    style={{ color: "var(--terv-szoveg)" }}
-                    data-testid="lablec-oszlopcim"
-                  >
-                    {gyoker.name}
-                  </LocalizedClientLink>
-                  <ul className="grid grid-cols-1 gap-2">
-                    {gyerekek.map((gyerek) => (
-                      <li key={gyerek.id}>
-                        <LocalizedClientLink
-                          href={`/categories/${gyerek.handle}`}
-                          className="text-[13.5px] hover:text-terv-kiemel-tinta"
-                          style={{ color: "var(--terv-szoveg-halvany)" }}
-                          data-testid="category-link"
-                        >
-                          {gyerek.name}
-                        </LocalizedClientLink>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            })}
-          </section>
-        )}
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
           <div>
             <LocalizedClientLink
