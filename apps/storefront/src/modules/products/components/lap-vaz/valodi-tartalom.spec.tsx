@@ -209,16 +209,27 @@ describe("a váz valódi tartalma", () => {
    * A GYOKER KIMARAD: a terven a sor a masodik szinttel kezdodik, es a gyoker
    * amugy is a morzsamenuben all.
    */
-  it("a névvel, a besorolás láncával és a cikkszámmal tölti a címsort", () => {
+  /**
+   * A CIMSOR KET SORA: A BESOROLAS ES A NEV -- CIKKSZAM NELKUL.
+   *
+   * A cikkszam a tervlapon nincs a cim alatt: a morzsamenu vegen all (#274
+   * ota) es a jobb panel brutto-sorában. Ez az allitas eddig itt kereste, es
+   * JOGGAL bukott el, amikor kikerult.
+   *
+   * A TAGADAS MELLE POZITIV KONTROLL KELL: a nev es a besorolas ITT VAN. Egy
+   * puszta "nincs cikkszam" allitast egy URES cimsor is kielegitene.
+   */
+  it("a névvel és a besorolás láncával tölti a címsort, cikkszám nélkül", () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
     expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
-    expect(screen.getByTestId("vaz-cikkszam").textContent).toBe("8023222196186")
 
     const besorolas = screen.getByTestId("vaz-besorolas").textContent
 
     expect(besorolas).toBe("Tesztek, mérés, vezérlés · TDS mérők")
     expect(besorolas).not.toContain("Termékek")
+
+    expect(screen.queryByTestId("vaz-cikkszam")).toBeNull()
   })
 
   /**

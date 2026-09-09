@@ -204,7 +204,6 @@ export function legmelyebbKategoria(termek: Termek): string | null {
  */
 export const Cimsor = ({ termek }: { termek: Termek }) => {
   const lanc = besorolasLanc(termek)
-  const sku = cikkszam(termek)
 
   return (
     <div className="flex flex-col gap-1">
@@ -238,18 +237,23 @@ export const Cimsor = ({ termek }: { termek: Termek }) => {
       <h1 className="text-2xl font-semibold" data-testid="vaz-termek-nev">
         {termek.title}
       </h1>
-      {sku && (
-        <p
-          className="text-xs"
-          style={{
-            color: "var(--terv-szoveg-halvany)",
-            fontFamily: "var(--terv-betu-mono-lanc)",
-          }}
-          data-testid="vaz-cikkszam"
-        >
-          {sku}
-        </p>
-      )}
+      {/*
+        A CIKKSZAM KIKERULT A CIM ALOL, ES EZ NEM ELVESZETT ADAT.
+
+        A tervlapon a cim-blokk harom sorbol all: besorolas, cim, dolt alcim --
+        cikkszam NINCS kozottuk. A cikkszam a MORZSAMENU vegen all
+        (`KORALLOK / WYSIWYG / SPS / A-1042`, #274 ota), es a terven a jobb
+        panelben is, a brutto-ar soraban.
+
+        AZERT MOST KERULT KI, ES NEM KORABBAN: amig a morzsamenu a termek NEVET
+        mutatta a sor vegen, a cikkszam CSAK itt latszott a lapon. Elobb
+        kivenni annyi lett volna, mint eltuntetni.
+
+        AMI MEG NEM EPULT MEG: a jobb panel "Bruttó ár · Cikkszám · Egyedi
+        példány" sora. A vaz megjegyzesei mar szamon tartjak (`ar -> brutto`),
+        de szakasz meg nincs ra -- es abban a sorban a harmadik elem egy
+        ALLITAS a peldanyrol, nem formazas, tehat kulon dontes.
+      */}
     </div>
   )
 }
