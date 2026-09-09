@@ -123,7 +123,22 @@ export default function UniquePieceBadge({
         color: "var(--terv-kiemel-szoveg)",
       }}
     >
-      1 db · Egyedi példány
+      {/*
+        MOBILON A "PÉLDÁNY" SZÓ ELMARAD (a terv 390 pixeles kerete):
+        "1 DB · EGYEDI PÉLDÁNY" helyett "1 DB · EGYEDI".
+
+        Ez az egyetlen mobil szöveg-változás a lapon, ami tisztán RÖVIDÍTÉS:
+        a "példány" szó nem hordoz információt a "1 db · Egyedi" mellett. A
+        többi mobil szöveg a tervben ÁT VAN FOGALMAZVA, nem csak rövidebb --
+        azok külön tételek.
+
+        A töréspont `lg`, ugyanaz, ahol a termékoldal egy oszlopból kettőbe
+        vált. A szó `hidden lg:inline`-nal áll, nem külön jelvény-változattal:
+        két jelvény esetén a színek, a pozíció és a méret KÉTSZER állna itt, és
+        külön romolhatna el.
+      */}
+      1 db · Egyedi
+      <span className="hidden lg:inline"> példány</span>
     </span>
   )
 }

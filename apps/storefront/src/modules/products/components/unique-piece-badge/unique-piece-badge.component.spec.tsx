@@ -16,11 +16,60 @@ afterEach(cleanup)
  * csúszna. A két állítás azt rögzíti, hogy mindkettő KÜLÖN kirajzolható.
  */
 describe("az egyedi példány jelölése", () => {
+  /**
+   * A TELJES FELIRAT -- ES AMIT EZ AZ ALLITAS NEM TUD MEGKULONBOZTETNI.
+   *
+   * A `textContent` MINDEN gyereket lat, a `hidden` osztallyal allot is: a
+   * jsdom nem szamol stilust. Ez az allitas tehat az ASZTALI alakot meri, es
+   * a mobil rovidites elvesztesét NEM venne eszre -- azt a ket allitas meri
+   * alatta, az osztalyon.
+   */
   it("a jelvény felirata a WYSIWYG-ígéretet jelöli", () => {
     render(<UniquePieceBadge />)
     expect(screen.getByTestId("unique-piece-badge")).toHaveTextContent(
       "Egyedi példány",
     )
+  })
+
+  /**
+   * MOBILON A "PÉLDÁNY" SZO ELMARAD (a terv 390 pixeles kerete).
+   *
+   * Ket fuggetlen ertek, ket nev: hogy a szo REJTHETO reszben all, es hogy a
+   * MARADEK mindig latszik. Az elso nelkul a rovidites tunhetne el csendben,
+   * a masodik nelkul egy olyan valtozat is atmenne, ami mobilon az EGESZ
+   * feliratot elrejti.
+   */
+  it("a példány szó kis méreten rejtve áll, lg-től látszik", () => {
+    const { container } = render(<UniquePieceBadge />)
+
+    /*
+      A BELSO span-t keressuk, PONTOS szoveggel. Az `includes` a KULSO jelvenyre
+      is illeszkedne (annak a `textContent`-je is tartalmazza a szot), es akkor
+      az allitas a jelveny sajat osztalyat merne -- ott pedig nincs `hidden`,
+      tehat pirosat adna egy helyes fan.
+    */
+    const szo = Array.from(container.querySelectorAll("span")).find(
+      (s) => (s.textContent ?? "").trim() === "példány",
+    )
+
+    /* ISMERT POZITIV KONTROLL: a szo egyaltalan ki van rajzolva. */
+    expect(szo).toBeTruthy()
+
+    expect(szo!.className).toContain("hidden")
+    expect(szo!.className).toContain("lg:inline")
+  })
+
+  it("a rövid alak minden méreten látszik", () => {
+    const { container } = render(<UniquePieceBadge />)
+
+    const jelveny = screen.getByTestId("unique-piece-badge")
+    const rejtett = Array.from(container.querySelectorAll("span")).filter((s) =>
+      s.className.includes("hidden"),
+    )
+
+    for (const s of rejtett) s.remove()
+
+    expect(jelveny.textContent?.trim()).toBe("1 db · Egyedi")
   })
 
   it("az ígéret-mondat kimondja, mit kap a vevő", () => {
