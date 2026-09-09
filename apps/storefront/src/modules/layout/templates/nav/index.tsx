@@ -139,7 +139,22 @@ import SideMenu from "@modules/layout/components/side-menu"
  */
 const BIZALMI_BAL =
   "Élő megérkezési garancia · Élőállat-szállítás minden szerdán"
-const BIZALMI_TANUSITVANY = "Fogyasztóbarát tanúsítvány"
+/**
+ * A TANUSITVANY ES A KET SZAMA -- STATIKUS ERTEK, MERT NINCS LEKERDEZESUNK.
+ *
+ * Balazs adta meg (2026-09-09): Fogyasztobarat, 4,8, 213 velemenybol. A ket
+ * szam A FENTI NAP ALLAPOTA, es NEM frissul magatol: nincs olyan hivasunk, ami
+ * a tanusitvany oldalarol lehozna.
+ *
+ * EZERT ALL ITT A DATUM, ES NEM DISZ: egy szam, ami a vevo elott all es nem
+ * frissul, egy ev mulva is ugyanezt fogja mondani. Aki ide nez, lassa, mikori.
+ *
+ * AMI EZZEL LEZARULT: az eredeti tervbeli sor ("Arukereso 4,9 / 5 · 312
+ * ertekeles") azert nem epult meg, mert KULSO szolgaltatas adata volt, forras
+ * nelkul. Ez a ket szam a SAJAT tanusitvanyunke, es a gazdatol jon.
+ */
+const BIZALMI_TANUSITVANY_DATUM = "2026-09-09"
+const BIZALMI_TANUSITVANY = "Fogyasztóbarát tanúsítvány · 4,8 · 213 véleményből"
 const BIZALMI_SEGITSEG = "Szakértői segítség"
 
 const KERESO_HELYKITOLTO = "Keresés termékre, márkára, cikkszámra"
@@ -177,6 +192,12 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
             fontFamily: "var(--terv-betu-fo-lanc)",
           }}
           data-testid="fejlec-bizalmi-sav"
+          /*
+            A DATUM JELOLOKENT ALL, NEM SZOVEGKENT: a vevonek nem mond semmit,
+            de aki a lapot megnezi, latja, MIKORI a ket szam. Egy csak
+            megjegyzesben allo datum a kitelepitett lapon nem letezik.
+          */
+          data-tanusitvany-allapot={BIZALMI_TANUSITVANY_DATUM}
         >
           <p>{BIZALMI_BAL}</p>
           <p className="flex items-center gap-2">

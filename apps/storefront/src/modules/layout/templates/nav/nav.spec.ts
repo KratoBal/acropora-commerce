@@ -95,15 +95,31 @@ describe("a fejléc fő sávja", () => {
   })
 
   /**
-   * NINCS KITALALT SZAM. A terven az Arukereso mellett "4,9 / 5 · 312
-   * ertekeles" all; Balazs a tanusitvanyt nevezte meg, szamot nem adott hozza.
-   * Egy kitalalt ertekeles ugyanaz a hiba lenne, amiert az eredeti sor nem
-   * epult meg.
+   * A KET SZAM BALAZSTOL VAN, ES A DATUMUK IS KI VAN IRVA.
+   *
+   * ITT KORABBAN EGY TAGADAS ALLT ("nincs értékelés-szám a sávban"), amikor meg
+   * nem volt szam. Amikor Balazs megadta oket (4,8 · 213 velemenybol), a
+   * tagadas NEM PIROSODOTT -- pedig szam kerult a savba.
+   *
+   * AZ OK UGYANAZ, AMIT EGY ORAVAL KORABBAN MASNAL TALALTAM: a tagadas a TERV
+   * IRASMODJARA szolt (`4,9 / 5`, `N értékelés`), nem arra, hogy van-e szam. A
+   * "4,8 · 213 véleményből" egyik mintara sem illeszkedik. Sajat magamon
+   * ismetlem meg a hibat, amit epp elotte irtam le.
+   *
+   * A HELYERE MEGLET-ALLITAS KERUL: a ket ERTEK es a datum. Igy ha barmelyik
+   * elcsuszik, az pirosodik -- es a datum arra szolgal, hogy egy ev mulva
+   * lassa valaki, hogy ezek a szamok NEM frissulnek maguktol.
    */
-  it("nincs értékelés-szám a sávban", () => {
+  it("a tanúsítvány két száma és a dátuma ki van írva", () => {
+    expect(nav).toContain("4,8")
+    expect(nav).toContain("213 véleményből")
+    expect(nav).toContain('BIZALMI_TANUSITVANY_DATUM = "2026-09-09"')
+    expect(nav).toContain("data-tanusitvany-allapot")
+  })
+
+  /** ES AMI NEM KERULT VISSZA: a kulso szolgaltatas, amire nincs forrasunk. */
+  it("az Árukereső-sor nem jött vissza", () => {
     expect(nav).not.toContain("Árukereső")
-    expect(nav).not.toMatch(/\d[.,]\d\s*\/\s*5/)
-    expect(nav).not.toMatch(/\d+\s*értékelés/)
   })
 
   /**
