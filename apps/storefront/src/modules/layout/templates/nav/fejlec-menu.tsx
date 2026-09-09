@@ -85,9 +85,41 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
             aria-label="Kategóriamenü bezárása"
             data-testid="category-menu-backdrop"
           />
+          {/*
+            A PANEL NEM DIALOGUS, HANEM LENYILO -- ES A MARKUP TOBBI RESZE MAR
+            MA IS EZT MONDTA.
+
+            === A HAROM JELOLES, AMI NEM UGYANAZT MONDTA ===
+
+                a nyito gombokon   aria-expanded + aria-controls   lenyilo
+                itt               role="dialog"                    dialogus
+                a fokuszban       nincs csapda, nincs aria-modal   nem modalis
+
+            Egy `role="dialog"` azt igeri a felolvasonak, hogy egy elkulonult
+            reteg nyilt meg, amibol a Tab nem lep ki. Itt kilep: a billentyuzet
+            szabadon vegigmegy a lap mogottes tartalman.
+
+            === ES A KOVETKEZMENY MERHETO, NEM ELMELETI ===
+
+            A hatterlap (`fixed inset-0`, `bg-black/35`) az EGERTOL elzarja a
+            mogottes lapot: barhova kattintasz, azt talalod, es a menu bezarul.
+            A BILLENTYUZET viszont belesetal ugyanabba a tartalomba. Ket
+            bemeneti eszkoz mast lat ugyanarrol a lapreszrol.
+
+            === KET UT VOLT, ES EZ AZ OLCSOBB ES A HELYESEBB ===
+
+            Vagy dialogus marad, es akkor jar hozza `aria-modal` ES
+            fokusz-csapda (tobb kod, es egy fejlec-gombhoz tapado lenyilonal
+            szokatlan) -- vagy lekerul a szerep, es a jeloles egysegesen a
+            lenyilo mintat mondja. A gombokon MAR OTT ALL az `aria-expanded`
+            es az `aria-controls`, tehat ez a valtozas nem vezet be uj mintat,
+            hanem megszunteti az egyetlen kivetelt.
+
+            Az `aria-label` MARAD: a szakasznak igy is van neve, es a
+            `category-menu-panel` jelolo valtozatlan.
+          */}
           <section
             id={panelId}
-            role="dialog"
             aria-label={`${openName} kategóriamenü`}
             className="fixed z-[61] w-[min(1064px,calc(100vw-2rem))] overflow-hidden rounded-b-xl border shadow-xl"
             style={{
