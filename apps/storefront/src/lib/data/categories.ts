@@ -191,7 +191,8 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
            * AMI EZZEL VALTOZIK A KEPERNYON: a helyorzok szama mostantol
            * mindenutt 8. Ez a betoltes alatt latszik, es semmi mas.
            */
-          fields: "*category_children",
+          fields:
+            "*category_children,*parent_category,*parent_category.parent_category,*parent_category.parent_category.parent_category,*parent_category.parent_category.parent_category.parent_category,*parent_category.parent_category.parent_category.parent_category.parent_category",
           handle,
         },
         next,
