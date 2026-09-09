@@ -18,7 +18,7 @@ describe("a műszaki lap váza", () => {
    * A SORREND A TERVBŐL JÖN, és ez az az állítás, ami elbukik, ha valaki
    * átrendezi a lapot anélkül, hogy a tervhez mérné.
    */
-  it("a tizennégy doboz a tervbeli sorrendben áll", () => {
+  it("a tizenhárom doboz a tervbeli sorrendben áll", () => {
     render(<LapVaz />)
 
     const kulcsok = Array.from(
@@ -30,7 +30,6 @@ describe("a műszaki lap váza", () => {
       "foto",
       "meretezes-seged",
       "fulek",
-      "muszaki-adatok",
       "ar",
       "elerhetoseg",
       "valaszto",
@@ -94,7 +93,7 @@ describe("a műszaki lap váza", () => {
       expect(oszlopa(k)).toBe("teljes")
     }
     // bal: a termék megismerése
-    for (const k of ["foto", "meretezes-seged", "fulek", "muszaki-adatok"]) {
+    for (const k of ["foto", "meretezes-seged", "fulek"]) {
       expect(oszlopa(k)).toBe("bal")
     }
     // jobb: a vásárlás
@@ -326,7 +325,7 @@ describe("a vevonek szant szoveg magyarul all", () => {
   ]).filter((x): x is string => Boolean(x))
 
   /** ISMERT POZITIV KONTROLL: van egyaltalan mit merni. */
-  it("van vevőnek szánt szöveg, és mind a tizennégy doboz ad legalább egyet", () => {
+  it("van vevőnek szánt szöveg, és mind a tizenhárom doboz ad legalább egyet", () => {
     expect(VEVONEK.length).toBeGreaterThanOrEqual(MUSZAKI_LAP_SZAKASZAI.length)
   })
 
@@ -335,7 +334,6 @@ describe("a vevonek szant szoveg magyarul all", () => {
 
     expect(cimek).toEqual([
       "Méretezés-segéd",
-      "Műszaki adatok",
       "Csomagajánlat",
       "Kérdezd minket",
       "Ami még kellhet hozzá",
@@ -519,14 +517,17 @@ describe("az élő állat lap feliratai", () => {
    * ÉS AMIT ELHAGYUNK, AZ NÉVVEL ÁLL. Enélkül a részhalmaz-állítás egy EGYETLEN
    * dobozból álló sötét listát is elfogadna.
    */
-  it("pontosan két doboz marad le, névvel", () => {
+  it("pontosan egy doboz marad le, névvel", () => {
     const sotet = ELO_ALLAT_LAP_SZAKASZAI.map((sz) => sz.kulcs)
     const vilagos = MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs)
 
-    expect(vilagos.filter((k) => !sotet.includes(k))).toEqual([
-      "muszaki-adatok",
-      "kiegeszitok",
-    ])
+    /*
+      KETTO VOLT, ES MOST EGY. A `muszaki-adatok` nem azert kerult le a
+      listarol, mert a sotet lapon nem kell, hanem mert EGYIK lapon sem: a
+      `fulek` szakasz mar hordoz egy ugyanilyen cimu fulet. A kizart halmaz
+      igy csak a `kiegeszitok`, ami tenyleg csak a sotet lapon hianyzik.
+    */
+    expect(vilagos.filter((k) => !sotet.includes(k))).toEqual(["kiegeszitok"])
   })
 
   /** Az oszlop-besorolás sem csúszhat el a másolás során. */
