@@ -473,7 +473,36 @@ body {
  * vilagosabb. A parafrazis adott az allitasnak egy iranyt, es a rosszat --
  * az ERTEKEK vegig helyesek voltak.
  */
-[data-vilag="sotet"] {
+/*
+  A FEJLEC A TERMEK VILAGAT KOVETI -- ES EZ EGY MEGNEVEZETT, NYITOTT KOR VOLT.
+
+  A `nav/index.tsx` fejlece 2026-09-08 ota kimondja: "MA A FEJLEC MINDIG
+  VILAGOS ... a fejlecnek kovetnie KELL a termek vilagat, de az kulon kor".
+  Ez az a kor.
+
+  A MERES, AMI ELOHOZTA (2026-09-09, kitelepitett lap):
+
+      korall lap      a vaz `data-vilag="sotet"`, hattere oklch(0.17 0.016 250)
+                      a FEJLEC hattere viszont oklch(0.99 0.004 80)   -- VILAGOS
+      muszaki lap     mind a ketto vilagos                            -- egyezik
+
+  Balazs a ket kepernyokepen (terv kontra a mienk) epp ezt latta: a terven a
+  fejlec sotet, nalunk vilagos. Nem MASIK szinrol van szo, hanem arrol, hogy a
+  fejlec nem tudta, milyen lapon all.
+
+  MIERT `:has()` ES NEM JS: a jelolo a lapon BELUL all (a vaz teszi ki), a
+  fejlec pedig a `(main)` elrendezesben, a lap FOLOTT. A ket elem testvér,
+  tehat oroklessel nem elerheto -- de a `body` MIND A KETTOT tartalmazza, es a
+  `:has()` ezt egyetlen valasztoval athidalja. JS-sel ugyanez egy kliens
+  komponens es egy effekt lenne, ami a betoltes utan VALTANA szint: a latogato
+  latna felvillanni a vilagos fejlecet.
+
+  MIERT UGYANEBBEN A BLOKKBAN, ES NEM MASOLATBAN: az ertekek egy helyen
+  allnak. Egy masodik blokk ugyanezekkel a szamokkal pontosan az a hiba lenne,
+  amit ma delelott ketszer javitottunk (ket szam, ami kesobb szetcsuszik).
+*/
+[data-vilag="sotet"],
+body:has([data-vilag="sotet"]) header[data-testid="fejlec"] {
   /*
     A LAP HATTERE A TERVLAP SAJAT HATTERE, ES EZT A NYERS FORRASBOL MERTEM
     (2026-09-08). A tervfajlban harom 1440 pixeles keret all egymas mellett,
