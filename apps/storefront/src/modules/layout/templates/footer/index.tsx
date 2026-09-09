@@ -122,12 +122,9 @@ export default async function Footer() {
                   Kollekciók
                 </span>
                 <ul
-                  className={clx(
-                    "grid grid-cols-1 gap-2 txt-small",
-                    {
-                      "grid-cols-2": (collections?.length || 0) > 3,
-                    },
-                  )}
+                  className={clx("grid grid-cols-1 gap-2 txt-small", {
+                    "grid-cols-2": (collections?.length || 0) > 3,
+                  })}
                 >
                   {collections?.slice(0, 6).map((c) => (
                     <li key={c.id}>

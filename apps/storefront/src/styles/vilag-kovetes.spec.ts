@@ -99,7 +99,10 @@ describe("a lábléc is a termék világát követi", () => {
    * sajat blokkot kapott ugyanazokkal a szamokkal.
    */
   it("a fejléc és a lábléc ugyanabban a szabályban áll", () => {
-    const blokk = css.slice(0, css.indexOf("{", css.indexOf('[data-vilag="sotet"]')))
+    const blokk = css.slice(
+      0,
+      css.indexOf("{", css.indexOf('[data-vilag="sotet"]')),
+    )
 
     expect(blokk).toContain('header[data-testid="fejlec"]')
     expect(blokk).toContain('footer[data-testid="lablec-sik"]')
