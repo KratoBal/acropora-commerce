@@ -10,6 +10,7 @@ import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
+import { kategoriaCanonical } from "@lib/util/kategoria-canonical"
 import { megjelenitendoNevek } from "@lib/util/kategoria-fa"
 
 type Props = {
@@ -104,7 +105,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       title,
       description,
       alternates: {
-        canonical: `${params.category.join("/")}`,
+        canonical: kategoriaCanonical(params.countryCode, params.category),
       },
     }
   } catch {
