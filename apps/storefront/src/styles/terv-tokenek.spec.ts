@@ -381,7 +381,24 @@ describe("a terv megerositett ertekei", () => {
       const minta = /^\s*(--terv-[a-z0-9-]+)\s*:\s*([^;]+);/gm
       let m: RegExpExecArray | null = minta.exec(blokk)
       while (m !== null) {
-        ki[m[1]] = m[2].split("/*")[0].trim()
+        /*
+          A KIOLVASOTT ERTEK NORMALIZALVA MEGY TOVABB, ES EZT EGY KONTROLL
+          KENYSZERITETTE KI (murena merese, 2026-09-09).
+
+          A kalibracioban NULLA pirosat jósoltam arra a rontasra, ami az
+          erteket VALTOZATLANUL hagyja, csak a zarojelen belul tesz szokozt
+          (`oklch( 0.88 0.008 70 )`). A tobbi allitas tenyleg zold maradt --
+          azok `normal()`-on at nezik a szoveget --, EZ AZ EGY viszont
+          pirosra valtott. Vagyis a fajlban ket kulonbozo turesu allitas allt
+          egymas mellett, es ez a formazasra is elsult volna: egy prettier
+          reflow (`[^;]` az ujsort is atlepi) ugyanezt a hamis pirosat adna.
+
+          A `normal()` a zarojelen beluli szokozoket es az ujsorokat vagja ki,
+          a szamjegyeket es a sorrendjuket nem -- tehat az orzo NEM lesz
+          lazabb, csak a formazasra vak, aminek eddig sem kellett volna
+          latnia.
+        */
+        ki[m[1]] = normal(m[2].split("/*")[0]).trim()
         m = minta.exec(blokk)
       }
       return ki
@@ -439,8 +456,8 @@ describe("a terv megerositett ertekei", () => {
     const hianyzo = elteroek.filter(
       (k) =>
         !SAJAT_FORRAS.includes(`["${k}"`) ||
-        !SAJAT_FORRAS.includes(v[k]) ||
-        !SAJAT_FORRAS.includes(s[k]),
+        !normal(SAJAT_FORRAS).includes(v[k]) ||
+        !normal(SAJAT_FORRAS).includes(s[k]),
     )
     expect(hianyzo).toEqual([])
   })
