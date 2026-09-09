@@ -34,6 +34,30 @@ describe("a termék ára", () => {
    * A katalogusban 1884 terméknek nincs valtozata es 9-nek van, tehat a regi
    * alak a termekek tulnyomo tobbsegen allitott valotlant.
    */
+  /**
+   * A KIRAJZOLT AR-SZOVEGBEN NINCS TIZEDES.
+   *
+   * Ez a `money.spec.ts` allitasanak a MASIK VEGE: ott a fuggveny kimenetet
+   * merjuk, itt azt, hogy a lapra KIRAJZOLT szoveg is ilyen. A ketto kozott
+   * ott a komponens, ami sajat szoveget is fuz hozza ("-tol"), tehat kulon
+   * elromolhat.
+   *
+   * Balazs kerese (2026-09-09, kepernyokeppel): `151 990,00 Ft` helyett
+   * `151 990 Ft`. Visszamerve a kitelepitett lapon ugyanarra a termekre a
+   * tizedes MAR nem volt ott -- a kep a javitas elotti allapotot mutatta.
+   * Ez az allitas azt orzi, hogy ne kerulhessen vissza.
+   */
+  it("a kirajzolt árban nincs tizedes", () => {
+    render(<ProductPrice product={termek(1)} />)
+
+    const szoveg = screen.getByTestId("product-price").textContent ?? ""
+
+    /* ISMERT POZITIV KONTROLL: tenyleg az arat olvastuk ki. */
+    expect(szoveg).toMatch(/319/)
+
+    expect(szoveg).not.toMatch(/,\d/)
+  })
+
   it("egyetlen változatnál NINCS -tól alak", () => {
     render(<ProductPrice product={termek(1)} />)
 
