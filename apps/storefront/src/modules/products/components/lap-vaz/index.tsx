@@ -374,12 +374,31 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     varakozo: "Leírás és műszaki adatok",
     oszlop: "bal",
   },
-  {
-    kulcs: "muszaki-adatok",
-    cim: "Műszaki adatok",
-    varakozo: "Ide jönnek a termék műszaki adatai",
-    oszlop: "bal",
-  },
+  /*
+    A `muszaki-adatok` SZAKASZ KIKERULT, ES NEM AZERT, MERT URES VOLT.
+
+    A `fulek` szakaszt a `ProductDescriptionTabs` tolti ki, es abban -- ha a
+    leirasban van tablazat -- MAR ALL egy "Műszaki adatok" nevu ful. Vagyis
+    ugyanaz a felirat ketszer jelent meg a lapon:
+
+        y = 1074   a ful gombja, VALODI tartalommal
+        y = 2250   ez a szakasz, "Ide jonnek a termek muszaki adatai" szoveggel
+
+    Merve 2026-09-09 a kitelepitett lapon (nyos-quantum-220-eq-okos-lehabzo).
+
+    A TERVBEN a "Műszaki adatok" KIZAROLAG a ful-panel tartalma: nincs mellette
+    onallo szakasz. (picasso merese a forrasbol, murena visszamerte.)
+
+    ES AMIERT NEM MARAD BENT HELYKITOLTOKENT: a helykitoltok altalaban jok,
+    megmutatjak, mi nincs kesz -- ez az egy azert nem, mert egy MAR MUKODO
+    komponens cimet ismetli meg, a vevo elott. (acrobot dontese, 2026-09-09,
+    uzenet 16821.)
+
+    HA EGYSZER LESZ STRUKTURALT muszaki adatunk (nem a leirasbol kihamozva), az
+    UJ adatforras lesz, es akkor uj dontes kell arrol, hol jelenjen meg. Egy ma
+    bent hagyott helykitolto nem sporolja meg azt a dontest, csak elore
+    eldonti, rosszul.
+  */
   {
     kulcs: "ar",
     cim: "",
@@ -830,7 +849,13 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
  * Ez terv-kovetes, nem terv-modositas, ezert nem megy a gazda ele. (acrobot
  * dontese, msg_id 14734, megerositve 14812-ben es 14827-ben.)
  */
-const ELO_ALLAT_ELHAGYOTT = new Set(["muszaki-adatok", "kiegeszitok"])
+/*
+  A `muszaki-adatok` KIKERULT EBBOL A HALMAZBOL IS, mert mar a KOZOS listaban
+  sincs benne (a duplikacio miatt, lasd ott). Egy nem letezo kulcs kizarasa
+  nem hiba, de HAMIS KEPET ad: azt sugallna, hogy a vilagos lapon all valami,
+  amit a soteten elhagyunk.
+*/
+const ELO_ALLAT_ELHAGYOTT = new Set(["kiegeszitok"])
 
 export const ELO_ALLAT_LAP_SZAKASZAI: VazSzakasz[] =
   MUSZAKI_LAP_SZAKASZAI.filter(

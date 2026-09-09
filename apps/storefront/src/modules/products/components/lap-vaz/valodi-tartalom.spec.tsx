@@ -192,6 +192,34 @@ describe("a váz valódi tartalma", () => {
   })
 
   /**
+   * ES A FELIRAT PONTOSAN EGYSZER ALL A LAPON -- EZ A DUPLIKACIO ORZOJE.
+   *
+   * A vaz szakasz-listajaban 2026-09-09-ig ott allt egy `muszaki-adatok`
+   * doboz is, "Műszaki adatok" cimmel es egy helykitolto szoveggel. A ful-sav
+   * ugyanezt a feliratot hordozza, valodi tartalommal -- vagyis tablazatos
+   * leirasnal a felirat KETSZER jelent meg a lapon. Merve a kitelepitett
+   * lapon: y = 1074 a ful gombja, y = 2250 a helykitolto.
+   *
+   * MIERT NEM ELEG A LISTA-ALLITAS. A "tizenharom doboz sorrendben" allitas a
+   * KULCSOKAT sorolja, tehat egy MASIK kulcsu doboz ugyanezzel a CIMMEL
+   * atmenne rajta. Ez az allitas a lathato kovetkezmenyre mer: hanyszor all a
+   * felirat a lapon.
+   *
+   * A `TABLAZATOS` fixtura kell hozza, mert cimke nelkul a ful-sav sem
+   * keletkezik -- egy tablazat nelkuli leirasnal a szam nulla lenne, es a
+   * "pontosan egy" allitas hamis okbol bukna el.
+   */
+  it("a Műszaki adatok felirat pontosan egyszer áll a lapon", () => {
+    render(<LapVaz tartalom={vazTartalom(TABLAZATOS)} />)
+
+    const talalatok = Array.from(document.querySelectorAll("*")).filter(
+      (e) => e.children.length === 0 && e.textContent === "Műszaki adatok",
+    )
+
+    expect(talalatok).toHaveLength(1)
+  })
+
+  /**
    * A HALMAZBAN NEM MINDIG JON VISSZA A TELJES OS-LANC.
    *
    * Merve az elo API-n (2026-09-07): az egyik termek HAT kategoriat kapott (a
@@ -520,7 +548,6 @@ describe("a váz valódi tartalma", () => {
 
     for (const kulcs of [
       "meretezes-seged",
-      "muszaki-adatok",
       "csomagajanlat",
       "kiegeszitok",
       "hasonlo",
