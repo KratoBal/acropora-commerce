@@ -120,6 +120,59 @@ export function cikkszam(termek: Termek): string | null {
  * ELSOT. Egyik sem "helyesebb" -- a terv egyetlen besorolast mutat, es
  * mindketto egy valodi, hozzarendelt kategoria neve.
  */
+/**
+ * A BESOROLAS LANCA, A GYOKER NELKUL -- A CIM FOLOTTI SORHOZ.
+ *
+ * A tervlapon a cim folott ez all: `WYSIWYG · SPS · ACROPORIDAE`, rez szinnel.
+ * A mi adatunkbol EBBOL KETTO all elo, es a harmadik NEM -- ezt kimondom,
+ * mert kulonben a kovetkezo olvaso hianynak nezi:
+ *
+ *     WYSIWYG, SPS      a kategoria-lanc, a gyoker ("Korallok") nelkul
+ *     ACROPORIDAE       CSALAD-nev, es ilyen adatunk NINCS. A `nav/index.tsx`
+ *                       fejlece mar rogziti: a tizenegy metaadat-kulcs kozott
+ *                       egy sincs, ami fajt vagy latin nevet hordozna.
+ *
+ * Nem talalunk ki helyette semmit: egy csalad-nev termekenkent MAS, tehat a
+ * terv szovegevel kitolteni ugyanaz a hiba lenne, mint egy ertekeles-szamot.
+ *
+ * === A GYOKER AZERT MARAD KI, MERT A TERVEN SINCS OTT ===
+ *
+ * A tervlapon a sor a masodik szinttel kezdodik. A gyoker amugy is a
+ * morzsamenuben all, es minden termeknel ugyanaz a nehany ertek -- a cim
+ * folott nem mond semmit.
+ *
+ * === AZ ADAT ELERHETO A TERMEKROL, ES EZT MERTEM ===
+ *
+ * A termek sajat `categories` tombje a TELJES lancot hordozza, nem csak a
+ * levelet (merve a teszt bolton, 2026-09-09: a korall lapjan Korallok ->
+ * WYSIWYG - Korallok -> SPS - WYSIWYG, mind a harom a termeken). Ezert nem
+ * kell hozza a teljes kategoria-lista, mint a morzsamenuben.
+ */
+export function besorolasLanc(termek: Termek): string[] {
+  const kategoriak = termek.categories ?? []
+  if (kategoriak.length === 0) return []
+
+  const szuloje = (c: (typeof kategoriak)[number]) =>
+    (c as { parent_category_id?: string | null }).parent_category_id ?? null
+
+  const gyoker = kategoriak.find((c) => !szuloje(c))
+  if (!gyoker) return []
+
+  const lanc: string[] = []
+  let jelenlegi = gyoker
+  const latott = new Set<string>([gyoker.id])
+  for (;;) {
+    const kovetkezo = kategoriak.find(
+      (c) => szuloje(c) === jelenlegi.id && !latott.has(c.id),
+    )
+    if (!kovetkezo) break
+    latott.add(kovetkezo.id)
+    lanc.push(kovetkezo.name.trim())
+    jelenlegi = kovetkezo
+  }
+  return lanc
+}
+
 export function legmelyebbKategoria(termek: Termek): string | null {
   const katok = termek.categories ?? []
   if (katok.length === 0) return null
@@ -150,17 +203,36 @@ export function legmelyebbKategoria(termek: Termek): string | null {
  * nincs, nem irunk a helyukre semmit.
  */
 export const Cimsor = ({ termek }: { termek: Termek }) => {
-  const kategoria = legmelyebbKategoria(termek)
+  const lanc = besorolasLanc(termek)
   const sku = cikkszam(termek)
 
   return (
     <div className="flex flex-col gap-1">
-      {kategoria && (
+      {/*
+        A BESOROLAS SORA REZ SZINU, ES A LANCOT MUTATJA, NEM EGY NEVET.
+
+        Itt korabban a LEGMELYEBB kategoria allt egyetlen, halvany sorban. A
+        tervlapon a cim folott a LANC all (`WYSIWYG · SPS · ACROPORIDAE`), rez
+        szinnel -- ket kulonbseg, es mind a ketto a tervbol jon.
+
+        A harmadik elem (a csalad-nev) nalunk NINCS, es nem is talaljuk ki: az
+        indoklas a `besorolasLanc` fejleceben all.
+      */}
+      {lanc.length > 0 && (
         <p
           className="text-xs uppercase tracking-wide"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
+          /*
+            A REZ SZOVEG-VALTOZATA, NEM A FELULETI. Elso valtozatomban a
+            `--terv-kiemel` allt itt, es KET meglevo orzo azonnal pirosra
+            fordult: a `rez-szerepek.spec.ts` szerint `color:` poziciohoz
+            kizarolag a `--terv-kiemel-szoveg` es a `--terv-kiemel-tinta`
+            hasznalhato. A `--terv-kiemel` FELULET-token (akcent hatter), es
+            szovegkent a ket vilag egyiken olvashatatlan lenne.
+          */
+          style={{ color: "var(--terv-kiemel-tinta)" }}
+          data-testid="vaz-besorolas"
         >
-          {kategoria}
+          {lanc.join(" · ")}
         </p>
       )}
       <h1 className="text-2xl font-semibold" data-testid="vaz-termek-nev">

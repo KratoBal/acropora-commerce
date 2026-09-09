@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
 import {
+  besorolasLanc,
   legmelyebbKategoria,
   TELEFON_HIVAS,
   TELEFON_MEGJELENITVE,
@@ -197,12 +198,43 @@ describe("a váz valódi tartalma", () => {
     expect(legmelyebbKategoria(TERMEK)).toBe("TDS mérők")
   })
 
-  it("a névvel, a besorolással és a cikkszámmal tölti a címsort", () => {
+  /**
+   * A BESOROLAS MOSTANTOL LANC, NEM EGY NEV.
+   *
+   * Ez az allitas eddig a `getByText("TDS mérők")` alakot hasznalta, vagyis a
+   * legmelyebb kategoriat ONALLO szovegkent kereste -- es JOGGAL bukott el,
+   * amikor a sor a lancot mutatja. A tervlapon a cim folott
+   * `WYSIWYG · SPS · ACROPORIDAE` all, tehat lanc, nem egy nev.
+   *
+   * A GYOKER KIMARAD: a terven a sor a masodik szinttel kezdodik, es a gyoker
+   * amugy is a morzsamenuben all.
+   */
+  it("a névvel, a besorolás láncával és a cikkszámmal tölti a címsort", () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
     expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
     expect(screen.getByTestId("vaz-cikkszam").textContent).toBe("8023222196186")
-    expect(screen.getByText("TDS mérők")).toBeTruthy()
+
+    const besorolas = screen.getByTestId("vaz-besorolas").textContent
+
+    expect(besorolas).toBe("Tesztek, mérés, vezérlés · TDS mérők")
+    expect(besorolas).not.toContain("Termékek")
+  })
+
+  /**
+   * ES A TISZTA FUGGVENY KULON, MERT A KIRAJZOLAS NEM MINDIG ELERHETO: egy
+   * kategoria nelkuli termeknel a sor MEG SEM JELENIK, es akkor a fenti
+   * allitas `getByTestId` hivasa hasal el, nem az allitas mond valamit.
+   */
+  it("kategória nélkül a lánc üres", () => {
+    expect(besorolasLanc({ id: "p", title: "x" } as never)).toEqual([])
+  })
+
+  it("a lánc a gyökér nélkül, sorrendben áll elő", () => {
+    expect(besorolasLanc(TERMEK)).toEqual([
+      "Tesztek, mérés, vezérlés",
+      "TDS mérők",
+    ])
   })
 
   /**
