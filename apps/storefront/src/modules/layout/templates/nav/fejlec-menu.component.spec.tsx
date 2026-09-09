@@ -1,3 +1,6 @@
+import { readFileSync } from "fs"
+import { join } from "path"
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -18,6 +21,10 @@ import {
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
 }))
+
+/** A megjegyzeseket kiszedi: ez a fajl a sajat javitasat SZOVEGBEN is leirja. */
+const kodSzoveg = (szoveg: string) =>
+  szoveg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
 
 afterEach(cleanup)
 
@@ -479,5 +486,83 @@ describe("a panel csak annyi oszlopot vesz fel, amennyit kitölt", () => {
       expect(lenyilo.getAttribute("data-alak")).toBe(v.alak)
       expect(panelOszlopok()).toBe(v.oszlop)
     }
+  })
+})
+
+/**
+ * A PANEL NYITVA MARAD, AMIG AZ EGER ODAER -- MERT EGYSZER NEM MARADT.
+ *
+ * Balazs szava: "a felso menusor lenyilik de ha lehozom onna az egeret akkor
+ * eltunik tehat nem kattinthato". A kitelepitett lapon merve a gomb alja az 50.
+ * pixelen allt, a panel teteje a 78-on: HUSZONNYOLC pixeles res, ami egyik
+ * elemhez sem tartozott. Mar 55 pixelnel bezarult.
+ *
+ * AMIT EZ A SPEC MER, ES AMIT NEM: a res maga ELRENDEZES, es jsdom nem szamol
+ * elrendezest -- azt csak a kitelepitett lapon lehet megnezni
+ * (`scripts/menu-panel-elesben.cjs` melle keszult a meres). Amit ITT merni
+ * lehet, az a MECHANIZMUS: melyik elem zar, es melyik nem.
+ */
+describe("a panel nyitva marad, amíg az egér odaér", () => {
+  const nyit = () => {
+    render(<FejlecMenu kategoriak={[kat("Korallok", ["SPS", "LPS"])]} />)
+    fireEvent.click(screen.getByTestId("fejlec-menu-tetel"))
+    expect(screen.getByTestId("fejlec-menu-lenyilo")).toBeTruthy()
+  }
+
+  /**
+   * EZ A REGRESSZIO-ORZO, ES A FORRASRA MER -- INDOKKAL.
+   *
+   * Eloszor viselkedessel probaltam: nyitas, majd `mouseLeave` a MENUPONT
+   * burkolatan, es a panel maradjon nyitva. PIROS lett, es nem a kod miatt: a
+   * React a `mouseenter`/`mouseleave` esemenyeket a gyokeren delegalva
+   * szimulalja, tehat egy gyereken kivaltott `mouseLeave` a SZULO kezelojehez
+   * is eljut. jsdom-ban ez a kulonbseg nem merheto.
+   *
+   * Amit merni lehet: HOL all a kezelo. Egy darab all belole, es a savon. Ha
+   * valaki visszateszi a menupontokra (ott volt, es epp ezert zarult be a res
+   * felett), ez pirosra fordul.
+   */
+  it("egyetlen záró kezelő áll, és a sávon", () => {
+    const kod = kodSzoveg(
+      readFileSync(join(__dirname, "fejlec-menu.tsx"), "utf-8"),
+    )
+
+    expect(kod.match(/onMouseLeave/g) ?? []).toHaveLength(1)
+    expect(kod).toMatch(
+      /data-testid="fejlec-menu"\s*\n\s*onMouseLeave=\{\(\) => setNyitott\(null\)\}/,
+    )
+  })
+
+  /** ES A MASIK IRANY: a SAVROL lelepve viszont be KELL zarulnia. */
+  it("a sávról lelépve bezárul", () => {
+    nyit()
+
+    fireEvent.mouseLeave(screen.getByTestId("fejlec-menu"))
+
+    expect(screen.queryByTestId("fejlec-menu-lenyilo")).toBeNull()
+  })
+
+  /**
+   * A PANEL A SAVON BELUL ALL A DOM-ban. Enelkul a bele lepes maga valtana ki
+   * a `mouseleave`-et a savon, es a fenti ket allitas egyutt sem segitene.
+   */
+  it("a panel a sáv leszármazottja", () => {
+    nyit()
+
+    const sav = screen.getByTestId("fejlec-menu")
+    const panel = screen.getByTestId("fejlec-menu-lenyilo")
+
+    expect(sav.contains(panel)).toBe(true)
+  })
+
+  /**
+   * ES A RES BEZARASA: a sav a fejlec TELJES magassagat elfoglalja, tehat az
+   * alja ott van, ahol a panel teteje. Ez osztaly-allitas, mert a pixel csak a
+   * kitelepitett lapon merheto -- de a mechanizmus ez az egy osztaly.
+   */
+  it("a sáv a fejléc teljes magasságát elfoglalja", () => {
+    render(<FejlecMenu kategoriak={[kat("Korallok", ["SPS"])]} />)
+
+    expect(screen.getByTestId("fejlec-menu").className).toContain("h-full")
   })
 })
