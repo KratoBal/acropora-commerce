@@ -378,3 +378,79 @@ export function MennyisegDoboz() {
     </div>
   )
 }
+
+/**
+ * A DOA-SOR: AZ ELO MEGERKEZESI GARANCIA.
+ *
+ * === A FORRAS, SZO SZERINT ===
+ *
+ * A tervlap 2a (elo allat) szakaszaban, a "Kosárba" alatti gombsor utan:
+ *
+ *     <div style="margin-top:16px;padding-top:16px;
+ *                 border-top:1px solid oklch(0.28 0.014 250);
+ *                 display:flex;gap:12px;font-size:13px;
+ *                 color:oklch(0.78 0.012 250);line-height:1.55">
+ *       <span style="font-family:'JetBrains Mono',monospace;
+ *                    color:oklch(0.68 0.13 45);letter-spacing:0.1em">DOA</span>
+ *       <span>Élő megérkezési garancia: ...</span>
+ *
+ * (`exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html`)
+ *
+ * === AMI TOKENBOL JON, ES AMI NEM ===
+ *
+ *     keret          oklch(0.28 0.014 250)  =  --terv-keret        (sotet)
+ *     a DOA szo      oklch(0.68 0.13 45)    =  --terv-kiemel-tinta (sotet)
+ *     a mondat       oklch(0.78 0.012 250)  =  NINCS ILYEN TOKEN
+ *
+ * A harmadikra a legkozelebbi token a `--terv-szoveg-halvany`, ami soteten
+ * `oklch(0.72 0.012 250)` -- kozel, de nem egyezik beture.
+ *
+ * NEM VEZETEK BE RA UJ TOKENT, es ez ugyanaz az indok, mint a lepteto
+ * szineinel nehany sorral feljebb: ez a sor CSAK a 2a lapon letezik, tehat a
+ * 0.78 EGY VILAGRA van merve. Egy egy-vilagra mert ertek tokenne emelese
+ * pontosan az a hiba, amit a rez-tokeneknel mar egyszer elkovettunk. Ha
+ * valaki a vilagos ertekre is ad merest -- vagy kimondja, hogy a meglevo
+ * token a valasz --, akkor ez a bekezdes valtozik, nem bovul.
+ *
+ * === MIT NEM HOZTAM AT UGYANEBBOL A BLOKKBOL ===
+ *
+ * A DOA-sor FOLOTT ket gomb all a terven ("Foglalás 48 órára", "Kérdésem
+ * van"). Azokat SZANDEKOSAN nem epitettem meg: mind a ketto MUVELETET iger
+ * (foglalas, kapcsolatfelvetel), es egyikhez sincs ma se vegpontunk, se
+ * cimzettunk. Egy gomb, ami nem csinal semmit, rosszabb a hianyanal -- a
+ * sajat kartyajukon (`81e4d30f`) all, dontesre varva.
+ *
+ * A DOA-sor ezzel szemben KIJELENTES: nincs mogotte muvelet, tehat a szoveg
+ * megjelenitese a teljes viselkedese.
+ */
+export const DOA_JELOLES = "DOA"
+export const DOA_MONDAT =
+  "Élő megérkezési garancia: 2 órán belüli fotós bejelentéssel a teljes vételárat visszatérítjük."
+
+export function DoaGarancia() {
+  return (
+    <div
+      className="flex gap-3 text-[13px]"
+      style={{
+        marginTop: "16px",
+        paddingTop: "16px",
+        borderTop: "1px solid var(--terv-keret)",
+        color: "var(--terv-szoveg-halvany)",
+        lineHeight: "1.55",
+      }}
+      data-testid="doa-garancia"
+    >
+      <span
+        style={{
+          fontFamily: "var(--terv-betu-mono-lanc)",
+          color: "var(--terv-kiemel-tinta)",
+          letterSpacing: "0.1em",
+        }}
+        data-testid="doa-jeloles"
+      >
+        {DOA_JELOLES}
+      </span>
+      <span>{DOA_MONDAT}</span>
+    </div>
+  )
+}

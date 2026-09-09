@@ -1129,3 +1129,70 @@ describe("a műszaki lap fotójának készlete", () => {
     ).toHaveLength(2)
   })
 })
+
+/**
+ * A DOA-SOR: A TERV SZOVEGE, ES A HATARA.
+ *
+ * A tervlap 2a szakaszaban a "Kosárba" alatt all egy garancia-sor. A lapon
+ * eddig sehol nem szerepelt (kartya `0d8bbbfb`).
+ *
+ * HAROM FUGGETLEN ERTEKET ORZUNK, ezert harom nev:
+ *   1. hogy elo allatnal MEGJELENIK
+ *   2. hogy muszaki terméknél NEM jelenik meg
+ *   3. hogy a szoveg SZO SZERINT a tervbol valo
+ *
+ * A masodik nelkul egy olyan valtozat is atmenne, ami MINDEN lapra kiteszi --
+ * es az elso allitas azt nem venne eszre, mert az csak a meglétet meri.
+ */
+describe("a DOA garancia-sor", () => {
+  const ELO_ALLAT = {
+    ...(TERMEK as object),
+    categories: [
+      { id: "k1", name: "Korallok", mpath: "k1", parent_category_id: null },
+      {
+        id: "k2",
+        name: "SPS - Korallok",
+        mpath: "k1.k2",
+        parent_category_id: "k1",
+      },
+    ],
+  } as never
+
+  it("élő állat lapján megjelenik", () => {
+    render(
+      <VasarlasProvider product={ELO_ALLAT}>
+        <LapVaz tartalom={vazTartalom(ELO_ALLAT, true)} />
+      </VasarlasProvider>,
+    )
+
+    expect(screen.queryByTestId("doa-garancia")).toBeTruthy()
+  })
+
+  it("műszaki terméknél nem jelenik meg", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    /* ISMERT POZITIV KONTROLL: a vasarlasi resz TENYLEG felallt. */
+    expect(
+      document.querySelector('[data-vaz-szakasz="mennyiseg"]'),
+    ).toBeTruthy()
+
+    expect(screen.queryByTestId("doa-garancia")).toBeNull()
+  })
+
+  it("a szöveg szó szerint a tervből való", () => {
+    render(
+      <VasarlasProvider product={ELO_ALLAT}>
+        <LapVaz tartalom={vazTartalom(ELO_ALLAT, true)} />
+      </VasarlasProvider>,
+    )
+
+    expect(screen.getByTestId("doa-jeloles").textContent).toBe("DOA")
+    expect(screen.getByTestId("doa-garancia").textContent).toContain(
+      "Élő megérkezési garancia: 2 órán belüli fotós bejelentéssel a teljes vételárat visszatérítjük.",
+    )
+  })
+})
