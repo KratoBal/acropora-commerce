@@ -34,6 +34,7 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
   )
   const [mobileDetails, setMobileDetails] = useState(false)
   const categoryButtons = useRef<(HTMLButtonElement | null)[]>([])
+  const panel = useRef<HTMLElement | null>(null)
   const panelId = useId()
   const selected = selectedCategory(kategoriak, selectedId)
   const groups = categoryGroups(selected)
@@ -53,6 +54,62 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
+  }, [open])
+
+  /**
+   * A FOKUSZ A PANELEN BELUL MARAD, AMIG NYITVA VAN.
+   *
+   * Merve elo bongeszoben (2026-09-09, billentyuzettel bejarva): a nyitott
+   * panelbol a HARMADIK Tab utan a fokusz kilepett a lap MOGOTTE ALLO
+   * tartalmara -- kosar, morzsamenu, fulek, lablec --, holott a panel azokat
+   * teljesen elfedi. Egy `role="dialog"`, ami elfed mindent, de a fokuszt
+   * atengedi, a billentyuzetes felhasznalot lathatatlan elemek koze viszi.
+   *
+   * A megoldas nem a `tabindex` atirasa a lap tobbi reszen (az minden uj
+   * elemnel ujra elromlana), hanem a korbeforgatas a panel hataran.
+   */
+  useEffect(() => {
+    if (!open) return
+
+    const onTab = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Tab") return
+
+      const doboz = panel.current
+      if (!doboz) return
+
+      const elemek = Array.from(
+        doboz.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      )
+      if (elemek.length === 0) return
+
+      const elso = elemek[0]
+      const utolso = elemek[elemek.length - 1]
+      const aktiv = document.activeElement
+
+      /*
+        A KIVUL ALLO FOKUSZ IS VISSZAKERUL. Nem eleg a ket veget kezelni: ha a
+        fokusz barmiert a panelen KIVUL all (peldaul a nyito gombon, ahonnan a
+        panel nyilt), akkor a kovetkezo Tab a lap mogottes reszere vinne.
+      */
+      if (!aktiv || !doboz.contains(aktiv)) {
+        event.preventDefault()
+        ;(event.shiftKey ? utolso : elso).focus()
+        return
+      }
+
+      if (!event.shiftKey && aktiv === utolso) {
+        event.preventDefault()
+        elso.focus()
+      } else if (event.shiftKey && aktiv === elso) {
+        event.preventDefault()
+        utolso.focus()
+      }
+    }
+
+    window.addEventListener("keydown", onTab)
+    return () => window.removeEventListener("keydown", onTab)
   }, [open])
 
   if (kategoriak.length === 0) return null
@@ -94,23 +151,41 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
 
       {open ? (
         <>
-          <button
-            type="button"
-            className="fixed inset-x-0 bottom-0 z-[60] cursor-default bg-black/60"
-            style={{ top: PANEL_TOP }}
-            onClick={close}
-            aria-label="Kategóriamenü bezárása"
-            data-testid="category-menu-backdrop"
-          />
           <section
             id={panelId}
             role="dialog"
+            aria-modal="true"
             aria-label="Kategóriamenü"
+            ref={panel}
             className="fixed inset-x-0 bottom-0 z-[61] overflow-y-auto"
             style={{
               top: PANEL_TOP,
               background: "var(--terv-hatter)",
               color: "var(--terv-szoveg)",
+            }}
+            /*
+              A PANEL SAJAT FOLDJERE KATTINTVA ZAR -- ES EZ VALTOTTA FEL A
+              KULON HATTERLAPOT.
+
+              Volt itt egy `category-menu-backdrop` gomb, es EGERREL SOHA NEM
+              LEHETETT ELERNI: pontosan ugyanazt a teglalapot foglalta el, mint
+              a panel (mind a ketto `fixed inset-x-0 bottom-0`, ugyanazzal a
+              `top` ertekkel), a panel pedig folotte allt (z-61 kontra z-60) es
+              atlatszatlan hatteret viselt. Merve elo bongeszoben (acrobot,
+              2026-09-09 18:44): a bal also sarokban az `elementFromPoint` a
+              PANELT adta vissza, es a savon kivul kattintva a panel nyitva
+              maradt.
+
+              Ugyanez az ok arra is, hogy a fekete atlatszo fatyol (`bg-black/60`)
+              soha nem latszott: teljesen elfedte a panel.
+
+              A jelenlegi alak azt zarja be, ami a felhasznalo szamara tenyleg
+              "kivul" van: a tartalom-hasab (max 1352 pixel) melletti sav es a
+              tartalom alatti ures resz. A `currentTarget` vizsgalat kell hozza,
+              kulonben minden belso kattintas is zarna.
+            */
+            onClick={(event) => {
+              if (event.target === event.currentTarget) close()
             }}
             data-testid="category-menu-panel"
           >
