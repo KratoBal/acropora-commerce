@@ -147,6 +147,19 @@ describe("a lap földjét viselő felületek hatóköre", () => {
     "styles/globals.css" /* a `body` szabalya ES a sotet keszlet */,
     /* a vazon BELUL, tehat a jelolotol oroklik */
     "modules/layout/templates/nav/fejlec-menu.tsx" /* a fejlecen belul */,
+    /*
+      A GALERIA DOBOZA 2026-09-09-en kapta meg a lap foldjet (a 291-ben), es a
+      LISTA ELOTTE keszult -- ezert fogta meg a sajat orzom a sajat masik
+      agamat. Ez a guard szandekolt viselkedese: egy UJ felulet felvetele
+      megallitja azt, aki nem gondolta vegig, hova tartozik.
+
+      A DONTES: a galeria a vazon BELUL all, tehat a jelolotol orokli a sotet
+      keszletet, es a sotet valasztoba NEM kell bekerulnie. A doboz azert
+      viseli a lap foldjet, mert `contain` mellett sav marad a foto mellett, es
+      annak lathatatlannak kell lennie -- az indoklas az `image-gallery`
+      fajlban all.
+    */
+    "modules/products/components/image-gallery/index.tsx",
     "modules/products/components/lap-vaz/index.tsx",
     "modules/products/components/lap-vaz/ragados-sav.tsx",
     "modules/products/components/vasarlas/dobozok.tsx",
