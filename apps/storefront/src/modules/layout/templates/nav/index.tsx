@@ -103,34 +103,47 @@ import SideMenu from "@modules/layout/components/side-menu"
  * tud kifejezni. Az 1b a valasztott valtozat, tehat az o szovege all itt.
  */
 /**
- * A HELYKITOLTO SZOVEG HAROM DOLGOT IGER, ES MIND A HAROM MAS ALAPON IGAZ.
+ * A HELYKITOLTO NEGY DOLGOT IGER, ES A HATARUK KOZOS.
  *
- * Ez nem szormeszalhasogatas: egy helykitolto KEPESSEGET iger a vevonek, es
- * ugyanolyan allitas, mint egy szam egy jelentesben -- csak senki nem gondol
- * ra ugy. Ezert all itt, hogy melyik miert all.
+ * === ITT KORABBAN EGY ELEMZES ALLT, AMI MAS SZOVEGROL SZOLT ===
  *
- * Merve a teszt bolton (2026-09-08), a `/store/products?q=...` uton:
+ * A regi valtozat harom igeretet targyalt, es a harmadikat "fajra" neven -- a
+ * kodban viszont "markara" allt. Az elemzes egy olyan szot magyarazott, ami nem
+ * szerepelt a szovegben. Az egyik ket dolog kozul rossz volt, es most mind a
+ * ketto javul.
  *
- *   "cikkszámra"  A MECHANIZMUSBOL KOVETKEZIK. A kereses a `sku` mezore is
- *                 illeszkedik. A ket legerosebb eset: `q=156161` es
- *                 `q=4011708350249` -- tisztan szamjegyes cikkszamok, amik a
- *                 termek NEVEBEN es cimeben sehol nem szerepelnek, tehat CSAK
- *                 a cikkszam-mezore talalhattak. Mind az ot probalt cikkszam a
- *                 helyes termeket adta.
+ * === MIERT NEGY, ES NEM HAROM ===
  *
- *   "termékre"    a cimre illeszkedik. Ez a szabadszavas kereses alapesete.
+ * A terv 2a lapja "fajra", az 1b "markara" szot ir. Ez KET KULON fejlec volt.
+ * A mienk mostantol MIND A KET vilagot kiszolgalja (a fejlec koveti a termek
+ * vilagat), tehat egy szoveg all ket lapra: egy elo allat lapjan a "fajra" a
+ * hasznos szo, egy muszaki termeken a "markara". Ha egyet valasztunk, az egyik
+ * lapon olyat kinalunk, ami ott ertelmetlen.
  *
- *   "fajra"       MA IGAZ, DE NEM A MECHANIZMUSBOL. Nincs strukturalt
- *                 faj-mezo: a tizenegy metaadat-kulcs kozott egy sincs, ami
- *                 fajt vagy latin nevet hordozna. A faj-kereses azert mukodik,
- *                 mert a faj neve a TERMEK CIMEBEN all (`q=austea` -> 1,
- *                 `q=Acropora` -> 64, `q=tricolor` -> 2; negativ kontroll:
- *                 `q=zzzzqqqq` -> 0).
+ * === A KOZOS HATAR, ES EZ A FONTOSABB RESZ ===
  *
- *                 AMI EBBOL KOVETKEZIK: ha egy termek valaha faj-nev nelkuli
- *                 cimet kap, ez az igeret RA NEZVE csendben megszunik -- nem
- *                 hibazik, csak nem talal. Az igeret tehat az adat alakjan
- *                 all, nem a keresoen.
+ * NINCS strukturalt marka-mezo, es nincs faj-mezo. A kereses HAROM helyre
+ * illeszkedik: a cimre, a LEIRASRA es a cikkszamra. Merve a teszt bolton
+ * (2026-09-09, `/store/products?q=...`):
+ *
+ *     q=ATB           111 talalat -- a mintaban 0/5 CIMBEN, de mind a negynel
+ *                     a LEIRASBAN igen
+ *     q=Aquaforest     79 talalat -- 3/5 cimben, a tobbi a leirasban
+ *     q=austea          1 talalat -- cimben
+ *     q=zzzzqqqq        0 talalat -- negativ kontroll
+ *
+ * EBBOL KOVETKEZIK, HOGY A NEGYBOL HAROM UGYANAZON AZ ALAPON ALL: a szo akkor
+ * talal, ha a termek CIMEBEN vagy LEIRASABAN ott van. Ha egy marka neve egyik
+ * helyen sem szerepel, arra a szora NEM talal ra -- es nem hibazik, csak nem
+ * talal.
+ *
+ * A "cikkszamra" az egyetlen, ami SAJAT MEZON all: a kereses a `sku` mezore is
+ * illeszkedik (merve: `q=156161` es `q=4011708350249`, tisztan szamjegyes
+ * cikkszamok, amik a termek nevében sehol nem szerepelnek).
+ *
+ * A SZAMOK AZERT ALLNAK ITT, mert egy ilyen mondat mellett a meres az, ami
+ * hitelesit. Egy megjegyzes, ami csak allit, fel ev mulva ugyanolyan
+ * ellenorizhetetlen, mint amit felvaltott.
  */
 /**
  * A FELSO SAV HAROM SZOVEGE. Kulon allandok, mert kulon dontes all mindegyik
@@ -166,7 +179,7 @@ const BIZALMI_TANUSITVANY =
   "Fogyasztóbarát tanúsítvány · 4,8 · 213 értékelésből"
 const BIZALMI_SEGITSEG = "Szakértői segítség"
 
-const KERESO_HELYKITOLTO = "Keresés termékre, márkára, cikkszámra"
+const KERESO_HELYKITOLTO = "Keresés termékre, fajra, márkára, cikkszámra"
 
 export default async function Nav({ countryCode }: { countryCode?: string }) {
   const regions = await listRegions().then((regions: StoreRegion[]) => regions)
