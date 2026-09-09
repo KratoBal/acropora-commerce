@@ -253,26 +253,56 @@ describe("a váz valódi tartalma", () => {
    * kitelepitett lapon lehet megnezni. Amit ez bizonyit: a toresponthoz kotott
    * ertek OTT VAN, es az elvetett lap erteke NINCS ott.
    */
-  it("a cím a terv méretét viseli, a törésponthoz kötve", () => {
+  /**
+   * HAROM ALLITAS, HAROM NEVVEL -- ES EZ NEM SZOROSZAPORITAS.
+   *
+   * Elso valtozatban mind a het `expect` EGY `it`-ben allt. A kalibracio
+   * ekkor haromfele rontasra HAROMSZOR ugyanazt a nevet adta vissza, tehat a
+   * piros NEVE nem mondta meg, MELYIK ertek romlott el -- csak a sor. A
+   * mercenk viszont a nev: "a pirosak szama egyezhet, mikozben a halmaz mas".
+   *
+   * Harom nevvel a kalibracio maga bizonyitja, hogy a harom ertek KULON all.
+   */
+  const cimet = () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
-    const cim = screen.getByTestId("vaz-termek-nev")
+    return screen.getByTestId("vaz-termek-nev").className
+  }
 
-    /* asztali: 36 pixel, 1.1 sorkoz, -0.02em betukoz -- a 2a ES az 1b lapon */
-    expect(cim.className).toContain("lg:text-[36px]")
-    expect(cim.className).toContain("lg:leading-[1.1]")
-    expect(cim.className).toContain("lg:tracking-[-0.02em]")
+  it("a cím asztalon a terv 36 pixeles alakját viseli", () => {
+    const osztaly = cimet()
 
-    /* mobil: 24 pixel, 1.15 sorkoz. A `text-2xl` sajat sorkoze 32 pixel
-       (1.333), ezert a `leading` kulon all -- enelkul a meret helyes lenne es
-       a sorkoz nem. */
-    expect(cim.className).toContain("text-2xl")
-    expect(cim.className).toContain("leading-[1.15]")
+    expect(osztaly).toContain("lg:text-[36px]")
+    expect(osztaly).toContain("lg:leading-[1.1]")
+    expect(osztaly).toContain("lg:tracking-[-0.02em]")
+  })
 
-    /* AZ ELVETETT 1a LAP ERTEKEI. Ket tokenunk mar jott onnan; ez a harmadik
-       hely, ahol ugyanaz a tevedes megtortenhetne. */
-    expect(cim.className).not.toContain("29px")
-    expect(cim.className).not.toContain("-0.015em")
+  /**
+   * A `text-2xl` sajat sorkoze 32 pixel (1.333), a terve 1.15. A meret
+   * onmagaban tehat NEM allitja be a sorkozt -- enelkul az allitas nelkul a
+   * meret helyes lenne es a sorkoz nem, es semmi nem szolna.
+   */
+  it("a törésport alatt a terv 24 pixeles alakját viseli", () => {
+    const osztaly = cimet()
+
+    expect(osztaly).toContain("text-2xl")
+    expect(osztaly).toContain("leading-[1.15]")
+  })
+
+  /**
+   * AZ ELVETETT 1a LAP ERTEKEI. Ket token-ertekunk mar jott onnan (a keret es
+   * a halvany felulet); ez a harmadik hely, ahol ugyanaz a tevedes
+   * megtortenhetne.
+   *
+   * A TAGADAS A KIRAJZOLT OSZTALYRA MER, nem a forras szovegere: a komponens
+   * megjegyzese SZO SZERINT idezi a `-0.015em` erteket, mert ki kell mondani,
+   * hogy azt ne hasznaljuk. Egy forras-szovegre mero tagadas ezen elbukna.
+   */
+  it("az elvetett tervlap címméretét nem viseli", () => {
+    const osztaly = cimet()
+
+    expect(osztaly).not.toContain("29px")
+    expect(osztaly).not.toContain("-0.015em")
   })
 
   it("kategória nélkül a lánc üres", () => {
