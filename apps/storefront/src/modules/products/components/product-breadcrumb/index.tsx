@@ -128,7 +128,14 @@ export default function ProductBreadcrumb({
       <ol
         className="flex min-w-max items-center gap-[9px] text-[11px] uppercase tracking-[0.08em]"
         style={{
-          color: "var(--terv-szoveg-halvany)",
+          /*
+            AZ UTVONAL SAJAT TOKENJE, NEM A HALVANY SZOVEGE.
+
+            A terv mind a ket lapon MASKEPP allitja be a ketto, es kulonbozo
+            iranyba (soteten 0.66 kontra 0.72, vilagoson 0.52 kontra 0.5). Az
+            indoklas a `globals.css`-ben all, a token mellett.
+          */
+          color: "var(--terv-utvonal)",
           fontFamily: "var(--terv-betu-mono-lanc)",
         }}
         data-testid="morzsamenu-lista"

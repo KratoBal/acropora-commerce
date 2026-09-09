@@ -107,12 +107,28 @@ describe("a morzsamenü színei", () => {
     expect(screen.getByTestId("morzsamenu-jelenlegi")).toBeTruthy()
   })
 
-  it("a lista a halvány szöveg tokenjét viseli", () => {
+  /**
+   * AZ UTVONAL SAJAT TOKENJET VISELI, NEM A HALVANY SZOVEGET.
+   *
+   * Ez az allitas 2026-09-09-ig a `--terv-szoveg-halvany` tokenre szolt, es
+   * HELYES volt akkor. A terv viszont mind a ket lapon MASKEPP allitja be a
+   * kettot, es KULONBOZO iranyba:
+   *
+   *     lap   utvonal-sor              halvany szoveg
+   *     2a    oklch(0.66 0.014 250)    oklch(0.72 0.012 250)
+   *     1b    oklch(0.52 0.012 60)     oklch(0.5 0.012 60)
+   *
+   * A TAGADAS AZERT KELL, mert a ket token ERTEKE kozel all egymashoz: ha
+   * valaki visszairja a regit, a lap alig valtozik, es csak ez az allitas
+   * szolna.
+   */
+  it("a lista az útvonal tokenjét viseli", () => {
     render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
 
-    expect(screen.getByTestId("morzsamenu-lista").style.color).toBe(
-      "var(--terv-szoveg-halvany)",
-    )
+    const stilus = screen.getByTestId("morzsamenu-lista").getAttribute("style")
+
+    expect(stilus).toContain("var(--terv-utvonal)")
+    expect(stilus).not.toContain("var(--terv-szoveg-halvany)")
   })
 
   it("a jelenlegi lap a szöveg tokenjét viseli", () => {

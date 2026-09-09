@@ -354,6 +354,13 @@ describe("a terv megerositett ertekei", () => {
   const VILAGONKENT: ReadonlyArray<readonly [string, string, string]> = [
     ["--terv-hatter-lap", "oklch(0.995 0.003 80)", "oklch(0.17 0.016 250)"],
     ["--terv-keret-meleg", "oklch(0.88 0.008 70)", "oklch(0.33 0.016 250)"],
+    /*
+      AZ UTVONAL-SOR SZINE, ES A KET ERTEK ELLENTETES IRANYBAN TER EL a halvany
+      szovegetol (soteten 0.66 kontra 0.72, vilagoson 0.52 kontra 0.5). Epp ez
+      az ellentetes irany az, amiert kulon token, es nem egy arnyalat --
+      az indoklas a `globals.css`-ben all.
+    */
+    ["--terv-utvonal", "oklch(0.52 0.012 60)", "oklch(0.66 0.014 250)"],
   ]
 
   it.each(VILAGONKENT)("%s a helyes világban áll", (nev, vilagos, sotet) => {
@@ -440,7 +447,13 @@ describe("a terv megerositett ertekei", () => {
      * nem ugyanaz az allitas, es egy jovobeli vilagos-only sor ott hamis
      * pirosat adna itt.)
      */
-    expect(elteroek).toHaveLength(10)
+    /*
+      TIZENEGY, MERT A `--terv-utvonal` 2026-09-09-en bekerult. A szam
+      atirasa akkor helyes, ha az uj tokennek van NEVESITETT PARJA a
+      `VILAGONKENT` tablaban -- van, kozvetlenul felette. A szam atirasa
+      magaban a guard kiuresitese lenne.
+    */
+    expect(elteroek).toHaveLength(11)
 
     /**
      * A TOKEN NEVE TABLA-SORBAN ALLJON, NE CSAK A FAJLBAN VALAHOL.
