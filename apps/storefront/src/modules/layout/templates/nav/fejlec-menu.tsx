@@ -3,6 +3,7 @@
 import { ArrowRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { rovidNev } from "@lib/util/kategoria-fa"
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react"
 
 type Category = HttpTypes.StoreProductCategory
@@ -271,7 +272,19 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                               className="min-w-0 flex-1 px-3 py-2 text-sm font-medium"
                               data-testid="category-menu-category-link"
                             >
-                              {category.name}
+                              {/*
+                                A ROVID NEV ITT IS -- a szulo a NYITOTT gyoker.
+
+                                A bolt neveiben a szulo neve is ott all
+                                (`SPS - Korallok`). A morzsamenu es a
+                                kategoria-lap a rovid alakot mutatja; ha a menu
+                                a teljeset mutatna, a latogato MAS feliratot
+                                latna a linken, mint a megnyitott lapon.
+
+                                Egy szint eleg, nem kell lanc: a szulo maga a
+                                nyitott gyoker, aminek nincs felette semmi.
+                              */}
+                              {rovidNev(category.name ?? "", openName)}
                             </LocalizedClientLink>
                             <button
                               ref={(element) => {
@@ -280,7 +293,7 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                               type="button"
                               className="m-1 grid h-8 w-8 place-items-center rounded border"
                               style={{ borderColor: "var(--terv-keret)" }}
-                              aria-label={`${category.name} alkategóriái`}
+                              aria-label={`${rovidNev(category.name ?? "", openName)} alkategóriái`}
                               aria-expanded={expanded}
                               onClick={() =>
                                 setExpandedId(expanded ? null : category.id)
@@ -310,7 +323,15 @@ export const FejlecMenu = ({ kategoriak }: { kategoriak: Category[] }) => {
                                         borderColor: "var(--terv-keret)",
                                       }}
                                     >
-                                      {child.name}
+                                      {/*
+                                        HARMADIK SZINT: a szulo a MASODIK szint
+                                        ROVID neve, nem a teljes -- kulonben a
+                                        levagas nem talalna.
+                                      */}
+                                      {rovidNev(
+                                        child.name ?? "",
+                                        rovidNev(category.name ?? "", openName),
+                                      )}
                                     </LocalizedClientLink>
                                   </li>
                                 ))}

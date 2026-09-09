@@ -8,43 +8,10 @@ import { HttpTypes } from "@medusajs/types"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import CategoryProducts from "./category-products"
 import { categoryPageKind, helperCopyFor } from "./category-page-data"
+import { rovidNev, rovidNevekLancban } from "@lib/util/kategoria-fa"
+import { Breadcrumbs } from "./category-breadcrumbs"
 
 const PRODUCT_LIMIT = 12
-
-function Breadcrumbs({
-  category,
-}: {
-  category: HttpTypes.StoreProductCategory
-}) {
-  const parents: HttpTypes.StoreProductCategory[] = []
-  let current = category.parent_category
-
-  while (current) {
-    parents.unshift(current)
-    current = current.parent_category
-  }
-
-  return (
-    <nav aria-label="Morzsamenü" className="mb-6 text-sm">
-      <ol
-        className="flex flex-wrap gap-2"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
-      >
-        {parents.map((parent) => (
-          <li key={parent.id} className="flex gap-2">
-            <LocalizedClientLink href={`/categories/${parent.handle}`}>
-              {parent.name}
-            </LocalizedClientLink>
-            <span aria-hidden="true">/</span>
-          </li>
-        ))}
-        <li aria-current="page" style={{ color: "var(--terv-szoveg)" }}>
-          {category.name}
-        </li>
-      </ol>
-    </nav>
-  )
-}
 
 export default function CategoryTemplate({
   category,
@@ -66,6 +33,28 @@ export default function CategoryTemplate({
   const kind = categoryPageKind(category)
   const helper = helperCopyFor(kind)
 
+  /*
+    A CIM ES A CSEMPEK IS A ROVID NEVET VISELIK.
+
+    A lap NEGY helyen mutat kategoria-nevet: a sajat morzsamenujeben ketto (a
+    felmenok es a jelenlegi), a H1-ben, es a gyermek-csempeken. Mind a negy a
+    rovid alakra all -- kulonben a lapon BELUL allna elteres, ami rosszabb,
+    mint a lapok kozotti.
+
+    A gyermek-csempeknel a szulo maga a JELENLEGI kategoria, tehat ott egy
+    szint eleg (`rovidNev`), nem kell a teljes lanc.
+  */
+  const sajatLanc: HttpTypes.StoreProductCategory[] = []
+  {
+    let futo: HttpTypes.StoreProductCategory | undefined | null = category
+    while (futo) {
+      sajatLanc.unshift(futo)
+      futo = futo.parent_category
+    }
+  }
+  const sajatRovidek = rovidNevekLancban(sajatLanc)
+  const sajatRovid = sajatRovidek[sajatRovidek.length - 1]
+
   return (
     <main className="content-container py-8" data-testid="category-container">
       <Breadcrumbs category={category} />
@@ -79,7 +68,7 @@ export default function CategoryTemplate({
             data-testid="category-page-title"
             style={{ color: "var(--terv-szoveg)" }}
           >
-            {category.name}
+            {sajatRovid}
           </h1>
           {category.description ? (
             <p
@@ -152,7 +141,9 @@ export default function CategoryTemplate({
                     color: "var(--terv-szoveg)",
                   }}
                 >
-                  <span className="font-semibold">{child.name?.trim()}</span>
+                  <span className="font-semibold">
+                    {rovidNev(child.name ?? "", sajatRovid)}
+                  </span>
                 </LocalizedClientLink>
               </li>
             ))}

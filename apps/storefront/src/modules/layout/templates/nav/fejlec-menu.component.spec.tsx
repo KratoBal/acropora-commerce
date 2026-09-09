@@ -30,7 +30,13 @@ const categories = [
     { name: "Világítás", children: ["LED", "T5"] },
     { name: "Szivattyúk" },
   ]),
-  root("Halak", [{ name: "Gébek" }]),
+  /*
+    EGY AG A BOLT VALODI NEVADASAVAL: a gyerek nevében ott all a szulo neve.
+    A menu 92 gyermek-nevebol 92 igy all (merve 2026-09-09) -- a fixtura tobbi
+    aga a ROVID alakot hasznalja, tehat enelkul semmi nem merne, hogy a menu
+    levag-e.
+  */
+  root("Halak", [{ name: "Gébek - Halak", children: ["Sárga gébek - Gébek"] }]),
   root("Korallok", [{ name: "SPS" }]),
   root("Gerinctelenek", [{ name: "Rákok" }]),
 ]
@@ -159,6 +165,38 @@ describe("a kis lenyíló kategóriamenü", () => {
     const sav = document.querySelector('nav[aria-label="Kategóriák"]')
 
     expect(sav!.className).not.toMatch(/\bshrink-0\b/)
+  })
+
+  /**
+   * A MENU IS A ROVID NEVET MUTATJA.
+   *
+   * A kategoria-lap es a morzsamenu a rovid alakot mutatja; ha a menu a
+   * teljeset mutatna, a latogato MAS feliratot latna a linken, mint a
+   * megnyitott lapon -- es nem tudna eldonteni, ugyanoda jutott-e.
+   *
+   * A HARMADIK SZINT KULON ERTEK: ott a szulo a MASODIK szint ROVID neve, nem
+   * a teljes. Egy elemenkenti levezetes epp ott adna rosszat.
+   */
+  it("a második hasáb a rövid nevet mutatja", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+    fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
+
+    const link = screen.getByTestId("category-menu-category-link")
+
+    expect(link.textContent?.trim()).toBe("Gébek")
+  })
+
+  it("a harmadik szint a második szint rövid nevéhez képest vág", () => {
+    render(<FejlecMenu kategoriak={categories} />)
+    fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
+    fireEvent.click(screen.getByTestId("category-menu-category-expand"))
+
+    const panel = screen.getByTestId("category-menu-panel")
+
+    /* ISMERT POZITIV KONTROLL: a harmadik szint tenyleg kirajzolodott. */
+    expect(panel.textContent).toContain("Sárga gébek")
+
+    expect(panel.textContent).not.toContain("Sárga gébek - Gébek")
   })
 
   it("a fejléc négy gyökeret kínál, névre pontosan", () => {

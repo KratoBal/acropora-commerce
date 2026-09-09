@@ -10,6 +10,7 @@ import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
+import { rovidNevekLancban } from "@lib/util/kategoria-fa"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -64,7 +65,32 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       decodeHandleParams(params.category),
     )
 
-    const title = `${productCategory.name} | ${STORE_NAME}`
+    /*
+      A LAP CIME IS A ROVID NEVET VISELI.
+
+      A `<title>` a kategoria NEVEBOL generalodik, tehat a rovid alakra
+      valtassal MINDEN kategoria-lap cime elmozdul. Ez nem mellekhatas, hanem
+      a dontes hatokore: ha a morzsamenu es a fejlec rovid nevet mutat, a lap
+      cime pedig a teljeset, akkor a ket hely MASKENT nevezne ugyanazt.
+
+      ES EGY HATAR, AMIT KI KELL MONDANI: a `<title>` az EGYETLEN hely, ahol a
+      rovid nev UT NELKUL all (a bongeszo-fulon es a talalati listaban nincs
+      morzsamenu folotte). Ha ket kulonbozo agon azonos rovid nev all, a ket
+      lap cime azonos lesz. A 2026-09-04-i dontes szerint epp ezert kapja meg
+      a 77 UTKOZO kategoria a szulot A NEVEBEN -- vagyis az adat oldjá fel, nem
+      a megjelenites. Amig a betoltes nem tortent meg, ez a lehetoseg elmeleti.
+    */
+    const lanc: { name?: string | null }[] = []
+    {
+      let futo = productCategory as
+        (typeof productCategory & { parent_category?: unknown }) | undefined
+      while (futo) {
+        lanc.unshift(futo)
+        futo = (futo as { parent_category?: typeof futo }).parent_category
+      }
+    }
+    const rovidek = rovidNevekLancban(lanc)
+    const title = `${rovidek[rovidek.length - 1]} | ${STORE_NAME}`
 
     const description = productCategory.description ?? `${title} category.`
 
