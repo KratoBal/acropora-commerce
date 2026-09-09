@@ -327,6 +327,45 @@ describe("a fejléc keresője", () => {
   it("a mezőnek van címkéje", () => {
     expect(nav).toContain('htmlFor="fejlec-kereso-mezo"')
   })
+
+  /**
+   * A KERESO DOBOZANAK VAN LATHATO FOKUSZ-GYURUJE.
+   *
+   * A mezo `outline-none` osztalyt visel, ami a Tailwindben nem a gyuru
+   * eltuntetese, hanem `outline: 2px solid TRANSPARENT`. Elo bongeszoben,
+   * valodi Tab lenyomasokkal merve (2026-09-09): a fejlec minden mas eleme
+   * megkapta a bongeszo alapertelmezett gyurujet, ez az egy nem.
+   *
+   * A DONTO OSZTALY a `focus-within:outline`: az adja az `outline-style:
+   * solid` erteket. A masik harom (szelesseg, eltolas, szin) finomit -- a
+   * gyuru nelkuluk is LATSZANA, e nelkul viszont egyik sem szamit.
+   */
+  it("a keresőnek van látható fókusz-gyűrűje", () => {
+    /*
+      SZOHATARRA MERUNK, NEM RESZSZORA -- ES EZT A KALIBRACIO MONDTA MEG.
+
+      Az elso valtozatom `toContain("focus-within:outline")` volt. Kivettem a
+      dontő osztalyt, es a teszt ZOLD MARADT: a megmaradt
+      `focus-within:outline-2` RESZSZOKENT tartalmazza ugyanazt. Az allitas
+      tehat pontosan arra volt vak, amiert megirtam.
+
+      Ugyanaz az alak, mint a variáns-elotagoknal: a SZUKEBB forma tartalmazza
+      a tagabbat, es a nulla piros vedelemnek latszik.
+    */
+    expect(nav).toMatch(/focus-within:outline(?![-\w])/)
+  })
+
+  /**
+   * ES A GYURU SZINE TOKENBOL JON, NEM ROGZITETT ERTEKBOL.
+   *
+   * Kulon allitas, mert kulon is elromolhat: egy rogzitett szin a ket vilag
+   * egyikén rosszul allna, ugyanaz a hiba, amit a lablecnel es az arnal mar
+   * egyszer megjavitottunk.
+   */
+  it("a fókusz-gyűrű színe tokenből jön", () => {
+    expect(nav).toContain("[outline-color:var(--terv-kiemel)]")
+    expect(nav).not.toMatch(/outline-color:\s*(#|rgb|oklch)/)
+  })
 })
 
 /*
