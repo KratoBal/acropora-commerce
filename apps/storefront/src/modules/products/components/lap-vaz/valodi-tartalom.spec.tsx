@@ -1176,7 +1176,9 @@ describe("a DOA garancia-sor", () => {
     )
 
     /* ISMERT POZITIV KONTROLL: a vasarlasi resz TENYLEG felallt. */
-    expect(document.querySelector('[data-vaz-szakasz="mennyiseg"]')).toBeTruthy()
+    expect(
+      document.querySelector('[data-vaz-szakasz="mennyiseg"]'),
+    ).toBeTruthy()
 
     expect(screen.queryByTestId("doa-garancia")).toBeNull()
   })
