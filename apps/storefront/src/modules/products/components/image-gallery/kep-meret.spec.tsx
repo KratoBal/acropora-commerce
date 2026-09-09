@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -68,6 +71,82 @@ describe("a nagy kép kisebb, a többi alatta", () => {
     expect(doboz!.style.maxWidth).toBe("")
     expect(doboz!.style.width).toBe("")
     expect(doboz!.className).toContain("w-full")
+  })
+
+  /**
+   * A TELJES FOTO LATSZIK -- AZ ALLITAS A MODRA MER, NEM PIXELRE.
+   *
+   * Balazs dontese (2026-09-09, harom felkinalt ut kozul a (b)): a `cover`
+   * kivagas a mert korall-fotokbol a magassag 38 / 38 / 38 / 17 / 17 / 10
+   * szazalekat vette volna el, es a lapunkon ott all a mondat, hogy "a foto
+   * pontosan ezt a peldanyt mutatja".
+   *
+   * A TAGADAS IS KELL: a `cover` visszairasa a meglet-allitast nem sertene, ha
+   * valaki mind a kettot ott hagyja -- akkor a kesobbi ertek nyerne, es a
+   * teszt hallgatna.
+   */
+  it("a nagy kép TELJESEN látszik, nem 16:10-re vágva", () => {
+    const { container } = render(<ImageGallery images={[kep(1)] as never} />)
+
+    const img = container.querySelector(
+      '[data-testid="nagy-kep"] img',
+    ) as HTMLElement | null
+
+    expect(img).toBeTruthy()
+    expect(img!.style.objectFit).toBe("contain")
+    expect(img!.style.objectFit).not.toBe("cover")
+  })
+
+  /**
+   * ES A SAV, AMI `contain` MELLETT MARAD, A LAP FOLDJET VISELI.
+   *
+   * Ha az a sav rogzitett szinu, a SOTET lapon vilagos csik allna a foto ket
+   * oldalan, es a kep elrontottnak latszana -- holott csak kisebb. Itt
+   * korabban `bg-ui-bg-subtle` allt, ami a Medusa rogzitett tokenje, es nem
+   * ismeri a `data-vilag` kapcsolot.
+   *
+   * A jsdom nem oldja fel a valtozot: ez a token NEVET meri, nem a festett
+   * szint. Amit bizonyit: a doboz nem visel rogzitett hatteret.
+   */
+  it("a kép doboza a lap földjét viseli, nem rögzített szürkét", () => {
+    const { container } = render(<ImageGallery images={[kep(1)] as never} />)
+
+    const doboz = container.querySelector(
+      '[data-testid="nagy-kep"]',
+    ) as HTMLElement | null
+
+    expect(doboz!.style.background).toBe("var(--terv-hatter)")
+    expect(doboz!.className).not.toContain("bg-ui-")
+  })
+
+  /**
+   * ES A MASIK KEP-UT UGYANEZT A MODOT HASZNALJA.
+   *
+   * A `lap-vaz/valodi-tartalom.tsx` `Foto` komponense MAR `contain`-t hasznalt,
+   * amikor a galeria meg `cover`-t. A ket ut EDDIG NEM EGYEZETT, es csak az
+   * egyik hordozta a dontest -- ez az allitas azt orzi, hogy ne csusszanak
+   * megint szet.
+   *
+   * A FORRAS SZOVEGET olvassa, mert a ket komponens kulon fajlban all, es egy
+   * kozos rendereles nem hozna ossze oket. A megjegyzeseket kiszedjuk: a
+   * fenti magyarazat SZO SZERINT idezi mind a ket modot.
+   */
+  it("a másik kép-út ugyanezt a módot használja", () => {
+    const kodSzoveg = (szoveg: string) =>
+      szoveg.replace(/\/\*[\s\S]*?\*\//g, "")
+
+    const masik = kodSzoveg(
+      readFileSync(
+        join(__dirname, "..", "lap-vaz", "valodi-tartalom.tsx"),
+        "utf-8",
+      ),
+    )
+
+    /* ISMERT POZITIV KONTROLL: tenyleg a kep-utat olvastuk be. */
+    expect(masik).toContain('data-testid="vaz-foto"')
+
+    expect(masik).toContain('objectFit: "contain"')
+    expect(masik).not.toContain('objectFit: "cover"')
   })
 
   /**

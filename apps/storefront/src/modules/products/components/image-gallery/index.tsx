@@ -39,8 +39,20 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
         {nagy && (
           <Container
             key={nagy.id}
-            className="relative w-full overflow-hidden bg-ui-bg-subtle"
-            style={{ aspectRatio: KEP_ARANY }}
+            className="relative w-full overflow-hidden"
+            /*
+              A DOBOZ FOLDJE A LAP FOLDJE, NEM EGY ROGZITETT SZURKE.
+
+              `contain` mellett a foto MELLETT (vagy alatta) sav marad, ha az
+              aranya nem 16:10. Ha az a sav rogzitett szinu, a SOTET lapon
+              vilagos csik allna a foto ket oldalan, es a kep elrontottnak
+              latszana -- holott csak kisebb.
+
+              A lap sajat foldjen a sav LATHATATLAN: a foto egyszeruen kisebb.
+              Itt korabban `bg-ui-bg-subtle` allt, ami a Medusa rogzitett
+              tokenje, es nem ismeri a `data-vilag` kapcsolot.
+            */
+            style={{ aspectRatio: KEP_ARANY, background: "var(--terv-hatter)" }}
             id={nagy.id}
             data-testid="nagy-kep"
           >
@@ -58,8 +70,32 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
                 alt="Termékfotó"
                 fill
                 sizes="(max-width: 576px) 100vw, (max-width: 992px) 100vw, 856px"
+                /*
+                  A TELJES FOTO LATSZIK, NEM A 16:10-ES KIVAGASA.
+
+                  Balazs dontese (2026-09-09 12:16:18Z, egyetlen betu: "b"),
+                  harom felkinalt ut kozul. A merés, ami ele ment: hat
+                  korall-fotobol a magassag 38 / 38 / 38 / 17 / 17 / 10
+                  szazaleka veszett volna el `cover` mellett, es a negyzetes
+                  kepeknel a telep TETEJE.
+
+                  AZ INDOK, AMIT ELFOGADOTT: a lapunkon ott all a mondat, hogy
+                  "a foto pontosan ezt a peldanyt mutatja: ezt kapod, nem egy
+                  hasonlot". Ha a magassag harmada nem latszik, az a mondat nem
+                  all.
+
+                  ES AMIT EZ NEM OLD MEG: a tervlap helyorzoje "SAJÁT FOTÓ --
+                  EZ A PÉLDÁNY, 16:10" -- vagyis a 16:10 a FOTOZAS bemeneti
+                  kikotese, nem az, hogy a meglevo kepeket vagjuk ra. A doboz
+                  aranya ezert marad 16:10; a keszlet 16:10-re hozasa
+                  tartalom-munka, es kulon tetel.
+
+                  A MASIK KEP-UT (`Foto` a `lap-vaz/valodi-tartalom.tsx`-ben)
+                  MAR `contain`-t hasznalt. A ket ut eddig NEM EGYEZETT, es
+                  csak az egyik hordozta a dontest.
+                */
                 style={{
-                  objectFit: "cover",
+                  objectFit: "contain",
                 }}
               />
             )}
