@@ -531,7 +531,25 @@ export const VazDoboz = ({
       id={`vaz-${szakasz.kulcs}`}
       data-vaz-szakasz={szakasz.kulcs}
       data-vaz-ures={uresE ? "igen" : "nem"}
-      className={keretNelkul ? "" : "p-4"}
+      /*
+        A BELSO TERKOZ A JOBB PANELEN 24 PIXEL, A TERVBOL.
+
+        Merve 2026-09-09, a tervforras ket valasztott lapjan, oszloponkent
+        szetvalasztva (a racs ket kozvetlen gyereket ad):
+
+            2a JOBB panel   3 keretes doboz, mind `padding:24px`
+            1b JOBB panel   3 keretes doboz, mind `padding:24px`
+            2a BAL oszlop   NULLA keretes doboz
+            1b BAL oszlop   NULLA keretes doboz
+
+        A BAL OSZLOP EZERT MARAD 16 PIXELEN, ES EZ NEM FELEDEKENYSEG: a terv
+        ott nem 16-ot ir, hanem SEMMIT -- a bal oszlopban nincs keretes doboz.
+        A mi keretes dobozaink ott a MEG NEM KESZ szakaszok jelolesei
+        (szaggatott keret, helykitolto szoveg), tehat vaz-eszkozok, nem
+        terv-elemek. Hogy azok eltunjenek-e, KULON dontes, es amig all, addig
+        a bal oszlop erteket nem a tervbol vesszuk, mert nincs honnan.
+      */
+      className={keretNelkul ? "" : szakasz.oszlop === "jobb" ? "p-6" : "p-4"}
       style={
         keretNelkul
           ? { color: "var(--terv-szoveg)" }
@@ -1342,7 +1360,12 @@ const LapVaz = ({
                 data-testid="vaz-ket-oszlop"
               >
                 <div
-                  className="flex flex-col gap-4"
+                  /*
+                    A BAL OSZLOP KOZE 14 PIXEL, A TERVBOL (mind a ket
+                    valasztott lapon `gap:14px`). A JOBB panele 16, es az
+                    egyezik a maival -- ezert csak ez az egy sor valtozik.
+                  */
+                  className="flex flex-col gap-[14px]"
                   data-testid="vaz-bal-halom"
                 >
                   {szeg.bal.map(doboz)}

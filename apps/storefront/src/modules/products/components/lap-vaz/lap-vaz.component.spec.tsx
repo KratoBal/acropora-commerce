@@ -80,6 +80,44 @@ describe("a műszaki lap váza", () => {
    * Ez az állítás azt védi, hogy a besorolás ne csússzon el észrevétlenül: egy
    * doboz, ami rossz oszlopba kerül, a lapon látszik, de semmi nem szól róla.
    */
+  /**
+   * A TERKOZOK A TERVBOL JONNEK, OSZLOPONKENT KULON.
+   *
+   * Merve 2026-09-09 a tervforrasbol, a racs ket kozvetlen gyereket
+   * szetvalasztva, MIND A KET valasztott lapon (2a es 1b):
+   *
+   *     bal oszlop koze     14 px
+   *     jobb panel koze     16 px
+   *     jobb panel doboza   3 db, mind `padding:24px`
+   *     bal oszlop doboza   NULLA keretes doboz
+   *
+   * A BAL OSZLOP BELSO TERKOZE EZERT NEM A TERVBOL JON: ott a terv nem 16-ot
+   * ir, hanem SEMMIT. A mi keretes dobozaink ott a meg nem kesz szakaszok
+   * jelolesei, nem terv-elemek -- ez az allitas tehat a KULONBSEGET rogziti,
+   * nem azt, hogy a 16 helyes lenne.
+   */
+  it("a két oszlop köze és a jobb panel doboza a terv értékeit viseli", () => {
+    render(<LapVaz />)
+
+    const bal = document.querySelector('[data-testid="vaz-bal-halom"]')
+    const jobb = document.querySelector('[data-testid="vaz-jobb-halom"]')
+
+    /* ISMERT POZITIV KONTROLL: mind a ket oszlop megrajzolodott. */
+    expect(bal).toBeTruthy()
+    expect(jobb).toBeTruthy()
+
+    expect(bal?.className).toContain("gap-[14px]")
+    expect(jobb?.className).toContain("gap-4")
+
+    const dobozOsztaly = (kulcs: string) =>
+      document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)?.className ?? ""
+
+    /* a jobb panel egy doboza 24 pixeles, a bal oszlope 16 marad */
+    expect(dobozOsztaly("csomagajanlat")).toContain("p-6")
+    expect(dobozOsztaly("fulek")).toContain("p-4")
+    expect(dobozOsztaly("fulek")).not.toContain("p-6")
+  })
+
   it("a dobozok a tervbeli oszlopukban állnak", () => {
     render(<LapVaz />)
 
