@@ -69,19 +69,31 @@ jobs:
     # Build elhasalt `Error: Service Unavailable` uzenettel, a gyujtemeny-lap
     # `generateStaticParams` lepesenel. A kod erintetlen volt.
     #
-    # A #53 ota mind a harom epites-ideju utvonal (termek, kategoria,
-    # gyujtemeny) elkapja ezt es ures listat ad -- a termek-utvonal a starter
-    # ota igy mukodott, a masik ketto kimaradt belole.
+    # A #53 UTAN mind a harom epites-ideju utvonal elkapta ezt es URES LISTAT
+    # adott -- DE EZ MA MAR NEM IGAZ, es a bekezdes eddig a regi viselkedest
+    # irta le. A #64 ("keep the build-time failure loud, but say what to
+    # check") lecserelte: az `epitesiHibaMegnevezve` KIIRJA a diagnozist es
+    # UJRADOBJA a hibat (a visszateresi tipusa `never`). Ures lista tehat
+    # nincs, es a build ELHASAL.
     #
-    # ES AMITOL NEM NYELI EL A VALODI HIBAT (ez volt a fenti aggaly): mindharom
-    # utvonal KULON naplosort ir ki arrol, hogy nem tudta legeneralni az utakat.
-    # Egy igy degradalt build tehat kimondja magarol a kimeneteben, nem csendben
-    # szallit. Az ara: azok a lapok nem eloregyartva keszulnek, hanem keresre --
-    # nem tunnek el es nem tornek el.
+    # AMI HELYETTE VAN, ES MIERT JOBB: a kimenet kimondja, hogy a bolt nem
+    # valaszol, megnevezi a cimet, es megmondja a teendot -- "INDITSD UJRA a
+    # futast. A kodhoz nem kell hozzanyulni." A felismerest a
+    # `boltHibanakLatszik` vegzi, es a specje a NEMLEGES iranyt is meri: egy
+    # valodi kod-hibat NEM nevez bolt-kiesesnek, kulonben a fejleszto a boltot
+    # nezne egy elgepelt mezo helyett.
     #
-    # Merve mindket iranyban: elerhetetlen API mellett a javitas NELKUL exit 1,
-    # VELE exit 0 harom naplosorral; elo API mellett MINDKET esetben 244
-    # statikus lap, tehat az egeszseges ut valtozatlan.
+    # MIERT VAN ATIRVA EZ A BEKEZDES, ES NEM KIEGESZITVE: azt allitotta, hogy a
+    # bolt kiesese NEM viszi pirosra a buildet. Egy megjegyzes, ami egy MEG NEM
+    # LETEZO (vagy azota megszunt) vedelmet ir le, rosszabb a semminel -- a
+    # kovetkezo olvaso kizarna a bolt-kiesest, amikor pont az all fenn.
+    #
+    # ES EZ NEM ELMELETI: 2026-09-09 15:59:44 UTC-kor a Build pontosan igy
+    # bukott el (`Error: Service Unavailable`, "Failed to collect page data for
+    # /[countryCode]/products/[handle]"), nulla bukott teszt mellett. Ugyanazon
+    # az agon a KOVETKEZO KET futas zold lett (16:42 es 16:51), kod-valtozas
+    # nelkul a bukott resze -- vagyis a diagnozis helyes volt, es a teendo is:
+    # ujra kellett futtatni.
     env:
       NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://commerce-stage.acropora.hu
       NEXT_PUBLIC_DEFAULT_REGION: hu
