@@ -183,6 +183,7 @@ describe("a kosár gomb felirata", () => {
  */
 describe("a fejléc geometriája a tervből", () => {
   const nav = forras("index.tsx")
+  const menu = forras("fejlec-menu.tsx")
 
   it("a logó-négyzet a tervbeli 30 pixel", () => {
     expect(nav).toContain("h-[30px]")
@@ -208,8 +209,19 @@ describe("a fejléc geometriája a tervből", () => {
     expect(nav).toContain("w-[13px]")
   })
 
+  /**
+   * A MENU-SAV ATKERULT EGY KLIENS KOMPONENSBE, ES AZ ERTEK NEM VALTOZOTT.
+   *
+   * Balazs kerese (2026-09-09) szerint a menupontok NYILNAK, es a sav
+   * gorgetesre eltunik -- mind a ketto allapotot igenyel, tehat a sav a
+   * `fejlec-menu.tsx`-be kerult, ami `use client`.
+   *
+   * A 22 pixeles koz UGYANAZ maradt; csak a fajl mas. Ezert olvassa ez az
+   * allitas mostantol a MENU forrasat -- egy fajl-szintu kereses a regi helyen
+   * pirosat adott volna egy VALTOZATLAN ertekre.
+   */
   it("a menü köze a tervbeli 22 pixel", () => {
-    expect(nav).toContain("gap-[22px]")
+    expect(menu).toContain("gap-[22px]")
   })
 
   /**
