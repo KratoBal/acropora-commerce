@@ -67,19 +67,59 @@ describe("a fejléc fő sávja", () => {
   })
 
   /**
-   * A FELSO SAV NINCS MEGEPITVE, ES EZ ALLITAS, NEM ELMULASZTAS.
+   * A FELSO SAV MEGEPULT -- ES A REGI ALLITAS NEM VETTE ESZRE.
    *
-   * Mind a harom szovege blokkolt (igeret, kulso adat, cel nelkuli link), es egy
-   * ures 36 pixeles csik rosszabb, mint a hianya. Ha valaki egyszer megepiti,
-   * ennek pirosodnia KELL -- akkor ujra el kell dontenie, van-e mar forrasa a
-   * harom szovegnek.
+   * Itt korabban ez allt: "a felső 36 pixeles sáv NINCS megépítve", ezzel a ket
+   * meressel:
    *
-   * A POZITIV KONTROLL a fenti 78-as allitas: enelkul ez a sor egy URES
-   * fajlon is zold lenne.
+   *     expect(nav).not.toContain("h-[36px]")
+   *     expect(nav).not.toContain("Árukereső")
+   *
+   * A sajat megjegyzese kimondta: "Ha valaki egyszer megepiti, ennek pirosodnia
+   * KELL". MEGEPULT, ES NEM PIROSODOTT. A magassag beagyazott stilusban all
+   * (`height: "36px"`), nem osztalykent, es az Arukereso-sor helyere Balazs
+   * dontese szerint a Fogyasztobarat tanusitvany kerult -- vagyis a szo sem
+   * szerepel. Mind a ket meres egy-egy IRASMODRA szolt, nem az allapotra.
+   *
+   * Ez ugyanaz a csalad, mint a tukor-allitas: a nev helyes volt, a targya nem.
+   *
+   * A HELYERE AZ UJ ALLAPOT ALLITASAI KERULNEK, es kozottuk kulon all a KET
+   * dolog, amit Balazs kikotott: nincs kitalalt szam, es a segitseg-felirat nem
+   * link, amig nincs cime.
    */
-  it("a felső 36 pixeles sáv NINCS megépítve", () => {
-    expect(nav).not.toContain("h-[36px]")
+  it("a felső sáv megépült, a terv három szövegével", () => {
+    expect(nav).toContain('data-testid="fejlec-bizalmi-sav"')
+    expect(nav).toContain("Élő megérkezési garancia")
+    expect(nav).toContain("Fogyasztóbarát tanúsítvány")
+    expect(nav).toContain("Szakértői segítség")
+  })
+
+  /**
+   * NINCS KITALALT SZAM. A terven az Arukereso mellett "4,9 / 5 · 312
+   * ertekeles" all; Balazs a tanusitvanyt nevezte meg, szamot nem adott hozza.
+   * Egy kitalalt ertekeles ugyanaz a hiba lenne, amiert az eredeti sor nem
+   * epult meg.
+   */
+  it("nincs értékelés-szám a sávban", () => {
     expect(nav).not.toContain("Árukereső")
+    expect(nav).not.toMatch(/\d[.,]\d\s*\/\s*5/)
+    expect(nav).not.toMatch(/\d+\s*értékelés/)
+  })
+
+  /**
+   * ES A FELIRAT NEM LINK. Egy felirat, ami nem visz sehova, elfogadhato; egy
+   * link, ami rossz helyre visz, nem. Amint van cime, ez az allitas fog
+   * pirosodni -- es akkor kell ujra eldonteni.
+   */
+  it("a segítség-felirat nem link", () => {
+    const sav = nav.slice(
+      nav.indexOf("fejlec-bizalmi-sav"),
+      nav.indexOf("</div>", nav.indexOf("fejlec-bizalmi-sav")),
+    )
+
+    expect(sav).toContain("BIZALMI_SEGITSEG")
+    expect(sav).not.toContain("href")
+    expect(sav).not.toContain("LocalizedClientLink")
   })
 
   /**
