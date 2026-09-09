@@ -10,7 +10,6 @@ import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
-import { rovidNevekLancban } from "@lib/util/kategoria-fa"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -66,31 +65,37 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     )
 
     /*
-      A LAP CIME IS A ROVID NEVET VISELI.
+      A LAP CIME A TELJES NEVET VISELI -- ES EZ MERESEN ALL, NEM OVATOSSAGON.
 
-      A `<title>` a kategoria NEVEBOL generalodik, tehat a rovid alakra
-      valtassal MINDEN kategoria-lap cime elmozdul. Ez nem mellekhatas, hanem
-      a dontes hatokore: ha a morzsamenu es a fejlec rovid nevet mutat, a lap
-      cime pedig a teljeset, akkor a ket hely MASKENT nevezne ugyanazt.
+      A lap LATHATO reszei (morzsamenu, H1, csempek, menu) a ROVID nevet
+      mutatjak: ott UT all a nev mellett, tehat a rovid alak nem valik
+      ketertelmuve -- a bal szomszed adja a szulot.
 
-      ES EGY HATAR, AMIT KI KELL MONDANI: a `<title>` az EGYETLEN hely, ahol a
-      rovid nev UT NELKUL all (a bongeszo-fulon es a talalati listaban nincs
-      morzsamenu folotte). Ha ket kulonbozo agon azonos rovid nev all, a ket
-      lap cime azonos lesz. A 2026-09-04-i dontes szerint epp ezert kapja meg
-      a 77 UTKOZO kategoria a szulot A NEVEBEN -- vagyis az adat oldjá fel, nem
-      a megjelenites. Amig a betoltes nem tortent meg, ez a lehetoseg elmeleti.
+      A `<title>` az EGYETLEN hely, ahol nincs ut: a bongeszo-fulon es a
+      talalati listaban a nev magaban all.
+
+      === A MERES, A BOLT MAI ADATAN (2026-09-09) ===
+
+          kategoria                                  219
+          gyerek, akinek a neveben ott a szulo rovid neve   213 / 213
+          UTKOZO rovid nev                            27
+          ERINTETT LAP (azonos cimet kapna)           77
+
+      Peldaul "Aquaforest" HET kulonbozo lap rovid neve (Koralltápok,
+      Haleledelek, Aminosavak es vitaminok, ...). Rovid cimmel mind a het lap
+      cime azonos lenne: `Aquaforest | Acropora`.
+
+      A 77 NEM veletlen szam: Balazs 2026-09-04-i dontese pontosan ennyi
+      UTKOZO kategoriarol szol, amelyik a szulot A NEVEBEN tartja meg. A
+      dontes tehat az ADATBAN oldja fel az utkozest -- de az a betoltes MEG
+      NEM FUTOTT LE, es addig a rovid cim 77 lapon utkozne.
+
+      Ezert a cim a teljes nevet viseli. Amikor a betoltes lefut, a 142 egyedi
+      kategoria neve MAR rovid lesz, tehat ez a sor MAGATOL a rovid alakot
+      adja -- es a 77 utkozo megtartja a megkulonbozteto szulot. Nem kell
+      visszaterni ide.
     */
-    const lanc: { name?: string | null }[] = []
-    {
-      let futo = productCategory as
-        (typeof productCategory & { parent_category?: unknown }) | undefined
-      while (futo) {
-        lanc.unshift(futo)
-        futo = (futo as { parent_category?: typeof futo }).parent_category
-      }
-    }
-    const rovidek = rovidNevekLancban(lanc)
-    const title = `${rovidek[rovidek.length - 1]} | ${STORE_NAME}`
+    const title = `${productCategory.name} | ${STORE_NAME}`
 
     const description = productCategory.description ?? `${title} category.`
 
