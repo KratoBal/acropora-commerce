@@ -1125,3 +1125,47 @@ describe("a morzsamenü helye a sötét felületen", () => {
     expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1352px")
   })
 })
+
+/**
+ * A CIMBLOKK NEM DOBOZBAN ALL.
+ *
+ * A kitelepitett lapon merve (2026-09-09) a `cimsor` szakasz igy allt:
+ * `1px solid oklch(0.28 0.014 250)` keret, `oklch(0.205 0.018 249)` hatter es
+ * 16 pixel belso margo. A tervlapon a cim, a folotte allo besorolas es az alcim
+ * KOZVETLENUL a lapon all.
+ *
+ * A BELSO MARGO A LENYEG MASIK FELE: a 16 pixel miatt a cim beljebb kezdodott,
+ * mint alatta a foto. A terven a ketto egy vonalban all.
+ */
+describe("a címblokk nem dobozban áll", () => {
+  const doboz = (kulcs: string) =>
+    document.querySelector(`[data-vaz-szakasz="${kulcs}"]`) as HTMLElement
+
+  it("a címsornak nincs kerete és nincs háttere", () => {
+    render(<LapVaz />)
+
+    const cim = doboz("cimsor")
+
+    expect(cim).not.toBeNull()
+    expect(cim.style.border).toBe("")
+    expect(cim.style.background).toBe("")
+  })
+
+  it("a címsornak nincs belső margója", () => {
+    render(<LapVaz />)
+
+    expect(doboz("cimsor").className).not.toContain("p-4")
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL, ES ITT NEM DISZ: a keret-nelkuliseg a vaz
+   * ALTALANOS kepessege, es ha valaki elrontja, MINDEN doboz keret nelkul
+   * maradna -- a fenti ket allitas attol meg zold lenne. Egy MASIK, keretes
+   * szakasz tehat bizonyitja, hogy a keret-rajzolas egyaltalan mukodik.
+   */
+  it("egy másik szakasznak viszont VAN kerete", () => {
+    render(<LapVaz />)
+
+    expect(doboz("meretezes-seged").style.border).toContain("1px")
+  })
+})
