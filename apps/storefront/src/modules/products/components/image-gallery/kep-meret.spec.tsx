@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import ImageGallery from "./index"
 import { KepBlokk } from "./kep-blokk"
-import { KEP_ARANY, TovabbiKepek } from "./kep-meret"
+import { TovabbiKepek } from "./kep-meret"
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
@@ -69,10 +69,15 @@ describe("a nagy kép kisebb, a többi alatta", () => {
    * elso valtozatom egy 452 pixeles maximumot tett ra -- azt ez az allitas
    * fogja meg, ha valaha visszakerulne.
    *
-   * jsdom nem szamol elrendezest, tehat a MODOT merjuk (arany plusz teljes
-   * szelesseg), nem a kirajzolt pixelt.
+   * === MIERT OSZTALYRA MERUNK, ES NEM BEAGYAZOTT STILUSRA (2026-09-09) ===
+   *
+   * Az arany 2026-09-09 ota TORESPONT-FUGGO (telefonon negyzetes), es egy
+   * beagyazott `style` nem ismer torespontot. A jsdom sem szamol media
+   * lekerdezest, tehat a KIRAJZOLT aranyt itt egyik alakban sem lehetne
+   * merni -- amit merni lehet, az a JELOLES, es abbol most tobb latszik,
+   * nem kevesebb: a ket meret ket kulon osztalyban all.
    */
-  it("a nagy kép 16:10, és nincs szélesség-korlátja", () => {
+  it("a nagy kép asztalin 16:10", () => {
     const { container } = render(<ImageGallery images={[kep(1)] as never} />)
 
     const doboz = container.querySelector(
@@ -80,12 +85,59 @@ describe("a nagy kép kisebb, a többi alatta", () => {
     ) as HTMLElement | null
 
     expect(doboz).toBeTruthy()
-    expect(doboz!.style.aspectRatio.replace(/\s/g, "")).toBe(
-      KEP_ARANY.replace(/\s/g, ""),
-    )
+    expect(doboz!.className).toContain("lg:aspect-[16/10]")
+    expect(doboz!.className).toContain("w-full")
+  })
+
+  /**
+   * ES TELEFONON NEGYZETES -- KULON ALLITAS, MERT KULON ERTEK.
+   *
+   * A tervlap mobil kerete `aspect-ratio:1` erteket ad. Ha ez es az asztali
+   * arany EGY allitasban allna, az egyik elvesztese eszrevetlen maradhatna:
+   * a masik fele ugyanugy zolden tartana a nevet.
+   */
+  it("a nagy kép telefonon négyzetes", () => {
+    const { container } = render(<ImageGallery images={[kep(1)] as never} />)
+
+    const doboz = container.querySelector(
+      '[data-testid="nagy-kep"]',
+    ) as HTMLElement | null
+
+    expect(doboz!.className).toContain("aspect-square")
+  })
+
+  /**
+   * ES A SZELESSEG NINCS KORLATOZVA. Ez a harmadik fuggetlen ertek: az elso
+   * valtozatom egy 452 pixeles maximumot tett a fotora, es a ket arany-allitas
+   * azt nem venne eszre.
+   */
+  it("a nagy képnek nincs szélesség-korlátja", () => {
+    const { container } = render(<ImageGallery images={[kep(1)] as never} />)
+
+    const doboz = container.querySelector(
+      '[data-testid="nagy-kep"]',
+    ) as HTMLElement | null
+
     expect(doboz!.style.maxWidth).toBe("")
     expect(doboz!.style.width).toBe("")
-    expect(doboz!.className).toContain("w-full")
+  })
+
+  /**
+   * ES A MASIK KEP-UT UGYANEZT A KET ARANYT VISELI.
+   *
+   * A ket ut kulon megjelenitovel dolgozik, tehat kulon is elcsuszhat --
+   * a `contain` modnal egyszer mar szet is csusztak.
+   */
+  it("a másik kép-út ugyanezt a két arányt viseli", () => {
+    const { container } = render(<KepBlokk kepek={[kep(1)]} alt="teszt" />)
+
+    const img = container.querySelector(
+      '[data-testid="vaz-foto"]',
+    ) as HTMLElement | null
+
+    expect(img).toBeTruthy()
+    expect(img!.className).toContain("aspect-square")
+    expect(img!.className).toContain("lg:aspect-[16/10]")
   })
 
   /**

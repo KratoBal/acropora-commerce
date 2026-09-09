@@ -66,18 +66,52 @@ import { HttpTypes } from "@medusajs/types"
  * egyenkent 55 pixel lenne, ami mar nem mutat meg semmit a kepbol. A sor tehat
  * NEM gorget es NEM zsugorodik olvashatatlanra, hanem kevesebb oszlopot hasznal.
  *
- * === AMI A TERVLAPON LATSZIK, ES SZANDEKOSAN NEM EPUL MEG ===
+ * === EGY BEKEZDES, AMI ELAVULT, ES EZERT AT VAN IRVA ===
  *
- * Az elso csempen NARANCS KERET all (a kivalasztott kep jelolese), az
- * utolson pedig "VIDEO" felirat. Mind a ketto INTERAKCIOT iger: hogy a
- * csempere kattintva valt a nagy kep. A galeria ma nem interaktiv, es acrobot
- * kikotese szerint ez a kor a MERETEZESROL szol.
+ * Itt korabban az allt, hogy a tervlap elso csempejenek NARANCS KERETE
+ * (a kivalasztott kep jelolese) szandekosan nem epul meg, mert a galeria nem
+ * interaktiv, es egy kivalasztas-keret mukodo valtas nelkul rosszabb a
+ * hianyanal.
  *
- * Egy kivalasztas-keret mukodo valtas nelkul rosszabb a hianyanal: kattinthatonak
- * latszik, es nem tortenik semmi. Ezert nem kerult be -- nem felejtes.
+ * AZ AKKOR IGAZ VOLT, MA MAR NEM: a sor 2026-09-09 ota cserel nagy kepet
+ * (#297), es a keret vele egyutt bekerult -- mind a ket kep-uton. Az indok
+ * tehat nem dolt meg, hanem TELJESULT: eloszor a valtas keszult el, es utana
+ * a jeloles.
+ *
+ * Ami a listabol MEGMARADT: az utolso csempe "VIDEO" felirata. Ahhoz video-
+ * forras kell, es olyan mezonk nincs.
  */
-/** A nagy kep aranya a tervlaprol, kiirva a helyorzore. */
+/** A nagy kep ASZTALI aranya a tervlaprol, kiirva a helyorzore. */
 export const KEP_ARANY = "16 / 10"
+
+/**
+ * A NAGY KEP ARANYA TELEFONON NEGYZETES, ASZTALIN 16:10.
+ *
+ * A tervlap mobil kerete (390 pixel) `aspect-ratio:1` erteket ad a fotonak,
+ * az asztali 16:10 helyett. picasso leirasa szerint ez az EGYETLEN szerkezeti
+ * mobil-sajatossag a lapon: minden mas mobil elem egy-egy asztali elem
+ * tomoritett vagy atfogalmazott valtozata.
+ *
+ * === MIERT OSZTALY, ES NEM BEAGYAZOTT STILUS ===
+ *
+ * A beagyazott `style` nem ismer torespontot -- ugyanaz a korlat, amit a
+ * `tailwind.config.js` a lebegtetett szoveg-szineknel mar leir. Egy
+ * torespont-fuggo ertek tehat CSAK osztalykent irhato le.
+ *
+ * === A TORESPONT NEM TALALGATAS ===
+ *
+ * `lg` (1024 pixel): ott valt MAGA A TERMEKLAP egy oszlopbol kettobe
+ * (`lap-vaz/index.tsx`). Ugyanaz a hatar, amit a lap mar hasznal, nem egy
+ * masodik "mobil" fogalom.
+ *
+ * === A KEP MAGA NEM VAGODIK ===
+ *
+ * A foto `objectFit: contain` modban all (Balazs dontese, 2026-09-09), tehat
+ * a negyzetes doboz NEM vag bele a kepbe: a kep beleillik, es a maradek sav
+ * a lap foldjet viseli. A negyzetes arany telefonon tehat tobb FUGGOLEGES
+ * helyet ad ugyanannak a kepnek, nem kevesebb kepet.
+ */
+export const KEP_ARANY_OSZTALY = "aspect-square lg:aspect-[16/10]"
 
 /** Hany csempe all egy sorban: asztalon hat (tervlap), telefonon harom. */
 export const BOLYEGKEP_OSZLOP = 6

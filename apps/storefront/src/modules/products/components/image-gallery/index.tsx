@@ -10,7 +10,7 @@ import UniquePieceBadge, {
   UniquePiecePromise,
 } from "@modules/products/components/unique-piece-badge"
 
-import { KEP_ARANY, TovabbiKepek } from "./kep-meret"
+import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
@@ -73,7 +73,7 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
         {nagy && (
           <Container
             key={nagy.id}
-            className="relative w-full overflow-hidden"
+            className={`relative w-full overflow-hidden ${KEP_ARANY_OSZTALY}`}
             /*
               A DOBOZ FOLDJE A LAP FOLDJE, NEM EGY ROGZITETT SZURKE.
 
@@ -86,7 +86,7 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
               Itt korabban `bg-ui-bg-subtle` allt, ami a Medusa rogzitett
               tokenje, es nem ismeri a `data-vilag` kapcsolot.
             */
-            style={{ aspectRatio: KEP_ARANY, background: "var(--terv-hatter)" }}
+            style={{ background: "var(--terv-hatter)" }}
             id={nagy.id}
             data-testid="nagy-kep"
           >
