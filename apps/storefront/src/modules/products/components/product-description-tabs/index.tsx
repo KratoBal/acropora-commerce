@@ -30,11 +30,34 @@ const ProductDescriptionTabs = ({
   const baseId = useId()
   const tables = description?.match(TABLE_PATTERN) ?? []
   const prose = description?.replace(TABLE_PATTERN, "") ?? ""
+  /*
+    AZ ADAT-FUL ALL ELOL, A LEIRAS MASODIK -- ES EZ A TERVBOL JON.
+
+    A tervlap NEGY keretében all ful-sav, es MIND A NEGYBEN a "Leírás" a
+    MASODIK elem:
+
+        2a asztali    Gondozás | Leírás | Vízparaméterek | Élőállat-szállítás | Értékelések
+        2a mobil      Gondozás | Leírás | Szállítás
+        1b asztali    Műszaki adatok | Leírás | Spektrum & PAR | Értékelések | Letöltések
+        1b mobil      Adatok | Leírás | Értékelés
+
+    Elottünk mindenhol az ADAT all, csak a neve mas vilagonkent. Nalunk ma
+    ketto ful van (a leiras szovege es a belole kihamozott tablazat), tehat
+    a terv sorrendjebol annyi kovetheto, hogy a tablazat megy elore.
+
+    ES A KEZDO FUL IS EZZEL VALTOZIK, mert az `activeIndex` nullarol indul.
+    Ez SZANDEKOS es a tervbol merve: mind a negy kereten a ful-sav ALATT a
+    tablazatos adat all kirajzolva ("Nehézség | Haladó", "Teljesítmény |
+    160 W"), nem a prozai szoveg -- vagyis a terven is az elso, adat-ful az
+    aktiv.
+
+    (Forras: exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html)
+  */
   const tabs: Tab[] = [
-    ...(hasVisibleContent(prose) ? [{ label: "Leírás", html: prose }] : []),
     ...(tables.length
       ? [{ label: "Műszaki adatok", html: tables.join("") }]
       : []),
+    ...(hasVisibleContent(prose) ? [{ label: "Leírás", html: prose }] : []),
   ]
   const [activeIndex, setActiveIndex] = useState(0)
 
