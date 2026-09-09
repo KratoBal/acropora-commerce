@@ -73,6 +73,43 @@ describe("a kosár-hivatkozás a fejlécben", () => {
   })
 
   /**
+   * A FELIRAT MAGYAR, A TERV ALAKJABAN -- ATKOLTOZOTT ALLITAS.
+   *
+   * Eddig a `nav.spec.ts` merte, a `cart-dropdown/index.tsx` SZOVEGEN. Amikor
+   * a gomb ide kerult, az az allitas pirosra ment, es helyesen: a pozitiv
+   * kontrollja sult el. A fajlnev atirasa helyett renderelesre allt at, mert
+   * mostantol VAN kozos renderelheto hely.
+   *
+   * A tagadas is atjott: eddig `Cart (0)` allt itt, angolul, a lap legjobban
+   * lathato pontjan. A kozeppont a terv alakja, nem zarojel.
+   */
+  it("a felirat magyar, a terv alakjában", () => {
+    render(<KosarLink darab={2} />)
+    const link = screen.getByTestId("nav-cart-link")
+
+    expect(link.textContent).toContain("Kosár")
+    expect(link.textContent).toContain("·")
+    expect(link.textContent).not.toContain("Cart (")
+    expect(link.textContent).not.toContain("(2)")
+  })
+
+  /**
+   * A GOMB GEOMETRIAJA A TERVBOL -- SZINTEN ATKOLTOZOTT ALLITAS.
+   *
+   * A kosar-gomb a keresovel AZONOS magassagu (46 pixel), es a tervben is igy
+   * all: a ket elem egy vonalban zar. A 20 pixeles belso margo (`px-5`)
+   * ugyanabbol a bejarasbol jon.
+   */
+  it("a gomb magassága és belső margója a tervből", () => {
+    render(<KosarLink darab={0} />)
+
+    const link = screen.getByTestId("nav-cart-link")
+
+    expect(link.className).toContain("h-[46px]")
+    expect(link.className).toContain("px-5")
+  })
+
+  /**
    * A NAV TARTALEKA NEM MASODIK MASOLAT.
    *
    * Korabban ket helyen allt betuere ugyanaz a gomb: itt a valodi
