@@ -39,6 +39,36 @@
   */
   --fejlec-magassag: 79px;
 
+  /*
+    A BIZALMI SAV ES A TELJES FEJLEC -- MERT A 79 NEM A TELJES FEJLEC.
+
+    === A MERT HIBA (2026-09-09, kitelepitett lap, 1440x900) ===
+
+        a bizalmi sav              36 px
+        a nav sor (+ 1px keret)    79 px   <- ez a `--fejlec-magassag`
+        a fejlec ALJA              115 px
+        a jobb panel tapadasa      top: 95 px  (= 79 + 16)
+
+    Vagyis a panel HUSZ pixellel a fejlec alja FOLE tapadt, tehat gorgetes
+    kozben becsuszott alá. Balazs ket kepernyokepe pontosan ezt allitja
+    szembe.
+
+    === ES A 36 EDDIG KET HELYEN ALLT, KEZZEL ===
+
+    A fejlec-menu panelje `calc(var(--fejlec-magassag) + 36px)` alakkal MAR
+    helyesen szamolt (115), a tapado panel viszont nem adta hozza. Ugyanaz a
+    szam ket helyen, az egyikben hianyzik -- es a hianyzas csendes, mert a
+    panel latszik, csak rossz helyen.
+
+    Ezert a sav magassaga is valtozo lett, es a teljes fejlec BELOLUK
+    szamolodik. Harom olvasoja van: a sav maga, a lenyilo panel teteje, es a
+    termeklap jobb paneljenek tapadasa.
+  */
+  --fejlec-bizalmi-magassag: 36px;
+  --fejlec-teljes-magassag: calc(
+    var(--fejlec-magassag) + var(--fejlec-bizalmi-magassag)
+  );
+
   /* hatterek */
   /*
     A VILAGOS LAP ERTEKE AZ 1b SZAKASZE, ES EZT KET LEPESBEN LEHETETT CSAK

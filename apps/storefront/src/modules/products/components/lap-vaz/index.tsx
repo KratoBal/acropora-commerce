@@ -1408,8 +1408,9 @@ const LapVaz = ({
                   */
                   className="flex flex-col gap-4 lg:sticky lg:overflow-y-auto"
                   style={{
-                    top: "calc(var(--fejlec-magassag) + 1rem)",
-                    maxHeight: "calc(100vh - var(--fejlec-magassag) - 2rem)",
+                    top: "var(--fejlec-teljes-magassag)",
+                    maxHeight:
+                      "calc(100vh - var(--fejlec-teljes-magassag) - 1rem)",
                   }}
                   data-testid="vaz-jobb-halom"
                 >
