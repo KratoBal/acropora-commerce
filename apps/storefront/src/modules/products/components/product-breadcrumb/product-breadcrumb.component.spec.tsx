@@ -38,7 +38,21 @@ import ProductBreadcrumb from "./index"
 
 afterEach(cleanup)
 
-const termek = { id: "p1", title: "Acropora tenuis" } as never
+/**
+ * A TERMEK MOSTANTOL HORDOZ KATEGORIAT, ES EZ NEM KOZMETIKA.
+ *
+ * A "Fooldal" elem kikerult (a tervlapon nem szerepel), tehat a listaban CSAK
+ * a kategoria-linkek maradnak. A regi fixtura nem adott a TERMEKNEK kategoriat,
+ * tehat nulla link keletkezett -- es a lebegtetes-allitas ezt azonnal
+ * megfogta. Helyes piros volt: az allitas eddig a "Fooldal" linken allt, nem
+ * azon, amirol szol.
+ */
+const termek = {
+  id: "p1",
+  title: "Acropora tenuis",
+  categories: [{ id: "c1" }],
+  variants: [{ sku: "A-1042" }],
+} as never
 const kategoriak = [
   { id: "c1", name: "Korallok", handle: "korallok", parent_category_id: null },
 ] as never
@@ -135,5 +149,74 @@ describe("a lebegtetés színe", () => {
     expect(screen.getByTestId("morzsamenu-jelenlegi").className).not.toContain(
       "hover:text-terv-szoveg",
     )
+  })
+})
+
+/**
+ * A TERVLAP ALAKJA: `KORALLOK / WYSIWYG / SPS / A-1042`.
+ *
+ * Harom elteres a korabbi alaktol, es mind a harom a tervbol jon:
+ * nincs "Fooldal", a sor NAGYBETUS es allo szelessegu betut visel, es az
+ * utolso elem a CIKKSZAM, nem a termek neve.
+ */
+describe("a morzsamenü a tervlap alakját veszi fel", () => {
+  it("nincs Főoldal elem", () => {
+    render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
+
+    expect(screen.getByTestId("morzsamenu-lista").textContent).not.toContain(
+      "Főoldal",
+    )
+  })
+
+  /** POZITIV KONTROLL a fentihez: a kategoria-link viszont OTT van. */
+  it("a kategória továbbra is ott áll, linkként", () => {
+    render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
+
+    const linkek = Array.from(
+      screen.getByTestId("morzsamenu-lista").querySelectorAll("a"),
+    )
+
+    expect(linkek.map((l) => l.textContent)).toEqual(["Korallok"])
+  })
+
+  it("az utolsó elem a cikkszám, nem a termék neve", () => {
+    render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
+
+    const jelenlegi = screen.getByTestId("morzsamenu-jelenlegi")
+
+    expect(jelenlegi.textContent).toContain("A-1042")
+    expect(jelenlegi.textContent).not.toContain("Acropora tenuis")
+  })
+
+  /**
+   * ES A TARTALEK, MERT NEM MINDEN VALTOZATON ALL CIKKSZAM. Egy URES utolso
+   * elem rosszabb lenne a hosszu nevnel: a latogato nem latna, hol all.
+   */
+  it("cikkszám nélkül a név marad", () => {
+    const sku_nelkul = {
+      id: "p1",
+      title: "Acropora tenuis",
+      categories: [{ id: "c1" }],
+    } as never
+
+    render(<ProductBreadcrumb product={sku_nelkul} categories={kategoriak} />)
+
+    expect(screen.getByTestId("morzsamenu-jelenlegi").textContent).toContain(
+      "Acropora tenuis",
+    )
+  })
+
+  /**
+   * A NAGYBETUS ALAK CSS-BEN VAN, NEM AZ ADATBAN. Egy `toUpperCase()` a
+   * szovegen a magyar ekezetes betuket is atirna, es a masolt szoveg is
+   * nagybetus lenne.
+   */
+  it("a nagybetűs alak CSS-ből jön, az adat változatlan", () => {
+    render(<ProductBreadcrumb product={termek} categories={kategoriak} />)
+
+    const lista = screen.getByTestId("morzsamenu-lista")
+
+    expect(lista.className).toContain("uppercase")
+    expect(lista.textContent).toContain("Korallok")
   })
 })

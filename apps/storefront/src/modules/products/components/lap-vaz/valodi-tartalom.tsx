@@ -71,7 +71,15 @@ function egysegFelirat(termek: Termek): string | null {
   return typeof egyseg === "string" && egyseg.trim() ? egyseg.trim() : null
 }
 
-function cikkszam(termek: Termek): string | null {
+/**
+ * A CIKKSZAM. KIVITELEZVE, MERT KET HELY OLVASSA.
+ *
+ * A cim-blokk irja ki a cim alatt, es a MORZSAMENU utolso eleme is ez a
+ * tervlapon (`KORALLOK / WYSIWYG / SPS / A-1042`). Ket masolat egy kesobbi
+ * valtozasnal szetcsuszna -- ugyanaz a hiba, amit ma delelott ketszer
+ * javitottunk.
+ */
+export function cikkszam(termek: Termek): string | null {
   const v = termek.variants?.[0]
   return v?.sku && v.sku.trim() ? v.sku.trim() : null
 }
