@@ -1287,4 +1287,105 @@ describe("a címblokk nem dobozban áll", () => {
 
     expect(doboz("meretezes-seged").style.border).toContain("1px")
   })
+
+  /**
+   * A RAGADÓS SÁV A LAP TELJES SZÉLESSÉGÉBEN ÁLL.
+   *
+   * AMIT EZ NEM MÉR, ÉS KIMONDOM: a jsdom nem számol elrendezést, tehát a
+   * SZÉLESSÉGET nem tudom állítani. Amit mérni tudok, az a MECHANIZMUS, ami
+   * a szélességet előállítja, és ez két külön dolog -- ezért két állítás:
+   *
+   *   1. a sáv a rácson KÍVÜL áll (a rács 1352 pixelre korlátozott)
+   *   2. a burka visszaadja a külső 16 pixeles margót (`-mx-4`)
+   *
+   * Ha valaki bármelyiket kiveszi, a sáv visszaszűkül -- és a másik állítás
+   * ettől még zöld maradna, mert külön okból áll fenn mind a kettő.
+   */
+  it("a ragadós sáv a rácson kívül áll", () => {
+    render(<LapVaz />)
+
+    const racs = screen.getByTestId("muszaki-lap-vaz")
+    const sav = doboz("ragados-sav")
+
+    expect(sav).not.toBeNull()
+    expect(racs.contains(sav)).toBe(false)
+  })
+
+  /**
+   * ISMERT POZITÍV KONTROLL a fenti állításhoz: egy MÁSIK teljes szélességű
+   * doboz (a `hasonlo`) a rácson BELÜL áll. Enélkül a `contains` hamis
+   * eredménye abból is jöhetne, hogy a rács üres, vagy hogy rossz elemet
+   * kérdezek le.
+   */
+  it("egy másik teljes szélességű doboz viszont a rácson BELÜL áll", () => {
+    render(<LapVaz />)
+
+    expect(
+      screen.getByTestId("muszaki-lap-vaz").contains(doboz("hasonlo")),
+    ).toBe(true)
+  })
+
+  it("a ragadós sáv burka visszaadja a külső margót", () => {
+    render(<LapVaz />)
+
+    const burok = screen.getByTestId("vaz-ragados-sav-burok")
+
+    /**
+     * A HATÁROLT ALAK NEM DÍSZ: a `toContain("-mx-4")` egy `-mx-40` osztályra
+     * is zöld lenne, tehát pont azt a törést nem fogná meg, amiért ez az
+     * állítás készült.
+     */
+    expect(burok.className).toMatch(/-mx-4(?![-\w])/)
+    expect(burok.contains(doboz("ragados-sav"))).toBe(true)
+  })
+
+  /**
+   * A FELSŐ MARGÓ 24 PIXEL, A TERVBŐL. A rácsból kiemelve a sáv elveszti a
+   * rács `gap-4` térközét, tehát ez az érték mostantól KIMONDOTT -- és ha
+   * kimondott, akkor mérni is kell, különben a következő átrendezéskor
+   * észrevétlenül elmozdul.
+   */
+  it("a ragadós sáv felső margója a tervbeli 24 pixel", () => {
+    render(<LapVaz />)
+
+    expect(screen.getByTestId("vaz-ragados-sav-burok").className).toMatch(
+      /mt-\[24px\]/,
+    )
+  })
+
+  /**
+   * A SÁV A SORREND VÉGÉN MARAD. A kiemelés a rácsból nem rendezheti át a
+   * lapot: a `data-vaz-szakasz` sorrendjét mérő állítás fölött ez a második
+   * jel, és ez kifejezetten az UTOLSÓ helyre szól.
+   */
+  it("a ragadós sáv a dokumentum végén áll", () => {
+    render(<LapVaz />)
+
+    const kulcsok = Array.from(
+      document.querySelectorAll("[data-vaz-szakasz]"),
+    ).map((e) => e.getAttribute("data-vaz-szakasz"))
+
+    expect(kulcsok[kulcsok.length - 1]).toBe("ragados-sav")
+  })
+
+  /**
+   * TARTALOMMAL A SÁV NEM KAP MÁSODIK KERETET. A sáv a saját felső keretét
+   * hozza; egy köré rajzolt dobozkeret két vonalat adna.
+   */
+  it("tartalommal a ragadós sáv szakasza keret nélkül áll", () => {
+    render(<LapVaz tartalom={{ "ragados-sav": <span>proba</span> }} />)
+
+    expect(doboz("ragados-sav").style.border).toBe("")
+  })
+
+  /**
+   * ÜRESEN VISZONT MEGMARAD A SZAGGATOTT HELYKITÖLTŐ. Ez a fenti állítás
+   * párja: enélkül a keret-nélküliséget úgy is el lehetne érni, hogy a
+   * szakasz SOHA nem rajzol keretet -- és akkor az üres váz késznek látszana.
+   */
+  it("üresen viszont marad a szaggatott keret", () => {
+    render(<LapVaz />)
+
+    expect(doboz("ragados-sav").style.border).toContain("dashed")
+  })
 })

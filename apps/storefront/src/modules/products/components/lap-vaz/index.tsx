@@ -482,6 +482,16 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
   },
 ]
 
+/**
+ * A RAGADOS SAV KULCSA NEVESITVE, MERT KET HELY OLVASSA.
+ *
+ * A sav a felsorolasban benne marad (ott a lap SORRENDJE all), de a racson
+ * KIVUL rajzolodik ki -- lasd a `LapVaz` also blokkjat. Ket helyen szereplo
+ * betuszerinti sztring eseten az egyik atirasa a masikat csendben elvagja: a
+ * sav egyszerre maradna bent a racsban ES kerulne ki melle.
+ */
+export const RAGADOS_SAV_KULCS = "ragados-sav"
+
 type VazDobozProps = {
   szakasz: VazSzakasz
   children?: React.ReactNode
@@ -1167,6 +1177,14 @@ const LapVaz = ({
   egyediPeldany = false,
   morzsa,
 }: LapVazProps) => {
+  const osszesSzakasz = szakaszokVilagra(vilag, egyediPeldany)
+  const savSzakasz = osszesSzakasz.find(
+    (szakasz) => szakasz.kulcs === RAGADOS_SAV_KULCS,
+  )
+  const racsSzakaszai = osszesSzakasz.filter(
+    (szakasz) => szakasz.kulcs !== RAGADOS_SAV_KULCS,
+  )
+
   return (
     /**
      * A LAP SOTET, NEM EGY DOBOZ BENNE (picasso atnezese, 2026-09-08).
@@ -1363,9 +1381,7 @@ const LapVaz = ({
             )
           }
 
-          return szegmensek(
-            csoportokba(szakaszokVilagra(vilag, egyediPeldany)),
-          ).map((szeg, i) =>
+          return szegmensek(csoportokba(racsSzakaszai)).map((szeg, i) =>
             szeg.tipus === "teljes" ? (
               szeg.elemek.map(doboz)
             ) : (
@@ -1421,6 +1437,71 @@ const LapVaz = ({
           )
         })()}
       </div>
+      {/*
+        A SAV A LAP TELJES SZELESSEGEBEN ALL, ES EZ A TERVBOL MERT ERTEK.
+
+        Merve 2026-09-09, a tervfajl harom lapjan, a sav SAJAT megkulonbozteto
+        jegyere keresve (`position:sticky; bottom:0`), es a talalt elem
+        szelesseget a sajat lapkeretehez merve:
+
+            2a mobil   sav 390   lapkeret 390
+            1b mobil   sav 390   lapkeret 390
+            1a mobil   sav 390   lapkeret 390
+
+        Vagyis a sav MINDHAROM lapon pontosan a lap szelessege. Nalunk 1600
+        pixeles nezetben 1318 volt (a racs 1352-es korlatja, minusz a doboz
+        16+1 pixeles keret-margoja ket oldalt), 390-en pedig 324 a 390-bol.
+
+        ES EGY SZAM, AMI A TERVBEN NINCS: a HAROM talalat MIND a 390 pixeles
+        mobil makettben all. Az 1440 pixeles asztali lapon NULLA ragados sav
+        van. Az asztali sav a tervben nem ragad (`margin-top:56px`,
+        `padding:20px 44px`), es az egy MASIK elem. Vagyis erre a szelessegre
+        asztali tervbeli ertek nincs; a "teljes lapszelesseg" itt a mobil
+        szabaly kiterjesztese, es az asztali sav SORSA kulon dontes
+        (`db0417af`, Balazsnal).
+
+        MIERT A RACSON KIVUL, ES MIERT NEM NEGATIV MARGOVAL A HELYEN: a racs
+        kozepre igazitott, 1352 pixelre korlatozott doboz. Onnan kilepni csak
+        `100vw` alapu margoval lehetne, a `100vw` viszont a GORGETOSAVOT is
+        beleszamolja -- eppen az a vizszintes tullogas, amit a fejlecen ma
+        javitottunk (`ff12ccb4`). A kulso burok mar teljes szelessegu, csak egy
+        16 pixeles belso margot visel, es azt a `-mx-4` pontosan visszaadja.
+
+        A FELSO MARGO 24 PIXEL, SZINTEN A TERVBOL: a ket epulo lap (2a es 1b)
+        `margin-top:24px` erteket ad a savnak (az 1a 28-at, de az az elvetett
+        harmadik valtozat). Eddig a racs `gap-4` erteke adta a 16 pixelt --
+        vagyis nem valasztas volt, hanem a hely kovetkezmenye, es a kiemeléssel
+        ugyis eldontendo lett.
+
+        AMI EZ A VALTOZAS NEM: NEM teszi ragadossa a savot. Merve ugyanaznap a
+        kitelepitett lapon (1440x800): felezo gorgetesnel a sav teteje 184, a
+        gorgetes 951, a gorgetes elotti teteje 1135 -- vagyis pontosan egyutt
+        mozog a lappal, nem tapad. Az ok szerkezeti: a `sticky` a SAJAT szulo
+        dobozan belul mozog, es az a doboz pontosan olyan magas, mint a sav.
+        Ez a burok is ilyen magas, tehat a viselkedes valtozatlan marad -- a
+        `sticky bottom-0` osztaly ma is, ezutan is HATASTALAN. Ez kulon tetel,
+        es kulon jelentem.
+      */}
+      {savSzakasz ? (
+        <div
+          className="-mx-4 mt-[24px]"
+          data-vaz-oszlop={savSzakasz.oszlop}
+          data-testid="vaz-ragados-sav-burok"
+        >
+          <VazDoboz
+            szakasz={savSzakasz}
+            /*
+              KERET NELKUL, DE CSAK HA VAN TARTALMA. A sav a sajat felso
+              keretet es hatteret hozza; egy masodik keret koreje ket vonalat
+              rajzolna. Ures allapotban viszont a szaggatott helykitolto AZ
+              egyetlen jel, hogy ott meg nincs semmi -- azt megtartjuk.
+            */
+            keretNelkul={Boolean(tartalom[savSzakasz.kulcs])}
+          >
+            {tartalom[savSzakasz.kulcs]}
+          </VazDoboz>
+        </div>
+      ) : null}
     </div>
   )
 }
