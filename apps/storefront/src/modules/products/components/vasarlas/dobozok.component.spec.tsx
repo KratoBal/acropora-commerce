@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { ArAlattiSor, ElerhetosegDoboz } from "./dobozok"
+import { ArAlattiSor, ElerhetosegDoboz, KiszerelesSor } from "./dobozok"
 
 afterEach(cleanup)
 
@@ -39,7 +39,7 @@ afterEach(cleanup)
  */
 describe("az elérhetőség-doboz mért geometriája", () => {
   it("a mélyedés belső margója 14, a sorköze 6 pixel", () => {
-    render(<ElerhetosegDoboz kiszereles="1 db" />)
+    render(<ElerhetosegDoboz keszlet={3} />)
 
     const melyedes = screen.getByTestId("elerhetoseg-melyedes")
 
@@ -68,42 +68,15 @@ describe("az elérhetőség-doboz mért geometriája", () => {
       "text-[13.5px]",
     )
   })
-
-  it("a kiszerelés-sor 13.5 pixelen áll", () => {
-    render(<ElerhetosegDoboz kiszereles="1 db" />)
-
-    expect(screen.getByTestId("vaz-egyseg").className).toContain(
-      "text-[13.5px]",
-    )
-  })
 })
 
 describe("az elérhetőség-doboz mélyedése", () => {
   it("a mélyedés a lap tokenjét viseli, nem a panelét", () => {
-    render(<ElerhetosegDoboz kiszereles="1 db" />)
+    render(<ElerhetosegDoboz keszlet={3} />)
 
     expect(screen.getByTestId("elerhetoseg-melyedes").style.background).toBe(
       "var(--terv-hatter)",
     )
-  })
-
-  /**
-   * A KISZERELES CIMKE-ERTEK PAR, A TERV SZERINT. A regi alak EGY mondat volt
-   * (`Kiszerelés: 1 db`), a tervben viszont a cimke balra, az ertek jobbra all.
-   * Ezert a KET RESZT kulon allitjuk, nem a teljes szoveget: egy osszefuzott
-   * szoveg akkor is egyezne, ha a ket resz egy elembe kerulne vissza.
-   */
-  it("a kiszerelés címke és érték, két külön részben", () => {
-    render(<ElerhetosegDoboz kiszereles="1 db" />)
-
-    const sor = screen.getByTestId("vaz-egyseg")
-    const reszek = Array.from(sor.querySelectorAll("span"))
-
-    expect(reszek).toHaveLength(2)
-    expect(reszek[0].textContent).toBe("Kiszerelés")
-    expect(reszek[1].textContent).toBe("1 db")
-    expect(reszek[0].style.color).toBe("var(--terv-szoveg-halvany)")
-    expect(sor.className).toContain("justify-between")
   })
 
   /**
@@ -132,15 +105,10 @@ describe("az elérhetőség-doboz mélyedése", () => {
   })
 
   it("a két adat egymás mellett is megáll", () => {
-    render(
-      <ElerhetosegDoboz
-        kiszereles="1 db"
-        rendelesiMondat="Legalább 2 darab."
-      />,
-    )
+    render(<ElerhetosegDoboz keszlet={3} rendelesiMondat="Legalább 2 darab." />)
 
     const melyedes = screen.getByTestId("elerhetoseg-melyedes")
-    expect(melyedes.querySelector('[data-testid="vaz-egyseg"]')).toBeTruthy()
+    expect(melyedes.querySelector('[data-testid="vaz-keszlet"]')).toBeTruthy()
     expect(
       melyedes.querySelector('[data-testid="vaz-rendelesi-mondat"]'),
     ).toBeTruthy()
@@ -185,7 +153,9 @@ describe("a szűkösség-sor a dobozban", () => {
    * hogy a kereses meg tudja talalni a sort, amikor OTT VAN.
    */
   it("szám nélkül nincs sor", () => {
-    render(<ElerhetosegDoboz kiszereles="1 db" keszlet={null} />)
+    render(
+      <ElerhetosegDoboz rendelesiMondat="Legalább 2 darab." keszlet={null} />,
+    )
 
     expect(screen.queryByTestId("vaz-keszlet")).toBeNull()
   })
@@ -258,5 +228,52 @@ describe("az ár alatti kis sor", () => {
     expect(screen.getByTestId("vaz-ar-alatti-sor").className).toContain(
       "text-[12.5px]",
     )
+  })
+})
+
+/**
+ * A KISZERELES SORA -- UGYANAZOK AZ ALLITASOK, MASIK KOMPONENSEN.
+ *
+ * A sor 2026-09-10-en kikerult az elerhetoseg-dobozbol (a kiszereles nem
+ * elerhetoseg, hanem a termek adata). AZ ALLITASOK NEM TORLODTEK, hanem
+ * ATKERULTEK: a jeloles beturhiven ugyanaz, tehat amit eddig mertek, azt
+ * tovabbra is merik.
+ *
+ * ES A HARMADIK ALLITAS A SZUKITESRE SZOL: adat nelkul a sor NE alljon ott.
+ * Enelkul a keszlet azt merne, hogy a komponens letezik, nem azt, hogy mikor
+ * jelenik meg.
+ */
+describe("a kiszerelés sora", () => {
+  it("13.5 pixelen áll", () => {
+    render(<KiszerelesSor kiszereles="1 db" />)
+
+    expect(screen.getByTestId("vaz-egyseg").className).toContain(
+      "text-[13.5px]",
+    )
+  })
+
+  /**
+   * A KISZERELES CIMKE-ERTEK PAR, A TERV SZERINT. A regi alak EGY mondat volt
+   * (`Kiszerelés: 1 db`), a tervben viszont a cimke balra, az ertek jobbra all.
+   * Ezert a KET RESZT kulon allitjuk, nem a teljes szoveget: egy osszefuzott
+   * szoveg akkor is egyezne, ha a ket resz egy elembe kerulne vissza.
+   */
+  it("a kiszerelés címke és érték, két külön részben", () => {
+    render(<KiszerelesSor kiszereles="1 db" />)
+
+    const sor = screen.getByTestId("vaz-egyseg")
+    const reszek = Array.from(sor.querySelectorAll("span"))
+
+    expect(reszek).toHaveLength(2)
+    expect(reszek[0].textContent).toBe("Kiszerelés")
+    expect(reszek[1].textContent).toBe("1 db")
+    expect(reszek[0].style.color).toBe("var(--terv-szoveg-halvany)")
+    expect(sor.className).toContain("justify-between")
+  })
+
+  it("kiszerelés nélkül semmit nem rajzol", () => {
+    const { container } = render(<KiszerelesSor />)
+
+    expect(container.firstChild).toBeNull()
   })
 })

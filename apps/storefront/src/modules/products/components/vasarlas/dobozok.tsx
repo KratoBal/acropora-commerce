@@ -46,11 +46,9 @@ export function ArDoboz() {
  * ugyanaz az alak, amiert a ragados sav sem szamol sajat arat.
  */
 export function ElerhetosegDoboz({
-  kiszereles,
   rendelesiMondat,
   keszlet,
 }: {
-  kiszereles?: string
   rendelesiMondat?: string | null
   /**
    * A SZUKOSSEG SZAMA, VAGY `null`. A dontest a hivo hozza
@@ -103,7 +101,7 @@ export function ElerhetosegDoboz({
     van -- es a hivo oldali dontes (`scarcityCountOf`) hiaba lenne helyes.
     Ezt a sajat doboz-szintu allitasom fogta meg, nem a fuggveny harom zoldje.
   */
-  if (!kiszereles && !minimumSor && typeof keszlet !== "number") return null
+  if (!minimumSor && typeof keszlet !== "number") return null
 
   /**
    * A DOBOZ MELYEDES A PANELEN BELUL, ES EZ A TERVBOL MERT ALAK (2026-09-08).
@@ -200,17 +198,6 @@ export function ElerhetosegDoboz({
         >
           <span style={{ color: "var(--terv-szoveg-halvany)" }}>Készlet</span>
           <span>{keszlet === 1 ? "1 db · utolsó" : `${keszlet} db`}</span>
-        </div>
-      ) : null}
-      {kiszereles ? (
-        <div
-          className="flex items-baseline justify-between gap-4 text-[13.5px]"
-          data-testid="vaz-egyseg"
-        >
-          <span style={{ color: "var(--terv-szoveg-halvany)" }}>
-            Kiszerelés
-          </span>
-          <span className="font-semibold">{kiszereles}</span>
         </div>
       ) : null}
       {minimumSor}
@@ -439,6 +426,46 @@ export function MennyisegDoboz() {
 export const DOA_JELOLES = "DOA"
 export const DOA_MONDAT =
   "Élő megérkezési garancia: 2 órán belüli fotós bejelentéssel a teljes vételárat visszatérítjük."
+
+/**
+ * A KISZERELES SORA -- ES EZ A HELYE ACROBOT DONTESE, NEM A TERVE.
+ *
+ * === MIERT KERULT KI AZ ELERHETOSEG-REKESZBOL ===
+ *
+ * Az a rekesz a sajat varakozo felirata szerint "Keszlet, szallitas, bolti
+ * atveteel" -- mind a harom ELERHETOSEG. A kiszereles nem az: a termek adata, es
+ * ugyanugy igaz akkor is, ha nincs keszleten. (acrobot dontese, 2026-09-10.)
+ *
+ * === ES AZ UJ HELYE SEM A TERVBOL JON, EZERT KI KELL MONDANI ===
+ *
+ * A "Kiszereles" szo es a "Mennyiseg" fogalom NULLA talalat a tervfajlban,
+ * mindket alakban (picasso merese, 2026-09-10). A terv tehat ezt a mezot NEM
+ * ismeri, es nincs kimondott helye. A dontes ezert acrobote, 2026-09-10-en:
+ *
+ *     egyedi peldany   ->  a Brutto ar sor melle (ott nincs lepegeto, mindig 1 db)
+ *     minden mas       ->  a mennyiseg-lepegeto koré (ott all az a kerdes,
+ *                          hogy mennyit veszek)
+ *
+ * HA A TERV KESOBB BOVUL ES MAST MOND, A TERV NYER. Ez a bekezdes azert all itt,
+ * hogy a kovetkezo olvaso ne tervnek nezze, amit nem a terv mond.
+ *
+ * A JELOLES BETUHIVEN AZ, AMI AZ ELERHETOSEG-DOBOZBAN VOLT (cimke-ertek par,
+ * 13,5 pixel), es az allitasai is atkerultek -- nem uj sor keszult, hanem
+ * ugyanaz all masutt.
+ */
+export function KiszerelesSor({ kiszereles }: { kiszereles?: string | null }) {
+  if (!kiszereles) return null
+
+  return (
+    <div
+      className="flex items-baseline justify-between gap-4 text-[13.5px]"
+      data-testid="vaz-egyseg"
+    >
+      <span style={{ color: "var(--terv-szoveg-halvany)" }}>Kiszerelés</span>
+      <span className="font-semibold">{kiszereles}</span>
+    </div>
+  )
+}
 
 /**
  * AZ AR ALATTI KIS SOR: "Brutto ar · Cikkszam · Egyedi peldany, nem potolhato".
