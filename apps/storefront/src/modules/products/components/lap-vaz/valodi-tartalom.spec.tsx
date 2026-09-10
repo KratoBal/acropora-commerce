@@ -363,16 +363,30 @@ describe("a váz valódi tartalma", () => {
    * amugy is a morzsamenuben all.
    */
   /**
-   * A CIMSOR KET SORA: A BESOROLAS ES A NEV -- CIKKSZAM NELKUL.
+   * A CIMSOR: BESOROLAS, EYEBROW ES NEV -- ES A CIKKSZAM A CIM FOLOTT ALL.
    *
-   * A cikkszam a tervlapon nincs a cim alatt: a morzsamenu vegen all (#274
-   * ota) es a jobb panel brutto-sorában. Ez az allitas eddig itt kereste, es
-   * JOGGAL bukott el, amikor kikerult.
+   * === EZ AZ ALLITAS KORABBAN NEM TUDOTT ELBUKNI ===
+   *
+   * Itt egy sor allt: `expect(queryByTestId("vaz-cikkszam")).toBeNull()`. Azt az
+   * azonositot SEMMILYEN komponens nem rendereli -- egyetlen elofordulasa maga ez
+   * az allitas volt. Ures halmazra szolt, tehat zold maradt volna akkor is, ha a
+   * cikkszam megjelenik a cimsorban MAS azonositoval.
+   *
+   * A szandeka helyes volt es le is volt irva ("a cikkszam nincs a cim ALATT"), de
+   * a merese nem letezo elemre mutatott. (nautilus talalta, acrobot kerte a
+   * javitasat ugyanabba a PR-be, 2026-09-10.)
+   *
+   * === ES A SZANDEK AZOTA VILAGONKENT MAS ===
+   *
+   * A #274 dontese (a cikkszam a morzsamenu vegen all) a SOTET lapra szol. A terv
+   * 1b lapjan a cikkszam a cim FOLOTT all, eyebrow alakban -- ezert itt, vilagos
+   * vilagu termeknel, MEGVAN, es a parja (sotet lapon NINCS) kulon allitasban all
+   * kozvetlenul alatta.
    *
    * A TAGADAS MELLE POZITIV KONTROLL KELL: a nev es a besorolas ITT VAN. Egy
-   * puszta "nincs cikkszam" allitast egy URES cimsor is kielegitene.
+   * puszta "nincs X" allitast egy URES cimsor is kielegitene.
    */
-  it("a névvel és a besorolás láncával tölti a címsort, cikkszám nélkül", () => {
+  it("a névvel, a besorolás láncával és a cikkszám-eyebrow-val tölti a címsort", () => {
     render(
       <LapVaz
         tartalom={vazTartalom(
@@ -394,7 +408,47 @@ describe("a váz valódi tartalma", () => {
     expect(besorolas).toBe("Tesztek, mérés, vezérlés · TDS mérők")
     expect(besorolas).not.toContain("Termékek")
 
-    expect(screen.queryByTestId("vaz-cikkszam")).toBeNull()
+    const eyebrow = screen.getByTestId("vaz-eyebrow")
+
+    expect(eyebrow.textContent).toContain("8023222196186")
+    expect(eyebrow.textContent).toContain("Cikkszám")
+  })
+
+  /**
+   * A PAR MASIK FELE: SOTET VILAGBAN NINCS EYEBROW.
+   *
+   * Enelkul a fenti allitas egy olyan megvalositason is zold lenne, ami MINDEN
+   * lapra kiteszi a cikkszamot a cim fole -- es akkor a sotet lapon KETSZER
+   * allna (a morzsamenu vege ott a cikkszam marad).
+   *
+   * A fixtura kizarolag a KATEGORIAKBAN ter el a fentitol: ugyanaz a termek,
+   * ugyanaz a cikkszam. Igy amit mer, az a VILAG, nem az adat hianya.
+   */
+  it("sötét világban nincs cikkszám-eyebrow a cím fölött", () => {
+    const KORALL_KATEGORIAK = [
+      { id: "k1", name: "Korallok", mpath: "k1", parent_category_id: null },
+    ]
+    const KORALL_TERMEK = {
+      ...(TERMEK as object),
+      categories: KORALL_KATEGORIAK,
+    } as never
+
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          KORALL_TERMEK,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KORALL_KATEGORIAK as never,
+        )}
+      />,
+    )
+
+    expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
+    expect(screen.queryByTestId("vaz-eyebrow")).toBeNull()
   })
 
   /**
