@@ -7,6 +7,7 @@ import React from "react"
 import {
   ArDoboz,
   DoaGarancia,
+  ArAlattiSor,
   ElerhetosegDoboz,
   MennyisegDoboz,
   ValasztoDoboz,
@@ -507,7 +508,23 @@ export function vazTartalom(
   const eloAllat = vilagaTermeknek(termek, kategoriak) === "sotet"
 
   if (vasarlasAktiv) {
-    tartalom.ar = <ArDoboz />
+    /*
+     * AZ AR ALATTI KIS SOR AZ AR-REKESZBEN AL, NEM SAJAT SZAKASZBAN.
+     *
+     * A tervben kozvetlenul az ar alatt fut, ugyanabban a dobozban -- es a vaz
+     * szakaszai a terv DOBOZAIT kovetik, nem a sorait. Egy sajat szakasz azt
+     * allitana, hogy ez onallo doboz, es a vaz uresen jelolne minden olyan
+     * lapon, ahol az ar sincs (a mobil peldanyban a jobb halom ures).
+     */
+    tartalom.ar = (
+      <>
+        <ArDoboz />
+        <ArAlattiSor
+          cikkszam={cikkszam(termek)}
+          egyediPeldany={egyediPeldany}
+        />
+      </>
+    )
     tartalom.mennyiseg = (
       <>
         <MennyisegDoboz />
