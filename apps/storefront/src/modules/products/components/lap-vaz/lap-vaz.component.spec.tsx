@@ -1745,3 +1745,55 @@ describe("az üres szakasz a vevői lapon", () => {
     expect(screen.getByTestId("vaz-ragados-sav-burok")).toBeTruthy()
   })
 })
+
+/**
+ * AZ ELERHETOSEG-REKESZ: A LANC ELSO SZEME, NEVEN NEVEZVE.
+ *
+ * === MIERT KAP SAJAT ALLITAST, HOLOTT A VEGYES CSOPORT MAR MERVE VAN ===
+ *
+ * Mert a KOVETKEZO valtozas pontosan ezt az egy szakaszt fogja kiuritni, es a
+ * szama miatt nem mindegy: a `Kiszereles` sor MA az egyetlen tartalom az
+ * `elerhetoseg` rekeszben, es ha kikerul onnan, a stage katalogus 1492
+ * sorabol 1478 lapon URESSE valik a doboz (nautilus merese, 2026-09-10).
+ *
+ * Egy allitas, ami "vegyes csoportrol" beszel, ezt LEFEDI, de nem NEVEZI MEG.
+ * Ha valaki egyszer atrendezi a `vasarlas` csoportot, ez a sor mondja meg,
+ * mit vesztett el.
+ *
+ * === A CSOPORT, AMIBEN ALL ===
+ *
+ * Az `elerhetoseg` a `vasarlas` csoport tagja (`ar`, `elerhetoseg`,
+ * `valaszto`, `mennyiseg`). Amig az `ar` vagy a `mennyiseg` tele van, a
+ * csoport MEGMARAD, tehat ez a SZAKASZ-szintu elrejtes esete, nem a
+ * csoport-szintu kihagyase.
+ */
+describe("az elérhetőség-rekesz kiürülése", () => {
+  const tartalom = {
+    ar: <span>ár</span>,
+    mennyiseg: <span>mennyiség</span>,
+  }
+
+  it("üres elérhetőség mellett sem áll várakozó felirat a vevői lapon", () => {
+    render(<LapVaz jelzesek={false} tartalom={tartalom} />)
+
+    const rekesz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+    expect(rekesz).toBeTruthy()
+    expect(rekesz?.getAttribute("data-vaz-rejtve")).toBe("igen")
+    expect(screen.queryAllByTestId("vaz-varakozo")).toHaveLength(0)
+
+    /* A csoport tobbi tagja megmaradt -- enelkul az allitas egy ures lapon is teljesulne. */
+    expect(
+      document
+        .querySelector('[data-vaz-szakasz="ar"]')
+        ?.getAttribute("data-vaz-ures"),
+    ).toBe("nem")
+  })
+
+  /** ISMERT POZITIV KONTROLL: ugyanaz a bemenet, jelzesekkel, kirajzolja a feliratot. */
+  it("fejlesztői jelzésekkel viszont ott a várakozó felirat", () => {
+    render(<LapVaz jelzesek={true} tartalom={tartalom} />)
+
+    const rekesz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+    expect(rekesz?.querySelector('[data-testid="vaz-varakozo"]')).toBeTruthy()
+  })
+})
