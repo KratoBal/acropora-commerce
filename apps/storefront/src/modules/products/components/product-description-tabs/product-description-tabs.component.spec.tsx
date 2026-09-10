@@ -157,3 +157,87 @@ describe("a termékleírás fül-sávja", () => {
     expect(container.innerHTML).toBe("")
   })
 })
+
+/**
+ * A SZINEK A TERV TOKENJEIROL JONNEK, NEM NYERS MEDUSA-OSZTALYOKROL.
+ *
+ * === MIERT ALLITAS, ES NEM CSAK EGY CSERE ===
+ *
+ * Az `ui-fg-interactive` osztaly rgb(59,130,246) -- Tailwind blue-500 --, es a
+ * paletankban SEHOL nem szerepel. Egy idegen szin egy MUKODO komponensen nem
+ * latszik hibanak: a ful mukodik, a fokusz-gyuru megjelenik, semmi nem hasal
+ * el. Epp ezert maradna ott hataridotlenul, ha nem all rá allitas.
+ *
+ * A jsdom nem szamol szint (a `var()` feloldasa a bongeszoben tortenik), tehat
+ * az OSZTALYT allitjuk, nem a kirajzolt erteket. Ezt kimondom, mert egy
+ * "a szin helyes" alaku allitas itt nem lenne igaz -- csak az, hogy a helyes
+ * TOKENRE hivatkozunk.
+ */
+describe("a fülek színei a terv tokenjein állnak", () => {
+  /* Ugyanaz a bemenet, amit a fenti szakaszok is hasznalnak: a leiras egy
+     TABLAZATOT es egy PROZA-reszt tartalmaz, tehat KET ful all elo. */
+  const KET_FULES = TABLAZAT + PROZA
+
+  it("egyetlen nyers Medusa szin-osztaly sem marad a sávban", () => {
+    const { container } = render(
+      <ProductDescriptionTabs description={KET_FULES} />,
+    )
+
+    const jeloles = container.innerHTML
+
+    for (const osztaly of [
+      "ui-fg-interactive",
+      "ui-fg-base",
+      "ui-fg-muted",
+      "ui-fg-subtle",
+      "ui-border-base",
+    ]) {
+      expect(jeloles).not.toContain(osztaly)
+    }
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL. A fenti tagadast egy URES komponens is
+   * kielegitene. Ez mutatja meg, hogy a helyere a TERV tokenjei kerultek.
+   */
+  it("a helyükön a terv tokenjei állnak", () => {
+    const { container } = render(
+      <ProductDescriptionTabs description={KET_FULES} />,
+    )
+
+    const jeloles = container.innerHTML
+
+    expect(jeloles).toContain("var(--terv-keret)")
+    expect(jeloles).toContain("var(--terv-szoveg)")
+    expect(jeloles).toContain("var(--terv-szoveg-halvany)")
+    expect(jeloles).toContain("var(--terv-kiemel)")
+  })
+
+  /**
+   * A LEGFONTOSABB EGY SOR: az AKTIV ful alavonasa a lap SAJAT szovegszine, nem
+   * kek akcens. Ez az egyetlen azonnal eszrevehato valtozas a lapon.
+   */
+  it("az aktív fül aláhúzása a lap szövegszínén áll", () => {
+    render(<ProductDescriptionTabs description={KET_FULES} />)
+
+    const aktiv = screen
+      .getAllByRole("tab")
+      .find((e) => e.getAttribute("aria-selected") === "true")
+
+    expect(aktiv).toBeTruthy()
+    expect(aktiv?.className).toContain("border-[var(--terv-szoveg)]")
+    /*
+      A TAGADAS A `border-` ELOTAGGAL EGYUTT SZOL, ES EZ MERT DONTES.
+
+      Az elso alakom `not.toContain("ui-fg-interactive")` volt, es az a
+      FOKUSZ-GYURU osztalyara is illeszkedett (`focus-visible:outline-...`),
+      ami UGYANAZON a gombon all. A kalibracioban ki is derult: a fokusz-gyuru
+      rontasa ezt az allitast is pirosra vitte, holott a NEVE az alavonasrol
+      szol.
+
+      Egy allitas, ami tobbet fog meg, mint amit a neve mond, kesobb rossz
+      helyre kuldi az olvasot.
+    */
+    expect(aktiv?.className).not.toContain("border-ui-fg-interactive")
+  })
+})
