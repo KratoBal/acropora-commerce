@@ -299,13 +299,33 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                   <ZaroSor
                     kepUrl={product.thumbnail ?? product.images?.[0]?.url}
                     nev={zarosorNeve(product)}
-                    cimke={
-                      ragadosSavAllapota === "KAPHATO"
-                        ? availabilityLabel.KAPHATO
-                        : ragadosSavAllapota === "ELFOGYOTT"
-                          ? availabilityLabel.ELFOGYOTT
-                          : null
-                    }
+                    /*
+                      CIMKE NINCS -- ES EZ NEM ELMARADT BEKOTES.
+
+                      A tervben a masodik sor KESZLET-ALLAPOT. A #342 ezt az
+                      `availabilityLabel` terkepbol toltotte fel, az viszont
+                      CSELEKVES-feliratokat tarol, es igy a sor ugyanazt mondta,
+                      mint a mellette allo gomb. Mind a ket ag igy allt:
+
+                        KAPHATO    cimke "Kosárba"        gomb "Kosárba"
+                                   MERVE a kiszolgalt lapon (2026-09-10,
+                                   NYOS QUANTUM 220 EQ, 1440 szelesseg)
+                        ELFOGYOTT  cimke "Nincs raktáron" gomb "Nincs raktáron"
+                                   a FORRASBOL kovetkezik: az `alsoCselekves`
+                                   harmadik aga ugyanezt a konstanst rajzolja.
+                                   Elo peldanyt erre nem mertem: a ket lap,
+                                   amit megneztem, KAPHATO es ELADVA volt.
+
+                      Nem hibazik es nem hasal el: ket helyen all ugyanaz a szo,
+                      ot centire egymastol.
+
+                      POZITIV KESZLET-MONDATOT NEM IRUNK HELYETTE. Forrasunk
+                      nincs ra (merve 2026-09-07: a bolt minden termeke nulla
+                      keszleten all, tehat a nulla nem meres, hanem az atvitel
+                      hianya), es a mobil sav pontosan ugyanezert all cimke
+                      nelkul. A `ZaroSor` megtartja a propot: a tervbeli sor
+                      letezik, csak a forrasa nincs meg.
+                    */
                     ar={<ProductPrice product={product} />}
                     cselekves={alsoCselekves("zarosor")}
                   />
