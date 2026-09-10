@@ -24,6 +24,7 @@ import {
   orderQuantityStep,
 } from "../product-actions/minimum-order-quantity"
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
+import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
 import { KepBlokk } from "../image-gallery/kep-blokk"
 import { vilagaTermeknek } from "./vilag-valto"
 
@@ -553,7 +554,12 @@ export function vazTartalom(
      * A ket feltetel indoka a `product-actions/index.tsx` fejleceben all
      * teljes hosszan (harom allapot, plusz az egyedi peldany negyedik esete).
      */
-    if (!egyediPeldany && (termek.options?.length ?? 0) > 0) {
+    /*
+     * A HARMADIK FELTETEL 2026-09-10 OTA: legyen MIBOL valasztani. A kozos
+     * predikatum (`vanValaszthatoOpcio`) ugyanaz, amit a doboz sajat orzoje
+     * hiv -- egy szabaly, egy helyen.
+     */
+    if (!egyediPeldany && vanValaszthatoOpcio(termek)) {
       tartalom.valaszto = <ValasztoDoboz />
     }
   }
