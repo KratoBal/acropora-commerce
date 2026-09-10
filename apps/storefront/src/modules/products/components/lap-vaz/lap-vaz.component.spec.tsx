@@ -1614,3 +1614,186 @@ describe("a címblokk nem dobozban áll", () => {
     }
   })
 })
+
+/**
+ * A VEVOI LAPON NINCS VARAKOZO FELIRAT (acrobot dontese, 2026-09-10).
+ *
+ * === A MERES, AMI ELOHOZTA (nautilus, 2026-09-10) ===
+ *
+ * A korall-lapon a `fulek` doboz ures, es a benne allo vesszos lista
+ * ("Gondozas, Leiras, Vizparameterek, Eloallat-szallitas, Ertekelesek") a vevo
+ * szemeben FUL-SORNAK latszik, amire kattintani probal. A ful-komponens maga
+ * hibatlan: egy masik lapon `role=tab` 2, `tablist` 1, `tabpanel` 1.
+ *
+ * A SZAM, AMITOL EZ NEM SZELSO ESET: a stage katalogus 1492 sorabol 265
+ * terméknek nincs leirasa, es mind a harom egyedi darab ebben a 265-ben van.
+ *
+ * === MIERT KAPCSOLOVAL, ES NEM A `NODE_ENV`-BOL ===
+ *
+ * Vitestben a `NODE_ENV` erteke `test`, tehat egy allitas, ami kozvetlenul
+ * arra epul, a KORNYEZETET merne, nem a viselkedest -- es a tagadas soha nem
+ * sulne el. Igy viszont mind a ket allas atadhato, es a tagadas mellett ott
+ * all az ismert pozitiv kontroll ugyanabban a szakaszban.
+ *
+ * === AMIT EZEK AZ ALLITASOK NEM TUDNAK MEGMUTATNI ===
+ *
+ * A jsdom nem szamol elrendezest. Hogy a `display: contents` doboz tenyleg nem
+ * eszik `gap`-et, es hogy a megmarado szakaszok fuggoleges helye nem csuszik
+ * el, azt CSAK a kiszolgalt lapon lehet megmerni. Az a meres nautilusnal all,
+ * a telepites utanra.
+ */
+describe("az üres szakasz a vevői lapon", () => {
+  it("kikapcsolt jelzések mellett egyetlen várakozó felirat sincs", () => {
+    render(<LapVaz jelzesek={false} />)
+
+    expect(screen.queryAllByTestId("vaz-varakozo")).toHaveLength(0)
+  })
+
+  /**
+   * A JELOLOK MEGMARADNAK -- DE CSAK OTT, AHOL A CSOPORT MEGMARAD.
+   *
+   * EZT AZ ALLITAST AZ ELSO FUTAS IRATTA AT VELEM, ES A KULONBSEG NEM
+   * ARNYALAT. Eloszor tartalom NELKUL rendereltem, es azt vartam, hogy a
+   * jelolők ott allnak. NULLA szakasz maradt a lapon: ha egy csoport MINDEN
+   * szakasza ures, a csoport EGESZE kimarad (kulonben egy ures keretes panel
+   * es egy `gap`-nyi hezag maradna). Tartalom nelkul tehat minden csoport ilyen.
+   *
+   * A helyes allitas ezert VEGYES csoportra szol: ahol van tartalom, ott a
+   * csoport megmarad, es a MELLETTE allo ures szakasz megtartja a jelolőit.
+   */
+  it("vegyes csoportban az üres szakasz megtartja a jelölőit", () => {
+    render(
+      <LapVaz
+        jelzesek={false}
+        tartalom={{
+          cimsor: <span>cím</span>,
+          foto: <span>fotó</span>,
+          ar: <span>ár</span>,
+        }}
+      />,
+    )
+
+    const szakaszok = Array.from(
+      document.querySelectorAll("[data-vaz-szakasz]"),
+    )
+    expect(szakaszok.length).toBeGreaterThan(3)
+
+    const rejtett = szakaszok.filter(
+      (e) => e.getAttribute("data-vaz-rejtve") === "igen",
+    )
+    /* A rejtettek MIND uresnek is vallják magukat, es egy sincs koztuk, ami tele van. */
+    expect(rejtett.length).toBeGreaterThan(0)
+    for (const e of rejtett) {
+      expect(e.getAttribute("data-vaz-ures")).toBe("igen")
+    }
+
+    /* Amiben tartalom all, az NEM rejtett -- ez a masik irany. */
+    for (const kulcs of ["cimsor", "foto", "ar"]) {
+      const e = document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)
+      expect(e).toBeTruthy()
+      expect(e?.getAttribute("data-vaz-rejtve")).toBeNull()
+      expect(e?.getAttribute("data-vaz-ures")).toBe("nem")
+    }
+  })
+
+  /**
+   * ES A MASIK ESET, KIMONDVA: A TELJESEN URES CSOPORT NYOMTALANUL ELTUNIK.
+   *
+   * Ez nem mellekhatas, hanem a dontes masik fele. Ha csak a dobozt rejtenenk
+   * el, a csoport burka `gap`-et vinne el (kozos panelnel egy KERETET is), es
+   * a lapon indoklas nelkuli hezag maradna. Amit cserebe elvesztunk: egy
+   * teljesen ures csoportban nincs mit merni -- ott a hianya maga a jel.
+   */
+  it("tartalom nélkül egyetlen szakasz sem marad a lapon", () => {
+    render(<LapVaz jelzesek={false} />)
+
+    expect(document.querySelectorAll("[data-vaz-szakasz]")).toHaveLength(0)
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL. A fenti ket allitast egy ures lap is kielegitene
+   * (nulla varakozo felirat akkor is igaz, ha semmi nem renderelodik). Ez
+   * mutatja meg, hogy UGYANAZ a bemenet a masik allasban kirajzolja oket.
+   */
+  it("bekapcsolt jelzések mellett a várakozó feliratok ott állnak", () => {
+    render(<LapVaz jelzesek={true} />)
+
+    expect(screen.queryAllByTestId("vaz-varakozo").length).toBeGreaterThan(0)
+    expect(document.querySelectorAll("[data-vaz-rejtve]")).toHaveLength(0)
+  })
+
+  /**
+   * A SAV BURKA KULON TETEL, mert nem a doboz rejtese veszi ki, hanem egy sajat
+   * feltetel: a burok FELSO MARGOT hoz, tehat egy elrejtett doboz melle
+   * hezagot hagyna a lap aljan.
+   */
+  it("üres sávnál a ragadós sáv burka sincs a lapon", () => {
+    render(<LapVaz jelzesek={false} />)
+
+    expect(screen.queryByTestId("vaz-ragados-sav-burok")).toBeNull()
+  })
+
+  /** ISMERT POZITIV KONTROLL a burokra: tartalommal ott all, jelzesek nelkul is. */
+  it("tartalommal a burok ott áll kikapcsolt jelzések mellett is", () => {
+    render(
+      <LapVaz
+        jelzesek={false}
+        tartalom={{ "ragados-sav": <span>tartalom</span> }}
+      />,
+    )
+
+    expect(screen.getByTestId("vaz-ragados-sav-burok")).toBeTruthy()
+  })
+})
+
+/**
+ * AZ ELERHETOSEG-REKESZ: A LANC ELSO SZEME, NEVEN NEVEZVE.
+ *
+ * === MIERT KAP SAJAT ALLITAST, HOLOTT A VEGYES CSOPORT MAR MERVE VAN ===
+ *
+ * Mert a KOVETKEZO valtozas pontosan ezt az egy szakaszt fogja kiuritni, es a
+ * szama miatt nem mindegy: a `Kiszereles` sor MA az egyetlen tartalom az
+ * `elerhetoseg` rekeszben, es ha kikerul onnan, a stage katalogus 1492
+ * sorabol 1478 lapon URESSE valik a doboz (nautilus merese, 2026-09-10).
+ *
+ * Egy allitas, ami "vegyes csoportrol" beszel, ezt LEFEDI, de nem NEVEZI MEG.
+ * Ha valaki egyszer atrendezi a `vasarlas` csoportot, ez a sor mondja meg,
+ * mit vesztett el.
+ *
+ * === A CSOPORT, AMIBEN ALL ===
+ *
+ * Az `elerhetoseg` a `vasarlas` csoport tagja (`ar`, `elerhetoseg`,
+ * `valaszto`, `mennyiseg`). Amig az `ar` vagy a `mennyiseg` tele van, a
+ * csoport MEGMARAD, tehat ez a SZAKASZ-szintu elrejtes esete, nem a
+ * csoport-szintu kihagyase.
+ */
+describe("az elérhetőség-rekesz kiürülése", () => {
+  const tartalom = {
+    ar: <span>ár</span>,
+    mennyiseg: <span>mennyiség</span>,
+  }
+
+  it("üres elérhetőség mellett sem áll várakozó felirat a vevői lapon", () => {
+    render(<LapVaz jelzesek={false} tartalom={tartalom} />)
+
+    const rekesz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+    expect(rekesz).toBeTruthy()
+    expect(rekesz?.getAttribute("data-vaz-rejtve")).toBe("igen")
+    expect(screen.queryAllByTestId("vaz-varakozo")).toHaveLength(0)
+
+    /* A csoport tobbi tagja megmaradt -- enelkul az allitas egy ures lapon is teljesulne. */
+    expect(
+      document
+        .querySelector('[data-vaz-szakasz="ar"]')
+        ?.getAttribute("data-vaz-ures"),
+    ).toBe("nem")
+  })
+
+  /** ISMERT POZITIV KONTROLL: ugyanaz a bemenet, jelzesekkel, kirajzolja a feliratot. */
+  it("fejlesztői jelzésekkel viszont ott a várakozó felirat", () => {
+    render(<LapVaz jelzesek={true} tartalom={tartalom} />)
+
+    const rekesz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+    expect(rekesz?.querySelector('[data-testid="vaz-varakozo"]')).toBeTruthy()
+  })
+})

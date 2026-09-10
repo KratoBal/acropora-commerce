@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { ElerhetosegDoboz } from "./dobozok"
+import { ArAlattiSor, ElerhetosegDoboz } from "./dobozok"
 
 afterEach(cleanup)
 
@@ -188,5 +188,75 @@ describe("a szűkösség-sor a dobozban", () => {
     render(<ElerhetosegDoboz kiszereles="1 db" keszlet={null} />)
 
     expect(screen.queryByTestId("vaz-keszlet")).toBeNull()
+  })
+})
+
+/**
+ * AZ AR ALATTI KIS SOR.
+ *
+ * MIERT KULON-KULON ALLITAS ES NEM EGY CIKLUS: a harom resz harom kulon
+ * feltetelen all, es kulon-kulon rontható el. Egy ciklus ugyanezt merne, de a
+ * piros nem mondana meg, MELYIK resz csuszott el -- a kalibraciobol tudjuk,
+ * hogy a piros NEVE a bizonyitek, nem a szama.
+ *
+ * ES A HARMADIK ALLITAS A SZUKITESRE SZOL, nem a mukodesre. Egy keszlet, ami
+ * csak a "minden adat megvan" esetet nezi, UGYANUGY zold lenne akkor is, ha a
+ * sor MINDIG kiirna mindharom reszt -- vagyis a doboz LETEZESET merne, nem a
+ * viselkedeset.
+ */
+describe("az ár alatti kis sor", () => {
+  it("mindhárom részt kiírja, ha mindhárom adat megvan", () => {
+    render(<ArAlattiSor cikkszam="A-1042" egyediPeldany />)
+
+    expect(screen.getByTestId("vaz-ar-alatti-sor").textContent).toBe(
+      "Bruttó ár · Cikkszám A-1042 · Egyedi példány, nem pótolható",
+    )
+  })
+
+  it("cikkszám nélkül nem ír ki cikkszámot, és nem hagy ott elválasztót", () => {
+    render(<ArAlattiSor egyediPeldany />)
+
+    const sor = screen.getByTestId("vaz-ar-alatti-sor")
+
+    expect(sor.textContent).toBe("Bruttó ár · Egyedi példány, nem pótolható")
+    expect(sor.textContent).not.toContain("Cikkszám")
+  })
+
+  /**
+   * EZ AZ AZ ESET, AMI A LEGKOZELEBB ALL A HIBAHOZ, ES MEGIS HELYES: egyetlen
+   * resz van, tehat elvalasztonak SEHOL nem szabad allnia. Egy tomb-osszefuzes
+   * hatarertekekkel epp itt hagyna ott egy arva kozepso pontot.
+   */
+  it("egyedül a bruttó ár marad, ha nincs se cikkszám, se egyedi példány", () => {
+    render(<ArAlattiSor />)
+
+    const sor = screen.getByTestId("vaz-ar-alatti-sor")
+
+    expect(sor.textContent).toBe("Bruttó ár")
+    expect(sor.textContent).not.toContain("·")
+  })
+
+  it("nem egyedi példánynál nem állítja, hogy nem pótolható", () => {
+    render(<ArAlattiSor cikkszam="A-1042" />)
+
+    const sor = screen.getByTestId("vaz-ar-alatti-sor")
+
+    expect(sor.textContent).toBe("Bruttó ár · Cikkszám A-1042")
+    expect(sor.textContent).not.toContain("nem pótolható")
+  })
+
+  /**
+   * A MERT TIPOGRAFIA. A tervfajl HAROM helyen hordozza ezt a sort, es
+   * mindharom helyen 12,5 pixelen all (merve 2026-09-10 a tervfajl
+   * renderelesevel). A szin tokenjere kulon allitas nem kerul: a jsdom nem
+   * oldja fel a CSS-valtozokat, tehat itt a NEV merheto, az ERTEK a
+   * `terv-tokenek.spec.ts`-ben all.
+   */
+  it("12.5 pixelen áll, ahogy a tervben mind a három helyen", () => {
+    render(<ArAlattiSor cikkszam="A-1042" />)
+
+    expect(screen.getByTestId("vaz-ar-alatti-sor").className).toContain(
+      "text-[12.5px]",
+    )
   })
 })

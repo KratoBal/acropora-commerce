@@ -453,6 +453,43 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
     expect(forras).not.toContain(">Kosárba<")
     expect(forras).toContain("availabilityLabel.KAPHATO")
   })
+
+  /**
+   * A ZAROSOR CIMKE-SORA NEM A CSELEKVES-TERKEPBOL JON.
+   *
+   * === A MERT HIBA, AMIT EZ AZ ALLITAS BEZAR ===
+   *
+   * A #342 a zarosor masodik sorat (a tervben KESZLET-ALLAPOT) az
+   * `availabilityLabel` terkepbol toltotte fel. Az a terkep CSELEKVES-
+   * feliratokat tarol, ezert a sor ugyanazt mondta, mint a mellette allo gomb:
+   *
+   *   KAPHATO    cimke "Kosárba"        gomb "Kosárba"    <- MERVE a
+   *              kiszolgalt lapon (2026-09-10, 1440 szelesseg)
+   *   ELFOGYOTT  cimke "Nincs raktáron" gomb ugyanez      <- a forrasbol
+   *
+   * === AMIT EZ AZ ALLITAS BIZONYIT, ES AMIT NEM ===
+   *
+   * Bizonyitja, hogy a hivo NEM ad at cimket a zarosornak. Nem bizonyitja,
+   * hogy egy KESOBBI cimke-forras keszlet-allitas lenne-e: azt csak az tudja
+   * eldonteni, aki a forrast megirja. Ez az orzo a MAI hibat zarja be, nem a
+   * fogalmat vedi.
+   *
+   * A `kodSzoveg` itt nem kenyelem, hanem feltetel: a sablonban all egy
+   * kommentblokk, ami SZO SZERINT idezi a regi alakot. Kommentek nelkul ez az
+   * allitas hamisan bukna el a sajat magyarazatatol.
+   */
+  it("a záró sor nem kap címkét a cselekvés-térképből", () => {
+    const kezdet = forras.indexOf("<ZaroSor")
+    expect(kezdet).toBeGreaterThan(0)
+
+    /* Az elem forras-szelete a sajat lezarasaig tart, nem a fajl vegeig. */
+    const veg = forras.indexOf("/>", kezdet)
+    expect(veg).toBeGreaterThan(kezdet)
+
+    const elem = forras.slice(kezdet, veg)
+    expect(elem).toContain("nev={zarosorNeve(product)}")
+    expect(elem).not.toContain("cimke=")
+  })
 })
 
 /**

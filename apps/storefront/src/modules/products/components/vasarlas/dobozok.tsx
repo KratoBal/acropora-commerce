@@ -440,6 +440,75 @@ export const DOA_JELOLES = "DOA"
 export const DOA_MONDAT =
   "Élő megérkezési garancia: 2 órán belüli fotós bejelentéssel a teljes vételárat visszatérítjük."
 
+/**
+ * AZ AR ALATTI KIS SOR: "Brutto ar · Cikkszam · Egyedi peldany, nem potolhato".
+ *
+ * TISZTA MEGJELENITES, ugyanaz az elv, mint a tobbi doboznal ebben a fajlban: a
+ * hivo donti el, mi all benne, ez a fuggveny csak kirajzol.
+ *
+ * === A TIPOGRAFIA MERVE, NEM BECSULVE ===
+ *
+ * A tervfajl HAROM helyen hordozza ezt a sort (2a, 1a es 1b), es MINDHAROM
+ * helyen egyforma: 12,5 px, 400-as vastagsag, Space Grotesk, normal betukoz es
+ * sormagassag. (Merve 2026-09-10, nautilus, a tervfajl renderelesevel.)
+ *
+ * A SZIN viszont laponkent MAS, es szandekosan NEM vezetek be ra uj tokent:
+ *
+ *     terv 2a (sotet)    oklch(0.7 0.014 250)     a mi tokenunk: oklch(0.72 0.012 250)
+ *     terv 1b (vilagos)  oklch(0.48 0.012 60)     a mi tokenunk: oklch(0.5 0.012 60)
+ *
+ * Mindket vilagban a `--terv-szoveg-halvany` a legkozelebbi, es a kulonbseg a
+ * masodik tizedesben all. Egy 0,02-es elteresert uj tokent felvenni pontosan az
+ * a hiba, amit a rez-tokeneknel mar egyszer elkovettunk -- es amirol nehany
+ * szaz sorral feljebb ez a fajl mar egyszer nyilatkozik. Ha valaki a kulonbsegre
+ * ad meresi indokot, ez a bekezdes valtozik, nem bovul.
+ *
+ * === AMI SZANDEKOSAN NINCS BENNE ===
+ *
+ * A terv 1b lapjan ugyanez a sor igy folytatodik: "Legalacsonyabb ar az elmult
+ * 30 napban: 319 900 Ft". Az EU Omnibus-kovetelmeny, es NULLA forrasa van
+ * (merve 2026-09-10: "30 nap", "lowest_price", "price_history", "omnibus" mind
+ * nulla talalat a kirakat es a hatteroldal forrasaban). Ma nincs kivaltva, mert
+ * a stage-en nulla termek akcios (1490-bol, aminek van ara) -- de az elso akcio
+ * pillanataban kotelezove valik. Kulon kartyan all, Balazsnal.
+ *
+ * Ugyanigy kimarad a "27% afaval" es a "Kedvezmeny: -30 000 Ft": mindketto
+ * SZAMOT allit, es egyikhez sincs meresem arrol, hogy a bolt ugyanazt szamolja.
+ */
+export function ArAlattiSor({
+  cikkszam,
+  egyediPeldany,
+}: {
+  cikkszam?: string | null
+  egyediPeldany?: boolean
+}) {
+  /*
+   * A "Brutto ar" MINDIG all, a masik ketto adattol fugg. Ezert nem tomb-
+   * osszefuzes hatarertekekkel: a kozepso pont ott jelenik meg, ahol tenylegesen
+   * ket resz kozott all -- kulonben egy cikkszam nelkuli termeken a sor
+   * "Brutto ar ·" alakban vegzodne.
+   */
+  const reszek = [
+    "Bruttó ár",
+    cikkszam ? `Cikkszám ${cikkszam}` : null,
+    egyediPeldany ? "Egyedi példány, nem pótolható" : null,
+  ].filter((x): x is string => Boolean(x))
+
+  return (
+    <p
+      className="text-[12.5px]"
+      style={{
+        marginTop: "8px",
+        color: "var(--terv-szoveg-halvany)",
+        fontFamily: "var(--terv-betu-fo-lanc)",
+      }}
+      data-testid="vaz-ar-alatti-sor"
+    >
+      {reszek.join(" · ")}
+    </p>
+  )
+}
+
 export function DoaGarancia() {
   return (
     <div
