@@ -31,8 +31,21 @@ import { join } from "node:path"
  * bizonyitottan landolt). Vagyis ezt az allitast a CI-ben tapasztalt hiba
  * indokolja, nem egy helyben reprodukalhato piros -- es ezert szoveg-alapu.
  *
- * A kommenteket ki kell szedni: ez a fajl maga is idezi a keresett alakot a
- * fenti magyarazatban, es a magyarazott fajlok is.
+ * A KOMMENT-KISZEDES BENNE VAN, ES A SZUKSEGESSEGE MERVE -- de NEM ugy, ahogy
+ * elsore leirtam. Eloszor azt allitottam, hogy a magyarazo kommentek maguk is
+ * idezik a keresett alakot; ez HAMIS. A ket fajl kommentjei a tulterheleseket
+ * `resolve<K extends keyof Cradle>(...)` alakban irjak le, PONT NELKUL, tehat a
+ * `\.resolve\s*\(` mintara nem illeszkednek. A kiszedes kiiktatasa ezert NULLA
+ * pirosat adott.
+ *
+ * A bizonyitas ketoldalu rontassal jott (2026-09-10):
+ *
+ *     egy `.resolve(` alak KOMMENTBE teve, kiszedessel     zold
+ *     ugyanaz, a kiszedes kiiktatva                        piros
+ *
+ * Vagyis a kiszedes VALODI kepesseg, csak a mai kommentek nem probaljak ki.
+ * Ezert marad benne: a kovetkezo magyarazat, ami peldat ir a tiltott alakra,
+ * kulonben hamis pirosat adna -- es a pelda epp a tiltott alakot mutatna meg.
  */
 const kodSzoveg = (szoveg: string) =>
   szoveg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
