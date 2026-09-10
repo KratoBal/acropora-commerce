@@ -24,6 +24,8 @@ import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
 import VasarlasKeret from "./vasarlas-keret"
 import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
+import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
+import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -57,6 +59,67 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     uniquePiece: uniquePieceOf(product.metadata),
     inventoryKnown: inventoryKnownOf(product),
   })
+
+  /**
+   * A CSELEKVES FUGGVENY, NEM VALTOZO -- ES EZ NEM STILUS.
+   *
+   * A ket also elem (mobil sav, asztali zarosor) UGYANAZT a cselekvest viseli,
+   * es egyszerre soha nem latszik. De MIND A KETTO ott all a fában, tehat ha
+   * ugyanazt a `data-testid` erteket kapnak, a `getByTestId` KET talalatra
+   * hasal el -- es a lap kirajzolasa attol meg helyes lenne. Egy valtozoba tett
+   * JSX ugyanazt az azonositot vinne mind a ket helyre; egy fuggveny elotagot
+   * kap.
+   */
+  const alsoCselekves = (elotag: string) =>
+    ragadosSavAllapota === "KAPHATO" ? (
+      <a
+        href="#vaz-mennyiseg"
+        data-testid={`${elotag}-ugras`}
+        className="flex h-[50px] items-center px-6 text-[15px] font-semibold lg:px-[26px]"
+        style={{
+          background: "var(--terv-kiemel)",
+          color: "var(--terv-kiemel-szoveg)",
+        }}
+      >
+        {availabilityLabel.KAPHATO}
+      </a>
+    ) : ragadosSavAllapota === "ELADVA" ? (
+      <a
+        href={similarItemsHref(product)}
+        data-testid={`${elotag}-hasonlo`}
+        className="flex h-[50px] items-center border px-6 text-[15px] font-semibold lg:px-[26px]"
+        style={{
+          borderColor: "var(--terv-keret)",
+          color: "var(--terv-szoveg)",
+        }}
+      >
+        {SIMILAR_ITEMS_LABEL}
+      </a>
+    ) : (
+      <span
+        data-testid={`${elotag}-elfogyott`}
+        className="flex h-[50px] items-center px-6 text-[15px] font-semibold lg:px-[26px]"
+        style={{ color: "var(--terv-szoveg-halvany)" }}
+      >
+        {availabilityLabel.ELFOGYOTT}
+      </span>
+    )
+
+  /**
+   * A ZAROSOR NEV-SORA: a termek neve, es utana a cikkszam, ha van.
+   *
+   * A tervben "A. tenuis „Miami Vice” · A-1042" all, vagyis NEV es CIKKSZAM,
+   * kozepponttal elvalasztva. A rovidites (a nemzetsegnev kezdobetuje) a
+   * tervlap sajat pelda-szovege, nem szabaly -- a mi nevunk teljes egeszeben
+   * all, es a sor `truncate`-el, ha nem fer ki.
+   *
+   * Ha nincs cikkszam, csak a nev all ott: a kozeppont elvalasztokent
+   * ertelmetlen lenne egyetlen elem mellett.
+   */
+  const zarosorNeve = (termek: HttpTypes.StoreProduct) => {
+    const kod = cikkszam(termek)
+    return kod ? `${termek.title} · ${kod}` : termek.title
+  }
 
   /**
    * A VAZ BEKOTESE, ES A HATAR, AMIT NEM EN DONTOK EL.
@@ -216,44 +279,37 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             a CELT vesszuk at, nem a komponenst.
           */
               ragadosResz={
-                <RagadosSav
-                  ar={<ProductPrice product={product} />}
-                  cselekves={
-                    ragadosSavAllapota === "KAPHATO" ? (
-                      <a
-                        href="#vaz-mennyiseg"
-                        data-testid="ragados-sav-ugras"
-                        className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
-                        style={{
-                          background: "var(--terv-kiemel)",
-                          color: "var(--terv-kiemel-szoveg)",
-                        }}
-                      >
-                        {availabilityLabel.KAPHATO}
-                      </a>
-                    ) : ragadosSavAllapota === "ELADVA" ? (
-                      <a
-                        href={similarItemsHref(product)}
-                        data-testid="ragados-sav-hasonlo"
-                        className="flex h-[50px] items-center border px-6 text-[15px] font-semibold"
-                        style={{
-                          borderColor: "var(--terv-keret)",
-                          color: "var(--terv-szoveg)",
-                        }}
-                      >
-                        {SIMILAR_ITEMS_LABEL}
-                      </a>
-                    ) : (
-                      <span
-                        data-testid="ragados-sav-elfogyott"
-                        className="flex h-[50px] items-center px-6 text-[15px] font-semibold"
-                        style={{ color: "var(--terv-szoveg-halvany)" }}
-                      >
-                        {availabilityLabel.ELFOGYOTT}
-                      </span>
-                    )
-                  }
-                />
+                <>
+                  <RagadosSav
+                    ar={<ProductPrice product={product} />}
+                    cselekves={alsoCselekves("ragados-sav")}
+                  />
+                  {/*
+                    AZ ASZTALI ZAROSOR UGYANAZT A CSELEKVEST VISELI, MAS
+                    AZONOSITOVAL.
+
+                    A ket also elem SOHA nem latszik egyszerre (`lg:hidden`
+                    kontra `hidden lg:flex`), de MIND A KETTO ott all a fában.
+                    Ha ugyanazt a `data-testid` erteket viselnek, a
+                    `getByTestId` ketto talalatra hasal el -- es a lap
+                    kiralyzasa attol meg helyes lenne. Ezert kap a cselekves
+                    elotagot, es ezert fuggveny, nem valtozo: egy valtozoba
+                    tett JSX ugyanazt az azonositot vinne mind a ket helyre.
+                  */}
+                  <ZaroSor
+                    kepUrl={product.thumbnail ?? product.images?.[0]?.url}
+                    nev={zarosorNeve(product)}
+                    cimke={
+                      ragadosSavAllapota === "KAPHATO"
+                        ? availabilityLabel.KAPHATO
+                        : ragadosSavAllapota === "ELFOGYOTT"
+                          ? availabilityLabel.ELFOGYOTT
+                          : null
+                    }
+                    ar={<ProductPrice product={product} />}
+                    cselekves={alsoCselekves("zarosor")}
+                  />
+                </>
               }
             />
           </VasarlasKeret>

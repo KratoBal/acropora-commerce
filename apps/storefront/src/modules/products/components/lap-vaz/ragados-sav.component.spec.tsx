@@ -209,10 +209,34 @@ describe("a sáv geometriája a tervből", () => {
    * elrontani. A tervben a szeles nezet SAJAT erteket kap (20px 44px), es ez
    * fuggetlen dontes a keskenytol.
    */
-  it("a széles nézet saját margót és közt kap", () => {
+  /**
+   * A SAV MOSTANTOL CSAK MOBILON LATSZIK -- ES EZ AZ ALLITAS EGY REGEBBIT VALT.
+   *
+   * Itt korabban az allt, hogy a sav a SZELES nezetben sajat margot es kozt kap
+   * (`lg:px-11`, `lg:py-5`, `lg:gap-5`). Az akkor helyes volt: a mobil alakot
+   * mutattuk asztalin is, szelesebbre allitva.
+   *
+   * A TERV VISZONT KET KULONBOZO ELEMET AD: az asztali zarosor sajat komponens
+   * (`ZaroSor`), mas tartalommal (belyegkep, nev, keszlet-sor). Ezert az
+   * asztali meretek ODA kerultek, es ez a sav `lg:hidden`.
+   *
+   * A regi allitas tehat nem "elavult", hanem a TARGYA koltozott -- es az uj
+   * helyen ugyanugy merve all (`zarosor.component.spec`).
+   */
+  it("a sáv az asztali nézetben nem látszik", () => {
+    expect(sav().className).toMatch(/lg:hidden(?![-\w])/)
+  })
+
+  /**
+   * ES A TAGADAS: az asztali meretek NEM maradtak itt. Enelkul a fenti
+   * allitas zold lenne ugy is, hogy a sav tovabbra is viseli a szeles nezet
+   * margoit -- csak epp rejtve, ahol senki nem latja, es a kovetkezo olvaso
+   * azt hinne, hogy a ket alak meg mindig egy komponensben all.
+   */
+  it("az asztali méretek már nem a sávon állnak", () => {
     const cs = sav().className
-    expect(cs).toContain("lg:px-11")
-    expect(cs).toContain("lg:py-5")
-    expect(cs).toContain("lg:gap-5")
+    expect(cs).not.toContain("lg:px-11")
+    expect(cs).not.toContain("lg:py-5")
+    expect(cs).not.toContain("lg:gap-5")
   })
 })
