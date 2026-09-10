@@ -1547,6 +1547,23 @@ const LapVaz = ({
              * egy `display: contents` szakasz akkor sem lesz layout-elem, ha
              * kozvetlenul a kulso oszlop gyereke. A burok az, ami `gap`-et
              * eszik, nem a szakasz.
+             *
+             * === EZ A TIZENHAROM SZAKASZ A MERES MIATT ALL ITT, NEM A
+             *     MEGJELENITES MIATT -- NE VEDD KI ===
+             *
+             * Ures lapon mind a tizenharom szakasz ott all, rejtve. A vevo
+             * egyiket sem latja, es EPP EZERT nez ki ugy, mint egy folosleges
+             * DOM-reszlet: "ugysem latszik, minek rendereljuk".
+             *
+             * Azert rendereljuk, hogy a kiszolgalt lapon MERHETO legyen, mi
+             * hianyzik. Amikor ez a negy szakasz (`meretezes-seged`,
+             * `csomagajanlat`, `hasonlo`, `kiegeszitok`) nyomtalanul eltunt,
+             * negyven megmert lapbol negyvenen ugy nezett ki, mintha nem is
+             * leteznenek -- holott mind a negy tervbeli szakasz, aminek csak
+             * az adatforrasa hianyzik.
+             *
+             * Ha ezt valaki teljesitmeny-okbol kivenne, nem egy DOM-csomopontot
+             * sporolna meg, hanem az egyetlen jelet, ami ezt a hianyt mutatja.
              */
             const mindRejtve =
               !jelzesek &&
