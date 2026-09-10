@@ -83,6 +83,38 @@ const TERMEK = {
  * mert a bolt igy adja: 2026-09-09-en a mega-menu 92 gyermek-nevebol 92 kovette
  * ezt a mintat. A rovid alakot a megjelenites szamolja, nem az adat hordozza.
  */
+/**
+ * KET ERTEKES OPCIO-CSOPORT -- ES EZ A FIXTURA A MAI ADATBAN NEM LETEZIK.
+ *
+ * A stage katalogus mind az 1492 termeke egy csoportos ES egy ertekes (merve
+ * 2026-09-10, nulla kivetel). Ezert a "egy ertekkel nincs valaszto" allitas a
+ * VALODI adaton nem tud elbukni: minden lap olyan.
+ *
+ * Enelkul a fixtura nelkul tehat egy HALOTT allitast irnank -- olyat, ami akkor
+ * is zold marad, ha a valaszto SOHA nem jelenik meg. A ket ertekes eset az,
+ * ami a kettot szetvalasztja.
+ *
+ * A csoport neve SZANDEKOSAN nem "Kivitel": a cimke az opcio-csoport sajat
+ * nevebol jon, es egy "Kivitel" nevu fixturan ez nem latszana.
+ */
+const TERMEK_KET_OPCIOS = {
+  ...(TERMEK as object),
+  variants: [
+    { id: "v1", sku: "8023222196186", options: [] },
+    { id: "v2", sku: "8023222196187", options: [] },
+  ],
+  options: [
+    {
+      id: "o1",
+      title: "Méret",
+      values: [
+        { id: "ov1", value: "160 W" },
+        { id: "ov2", value: "240 W" },
+      ],
+    },
+  ],
+} as never
+
 const KATEGORIAK = [
   { id: "c1", name: "Termékek", parent_category_id: null },
   {
@@ -944,10 +976,71 @@ describe("a váz valódi tartalma", () => {
    * doboz nem ures", ezt a valtozast NEM latta volna: az a doboz eddig is tele
    * volt. Ezert a negy dobozt KULON-KULON kell megnevezni.
    */
-  it("az ár, a választó és a mennyiség külön dobozba kerül", () => {
+  /**
+   * EGY ERTEKKEL A VALASZTO BLOKK NEM JELENIK MEG -- ES A "NEM JELENIK MEG"
+   * PONTOS ALAKJA SZAMIT.
+   *
+   * A vaz SZAKASZA a 2026-09-10-i valtozas ota akkor is a DOM-ban all, ha ures
+   * (`data-vaz-ures="igen"`, `display: contents`, helyet nem foglal) -- az a
+   * meresi felulet, es szandekosan marad. Amit itt allitunk: a szakaszban
+   * NINCS sem cimke, sem opcio-gomb, es a rekesz uresnek van jelolve.
+   *
+   * Ez a mai adaton MINDEN lap: 1492 termekbol 1492 egy ertekes.
+   */
+  it("egy értékkel a választó blokk nem jelenik meg", () => {
     render(
       <VasarlasProvider product={TERMEK}>
         <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="valaszto"]')
+
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+    expect(doboz?.querySelector('[data-testid="opcio-cimke"]')).toBeNull()
+    expect(doboz?.querySelector('[data-testid="option-button"]')).toBeNull()
+  })
+
+  /**
+   * KET ERTEKKEL OTT VAN, ES A CIMKE AZ OPCIO-CSOPORT SAJAT NEVE.
+   *
+   * A regi alak `{title} választása` volt; a terv a csoport NEVET mutatja,
+   * toldalek nelkul. A fixtura csoportja SZANDEKOSAN "Méret", nem "Kivitel" --
+   * egy "Kivitel" nevu fixturan nem latszana, hogy a nev valoban a csoportbol
+   * jon.
+   *
+   * A szoveget `textContent`-tel nezzuk, nem reszszo-keresessel: epitett
+   * HTML-ben a React hidratacios jelolot ekelhet a szo koze
+   * (`Kivitel<!-- --> valasztasa`), es akkor egy substring-kereses nem talalja
+   * meg azt, ami ott van.
+   */
+  it("két értékkel a blokk ott van, és a címke a csoport neve", () => {
+    render(
+      <VasarlasProvider product={TERMEK_KET_OPCIOS}>
+        <LapVaz tartalom={vazTartalom(TERMEK_KET_OPCIOS, true)} />
+      </VasarlasProvider>,
+    )
+
+    const doboz = document.querySelector('[data-vaz-szakasz="valaszto"]')
+    const cimke = doboz?.querySelector('[data-testid="opcio-cimke"]')
+
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(cimke?.textContent).toBe("Méret")
+    expect(cimke?.textContent).not.toContain("választása")
+    expect(
+      doboz?.querySelectorAll('[data-testid="option-button"]'),
+    ).toHaveLength(2)
+  })
+
+  it("az ár, a választó és a mennyiség külön dobozba kerül", () => {
+    /*
+     * KET OPCIOS FIXTURA, 2026-09-10 ota: egy ertekkel a valaszto rekesz
+     * SZANDEKOSAN ures (nincs mibol valasztani), es akkor ez az allitas nem a
+     * doboz-szetvalasztast merne, hanem az uressegét.
+     */
+    render(
+      <VasarlasProvider product={TERMEK_KET_OPCIOS}>
+        <LapVaz tartalom={vazTartalom(TERMEK_KET_OPCIOS, true)} />
       </VasarlasProvider>,
     )
 

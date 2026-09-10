@@ -2,6 +2,7 @@
 
 import { Button } from "@modules/common/components/ui"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
+import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
 
 import ProductPrice from "../product-price"
 import StockState from "../stock-state"
@@ -218,7 +219,12 @@ export function ValasztoDoboz() {
   const a = useVasarlas()
   if (!a) return null
   if (a.uniquePiece) return null
-  if ((a.product.options?.length ?? 0) === 0) return null
+  /*
+   * EGY ERTEKKEL NINCS MIBOL VALASZTANI, es ezt a KOZOS predikatum mondja meg
+   * -- ugyanaz, amit a vaz slot-feltetele hiv. Ha a ket hely kulon szamolna,
+   * a vaz TELINEK jelolne egy uresen rajzolo dobozt.
+   */
+  if (!vanValaszthatoOpcio(a.product)) return null
 
   return (
     <div className="flex flex-col gap-y-4">
