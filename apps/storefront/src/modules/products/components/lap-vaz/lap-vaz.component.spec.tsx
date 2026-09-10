@@ -1697,17 +1697,41 @@ describe("az üres szakasz a vevői lapon", () => {
   })
 
   /**
-   * ES A MASIK ESET, KIMONDVA: A TELJESEN URES CSOPORT NYOMTALANUL ELTUNIK.
+   * A TELJESEN URES CSOPORTBOL A BUROK TUNIK EL, A SZAKASZOK NEM.
    *
-   * Ez nem mellekhatas, hanem a dontes masik fele. Ha csak a dobozt rejtenenk
-   * el, a csoport burka `gap`-et vinne el (kozos panelnel egy KERETET is), es
-   * a lapon indoklas nelkuli hezag maradna. Amit cserebe elvesztunk: egy
-   * teljesen ures csoportban nincs mit merni -- ott a hianya maga a jel.
+   * === EZ AZ ALLITAS AZ ELLENKEZOJET MONDTA, ES A MERES IRATTA AT ===
+   *
+   * Eloszor az allt itt, hogy tartalom nelkul EGYETLEN szakasz sem marad. Az
+   * volt a kod elso alakja, es nautilus a kiszolgalt lapon mérte vissza, hogy
+   * negy ures szakasz eltunt a fából, egy pedig (`valaszto`) ottmaradt. A
+   * kulonbseg nem szandekos volt: a `valaszto` olyan csoportban all, amiben
+   * van tartalom.
+   *
+   * Amit az eltunes elvett: azokrol a szakaszokrol a kovetkezo mero nem tud
+   * allitani semmit -- ugy nez ki, mintha nem is leteznenek.
+   *
+   * A burok elhagyasahoz nem kell a szakaszokat is elhagyni: egy
+   * `display: contents` szakasz akkor sem layout-elem, ha kozvetlenul a kulso
+   * oszlop gyereke. EZ az allitas ket kulonbozo dolgot mer egyszerre, es
+   * pontosan ezert all igy: a BUROK nincs, a SZAKASZ van.
    */
-  it("tartalom nélkül egyetlen szakasz sem marad a lapon", () => {
+  it("tartalom nélkül a burkok tűnnek el, a szakaszok maradnak", () => {
     render(<LapVaz jelzesek={false} />)
 
-    expect(document.querySelectorAll("[data-vaz-szakasz]")).toHaveLength(0)
+    /* Burok NINCS: a csoport-burkok `div`-ek, a szakaszok `section`-ok. */
+    expect(document.querySelectorAll("div[data-vaz-oszlop]")).toHaveLength(0)
+
+    /* Szakasz VAN, es mind rejtett. */
+    const szakaszok = Array.from(
+      document.querySelectorAll("[data-vaz-szakasz]"),
+    )
+    expect(szakaszok.length).toBeGreaterThan(10)
+    for (const e of szakaszok) {
+      expect(e.getAttribute("data-vaz-rejtve")).toBe("igen")
+      expect(e.getAttribute("data-vaz-ures")).toBe("igen")
+      /* Burok nelkul a szakasz maga hordozza, melyik hasabba tartozna. */
+      expect(e.getAttribute("data-vaz-oszlop")).toBeTruthy()
+    }
   })
 
   /**
