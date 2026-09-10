@@ -622,24 +622,39 @@ export function vazTartalom(
   /**
    * A FOTO SLOT: ATADHATO, ES A MURENA LAPJAN ATADANDO.
    *
-   * A vaz sajat `Foto` komponense EGY kepet rendereli, es semmit nem tud arrol,
-   * mi TAPAD a kephez. Az elo allat lapjan viszont ket dolog tapad hozza, es
-   * egyik sincs a `ProductActions`-ben:
+   * A SZERZODES UGYANAZ, MINT A VASARLASI RESZNEL ES A HASONLO LISTANAL: ha a
+   * hivo ATAD tartalmat, azt tesszuk a helyere; ha nem, a vaz sajat `Foto`
+   * komponense all ott.
    *
-   *   UniquePieceBadge     az ELSO kepre, a galeria kontenereben (abszolut)
-   *   UniquePiecePromise   a galeria ALATT
+   * === AMI EBBOL AZ INDOKLASBOL 2026-09-10-EN MEGSZUNT ===
    *
-   * Ha az a lap atallna a vazra ugy, hogy a `Foto` marad, mind a ketto
-   * ELTUNNE -- pontosan az a regresszio, ami a fulekkel ma mar egyszer
-   * megtortent (a vaz megkerulte a `product-info`-t, es a #50 munkaja holt kod
-   * lett a muszaki lapokon).
+   * Itt korabban az allt, hogy a vaz sajat `Foto`-ja EGY kepet rendereli es
+   * semmit nem tud arrol, mi tapad a kephez -- tehat egy vazra allitott elo
+   * allat lapon a `UniquePieceBadge` es a `UniquePiecePromise` ELTUNNE.
    *
-   * Ezert ugyanaz a szerzodes, mint a vasarlasi resznel es a hasonlo listanal:
-   * ha a hivo ATAD tartalmat, azt tesszuk a helyere; ha nem, a vaz sajat
-   * egykepes valtozata all ott. A vaznak nincs forrasa eldonteni, mi tapad a
-   * kephez -- a lapot ossserako oldal tudja.
+   * EGYIK FELE SEM ALL MAR:
    *
-   * (murena kerese, 2026-09-07, msg_id 14373; az erve az oveé, es helyes.)
+   *   a jelveny es az igeret   a #356 ota a `Foto`-n IS ott all, ugyanazokkal a
+   *                            komponensekkel (lasd a `Foto` folotti blokkot)
+   *   "egy kepet rendereli"    a `KepBlokk` a TELJES keszletet viszi,
+   *                            bolyegkep-sorral es kivalasztas-allapottal
+   *
+   * A mondatot azert irom at es nem torlom, mert az INDOKLASA volt a
+   * `galeriatAdunkAt()` kapunak. Egy komment, ami egy mar bezart rest ir le
+   * nyitottkent, rosszabb a semminel: itt EPP AZ ELLEN tanacsolna, amit a
+   * kartya celoz (az elo allat lapjanak atallitasa a vazra).
+   *
+   * === AMI VISZONT VALTOZATLANUL ALL, ES EZ MA A KAPU EGYETLEN INDOKA ===
+   *
+   * A ket kep-ut MAS MEGJELENITOVEL dolgozik: a galeria `next/image`-dzsel, a
+   * `KepBlokk` sima `<img>`-gel. Az egyesitesuk azt jelentene, hogy az egyik
+   * oldal kep-megjelenitese megvaltozik, es azt NEM ez a kor donti el. A
+   * reszletes indok ott all, ahol a ket megjelenito lakik:
+   * `image-gallery/index.tsx` es `image-gallery/kep-blokk.tsx`.
+   *
+   * (a szerzodes murena kerese, 2026-09-07, msg_id 14373; az erve az oveé, es
+   * helyes. A fenti hatokor-pontositas nautilus, 2026-09-10 -- a sajat #356-om
+   * tette az eredeti indoklas egyik felet elavultta.)
    */
   if (fotoResz) {
     tartalom.foto = fotoResz
