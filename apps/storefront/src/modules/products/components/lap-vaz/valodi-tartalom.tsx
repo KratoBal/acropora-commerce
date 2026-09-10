@@ -26,6 +26,9 @@ import {
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
 import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
 import { KepBlokk } from "../image-gallery/kep-blokk"
+import UniquePieceBadge, {
+  UniquePiecePromise,
+} from "@modules/products/components/unique-piece-badge"
 import { vilagaTermeknek } from "./vilag-valto"
 
 /**
@@ -316,7 +319,39 @@ export const Foto = ({ termek }: { termek: Termek }) => {
       ? [{ id: "bolyeg", url: bolyeg }, ...kepek]
       : kepek
 
-  return <KepBlokk kepek={teljes} alt={termek.title ?? ""} />
+  /*
+   * A JELVENY ES AZ IGERET A VAZ SAJAT FOTOJAN IS OTT ALL -- ES EZ EGY CSENDES
+   * RES LEZARASA, NEM UJ KEPESSEG.
+   *
+   * A ketto eddig KIZAROLAG az `ImageGallery`-ben allt, azt pedig csak a SOTET
+   * vilag kapja meg (`galeriatAdunkAt()`). Egy VILAGOS vilagu egyedi darab
+   * tehat elvesztette mind a kettot -- es a hianya NEM HIBAZIK: egyszeruen nem
+   * lenne ott a jelveny es az igeret.
+   *
+   * MA NEM FORDUL ELO, es ezt merve mondom: a stage katalogus 1492 termekebol
+   * HAROM visel `unique_piece` jelzot, es mind a harom Acropora korall, tehat
+   * sotet vilagu (merve 2026-09-10). A res tehat ma nulla lapot erint.
+   *
+   * AZERT ZARJUK LE MEGIS, MERT A HIANYA CSENDES. Egy kezi ellenorzes soha nem
+   * talalna meg: senki nem fog vilagos vilagu egyedi darabot keresni. Az egyik
+   * elso ilyen termek (egy egyedi technikai darab, egy WYSIWYG-en kivuli
+   * peldany) ugy kerulne ki, hogy semmi nem szol.
+   *
+   * UGYANAZOKAT A KOMPONENSEKET hasznalja, mint a galeria -- nem masolat. A
+   * HELY kulonbozik (ott galeria-konteneren, itt a kep-blokkon), a SZABALY
+   * (egyedi darab -> jelveny plusz igeret) egy helyen all.
+   */
+  const egyedi = uniquePieceOf(termek.metadata)
+
+  return (
+    <>
+      <div className="relative">
+        {egyedi && <UniquePieceBadge />}
+        <KepBlokk kepek={teljes} alt={termek.title ?? ""} />
+      </div>
+      {egyedi && <UniquePiecePromise className="mt-1" />}
+    </>
+  )
 }
 
 /**

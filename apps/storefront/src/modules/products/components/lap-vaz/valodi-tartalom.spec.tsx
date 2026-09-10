@@ -97,6 +97,26 @@ const TERMEK = {
  * A csoport neve SZANDEKOSAN nem "Kivitel": a cimke az opcio-csoport sajat
  * nevebol jon, es egy "Kivitel" nevu fixturan ez nem latszana.
  */
+/**
+ * VILAGOS VILAGU EGYEDI DARAB -- ES EZ A FIXTURA A MAI ADATBAN NEM LETEZIK.
+ *
+ * A stage katalogus harom `unique_piece` termeke MIND Acropora korall, tehat
+ * mind SOTET vilagu (merve 2026-09-10, 1492 termek vegiglapozva). A vilagos
+ * vilagu egyedi darab tehat ma NULLA lapot erint.
+ *
+ * Ettol meg kell a fixtura: a jelveny es az igeret eddig KIZAROLAG a sotet
+ * vilag galeriajaban allt, es egy vilagos vilagu egyedi darab CSENDBEN
+ * elvesztette volna mind a kettot -- nem hibazik semmi, egyszeruen nincs ott.
+ * Egy kezi ellenorzes ezt soha nem talalna meg.
+ */
+const TERMEK_VILAGOS_EGYEDI = {
+  ...(TERMEK as object),
+  metadata: {
+    ...(TERMEK as { metadata: Record<string, unknown> }).metadata,
+    unique_piece: "true",
+  },
+} as never
+
 const TERMEK_KET_OPCIOS = {
   ...(TERMEK as object),
   variants: [
@@ -1030,6 +1050,41 @@ describe("a váz valódi tartalma", () => {
     expect(
       doboz?.querySelectorAll('[data-testid="option-button"]'),
     ).toHaveLength(2)
+  })
+
+  /**
+   * A CSENDES RES: VILAGOS VILAGU EGYEDI DARAB.
+   *
+   * A `TERMEK` kategoriai technikaiak, tehat a vilag VILAGOS -- a vaz a sajat
+   * `Foto` komponenset rakja a helyere, nem a galeriat. A jelveny es az igeret
+   * eddig csak a galeriaban allt.
+   */
+  it("világos világú egyedi darabon is ott a jelvény és az ígéret", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK_VILAGOS_EGYEDI)} />)
+
+    const foto = document.querySelector('[data-vaz-szakasz="foto"]')
+
+    expect(
+      foto?.querySelector('[data-testid="unique-piece-badge"]'),
+    ).not.toBeNull()
+    expect(
+      foto?.querySelector('[data-testid="unique-piece-promise"]'),
+    ).not.toBeNull()
+  })
+
+  /**
+   * A TAGADO PAR, ES ENELKUL A FENTI ALLITAS A DOBOZ LETEZESET MERNE: egy
+   * valtozat, ami MINDEN termekre kiteszi a jelvenyt, ugyanugy zold lenne.
+   */
+  it("nem egyedi darabon nincs se jelvény, se ígéret", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const foto = document.querySelector('[data-vaz-szakasz="foto"]')
+
+    expect(foto?.querySelector('[data-testid="unique-piece-badge"]')).toBeNull()
+    expect(
+      foto?.querySelector('[data-testid="unique-piece-promise"]'),
+    ).toBeNull()
   })
 
   it("az ár, a választó és a mennyiség külön dobozba kerül", () => {
