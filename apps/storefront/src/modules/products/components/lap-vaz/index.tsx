@@ -518,6 +518,24 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
  */
 export const RAGADOS_SAV_KULCS = "ragados-sav"
 
+/**
+ * MIKOR URES EGY SZAKASZ -- ES MIERT EGY HELYEN ALL A SZABALY.
+ *
+ * A JSX gyerek-atadasnal a `children` akkor is letezhet, ha nincs benne semmi
+ * (ures kifejezes, `undefined` a terkepbol). Ezert nem a MEZO meglétét nezzuk,
+ * hanem hogy van-e MIT kirajzolni.
+ *
+ * KET HELY OLVASSA: a doboz maga, es a `LapVaz`, ami egy egesz CSOPORTROL
+ * dönti el, hogy kimarad-e. Ha a ket helyen ket masolat allna, az egyik atirasa
+ * a masikat csendben elvagna: a csoport kimaradna, a doboz meg varakozo
+ * szoveget rajzolna, vagy forditva.
+ */
+export const uresTartalom = (children: React.ReactNode): boolean =>
+  children === undefined ||
+  children === null ||
+  children === false ||
+  (Array.isArray(children) && children.length === 0)
+
 type VazDobozProps = {
   szakasz: VazSzakasz
   children?: React.ReactNode
@@ -529,6 +547,14 @@ type VazDobozProps = {
    * belso margo kerul at a kozos panelre -- kulonben ket keret allna egymasban.
    */
   keretNelkul?: boolean
+  /**
+   * A FEJLESZTOI JELZESEK (szaggatott keret + varakozo szoveg) LATSZANAK-E.
+   *
+   * Alapertelmezese `true`, mert ez belso komponens: aki kozvetlenul hasznalja
+   * (teszt, tortenet), a jelzeses alakot varja. A vevoi lapon a `LapVaz` adja
+   * at a sajat erteket.
+   */
+  jelzesek?: boolean
 }
 
 /**
@@ -542,17 +568,53 @@ export const VazDoboz = ({
   szakasz,
   children,
   keretNelkul = false,
+  jelzesek = true,
 }: VazDobozProps) => {
+  const uresE = uresTartalom(children)
+
   /**
-   * A JSX gyerek-atadasnal a `children` akkor is letezhet, ha nincs benne semmi
-   * (ures kifejezes, `undefined` a terkepbol). Ezert nem a MEZO meglétét
-   * nezzuk, hanem hogy van-e MIT kirajzolni.
+   * AZ URES SZAKASZ A VEVO ELOTT NEM ALL OTT (acrobot dontese, 2026-09-10).
+   *
+   * === MIERT NEM TORLOM A SZAKASZT ===
+   *
+   * A `<section>` marad, a jelolőivel egyutt (`data-vaz-szakasz`,
+   * `data-vaz-ures`, `#vaz-<kulcs>` horgony): ezek MERESI feluletek, es a
+   * vevonek egyikuk sem latszik. Ami eltunik, az a szaggatott keret, a belso
+   * margo, a cim es a varakozo szoveg.
+   *
+   * === MIERT `contents`, ES NEM NULLA MAGASSAG ===
+   *
+   * Egy ures, nulla magassagu doboz a racsban ATTOL MEG elvinne egy koznyi
+   * helyet (`gap`), es a lapon indoklas nelkuli lyuk maradna. A
+   * `display: contents` doboz a DOM-ban all, a layoutban nem -- a jelolőket
+   * megtartja, helyet nem foglal.
+   *
+   * === MIERT NEM KOZVETLENUL A `NODE_ENV` DONTI EL ===
+   *
+   * Vitestben a `NODE_ENV` erteke `test`, tehat egy allitas, ami erre epul, a
+   * KORNYEZETET merne, nem a viselkedest. Igy viszont a teszt mind a ket
+   * allast at tudja adni, es egy fajlban all a tagadas es az ismert pozitiv
+   * kontroll.
+   *
+   * A MERES, AMI ELOHOZTA (nautilus, 2026-09-10): a korall-lapon a fulek
+   * doboza ures, es a benne allo vesszos lista ("Gondozas, Leiras, ...") a
+   * vevo szemeben ful-sornak latszik, amire kattintani probal. Nem szelso
+   * eset: a stage katalogus 1492 sorabol 265 termeknek nincs leirasa, es
+   * mind a harom egyedi darab ebben a 265-ben van.
    */
-  const uresE =
-    children === undefined ||
-    children === null ||
-    children === false ||
-    (Array.isArray(children) && children.length === 0)
+  const rejtve = uresE && !jelzesek
+
+  if (rejtve) {
+    return (
+      <section
+        id={`vaz-${szakasz.kulcs}`}
+        data-vaz-szakasz={szakasz.kulcs}
+        data-vaz-ures="igen"
+        data-vaz-rejtve="igen"
+        className="contents"
+      />
+    )
+  }
 
   return (
     <section
@@ -1092,6 +1154,20 @@ type LapVazProps = {
    * hol all a termek -- es a ketto eltevedese nem hibazna, csak mast mutatna.
    */
   morzsa?: React.ReactNode
+  /**
+   * A FEJLESZTOI JELZESEK LATSZANAK-E AZ URES SZAKASZOKON.
+   *
+   * Alapertelmezesben a fejlesztoi futasban IGEN, epitett lapon NEM. A vevo
+   * elott a szaggatott keret es a varakozo szoveg nem informacio, hanem zaj:
+   * a "Gondozas, Leiras, Vizparameterek" vesszos lista ful-sornak latszik,
+   * amire kattintani probal (nautilus merese, 2026-09-10).
+   *
+   * A HIVO FELULIRHATJA, es a teszt EPPEN EZERT tud mind a ket allast merni.
+   * Ha a kapcsolo kozvetlenul a `NODE_ENV`-et olvasna, egy allitas a
+   * kornyezetet merne, nem a viselkedest -- vitestben a `NODE_ENV` erteke
+   * `test`, tehat a jelzeses ag allna, es a tagadas soha nem sulne el.
+   */
+  jelzesek?: boolean
 }
 
 /**
@@ -1321,6 +1397,7 @@ const LapVaz = ({
   vilag = "vilagos",
   egyediPeldany = false,
   morzsa,
+  jelzesek = process.env.NODE_ENV !== "production",
 }: LapVazProps) => {
   const osszesSzakasz = szakaszokVilagra(vilag, egyediPeldany)
   const savSzakasz = osszesSzakasz.find(
@@ -1429,6 +1506,28 @@ const LapVaz = ({
             const elso = csoport[0]
             const kozos = csoport.length > 1 || Boolean(elso.csoport)
 
+            /**
+             * A TELJESEN URES CSOPORT KI IS MARAD -- ES EZ NEM UGYANAZ, MINT A
+             * DOBOZ ELREJTESE.
+             *
+             * A doboz `display: contents` alakja a SZAKASZT veszi ki a
+             * layoutbol. A csoport BURKA viszont a kulso oszlop kozvetlen
+             * gyereke, tehat akkor is elvinne egy `gap`-nyi helyet (es kozos
+             * panelnel egy KERETET), ha minden gyereke lathatatlan. Egy ures
+             * keretes panel a lapon rosszabb, mint a varakozo szoveg volt: az
+             * legalabb megmondta, mi jon oda.
+             *
+             * Ezert itt a csoport egeszet hagyjuk ki, es nem a dobozokat
+             * rejtjuk el egyenkent.
+             */
+            const mindRejtve =
+              !jelzesek &&
+              csoport.every((szakasz) => uresTartalom(tartalom[szakasz.kulcs]))
+
+            if (mindRejtve) {
+              return null
+            }
+
             return (
               <div
                 key={elso.kulcs}
@@ -1519,6 +1618,7 @@ const LapVaz = ({
                     key={szakasz.kulcs}
                     szakasz={szakasz}
                     keretNelkul={kozos || Boolean(szakasz.keretNelkul)}
+                    jelzesek={jelzesek}
                   >
                     {tartalom[szakasz.kulcs]}
                   </VazDoboz>
@@ -1630,7 +1730,14 @@ const LapVaz = ({
         `sticky bottom-0` osztaly ma is, ezutan is HATASTALAN. Ez kulon tetel,
         es kulon jelentem.
       */}
-      {savSzakasz ? (
+      {/*
+        A SAV BURKA IS KIMARAD, HA A SAV URES ES A JELZESEK KI VANNAK KAPCSOLVA.
+
+        A burok sajat FELSO MARGOT hoz (24 mobilon, 56 asztalin). Ha csak a
+        benne allo dobozt rejtenenk el, a lap aljan egy indoklas nelkuli hezag
+        maradna -- ugyanaz a hiba, mint a teljesen ures csoportnal, csak lentebb.
+      */}
+      {savSzakasz && (jelzesek || !uresTartalom(tartalom[savSzakasz.kulcs])) ? (
         <div
           /*
             A SZELESSEG-VALTOZAS CSAK MOBILON SZOL, ES EZ NEM OVATOSSAG.
@@ -1713,6 +1820,7 @@ const LapVaz = ({
               egyetlen jel, hogy ott meg nincs semmi -- azt megtartjuk.
             */
             keretNelkul={Boolean(tartalom[savSzakasz.kulcs])}
+            jelzesek={jelzesek}
           >
             {tartalom[savSzakasz.kulcs]}
           </VazDoboz>
