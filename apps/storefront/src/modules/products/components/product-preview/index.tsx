@@ -74,11 +74,59 @@ export default async function ProductPreview({
           />
           {egyediPeldany && <UniquePieceBadge />}
         </div>
-        <div className="flex txt-compact-medium mt-4 justify-between">
-          <Text className="text-ui-fg-subtle" data-testid="product-title">
+        {/*
+          A CIM ES AZ AR EGYMAS ALATT ALL, NEM EGY SORBAN.
+
+          === A MERT HIBA ===
+
+          A sor `flex justify-between` volt, tehat a cim es az ar EGY sorba
+          keruelt. A kartya 150 pixel szeles; egy hosszabb nev mellett a sor
+          TULCSORDUL. Merve a kiszolgalt lapon, 390 pixeles nezetben, negy
+          termeklap hasonlo-widgetjen (osszesen 34 kartya):
+
+              acropora-austea-tricolor            1 / 2   tulcsordul
+              ecotech-...-rms-track-lampatarto    1 / 12
+              nyos-quantum-220-eq                 0 / 8
+              aquaforest-af-vitality-10ml         0 / 12
+
+          A legrosszabb eset: "Acropora abrolhosensis ULTRA" -- a sor 163 pixel
+          egy 150 pixeles kartyan.
+
+          A SAJAT SZAMOM 2/34, ES NEM A JAVASLATE (8/12). A javaslat picassotol
+          jott, es a kulonbseget nem magyarazom meg: mas lapokon mertek, es a
+          widget TARTALMA ma valtozott (a hasonlo-lista tartaleka ota a
+          kategoria-tarsak allnak benne, mas nevekkel). A jelenseg VALODI, a
+          gyakorisaga nem az, amit a javaslat mond.
+
+          === MIERT TORDELES, ES NEM CSONKOLAS ===
+
+          A minta MAR LETEZIK a kodban: a kategoria-racs kartyaja
+          (`category-products.tsx`) `mt-4 space-y-2` alatt egymas ALA teszi a
+          nevet es az arat, sajat tokenekkel. Ez tehat nem uj minta, hanem a
+          mar bevalt sajat alak ugyanarra a feladatra.
+
+          Csonkolas eseten a nev vege VESZNE EL -- egy hasonlo-widgetben epp a
+          megkulonbozteto resz ("ULTRA", "3 fejes frag") all a vegen.
+
+          === AMI VALTOZIK, ES AMI NEM ===
+
+          Minden kartya EGYFORMAN magasabb lesz (a cim es az ar kulon sorban),
+          a szelesseguk valtozatlan (150 pixel). A nyers Medusa-osztalyok
+          (`txt-compact-medium`, `text-ui-fg-subtle`) helyere a terv tokenjei
+          kerulnek -- ugyanaz a csere, mint a fuleknel.
+        */}
+        <div className="mt-4 space-y-1">
+          <Text
+            className="text-sm font-medium"
+            style={{ color: "var(--terv-szoveg)" }}
+            data-testid="product-title"
+          >
             {product.title}
           </Text>
-          <div className="flex items-center gap-x-2">
+          <div
+            className="flex items-center gap-x-2 text-sm"
+            style={{ color: "var(--terv-szoveg-halvany)" }}
+          >
             {cheapestPrice && <PreviewPrice price={cheapestPrice} />}
           </div>
         </div>
