@@ -278,7 +278,21 @@ describe("a morzsamenü a tervlap alakját veszi fel", () => {
     const szoveg = screen.getByTestId("morzsamenu-lista").textContent ?? ""
 
     expect(szoveg.trim().startsWith("/")).toBe(false)
-    expect(szoveg).toContain("A-1042")
+
+    /*
+      ISMERT POZITIV KONTROLL: a sor NEM URES. Enelkul a fenti tagadast egy ures
+      lista is kielegitene.
+
+      ITT KORABBAN `A-1042` ALLT, ES A VALTOZAS EZT MOZDITOTTA EL -- nem hiba, hanem
+      a `vilagaTermeknek` kovetkezmenye: kategoria nelkul a fuggveny "vilagos"-t ad
+      (`return eloAllat ? "sotet" : "vilagos"`), es a VILAGOS lapon a morzsamenu vege
+      a NEV, a cikkszam pedig a cim fole kerul (`vaz-eyebrow`).
+
+      A cikkszam tehat nem tunik el a lapról, csak ez a komponens-teszt nem latja:
+      kizarolag a morzsamenut rendereli. A teszt SZANDEKA (nincs bevezeto elvalaszto)
+      valtozatlan; a kontroll erteke igazodott ahhoz, ami a sorban all.
+    */
+    expect(szoveg).toContain("Acropora tenuis")
   })
 
   /**

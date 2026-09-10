@@ -2,6 +2,7 @@ import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
+import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 
 type Category = Pick<
   HttpTypes.StoreProductCategory,
@@ -205,8 +206,36 @@ export default function ProductBreadcrumb({
             egy felesleges karakterrel indulna.
           */}
           {path.length > 0 && <span aria-hidden="true">/</span>}
+          {/*
+            A SOR VEGE VILAGONKENT MAS, ES EZ A TERVBOL JON -- NEM EGY REGI DONTES
+            FELULIRASA.
+
+            Merve a tervfajlon (2026-09-10, ket agens egymastol fuggetlenul):
+
+                2a (sotet)    KORALLOK / WYSIWYG / SPS / A-1042             a vegen CIKKSZAM
+                1b (vilagos)  TECHNIKA / VILÁGÍTÁS / LED / REEF LED 160 PRO  a vegen NEV
+
+            A #274 dontese (a sor vege a cikkszam) a SOTET lapra szolt, es ott ma is all.
+            A vilagos lapon a terv mast mond, es ott a cikkszam a cim FOLE kerul, eyebrow
+            alakban (`vaz-eyebrow`). Vagyis nem meressel irunk felul egy dontest, hanem egy
+            EGY VILAGRA szolo dontest nem terjesztunk ki a masikra.
+
+            ES A KETTO EGYUTT JAR: eyebrow nelkul a vilagos lap ELVESZTENE a cikkszamot,
+            a sor vegenek atirasa nelkul pedig KETSZER mutatna. Egyik allapotban sem
+            akarunk megallni, ezert megy a ket valtozas egy PR-ben.
+
+            AMIT NE OLVASS KI EBBOL: hogy a terv "pontosan egyszer" mutatja a cikkszamot.
+            A soteten KETSZER all -- a sor vegen ES az ar-blokkban ("Bruttó ár · Cikkszám
+            A-1042 · Egyedi példány, nem pótolható"). Ami vilagonkent kulonbozik, az a
+            MORZSAMENU VEGE, nem a cikkszam darabszama. (acrobot pontositasa, 2026-09-10.)
+
+            A CIKKSZAM-TARTALEK A SOTET AGON MEGMARAD: a teszt bolton merve nem minden
+            valtozaton all `sku`, es egy URES utolso elem rosszabb lenne a hosszunal.
+          */}
           <span className="max-w-48 truncate">
-            {cikkszam(product) ?? product.title}
+            {vilagaTermeknek(product, categories) === "vilagos"
+              ? product.title
+              : (cikkszam(product) ?? product.title)}
           </span>
         </li>
       </ol>

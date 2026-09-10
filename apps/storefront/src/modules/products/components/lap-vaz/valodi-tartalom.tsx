@@ -211,10 +211,61 @@ export const Cimsor = ({
   kategoriak?: BesorolasKategoria[]
 }) => {
   const lanc = besorolasLanc(termek, kategoriak)
+  const sku = cikkszam(termek)
+  const vilagosVilag = vilagaTermeknek(termek, kategoriak) === "vilagos"
 
   return (
     /* A HEZAG A TERVBOL: a cim `margin-top` erteke 8 px mobilon, 10 asztalon. */
     <div className="flex flex-col gap-2 lg:gap-2.5">
+      {/*
+        A CIKKSZAM-SOR A CIM FOLOTT, ES CSAK A VILAGOS VILAGBAN.
+
+        === A TERV, MERVE, NEM ATVEVE ===
+
+        A tervfajl 1b lapjan a cim ("Reef LED 160 Pro", 29 px) FOLOTT 26 pixellel KET
+        elem all, azonos tipografiaval (merve 2026-09-10, a tervfajl rendereleseből):
+
+            "CIKKSZÁM RL160P"    11 px, 400-as suly, betukoz 1.32 px
+            "AQUALIGHT"          ugyanaz
+
+        A 2a (sotet) lapon EZ NINCS: ott a cim folott a morzsamenu all (11 px, betukoz
+        0.88 px). Ezert szol ez a sor a VILAGOS vilagra, es ezert nem general egy
+        vilag-fuggetlen eyebrow-t.
+
+        === A MASODIK FEL SZANDEKOSAN HIANYZIK ===
+
+        A terv MARKAT is mutat ("AQUALIGHT"). Az adat NINCS MEG: a stage bolt 1492
+        termekebol NULLA visel marka-mezot (a metadata kulcsai kizarolag `unas_*` es
+        `unique_piece`). A cikkszam viszont 1492 / 1492 termeken all -- ezert megy ki
+        a fele, es ezert nem talalom ki a masikat.
+
+        === A SZIN A LEGKOZELEBBI TOKEN, UJ TOKEN NELKUL ===
+
+            terv          oklch(0.55 0.01 250)
+            a mi tokenunk `--terv-szoveg-halvany`, vilagosban oklch(0.5 0.012 60)
+
+        Az elteres a vilagossagban 0.05; a telitettseg gyakorlatilag azonos, es ezen a
+        telitettsegen a szinezet-kulonbseg (250 kontra 60) nem lathato. Uj tokent
+        felvenni ugyanaz a hiba lenne, amit a rez-tokeneknel mar egyszer elkovettunk:
+        a kovetkezo olvaso nem tudna, melyik a "helyes" halvany.
+
+        A HEZAGOT nem allitom kulon: a `gap-2 lg:gap-2.5` a tervbol jon, es a 26 pixeles
+        y-kulonbseg ebbol meg a 11 pixeles sor magassagabol all ossze.
+      */}
+      {vilagosVilag && sku && (
+        <p
+          className="uppercase"
+          style={{
+            fontSize: "11px",
+            fontWeight: 400,
+            letterSpacing: "1.32px",
+            color: "var(--terv-szoveg-halvany)",
+          }}
+          data-testid="vaz-eyebrow"
+        >
+          Cikkszám {sku}
+        </p>
+      )}
       {/*
         A BESOROLAS SORA REZ SZINU, ES A LANCOT MUTATJA, NEM EGY NEVET.
 
