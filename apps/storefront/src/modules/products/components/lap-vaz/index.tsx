@@ -1372,40 +1372,68 @@ export const szegmensek = (csoportok: VazSzakasz[][]): VazSzegmens[] => {
  *
  * === MIERT `contents` ES `order`, ES MIERT NEM MASODIK JELOLO ===
  *
- * A ket halom (`vaz-bal-halom`, `vaz-jobb-halom`) mobilon `display: contents`
- * lesz, tehat a dobozaik KOZVETLEN flex-elemekke valnak a kozos oszlopban --
- * igy lehet oket egymas koze rendezni. Egy masodik DOM-fa (kulon mobil jelolo)
- * ugyanezt adna, de KETSZER kellene karbantartani, es a ket alak elteveDESE nem
- * hibazna, csak mast mutatna.
+ * A ket halom (`vaz-bal-halom`, `vaz-jobb-halom`) ES a ketoszlopos futam burka
+ * mobilon `display: contents` lesz, tehat a dobozaik KOZVETLEN flex-elemekke
+ * valnak a kulso oszlopban -- igy lehet oket egymas koze rendezni. Egy masodik
+ * DOM-fa (kulon mobil jelolo) ugyanezt adna, de KETSZER kellene karbantartani,
+ * es a ket alak eltevedese nem hibazna, csak mast mutatna.
  *
  * A `contents` egy dolgot ELVESZ: a halmok sajat `gap` erteket. Mobilon ezert a
  * kozos oszlop `gap-4` erteke all minden szakasz kozott, egysegesen. Ez ma is
  * 16 pixel volt a halmok kozott, tehat a valtozas a halmokon BELULI 14 pixelt
  * viszi 16-ra.
  *
- * === AMI EBBOL MEG NEM A TERV, ES KIMONDOM ===
+ * === A CIMSOR IS BELEKERULT, ES EZ KETTOT VALTOZTAT (2026-09-10) ===
  *
- * A `cimsor` a tervben a foto ALATT all; nalunk marad felette, mert az egy
- * kulon, teljes szelessegu szegmens, nem ennek a racsnak a resze. A tervben az
- * eyebrow, a cim es az ar EGY blokkban all -- azt egy kesobbi lepes hozza.
+ * Elozoleg itt az allt, hogy a `cimsor` a tervben a foto ALATT van, nalunk
+ * viszont marad felette, mert kulon "teljes" szegmens, es hogy ezt "egy kesobbi
+ * lepes hozza". Ez a lepes.
+ *
+ * Ahhoz, hogy a cimsor a foto UTAN allhasson mobilon, a ketoszlopos futam
+ * burkanak is fel kellett oldodnia (`max-lg:contents`) -- kulonben a cimsor es
+ * a futam KET kulon rendezesi terben all, es a cimsort csak a futam EGESZE moge
+ * lehetne tenni, nem a foto moge.
+ *
+ * ES AMI EZZEL AZ ARBA KERULT: mostantol EGY rendezesi ter van, tehat egy
+ * hianyzo terkep-kulcs `order: 0`-t jelent, ami a lap TETEJERE viszi a
+ * szakaszt. Korabban ugyanez a hiba csak a futamon belul latszott volna, es a
+ * futam a helyen maradt volna. Ezert all mostantol orzo a terkep TELJESSEGERE,
+ * es arra is, hogy a racs pontosan EGY ketoszlopos futamot ad -- ket futam
+ * eseten a `contents` osszekeverne oket.
+ *
+ * AMI VISZONT MEG MINDIG NEM A TERV: a tervben az eyebrow, a cim, az alcim es
+ * az AR EGY blokkban all; nalunk a cimsor es az ar ket kulon szakasz, kozottuk
+ * a kulso oszlop 16 pixeles terkoze. A sorrend mostantol egyezik, a
+ * blokk-osszevonas nem tortent meg.
  *
  * Es a panelen BELUL a terv sorrendje ar -> valaszto -> info, nalunk
  * ar -> info -> valaszto. Ezt szandekosan nem mozditom: a negy szakasz egy
  * KOZOS panelt alkot, es a panel belso sorrendje az asztali lapon is latszik.
  */
-const MOBIL_SORREND: Record<string, string> = {
+export const MOBIL_SORREND: Record<string, string> = {
   /*
     A KULCSOK BETUSZERINT ALLNAK ITT, ES EZ NEM STILUS: a Tailwind a FORRAST
     olvassa, tehat egy osszefuzott (`max-lg:order-${n}`) osztalyt nem latna meg,
     es a szabaly SOHA nem kerulne bele a keszletbe. Nem hibazna: a sorrend
     egyszeruen nem valtozna.
+
+    ES MOSTANTOL A TERKEP TELJES, NEM VALOGATO -- ez a `contents` ara.
+
+    Amig a ketoszlopos futam SAJAT flex-doboz volt, egy hianyzo kulcs csak a
+    futamon BELUL jelentett `order: 0`-t, es a futam a helyen maradt. Mostantol
+    minden csoport a KULSO oszlop kozvetlen gyereke, tehat egy hianyzo kulcs a
+    lap TETEJERE viszi a szakaszt, a foto ele. Ezert all orzo a teljessegre
+    (`lap-vaz.component.spec`, "minden csoportnak van mobil sorrendje").
   */
   foto: "max-lg:order-1",
-  ar: "max-lg:order-2",
-  "meretezes-seged": "max-lg:order-3",
-  fulek: "max-lg:order-4",
-  csomagajanlat: "max-lg:order-5",
-  kerdezd: "max-lg:order-6",
+  cimsor: "max-lg:order-2",
+  ar: "max-lg:order-3",
+  "meretezes-seged": "max-lg:order-4",
+  fulek: "max-lg:order-5",
+  csomagajanlat: "max-lg:order-6",
+  kerdezd: "max-lg:order-7",
+  kiegeszitok: "max-lg:order-8",
+  hasonlo: "max-lg:order-9",
 }
 
 export const csoportokba = (szakaszok: VazSzakasz[]): VazSzakasz[][] =>
@@ -1708,7 +1736,7 @@ const LapVaz = ({
             ) : (
               <div
                 key={`oszlopos-${i}`}
-                className="lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:items-start max-lg:flex max-lg:flex-col max-lg:gap-4"
+                className="lg:grid lg:grid-cols-[minmax(0,1fr)_452px] lg:gap-x-[44px] lg:items-start max-lg:contents"
                 data-testid="vaz-ket-oszlop"
               >
                 <div

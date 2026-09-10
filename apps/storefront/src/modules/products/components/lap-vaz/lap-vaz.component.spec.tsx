@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from "vitest"
 import LapVaz, {
   csoportokba,
   ELO_ALLAT_LAP_SZAKASZAI,
+  MOBIL_SORREND,
   MUSZAKI_LAP_SZAKASZAI,
+  szegmensek,
 } from "./index"
 
 afterEach(cleanup)
@@ -938,15 +940,25 @@ describe("a törésponti elrendezés", () => {
    * Ezert ez a szakasz EGY allitast tesz hozza, nem harmat.
    */
   /**
-   * A TORESPONT ALATT EGY OSZLOP ALL -- ES EZ MOSTANTOL KET ELEMEN MULIK.
+   * A TORESPONT ALATT EGY OSZLOP ALL -- ES EZ MOSTANTOL A KULSO OSZLOPON MULIK.
    *
-   * A kulso taroló mar nem racs (a racs a ketoszlopos futamba kerult), tehat
-   * az egy-oszlopos viselkedes ket helyen dol el: a kulso taroló FUGGOLEGES
-   * halom, es a ketoszlopos futam a torespont ALATT szinten az.
+   * === AMI ITT VALTOZOTT, ES MIERT NEM CSAK ATSZAMOZAS (2026-09-10) ===
    *
-   * MIERT MER MIND A KETTORE: ha csak a kulsot nezne, a futam barmikor
-   * ketoszloposra valthatna mobilon anelkul, hogy barmi szolna -- es a mobil
-   * sorrend epp az, amit a mostani atalakitas VALTOZATLANUL hagyott.
+   * Ez az allitas eddig azt merte, hogy a ketoszlopos futam a torespont ALATT
+   * MAGA is fuggoleges halom (`max-lg:flex max-lg:flex-col`). Ma a futam burka
+   * mobilon FELOLDODIK (`max-lg:contents`), tehat nem is layout-doboz tobbe:
+   * az egy-oszlopos viselkedes teljes egeszeben a KULSO oszlope.
+   *
+   * A regi alak nem "elavult szam" volt, hanem egy MASIK mechanizmusrol szolt.
+   * Ezert nem szamot cserelek benne, hanem allitast.
+   *
+   * A MASODIK SOR EZERT MARAD: a futam a torespont alatt NE legyen racs. Egy
+   * `max-lg:grid` visszahozna a ket oszlopot mobilon.
+   *
+   * ES AMI SZANDEKOSAN NINCS ITT: a `max-lg:contents` allitasa. Azt a
+   * kovetkezo teszt meri, es a kalibracio megmutatta, miert nem szabad
+   * ketszer: az elso alakomban mind a ketto allitotta, es egyetlen rontas KET
+   * pirosat adott -- amitol ugy nez ki, mintha ket dolog romlott volna el.
    */
   it("a töréspont ALATT egy oszlop áll", () => {
     render(<LapVaz />)
@@ -954,15 +966,9 @@ describe("a törésponti elrendezés", () => {
     expect(vaz().className).toContain("flex-col")
     expect(vaz().className).not.toContain("grid-cols-2")
 
-    const futam = screen.getByTestId("vaz-ket-oszlop").className
-    /*
-      SZOHATARRA, ugyanabbol az okbol, mint feljebb: a `max-lg:flex-col`
-      tartalmazza a `max-lg:flex` szoveget, tehat a ket sor kozul az elso
-      eddig SEMMIT nem allitott a masodikon felul.
-    */
-    expect(futam).toMatch(/max-lg:flex(?![-\w])/)
-    expect(futam).toContain("max-lg:flex-col")
-    expect(futam).not.toContain("max-lg:grid")
+    expect(screen.getByTestId("vaz-ket-oszlop").className).not.toContain(
+      "max-lg:grid",
+    )
   })
 })
 
@@ -1573,6 +1579,17 @@ describe("a címblokk nem dobozban áll", () => {
   const csoportDoboza = (kulcs: string) =>
     doboz(kulcs).parentElement as HTMLElement
 
+  /**
+   * A RACSON BELULI CSOPORT-BUROK. A szukites nem kenyelmi: a ragados sav
+   * burka is `data-vaz-oszlop` jelet visel, de a racson KIVUL all (a kulso
+   * burokban), tehat mobil sorszam nem jar neki -- es egy szuretlen lekerdezes
+   * ezt hibanak latna.
+   */
+  const racsCsoportjai = () =>
+    screen
+      .getByTestId("muszaki-lap-vaz")
+      .querySelectorAll("[data-vaz-oszlop]:not([data-vaz-szakasz])")
+
   it("a két oszlop halma mobilon feloldódik", () => {
     render(<LapVaz />)
 
@@ -1584,6 +1601,39 @@ describe("a címblokk nem dobozban áll", () => {
   })
 
   /**
+   * ÉS A FUTAM BURKA IS. Enélkül a `cimsor` (ami külön "teljes" szegmens) és a
+   * futam KÉT külön rendezési térben áll: a címsort csak a futam EGÉSZE mögé
+   * lehetne tenni, a fotó mögé nem.
+   *
+   * === KALIBRÁCIÓ (2026-09-10), mind a három körben 118 teszt futott le ===
+   *
+   *   R1  a futam burkáról leveszem a `max-lg:contents`-et
+   *       1 piros: "a kétoszlopos futam burka mobilon feloldódik"
+   *   R2  a `cimsor` kulcs kiesik a `MOBIL_SORREND`-ből
+   *       4 piros: a címsor helye, a teljesség, az egyediség, és a
+   *       "nem szivárog át" -- MIND a hiányzó osztályra, nem négy hibára
+   *   R3  egy "teljes" szélességű szakasz a `foto` és a `fulek` KÖZÉ
+   *       10 piros, köztük "a rács pontosan egy kétoszlopos futamot ad"
+   *
+   * AZ R1 ELSŐ ALAKJA KETTŐT ADOTT, és ez nem a kód hibája volt: a
+   * "töréspont ALATT egy oszlop áll" is állította a `max-lg:contents`-et.
+   * Kivettem onnan -- egy rontás egy pirosat adjon, különben két hibának
+   * látszik.
+   *
+   * AZ R3 SZÉLESSÉGE VISZONT NEM JAVÍTHATÓ, és ezt kimondom: a szakasz-tábla
+   * bővítése a doboz-számot, a halmok tartalmát és a sorrendet EGYSZERRE
+   * mozdítja. Nem tíz állítás romlott el, hanem egy bemenet változott meg
+   * tíz állítás alatt. A bizonyíték az, hogy a NÉV ott van köztük.
+   */
+  it("a kétoszlopos futam burka mobilon feloldódik", () => {
+    render(<LapVaz />)
+
+    expect(screen.getByTestId("vaz-ket-oszlop").className).toMatch(
+      /max-lg:contents(?![-\w])/,
+    )
+  })
+
+  /**
    * A FOTÓ ELŐBBRE KERÜL, MINT AZ ÁR -- ez a változás lényege, mérve: az ár
    * korábban 877 pixelen állt a lap tetejétől 390 pixeles nézetben.
    */
@@ -1591,16 +1641,121 @@ describe("a címblokk nem dobozban áll", () => {
     render(<LapVaz />)
 
     expect(csoportDoboza("foto").className).toMatch(/max-lg:order-1(?![-\w])/)
-    expect(csoportDoboza("ar").className).toMatch(/max-lg:order-2(?![-\w])/)
+    expect(csoportDoboza("ar").className).toMatch(/max-lg:order-3(?![-\w])/)
+  })
+
+  /**
+   * A CÍMSOR A FOTÓ ÉS AZ ÁR KÖZÉ KERÜL (2026-09-10).
+   *
+   * A terv mobil kerete a fotóval kezdődik (y=57), és a cím-blokk alatta áll
+   * (y=447). Nálunk a címsor a fotó FÖLÖTT állt: mérve a kitelepített lapon,
+   * 390 pixelen, `cimsor` 164, `foto` 231.
+   *
+   * AMIT EZ NEM MÉR: a jsdom nem számol elrendezést, tehát a tényleges
+   * függőleges helyet nem tudom állítani. A számok viszonyát mérem, és a
+   * kitelepítés után a lapon mérem vissza.
+   */
+  it("a címsor a fotó és az ár közé kerül", () => {
+    render(<LapVaz />)
+
+    expect(csoportDoboza("cimsor").className).toMatch(/max-lg:order-2(?![-\w])/)
   })
 
   it("a segéd és a fülek az ár MÖGÉ kerülnek", () => {
     render(<LapVaz />)
 
     expect(csoportDoboza("meretezes-seged").className).toMatch(
-      /max-lg:order-3(?![-\w])/,
+      /max-lg:order-4(?![-\w])/,
     )
-    expect(csoportDoboza("fulek").className).toMatch(/max-lg:order-4(?![-\w])/)
+    expect(csoportDoboza("fulek").className).toMatch(/max-lg:order-5(?![-\w])/)
+  })
+
+  /**
+   * A TÉRKÉP TELJES -- ÉS EZ A `contents` ÁRA, NEM SZÉPSÉGHIBA.
+   *
+   * Amíg a futam saját flex-doboz volt, egy hiányzó kulcs csak a futamon BELÜL
+   * jelentett `order: 0`-t, és a futam a helyén maradt. Mostantól minden csoport
+   * a KÜLSŐ oszlop közvetlen gyereke, tehát egy hiányzó kulcs a lap TETEJÉRE
+   * viszi a szakaszt, a fotó elé -- és ez nem hibázik, csak mást mutat.
+   *
+   * Az állítás a MEGJELENÍTETT fából dolgozik, nem a térkép kulcsaiból: így egy
+   * új szakasz is elsüti, amit valaki felvesz a táblába és elfelejt rendezni.
+   */
+  it("minden csoportnak van mobil sorrendje", () => {
+    render(<LapVaz />)
+
+    const csoportok = Array.from(racsCsoportjai())
+
+    expect(csoportok.length).toBeGreaterThan(0)
+    for (const cs of csoportok) {
+      expect(cs.className).toMatch(/max-lg:order-\d+(?![-\w])/)
+    }
+  })
+
+  /**
+   * ÉS A SORSZÁMOK KÜLÖNBÖZNEK. Két azonos sorszám nem hibázik: a böngésző a
+   * forrás-rendet használja döntetlennél, tehát a hiba CSENDES, és épp azt a
+   * szakaszt viszi vissza a régi helyére, amit mozgatni akartunk.
+   */
+  it("két csoport nem kap azonos sorszámot", () => {
+    render(<LapVaz />)
+
+    const szamok = Array.from(racsCsoportjai()).map(
+      (cs) => cs.className.match(/max-lg:order-(\d+)(?![-\w])/)?.[1],
+    )
+
+    expect(szamok.every(Boolean)).toBe(true)
+    expect(new Set(szamok).size).toBe(szamok.length)
+  })
+
+  /**
+   * A RÁCS PONTOSAN EGY KÉTOSZLOPOS FUTAMOT AD -- ÉS EZ MOST TEHERVISELŐ.
+   *
+   * A `contents` egy közös rendezési teret csinál. Amíg egyetlen futam van, ez
+   * pontosan az, amit akarunk. Ha valaki egy "teljes" szélességű szakaszt tesz
+   * a `foto` és a `fulek` KÖZÉ, a rács KÉT futamot ad, a `contents` pedig
+   * összekeveri őket: a második futam dobozai az elsőéi közé rendeződnek.
+   *
+   * Ez nem hibázna és nem is látszana a fejlesztői gépen -- csak a lap nézne ki
+   * másképp. Ezért áll rá szám, nem szem.
+   */
+  it("a rács pontosan egy kétoszlopos futamot ad", () => {
+    const racs = MUSZAKI_LAP_SZAKASZAI.filter(
+      (sz) => sz.kulcs !== "ragados-sav",
+    )
+    const szeg = szegmensek(csoportokba(racs))
+
+    expect(szeg.filter((s) => s.tipus === "oszlopos")).toHaveLength(1)
+  })
+
+  /**
+   * ISMERT POZITÍV KONTROLL a fentihez: ha a rács TÉNYLEG két futamot adna, ez
+   * a számolás meg is találná. Enélkül a fenti állítás akkor is zöld lenne, ha
+   * a `szegmensek` sosem adna "oszlopos" elemet.
+   */
+  it("ugyanez a számolás kettőt ad, amikor tényleg kettő van", () => {
+    const kettevagva = [
+      { kulcs: "a", cim: "", varakozo: "", oszlop: "bal" as const },
+      { kulcs: "kozotte", cim: "", varakozo: "", oszlop: "teljes" as const },
+      { kulcs: "b", cim: "", varakozo: "", oszlop: "bal" as const },
+    ]
+
+    expect(
+      szegmensek(csoportokba(kettevagva)).filter((s) => s.tipus === "oszlopos"),
+    ).toHaveLength(2)
+  })
+
+  /**
+   * A TÉRKÉP NEM HIVATKOZIK NEM LÉTEZŐ SZAKASZRA. Egy elgépelt vagy megszűnt
+   * kulcs nem hibázik: a sorszám egyszerűen sehova nem kerül ki, és a szakasz,
+   * amit rendezni akartunk, a lap tetején marad.
+   */
+  it("a mobil sorrend minden kulcsa létező szakaszra mutat", () => {
+    const kulcsok = new Set(MUSZAKI_LAP_SZAKASZAI.map((sz) => sz.kulcs))
+
+    for (const kulcs of Object.keys(MOBIL_SORREND)) {
+      expect(kulcsok.has(kulcs)).toBe(true)
+    }
   })
 
   /**
@@ -1612,7 +1767,7 @@ describe("a címblokk nem dobozban áll", () => {
   it("a rendezés nem szivárog át az asztali nézetre", () => {
     render(<LapVaz />)
 
-    for (const kulcs of ["foto", "ar", "meretezes-seged", "fulek"]) {
+    for (const kulcs of ["foto", "cimsor", "ar", "meretezes-seged", "fulek"]) {
       const osztalyok = csoportDoboza(kulcs).className.split(/\s+/)
       const rendezok = osztalyok.filter((o) => /(^|:)order-/.test(o))
 
