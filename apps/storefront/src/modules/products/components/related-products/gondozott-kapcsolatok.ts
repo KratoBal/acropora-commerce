@@ -229,3 +229,76 @@ export function kertSorrendben<T extends { id: string }>(
   }
   return ki
 }
+
+/**
+ * MELYIK LISTABOL EPULJON A "HASONLO" DOBOZ -- ES MIERT DONTES, NEM SZURO.
+ *
+ * === A KET FORRAS, ES A SORREND KOZTUK (acrobot dontese, 2026-09-10) ===
+ *
+ *     gondozott kapcsolat   ha van `unas_similar_ids`, AZ megy, valtozatlanul
+ *     legmelyebb kategoria  ha nincs, a termek sajat besorolasa adja a listat
+ *
+ * === MIERT NEM MOND ELLENT A 14892-ES DONTESNEK ===
+ *
+ * A 14892 azt tiltotta meg, hogy a doboz VALOTLANT allitson. A starter szuroje
+ * nulla gyujtemenyre es nulla cimkere szurt, tehat a "Hasonlo termekek" cim
+ * alatt a bolt ELSO TIZENKET TERMEKE allt, barmilyen kapcsolat nelkul. Az a
+ * lista hazudott.
+ *
+ * A legmelyebb kategoria MAS FAJTA: valodi szukites. A lista tagjai tenyleg egy
+ * csoportba tartoznak, tehat a cim igaz marad. Ugyanabbol a szabalybol
+ * kovetkezik, nem felulirja.
+ *
+ * === A MERES, AMI A TARTALEKOT INDOKOLJA (murena, 2026-09-10) ===
+ *
+ * Negyven kiszolgalt termeklapbol KETTON latszott a szakasz: kb. ot szazalekon
+ * van gondozott kapcsolat. A tobbin a doboz nem hianyzott -- a doboz ott volt,
+ * csak nem volt mit mutatnia.
+ *
+ * Es a tartalek a kockazatos csoportban is ad talalatot: huszonot mert termek
+ * tiz kategoriaban, a legkisebb kategoria HAROM elemu (`sps---wysiwyg`, a
+ * WYSIWYG korallok), tehat ott ket hasonlo jon -- mind a ketto masik egyedi
+ * peldany, nem ugyanennek az allatnak a tovabbi kepe.
+ *
+ * === AMIT EZ A FUGGVENY NEM DONT EL ===
+ *
+ * Azt, hogy a doboz LATSZIK-e. Egy egyelemu kategoria (csak maga a termek)
+ * ures listat ad a szures utan, es akkor a hivo `null`-t ad vissza -- nulla
+ * hasonlo nem ures doboz, hanem hianyzo szakasz. Ez a lepes a hivo oldalan
+ * all, mert csak a VALASZ ismereteben dontheto el.
+ */
+export type HasonloForras =
+  | { mod: "gondozott"; azonositok: string[] }
+  | { mod: "kategoria"; kategoriaId: string }
+  | { mod: "nincs" }
+
+export function kapcsolatForras(
+  kapcsolat: "hasonlo" | "kiegeszito",
+  metadata: Record<string, unknown> | null | undefined,
+  tartalekKategoriaId?: string | null,
+): HasonloForras {
+  const azonositok =
+    kapcsolat === "kiegeszito"
+      ? kiegeszitoAzonositok(metadata)
+      : hasonloAzonositok(metadata)
+
+  if (azonositok.length > 0) {
+    return { mod: "gondozott", azonositok }
+  }
+
+  /*
+    A KIEGESZITO LISTA NEM KAP TARTALEKOT, ES EZ NEM FELEDEKENYSEG.
+
+    Egy kategoria tagjai nem "kellenek hozza" egymashoz -- egy algakaparo
+    melle nem tartozek egy masik algakaparo. Ott a cim VALOTLAN lenne, tehat
+    pontosan az a hiba keletkezne, amit a 14892 megszuntetett.
+
+    Ezert all a ket ag EGY fuggvenyben: kulon irva a kovetkezo olvaso
+    ugyanugy "kiegesziteni" fogja a masikat is, mert szimmetrikusnak latszik.
+  */
+  if (kapcsolat === "hasonlo" && tartalekKategoriaId) {
+    return { mod: "kategoria", kategoriaId: tartalekKategoriaId }
+  }
+
+  return { mod: "nincs" }
+}

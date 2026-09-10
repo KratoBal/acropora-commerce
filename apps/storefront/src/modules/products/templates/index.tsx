@@ -26,6 +26,7 @@ import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
+import { besorolasUt } from "@lib/util/kategoria-fa"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -197,6 +198,20 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       product={product}
                       countryCode={countryCode}
                       fejlecNelkul
+                      /*
+                        A TARTALEK KATEGORIA ITT SZAMOLODIK, ES NEM A
+                        KOMPONENSBEN.
+
+                        A termek sajat `categories` tombje csak a LEVEL
+                        kategoriakat tartalmazza, az oseiket nem -- a lanc
+                        felepitesehez a teljes katalogus kell, es az itt van
+                        (`categories`). Ugyanaz a fuggveny adja, mint amibol a
+                        besorolas sora keszul, hogy a ket olvaso ne vezesse le
+                        ketfele ugyanazt.
+                      */
+                      tartalekKategoriaId={
+                        besorolasUt(product, categories).at(-1)?.id
+                      }
                     />
                   </Suspense>
                 </div>

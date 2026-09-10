@@ -3,9 +3,9 @@ import { getRegion } from "@lib/data/regions"
 import { HttpTypes } from "@medusajs/types"
 import Product from "../product-preview"
 import {
-  hasonloAzonositok,
+  KAPCSOLAT_HATAR,
+  kapcsolatForras,
   kertSorrendben,
-  kiegeszitoAzonositok,
 } from "./gondozott-kapcsolatok"
 
 type RelatedProductsProps = {
@@ -38,6 +38,18 @@ type RelatedProductsProps = {
    * ALAPERTELMEZESBEN `hasonlo`, tehat az elo allat lapja betuere valtozatlan.
    */
   kapcsolat?: "hasonlo" | "kiegeszito"
+  /**
+   * A TARTALEK FORRAS: A TERMEK LEGMELYEBB KATEGORIAJA.
+   *
+   * Csak a `hasonlo` listara szol, es csak akkor sul el, ha nincs gondozott
+   * kapcsolat. A `kiegeszito` lista NEM kap tartalekot: egy kategoria tagjai
+   * nem "kellenek hozza" egymashoz, tehat ott a cim valotlan lenne.
+   *
+   * A hivo szamolja ki (`besorolasUt` utolso eleme), mert ott van a teljes
+   * kategoria-katalogus. A termek sajat `categories` tombje csak a LEVEL
+   * kategoriakat tartalmazza, az oseiket nem -- ezert nem lehet itt levezetni.
+   */
+  tartalekKategoriaId?: string | null
 }
 
 export default async function RelatedProducts({
@@ -45,6 +57,7 @@ export default async function RelatedProducts({
   countryCode,
   fejlecNelkul = false,
   kapcsolat = "hasonlo",
+  tartalekKategoriaId,
 }: RelatedProductsProps) {
   const region = await getRegion(countryCode)
 
@@ -69,30 +82,58 @@ export default async function RelatedProducts({
    * rosszabb az ures doboznal, mert ugy nezett ki, mintha mukodne.
    * (acrobot dontese, msg_id 14892.)
    *
-   * MOSTANTOL: gondozott kapcsolat nelkul a doboz NEM RENDERELODIK, es
-   * lekerdezes SEM INDUL. A ketto egyutt fontos -- egy ures szuro nem szur.
+   * A SZABALY VALTOZATLAN: URES SZURO SOHA NEM INDUL. Amit 2026-09-10-en
+   * hozzavettunk, az egy MASODIK, VALODI szuro (a legmelyebb kategoria), nem a
+   * szuretlen lista visszahozasa -- a kulonbseget a `hasonloForras` fejlece
+   * fejti ki.
    */
-  const kiolvas =
-    kapcsolat === "kiegeszito" ? kiegeszitoAzonositok : hasonloAzonositok
-  const azonositok = kiolvas(product.metadata as Record<string, unknown> | null)
+  const forras = kapcsolatForras(
+    kapcsolat,
+    product.metadata as Record<string, unknown> | null,
+    tartalekKategoriaId,
+  )
 
-  if (azonositok.length === 0) {
+  if (forras.mod === "nincs") {
     return null
   }
 
   const valasz = await listProducts({
-    queryParams: {
-      id: azonositok,
-      limit: azonositok.length,
-    },
+    queryParams:
+      forras.mod === "gondozott"
+        ? { id: forras.azonositok, limit: forras.azonositok.length }
+        : /*
+            EGGYEL TOBBAT KERUNK, MINT AMENNYIT MUTATUNK.
+
+            A kategoria a termek SAJAT kategoriaja, tehat a valaszban benne
+            lesz o maga is, es utana szurjuk ki. Ha pontosan a hatart kernenk,
+            a sajat kiszurese egy elemet ELVENNE a listabol -- a doboz
+            tizenketto helyett tizenegyet mutatna, es senki nem venne eszre.
+          */
+          {
+            category_id: [forras.kategoriaId],
+            limit: KAPCSOLAT_HATAR + 1,
+          },
     countryCode,
   }).then(({ response }) => response.products)
 
-  const products = kertSorrendben(
-    valasz.filter((responseProduct) => responseProduct.id !== product.id),
-    azonositok,
+  const sajatNelkul = valasz.filter(
+    (responseProduct) => responseProduct.id !== product.id,
   )
 
+  const products =
+    forras.mod === "gondozott"
+      ? kertSorrendben(sajatNelkul, forras.azonositok)
+      : sajatNelkul.slice(0, KAPCSOLAT_HATAR)
+
+  /*
+    NULLA HASONLO NEM URES DOBOZ, HANEM HIANYZO SZAKASZ (acrobot kikotese,
+    2026-09-10). Egy egyelemu kategoriaban -- ahol csak maga a termek all --
+    a szures utan ures lista marad, es akkor a doboz nem renderelodik.
+
+    Merve ugyanaznap: a legkisebb kategoria HAROM elemu, tehat ez ma nem sul
+    el. A katalogus viszont valtozik, es egy ures keretes szakasz rosszabbul
+    nez ki, mint a semmi.
+  */
   if (!products.length) {
     return null
   }
