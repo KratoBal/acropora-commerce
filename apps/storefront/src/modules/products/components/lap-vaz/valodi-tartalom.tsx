@@ -590,6 +590,29 @@ export function vazTartalom(
         {egyediPeldany && <KiszerelesSor kiszereles={egyseg} />}
       </>
     )
+    /*
+     * A KISZERELES SOR HELYE DONTES, NEM TERV -- ES EZERT ALL ITT.
+     *
+     * Egyedi peldanynal az ar melle kerul (fent), minden mas lapon ide, a
+     * lepegeto koré. Ezt acrobot dontotte el 2026-09-10-en, es NEM a tervbol
+     * jon: a tervfajl ezt a mezot NEM ISMERI.
+     *
+     * MERVE, ket fuggetlen keresessel ugyanazon a tervfajlon
+     * (`exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html`):
+     *
+     *     "Kiszereles"   0 talalat        picasso merese, majd nautilus
+     *     "Mennyiseg"    0 talalat        visszamerese 2026-09-10-en
+     *     "Brutto ar"    1 talalat        <- ISMERT POZITIV KONTROLL
+     *     "Cikkszam"     1 talalat        <- ISMERT POZITIV KONTROLL
+     *
+     * A ket kontroll azert all itt, mert nelkuluk a ket nulla a KERESES
+     * tulajdonsaga is lehetne: mind a negy szo ekezetes, es egy ekezet-erzekeny
+     * minta mind a negyre nullat adna. Igy latszik, hogy a kereses TUD talalni.
+     *
+     * ES HA A TERV KESOBB BOVUL, A TERV NYER. Ez a bekezdes akkor nem bovul,
+     * hanem VALTOZIK: a mai alak ideiglenes, es a kovetkezo olvasonak ezt kell
+     * tudnia, kulonben tervezett elrendezesnek fogja hinni.
+     */
     tartalom.mennyiseg = (
       <>
         {!egyediPeldany && <KiszerelesSor kiszereles={egyseg} />}
