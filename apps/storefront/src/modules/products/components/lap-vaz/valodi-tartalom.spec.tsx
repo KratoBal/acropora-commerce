@@ -586,10 +586,47 @@ describe("a váz valódi tartalma", () => {
   it("a meglévő adat dobozai NEM üresek", () => {
     render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
 
-    for (const kulcs of ["cimsor", "foto", "fulek", "elerhetoseg"]) {
+    for (const kulcs of ["cimsor", "foto", "fulek"]) {
       const doboz = document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)
       expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
     }
+  })
+
+  /**
+   * AZ ELERHETOSEG-REKESZ 2026-09-10 OTA KIESIK A FENTI LISTABOL, ES EZ NEM
+   * GYENGITES, HANEM PONTOSITAS.
+   *
+   * A "Kiszereles" sor akkor kerult ki ebbol a rekeszbol (a kiszereles a termek
+   * adata, nem az elerhetoseg). Ez a fixtura CSAK `unas_unit`-ot visel, tehat a
+   * rekesznek MA URESNEK kell lennie -- es a katalogusban ez a tobbseg: 1478
+   * termek az 1492-bol (merve 2026-09-10 a stage boltban).
+   *
+   * KET ALLITAS, NEM EGY: a masodik nelkul az elso ugyanugy zold lenne egy olyan
+   * valtozatra, ami a rekeszt SOHA nem tolti fel. Az ures allapot csak akkor
+   * lelet, ha a teli allapot is merve van.
+   */
+  it("az elérhetőség-rekesz üres, ha csak kiszerelés van", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+  })
+
+  it("az elérhetőség-rekesz NEM üres, ha valódi elérhetőségi adat van", () => {
+    const termek = {
+      ...(TERMEK as object),
+      metadata: {
+        ...(TERMEK as { metadata: Record<string, unknown> }).metadata,
+        unas_minimum_order_quantity: "10",
+      },
+    }
+
+    render(<LapVaz tartalom={vazTartalom(termek as never)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
   })
 
   /**
@@ -676,6 +713,61 @@ describe("a váz valódi tartalma", () => {
 
     const doboz = document.querySelector('[data-vaz-szakasz="mennyiseg"]')
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+  })
+
+  /**
+   * A KISZERELES SORANAK HELYE KET REKESZ KOZOTT DOL EL, ES EZT KET ALLITAS
+   * MERI -- KULON-KULON.
+   *
+   * Egy allitas, ami csak annyit nez, hogy a sor VALAHOL megjelenik, ugyanugy
+   * zold lenne egy olyan valtozatra, ami MINDIG ugyanabba a rekeszbe teszi.
+   * A hely maga a viselkedes, tehat azt kell merni.
+   *
+   * A dontes acrobote (2026-09-10) es NEM a tervbol jon: a "Kiszereles" szo
+   * nulla talalat a tervfajlban. Az indoklas a `KiszerelesSor` fejleceben all.
+   */
+  it("egyedi példánynál a kiszerelés az ár rekeszébe kerül", () => {
+    const egyedi = {
+      ...(TERMEK as object),
+      metadata: {
+        ...(TERMEK as { metadata: Record<string, unknown> }).metadata,
+        unique_piece: true,
+      },
+    }
+
+    render(
+      <VasarlasProvider product={egyedi as never}>
+        <LapVaz tartalom={vazTartalom(egyedi as never, true)} />
+      </VasarlasProvider>,
+    )
+
+    const arDoboz = document.querySelector('[data-vaz-szakasz="ar"]')
+    const mennyisegDoboz = document.querySelector(
+      '[data-vaz-szakasz="mennyiseg"]',
+    )
+
+    expect(arDoboz?.querySelector('[data-testid="vaz-egyseg"]')).toBeTruthy()
+    expect(
+      mennyisegDoboz?.querySelector('[data-testid="vaz-egyseg"]'),
+    ).toBeNull()
+  })
+
+  it("nem egyedi példánynál a kiszerelés a mennyiség rekeszébe kerül", () => {
+    render(
+      <VasarlasProvider product={TERMEK}>
+        <LapVaz tartalom={vazTartalom(TERMEK, true)} />
+      </VasarlasProvider>,
+    )
+
+    const arDoboz = document.querySelector('[data-vaz-szakasz="ar"]')
+    const mennyisegDoboz = document.querySelector(
+      '[data-vaz-szakasz="mennyiseg"]',
+    )
+
+    expect(
+      mennyisegDoboz?.querySelector('[data-testid="vaz-egyseg"]'),
+    ).toBeTruthy()
+    expect(arDoboz?.querySelector('[data-testid="vaz-egyseg"]')).toBeNull()
   })
 
   it("vásárlási állapot nélkül a mennyiség doboz üresen marad", () => {

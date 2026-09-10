@@ -9,6 +9,7 @@ import {
   DoaGarancia,
   ArAlattiSor,
   ElerhetosegDoboz,
+  KiszerelesSor,
   MennyisegDoboz,
   ValasztoDoboz,
 } from "../vasarlas/dobozok"
@@ -468,6 +469,13 @@ export function vazTartalom(
    * Ezert dont ez a sor, es nem a dobozok sajat ures-aga.
    */
   const egyediPeldany = uniquePieceOf(termek.metadata)
+  /*
+   * A KISZERELES FELIRATA IDE KERULT ELORE, mert 2026-09-10 ota KET helyen
+   * kell: az egyedi peldany lapjan a Brutto ar sor melle, minden mas lapon a
+   * mennyiseg-lepegeto koré. Mindketto a `vasarlasAktiv` agban all, ami
+   * korabban fut, mint ahol ez a sor eddig allt.
+   */
+  const egyseg = egysegFelirat(termek)
 
   /**
    * A DOA-SOR CSAK AZ ELO ALLAT LAPJAN ALL, ES EZ NEM STILUS-DONTES.
@@ -523,10 +531,12 @@ export function vazTartalom(
           cikkszam={cikkszam(termek)}
           egyediPeldany={egyediPeldany}
         />
+        {egyediPeldany && <KiszerelesSor kiszereles={egyseg} />}
       </>
     )
     tartalom.mennyiseg = (
       <>
+        {!egyediPeldany && <KiszerelesSor kiszereles={egyseg} />}
         <MennyisegDoboz />
         {eloAllat && <DoaGarancia />}
       </>
@@ -604,7 +614,6 @@ export function vazTartalom(
    * A doboz `null`-t ad, ha egyik sincs -- ilyenkor a vaz varakozo szoveget
    * mutat, ami a helyes valasz: szallitas es bolti atvetel adatkent MA NINCS.
    */
-  const egyseg = egysegFelirat(termek)
   /**
    * EGYEDI PELDANYNAL NINCS RENDELESI SZABALY: abbol egy darab van, tehat sem
    * a minimum, sem a lepeskoz, sem a maximum nem mond semmit. Ez a korabbi
@@ -627,13 +636,20 @@ export function vazTartalom(
    * vasarlasi kontextusban all, nem itt.
    */
   const keszlet = scarcityCountOf(termek.variants?.[0])
-  if (egyseg || rendelesiMondat || typeof keszlet === "number") {
+  /*
+   * A KISZERELES MAR NEM SZAMIT BELE A FELTETELBE, es ez a valtozas MERT
+   * kovetkezmenye: az `unas_unit` a katalogus 1492 termekebol 1492-n all, tehat
+   * ma ez a mezo tartja "telinek" a rekeszt. Nelkule 1478 lapon URES lesz
+   * (marad: minimum>1 tizennegy, lepeskoz tizenketto, maximum negy, es a
+   * keszlet-sor nulla -- merve 2026-09-10 a stage boltban).
+   *
+   * Ez SZANDEKOS: egy ures rekesz a 2026-09-10-i valtozas ota nem all a vevo
+   * ele (nincs keret es nem foglal helyet), tehat az uresseg nem latszik
+   * hianynak.
+   */
+  if (rendelesiMondat || typeof keszlet === "number") {
     tartalom.elerhetoseg = (
-      <ElerhetosegDoboz
-        kiszereles={egyseg ?? undefined}
-        rendelesiMondat={rendelesiMondat}
-        keszlet={keszlet}
-      />
+      <ElerhetosegDoboz rendelesiMondat={rendelesiMondat} keszlet={keszlet} />
     )
   }
 
