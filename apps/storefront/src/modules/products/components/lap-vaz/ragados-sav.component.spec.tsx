@@ -67,20 +67,43 @@ describe("a lap alján futó sáv", () => {
   })
 
   /**
-   * A RAGADAS MAGA. A tervben `position:sticky; bottom:0` all -- NEM `fixed`.
-   * A kulonbseg lathato: a fixed a lapon KIVUL rogzit, a sticky a SZULOJEN
-   * belul. Ha valaki "egyszerusit" es fixed-re irja, ez pirosodik ki.
+   * A SAV MAGA NEM DEKLARAL POZICIOT -- ES EZ NEM HIANY, HANEM A JAVITAS.
    *
-   * A HALO HATARA: a jsdom nem szamol elrendezest, tehat az OSZTALYT meri,
-   * nem a tenyleges ragadast. Azt a lapon kell megnezni.
+   * Itt korabban az allt, hogy a savon `sticky bottom-0` van. Az az allitas
+   * ZOLD volt, es a viselkedes MEGSEM letezett: a `sticky` elem a sajat szulo
+   * dobozan belul mozog, es az a doboz pontosan olyan magas, mint a sav.
+   * Merve a kiszolgalt lapon (1440x800): felezo gorgetesnel a sav teteje 184,
+   * a gorgetes 951, a gorgetes elotti teteje 1135 -- egyutt mozgott a lappal.
+   *
+   * A tapadas azota a VAZ burkan all, es AZT a `lap-vaz.component.spec` meri.
+   * Itt a TAGADAS marad: ha valaki visszateszi ide a `sticky`-t vagy `fixed`-et
+   * ir, az ismet egy hatastalan deklaracio lenne, es ez pirosodik ki.
+   *
+   * A HALO HATARA VALTOZATLAN: a jsdom nem szamol elrendezest, tehat ez az
+   * OSZTALYT meri. A tenyleges tapadast a lapon kell megnezni -- a burok
+   * megjegyzeseben ott all a ket mert szam (1687 kontra 765 egy 844 magas
+   * nezetben).
    */
-  it("a terv szerint sticky, nem fixed", () => {
+  it("a sáv maga nem deklarál pozíciót", () => {
     render(<RagadosSav ar={<span>24 900 Ft</span>} />)
 
     const sav = screen.getByTestId("ragados-sav")
-    expect(sav.className).toContain("sticky")
-    expect(sav.className).toContain("bottom-0")
-    expect(sav.className).not.toContain("fixed")
+    expect(sav.className).not.toMatch(/(^|\s|:)sticky(?![-\w])/)
+    expect(sav.className).not.toMatch(/(^|\s|:)fixed(?![-\w])/)
+    expect(sav.className).not.toMatch(/(^|\s|:)bottom-0(?![-\w])/)
+  })
+
+  /**
+   * ISMERT POZITIV KONTROLL: a tagadas onmagaban akkor is zold lenne, ha a
+   * komponens semmilyen osztalyt nem adna ki. Ez az allitas bizonyitja, hogy a
+   * className egyaltalan megjelenik.
+   */
+  it("a sáv viszont viseli a tervbeli belső margót", () => {
+    render(<RagadosSav ar={<span>24 900 Ft</span>} />)
+
+    const sav = screen.getByTestId("ragados-sav")
+    expect(sav.className).toMatch(/px-\[18px\]/)
+    expect(sav.className).toMatch(/py-\[14px\]/)
   })
 })
 

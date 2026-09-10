@@ -105,7 +105,21 @@ const RagadosSav = ({ cimke, ar, cselekves }: RagadosSavProps) => {
   return (
     <div
       data-testid="ragados-sav"
-      className="sticky bottom-0 flex items-center gap-[10px] border-t px-[18px] py-[14px] lg:gap-5 lg:px-11 lg:py-5"
+      /*
+        A TAPADAS NEM ITT ALL, ES EZ NEM FELEDEKENYSEG.
+
+        Itt korabban `sticky bottom-0` allt, es HATASTALAN volt: a `sticky` elem
+        a sajat szulo dobozan belul mozog, ez a doboz pedig pontosan olyan
+        magas, mint a sav. Merve a kiszolgalt lapon (2026-09-09, 1440x800):
+        felezo gorgetesnel a sav teteje 184, a gorgetes 951, a gorgetes elotti
+        teteje 1135 -- vagyis egyutt mozgott a lappal, nem tapadt.
+
+        A tapadas mostantol a VAZ burkan all (`vaz-ragados-sav-burok`,
+        `max-lg:sticky max-lg:bottom-0`), ami a magas kulso doboz kozvetlen
+        gyereke. A sav maga tehat NEM deklaral pozíciot -- es ezt allitas is
+        orzi, hogy a hatastalan alak ne jojjon vissza.
+      */
+      className="flex items-center gap-[10px] border-t px-[18px] py-[14px] lg:gap-5 lg:px-11 lg:py-5"
       style={{
         borderColor: "var(--terv-keret)",
         background: "var(--terv-hatter)",

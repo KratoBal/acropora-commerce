@@ -1654,9 +1654,35 @@ const LapVaz = ({
             szakasz keret nelkul all (nincs ket vonal), a burok pedig
             toresponkent MASKENT.
           */
+          /*
+            A TAPADAS ITT ALL, ES NEM A SAVON -- EZ A JAVITAS LENYEGE.
+
+            A `sticky` elem a SAJAT szulo dobozan belul mozog. A savon allo
+            `sticky bottom-0` azert volt hatastalan, mert a szuloje pontosan
+            olyan magas, mint maga a sav: nincs olyan tartomany, ahol a sav
+            termeszetes helye a nezet alatt lenne, mikozben a szuloje meg
+            atfogja a nezet aljat.
+
+            Ez a burok viszont a MAGAS kulso doboz kozvetlen gyereke, tehat van
+            hova tapadnia. Merve a kiszolgalt lapon (390x844), MIELOTT megirtam
+            volna -- a ket osztalyt bongeszobol tettem ra:
+
+                ma          gorgetes elott a sav teteje 1687   (a nezeten kivul)
+                javitva     gorgetes elott a sav teteje  765   (765 + 79 = 844,
+                                                                a nezet aljara
+                                                                szegezve)
+
+            CSAK MOBILON: a tervben mind a harom `position:sticky; bottom:0`
+            talalat a 390 pixeles keretben all, az asztali lapokon EGY SINCS.
+            Az asztali zarosor egy MASIK elem (nem ragad, belyegkeppel es
+            keszlet-sorral), es az kulon tetel.
+
+            ES CSAK TARTALOMMAL: egy ures helykitolto, ami a nezet aljara tapad,
+            nem "meg nincs kesz", hanem hiba.
+          */
           className={
             tartalom[savSzakasz.kulcs]
-              ? "-mx-4 mt-[24px] lg:mx-auto lg:mt-4 lg:max-w-[1352px] lg:border lg:bg-[var(--terv-doboz-hatter)] lg:p-4"
+              ? "-mx-4 mt-[24px] max-lg:sticky max-lg:bottom-0 lg:mx-auto lg:mt-4 lg:max-w-[1352px] lg:border lg:bg-[var(--terv-doboz-hatter)] lg:p-4"
               : "-mx-4 mt-[24px] lg:mx-auto lg:mt-4 lg:max-w-[1352px]"
           }
           style={{ borderColor: "var(--terv-keret)" }}

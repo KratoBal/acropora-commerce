@@ -1430,6 +1430,58 @@ describe("a címblokk nem dobozban áll", () => {
    * kimondott, akkor mérni is kell, különben a következő átrendezéskor
    * észrevétlenül elmozdul.
    */
+  /**
+   * A TAPADAS A BURKON ALL, ES CSAK MOBILON.
+   *
+   * A tervben mind a harom `position:sticky; bottom:0` talalat a 390 pixeles
+   * keretben all; az asztali lapokon EGY SINCS (ott egy MASIK, nem ragado
+   * zarosor all, belyegkeppel es keszlet-sorral -- kulon tetel).
+   *
+   * AMIT EZ NEM MER: a tenyleges tapadast. A jsdom nem szamol elrendezest.
+   * Azt a kiszolgalt lapon merteem, MIELOTT megirtam volna (390x844): a ket
+   * osztaly nelkul a sav teteje gorgetes elott 1687 -- a nezeten kivul --, a
+   * ket osztallyal 765, vagyis 765 + 79 = 844, a nezet aljara szegezve.
+   */
+  it("a ragadós sáv burka mobilon tapad", () => {
+    render(<LapVaz tartalom={{ "ragados-sav": <span>proba</span> }} />)
+
+    const kod = screen.getByTestId("vaz-ragados-sav-burok").className
+
+    expect(kod).toMatch(/max-lg:sticky(?![-\w])/)
+    expect(kod).toMatch(/max-lg:bottom-0(?![-\w])/)
+  })
+
+  /**
+   * ES A TAGADAS: az asztali nezetre NEM szol. Egy `sticky` a `max-lg:` elotag
+   * nelkul az asztali savot is a nezet aljara vinne -- es a fenti allitas
+   * attol meg zold maradna, mert a szukebb alak tartalmazza a tagabbat.
+   */
+  it("a tapadás nem szivárog át az asztali nézetre", () => {
+    render(<LapVaz tartalom={{ "ragados-sav": <span>proba</span> }} />)
+
+    const osztalyok = screen
+      .getByTestId("vaz-ragados-sav-burok")
+      .className.split(/\s+/)
+
+    for (const o of osztalyok.filter((o) =>
+      /(^|:)(sticky|bottom-0)$/.test(o),
+    )) {
+      expect(o.startsWith("max-lg:")).toBe(true)
+    }
+  })
+
+  /**
+   * URESEN VISZONT NEM TAPAD: egy helykitolto, ami a nezet aljara all, nem
+   * "meg nincs kesz", hanem hiba.
+   */
+  it("üresen a burok nem tapad", () => {
+    render(<LapVaz />)
+
+    expect(screen.getByTestId("vaz-ragados-sav-burok").className).not.toMatch(
+      /sticky(?![-\w])/,
+    )
+  })
+
   it("a ragadós sáv felső margója a tervbeli 24 pixel", () => {
     render(<LapVaz />)
 
