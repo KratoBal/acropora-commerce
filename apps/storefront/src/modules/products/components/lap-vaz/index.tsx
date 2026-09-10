@@ -611,6 +611,17 @@ export const VazDoboz = ({
         data-vaz-szakasz={szakasz.kulcs}
         data-vaz-ures="igen"
         data-vaz-rejtve="igen"
+        /*
+          AZ OSZLOP A REJTETT ALAKON ALL, A LATHATON NEM -- ES EZ NEM ELIRAS.
+
+          A lathato szakasznal a BUROK viseli (`data-vaz-oszlop`), tehat ott
+          ez ismetlés lenne. Egy teljesen ures csoportnal viszont NINCS burok,
+          es akkor a szakaszrol nem lehetne megmondani, HOVA tartozik.
+
+          (Az elso alakomban itt allt, aztan a szimmetria kedveert kivettem.
+          A meres irattá vissza: burok nelkul ez az egyetlen hordozoja.)
+        */
+        data-vaz-oszlop={szakasz.oszlop}
         className="contents"
       />
     )
@@ -1517,15 +1528,42 @@ const LapVaz = ({
              * keretes panel a lapon rosszabb, mint a varakozo szoveg volt: az
              * legalabb megmondta, mi jon oda.
              *
-             * Ezert itt a csoport egeszet hagyjuk ki, es nem a dobozokat
-             * rejtjuk el egyenkent.
+             * Ezert a BUROK marad ki, nem a dobozok.
+             *
+             * === ES A DOBOZOK MEGIS MEGMARADNAK, JAVITVA 2026-09-10 ===
+             *
+             * Az elso alak `null`-t adott vissza, tehat az egesz csoport --
+             * a szakaszokkal egyutt -- eltunt. Nautilus a kiszolgalt lapon
+             * mérte vissza: EGY ures szakasz maradt a fában (`valaszto`, a
+             * `vasarlas` csoportbol) es NEGY eltunt (`meretezes-seged`,
+             * `csomagajanlat`, `hasonlo`, `kiegeszitok`). Es jogosan kerdezte
+             * meg, mert en azt irtam neki, hogy a jelolők megmaradnak.
+             *
+             * Amit ez elvett: a kovetkezo mero szamara az a negy szakasz ugy
+             * nez ki, MINTHA NEM IS LETEZNE -- nem tud allitani sem arrol,
+             * hogy uresek, sem arrol, hogy a helyukon lennenek tartalommal.
+             *
+             * A burok elhagyasahoz viszont NEM kell a szakaszokat is elhagyni:
+             * egy `display: contents` szakasz akkor sem lesz layout-elem, ha
+             * kozvetlenul a kulso oszlop gyereke. A burok az, ami `gap`-et
+             * eszik, nem a szakasz.
              */
             const mindRejtve =
               !jelzesek &&
               csoport.every((szakasz) => uresTartalom(tartalom[szakasz.kulcs]))
 
             if (mindRejtve) {
-              return null
+              return (
+                <React.Fragment key={elso.kulcs}>
+                  {csoport.map((szakasz) => (
+                    <VazDoboz
+                      key={szakasz.kulcs}
+                      szakasz={szakasz}
+                      jelzesek={false}
+                    />
+                  ))}
+                </React.Fragment>
+              )
             }
 
             return (
