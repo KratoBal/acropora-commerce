@@ -65,7 +65,33 @@ export type ZaroSorProps = {
   kepUrl?: string | null
   /** A nev sora: a termek neve es a cikkszama, a hivo osszeallitasaban. */
   nev?: React.ReactNode
-  /** A masodik sor: keszlet-allapot. Ha nincs forrasa, elmarad. */
+  /**
+   * A MASODIK SOR: KESZLET-ALLAPOT. MA NINCS FORRASA, EZERT A HIVO NEM ADJA AT.
+   *
+   * === MILYEN FORRASRA VAR, ES MI NEM AZ ===
+   *
+   * Amire var: a peldany KESZLET-ALLAPOTA, mondatba ontve ("Utolso darab",
+   * "Raktaron 3 db"). Ilyen adatunk ma nincs -- merve 2026-09-07: a bolt MINDEN
+   * termeke nulla keszleten all, tehat a nulla nem meres, hanem az atvitel
+   * hianya. Amig ez igy all, a helyes ertek az URES sor, nem egy hiheto mondat.
+   *
+   * AMI NEM AZ: az `availabilityLabel` terkep. A neve es a kulcsai
+   * (`KAPHATO`, `ELFOGYOTT`) allapot-fogalmat igernek, az ERTEKEI viszont
+   * KEVERTEK: az `ELFOGYOTT` erteke allapot-allitas, a `KAPHATO` erteke
+   * viszont GOMBFELIRAT ("Kosárba").
+   *
+   * === MIERT ALL EZ ITT, ES NEM CSAK A HIVONAL ===
+   *
+   * A #342-ben pontosan ugy keletkezett a hiba, hogy valaki keresett egy
+   * terkepet, ami feliratokat ad allapotokhoz, es talalt egyet: a nev
+   * stimmelt, a jelentes nem. A kaphato termek lapjan ezutan a halvany 13px-es
+   * sor es a mellette allo gomb ugyanazt a szot mondta (merve a kiszolgalt
+   * lapon, 2026-09-10). Nem hibazott es nem hasalt el: ket helyen allt ugyanaz.
+   *
+   * Egy uresen allo prop, ami mellett nincs odairva, MIT var, ugyanezt fogja
+   * megismetelni. A hivo oldalan all a mai dontes; itt az all, mi tenne
+   * ervenyesse.
+   */
   cimke?: React.ReactNode
   /** Az ar, a hivo formazasaban -- a sor nem szamol arat. */
   ar?: React.ReactNode
