@@ -3,6 +3,7 @@ import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
 import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 
+import { termeklapCanonical } from "@lib/util/lap-canonical"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { listProducts } from "@lib/data/products"
 import { TERMEKLAP_FIELDS } from "@lib/data/termeklap-fields"
@@ -91,6 +92,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title: `${product.title} | ${STORE_NAME}`,
     description: `${product.title}`,
+    /*
+     * A KANONIKUS CIM A NYERS, KODOLT HANDLE-BOL EPUL, nem a `handle`
+     * valtozobol -- az `decodeHandleParam`-en ment at, es egy URL-be a KODOLT
+     * alak valo. Az indoklas a `lap-canonical.ts` fejleceben all.
+     */
+    alternates: {
+      canonical: termeklapCanonical(params.countryCode, params.handle),
+    },
     openGraph: {
       title: `${product.title} | ${STORE_NAME}`,
       description: `${product.title}`,
