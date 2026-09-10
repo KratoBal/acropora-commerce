@@ -1680,12 +1680,27 @@ const LapVaz = ({
             ES CSAK TARTALOMMAL: egy ures helykitolto, ami a nezet aljara tapad,
             nem "meg nincs kesz", hanem hiba.
           */
+          /*
+            A BUROK MOSTANTOL MIND A KET NEZETBEN TELJES SZELESSEGU.
+
+            A 332-ben az asztali oldalra visszaallitottam a racs korlatjat
+            (1352, kozepre igazitva, kerettel), MERT AKKOR a tervnek nem volt
+            allitasa az asztali savrol -- a mobil alakot mutattuk ott, es egy
+            szelesites eldontott volna egy nyitott kerdest.
+
+            AZOTA A KERDES ELDOLT, es nem dontessel, hanem meressel: a tervben
+            az asztali ZAROSOR a lapkeret TELJES szelesseget foglalja (1440 a
+            1440-bol), sajat 44 pixeles belso margoval es sajat felso kerettel.
+            A keret es a hatter tehat a SORE tartozik, nem a burokra.
+
+            A felso margo tovabbra is toresponkent valt: mobilon 24, asztalin
+            56 -- mind a ketto a tervbol.
+          */
           className={
             tartalom[savSzakasz.kulcs]
-              ? "-mx-4 mt-[24px] max-lg:sticky max-lg:bottom-0 lg:mx-auto lg:mt-4 lg:max-w-[1352px] lg:border lg:bg-[var(--terv-doboz-hatter)] lg:p-4"
-              : "-mx-4 mt-[24px] lg:mx-auto lg:mt-4 lg:max-w-[1352px]"
+              ? "-mx-4 mt-[24px] max-lg:sticky max-lg:bottom-0 lg:mt-14"
+              : "-mx-4 mt-[24px] lg:mt-14"
           }
-          style={{ borderColor: "var(--terv-keret)" }}
           data-vaz-oszlop={savSzakasz.oszlop}
           data-testid="vaz-ragados-sav-burok"
         >

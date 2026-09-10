@@ -1394,34 +1394,60 @@ describe("a címblokk nem dobozban áll", () => {
    * korlat es kozepre igazitas. A `lg:mx-auto` nelkul a fenti `-mx-4` az
    * asztali lapon is szelesitene -- es a fenti allitas attol meg zold lenne.
    */
-  it("az asztali nézetben visszaáll a rács korlátja", () => {
+  /**
+   * A BUROK MIND A KET NEZETBEN TELJES SZELESSEGU -- ES EZ EGY KORABBI
+   * ALLITAST VALT FEL, NEM TOROL.
+   *
+   * A 332-ben azt allitottam, hogy az asztali nezetben VISSZAALL a racs
+   * korlatja (1352, kozepre igazitva). Az akkor helyes volt: a tervnek nem
+   * volt allitasa az asztali savrol, tehat egy szelesites eldontott volna egy
+   * nyitott kerdest.
+   *
+   * A kerdes azota MERESSEL dolt el: a tervben az asztali zarosor a lapkeret
+   * TELJES szelesseget foglalja (1440 a 1440-bol), sajat 44 pixeles belso
+   * margoval. A korlat tehat nem "elavult", hanem a MENTSEGE fogyott el.
+   */
+  it("a burok mind a két nézetben teljes szélességű", () => {
     render(<LapVaz />)
 
-    const burok = screen.getByTestId("vaz-ragados-sav-burok")
+    const kod = screen.getByTestId("vaz-ragados-sav-burok").className
 
-    expect(burok.className).toMatch(/lg:mx-auto(?![-\w])/)
-    expect(burok.className).toMatch(/lg:max-w-\[1352px\]/)
+    expect(kod).toMatch(/-mx-4(?![-\w])/)
+    expect(kod).not.toMatch(/lg:mx-auto(?![-\w])/)
+    expect(kod).not.toMatch(/lg:max-w-/)
+  })
+
+  /**
+   * ES A FELSO MARGO TORESPONKENT VALT: mobilon 24, asztalin 56 -- mind a
+   * ketto a tervbol merve. A `lg:mt-14` a Tailwind 56 pixeles lepese.
+   */
+  it("a burok felső margója törésponként vált", () => {
+    render(<LapVaz />)
+
+    const kod = screen.getByTestId("vaz-ragados-sav-burok").className
+
+    expect(kod).toMatch(/mt-\[24px\]/)
+    expect(kod).toMatch(/lg:mt-14(?![-\w])/)
   })
 
   /**
    * ES A DOBOZ KERETE IS VISSZAALL, DE CSAK TARTALOMMAL -- ures allapotban a
    * szaggatott helykitolto a szakaszon marad, es ket keret allna egymasban.
    */
-  it("tartalommal az asztali burok viseli a doboz keretét", () => {
+  /**
+   * A KERET ES A BELSO MARGO A SORE TARTOZIK, NEM A BUROKRA.
+   *
+   * A 332-ben a burok viselte oket asztalin, mert a savnak nem volt sajat
+   * asztali alakja. A tervbeli zarosor viszont SAJAT felso keretet es sajat
+   * 44 pixeles belso margot hoz -- ket keret egymasban ket vonalat rajzolna.
+   */
+  it("a burok semmilyen nézetben nem visel keretet", () => {
     render(<LapVaz tartalom={{ "ragados-sav": <span>proba</span> }} />)
 
-    const burok = screen.getByTestId("vaz-ragados-sav-burok")
+    const kod = screen.getByTestId("vaz-ragados-sav-burok").className
 
-    expect(burok.className).toMatch(/lg:border(?![-\w])/)
-    expect(burok.className).toMatch(/lg:p-4(?![-\w])/)
-  })
-
-  it("üresen viszont a burok nem visel keretet", () => {
-    render(<LapVaz />)
-
-    expect(screen.getByTestId("vaz-ragados-sav-burok").className).not.toMatch(
-      /lg:border(?![-\w])/,
-    )
+    expect(kod).not.toMatch(/(^|\s|:)border(?![-\w])/)
+    expect(kod).not.toMatch(/(^|\s|:)p-4(?![-\w])/)
   })
 
   /**

@@ -119,7 +119,12 @@ const RagadosSav = ({ cimke, ar, cselekves }: RagadosSavProps) => {
         gyereke. A sav maga tehat NEM deklaral pozíciot -- es ezt allitas is
         orzi, hogy a hatastalan alak ne jojjon vissza.
       */
-      className="flex items-center gap-[10px] border-t px-[18px] py-[14px] lg:gap-5 lg:px-11 lg:py-5"
+      /*
+        CSAK MOBILON. Az asztali lapon a `ZaroSor` all a helyen -- a tervben ez
+        KET kulonbozo elem, mas tartalommal (belyegkep, nev, keszlet-sor), nem
+        ugyanez szelesebben. A ket komponens egyszerre soha nem latszik.
+      */
+      className="flex items-center gap-[10px] border-t px-[18px] py-[14px] lg:hidden"
       style={{
         borderColor: "var(--terv-keret)",
         background: "var(--terv-hatter)",

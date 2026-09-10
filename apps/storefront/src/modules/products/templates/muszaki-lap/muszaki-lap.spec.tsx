@@ -321,7 +321,22 @@ describe("a sablon átadja-e a fotó slotot", () => {
    * keri, es nem beirt szint. Az meg tud bukni, tehat allitas.
    */
   it("a ragadós sáv gombja a fő cselekvés tokenjét viseli", () => {
-    expect(forras).toContain("ragados-sav-ugras")
+    /**
+     * AZ AZONOSITO MOSTANTOL ELOTAGBOL AL, ES EZ NEM GYENGITES.
+     *
+     * Itt korabban a betuszerinti `ragados-sav-ugras` allt. A ket also elem
+     * (mobil sav, asztali zarosor) UGYANAZT a cselekvest viseli, es mind a
+     * ketto ott all a fában -- egy betuszerinti azonosito mind a kettore
+     * ugyanazt vinne, es a `getByTestId` ket talalatra hasalna el. Ezert
+     * fuggveny epiti, elotaggal.
+     *
+     * Az allitas ezert a MECHANIZMUSRA megy: a suffix ott all a forrasban, es
+     * a ket hivo KULONBOZO elotagot ad. A regi hibat (a gomb nem koveti a fo
+     * cselekvest) ez ugyanugy elkapja, mert a suffix eltunese pirosra viszi.
+     */
+    expect(forras).toContain("`${elotag}-ugras`")
+    expect(forras).toContain('alsoCselekves("ragados-sav")')
+    expect(forras).toContain('alsoCselekves("zarosor")')
     expect(forras).toContain('background: "var(--terv-kiemel)"')
 
     /**
@@ -399,12 +414,9 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
    * valamelyiket, a sav megint mondhat mast, mint a fo oszlop.
    */
   it("mindhárom állapotnak van saját cselekvése", () => {
-    for (const azonosito of [
-      "ragados-sav-ugras",
-      "ragados-sav-hasonlo",
-      "ragados-sav-elfogyott",
-    ]) {
-      expect(forras).toContain(azonosito)
+    /* A suffixek a cselekves-fuggvenyben allnak; az elotagot a hivo adja. */
+    for (const suffix of ["-ugras", "-hasonlo", "-elfogyott"]) {
+      expect(forras).toContain("`${elotag}" + suffix + "`")
     }
   })
 
@@ -416,7 +428,7 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
    * is allitunk, a valtozo NEVEVEL egyutt.
    */
   it("az ugró gomb csak a KAPHATÓ ághoz tartozik", () => {
-    const ugras = forras.indexOf("ragados-sav-ugras")
+    const ugras = forras.indexOf("`${elotag}-ugras`")
     expect(ugras).toBeGreaterThan(0)
 
     const elotte = forras.slice(0, ugras)
