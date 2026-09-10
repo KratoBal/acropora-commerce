@@ -24,6 +24,19 @@
  * osszefuz. Aki ide dekodolast tesz, ugyanazt a hibat hozza vissza, amit a
  * ketszeres kodolas javitasa (2026-09-07) megszuntetett.
  *
+ * === A TOBBSZEGMENSU ALAK MA NEM ALL ELO (merve 2026-09-10, nautilus) ===
+ *
+ * A kategoria-utak a stage bolton EGYSZEGMENSUEK: a handle mar magaban hordozza
+ * a lancot (`aquaforest---korallt%C3%A1pok`), es a morzsamenu is EGYETLEN
+ * handle-lel linkel (`product-breadcrumb/index.tsx`). Merve harom valodi
+ * kiszolgalt lapon: `/hu/categories/korallok`, `/hu/categories/term%C3%A9kek` es
+ * `/hu/categories/aquaforest---korallt%C3%A1pok` mind 200-at ad, a tobbszegmensu
+ * `/hu/categories/term%C3%A9kek/eledelek---term%C3%A9kek` pedig 404-et.
+ *
+ * A `join("/")` tehat ma egy NEM LETEZO esetet kezel. Ez nem hiba, es nem is kell
+ * kivenni -- de aki ezt a sort olvassa, kulonben azt hinne, hogy a tobbszintu ut
+ * letezik, es arra epitene.
+ *
  * === A HATOKORE ===
  *
  * CSAK a kategoria-lap cimet adja. A `robots` fejlec es a kereso-lathatosag
