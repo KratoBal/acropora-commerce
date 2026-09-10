@@ -1401,3 +1401,67 @@ describe("a DOA garancia-sor", () => {
     )
   })
 })
+
+/**
+ * A VAZ KAPUJA NEM LEHET SZUKEBB, MINT A KOMPONENS DONTESE.
+ *
+ * === A MERT HIBA, AMI EZT AZ ALLITAST LETREHOZTA ===
+ *
+ * A #353 adott a `RelatedProducts`-nak masodik forrast (a legmelyebb
+ * kategoriat), de ez a kapu valtozatlanul a GONDOZOTT azonositokat kerdezte.
+ * Vagyis a slot ki sem kerult, es a komponens uj aga SOSEM futott le.
+ *
+ * Merve a kiszolgalt lapon, KET egymast koveto build utan: a szakasz tovabbra
+ * is 2/42 lapon latszott -- pontosan annyin, ahany gondozott listaval
+ * rendelkezik. A valtozas zolden ment at minden kapun, es NULLA hatasa volt.
+ *
+ * A kapu sajat fejlece mar akkor is kimondta a szabalyt ("ugyanazt a
+ * fuggvenyt kerdezzuk meg, amit a komponens is"). A szabaly megvolt; en
+ * valtoztattam meg az egyik felet, es a masikat nem.
+ *
+ * === MIERT KET IRANYBOL MERUNK ===
+ *
+ * Egy kapu ketfele romolhat el: SZUKEBB lesz a kelletenel (a mai hiba, a
+ * doboz sosem jelenik meg), vagy TAGABB (a slot mindig bekerul, es a doboz
+ * URESEN rajzol -- amit a `VazDoboz` fejlece kulon tilt). Ket allitas keriti
+ * be, nem egy.
+ */
+describe("a hasonló doboz kapuja a tartalékot is ismeri", () => {
+  /*
+    A FIXTURAK A `TERMEK`-BOL EPULNEK, DE AZ `never` TIPUSU -- egy `never`
+    ERTEKET NEM LEHET SZETTERITENI. Egy koztes `Record` alak kell hozza, es
+    az `as never` marad a vegen, mert a `vazTartalom` bemenete is ilyen.
+  */
+  const ALAP = TERMEK as unknown as Record<string, unknown>
+  const NINCS_GONDOZOTT = { ...ALAP, metadata: {} } as never
+  const VAN_GONDOZOTT = {
+    ...ALAP,
+    metadata: { unas_similar_ids: "prod_1" },
+  } as never
+  const SZAKASZ = <div data-testid="hasonlo-proba">lista</div>
+
+  const kapu = (termek: never, tartalek?: string) =>
+    vazTartalom(
+      termek,
+      true,
+      SZAKASZ,
+      undefined,
+      undefined,
+      undefined,
+      KATEGORIAK,
+      tartalek,
+    ).hasonlo
+
+  it("gondozott lista nélkül, tartalék kategóriával a slot bekerül", () => {
+    expect(kapu(NINCS_GONDOZOTT, "pcat_sps")).toBeTruthy()
+  })
+
+  it("gondozott lista és tartalék nélkül a slot NEM kerül be", () => {
+    expect(kapu(NINCS_GONDOZOTT, undefined)).toBeFalsy()
+  })
+
+  /** ISMERT POZITIV KONTROLL: a regi ut valtozatlan. */
+  it("gondozott listával a slot tartalék nélkül is bekerül", () => {
+    expect(kapu(VAN_GONDOZOTT, undefined)).toBeTruthy()
+  })
+})

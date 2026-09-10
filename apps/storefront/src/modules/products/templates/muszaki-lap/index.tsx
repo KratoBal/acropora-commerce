@@ -3,6 +3,7 @@ import LapVaz from "@modules/products/components/lap-vaz"
 import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 import { vazTartalom } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
+import { besorolasUt } from "@lib/util/kategoria-fa"
 import React from "react"
 
 /**
@@ -158,6 +159,15 @@ const MuszakiLap = ({
         ragadosResz,
         kiegeszitoResz,
         kategoriak,
+        /*
+          A TARTALEK KATEGORIA A KAPUNAK IS KELL, NEM CSAK A KOMPONENSNEK.
+
+          A `hasonlo` doboz kapuja a `vazTartalom`-ban all, es ha az szukebb,
+          mint a komponens dontese, a slot ki sem kerul -- a komponens uj aga
+          sosem fut le. Ugyanabbol a fuggvenybol szamolodik, mint a besorolas
+          sora, hogy a ket olvaso ne vezesse le ketfele ugyanazt.
+        */
+        besorolasUt(product, kategoriak ?? []).at(-1)?.id,
       )}
     />
   )
