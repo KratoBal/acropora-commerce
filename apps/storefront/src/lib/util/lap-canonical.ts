@@ -1,9 +1,12 @@
 /**
- * A TERMEKLAP ES A STORE-LAP KANONIKUS CIME.
+ * A TERMEKLAP, A STORE-LAP ES A FOOLDAL KANONIKUS CIME.
  *
  * A kategoria-lape kulon fajlban all (`kategoria-canonical.ts`), mert az egy
  * MERT HIBA javitasa volt (a canonical egy nem letezo lapra mutatott). Ez a
- * ketto UJ: ezeknek a lapoknak soha nem volt canonicaljuk.
+ * HAROM UJ: ezeknek a lapoknak soha nem volt canonicaljuk.
+ *
+ * (A fooldal 2026-09-10-en kerult ide, a masik ketto utan. A fenti mondat
+ * addig "ez a ketto"-t mondott -- egy szam, ami a sajat fajljaban avult el.)
  *
  * === MIT OLD MEG, ES MIT NEM (merve 2026-09-10 a stage bolton) ===
  *
@@ -70,4 +73,28 @@ export function storeCanonical(
 ): string {
   const alap = `/${countryCode}/store`
   return oldal && oldal > 1 ? `${alap}?page=${oldal}` : alap
+}
+
+/**
+ * A FOOLDAL KANONIKUS CIME.
+ *
+ * A LEGEGYSZERUBB A HAROM KOZUL, ES EPP EZERT KELL ODAIRNI, MIERT KELL EGYALTALAN.
+ *
+ * A fooldalnak nincs se lapozasa, se szuroje, tehat nincs mit eldonteni benne.
+ * Egyetlen duplikalo alak marad, ugyanaz, mint a masik ket lapnal: a kovetesi
+ * parameteres cim.
+ *
+ * MERVE 2026-09-10, a stage bolton, negy alakon:
+ *
+ *     /hu                    200,  0 atiranyitas
+ *     /hu?fbclid=abc123      200,  0 atiranyitas   <- EZ a duplikatum
+ *     /hu/                   200,  1 atiranyitas a /hu-ra
+ *     /                      200,  1 atiranyitas a /hu-ra
+ *
+ * Vagyis a per-jeles es az orszagkod nelkuli alakot atiranyitas kezeli, a
+ * kovetesi parameterest semmi. A bolt Facebook-hirdeteseket futtat, es minden
+ * hirdetes-kattintas `?fbclid=...` alaku cimre erkezik -- a fooldalra is.
+ */
+export function fooldalCanonical(countryCode: string): string {
+  return `/${countryCode}`
 }
