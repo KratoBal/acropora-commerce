@@ -1,4 +1,4 @@
-import type { Logger } from "@medusajs/framework/types"
+import type { ICartModuleService, Logger } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { refreshCartItemsWorkflow } from "@medusajs/medusa/core-flows"
 
@@ -50,8 +50,30 @@ refreshCartItemsWorkflow.hooks.beforeRefreshingPaymentCollection(
       const { plan } = state
 
       if (plan.action === "remove") {
+        /*
+          A TIPUS ITT ALL, ES NEM A KIKOVETKEZTETESRE BIZZUK.
+
+          A `MedusaContainer` ket tulterhelest ad: az elso a `Cradle`
+          kulcsaira szol, a masodik egy sima sztring-kulcsra. A `Cradle`
+          alapertelmezese a `ModuleImplementations`, ami a `@medusajs/types`-ban
+          URES interfesz -- a sajat kommentje szerint "acts as a bucket that
+          other modules can fill using declaration merging". A feltoltest a
+          GENERALT `.medusa/types/augmentation-refs.d.ts` vegzi
+          (`/// <reference types="@medusajs/medusa/cart" />` es tarsai).
+
+          Az a fajl a CI-ben NINCS -- ezt a `verify` sajat mereseszkoze irja ki
+          minden futason. Ha az augmentacio nincs a programban, a kulcs nem
+          `keyof Cradle`, a masodik tulterheles all be, es a tipus `unknown`
+          lesz. Pontosan ezt a hibat adta a CI ezen a soron: TS2571,
+          2026-09-10 06:14.
+
+          A TIPUS FORRASA, hogy ne talalgatas legyen: a `@medusajs/types`
+          `dist/cart/service.d.ts`-ben all az `ICartModuleService`, es rajta
+          `deleteLineItems(ids: string[], sharedContext?: Context)` -- pont az
+          a hivas, amit itt teszunk.
+        */
         await container
-          .resolve(Modules.CART)
+          .resolve<ICartModuleService>(Modules.CART)
           .deleteLineItems(plan.removeIds)
 
         logger.info(
