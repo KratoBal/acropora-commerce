@@ -14,7 +14,7 @@ import {
   ValasztoDoboz,
 } from "../vasarlas/dobozok"
 import {
-  hasonloAzonositok,
+  kapcsolatForras,
   kiegeszitoAzonositok,
 } from "../related-products/gondozott-kapcsolatok"
 import {
@@ -445,6 +445,26 @@ export function vazTartalom(
    * hivo nem tudna eloallitani anelkul, hogy a lanc-logika ketfele allna.
    */
   kategoriak?: BesorolasKategoria[],
+  /**
+   * A NYOLCADIK, ES UGYANAZERT A VEGERE, mint a hatodik es a hetedik: a
+   * szignatura POZICIONALIS.
+   *
+   * === MIERT KELL EGYALTALAN IDE ===
+   *
+   * A `hasonlo` doboz kapuja (lentebb) eddig a GONDOZOTT azonositokat kerdezte
+   * meg, es a komponens is azt kerdezte. A #353 ota a komponensnek MASODIK
+   * forrasa is van (a legmelyebb kategoria), a kapu viszont valtozatlan maradt
+   * -- vagyis a slot ki sem kerult, es a komponens uj aga SOSEM futott le.
+   *
+   * Merve a kiszolgalt lapon, KET egymast koveto build utan: a szakasz
+   * tovabbra is 2/42 lapon latszott, pontosan annyin, ahany gondozott listaval
+   * rendelkezik.
+   *
+   * Ez ugyanaz az alak, amit a kapu sajat megjegyzese mar leir: "ugyanazt a
+   * fuggvenyt kerdezzuk meg, amit a komponens is". A ket fel kozotti allitas
+   * megvolt -- csak en valtoztattam meg az egyik felet, es a masikat nem.
+   */
+  tartalekKategoriaId?: string | null,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: <Cimsor termek={termek} kategoriak={kategoriak} />,
@@ -693,10 +713,21 @@ export function vazTartalom(
    * a lap nem kerte le azt a mezot.
    *
    * Ezert ugyanazt a fuggvenyt kerdezzuk meg, amit a komponens is: ha nincs
-   * gondozott azonosito, a slot ki sem kerul, es a doboz a varakozo szoveget
-   * mutatja.
+   * FORRAS, a slot ki sem kerul, es a doboz a varakozo szoveget mutatja.
+   *
+   * === ES A FUGGVENY NEVE 2026-09-10-EN MEGVALTOZOTT, NEM A SZABALY ===
+   *
+   * A `hasonloAzonositok` csak a gondozott listat ismeri. A komponensnek a
+   * #353 ota KET forrasa van, es a dontest a `kapcsolatForras` hozza. Amig itt
+   * a regi fuggveny allt, a kapu SZUKEBB volt, mint a komponens: a slot ki sem
+   * kerult, tehat a tartalek-ag sosem futott le. Merve ket build utan: 2/42,
+   * valtozatlanul.
    */
-  if (hasonloResz && hasonloAzonositok(termek.metadata).length > 0) {
+  if (
+    hasonloResz &&
+    kapcsolatForras("hasonlo", termek.metadata, tartalekKategoriaId).mod !==
+      "nincs"
+  ) {
     tartalom.hasonlo = hasonloResz
   }
 
