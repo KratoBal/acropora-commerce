@@ -259,9 +259,44 @@ jobs:
           echo "--- tsc --showConfig ---"
           pnpm exec tsc --showConfig -p tsconfig.json
 
+      # A TIPUSELLENORZES MOSTANTOL A SAJAT BEMENETEROL IS BESZEL.
+      #
+      # MIERT UGYANEBBEN A HIVASBAN, ES NEM KULON LEPESBEN: egy kulon
+      # diagnosztikai futas mindig azzal a kerdessel jar, hogy ugyanaz-e, mint
+      # az eles. A `--listFiles` a `--noEmit` mellett UGYANAZT a programot
+      # sorolja fel, amelyiket ellenorzi -- tehat arrol beszel, amelyik bukik.
+      #
+      # MIT KERESUNK: a `@medusajs/framework/dist/types/container.d.ts` fajlt.
+      # Az tolti fel a `ModuleImplementations` interfeszt deklaracio-
+      # osszefuzessel (`declare module "@medusajs/types"`), es abban all
+      # `[Modules.CART]: ICartModuleService`, `[LOGGER]: Logger` es tarsaik.
+      # Ha ez a fajl NINCS a programban, a `resolve` kulcsa nem `keyof Cradle`,
+      # a masodik tulterheles all be, es a tipus `unknown` -- pontosan az a
+      # hiba, ami 2026-09-07 es 09-10 kozott tizennegyszer bukott el
+      # (643 futasbol; a bukasok 41 szazaleka).
+      #
+      # A FAJLLISTAT NEM IRJUK KI: 3937 sor. Csak a szamokat es a hibakat.
+      #
+      # A kilepesi kod a `tsc`-e, nem a `grep`-e -- ezert all kulon valtozoban.
+      # Egy csovezetek utolso tagjanak kilepesi kodja a sajat hibank lenne.
       - name: Tipusellenorzes
         working-directory: apps/backend
-        run: pnpm exec tsc --noEmit -p tsconfig.json
+        run: |
+          set +e
+          pnpm exec tsc --noEmit --listFiles -p tsconfig.json > /tmp/tsc-kimenet.txt 2>&1
+          KOD=$?
+          set -e
+          # A `wc -l` a HIBASOROKAT is beleszamolna: a `--listFiles` kimenete
+          # es a hibauzenetek ugyanabban a folyamban allnak. A fajlok abszolut
+          # uttal kezdodnek, a hibak nem -- ezert a szamlalas `^/` mintara megy.
+          # (Merve: hibas fan a `wc -l` 3938-at adott, a mintas szamlalas 3937-et.)
+          echo "a program fajljainak szama: $(grep -c '^/' /tmp/tsc-kimenet.txt)"
+          echo "framework container.d.ts a programban: $(grep -c 'framework/dist/types/container.d.ts' /tmp/tsc-kimenet.txt || true)"
+          echo "AMIT EZ NEM MOND MEG: azt, hogy az augmentacio ERVENYBE lepett-e."
+          echo "A lista a program FAJLJAIT sorolja. Ha a fajl ott all es MEGIS"
+          echo "'unknown' jon, a kovetkezo kerdes mar nem ez lesz."
+          grep -E 'error TS' /tmp/tsc-kimenet.txt || true
+          exit $KOD
 
       # A KIRAKAT TIPUSELLENORZESE KULON LEPES, ES EDDIG EGYALTALAN NEM LETEZETT.
       #
