@@ -326,14 +326,23 @@ describe("a műszaki lap váza", () => {
    * lap, csak két érték-készlet ugyanazon a vázon. Ha valaha valaki a sötét
    * ághoz más dobozokat vagy más sorrendet ad, ez pirosra vált.
    *
-   * EGY KÖR ODA-VISSZA (2026-09-07): a #108-ban SZŰKÍTETTEM ezt az állítást
-   * részhalmaz-alakra, mert acrobot két dobozt levetetett a sötét listáról. A
-   * tervből vett mérés azt a döntést cáfolta -- a terv MINDKÉT dobozt
-   * tartalmazza, csak mást kérdez --, ezért a dobozok visszakerültek, és ezzel
-   * ez az állítás visszakapta az eredeti, ERŐSEBB alakját.
+   * KÉT KÖR ODA-VISSZA, ÉS AZ ÁLLÍTÁS MA RÉSZHALMAZ-ALAKÚ:
    *
-   * A tanulság nem az, hogy fölösleges kör volt: az állítás mindkét irányban
-   * elsült, és pontosan azt mutatta meg, hogy a szerkezet változik.
+   *   #108   két doboz lekerül a sötét listáról, az állítás részhalmaz-alakra szűkül
+   *   #116   a dobozok visszakerülnek, mert a terv tartalmazza őket
+   *   #126   a tartozék-doboz VÉGLEG lekerül (`ELO_ALLAT_ELHAGYOTT`)
+   *
+   * EZ A BEKEZDÉS 2026-09-10-ig azt mondta, hogy az állítás "visszakapta az
+   * eredeti, ERŐSEBB alakját". A #116 után igaz volt; a #126 után nem, és
+   * ottmaradt. A törzs végig részhalmaz-alakú maradt -- vagyis a KOMMENT
+   * mondott mást, mint amit a sorok alatta mérnek.
+   *
+   * Ezért áll itt a lánc, nem csak a mai állapot: egy állítás, aminek a
+   * kommentje erősebbnek mondja magát, mint amit mér, pontosan olyan, mint egy
+   * őrző, ami szól, de nem állít meg.
+   *
+   * A tanulság nem az, hogy fölösleges körök voltak: az állítás mindkét
+   * irányban elsült, és pontosan azt mutatta meg, hogy a szerkezet változik.
    */
   it("a sötét szerkezet a világos RÉSZHALMAZA, azonos sorrendben", () => {
     const kulcsok = (v: "vilagos" | "sotet") => {
