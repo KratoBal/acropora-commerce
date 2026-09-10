@@ -883,23 +883,43 @@ const ELO_ALLAT_CIMEK: Record<string, { cim?: string; varakozo?: string }> = {
 }
 
 /**
- * ES EGY DOBOZ, AMIT A TERV ALAPJAN KI KELLETT VOLNA HAGYNI -- MEGIS BENT MARAD.
+ * A TARTOZEK-DOBOZ A SOTET LISTAROL LEKERUL -- ES EZ ITT KORABBAN AZ
+ * ELLENKEZOJET ALLITOTTA.
  *
- * Merve: a korall valtozatban NINCS "Ami meg kellhet hozza" doboz. Eloszor ki is
- * vettem, es egy MEGLEVO allitas azonnal pirosra valtott:
+ * MA: `ELO_ALLAT_ELHAGYOTT = new Set(["kiegeszitok"])` (lentebb). Az elo allat
+ * lapjan tehat "Ami meg kellhet hozza" doboz NINCS -- sem tele, sem uresen,
+ * sem rejtve. A tervbol kovetkezik: a korall valtozat nem tartalmazza.
  *
- *   "a szerkezet mindket vilagban ugyanaz"
+ * === MIERT ALL ITT A TORTENET, ES NEM CSAK A MAI ALLAPOT ===
  *
- * Az az allitas SZANDEKOS, es a sajat kommentje ki is mondja, mit ved: hogy a
- * ket vilag NEM ket kulon lap, csak ket ertek-keszlet ugyanazon a vazon. Ez
- * szerkezeti dontes, es nem az enyem -- nem irom at azert, hogy az en
- * valtozasom atmenjen.
+ * Ez a bekezdes 2026-09-10-ig azt mondta, hogy a doboz "MEGIS BENT MARAD", es
+ * egy allitast idezett a nevevel: "a szerkezet mindket vilagban ugyanaz". A
+ * dontes azota KETSZER fordult meg, es az allitas neve is megvaltozott:
  *
- * ES A KET BIZONYITEK KOZUL A MASODIK ITT EROSEBB, mert Balazs kikotese pontosan
- * erre az esetre szol: "ami NINCS, ott a doboz alljon a helyen, uresen". Egy
- * uresen allo tartozek-doboz tehat NEM hiba a korall lapon, hanem a kimondott
- * viselkedes. A "Hasonlo lampak" felirat viszont AZ IGEN: az nem ures doboz,
- * hanem rossz allitas -- es a javitas pontosan azt celozza.
+ *   #108   ket doboz lekerul, az allitas RESZHALMAZ-alakra szukul
+ *   #116   a dobozok visszakerulnek, mert a terv tartalmazza oket
+ *   #126   a tartozek-doboz VEGLEG lekerul a sotet listarol
+ *
+ * A mondat tehat nem tevedes volt, hanem egy KOZBENSO allapot leirasa, ami
+ * ottmaradt. Aki ma a nevere keresett ("a szerkezet mindket vilagban ugyanaz"),
+ * NULLA talalatot kapott: a mai allitas neve "a sötét szerkezet a világos
+ * RÉSZHALMAZA, azonos sorrendben".
+ *
+ * === AMI VALTOZATLANUL IGAZ, ES AMI NEM ===
+ *
+ * VALTOZATLAN: Balazs kikotese ("ami NINCS, ott a doboz alljon a helyen,
+ * uresen") azokra a dobozokra all, amik a listan RAJTA vannak. Egy ures
+ * tartozek-doboz nem lett volna hiba.
+ *
+ * NEM ALL TOBBE: hogy ezert bent is marad. A lista maga donti el, mi all a
+ * lapon, es a tartozek-doboz azon ma nincs rajta.
+ *
+ * === AMIT EZ A KOVETKEZO MERONEK JELENT (nautilus felvetese, 2026-09-10) ===
+ *
+ * A korall lapokon a `vaz-kiegeszitok` jelolo egyaltalan nem letezik -- se
+ * `ures=igen`, se rejtve. Amikor a tartozek-kapcsolatok megjonnek a forrasbol,
+ * a megjeleneset MUSZAKI lapon kell visszamerni, nem koralln: ott nincs mihez
+ * merni, es ez nem hiany, hanem a lista dontese.
  */
 
 /**
