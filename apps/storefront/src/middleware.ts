@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
+import { statikusGyokerUt } from "@lib/util/statikus-utak"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -102,8 +103,13 @@ async function getCountryCode(
 /**
  * Middleware to handle region selection.
  */
+/*
+ * A DONTES KULON FAJLBAN ALL (`lib/util/statikus-utak.ts`), MERT ITT NEM MERHETO:
+ * ez a modul a `next/server`-t importalja, tehat egysegteszt nem tudja betolteni.
+ * Az indok, a meres es a lista bovitesenek szabalya ott all, a fuggveny mellett.
+ */
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.includes(".")) {
+  if (statikusGyokerUt(request.nextUrl.pathname)) {
     return NextResponse.next()
   }
 
