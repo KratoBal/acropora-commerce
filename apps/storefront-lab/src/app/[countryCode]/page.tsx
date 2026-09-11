@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CategoryIcon } from "@/components/category-icon";
 import { ProductCard } from "@/components/product-card";
 import { listProducts } from "@/lib/medusa";
 
@@ -27,17 +28,21 @@ export default async function StorefrontLabHome({
       </section>
       <section className="category-shortcuts" aria-label="Kiemelt kategóriák">
         {[
-          ["◌", "Világítás"],
-          ["✤", "Szivattyúk"],
-          ["▽", "Szűrés"],
-          ["♧", "Vízkémia"],
-          ["◔", "Eleség"],
-          ["♢", "Élőlények"],
-          ["▱", "Akváriumok"],
-          ["☷", "Minden termék"],
+          ["light", "Világítás"],
+          ["pump", "Szivattyúk"],
+          ["filter", "Szűrés"],
+          ["water", "Vízkémia"],
+          ["food", "Eleség"],
+          ["livestock", "Élőlények"],
+          ["aquarium", "Akváriumok"],
+          ["all", "Minden termék"],
         ].map(([icon, label]) => (
           <a href="#friss-erkezesek" key={label}>
-            <span aria-hidden="true">{icon}</span>
+            <span>
+              <CategoryIcon
+                name={icon as Parameters<typeof CategoryIcon>[0]["name"]}
+              />
+            </span>
             {label}
           </a>
         ))}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AcroporaLogo } from "@/components/acropora-logo";
 import type { MedusaCategory } from "@/lib/medusa";
 
 const navigation = ["Termékek", "Halak", "Korallok", "Gerinctelenek"];
@@ -24,10 +25,7 @@ export function SiteHeader({ categories }: { categories: MedusaCategory[] }) {
       </div>
       <div className="header-main homepage-header">
         <Link className="brand" href="/hu" aria-label="Acropora kezdőlap">
-          <span className="brand-mark" aria-hidden="true">
-            <i />
-          </span>
-          <span>acropora</span>
+          <AcroporaLogo className="header-logo" />
         </Link>
         <label className="search">
           <span className="sr-only">Keresés</span>
