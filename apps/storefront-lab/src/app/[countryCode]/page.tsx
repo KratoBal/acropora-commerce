@@ -20,38 +20,51 @@ export default async function StorefrontLabHome({
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="eyebrow">Acropora OS · Storefront Lab</span>
-          <h1>A zátony minden részlete számít.</h1>
-          <p>
-            Különálló, Medusa-alapú teszt storefront az Acropora új vásárlási
-            élményéhez.
-          </p>
-          <div className="hero-actions">
-            <a href="#friss-erkezesek">Friss érkezések</a>
-            <Link href="/hu/kosar">Tesztkosár megnyitása</Link>
+      <section className="intro-section">
+        <span className="eyebrow">A TE REEFED. A MI SZAKÉRTELMÜNK.</span>
+        <h1>Minden a következő jó döntéshez.</h1>
+        <p>Technika, élőlények és a tudás, hogy jól válassz.</p>
+      </section>
+      <section className="category-shortcuts" aria-label="Kiemelt kategóriák">
+        {[
+          ["◌", "Világítás"],
+          ["✤", "Szivattyúk"],
+          ["▽", "Szűrés"],
+          ["♧", "Vízkémia"],
+          ["◔", "Eleség"],
+          ["♢", "Élőlények"],
+          ["▱", "Akváriumok"],
+          ["☷", "Minden termék"],
+        ].map(([icon, label]) => (
+          <a href="#friss-erkezesek" key={label}>
+            <span aria-hidden="true">{icon}</span>
+            {label}
+          </a>
+        ))}
+      </section>
+      <section className="home-feature-grid">
+        <div className="reef-feature">
+          <div>
+            <span className="eyebrow">EGY ÉLŐ VILÁG, OTTHON.</span>
+            <h2>A reefed következő fejezete itt kezdődik.</h2>
+            <p>Az első akváriumtól a legszebb korallodig.</p>
+            <a href="#friss-erkezesek">Fedezd fel az élőlényeket　→</a>
           </div>
         </div>
-        <div className="hero-water" aria-hidden="true">
-          <span className="coral-orb one" />
-          <span className="coral-orb two" />
-          <span className="coral-orb three" />
-        </div>
-      </section>
-      <section className="service-strip">
-        <div>
-          <strong>WYSIWYG élőlények</strong>
-          <span>A kiválasztott egyedet kapod</span>
-        </div>
-        <div>
-          <strong>Szakértői segítség</strong>
-          <span>Akvarista szemlélet minden döntéshez</span>
-        </div>
-        <div>
-          <strong>Biztonságos szállítás</strong>
-          <span>Élő állatokra tervezett folyamat</span>
-        </div>
+        <aside className="knowledge-feature" id="tudastar">
+          <span className="eyebrow">▱ ACROPORA TUDÁSTÁR</span>
+          <h2>
+            Előbb megértjük.
+            <br />
+            Aztán választunk.
+          </h2>
+          <p>Új akváriumot indítasz, vagy a meglévőből hoznál ki többet?</p>
+          <a href="#tudastar">Indulj a tudással　→</a>
+          <div>
+            <span>Most indítom az első reefemet　›</span>
+            <span>Stabilabb vízértékeket szeretnék　›</span>
+          </div>
+        </aside>
       </section>
       <section className="catalog-section" id="friss-erkezesek">
         <div className="section-heading">
