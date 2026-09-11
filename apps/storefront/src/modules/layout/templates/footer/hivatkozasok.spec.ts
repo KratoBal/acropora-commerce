@@ -235,27 +235,67 @@ describe("a lábléc síkja", () => {
   /**
    * ISMERT POZITIV KONTROLL A FENTI MINTAHOZ. Egy tagado allitast egy URES
    * VILAG is kielegit: ha a regex elromlik, a sor akkor is zold, ha a lablec
-   * tele van rogzitett szinnel. Ez a sor egy olyan fajlon sul el, amirol
-   * tudjuk, hogy vannak benne.
+   * tele van rogzitett szinnel.
+   *
+   * === EZ A KONTROLL EGY MASIK FAJLRA MUTATOTT, ES ELAVULT ===
+   *
+   * Elso alakja a `product-preview/index.tsx` fajlt olvasta be, azzal az
+   * indokkal, hogy "tudjuk, hogy vannak benne" rogzitett szinek. 2026-09-10-en
+   * abbol a fajlbol kikerultek a nyers Medusa osztalyok (a kartya cime es ara
+   * a terv tokenjeire allt at), es ez a kontroll PIROSRA valtott -- holott sem
+   * a lablec, sem a minta nem valtozott.
+   *
+   * A hiba nem a javitase volt, hanem a kontrolle: egy MASIK fajl esetleges
+   * tartalmara tamaszkodott, es epp azt a tartalmat dolgozunk azon, hogy
+   * eltuntessuk. Amig ilyen alakban all, minden token-atallas ujra elsuti.
+   *
+   * A mai alak SAJAT mintakon mer, minden aganra kulon, es a tagado peldakkal
+   * egyutt azt is megmondja, hogy a minta nem talal MINDENT. Amit ezzel
+   * elvesztunk: nem bizonyitja, hogy valodi kodon is elsul -- azt viszont a
+   * lablec sajat beolvasasa (`a forrás olvasható`) mar allitja.
+   *
+   * === KALIBRACIO (2026-09-10) ===
+   *
+   *   a minta mindent elkap (`/text/`)      3 piros, koztuk MINDKET kontroll
+   *   a minta semmit nem talal              1 piros: a rogzitett-peldak kontroll
+   *
+   * A ket irany kulon sul el, tehat a ket kontroll nem ugyanazt meri.
    */
   it("ugyanez a minta megtalálja a rögzített színt ott, ahol van", () => {
-    const mas = kodSzoveg(
-      readFileSync(
-        join(
-          __dirname,
-          "..",
-          "..",
-          "..",
-          "products",
-          "components",
-          "product-preview",
-          "index.tsx",
-        ),
-        "utf-8",
-      ),
-    )
+    const ROGZITETT_PELDAK = [
+      "text-ui-fg-subtle",
+      "txt-ui-fg-base",
+      "bg-ui-bg-base",
+      "border-ui-border-base",
+      "text-zinc-500",
+      "text-gray-400",
+      "text-neutral-700",
+      "text-slate-900",
+      "text-black",
+      "text-white",
+    ]
 
-    expect(mas).toMatch(ROGZITETT_SZIN)
+    for (const pelda of ROGZITETT_PELDAK) {
+      expect(pelda).toMatch(ROGZITETT_SZIN)
+    }
+  })
+
+  /**
+   * ES A MASIK IRANY: a minta NEM talal el mindent. E nelkul egy elszabadult
+   * regex (peldaul `/text-/`) is kielegitene a fenti kontrollt, es kozben a
+   * lablec minden token-alapu osztalyat rogzitett szinnek mondana.
+   */
+  it("a minta a terv tokenjeit és a méret-osztályokat békén hagyja", () => {
+    const TOKEN_PELDAK = [
+      "text-[var(--terv-szoveg)]",
+      "border-[var(--terv-keret)]",
+      "text-sm font-medium",
+      "bg-[var(--terv-hatter)]",
+    ]
+
+    for (const pelda of TOKEN_PELDAK) {
+      expect(pelda).not.toMatch(ROGZITETT_SZIN)
+    }
   })
 })
 
