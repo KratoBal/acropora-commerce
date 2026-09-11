@@ -44,16 +44,21 @@ type Region = {
   countries?: Array<{ iso_2?: string }>;
 };
 
-const backendUrl = () =>
-  (
+const stagingBackendUrl = "https://commerce-stage.acropora.hu";
+const stagingPublishableKey =
+  "pk_ba7f178c2b6b94dc96334fc7f24d32c3949b4575fc764658812fcd508a8b7dcc";
+
+const backendUrl = () => {
+  const configuredUrl =
     process.env.MEDUSA_BACKEND_URL ??
-    process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ??
-    "https://commerce-stage.acropora.hu"
-  ).replace(/\/$/, "");
+    process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL;
+
+  return (configuredUrl?.trim() || stagingBackendUrl).replace(/\/$/, "");
+};
 
 const publishableKey = () =>
-  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ??
-  "pk_ba7f178c2b6b94dc96334fc7f24d32c3949b4575fc764658812fcd508a8b7dcc";
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY?.trim() ||
+  stagingPublishableKey;
 
 const endpoint = (
   path: string,

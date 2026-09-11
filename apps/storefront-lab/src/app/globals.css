@@ -1144,12 +1144,6 @@ h2 {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.footer-logo {
-  display: block;
-  width: 180px;
-  height: auto;
-  margin-bottom: 17px;
-}
 .footer-contact h2 {
   margin-bottom: 12px;
 }

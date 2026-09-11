@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { AcroporaLogo } from "@/components/acropora-logo";
-
 const shop = "https://shop.acropora.hu";
 
 function ShopLink({
@@ -38,7 +36,6 @@ export function SiteFooter() {
       </section>
       <div className="footer-grid">
         <section className="footer-contact">
-          <AcroporaLogo className="footer-logo" />
           <h2>Acropora Kft.</h2>
           <address>
             1106 Budapest,
