@@ -36,6 +36,42 @@ const hasVisibleContent = (html: string) =>
  * This component only separates its existing HTML tables; it deliberately does
  * not alter, sanitize, or interpret their contents.
  */
+/**
+ * A FULEK A TERV SAJAT TOKENJEIN ALLNAK, NEM NYERS MEDUSA-OSZTALYOKON.
+ *
+ * === AMI ITT ALLT, ES A LEGFONTOSABB EGY SOR ===
+ *
+ * Az AKTIV ful alavonasa `border-ui-fg-interactive` volt, ami rgb(59,130,246)
+ * -- Tailwind blue-500. Ez a szin a design-rendszerunkben SEHOL maskent nem
+ * fordul elo: idegen szin egy MUKODO komponensen. A terv az aktiv fult a lap
+ * SAJAT szovegszinevel jeloli, nem kulon akcentszinnel.
+ *
+ * A hat par (picasso merese, 2026-09-10):
+ *
+ *   border-ui-border-base       -> var(--terv-keret)
+ *   border-ui-fg-interactive    -> var(--terv-szoveg)          (kek -> lap-szin)
+ *   text-ui-fg-base             -> var(--terv-szoveg)
+ *   text-ui-fg-muted            -> var(--terv-szoveg-halvany)
+ *   outline-ui-fg-interactive   -> var(--terv-kiemel)          (rez fokusz-gyuru)
+ *   text-ui-fg-subtle           -> var(--terv-szoveg-halvany)
+ *
+ * A BETUTIPUS NEM ERINTETT: mind a harom resz mar a lap sajat fontjat orokli.
+ *
+ * === AMIT EZ A CSERE NEM ER EL, ES EZ MERVE VAN ===
+ *
+ * A ful-panel TARTALMA nem JSX: `dangerouslySetInnerHTML` toltifel, a HTML
+ * pedig a termek leirasabol jon. A benne allo `table table-condensed`,
+ * `attr-label` es `attr-value` osztalyok a TAROLT szovegben vannak, nem nalunk:
+ *
+ *   a kirakat forrasaban          0 elofordulas (mind a harom osztalyra)
+ *   a kiszolgalt lapon            3 / 9 / 9 elofordulas
+ *
+ * Vagyis a panel BELSEJE ettol a valtozastol nem mozdul. Ha az is a tervhez
+ * igazodik, az MASIK munka: vagy a tarolt HTML-t kell atirni, vagy egy globalis
+ * szabalyt kell rea adni -- es a ketto kozott dontes kell, nem szerkesztés.
+ *
+ * (Picasso ezt kerdesként jelezte, nem allitaskent; a fenti ket szam a valasz.)
+ */
 const ProductDescriptionTabs = ({
   description,
 }: ProductDescriptionTabsProps) => {
@@ -83,7 +119,7 @@ const ProductDescriptionTabs = ({
   if (tabs.length === 1) {
     return (
       <div
-        className="text-medium text-ui-fg-subtle prose prose-sm max-w-none"
+        className="text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
         data-testid="product-description"
         dangerouslySetInnerHTML={{ __html: tabs[0].html }}
       />
@@ -94,7 +130,7 @@ const ProductDescriptionTabs = ({
   return (
     <div data-testid="product-description-tabs">
       <div
-        className="flex border-b border-ui-border-base"
+        className="flex border-b border-[var(--terv-keret)]"
         role="tablist"
         aria-label="Termékadatok"
       >
@@ -110,7 +146,7 @@ const ProductDescriptionTabs = ({
               id={`${baseId}-tab-${index}`}
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveIndex(index)}
-              className={`px-4 py-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ui-fg-interactive ${selected ? "border-b-2 border-ui-fg-interactive text-ui-fg-base" : "text-ui-fg-muted hover:text-ui-fg-base"}`}
+              className={`px-4 py-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-b-2 border-[var(--terv-szoveg)] text-[var(--terv-szoveg)]" : "text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`}
             >
               {/*
                 KET FELIRAT, EGY GOMB -- ES NEM KET GOMB.
@@ -139,7 +175,7 @@ const ProductDescriptionTabs = ({
         id={`${baseId}-panel-${activeIndex}`}
         role="tabpanel"
         aria-labelledby={`${baseId}-tab-${activeIndex}`}
-        className="pt-4 text-medium text-ui-fg-subtle prose prose-sm max-w-none"
+        className="pt-4 text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
         dangerouslySetInnerHTML={{ __html: activeTab.html }}
       />
     </div>
