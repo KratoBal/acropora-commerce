@@ -1,9 +1,11 @@
 import { Metadata } from "next"
 import { STORE_NAME } from "@lib/store"
 
-import FeaturedProducts from "@modules/home/components/featured-products"
-import Hero from "@modules/home/components/hero"
-import { listCollections } from "@lib/data/collections"
+import AkciosSor from "@modules/kezdolap/components/akcios-sor"
+import HeroCsuszka from "@modules/kezdolap/components/hero-csuszka"
+import KategoriaSav from "@modules/kezdolap/components/kategoria-sav"
+import MagazinEsVideo from "@modules/kezdolap/components/magazin-es-video"
+import ReefClub from "@modules/kezdolap/components/reef-club"
 import { getRegion } from "@lib/data/regions"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
@@ -35,6 +37,38 @@ export async function generateMetadata(props: {
   }
 }
 
+/**
+ * A KEZDOLAP.
+ *
+ * === MI VALTOZOTT, ES MIERT ===
+ *
+ * Eddig a starter ket eleme allt itt: egy ures hero a bolt nevevel, es egy
+ * `FeaturedProducts` lista, ami GYUJTEMENYEKBOL epult. Merve 2026-09-14 az elo
+ * lapon: a kiszolgalt kezdolap 75 kilobajt, EGY `h1` ("Acropora"), NULLA
+ * termek-hivatkozas es NULLA kategoria-hivatkozas -- mert a teszt boltban
+ * nulla gyujtemeny van, tehat a lista sosem kapott mit mutatni.
+ *
+ * A helyere Balazs 2026-09-14-i kezdolap-terve kerul, savonkent.
+ *
+ * === A SAVOK SORRENDJE A TERVROL JON ===
+ *
+ *   hero-csuszka      MINTA (kep es szoveg)
+ *   kategoriasav      ELO adat
+ *   akcios sor        MINTA (a boltban ma nincs kedvezmenyes ar)
+ *   Reef Club         MINTA (a klub meg nem indult)
+ *   magazin es video  MINTA (nincs cikkforras, nincs kivalasztott video)
+ *   lablec            ELO, mar korabban megepult
+ *
+ * Amelyik sav minta-adatbol dolgozik, az a lapon is megmondja magarol. A
+ * reszletes indoklas a `modules/kezdolap/minta-adat.ts` fejleceben all.
+ *
+ * === AMIERT A REGIO HIANYA NEM URES LAPOT AD ===
+ *
+ * A regio csak a kategoriasav termekszamaihoz kell. A starter itt `null`-t
+ * adott vissza, ha a regio vagy a gyujtemeny hianyzott -- vagyis EGY hianyzo
+ * adat az EGESZ kezdolapot eltuntette. A tobbi sav nem fugg a regiotol, tehat
+ * azok attol meg megjelenhetnek.
+ */
 export default async function Home(props: {
   params: Promise<{ countryCode: string }>
 }) {
@@ -44,22 +78,13 @@ export default async function Home(props: {
 
   const region = await getRegion(countryCode)
 
-  const { collections } = await listCollections({
-    fields: "id, handle, title",
-  })
-
-  if (!collections || !region) {
-    return null
-  }
-
   return (
     <>
-      <Hero />
-      <div className="py-12">
-        <ul className="flex flex-col gap-x-6">
-          <FeaturedProducts collections={collections} region={region} />
-        </ul>
-      </div>
+      <HeroCsuszka />
+      {region ? <KategoriaSav regionId={region.id} /> : null}
+      <AkciosSor />
+      <ReefClub />
+      <MagazinEsVideo />
     </>
   )
 }
