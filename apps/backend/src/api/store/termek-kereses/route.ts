@@ -54,8 +54,30 @@ import { oszlopHajtogatva, szavakra } from "./ekezet-hajtogatas";
  * A hatar nem izles: 200 azonosito nagyjabol hat kilobajt cim, ami a szokasos
  * nyolc kilobajtos korlat alatt marad.
  *
- * ES A CSONKOLAS NEM NEMA: egy levagott lista ugy nezne ki, mint egy kisebb
- * talalathalmaz, es a vevo azt olvasna ki belole, hogy ennyi termekunk van.
+ * ES A CSONKOLAS NEM NEMA -- A VALASZBAN. A `csonkolt` mezo ott van; a kirakat
+ * ma NEM rajzolja ki, es a vevo fele igy a levagas NEMA MARAD. Merve a
+ * kitelepites utan: a `szűrő` kereses 241-252 talalatrol 193-204-re esett, azaz
+ * pontosan 200 azonositora -- a vevo legalabb 41 termeket nem lat, es a lapozo
+ * egyszeruen 17 lapot mutat.
+ *
+ * === KET DOLOG, AMIT SZANDEKOSAN NEM JAVITUNK, ES EZERT ALL ITT ===
+ *
+ * 1. A LIKE JOKEREI NINCSENEK VEDVE. Aki `%` vagy `_` karaktert gepel, jokert
+ *    kap: a `q=50%` mintabol `%50%%` lesz. EZ NEM ROMLAS -- a Medusa mag `q`-ja
+ *    pontosan ugyanezt csinalja (`%${searchValue}%`, vedes nelkul), tehat a mai
+ *    viselkedest orizzuk. Azert all itt, hogy ha valaha panasz jon ra, senki ne
+ *    higgye, hogy az UJ ut hozta. (acrobot atnezese, 2026-09-14.)
+ *
+ * 2. AZ INDEX KERDESE, ES ITT A KEZENFEKVO VALASZ ROSSZ. A
+ *    `translate(lower(oszlop), ...)` feltetelt egy sima index nem szolgalja ki,
+ *    tehat minden kereses vegigolvassa a tablat. 1501 terméknel ez nem latszik.
+ *    DE EGY KIFEJEZES-INDEX SEM OLDANA MEG: a minta `%`-szal KEZDODIK, es azt a
+ *    btree ugyis eldobja. Ha ez valaha lassu lesz, a valodi ut a `pg_trgm` GIN
+ *    index -- az viszont BOVITMENY, tehat ugyanaz a merlegeles, amit az
+ *    `unaccent`-nel elvetettunk.
+ *
+ *    EZT AZERT IRJUK LE, hogy ha egyszer lassu lesz, senki ne toltson egy
+ *    delelottot egy indexszel, ami nem segit.
  */
 const FELSO_HATAR = 200;
 
