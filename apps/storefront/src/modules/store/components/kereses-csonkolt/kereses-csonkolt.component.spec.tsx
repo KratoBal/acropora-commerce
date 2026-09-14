@@ -28,9 +28,22 @@ afterEach(cleanup)
  * A ketto EGYUTT ad allitast, kulon egyik sem: egy doboz teszje nem meri a
  * bekotest.
  *
- * === KALIBRACIO ===
+ * === KALIBRACIO (2026-09-14, fej 26eed33; minden korben 27 teszt futott le) ===
  *
- * A szamok a meres utan kerulnek ide; a joslat fajlban all a futtatas elott.
+ * A joslat FAJLBAN allt a futtatas elott
+ * (`agents/murena/scripts/joslat-csonkolt.md`), a cafolati feltetelekkel.
+ *
+ *   mindig kirajzolja (a feltetel kiesik)   1 piros („csonkolas nelkul NEM")
+ *   soha nem rajzolja ki                    4 piros (a masik negy szelet)
+ *   a szam BEEGETVE 200                     1 piros („az atadott ertekbol jon")
+ *
+ * A HARMADIKNAL A KONTROLL ZOLD MARADT, es ez szandekos: 200-at egetek be,
+ * tehat az „egy masik szam is atmegy" szelet (ami 200-zal hiv) tovabbra is
+ * teljesul. Ez mutatja, hogy a ket szelet KULON mer -- ha egyutt pirosodnanak,
+ * nem tudnank, melyik allitas el.
+ *
+ * A BEKOTES ket rontasat a SZOMSZEDOS spec fogja (`kereses-azonositokkal`), es
+ * ott derult ki, hogy az elso alakja HALOTT volt. Lasd ott.
  */
 describe("a csonkolas jelzese", () => {
   it("csonkolaskor megjelenik a mondat", () => {

@@ -73,8 +73,15 @@ describe("a keresés azonosítókon át megy", () => {
    * hiba, hogy a mezo letezett es senki nem olvasta.
    */
   it("a csonkolás jelzése a válasz mezőiből kap értéket", () => {
-    expect(kod).toContain("talalat.csonkolt")
-    expect(kod).toContain("talalat.count")
+    /*
+      A TELJES ERTEKADASRA MERUNK, NEM A RESZSZORA. A `toContain`
+      ("talalat.csonkolt") alak HALOTT volt: a kalibracio C4 kore egy
+      `talalat.csonkolt && false` rontast tett be, es a szelet ZOLD MARADT,
+      mert a reszszo tovabbra is ott allt. A sor VEGEHEZ kotve a rontas
+      nev szerint pirosodik.
+    */
+    expect(kod).toMatch(/keresesCsonkolt = talalat\.csonkolt\s*$/m)
+    expect(kod).toMatch(/keresesDarab = talalat\.count\s*$/m)
     expect(kod).toMatch(/<KeresesCsonkolt[^>]*csonkolt=\{keresesCsonkolt\}/)
     expect(kod).toMatch(/<KeresesCsonkolt[^>]*darab=\{keresesDarab\}/)
   })
