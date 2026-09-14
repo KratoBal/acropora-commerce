@@ -53,9 +53,16 @@ beforeEach(() => {
  * két ág forrása bájtra azonos (egyetlen cserével készült mindkettő), de ez
  * ÁLLÍTÁS a kódról, nem mérés a viselkedésről, és így is mondom.
  *
- * === KALIBRÁCIÓ ===
+ * === KALIBRÁCIÓ (2026-09-14, fej 2fffd47; minden körben 37 teszt futott le) ===
  *
- * A számok a mérés után kerülnek ide; a jóslat fájlban áll a futtatás előtt.
+ * A jóslat FÁJLBAN állt a futtatás előtt
+ * (`agents/murena/scripts/joslat-penztar-hiba.md`).
+ *
+ *   BEÉGETETT mondat, mindig ugyanaz   1 piros („nem egy beégetettet")
+ *
+ * A rontás MINDKÉT ágat átírta (a Stripe-osat is), és mégis egy piros jött --
+ * mert a Stripe ágat ez a suite nem méri. Ez nem hiba, hanem a fenti korlát
+ * SZÁMSZERŰ alakja: ami nincs mérve, az egy rontástól sem mozdul.
  */
 
 /** Manuális fizetési mód: ez az ág Stripe nélkül is kirajzolódik. */

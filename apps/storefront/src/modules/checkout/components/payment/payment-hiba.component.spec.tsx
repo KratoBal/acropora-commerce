@@ -59,9 +59,16 @@ beforeEach(() => {
  *
  * NEM MÉRI az élő pénztár-utat sem: valódi rendelést nem indítottam.
  *
- * === KALIBRÁCIÓ ===
+ * === KALIBRÁCIÓ (2026-09-14, fej 2fffd47; minden körben 37 teszt futott le) ===
  *
- * A számok a mérés után kerülnek ide; a jóslat fájlban áll a futtatás előtt.
+ * A jóslat FÁJLBAN állt a futtatás előtt
+ * (`agents/murena/scripts/joslat-penztar-hiba.md`).
+ *
+ *   sikertelen indítás után MÉGIS továbblép   1 piros („nem lép tovább")
+ *
+ * ÉS AMI EZT BIZONYÍTÉKKÁ TESZI: a pozitív kontroll („sikeres indítás után
+ * továbblép") ZÖLD maradt. Ha mind a kettő pirosodott volna, a rontásom a
+ * továbblépést általában vitte volna el, és nem tudnánk, mit mértünk.
  */
 
 function kosar(): HttpTypes.StoreCart {

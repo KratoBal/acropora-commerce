@@ -19,9 +19,22 @@ import {
  * nem: a vevő más teendőt kap attól, hogy a szállítási módot kell-e
  * újraválasztania, a fizetésit, vagy azt kell megnéznie, átment-e a rendelése.
  *
- * === KALIBRÁCIÓ ===
+ * === KALIBRÁCIÓ (2026-09-14, fej 2fffd47; minden körben 37 teszt futott le) ===
  *
- * A számok a mérés után kerülnek ide; a jóslat fájlban áll a futtatás előtt.
+ * A jóslat FÁJLBAN állt a futtatás előtt
+ * (`agents/murena/scripts/joslat-penztar-hiba.md`), a cáfolati feltételekkel.
+ *
+ *   a vágás mindhárom párra a 4xx-ágat adja   6 piros (páronként 2)
+ *   a szállítás és a fizetés mondata egybeesik 1 piros („nincs két egyforma")
+ *
+ * AZ ELSŐHÖZ 9-ET JÓSOLTAM, ÉS 6 LETT. A jóslatom volt rossz, nem a teszt: a
+ * komponens-szeletek az adatréteget mockolják, tehát a `vagas` függvényt el sem
+ * érik, a rendelés-mondat ellenőrzős szelete pedig a KONSTANSOKAT méri, nem a
+ * leképezést. Amit a jóslat MELLÉ írtam -- hogy a lényeg nem a szám, hanem hogy
+ * mindhárom párból pirosodjon -- az teljesült: 2, 2, 2.
+ *
+ * A MÁSODIK EGY PIROSA NEM HIÁNYOSSÁG: a többi szelet a saját konstansához
+ * méri a kimenetet, tehát egy egybeesést KIZÁRÓLAG a halmaz-kontroll fog meg.
  */
 
 const PAROK = [

@@ -49,9 +49,16 @@ beforeEach(() => {
  *
  * NEM MÉRI az élő pénztár-utat: valódi rendelést nem indítottam.
  *
- * === KALIBRÁCIÓ ===
+ * === KALIBRÁCIÓ (2026-09-14, fej 2fffd47; minden körben 37 teszt futott le) ===
  *
- * A számok a mérés után kerülnek ide; a jóslat fájlban áll a futtatás előtt.
+ * A jóslat FÁJLBAN állt a futtatás előtt
+ * (`agents/murena/scripts/joslat-penztar-hiba.md`).
+ *
+ *   a lépés megint a KIVÉTELBŐL dolgozik   3 piros, és mind a három ITT
+ *
+ * A harmadik piros a VISSZAUGRÁS szelete, és ez a lényeg: a rontás nem csak a
+ * mondatot vitte el, hanem a visszaállítást is -- vagyis a kettő tényleg
+ * ugyanabból az ágból jön, nem két véletlenül együtt álló dolog.
  */
 
 function szallitasiMod(id: string, nev: string) {
