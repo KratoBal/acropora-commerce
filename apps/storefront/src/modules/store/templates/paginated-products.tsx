@@ -1,6 +1,7 @@
 import { listCategoryIdsWithDescendants } from "@lib/data/categories"
 import { listProductsWithSort } from "@lib/data/products"
 import { keresesTalalatok } from "@lib/data/termek-kereses"
+import { keresesSzuro } from "@lib/util/kereses-szuro"
 import { getRegion } from "@lib/data/regions"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import ProductPreview from "@modules/products/components/product-preview"
@@ -100,19 +101,9 @@ export default async function PaginatedProducts({
   let keresesNullaTalalat = false
   if (kereses) {
     const talalat = await keresesTalalatok(kereses)
-    if (talalat.ids.length === 0) {
-      keresesNullaTalalat = true
-    } else {
-      /*
-        HA MAR VAN `id` SZURO (kapcsolodo termekek listaja), a ketto METSZETE a
-        helyes: mind a ket feltetelnek teljesulnie kell. Felulirva az egyik
-        szuro CSENDBEN eltunne.
-      */
-      queryParams["id"] = productsIds
-        ? talalat.ids.filter((id) => productsIds.includes(id))
-        : talalat.ids
-      if (queryParams["id"].length === 0) keresesNullaTalalat = true
-    }
+    const szuro = keresesSzuro(talalat.ids, productsIds)
+    if (szuro.nullaTalalat) keresesNullaTalalat = true
+    else queryParams["id"] = szuro.ids
   }
 
   if (sortBy === "created_at") {

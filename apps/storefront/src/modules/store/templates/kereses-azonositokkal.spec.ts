@@ -52,26 +52,19 @@ describe("a keresés azonosítókon át megy", () => {
   })
 
   /**
-   * A NULLA TALALAT KULON AG, ES EZ A LEGFONTOSABB ALLITAS EBBEN A FAJLBAN.
+   * A DONTES A MERT FUGGVENYBOL JON, NEM A LAPON BELULROL.
    *
-   * Egy URES `id` halmazt a lekerdezes figyelmen kivul hagyhatna, es akkor a
-   * vevo a TELJES katalogust latna egy olyan keresesre, aminek nincs talalata.
-   * Nem hibazna, es hihető valasznak latszana -- a nema fajta.
+   * Ez az allitas ELOSZOR a feltetel SZOVEGET merte, es a kalibracio
+   * megmutatta, hogy nem discriminal: a `=== 0`-t `=== -1`-re rontva minden
+   * szelet zold maradt, mert a valtozo es a korai visszateres a helyen volt.
+   * A dontes ezert sajat, merheto fuggvenybe kerult (`kereses-szuro.ts`), es
+   * ott VISELKEDESSEL van orizve. Ez a sor csak azt orzi, hogy az ELO ut oda
+   * vezessen.
    */
-  it("nulla találatnál el sem indítja a lekérdezést", () => {
-    expect(kod).toContain("keresesNullaTalalat")
-    /* A korai visszateres a lekerdezes ELOTT all: a `listProductsWithSort`
-       hivasa kesobb szerepel a fajlban, mint a nulla-talalat aga. */
-    expect(kod.indexOf("keresesNullaTalalat) {")).toBeLessThan(
+  it("a nulla-találat döntését a mért függvény hozza", () => {
+    expect(kod).toContain("keresesSzuro(")
+    expect(kod.indexOf("keresesNullaTalalat")).toBeLessThan(
       kod.indexOf("await listProductsWithSort"),
     )
-  })
-
-  /**
-   * ES A METSZET: ha mar all `id` szuro (kapcsolodo termekek), a ketto
-   * EGYUTT ervenyes. Felulirva az egyik feltetel csendben eltunne.
-   */
-  it("meglévő azonosító-szűrővel metszetet képez, nem ír felül", () => {
-    expect(kod).toMatch(/productsIds[\s\S]{0,120}filter\(/)
   })
 })
