@@ -275,6 +275,20 @@ export const listNonEmptyRootCategories = async (
    * szurjuk. A menu igy nem kap uj hivast, csak egy kesz terkepet.
    */
   nevek: Map<string, string>
+  /**
+   * A GYOKERENKENTI TERMEKSZAM, AZONOSITO SZERINT -- ES NEM UJ LEKERDEZES.
+   *
+   * Ugyanaz a `count`, amibol az ures gyokereket kiszurjuk. Eddig eldobtuk,
+   * miutan igaz/hamis lett belole. A kezdolap kategoria-csempeje viszont a
+   * SZAMOT is kiirja ("125 termek"), es ha azt kulon kerne le, ugyanaz a
+   * lekerdezes menne ki masodszor, minden lapbetolteskor.
+   *
+   * A szam a TELJES RESZFARA ertendo (leszarmazottakkal egyutt), mert a szures
+   * is arra megy. A kozvetlenul a gyokerhez kotott termekek szama mas -- merve
+   * 2026-09-14 a teszt bolton: Korallok kozvetlenul 8, reszfaval is 8, de a
+   * Vizkezeles kozvetlenul 120, reszfaval 128.
+   */
+  szamok: Map<string, number>
 }> => {
   const mind = await listCategories({
     fields: "id,name,handle,parent_category_id,rank",
@@ -342,7 +356,7 @@ export const listNonEmptyRootCategories = async (
   */
   const gyokerek = gyokerekKetSzintel(mind)
 
-  const vane = await Promise.all(
+  const szamok = await Promise.all(
     gyokerek.map(async (gy) => {
       const {
         response: { count },
@@ -353,7 +367,7 @@ export const listNonEmptyRootCategories = async (
           category_id: leszarmazottAzonositok(mind, gy.id),
         },
       })
-      return count > 0
+      return count
     }),
   )
 
@@ -375,7 +389,7 @@ export const listNonEmptyRootCategories = async (
   */
   return {
     gyokerek: gyokerek
-      .filter((_, i) => vane[i])
+      .filter((_, i) => szamok[i] > 0)
       .sort((a, b) => {
         const ra = (a as { rank?: number | null }).rank ?? 0
         const rb = (b as { rank?: number | null }).rank ?? 0
@@ -388,5 +402,6 @@ export const listNonEmptyRootCategories = async (
       utkozo tarsa nem fer be a menube.
     */
     nevek: megjelenitendoNevek(mind),
+    szamok: new Map(gyokerek.map((gy, i) => [gy.id, szamok[i]])),
   }
 }
