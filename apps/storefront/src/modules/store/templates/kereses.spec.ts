@@ -153,8 +153,25 @@ describe("a keresés eljut a lekérdezésig", () => {
     expect(forras).toContain("listProductsWithSort")
   })
 
+  /**
+   * A KERESES ELJUT A LEKERDEZESIG -- DE MAR MASIK UTON (2026-09-14).
+   *
+   * Ez az allitas eddig a `queryParams["q"] = kereses` sort kereste. AZ AZ
+   * ALLITAS HELYES VOLT, es a `q` kikerulesevel PIROSRA is valtott -- pontosan
+   * ugy, ahogy egy orzotol varni kell.
+   *
+   * Amit NEM cserelek: a szandekot. A kerdes tovabbra is az, hogy a kereses
+   * TENYLEG eljut-e a lekerdezesig -- csak a mechanizmus mas: a sajat,
+   * ekezet-fuggetlen vegpont adja az azonositokat, es azok kerulnek a szurobe.
+   * Az OK a `termek-kereses.ts` fejleceben all.
+   *
+   * A MELLETTE ALLO TAGADAS (`q` mar nem megy ki) es a nulla-talalat aga a
+   * `kereses-azonositokkal.spec.ts` fajlban van, hogy ez a doboz a REGI
+   * kerdesnel maradjon: eljut-e.
+   */
   it("a keresés a lekérdezés paraméterei közé kerül", () => {
-    expect(forras).toContain('queryParams["q"] = kereses')
+    expect(forras).toContain("keresesTalalatok")
+    expect(forras).toMatch(/queryParams\["id"\]/)
   })
 
   /**
