@@ -32,7 +32,7 @@ const ReefClub = () => {
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <p
             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-            style={{ color: "var(--terv-kiemel)" }}
+            style={{ color: "var(--terv-kiemel-tinta)" }}
           >
             {k.eyebrow}
           </p>
@@ -59,7 +59,7 @@ const ReefClub = () => {
                 <li key={p.cim}>
                   <span
                     className="text-[11px] font-semibold tabular-nums"
-                    style={{ color: "var(--terv-kiemel)" }}
+                    style={{ color: "var(--terv-kiemel-tinta)" }}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </span>

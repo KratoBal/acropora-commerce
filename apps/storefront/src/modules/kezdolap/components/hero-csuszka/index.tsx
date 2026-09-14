@@ -84,7 +84,7 @@ const HeroCsuszka = () => {
         <div className="relative z-10 max-w-2xl">
           <p
             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-            style={{ color: "var(--terv-kiemel)" }}
+            style={{ color: "var(--terv-kiemel-tinta)" }}
           >
             {dia.eyebrow}
           </p>
