@@ -54,11 +54,23 @@ import { oszlopHajtogatva, szavakra } from "./ekezet-hajtogatas";
  * A hatar nem izles: 200 azonosito nagyjabol hat kilobajt cim, ami a szokasos
  * nyolc kilobajtos korlat alatt marad.
  *
- * ES A CSONKOLAS NEM NEMA -- A VALASZBAN. A `csonkolt` mezo ott van; a kirakat
- * ma NEM rajzolja ki, es a vevo fele igy a levagas NEMA MARAD. Merve a
- * kitelepites utan: a `szűrő` kereses 241-252 talalatrol 193-204-re esett, azaz
- * pontosan 200 azonositora -- a vevo legalabb 41 termeket nem lat, es a lapozo
- * egyszeruen 17 lapot mutat.
+ * ES A CSONKOLAS NEM NEMA. A `csonkolt` mezo ott van a valaszban, ES A KIRAKAT
+ * KI IS RAJZOLJA (`modules/store/components/kereses-csonkolt`).
+ *
+ * ITT KORABBAN AZ ALLT, hogy a kirakat nem rajzolja ki, tehat a vevo fele a
+ * levagas nema marad. Az akkor IGAZ volt, es 2026-09-14-en szunt meg -- nem
+ * hagytam ott, mert egy megjegyzes, ami egy azota megvaltozott allapotot ir le,
+ * rosszabb a semminel: a kovetkezo olvaso egy mar bezart rest keresne.
+ *
+ * A MERES, AMIBOL A JELZES LETT (kitelepites utan, 2026-09-14, a kiszolgalt
+ * lapon, ket iranyban es ket kontrollal): a `szűrő` kereses 241-252 talalatrol
+ * 193-204-re esett, azaz pontosan 200 azonositora -- a vevo legalabb 41
+ * termeket nem lat, es a lapozo egyszeruen 17 lapot mutat. Pozitiv kontroll
+ * `quantum` (9, valtozatlan), negativ kontroll `zzzzqqqqxxxx` (0).
+ *
+ * A VAGAS ISMERVE, mert a jelzes szovege ezen all: a rendezes `created_at DESC`
+ * a LIMIT ELOTT, tehat a megtartott 200 MINDIG a legujabb 200 -- fuggetlenul
+ * attol, hogyan rendez a vevo a lapon.
  *
  * === KET DOLOG, AMIT SZANDEKOSAN NEM JAVITUNK, ES EZERT ALL ITT ===
  *
@@ -71,6 +83,9 @@ import { oszlopHajtogatva, szavakra } from "./ekezet-hajtogatas";
  * 2. AZ INDEX KERDESE, ES ITT A KEZENFEKVO VALASZ ROSSZ. A
  *    `translate(lower(oszlop), ...)` feltetelt egy sima index nem szolgalja ki,
  *    tehat minden kereses vegigolvassa a tablat. 1501 terméknel ez nem latszik.
+ *    (A DARABSZAM MELLE DATUM ES POPULACIO KELL, kulonben nem osszevetheto:
+ *    1501 publikalt termek a TESZT Medusa boltban, merve 2026-09-14, acrobot
+ *    adatbazis-lekerdezese. Az UNAS export ugyanakkor MAS populacio.)
  *    DE EGY KIFEJEZES-INDEX SEM OLDANA MEG: a minta `%`-szal KEZDODIK, es azt a
  *    btree ugyis eldobja. Ha ez valaha lassu lesz, a valodi ut a `pg_trgm` GIN
  *    index -- az viszont BOVITMENY, tehat ugyanaz a merlegeles, amit az
