@@ -10,9 +10,23 @@ import {
 /**
  * A KÉT MONDAT SZÉTVÁLASZTÁSA.
  *
- * A lényeg nem az, hogy VAN üzenet, hanem hogy a KETTŐ KÜLÖNBÖZIK -- és a
- * kalibráció is erre megy: egy olyan változat, ami mindig ugyanazt a mondatot
- * adja, a „nem érvényes" ágon zöld maradna, a másikon pirosodik.
+ * A lényeg nem az, hogy VAN üzenet, hanem hogy a KETTŐ KÜLÖNBÖZIK.
+ *
+ * === KALIBRÁCIÓ (2026-09-14, fej cd4ff2e; minden körben 14 teszt futott le) ===
+ *
+ *   a két mondat UGYANAZ                      1 piros: „a két mondat nem ugyanaz"
+ *   a vágás 500-nál áll, nem 400-nál          3 piros (mindhárom leképezés-szelet)
+ *   a `hibaAllapota` a régi alakot is elfogadja 1 piros
+ *   a komponens megint a kivételből dolgozik  1 piros
+ *   a komponens nem írja ki a válasz üzenetét 1 piros
+ *   a felirat visszaangolosodik               1 piros
+ *
+ * AZ ELSŐ KÖRNÉL HÁRMAT VÁRTAM, ÉS EGY JÖTT -- a JÓSLATOM volt rossz, nem a
+ * teszt. A leképezés-szeletek a függvény kimenetét A KONSTANSHOZ mérik, tehát
+ * egy konstans-csere őket nem tudja megmozdítani: a tartalom összeomlását
+ * KIZÁRÓLAG a „nem ugyanaz" kontroll fogja meg. Épp ezért van ott — enélkül a
+ * hat állítás egy olyan változatot is kielégítene, amiben mindkét ág ugyanazt
+ * a mondatot adja, és a vevő minden hibára ugyanazt olvasná.
  */
 describe("a kedvezménykód üzenete az állapotkódból következik", () => {
   it("a 4xx a KÓDRA mutat", () => {
