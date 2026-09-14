@@ -47,9 +47,23 @@ beforeEach(() => {
  * szőrszálhasogatás: ez a suite akkor is zöld lenne, ha a Next viselkedése
  * holnap megváltozna -- amit itt őrzünk, az a mi oldalunk.
  *
- * === KALIBRÁCIÓ ===
+ * === KALIBRÁCIÓ (2026-09-14, fej ef7b4e0; minden körben 11 teszt futott le) ===
  *
- * A számok a mérés után kerülnek ide; a jóslat fájlban áll a futtatás előtt.
+ * A jóslat FÁJLBAN állt a futtatás előtt
+ * (`agents/murena/scripts/joslat-kosar-hiba.md`). Öt körből öt egyezett.
+ *
+ *   a sor megint a KIVÉTELBŐL dolgozik        2 piros (a két mondat-szelet)
+ *   BEÉGETETT mondat, mindig ugyanaz          1 piros („nem egy beégetettet")
+ *   a hibaüzenet nem jut el a dobozig         3 piros (mindhárom üzenet-szelet)
+ *
+ * AZ ELSŐ RONTÁS SZÁNDÉKOSAN SZŰK: a `catch` ágat változatlanul hagyja, hogy a
+ * dobás-szelet ne mozduljon. Egy tágabb rontás (visszatérés a teljes
+ * `catch`-alapú alakra) hármat vitt volna, és akkor nem tudnánk, hogy a válasz
+ * olvasása és a dobás kezelése KÉT külön állítás.
+ *
+ * AZ UTOLSÓ IS SZŰK, ÉS UGYANEZÉRT: az `ErrorMessage` elem a HELYÉN marad, csak
+ * nem kap hibát. Ha az elemet tüntetném el, a piros a „létezik" állításról
+ * szólna, nem a „működik"-ről -- és a pozitív kontroll szelet is elesne vele.
  */
 
 /**

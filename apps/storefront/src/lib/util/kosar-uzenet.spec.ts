@@ -15,10 +15,20 @@ import { KOD_NEM_ERVENYES } from "./kedvezmeny-uzenet"
  * Aki a kosárban azt olvasná, hogy „ez a kedvezménykód nem érvényes", nem
  * tudná, mit csináljon.
  *
- * === KALIBRÁCIÓ ===
+ * === KALIBRÁCIÓ (2026-09-14, fej ef7b4e0; minden körben 11 teszt futott le) ===
  *
- * A számok a spec alján, a mérés után kerülnek ide -- a jóslat fájlban áll a
- * futtatás előtt (`agents/murena/scripts/`), és a lap tartalmazza, mi cáfolna.
+ * A jóslat FÁJLBAN állt a futtatás előtt
+ * (`agents/murena/scripts/joslat-kosar-hiba.md`), a cáfolati feltételekkel
+ * együtt. Öt körből öt egyezett.
+ *
+ *   a vágás 500-nál áll, nem 400-nál          2 piros (4xx-szelet, határok)
+ *   a két konstans UGYANAZ a szöveg           1 piros („a két mondat nem ugyanaz")
+ *
+ * A MÁSODIKHOZ ELŐSZÖR HÁRMAT ÍRTAM, és a futtatás ELŐTT javítottam ki egyre.
+ * A leképezés-szeletek a függvény kimenetét A KONSTANSHOZ mérik, tehát egy
+ * összeomlott konstans-pár őket nem tudja megmozdítani -- KIZÁRÓLAG a „nem
+ * ugyanaz" kontroll fogja meg. Ugyanezt a tévedést a `kedvezmeny-uzenet.spec.ts`
+ * fejléce már egyszer rögzítette, egy fájllal odébb.
  */
 describe("a kosár üzenete az állapotkódból következik", () => {
   it("a 4xx a kért MENNYISÉGRE mutat", () => {
