@@ -190,8 +190,13 @@ describe("leírás-tisztítás: amit nem szabad átengednie", () => {
 
   /**
    * A `style` attribútum megmarad, mert a műszaki táblázatok tőle olvashatóak --
-   * de csak azzal a 11 CSS tulajdonsággal, ami az exportban ténylegesen előfordul.
-   * Egyik sem tud elemet a lap fölé pozicionálni vagy URL-t betölteni.
+   * de csak azzal a 10 CSS tulajdonsággal, ami az exportban ténylegesen előfordul
+   * ÉS a lapunkon is értelmes. Egyik sem tud elemet a lap fölé pozicionálni vagy
+   * URL-t betölteni.
+   *
+   * A `color` itt azért marad meg, mert a #ff0000 a skála KÖZEPÉN áll (HSL
+   * világosság 0.5), tehát mind a két világunkban olvasható. A szélein álló
+   * színek külön blokkban, lentebb.
    */
   it("a ráfedésre alkalmas CSS kiesik, a színezés marad", () => {
     const ki = sanitizeDescription(
@@ -218,5 +223,111 @@ describe("leírás-tisztítás: amit nem szabad átengednie", () => {
     expect(ki).toContain("marad")
     expect(ki).not.toContain("<style")
     expect(ki).not.toContain("display:none")
+  })
+})
+
+/**
+ * A LAP VILÁGA ADJA A SZÍNT -- ez NEM biztonsági szabály, és ezért áll külön.
+ *
+ * A fenti két blokk arról szól, mit nem szabad átengedni. Ez arról, hogy a régi
+ * bolt FEHÉR lapjához választott színek a mi lapunkon rossz helyre kerülnek. A
+ * termékoldal világát a termék adja (`data-vilag`): az élőlény lap sötét, a
+ * műszaki világos.
+ *
+ * A mérés (2026-09-14, mind az 1494 teszt-boltbeli termék leírásán):
+ *
+ *   background-color   152 termék, 1052 előfordulás, ebből 1050 a #d9d9d9
+ *   color              167 termék, 216-szor #ff0000 és 17-szer #000000
+ *
+ * És a kiszolgált lapon mérve (shop-staging, Lyrafarkú anthias): a csíkok
+ * háttere rgb(217,217,217), a bennük álló szöveg oklch(0.72 0.012 250), a lap
+ * oklch(0.17 0.016 250). Ez az a kombináció, amit Balázs kifogásolt.
+ */
+describe("leírás-tisztítás: a lap világa adja a színt", () => {
+  const fixturaSzinekkel = () => sanitizeDescription(fixtura("zebra-szinek"))!
+
+  /**
+   * A fixtúra a Halichoeres chrysus (Sárga ajakoshal) leírása, ugyanabból a
+   * 2026-09-02-i exportból, mint a többi. AZÉRT ez: egyetlen bemenetben áll
+   * mind a három alak (7 zebra-háttér, 1 fekete szövegszín, 2 piros), tehát a
+   * három állítás UGYANAZON a szövegen mérhető, nem háromféle bemeneten.
+   */
+  it("a zebra-háttér kiesik, a táblázat marad", () => {
+    const ki = fixturaSzinekkel()
+    expect(ki).toContain("<table")
+    expect(ki).toContain("<td")
+    expect(ki).not.toContain("background-color")
+    expect(ki).not.toContain("d9d9d9")
+  })
+
+  /**
+   * A fekete szövegszín eltávolítása NEM esztétikai: a fixtúrában a magyar név
+   * cellája fekete, és a sötét lapon a háttér elvétele után LÁTHATATLAN lenne.
+   * A javítás, ami ezt bent hagyja, rosszabb hibát csinál, mint amit javít.
+   */
+  it("a sötét szövegszín kiesik, a szövege megmarad", () => {
+    const ki = fixturaSzinekkel()
+    expect(ki).not.toContain("#000000")
+    expect(ki).toContain("Sárga ajakoshal")
+  })
+
+  /**
+   * A piros a jogi figyelmeztetéseké (a mérésben 216 előfordulás, ebből 153
+   * ugyanaz a "Felhívjuk szíves figyelmét..." mondat). Jelentést hordoz, és a
+   * skála közepén áll, tehát marad.
+   */
+  it("a piros figyelmeztetés színe megmarad", () => {
+    expect(fixturaSzinekkel()).toContain("#ff0000")
+  })
+
+  it("a fehér szövegszín kiesik, mert a világos lapon tűnne el", () => {
+    const ki = sanitizeDescription('<p style="color:#ffffff">szoveg</p>')!
+    expect(ki).toContain("szoveg")
+    expect(ki).not.toContain("#ffffff")
+  })
+
+  /**
+   * A rövid alak ugyanaz a szín. Ha csak a hatjegyűt néznénk, egy `#000`
+   * átcsúszna -- és pontosan úgy tűnne el a lapon, mint a hatjegyű.
+   */
+  it("a rövid hex alakra is áll a szabály", () => {
+    const ki = sanitizeDescription('<p style="color:#000">szoveg</p>')!
+    expect(ki).toContain("szoveg")
+    expect(ki).not.toContain("#000")
+  })
+
+  /**
+   * AMIT SZÁNDÉKOSAN NEM CSINÁL. A nevesített színek és az `rgb()` alak ma
+   * NULLA előfordulással áll az exportban, tehát nincs mérésünk arról, mit
+   * jelentenek. Egy szabály, ami nem tudja megmérni az értéket, ne nyúljon
+   * hozzá: a `black` így bent marad, és ez tudatos, nem kifelejtés.
+   */
+  it("a nem mérhető színalakot érintetlenül hagyja", () => {
+    const ki = sanitizeDescription('<p style="color:black">szoveg</p>')!
+    expect(ki).toContain("color")
+  })
+
+  /**
+   * A style attribútum akkor is eltűnik, ha a szín volt az egyetlen tartalma --
+   * egy üres `style=""` a lapon semmit nem csinál, de minden mérésben úgy
+   * néz ki, mintha a szabály nem futott volna le.
+   */
+  it("az üresen maradt style attribútum eltűnik", () => {
+    const ki = sanitizeDescription('<p style="color:#000000">szoveg</p>')!
+    expect(ki).toContain("szoveg")
+    expect(ki).not.toContain("style")
+  })
+
+  /**
+   * ISMERT POZITÍV KONTROLL: a szabály a színt viszi el, nem a style
+   * attribútumot. A táblázatok szélessége és magassága tőle függ (5362 td és
+   * 2655 tr style attribútum az exportban).
+   */
+  it("a méretek a style attribútumban maradnak", () => {
+    const ki = sanitizeDescription(
+      '<td style="width:114px;color:#000000">szoveg</td>',
+    )!
+    expect(ki).toContain("width:114px")
+    expect(ki).not.toContain("#000000")
   })
 })
