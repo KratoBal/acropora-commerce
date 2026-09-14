@@ -154,30 +154,46 @@ const HeroCsuszka = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => lep(-1)}
-          aria-label="Előző dia"
-          className="absolute left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center border small:flex"
-          style={{
-            borderColor: "var(--terv-szoveg-vilagos)",
-            color: "var(--terv-szoveg-vilagos)",
-          }}
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={() => lep(1)}
-          aria-label="Következő dia"
-          className="absolute right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center border small:flex"
-          style={{
-            borderColor: "var(--terv-szoveg-vilagos)",
-            color: "var(--terv-szoveg-vilagos)",
-          }}
-        >
-          ›
-        </button>
+        {/*
+          A KET NYIL EGYUTT ALL, A JOBB SZELEN -- ES EZ ELTERES A TERVTOL.
+
+          A terven a ket nyil a sav KET szelen all, kozepmagassagban. Ugy
+          kiraktam, es az elo lapon lemerve (2026-09-14 14:47, 1440 pixel) a BAL
+          nyil RAFUTOTT a bevezeto mondatra: a szovegoszlop ugyanannal a bal
+          elnel kezdodik, ahol a nyil allt.
+
+          KET UTON lehetett volna megoldani, es a masikat szandekosan nem
+          valasztottam: a szovegoszlopot beljebb tolni. Az elvitte volna a cimet
+          a lap tobbi savjanak bal elerol, tehat egy atfedes helyett egy
+          rosszabb, ALLANDO hibat okozott volna (a kezdolap minden sava ugyanarra
+          a vonalra all).
+        */}
+        <div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 gap-2 small:flex">
+          <button
+            type="button"
+            onClick={() => lep(-1)}
+            aria-label="Előző dia"
+            className="flex h-11 w-11 items-center justify-center border"
+            style={{
+              borderColor: "var(--terv-szoveg-vilagos)",
+              color: "var(--terv-szoveg-vilagos)",
+            }}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => lep(1)}
+            aria-label="Következő dia"
+            className="flex h-11 w-11 items-center justify-center border"
+            style={{
+              borderColor: "var(--terv-szoveg-vilagos)",
+              color: "var(--terv-szoveg-vilagos)",
+            }}
+          >
+            ›
+          </button>
+        </div>
       </div>
     </section>
   )
