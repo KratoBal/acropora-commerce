@@ -3,6 +3,7 @@ import { Radio, RadioGroup } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
+import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -156,15 +157,35 @@ const Shipping: React.FC<ShippingProps> = ({
       return id
     })
 
-    await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
-      .catch((err) => {
-        setShippingMethodId(currentId)
+    /*
+      A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL.
 
-        setError(err.message)
+      Itt korabban `.catch((err) => setError(err.message))` allt. Produkcioban
+      a Next a szerver-muveletbol DOBOTT hiba uzenetet lecsereli egy altalanos
+      angol mondatra, tehat a vevo a penztarban is azt latta volna, amit a
+      kedvezmenykodnal mar lemertunk (#371). Egy VISSZAADOTT ertek
+      valtozatlanul atmegy a hataron.
+
+      A VISSZAALLITAS IS AZ AGHOZ TARTOZIK: sikertelen beallitasnal a
+      valasztott mod visszaugrik az elozore, kulonben a felulet olyat mutatna
+      kivalasztottnak, ami nem all a kosarban.
+    */
+    try {
+      const eredmeny = await setShippingMethod({
+        cartId: cart.id,
+        shippingMethodId: id,
       })
-      .finally(() => {
-        setIsLoading(false)
-      })
+
+      if (!eredmeny.ok) {
+        setShippingMethodId(currentId)
+        setError(eredmeny.uzenet)
+      }
+    } catch {
+      setShippingMethodId(currentId)
+      setError(SZALLITAS_MOST_NEM_SIKERULT)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {

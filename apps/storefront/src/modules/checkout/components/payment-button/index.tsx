@@ -2,10 +2,11 @@
 
 import { isManual, isStripeLike } from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
+import { RENDELES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
-import { useParams } from "next/navigation"
+import { unstable_rethrow, useParams } from "next/navigation"
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
 
@@ -57,14 +58,37 @@ const StripePaymentButton = ({
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  /*
+    A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL.
+
+    Itt korabban `.catch((err) => setErrorMessage(err.message))` allt.
+    Produkcioban a Next a szerver-muveletbol DOBOTT hiba uzenetet lecsereli
+    egy altalanos angol mondatra (#371); egy VISSZAADOTT ertek atmegy.
+
+    A SIKER NEM IDE TER VISSZA: a `placeOrder` atiranyit a visszaigazolo
+    lapra. Ha ez a fuggveny egyaltalan visszater, az kudarc.
+  */
   const onPaymentCompleted = async () => {
-    await placeOrder()
-      .catch((err) => {
-        setErrorMessage(err.message)
-      })
-      .finally(() => {
-        setSubmitting(false)
-      })
+    try {
+      const eredmeny = await placeOrder()
+
+      if (!eredmeny.ok) {
+        setErrorMessage(eredmeny.uzenet)
+      }
+    } catch (hiba) {
+      /*
+        A VEZERLO-DOBAST ATENGEDJUK. A sikeres rendeles `redirect`-tel zarul,
+        es a Next azt kivetelkent valositja meg. A szerver-muvelet valaszat a
+        keret dolgozza fel, tehat ez a dobas VALOSZINULEG el sem jut idaig --
+        de VALODI RENDELES NELKUL ezt nem tudom lemerni, es a regi
+        `.catch(...)` alak ugyanezt a kockazatot vitte, csak orzo nelkul.
+        Nem-Next hibara ez a hivas nem csinal semmit.
+      */
+      unstable_rethrow(hiba)
+      setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const stripe = useStripe()
@@ -160,14 +184,37 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  /*
+    A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL.
+
+    Itt korabban `.catch((err) => setErrorMessage(err.message))` allt.
+    Produkcioban a Next a szerver-muveletbol DOBOTT hiba uzenetet lecsereli
+    egy altalanos angol mondatra (#371); egy VISSZAADOTT ertek atmegy.
+
+    A SIKER NEM IDE TER VISSZA: a `placeOrder` atiranyit a visszaigazolo
+    lapra. Ha ez a fuggveny egyaltalan visszater, az kudarc.
+  */
   const onPaymentCompleted = async () => {
-    await placeOrder()
-      .catch((err) => {
-        setErrorMessage(err.message)
-      })
-      .finally(() => {
-        setSubmitting(false)
-      })
+    try {
+      const eredmeny = await placeOrder()
+
+      if (!eredmeny.ok) {
+        setErrorMessage(eredmeny.uzenet)
+      }
+    } catch (hiba) {
+      /*
+        A VEZERLO-DOBAST ATENGEDJUK. A sikeres rendeles `redirect`-tel zarul,
+        es a Next azt kivetelkent valositja meg. A szerver-muvelet valaszat a
+        keret dolgozza fel, tehat ez a dobas VALOSZINULEG el sem jut idaig --
+        de VALODI RENDELES NELKUL ezt nem tudom lemerni, es a regi
+        `.catch(...)` alak ugyanezt a kockazatot vitte, csak orzo nelkul.
+        Nem-Next hibara ez a hivas nem csinal semmit.
+      */
+      unstable_rethrow(hiba)
+      setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handlePayment = () => {
