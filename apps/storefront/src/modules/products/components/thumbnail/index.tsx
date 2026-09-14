@@ -17,7 +17,19 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   thumbnail,
   images,
   size = "small",
-  isFeatured,
+  /**
+   * A PROP MEGMARAD, DE MAR NEM VALASZT ARANYT (2026-09-14).
+   *
+   * Korabban ez kapcsolta a `aspect-[11/14]` erteket a kiemelt kartyakon.
+   * Miota a kepdoboz mindenhol negyzetes, nincs mit kapcsolnia. A prop azert
+   * NEM TUNIK EL, mert a hivoi tovabbra is atadjak (`product-preview`, es
+   * rajta keresztul a nyitolap `product-rail` sora), es a torlese harom
+   * fajlt mozgatna egy latvanybeli valtozas kedveert.
+   *
+   * Az alahuzas a repo sajat konvencioja a szandekosan nem hasznalt
+   * argumentumra (ugyanez all a `product-preview` `region: _region` soraban).
+   */
+  isFeatured: _isFeatured,
   className,
   "data-testid": dataTestid,
 }) => {
