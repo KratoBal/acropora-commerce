@@ -28,6 +28,15 @@ afterEach(cleanup)
  * Ez nem szépséghiba: egy nem létező jelölőre írt mérés NULLÁT ad, és a nulla
  * ugyanúgy néz ki, mint egy hiányzó gomb. Engem is megállított -- az üres
  * kosár mérésénél emiatt nem tudtam a sort levenni.
+ *
+ * === KALIBRÁCIÓ (2026-09-14; mindkét körben 9 teszt futott le) ===
+ *
+ *   a komponens megint ELDOBJA a jelölőt      2 piros
+ *   a jelölő a BURKÁRA kerül, nem a gombra    2 piros
+ *
+ * A MÁSODIK A LÉNYEGI: egy jelölő, ami ott VAN, csak a rossz elemen, kívülről
+ * működőnek látszik -- a keresés megtalálja, a kattintás viszont nem a gombra
+ * megy. Ezért méri az állítás a `tagName`-et, nem csak a meglétet.
  */
 describe("a törlő gomb jelölője", () => {
   it("az átadott jelölő a GOMBON áll, nem a burkán", () => {

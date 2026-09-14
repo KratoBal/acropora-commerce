@@ -26,6 +26,17 @@ import { describe, expect, it } from "vitest"
  *
  * A második ág a kártyán nem szerepelt, és rosszabb az elsőnél: a vevő
  * nekiállhat kitölteni egy szállítási címet egy ÜRES rendeléshez.
+ *
+ * === KALIBRÁCIÓ (2026-09-14, fej f4c3408; minden körben 9 teszt futott le) ===
+ *
+ *   megint `notFound()`                    2 piros
+ *   csak a `!cart` ágat nézi               1 piros
+ *   az országkód beégetve (`/hu/cart`)     1 piros
+ *   a lap címe visszaangolosodik           1 piros
+ *
+ * Az elsőnél KETTŐT VAGY HÁRMAT vártam, és a bizonytalanságot a jóslatban
+ * kimondtam: a `countryCode` szó a paraméter-típusban akkor is ottmarad, ha az
+ * átirányítás eltűnik, tehát az a szelet zöld maradhat. Kettő jött.
  */
 const kod = (() => {
   const nyers = readFileSync(join(__dirname, "page.tsx"), "utf8")
