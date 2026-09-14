@@ -25,16 +25,34 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
   const [errorMessage, setErrorMessage] = React.useState("")
 
   const { promotions = [] } = cart
+  /**
+   * A LEVETEL IS ADHAT HIBAT, ES AZT IS KI KELL IRNI.
+   *
+   * Az elso alak eldobta a valaszt: ha a levetel nem sikerult, a kod a lapon
+   * maradt, es SEMMI nem szolt rola. A vevo ujra rakattintana, es megint nem
+   * tortenne semmi -- ez a nema fajta, amit nem lehet bejelenteni.
+   */
   const removePromotionCode = async (code: string) => {
+    setErrorMessage("")
+
     const validPromotions = promotions.filter(
       (promotion) => promotion.code !== code,
     )
 
-    await applyPromotions(
+    const eredmeny = await applyPromotions(
       validPromotions.filter((p) => p.code !== undefined).map((p) => p.code!),
     )
+    if (!eredmeny.ok) setErrorMessage(eredmeny.uzenet)
   }
 
+  /**
+   * A MUVELET VALASZAT OLVASSUK, NEM A KIVETELET.
+   *
+   * Az elso alak `try/catch`-elt, es az elkapott hiba `message`-et rajzolta ki.
+   * Szerver-muveletnel ez a produkcios buildben a Next altalanos, ANGOL
+   * mentoszovege -- pontosan az, ami a kartyan all. A `catch` ag ezert
+   * megszunt: nincs mit elkapni, mert a muvelet mar nem dob.
+   */
   const addPromotionCode = async (formData: FormData) => {
     setErrorMessage("")
 
@@ -48,11 +66,8 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
       .map((p) => p.code!)
     codes.push(code.toString())
 
-    try {
-      await applyPromotions(codes)
-    } catch (e) {
-      setErrorMessage(e instanceof Error ? e.message : String(e))
-    }
+    const eredmeny = await applyPromotions(codes)
+    if (!eredmeny.ok) setErrorMessage(eredmeny.uzenet)
 
     if (input) {
       input.value = ""
@@ -108,8 +123,13 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
         {promotions.length > 0 && (
           <div className="w-full flex items-center">
             <div className="flex flex-col w-full">
+              {/*
+                MAGYARUL, mert a vevo latja. Az eredeti starter angol felirata
+                (`Promotion(s) applied:`) ugyanabban a dobozban allt, mint a
+                most javitott hibauzenet -- ket sorral feljebb.
+              */}
               <Heading className="txt-medium mb-2">
-                Promotion(s) applied:
+                Alkalmazott kedvezmények:
               </Heading>
 
               {promotions.map((promotion) => {

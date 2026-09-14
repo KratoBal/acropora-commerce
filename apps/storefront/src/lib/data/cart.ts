@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
+import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -256,27 +257,93 @@ export async function initiatePaymentSession(
     .catch(medusaError)
 }
 
-export async function applyPromotions(codes: string[]) {
+/**
+ * A KEDVEZMENYKOD VALASZA -- ERTEK, NEM KIVETEL.
+ *
+ * === A MERT HIBA (b4ea279c) ===
+ *
+ * Egy ervenytelen kod bekuldesere a vevo EZT latta a kod-mezo alatt, angolul:
+ *
+ *   "An error occurred in the Server Components render. The specific message is
+ *    omitted in production builds to avoid leaking sensitive details..."
+ *
+ * Merve a kitelepitett lapon (2026-09-14): a szoveg a `discount-error-message`
+ * jelolon BELUL all, tehat a komponens sajat hibauzenet-helyerol jon -- nem
+ * valahonnan a lap mogul.
+ *
+ * === AZ OK, ES MIERT NEM A HIBAKEZELES HIANYA ===
+ *
+ * Ez a fajl `"use server"`: minden exportalt fuggvenye SZERVER-MUVELET. Egy
+ * szerver-muveletben DOBOTT hiba uzenete a produkcios buildben NEM jut el a
+ * klienshez -- a Next lecsereli a fenti altalanos szovegre, es csak egy
+ * `digest` azonositot ad melle. A komponens ezt a lecserelt szoveget kapta meg
+ * `e.message`-kent, es azt rajzolta ki.
+ *
+ * A hibakezeles tehat MEGVOLT (a hivo `try/catch`-elt, es volt hova irnia); a
+ * HATARON veszett el az uzenet. Ezert a javitas nem egy ujabb elkapas, hanem
+ * az, hogy a muvelet ERTEKKEL ter vissza -- egy visszaadott objektum atmegy a
+ * hataron, egy kivetel uzenete nem.
+ *
+ * === MIERT NEM A MEDUSA UZENETET ADJUK TOVABB ===
+ *
+ * Epp ez a kartya szol arrol, hogy belso reszlet ne kerüljön a vevo ele. A
+ * Medusa uzenete angol, es a rendszer belsejerol beszel. Ezert KET magyar
+ * mondat all a helyen, es a valasztast a HTTP-allapot donti el, nem a szoveg:
+ *
+ *   4xx  a kerest utasitottak el -> a KOD a baj: "nem ervenyes"
+ *   egyeb (5xx, halozat, semmi)  -> NEM a kod a baj: "most nem ellenorizheto"
+ *
+ * A ketto szetvalasztasa nem finomkodas: egy halozati hibara azt mondani, hogy
+ * "ervenytelen a kod", HAZUGSAG -- a vevo eldobna egy jo kodot.
+ *
+ * AMIT NEM TUDTAM MEGMERNI, ES EZERT ALL ITT TARTOMANY, NEM PONTOS KOD: hogy a
+ * Medusa pontosan milyen allapottal utasitja el az ismeretlen kodot (400 vagy
+ * 404), azt kulon nem tudtam lekerdezni -- a `/store` vegpontokhoz publikalhato
+ * kulcs kell, es az a kiszolgalt lapban nincs benne. A 4xx/egyeb vagas ettol
+ * fuggetlenul helyes, es a kitelepites utan a valaszbol latszik majd, melyik ag
+ * sul el.
+ *
+ * A VALODI OK A SZERVER NAPLOJABAN MARAD (`console.error` lent): a vevo elol
+ * elvesszuk, magunk elol nem.
+ */
+export type KedvezmenyEredmeny = { ok: true } | { ok: false; uzenet: string }
+
+export async function applyPromotions(
+  codes: string[],
+): Promise<KedvezmenyEredmeny> {
   const cartId = await getCartId()
 
   if (!cartId) {
-    throw new Error("No existing cart found")
+    // NEM DOBAS: ugyanaz a hatar, ugyanaz a veszteseg. A kosar nelkuli allapot
+    // a vevo szemszogebol ugyanaz, mint egy sikertelen ellenorzes.
+    return { ok: false, uzenet: kedvezmenyUzenet(undefined) }
   }
 
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  return sdk.store.cart
-    .update(cartId, { promo_codes: codes }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  try {
+    await sdk.store.cart.update(cartId, { promo_codes: codes }, {}, headers)
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    // A VALODI OK A SZERVER NAPLOJABAN MARAD: a vevo elol elvesszuk, magunk
+    // elol nem.
+    console.error(
+      "A kedvezménykód alkalmazása nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return { ok: false, uzenet: kedvezmenyUzenet(allapot) }
+  }
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  revalidateTag(fulfillmentCacheTag)
+
+  return { ok: true }
 }
 
 /*
