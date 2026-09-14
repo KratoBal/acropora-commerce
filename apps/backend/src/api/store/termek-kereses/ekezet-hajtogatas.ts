@@ -30,7 +30,30 @@
  * A `translate()` a Postgres BEEPITETT fuggvenye: nem kell hozza bovitmeny,
  * telepites, verzio-egyeztetes. Az `unaccent` altalanosabb (minden nyelvre),
  * de kiterjesztes -- es egy uj fuggoseg mas merlegelest kivanna, mint egy
- * beepitett fuggveny. A bolt magyar, a keszlet ismert.
+ * beepitett fuggveny.
+ *
+ * ES EZ NEM KOMPROMISSZUM, HANEM TELJES A MERT KATALOGUSRA. acrobot merte a
+ * stage adatbazison (2026-09-14, olvaso uton):
+ *
+ *     termek osszesen                     1501
+ *     a nevben VAN magyar ekezet          1103   (73,5 szazalek)
+ *     nincs benne                          398
+ *     MAS latin mellekjel                    0   <- KONTROLLAL igazolva
+ *     `subtitle` kitoltve                    0
+ *     `unaccent` bovitmeny         elerheto, de NINCS telepitve
+ *
+ * A NULLA A LENYEG, es kontrollal all: ugyanaz a minta egy proba-szovegen
+ * ILLESZKEDIK, tehat a nulla a katalogusrol szol, nem a mintarol. Vagyis ma
+ * NINCS olyan termek, amit az `unaccent` megtalalna, a `translate()` pedig nem.
+ *
+ * Az `unaccent` ott van a gepen, de nem kerjuk: bovitmeny-telepites az eles
+ * adatbazison nagyobb keres, mint maga a javitas, es ma semmivel nem adna
+ * tobbet.
+ *
+ * AMI EZT ERVENYTELENITENE: egy termeknev MAS latin mellekjellel (peldaul
+ * cseh `ř`, lengyel `ł`, roman `ș`). A markanevek kozott ez nem elmeleti --
+ * ha ilyen bekerul a katalogusba, a fenti nulla mar nem all, es a valasztast
+ * ujra kell merlegelni.
  */
 
 /**
