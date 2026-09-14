@@ -42,6 +42,23 @@ function sdkHiba(status: number, uzenet: string) {
  * szerver-műveletek, és ott a Next lecseréli a dobott hiba üzenetét. Az a másik
  * tétel (`31a50e97`), és ez a határ azért áll itt, hogy senki ne higgye: ezzel
  * a képernyőn is jobb lett.
+ *
+ * === KALIBRÁCIÓ (2026-09-14, fej 02ae6e6; minden körben 14 teszt futott le) ===
+ *
+ *   a segéd megint a RÉGI, response-os alakot olvassa      3 piros
+ *   a `hibaAllapota` a régi alakot IS elfogadja            2 piros
+ *   a diagnosztika nem fut le (a console.error kiütve)     2 piros
+ *   a két ág UGYANAZT az üzenetet dobja                    1 piros
+ *   a segéd NEM dob, csendben visszatér                    5 piros
+ *
+ * A MÁSODIK KÉT PIROSA SZÁNDÉKOS: a szabály EGY helyen áll (`hibaAllapota`),
+ * de KÉT spec méri -- az egyik magát a szabályt, a másik a használatát. Ha
+ * valaha csak az egyik pirosodna, az azt jelentené, hogy a segéd megkerülte a
+ * közös kiolvasót.
+ *
+ * AZ UTOLSÓ A POZITÍV KONTROLL RONTÁSA: ha a segéd csendben visszatérne,
+ * MINDEN szelet elbukik. Ez mondja meg, hogy a fenti négy nem azért zöld, mert
+ * a függvényt el sem érjük.
  */
 describe("a Medusa-hívások hibájának egységes alakja", () => {
   it("a mai SDK alakjából kiolvassa az állapotkódot, és naplózza", () => {
