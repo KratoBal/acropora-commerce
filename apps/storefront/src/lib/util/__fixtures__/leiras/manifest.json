@@ -67,6 +67,14 @@
       "hossz": 1160
     },
     {
+      "nev": "zebra-szinek",
+      "sku": "353",
+      "mezo": "Short",
+      "IsHtml": "1",
+      "mire_pelda": "a regi bolt sajat szinei EGY bemeneten: 7 zebra-hatter (#d9d9d9), 1 sotet szovegszin (#000000) es 2 piros (#ff0000). A 177 ilyen jelolt kozul a LEGROVIDEBB, ami mind a harom alakot hordozza",
+      "hossz": 4183
+    },
+    {
       "nev": "ritka-jelolok",
       "sku": "ITC-PARWISE",
       "mezo": "Long",
@@ -75,5 +83,5 @@
       "hossz": 4257
     }
   ],
-  "megjegyzes": "A tiz fixtura md5 szerint kulonbozo. A lista-fixtura 2026-09-07-en cserelve: az elso valasztas bajtra azonos volt a meta-charset fixturaval, tehat tiz fajl mellett csak kilenc kulonbozo bemenet allt."
+  "megjegyzes": "A tizenegy fixtura md5 szerint kulonbozo (2026-09-14-en visszamerve). A lista-fixtura 2026-09-07-en cserelve: az elso valasztas bajtra azonos volt a meta-charset fixturaval, tehat tiz fajl mellett csak kilenc kulonbozo bemenet allt."
 }

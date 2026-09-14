@@ -23,23 +23,42 @@ import sanitizeHtml from "sanitize-html"
  */
 
 /**
- * The 11 CSS properties that actually occur in the export's style attributes.
+ * The 10 CSS properties that survive from the export's style attributes.
  *
  * The style attribute is kept because 189 products carry their technical
  * specifications in tables (5362 td and 2655 tr style attributes); without it
  * those tables collapse into one run of text. But "keep style" and "keep any
  * style" are different promises: none of the properties below can position an
  * element over the page or load a URL, and anything not listed is dropped.
+ *
+ * `background-color` USED TO BE ON THIS LIST AND IS DELIBERATELY GONE.
+ *
+ * The reason is not safety, it is that the stored value was chosen for a page
+ * we no longer serve. Measured 2026-09-14 over the 1494 stage products: 152 of
+ * them carry 1052 background-color declarations, and 1050 of those are the
+ * single value #d9d9d9 -- the grey zebra stripe of the old shop's white page.
+ * Our product pages carry their own world (`data-vilag`): a livestock page is
+ * dark, a technical page is light, and the person who typed #d9d9d9 years ago
+ * could not know which one it would land on. Measured on the served page, the
+ * result of that mismatch was a light grey band under oklch(0.72) text on an
+ * oklch(0.17) page -- roughly 1.7:1 contrast, which is what Balázs saw and
+ * called out ("az élőlényeknek ez így nem jó, mindenhol a sötét kellene",
+ * 2026-09-14 11:25).
+ *
+ * The stripe itself is not lost: it moves to `.leiras-tartalom` in globals.css,
+ * where it is drawn from `--terv-hatter-halvany` and therefore follows the
+ * world of the page. What is dropped is the hard-coded colour, not the banding.
+ *
+ * TWO NON-ZEBRA VALUES GO WITH IT, and naming them is the honest part: one
+ * #003366 heading band and one #ffff00 warning highlight, one product each.
+ * Their text stays; only their fill goes. A rule that kept them would have to
+ * ask which greys are zebra and which are intent, and that question has no
+ * answer in the data.
  */
 const ALLOWED_STYLES = {
   "*": {
     width: [/^\d+(\.\d+)?(px|%|em|rem)$/],
     height: [/^\d+(\.\d+)?(px|%|em|rem)$/],
-    "background-color": [
-      /^#[0-9a-f]{3,8}$/i,
-      /^rgba?\([\d\s.,%]+\)$/i,
-      /^[a-z]+$/i,
-    ],
     color: [/^#[0-9a-f]{3,8}$/i, /^rgba?\([\d\s.,%]+\)$/i, /^[a-z]+$/i],
     "caret-color": [/^#[0-9a-f]{3,8}$/i, /^[a-z]+$/i],
     "font-weight": [/^(\d{3}|normal|bold|bolder|lighter)$/i],
@@ -149,6 +168,78 @@ const OPTIONS: sanitizeHtml.IOptions = {
 }
 
 /**
+ * A text colour survives only if it stays readable on BOTH of our pages.
+ *
+ * This is the other half of dropping `background-color`, and it exists because
+ * the first half creates the problem. Measured 2026-09-14 over the same 1494
+ * products: 167 of them set a text colour, 216 times #ff0000 and 17 times
+ * #000000. The black is not decoration -- on 17 livestock products it colours
+ * the Hungarian-name cell, and it was readable ONLY because a #d9d9d9 band sat
+ * behind it. Take the band away and leave the black, and those cells turn
+ * invisible on the dark page: a fix that creates a worse defect than the one it
+ * removes.
+ *
+ * So the rule is about the two ends of the scale, not about a list of colours.
+ * A page of ours is either oklch(0.17) dark or oklch(0.99) light, so a near
+ * black and a near white each disappear on one of them. Anything in between --
+ * the 216 red legal warnings, a blue tip -- carries meaning and stays.
+ *
+ * The thresholds are HSL lightness, which keeps a saturated colour where it
+ * belongs: #ff0000 is 0.5 and survives, while #000000 (0) and #ffffff (1) go.
+ * A value we cannot parse (a named colour, an rgb() call -- zero occurrences
+ * today) is left alone: a rule that cannot measure something should not act on
+ * it.
+ */
+const SOTET_HATAR = 0.25
+const VILAGOS_HATAR = 0.8
+
+function hslLightness(value: string): number | null {
+  const hex = value.trim().replace(/^#/, "")
+  if (!/^[0-9a-f]+$/i.test(hex)) {
+    return null
+  }
+
+  let r: number, g: number, b: number
+  if (hex.length === 3 || hex.length === 4) {
+    r = parseInt(hex[0] + hex[0], 16)
+    g = parseInt(hex[1] + hex[1], 16)
+    b = parseInt(hex[2] + hex[2], 16)
+  } else if (hex.length === 6 || hex.length === 8) {
+    r = parseInt(hex.slice(0, 2), 16)
+    g = parseInt(hex.slice(2, 4), 16)
+    b = parseInt(hex.slice(4, 6), 16)
+  } else {
+    return null
+  }
+
+  const max = Math.max(r, g, b) / 255
+  const min = Math.min(r, g, b) / 255
+  return (max + min) / 2
+}
+
+function dropUnreadableColors(html: string): string {
+  return html.replace(/ style="([^"]*)"/gi, (whole, body: string) => {
+    const kept = body
+      .split(";")
+      .filter((declaration) => {
+        const [name, ...rest] = declaration.split(":")
+        if (name.trim().toLowerCase() !== "color") {
+          return true
+        }
+        const lightness = hslLightness(rest.join(":"))
+        if (lightness === null) {
+          return true
+        }
+        return lightness > SOTET_HATAR && lightness < VILAGOS_HATAR
+      })
+      .filter((declaration) => declaration.trim().length > 0)
+      .join(";")
+
+    return kept ? ` style="${kept}"` : ""
+  })
+}
+
+/**
  * Returns the description as markup safe to insert, or null when there is
  * nothing to show.
  *
@@ -163,7 +254,7 @@ export function sanitizeDescription(
     return null
   }
 
-  const clean = sanitizeHtml(description, OPTIONS).trim()
+  const clean = dropUnreadableColors(sanitizeHtml(description, OPTIONS)).trim()
 
   if (!clean) {
     return null

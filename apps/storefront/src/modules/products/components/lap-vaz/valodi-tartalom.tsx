@@ -415,7 +415,16 @@ export const Leiras = ({ termek }: { termek: Termek }) => {
 
   return (
     <div
-      className="text-sm [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_table]:block [&_table]:overflow-x-auto"
+      /*
+        A `leiras-tartalom` HORGOT EZ A DOBOZ IS VISELI, PEDIG MA NINCS BEKOTVE.
+
+        A tablazat sav-szine 2026-09-14 ota a `globals.css` szabalyabol jon, nem
+        a tarolt HTML-bol (a tisztito eldobja a `background-color` tulajdonsagot).
+        Ez a komponens ugyanazt a tisztitott szoveget rajzolja ki, tehat az osztaly
+        nelkul a tablazatai savozas NELKUL allnanak -- es mivel a doboznak ma
+        nincs hivoja, ez a hianyossag csak a bekotes napjan derulne ki.
+      */
+      className="leiras-tartalom text-sm [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-1 [&_table]:block [&_table]:overflow-x-auto"
       data-testid="vaz-leiras"
       dangerouslySetInnerHTML={{ __html: tiszta }}
     />

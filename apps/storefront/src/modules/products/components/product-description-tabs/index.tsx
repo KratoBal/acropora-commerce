@@ -115,11 +115,25 @@ const ProductDescriptionTabs = ({
   ]
   const [activeIndex, setActiveIndex] = useState(0)
 
+  /*
+    A `leiras-tartalom` OSZTALY MIND A KET AGON RAJTA VAN, ES EZ NEM MASOLAS.
+
+    Ez a horog koti a tarolt HTML-t a `globals.css` tablazat-szabalyaihoz (sav,
+    cella-terkoz). A ket ag ugyanazt a tartalmat rajzolja ki: az egyik akkor,
+    amikor csak EGY ful van, a masik a ful-panelben. Ha csak az egyikre kerulne
+    ra, a termekek egy resze -- azok, ahol nincs kulon tablazat-ful -- csendben
+    kimaradna a savozasbol, es a hiba pont ott latszana a legkevesbe.
+
+    Ez a valasz arra a nyitott korre, amit a fenti komment nevezett meg: "vagy a
+    tarolt HTML-t kell atirni, vagy egy globalis szabalyt kell rea adni -- es a
+    ketto kozott dontes kell". A dontes a globalis szabaly, mert a tarolt HTML
+    tovabbra is a regi bolte, es a megjelenest a lap vilaga adja.
+  */
   if (!tabs.length) return null
   if (tabs.length === 1) {
     return (
       <div
-        className="text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
+        className="leiras-tartalom text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
         data-testid="product-description"
         dangerouslySetInnerHTML={{ __html: tabs[0].html }}
       />
@@ -175,7 +189,7 @@ const ProductDescriptionTabs = ({
         id={`${baseId}-panel-${activeIndex}`}
         role="tabpanel"
         aria-labelledby={`${baseId}-tab-${activeIndex}`}
-        className="pt-4 text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
+        className="leiras-tartalom pt-4 text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
         dangerouslySetInnerHTML={{ __html: activeTab.html }}
       />
     </div>

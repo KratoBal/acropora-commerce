@@ -809,6 +809,57 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
   --terv-keret-meleg: oklch(0.33 0.016 250);
 }
 
+/*
+  A TERMEKLEIRAS TABLAZATA -- A CSIK MARAD, A SZINE A LAPTOL JON.
+
+  === MI VOLT ITT ELOTTE, ES MIERT NEM EZ A FAJL DONTOTTE EL ===
+
+  A leiras HTML-je a regi boltbol jon, es a sav-szint MAGA HORDOZTA, inline:
+  `<tr style="background-color: #d9d9d9">`. Merve 2026-09-14 a teszt bolt 1494
+  termeken: 152 termek, 1052 ilyen deklaracio, ebbol 1050 pontosan ez az egy
+  ertek. Egy inline szint stiluslap csak `!important`-tal tud felulirni, tehat
+  amig ott allt, EZ A FAJL nem is versenyzett vele.
+
+  A kiszolgalt lapon merve (Lyrafarku anthias, shop-staging, 1440 pixel): a
+  paratlan sorok hattere rgb(217,217,217), a szoveg oklch(0.72 0.012 250), a lap
+  oklch(0.17 0.016 250). Vilagos sav sotet lapon, halvany szurke szoveggel.
+
+  === A DONTES, ES HOL LAKIK ===
+
+  A leiras-tisztito (`lib/util/sanitize-description.ts`) mostantol NEM engedi at
+  a `background-color` tulajdonsagot, tehat a sav szine ide kerult. Ez a ket
+  valtozas EGY dolog ket fele: ott elveszik a rogzitett ertek, itt megjelenik a
+  helyette allo token. Ha valaki az egyiket visszaforditja, a masik ertelmet
+  veszti -- ezert all mind a ketto ugyanabban a beolvasztasban.
+
+  A `product-description-tabs` komponens SAJAT `data-vilag` jelolot NEM tesz ki:
+  a `--terv-hatter-halvany` ertekét a lap vazatol orokli, tehat elolenynel a
+  sotet, muszaki termeknel a vilagos ertek all be magatol.
+
+  === MIERT `:nth-child(odd)`, ES MIERT NEM A REGI SORREND ===
+
+  A regi jelolesben a savok kezzel voltak kiosztva, es NEM mindig szabalyosan.
+  Ez a valaszto egyseges savozast ad, tehat egy termeken elmozdulhat, MELYIK sor
+  csikos. Ez tudatos: a sav dolga az olvashatosag, nem az, hogy melyik allitas
+  fontos. A regi kiosztas jelentest sem hordozott -- az elso sor kapta a csikot,
+  aztan minden masodik.
+
+  A cella-belso terkoz uj: a savokat eddig semmi nem valasztotta el egymastol,
+  es a merohely (a kepernyokep) is ezt mutatta.
+*/
+.leiras-tartalom table {
+  border-collapse: collapse;
+}
+
+.leiras-tartalom :is(td, th) {
+  padding: 6px 10px;
+  vertical-align: top;
+}
+
+.leiras-tartalom tbody tr:nth-child(odd) {
+  background: var(--terv-hatter-halvany);
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
