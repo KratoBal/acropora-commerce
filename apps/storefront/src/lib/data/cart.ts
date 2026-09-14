@@ -3,6 +3,7 @@
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
+import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -159,13 +160,31 @@ export async function addToCart({
     .catch(medusaError)
 }
 
+/**
+ * A MENNYISEG-MODOSITAS EREDMENYE, NEM KIVETEL.
+ *
+ * Ugyanaz az alak, mint a `KedvezmenyEredmeny`, es ugyanazert: egy DOBOTT hiba
+ * uzenetet a Next lecsereli a szerver-muvelet hataran, egy VISSZAADOTT ertek
+ * valtozatlanul atmegy rajta. A reszletes indoklas a `kosar-uzenet.ts`
+ * fejlecben all.
+ */
+export type KosarEredmeny = { ok: true } | { ok: false; uzenet: string }
+
 export async function updateLineItem({
   lineId,
   quantity,
 }: {
   lineId: string
   quantity: number
-}) {
+}): Promise<KosarEredmeny> {
+  /*
+    A KET HIANYZO AZONOSITO TOVABBRA IS DOB, ES EZ SZANDEKOS.
+
+    Ezek nem a vevo hibai, hanem a mieink: ha idaig eljut a hivas `lineId` vagy
+    kosar nelkul, akkor a lap allapota romlott el. Egy vevonek szolo mondat
+    elfedne egy programhibat -- itt a dobas a helyes, mert az lathato marad a
+    naploban.
+  */
   if (!lineId) {
     throw new Error("Missing lineItem ID when updating line item")
   }
@@ -180,16 +199,33 @@ export async function updateLineItem({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .updateLineItem(cartId, lineId, { quantity }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  try {
+    await sdk.store.cart.updateLineItem(
+      cartId,
+      lineId,
+      { quantity },
+      {},
+      headers,
+    )
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    // A VALODI OK A SZERVER NAPLOJABAN MARAD: a vevo elol elvesszuk, magunk
+    // elol nem.
+    console.error(
+      "A kosár mennyiségének módosítása nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return { ok: false, uzenet: kosarUzenet(allapot) }
+  }
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  revalidateTag(fulfillmentCacheTag)
+
+  return { ok: true }
 }
 
 export async function deleteLineItem(lineId: string) {
@@ -362,19 +398,33 @@ export async function applyPromotions(
  * kikommentelt torzs felelesztesevel.
  */
 
+/**
+ * A `useActionState` alaku burkolat a kedvezmenykod urlapjahoz.
+ *
+ * === AMI ITT ALLT, ES MIERT VOLT HALOTT (acrobot lelete, 2026-09-14) ===
+ *
+ * A torzs egy `try/catch` volt az `applyPromotions` korul, es a `catch` ag adta
+ * vissza a hibauzenetet. A #371 ota az `applyPromotions` MAR NEM DOB: eredmenyt
+ * ad vissza. Vagyis az az ag soha nem sult volna el, es a fuggveny hiba eseten
+ * `undefined` erteket adott volna -- URES hibauzenetet a feluleten, miközben a
+ * kod ranezesre kezelinek latszott.
+ *
+ * Ma nincs egyetlen hivoja sem (merve az egesz `apps` fan: csak ez a
+ * definicio). Vagyis MOST nem ront el semmit -- de aki egyszer rakoti egy
+ * urlapra, pontosan a nema ures uzenetet kapta volna.
+ *
+ * Nem toroltem, hanem OSSZEKOTOTTEM: a mezo mar letezik (`uzenet`), csak senki
+ * nem olvasta ki. Egy torles ugyanezt a fuggvenyt irattatna meg ujra a
+ * kovetkezo urlapnal.
+ */
 export async function submitPromotionForm(
   currentState: unknown,
   formData: FormData,
-) {
+): Promise<string | undefined> {
   const code = formData.get("code") as string
-  try {
-    await applyPromotions([code])
-  } catch (e) {
-    // `unknown`, nem `any`: egy nem-Error dobasnal a `.message` eddig
-    // CSENDBEN `undefined`-ot adott vissza, es a felulet ures hibauzenetet
-    // mutatott volna.
-    return e instanceof Error ? e.message : String(e)
-  }
+  const eredmeny = await applyPromotions([code])
+
+  return eredmeny.ok ? undefined : eredmeny.uzenet
 }
 
 // TODO: Pass a POJO instead of a form entity here

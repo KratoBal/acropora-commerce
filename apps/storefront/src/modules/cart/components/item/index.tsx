@@ -2,6 +2,7 @@
 
 import { Table, Text, clx } from "@modules/common/components/ui"
 import { updateLineItem } from "@lib/data/cart"
+import { KOSAR_MOST_NEM_SIKERULT } from "@lib/util/kosar-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import CartItemSelect from "@modules/cart/components/cart-item-select"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -34,20 +35,37 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  /*
+    A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL.
+
+    Itt korabban `.catch((err) => setError(err.message))` allt. Fejlesztoi gepen
+    ez mukodik; produkcioban NEM: a Next a szerver-muveletbol DOBOTT hiba
+    uzenetet lecsereli egy altalanos angol mondatra es egy digestre, tehat a
+    vevo azt latta volna a kosarban, amit a kedvezmenykodnal mar lemertunk
+    (#371). Egy VISSZAADOTT ertek valtozatlanul atmegy a hataron.
+
+    A `try/catch` ATTOL MEG ITT MARAD: az `updateLineItem` a ket hianyzo
+    azonositora tovabbra is DOB (az a mi hibank, nem a vevoe), es kell egy ag,
+    ami ilyenkor sem hagyja a lapot pörgo allapotban.
+  */
   const changeQuantity = async (quantity: number) => {
     setError(null)
     setUpdating(true)
 
-    await updateLineItem({
-      lineId: item.id,
-      quantity,
-    })
-      .catch((err) => {
-        setError(err.message)
+    try {
+      const eredmeny = await updateLineItem({
+        lineId: item.id,
+        quantity,
       })
-      .finally(() => {
-        setUpdating(false)
-      })
+
+      if (!eredmeny.ok) {
+        setError(eredmeny.uzenet)
+      }
+    } catch {
+      setError(KOSAR_MOST_NEM_SIKERULT)
+    } finally {
+      setUpdating(false)
+    }
   }
 
   /*
