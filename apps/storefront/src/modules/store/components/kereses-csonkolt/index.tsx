@@ -22,6 +22,17 @@
  * egy masodik helyre irt szam attol a naptol hazudik, amikor az elsot
  * atallitjak -- es senki nem venne eszre, mert a lap ettol meg megjelenik.
  *
+ * === MIERT "LEGUJABB", ES NEM "ELSO" ===
+ *
+ * A vegpont a vagas ELOTT mindig `created_at DESC` szerint rendez (merve a
+ * route SQL-jeben), tehat a megtartott 200 MINDIG a legujabb 200 -- fuggetlenul
+ * attol, hogyan rendez a vevo a lapon.
+ *
+ * Ez akkor szamit, amikor a vevo AR szerint rendez: ilyenkor a 200 LEGUJABB
+ * talalat legolcsobbjait latja, nem a keresés legolcsobb termekeit. Az "elso
+ * 200" megfogalmazas ezt elfedte volna -- a vevo azt hinne, hogy az ar szerinti
+ * sorrend eleje all elotte. A szo tehat nem stilus: a vagas ISMERVET mondja ki.
+ *
  * === A DONTES IS ITT VAN, NEM A LAPON ===
  *
  * A komponens `csonkolt=false` eseten `null`-t ad. Igy a "mikor latszik"
@@ -43,7 +54,7 @@ export function KeresesCsonkolt({
       className="text-base-regular text-ui-fg-subtle mb-4"
       data-testid="kereses-csonkolt"
     >
-      Több mint {darab} termék illik erre a keresésre, itt az első {darab}{" "}
+      Több mint {darab} termék illik erre a keresésre, itt a {darab} legújabb
       látszik. Pontosítsd a keresést, ha nem találod, amit keresel.
     </p>
   )

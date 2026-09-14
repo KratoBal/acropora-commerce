@@ -93,6 +93,23 @@ describe("a csonkolas jelzese", () => {
     )
   })
 
+  /**
+   * A MONDAT KIMONDJA A VAGAS ISMERVET.
+   *
+   * A vegpont a vagas ELOTT `created_at DESC` szerint rendez, tehat a
+   * megtartott darab MINDIG a legujabb -- fuggetlenul attol, hogyan rendez a
+   * vevo a lapon. Ha a vevo AR szerint rendez, a 200 LEGUJABB talalat
+   * legolcsobbjait latja, nem a kereses legolcsobb termekeit. Egy „az elso
+   * 200" alaku mondat ezt elfedne.
+   */
+  it("megmondja, hogy a legujabbakat tartotta meg", () => {
+    render(<KeresesCsonkolt csonkolt darab={200} />)
+
+    expect(screen.getByTestId("kereses-csonkolt").textContent ?? "").toContain(
+      "legújabb",
+    )
+  })
+
   /** MAGYARUL, ekezetesen, mert a vevo latja. */
   it("a mondat magyar es ekezetes", () => {
     render(<KeresesCsonkolt csonkolt darab={200} />)
