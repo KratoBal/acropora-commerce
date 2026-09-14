@@ -17,7 +17,19 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   thumbnail,
   images,
   size = "small",
-  isFeatured,
+  /**
+   * A PROP MEGMARAD, DE MAR NEM VALASZT ARANYT (2026-09-14).
+   *
+   * Korabban ez kapcsolta a `aspect-[11/14]` erteket a kiemelt kartyakon.
+   * Miota a kepdoboz mindenhol negyzetes, nincs mit kapcsolnia. A prop azert
+   * NEM TUNIK EL, mert a hivoi tovabbra is atadjak (`product-preview`, es
+   * rajta keresztul a nyitolap `product-rail` sora), es a torlese harom
+   * fajlt mozgatna egy latvanybeli valtozas kedveert.
+   *
+   * Az alahuzas a repo sajat konvencioja a szandekosan nem hasznalt
+   * argumentumra (ugyanez all a `product-preview` `region: _region` soraban).
+   */
+  isFeatured: _isFeatured,
   className,
   "data-testid": dataTestid,
 }) => {
@@ -26,12 +38,38 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   return (
     <Container
       className={clx(
-        "relative w-full overflow-hidden p-4 bg-ui-bg-subtle shadow-elevation-card-rest rounded-large group-hover:shadow-elevation-card-hover transition-shadow ease-in-out duration-150",
+        /**
+         * A KEPDOBOZ NEGYZETES, ES A KEP BELEFER (Balazs kerese, 2026-09-14 10:30).
+         *
+         * === A MERT HIBA ===
+         *
+         * Itt korabban harom kulonbozo arany allt: 11/14 a kiemelt kartyakon,
+         * 9/16 minden mas listan, 1/1 csak a `size="square"` hivoknal. A
+         * `/store` lapon a 9/16 futott, es az ALLO TELEFONKEPERNYO alaku.
+         * Merve az elo lapon (shop-staging, 1440 pixeles nezet, Playwright):
+         * a doboz 261 x 464 pixel egy 261 pixel szeles kartyan. Ezert fert a
+         * kepernyore MASFEL sor termek.
+         *
+         * A masik fele az `object-cover` volt (lasd lentebb): a kep BELEVAGVA
+         * toltotte ki ezt a magas dobozt. Mivel minden szallitoi fotonak mas
+         * az alakja, mindegyik MASHOL serult -- az AF Amino Mix dobozarol a
+         * nemet es spanyol HATLAP latszott a termek helyett. Balazs szo
+         * szerint ezt kifogasolta: "nagyon nagyok a kepek", "jo lenne valami
+         * egyseges megjelenes".
+         *
+         * === MIERT EGY ARANY, ES NEM HAROM ===
+         *
+         * Az "egyseges megjelenes" azt jelenti, hogy a DOBOZ mindig ugyanakkora,
+         * fuggetlenul attol, melyik listan all. Harom arany mellett a nyitolap
+         * kiemelt sora es a kereso talalati listaja kulonbozo alaku maradt
+         * volna. Ezert mind a harom helyett egy negyzet all.
+         *
+         * A `size` prop tovabbra is a SZELESSEGET valasztja (small/medium/
+         * large/full); csak az aranyt vettuk ki a kezebol.
+         */
+        "relative w-full aspect-[1/1] overflow-hidden p-4 bg-ui-bg-subtle shadow-elevation-card-rest rounded-large group-hover:shadow-elevation-card-hover transition-shadow ease-in-out duration-150",
         className,
         {
-          "aspect-[11/14]": isFeatured,
-          "aspect-[9/16]": !isFeatured && size !== "square",
-          "aspect-[1/1]": size === "square",
           "w-[180px]": size === "small",
           "w-[290px]": size === "medium",
           "w-[440px]": size === "large",
@@ -53,7 +91,21 @@ const ImageOrPlaceholder = ({
     <Image
       src={image}
       alt="Thumbnail"
-      className="absolute inset-0 object-cover object-center"
+      /**
+       * BELEFER, NEM BELEVAG (`contain`, nem `cover`).
+       *
+       * A `cover` a doboz rovidebb tengelyere igazit es a tobbit LEVAGJA. Egy
+       * katalogusban, ahol a fotok kulonbozo szallitotol jonnek es kulonbozo
+       * alakuak, ez termekenkent MAS reszt vag le -- ezt latta Balazs a
+       * kepernyokepen.
+       *
+       * A `contain` cserebe ures helyet hagy a kulonbozo alaku fotok korul.
+       * Ez TUDATOS csere, nem mellekhatas: a doboz meret azonos marad, es a
+       * termek mindig egeszben latszik. A `bg-white` azert kell, hogy ez az
+       * ures hely a termekfotok feher hatterevel folytonos legyen, ne a doboz
+       * szurkejevel.
+       */
+      className="absolute inset-0 object-contain object-center bg-white"
       draggable={false}
       quality={50}
       sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
