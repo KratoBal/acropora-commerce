@@ -4,6 +4,11 @@ import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
+import {
+  fizetesUzenet,
+  rendelesUzenet,
+  szallitasUzenet,
+} from "@lib/util/penztar-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -255,42 +260,84 @@ export async function deleteLineItem(lineId: string) {
     .catch(medusaError)
 }
 
+/**
+ * A PENZTAR LEPESEINEK EREDMENYE -- ERTEK, NEM KIVETEL.
+ *
+ * Ugyanaz az alak, mint a `KedvezmenyEredmeny`, es ugyanazert: egy DOBOTT hiba
+ * uzenetet a Next lecsereli a szerver-muvelet hataran, egy VISSZAADOTT ertek
+ * valtozatlanul atmegy rajta. A reszletes indoklas a `penztar-uzenet.ts`
+ * fejlecben all.
+ */
+export type PenztarEredmeny = { ok: true } | { ok: false; uzenet: string }
+
 export async function setShippingMethod({
   cartId,
   shippingMethodId,
 }: {
   cartId: string
   shippingMethodId: string
-}) {
+}): Promise<PenztarEredmeny> {
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  return sdk.store.cart
-    .addShippingMethod(cartId, { option_id: shippingMethodId }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-    })
-    .catch(medusaError)
+  try {
+    await sdk.store.cart.addShippingMethod(
+      cartId,
+      { option_id: shippingMethodId },
+      {},
+      headers,
+    )
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    // A VALODI OK A SZERVER NAPLOJABAN MARAD: a vevo elol elvesszuk, magunk
+    // elol nem.
+    console.error(
+      "A szállítási mód beállítása nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return { ok: false, uzenet: szallitasUzenet(allapot) }
+  }
+
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  return { ok: true }
 }
 
+/*
+  A VALASZ OBJEKTUMOT EDDIG SEM OLVASTA SENKI, ES EZT MERTEM, NEM FELTETELEZTEM.
+
+  A fuggveny korabban az SDK valaszat adta vissza. Mindket hivohelye (a
+  `checkout/components/payment` ket agan) csupasz `await`-tel hivja, ertekadas
+  nelkul -- a komponens az aktiv munkamenetet a kosarbol olvassa ujra, nem
+  innen. Ezert a visszateresi ertek cserejevel semmi nem vesz el.
+*/
 export async function initiatePaymentSession(
   cart: HttpTypes.StoreCart,
   data: HttpTypes.StoreInitializePaymentSession,
-) {
+): Promise<PenztarEredmeny> {
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  return sdk.store.payment
-    .initiatePaymentSession(cart, data, {}, headers)
-    .then(async (resp) => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-      return resp
-    })
-    .catch(medusaError)
+  try {
+    await sdk.store.payment.initiatePaymentSession(cart, data, {}, headers)
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    console.error(
+      "A fizetési munkamenet indítása nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return { ok: false, uzenet: fizetesUzenet(allapot) }
+  }
+
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  return { ok: true }
 }
 
 /**
@@ -500,29 +547,56 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 }
 
 /**
- * Places an order for a cart. If no cart ID is provided, it will use the cart ID from the cookies.
- * @param cartId - optional - The ID of the cart to place an order for.
- * @returns The cart object if the order was successful, or null if not.
+ * A RENDELES LEADASA. Sikernel NEM TER VISSZA: atiranyit a visszaigazolo lapra.
+ *
+ * === KET KIMENET, ES AZ EGYIK NEM ERTEK ===
+ *
+ *   sikeres rendeles   `redirect(...)` -- a Next sajat vezerlest dob, ez NEM
+ *                      hiba, es szandekosan megy at minden `catch` agon
+ *   minden mas         `PenztarEredmeny`, tehat ERTEK
+ *
+ * A masodik a valtozas: eddig `medusaError`-on at DOBOTT, es a hivo komponens
+ * a kivetel `message` erteket rajzolta ki -- amit produkcioban a Next mar
+ * lecserelt egy angol mentoszovegre. A reszletes indoklas a `penztar-uzenet.ts`
+ * fejlecben all.
+ *
+ * === A MASIK HIVO, ES AMIERT A VISELKEDESE NEM VALTOZIK ===
+ *
+ * A `app/api/payment-return` utvonal-kezelo is ezt hivja. Ott a hibas ag
+ * korabban a `catch`-be esett, es onnan ment a `cart?error=order_failed`
+ * cimre; ma ugyanoda esik at a fuggveny VEGEN allo ugyanarra a sorra. A ket ut
+ * celja beture azonos, tehat a kulso viselkedes valtozatlan -- a `catch` pedig
+ * ott marad, mert a `redirect` vezerlo-dobasat tovabbra is at kell engednie.
  */
-export async function placeOrder(cartId?: string) {
+export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
 
   if (!id) {
-    throw new Error("No existing cart found when placing an order")
+    // NEM DOBAS: kosar nelkul a vevo szamara ugyanaz a helyzet, mint egy
+    // elutasitott rendelesnel, es a penztar-lap mar ugyis atiranyit.
+    return { ok: false, uzenet: rendelesUzenet(undefined) }
   }
 
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  const cartRes = await sdk.store.cart
-    .complete(id, {}, headers)
-    .then(async (cartRes) => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-      return cartRes
-    })
-    .catch(medusaError)
+  let cartRes: Awaited<ReturnType<typeof sdk.store.cart.complete>>
+
+  try {
+    cartRes = await sdk.store.cart.complete(id, {}, headers)
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    console.error(
+      "A rendelés leadása nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return { ok: false, uzenet: rendelesUzenet(allapot) }
+  }
+
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
 
   if (cartRes?.type === "order") {
     const countryCode =
@@ -535,7 +609,15 @@ export async function placeOrder(cartId?: string) {
     redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
   }
 
-  return cartRes.cart
+  /*
+    IDE AKKOR JUTUNK, HA A HIVAS SIKERULT, DE A KOSAR NEM LETT RENDELES.
+
+    A regi kod ilyenkor a kosarat adta vissza, es a hivok egyike sem nezte meg:
+    a komponens csak a `catch` agat figyelte, az utvonal-kezelo pedig a
+    `try` utan ugyanarra a hiba-cimre iranyitott. Vagyis ez az allapot eddig is
+    KUDARC volt, csak nem mondta ki senki.
+  */
+  return { ok: false, uzenet: rendelesUzenet(undefined) }
 }
 
 /**

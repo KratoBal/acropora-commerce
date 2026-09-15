@@ -2,6 +2,7 @@
 import { RadioGroup } from "@headlessui/react"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
+import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer, {
@@ -43,13 +44,29 @@ const Payment = ({
 
   const isOpen = searchParams.get("step") === "payment"
 
+  /*
+    AZ ELSO AG EDDIG NEMA VOLT, ES EZ KULON HIBA A HATAR-HIBA MELLETT.
+
+    A hivas `await`-tel allt, `catch` NELKUL: ha a fizetesi munkamenet
+    inditasa elhasalt, a felulet kivalasztottnak mutatta a modot, es a vevo
+    semmilyen jelet nem kapott. A kudarc csak a KOVETKEZO lepesnel derult
+    volna ki. Most ugyanoda ir, ahova a masik ag.
+  */
   const setPaymentMethod = async (method: string) => {
     setError(null)
     setSelectedPaymentMethod(method)
     if (isStripeLike(method)) {
-      await initiatePaymentSession(cart, {
-        provider_id: method,
-      })
+      try {
+        const eredmeny = await initiatePaymentSession(cart, {
+          provider_id: method,
+        })
+
+        if (!eredmeny.ok) {
+          setError(eredmeny.uzenet)
+        }
+      } catch {
+        setError(FIZETES_MOST_NEM_SIKERULT)
+      }
     }
   }
 
@@ -90,9 +107,22 @@ const Payment = ({
         activeSession?.provider_id === selectedPaymentMethod
 
       if (!checkActiveSession) {
-        await initiatePaymentSession(cart, {
+        /*
+          A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL. Produkcioban a
+          Next a szerver-muveletbol DOBOTT hiba uzenetet lecsereli egy
+          altalanos angol mondatra (#371); egy VISSZAADOTT ertek atmegy.
+
+          ES A VISSZATERES ITT LENYEGI: sikertelen inditas utan NEM szabad
+          tovabblepni a „review" lepesre, mert ott mar nincs mit fizetni.
+        */
+        const eredmeny = await initiatePaymentSession(cart, {
           provider_id: selectedPaymentMethod,
         })
+
+        if (!eredmeny.ok) {
+          setError(eredmeny.uzenet)
+          return
+        }
       }
 
       if (!shouldInputPaymentDetails) {
@@ -103,8 +133,13 @@ const Payment = ({
           },
         )
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+    } catch {
+      /*
+        AMI IDE ESIK, AZ MAR NEM A MUVELET VALASZA, HANEM EGY DOBAS. Annak az
+        uzenetet produkcioban ugyis lecsereltek, tehat kiirni FELREVEZETO
+        lenne: a sajat mondatunk megy ki helyette.
+      */
+      setError(FIZETES_MOST_NEM_SIKERULT)
     } finally {
       setIsLoading(false)
     }
