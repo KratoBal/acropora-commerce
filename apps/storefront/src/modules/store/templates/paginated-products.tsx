@@ -5,6 +5,7 @@ import { keresesSzuro } from "@lib/util/kereses-szuro"
 import { getRegion } from "@lib/data/regions"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import ProductPreview from "@modules/products/components/product-preview"
+import KeresesCsonkolt from "@modules/store/components/kereses-csonkolt"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
@@ -99,8 +100,18 @@ export default async function PaginatedProducts({
    * inditjuk a lekerdezest.
    */
   let keresesNullaTalalat = false
+  /*
+    A CSONKOLAS ATKERUL A LAPRA, mert eddig SEHOVA nem ert el. A vegpont
+    kimondta a valaszban, a kirakat viszont nem olvasta -- merve az
+    origin/main-en: a mezo a tipusban all, egyetlen komponens sem hivatkozik ra.
+    A vevo 200 terméket latott ugy, hogy semmi nem szolt a tobbirol.
+  */
+  let keresesCsonkolt = false
+  let keresesDarab = 0
   if (kereses) {
     const talalat = await keresesTalalatok(kereses)
+    keresesCsonkolt = talalat.csonkolt
+    keresesDarab = talalat.count
     const szuro = keresesSzuro(talalat.ids, productsIds)
     if (szuro.nullaTalalat) keresesNullaTalalat = true
     else queryParams["id"] = szuro.ids
@@ -159,6 +170,7 @@ export default async function PaginatedProducts({
 
   return (
     <>
+      <KeresesCsonkolt csonkolt={keresesCsonkolt} darab={keresesDarab} />
       <ul
         className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
         data-testid="products-list"

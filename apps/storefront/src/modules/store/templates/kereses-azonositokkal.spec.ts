@@ -61,6 +61,31 @@ describe("a keresés azonosítókon át megy", () => {
    * ott VISELKEDESSEL van orizve. Ez a sor csak azt orzi, hogy az ELO ut oda
    * vezessen.
    */
+  /**
+   * A BEKOTES, ES EZ KULON ALLITAS A KOMPONENS SAJAT TESZTJETOL.
+   *
+   * A `KeresesCsonkolt` doboza jsdom alatt meg van merve (mikor latszik, mikor
+   * nem, honnan jon a szam). Amit AZ nem tud megmerni: hogy a lap tenyleg
+   * atadja-e neki a VALASZ mezoit. Ez a szelet arra mer, es a ketto egyutt ad
+   * allitast -- egy doboz teszje nem meri a bekotest.
+   *
+   * A `talalat.csonkolt` es a `talalat.count` NEVE all itt, mert epp az volt a
+   * hiba, hogy a mezo letezett es senki nem olvasta.
+   */
+  it("a csonkolás jelzése a válasz mezőiből kap értéket", () => {
+    /*
+      A TELJES ERTEKADASRA MERUNK, NEM A RESZSZORA. A `toContain`
+      ("talalat.csonkolt") alak HALOTT volt: a kalibracio C4 kore egy
+      `talalat.csonkolt && false` rontast tett be, es a szelet ZOLD MARADT,
+      mert a reszszo tovabbra is ott allt. A sor VEGEHEZ kotve a rontas
+      nev szerint pirosodik.
+    */
+    expect(kod).toMatch(/keresesCsonkolt = talalat\.csonkolt\s*$/m)
+    expect(kod).toMatch(/keresesDarab = talalat\.count\s*$/m)
+    expect(kod).toMatch(/<KeresesCsonkolt[^>]*csonkolt=\{keresesCsonkolt\}/)
+    expect(kod).toMatch(/<KeresesCsonkolt[^>]*darab=\{keresesDarab\}/)
+  })
+
   it("a nulla-találat döntését a mért függvény hozza", () => {
     expect(kod).toContain("keresesSzuro(")
     expect(kod.indexOf("keresesNullaTalalat")).toBeLessThan(
