@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { statikusGyokerUt } from "./statikus-utak"
+import { existsSync } from "node:fs"
+import { join } from "node:path"
+
+import { STATIKUS_GYOKER_UTAK, statikusGyokerUt } from "./statikus-utak"
 
 /**
  * A SOFT-404 JAVITASA: MELYIK UT KERULI MEG AZ ORSZAGKOD-ATIRANYITAST.
@@ -13,7 +16,40 @@ import { statikusGyokerUt } from "./statikus-utak"
 describe("gyoker szintu statikus utak", () => {
   it("a nevesitett utak megkerulik az atiranyitast", () => {
     expect(statikusGyokerUt("/robots.txt")).toBe(true)
-    expect(statikusGyokerUt("/sitemap.xml")).toBe(true)
+  })
+
+  /**
+   * ES MINDEN BEJEGYZESHEZ KELL EGY FORRAS, AMI TENYLEGESEN KISZOLGALJA.
+   *
+   * A fajl fejlece eddig is kimondta ezt a szabalyt -- es a lista maga sertette
+   * meg: a `/sitemap.xml` ugy allt rajta, hogy sitemap nem letezett. A
+   * kovetkezmenyet az elo teszt-kirakaton mertuk (2026-09-15): 200-as valasz egy
+   * RENDES LAPPAL (69 957 bajt, `<title>Acropora`) ott, ahol vagy sitemapnak
+   * vagy 404-nek kellene allnia. Egy keresonek ez nem hianyzo sitemap, hanem egy
+   * HTML sitemap.
+   *
+   * A FENTI KESZLET EZT NEM TUDTA MEGFOGNI, es ez a lenyeg: azok az allitasok a
+   * LISTABOL veszik a bemenetuket, tehat a listat igazoljak. Ez az egy a lemezre
+   * nez -- ugyanaz a lepes, mint amikor egy halo listaja a forrasbol jon, nem
+   * kezbol.
+   *
+   * A KET ISMERT NEXT-KONVENCIO a `robots.ts` es a `sitemap.ts`; barmi mas
+   * bejegyzeshez a `public/` mappaban kell allnia a fajlnak.
+   */
+  it("minden bejegyzes mogott all valami, ami kiszolgalja", () => {
+    const gyoker = join(__dirname, "..", "..")
+    const kiszolgalo: Record<string, string> = {
+      "/robots.txt": join(gyoker, "app", "robots.ts"),
+      "/sitemap.xml": join(gyoker, "app", "sitemap.ts"),
+    }
+
+    const fedetlen = STATIKUS_GYOKER_UTAK.filter((ut) => {
+      const metadataUt = kiszolgalo[ut]
+      if (metadataUt && existsSync(metadataUt)) return false
+      return !existsSync(join(gyoker, "..", "public", ut.replace(/^\//, "")))
+    })
+
+    expect(fedetlen).toEqual([])
   })
 
   /**
