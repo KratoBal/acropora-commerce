@@ -33,14 +33,16 @@
  * `app/` alatt csak `robots.ts` all), tehat a kirakat egy RENDES LAPOT ad ra
  * 200-zal. Egy keresonek ez nem hianyzo sitemap, hanem egy HTML sitemap.
  *
- * Ezert a lista MA EGY elemu, es a `/robots.txt` azert maradhat, mert
- * `app/robots.ts` tenylegesen kiszolgalja.
+ * A `/sitemap.xml` AZOTA VISSZAKERULT, es pontosan a helyes sorrendben: eloszor
+ * megepult az `app/sitemap.ts`, es a bejegyzes CSAK utana jott. Az orzo ezt
+ * gepiesen kikenyszeriti -- a forditott sorrend (bejegyzes mechanizmus nelkul)
+ * nev szerint pirosra valt.
  *
  * A SZABALY PEDIG MOSTANTOL NEM CSAK LE VAN IRVA: a `statikus-utak.spec.ts`
  * minden bejegyzeshez megkoveteli a kiszolgalo forrast. Egy szabaly, aminek
  * nincs eszkoze, megnyugtat -- es epp ez a bejegyzes mutatta meg, hogy kevés.
  */
-export const STATIKUS_GYOKER_UTAK = ["/robots.txt"] as const
+export const STATIKUS_GYOKER_UTAK = ["/robots.txt", "/sitemap.xml"] as const
 
 export function statikusGyokerUt(pathname: string): boolean {
   return (STATIKUS_GYOKER_UTAK as readonly string[]).includes(pathname)
