@@ -78,21 +78,53 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const kategoriak = await listCategories({ fields: "handle,updated_at" })
 
-  const termekek: { handle?: string | null; updated_at?: unknown }[] = []
-  for (let lap = 1; lap <= MAX_LAP; lap++) {
-    const { response, nextPage } = await listProducts({
-      pageParam: lap,
-      countryCode: orszagKodok[0],
-      queryParams: { limit: LAP_MERET, fields: "handle,updated_at" },
-    })
-    termekek.push(...response.products)
-    if (nextPage === null) break
+  /*
+    A TERMEKLISTA ORSZAGKODONKENT KESZUL, NEM EGYSZER. Az elso valtozat az ELSO
+    orszag termekeit kerte le, es a cimeket minden orszagra abbol epitette --
+    egy masodik piac cimei igy a masik piac termekeibol keszultek volna. Ma egy
+    regio van, tehat az a kimenet meg helyes volt; a hiba akkor jelent volna
+    meg, amikor senki nem koti ossze ezzel a sorral.
+
+    A KOLTSEG MA NULLA: egy orszag, ugyanaz a ~15 lapozas. Ez sorrend, nem ar.
+  */
+  const orszagok: {
+    countryCode: string
+    termekek: { handle?: string | null; updated_at?: unknown }[]
+  }[] = []
+
+  for (const countryCode of orszagKodok) {
+    const termekek: { handle?: string | null; updated_at?: unknown }[] = []
+    let betelt = true
+    for (let lap = 1; lap <= MAX_LAP; lap++) {
+      const { response, nextPage } = await listProducts({
+        pageParam: lap,
+        countryCode,
+        queryParams: { limit: LAP_MERET, fields: "handle,updated_at" },
+      })
+      termekek.push(...response.products)
+      if (nextPage === null) {
+        betelt = false
+        break
+      }
+    }
+    /*
+      A BETELT KORLAT NYOMOT HAGY, ES NEM DOB. A felso hatar azert all itt, hogy
+      egy elromlott lapozas ne forogjon vegtelenul -- de ha betelik, a sitemap
+      CSENDBEN lesz rovidebb, es epp az a jel veszne el, ami megmondja, hogy
+      elromlott. Kivetelt viszont nem dobunk: egy csonka sitemap tobbet er a
+      seminel. (Ma 15 lap kell a szazbol.)
+    */
+    if (betelt) {
+      console.warn(
+        `[sitemap] a lapozasi korlat (${MAX_LAP}) betelt a(z) ${countryCode} orszagkodnal, a lista csonka lehet`,
+      )
+    }
+    orszagok.push({ countryCode, termekek })
   }
 
   return sitemapBejegyzesek({
     origin: `https://${hoszt}`,
-    orszagKodok,
+    orszagok,
     kategoriak,
-    termekek,
   })
 }

@@ -29,11 +29,31 @@ import { kategoriaCanonical } from "./kategoria-canonical"
  * ugyanaz a hiba kisebben, mint amibol ez a fajl szuletett.
  */
 
+type Sor = { handle?: string | null; updated_at?: unknown }
+
 export type SitemapBemenet = {
   origin: string
-  orszagKodok: readonly string[]
-  kategoriak: readonly { handle?: string | null; updated_at?: unknown }[]
-  termekek: readonly { handle?: string | null; updated_at?: unknown }[]
+  /**
+   * ORSZAGONKENT SAJAT TERMEKLISTA -- ES EZ NEM TULBONYOLITAS.
+   *
+   * Az elso valtozat EGY orszagkod termekeit kerte le, es MINDEN orszagra
+   * ugyanazt a listat sorolta fel. Ma egy regio van, tehat a kimenet helyes
+   * volt; egy masodik piac megjelenesekor viszont a masodik orszag cimei az
+   * ELSO orszag termeklistajabol keszultek volna. Nem hianyzo lista lett volna
+   * belole, hanem HIHETO, teljesnek latszo lista rossz tartalommal -- es az
+   * elso fajta latszik, a masodik nem. (acrobot lelete, 2026-09-15.)
+   *
+   * A tipus most szerkezetileg zarja ki: termeklistat csak orszagkoddal egyutt
+   * lehet atadni.
+   */
+  orszagok: readonly { countryCode: string; termekek: readonly Sor[] }[]
+  /**
+   * A KATEGORIAK KOZOSEK, ES EZ MERT KULONBSEG, NEM FELEDEKENYSEG: a
+   * `listProducts` azert kovetel orszagkodot, mert az ARAK regio-fuggok, a
+   * `listCategories` viszont nem vesz fel ilyet -- a kategoria-fa nem
+   * regionkent mas.
+   */
+  kategoriak: readonly Sor[]
 }
 
 export type SitemapBejegyzes = {
@@ -53,14 +73,13 @@ export function utolsoModositas(ertek: unknown): Date | undefined {
 
 export function sitemapBejegyzesek({
   origin,
-  orszagKodok,
+  orszagok,
   kategoriak,
-  termekek,
 }: SitemapBemenet): SitemapBejegyzes[] {
   const bejegyzesek: SitemapBejegyzes[] = []
   const cim = (ut: string) => `${origin}${ut}`
 
-  for (const countryCode of orszagKodok) {
+  for (const { countryCode, termekek } of orszagok) {
     bejegyzesek.push({ url: cim(fooldalCanonical(countryCode)) })
     bejegyzesek.push({ url: cim(storeCanonical(countryCode)) })
 
