@@ -18,6 +18,15 @@ vi.mock("@lib/data/cart", () => ({
     initiatePaymentSession(...args),
 }))
 
+/* Lasd a szures-specben: a szerver-muveletek modulja a teszt-kornyezetben a
+   `server-only` orzon akadna el. Az egyeztetes alapbol sikeres es dij nelkuli,
+   tehat ezek az allitasok tovabbra is a HIBAUZENET utjat merik. */
+vi.mock("@lib/data/payment", () => ({
+  egyeztesdAzUtanvetDijat: vi
+    .fn()
+    .mockResolvedValue({ ok: true, dij: 0, valasztottSzerep: "PAY_AT_STORE" }),
+}))
+
 import Payment from "./index"
 import {
   FIZETES_ELUTASITVA,

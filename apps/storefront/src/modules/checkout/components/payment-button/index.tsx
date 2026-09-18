@@ -12,11 +12,22 @@ import ErrorMessage from "../error-message"
 
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
+  /**
+   * AMIVEL A KOSAR FIZET, A HATTER SZAVAVAL.
+   *
+   * Azert kell, mert a szolgaltato AZONOSITOJA nem mondja meg: a sajat
+   * utanvet-szolgaltatonk azonositoja kornyezeti beallitas a hatteren
+   * (`ACROPORA_PP_COD`), es egy ide irt masolat ugyanannak a dontesnek a
+   * masodik forrasa lenne. E nelkul a gomb a `default:` agra esne, es a vevo
+   * egy letiltott gombot latna egy ervenyes fizetesi mod mellett.
+   */
+  fizetesiSzerep?: "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
   "data-testid": string
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
+  fizetesiSzerep,
   "data-testid": dataTestId,
 }) => {
   const notReady =
@@ -39,7 +50,18 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
       )
     case isManual(paymentSession?.provider_id):
       return (
-        <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
+        <KozvetlenRendelesGomb notReady={notReady} data-testid={dataTestId} />
+      )
+    /*
+      UTANVET: ugyanaz a gomb, mint a bolti fizetesnel -- nincs mit beszedni a
+      penztarban, a rendeles egyszeruen leadodik. A dij ekkorra MAR a kosaron
+      van (a fizetesi lepes tette fel az egyeztetessel), tehat itt nincs mit
+      szamolni, es nem is szabad: a rendeles lezarasa a hatteren ellenorzi, hogy
+      a dij es a valasztott mod osszeillik-e.
+    */
+    case fizetesiSzerep === "COD" && !!paymentSession:
+      return (
+        <KozvetlenRendelesGomb notReady={notReady} data-testid={dataTestId} />
       )
     default:
       return <Button disabled>Válassz fizetési módot</Button>
@@ -180,7 +202,7 @@ const StripePaymentButton = ({
   )
 }
 
-const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
+const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 

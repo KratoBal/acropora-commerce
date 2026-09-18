@@ -53,7 +53,10 @@ export default async function CheckoutForm({
         }
       />
 
-      <Review cart={cart} />
+      <Review
+        cart={cart}
+        fizetesiSzerep={fizetesiLehetosegek?.selected_payment_role ?? null}
+      />
     </div>
   )
 }

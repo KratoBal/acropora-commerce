@@ -7,6 +7,8 @@ import {
   engedelyezettFizetesiModok,
 } from "@lib/util/fizetesi-modok"
 import { initiatePaymentSession } from "@lib/data/cart"
+import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
+import { convertToLocale } from "@lib/util/money"
 import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -46,6 +48,11 @@ const Payment = ({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [paymentComplete, setPaymentComplete] = useState(false)
+  /**
+   * A DIJ A HATTER VALASZABOL JON, ES CSAK ONNAN. Nulla addig, amig a vegpont
+   * nem mond mast -- a kirakat nem ir ki osszeget sajat talalgatasbol.
+   */
+  const [utanvetDij, setUtanvetDij] = useState(0)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? "",
   )
@@ -64,21 +71,64 @@ const Payment = ({
     semmilyen jelet nem kapott. A kudarc csak a KOVETKEZO lepesnel derult
     volna ki. Most ugyanoda ir, ahova a masik ag.
   */
+  /**
+   * A VALASZTAS HAROM LEPES, ES A SORREND KOTOTT.
+   *
+   * 1. munkamenet a valasztott szolgaltatoval -- a hatter EBBOL tudja meg,
+   *    mire esett a valasztas. Dij-jelzo mezot nem kuldunk: az azt jelentene,
+   *    hogy a kirakat mondja meg, mennyit kell fizetni.
+   * 2. egyeztetes: felkerul az utanvet-dij, vagy lekerul, ha a vevo masra
+   *    valtott. MINDEN modnal lefut, nem csak az utanvetnel -- kulonben egy
+   *    utanvetrol kartyara valto vevonel a dij ottmaradna.
+   * 3. ha a dij mozdult, a vegosszeg is mozdult, es a Medusa eldobja a
+   *    munkamenetet. A valasz `valasztottSzerep: null` ertekkel EZT mondja
+   *    meg, es ilyenkor ujra kell inditani -- most mar az uj vegosszegre.
+   *
+   * A harmadik lepes nelkul a lanc NEM HIBAZIK, csak elromlik: a vevo latna a
+   * dijat, es a fizetese kozben tunne el alola a munkamenet.
+   */
   const setPaymentMethod = async (method: string) => {
     setError(null)
     setSelectedPaymentMethod(method)
-    if (isStripeLike(method)) {
-      try {
-        const eredmeny = await initiatePaymentSession(cart, {
+    setUtanvetDij(0)
+
+    try {
+      const inditas = await initiatePaymentSession(cart, {
+        provider_id: method,
+      })
+
+      if (!inditas.ok) {
+        setError(inditas.uzenet)
+        return
+      }
+
+      const egyeztetes = await egyeztesdAzUtanvetDijat(cart.id)
+
+      if (!egyeztetes.ok) {
+        setError(egyeztetes.uzenet)
+        return
+      }
+
+      if (egyeztetes.valasztottSzerep === null) {
+        const ujrainditas = await initiatePaymentSession(cart, {
           provider_id: method,
         })
 
-        if (!eredmeny.ok) {
-          setError(eredmeny.uzenet)
+        if (!ujrainditas.ok) {
+          setError(ujrainditas.uzenet)
+          return
         }
-      } catch {
-        setError(FIZETES_MOST_NEM_SIKERULT)
       }
+
+      setUtanvetDij(egyeztetes.dij)
+      /*
+        A DIJ SOR A KOSARON KELETKEZIK, tehat a szerver-komponensek adata
+        elavult: az osszegzo a dij nelkuli vegosszeget mutatna. A frissites
+        ujraolvastatja oket.
+      */
+      router.refresh()
+    } catch {
+      setError(FIZETES_MOST_NEM_SIKERULT)
     }
   }
 
@@ -278,6 +328,27 @@ const Payment = ({
                 Ajándékkártya
               </Text>
             </div>
+          )}
+
+          {/*
+            A DIJ CSAK AKKOR JELENIK MEG, HA A VEGPONT NEM NULLAT ADOTT.
+
+            A kodban allo 450 forintos tartalek a HATTERE, nem a kirakate: ha
+            a beallitasi sor hianyzik, a hatter dont rola es a valaszaban
+            kuldi. Egy itt kiirt szam sajat talalgatas lenne, es penzrol.
+          */}
+          {utanvetDij > 0 && (
+            <Text
+              className="txt-medium text-ui-fg-subtle mt-4"
+              data-testid="utanvet-dij"
+            >
+              Utánvét kezelési díj:{" "}
+              {convertToLocale({
+                amount: utanvetDij,
+                currency_code: cart.currency_code,
+              })}
+              . A rendelés végösszege ezt tartalmazza.
+            </Text>
           )}
 
           <ErrorMessage
