@@ -6,7 +6,14 @@ import PaymentButton from "../payment-button"
 import { useSearchParams } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
-const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
+const Review = ({
+  cart,
+  fizetesiSzerep,
+}: {
+  cart: HttpTypes.StoreCart
+  /** Amivel a kosar fizet, a hatter szavaval. Lasd a gomb propjanak fejlecet. */
+  fizetesiSzerep?: "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
+}) => {
   const searchParams = useSearchParams()
 
   const isOpen = searchParams.get("step") === "review"
@@ -50,7 +57,11 @@ const Review = ({ cart }: { cart: HttpTypes.StoreCart }) => {
               </Text>
             </div>
           </div>
-          <PaymentButton cart={cart} data-testid="submit-order-button" />
+          <PaymentButton
+            cart={cart}
+            fizetesiSzerep={fizetesiSzerep}
+            data-testid="submit-order-button"
+          />
         </>
       )}
     </div>

@@ -10,7 +10,19 @@ vi.mock("next/navigation", () => ({
 }))
 
 vi.mock("@lib/data/cart", () => ({
-  initiatePaymentSession: vi.fn(),
+  initiatePaymentSession: vi.fn().mockResolvedValue({ ok: true }),
+}))
+
+/*
+  A `@lib/data/payment` SZERVER-MUVELETEKET exportal, es a `server-only` orzon
+  keresztul toltodne be -- a teszt-kornyezetben ez maga a bukas. Valodi
+  futasban a Next a modult hivatkozassa csereli, tehat ez a mock a teszt
+  kornyezetenek szol, nem a viselkedest irja at.
+*/
+vi.mock("@lib/data/payment", () => ({
+  egyeztesdAzUtanvetDijat: vi
+    .fn()
+    .mockResolvedValue({ ok: true, dij: 0, valasztottSzerep: "PAY_AT_STORE" }),
 }))
 
 import Payment from "./index"
