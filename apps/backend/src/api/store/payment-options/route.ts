@@ -18,6 +18,13 @@ import { resolveCartPaymentContext } from "../../../workflows/utils/resolve-cart
  *
  * In practice it is zero until a payment provider is mapped to a role, because
  * `selected_payment_role` cannot be COD before then.
+ *
+ * `allowed_payment_providers` is the same answer as `allowed_payment_roles`,
+ * resolved to provider ids. It exists because a storefront cannot do that
+ * resolution: the role-to-provider map lives in this process's environment.
+ * An allowed role with no provider yields no entry, so the list can be empty
+ * while the roles are not - today that is what ONLINE_CARD looks like, since
+ * no SimplePay provider is registered.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { cart_id } = req.validatedQuery as { cart_id: string }
@@ -48,6 +55,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   res.json({
     payment_options: {
       allowed_payment_roles: context.allowed_payment_roles,
+      allowed_payment_providers: context.allowed_payment_providers,
       selected_payment_role: context.selected_payment_role,
       cash_on_delivery_fee: context.cash_on_delivery_fee,
     },
@@ -100,6 +108,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   res.json({
     payment_options: {
       allowed_payment_roles: after.context.allowed_payment_roles,
+      allowed_payment_providers: after.context.allowed_payment_providers,
       selected_payment_role: after.context.selected_payment_role,
       cash_on_delivery_fee: after.context.cash_on_delivery_fee,
     },

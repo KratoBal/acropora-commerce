@@ -97,11 +97,17 @@ function modotValaszt() {
   fireEvent.click(screen.getAllByRole("radio")[0])
 }
 
+/**
+ * AZ ENGEDELY-LISTA A HATTER VALASZA, ES ITT NEM DISZ: nelkule a fizetesi
+ * lepes egyetlen modot sem rajzol ki, tehat a lenti allitasok egy ures fan
+ * futnanak. A `pp_system_default` szerepe a bolti fizetes.
+ */
 function lapotRajzol() {
   return render(
     <Payment
       cart={kosar()}
       availablePaymentMethods={[{ id: "pp_system_default" }]}
+      engedelyezettModok={[{ id: "pp_system_default", role: "PAY_AT_STORE" }]}
     />,
   )
 }

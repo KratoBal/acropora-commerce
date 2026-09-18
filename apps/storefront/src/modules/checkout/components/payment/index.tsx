@@ -1,6 +1,11 @@
 "use client"
 import { RadioGroup } from "@headlessui/react"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
+import {
+  FIZETESI_SZEREP_CIMKE,
+  type EngedelyezettFizetesiMod,
+  engedelyezettFizetesiModok,
+} from "@lib/util/fizetesi-modok"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
@@ -23,9 +28,16 @@ import { useCallback, useEffect, useState } from "react"
 const Payment = ({
   cart,
   availablePaymentMethods,
+  engedelyezettModok,
 }: {
   cart: HttpTypes.StoreCart
   availablePaymentMethods: { id: string }[]
+  /**
+   * Amit a HATTER enged ennek a kosarnak, szerepekkel egyutt. A
+   * `availablePaymentMethods` a regio kinalata, ami a szallitasi modrol semmit
+   * nem tud -- a ketto metszete az, amit a vevo lathat.
+   */
+  engedelyezettModok: EngedelyezettFizetesiMod[]
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession) => paymentSession.status === "pending",
@@ -68,6 +80,33 @@ const Payment = ({
         setError(FIZETES_MOST_NEM_SIKERULT)
       }
     }
+  }
+
+  const megjelenitheto = engedelyezettFizetesiModok(
+    availablePaymentMethods,
+    engedelyezettModok,
+  )
+
+  /**
+   * A CIMKE A SZEREPBOL JON, NEM AZ AZONOSITOBOL.
+   *
+   * A `paymentInfoMap` a Medusa-sablon terkepe, es a sajat szolgaltatonk nincs
+   * benne: azon az uton a vevo a nyers `pp_acropora_cod` szoveget olvasna a
+   * radiogomb mellett. A szerep viszont megerkezik a hatter valaszaban, es az
+   * mondja meg, MIT valaszt a vevo. A terkep tovabbra is ott all mogotte, hogy
+   * a beepitett szolgaltatok ikonja megmaradjon.
+   */
+  const cimkek = {
+    ...paymentInfoMap,
+    ...Object.fromEntries(
+      megjelenitheto.map((mod) => [
+        mod.id,
+        {
+          title: FIZETESI_SZEREP_CIMKE[mod.role],
+          icon: paymentInfoMap[mod.id]?.icon ?? <CreditCard />,
+        },
+      ]),
+    ),
   }
 
   const paidByGiftcard = !!(
@@ -179,25 +218,25 @@ const Payment = ({
       </div>
       <div>
         <div className={isOpen ? "block" : "hidden"}>
-          {!paidByGiftcard && availablePaymentMethods?.length && (
+          {!paidByGiftcard && megjelenitheto.length > 0 && (
             <>
               <RadioGroup
                 value={selectedPaymentMethod}
                 onChange={(value: string) => setPaymentMethod(value)}
               >
-                {availablePaymentMethods.map((paymentMethod) => (
+                {megjelenitheto.map((paymentMethod) => (
                   <div key={paymentMethod.id}>
                     {isStripeLike(paymentMethod.id) ? (
                       <StripePaymentContainer
                         paymentProviderId={paymentMethod.id}
                         selectedPaymentOptionId={selectedPaymentMethod}
-                        paymentInfoMap={paymentInfoMap}
+                        paymentInfoMap={cimkek}
                         setError={setError}
                         setPaymentComplete={setPaymentComplete}
                       />
                     ) : (
                       <PaymentContainer
-                        paymentInfoMap={paymentInfoMap}
+                        paymentInfoMap={cimkek}
                         paymentProviderId={paymentMethod.id}
                         selectedPaymentOptionId={selectedPaymentMethod}
                       />
@@ -206,6 +245,25 @@ const Payment = ({
                 ))}
               </RadioGroup>
             </>
+          )}
+
+          {/*
+            AZ URES LISTA NEM URES KEPERNYO.
+
+            Eddig a `&&` miatt SEMMI nem jelent meg: a vevo egy cim nelkuli,
+            letiltott gombos lepest latott, es nem tudta, rajta mulik-e. Ez az
+            allapot ma valodi -- a bankkartyas szerephez nincs szolgaltato --,
+            tehat nem elmeleti ag.
+          */}
+          {!paidByGiftcard && megjelenitheto.length === 0 && (
+            <Text
+              className="txt-medium text-ui-fg-subtle"
+              data-testid="nincs-fizetesi-mod"
+            >
+              A választott szállítási módhoz jelenleg nincs elérhető fizetési
+              mód. Válassz másik szállítási módot, vagy vedd fel velünk a
+              kapcsolatot.
+            </Text>
           )}
 
           {paidByGiftcard && (
@@ -255,7 +313,7 @@ const Payment = ({
                   className="txt-medium text-ui-fg-subtle"
                   data-testid="payment-method-summary"
                 >
-                  {paymentInfoMap[activeSession?.provider_id]?.title ||
+                  {cimkek[activeSession?.provider_id]?.title ||
                     activeSession?.provider_id}
                 </Text>
               </div>
@@ -268,9 +326,7 @@ const Payment = ({
                   data-testid="payment-details-summary"
                 >
                   <Container className="flex items-center h-7 w-fit p-2 bg-ui-button-neutral-hover">
-                    {paymentInfoMap[selectedPaymentMethod]?.icon || (
-                      <CreditCard />
-                    )}
+                    {cimkek[selectedPaymentMethod]?.icon || <CreditCard />}
                   </Container>
                   <Text>Megjelenik a következő lépés</Text>
                 </div>
