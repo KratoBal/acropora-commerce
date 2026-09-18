@@ -4,7 +4,12 @@ import {
 } from "./payment-eligibility"
 import { ShippingOptionRole } from "./shipping-eligibility"
 import { buildShippingOptionRoleMap } from "./shipping-option-roles"
-import { buildProviderRoleMap, resolvePaymentRole } from "./payment-providers"
+import {
+  AllowedPaymentProvider,
+  allowedPaymentProvidersFor,
+  buildProviderRoleMap,
+  resolvePaymentRole,
+} from "./payment-providers"
 import {
   getCashOnDeliveryFee,
   resolveCashOnDeliveryFeeAmount,
@@ -14,6 +19,12 @@ import { COMMERCE_SETTINGS_MODULE } from "../../modules/commerce-settings"
 export type CartPaymentContext = {
   shipping_roles: ShippingOptionRole[]
   allowed_payment_roles: PaymentRole[]
+  /**
+   * The same answer as `allowed_payment_roles`, in the only currency a
+   * storefront can act on: provider ids. A role it cannot resolve to a
+   * provider is not an answer it can render.
+   */
+  allowed_payment_providers: AllowedPaymentProvider[]
   selected_payment_role: PaymentRole | null
   cash_on_delivery_fee: number
 }
@@ -94,10 +105,12 @@ export const resolveCartPaymentContext = async (
     buildShippingOptionRoleMap(env)
   )
   const allowed_payment_roles = allowedPaymentRolesFor(shipping_roles)
-  const selected_payment_role = resolveSelectedPaymentRole(
-    cart,
-    buildProviderRoleMap(env)
+  const providerRoles = buildProviderRoleMap(env)
+  const allowed_payment_providers = allowedPaymentProvidersFor(
+    allowed_payment_roles,
+    providerRoles
   )
+  const selected_payment_role = resolveSelectedPaymentRole(cart, providerRoles)
 
   // Only read the setting when it can actually matter.
   const feeHuf =
@@ -108,6 +121,7 @@ export const resolveCartPaymentContext = async (
   return {
     shipping_roles,
     allowed_payment_roles,
+    allowed_payment_providers,
     selected_payment_role,
     cash_on_delivery_fee: resolveCashOnDeliveryFeeAmount({
       selectedPaymentRole: selected_payment_role,
