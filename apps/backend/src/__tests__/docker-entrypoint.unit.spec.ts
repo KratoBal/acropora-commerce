@@ -29,6 +29,15 @@ type StepExitCodes = {
   shippingIds?: number
 }
 
+type RunOptions = StepExitCodes & {
+  /** This step never returns (sleeps far past the deadline), like a prompt. */
+  hang?: "migrate" | "links" | "shippingIds"
+  /** MEDUSA_STEP_TIMEOUT_SECONDS for the run. */
+  stepTimeout?: number
+  /** Run with a PATH that has no `timeout` binary on it. */
+  withoutTimeoutBinary?: boolean
+}
+
 /// Puts a fake `npx` AND a fake `node` first on PATH. Each exits with the code
 /// the test asks for - which is exactly the signal the entrypoint branches on.
 ///
@@ -56,10 +65,15 @@ function runEntrypoint({
   migrate = 0,
   links = 0,
   shippingIds = 0,
-}: StepExitCodes = {}): {
+  hang,
+  stepTimeout,
+  withoutTimeoutBinary = false,
+}: RunOptions = {}): {
   status: number | null
   serverStarted: boolean
   migrateArgs: string
+  stderr: string
+  elapsedMs: number
 } {
   const dir = mkdtempSync(join(tmpdir(), "entrypoint-"))
   const marker = join(dir, "server-started")
@@ -70,10 +84,10 @@ function runEntrypoint({
     [
       "#!/bin/sh",
       'case "$2" in',
-      `  db:migrate) printf '%s' "$*" > ${migrateArgsFile}; exit ${migrate} ;;`,
+      `  db:migrate) printf '%s' "$*" > ${migrateArgsFile}; ${hang === "migrate" ? "sleep 30; " : ""}exit ${migrate} ;;`,
       '  exec) case "$3" in',
-      `    *verify-links-in-sync*) exit ${links} ;;`,
-      `    *) exit ${shippingIds} ;;`,
+      `    *verify-links-in-sync*) ${hang === "links" ? "sleep 30; " : ""}exit ${links} ;;`,
+      `    *) ${hang === "shippingIds" ? "sleep 30; " : ""}exit ${shippingIds} ;;`,
       "  esac ;;",
       "  *) exit 0 ;;",
       "esac",
@@ -88,14 +102,26 @@ function runEntrypoint({
   )
   chmodSync(join(dir, "node"), 0o755)
 
+  /*
+    WITHOUT `timeout`: a PATH with only the fakes on it. The entrypoint's other
+    commands are shell builtins, and the start command is given by absolute
+    path, so the only thing this removes is the binary under test.
+  */
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    PATH: withoutTimeoutBinary ? dir : `${dir}:${process.env.PATH ?? ""}`,
+  }
+  if (stepTimeout !== undefined) {
+    env.MEDUSA_STEP_TIMEOUT_SECONDS = String(stepTimeout)
+  }
+
+  const started = Date.now()
   const result = spawnSync(
     "/bin/sh",
     [ENTRYPOINT, "/bin/sh", "-c", `printf started > ${marker}`],
-    {
-      env: { ...process.env, PATH: `${dir}:${process.env.PATH ?? ""}` },
-      encoding: "utf8",
-    }
+    { env, encoding: "utf8", timeout: 60_000 }
   )
+  const elapsedMs = Date.now() - started
 
   let serverStarted = false
   try {
@@ -112,7 +138,13 @@ function runEntrypoint({
     migrateArgs = ""
   }
 
-  return { status: result.status, serverStarted, migrateArgs }
+  return {
+    status: result.status,
+    serverStarted,
+    migrateArgs,
+    stderr: result.stderr ?? "",
+    elapsedMs,
+  }
 }
 
 describe("docker-entrypoint.sh", () => {
@@ -173,6 +205,40 @@ describe("docker-entrypoint.sh", () => {
 
     expect(status).not.toBe(0)
     expect(serverStarted).toBe(false)
+  })
+
+  /*
+    A HATARIDO. Egy kerdesre varo lepes nem lep ki, tehat kilepesi kod sem
+    jelzi - 2026-09-28-an igy allt a stage. Az allitas harom resze: a szerver
+    NEM indult, a futas a hataridon belul VEGET ERT (nem a teszt sajat 60 mp-es
+    korlatja vagta el), es a hibauzenet megnevezi a lepest.
+
+    Mind a harom Medusa-lepesre: egy kimaradt `run_step` pontosan az a lepes
+    lenne, amelyik a kovetkezo kerdesnel orokre all.
+  */
+  it.each(["migrate", "links", "shippingIds"] as const)(
+    "does not start the server when the %s step never returns",
+    (hang) => {
+      const { status, serverStarted, stderr, elapsedMs } = runEntrypoint({
+        hang,
+        stepTimeout: 1,
+      })
+
+      expect(status).toBe(124)
+      expect(serverStarted).toBe(false)
+      expect(elapsedMs).toBeLessThan(20_000)
+      expect(stderr).toMatch(/did not finish within 1s - refusing to start/)
+    }
+  )
+
+  it("refuses to start when the deadline itself is unavailable", () => {
+    const { status, serverStarted, stderr } = runEntrypoint({
+      withoutTimeoutBinary: true,
+    })
+
+    expect(status).not.toBe(0)
+    expect(serverStarted).toBe(false)
+    expect(stderr).toMatch(/'timeout' not found/)
   })
 
   it("does not start the server when the shipping id check fails", () => {
