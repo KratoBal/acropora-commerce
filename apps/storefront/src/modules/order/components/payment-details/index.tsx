@@ -1,5 +1,7 @@
 import { Container, Heading, Text } from "@modules/common/components/ui"
 
+import { CreditCard } from "@medusajs/icons"
+
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
@@ -11,6 +13,13 @@ type PaymentDetailsProps = {
 
 const PaymentDetails = ({ order }: PaymentDetailsProps) => {
   const payment = order.payment_collections?.[0].payments?.[0]
+  /*
+    EGY ISMERETLEN SZOLGALTATO NEM DONTHETI LE A VISSZAIGAZOLO LAPOT. Eddig a
+    terkepet `.title`-lal olvasta, es egy benne nem szereplo azonosito (ilyen
+    volt az utanvet) hibat dobott. Most az azonosito all a helyen, es a
+    hianyt egy teszt fogja meg, nem a vevo.
+  */
+  const info = payment ? paymentInfoMap[payment.provider_id] : undefined
 
   return (
     <div>
@@ -28,7 +37,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
                 className="txt-medium text-ui-fg-subtle"
                 data-testid="payment-method"
               >
-                {paymentInfoMap[payment.provider_id].title}
+                {info?.title ?? payment.provider_id}
               </Text>
             </div>
             <div className="flex flex-col w-2/3">
@@ -37,7 +46,7 @@ const PaymentDetails = ({ order }: PaymentDetailsProps) => {
               </Text>
               <div className="flex gap-2 txt-medium text-ui-fg-subtle items-center">
                 <Container className="flex items-center h-7 w-fit p-2 bg-ui-button-neutral-hover">
-                  {paymentInfoMap[payment.provider_id].icon}
+                  {info?.icon ?? <CreditCard />}
                 </Container>
                 <Text data-testid="payment-amount">
                   {isStripeLike(payment.provider_id) && payment.data?.card_last4

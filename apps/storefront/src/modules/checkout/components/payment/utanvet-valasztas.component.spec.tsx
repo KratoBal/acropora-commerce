@@ -167,7 +167,7 @@ describe("az utánvét választása", () => {
         engedelyezettModok={[{ id: "pp_system_default", role: "PAY_AT_STORE" }]}
       />,
     )
-    fireEvent.click(screen.getByText("Fizetés a boltban"))
+    fireEvent.click(screen.getByText("Fizetés átvételkor"))
 
     await waitFor(() =>
       expect(egyeztesdAzUtanvetDijat).toHaveBeenCalledWith("cart-1"),

@@ -1,4 +1,4 @@
-import { CreditCard } from "@medusajs/icons"
+import { BuildingStorefront, Cash, CreditCard } from "@medusajs/icons"
 import Bancontact from "@modules/common/icons/bancontact"
 import Ideal from "@modules/common/icons/ideal"
 import PayPal from "@modules/common/icons/paypal"
@@ -29,9 +29,23 @@ export const paymentInfoMap: Record<
     title: "PayPal",
     icon: <PayPal />,
   },
+  /*
+    A KET SAJAT SZEREP, PD-002 (Balazs, 2026-09-28) szerint:
+      pp_system_default  KIZAROLAG a bolti fizetes, szemelyes atvetelnel
+      pp_acropora_cod    KIZAROLAG az utanvet, kiszallitasnal
+    A penztar a feliratot a SZEREPBOL veszi (fizetesi-modok.ts); ez a terkep
+    ott csak ikont ad. A rendeles visszaigazolo lapja viszont csak a szolgaltato
+    azonositojat latja, es itt keres - ezert kell a ket bejegyzes, ugyanazzal a
+    szoveggel. Eddig a bolti fizetes itt "Manual Payment" volt, az utanvet
+    pedig hianyzott, es a lap a .title-on hibara futott volna.
+  */
   pp_system_default: {
-    title: "Manual Payment",
-    icon: <CreditCard />,
+    title: "Fizetés átvételkor",
+    icon: <BuildingStorefront />,
+  },
+  pp_acropora_cod: {
+    title: "Utánvét",
+    icon: <Cash />,
   },
   // Add more payment providers here
 }

@@ -88,7 +88,7 @@ describe("a fizetési lépés csak azt kínálja, amit a háttér enged", () => 
     lapotRajzol([{ id: "pp_system_default", role: "PAY_AT_STORE" }])
 
     expect(felkinaltModok()).toHaveLength(1)
-    expect(screen.getByText("Fizetés a boltban")).toBeTruthy()
+    expect(screen.getByText("Fizetés átvételkor")).toBeTruthy()
     expect(screen.queryByText("Utánvét")).toBeNull()
   })
 
