@@ -27,6 +27,38 @@
 # needs no bash-only syntax.
 set -e
 
+# EVERY MEDUSA STEP RUNS UNDER A DEADLINE. A step that waits for input never
+# returns and never exits - no exit code, no log line, just a container that
+# does not start. On 2026-09-28 the link sync did exactly that. `--execute-
+# safe-links` (below) closes that one question; the deadline closes the next
+# one, whichever Medusa version brings it. Closing stdin is no substitute:
+# the prompt library keeps waiting on a closed stdin (measured, 2026-09-28).
+#
+# Generous by default, because a real data migration may legitimately run
+# long. Overridable per environment: MEDUSA_STEP_TIMEOUT_SECONDS.
+STEP_TIMEOUT="${MEDUSA_STEP_TIMEOUT_SECONDS:-900}"
+
+# The deadline depends on coreutils' `timeout`. If it is missing, refuse
+# rather than run without the guard - a silently absent guard is the fault
+# this whole block exists to prevent.
+if ! command -v timeout >/dev/null 2>&1; then
+  echo "docker-entrypoint: 'timeout' not found - refusing to start without the step deadline." >&2
+  exit 1
+fi
+
+# Runs one step under the deadline. On expiry (exit 124) it says WHICH step
+# stalled; any other failure keeps the step's own exit code. `-k 30`: if the
+# step ignores SIGTERM, it is killed 30 s later.
+run_step() {
+  timeout -k 30 "$STEP_TIMEOUT" "$@" || {
+    status=$?
+    if [ "$status" -eq 124 ]; then
+      echo "docker-entrypoint: '$*' did not finish within ${STEP_TIMEOUT}s - refusing to start." >&2
+    fi
+    exit "$status"
+  }
+}
+
 # THE FIRST REFUSAL IS THE CHEAPEST ONE, AND IT RUNS FIRST FOR THAT REASON.
 #
 # Without MEDUSA_FILE_BACKEND_URL the file provider falls back to
@@ -52,13 +84,13 @@ echo "docker-entrypoint: applying Medusa migrations..."
 #
 # The safe flag, however, drops those changes WITHOUT A WORD, so the next step
 # asks for the plan again and refuses the start if anything is left.
-npx medusa db:migrate --execute-safe-links
+run_step npx medusa db:migrate --execute-safe-links
 
 # THE LINK SYNC'S LEFTOVERS, LOUDLY. Whatever `--execute-safe-links` skipped
 # (an altered or removed link table) stops the start here, with the table names
 # and the command that resolves it - after a backup, by a person.
 echo "docker-entrypoint: verifying the link tables..."
-npx medusa exec ./src/scripts/verify-links-in-sync.js
+run_step npx medusa exec ./src/scripts/verify-links-in-sync.js
 
 # THE THIRD REFUSAL, AND IT IS HERE FOR THE SAME REASON AS THE OTHER TWO.
 #
@@ -73,7 +105,7 @@ npx medusa exec ./src/scripts/verify-links-in-sync.js
 # the COMPILED file: the runner stage copies `.medusa/server` to /app, so the
 # source-tree path does not exist in the image.
 echo "docker-entrypoint: verifying the shipping option ids..."
-npx medusa exec ./src/scripts/verify-shipping-option-roles.js
+run_step npx medusa exec ./src/scripts/verify-shipping-option-roles.js
 
 echo "docker-entrypoint: migrations applied, links and ids verified, starting server..."
 
