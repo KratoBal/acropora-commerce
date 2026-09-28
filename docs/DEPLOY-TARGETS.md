@@ -62,3 +62,33 @@ the deployment to work.
 The same shape appears elsewhere in this codebase's history: a check that cannot fail, a guard
 that reports but does not stop, a test that waits for something always present. This was the
 infrastructure version of it.
+
+## Which commit is running, and where the number comes from
+
+Both apps answer the question over HTTP, without shell access:
+
+| App | Endpoint |
+|---|---|
+| backend | `GET /health/release` (plus `medusa.version`, the installed framework version) |
+| storefront | `GET /api/health/release` |
+
+The commit is read from two variables, in this order:
+
+1. `APP_GIT_SHA` - baked into the image from the `GIT_SHA` build argument. Only
+   `infra/deploy-stage.sh` passes it, and that script verifies it against the commit.
+2. `SOURCE_COMMIT` - set by Coolify **at runtime** on every deployment.
+
+**Why the second one is needed.** Coolify does not pass `GIT_SHA`, so an image it builds
+carries the Dockerfile default, `"unknown"`. Until 2026-09-28 the stage backend therefore
+answered `"commit":null,"reported":"unknown"`. Coolify can also pass the commit at build time,
+but only behind its `include_source_commit_in_build` setting, which its own source describes as
+breaking the Docker cache. At runtime it sets `SOURCE_COMMIT` unconditionally
+(`coollabsio/coolify`, `app/Jobs/ApplicationDeploymentJob.php`, read on 2026-09-28). The runtime
+value needs no setting.
+
+The `source` field says which variable answered. `reported` and `reported_runtime` carry both
+raw values, so an `"unknown"` stays visible instead of turning into an empty answer.
+
+**The storefront is also a Coolify application on staging** (`commerce-staging-storefront`,
+Dockerfile, `main`, deploys on push; measured by acrobot on 2026-09-28). The table at the top
+predates it.
