@@ -1,7 +1,7 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
-import { runningMedusaVersion } from "./medusa-version";
-import { currentReleaseInfo } from "./release-info";
+import { runningMedusaVersion } from "./medusa-version"
+import { currentReleaseInfo } from "./release-info"
 
 /**
  * Which build is serving this instance.
@@ -42,5 +42,5 @@ export const GET = async (_req: MedusaRequest, res: MedusaResponse) => {
     status: "ok",
     release: currentReleaseInfo(),
     medusa: { version: runningMedusaVersion() },
-  });
-};
+  })
+}

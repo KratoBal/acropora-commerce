@@ -1,4 +1,4 @@
-import { runningMedusaVersion } from "../medusa-version";
+import { runningMedusaVersion } from "../medusa-version"
 
 describe("runningMedusaVersion", () => {
   /**
@@ -7,16 +7,16 @@ describe("runningMedusaVersion", () => {
    * would turn every upgrade into a red test for the wrong reason.
    */
   it("reads a release number from the installed @medusajs/medusa", () => {
-    expect(runningMedusaVersion()).toMatch(/^\d+\.\d+\.\d+/);
-  });
+    expect(runningMedusaVersion()).toMatch(/^\d+\.\d+\.\d+/)
+  })
 
   it("returns the version it is given", () => {
-    expect(runningMedusaVersion({ version: "2.20.1" })).toBe("2.20.1");
-  });
+    expect(runningMedusaVersion({ version: "2.20.1" })).toBe("2.20.1")
+  })
 
   it("answers null rather than a guess when the manifest has no usable version", () => {
-    expect(runningMedusaVersion({})).toBeNull();
-    expect(runningMedusaVersion({ version: 2 })).toBeNull();
-    expect(runningMedusaVersion({ version: "  " })).toBeNull();
-  });
-});
+    expect(runningMedusaVersion({})).toBeNull()
+    expect(runningMedusaVersion({ version: 2 })).toBeNull()
+    expect(runningMedusaVersion({ version: "  " })).toBeNull()
+  })
+})

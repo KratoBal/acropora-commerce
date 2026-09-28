@@ -1,4 +1,4 @@
-import medusaPackage from "@medusajs/medusa/package.json";
+import medusaPackage from "@medusajs/medusa/package.json"
 
 /**
  * The Medusa version this process actually loaded, read from the installed
@@ -14,8 +14,8 @@ import medusaPackage from "@medusajs/medusa/package.json";
  * part of the package's public surface, not a reach into its internals.
  */
 export const runningMedusaVersion = (
-  pkg: { version?: unknown } = medusaPackage,
+  pkg: { version?: unknown } = medusaPackage
 ): string | null =>
   typeof pkg.version === "string" && pkg.version.trim()
     ? pkg.version.trim()
-    : null;
+    : null

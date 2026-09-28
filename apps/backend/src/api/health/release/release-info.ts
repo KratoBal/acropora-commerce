@@ -43,18 +43,18 @@
  * for this variable. So a full-SHA pattern is what this deployment actually
  * produces; it is measured from the deploy script, not assumed.
  */
-const FULL_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
+const FULL_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/
 
 /** Which variable the reported `commit` came from. */
-export type ReleaseSource = "APP_GIT_SHA" | "SOURCE_COMMIT";
+export type ReleaseSource = "APP_GIT_SHA" | "SOURCE_COMMIT"
 
 export type ReleaseInfo = {
   /** The validated full commit SHA, or `null` when it cannot be trusted. */
-  commit: string | null;
+  commit: string | null
   /** First 12 characters of `commit`, or `null`. Derived, never trusted separately. */
-  short: string | null;
+  short: string | null
   /** The variable `commit` was read from, or `null` when neither was valid. */
-  source: ReleaseSource | null;
+  source: ReleaseSource | null
   /**
    * The raw value the image actually carries, or `null` when the variable is
    * absent entirely.
@@ -66,7 +66,7 @@ export type ReleaseInfo = {
    * field existed looks like. Collapsing both into one empty answer would
    * recreate the very ambiguity this endpoint is meant to remove.
    */
-  reported: string | null;
+  reported: string | null
   /**
    * The raw `SOURCE_COMMIT` the platform set at runtime, or `null` when absent.
    *
@@ -74,16 +74,16 @@ export type ReleaseInfo = {
    * writes "unknown" here when it has no commit, and a malformed value must be
    * visible rather than swallowed.
    */
-  reported_runtime: string | null;
-};
+  reported_runtime: string | null
+}
 
 const rawValue = (value: string | undefined): string | null => {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-};
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
 
 const isFullSha = (value: string | null): value is string =>
-  !!value && FULL_COMMIT_SHA_PATTERN.test(value);
+  !!value && FULL_COMMIT_SHA_PATTERN.test(value)
 
 /**
  * Reads the running build's identity from the environment.
@@ -95,18 +95,18 @@ const isFullSha = (value: string | null): value is string =>
  * visible rather than swallowed.
  */
 export function currentReleaseInfo(
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ): ReleaseInfo {
-  const reported = rawValue(env.APP_GIT_SHA);
-  const reported_runtime = rawValue(env.SOURCE_COMMIT);
+  const reported = rawValue(env.APP_GIT_SHA)
+  const reported_runtime = rawValue(env.SOURCE_COMMIT)
 
   const [commit, source]: [string | null, ReleaseSource | null] = isFullSha(
-    reported,
+    reported
   )
     ? [reported, "APP_GIT_SHA"]
     : isFullSha(reported_runtime)
       ? [reported_runtime, "SOURCE_COMMIT"]
-      : [null, null];
+      : [null, null]
 
   return {
     commit,
@@ -114,5 +114,5 @@ export function currentReleaseInfo(
     source,
     reported,
     reported_runtime,
-  };
+  }
 }
