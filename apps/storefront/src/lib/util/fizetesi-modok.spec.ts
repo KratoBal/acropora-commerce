@@ -56,6 +56,8 @@ describe("engedelyezettFizetesiModok", () => {
 
   it("minden szerephez tartozik magyar cimke", () => {
     expect(FIZETESI_SZEREP_CIMKE.COD).toBe("Utánvét")
+    // PD-002: "Fizetés átvételkor", nem "Fizetés a boltban".
+    expect(FIZETESI_SZEREP_CIMKE.PAY_AT_STORE).toBe("Fizetés átvételkor")
     expect(Object.values(FIZETESI_SZEREP_CIMKE).every(Boolean)).toBe(true)
   })
 })

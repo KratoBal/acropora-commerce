@@ -34,7 +34,9 @@ export type EngedelyezettFizetesiMod = { id: string; role: FizetesiSzerep }
 export const FIZETESI_SZEREP_CIMKE: Record<FizetesiSzerep, string> = {
   ONLINE_CARD: "Bankkártyás fizetés",
   COD: "Utánvét",
-  PAY_AT_STORE: "Fizetés a boltban",
+  // PD-002 (Balázs, 2026-09-28): a bolti fizetés CSAK személyes átvételnél
+  // áll, ezért a felirat az átvételt nevezi meg, nem a helyet.
+  PAY_AT_STORE: "Fizetés átvételkor",
 }
 
 /**
