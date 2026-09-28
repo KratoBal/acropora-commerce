@@ -66,9 +66,24 @@ const JELOLO = "data-vilag"
 const kodSzoveg = (szoveg: string) =>
   szoveg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
 
-const hasznalok = forrasFajlok(GYOKER)
+const osszesHasznalo = forrasFajlok(GYOKER)
   .filter((ut) => kodSzoveg(readFileSync(ut, "utf-8")).includes(`${JELOLO}=`))
   .map((ut) => ut.slice(GYOKER.length + 1))
+
+/**
+ * AZ EGYETLEN, NEV SZERINTI KIVETEL: a fejlesztoi token-mintalap (P1a,
+ * 2026-09-28). A ket modot EGYMAS MELLETT kell mutatnia a Figma-osszeveteshez,
+ * tehat mindket vilagot kiteszi. Elesben nem renderel (`ACROPORA_TOKEN_MINTALAP`).
+ *
+ * A kivetel PONTOS utvonal, nem minta: egy masik fajl ugyanigy a szamlalo ala
+ * esik, es ha a mintalap elkoltozik, az alabbi allitas pirosodik, nem csendben
+ * tagul.
+ */
+const FEJLESZTOI_MINTALAPOK = [join("app", "tokenek", "page.tsx")]
+
+const hasznalok = osszesHasznalo.filter(
+  (ut) => !FEJLESZTOI_MINTALAPOK.includes(ut),
+)
 
 describe("ki állítja be a világot", () => {
   /**
@@ -84,6 +99,12 @@ describe("ki állítja be a világot", () => {
 
   it("a data-vilag PONTOSAN egy helyen kerül ki", () => {
     expect(hasznalok).toHaveLength(1)
+  })
+
+  it("a kivétel pontosan a mintalap, és az valóban kiteszi a jelölőt", () => {
+    expect(
+      osszesHasznalo.filter((ut) => FEJLESZTOI_MINTALAPOK.includes(ut)),
+    ).toEqual(FEJLESZTOI_MINTALAPOK)
   })
 
   it("a kosár fa SEHOL nem állít világot", () => {

@@ -1,0 +1,55 @@
+{
+  "_forras": "Figma ji64fTFss0jqm5Uifd0zhE, oldal 'Foundations', frame 9:2 'Foundations / Acropora v0.1', a fajl lastModified 2026-09-28T12:09:35Z; kiolvasva a REST API-rol 2026-09-28 (murena). A szinek a primitiv-mintak kitoltesei (9:35-9:74), a modok a 'Mode Card' frame-ek (9:10 Reef, 9:17 Commerce) kitoltesei, keretei es szovegszinei; a szovegstilusok a 9:79-9:107 mintak, a Wordmark a 4:55, az arnyek a 4:56 stilus-csomopont.",
+  "colors": {
+    "abyss": "#060d17",
+    "deep": "#0a1726",
+    "navy": "#0f2338",
+    "ocean": "#1d5b87",
+    "ocean-soft": "#dce7ef",
+    "shell": "#fbfbf9",
+    "mist": "#f2f1ee",
+    "line": "#e3e1dc",
+    "ink": "#0d1a28",
+    "slate": "#4a5866",
+    "warm": "#f6f4f0",
+    "driftwood": "#8c7b68",
+    "heritage": "#d5782f",
+    "white": "#ffffff"
+  },
+  "modes": {
+    "commerce": {
+      "bg": "shell",
+      "heading": "ink",
+      "text": "slate",
+      "eyebrow": "slate",
+      "border": "line",
+      "action-bg": "navy",
+      "action-text": "white"
+    },
+    "reef": {
+      "bg": "abyss",
+      "heading": "white",
+      "text": "ocean-soft",
+      "eyebrow": "ocean-soft",
+      "border": "navy",
+      "action-bg": "heritage",
+      "action-text": "abyss"
+    }
+  },
+  "textStyles": {
+    "display-hero": { "family": "sans", "weight": 300, "size": 84, "lineHeight": 88, "letterSpacing": -1.8 },
+    "h1": { "family": "sans", "weight": 300, "size": 56, "lineHeight": 62, "letterSpacing": -1 },
+    "h2": { "family": "sans", "weight": 300, "size": 44, "lineHeight": 50, "letterSpacing": -0.6 },
+    "h3": { "family": "sans", "weight": 400, "size": 28, "lineHeight": 34, "letterSpacing": -0.2 },
+    "body-lg": { "family": "sans", "weight": 400, "size": 18, "lineHeight": 30, "letterSpacing": 0 },
+    "body-md": { "family": "sans", "weight": 400, "size": 16, "lineHeight": 26, "letterSpacing": 0 },
+    "body-sm": { "family": "sans", "weight": 400, "size": 14, "lineHeight": 22, "letterSpacing": 0 },
+    "eyebrow": { "family": "sans", "weight": 500, "size": 12, "lineHeight": 16, "letterSpacing": 1.8 },
+    "editorial-h2": { "family": "serif", "weight": 300, "size": 50, "lineHeight": 58, "letterSpacing": -0.3 },
+    "editorial-h3": { "family": "serif", "weight": 400, "size": 30, "lineHeight": 38, "letterSpacing": 0 },
+    "wordmark": { "family": "wordmark", "weight": 400, "size": 32, "lineHeight": 36, "letterSpacing": 1.2 }
+  },
+  "spacing": { "2xs": 4, "xs": 8, "sm": 12, "md": 16, "lg": 24, "xl": 32, "2xl": 48, "3xl": 64, "4xl": 96, "5xl": 128 },
+  "radius": { "none": 0, "control": 2, "card": 8, "panel": 16, "full": 9999 },
+  "shadow": { "subtle": { "x": 0, "y": 2, "blur": 8, "color": "rgba(0, 0, 0, 0.06)" } }
+}

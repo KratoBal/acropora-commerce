@@ -2,6 +2,8 @@ import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import { JetBrains_Mono, Newsreader, Space_Grotesk } from "next/font/google"
 import "styles/globals.css"
+// A Figma Foundations tokenek (P1a): csak `--acr-*` valtozok, meglevo stilust nem irnak felul.
+import "styles/acropora-tokens.css"
 
 /**
  * A KET BETUTIPUS A TERVBOL JON, ES MERT ARANYBAN.

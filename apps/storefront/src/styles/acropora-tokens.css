@@ -1,0 +1,92 @@
+/*
+ * ACROPORA FOUNDATIONS TOKENEK (P1a, 2026-09-28).
+ *
+ * A forras a Figma "Foundations / Acropora v0.1" frame (9:2), kiolvasva a REST
+ * API-rol, mert a `file_variables:read` jogosultsag nincs meg. A kiolvasott
+ * ertekek fixturaban allnak (`__fixtures__/figma-foundations.json`), es egy
+ * teszt veti ossze ezzel a fajllal: egy kezzel atirt szin ott pirosodik.
+ *
+ * MIT NEM CSINAL, SZANDEKOSAN: egyetlen meglevo stilust sem ir felul. Minden
+ * nev `--acr-` elotagu, es ma csak a token-mintalap hasznalja. A meglevo
+ * `--terv-*` rendszer valtozatlan; a ket keszlet a P1b-tol talalkozik.
+ *
+ * A KET MOD A MEGLEVO `data-vilag` KAPCSOLORA EPUL: Commerce a vilagos
+ * (`:root` es `[data-vilag="vilagos"]`), Reef a sotet (`[data-vilag="sotet"]`).
+ * A mod-tokenek halmaza a ket modban azonos; ezt is teszt ellenorzi.
+ *
+ * A Hanken Grotesk es a Belleza MA NINCS globalisan betoltve (csak a
+ * mintalapon), ezert a betu-tokenek tartalekkal allnak: egy hivatkozott, de
+ * nem letezo valtozo tartalek nelkul az egesz `font-family`-t ervenytelenne
+ * tenne.
+ */
+
+:root {
+  /* Szin-primitivek (Figma 9:35-9:74) */
+  --acr-color-abyss: #060d17;
+  --acr-color-deep: #0a1726;
+  --acr-color-navy: #0f2338;
+  --acr-color-ocean: #1d5b87;
+  --acr-color-ocean-soft: #dce7ef;
+  --acr-color-shell: #fbfbf9;
+  --acr-color-mist: #f2f1ee;
+  --acr-color-line: #e3e1dc;
+  --acr-color-ink: #0d1a28;
+  --acr-color-slate: #4a5866;
+  --acr-color-warm: #f6f4f0;
+  --acr-color-driftwood: #8c7b68;
+  --acr-color-heritage: #d5782f;
+  --acr-color-white: #ffffff;
+
+  /* Betucsaladok */
+  --acr-font-sans:
+    var(--acr-font-hanken, "Hanken Grotesk"), ui-sans-serif, system-ui,
+    sans-serif;
+  --acr-font-serif: var(--terv-betu-kiemelt, "Newsreader"), Georgia, serif;
+  --acr-font-wordmark:
+    var(--acr-font-belleza, "Belleza"), ui-sans-serif, system-ui, sans-serif;
+
+  /* Terkozok (Figma 9:111-9:139) */
+  --acr-space-2xs: 4px;
+  --acr-space-xs: 8px;
+  --acr-space-sm: 12px;
+  --acr-space-md: 16px;
+  --acr-space-lg: 24px;
+  --acr-space-xl: 32px;
+  --acr-space-2xl: 48px;
+  --acr-space-3xl: 64px;
+  --acr-space-4xl: 96px;
+  --acr-space-5xl: 128px;
+
+  /* Lekerekites (Figma 9:144-9:156; a 'full' a mintan 36px egy 72px-es negyzeten, azaz felmeret) */
+  --acr-radius-none: 0;
+  --acr-radius-control: 2px;
+  --acr-radius-card: 8px;
+  --acr-radius-panel: 16px;
+  --acr-radius-full: 9999px;
+
+  /* Effekt (Figma 4:56 Shadow/Subtle) */
+  --acr-shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Commerce: vilagos, a Mode Card / Commerce (9:17) szerint */
+:root,
+[data-vilag="vilagos"] {
+  --acr-mode-bg: var(--acr-color-shell);
+  --acr-mode-heading: var(--acr-color-ink);
+  --acr-mode-text: var(--acr-color-slate);
+  --acr-mode-eyebrow: var(--acr-color-slate);
+  --acr-mode-border: var(--acr-color-line);
+  --acr-mode-action-bg: var(--acr-color-navy);
+  --acr-mode-action-text: var(--acr-color-white);
+}
+
+/* Reef: sotet, a Mode Card / Reef (9:10) szerint */
+[data-vilag="sotet"] {
+  --acr-mode-bg: var(--acr-color-abyss);
+  --acr-mode-heading: var(--acr-color-white);
+  --acr-mode-text: var(--acr-color-ocean-soft);
+  --acr-mode-eyebrow: var(--acr-color-ocean-soft);
+  --acr-mode-border: var(--acr-color-navy);
+  --acr-mode-action-bg: var(--acr-color-heritage);
+  --acr-mode-action-text: var(--acr-color-abyss);
+}

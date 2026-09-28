@@ -42,7 +42,18 @@
  * minden bejegyzeshez megkoveteli a kiszolgalo forrast. Egy szabaly, aminek
  * nincs eszkoze, megnyugtat -- es epp ez a bejegyzes mutatta meg, hogy kevés.
  */
-export const STATIKUS_GYOKER_UTAK = ["/robots.txt", "/sitemap.xml"] as const
+/*
+ * A `/tokenek` (P1a, 2026-09-28) nem fajl, hanem a FEJLESZTOI token-mintalap. Azert
+ * all itt, mert regio nelkul renderel, es a Figma-osszeveteshez helyben, hatter
+ * nelkul kell futnia -- az orszagkod-atiranyitas a hattertol kerne a regiokat.
+ * Kikapcsolt allapotban (`ACROPORA_TOKEN_MINTALAP` nem "1", az elesben igy all)
+ * a lap RENDES 404-et ad, nem 200-at, tehat a fenti soft-404 hiba nem jon vissza.
+ */
+export const STATIKUS_GYOKER_UTAK = [
+  "/robots.txt",
+  "/sitemap.xml",
+  "/tokenek",
+] as const
 
 export function statikusGyokerUt(pathname: string): boolean {
   return (STATIKUS_GYOKER_UTAK as readonly string[]).includes(pathname)
