@@ -1,21 +1,22 @@
 /**
  * MELYIK MODBAN JELENIK MEG EGY OLDAL: COMMERCE (VILAGOS) VAGY REEF (SOTET).
  *
- * A szabaly a PD-000 preflight 7. pontja (P1a) es a Figma Implementation Handoff
- * (262:3) szerint: a WYSIWYG, a hal es a gerinctelen utvonal Reef, minden mas
- * Commerce. ("Commerce kepernyok vilagos modúak; WYSIWYG/livestock Reef
- * kepernyok ... sotet Reef modúak.")
+ * A szabaly Balazs dontese (2026-09-28, 18:52 UTC, Eldontendo szal): MINDEN
+ * KORALL SOTET (Reef), a WYSIWYG-tol fuggetlenul, es ugyanigy a hal es a
+ * gerinctelen; minden mas Commerce. A PD-000 preflight 7. pontja meg csak a
+ * WYSIWYG korallt sorolta a Reef-be; a dontes ezt tagitotta.
  *
  * A mod a meglevo `data-vilag` kapcsolora kepezodik le (`vilagModhoz`), tehat
  * nem uj mechanizmus, hanem uj dontes ugyanarra a kapcsolora.
  *
- * === MA SZANDEKOSAN NINCS BEKOTVE EGYETLEN MEGLEVO OLDALBA SEM ===
+ * === A MEGLEVO TERMEKLAPPAL MOSTANTOL EGYEZIK, ES EZT TESZT TARTJA IGY ===
  *
- * A meglevo termeklap (`lap-vaz/vilag-valto.ts`) MAS szabalyt kovet: a Korallok
- * gyoker ALATT minden termek sotet, a nem WYSIWYG korall is. Ez a fuggveny egy
- * nem WYSIWYG korallt Commerce-nek (vilagosnak) mond. A ketto kozotti atallas
- * tehat LATHATO valtozas egy meglevo oldalon, es a P1a hatokore kimondja, hogy
- * meglevo oldalt nem rajzolunk at. Az atallas a P2-P3 dontese.
+ * A `lap-vaz/vilag-valto.ts` ugyanezt a harom gyokeret sotetnek veszi
+ * (`ELO_ALLAT_GYOKEREK`). A ket lista kulon el (ez `lib`, az `modules`), ezert
+ * az `acropora-mod.spec.ts` kimondja, hogy egyeznek: ha az egyik valtozik, a
+ * masik nem maradhat le szo nelkul.
+ *
+ * BEKOTVE MEG MINDIG NINCS: a bekotes a P2-P3 resze.
  *
  * A dontes a kategoria-UTVONAL NEVEIN all (gyokertol lefele), ugyanugy, mint a
  * meglevo vilag-valto: a kategoria-fa azonositoi kornyezetenkent masok, a nevek
@@ -25,9 +26,13 @@
 export type AcroporaMod = "commerce" | "reef"
 
 /** A gyoker-kategoriak, amelyek alatt minden Reef. */
-export const REEF_GYOKEREK = ["Halak", "Gerinctelenek"] as const
+export const REEF_GYOKEREK = ["Korallok", "Halak", "Gerinctelenek"] as const
 
-/** Az utvonal barmely pontjan allo kategoria, ami Reef-be visz. */
+/**
+ * Az utvonal barmely pontjan allo kategoria, ami Reef-be visz. Ma a Korallok
+ * alatt all, tehat a gyoker-szabaly mar lefedi; akkor szamit, ha egyszer mas
+ * gyoker ala is kerul WYSIWYG ag.
+ */
 export const REEF_KATEGORIA = "WYSIWYG"
 
 const egyezik = (a: string, b: string) =>

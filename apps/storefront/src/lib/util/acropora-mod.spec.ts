@@ -1,13 +1,20 @@
 import { describe, expect, it } from "vitest"
 
-import { modKategoriaUtvonalhoz, vilagModhoz } from "./acropora-mod"
+import { ELO_ALLAT_GYOKEREK } from "@modules/products/components/lap-vaz/vilag-valto"
+
+import {
+  modKategoriaUtvonalhoz,
+  REEF_GYOKEREK,
+  vilagModhoz,
+} from "./acropora-mod"
 
 /**
- * A P1a mod-szabalya: WYSIWYG, hal es gerinctelen = Reef; minden mas Commerce.
+ * A mod-szabaly, Balazs 2026-09-28 18:52 UTC-s dontese szerint: MINDEN korall,
+ * hal es gerinctelen Reef, a WYSIWYG-tol fuggetlenul; minden mas Commerce.
  *
- * MI PIROSIT: ha a nem WYSIWYG korall Reef lesz (a meglevo vilag-valto
- * szabalya, ami a P1a szerint mar nem all); ha a WYSIWYG csak gyokerkent
- * szamitana (a stage-en a Korallok ALATT all); ha az ures utvonal Reef lenne.
+ * MI PIROSIT: ha a nem WYSIWYG korall Commerce lesz (a P1a eredeti szabalya,
+ * amit a dontes felulirt); ha a gyoker neve mashol is Reef-be vinne; ha az ures
+ * utvonal Reef lenne; ha a lista elvalik a termeklap vilag-valtojatol.
  */
 describe("modKategoriaUtvonalhoz", () => {
   it("hal es gerinctelen gyoker alatt Reef, barmilyen melyen", () => {
@@ -20,9 +27,22 @@ describe("modKategoriaUtvonalhoz", () => {
     expect(modKategoriaUtvonalhoz(["Korallok", "WYSIWYG", "SPS"])).toBe("reef")
   })
 
-  it("a nem WYSIWYG korall Commerce (EZ ELTER a meglevo vilag-valtotol)", () => {
-    expect(modKategoriaUtvonalhoz(["Korallok"])).toBe("commerce")
-    expect(modKategoriaUtvonalhoz(["Korallok", "LPS"])).toBe("commerce")
+  it("MINDEN korall Reef, a nem WYSIWYG is (Balazs dontese, 2026-09-28)", () => {
+    expect(modKategoriaUtvonalhoz(["Korallok"])).toBe("reef")
+    expect(modKategoriaUtvonalhoz(["Korallok", "LPS"])).toBe("reef")
+  })
+
+  it("a WYSIWYG mas gyoker alatt is Reef", () => {
+    expect(modKategoriaUtvonalhoz(["Termékek", "WYSIWYG"])).toBe("reef")
+  })
+
+  /**
+   * A KET LISTA EGYUTT MOZOG. A termeklap vilag-valtoja ugyanezt a harom
+   * gyokeret veszi sotetnek; ha az egyik bovul vagy szukul, a masik nem
+   * maradhat le -- kulonben egy lap mas modban allna, mint a sajat tokenjei.
+   */
+  it("a Reef gyokerek azonosak a termeklap sotet gyokereivel", () => {
+    expect([...REEF_GYOKEREK].sort()).toEqual([...ELO_ALLAT_GYOKEREK].sort())
   })
 
   it("technika es minden mas Commerce, az ures utvonal is", () => {
