@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+import { runningMedusaVersion } from "./medusa-version"
 import { currentReleaseInfo } from "./release-info"
 
 /**
@@ -32,6 +33,14 @@ export const GET = async (_req: MedusaRequest, res: MedusaResponse) => {
    * nothing is known. A missing field is indistinguishable from an old
    * deployment that never had the field, and telling those two apart is the
    * whole reason this endpoint exists.
+   *
+   * `medusa.version` is the installed framework version, so a version
+   * alignment can be confirmed on the running instance rather than inferred
+   * from the lockfile.
    */
-  res.json({ status: "ok", release: currentReleaseInfo() })
+  res.json({
+    status: "ok",
+    release: currentReleaseInfo(),
+    medusa: { version: runningMedusaVersion() },
+  })
 }

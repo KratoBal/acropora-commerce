@@ -16,6 +16,23 @@
  * The value is deliberately NOT derived from `.git` at runtime: the runtime
  * image ships no `.git` directory, and an on-disk one would describe the
  * checkout rather than the build.
+ *
+ * TWO SOURCES, because there are two ways this image gets built (2026-09-28):
+ *
+ *   APP_GIT_SHA    baked in by `infra/deploy-stage.sh` (`--build-arg GIT_SHA`)
+ *   SOURCE_COMMIT  set at RUNTIME by Coolify, on every deployment
+ *
+ * Coolify does not pass `GIT_SHA`, so an image it builds carries the
+ * Dockerfile's "unknown" - which is exactly what the stage answered until this
+ * change (`"commit":null,"reported":"unknown"`). Coolify can pass the commit
+ * at BUILD time too, but only behind its `include_source_commit_in_build`
+ * setting, which its own source calls a Docker cache breaker. At runtime it
+ * sets `SOURCE_COMMIT` unconditionally (coollabsio/coolify,
+ * `app/Jobs/ApplicationDeploymentJob.php`, measured on 2026-09-28), so the
+ * runtime value needs no setting and costs no cache.
+ *
+ * The baked value wins when it is valid: it was checked against the commit by
+ * the deploy script, and it travels with the image.
  */
 
 /**
@@ -28,11 +45,16 @@
  */
 const FULL_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/
 
+/** Which variable the reported `commit` came from. */
+export type ReleaseSource = "APP_GIT_SHA" | "SOURCE_COMMIT"
+
 export type ReleaseInfo = {
   /** The validated full commit SHA, or `null` when it cannot be trusted. */
   commit: string | null
   /** First 12 characters of `commit`, or `null`. Derived, never trusted separately. */
   short: string | null
+  /** The variable `commit` was read from, or `null` when neither was valid. */
+  source: ReleaseSource | null
   /**
    * The raw value the image actually carries, or `null` when the variable is
    * absent entirely.
@@ -45,7 +67,23 @@ export type ReleaseInfo = {
    * recreate the very ambiguity this endpoint is meant to remove.
    */
   reported: string | null
+  /**
+   * The raw `SOURCE_COMMIT` the platform set at runtime, or `null` when absent.
+   *
+   * Kept next to `reported` for the same reason `reported` exists: Coolify
+   * writes "unknown" here when it has no commit, and a malformed value must be
+   * visible rather than swallowed.
+   */
+  reported_runtime: string | null
 }
+
+const rawValue = (value: string | undefined): string | null => {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
+const isFullSha = (value: string | null): value is string =>
+  !!value && FULL_COMMIT_SHA_PATTERN.test(value)
 
 /**
  * Reads the running build's identity from the environment.
@@ -59,12 +97,22 @@ export type ReleaseInfo = {
 export function currentReleaseInfo(
   env: NodeJS.ProcessEnv = process.env
 ): ReleaseInfo {
-  const raw = env.APP_GIT_SHA?.trim()
-  const reported = raw ? raw : null
+  const reported = rawValue(env.APP_GIT_SHA)
+  const reported_runtime = rawValue(env.SOURCE_COMMIT)
 
-  if (!reported || !FULL_COMMIT_SHA_PATTERN.test(reported)) {
-    return { commit: null, short: null, reported }
+  const [commit, source]: [string | null, ReleaseSource | null] = isFullSha(
+    reported
+  )
+    ? [reported, "APP_GIT_SHA"]
+    : isFullSha(reported_runtime)
+      ? [reported_runtime, "SOURCE_COMMIT"]
+      : [null, null]
+
+  return {
+    commit,
+    short: commit ? commit.slice(0, 12) : null,
+    source,
+    reported,
+    reported_runtime,
   }
-
-  return { commit: reported, short: reported.slice(0, 12), reported }
 }
