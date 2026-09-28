@@ -1,6 +1,7 @@
 import { loadEnv, defineConfig } from "@medusajs/framework/utils"
 
 import { COMMERCE_SETTINGS_MODULE } from "./src/modules/commerce-settings"
+import { STORE_RELATIONS_LIMIT } from "./src/api/store-relations-limit"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
@@ -24,6 +25,9 @@ module.exports = defineConfig({
       authCors: process.env.AUTH_CORS!,
       jwtSecret: process.env.JWT_SECRET,
       cookieSecret: process.env.COOKIE_SECRET,
+      // The storefront's category breadcrumb expands five levels of parents;
+      // the 2.20 default of 3 would reject it. See the constant's file.
+      storeRelationsLimit: STORE_RELATIONS_LIMIT,
     },
   },
 
