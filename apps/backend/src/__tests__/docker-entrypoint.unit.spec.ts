@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process"
-import { chmodSync, mkdtempSync, writeFileSync } from "node:fs"
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -21,8 +21,10 @@ const ENTRYPOINT = join(__dirname, "..", "..", "docker-entrypoint.sh")
 type StepExitCodes = {
   /** `node ./src/scripts/verify-file-backend-url.js` */
   fileUrl?: number
-  /** `npx medusa db:migrate` */
+  /** `npx medusa db:migrate --execute-safe-links` */
   migrate?: number
+  /** `npx medusa exec ./src/scripts/verify-links-in-sync.js` */
+  links?: number
   /** `npx medusa exec ./src/scripts/verify-shipping-option-roles.js` */
   shippingIds?: number
 }
@@ -43,24 +45,36 @@ type StepExitCodes = {
 /// refused to start on a correct configuration. The harness has to know about
 /// every process the script starts, or "the server did not start" stops meaning
 /// what the test says it means.
+///
+/// THE TWO `exec` STEPS ARE TOLD APART BY THE SCRIPT PATH, for the same reason:
+/// one code for both would let the link check vanish without a red test.
+/// The migrate step also records its arguments, so the flag that keeps the link
+/// sync from ASKING can be asserted - a prompt in a container is a start that
+/// never finishes, and no exit code would ever show it.
 function runEntrypoint({
   fileUrl = 0,
   migrate = 0,
+  links = 0,
   shippingIds = 0,
 }: StepExitCodes = {}): {
   status: number | null
   serverStarted: boolean
+  migrateArgs: string
 } {
   const dir = mkdtempSync(join(tmpdir(), "entrypoint-"))
   const marker = join(dir, "server-started")
+  const migrateArgsFile = join(dir, "migrate-args")
 
   writeFileSync(
     join(dir, "npx"),
     [
       "#!/bin/sh",
       'case "$2" in',
-      `  db:migrate) exit ${migrate} ;;`,
-      `  exec) exit ${shippingIds} ;;`,
+      `  db:migrate) printf '%s' "$*" > ${migrateArgsFile}; exit ${migrate} ;;`,
+      '  exec) case "$3" in',
+      `    *verify-links-in-sync*) exit ${links} ;;`,
+      `    *) exit ${shippingIds} ;;`,
+      "  esac ;;",
       "  *) exit 0 ;;",
       "esac",
       "",
@@ -91,7 +105,14 @@ function runEntrypoint({
     serverStarted = false
   }
 
-  return { status: result.status, serverStarted }
+  let migrateArgs = ""
+  try {
+    migrateArgs = readFileSync(migrateArgsFile, "utf8")
+  } catch {
+    migrateArgs = ""
+  }
+
+  return { status: result.status, serverStarted, migrateArgs }
 }
 
 describe("docker-entrypoint.sh", () => {
@@ -124,6 +145,36 @@ describe("docker-entrypoint.sh", () => {
     Az allitas ugyanaz az alak, mint a migracional: nem az uzenetet nezi, hanem
     azt, hogy a szerver NEM indult el.
   */
+  /*
+    A LINK-SZINKRON SOHA NEM KERDEZ. Zaszlo nelkul a `db:migrate` egy nem
+    tisztan bovito link-valtozasnal interaktiv kerdest tesz fel, es egy
+    kontenerben erre senki nem valaszol: 2026-09-28-an a stage hattere igy allt
+    a 2.20.1 utan, es sosem indult el. Kilepesi kod nem jelzi, mert a folyamat
+    nem lep ki - ezert az allitas az ARGUMENTUMOT nezi.
+
+    Es a masik irany: az `--execute-all-links` torolhet link-tablat, arrol pedig
+    nem egy felugyelet nelkuli indulas dont.
+  */
+  it("tells the migration to sync links without asking, and without deleting", () => {
+    const { migrateArgs } = runEntrypoint()
+
+    expect(migrateArgs).toContain("db:migrate")
+    expect(migrateArgs).toContain("--execute-safe-links")
+    expect(migrateArgs).not.toContain("--execute-all-links")
+  })
+
+  /*
+    A BIZTONSAGOS SZINKRON MARADEKA HANGOS. Az `--execute-safe-links` a kihagyott
+    link-modositast szo nelkul eldobja; az ellenorzes ezt fogja meg, es ha
+    elbukik, a szerver NEM indul.
+  */
+  it("does not start the server when link changes were left pending", () => {
+    const { status, serverStarted } = runEntrypoint({ links: 1 })
+
+    expect(status).not.toBe(0)
+    expect(serverStarted).toBe(false)
+  })
+
   it("does not start the server when the shipping id check fails", () => {
     const { status, serverStarted } = runEntrypoint({ shippingIds: 1 })
 
