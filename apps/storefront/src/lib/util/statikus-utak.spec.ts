@@ -41,6 +41,7 @@ describe("gyoker szintu statikus utak", () => {
     const kiszolgalo: Record<string, string> = {
       "/robots.txt": join(gyoker, "app", "robots.ts"),
       "/sitemap.xml": join(gyoker, "app", "sitemap.ts"),
+      "/tokenek": join(gyoker, "app", "tokenek", "page.tsx"),
     }
 
     const fedetlen = STATIKUS_GYOKER_UTAK.filter((ut) => {

@@ -1,4 +1,6 @@
 const path = require("path")
+// A Figma Foundations tokenek (P1a): minden kulcs `acr` elotagu, lasd a fajlt.
+const acr = require("./tailwind-acropora")
 
 module.exports = {
   darkMode: "class",
@@ -20,6 +22,7 @@ module.exports = {
         padding: "padding-top padding-right padding-bottom padding-left",
       },
       colors: {
+        ...acr.colors,
         grey: {
           0: "#FFFFFF",
           5: "#F9FAFB",
@@ -35,6 +38,7 @@ module.exports = {
         },
       },
       borderRadius: {
+        ...acr.borderRadius,
         none: "0px",
         soft: "2px",
         base: "4px",
@@ -42,6 +46,8 @@ module.exports = {
         large: "16px",
         circle: "9999px",
       },
+      spacing: acr.spacing,
+      boxShadow: acr.boxShadow,
       maxWidth: {
         "8xl": "100rem",
       },
@@ -55,6 +61,7 @@ module.exports = {
         "2xlarge": "1920px",
       },
       fontSize: {
+        ...acr.fontSize,
         "3xl": "2rem",
       },
       textColor: {
@@ -107,6 +114,7 @@ module.exports = {
 
           A lanc maga valtozatlan; ez nem uj ertek.
         */
+        ...acr.fontFamily,
         kiemelt: ["var(--terv-betu-kiemelt-lanc)"],
         sans: [
           "Inter",
