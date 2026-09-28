@@ -36,6 +36,8 @@ type RunOptions = StepExitCodes & {
   stepTimeout?: number
   /** Run with a PATH that has no `timeout` binary on it. */
   withoutTimeoutBinary?: boolean
+  /** RUN_MIGRATIONS for the run; unset when omitted. */
+  runMigrations?: string
 }
 
 /// Puts a fake `npx` AND a fake `node` first on PATH. Each exits with the code
@@ -68,6 +70,7 @@ function runEntrypoint({
   hang,
   stepTimeout,
   withoutTimeoutBinary = false,
+  runMigrations,
 }: RunOptions = {}): {
   status: number | null
   serverStarted: boolean
@@ -113,6 +116,10 @@ function runEntrypoint({
   }
   if (stepTimeout !== undefined) {
     env.MEDUSA_STEP_TIMEOUT_SECONDS = String(stepTimeout)
+  }
+  delete env.RUN_MIGRATIONS
+  if (runMigrations !== undefined) {
+    env.RUN_MIGRATIONS = runMigrations
   }
 
   const started = Date.now()
@@ -228,6 +235,63 @@ describe("docker-entrypoint.sh", () => {
       expect(serverStarted).toBe(false)
       expect(elapsedMs).toBeLessThan(20_000)
       expect(stderr).toMatch(/did not finish within 1s - refusing to start/)
+    }
+  )
+
+  /*
+    CSAK EGY KONTENER MIGRAL. A szerver es a worker ugyanazt a kepet es belepesi
+    pontot futtatja, es 2026-09-28-an MINDKETTO migralt, ugyanarra az
+    adatbazisra, egyszerre. A workeren RUN_MIGRATIONS=false.
+
+    A negy allitas egyutt a szabaly: alapbol migral; false-nal NEM migral, de
+    elindul; false-nal a link-ellenorzes MEGIS lefut, es piros eseten nincs
+    indulas; egy elgepelt ertek nem dont csendben egyik iranyba sem.
+  */
+  it("migrates by default, when RUN_MIGRATIONS is unset", () => {
+    const { serverStarted, migrateArgs } = runEntrypoint()
+
+    expect(migrateArgs).toContain("db:migrate")
+    expect(serverStarted).toBe(true)
+  })
+
+  it("does not migrate with RUN_MIGRATIONS=false, and still starts", () => {
+    const { status, serverStarted, migrateArgs } = runEntrypoint({
+      runMigrations: "false",
+    })
+
+    expect(migrateArgs).toBe("")
+    expect(status).toBe(0)
+    expect(serverStarted).toBe(true)
+  })
+
+  it("still checks the link tables with RUN_MIGRATIONS=false, and refuses on a mismatch", () => {
+    const { status, serverStarted, migrateArgs } = runEntrypoint({
+      runMigrations: "false",
+      links: 1,
+    })
+
+    expect(migrateArgs).toBe("")
+    expect(status).not.toBe(0)
+    expect(serverStarted).toBe(false)
+  })
+
+  it.each(["False", "0", "no", ""])(
+    "refuses to start on RUN_MIGRATIONS=%j instead of guessing",
+    (value) => {
+      const { status, serverStarted, migrateArgs, stderr } = runEntrypoint({
+        runMigrations: value,
+      })
+
+      // Az ures ertek a `:-` miatt az alapertelmezest kapja: az MIGRAL.
+      if (value === "") {
+        expect(migrateArgs).toContain("db:migrate")
+        expect(serverStarted).toBe(true)
+        return
+      }
+      expect(migrateArgs).toBe("")
+      expect(status).not.toBe(0)
+      expect(serverStarted).toBe(false)
+      expect(stderr).toMatch(/RUN_MIGRATIONS must be 'true' or 'false'/)
     }
   )
 

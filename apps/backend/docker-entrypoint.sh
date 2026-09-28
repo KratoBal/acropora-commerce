@@ -73,18 +73,43 @@ run_step() {
 echo "docker-entrypoint: verifying the public image prefix..."
 node ./src/scripts/verify-file-backend-url.js
 
-echo "docker-entrypoint: applying Medusa migrations..."
-# `--execute-safe-links`: THE LINK SYNC MUST NEVER ASK. Without a flag, a link
-# change that is not purely additive opens an interactive checkbox, and a
-# container has nobody to answer it: on 2026-09-28 the stage backend waited on
-# that question after the 2.20.1 upgrade and never started. Closing stdin does
-# not help - the prompt keeps waiting (measured). `--execute-all-links` would
-# answer by itself, but it can DELETE link tables, and that is not a decision
-# for an unattended start.
+# ONLY ONE CONTAINER MIGRATES. The server and the worker run the same image
+# and the same entrypoint, so until 2026-09-28 BOTH applied the migrations, to
+# the same database, at the same time: after the 2.20.1 upgrade two containers
+# hung on the same link prompt (stage logs, 13:51 and 13:58 UTC).
 #
-# The safe flag, however, drops those changes WITHOUT A WORD, so the next step
-# asks for the plan again and refuses the start if anything is left.
-run_step npx medusa db:migrate --execute-safe-links
+# RUN_MIGRATIONS=false (set on the worker) skips the migration. The link check
+# below still runs, read-only, so a worker never starts on a link schema the
+# code does not match - it refuses, and the orchestrator restarts it until the
+# migrating container has done its part.
+#
+# Only "true" and "false" are accepted. Anything else refuses the start: a
+# misspelt value must not quietly migrate (or quietly not).
+RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
+case "$RUN_MIGRATIONS" in
+  true | false) ;;
+  *)
+    echo "docker-entrypoint: RUN_MIGRATIONS must be 'true' or 'false', got '$RUN_MIGRATIONS' - refusing to start." >&2
+    exit 1
+    ;;
+esac
+
+if [ "$RUN_MIGRATIONS" = "true" ]; then
+  echo "docker-entrypoint: applying Medusa migrations..."
+  # `--execute-safe-links`: THE LINK SYNC MUST NEVER ASK. Without a flag, a link
+  # change that is not purely additive opens an interactive checkbox, and a
+  # container has nobody to answer it: on 2026-09-28 the stage backend waited on
+  # that question after the 2.20.1 upgrade and never started. Closing stdin does
+  # not help - the prompt keeps waiting (measured). `--execute-all-links` would
+  # answer by itself, but it can DELETE link tables, and that is not a decision
+  # for an unattended start.
+  #
+  # The safe flag, however, drops those changes WITHOUT A WORD, so the next step
+  # asks for the plan again and refuses the start if anything is left.
+  run_step npx medusa db:migrate --execute-safe-links
+else
+  echo "docker-entrypoint: RUN_MIGRATIONS=false - not migrating; another container applies them."
+fi
 
 # THE LINK SYNC'S LEFTOVERS, LOUDLY. Whatever `--execute-safe-links` skipped
 # (an altered or removed link table) stops the start here, with the table names
