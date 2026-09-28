@@ -42,7 +42,23 @@ echo "docker-entrypoint: verifying the public image prefix..."
 node ./src/scripts/verify-file-backend-url.js
 
 echo "docker-entrypoint: applying Medusa migrations..."
-npx medusa db:migrate
+# `--execute-safe-links`: THE LINK SYNC MUST NEVER ASK. Without a flag, a link
+# change that is not purely additive opens an interactive checkbox, and a
+# container has nobody to answer it: on 2026-09-28 the stage backend waited on
+# that question after the 2.20.1 upgrade and never started. Closing stdin does
+# not help - the prompt keeps waiting (measured). `--execute-all-links` would
+# answer by itself, but it can DELETE link tables, and that is not a decision
+# for an unattended start.
+#
+# The safe flag, however, drops those changes WITHOUT A WORD, so the next step
+# asks for the plan again and refuses the start if anything is left.
+npx medusa db:migrate --execute-safe-links
+
+# THE LINK SYNC'S LEFTOVERS, LOUDLY. Whatever `--execute-safe-links` skipped
+# (an altered or removed link table) stops the start here, with the table names
+# and the command that resolves it - after a backup, by a person.
+echo "docker-entrypoint: verifying the link tables..."
+npx medusa exec ./src/scripts/verify-links-in-sync.js
 
 # THE THIRD REFUSAL, AND IT IS HERE FOR THE SAME REASON AS THE OTHER TWO.
 #
@@ -59,6 +75,6 @@ npx medusa db:migrate
 echo "docker-entrypoint: verifying the shipping option ids..."
 npx medusa exec ./src/scripts/verify-shipping-option-roles.js
 
-echo "docker-entrypoint: migrations applied, ids verified, starting server..."
+echo "docker-entrypoint: migrations applied, links and ids verified, starting server..."
 
 exec "$@"
