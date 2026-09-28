@@ -28,7 +28,7 @@ Two of the eleven styles are not placed anywhere in the file: `Wordmark/Placehol
     - Reef on `[data-vilag="sotet"]`.
   - It is loaded from the root layout. It only **defines** variables, and no existing rule reads them.
 - `tailwind-acropora.js`: the Tailwind theme built from the same fixture. Every key is `acr`-prefixed, so no existing class is overridden. It sits outside `src` because `tailwind.config.js` loads it with `require`, and the `src` lint forbids that.
-- `src/lib/util/acropora-mod.ts`: the mode rule. WYSIWYG, Halak and Gerinctelenek are Reef, everything else is Commerce. `vilagModhoz` maps the mode onto `data-vilag`.
+- `src/lib/util/acropora-mod.ts`: the mode rule. Korallok (every coral), Halak, Gerinctelenek and WYSIWYG are Reef, everything else is Commerce (see the coral decision below). `vilagModhoz` maps the mode onto `data-vilag`.
 - `src/app/tokenek/page.tsx`: the token sample page.
   - It renders only with `ACROPORA_TOKEN_MINTALAP=1`; otherwise it returns a real 404.
   - It loads Hanken Grotesk and Belleza on this page only.
@@ -56,10 +56,12 @@ Two pages were chosen:
 
 They were shot on the stage storefront before the change, at `cccbe67`, twice each. Two identical runs differed by **0** pixels on both, so any pixel after the change is a real change. The after-shots are taken on stage once this merges.
 
-## Open decision, deliberately not taken here
+## The coral decision (taken 2026-09-28)
 
-The P1a mode rule and the existing product-page rule (`lap-vaz/vilag-valto.ts`) **differ on one group**: corals outside WYSIWYG.
-- Today every product under Korallok is dark. The Tubastrea above is an example.
-- The P1a rule makes a non-WYSIWYG coral Commerce, that is light.
+P1a's first rule made a non-WYSIWYG coral Commerce (light), which would have changed the existing coral product pages. Balázs decided on 2026-09-28 at 18:52 UTC: **every coral stays dark (Reef), regardless of WYSIWYG**, as do fish and invertebrates.
 
-Wiring the new rule into existing pages would therefore visibly change those pages, which P1a excludes. `modKategoriaUtvonalhoz` exists and is tested, but no existing page uses it. Switching belongs to P2/P3, with a decision on the non-WYSIWYG corals.
+`modKategoriaUtvonalhoz` follows that now. Its Reef roots are Korallok, Halak and Gerinctelenek, the same three the product page's `vilag-valto.ts` treats as dark, and a test keeps the two lists equal.
+
+It is still not wired into any page; wiring is P2/P3.
+
+After #390 was deployed to stage (`ee11258`), the two pages shot before were shot again. `/hu` and the coral product page differ from their before-shots by **0 pixels**, and `/tokenek` returns 404 on stage.
