@@ -12,7 +12,9 @@ vi.mock("@lib/data/cart", () => ({
   initiatePaymentSession: vi.fn().mockResolvedValue({ ok: true }),
 }))
 vi.mock("@lib/data/payment", () => ({
-  egyeztesdAzUtanvetDijat: vi.fn().mockResolvedValue({ ok: true, dij: 0, valasztottSzerep: "COD" }),
+  egyeztesdAzUtanvetDijat: vi
+    .fn()
+    .mockResolvedValue({ ok: true, dij: 0, valasztottSzerep: "COD" }),
 }))
 
 import Payment from "./index"
@@ -29,7 +31,9 @@ const kosar = (provider: string) =>
     shipping_address: { id: "addr-1", country_code: "hu" },
     billing_address: { id: "addr-2", country_code: "hu" },
     shipping_methods: [{ id: "sm-1" }],
-    payment_collection: { payment_sessions: [{ provider_id: provider, status: "pending" }] },
+    payment_collection: {
+      payment_sessions: [{ provider_id: provider, status: "pending" }],
+    },
   }) as unknown as HttpTypes.StoreCart
 
 const lepes = (provider: string) =>

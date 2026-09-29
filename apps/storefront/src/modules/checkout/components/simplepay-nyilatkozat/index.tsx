@@ -22,7 +22,10 @@ const SimplePayNyilatkozat = ({
   elfogadva: boolean
   onValtozas: (elfogadva: boolean) => void
 }) => (
-  <div className="mt-4 flex flex-col gap-y-3" data-testid="simplepay-nyilatkozat">
+  <div
+    className="mt-4 flex flex-col gap-y-3"
+    data-testid="simplepay-nyilatkozat"
+  >
     <a
       href={SIMPLEPAY_FIZETESI_TAJEKOZTATO}
       target="_blank"
