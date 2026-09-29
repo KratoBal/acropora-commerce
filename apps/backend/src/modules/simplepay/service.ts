@@ -32,6 +32,19 @@ import { SimplePayClient, SimplePayConfig } from "./client"
 /** Where the SimplePay facts live on the payment session's data. */
 export const SIMPLEPAY_DATA_KEY = "simplepay"
 
+/**
+ * ONE TRANSACTION FOR BOTH ORDERS OF A SPLIT CART (P4-3c). Set only by our own
+ * server code, never by the client (the store route refuses these keys, see
+ * `refuseClientSimplePayKeys`):
+ *
+ * - `simplepay_joint` on the shipped cart's session: start ONE transaction for
+ *   `total`, the two carts together (at least this session's own amount);
+ * - `simplepay_joined` on the pickup cart's session: start nothing, carry the
+ *   shipped session's transaction.
+ */
+export const SIMPLEPAY_JOINT_KEY = "simplepay_joint"
+export const SIMPLEPAY_JOINED_KEY = "simplepay_joined"
+
 export type SimplePayOptions = {
   merchant?: string
   secretKey?: string
@@ -57,9 +70,17 @@ type SimplePayFacts = {
   orderRef: string
   paymentUrl?: string
   timeout?: string
+  /** The transaction's total, as SimplePay confirmed it at the start. */
   total?: number
+  /** This session's own amount; less than `total` when the transaction is shared (P4-3c). */
+  own?: number
+  /** Set on the pickup session that carries the shipped session's transaction. */
+  joined?: boolean
   status?: string
 }
+
+/** The status a FINISHED transaction reads as when its total is not the one we started. */
+export const SIMPLEPAY_TOTAL_MISMATCH = "TOTAL_MISMATCH"
 
 /**
  * THE TRANSACTION STATUS AS MEDUSA READS IT (statuses, L493-505).
@@ -164,7 +185,50 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
    * URL is ours, from the configuration, never from the request.
    */
   async initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentOutput> {
-    const data = (input.data ?? {}) as Record<string, unknown>
+    const {
+      [SIMPLEPAY_JOINT_KEY]: joint,
+      [SIMPLEPAY_JOINED_KEY]: joined,
+      ...data
+    } = (input.data ?? {}) as Record<string, unknown>
+    const own = hufTotal(input.amount)
+
+    // THE PICKUP SESSION OF A SPLIT: the shipped session's transaction, no new start.
+    // The two parts TOGETHER must be exactly the transaction's total: the
+    // shipped session's own amount plus this one. If the pickup cart's total
+    // moved after the start (its promotions are computed again after the
+    // split), the orders would book more or less than was paid (nautilus's
+    // review of #433, 2026-09-29), so the payment is started again instead.
+    if (joined) {
+      const facts = joined as SimplePayFacts
+      // A missing `own` is NaN, and NaN never adds up: no separate guard needed.
+      const shippedOwn = Number(facts.own)
+      if (
+        !facts.transactionId ||
+        !facts.orderRef ||
+        shippedOwn + own !== hufTotal(facts.total)
+      ) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "A joined SimplePay session needs the shared transaction, whose total is exactly the two carts together"
+        )
+      }
+      return {
+        id: String(facts.transactionId),
+        data: {
+          ...data,
+          [SIMPLEPAY_DATA_KEY]: {
+            transactionId: facts.transactionId,
+            orderRef: facts.orderRef,
+            paymentUrl: facts.paymentUrl,
+            timeout: facts.timeout,
+            total: facts.total,
+            own,
+            joined: true,
+          } satisfies SimplePayFacts,
+        },
+      }
+    }
+
     const email =
       (typeof data.customer_email === "string" && data.customer_email) ||
       input.context?.customer?.email
@@ -180,7 +244,14 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
       throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "The SimplePay back URL is not configured")
     }
 
-    const total = hufTotal(input.amount)
+    // THE SHIPPED SESSION OF A SPLIT starts one transaction for both carts.
+    const total = joint ? hufTotal((joint as { total?: unknown }).total) : own
+    if (total < own) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `A joint SimplePay total (${total}) cannot be less than this session's amount (${own})`
+      )
+    }
     const sessionId = typeof data.session_id === "string" ? data.session_id : "session"
     // Unique per start: a failed orderRef may be reused, a paid one may not (L667-668).
     const orderRef = `${sessionId}-${Date.now().toString(36)}`
@@ -213,18 +284,29 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
           paymentUrl: answer.paymentUrl,
           timeout: answer.timeout,
           total: answer.total,
+          own,
         } satisfies SimplePayFacts,
       },
     }
   }
 
-  /** QUERY (section 3.17) for one transaction. */
+  /**
+   * QUERY (section 3.17) for one transaction. Paid money counts only when its
+   * `total` (L1392) is the one we started: a FINISHED transaction for another
+   * amount reads as `SIMPLEPAY_TOTAL_MISMATCH`, an ERROR, never as paid.
+   */
   private async status(facts: SimplePayFacts) {
     const answer = await this.client.call<{
-      transactions?: { transactionId: number; status?: string }[]
+      transactions?: { transactionId: number; status?: string; total?: number | string }[]
     }>("query", { transactionIds: [String(facts.transactionId)] })
-    return answer.transactions?.find((t) => String(t.transactionId) === String(facts.transactionId))
-      ?.status
+    const transaction = answer.transactions?.find(
+      (t) => String(t.transactionId) === String(facts.transactionId)
+    )
+    const paid = transaction?.status === "FINISHED" || transaction?.status === "AUTHORIZED"
+    if (paid && Number(transaction?.total) !== Number(facts.total)) {
+      return SIMPLEPAY_TOTAL_MISMATCH
+    }
+    return transaction?.status
   }
 
   async authorizePayment(input: AuthorizePaymentInput): Promise<AuthorizePaymentOutput> {
@@ -291,6 +373,11 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
    */
   async cancelPayment(input: CancelPaymentInput): Promise<CancelPaymentOutput> {
     const facts = factsOf(input.data)
+    // The shared transaction belongs to the shipped session: dropping the
+    // pickup session must not cancel the customer's payment for both.
+    if (facts.joined) {
+      return { data: input.data ?? {} }
+    }
     const status = await this.status(facts)
     if (status === "INIT") {
       await this.client.call("transactioncancel", {
@@ -319,8 +406,17 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
    */
   async updatePayment(input: UpdatePaymentInput): Promise<UpdatePaymentOutput> {
     const facts = (input.data?.[SIMPLEPAY_DATA_KEY] as SimplePayFacts | undefined) ?? null
-    if (facts?.total !== undefined && Number(facts.total) === Number(input.amount)) {
+    const own = facts?.own ?? facts?.total
+    if (own !== undefined && Number(own) === Number(input.amount)) {
       return { data: input.data ?? {} }
+    }
+    // A shared transaction cannot follow one cart's new amount alone: the
+    // split's payment is started again, for both carts (P4-3c).
+    if (facts && (facts.joined || (facts.own !== undefined && facts.own !== facts.total))) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "The amount of a split cart's shared SimplePay payment changed; start the payment again"
+      )
     }
     const started = await this.initiatePayment(input as unknown as InitiatePaymentInput)
     return { data: started.data ?? {} }

@@ -3,6 +3,8 @@ import { PaymentSessionStatus } from "@medusajs/framework/utils"
 import { SimplePayClient } from "../client"
 import SimplePayProviderService, {
   SIMPLEPAY_DATA_KEY,
+  SIMPLEPAY_JOINED_KEY,
+  SIMPLEPAY_JOINT_KEY,
   simplePayStatusToSession,
 } from "../service"
 import { sessionIdOfOrderRef } from "../ipn"
@@ -156,7 +158,7 @@ describe("the transaction status", () => {
 
   it("authorizing asks SimplePay, and only FINISHED is money", async () => {
     const { service, calls } = bolt({
-      query: { transactions: [{ transactionId: 501234567, status: "FINISHED" }] },
+      query: { transactions: [{ transactionId: 501234567, status: "FINISHED", total: 4950 }] },
     })
     const result = await service.authorizePayment({ data: withTransaction() } as never)
     expect(calls[0]).toMatchObject({ endpoint: "query", body: { transactionIds: ["501234567"] } })
@@ -197,7 +199,7 @@ describe("refund, cancel and a changed amount", () => {
     await init.service.cancelPayment({ data: withTransaction() } as never)
     expect(init.calls.map((c) => c.endpoint)).toEqual(["query", "transactioncancel"])
 
-    const paid = bolt({ query: { transactions: [{ transactionId: 501234567, status: "FINISHED" }] } })
+    const paid = bolt({ query: { transactions: [{ transactionId: 501234567, status: "FINISHED", total: 4950 }] } })
     await paid.service.cancelPayment({ data: withTransaction() } as never)
     expect(paid.calls.map((c) => c.endpoint)).toEqual(["query"])
   })
@@ -215,5 +217,113 @@ describe("refund, cancel and a changed amount", () => {
     } as never)
     expect(changed.calls.map((c) => c.endpoint)).toEqual(["start"])
     expect(changed.calls[0].body.total).toBe("6000")
+  })
+})
+
+/**
+ * ONE TRANSACTION FOR BOTH ORDERS OF A SPLIT CART (P4-3c). What must fail: the
+ * shipped session starting for its own amount only; the pickup session
+ * starting a second transaction; a joint total below the session's amount;
+ * dropping the pickup session cancelling the shared payment; one cart's new
+ * amount silently restarting a shared transaction; a FINISHED transaction for
+ * another amount read as paid.
+ */
+describe("a transaction shared by the two carts of a split", () => {
+  const START_DATA = { session_id: "payses_1", customer_email: "vevo@example.hu", invoice: INVOICE }
+
+  it("the shipped session starts ONE transaction for the joint total, and keeps its own amount apart", async () => {
+    const { service, calls } = bolt({ start: { ...STARTED, total: 13450 } })
+    const result = await service.initiatePayment({
+      amount: 4950,
+      currency_code: "huf",
+      data: { ...START_DATA, [SIMPLEPAY_JOINT_KEY]: { total: 13450 } },
+    } as never)
+
+    expect(calls.map((c) => [c.endpoint, c.body.total])).toEqual([["start", "13450"]])
+    expect(result.data?.[SIMPLEPAY_DATA_KEY]).toMatchObject({ total: 13450, own: 4950 })
+    expect(result.data).not.toHaveProperty(SIMPLEPAY_JOINT_KEY)
+  })
+
+  it("a joint total below the session's own amount is refused, before any call", async () => {
+    const { service, calls } = bolt({ start: STARTED })
+    await expect(
+      service.initiatePayment({
+        amount: 4950,
+        currency_code: "huf",
+        data: { ...START_DATA, [SIMPLEPAY_JOINT_KEY]: { total: 100 } },
+      } as never)
+    ).rejects.toThrow("cannot be less")
+    expect(calls).toEqual([])
+  })
+
+  it("the pickup session carries the shared transaction and calls no one", async () => {
+    const { service, calls } = bolt({})
+    const shared = { transactionId: 501234567, orderRef: "payses_1-x", total: 13450, own: 4950, paymentUrl: STARTED.paymentUrl }
+    const result = await service.initiatePayment({
+      amount: 8500,
+      currency_code: "huf",
+      data: { [SIMPLEPAY_JOINED_KEY]: shared },
+    } as never)
+
+    expect(calls).toEqual([])
+    expect(result.id).toBe("501234567")
+    expect(result.data?.[SIMPLEPAY_DATA_KEY]).toEqual({
+      transactionId: 501234567,
+      orderRef: "payses_1-x",
+      paymentUrl: STARTED.paymentUrl,
+      timeout: undefined,
+      total: 13450,
+      own: 8500,
+      joined: true,
+    })
+    expect(result.data).not.toHaveProperty(SIMPLEPAY_JOINED_KEY)
+  })
+
+  it("joining is refused unless the two parts together are exactly the transaction's total", async () => {
+    const { service, calls } = bolt({})
+    const shared = { transactionId: 501234567, orderRef: "payses_1-x", total: 13450, own: 4950 }
+    const join = (amount: number, facts: Record<string, unknown>) =>
+      service.initiatePayment({ amount, currency_code: "huf", data: { [SIMPLEPAY_JOINED_KEY]: facts } } as never)
+
+    // The pickup cart grew after the start (its promotions computed again): 4950 + 9000 > 13450.
+    await expect(join(9000, shared)).rejects.toThrow("exactly the two carts together")
+    // Each part alone fits, only the sum is wrong: the old check let this through.
+    await expect(join(8000, shared)).rejects.toThrow("exactly the two carts together")
+    // Without the shipped part's own amount there is nothing to add up.
+    await expect(join(8500, { ...shared, own: undefined })).rejects.toThrow("exactly the two carts together")
+    expect(calls).toEqual([])
+  })
+
+  it("dropping the pickup session never cancels the shared payment", async () => {
+    const { service, calls } = bolt({ query: { transactions: [{ transactionId: 501234567, status: "INIT" }] } })
+    const joined = { [SIMPLEPAY_DATA_KEY]: { transactionId: 501234567, orderRef: "payses_1-x", total: 13450, own: 8500, joined: true } }
+    await service.cancelPayment({ data: joined } as never)
+    await service.deletePayment({ data: joined } as never)
+    expect(calls).toEqual([])
+  })
+
+  it("a new amount on either cart of a shared payment is refused, not restarted alone", async () => {
+    const { service, calls } = bolt({ start: STARTED })
+    const shipped = { [SIMPLEPAY_DATA_KEY]: { transactionId: 1, orderRef: "payses_1-x", total: 13450, own: 4950 } }
+    const pickup = { [SIMPLEPAY_DATA_KEY]: { transactionId: 1, orderRef: "payses_1-x", total: 13450, own: 8500, joined: true } }
+
+    await service.updatePayment({ data: shipped, amount: 4950, currency_code: "huf" } as never)
+    await expect(service.updatePayment({ data: shipped, amount: 5000, currency_code: "huf" } as never)).rejects.toThrow(
+      "start the payment again"
+    )
+    await expect(service.updatePayment({ data: pickup, amount: 9000, currency_code: "huf" } as never)).rejects.toThrow(
+      "start the payment again"
+    )
+    expect(calls).toEqual([])
+  })
+
+  it("a FINISHED transaction for another total is not money", async () => {
+    const { service } = bolt({
+      query: { transactions: [{ transactionId: 501234567, status: "FINISHED", total: 1 }] },
+    })
+    expect((await service.authorizePayment({ data: withTransaction() } as never)).status).toBe(
+      PaymentSessionStatus.ERROR
+    )
+    await expect(service.capturePayment({ data: withTransaction() } as never)).rejects.toThrow("not FINISHED")
   })
 })
