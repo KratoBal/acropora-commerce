@@ -134,3 +134,45 @@ The storefront places every cart through this route; the core complete route ref
 ### Still to come
 - **One SimplePay transaction for both orders:** part of P4-3.
 
+## 3. SimplePay (P4-3, P4-4)
+
+**The source:** SimplePay's public API v2 description, version 2026-09-01 (`exchange/simplepay-v2-2026-09-29/SimplePay_2x_API_v2_HU_260901`). Line numbers below are that file's `.txt`.
+- This is the redirect payment on SimplePay's own page.
+- The "auto" interface (`SimplePay_2.0_AutoPayment`) takes the card data on our side, which needs PCI-DSS, so it is **not** used.
+
+**Decisions (acrobot, 2026-09-29):**
+- One-step charge (`twoStep: false`).
+- The data-transfer statement as a required checkbox in the payment step, with the SimplePay logo and the payment-information link. The final text goes to Balázs before P4-4.
+- One SimplePay transaction pays both orders of a split cart (Balázs, 16:09 UTC).
+
+### 3a. The provider (`src/modules/simplepay`, `pp_simplepay_simplepay`)
+
+- **Signature** (`signature.ts`): HMAC-SHA384 over the **raw** body bytes, base64, in the `Signature` header (L590-599, L2568).
+  - Both of the document's test vectors reproduce exactly: the request signature (L632-641) and the back redirect's `s` (L994-996). For the latter, `s` signs the **decoded** JSON of `r`, measured on the document's own example.
+  - The unit tests pin both vectors.
+- **Client** (`client.ts`): every call is POST JSON with a fresh 32-character `salt`, our `merchant` and `sdkVersion`, signed.
+  - An answer is believed only when its signature verifies on the raw bytes.
+  - An `errorCodes` answer is a refusal reported with its codes.
+  - The URLs are `https://sandbox.simplepay.hu/payment/v2/` and `https://secure.simplepay.hu/payment/v2/` (L439, L462).
+- **Provider** (`service.ts`):
+  - `initiatePayment` → `start`:
+    - Medusa's amount and currency; HUF must be whole (L573-575).
+    - `methods: ["CARD"]`, `language: "HU"`, a 30-minute timeout.
+    - The back URL from **our** configuration, never from the request.
+    - `orderRef` is the session id plus a suffix; a failed orderRef may be reused, a paid one not (L667-668).
+    - The customer's email and billing address come with the session data; 3DS needs them (L758-773). Without them it refuses.
+  - `authorizePayment` → `query`. FINISHED is money (CAPTURED, one-step); INIT and INPAYMENT are still pending; cancelled, timeout or not authorized are CANCELED; anything unknown is ERROR, not a guess. **The customer's return is never proof of payment** (L372, L533, L726).
+  - `refundPayment` → `refund`, partial up to the charged amount.
+  - `cancelPayment` → `transactioncancel`, only while INIT (L1541); a paid transaction is refunded, not cancelled.
+  - `updatePayment` with a new amount starts a new transaction.
+  - The IPN answer (L1189-1193: the received data plus `receiveDate`, signed) is more than Medusa's generic webhook route can give, so it gets its own route in P4-3b.
+- **Configuration** (`medusa-config.ts`, `.env.template`): `SIMPLEPAY_MERCHANT`, `SIMPLEPAY_SECRET_KEY`, `SIMPLEPAY_SANDBOX` (the sandbox unless exactly `false`) and `SIMPLEPAY_BACK_URL`.
+  - Unconfigured, the provider loads and refuses every call.
+  - It is offered only when linked to the region and named by `ACROPORA_PP_ONLINE_CARD`, which stays empty until the sandbox key is set.
+
+### Still to come
+
+- **P4-3b:** `POST /simplepay/ipn`: signature check on the raw body, the answer per L1189-1193, then Medusa's payment update. Its URL goes into the SimplePay admin, only once it is live.
+- **P4-3c:** one transaction for the two orders of a split cart.
+- **P4-4:** the storefront: logo, statement checkbox, redirect to `paymentUrl`, and the back page with the texts section 3.13 requires.
+
