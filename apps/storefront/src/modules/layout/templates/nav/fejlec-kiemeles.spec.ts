@@ -65,7 +65,7 @@ describe("a termék gyökerének kiemelése a fejléc menüjében", () => {
       "utf8",
     )
     expect(lap).toMatch(
-      /fejlecGyokerek=\{\[\s*\.\.\.new Set\(termekGyokerNevei\(product, kategoriak\)\.map\(kulcs\)\),?\s*\]\}/,
+      /fejlecGyokerek=\{Array\.from\(\s*new Set\(termekGyokerNevei\(product, kategoriak\)\.map\(kulcs\)\),?\s*\)\}/,
     )
   })
 })

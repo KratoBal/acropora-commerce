@@ -148,9 +148,9 @@ const MuszakiLap = ({
   return (
     <LapVaz
       vilag={vilagaTermeknek(product, kategoriak)}
-      fejlecGyokerek={[
-        ...new Set(termekGyokerNevei(product, kategoriak).map(kulcs)),
-      ]}
+      fejlecGyokerek={Array.from(
+        new Set(termekGyokerNevei(product, kategoriak).map(kulcs)),
+      )}
       /*
        * UGYANAZ A PREDIKATUM, AMI A JELVENYT IS VEZERLI -- nem masodik forras.
        * A `hasonlo` doboz WYSIWYG-felirata csak akkor all, ha a termek TENYLEG
