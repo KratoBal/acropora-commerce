@@ -172,6 +172,17 @@ describe("a műszaki lap váza", () => {
     A FULEK A VILAGOS LAPON KERET NELKUL ALLNAK (192:57, 193:104), a sotet
     lapon a P3-ig a korabbi keretes dobozban. (P2, 2026-09-29.)
   */
+  it("a kapcsolat-listák világosban keret nélkül, sötétben a korábbi dobozban (193:181)", () => {
+    const osztaly = (kulcs: string) =>
+      document.querySelector(`[data-vaz-szakasz="${kulcs}"]`)?.className ?? ""
+    const { unmount } = render(<LapVaz vilag="vilagos" />)
+    expect(osztaly("kiegeszitok")).not.toContain("p-4")
+    expect(osztaly("hasonlo")).not.toContain("p-4")
+    unmount()
+    render(<LapVaz vilag="sotet" />)
+    expect(osztaly("hasonlo")).toContain("p-4")
+  })
+
   it("a fülek világosban keret nélkül, sötétben a korábbi dobozban", () => {
     const osztaly = () =>
       document.querySelector('[data-vaz-szakasz="fulek"]')?.className ?? ""
