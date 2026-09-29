@@ -3,9 +3,8 @@
  *
  * A keret sorrendje: Profil, Rendeléseim, Címek, Számlázási adatok,
  * Hűségpontok, Beállítások. Itt CSAK a mar letezo oldal kap pontot: egy
- * menupont, ami nem letezo lapra visz, rosszabb a hianyzonal. A Számlázási
- * adatok es a Beállítások a sajat PR-jukkal kerulnek ide (P5 5. es 6.
- * pont); a Hűségpontok moge nincs adat (docs/P5-LEFT-OUT.md).
+ * menupont, ami nem letezo lapra visz, rosszabb a hianyzonal. A Hűségpontok
+ * moge nincs adat, ezert kimarad (docs/P5-LEFT-OUT.md).
  */
 export type FiokPont = {
   /** Az asztali menu felirata. */
@@ -45,6 +44,12 @@ export const FIOK_PONTOK: readonly FiokPont[] = [
     mobilCimke: "Számlázás",
     href: "/account/billing",
     testId: "billing-link",
+  },
+  {
+    cimke: "Beállítások",
+    mobilCimke: "Beállítások",
+    href: "/account/settings",
+    testId: "settings-link",
   },
 ] as const
 

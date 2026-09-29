@@ -9,6 +9,11 @@ import {
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
 import { alapertelmezettUrlapbol, cimNevUrlapbol } from "@lib/util/cim"
 import {
+  jelszoCsereHiba,
+  ROSSZ_JELENLEGI_JELSZO,
+  ROSSZ_JELENLEGI_JELSZO_SZOVEG,
+} from "@lib/util/jelszo"
+import {
   ADOSZAM_METADATA_KULCS,
   adoszamEgysegesitve,
   szamlazasiHiba,
@@ -133,6 +138,56 @@ export async function saveProfile(
     await updateCustomer({ first_name, last_name, phone: phone || null })
   } catch (error) {
     return { state: "error", error: authHibaSzoveg(error), ertekek }
+  }
+
+  return { state: "success" }
+}
+
+export type JelszoCsereAllapot =
+  | { state: "success" }
+  // No `ertekek`: every field is a password, and none is sent back.
+  | { state: "error"; error: string }
+  | null
+
+/**
+ * A JELSZOCSERE (P5, 257:191). A Medusa sajat `/auth/.../update` utja csak a
+ * visszaallito tokent fogadja el, ezert a sajat vegpontunk megy
+ * (`/store/customers/me/password`): a jelenlegi jelszot ellenorzi, utana cserel.
+ */
+export async function changePassword(
+  _currentState: unknown,
+  formData: FormData,
+): Promise<JelszoCsereAllapot> {
+  const jelenlegi = formData.get("current_password")
+  const uj = formData.get("new_password")
+  const hiba = jelszoCsereHiba({
+    jelenlegi,
+    uj,
+    ujUjra: formData.get("new_password_again"),
+  })
+  if (hiba) return { state: "error", error: hiba }
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  try {
+    await sdk.client.fetch<{ success: boolean }>(
+      `/store/customers/me/password`,
+      {
+        method: "POST",
+        headers,
+        body: { current_password: String(jelenlegi), new_password: String(uj) },
+      },
+    )
+  } catch (error) {
+    const uzenet = error instanceof Error ? error.message : String(error ?? "")
+    return {
+      state: "error",
+      error: ROSSZ_JELENLEGI_JELSZO.test(uzenet)
+        ? ROSSZ_JELENLEGI_JELSZO_SZOVEG
+        : authHibaSzoveg(error),
+    }
   }
 
   return { state: "success" }

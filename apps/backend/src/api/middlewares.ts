@@ -20,6 +20,7 @@ import {
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators";
+import { StoreChangePassword } from "./store/customers/me/password/validators";
 
 export default defineMiddlewares({
   routes: [
@@ -75,6 +76,11 @@ export default defineMiddlewares({
       matcher: "/store/payment-options",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostPaymentOptions)],
+    },
+    {
+      matcher: "/store/customers/me/password",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StoreChangePassword)],
     },
     {
       matcher: "/store/shipping-class",
