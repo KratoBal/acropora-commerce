@@ -2,6 +2,8 @@ import { Metadata } from "next"
 
 import { storeCanonical } from "@lib/util/lap-canonical"
 import { keresesSzovege } from "@lib/util/kereses"
+import { GYOKER_PARAM } from "@lib/util/kereses-talalatok"
+import { MARKA_PARAM, markaAzonositok } from "@lib/util/marka-szuro"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
@@ -61,6 +63,10 @@ export default async function StorePage(props: Params) {
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
   const kereses = keresesSzovege(searchParams.q)
+  const gyokerErtek = searchParams[GYOKER_PARAM]
+  const gyoker =
+    (Array.isArray(gyokerErtek) ? gyokerErtek[0] : gyokerErtek)?.trim() ||
+    undefined
 
   return (
     <StoreTemplate
@@ -69,6 +75,8 @@ export default async function StorePage(props: Params) {
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
       kereses={kereses}
+      gyoker={gyoker}
+      markak={markaAzonositok(searchParams[MARKA_PARAM])}
     />
   )
 }

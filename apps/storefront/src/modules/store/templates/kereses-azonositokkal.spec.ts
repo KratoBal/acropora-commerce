@@ -8,9 +8,10 @@ import { describe, expect, it } from "vitest"
  *
  * === AMIT EZ MER, ES AMIT NEM ===
  *
- * A `paginated-products.tsx` `server-only` adatreteget importal, tehat jsdom
- * alatt be sem tolthető -- amit itt merni lehet, az a FORRAS SZOVEGE. Ez
- * gyengebb allitas egy viselkedes-tesztnel, es ki is mondom.
+ * 2026-09-29 ota a kereses a TALALATI LAPON fut (`kereses/kereses-lap.tsx`,
+ * P2 4a), a lapozott lista mar nem kap keresest. A viselkedest a
+ * `kereses-lap.component.spec.tsx` meri; itt a FORRAS SZOVEGE all, a ket
+ * tagadas miatt (a `q` nem megy ki, a dontes a mert fuggvenybol jon).
  *
  * A VISELKEDEST a kiszolgalt lapon mertem, es a kitelepites utan ugyanazzal az
  * eszkozzel merem vissza (`agents/murena/scripts/kereso-ekezet.cjs`), MIND A
@@ -25,7 +26,10 @@ import { describe, expect, it } from "vitest"
  *     quantum      9  POZITIV KONTROLL     zzzzqqqqxxxx  0  NEGATIV KONTROLL
  */
 const kod = (() => {
-  const nyers = readFileSync(join(__dirname, "paginated-products.tsx"), "utf8")
+  const nyers = readFileSync(
+    join(__dirname, "kereses", "kereses-lap.tsx"),
+    "utf8",
+  )
   /* A megjegyzeseket kiszedjuk, kulonben a SAJAT magyarazo szovegunk lenne a
      talalat -- a repo mar hasznalja ezt az alakot. */
   return nyers.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
@@ -33,8 +37,8 @@ const kod = (() => {
 
 describe("a keresés azonosítókon át megy", () => {
   /** ISMERT POZITIV KONTROLL: a fajlt tenyleg beolvastuk, es ez a lista. */
-  it("a forrás olvasható, és tényleg a terméklista", () => {
-    expect(kod).toContain("export default async function PaginatedProducts")
+  it("a forrás olvasható, és tényleg a találati lap", () => {
+    expect(kod).toContain("export default async function KeresesLap")
     expect(kod).toContain("listProductsWithSort")
   })
 
@@ -49,6 +53,8 @@ describe("a keresés azonosítókon át megy", () => {
    */
   it("a `q` paramétert nem küldi el többé", () => {
     expect(kod).not.toMatch(/queryParams\["q"\]/)
+    // A lekerdezes objektum-alakban all; a cim-epito `q`-ja nem ide tartozik.
+    expect(kod).not.toMatch(/queryParams:\s*\{[^}]*\bq:/)
   })
 
   /**
@@ -63,7 +69,8 @@ describe("a keresés azonosítókon át megy", () => {
    */
   it("a nulla-találat döntését a mért függvény hozza", () => {
     expect(kod).toContain("keresesSzuro(")
-    expect(kod.indexOf("keresesNullaTalalat")).toBeLessThan(
+    expect(kod.indexOf("!szuro.nullaTalalat")).toBeGreaterThan(-1)
+    expect(kod.indexOf("!szuro.nullaTalalat")).toBeLessThan(
       kod.indexOf("await listProductsWithSort"),
     )
   })

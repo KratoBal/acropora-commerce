@@ -30,7 +30,45 @@
  * A `translate()` a Postgres BEEPITETT fuggvenye: nem kell hozza bovitmeny,
  * telepites, verzio-egyeztetes. Az `unaccent` altalanosabb (minden nyelvre),
  * de kiterjesztes -- es egy uj fuggoseg mas merlegelest kivanna, mint egy
- * beepitett fuggveny. A bolt magyar, a keszlet ismert.
+ * beepitett fuggveny.
+ *
+ * ES EZ NEM KOMPROMISSZUM, HANEM TELJES A MERT KATALOGUSRA. acrobot merte a
+ * stage adatbazison (2026-09-14, olvaso uton):
+ *
+ *     termek osszesen                     1501
+ *     a nevben VAN magyar ekezet          1103   (73,5 szazalek)
+ *     nincs benne                          398
+ *     MAS latin mellekjel                    0   <- KONTROLLAL igazolva
+ *     `subtitle` kitoltve                    0
+ *     `unaccent` bovitmeny         elerheto, de NINCS telepitve
+ *
+ * A NULLA A LENYEG, es kontrollal all: ugyanaz a minta egy proba-szovegen
+ * ILLESZKEDIK, tehat a nulla a katalogusrol szol, nem a mintarol. Vagyis ma
+ * NINCS olyan termek, amit az `unaccent` megtalalna, a `translate()` pedig nem.
+ *
+ * Az `unaccent` ott van a gepen, de nem kerjuk: bovitmeny-telepites az eles
+ * adatbazison nagyobb keres, mint maga a javitas, es ma semmivel nem adna
+ * tobbet.
+ *
+ * VISSZAMERVE 2026-09-29, MAS POPULACION: murena, a stage BOLT API-jan
+ * (`/store/products`, tehat a kozzetett termekek, nem az adatbazis egesze),
+ * ugyanazzal a kontrollal (`Příbor łódź Ștefan` -> `řłźȘ` illeszkedik):
+ *
+ *     kozzetett termek                    1492
+ *     a nevben VAN magyar ekezet          1095
+ *     MAS latin betu a nevben                2   mind a ketto `Ø` (atmero-jel,
+ *                                                 "Koralletető pohár - Ø 8cm")
+ *     `subtitle` kitoltve                    0
+ *
+ * A `Ø`-t az `unaccent` `O`-ra hajtogatna, a `translate()` nem. Ez nem szo,
+ * hanem mertekjel, tehat keresesi kulonbseget nem okoz; a `Ø`-n kivul a
+ * mas latin betuk szama ma is nulla. Az `unaccent` telepitettseget nem mertem
+ * vissza: az adatbazist kerdezi, nem a boltot.
+ *
+ * AMI EZT ERVENYTELENITENE: egy termeknev MAS latin mellekjellel (peldaul
+ * cseh `ř`, lengyel `ł`, roman `ș`). A markanevek kozott ez nem elmeleti --
+ * ha ilyen bekerul a katalogusba, a fenti nulla mar nem all, es a valasztast
+ * ujra kell merlegelni.
  */
 
 /**

@@ -105,8 +105,9 @@ describe("a store lap címe", () => {
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "")
 
-    expect(kod).toContain('"Minden termék"')
-    expect(kod).toContain("Keresés:")
+    expect(kod).toContain("Minden termék")
+    // Kereseskor a talalati lap all, sajat cimmel (P2, 4a).
+    expect(kod).toContain("<KeresesLap")
     expect(kod).not.toContain("All products")
     expect(kod).not.toContain("Search:")
   })

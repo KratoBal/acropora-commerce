@@ -134,8 +134,12 @@ describe("a keresés eljut a hívóktól a lekérdezésig", () => {
     expect(blokk).toContain("kereses={kereses}")
   })
 
-  it("a sablon a LEKÉRDEZÉSNEK adja át a keresést", () => {
-    const blokk = elemBlokk(sablon, "PaginatedProducts")
+  /*
+   * A CIMZETT 2026-09-29 OTA A TALALATI LAP (P2, 4a): kereseskor a sablon azt
+   * rajzolja, es a lapozott lista mar nem kap keresest.
+   */
+  it("a sablon a TALÁLATI LAPNAK adja át a keresést", () => {
+    const blokk = elemBlokk(sablon, "KeresesLap")
 
     expect(blokk).not.toBe("")
     expect(blokk).toContain("kereses={kereses}")
@@ -144,43 +148,22 @@ describe("a keresés eljut a hívóktól a lekérdezésig", () => {
 
 describe("a keresés eljut a lekérdezésig", () => {
   const forras = kodSzoveg(
-    readFileSync(join(__dirname, "paginated-products.tsx"), "utf-8"),
+    readFileSync(join(__dirname, "kereses", "kereses-lap.tsx"), "utf-8"),
   )
 
-  /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es tenyleg ez az. */
-  it("a forrás olvasható, és tényleg a lapozott lista", () => {
-    expect(forras).toContain("PaginatedProducts")
+  /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es tenyleg a talalati lap. */
+  it("a forrás olvasható, és tényleg a találati lap", () => {
+    expect(forras).toContain("export default async function KeresesLap")
     expect(forras).toContain("listProductsWithSort")
   })
 
   /**
-   * A KERESES ELJUT A LEKERDEZESIG -- DE MAR MASIK UTON (2026-09-14).
-   *
-   * Ez az allitas eddig a `queryParams["q"] = kereses` sort kereste. AZ AZ
-   * ALLITAS HELYES VOLT, es a `q` kikerulesevel PIROSRA is valtott -- pontosan
-   * ugy, ahogy egy orzotol varni kell.
-   *
-   * Amit NEM cserelek: a szandekot. A kerdes tovabbra is az, hogy a kereses
-   * TENYLEG eljut-e a lekerdezesig -- csak a mechanizmus mas: a sajat,
-   * ekezet-fuggetlen vegpont adja az azonositokat, es azok kerulnek a szurobe.
-   * Az OK a `termek-kereses.ts` fejleceben all.
-   *
-   * A MELLETTE ALLO TAGADAS (`q` mar nem megy ki) es a nulla-talalat aga a
-   * `kereses-azonositokkal.spec.ts` fajlban van, hogy ez a doboz a REGI
-   * kerdesnel maradjon: eljut-e.
+   * A KERESES A SAJAT VEGPONTON AT JUT EL A LEKERDEZESIG, azonositokkent. A
+   * viselkedest a `kereses-lap.component.spec.tsx` meri; ez a doboz a regi
+   * kerdesnel marad: eljut-e.
    */
   it("a keresés a lekérdezés paraméterei közé kerül", () => {
-    expect(forras).toContain("keresesTalalatok")
-    expect(forras).toMatch(/queryParams\["id"\]/)
-  })
-
-  /**
-   * A NULLA TALALAT KERESESKOR MONDATOT AD, NEM URES LAPOT -- es ez a doboz
-   * legfontosabb allitasa. Kereses NELKUL a `null` a helyes valasz, es az is
-   * marad: az ELSO sor a feltetel, a masodik a mondat.
-   */
-  it("nulla találatnál keresés esetén mondat áll, egyébként null", () => {
-    expect(forras).toContain("if (!kereses) return null")
-    expect(forras).toContain('data-testid="kereses-nincs-talalat"')
+    expect(forras).toContain("keresesTalalatok(kereses)")
+    expect(forras).toContain("id: szuro.ids")
   })
 })

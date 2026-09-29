@@ -1,7 +1,5 @@
 import { listCategoryIdsWithDescendants } from "@lib/data/categories"
 import { listProductsWithSort } from "@lib/data/products"
-import { keresesTalalatok } from "@lib/data/termek-kereses"
-import { keresesSzuro } from "@lib/util/kereses-szuro"
 import { getRegion } from "@lib/data/regions"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import ProductPreview from "@modules/products/components/product-preview"
@@ -10,19 +8,6 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 
 const PRODUCT_LIMIT = 12
 
-/**
- * A `q` MEZO INNEN KIKERULT (2026-09-14), ES EZT KIMONDOM.
- *
- * Itt allt a Medusa szabad szavas keresese, a 2026-09-08-i meresevel egyutt
- * (`q=DMBS1KG` 1 talalat cikkszambol, `q=Dupla` 32 pozitiv kontrollkent,
- * `q=zzzzqqqqxxxx` 0 negativ kontrollkent). Az a meres ERVENYES VOLT es ma is
- * az -- csak epp azt NEM merte, amit a `q` nem tud: az ekezetet.
- *
- * A kereses mostantol a sajat vegponton at megy (`lib/data/termek-kereses.ts`),
- * es azonositokkal szur. A cikkszam-kereses NEM veszett el: az uj vegpont a
- * valtozatok `sku` mezojet is nezi, epp azert, mert a fenti meres megmutatta,
- * hogy az a kepesseg letezik es hasznaljak.
- */
 type PaginatedProductsParams = {
   limit: number
   collection_id?: string[]
@@ -40,7 +25,6 @@ export default async function PaginatedProducts({
   countryCode,
   optionValueIds,
   includeDescendants = true,
-  kereses,
 }: {
   sortBy?: SortOptions
   page: number
@@ -50,8 +34,6 @@ export default async function PaginatedProducts({
   countryCode: string
   optionValueIds?: OptionValueIds
   includeDescendants?: boolean
-  /** A kereses szovege. Ures kereses eseten `undefined`. */
-  kereses?: string
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -84,28 +66,6 @@ export default async function PaginatedProducts({
     queryParams["id"] = productsIds
   }
 
-  /**
-   * A KERESES MOSTANTOL AZONOSITOKON AT MEGY, NEM A `q` PARAMETEREN.
-   *
-   * A Medusa `q`-ja `ILIKE '%token%'` feltetelt epit, a Postgres ILIKE pedig az
-   * EKEZETET nem vonja ossze -- merve a kiszolgalt lapon: `lehabzó` 61-72
-   * talalat, `lehabzo` NULLA. A sajat vegpont mind a ket oldalt ugyanarra az
-   * alakra hajtogatja, es CSAK azonositokat ad vissza; a termekeket innentol a
-   * MAI ut hozza, tehat a lapozas, a szures es az arazas egy helyen marad.
-   *
-   * A NULLA TALALAT KULON AG, ES EZ A LENYEG: egy URES `id` halmazt a
-   * lekerdezes figyelmen kivul hagyhatna, es akkor a vevo a TELJES katalogust
-   * latna egy olyan keresesre, aminek nincs talalata. Ezert ilyenkor el sem
-   * inditjuk a lekerdezest.
-   */
-  let keresesNullaTalalat = false
-  if (kereses) {
-    const talalat = await keresesTalalatok(kereses)
-    const szuro = keresesSzuro(talalat.ids, productsIds)
-    if (szuro.nullaTalalat) keresesNullaTalalat = true
-    else queryParams["id"] = szuro.ids
-  }
-
   if (sortBy === "created_at") {
     queryParams["order"] = "created_at"
   }
@@ -114,14 +74,6 @@ export default async function PaginatedProducts({
 
   if (!region) {
     return null
-  }
-
-  if (keresesNullaTalalat) {
-    return (
-      <p data-testid="kereses-nincs-talalat" className="text-base-regular">
-        Erre a keresésre nincs találat: {kereses}
-      </p>
-    )
   }
 
   const {
@@ -136,25 +88,8 @@ export default async function PaginatedProducts({
 
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 
-  /**
-   * A NULLA TALALAT KERESESKOR NEM UGYANAZ, MINT EGY URES LISTA-LAP.
-   *
-   * A `null` eddig helyes volt: egy ures kategoria-lapon nincs mit mondani, a
-   * lap tobbi resze all. Egy KERESES utan viszont a vevo bepotyogott valamit,
-   * es egy uresen maradt lap nem valasz -- nem tudja meg, hogy nincs ilyen
-   * termekunk, vagy elromlott valami.
-   *
-   * Ezert kereseskor mondat all a `null` helyen. Kereses NELKUL a viselkedes
-   * betuere valtozatlan.
-   */
   if (!products.length) {
-    if (!kereses) return null
-
-    return (
-      <p data-testid="kereses-nincs-talalat" className="text-base-regular">
-        Erre a keresésre nincs találat: {kereses}
-      </p>
-    )
+    return null
   }
 
   return (
