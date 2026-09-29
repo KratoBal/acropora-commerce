@@ -108,7 +108,10 @@ describe("resolveCartShippingClass", () => {
       expect(result.shipping_class_source).toBe("l2")
     })
 
-    it("normal plus pickup-only becomes PICKUP_ONLY", async () => {
+    // P4-2 (Balázs, 2026-09-29): a pickup-only line no longer makes a mixed
+    // cart pickup-only. It is split off into its own pickup order, and the
+    // rest keeps its courier options. Before P4-2 this was PICKUP_ONLY.
+    it("normal plus pickup-only stays NORMAL and splits the pickup line off", async () => {
       const { container } = makeContainer(
         [variant("v1", "p1"), variant("v2", "p2")],
         [{ product_id: "p2", pickup_only: true }]
@@ -119,10 +122,14 @@ describe("resolveCartShippingClass", () => {
         container as any
       )
 
-      expect(result.shipping_class).toBe("PICKUP_ONLY")
+      expect(result).toEqual({
+        shipping_class: "NORMAL",
+        shipping_class_source: null,
+        split_line_ids: ["l2"],
+      })
     })
 
-    it("heavy plus pickup-only becomes PICKUP_ONLY", async () => {
+    it("heavy plus frozen stays HEAVY and splits the frozen line off", async () => {
       const { container } = makeContainer(
         [variant("v1", "p1"), variant("v2", "p2")],
         [
@@ -136,7 +143,9 @@ describe("resolveCartShippingClass", () => {
         container as any
       )
 
-      expect(result.shipping_class).toBe("PICKUP_ONLY")
+      expect(result.shipping_class).toBe("HEAVY")
+      expect(result.shipping_class_source).toBe("l1")
+      expect(result.split_line_ids).toEqual(["l2"])
     })
 
     it("foxpost-forbidden plus heavy becomes HEAVY", async () => {
@@ -304,11 +313,26 @@ describe("resolveCartShippingClass", () => {
       "FOXPOST",
     ])
 
+    // Adding a pickup-only line to a shippable cart keeps the courier options
+    // (the line goes to its own pickup order, P4-2); a cart of pickup-only
+    // lines alone is still pickup-only.
     const afterAdding = await resolveCartShippingClass(
       { items: [line("l1", "v1"), line("l2", "v2")] },
       makeContainer(variants, attributes).container as any
     )
-    expect(allowedRolesFor(afterAdding.shipping_class)).toEqual(["PICKUP"])
+    expect(allowedRolesFor(afterAdding.shipping_class)).toEqual([
+      "PICKUP",
+      "GLS_NORMAL",
+      "FOXPOST",
+    ])
+    expect(afterAdding.split_line_ids).toEqual(["l2"])
+
+    const onlyPickup = await resolveCartShippingClass(
+      { items: [line("l2", "v2")] },
+      makeContainer(variants, attributes).container as any
+    )
+    expect(allowedRolesFor(onlyPickup.shipping_class)).toEqual(["PICKUP"])
+    expect(onlyPickup.split_line_ids).toEqual([])
 
     const afterRemoving = await resolveCartShippingClass(
       { items: [line("l1", "v1")] },

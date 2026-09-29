@@ -124,3 +124,46 @@ export const computeShippingClass = (
 }
 
 export default computeShippingClass
+
+export type PickupSplit = {
+  /**
+   * The lines that become the separate pickup order. Empty unless the cart
+   * has BOTH pickup-only lines and lines that can ship: a cart of pickup-only
+   * lines alone stays one pickup order, as before.
+   */
+  split_line_ids: string[]
+  /** Every other line: the order that ships. */
+  rest: ShippingRelevantItem[]
+}
+
+/**
+ * WHICH LINES BECOME THE PICKUP ORDER (P4-2).
+ *
+ * Balázs, 2026-09-29: a live animal no longer makes the whole cart
+ * pickup-only. The pickup-only lines (the same three flags that force
+ * PICKUP_ONLY) are split off into their own order, collected and paid in the
+ * shop, and the rest ships as it would without them. The customer sees two
+ * orders, and the cart says so before checkout.
+ */
+export const pickupSplit = (
+  items: ShippingRelevantItem[] | null | undefined
+): PickupSplit => {
+  const all = items ?? []
+  const goesToPickup = (item: ShippingRelevantItem) =>
+    isShippable(item) && forcesPickup(item)
+
+  const pickup = all.filter(goesToPickup)
+  const ships = all.filter((item) => isShippable(item) && !forcesPickup(item))
+
+  if (!pickup.length || !ships.length) {
+    return { split_line_ids: [], rest: all }
+  }
+
+  return {
+    split_line_ids: pickup
+      .map(sourceOf)
+      .filter((id): id is string => typeof id === "string"),
+    rest: all.filter((item) => !goesToPickup(item)),
+  }
+}
+
