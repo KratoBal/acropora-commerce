@@ -5,6 +5,7 @@ import { KosarLink } from "@modules/layout/components/cart-dropdown/kosar-link"
 import { getRegion } from "@lib/data/regions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { FejlecMenu } from "./fejlec-menu"
+import { MobilMenu } from "./mobil-menu"
 import CartButton from "@modules/layout/components/cart-button"
 
 /**
@@ -231,6 +232,9 @@ const BIZALMI_SEGITSEG = "Szakértői segítség"
  */
 const KERESO_HELYKITOLTO = "Keresés termékre, fajra, márkára, cikkszámra"
 
+/** A Figma fejlec-frame-jeinek jobb oldali szovege (234:37, 253:58). */
+const FIOK_FELIRAT = "Fiók"
+
 export default async function Nav({ countryCode }: { countryCode?: string }) {
   /**
    * A MENU A VALODI GYOKEREKBOL EPUL, DE CSAK A NEM URESEKBOL.
@@ -245,147 +249,81 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
+      {/*
+        P1b (2026-09-29): A FEJLEC A FIGMA FEJLEC-FRAME-JEIBOL, AZ `acr`
+        TOKENEKKEL. A szinek a MOD-tokenekbol jonnek (`--acr-mode-*`), tehat
+        ugyanez a jeloles Commerce (vilagos) es Reef (sotet): a `data-fejlec`
+        jelolon at a lap sotet vilaga (termeklap) vagy Reef-jeloloje
+        (kategorialap) atkapcsolja, lasd `acropora-tokens.css`.
+
+        A Figma kanonikus frame-jei, amikbol a meretek jonnek:
+          asztali Commerce   253:58 (Search / No Results), 201:7 (Cart 3a)
+          asztali Reef       234:23 (Fish listing), 217:46, 239:25
+          mobil Commerce     196:4 (Lighting PDP 1b mobile)
+          mobil Reef         226:123 (WYSIWYG listing mobile)
+        Az elteresek es az okuk: `docs/P1B-HEADER.md`.
+      */}
       <header
-        className="relative w-full border-b px-4"
-        style={{
-          borderColor: "var(--terv-keret)",
-          background: "var(--terv-hatter)",
-          color: "var(--terv-szoveg)",
-        }}
+        className="relative w-full border-b border-acr-mode-border bg-acr-mode-bg font-acr-sans text-acr-mode-text px-[18px] small:px-[44px]"
+        data-fejlec
         data-testid="fejlec"
       >
         <div
-          /*
-            A BETUMERET A TERVBOL: 12.5 pixel. A `text-xs` 12-t ad, tehat fel
-            pixellel kisebbet -- kicsi kulonbseg, de a savban ez az EGYETLEN
-            szovegmeret, es a terv kiirja.
-          */
-          className="mx-auto flex w-full items-center justify-between border-b text-[12.5px]"
+          className="mx-auto hidden w-full items-center justify-between border-b border-acr-mode-border text-[12.5px] small:flex"
           style={{
             height: "var(--fejlec-bizalmi-magassag)",
             maxWidth: "1352px",
-            borderColor: "var(--terv-keret)",
-            color: "var(--terv-szoveg-halvany)",
-            fontFamily: "var(--terv-betu-fo-lanc)",
           }}
           data-testid="fejlec-bizalmi-sav"
-          /*
-            A DATUM JELOLOKENT ALL, NEM SZOVEGKENT: a vevonek nem mond semmit,
-            de aki a lapot megnezi, latja, MIKORI a ket szam. Egy csak
-            megjegyzesben allo datum a kitelepitett lapon nem letezik.
-          */
           data-tanusitvany-allapot={BIZALMI_TANUSITVANY_DATUM}
         >
           <p>{BIZALMI_BAL}</p>
-          {/*
-            A JOBB OLDAL KET SZOVEG, HUSZONNEGY PIXEL KOZZEL, ELVALASZTO NELKUL.
-
-            A tervforrasban (2026-09-09) ez all:
-
-                <span style="display:flex;gap:24px">
-                  <span>...</span>
-                  <span style="color:REZ;font-weight:600">Szakértői segítség</span>
-                </span>
-
-            ITT KORABBAN EGY `·` PONT ALLT a ket szoveg kozott, nyolc pixeles
-            kozzel. Az en betoldasom volt, kep alapjan, es a forrasban nincs.
-            A tervben a ket szoveget a KOZ valasztja el, nem egy karakter.
-
-            A `font-weight:600` is a forrasbol jon: a segitseg-felirat nem csak
-            rez szinu, hanem felkover is.
-          */}
           <p className="flex items-center gap-6">
             <span>{BIZALMI_TANUSITVANY}</span>
-            <span
-              className="font-semibold"
-              style={{ color: "var(--terv-kiemel-tinta)" }}
-            >
+            <span className="font-semibold text-acr-heritage">
               {BIZALMI_SEGITSEG}
             </span>
           </p>
         </div>
         <nav
-          /*
-            A SAV MAGASSAGA A KOZOS VALTOZOBOL JON, MINUSZ AZ ALSO KERET.
-
-            A `--fejlec-magassag` EZT A SORT jelenti (a nav sav plusz az 1
-            pixeles keret), NEM a teljes fejlecet -- folotte all meg a bizalmi
-            sav is. Ez a megjegyzes korabban "TELJES fejlecet" mondott, es az
-            merhetoen nem allt: 79 kontra 115 (merve 2026-09-09).
-
-            A teljes magassag kulon valtozo (`--fejlec-teljes-magassag`), es a
-            ketto kulonbsege pontosan a bizalmi sav. Az indoklas a
-            `globals.css`-ben all, a valtozok mellett.
-          */
-          className="mx-auto flex w-full items-center gap-4 lg:gap-10"
+          className="mx-auto flex w-full items-center gap-[14px] small:gap-[28px]"
           style={{
             height: "calc(var(--fejlec-magassag) - 1px)",
             maxWidth: "1352px",
-            fontFamily: "var(--terv-betu-fo-lanc)",
           }}
         >
+          <MobilMenu
+            kategoriak={menuAdat.gyokerek}
+            nevek={menuAdat.nevek}
+            keresoCel={countryCode ? `/${countryCode}/store` : "/store"}
+          />
           <LocalizedClientLink
             href="/"
-            className="flex shrink-0 items-center gap-3"
+            className="flex min-w-0 shrink-0 items-center gap-[14px] small:gap-3"
             data-testid="nav-store-link"
           >
             <span
-              className="block h-[30px] w-[30px]"
-              style={{ background: "var(--terv-kiemel)" }}
+              className="block h-[22px] w-[22px] shrink-0 bg-acr-heritage small:h-[30px] small:w-[30px]"
               aria-hidden="true"
             />
-            <span className="text-[21px] font-bold tracking-[0.1em]">
+            <span className="text-[16px] font-bold leading-[21px] tracking-[1.6px] text-acr-mode-heading small:text-[20px] small:leading-[26px] small:tracking-[2.1px]">
               ACROPORA
             </span>
           </LocalizedClientLink>
-
+          <div className="hidden min-w-0 small:flex">
+            <FejlecMenu kategoriak={menuAdat.gyokerek} nevek={menuAdat.nevek} />
+          </div>
           <form
             action={countryCode ? `/${countryCode}/store` : "/store"}
             method="get"
-            /*
-              A FOKUSZ-GYURU A DOBOZON ALL, NEM A MEZON.
-
-              === A MERT HIBA ===
-
-              A mezo `outline-none` osztalyt visel, ami a Tailwindben NEM a
-              gyuru eltuntetese, hanem `outline: 2px solid transparent` --
-              es semmi nem allt a helyere. Elo bongeszoben, VALODI Tab
-              lenyomasokkal merve (2026-09-09): a fejlec minden mas eleme
-              megkapja a bongeszo alapertelmezett gyurujet (`outline-style:
-              auto`), ez az EGY nem: `2px solid rgba(0, 0, 0, 0)`, arnyek
-              nelkul. Billentyuzettel a latogato nem latja, hogy a keresoben
-              all.
-
-              === MIERT A DOBOZON, ES NEM A MEZON ===
-
-              A mezo atlatszo hatteru es a doboz TOLTI KI a savot: egy gyuru a
-              mezo korul a doboz BELSEJEBEN futna, a keret es a szoveg kozott.
-              A `focus-within` a LATHATO elemre teszi, oda, ahova a szem nez.
-
-              === EZT A SZINT NEM A TERV MONDJA MEG ===
-
-              A tervlap nem rajzol fokusz-allapotot -- egy makett ritkan
-              teszi. A `--terv-kiemel` az arculat kiemelo szine, tehat nem uj
-              ertek, de a VALASZTAS az enyem, nem meres. Ha mas kell, egy
-              token-nev csereje.
-            */
             className={
-              "hidden flex-1 items-center gap-3 px-4 sm:flex " +
+              "ml-auto hidden h-[32px] w-full max-w-[370px] items-center border-b border-acr-mode-border small:flex " +
               "focus-within:outline focus-within:outline-2 " +
-              "focus-within:outline-offset-2 " +
-              "focus-within:[outline-color:var(--terv-kiemel)]"
+              "focus-within:outline-offset-4 " +
+              "focus-within:[outline-color:var(--acr-color-heritage)]"
             }
-            style={{
-              height: "46px",
-              background: "var(--terv-hatter-halvany)",
-            }}
             data-testid="fejlec-kereso"
           >
-            <span
-              className="block h-[13px] w-[13px] shrink-0 rounded-full border-[1.5px]"
-              style={{ borderColor: "var(--terv-szoveg-halvany)" }}
-              aria-hidden="true"
-            />
             <label className="sr-only" htmlFor="fejlec-kereso-mezo">
               {KERESO_HELYKITOLTO}
             </label>
@@ -394,34 +332,18 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
               type="search"
               name="q"
               placeholder={KERESO_HELYKITOLTO}
-              className="h-full w-full bg-transparent text-[14px] outline-none"
-              style={{ color: "var(--terv-szoveg)" }}
+              className="h-full w-full bg-transparent text-[13px] text-acr-mode-heading outline-none placeholder:text-acr-mode-text"
             />
           </form>
-
-          <FejlecMenu
-            kategoriak={menuAdat.gyokerek}
-            /*
-              A NEVEK A BETOLTOTOL JONNEK, NEM A MENU SZAMOLJA.
-
-              A roviditest a menu eddig helyben vegezte, feltetel nelkul. Az
-              egyedisegrol csak a TELJES katalogus tud dontenni, es az a
-              betoltoben mar megvan -- ott keszul a terkep, uj lekerdezes
-              nelkul.
-            */
-            nevek={menuAdat.nevek}
-          />
-
-          <div className="ml-auto flex shrink-0 items-center lg:ml-0">
-            <Suspense
-              /*
-                A TARTALEK UGYANAZ A KOMPONENS, MINT A VALODI GOMB -- csak
-                nullaval. Korabban egy MASOLAT allt itt, sajat osztalyokkal es
-                sajat felirattal, tehat a ket alak kulon romolhatott el, es a
-                tartalek csak a betoltes elso pillanataiban latszik.
-              */
-              fallback={<KosarLink darab={0} />}
+          <div className="ml-auto flex shrink-0 items-center gap-[28px] text-[13px] leading-[17px] small:ml-0">
+            <LocalizedClientLink
+              href="/account"
+              className="hidden small:inline"
+              data-testid="nav-account-link"
             >
+              {FIOK_FELIRAT}
+            </LocalizedClientLink>
+            <Suspense fallback={<KosarLink darab={0} />}>
               <CartButton />
             </Suspense>
           </div>

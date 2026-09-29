@@ -32,7 +32,9 @@ function blokk(szelektor: string): Map<string, string> {
 
 const alap = blokk(":root")
 const commerce = blokk(':root,\n[data-vilag="vilagos"]')
-const reef = blokk('[data-vilag="sotet"]')
+const reef = blokk(
+  '[data-vilag="sotet"],\nbody:has([data-vilag="sotet"]) [data-fejlec],\nbody:has([data-acr-mod="reef"]) [data-fejlec]',
+)
 
 describe("acropora-tokens.css a Figma Foundations szerint", () => {
   it("mind a 14 szin-primitiv betura a Figma-ertek", () => {

@@ -37,7 +37,13 @@
     a 268 ota VEGIG lathato. Ket kulon szam egy kesobbi fejlec-magassag
     valtozasnal ujra szetcsuszna, es megint csendben.
   */
-  --fejlec-magassag: 79px;
+  /*
+    P1b (2026-09-29): A FIGMA FEJLEC-SAVJA 76 PIXEL a kerettel (234:23, 253:58);
+    itt korabban a regi terv 79-e allt. Mobilon a Figma fejlece 56 pixel
+    (196:4, 226:123), bizalmi sav nelkul -- a ket mobil ertek a fajl vegi
+    media-blokkban all, `small` alatt.
+  */
+  --fejlec-magassag: 76px;
 
   /*
     A BIZALMI SAV ES A TELJES FEJLEC -- MERT A 79 NEM A TELJES FEJLEC.
@@ -966,5 +972,17 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
 
   .text-3xl-semi {
     @apply text-[32px] leading-[44px] font-semibold;
+  }
+}
+
+/*
+  A MOBIL FEJLEC (P1b, 2026-09-29): a Figma 390 pixeles fejlece 56 pixel, es a
+  bizalmi sav nem all benne. A `small` torespont (1024 px) alatt a ket valtozo
+  ezt adja, tehat a ragados panelek eltolasa is kovetik.
+*/
+@media (max-width: 1023.98px) {
+  :root {
+    --fejlec-magassag: 56px;
+    --fejlec-bizalmi-magassag: 0px;
   }
 }

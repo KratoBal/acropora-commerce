@@ -4,11 +4,18 @@ import { ArrowRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
 
 type Category = HttpTypes.StoreProductCategory
 
-/** Explicit navigation decision; this is not derived from the category tree. */
-const HEADER_MENU_ITEMS = ["Termékek", "Halak", "Korallok", "Gerinctelenek"]
+/*
+  A MENUPONTOK ADATBOL JONNEK (P1b, 2026-09-29). Itt korabban egy kodba irt
+  negyes lista allt ("Termékek", "Halak", "Korallok", "Gerinctelenek"), es a
+  menu csak azt a negy nevet kereste a gyokerek kozott. Balazs szabalya: minden,
+  amit epitunk, egyszer publikus alap lehet -- egy beegetett katalogus-nev nem
+  az. A menu most a nem ures gyoker-kategoriakat mutatja, a betolto
+  sorrendjeben (`listNonEmptyRootCategories`).
+*/
 /**
  * A GYORSLINKEK -- ES CSAK AZ EGYIKNEK VAN CELPONTJA.
  *
@@ -81,6 +88,17 @@ export const FejlecMenu = ({
   nevek?: Map<string, string>
 }) => {
   const [openName, setOpenName] = useState<string | null>(null)
+  /*
+    AZ AKTUALIS GYOKER KIEMELESE (P1b): a Figma a hal-listan a "Halak" pontot
+    600-as sulyban, a cimszinben mutatja (234:29). A kategorialap utvonala
+    (`/<orszag>/categories/<gyoker>/...`) megmondja, melyik gyoker alatt allunk;
+    a termeklapon az utvonal nem hordoz kategoriat, ott nincs kiemeles.
+  */
+  const pathname = usePathname() ?? ""
+  const aktivHandle =
+    pathname.split("/").filter(Boolean)[1] === "categories"
+      ? decodeURIComponent(pathname.split("/").filter(Boolean)[2] ?? "")
+      : null
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [panelLeft, setPanelLeft] = useState(16)
   const categoryButtons = useRef<(HTMLButtonElement | null)[]>([])
@@ -168,20 +186,30 @@ export const FejlecMenu = ({
         kovetkeztetek a hatasra.
       */}
       <nav
-        className="flex min-w-0 items-center gap-4 overflow-x-auto"
+        className="flex min-w-0 items-center gap-[18px] overflow-x-auto"
         aria-label="Kategóriák"
       >
-        {HEADER_MENU_ITEMS.map((name) => (
+        {/*
+          A FIGMA SZERINT (234:28-234:35): 13.5 pixel, normal suly a mod
+          szovegszineben; a NYITOTT pont 600-as sulyu a cimszinben, ugyanugy,
+          mint a Figma aktiv pontja ("Halak" a hal-listan).
+        */}
+        {kategoriak.map((category) => (
           <button
-            key={name}
+            key={category.id}
             type="button"
-            className="text-[14px] font-semibold"
+            className={
+              "shrink-0 whitespace-nowrap text-[13.5px] leading-[17.5px] " +
+              (openName === category.name || aktivHandle === category.handle
+                ? "font-semibold text-acr-mode-heading"
+                : "font-normal text-acr-mode-text")
+            }
             aria-controls={panelId}
-            aria-expanded={openName === name}
-            onClick={(event) => toggle(name, event.currentTarget)}
-            data-testid={`category-menu-trigger-${name}`}
+            aria-expanded={openName === category.name}
+            onClick={(event) => toggle(category.name, event.currentTarget)}
+            data-testid={`category-menu-trigger-${category.name}`}
           >
-            {name}
+            {nev(category)}
           </button>
         ))}
       </nav>

@@ -1,6 +1,11 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
-import { JetBrains_Mono, Newsreader, Space_Grotesk } from "next/font/google"
+import {
+  Hanken_Grotesk,
+  JetBrains_Mono,
+  Newsreader,
+  Space_Grotesk,
+} from "next/font/google"
 import "styles/globals.css"
 // A Figma Foundations tokenek (P1a): csak `--acr-*` valtozok, meglevo stilust nem irnak felul.
 import "styles/acropora-tokens.css"
@@ -47,6 +52,19 @@ const newsreader = Newsreader({
   variable: "--terv-betu-kiemelt",
 })
 
+/**
+ * A FIGMA FOUNDATIONS BETUJE (P1b, 2026-09-29): a fejlec minden lapon ebbol all,
+ * ezert itt, globalisan toltodik be. A `--acr-font-hanken` valtozot a
+ * `--acr-font-sans` token olvassa; mas stilus nem hivatkozik ra, tehat a tobbi
+ * lap betukeszlete nem valtozik.
+ */
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--acr-font-hanken",
+})
+
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
@@ -66,7 +84,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html
       lang="hu"
       data-mode="light"
-      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable}`}
+      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable} ${hankenGrotesk.variable}`}
     >
       <body>
         <main className="relative">{props.children}</main>

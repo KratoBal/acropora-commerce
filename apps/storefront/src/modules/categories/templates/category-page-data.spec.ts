@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { categoryPageKind, helperCopyFor } from "./category-page-data"
+import {
+  categoryPageKind,
+  categoryPageMode,
+  helperCopyFor,
+} from "./category-page-data"
 
 /**
  * A kategóriaoldalnak EGY vázra van szüksége, nem két, egymástól lassan
@@ -50,5 +54,45 @@ describe("a kategóriaoldal adatnézete", () => {
     expect(helperCopyFor("livestock").description).toBe(
       "Élő állatot csak személyesen, üzletünkben adunk át neked.",
     )
+  })
+})
+
+/**
+ * A KATEGORIALAP MODJA (P1b): a fejlec ebbol a jelolobol valt Reef-re. A P1a
+ * szabalya (`acropora-mod.ts`), a gyokertol a lapig tarto nevsoron.
+ *
+ * MI PIROSIT: ha csak a lap SAJAT neve dontene (a mely alkategoria "Leveles"
+ * neve semmit nem mond); ha a sorrend fordított lenne (a WYSIWYG-t a gyoker
+ * helyen keresne); ha a technikai ag Reef lenne.
+ */
+describe("a kategóriaoldal módja", () => {
+  it("a korall, hal és gerinctelen ág mélyen is Reef", () => {
+    for (const root of ["Korallok", "Halak", "Gerinctelenek"]) {
+      expect(
+        categoryPageMode({
+          name: "Leveles",
+          parent_category: { name: "Köztes", parent_category: { name: root } },
+        }),
+        root,
+      ).toBe("reef")
+    }
+  })
+
+  it("a technikai ág Commerce", () => {
+    expect(
+      categoryPageMode({
+        name: "Világítás",
+        parent_category: { name: "Termékek" },
+      }),
+    ).toBe("commerce")
+  })
+
+  it("a WYSIWYG ág más gyökér alatt is Reef", () => {
+    expect(
+      categoryPageMode({
+        name: "WYSIWYG",
+        parent_category: { name: "Termékek" },
+      }),
+    ).toBe("reef")
   })
 })

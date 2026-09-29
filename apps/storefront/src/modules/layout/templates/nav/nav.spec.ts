@@ -37,6 +37,29 @@ describe("a fejléc fő sávja", () => {
    * ellenkezo iranyban: egy rejto mechanizmus kerult a menu-komponensbe, es a
    * savot gorgetesre eltuntette. Az visszavonva, es ide orzo kerult.
    */
+  /**
+   * A FEJLEC MODJA (P1b): a `data-fejlec` jelolon at kapcsolja at a lap sotet
+   * vilaga vagy a kategorialap Reef-jeloloje (`acropora-tokens.css`). Ha a
+   * jelolo eltunik a fejlecrol, vagy a kategorialap nem teszi ki a sajatjat,
+   * a fejlec csendben Commerce marad a Reef lapokon.
+   */
+  it("a fejléc viseli a mód-jelölőt, és a kategórialap kiteszi a sajátját", () => {
+    expect(nav).toMatch(
+      /<header[\s\S]{0,400}data-fejlec[\s\S]{0,40}data-testid="fejlec"/,
+    )
+    const kategoria = readFileSync(
+      join(__dirname, "..", "..", "..", "categories", "templates", "index.tsx"),
+      "utf-8",
+    )
+    expect(kategoria).toContain("data-acr-mod={categoryPageMode(category)}")
+    const tokenek = readFileSync(
+      join(__dirname, "..", "..", "..", "..", "styles", "acropora-tokens.css"),
+      "utf-8",
+    )
+    expect(tokenek).toContain('body:has([data-vilag="sotet"]) [data-fejlec]')
+    expect(tokenek).toContain('body:has([data-acr-mod="reef"]) [data-fejlec]')
+  })
+
   it("a fejléc tapad a lap tetejéhez", () => {
     expect(nav).toMatch(/sticky\s+top-0/)
   })
@@ -188,7 +211,8 @@ describe("a fejléc fő sávja", () => {
     const felirat = sav.slice(sav.indexOf("BIZALMI_SEGITSEG") - 260)
 
     expect(felirat).toContain("font-semibold")
-    expect(felirat).toContain("var(--terv-kiemel-tinta)")
+    // P1b: a rez a Figma `heritage` primitivje, `acr` tokenkent.
+    expect(felirat).toContain("text-acr-heritage")
   })
 
   /** ES AMI NEM KERULT VISSZA: a kulso szolgaltatas, amire nincs forrasunk. */
@@ -228,10 +252,14 @@ describe("a fejléc fő sávja", () => {
    * az kulon allitas, sajat nevvel, alabb.
    */
   it("a fő sáv fájlja tokent használ, nyers érték nélkül", () => {
-    expect(nav).toContain("var(--terv-keret)")
-    expect(nav).toContain("var(--terv-kiemel)")
-    expect(nav).toContain("var(--terv-szoveg)")
+    // P1b: a fejlec a Figma `acr` mod-tokenjeibol szinezodik.
+    expect(nav).toContain("border-acr-mode-border")
+    expect(nav).toContain("bg-acr-mode-bg")
+    expect(nav).toContain("text-acr-mode-text")
+    expect(nav).toContain("text-acr-mode-heading")
+    expect(nav).toContain("bg-acr-heritage")
     expect(nav.match(/oklch\(/g)).toBeNull()
+    expect(nav).not.toMatch(/#[0-9a-fA-F]{6}/)
   })
 
   /**
@@ -385,7 +413,7 @@ describe("a fejléc keresője", () => {
    * egyszer megjavitottunk.
    */
   it("a fókusz-gyűrű színe tokenből jön", () => {
-    expect(nav).toContain("[outline-color:var(--terv-kiemel)]")
+    expect(nav).toContain("[outline-color:var(--acr-color-heritage)]")
     expect(nav).not.toMatch(/outline-color:\s*(#|rgb|oklch)/)
   })
 })
@@ -438,23 +466,37 @@ describe("a fejléc geometriája a tervből", () => {
     expect(nav).toContain("w-[30px]")
   })
 
-  it("a szóvédjegy mérete és betűköze a tervből", () => {
-    expect(nav).toContain("text-[21px]")
-    expect(nav).toContain("tracking-[0.1em]")
+  /*
+    P1b (2026-09-29): A GEOMETRIA A FIGMA FEJLEC-FRAME-JEIBOL. Korabban itt a
+    regi terv ertekei alltak (21 px-es szovedjegy 0.1em betukozzel, 46 px-es
+    kereso-doboz nagyito-jellel). A Figma asztali Reef fejlece (234:23) 20 px-es,
+    2.1 px betukozu szovedjegyet es egy 370 px szeles, alulvonalas kereso-helyet
+    (234:36) rajzol, nagyito nelkul; a mobil (226:123) 16 px-es, 1.6 px-eset es
+    22 px-es negyzetet.
+  */
+  it("a szóvédjegy mérete és betűköze a Figmából, asztalon és mobilon", () => {
+    expect(nav).toContain("small:text-[20px]")
+    expect(nav).toContain("small:tracking-[2.1px]")
+    expect(nav).toContain("text-[16px]")
+    expect(nav).toContain("tracking-[1.6px]")
+  })
+
+  it("a mobil négyzet 22 pixel", () => {
+    expect(nav).toContain("h-[22px]")
+    expect(nav).toContain("w-[22px]")
   })
 
   /**
    * A KERESO MAGASSAGA BEAGYAZOTT STILUSBAN ALL, nem osztalyban -- ezert mas
    * alakra keresunk. Nem kovetkezetlenseg: a mezo magassagat a doboz adja.
    */
-  it("a kereső-mező a tervbeli 46 pixel, 12 pixeles közzel", () => {
-    expect(nav).toContain('height: "46px"')
-    expect(nav).toContain("gap-3")
+  it("a kereső-hely 370 pixel széles és alulvonalas (Figma 234:36)", () => {
+    expect(nav).toContain("max-w-[370px]")
+    expect(nav).toMatch(/border-b border-acr-mode-border small:flex/)
   })
 
-  it("a nagyító-jel a tervbeli 13 pixel", () => {
-    expect(nav).toContain("h-[13px]")
-    expect(nav).toContain("w-[13px]")
+  it("a nagyító-jel kikerült: a Figma kereső-helye nem rajzol ilyet", () => {
+    expect(nav).not.toContain("h-[13px]")
   })
 
   /**

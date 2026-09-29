@@ -143,7 +143,12 @@ describe("a lap földjét viselő felületek hatóköre", () => {
   const VART = [
     /* a vazon KIVUL, tehat a sotet valasztoban is szerepelnie kell */
     "modules/layout/templates/footer/index.tsx",
-    "modules/layout/templates/nav/index.tsx",
+    /*
+      A FEJLEC (`nav/index.tsx`) 2026-09-29 OTA NINCS ITT: a P1b a Figma
+      `acr` mod-tokenjeire allitotta (`bg-acr-mode-bg`), es a sotet modot a
+      `data-fejlec` jelolon at kapja (`acropora-tokens.css`). A lap foldjet
+      tehat mar nem viseli, a sajat modjat viseli.
+    */
     "styles/globals.css" /* a `body` szabalya ES a sotet keszlet */,
     /* a vazon BELUL, tehat a jelolotol oroklik */
     "modules/layout/templates/nav/fejlec-menu.tsx" /* a fejlecen belul */,

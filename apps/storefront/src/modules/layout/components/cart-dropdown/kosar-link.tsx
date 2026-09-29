@@ -33,18 +33,20 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 export const kosarFelirat = (darab: number) => `Kosár · ${darab}`
 
 export const KosarLink = ({ darab }: { darab: number }) => (
+  /*
+    P1b (2026-09-29): A FIGMA FEJLEC-FRAME-JEI SZERINT egy felirat, nem doboz:
+    "Kosár 0", 13 pixel, 600-as suly, a mod cimszineben (234:38, 201:7). Mobilon
+    csak a darabszam all (196:10, 226:129). A felolvaso tovabbra is a teljes
+    "Kosár · N" alakot kapja.
+  */
   <LocalizedClientLink
-    className="flex h-[46px] items-center px-5 text-[14px] font-semibold"
-    style={{
-      background: "var(--terv-szoveg)",
-      color: "var(--terv-hatter)",
-    }}
+    className="flex items-center text-[13px] font-medium leading-[17px] text-acr-mode-heading small:font-semibold"
     href="/cart"
     aria-label={kosarFelirat(darab)}
     data-testid="nav-cart-link"
   >
-    <span aria-hidden="true" className="hidden lg:inline">
-      Kosár&nbsp;·&nbsp;
+    <span aria-hidden="true" className="hidden small:inline">
+      Kosár&nbsp;
     </span>
     <span aria-hidden="true">{darab}</span>
   </LocalizedClientLink>
