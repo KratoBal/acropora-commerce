@@ -15,6 +15,8 @@ vi.mock("./cookies", () => ({
 vi.mock("./regions", () => ({ getRegion: vi.fn() }))
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
 
+import { RENDELES_KEDVEZMENY_BONTAS } from "@lib/util/penztar-uzenet"
+
 import { placeOrder } from "./cart"
 
 const valaszok = (split: unknown) =>
@@ -69,6 +71,19 @@ describe("a rendelés leadása", () => {
     valaszok(new Error("This cart has pickup-only and shipped items together"))
     const eredmeny = await placeOrder("cart_1")
     expect(eredmeny.ok).toBe(false)
+    expect(nav.redirect).not.toHaveBeenCalled()
+  })
+
+  it("ha a bontás megváltoztatná a kedvezményt, megmondja a vevőnek, mit tehet", async () => {
+    valaszok(
+      new Error(
+        "split_discount_changed: the discount changes when this cart is split into two orders, so nothing was placed",
+      ),
+    )
+    const eredmeny = await placeOrder("cart_1")
+    expect(eredmeny).toEqual({ ok: false, uzenet: RENDELES_KEDVEZMENY_BONTAS })
+    expect(RENDELES_KEDVEZMENY_BONTAS).toContain("külön kosárban")
+    expect(RENDELES_KEDVEZMENY_BONTAS).toContain("kupon")
     expect(nav.redirect).not.toHaveBeenCalled()
   })
 })

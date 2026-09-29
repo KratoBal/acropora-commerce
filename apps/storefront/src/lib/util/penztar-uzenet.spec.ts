@@ -8,6 +8,8 @@ import {
   SZALLITAS_ELUTASITVA,
   SZALLITAS_MOST_NEM_SIKERULT,
   fizetesUzenet,
+  RENDELES_KEDVEZMENY_BONTAS,
+  rendelesHibaUzenet,
   rendelesUzenet,
   szallitasUzenet,
 } from "./penztar-uzenet"
@@ -127,5 +129,27 @@ describe("a hat mondat mind különbözik", () => {
     expect(RENDELES_MOST_NEM_SIKERULT).toContain("nézd meg")
     expect(RENDELES_MOST_NEM_SIKERULT).not.toMatch(/Próbáld meg újra\./)
     expect(SZALLITAS_MOST_NEM_SIKERULT).toMatch(/Próbáld meg újra\./)
+  })
+})
+
+/**
+ * A LEADÁS HIBÁJA A BONTÁS KEDVEZMÉNY-KÓDJÁRA (P4-3c). MI PIROSÍT: ha a kódra
+ * nem a teendőt mondó mondat jön; ha minden más hiba is azt kapja.
+ */
+describe("a leadás hibájának mondata", () => {
+  it("a bontás kedvezmény-kódjára a saját mondata, minden másra a mai vágás", () => {
+    expect(
+      rendelesHibaUzenet(
+        new Error("split_discount_changed: the discount changes"),
+      ),
+    ).toBe(RENDELES_KEDVEZMENY_BONTAS)
+    const elutasitas = Object.assign(
+      new Error("Some pickup items cannot be collected"),
+      { status: 400 },
+    )
+    expect(rendelesHibaUzenet(elutasitas)).toBe(RENDELES_ELUTASITVA)
+    expect(rendelesHibaUzenet(new Error("fetch failed"))).toBe(
+      RENDELES_MOST_NEM_SIKERULT,
+    )
   })
 })

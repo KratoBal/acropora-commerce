@@ -100,7 +100,17 @@ The storefront places every cart through this route; the core complete route ref
 **For a mixed cart** (`completeSplitCart` in `split-completion.ts`; the Medusa calls are in `split-completion-operations.ts`):
 1. **Move the pickup lines.** They go to a new pickup cart with the same customer, region, channel and addresses, linked both ways in metadata (`acropora_pickup_cart_id`, `acropora_parent_cart_id`). The promotion codes are applied to it where they are valid, but **only the codes that divide with the lines**: percentage codes and fixed per-item (`each`) codes (`pickupPromoCodes`).
    - Measured on stage (2026-09-29, the same two lines whole and split): a 10% code gave 950 Ft whole and 100 + 850 split. A fixed cart-level code (`fixed`, `across`) gave 635 Ft whole and 635 on **each** part, so it was taken twice. Such a code now stays on the shipped cart only.
-   - Two known limits. If the shipped part is smaller than the fixed discount, the customer gets less than the one cart would have given. An **automatic** fixed cart-level promotion applies itself to each cart, whatever the codes. Stage has none: acrobot measured the promotion table on 2026-09-29, and both codes there are `is_automatic=false`.
+   - **The discount may not change by splitting** (acrobot's decision, 2026-09-29). Medusa computes promotions per cart, and three cases were measured on stage (whole cart, then split into two orders):
+
+     | Promotion | Whole | Shipped | Pickup |
+     |---|---|---|---|
+     | automatic, fixed 500, cart-level | 635 | 635 | **635** (twice) |
+     | code, fixed 500, targeting the pickup item only | 635 | **0** | **0** (lost) |
+     | code, 10%, minimum net subtotal 9000 | 1150 | **0** | **0** (lost) |
+
+     The discount total is read before the move and after it (both carts). On a difference of 1 Ft or more, the lines go back and the placement stops with `split_discount_changed`. The storefront then tells the customer to place the live animal in a separate cart or to remove the coupon (`RENDELES_KEDVEZMENY_BONTAS`).
+   - **For whoever adds an automatic promotion:** an automatic fixed cart-level promotion changes the discount of every mixed cart, so every mixed cart would be refused. Stage has none: acrobot measured the promotion table on 2026-09-29, and the only codes are not automatic. Medusa 2.20.1 cannot keep an automatic promotion off one cart: the cart promotion workflow does not pass `prevent_auto_promotions` on.
+   - The subtotal rule of a promotion reads the **net** subtotal: 12 × 1000 Ft gross (net 9449) meets a 9000 minimum, 11 × (net 8661) does not.
 2. **Set the pickup cart's shipping:** the store pickup (`ACROPORA_SO_PICKUP`).
 3. **Re-make the shipped cart's payment:** the method the customer chose, read from the cart and never sent by the client.
    - Moving lines changes the total, and Medusa then deletes the payment session, so it is created again.

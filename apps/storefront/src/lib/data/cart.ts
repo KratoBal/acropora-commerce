@@ -6,6 +6,7 @@ import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
   fizetesUzenet,
+  rendelesHibaUzenet,
   rendelesUzenet,
   szallitasUzenet,
 } from "@lib/util/penztar-uzenet"
@@ -618,7 +619,7 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: rendelesUzenet(allapot) }
+    return { ok: false, uzenet: rendelesHibaUzenet(hiba) }
   }
 
   const cartCacheTag = await getCacheTag("carts")

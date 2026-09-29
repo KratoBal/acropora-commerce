@@ -77,4 +77,28 @@ export function rendelesUzenet(allapot: number | undefined): string {
   return vagas(allapot, RENDELES_ELUTASITVA, RENDELES_MOST_NEM_SIKERULT)
 }
 
+/**
+ * A HATTER KODJA, HA A KET RENDELESRE BONTAS MEGVALTOZTATNA A KEDVEZMENYT
+ * (P4-3c, acrobot dontese 2026-09-29). A Medusa a kedvezmenyt kosaronkent
+ * szamolja: egy csak az egesz kosarra teljesulo kupon (minimum-osszeg, vagy
+ * csak az elo allatra szolo) a bontas utan elveszne. Ilyenkor semmi nem adodik
+ * le, es a vevo megtudja, mit tehet.
+ */
+export const BONTAS_KEDVEZMENY_KOD = "split_discount_changed"
+
+export const RENDELES_KEDVEZMENY_BONTAS =
+  "Az élő állat miatt a kosarad két rendelésre bomlik, és így a kedvezmény nem érvényesíthető ugyanúgy. Add le az élő állatot külön kosárban, vagy távolítsd el a kupont, és próbáld újra."
+
+/**
+ * A leadas hibajanak mondata: a bontas kedvezmeny-kodjara a sajat mondata
+ * (itt biztonsagos az ujraprobalas, mert semmi nem adodott le), minden masra a
+ * mai vagas.
+ */
+export function rendelesHibaUzenet(hiba: unknown): string {
+  const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
+  return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
+    ? RENDELES_KEDVEZMENY_BONTAS
+    : rendelesUzenet(hibaAllapota(hiba))
+}
+
 export { hibaAllapota }
