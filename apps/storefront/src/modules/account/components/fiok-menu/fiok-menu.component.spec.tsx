@@ -20,6 +20,10 @@ import FiokMenu, { FiokFej } from "."
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  // Az utvonal a teszt vegen MINDIG visszaall, akkor is, ha egy allitas
+  // elbukott: kulonben atszivarog a kovetkezo tesztbe (a P5-2 kalibracio F1
+  // rontasa igy adott egy hamis, masodlagos pirosat).
+  nav.utvonal = "/hu/account/profile"
 })
 
 /**
@@ -57,7 +61,6 @@ describe("a fiók menüje", () => {
       "Címek",
     ])
     expect(fulek[2].getAttribute("aria-current")).toBe("page")
-    nav.utvonal = "/hu/account/profile"
   })
 
   it("a kijelentkezés kilépést hív, az országkóddal", () => {
