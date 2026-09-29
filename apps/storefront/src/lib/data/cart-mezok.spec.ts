@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-const sdk = vi.hoisted(() => ({ client: { fetch: vi.fn(async () => ({ cart: { id: "cart_1" } })) } }))
+const sdk = vi.hoisted(() => ({
+  client: { fetch: vi.fn(async () => ({ cart: { id: "cart_1" } })) },
+}))
 vi.mock("@lib/config", () => ({ sdk }))
 vi.mock("./cookies", () => ({
   getAuthHeaders: vi.fn(async () => ({})),
