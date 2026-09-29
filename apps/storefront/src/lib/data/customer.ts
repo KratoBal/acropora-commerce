@@ -7,6 +7,7 @@ import {
   regisztracioHiba,
 } from "@lib/util/aszf"
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
+import { alapertelmezettUrlapbol, cimNevUrlapbol } from "@lib/util/cim"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { FetchError } from "@medusajs/js-sdk"
@@ -348,7 +349,10 @@ export const addCustomerAddress = async (
     country_code: formData.get("country_code") as string,
     phone: formData.get("phone") as string,
     is_default_billing: isDefaultBilling,
-    is_default_shipping: isDefaultShipping,
+    is_default_shipping:
+      alapertelmezettUrlapbol(formData, isDefaultShipping) ?? false,
+    // P5 (257:51): the address's own name ("Otthon"), when the form has it.
+    address_name: cimNevUrlapbol(formData) ?? undefined,
   }
 
   const headers = {
@@ -363,7 +367,7 @@ export const addCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: err.toString() }
+      return { success: false, error: authHibaSzoveg(err) }
     })
 }
 
@@ -415,6 +419,14 @@ export const updateCustomerAddress = async (
     address.phone = phone
   }
 
+  // P5 (257:51): the name and the default flag, only when the form has them.
+  const cimNev = cimNevUrlapbol(formData)
+  if (cimNev !== undefined) address.address_name = cimNev
+  const alapertelmezett = alapertelmezettUrlapbol(formData, undefined)
+  if (alapertelmezett !== undefined) {
+    address.is_default_shipping = alapertelmezett
+  }
+
   const headers = {
     ...(await getAuthHeaders()),
   }
@@ -427,6 +439,6 @@ export const updateCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: err.toString() }
+      return { success: false, error: authHibaSzoveg(err) }
     })
 }

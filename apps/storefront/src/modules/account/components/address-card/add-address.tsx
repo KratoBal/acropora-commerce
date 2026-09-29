@@ -1,6 +1,5 @@
 "use client"
 
-import { Plus } from "@medusajs/icons"
 import { Button, Heading } from "@modules/common/components/ui"
 import { useActionState, useEffect, useState } from "react"
 
@@ -12,8 +11,11 @@ import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
 
+import CimMezok from "../cim-mezok"
+
 const AddAddress = ({
   region,
+  addresses,
 }: {
   region: HttpTypes.StoreRegion
   addresses: HttpTypes.StoreCustomerAddress[]
@@ -46,13 +48,14 @@ const AddAddress = ({
 
   return (
     <>
+      {/* Az "Új cím" gomb (257:85; mobilon a lista alatt, 257:267). */}
       <button
-        className="border border-ui-border-base rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between"
+        type="button"
+        className="flex h-[46px] w-full items-center justify-center bg-acr-heritage font-acr-sans text-[13.5px] font-semibold text-acr-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--acr-color-heritage)] small:h-[44px] small:w-[120px]"
         onClick={open}
         data-testid="add-address-button"
       >
-        <span className="text-base-semi">Új cím</span>
-        <Plus />
+        Új cím
       </button>
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
@@ -62,6 +65,7 @@ const AddAddress = ({
         <form action={formAction}>
           <Modal.Body>
             <div className="flex flex-col gap-y-2">
+              <CimMezok alapertelmezett={addresses.length === 0} />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="Keresztnév"

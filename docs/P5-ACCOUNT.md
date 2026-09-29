@@ -100,3 +100,35 @@ Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-pro
 
 **The stage test account** (acrobot, 2026-09-29): `teszt+p5@acropora.hu`, "Teszt P5", created through the stage storefront once it ran #411. Read back through the store API, the customer carries `metadata.aszf_elfogadas`, with the version, the submit time and the document address. The account stays for the later P5 items. Its password is kept outside the repo.
 
+
+## 3. Addresses (`257:51`; mobile `257:242`)
+
+| Element | Figma | Built |
+|---|---|---|
+| Top row (`257:83`) | "Mentett szállítási címek" 600/20; "Új cím" 120 × 44 heritage on the right | same. Mobile: no heading; "Új cím" full width under the list (`257:267`). |
+| Card (`257:87`) | white, border, 18 px padding, 8 px gaps, as wide as its content; the name 600/15 with "ALAPÉRTELMEZETT" 600/9.5 heritage beside it; one address line 13 px slate; "Szerkesztés" heritage, "Törlés" slate | same |
+| Mobile card (`257:258`) | 12 px padding, 6 px gaps, as wide as its content; name, address, then the badge, then "Szerkesztés · Törlés" in heritage | same |
+
+- **The card's name** is the Medusa address's own name (`address_name`, "Otthon"). Without one, the recipient's name (last first); without that, "Cím".
+- **The line** is "1111 Budapest, Minta utca 12." (postal code and city, then the street lines).
+- **The default address** (`is_default_shipping`) comes first and carries the badge.
+- **Two new fields** in the add and edit dialogs, because the card needs them and Medusa has the fields:
+  - "A cím neve" (an emptied name clears it: `null`);
+  - an "Alapértelmezett szállítási cím" checkbox. A hidden `alapertelmezett_mezo` input tells the save that the checkbox was on the form, since an unchecked box sends nothing. A customer's first address is ticked by default.
+- **The billing address editor** calls the same save actions without these fields. The actions read them only when the form has them, so that caller keeps its own flags.
+- **Errors** from saving an address are Hungarian (`authHibaSzoveg`), not the raw server text.
+- **Left out** (no frame): the add/edit dialog has no CANONICAL frame. It stays the existing dialog, with the two new fields added; its look is not redesigned (`P5-LEFT-OUT.md`).
+
+Measured locally against stage on 2026-09-29, signed in as the stage test account, after adding "Otthon" (default) and "Munkahely" through the dialog:
+
+| | Figma | Ours |
+|---|---|---|
+| "Otthon" card, desktop | 214 × 107 | 215 × 107 |
+| "Munkahely" card, desktop | 201 × 107 | 204 × 107 |
+| "Új cím", desktop | 120 × 44 | 120 × 44 |
+| cards, mobile | 189 × 105, 177 × 87 | 197 × 105, 184 × 87 |
+| "Új cím", mobile | y 375, 326 wide | y 375, 358 wide (the page's 16 px gutter) |
+
+No horizontal scroll at 390 px. The two addresses stay on the test account.
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-cimek-1440-figma-balra.png`, `p5-cimek-390-figma-balra.png`.
