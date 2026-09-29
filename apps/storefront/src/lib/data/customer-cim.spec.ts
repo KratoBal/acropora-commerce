@@ -102,4 +102,63 @@ describe("a cím mentése", () => {
     expect(valasz.success).toBe(false)
     expect(valasz.error).not.toContain("Boom")
   })
+
+  /*
+   * HIBANAL A BEKULDOTT CIM VISSZAJON (a #418 mintajara): a React 19 az action
+   * utan alaphelyzetbe allitja az ablak urlapjat, es a mezok ebbol toltodnek.
+   */
+  it("felvételi hibánál visszaadja a beküldött címet, a pipával", async () => {
+    sdk.store.customer.createAddress.mockRejectedValue(new Error("Boom"))
+    const valasz = await addCustomerAddress(
+      {},
+      urlap({
+        ...CIM,
+        address_name: "Otthon",
+        alapertelmezett_mezo: "1",
+        is_default_shipping: "on",
+      }),
+    )
+    expect(valasz.ertekek).toEqual({
+      address_name: "Otthon",
+      first_name: "Anna",
+      last_name: "Minta",
+      company: "",
+      address_1: "Minta utca 12.",
+      address_2: "",
+      postal_code: "1111",
+      city: "Budapest",
+      province: "",
+      country_code: "hu",
+      phone: "",
+      is_default_shipping: "on",
+    })
+  })
+
+  it("szerkesztési hibánál a beírt értéket adja vissza, a bejelöletlen pipát üresen", async () => {
+    sdk.store.customer.updateAddress.mockRejectedValue(new Error("Boom"))
+    const valasz = await updateCustomerAddress(
+      {},
+      urlap({
+        ...CIM,
+        city: "Szeged",
+        addressId: "addr_1",
+        alapertelmezett_mezo: "1",
+      }),
+    )
+    expect(valasz.success).toBe(false)
+    expect(valasz.ertekek).toMatchObject({
+      city: "Szeged",
+      is_default_shipping: "",
+    })
+  })
+
+  it("sikeres mentésnél nincs visszatöltés", async () => {
+    expect(await addCustomerAddress({}, urlap(CIM))).toEqual({
+      success: true,
+      error: null,
+    })
+    expect(
+      await updateCustomerAddress({}, urlap({ ...CIM, addressId: "addr_1" })),
+    ).toEqual({ success: true, error: null })
+  })
 })

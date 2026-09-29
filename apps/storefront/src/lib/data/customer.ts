@@ -7,7 +7,11 @@ import {
   regisztracioHiba,
 } from "@lib/util/aszf"
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
-import { alapertelmezettUrlapbol, cimNevUrlapbol } from "@lib/util/cim"
+import {
+  alapertelmezettUrlapbol,
+  cimNevUrlapbol,
+  cimUrlapErtekek,
+} from "@lib/util/cim"
 import {
   jelszoCsereHiba,
   ROSSZ_JELENLEGI_JELSZO,
@@ -518,10 +522,18 @@ export async function transferCart() {
   revalidateTag(cartCacheTag)
 }
 
+// `ertekek`: the submitted values on error, so the dialog refills after
+// React 19 resets the form (as #418 does for the other account forms).
+export type CimMentesAllapot = {
+  success: boolean
+  error: string | null
+  ertekek?: Record<string, string>
+}
+
 export const addCustomerAddress = async (
   currentState: Record<string, unknown>,
   formData: FormData,
-): Promise<{ success: boolean; error: string | null }> => {
+): Promise<CimMentesAllapot> => {
   const isDefaultBilling = (currentState.isDefaultBilling as boolean) || false
   const isDefaultShipping = (currentState.isDefaultShipping as boolean) || false
 
@@ -555,7 +567,11 @@ export const addCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: authHibaSzoveg(err) }
+      return {
+        success: false,
+        error: authHibaSzoveg(err),
+        ertekek: cimUrlapErtekek(formData),
+      }
     })
 }
 
@@ -581,12 +597,16 @@ export const deleteCustomerAddress = async (
 export const updateCustomerAddress = async (
   currentState: Record<string, unknown>,
   formData: FormData,
-): Promise<{ success: boolean; error: string | null }> => {
+): Promise<CimMentesAllapot> => {
   const addressId =
     (currentState.addressId as string) || (formData.get("addressId") as string)
 
   if (!addressId) {
-    return { success: false, error: "Address ID is required" }
+    return {
+      success: false,
+      error: "Address ID is required",
+      ertekek: cimUrlapErtekek(formData),
+    }
   }
 
   const address = {
@@ -627,6 +647,10 @@ export const updateCustomerAddress = async (
       return { success: true, error: null }
     })
     .catch((err) => {
-      return { success: false, error: authHibaSzoveg(err) }
+      return {
+        success: false,
+        error: authHibaSzoveg(err),
+        ertekek: cimUrlapErtekek(formData),
+      }
     })
 }

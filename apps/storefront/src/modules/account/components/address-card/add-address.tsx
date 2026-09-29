@@ -3,7 +3,7 @@
 import { Button, Heading } from "@modules/common/components/ui"
 import { useActionState, useEffect, useState } from "react"
 
-import { addCustomerAddress } from "@lib/data/customer"
+import { addCustomerAddress, type CimMentesAllapot } from "@lib/data/customer"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { HttpTypes } from "@medusajs/types"
 import CountrySelect from "@modules/checkout/components/country-select"
@@ -26,7 +26,9 @@ const AddAddress = ({
   const [formState, formAction] = useActionState(addCustomerAddress, {
     success: false,
     error: null,
-  } as { success: boolean; error: string | null })
+  } as CimMentesAllapot)
+  // A failed save refills from the submitted values (React 19 resets the form).
+  const beirt = formState.error ? formState.ertekek : undefined
 
   const close = () => {
     setSuccessState(false)
@@ -65,11 +67,19 @@ const AddAddress = ({
         <form action={formAction}>
           <Modal.Body>
             <div className="flex flex-col gap-y-2">
-              <CimMezok alapertelmezett={addresses.length === 0} />
+              <CimMezok
+                nev={beirt?.address_name}
+                alapertelmezett={
+                  beirt
+                    ? beirt.is_default_shipping === "on"
+                    : addresses.length === 0
+                }
+              />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="Keresztnév"
                   name="first_name"
+                  defaultValue={beirt?.first_name}
                   required
                   autoComplete="given-name"
                   data-testid="first-name-input"
@@ -77,6 +87,7 @@ const AddAddress = ({
                 <Input
                   label="Vezetéknév"
                   name="last_name"
+                  defaultValue={beirt?.last_name}
                   required
                   autoComplete="family-name"
                   data-testid="last-name-input"
@@ -85,12 +96,14 @@ const AddAddress = ({
               <Input
                 label="Cégnév"
                 name="company"
+                  defaultValue={beirt?.company}
                 autoComplete="organization"
                 data-testid="company-input"
               />
               <Input
                 label="Cím"
                 name="address_1"
+                  defaultValue={beirt?.address_1}
                 required
                 autoComplete="address-line1"
                 data-testid="address-1-input"
@@ -98,6 +111,7 @@ const AddAddress = ({
               <Input
                 label="Emelet, ajtó stb."
                 name="address_2"
+                  defaultValue={beirt?.address_2}
                 autoComplete="address-line2"
                 data-testid="address-2-input"
               />
@@ -105,6 +119,7 @@ const AddAddress = ({
                 <Input
                   label="Irányítószám"
                   name="postal_code"
+                  defaultValue={beirt?.postal_code}
                   required
                   autoComplete="postal-code"
                   data-testid="postal-code-input"
@@ -112,6 +127,7 @@ const AddAddress = ({
                 <Input
                   label="Város"
                   name="city"
+                  defaultValue={beirt?.city}
                   required
                   autoComplete="locality"
                   data-testid="city-input"
@@ -120,12 +136,14 @@ const AddAddress = ({
               <Input
                 label="Megye / állam"
                 name="province"
+                  defaultValue={beirt?.province}
                 autoComplete="address-level1"
                 data-testid="state-input"
               />
               <CountrySelect
                 region={region}
                 name="country_code"
+                defaultValue={beirt?.country_code}
                 required
                 autoComplete="country"
                 data-testid="country-select"
@@ -133,6 +151,7 @@ const AddAddress = ({
               <Input
                 label="Telefonszám"
                 name="phone"
+                  defaultValue={beirt?.phone}
                 autoComplete="phone"
                 data-testid="phone-input"
               />

@@ -69,3 +69,32 @@ export function alapertelmezettUrlapbol(
   if (!urlap.has("alapertelmezett_mezo")) return eddigi
   return urlap.get("is_default_shipping") === "on"
 }
+
+/** A cim-ablakok szoveges mezoi, ahogy az urlap kuldi oket. */
+const CIM_URLAP_MEZOK = [
+  "address_name",
+  "first_name",
+  "last_name",
+  "company",
+  "address_1",
+  "address_2",
+  "postal_code",
+  "city",
+  "province",
+  "country_code",
+  "phone",
+] as const
+
+/**
+ * A BEKULDOTT CIM, hibanal visszaadva (a #418 mintajara): a React 19 az action
+ * utan alaphelyzetbe allitja az urlapot, es a mezok ebbol toltodnek vissza. A
+ * pipa "on" vagy ures.
+ */
+export function cimUrlapErtekek(urlap: FormData): Record<string, string> {
+  const ertekek: Record<string, string> = {}
+  for (const nev of CIM_URLAP_MEZOK) ertekek[nev] = String(urlap.get(nev) ?? "")
+  ertekek.is_default_shipping =
+    urlap.get("is_default_shipping") === "on" ? "on" : ""
+  return ertekek
+}
+
