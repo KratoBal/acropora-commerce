@@ -25,6 +25,9 @@ When the email provider is decided, these three come together. The order-status 
 
 - **Two name fields at registration** (Vezetéknév, Keresztnév) instead of one "Név". The Medusa customer and invoices keep them apart. (P5-ACCOUNT, 1)
 - **Auth mobile header:** the frame has its own (back arrow and logo); the P1b header stays. (P5-ACCOUNT, 1)
+- **Two name fields on the profile** too, and the **email is read-only**: the store API does not update it. (P5-ACCOUNT, 2)
+- **The mobile account tabs include Rendeléseim**, which the frame's tab row leaves out. (P5-ACCOUNT, 2)
+- **Kijelentkezés** is added under the menu; the frame has no sign-out. (P5-ACCOUNT, 2)
 
 ## Still to be measured with their PRs
 
@@ -33,6 +36,5 @@ These come from the P5 inventory and are confirmed or corrected when their scree
   - fulfillment groups (Foxpost / GLS / pickup) are P4 background;
   - invoice download and parcel tracking have no data;
   - the "ACR-2026-…" order number is Medusa's display id today.
-- **Profile:** the email is read-only, because the store API's customer update excludes it.
 - **Billing:** the tax number goes into the billing address's metadata under one documented key, `tax_id`, checked against the Hungarian 8-1-2 form (acrobot, 2026-09-29).
 - **Settings, password change:** there is no store route for a signed-in customer; it needs its own backend route.
