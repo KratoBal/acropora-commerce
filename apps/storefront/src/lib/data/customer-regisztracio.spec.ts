@@ -75,8 +75,39 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     expect(valasz).toEqual({
       state: "error",
       error: "A két jelszó nem egyezik.",
+      ertekek: {
+        last_name: "Minta",
+        first_name: "Anna",
+        email: "vevo@example.hu",
+        aszf: "on",
+      },
     })
     expect(sdk.auth.register).not.toHaveBeenCalled()
+  })
+
+  /*
+   * A HIBA A BEIRT ERTEKEKET VISSZAADJA (a React 19 az action utan alaphelyzetbe
+   * allitja az urlapot, es ezekbol toltodik vissza), a JELSZAVAKAT NEM. A
+   * szerver hibaja (letezo fiok) is, nem csak az ellenorzese.
+   */
+  it("a szerver hibájánál is visszaadja a beírt értékeket, a jelszavakat nem", async () => {
+    sdk.auth.register.mockRejectedValue(new Error("Something broke"))
+    const valasz = await signup(null, urlap(JO))
+    expect(valasz).toMatchObject({
+      state: "error",
+      ertekek: {
+        last_name: "Minta",
+        first_name: "Anna",
+        email: "vevo@example.hu",
+        aszf: "on",
+      },
+    })
+    expect(JSON.stringify(valasz)).not.toContain("titok123")
+  })
+
+  it("sikeres regisztrációnál nincs visszatöltés", async () => {
+    const valasz = await signup(null, urlap(JO))
+    expect(valasz).toEqual({ state: "success" })
   })
 
   it("az elfogadás időbélyeggel és verzióval a vevő metadata mezőjébe kerül", async () => {
@@ -127,6 +158,8 @@ describe("a belépés hibája a vevő felé", () => {
     expect(valasz).toEqual({
       state: "error",
       error: "Hibás e-mail-cím vagy jelszó.",
+      ertekek: { email: "vevo@example.hu" },
     })
+    expect(JSON.stringify(valasz)).not.toContain("rossz")
   })
 })

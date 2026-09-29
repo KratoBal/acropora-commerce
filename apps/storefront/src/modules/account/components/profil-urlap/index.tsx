@@ -22,6 +22,9 @@ export default function ProfilUrlap({
   customer: HttpTypes.StoreCustomer
 }) {
   const [allapot, mentes] = useActionState(saveProfile, null)
+  // After a failed save the fields keep what was typed, not the saved values:
+  // React 19 resets the form after the action.
+  const beirt = allapot?.state === "error" ? allapot.ertekek : undefined
 
   return (
     <form
@@ -35,7 +38,7 @@ export default function ProfilUrlap({
           name="last_name"
           required
           autoComplete="family-name"
-          defaultValue={customer.last_name ?? ""}
+          defaultValue={beirt?.last_name ?? customer.last_name ?? ""}
           data-testid="last-name-input"
         />
         <AuthMezo
@@ -43,7 +46,7 @@ export default function ProfilUrlap({
           name="first_name"
           required
           autoComplete="given-name"
-          defaultValue={customer.first_name ?? ""}
+          defaultValue={beirt?.first_name ?? customer.first_name ?? ""}
           data-testid="first-name-input"
         />
       </div>
@@ -70,7 +73,7 @@ export default function ProfilUrlap({
           name="phone"
           type="tel"
           autoComplete="tel"
-          defaultValue={customer.phone ?? ""}
+          defaultValue={beirt?.phone ?? customer.phone ?? ""}
           data-testid="phone-input"
         />
       </div>

@@ -15,6 +15,9 @@ type Props = {
  */
 const Login = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(login, null)
+  // A failed sign-in keeps the email (React 19 resets the form after the
+  // action); the password is typed again.
+  const beirt = message?.state === "error" ? message.ertekek : undefined
 
   return (
     <AuthKartya
@@ -40,6 +43,7 @@ const Login = ({ setCurrentView }: Props) => {
           title="Adj meg érvényes e-mail-címet."
           autoComplete="email"
           required
+          defaultValue={beirt?.email ?? ""}
           data-testid="email-input"
         />
         <AuthMezo

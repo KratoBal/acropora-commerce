@@ -38,6 +38,7 @@ describe("a profil mentése", () => {
     expect(valasz).toEqual({
       state: "error",
       error: "A vezetéknév és a keresztnév kötelező.",
+      ertekek: { first_name: "", last_name: "Minta", phone: "" },
     })
     expect(sdk.store.customer.update).not.toHaveBeenCalled()
   })
@@ -82,5 +83,9 @@ describe("a profil mentése", () => {
     )
     expect(valasz?.state).toBe("error")
     expect(JSON.stringify(valasz)).not.toContain("Something broke")
+    // The typed values come back, so the form refills after the reset.
+    expect(valasz).toMatchObject({
+      ertekek: { first_name: "Anna", last_name: "Minta", phone: "" },
+    })
   })
 })

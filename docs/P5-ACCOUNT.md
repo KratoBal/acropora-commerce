@@ -228,7 +228,7 @@ The menu gets its fourth item, "Számlázási adatok" ("Számlázás" on mobile,
 1. **After a failed save, every field emptied.** The error state now returns the submitted values, and the fields refill from them.
 2. **The radio pair jumped back to "Magánszemély" in the DOM** while the page still showed "Cég", so a company saved as a private person. The type is now sent by a hidden field from React state; the radios only drive the state.
 
-The same reset also empties the registration form after an error (#411), and puts the profile form (#412) back to its saved values. That is a separate follow-up.
+The same reset also emptied the registration form after an error (#411), and put the profile form (#412) back to its saved values. Fixed in its own PR, see "Form reset after a failed submit" below.
 
 **Deviations:**
 - the address in two fields (Medusa keeps city and street apart; splitting one field would be a guess);
@@ -242,3 +242,26 @@ The same reset also empties the registration form after an error (#411), and put
 - **Size:** 1440: card 842 wide; 390: no card; no horizontal scroll.
 
 Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-szamlazas-1440-figma-balra.png`, `p5-szamlazas-390-figma-balra.png`.
+
+
+## Form reset after a failed submit (#411, #412, sign-in)
+
+React 19 resets a form after its action. Uncontrolled fields go back to their `defaultValue`. Without a fix, a failed submit therefore:
+
+- **emptied the registration form** — every field and the ÁSZF tick;
+- **emptied the sign-in email;**
+- **put the profile back to the saved values,** so an edit that failed looked as if it had never been typed.
+
+**The fix is the one billing uses.** The error state carries `ertekek`, the submitted values, and the fields take their `defaultValue` from them.
+
+**The passwords are never sent back;** they are typed again. The tests check that the password text is not in the response.
+
+**The tests run React's real submit in jsdom.** The action is mocked to return an error. With the component fix removed, all three are red:
+- registration and sign-in come back empty;
+- the profile comes back with the saved name.
+
+So the test sees the reset itself, not a hand-set state.
+
+**Not covered here:**
+- **the address modals** (`address-card/add-address.tsx`, `edit-address-modal.tsx`). They are template forms with the same shape; their errors come only from the server.
+- **the checkout address form (P4).** It is not a P5 form.
