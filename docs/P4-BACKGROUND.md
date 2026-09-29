@@ -69,8 +69,33 @@ During checkout the cart stays **one cart**, so the cart page shows everything. 
 
 **The state between 2a1 and 2a2, on stage:** a mixed cart shows courier options and cannot be completed, because the split completion does not exist yet. Before 2a1 the same cart completed as one pickup order. Merging 2a1 and 2a2 close together keeps that window short.
 
+### 2a2. The split completion: `POST /store/carts/:id/complete-split`
+
+The storefront places every cart through this route; the core complete route refuses a mixed cart (2a1). A cart that is not mixed becomes one order, exactly as before.
+
+**For a mixed cart** (`completeSplitCart` in `split-completion.ts`; the Medusa calls are in `split-completion-operations.ts`):
+1. **Move the pickup lines.** They go to a new pickup cart with the same customer, region, channel and addresses, linked both ways in metadata (`acropora_pickup_cart_id`, `acropora_parent_cart_id`). The promotion codes are applied to it where they are valid.
+2. **Set the pickup cart's shipping:** the store pickup (`ACROPORA_SO_PICKUP`).
+3. **Re-make the shipped cart's payment:** the method the customer chose, read from the cart and never sent by the client.
+   - Moving lines changes the total, and Medusa then deletes the payment session, so it is created again.
+   - The cash-on-delivery fee is brought in line, repeating until both are settled.
+4. **Complete the shipped cart first.** If that fails, the pickup lines move back, and the customer is where they were. The emptied pickup cart stays linked and is reused next time.
+5. **Then the pickup cart,** with payment in the shop (`ACROPORA_PP_PAY_AT_STORE`). If that fails, the shipped order stands, the answer names the pickup cart as pending, and a repeated call finishes it.
+6. **Link the two orders** both ways in metadata (`acropora_pickup_order_id`, `acropora_parent_order_id`). The link is written through the order module's `updateOrders`, because `updateOrderWorkflow` requires an admin user.
+
+**Every step is safe to repeat.** A second call never makes a third cart or a second order.
+
+**Refused before anything moves:**
+- a mixed cart without a payment choice;
+- payment in the shop not configured.
+
+**The answer:** `{ orders: [{ id, display_id }], pending_pickup_cart_id }`, the shipped order first.
+
+**Measured and not measured:**
+- The order of the steps, the rollback and the repeat behaviour are unit-tested on an in-memory shop.
+- The Medusa calls themselves (cart creation, line moves, payment re-creation, the fee settling, both completions, the link) cannot run locally. They are measured on stage after merge, with a test cart: one pickup-only product and one ordinary product, cash on delivery.
+
 ### Still to come
-- **2a2:** the split completion endpoint. It moves the pickup lines to a new cart linked in metadata, gives it the store pickup and payment in the shop, completes the shipped cart, then the pickup cart, and links the two orders in metadata. It moves the lines back if the first completion fails, and it is idempotent.
 - **2b:** the storefront. The notice on the cart page and at placement, the two parts in the existing checkout step, and a hint on the two orders in the account that they come from one placement.
 - **One SimplePay transaction for both orders:** part of P4-3.
 
