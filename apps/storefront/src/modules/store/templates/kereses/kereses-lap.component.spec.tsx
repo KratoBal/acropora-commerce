@@ -15,6 +15,12 @@ const adat = vi.hoisted(() => ({
 vi.mock("@lib/data/products", () => adat)
 const kereses = vi.hoisted(() => ({ keresesTalalatok: vi.fn() }))
 vi.mock("@lib/data/termek-kereses", () => kereses)
+// A nulla-talalat lap (4b) sajat adatot ker; a sajat spec meri, itt ures.
+vi.mock("@lib/data/regions", () => ({ getRegion: vi.fn(async () => null) }))
+vi.mock("@lib/data/categories", () => ({
+  listNonEmptyRootCategories: vi.fn(),
+  listCategoryIdsWithDescendants: vi.fn(),
+}))
 // A kartya gombja a kosar szerver-muveletet importalja; itt nem hivodik.
 vi.mock("@lib/data/cart", () => ({ addToCart: vi.fn() }))
 
@@ -164,7 +170,7 @@ describe("a keresési találatok lapja", () => {
     expect(String(hivas.queryParams.fields)).toContain("*collection")
   })
 
-  it("nulla találatnál nincs lekérdezés, és a keresést kimondja", async () => {
+  it("nulla találatnál a nincs-találat lap áll, lekérdezés nélkül", async () => {
     kereses.keresesTalalatok.mockResolvedValue({
       ids: [],
       count: 0,
@@ -172,17 +178,24 @@ describe("a keresési találatok lapja", () => {
     })
     await lap()
     expect(adat.listProductsWithSort).not.toHaveBeenCalled()
-    expect(screen.getByTestId("kereses-nincs-talalat").textContent).toBe(
-      "Erre a keresésre nincs találat: led",
+    expect(adat.listProducts).not.toHaveBeenCalled()
+    expect(screen.getByTestId("store-page-title").textContent).toBe(
+      "Nincs találat",
     )
+    expect(
+      (screen.getByRole("searchbox", { name: "Keresés" }) as HTMLInputElement)
+        .defaultValue,
+    ).toBe("led")
+    expect(screen.getByTestId("kereses-nincs-talalat")).toBeTruthy()
   })
 
   it("üres szűrt halmaznál sincs lekérdezés, és a szűrőt nevezi meg", async () => {
     await lap({ gyoker: "korall", markak: ["ati"] })
     expect(adat.listProductsWithSort).not.toHaveBeenCalled()
-    expect(screen.getByTestId("kereses-nincs-talalat").textContent).toBe(
+    expect(screen.getByTestId("kereses-szurt-ures").textContent).toBe(
       "A szűrőkkel együtt nincs találat.",
     )
+    expect(screen.queryByTestId("kereses-nincs-talalat")).toBeNull()
   })
 
   it("a hol tartunk sor és a További találatok a következő lapra visz", async () => {

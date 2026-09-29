@@ -13,6 +13,8 @@ import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import MarkaLista from "@modules/categories/templates/commerce/marka-lista"
 import CommerceRendezes from "@modules/categories/templates/commerce/rendezes"
 import CommerceTermekKartya from "@modules/categories/templates/commerce/termek-kartya"
+
+import NincsTalalatLap from "./nincs-talalat-lap"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -68,6 +70,8 @@ export default async function KeresesLap({
   markak?: string[]
 }) {
   const talalat = await keresesTalalatok(kereses)
+  // NULLA TALALAT: sajat lap (253:57), tippekkel es kategoriakkal (P2, 4b).
+  if (talalat.count === 0) return NincsTalalatLap({ kereses, countryCode })
   const adatok = await talalatAdatok(talalat.ids, countryCode)
   const gyokerek = gyokerSorok(adatok)
   // A Márka lista a kivalasztott gyoker talalataibol szamol, a markatol fuggetlenul.
@@ -277,11 +281,9 @@ export default async function KeresesLap({
           {products.length === 0 ? (
             <p
               className="text-[14px] text-acr-slate"
-              data-testid="kereses-nincs-talalat"
+              data-testid="kereses-szurt-ures"
             >
-              {talalat.count === 0
-                ? `Erre a keresésre nincs találat: ${kereses}`
-                : "A szűrőkkel együtt nincs találat."}
+              A szűrőkkel együtt nincs találat.
             </p>
           ) : (
             <ul
