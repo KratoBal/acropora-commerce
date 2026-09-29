@@ -226,6 +226,25 @@ describe("when a step fails", () => {
     ])
   })
 
+  // A move that stopped half way (added to the pickup cart, not yet removed
+  // from the shipped one) must not put the live animal on the pickup order
+  // twice when the call is repeated.
+  it("a repeated call after a half-done move does not add the lines twice", async () => {
+    const shop = vegyes()
+    shop.failOn.add("deleteLines cart_1 l2")
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow(
+      "deleteLines cart_1 l2 failed"
+    )
+    shop.failOn.clear()
+
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+
+    expect(result.order_ids).toHaveLength(2)
+    expect(
+      shop.carts.get("cart_pickup_1")!.items.map((l) => [l.variant_id, l.quantity])
+    ).toEqual([["v_korall", 2]])
+  })
+
   it("a failed pickup completion keeps the shipped order and names the pickup cart", async () => {
     const shop = vegyes()
     shop.failOn.add("complete cart_pickup_1")
