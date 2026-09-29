@@ -39,7 +39,7 @@ describe("a kosár-hivatkozás a fejlécben", () => {
     expect(szam!.className).not.toContain("hidden")
   })
 
-  it("a Kosár szó kis méreten rejtve áll, lg-től látszik", () => {
+  it("a Kosár szó kis méreten rejtve áll, a fejléc töréspontjától (small) látszik", () => {
     const { container } = render(<KosarLink darab={3} />)
 
     const szo = szoSpanja(container)
@@ -48,7 +48,7 @@ describe("a kosár-hivatkozás a fejlécben", () => {
     expect(szo).toBeTruthy()
 
     expect(szo!.className).toContain("hidden")
-    expect(szo!.className).toContain("lg:inline")
+    expect(szo!.className).toContain("small:inline")
   })
 
   /**
@@ -88,25 +88,28 @@ describe("a kosár-hivatkozás a fejlécben", () => {
     const link = screen.getByTestId("nav-cart-link")
 
     expect(link.textContent).toContain("Kosár")
-    expect(link.textContent).toContain("·")
+    // P1b: a Figma alakja "Kosár 0" (234:38, 201:7), pont nelkul.
+    expect(link.textContent?.replace(/\s+/g, " ").trim()).toBe("Kosár 2")
     expect(link.textContent).not.toContain("Cart (")
     expect(link.textContent).not.toContain("(2)")
   })
 
   /**
-   * A GOMB GEOMETRIAJA A TERVBOL -- SZINTEN ATKOLTOZOTT ALLITAS.
-   *
-   * A kosar-gomb a keresovel AZONOS magassagu (46 pixel), es a tervben is igy
-   * all: a ket elem egy vonalban zar. A 20 pixeles belso margo (`px-5`)
-   * ugyanabbol a bejarasbol jon.
+   * A FELIRAT GEOMETRIAJA A FIGMABOL (P1b, 2026-09-29). Korabban itt a regi
+   * terv 46 pixeles, kitoltott gombja allt; a Figma fejlec-frame-jeiben a kosar
+   * egy felirat: 13 pixel, a mod cimszineben, asztalon 600-as, mobilon 500-as
+   * sulyban (234:38, 201:7; 196:10, 226:129). Doboz nincs.
    */
-  it("a gomb magassága és belső margója a tervből", () => {
+  it("a felirat mérete, színe és súlya a Figmából", () => {
     render(<KosarLink darab={0} />)
 
     const link = screen.getByTestId("nav-cart-link")
 
-    expect(link.className).toContain("h-[46px]")
-    expect(link.className).toContain("px-5")
+    expect(link.className).toContain("text-[13px]")
+    expect(link.className).toContain("text-acr-mode-heading")
+    expect(link.className).toContain("font-medium")
+    expect(link.className).toContain("small:font-semibold")
+    expect(link.className).not.toContain("h-[46px]")
   })
 
   /**

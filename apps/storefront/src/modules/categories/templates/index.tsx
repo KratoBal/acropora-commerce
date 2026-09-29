@@ -7,7 +7,11 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { HttpTypes } from "@medusajs/types"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import CategoryProducts from "./category-products"
-import { categoryPageKind, helperCopyFor } from "./category-page-data"
+import {
+  categoryPageKind,
+  categoryPageMode,
+  helperCopyFor,
+} from "./category-page-data"
 import { Breadcrumbs } from "./category-breadcrumbs"
 
 const PRODUCT_LIMIT = 12
@@ -67,7 +71,16 @@ export default function CategoryTemplate({
   const sajatRovid = nev(category)
 
   return (
-    <main className="content-container py-8" data-testid="category-container">
+    <main
+      className="content-container py-8"
+      data-testid="category-container"
+      /*
+        A FEJLEC MODJA (P1b): Reef a korall, hal es gerinctelen agon. NEM
+        data-vilag, mert az a globals.css szabalyan at a lap torzset is
+        atszinezne; ezt a jelolot csak a fejlec olvassa.
+      */
+      data-acr-mod={categoryPageMode(category)}
+    >
       <Breadcrumbs category={category} nevek={nevek} />
       <section
         className="grid gap-6 border-b pb-8 medium:grid-cols-[minmax(0,1fr)_320px]"

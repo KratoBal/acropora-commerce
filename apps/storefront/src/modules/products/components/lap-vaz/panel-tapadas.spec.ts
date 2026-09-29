@@ -59,10 +59,23 @@ describe("a jobb panel a fejléc aljához tapad", () => {
     expect(css).toContain(":root")
   })
 
-  it("a magasság EGY helyen áll, és 79 pixel", () => {
-    expect(css.match(/--fejlec-magassag:/g) ?? []).toHaveLength(1)
-    /* 78 pixeles sav a tervbol, plusz az 1 pixeles also keret. */
-    expect(css).toMatch(/--fejlec-magassag:\s*79px/)
+  /*
+    P1b (2026-09-29): A FIGMA FEJLEC-SAVJA 76 PIXEL a kerettel (234:23), a mobil
+    56 (226:123). A magassag tehat KET erteket kap, de tovabbra is egy
+    valtozoban: egy alapertek es PONTOSAN egy mobil felulirs a `small` alatti
+    media-blokkban. Egy harmadik elofordulas (peldaul egy komponensben
+    beirt szam) itt pirosodik.
+  */
+  const mobilBlokk = () => {
+    const kezd = css.indexOf("@media (max-width: 1023.98px)")
+    expect(kezd).toBeGreaterThanOrEqual(0)
+    return css.slice(kezd, css.indexOf("}\n}", kezd))
+  }
+
+  it("a magasság egy alapértékből és egy mobil felülírásból áll: 76 és 56 pixel", () => {
+    expect(css.match(/--fejlec-magassag:/g) ?? []).toHaveLength(2)
+    expect(css).toMatch(/--fejlec-magassag:\s*76px/)
+    expect(mobilBlokk()).toMatch(/--fejlec-magassag:\s*56px/)
   })
 
   /**
@@ -74,7 +87,9 @@ describe("a jobb panel a fejléc aljához tapad", () => {
    * HIANYZOTT. Egy szam, ami tobb helyen all, pontosan igy csuszik szet.
    */
   it("a teljes fejléc a két változóból számol", () => {
-    expect(css.match(/--fejlec-bizalmi-magassag:/g) ?? []).toHaveLength(1)
+    expect(css.match(/--fejlec-bizalmi-magassag:/g) ?? []).toHaveLength(2)
+    // Mobilon a Figma fejleceben nincs bizalmi sav.
+    expect(mobilBlokk()).toMatch(/--fejlec-bizalmi-magassag:\s*0px/)
     expect(css).toMatch(
       /--fejlec-teljes-magassag:\s*calc\(\s*var\(--fejlec-magassag\)\s*\+\s*var\(--fejlec-bizalmi-magassag\)/,
     )

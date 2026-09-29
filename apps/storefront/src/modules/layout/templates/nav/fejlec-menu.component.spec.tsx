@@ -2,7 +2,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { FejlecMenu } from "./fejlec-menu"
 
-vi.mock("next/navigation", () => ({ useParams: () => ({ countryCode: "hu" }) }))
+vi.mock("next/navigation", () => ({
+  useParams: () => ({ countryCode: "hu" }),
+  usePathname: () => "/hu",
+}))
 afterEach(cleanup)
 
 const root = (
@@ -249,42 +252,46 @@ describe("a kis lenyíló kategóriamenü", () => {
     ).toBe("Gébek - Halak")
   })
 
-  it("a fejléc négy gyökeret kínál, névre pontosan", () => {
+  /*
+    A LISTA ADATBOL JON (P1b, 2026-09-29). A fenti fejlec-megjegyzes nyitott
+    kerdese (`659272df`: a negy nev tartalmi szabaly volt-e) eldolt: Balazs
+    szabalya, hogy a kategoriafa adatbol jojjon, ne legyen beegetve (a P1b
+    hatokore, acrobot 24348). A menu tehat a kapott gyokereket mutatja, a kapott
+    sorrendben.
+  */
+  /** A fixtura `never`-kent tipizalt; a nevet innen olvassuk ki. */
+  const fixturaNevek = (lista: unknown[]) =>
+    lista.map((c) => (c as { name: string }).name)
+
+  it("a fejléc a kapott gyökereket kínálja, névre pontosan", () => {
     render(<FejlecMenu kategoriak={categories} />)
 
     expect(gyokerNevek().slice().sort()).toEqual(
-      ["Gerinctelenek", "Halak", "Korallok", "Termékek"].sort(),
+      fixturaNevek(categories).sort(),
     )
   })
 
-  it("a négy gyökér ebben a sorrendben áll", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+  it("a gyökerek a kapott sorrendben állnak", () => {
+    render(<FejlecMenu kategoriak={[...categories].reverse()} />)
 
-    expect(gyokerNevek()).toEqual([
-      "Termékek",
-      "Halak",
-      "Korallok",
-      "Gerinctelenek",
-    ])
+    expect(gyokerNevek()).toEqual(fixturaNevek([...categories].reverse()))
   })
 
   /**
-   * ES A TAGADAS: a lista NEM a kategoria-fabol epul.
-   *
-   * A fixtura NEGY gyokeret ad, tehat a fenti ket allitas akkor is teljesulne,
-   * ha a komponens a FABOL venne a neveket. Ez az allitas ad a fanak EGY
-   * OTODIK gyokeret, es azt varja, hogy a fejlecben NE jelenjen meg -- ez a
-   * kulonbseg a valogatott lista es a fa kozott.
+   * ES A FORDITOTTJA ANNAK, AMI ITT KORABBAN ALLT: a fa otodik gyokere IS
+   * bekerul. Korabban ez az allitas azt varta, hogy NE jelenjen meg (a kezzel
+   * valogatott lista es a fa kulonbsege). Mostantol a lista maga a fa: egy
+   * beegetett nevsor pontosan ezen buknek el.
    */
-  it("a fa ötödik gyökere NEM kerül a fejlécbe", () => {
+  it("a fa ötödik gyökere is a fejlécbe kerül", () => {
     render(
       <FejlecMenu
         kategoriak={[...categories, root("Édesvízi akvarisztika")] as never}
       />,
     )
 
-    expect(gyokerNevek()).toHaveLength(4)
-    expect(gyokerNevek()).not.toContain("Édesvízi akvarisztika")
+    expect(gyokerNevek()).toHaveLength(categories.length + 1)
+    expect(gyokerNevek()).toContain("Édesvízi akvarisztika")
   })
 
   it("a rögzített menüpont alatt megjelenik a három hasáb", () => {

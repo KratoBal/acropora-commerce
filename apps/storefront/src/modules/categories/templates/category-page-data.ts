@@ -1,4 +1,8 @@
 import { ELO_ALLAT_GYOKEREK } from "@modules/products/components/lap-vaz/vilag-valto"
+import {
+  type AcroporaMod,
+  modKategoriaUtvonalhoz,
+} from "@lib/util/acropora-mod"
 
 export type CategoryPageKind = "technical" | "livestock"
 
@@ -26,6 +30,21 @@ export function categoryPageKind(category: CategoryPathItem): CategoryPageKind {
   }
 
   return "technical"
+}
+
+/**
+ * A kategorialap MODJA a P1a szabalya szerint (`acropora-mod.ts`): a gyokertol
+ * a lapig tarto nevsor dont. A lap ezt `data-acr-mod` jelolokent teszi ki, es
+ * ma CSAK a fejlec olvassa (P1b): a lap torzse a P2-ig valtozatlan.
+ */
+export function categoryPageMode(category: CategoryPathItem): AcroporaMod {
+  const nevek: (string | null | undefined)[] = []
+  let current: CategoryPathItem | null | undefined = category
+  while (current) {
+    nevek.unshift(current.name)
+    current = current.parent_category
+  }
+  return modKategoriaUtvonalhoz(nevek)
 }
 
 export const helperCopyFor = (kind: CategoryPageKind) =>

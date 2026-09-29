@@ -81,7 +81,20 @@
 }
 
 /* Reef: sotet, a Mode Card / Reef (9:10) szerint */
-[data-vilag="sotet"] {
+/*
+ * A FEJLEC IS REEF, ha a lap sotet (P1b, 2026-09-29). A fejlec a `(main)`
+ * elrendezesben all, a lapon KIVUL, tehat a lap jeloloje nem oroklodik ra: a
+ * `:has()` hidalja at, ugyanugy, mint a `globals.css` meglevo sotet szabalya.
+ *
+ * Ket jelolo, mert ket kulon hely dont:
+ *   data-vilag="sotet"   a termeklap vaza teszi ki (a meglevo szabaly)
+ *   data-acr-mod="reef"  a kategorialap teszi ki. NEM data-vilag, mert az a
+ *                        `globals.css` szabalyan at az EGESZ lapot sotetre
+ *                        valtana, es a kategorialap torzse a P2-ig marad.
+ */
+[data-vilag="sotet"],
+body:has([data-vilag="sotet"]) [data-fejlec],
+body:has([data-acr-mod="reef"]) [data-fejlec] {
   --acr-mode-bg: var(--acr-color-abyss);
   --acr-mode-heading: var(--acr-color-white);
   --acr-mode-text: var(--acr-color-ocean-soft);
