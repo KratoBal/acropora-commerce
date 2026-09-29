@@ -79,9 +79,28 @@ The frame's other filters have no data behind them, or cannot be served by the s
 - Akvárium hossza, Korallállomány and Elérhetőség have no such data;
 - Ár cannot be served: the Medusa store API cannot filter by price band, and even price sorting reads every page today.
 
-The Márka filter comes in a separate PR.
+The Márka filter is described in the next section.
 
+## The Márka filter (`117:108`)
 
+A brand is the product's Medusa collection; on stage all 65 collections are brand names.
+
+- **Counts:** the Medusa store API has no facet counts, so the page reads the collection of **every** product in the category, with a narrow field list (`id,collection.id,collection.title`) and 100 per page. The pages after the first are fetched in parallel and go through the product list's cache.
+  - Measured on 2026-09-29 on the Termékek branch (1278 products, 13 pages): 1.98 s one after the other, from the container.
+  - In `next dev`, a cached page loaded in 0.46 s.
+  - At most 30 pages (3000 products) are read, as a guard.
+- **List:** brands with their product counts, most first. Products without a brand give no row. The first 8 are shown; the rest open in a native `<details>` ("További N márka") that works without JavaScript. On Termékek there are 47 brands.
+- **Filter:** the selection is in the URL (`?marka=<collection id>`, may repeat), so it can be shared and is rendered on the server.
+  - The product list is queried with `collection_id`.
+  - Sort, option filters and page links keep the selection.
+  - Changing a brand goes back to page 1.
+- **Active filters** (`117:197`): each selected brand as a navy chip ("Fauna Marin ×"); clicking it removes that brand. "Törlés" clears everything.
+- **Counts are per category, not cross-filtered:** a brand's number does not change when another brand is selected. The Kategória links lead to another category and do not carry the brand, because the brands there are different.
+- If reading the brands fails, the page still renders, without the Márka section.
+
+Checked live against the stage backend: selecting Fauna Marin on Termékek gives 109 products, every card on the page shows Fauna Marin, the chip appears, and the next-page link keeps the brand.
+
+## Left out, and why
 
 The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories and 65 collections.
 
@@ -89,14 +108,12 @@ The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories
 |---|---|
 | Eyebrow "TECHNIKA · TERVEZHETŐ RENDSZER" and the intro text | no category has a description (0 of 219) |
 | "Nem tudod, mi illik a rendszeredhez? / Rendszerem beállítása" | no feature behind it |
-| Márka filter | the data exists (collections), but counting brands means reading the whole category; separate small PR with its own measurement |
 | Akváriumméret, Felhasználás filters | no such field, tag, type or metadata |
 | Készlet filter | until the stock-take, zero stock does not mean sold out, so "Azonnal vihető" would be wrong |
 | Card: technical line ("SPS / LPS · 95 W") | metadata holds only `unas_*` fields |
 | Card: "AJÁNLOTT", "ÚJ" | no data or rule behind them |
 | Card: favourite (♡), compare (⇄); the compare helper | no feature behind them |
 | "Ajánlott sorrend" | no curated order exists; the default is "Legújabbak" |
-| Active filter chips (`117:197`) | there are no multi-value filters yet to show |
 
 ## Deviations
 

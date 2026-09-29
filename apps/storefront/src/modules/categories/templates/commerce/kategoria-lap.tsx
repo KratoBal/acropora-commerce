@@ -2,6 +2,12 @@ import { HttpTypes } from "@medusajs/types"
 
 import { listCategories } from "@lib/data/categories"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
+import {
+  MarkaSor,
+  markaSorok,
+  markaValtas,
+  szuroCim,
+} from "@lib/util/marka-szuro"
 import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -32,6 +38,54 @@ type Props = {
   page: number
   countryCode: string
   optionValueIds?: OptionValueIds
+  /** A kivalasztott markak (gyujtemeny-azonositok), a cim `marka` parameterei. */
+  markak?: string[]
+}
+
+/** Egy lap a marka-szamlalashoz, es a vedelem felso hatara (3000 termek). */
+const MARKA_LAP = 100
+const MARKA_MAX_LAP = 30
+
+/**
+ * A KATEGORIA MARKAI, DARABSZAMMAL (117:108).
+ *
+ * A Medusa nem ad facet-szamot, tehat a kategoria MINDEN termekenek a
+ * gyujtemenyet le kell kerni, szuk mezolistaval. Merve 2026-09-29, a
+ * Termékek agon (1278 termek, 13 lap): egymas utan 1,98 mp a kontenerbol;
+ * itt a lapok parhuzamosan mennek, es a lista-lekeres gyorsitotaraban
+ * maradnak. Egy sikertelen lekeres nem torheti el a lapot: akkor nincs
+ * Márka szakasz.
+ */
+async function kategoriaMarkai(
+  categoryId: string,
+  countryCode: string,
+): Promise<MarkaSor[]> {
+  const lap = (pageParam: number) =>
+    listProducts({
+      pageParam,
+      queryParams: {
+        category_id: [categoryId],
+        limit: MARKA_LAP,
+        fields: "id,collection.id,collection.title",
+      },
+      countryCode,
+    })
+  try {
+    const elso = await lap(1)
+    const lapok = Math.min(
+      Math.ceil(elso.response.count / MARKA_LAP),
+      MARKA_MAX_LAP,
+    )
+    const tobbi = await Promise.all(
+      Array.from({ length: Math.max(lapok - 1, 0) }, (_, i) => lap(i + 2)),
+    )
+    return markaSorok([
+      ...elso.response.products,
+      ...tobbi.flatMap(({ response }) => response.products),
+    ])
+  } catch {
+    return []
+  }
 }
 
 /**
@@ -58,17 +112,14 @@ async function alkategoriaSzamok(
   )
 }
 
-/** A kovetkezo lap cime: a rendezes es az opcio-szurok megmaradnak. */
+/** A kovetkezo lap cime: a rendezes, az opcio-szurok es a markak megmaradnak. */
 export function kovetkezoLap(
   page: number,
   sortBy?: SortOptions,
   optionValueIds?: OptionValueIds,
+  markak?: string[],
 ): string {
-  const params = new URLSearchParams()
-  if (sortBy) params.set("sortBy", sortBy)
-  for (const id of optionValueIds ?? []) params.append("optionValueIds", id)
-  params.set("page", String(page + 1))
-  return `?${params.toString()}`
+  return szuroCim({ sortBy, optionValueIds, markak, page: page + 1 })
 }
 
 /**
@@ -129,6 +180,7 @@ export default async function CommerceKategoriaLap({
   page,
   countryCode,
   optionValueIds,
+  markak = [],
 }: Props) {
   const nev = (elem: { id?: string | null; name?: string | null }) =>
     (elem.id ? nevek?.get(elem.id) : undefined) ?? (elem.name ?? "").trim()
@@ -144,6 +196,7 @@ export default async function CommerceKategoriaLap({
       response: { products, count },
     },
     { lista: testverLista, szamok },
+    markaLista,
   ] = await Promise.all([
     listProductsWithSort({
       page,
@@ -151,6 +204,7 @@ export default async function CommerceKategoriaLap({
         category_id: [category.id],
         limit: LAP_MERET,
         fields: `${TERMEKLISTA_MEZOK}*collection`,
+        ...(markak.length > 0 ? { collection_id: markak } : {}),
       },
       sortBy,
       countryCode,
@@ -163,7 +217,11 @@ export default async function CommerceKategoriaLap({
         countryCode,
       ),
     })),
+    kategoriaMarkai(category.id, countryCode),
   ])
+  const markaNev = new Map(markaLista.map((sor) => [sor.id, sor.nev]))
+  const markaLink = (id: string) =>
+    szuroCim({ sortBy, optionValueIds, markak: markaValtas(markak, id) })
 
   /*
     AZ URES ALKATEGORIA NEM KERUL SE A SAVBA, SE A SZUROBE: ures lapra vinne
@@ -285,7 +343,9 @@ export default async function CommerceKategoriaLap({
             <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
               Szűrés
             </h2>
-            {sortBy || (optionValueIds?.length ?? 0) > 0 ? (
+            {sortBy ||
+            (optionValueIds?.length ?? 0) > 0 ||
+            markak.length > 0 ? (
               <LocalizedClientLink
                 href={`/categories/${category.handle}`}
                 className="text-[14px] text-acr-ocean"
@@ -349,9 +409,42 @@ export default async function CommerceKategoriaLap({
               </ul>
             </section>
           ) : null}
+          {markaLista.length > 0 ? (
+            <section
+              className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
+              data-testid="szuro-markak"
+            >
+              <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                Márka
+              </h3>
+              <MarkaLista sorok={markaLista} aktiv={markak} link={markaLink} />
+            </section>
+          ) : null}
         </aside>
 
         <section aria-label="Termékek" id="category-products">
+          {/* AKTIV SZUROK (117:197): a kivalasztott markak, egy-egy
+              kattintassal levehetok. */}
+          {markak.length > 0 ? (
+            <div
+              className="mb-[26px] flex flex-wrap items-center gap-2"
+              data-testid="aktiv-szurok"
+            >
+              <span className="text-[14px] leading-[22px] text-acr-slate">
+                Aktív szűrők:
+              </span>
+              {markak.map((id) => (
+                <a
+                  key={id}
+                  href={markaLink(id)}
+                  className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
+                  aria-label={`${markaNev.get(id) ?? "Márka"} szűrő levétele`}
+                >
+                  {markaNev.get(id) ?? "Ismeretlen márka"} ×
+                </a>
+              ))}
+            </div>
+          ) : null}
           {products.length === 0 ? (
             <p
               className="text-[14px] text-acr-slate"
@@ -385,7 +478,7 @@ export default async function CommerceKategoriaLap({
               </p>
               {tovabbi ? (
                 <a
-                  href={kovetkezoLap(page, sortBy, optionValueIds)}
+                  href={kovetkezoLap(page, sortBy, optionValueIds, markak)}
                   className="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink"
                   data-testid="category-more-products"
                 >
@@ -397,5 +490,63 @@ export default async function CommerceKategoriaLap({
         </section>
       </div>
     </div>
+  )
+}
+
+/** Ennyi marka latszik alapbol; a tobbi egy natív lenyiloban, JS nelkul. */
+export const MARKA_ELSO = 8
+
+function MarkaLista({
+  sorok,
+  aktiv,
+  link,
+}: {
+  sorok: MarkaSor[]
+  aktiv: string[]
+  link: (id: string) => string
+}) {
+  const sor = (marka: MarkaSor) => {
+    const be = aktiv.includes(marka.id)
+    return (
+      <li key={marka.id}>
+        <a
+          href={link(marka.id)}
+          aria-current={be ? "true" : undefined}
+          className={
+            "flex items-center justify-between gap-2 text-[14px] leading-[22px] hover:text-acr-ink " +
+            (be ? "text-acr-ink" : "text-acr-slate")
+          }
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              className={
+                "h-[15px] w-[15px] shrink-0 border " +
+                (be
+                  ? "border-acr-navy bg-acr-navy"
+                  : "border-acr-slate bg-acr-mist")
+              }
+              aria-hidden="true"
+            />
+            <span className="min-w-0">{marka.nev}</span>
+          </span>
+          <span className="shrink-0">{marka.szam}</span>
+        </a>
+      </li>
+    )
+  }
+  const elso = sorok.slice(0, MARKA_ELSO)
+  const tobbi = sorok.slice(MARKA_ELSO)
+  return (
+    <>
+      <ul className="flex flex-col gap-2">{elso.map(sor)}</ul>
+      {tobbi.length > 0 ? (
+        <details>
+          <summary className="cursor-pointer text-[14px] leading-[22px] text-acr-ocean">
+            További {tobbi.length} márka
+          </summary>
+          <ul className="mt-2 flex flex-col gap-2">{tobbi.map(sor)}</ul>
+        </details>
+      ) : null}
+    </>
   )
 }

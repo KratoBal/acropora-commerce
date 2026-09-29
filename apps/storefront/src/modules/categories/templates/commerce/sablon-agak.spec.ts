@@ -35,4 +35,32 @@ describe("a kategória-sablon ágai", () => {
       expect(categoryPageKind(k("Valami", k(gyoker)))).toBe("livestock")
     }
   })
+
+  it("a márka a címből a route-on és a sablonon át a lapig ér", () => {
+    const route = readFileSync(
+      join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "..",
+        "app",
+        "[countryCode]",
+        "(main)",
+        "categories",
+        "[...category]",
+        "page.tsx",
+      ),
+      "utf8",
+    )
+    expect(route).toContain(
+      "const markak = markaAzonositok(searchParams.marka)",
+    )
+    expect(route).toContain("markak={markak}")
+    const ag = sablon.slice(
+      sablon.indexOf("<CommerceKategoriaLap"),
+      sablon.indexOf("</main>"),
+    )
+    expect(ag).toContain("markak={markak}")
+  })
 })
