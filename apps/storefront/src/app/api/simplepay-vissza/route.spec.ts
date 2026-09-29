@@ -11,7 +11,9 @@ import { GET } from "./route"
 afterEach(() => vi.clearAllMocks())
 
 const keres = (query: string) =>
-  new NextRequest(`https://shop-staging.acropora.hu/api/simplepay-vissza${query}`)
+  new NextRequest(
+    `https://shop-staging.acropora.hu/api/simplepay-vissza${query}`,
+  )
 
 /**
  * A SIMPLEPAY VISSZATERESI CIME (P4-4). MI PIROSIT: ha a sikeres fizetes utan a
@@ -20,7 +22,11 @@ const keres = (query: string) =>
  */
 describe("a SimplePay visszatérés útja", () => {
   it("sikeres fizetésnél leveszi a kosarat, és az eredménylapra visz az aláírt paraméterekkel", async () => {
-    visszateres.mockResolvedValue({ event: "SUCCESS", status: "paid", order_ids: ["order_1"] })
+    visszateres.mockResolvedValue({
+      event: "SUCCESS",
+      status: "paid",
+      order_ids: ["order_1"],
+    })
     const valasz = await GET(keres("?r=UkVS&s=QUzB"))
 
     expect(visszateres).toHaveBeenCalledWith("UkVS", "QUzB")

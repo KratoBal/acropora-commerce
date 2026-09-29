@@ -1,5 +1,9 @@
 import { simplePayVisszateres } from "@lib/data/simplepay"
-import { simplePayEredmeny, tranzakcioAzR, tranzakcioSor } from "@lib/util/simplepay-eredmeny"
+import {
+  simplePayEredmeny,
+  tranzakcioAzR,
+  tranzakcioSor,
+} from "@lib/util/simplepay-eredmeny"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Heading, Text } from "@modules/common/components/ui"
 
@@ -21,7 +25,10 @@ export default async function SimplePayEredmenyLap(props: {
   const eredmeny = simplePayEredmeny(valasz, tranzakcioAzR(r))
 
   return (
-    <div className="content-container py-12 max-w-xl" data-testid="simplepay-eredmeny">
+    <div
+      className="content-container py-12 max-w-xl"
+      data-testid="simplepay-eredmeny"
+    >
       <Heading level="h1" className="text-2xl-regular mb-4">
         {eredmeny.cim}
       </Heading>
@@ -37,11 +44,17 @@ export default async function SimplePayEredmenyLap(props: {
       ))}
       <div className="mt-6">
         {eredmeny.rendelesId ? (
-          <LocalizedClientLink href={`/order/${eredmeny.rendelesId}/confirmed`} className="underline">
+          <LocalizedClientLink
+            href={`/order/${eredmeny.rendelesId}/confirmed`}
+            className="underline"
+          >
             A rendelésed
           </LocalizedClientLink>
         ) : eredmeny.vissza ? (
-          <LocalizedClientLink href="/checkout?step=payment" className="underline">
+          <LocalizedClientLink
+            href="/checkout?step=payment"
+            className="underline"
+          >
             Vissza a fizetéshez
           </LocalizedClientLink>
         ) : (
