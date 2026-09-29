@@ -40,6 +40,12 @@ export const FIOK_PONTOK: readonly FiokPont[] = [
     href: "/account/addresses",
     testId: "addresses-link",
   },
+  {
+    cimke: "Számlázási adatok",
+    mobilCimke: "Számlázás",
+    href: "/account/billing",
+    testId: "billing-link",
+  },
 ] as const
 
 /** A pont aktiv-e az adott utvonalon (a rendeles reszletei a Rendeléseim ala tartozik). */

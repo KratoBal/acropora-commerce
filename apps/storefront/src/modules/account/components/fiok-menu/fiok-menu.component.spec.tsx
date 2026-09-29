@@ -32,7 +32,7 @@ afterEach(() => {
  * kilepest; ha a fej cime nem az utvonalbol jon.
  */
 describe("a fiók menüje", () => {
-  it("asztalon a három pont, az aktív jelölve", () => {
+  it("asztalon a négy pont, az aktív jelölve", () => {
     render(<FiokMenu />)
     const asztali = screen.getByTestId("account-nav")
     const linkek = within(asztali).getAllByRole("link")
@@ -40,9 +40,11 @@ describe("a fiók menüje", () => {
       "Profil",
       "Rendeléseim",
       "Címek",
+      "Számlázási adatok",
     ])
     expect(linkek.map((a) => a.getAttribute("aria-current"))).toEqual([
       "page",
+      null,
       null,
       null,
     ])
@@ -59,6 +61,7 @@ describe("a fiók menüje", () => {
       "Profil",
       "Rendeléseim",
       "Címek",
+      "Számlázás",
     ])
     expect(fulek[2].getAttribute("aria-current")).toBe("page")
   })

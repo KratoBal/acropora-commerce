@@ -8,6 +8,12 @@ import {
 } from "@lib/util/aszf"
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
 import { alapertelmezettUrlapbol, cimNevUrlapbol } from "@lib/util/cim"
+import {
+  ADOSZAM_METADATA_KULCS,
+  adoszamEgysegesitve,
+  szamlazasiHiba,
+  type SzamlazasiTipus,
+} from "@lib/util/szamlazas"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { FetchError } from "@medusajs/js-sdk"
@@ -119,6 +125,106 @@ export async function saveProfile(
     return { state: "error", error: authHibaSzoveg(error) }
   }
 
+  return { state: "success" }
+}
+
+export type SzamlazasMentesAllapot =
+  | { state: "success" }
+  | {
+      state: "error"
+      error: string
+      /**
+       * A BEKULDOTT ERTEKEK. A React 19 egy form action utan alaphelyzetbe
+       * allitja az urlapot (a mezok a `defaultValue`-ra allnak vissza): e
+       * nelkul egy hibas bekuldes kiuritene mindent, amit a vevo beirt
+       * (mérve a stage ellen, 2026-09-29).
+       */
+      ertekek: Record<string, string>
+    }
+  | null
+
+/**
+ * A SZAMLAZASI ADATOK MENTESE (P5, 257:102). A vevo ALAPERTELMEZETT
+ * SZAMLAZASI CIMET irja (`is_default_billing`): ha van, frissiti, ha nincs,
+ * letrehozza. A nev a vevoe (a keret nem ker nevet); cegnel a cegnev a
+ * `company`, az adoszam egysegesitve a `metadata.tax_id` (acrobot dontese);
+ * maganszemelynel mind a ketto `null`. A tobbi metadata kulcs marad.
+ */
+export async function saveBilling(
+  _currentState: unknown,
+  formData: FormData,
+): Promise<SzamlazasMentesAllapot> {
+  const mezo = (nev: string) => String(formData.get(nev) ?? "").trim()
+  const tipus: SzamlazasiTipus =
+    formData.get("tipus") === "ceg" ? "ceg" : "maganszemely"
+  const urlap = {
+    tipus,
+    ceg: mezo("company"),
+    adoszam: mezo("tax_id"),
+    iranyitoszam: mezo("postal_code"),
+    varos: mezo("city"),
+    utca: mezo("address_1"),
+  }
+
+  const ertekek = {
+    company: urlap.ceg,
+    tax_id: urlap.adoszam,
+    postal_code: urlap.iranyitoszam,
+    city: urlap.varos,
+    address_1: urlap.utca,
+  }
+
+  const hiba = szamlazasiHiba(urlap)
+  if (hiba) return { state: "error", error: hiba, ertekek }
+
+  const vevo = await retrieveCustomer()
+  if (!vevo) return { state: "error", error: ALTALANOS_AUTH_HIBA, ertekek }
+
+  const meglevo = (vevo.addresses ?? []).find((c) => c.is_default_billing)
+  const ceges = tipus === "ceg"
+  const cim = {
+    first_name: vevo.first_name ?? undefined,
+    last_name: vevo.last_name ?? undefined,
+    company: ceges ? urlap.ceg : null,
+    address_1: urlap.utca,
+    city: urlap.varos,
+    postal_code: urlap.iranyitoszam,
+    country_code: "hu",
+    metadata: {
+      ...(meglevo?.metadata ?? {}),
+      [ADOSZAM_METADATA_KULCS]: ceges
+        ? adoszamEgysegesitve(urlap.adoszam)
+        : null,
+    },
+  }
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  try {
+    if (meglevo) {
+      await sdk.store.customer.updateAddress(meglevo.id, cim, {}, headers)
+    } else {
+      await sdk.store.customer.createAddress(
+        {
+          ...cim,
+          // Medusa does not separate billing from shipping addresses, so the
+          // new one also shows under Címek: its name makes it recognizable.
+          address_name: "Számlázási cím",
+          is_default_billing: true,
+          is_default_shipping: false,
+        },
+        {},
+        headers,
+      )
+    }
+  } catch (error) {
+    return { state: "error", error: authHibaSzoveg(error), ertekek }
+  }
+
+  const customerCacheTag = await getCacheTag("customers")
+  revalidateTag(customerCacheTag)
   return { state: "success" }
 }
 
