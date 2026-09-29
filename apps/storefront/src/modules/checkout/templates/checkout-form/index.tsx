@@ -1,4 +1,5 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
+import { retrieveFoxpostOption } from "@lib/data/csomagpont"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
@@ -39,6 +40,8 @@ export default async function CheckoutForm({
   const fizetesiLehetosegek = await getCartPaymentOptions(cart.id)
   // P4-2: a két rendelés sávja a leadásnál is látszik (Balázs, 2026-09-29).
   const szallitasiOsztaly = await retrieveCartShippingClass()
+  // P4: melyik mod a Foxpost; annal a mod csomagpont-valasztot nyit.
+  const foxpost = await retrieveFoxpostOption()
 
   if (!shippingMethods || !paymentMethods) {
     return null
@@ -50,7 +53,11 @@ export default async function CheckoutForm({
 
       <Addresses cart={cart} customer={customer} />
 
-      <Shipping cart={cart} availableShippingMethods={shippingMethods} />
+      <Shipping
+        cart={cart}
+        availableShippingMethods={shippingMethods}
+        foxpostOptionId={foxpost?.option_id ?? null}
+      />
 
       <Payment
         cart={cart}

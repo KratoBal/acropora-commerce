@@ -47,3 +47,21 @@ export async function searchFoxpostPickupPoints(
     )
     .catch(() => NINCS)
 }
+
+/**
+ * MELYIK SZALLITASI MOD A FOXPOST, es valaszthato-e most (`GET /store/foxpost`).
+ * A szerep-tabla a hatterben el; hiba eseten `null`, es a penztar ugy mukodik,
+ * mint eddig (a Foxpost-mod ilyenkor pont nelkul, a hatter elutasitasaval).
+ */
+export async function retrieveFoxpostOption(): Promise<{
+  option_id: string | null
+  available: boolean
+} | null> {
+  return sdk.client
+    .fetch<{ option_id: string | null; available: boolean }>(`/store/foxpost`, {
+      method: "GET",
+      cache: "no-store",
+    })
+    .catch(() => null)
+}
+

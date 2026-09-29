@@ -2,10 +2,12 @@
 import { Radio, RadioGroup } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
+import { foxpostSzallitasiAdat } from "@lib/util/csomagpont"
 import { convertToLocale } from "@lib/util/money"
 import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
+import CsomagpontValaszto from "@modules/checkout/components/csomagpont-valaszto"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
@@ -19,6 +21,12 @@ const PICKUP_OPTION_OFF = "__PICKUP_OFF"
 type ShippingProps = {
   cart: HttpTypes.StoreCart
   availableShippingMethods: HttpTypes.StoreCartShippingOption[] | null
+  /**
+   * A Foxpost-mod azonositoja (`GET /store/foxpost`). Ennel a modnal a
+   * kivalasztas a csomagpont-valasztot nyitja meg: pont nelkul a hatter a
+   * modot elutasitja.
+   */
+  foxpostOptionId?: string | null
 }
 
 function formatAddress(address: HttpTypes.StoreCartAddress) {
@@ -50,6 +58,7 @@ function formatAddress(address: HttpTypes.StoreCartAddress) {
 const Shipping: React.FC<ShippingProps> = ({
   cart,
   availableShippingMethods,
+  foxpostOptionId = null,
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
@@ -150,6 +159,13 @@ const Shipping: React.FC<ShippingProps> = ({
       setShowPickupOptions(PICKUP_OPTION_OFF)
     }
 
+    // FOXPOST: a mod csak csomagponttal allithato be. A valaszto nyilik meg,
+    // es a pont kivalasztasa allitja be a modot (`handleFoxpostPont`).
+    if (foxpostOptionId && id === foxpostOptionId) {
+      setShippingMethodId(id)
+      return
+    }
+
     let currentId: string | null = null
     setIsLoading(true)
     setShippingMethodId((prev) => {
@@ -187,6 +203,35 @@ const Shipping: React.FC<ShippingProps> = ({
       setIsLoading(false)
     }
   }
+
+  const handleFoxpostPont = async (pont: { id: string }) => {
+    if (!foxpostOptionId) return
+    setError(null)
+    setIsLoading(true)
+    try {
+      const eredmeny = await setShippingMethod({
+        cartId: cart.id,
+        shippingMethodId: foxpostOptionId,
+        data: foxpostSzallitasiAdat(pont.id),
+      })
+      if (!eredmeny.ok) setError(eredmeny.uzenet)
+    } catch {
+      setError(SZALLITAS_MOST_NEM_SIKERULT)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // A kosarban allo mod: a "Tovabb" csak akkor mehet, ha a KIVALASZTOTT mod
+  // tenyleg a kosarban all. Foxpostnal a pont kivalasztasaig nem all ott.
+  const kosarMod = cart.shipping_methods?.at(-1)
+  const foxpostPont =
+    kosarMod?.shipping_option_id === foxpostOptionId
+      ? ((kosarMod?.data as Record<string, unknown> | undefined)
+          ?.foxpost_pickup_point as
+          | { name?: string; address?: string }
+          | undefined)
+      : undefined
 
   useEffect(() => {
     setError(null)
@@ -335,6 +380,12 @@ const Shipping: React.FC<ShippingProps> = ({
                     )
                   })}
                 </RadioGroup>
+                {foxpostOptionId && shippingMethodId === foxpostOptionId ? (
+                  <CsomagpontValaszto
+                    kivalasztott={foxpostPont ?? null}
+                    onValaszt={handleFoxpostPont}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -427,7 +478,10 @@ const Shipping: React.FC<ShippingProps> = ({
               className="mt"
               onClick={handleSubmit}
               isLoading={isLoading}
-              disabled={!cart.shipping_methods?.[0]}
+              disabled={
+                !cart.shipping_methods?.[0] ||
+                kosarMod?.shipping_option_id !== shippingMethodId
+              }
               data-testid="submit-delivery-option-button"
             >
               Tovább a fizetéshez
