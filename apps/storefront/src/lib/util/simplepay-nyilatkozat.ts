@@ -24,5 +24,14 @@ export const SIMPLEPAY_ADATKEZELESI_TAJEKOZTATO =
 export const SIMPLEPAY_FIZETESI_TAJEKOZTATO =
   "https://simplepartner.hu/PaymentService/Fizetesi_tajekoztato.pdf"
 
-/** A SimplePay-bol letoltott logo (kartyalogokkal), a kirakat sajat eleresi utjan. */
-export const SIMPLEPAY_LOGO = "/simplepay/simplepay-kartyak.png"
+/**
+ * A SimplePay-bol letoltott logo (kartyalogokkal), a kirakat sajat eleresi utjan.
+ *
+ * AZ `/images/` ELOTAG NEM DISZ. A kirakat middleware-je minden utat, ami nem
+ * `api`, `_next/...`, `images`, `assets` stb. ELOTAGGAL kezdodik, orszagkodos
+ * utra iranyit at -- a `.png` VEGZODES ezt nem kapcsolja ki. Merve a teszt
+ * kirakaton (2026-09-29): a `/simplepay/simplepay-kartyak.png` 307-tel a
+ * `/hu/simplepay/...` utra ment, es ott 404 lett. A logo tehat nem jelent volna
+ * meg. A `middleware.spec` ezt az utat a kizart elotagok ellen meri.
+ */
+export const SIMPLEPAY_LOGO = "/images/simplepay-kartyak.png"

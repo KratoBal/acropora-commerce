@@ -22,7 +22,7 @@ describe("a SimplePay nyilatkozat", () => {
     expect(link).toHaveAttribute("target", "_blank")
     expect(link.querySelector("img")).toHaveAttribute(
       "src",
-      "/simplepay/simplepay-kartyak.png",
+      "/images/simplepay-kartyak.png",
     )
   })
 

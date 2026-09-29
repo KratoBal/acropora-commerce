@@ -277,7 +277,7 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
 
 Balázs, 2026-09-29 21:05 UTC: "Murena beépítheti", for the test storefront, in today's look.
 - **Where:** the payment step, under the payment methods, only when the chosen method's role is `ONLINE_CARD` (`SimplePayNyilatkozat`).
-- **The logo:** SimplePay's own file with the card logos (`public/simplepay/simplepay-kartyak.png`, from the package acrobot downloaded). It links to the Fizetési Tájékoztató, as section 7 requires.
+- **The logo:** SimplePay's own file with the card logos (`public/images/simplepay-kartyak.png`, from the package acrobot downloaded; under `images/` because the storefront middleware redirects every other path to a country path, which gave the first placement a 404 on stage). It links to the Fizetési Tájékoztató, as section 7 requires.
 - **The statement:** SimplePay's template (section 8), filled with the contract data: Acropora Kft., 1106 Budapest, Pesti Gábor utca 35., shop.acropora.hu. The data listed are name, email, billing address and phone, which is exactly what the provider sends. The text lives in `lib/util/simplepay-nyilatkozat.ts`.
 - **Acceptance:** a checkbox. "Tovább az ellenőrzéshez" stays disabled until it is ticked, and every opening of the step asks again.
 - **Not in this part:** today, choosing the card method still asks for a payment session at selection, before the tick. That call fails, because the storefront sends no payer data and the provider refuses a start without it. It cannot happen on stage yet anyway: no card provider is offered until `ACROPORA_PP_ONLINE_CARD` is set. The next part sets the order: accept, then start, then redirect.
