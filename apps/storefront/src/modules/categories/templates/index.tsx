@@ -24,6 +24,7 @@ export default function CategoryTemplate({
   page,
   countryCode,
   optionValueIds,
+  markak,
 }: {
   category: HttpTypes.StoreProductCategory
   /**
@@ -44,6 +45,7 @@ export default function CategoryTemplate({
   page?: string
   countryCode: string
   optionValueIds?: OptionValueIds
+  markak?: string[]
 }) {
   if (!category || !countryCode) notFound()
 
@@ -69,6 +71,7 @@ export default function CategoryTemplate({
           page={pageNumber}
           countryCode={countryCode}
           optionValueIds={optionValueIds}
+          markak={markak}
         />
       </main>
     )

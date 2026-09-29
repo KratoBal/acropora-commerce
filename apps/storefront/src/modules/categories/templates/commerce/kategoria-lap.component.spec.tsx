@@ -68,7 +68,27 @@ beforeEach(() => {
   // Alapbol ures testver-lista: egy `undefined` valasz az egesz lapot
   // eltorne, es az a teszt-dupla hibaja lenne, nem a kode.
   katAdat.listCategories.mockResolvedValue([])
-  adat.listProducts.mockImplementation(async ({ queryParams }) => {
+  adat.listProducts.mockImplementation(async ({ queryParams, pageParam }) => {
+    if (String(queryParams.fields).startsWith("id,collection")) {
+      // Ket lap markaval: 150 termek, 100-asaval.
+      const lap = pageParam ?? 1
+      const n = lap === 1 ? 100 : 50
+      return {
+        response: {
+          products: Array.from({ length: n }, (_, i) => ({
+            id: `m${lap}-${i}`,
+            collection:
+              i % 5 === 0
+                ? null
+                : i % 2 === 0
+                  ? { id: "pcol_ati", title: "ATI" }
+                  : { id: "pcol_dd", title: "D-D" },
+          })),
+          count: 150,
+        },
+        nextPage: null,
+      }
+    }
     const ertek = SZAMOK[queryParams.category_id[0]]
     if (ertek instanceof Error) throw ertek
     return { response: { products: [], count: ertek }, nextPage: null }
@@ -216,5 +236,57 @@ describe("a Commerce kategórialap", () => {
       ["led", false],
       ["jelen", true],
     ])
+  })
+
+  describe("a márka szűrő (117:108)", () => {
+    it("a márkák a kategória összes termékéből, darabszámmal", async () => {
+      await lap()
+      const markaHivasok = adat.listProducts.mock.calls
+        .map(([h]) => h)
+        .filter((h) => String(h.queryParams.fields).startsWith("id,collection"))
+      expect(markaHivasok.map((h) => h.pageParam)).toEqual([1, 2])
+      const sorok = within(screen.getByTestId("szuro-markak"))
+        .getAllByRole("link")
+        .map((a) => a.textContent)
+      // 150 termek, ebbol 30 marka nelkul: 120, fele-fele.
+      expect(sorok).toEqual(["ATI60", "D-D60"])
+    })
+
+    it("a kiválasztott márka szűri a listát, csíkot kap, és levehető", async () => {
+      await lap({ markak: ["pcol_ati"], sortBy: "price_asc" })
+      expect(
+        adat.listProductsWithSort.mock.calls[0][0].queryParams.collection_id,
+      ).toEqual(["pcol_ati"])
+      const csik = within(screen.getByTestId("aktiv-szurok")).getByRole("link")
+      expect(csik.textContent).toBe("ATI ×")
+      expect(csik.getAttribute("href")).toBe("?sortBy=price_asc")
+      const sor = within(screen.getByTestId("szuro-markak"))
+        .getByText("ATI")
+        .closest("a")
+      expect(sor?.getAttribute("aria-current")).toBe("true")
+      expect(
+        screen.getByTestId("category-more-products").getAttribute("href"),
+      ).toBe("?sortBy=price_asc&marka=pcol_ati&page=2")
+    })
+
+    it("márka nélkül nincs szűrés és nincs csík", async () => {
+      await lap()
+      expect(
+        adat.listProductsWithSort.mock.calls[0][0].queryParams.collection_id,
+      ).toBeUndefined()
+      expect(screen.queryByTestId("aktiv-szurok")).toBeNull()
+    })
+
+    it("ha a márkák lekérése elbukik, a lap áll, Márka szakasz nélkül", async () => {
+      const eredeti = adat.listProducts.getMockImplementation()!
+      adat.listProducts.mockImplementation(async (h) => {
+        if (String(h.queryParams.fields).startsWith("id,collection"))
+          throw new Error("hálózat")
+        return eredeti(h)
+      })
+      await lap()
+      expect(screen.queryByTestId("szuro-markak")).toBeNull()
+      expect(screen.getByTestId("category-page-title")).toBeTruthy()
+    })
   })
 })
