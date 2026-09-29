@@ -1,5 +1,11 @@
+/**
+ * The seven business statuses, in the shop's order (Balázs, 2026-09-03 18:27:
+ * "Keruljon fel hetedikkent"). Visszaigazolva stands after Feldolgozásra vár
+ * and before Készletezés alatt, where the old shop has it.
+ */
 export const ORDER_BUSINESS_STATUSES = [
   "pending_processing",
+  "confirmed",
   "stocking",
   "out_for_delivery",
   "ready_for_pickup",
@@ -14,6 +20,7 @@ export const ORDER_BUSINESS_STATUS_LABELS: Record<
   string
 > = {
   pending_processing: "Feldolgozásra vár",
+  confirmed: "Visszaigazolva",
   stocking: "Készletezés alatt",
   out_for_delivery: "Kiszállítás",
   ready_for_pickup: "Átvehető",
