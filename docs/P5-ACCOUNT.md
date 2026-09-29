@@ -132,3 +132,39 @@ Measured locally against stage on 2026-09-29, signed in as the stage test accoun
 No horizontal scroll at 390 px. The two addresses stay on the test account.
 
 Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-cimek-1440-figma-balra.png`, `p5-cimek-390-figma-balra.png`.
+
+## 4a. Orders (`249:3`; mobile `249:204`)
+
+The order details page (`249:96`) is its own PR (4b).
+
+| Element | Figma | Built |
+|---|---|---|
+| Head (`249:17`) | "Rendeléseim" 600/38, and a sentence under it | the account head (600/34, as on `257:3`), with the **mobile frame's** sentence on both: "Aktuális és korábbi rendeléseid egy helyen." (`249:215`) |
+| Open order card (`249:38`) | white, border, 20 px padding: number 600/18, status pill (mist, heritage border and text, 600/10.5, 26 high), total 700/20 on the right; "date · payment" 12.5 slate; "Rendelés részletei" 150 × 42 heritage | same |
+| Mobile open card (`249:217`) | 14 px padding: number 600/15 with a 24 px pill; short date; total 700/20 on its own line; full-width "Rendelés részletei" 44 high | same |
+| "Korábbi rendelések" (`249:70`) | 600/22 (mobile 18), then compact cards (`249:71`): number 600/15, a green-bordered pill, total 700/16; "date · … · megtekintés" | same; the meta line is "date · N tétel · megtekintés" |
+| Mobile past order (`249:236`) | 62 high, the whole card a link: number 600/13.5 over the status 11.5 slate, total 500/13.5 on the right | same |
+
+- **The status** is the order's business status from the store route (#410): `GET /store/customers/me/order-business-statuses`. The response shape was measured from its code, not from a message. The label is the shop's Hungarian name (for example "Visszaigazolva").
+  - **Open:** everything except the two closed statuses. They sit on top with a heritage pill.
+  - **"Megrendelés lezárva":** a green-bordered pill. The green is the frame's own colour; Foundations has none.
+  - **"Sikertelenül lezárt rendelés":** a neutral pill (line border, slate). The frame has no such example.
+  - **An order without a business status** counts as open and shows no pill. An unknown state is not buried.
+  - **If the status route fails,** the page still shows the orders, without pills.
+- **Payment:** the meta line shows Medusa's payment status in Hungarian (for example "kifizetve"). The frame's payment method ("SimplePay") is P4.
+- **Dates:** Budapest dates: "2026. szeptember 28." on desktop, "2026. 09. 28." on mobile.
+- **The order number** is Medusa's display id ("#12"). The frame's "ACR-2026-…" form does not exist.
+- **The account start page** (`/account`) now goes to the orders when signed in. The orders frame starts its menu with "Áttekintés" in the orders' place, and the old overview had no frame. The redirect happens inside the streamed page (the response is 200 and the client moves on), so it needs no separate route. Signed out, `/account` still shows sign-in. The old overview, its order list and card are removed.
+- **"Rendelés átvétele"** (claiming a guest order, the existing `TransferRequestForm`) is not on the frame. It stays under the list, because it is an account function.
+- **Left out:**
+  - the fulfillment groups (`249:46`: Foxpost, GLS, pickup, each with its own status) are P4 background;
+  - the "Számla" button (`249:68`) has no invoice data;
+  - the frame shows no paging; the page reads the last 50 orders.
+
+Measured locally against stage on 2026-09-29, signed in as the test account, which has no orders:
+- sign-in lands on `/account/orders`; `/account` moves there too;
+- the head shows "Rendeléseim" and the sentence; the menu marks Rendeléseim;
+- the empty state reads "Még nincs rendelésed." with a "Vásárlás" link;
+- no horizontal scroll at 1440 or 390.
+
+The cards themselves are covered by component tests. A live image of them needs an order on the test account.

@@ -5,7 +5,7 @@ import { useParams, usePathname } from "next/navigation"
 import { signout } from "@lib/data/customer"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { FIOK_PONTOK, aktivPont, fiokCim } from "./pontok"
+import { FIOK_PONTOK, aktivPont, fiokCim, fiokLeiras } from "./pontok"
 
 /**
  * A FIOK FEJE (257:17): "FIÓKOM" felulcim es a lap cime. Mobilon (257:218)
@@ -14,6 +14,7 @@ import { FIOK_PONTOK, aktivPont, fiokCim } from "./pontok"
 export function FiokFej() {
   const utvonal = usePathname() ?? ""
   const { countryCode } = useParams() as { countryCode: string }
+  const leiras = fiokLeiras(utvonal, countryCode)
   return (
     <div className="flex flex-col gap-[5px]">
       <p className="hidden text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.1px] text-acr-heritage small:block">
@@ -25,6 +26,14 @@ export function FiokFej() {
       >
         {fiokCim(utvonal, countryCode)}
       </h1>
+      {leiras ? (
+        <p
+          className="text-[13px] leading-[17px] text-acr-slate small:text-[14px] small:leading-[20px]"
+          data-testid="fiok-leiras"
+        >
+          {leiras}
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -1,22 +1,22 @@
-import { Metadata } from "next"
+import { notFound, redirect } from "next/navigation"
 
-import Overview from "@modules/account/components/overview"
-import { notFound } from "next/navigation"
 import { retrieveCustomer } from "@lib/data/customer"
-import { listOrders } from "@lib/data/orders"
 
-export const metadata: Metadata = {
-  title: "Account",
-  description: "Overview of your account activity.",
-}
-
-export default async function OverviewTemplate() {
+/**
+ * A FIOK NYITOLAPJA A RENDELESEKRE VISZ (P5, 4. pont). A rendelesek kerete
+ * (249:3) a menut "Áttekintés"-sel kezdi a rendelesek helyen, a regi
+ * attekinto lapnak nincs kerete. Bejelentkezes nelkul ez a lap nem fut: a
+ * fiok layoutja akkor a belepo lapot adja.
+ */
+export default async function AccountStart(props: {
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
   const customer = await retrieveCustomer().catch(() => null)
-  const orders = (await listOrders().catch(() => null)) || null
 
   if (!customer) {
     notFound()
   }
 
-  return <Overview customer={customer} orders={orders} />
+  redirect(`/${countryCode}/account/orders`)
 }

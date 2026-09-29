@@ -14,6 +14,8 @@ export type FiokPont = {
   mobilCimke: string
   href: string
   testId: string
+  /** A fej leirasa a cim alatt, ha a keret ad ilyet (249:215). */
+  leiras?: string
 }
 
 export const FIOK_PONTOK: readonly FiokPont[] = [
@@ -28,6 +30,9 @@ export const FIOK_PONTOK: readonly FiokPont[] = [
     mobilCimke: "Rendeléseim",
     href: "/account/orders",
     testId: "orders-link",
+    // A mobil keret mondata (249:215). Az asztali (249:20) szallitasi
+    // csoportokat es elo allatos atvetelt igerne, ami a P4 hattere.
+    leiras: "Aktuális és korábbi rendeléseid egy helyen.",
   },
   {
     cimke: "Címek",
@@ -50,6 +55,15 @@ export function aktivPont(utvonal: string, countryCode: string): string | null {
  * A lap cime a fejben (257:19). A fiok nyitolapja ("/account") a meglevo
  * attekintes; a rendeles reszletei sajat cimet kapnak a 4. pontban.
  */
+/** A fej leirasa az utvonalhoz, ha van. */
+export function fiokLeiras(
+  utvonal: string,
+  countryCode: string,
+): string | undefined {
+  const aktiv = aktivPont(utvonal, countryCode)
+  return FIOK_PONTOK.find((p) => p.href === aktiv)?.leiras
+}
+
 export function fiokCim(utvonal: string, countryCode: string): string {
   const aktiv = aktivPont(utvonal, countryCode)
   const pont = FIOK_PONTOK.find((p) => p.href === aktiv)
