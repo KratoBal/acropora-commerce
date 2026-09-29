@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
@@ -76,8 +77,7 @@ export const listProducts = async ({
           limit,
           offset,
           region_id: region?.id,
-          fields:
-            "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,",
+          fields: TERMEKLISTA_MEZOK,
           ...queryParams,
         },
         headers,

@@ -13,6 +13,7 @@ import {
   helperCopyFor,
 } from "./category-page-data"
 import { Breadcrumbs } from "./category-breadcrumbs"
+import CommerceKategoriaLap from "./commerce/kategoria-lap"
 
 const PRODUCT_LIMIT = 12
 
@@ -50,6 +51,28 @@ export default function CategoryTemplate({
   const children = category.category_children ?? []
   const kind = categoryPageKind(category)
   const helper = helperCopyFor(kind)
+
+  /*
+    A COMMERCE (MUSZAKI) KATEGORIA A P2 UJ LAPJAT KAPJA (117:30); az elo allat
+    aga (korall, hal, gerinctelen) a P3-ig a lenti regi sablonon marad.
+  */
+  if (kind === "technical") {
+    return (
+      <main
+        data-testid="category-container"
+        data-acr-mod={categoryPageMode(category)}
+      >
+        <CommerceKategoriaLap
+          category={category}
+          nevek={nevek}
+          sortBy={sortBy}
+          page={pageNumber}
+          countryCode={countryCode}
+          optionValueIds={optionValueIds}
+        />
+      </main>
+    )
+  }
 
   /*
     A CIM ES A CSEMPEK IS A MEGJELENITENDO NEVET VISELIK.
@@ -129,18 +152,6 @@ export default function CategoryTemplate({
           >
             {helper.description}
           </p>
-          {kind === "technical" ? (
-            <a
-              href="#category-products"
-              className="mt-4 inline-flex min-h-10 items-center px-4 text-sm font-semibold"
-              style={{
-                background: "var(--terv-kiemel)",
-                color: "var(--terv-kiemel-szoveg)",
-              }}
-            >
-              Segéd indítása
-            </a>
-          ) : null}
         </aside>
       </section>
 
@@ -189,7 +200,7 @@ export default function CategoryTemplate({
             className="hidden text-sm small:block"
             style={{ color: "var(--terv-szoveg-halvany)" }}
           >
-            {kind === "technical" ? "Műszaki felszerelés" : "Élő állat"}
+            Élő állat
           </span>
         </div>
         <Suspense
