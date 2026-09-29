@@ -55,7 +55,10 @@ const rajzol = (k = kosar()) =>
   render(
     <Shipping
       cart={k}
-      availableShippingMethods={[mod("so-gls", "GLS"), mod("so-fox", "Foxpost")]}
+      availableShippingMethods={[
+        mod("so-gls", "GLS"),
+        mod("so-fox", "Foxpost"),
+      ]}
       foxpostOptionId="so-fox"
     />,
   )
@@ -125,7 +128,13 @@ describe("a Foxpost-csomagpont választó a szállítási lépésben", () => {
         {
           id: "sm-1",
           shipping_option_id: "so-fox",
-          data: { foxpost_pickup_point: { id: "HU1", name: PONT.name, address: PONT.address } },
+          data: {
+            foxpost_pickup_point: {
+              id: "HU1",
+              name: PONT.name,
+              address: PONT.address,
+            },
+          },
         },
       ]),
     )
@@ -144,16 +153,26 @@ describe("a Foxpost-csomagpont választó a szállítási lépésben", () => {
     fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
       target: { value: "x" },
     })
-    searchFoxpostPickupPoints.mockResolvedValueOnce({ elerheto: false, pontok: [], talalat: 0 })
+    searchFoxpostPickupPoints.mockResolvedValueOnce({
+      elerheto: false,
+      pontok: [],
+      talalat: 0,
+    })
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
     expect(screen.getByTestId("csomagpont-nem-elerheto")).toBeTruthy()
 
-    searchFoxpostPickupPoints.mockResolvedValueOnce({ elerheto: true, pontok: [], talalat: 0 })
+    searchFoxpostPickupPoints.mockResolvedValueOnce({
+      elerheto: true,
+      pontok: [],
+      talalat: 0,
+    })
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
-    await waitFor(() => expect(screen.getByTestId("csomagpont-nincs")).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByTestId("csomagpont-nincs")).toBeTruthy(),
+    )
   })
 })

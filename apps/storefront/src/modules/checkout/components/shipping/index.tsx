@@ -229,8 +229,7 @@ const Shipping: React.FC<ShippingProps> = ({
     kosarMod?.shipping_option_id === foxpostOptionId
       ? ((kosarMod?.data as Record<string, unknown> | undefined)
           ?.foxpost_pickup_point as
-          | { name?: string; address?: string }
-          | undefined)
+          { name?: string; address?: string } | undefined)
       : undefined
 
   useEffect(() => {

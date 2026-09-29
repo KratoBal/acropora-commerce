@@ -64,4 +64,3 @@ export async function retrieveFoxpostOption(): Promise<{
     })
     .catch(() => null)
 }
-

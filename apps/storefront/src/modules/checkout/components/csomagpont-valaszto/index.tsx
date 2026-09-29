@@ -3,10 +3,7 @@
 import { useState } from "react"
 
 import { searchFoxpostPickupPoints } from "@lib/data/csomagpont"
-import type {
-  CsomagpontKereses,
-  FoxpostCsomagpont,
-} from "@lib/util/csomagpont"
+import type { CsomagpontKereses, FoxpostCsomagpont } from "@lib/util/csomagpont"
 import { Button } from "@modules/common/components/ui"
 
 /**
@@ -40,7 +37,10 @@ export default function CsomagpontValaszto({
   return (
     <div className="flex flex-col gap-3 pb-8" data-testid="csomagpont-valaszto">
       {kivalasztott?.name ? (
-        <p className="txt-medium text-ui-fg-base" data-testid="csomagpont-kivalasztott">
+        <p
+          className="txt-medium text-ui-fg-base"
+          data-testid="csomagpont-kivalasztott"
+        >
           Kiválasztott csomagpont: {kivalasztott.name}
           {kivalasztott.address ? `, ${kivalasztott.address}` : ""}
         </p>
@@ -71,13 +71,19 @@ export default function CsomagpontValaszto({
         </Button>
       </form>
       {eredmeny && !eredmeny.elerheto ? (
-        <p className="txt-medium text-ui-fg-base" data-testid="csomagpont-nem-elerheto">
+        <p
+          className="txt-medium text-ui-fg-base"
+          data-testid="csomagpont-nem-elerheto"
+        >
           A Foxpost csomagpontjai most nem érhetők el. Válassz másik szállítási
           módot.
         </p>
       ) : null}
       {eredmeny?.elerheto && eredmeny.pontok.length === 0 ? (
-        <p className="txt-medium text-ui-fg-base" data-testid="csomagpont-nincs">
+        <p
+          className="txt-medium text-ui-fg-base"
+          data-testid="csomagpont-nincs"
+        >
           Nincs találat erre a keresésre.
         </p>
       ) : null}
