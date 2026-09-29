@@ -29,8 +29,11 @@ import { getRegion } from "./regions"
  */
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
+  // +shipping_methods.data: a Foxpost-csomagpont a szallitasi mod adataban all,
+  // es a Medusa bolti kosar-mezoi kozott nincs benne (merve 2026-09-29: a
+  // penztar ezert nem tudta kiirni a kivalasztott pontot).
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +shipping_methods.data"
 
   if (!id) {
     return null
