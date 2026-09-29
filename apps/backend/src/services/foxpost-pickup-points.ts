@@ -1,3 +1,8 @@
+import {
+  DEFAULT_PICKUP_POINT_SEARCH_LIMIT,
+  searchPickupPoints,
+} from "./pickup-point-search";
+
 const FOXPOST_PICKUP_POINTS_URL = "https://cdn.foxpost.hu/foxplus.json";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -32,8 +37,10 @@ export type FoxpostPickupPoint = {
   longitude: number;
 };
 
-export const DEFAULT_PICKUP_POINT_SEARCH_LIMIT = 20;
-export const MAX_PICKUP_POINT_SEARCH_LIMIT = 50;
+export {
+  DEFAULT_PICKUP_POINT_SEARCH_LIMIT,
+  MAX_PICKUP_POINT_SEARCH_LIMIT,
+} from "./pickup-point-search";
 
 export type FoxpostPickupPointSearch =
   | {
@@ -101,32 +108,9 @@ const toPickupPoint = (point: FoxpostSourcePoint): FoxpostPickupPoint => ({
   longitude: point.geolng,
 });
 
-// Case and accents do not matter: "godollo" finds "Gödöllő".
-const normalized = (text: string): string =>
-  text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-
-/**
- * A pickup point matches a search when:
- * - the search is 1 to 4 digits and the postcode starts with it, or
- * - every word of the search occurs in its name, city or address.
- */
-export const matchesPickupPointSearch = (
-  point: FoxpostPickupPoint,
-  query: string,
-): boolean => {
-  const trimmed = query.trim();
-
-  if (/^\d{1,4}$/.test(trimmed)) {
-    return point.zip.startsWith(trimmed);
-  }
-
-  const haystack = normalized(`${point.name} ${point.city} ${point.address}`);
-
-  return normalized(trimmed)
-    .split(/\s+/)
-    .filter((word) => word.length > 0)
-    .every((word) => haystack.includes(word));
-};
+// The search is shared with the GLS directory (P4), so both pickers answer
+// the same way; it lives in `pickup-point-search.ts`.
+export { matchesPickupPointSearch } from "./pickup-point-search";
 
 /**
  * Foxpost publishes its locker directory at a CDN endpoint. The Web API
@@ -213,20 +197,9 @@ export class FoxpostPickupPointsService {
       return availability;
     }
 
-    const matches = availability.pickup_points
-      .filter((point) => matchesPickupPointSearch(point, query))
-      .sort(
-        (a, b) =>
-          a.zip.localeCompare(b.zip) || a.name.localeCompare(b.name, "hu"),
-      );
-
     return {
       available: true,
-      pickup_points: matches.slice(
-        0,
-        Math.min(Math.max(limit, 1), MAX_PICKUP_POINT_SEARCH_LIMIT),
-      ),
-      count: matches.length,
+      ...searchPickupPoints(availability.pickup_points, query, limit),
     };
   }
 

@@ -1,5 +1,5 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
-import { retrieveFoxpostOption } from "@lib/data/csomagpont"
+import { retrieveFoxpostOption, retrieveGlsOptions } from "@lib/data/csomagpont"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
@@ -42,6 +42,7 @@ export default async function CheckoutForm({
   const szallitasiOsztaly = await retrieveCartShippingClass()
   // P4: melyik mod a Foxpost; annal a mod csomagpont-valasztot nyit.
   const foxpost = await retrieveFoxpostOption()
+  const glsOptions = await retrieveGlsOptions()
 
   if (!shippingMethods || !paymentMethods) {
     return null
@@ -57,6 +58,7 @@ export default async function CheckoutForm({
         cart={cart}
         availableShippingMethods={shippingMethods}
         foxpostOptionId={foxpost?.option_id ?? null}
+        glsOptions={glsOptions}
       />
 
       <Payment

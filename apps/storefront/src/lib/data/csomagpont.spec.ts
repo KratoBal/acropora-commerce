@@ -5,7 +5,11 @@ vi.mock("@lib/config", () => ({ sdk }))
 
 import { foxpostSzallitasiAdat } from "@lib/util/csomagpont"
 
-import { searchFoxpostPickupPoints } from "./csomagpont"
+import {
+  retrieveGlsOptions,
+  searchFoxpostPickupPoints,
+  searchGlsPickupPoints,
+} from "./csomagpont"
 
 afterEach(() => vi.clearAllMocks())
 
@@ -83,3 +87,35 @@ describe("a Foxpost-csomagpont keresése", () => {
     })
   })
 })
+
+/**
+ * A GLS-CSOMAGPONT KERESÉSE (P4). MI PIROSIT: ha nem a mód azonosítójával
+ * kérdez; ha a cím nem a Foxposthoz hasonló alakban jön (irányítószámmal elöl);
+ * ha a GLS-módok listájának hibája eltöri a pénztárt.
+ */
+describe("a GLS-csomagpont keresése", () => {
+  it("a mód azonosítójával kérdez, és a címet irányítószámmal elöl adja", async () => {
+    sdk.client.fetch.mockResolvedValue({
+      available: true,
+      pickup_points: [{ id: "SHOP1", name: "Bolt", zip: "2100", city: "Gödöllő", address: "Fő tér 1." }],
+      count: 1,
+    })
+    const valasz = await searchGlsPickupPoints(" 2100 ", "so_gls")
+    const [ut, opciok] = sdk.client.fetch.mock.calls[0]
+    expect(ut).toBe("/store/gls/pickup-points")
+    expect(opciok).toMatchObject({ query: { q: "2100", option_id: "so_gls", limit: 20 } })
+    expect(valasz.pontok[0]).toEqual({
+      id: "SHOP1",
+      name: "Bolt",
+      address: "2100 Gödöllő, Fő tér 1.",
+      zip: "2100",
+      city: "Gödöllő",
+    })
+  })
+
+  it("a GLS-módok hibája üres listát ad, nem dob", async () => {
+    sdk.client.fetch.mockRejectedValue(new Error("503"))
+    expect(await retrieveGlsOptions()).toEqual([])
+  })
+})
+

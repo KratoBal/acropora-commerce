@@ -13,6 +13,7 @@ import { COMMERCE_SETTINGS_MODULE } from "../../../commerce-settings"
 import { CommerceSettingsService } from "../../../commerce-settings/accessor"
 import AcroporaFulfillmentService from "../../service"
 import { FoxpostPickupPointsService } from "../../../../services/foxpost-pickup-points"
+import { GlsPickupPointsService } from "../../../../services/gls-pickup-points"
 
 const configuredSettings: Record<string, unknown> = {
   shipping_gls_normal_huf: 3_500,
@@ -494,5 +495,90 @@ describe("Acropora calculated fulfillment provider", () => {
         ),
       ).resolves.toMatchObject({ calculated_amount: 0 })
     })
+  })
+})
+
+/**
+ * A GLS PICKUP-POINT OPTION NEEDS A POINT (P4). What must fail: a GLS point
+ * option accepted without a point; a point stored from the browser's words
+ * instead of our list; a heavy parcel sent to a locker; home delivery made to
+ * ask for a point.
+ */
+describe("GLS pickup-point shipping", () => {
+  const glsFrom = (items: unknown[]) =>
+    new GlsPickupPointsService({
+      fetcher: async () => ({ ok: true, json: async () => ({ items }) }),
+    })
+  const pont = (id: string, type: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    goldId: 42,
+    name: `Pont ${id}`,
+    contact: { postalCode: "1011", city: "Budapest", address: "Fő utca 1." },
+    features: ["delivery"],
+    type,
+    ...extra,
+  })
+  const withGls = (items: unknown[]) =>
+    new AcroporaFulfillmentService({
+      ...cradleWith(configuredSettings),
+      glsPickupPoints: glsFrom(items),
+    } as never)
+  const bindingId = (env: string) =>
+    resolveShippingOptionRoleBindings().find((b) => b.env === env)!.id
+  const POINT = bindingId("ACROPORA_SO_GLS_POINT")
+  const HEAVY_POINT = bindingId("ACROPORA_SO_GLS_HEAVY_POINT")
+  const HOME = bindingId("ACROPORA_SO_GLS_HOME")
+
+  it("stores the point from our list, with both GLS ids, whatever the browser sent", async () => {
+    const stored = await withGls([pont("SHOP1", "parcel-shop")]).validateFulfillmentData(
+      { id: POINT },
+      { gls_pickup_point: { id: "SHOP1", name: "Kitalált név" } },
+      {} as never,
+    )
+    expect(stored).toEqual({
+      gls_pickup_point: {
+        id: "SHOP1",
+        gold_id: 42,
+        name: "Pont SHOP1",
+        address: "1011 Budapest, Fő utca 1.",
+        type: "parcel-shop",
+      },
+    })
+  })
+
+  it("refuses a GLS point option without a point, or with an unknown one", async () => {
+    const service = withGls([pont("SHOP1", "parcel-shop")])
+    await expect(service.validateFulfillmentData({ id: POINT }, {}, {} as never)).rejects.toThrow(
+      "needs a gls_pickup_point id",
+    )
+    await expect(
+      service.validateFulfillmentData({ id: POINT }, { gls_pickup_point: { id: "NINCS" } }, {} as never),
+    ).rejects.toThrow("unavailable for this shipping method")
+  })
+
+  it("the heavy option refuses a locker and takes a parcel shop", async () => {
+    const service = withGls([pont("LOCKER1", "parcel-locker"), pont("SHOP1", "parcel-shop")])
+    await expect(
+      service.validateFulfillmentData({ id: HEAVY_POINT }, { gls_pickup_point: { id: "LOCKER1" } }, {} as never),
+    ).rejects.toThrow("unavailable for this shipping method")
+    await expect(
+      service.validateFulfillmentData({ id: HEAVY_POINT }, { gls_pickup_point: { id: "SHOP1" } }, {} as never),
+    ).resolves.toMatchObject({ gls_pickup_point: { id: "SHOP1" } })
+  })
+
+  it("home delivery asks for no point", async () => {
+    await expect(
+      withGls([]).validateFulfillmentData({ id: HOME }, { any: 1 }, {} as never),
+    ).resolves.toEqual({ any: 1 })
+  })
+
+  it("an unreachable GLS list refuses the point option", async () => {
+    const service = new AcroporaFulfillmentService({
+      ...cradleWith(configuredSettings),
+      glsPickupPoints: new GlsPickupPointsService({ fetcher: async () => Promise.reject(new Error("net")) }),
+    } as never)
+    await expect(
+      service.validateFulfillmentData({ id: POINT }, { gls_pickup_point: { id: "SHOP1" } }, {} as never),
+    ).rejects.toThrow("currently unavailable")
   })
 })
