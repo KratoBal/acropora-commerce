@@ -265,11 +265,10 @@ export const shippingProfileGaps = (
   for (const variantId of variantIds) {
     const variant = variantId ? byId.get(variantId) : undefined
 
-    if (
-      !pickupProfileId ||
-      !variant ||
-      variant.product?.shipping_profile?.id !== pickupProfileId
-    ) {
+    // An unknown pickup profile (null) differs from every real profile id, so
+    // it needs no clause of its own: every line is then a gap (measured by the
+    // calibration, where a separate clause changed nothing).
+    if (!variant || variant.product?.shipping_profile?.id !== pickupProfileId) {
       // The product when known; otherwise the variant, so the log still says
       // which line it was.
       gaps.add(variant?.product?.id ?? `variant ${variantId ?? "(none)"}`)
