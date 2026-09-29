@@ -85,7 +85,9 @@ describe("a jelszó módosítása", () => {
   })
 
   it("más szerverhiba az általános mondatot kapja, nem a nyers szöveget", async () => {
-    sdk.client.fetch.mockRejectedValue(new Error("Password could not be changed"))
+    sdk.client.fetch.mockRejectedValue(
+      new Error("Password could not be changed"),
+    )
     const valasz = await changePassword(null, urlap(JO))
     expect(valasz?.state).toBe("error")
     expect(JSON.stringify(valasz)).not.toContain("could not")
