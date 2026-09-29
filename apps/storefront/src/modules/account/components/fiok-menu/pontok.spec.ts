@@ -3,7 +3,7 @@ import { join } from "path"
 
 import { describe, expect, it } from "vitest"
 
-import { FIOK_PONTOK, aktivPont, fiokCim } from "./pontok"
+import { FIOK_PONTOK, aktivPont, fiokCim, fiokLeiras } from "./pontok"
 
 /**
  * A FIOK MENUJENEK PONTJAI. MI PIROSIT: ha egy pont nem letezo lapra visz; ha
@@ -51,5 +51,12 @@ describe("a fiók menüjének pontjai", () => {
   it("a lap címe a pont felirata, a nyitólapé Áttekintés", () => {
     expect(fiokCim("/hu/account/addresses", "hu")).toBe("Címek")
     expect(fiokCim("/hu/account", "hu")).toBe("Áttekintés")
+  })
+
+  it("a rendelések fejének leírása a mobil keret mondata, a többi lapon nincs", () => {
+    expect(fiokLeiras("/hu/account/orders", "hu")).toBe(
+      "Aktuális és korábbi rendeléseid egy helyen.",
+    )
+    expect(fiokLeiras("/hu/account/profile", "hu")).toBeUndefined()
   })
 })

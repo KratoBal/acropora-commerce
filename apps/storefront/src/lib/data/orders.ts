@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import type { UzletiAllapot } from "@lib/util/rendelesek"
 import medusaError from "@lib/util/medusa-error"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
@@ -58,6 +59,25 @@ export const listOrders = async (
     })
     .then(({ orders }) => orders)
     .catch((err) => medusaError(err))
+}
+
+/**
+ * A BEJELENTKEZETT VEVO SAJAT RENDELESEINEK UZLETI ALLAPOTA (#410). Hiba eseten
+ * ures lista: a rendelesek lapja allapot-cimke nelkul is megjelenik, es egy
+ * elerhetetlen vegpont nem viszi el a rendeleseket.
+ */
+export const listOrderBusinessStatuses = async (): Promise<UzletiAllapot[]> => {
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  return sdk.client
+    .fetch<{ business_statuses: UzletiAllapot[] }>(
+      `/store/customers/me/order-business-statuses`,
+      { method: "GET", headers, cache: "no-store" },
+    )
+    .then(({ business_statuses }) => business_statuses ?? [])
+    .catch(() => [])
 }
 
 export const createTransferRequest = async (
