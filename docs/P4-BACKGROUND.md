@@ -271,7 +271,18 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
 
 ### Still to come
 
-- **P4-4, the rest:** starting the transaction after the statement is accepted, the redirect to `paymentUrl`, and the back page with the section 3.13 texts. Waits for Balázs's word (asked 2026-09-29): his yes covered the statement and the logo only.
+- **P4-4, the storefront order and the back page:** Balázs's yes, 2026-09-29 21:37 UTC. The backend part is below (3d); the storefront follows.
+
+### 3d. The card payment's order on the backend (P4-4)
+
+The data-transfer statement must be accepted **before** the transaction starts (section 8). So:
+1. **Choosing card** (`POST /store/carts/:id/simplepay-choose`, `chooseCardPayment`) starts nothing. It deletes the cart's earlier payment session and drops the cash-on-delivery fee lines, so the review shows what the card will be charged.
+2. **Placing the order, after the tick** (`POST /store/carts/:id/simplepay-start`, `startCardPayment`) starts the transaction:
+   - a cart that is not split gets one transaction for itself, with the payer read from the cart;
+   - a mixed cart is split first, as in 3c;
+   - either way the fee lines go first, so a customer who switched from cash on delivery is not charged the fee by card.
+3. The answer's `payment_url` is where the storefront sends the customer.
+- **Both run under the split lock.**
 
 ### 4. The storefront's SimplePay statement and logo (P4-4, first part)
 

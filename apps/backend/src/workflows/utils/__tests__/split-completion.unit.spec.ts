@@ -7,9 +7,10 @@ import {
   SharedPaymentOperations,
   SplitOperations,
   SPLIT_LOCK_KEY,
+  chooseCardPayment,
   completeSplitCart,
   rejoinSharedSplit,
-  startSharedSplitPayment,
+  startCardPayment,
 } from "../split-completion"
 
 /**
@@ -27,6 +28,8 @@ const PAY_AT_STORE = "pp_system_default"
 const SIMPLEPAY = "pp_simplepay_simplepay"
 /** Unit prices for the in-memory totals. */
 const PRICE: Record<string, number> = { v_eszkoz: 4950, v_korall: 8500 }
+const PRICE_TOTAL = (c: SplitCart) =>
+  c.items.reduce((sum, l) => sum + (PRICE[l.variant_id ?? ""] ?? 0) * l.quantity, 0)
 const COD = "pp_acropora_cod"
 
 type Shop = {
@@ -151,6 +154,14 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     },
     warn: (message) => shop.warnings.push(message),
     discountTotal: async (id) => shop.discountOf(get(id)),
+    dropCashOnDeliveryFee: async (id) => {
+      step(`dropCashOnDeliveryFee ${id}`)
+    },
+    clearPayment: async (id) => {
+      step(`clearPayment ${id}`)
+      get(id).payment_provider_id = null
+      get(id).shared_payment = false
+    },
     withLock: async (id, job) => {
       const key = SPLIT_LOCK_KEY(id)
       shop.locks.push(key)
@@ -170,9 +181,16 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
       c.payment_provider_id = provider
       c.shared_payment = true
       const joint = data.simplepay_joint as { total: number } | undefined
-      return joint
-        ? { transactionId: 777, orderRef: `payses_${id}-x`, total: joint.total, paymentUrl: "https://sandbox.simplepay.hu/pay/x" }
-        : { ...(data.simplepay_joined as object), joined: true }
+      if (data.simplepay_joined) {
+        return { ...(data.simplepay_joined as object), joined: true }
+      }
+      c.shared_payment = !!joint
+      return {
+        transactionId: 777,
+        orderRef: `payses_${id}-x`,
+        total: joint?.total ?? PRICE_TOTAL(c),
+        paymentUrl: "https://sandbox.simplepay.hu/pay/x",
+      }
     },
   }
   return shop
@@ -417,7 +435,7 @@ describe("starting one card payment for a mixed cart", () => {
   it("splits first, then starts one transaction for both carts, which the pickup session joins", async () => {
     const shop = vegyes()
 
-    const result = await startSharedSplitPayment("cart_1", shop.ops, config)
+    const result = await startCardPayment("cart_1", shop.ops, config)
 
     expect(result).toEqual({
       payment_url: "https://sandbox.simplepay.hu/pay/x",
@@ -427,6 +445,7 @@ describe("starting one card payment for a mixed cart", () => {
       pickup_cart_id: "cart_pickup_1",
     })
     expect(shop.log).toEqual([
+      "dropCashOnDeliveryFee cart_1",
       "pickupProfileGaps v_korall",
       "createPickupCart cart_1",
       "addLines cart_pickup_1 v_korall",
@@ -442,29 +461,45 @@ describe("starting one card payment for a mixed cart", () => {
     const shop = vegyes()
     shop.failOn.add(`startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`)
 
-    await expect(startSharedSplitPayment("cart_1", shop.ops, config)).rejects.toThrow("failed")
+    await expect(startCardPayment("cart_1", shop.ops, config)).rejects.toThrow("failed")
 
     expect(shop.carts.get("cart_1")!.items.map((l) => l.variant_id).sort()).toEqual(["v_eszkoz", "v_korall"])
     expect(shop.carts.get("cart_pickup_1")!.items).toEqual([])
   })
 
-  it("refuses a cart that is not split, and a shop without card payment, with nothing moved", async () => {
+  it("a cart that is not split gets one transaction for itself, after its fee is dropped", async () => {
     const plain = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})
-    await expect(startSharedSplitPayment("cart_1", plain.ops, config)).rejects.toThrow("not split")
 
+    expect(await startCardPayment("cart_1", plain.ops, config)).toEqual({
+      payment_url: "https://sandbox.simplepay.hu/pay/x",
+      total: 4950,
+      shipped_total: 4950,
+      pickup_total: 0,
+      pickup_cart_id: null,
+    })
+    expect(plain.log).toEqual(["dropCashOnDeliveryFee cart_1", `startPayment cart_1 ${SIMPLEPAY} []`])
+    expect(plain.carts.size).toBe(1)
+  })
+
+  it("refuses a shop without card payment, and a completed cart, with nothing changed", async () => {
     const shop = vegyes()
-    await expect(startSharedSplitPayment("cart_1", shop.ops, { providerId: "" })).rejects.toThrow("not configured")
-    expect([...plain.log, ...shop.log]).toEqual([])
+    await expect(startCardPayment("cart_1", shop.ops, { providerId: "" })).rejects.toThrow("not configured")
+
+    const done = vegyes()
+    done.carts.get("cart_1")!.completed_at = "2026-09-29T20:00:00Z"
+    await expect(startCardPayment("cart_1", done.ops, config)).rejects.toThrow("already completed")
+    expect([...shop.log, ...done.log]).toEqual([])
   })
 
   it("started again, it reuses the split and starts a new transaction", async () => {
     const shop = vegyes()
-    await startSharedSplitPayment("cart_1", shop.ops, config)
+    await startCardPayment("cart_1", shop.ops, config)
     shop.log.length = 0
 
-    await startSharedSplitPayment("cart_1", shop.ops, config)
+    await startCardPayment("cart_1", shop.ops, config)
 
     expect(shop.log).toEqual([
+      "dropCashOnDeliveryFee cart_1",
       "applyPromotions cart_pickup_1 TAVASZ",
       `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"] 21950`,
       `startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`,
@@ -476,7 +511,7 @@ describe("starting one card payment for a mixed cart", () => {
 describe("completing a split paid together", () => {
   const paid = async () => {
     const shop = vegyes()
-    await startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
+    await startCardPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
     shop.log.length = 0
     return shop
   }
@@ -564,7 +599,7 @@ describe("a split that would change the discount", () => {
     const shop = vegyes()
     shop.discountOf = automatic
 
-    await expect(startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })).rejects.toThrow(
+    await expect(startCardPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })).rejects.toThrow(
       "split_discount_changed"
     )
     expect(shop.log.some((entry) => entry.startsWith("startPayment"))).toBe(false)
@@ -598,7 +633,7 @@ describe("a split that would change the discount", () => {
 describe("putting a split back after its shared payment did not happen", () => {
   const started = async () => {
     const shop = vegyes()
-    await startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
+    await startCardPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
     shop.log.length = 0
     return shop
   }
@@ -655,10 +690,35 @@ describe("two splits of the same cart at once", () => {
 
   it("take a key of their own, not the cart id Medusa locks, for every entry", async () => {
     const shop = vegyes()
-    await startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
+    await startCardPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
     await rejoinSharedSplit("cart_1", shop.ops)
     await completeSplitCart("cart_1", shop.ops, config)
 
     expect(shop.locks).toEqual(["split:cart_1", "split:cart_1", "split:cart_1"])
+  })
+})
+
+/**
+ * THE CUSTOMER CHOSE CARD PAYMENT (P4-4). What must fail: a transaction
+ * started before the statement is accepted; the cash-on-delivery fee or the
+ * old session left on the cart, so the review shows the wrong amount; a
+ * completed cart touched.
+ */
+describe("choosing card payment", () => {
+  it("drops the old session and the fee, and starts nothing", async () => {
+    const shop = vegyes()
+
+    await chooseCardPayment("cart_1", shop.ops)
+
+    expect(shop.log).toEqual(["clearPayment cart_1", "dropCashOnDeliveryFee cart_1"])
+    expect(shop.carts.get("cart_1")!.payment_provider_id).toBeNull()
+    expect(shop.locks).toEqual(["split:cart_1"])
+  })
+
+  it("refuses a completed cart", async () => {
+    const shop = vegyes()
+    shop.carts.get("cart_1")!.completed_at = "2026-09-29T20:00:00Z"
+    await expect(chooseCardPayment("cart_1", shop.ops)).rejects.toThrow("already completed")
+    expect(shop.log).toEqual([])
   })
 })

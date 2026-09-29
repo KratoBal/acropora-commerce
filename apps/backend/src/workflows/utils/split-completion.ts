@@ -435,6 +435,10 @@ export type SharedPaymentOperations = SplitOperations & {
     providerId: string,
     data: Record<string, unknown>
   ): Promise<Record<string, unknown>>
+  /** Removes the cash-on-delivery fee lines, if any: a card payment owes none. */
+  dropCashOnDeliveryFee(cartId: string): Promise<void>
+  /** Deletes the cart's payment sessions (the customer is changing method). */
+  clearPayment(cartId: string): Promise<void>
 }
 
 export type SharedPaymentStart = {
@@ -442,10 +446,17 @@ export type SharedPaymentStart = {
   total: number
   shipped_total: number
   pickup_total: number
-  pickup_cart_id: string
+  pickup_cart_id: string | null
 }
 
 /**
+ * THE CARD PAYMENT STARTS HERE (P4-3c, P4-4), after the customer accepted
+ * SimplePay's data-transfer statement: a cart that is not split gets one
+ * transaction for itself; a mixed cart is split first (below).
+ *
+ * The cash-on-delivery fee goes first, so a customer who switched from cash on
+ * delivery is not charged it by card, and the amount SimplePay gets is final.
+ *
  * ONE CARD PAYMENT FOR BOTH ORDERS OF A MIXED CART (P4-3c, variant B).
  *
  * The lines are split BEFORE the payment starts, so the transaction is for
@@ -458,14 +469,14 @@ export type SharedPaymentStart = {
  * and the cart is whole again. Called again (a second click, or after a
  * cancelled payment), it reuses the split and starts a new transaction.
  */
-export const startSharedSplitPayment = (
+export const startCardPayment = (
   cartId: string,
   ops: SharedPaymentOperations,
   config: { providerId: string }
 ): Promise<SharedPaymentStart> =>
-  ops.withLock(cartId, () => startSharedSplitPaymentLocked(cartId, ops, config))
+  ops.withLock(cartId, () => startCardPaymentLocked(cartId, ops, config))
 
-const startSharedSplitPaymentLocked = async (
+const startCardPaymentLocked = async (
   cartId: string,
   ops: SharedPaymentOperations,
   config: { providerId: string }
@@ -484,11 +495,19 @@ const startSharedSplitPaymentLocked = async (
   const splitIds = new Set(await ops.splitLineIds(cartId))
   const pickupLines = cart.items.filter((line) => splitIds.has(line.id))
 
+  await ops.dropCashOnDeliveryFee(cartId)
+
+  // NOT SPLIT: one transaction for the cart itself, with its payer.
   if (!pickupLines.length && !pickupCartId) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "This cart is not split; it is paid as one"
-    )
+    const total = await ops.cartTotal(cartId)
+    const facts = await ops.startPayment(cartId, config.providerId, await ops.payerOf(cartId))
+    return {
+      payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,
+      total,
+      shipped_total: total,
+      pickup_total: 0,
+      pickup_cart_id: null,
+    }
   }
 
   const pickupId = await moveToPickupCart(ops, cart, pickupLines, pickupCartId)
@@ -551,3 +570,22 @@ const rejoinSharedSplitLocked = async (
   await movePickupLinesBack(ops, cartId, pickupCartId)
   return { rejoined: true }
 }
+
+/**
+ * THE CUSTOMER CHOSE CARD PAYMENT (P4-4), before accepting the statement and
+ * before any transaction: the cash-on-delivery fee and the earlier payment
+ * session go, so the review shows the amount the card will be charged, and
+ * nothing is started yet. The transaction starts at placement
+ * (`startCardPayment`), after the acceptance.
+ */
+export const chooseCardPayment = (cartId: string, ops: SharedPaymentOperations): Promise<void> =>
+  ops.withLock(cartId, async () => {
+    const cart = await mustLoad(ops, cartId)
+
+    if (cart.completed_at) {
+      throw new MedusaError(MedusaError.Types.NOT_ALLOWED, `Cart ${cartId} is already completed`)
+    }
+
+    await ops.clearPayment(cartId)
+    await ops.dropCashOnDeliveryFee(cartId)
+  })

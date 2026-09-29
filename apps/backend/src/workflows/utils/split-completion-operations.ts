@@ -13,6 +13,7 @@ import {
   createPaymentCollectionForCartWorkflow,
   createPaymentSessionsWorkflow,
   deleteLineItemsWorkflow,
+  deletePaymentSessionsWorkflow,
   updateCartPromotionsWorkflow,
   updateCartWorkflow,
 } from "@medusajs/medusa/core-flows"
@@ -23,6 +24,8 @@ import {
   simplePayFactsOf,
 } from "../../modules/simplepay/service"
 import { reconcileCartCashOnDeliveryFeeWorkflow } from "../reconcile-cart-cod-fee"
+import { planCashOnDeliveryFee } from "./cod-fee-reconciliation"
+import { loadCartCashOnDeliveryFeeState } from "./load-cart-cod-fee-state"
 import { loadCartShippingDecision } from "./load-cart-shipping-decision"
 import {
   PARENT_CART_METADATA_KEY,
@@ -82,6 +85,7 @@ export const CART_FIELDS = [
   "promotions.application_method.type",
   "promotions.application_method.allocation",
   "payment_collection.id",
+  "payment_collection.payment_sessions.id",
   "payment_collection.payment_sessions.provider_id",
   "payment_collection.payment_sessions.data",
   "shipping_methods.id",
@@ -444,5 +448,27 @@ export const sharedPaymentOperations = (
     })
 
     return ((result as any)?.data?.[SIMPLEPAY_DATA_KEY] ?? {}) as Record<string, unknown>
+  },
+
+  dropCashOnDeliveryFee: async (cartId) => {
+    const state = await loadCartCashOnDeliveryFeeState(cartId, container)
+    // What the cart owes for a card payment: no fee at all.
+    const plan = planCashOnDeliveryFee({ dueHuf: 0, items: state?.cart.items })
+
+    if (plan.action === "remove") {
+      await deleteLineItemsWorkflow(container).run({
+        input: { cart_id: cartId, ids: plan.removeIds },
+      })
+    }
+  },
+
+  clearPayment: async (cartId) => {
+    const raw = await loadRawCart(container, cartId)
+    const sessions = (raw?.payment_collection?.payment_sessions ?? []) as { id?: string }[]
+    const ids = sessions.map((session) => session?.id).filter((id): id is string => !!id)
+
+    if (ids.length) {
+      await deletePaymentSessionsWorkflow(container).run({ input: { ids } })
+    }
   },
 })
