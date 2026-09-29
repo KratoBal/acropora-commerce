@@ -280,7 +280,11 @@ describe("az 1b fül-sáv (192:57)", () => {
       <ProductDescriptionTabs description={PROZA + TABLAZAT} valtozat="1b" />,
     )
     const [aktiv, masik] = screen.getAllByRole("tab")
-    expect(aktiv.className).toContain("text-[15px]")
+    // mobilon 14 (196:43), asztalon 15 (193:107)
+    expect(aktiv.className).toContain("text-[14px]")
+    expect(aktiv.className).toContain("lg:text-[15px]")
+    expect(screen.getByRole("tablist").className).toContain("gap-[22px]")
+    expect(screen.getByRole("tablist").className).toContain("lg:gap-7")
     expect(aktiv.className).toContain("font-semibold")
     expect(aktiv.className).toContain("border-[var(--terv-szoveg)]")
     expect(masik.className).toContain("font-medium")

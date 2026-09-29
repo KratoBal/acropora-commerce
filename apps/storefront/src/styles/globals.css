@@ -1024,10 +1024,17 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   sotet (2a) lap a P3-ig valtozatlan.
 */
 [data-vilag="vilagos"] #vaz-ar .termeklap-ar {
-  font-size: 36px;
+  /* mobilon a 196:18 ara: 700/28 */
+  font-size: 28px;
   font-weight: 700;
-  line-height: 47px;
-  letter-spacing: -0.5px;
+  line-height: 36px;
+}
+@media (min-width: 1024px) {
+  [data-vilag="vilagos"] #vaz-ar .termeklap-ar {
+    font-size: 36px;
+    line-height: 47px;
+    letter-spacing: -0.5px;
+  }
 }
 
 /*
@@ -1089,4 +1096,37 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   border: 1px solid var(--terv-keret);
   background: var(--terv-hatter-lap);
   padding: 20px;
+}
+
+/*
+  A VILAGOS TERMEKLAP MOBILON A 196:3 SZERINT (P2, 3c).
+
+  - A morzsamenu mobilon nem all (a keretben nincs).
+  - A vasarlasi csoport NEM keretes kartya (196:17-196:28): ar, valaszto,
+    keszlet a lap foldjen. A panel kerete, belso margoja es hattere
+    BEAGYAZOTT stilusban all (a vaz kozos panelje, es a regi orzok ezt az
+    alakot rogzitik), ezert itt `!important` kell: kulonben a beagyazott
+    stilus nyerne. A hatokor szuk: vilagos lap, `lg` alatt, egy jelolo.
+  - A ragados sav ara 600/16 (196:70), a gombja legalabb 126 pixeles
+    (196:71).
+  A sotet (2a) lap a P3-ig valtozatlan.
+*/
+@media (max-width: 1023.98px) {
+  [data-vilag="vilagos"] [data-testid="lap-morzsa-sav"] {
+    display: none;
+  }
+  [data-vilag="vilagos"] [data-vaz-csoport="vasarlas"] {
+    border-width: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+}
+[data-vilag="vilagos"] .termeklap-ragados-ar .termeklap-ar {
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 600;
+}
+[data-vilag="vilagos"] .termeklap-ragados-cselekves > * {
+  min-width: 126px;
+  justify-content: center;
 }

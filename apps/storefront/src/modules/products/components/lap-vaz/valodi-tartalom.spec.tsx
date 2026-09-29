@@ -412,7 +412,14 @@ describe("a váz valódi tartalma", () => {
 
     expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
     const eyebrow = screen.getByTestId("vaz-eyebrow")
-    expect(eyebrow.textContent).toBe("Amtra · TDS mérők")
+    expect(screen.getByTestId("vaz-eyebrow-asztali").textContent).toBe(
+      "Amtra · TDS mérők",
+    )
+    // Mobilon a 196:15 szerint marka · cikkszam, rez szinnel.
+    const mobil = screen.getByTestId("vaz-eyebrow-mobil")
+    expect(mobil.textContent).toBe("Amtra · 8023222196186")
+    expect(mobil.className).toContain("text-acr-heritage")
+    expect(mobil.className).toContain("lg:hidden")
     expect(eyebrow.getAttribute("data-cikkszam")).toBe("8023222196186")
     expect(eyebrow.textContent).not.toContain("Cikkszám")
     expect(screen.queryByTestId("vaz-besorolas")).toBeNull()
@@ -432,7 +439,12 @@ describe("a váz valódi tartalma", () => {
         )}
       />,
     )
-    expect(screen.getByTestId("vaz-eyebrow").textContent).toBe("TDS mérők")
+    expect(screen.getByTestId("vaz-eyebrow-asztali").textContent).toBe(
+      "TDS mérők",
+    )
+    expect(screen.getByTestId("vaz-eyebrow-mobil").textContent).toBe(
+      "8023222196186",
+    )
   })
 
   /*

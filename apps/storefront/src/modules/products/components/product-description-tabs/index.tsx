@@ -152,7 +152,7 @@ const ProductDescriptionTabs = ({
       <div
         className={
           egyB
-            ? "flex gap-7 border-b border-[var(--terv-keret)] pt-5"
+            ? "flex gap-[22px] border-b border-[var(--terv-keret)] pt-5 lg:gap-7"
             : "flex border-b border-[var(--terv-keret)]"
         }
         role="tablist"
@@ -172,7 +172,7 @@ const ProductDescriptionTabs = ({
               onClick={() => setActiveIndex(index)}
               className={
                 egyB
-                  ? `-mb-px border-b-2 pb-0 text-[15px] leading-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-[var(--terv-szoveg)] font-semibold text-[var(--terv-szoveg)]" : "border-transparent font-medium text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`
+                  ? `-mb-px border-b-2 pb-0 text-[14px] leading-[18px] lg:text-[15px] lg:leading-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-[var(--terv-szoveg)] font-semibold text-[var(--terv-szoveg)]" : "border-transparent font-medium text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`
                   : `px-4 py-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-b-2 border-[var(--terv-szoveg)] text-[var(--terv-szoveg)]" : "text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`
               }
             >

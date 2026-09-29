@@ -142,7 +142,7 @@ const RagadosSav = ({ cimke, ar, cselekves }: RagadosSavProps) => {
         ) : null}
         {ar ? (
           <div
-            className="text-base font-semibold lg:text-xl lg:font-bold"
+            className="termeklap-ragados-ar text-base font-semibold lg:text-xl lg:font-bold"
             data-testid="ragados-sav-ar"
           >
             {ar}
@@ -150,7 +150,12 @@ const RagadosSav = ({ cimke, ar, cselekves }: RagadosSavProps) => {
         ) : null}
       </div>
       {cselekves ? (
-        <div data-testid="ragados-sav-cselekves">{cselekves}</div>
+        <div
+          className="termeklap-ragados-cselekves"
+          data-testid="ragados-sav-cselekves"
+        >
+          {cselekves}
+        </div>
       ) : null}
     </div>
   )
