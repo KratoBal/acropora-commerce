@@ -135,7 +135,13 @@ export const BOLYEGKEP_OSZLOP_MOBIL = 3
  * A rez itt FELULET-szerepben all (keret), nem szovegben, ezert a
  * `--terv-kiemel` a helyes token, nem a `-tinta`.
  */
-const KIVALASZTOTT_KERET = "2px solid var(--terv-kiemel)"
+/*
+  AZ AKTIV BELYEGKEP KERETE: a vilagos (muszaki) lapon a 192:57 szerint navy
+  (193:78), a `--termeklap-belyeg-aktiv` valtozobol (acropora-tokens.css).
+  Ahol nincs beallitva (sotet lap), a korabbi `--terv-kiemel` marad.
+*/
+const KIVALASZTOTT_KERET =
+  "2px solid var(--termeklap-belyeg-aktiv, var(--terv-kiemel))"
 const KERET = "1px solid var(--terv-keret)"
 
 export const TovabbiKepek = ({
@@ -160,7 +166,7 @@ export const TovabbiKepek = ({
 
   return (
     <div
-      className="grid grid-cols-3 gap-2.5 lg:grid-cols-6"
+      className="termeklap-belyegsor grid grid-cols-3 gap-2.5 lg:grid-cols-6"
       data-testid="tovabbi-kepek"
     >
       {kepek.map((kep, i) => {
@@ -171,7 +177,7 @@ export const TovabbiKepek = ({
           <img
             src={kep.url}
             alt=""
-            className="aspect-square w-full object-cover"
+            className="termeklap-belyeg aspect-square w-full object-cover"
             data-testid="tovabbi-kep"
           />
         )

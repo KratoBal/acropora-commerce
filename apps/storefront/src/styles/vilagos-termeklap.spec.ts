@@ -64,4 +64,27 @@ describe("a világos terméklap tokenjei", () => {
     expect(ar).toContain("font-weight: 700")
     expect(ar).toContain("letter-spacing: -0.5px")
   })
+
+  /*
+    3a-2 (193:74, 193:77): asztalon a foto korul nincs doboz, a kep sajat
+    keretet visel, a belyegkepek 126 pixeles oszlopokban, 126:82 aranyban,
+    navy aktiv kerettel. A sotet lap ezekbol semmit nem kap.
+  */
+  it("a kép és a bélyegképek a 192:57 szerint, csak asztalon és csak világosban", () => {
+    const media = GLOBALS.slice(GLOBALS.indexOf("A VILAGOS TERMEKLAP KEPE"))
+    const lg = media.slice(media.indexOf("@media (min-width: 1024px)"))
+    expect(lg).toMatch(
+      /\[data-vilag="vilagos"\] #vaz-foto \{\s*border-width: 0;\s*padding: 0;/,
+    )
+    expect(lg).toMatch(
+      /\[data-vilag="vilagos"\] \.termeklap-nagykep \{\s*border: 1px solid var\(--terv-keret\);/,
+    )
+    expect(lg).toMatch(
+      /\.termeklap-belyegsor \{\s*grid-template-columns: repeat\(6, 126px\);/,
+    )
+    expect(lg).toMatch(/\.termeklap-belyeg \{\s*aspect-ratio: 126 \/ 82;/)
+    expect(TOKENEK).toContain(
+      "--termeklap-belyeg-aktiv: var(--acr-color-navy);",
+    )
+  })
 })

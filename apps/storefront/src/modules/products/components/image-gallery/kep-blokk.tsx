@@ -51,7 +51,7 @@ export const KepBlokk = ({
       <img
         src={nagy.url ?? ""}
         alt={alt}
-        className={`w-full ${KEP_ARANY_OSZTALY}`}
+        className={`termeklap-nagykep w-full ${KEP_ARANY_OSZTALY}`}
         style={{ objectFit: "contain" }}
         data-testid={jelolo}
       />

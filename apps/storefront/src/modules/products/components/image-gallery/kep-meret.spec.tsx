@@ -417,3 +417,31 @@ describe("a műszaki lapok kép-blokkja", () => {
     expect(container.innerHTML).toBe("")
   })
 })
+
+describe("a bélyegkép aktív kerete (192:57, 193:78)", () => {
+  it("a világos lap változójából jön, és anélkül a korábbi réz marad", () => {
+    render(
+      <TovabbiKepek
+        kepek={
+          [
+            { id: "a", url: "https://pelda/a.jpg" },
+            { id: "b", url: "https://pelda/b.jpg" },
+          ] as never
+        }
+        kivalasztott={0}
+        onValaszt={() => {}}
+      />,
+    )
+    const [aktiv, masik] = screen.getAllByTestId("tovabbi-kep-gomb")
+    expect(aktiv.style.border).toBe(
+      "2px solid var(--termeklap-belyeg-aktiv, var(--terv-kiemel))",
+    )
+    expect(masik.style.border).not.toContain("termeklap-belyeg-aktiv")
+    expect(screen.getByTestId("tovabbi-kepek").className).toContain(
+      "termeklap-belyegsor",
+    )
+    expect(screen.getAllByTestId("tovabbi-kep")[0].className).toContain(
+      "termeklap-belyeg",
+    )
+  })
+})

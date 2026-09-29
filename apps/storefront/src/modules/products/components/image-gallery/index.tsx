@@ -72,7 +72,7 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
         {nagy && (
           <div
             key={nagy.id}
-            className={`relative w-full overflow-hidden ${KEP_ARANY_OSZTALY}`}
+            className={`termeklap-nagykep relative w-full overflow-hidden ${KEP_ARANY_OSZTALY}`}
             /*
             SIMA `div`, NEM A KOZOS `Container` -- ES EZT MERES KERTE.
 

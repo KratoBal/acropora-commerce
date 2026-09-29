@@ -1029,3 +1029,27 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   line-height: 47px;
   letter-spacing: -0.5px;
 }
+
+/*
+  A VILAGOS TERMEKLAP KEPE ES BELYEGKEPEI A 192:57 SZERINT (P2, 3a-2).
+
+  Asztalon (a `lg` torespont folott) a foto korul nincs doboz: a kep sajat 1
+  pixeles keretet visel (193:74, 856 x 535), a belyegkepek alatta keret
+  nelkul allnak, 126 x 82 aranyban (193:78-193:82). A mobil a 196:3 szerint
+  kulon lepes (3c); a sotet (2a) lap a P3-ig valtozatlan.
+*/
+@media (min-width: 1024px) {
+  [data-vilag="vilagos"] #vaz-foto {
+    border-width: 0;
+    padding: 0;
+  }
+  [data-vilag="vilagos"] .termeklap-nagykep {
+    border: 1px solid var(--terv-keret);
+  }
+  [data-vilag="vilagos"] .termeklap-belyegsor {
+    grid-template-columns: repeat(6, 126px);
+  }
+  [data-vilag="vilagos"] .termeklap-belyeg {
+    aspect-ratio: 126 / 82;
+  }
+}

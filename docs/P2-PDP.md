@@ -38,6 +38,21 @@ It paints itself from the old `--terv-*` tokens (Space Grotesk, the old warm pal
   - The dark page keeps its category chain, unchanged.
 - **Price (`193:125`):** 700 / 36 px, −0.5 px tracking, on the light page only. It uses a `termeklap-ar` hook on `ProductPrice` and a rule in `globals.css`.
 
+## 3a-2: image and thumbnails
+
+On desktop (from `lg`, 1024 px), light page only:
+
+| Element | Figma | Built | Measured |
+|---|---|---|---|
+| Box around the photo | none (`193:74`) | the photo section's box loses its border and padding | 856 px wide, 0 border, 0 padding |
+| Main image | own 1 px border, 856 × 535 | `.termeklap-nagykep`, 1 px line border | 856 × 535, 1 px |
+| Thumbnails | 126 × 82, gap 10 (`193:78`–`193:82`) | `.termeklap-belyegsor` with six 126 px columns, `.termeklap-belyeg` at 126:82 | 126 × 83 (the extra pixel is the 2 px active border around the image) |
+| Active thumbnail | navy 2 px (`193:78`) | `--termeklap-belyeg-aktiv`, set to navy in the light block; without it the old `--terv-kiemel` stays | navy |
+
+- On mobile the thumbnails stay square; the mobile frame (`196:3`) is 3c.
+- The dark (2a) page is unchanged: its photo box keeps the 1 px border and 16 px padding (measured on the coral product page).
+- The video thumbnail (`193:83`) is not built: no product has a video.
+
 ### Left out (no data or no feature), for the whole 1b page
 
 | Frame element | Why |

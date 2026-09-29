@@ -150,4 +150,6 @@ body:has([data-acr-mod="reef"]) [data-fejlec] {
   /* A keret MINDEN szovege Hanken, a technikai ertekek is (cikkszam). */
   --terv-betu-fo-lanc: var(--acr-font-hanken), system-ui, sans-serif;
   --terv-betu-mono-lanc: var(--acr-font-hanken), system-ui, sans-serif;
+  /* Az aktiv belyegkep kerete (193:78): navy, nem a Kosárba rezje. */
+  --termeklap-belyeg-aktiv: var(--acr-color-navy);
 }
