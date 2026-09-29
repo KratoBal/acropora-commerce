@@ -63,6 +63,12 @@ export type SplitOperations = {
   /** Applies the codes that are valid on the cart; the others are skipped. */
   applyPromotions(cartId: string, codes: string[]): Promise<void>
   setStorePickup(cartId: string): Promise<void>
+  /**
+   * The products among these lines that are NOT on the store pickup option's
+   * shipping profile, by product id. Medusa refuses to complete a cart whose
+   * lines have no matching shipping method; checked before anything moves.
+   */
+  pickupProfileGaps(lines: SplitLine[]): Promise<string[]>
   /** A payment session with this provider, and its fee lines in line with it. */
   ensurePayment(cartId: string, providerId: string): Promise<void>
   complete(cartId: string): Promise<string>
@@ -184,6 +190,22 @@ export const completeSplitCart = async (
     )
   }
 
+  // THE PICKUP ORDER MUST BE POSSIBLE BEFORE THE FIRST ORDER IS MADE (measured
+  // on stage, 2026-09-29: a pickup product without a shipping profile let the
+  // shipped order through and left the pickup cart pending). A gap known in
+  // advance now refuses the placement with nothing moved.
+  const gaps = pickupLines.length ? await ops.pickupProfileGaps(pickupLines) : []
+
+  if (gaps.length) {
+    ops.warn(
+      `Split completion refused for ${cartId}: not on the store pickup's shipping profile: ${gaps.join(", ")}`
+    )
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Some pickup items cannot be collected in the shop yet, so the order was not placed"
+    )
+  }
+
   const pickupId = pickupCartId ?? (await ops.createPickupCart(cart))
   const pickup = await mustLoad(ops, pickupId)
 
@@ -223,3 +245,37 @@ export const completeSplitCart = async (
 
   return finishPickup(ops, parentOrderId, pickupId, config.payAtStoreProviderId)
 }
+
+/**
+ * The products whose shipping profile is not the store pickup's, from the
+ * variant rows of the pickup lines. A variant without a product row, or a
+ * product without a profile, is a gap too: Medusa would refuse it the same way.
+ */
+export const shippingProfileGaps = (
+  variants: {
+    id: string
+    product?: { id?: string | null; shipping_profile?: { id?: string | null } | null } | null
+  }[],
+  variantIds: (string | null)[],
+  pickupProfileId: string | null
+): string[] => {
+  const byId = new Map(variants.map((variant) => [variant.id, variant]))
+  const gaps = new Set<string>()
+
+  for (const variantId of variantIds) {
+    const variant = variantId ? byId.get(variantId) : undefined
+
+    if (
+      !pickupProfileId ||
+      !variant ||
+      variant.product?.shipping_profile?.id !== pickupProfileId
+    ) {
+      // The product when known; otherwise the variant, so the log still says
+      // which line it was.
+      gaps.add(variant?.product?.id ?? `variant ${variantId ?? "(none)"}`)
+    }
+  }
+
+  return Array.from(gaps)
+}
+
