@@ -33,8 +33,13 @@ The plan splits it into four PRs:
 - `setShippingMethod` takes an optional `data`. `foxpostSzallitasiAdat(id)` builds `{ foxpost_pickup_point: { id } }`.
 - Only the id is sent; the backend writes the name and address from its own directory, so a browser cannot put an invented point on an order.
 
+**The picker, added later in today's look (not the Figma redesign):**
+- `GET /store/foxpost` tells the checkout which option is Foxpost (the role table lives in the backend) and whether it is available.
+- In the existing shipping step, choosing Foxpost opens `CsomagpontValaszto`: a postcode or city search, the results list, and the chosen point.
+- Choosing a point sets the method with the point in its `data`. Until then the method is not set, and "Tovább a fizetéshez" stays disabled.
+- The point already in the cart is shown back.
+
 **Not in this PR:**
-- **The picker UI:** the checkout screens wait for Balázs's word, so nothing in the checkout calls these yet.
 - **GLS pickup points:** there is no GLS directory in the code, only the option names. It needs the official GLS ParcelShop documentation (`P4-LEFT-OUT.md`).
 
 ## 2. Two orders from one cart (P4-2)
