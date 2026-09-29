@@ -99,6 +99,12 @@ export default defineMiddlewares({
       ],
     },
     {
+      // SimplePay signs the exact bytes it sends; the IPN is checked on them.
+      matcher: "/simplepay/ipn",
+      method: "POST",
+      bodyParser: { preserveRawBody: true },
+    },
+    {
       matcher: "/store/shipping-class",
       method: "GET",
       middlewares: [validateAndTransformQuery(StoreGetShippingClassParams, {})],
