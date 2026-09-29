@@ -13,10 +13,16 @@ const adat = vi.hoisted(() => ({
   listProductsWithSort: vi.fn(),
 }))
 vi.mock("@lib/data/products", () => adat)
+const katAdat = vi.hoisted(() => ({ listCategories: vi.fn() }))
+vi.mock("@lib/data/categories", () => katAdat)
 // A kartya gombja a kosar szerver-muveletet importalja; itt nem hivodik.
 vi.mock("@lib/data/cart", () => ({ addToCart: vi.fn() }))
 
-import CommerceKategoriaLap, { LAP_MERET, kovetkezoLap } from "./kategoria-lap"
+import CommerceKategoriaLap, {
+  LAP_MERET,
+  kovetkezoLap,
+  savElemek,
+} from "./kategoria-lap"
 
 const kat = (id: string, name: string, extra: Record<string, unknown> = {}) =>
   ({ id, name, handle: id, ...extra }) as never
@@ -33,6 +39,9 @@ const KATEGORIA = kat("termekek", "Termékek", {
 /** A gyerekek szama: 28, 0 (ures), es egy sikertelen szamlalas. */
 const SZAMOK: Record<string, number | Error> = {
   vilagitas: 28,
+  led: 40,
+  t5: 0,
+  jelen: 0,
   ures: 0,
   hibas: new Error("halozati hiba"),
 }
@@ -56,6 +65,9 @@ const lap = async (props: Record<string, unknown> = {}) =>
   )
 
 beforeEach(() => {
+  // Alapbol ures testver-lista: egy `undefined` valasz az egesz lapot
+  // eltorne, es az a teszt-dupla hibaja lenne, nem a kode.
+  katAdat.listCategories.mockResolvedValue([])
   adat.listProducts.mockImplementation(async ({ queryParams }) => {
     const ertek = SZAMOK[queryParams.category_id[0]]
     if (ertek instanceof Error) throw ertek
@@ -146,5 +158,63 @@ describe("a Commerce kategórialap", () => {
     expect(kovetkezoLap(1, "price_desc", ["o1", "o2"])).toBe(
       "?sortBy=price_desc&optionValueIds=o1&optionValueIds=o2&page=2",
     )
+  })
+
+  describe("levél-kategórián a testvérek (162:117)", () => {
+    const LEVEL = kat("jelen", "Moonlight", {
+      parent_category: kat("vilagitas", "Világítás"),
+      category_children: [],
+    })
+    const TESTVEREK = [
+      kat("led", "LED"),
+      kat("jelen", "Moonlight"),
+      kat("t5", "T5"),
+    ]
+
+    it("a sáv a testvéreket mutatja, az aktuálisat kiemelve, Összes nélkül", async () => {
+      katAdat.listCategories.mockResolvedValue(TESTVEREK)
+      await lap({ category: LEVEL })
+      expect(katAdat.listCategories).toHaveBeenCalledWith({
+        parent_category_id: "vilagitas",
+        fields: "id,name,handle",
+      })
+      const sav = screen.getByTestId("gyors-kategoriak")
+      expect(sav.textContent).not.toContain("Összes")
+      expect(
+        within(sav)
+          .getAllByRole("listitem")
+          .map((li) => li.textContent),
+      ).toEqual(["LED", "Moonlight"])
+      expect(sav.querySelector("[aria-current='page']")?.textContent).toBe(
+        "Moonlight",
+      )
+      expect(screen.queryByTestId("szuro-kategoriak")).toBeNull()
+    })
+
+    it("ha a testvérek lekérése elbukik, csak az Összes marad", async () => {
+      katAdat.listCategories.mockRejectedValue(new Error("hálózat"))
+      await lap({ category: LEVEL })
+      expect(screen.getByTestId("gyors-kategoriak").textContent).toBe("Összes")
+    })
+
+    it("gyerekes kategórián nem kér testvért", async () => {
+      await lap()
+      expect(katAdat.listCategories).not.toHaveBeenCalled()
+    })
+  })
+
+  it("a sáv döntése: az üres kimarad, az aktuális akkor is marad, ha üres", () => {
+    const jelen = kat("jelen", "Moonlight")
+    const { mod, elemek } = savElemek(
+      jelen,
+      [],
+      [kat("led", "LED"), jelen, kat("t5", "T5")],
+      [40, 0, 0],
+    )
+    expect(mod).toBe("testverek")
+    expect(elemek.map((e) => [e.kategoria.id, e.aktiv])).toEqual([
+      ["led", false],
+      ["jelen", true],
+    ])
   })
 })
