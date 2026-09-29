@@ -1,13 +1,13 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import { MedusaError } from "@medusajs/framework/utils"
 
-import { SimplePayIpn, sessionIdOfOrderRef } from "../../modules/simplepay/ipn"
-import { SIMPLEPAY_DATA_KEY } from "../../modules/simplepay/service"
+import { SimplePayIpn } from "../../modules/simplepay/ipn"
 import { loadCartShippingDecision } from "./load-cart-shipping-decision"
 import { PAYMENT_ROLE_PROVIDER_ENV } from "./payment-providers"
 import { completeSplitCart } from "./split-completion"
 import { splitCompletionOperations } from "./split-completion-operations"
 import { resolveShippingOptionRoleBindings } from "./shipping-option-roles"
+import { cartOfSimplePayTransaction } from "./simplepay-cart"
 
 /**
  * A FINISHED IPN MAKES THE ORDER (P4-3b), even when the customer never comes
@@ -31,33 +31,7 @@ export const finishSimplePayOrder = async (
   container: MedusaContainer,
   ipn: SimplePayIpn
 ): Promise<{ order_ids: string[] }> => {
-  const sessionId = sessionIdOfOrderRef(ipn.orderRef)
-
-  if (!sessionId) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, `Not our orderRef: ${ipn.orderRef}`)
-  }
-
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const { data: sessions } = await query.graph({
-    entity: "payment_session",
-    filters: { id: sessionId },
-    fields: ["id", "data", "payment_collection.cart.id"],
-  })
-  const session = sessions?.[0] as
-    | { data?: Record<string, unknown>; payment_collection?: { cart?: { id?: string } } }
-    | undefined
-  const facts = session?.data?.[SIMPLEPAY_DATA_KEY] as { transactionId?: number } | undefined
-  const cartId = session?.payment_collection?.cart?.id
-
-  if (!session || !cartId) {
-    throw new MedusaError(MedusaError.Types.NOT_FOUND, `No cart for payment session ${sessionId}`)
-  }
-  if (String(facts?.transactionId) !== String(ipn.transactionId)) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      `The IPN's transaction ${ipn.transactionId} is not the one on session ${sessionId}`
-    )
-  }
+  const cartId = await cartOfSimplePayTransaction(container, ipn.orderRef, ipn.transactionId)
 
   const decision = await loadCartShippingDecision(cartId, container)
   if (decision?.split_line_ids.length) {

@@ -7,6 +7,7 @@ import {
   SharedPaymentOperations,
   SplitOperations,
   completeSplitCart,
+  rejoinSharedSplit,
   startSharedSplitPayment,
 } from "../split-completion"
 
@@ -571,5 +572,48 @@ describe("a split that would change the discount", () => {
 
     const result = await completeSplitCart("cart_1", shop.ops, config)
     expect(result.order_ids).toHaveLength(2)
+  })
+})
+
+/**
+ * PUTTING A SPLIT BACK AFTER AN UNPAID SHARED PAYMENT (P4-3c3). What must
+ * fail: the lines left in the pickup cart after a cancelled payment; a split
+ * put back whose payment was not shared (paid in the shop, or not started);
+ * a completed cart or pickup cart touched.
+ */
+describe("putting a split back after its shared payment did not happen", () => {
+  const started = async () => {
+    const shop = vegyes()
+    await startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
+    shop.log.length = 0
+    return shop
+  }
+
+  it("moves the pickup lines back to the cart, which is whole again", async () => {
+    const shop = await started()
+
+    expect(await rejoinSharedSplit("cart_1", shop.ops)).toEqual({ rejoined: true })
+
+    expect(shop.carts.get("cart_1")!.items.map((l) => l.variant_id).sort()).toEqual(["v_eszkoz", "v_korall"])
+    expect(shop.carts.get("cart_pickup_1")!.items).toEqual([])
+  })
+
+  it("leaves alone a cart that is not split, not paid together, or already completed", async () => {
+    const plain = vegyes()
+    expect(await rejoinSharedSplit("cart_1", plain.ops)).toEqual({ rejoined: false })
+
+    const shop = await started()
+    shop.carts.get("cart_1")!.shared_payment = false
+    expect(await rejoinSharedSplit("cart_1", shop.ops)).toEqual({ rejoined: false })
+
+    const done = await started()
+    done.carts.get("cart_pickup_1")!.completed_at = "2026-09-29T20:00:00Z"
+    expect(await rejoinSharedSplit("cart_1", done.ops)).toEqual({ rejoined: false })
+
+    const shipped = await started()
+    shipped.carts.get("cart_1")!.completed_at = "2026-09-29T20:00:00Z"
+    expect(await rejoinSharedSplit("cart_1", shipped.ops)).toEqual({ rejoined: false })
+
+    expect([...shop.log, ...done.log, ...shipped.log].filter((e) => e.startsWith("addLines"))).toEqual([])
   })
 })
