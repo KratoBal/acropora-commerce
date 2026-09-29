@@ -4,8 +4,8 @@ import { STORE_NAME } from "@lib/store"
 import LoginTemplate from "@modules/account/templates/login-template"
 
 export const metadata: Metadata = {
-  title: "Sign in",
-  description: `Sign in to your ${STORE_NAME} account.`,
+  title: "Bejelentkezés",
+  description: `Lépj be a(z) ${STORE_NAME} fiókodba.`,
 }
 
 export default function Login() {

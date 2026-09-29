@@ -77,6 +77,8 @@ export type PendingCustomer = {
   first_name?: string
   last_name?: string
   phone?: string
+  /** A regisztraciokor rogzitett adatok (peldaul az ASZF-elfogadas). */
+  metadata?: Record<string, unknown>
 }
 
 // During the email verification flow the customer record isn't created until
