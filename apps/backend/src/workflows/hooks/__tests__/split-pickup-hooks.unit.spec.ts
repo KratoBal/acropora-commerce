@@ -33,8 +33,13 @@ jest.mock("@medusajs/medusa/core-flows", () => ({
   },
 }))
 
-import "../split-shipping-pricing-context"
-import "../complete-cart-cod-fee"
+// The hook files register at load time; they are required only after
+// `handlers` exists (jest hoists the mock above it, and a static import would
+// run the registration before the object is initialized).
+beforeAll(() => {
+  require("../split-shipping-pricing-context")
+  require("../complete-cart-cod-fee")
+})
 import { MIXED_CART_MESSAGE } from "../../utils/assert-cart-not-mixed"
 import { SPLIT_LINE_IDS_CONTEXT_KEY } from "../../utils/split-pricing-context"
 
