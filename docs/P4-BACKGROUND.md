@@ -211,7 +211,7 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
 
 **Decision (acrobot, 2026-09-29, variant B):** the cart is split **before** the payment starts, and the one transaction is for the two finished carts together. The money and the two orders' sum then cannot differ by construction. A cancelled or failed payment puts the lines back.
 
-**Built so far (P4-3c2a, the provider and its guard):**
+**P4-3c2a, the provider and its guard (#433):**
 - **The shipped cart's session** carries `simplepay_joint: { total }`. It starts ONE transaction for that total, which must be at least the session's own amount.
 - **The pickup cart's session** carries `simplepay_joined: { transactionId, orderRef, total, own, … }`, the shipped session's facts. It starts nothing and carries the shipped session's transaction.
   - It joins only if the two parts **together** are exactly the transaction's total: the shipped session's `own` plus its own amount.
@@ -222,9 +222,31 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
 - **A FINISHED transaction whose `total` (L1392) is not the one we started** reads as `TOTAL_MISMATCH`, an error, never as paid. This holds for every SimplePay payment, split or not.
 - **The client cannot set these keys:** the store route that creates payment sessions refuses `simplepay`, `simplepay_joint` and `simplepay_joined` in its `data` (`refuse-client-simplepay-keys.ts`). Otherwise a cart could borrow someone else's paid transaction, or name its own amount. Only our split route sets them.
 
+**P4-3c2b, the start and the completion:**
+- **`POST /store/carts/:id/simplepay-start`** (`startSharedSplitPayment`). The request carries only the cart id; the provider (`ACROPORA_PP_ONLINE_CARD`), the payer (the cart's email and billing address) and every amount are read on the server.
+  1. The pickup lines move to their own cart, as in the completion (`moveToPickupCart`, shared with it).
+  2. Both carts' totals are read.
+  3. The shipped cart's session starts one transaction for their sum (`simplepay_joint`).
+  4. The pickup cart's session joins it (`simplepay_joined`).
+  5. The answer carries `payment_url` and the totals.
+  - **If anything fails before the customer is sent to pay,** the lines move back and the cart is whole again.
+  - **Called again** (a second click, or after a cancelled payment), it reuses the split and starts a new transaction. Medusa deletes the old session, which releases its unpaid transaction.
+  - **A cart that is not split** is paid the ordinary way, and is refused here.
+- **The completion of a split paid together** (`completeSplitCart`, when the cart's session shares its transaction):
+  - nothing moves;
+  - the shipped cart is completed on its card session;
+  - the pickup cart keeps its joined card session instead of payment in the shop.
+  - **A failure moves nothing back:** the payment belongs to the two carts as they are, and the IPN retries.
+  - **A pickup line added to the shipped cart after the start** is refused.
+- **The check before any cart becomes an order** (`assertSimplePayShare`, in the `validate` hook):
+  - a card session's own amount must be the cart's total;
+  - the shipped cart's transaction must be its total plus its pickup pair's, and the pair must carry the same transaction;
+  - a pickup cart's transaction must be its shipped cart's.
+  - Together with the provider's FINISHED-total check, the money and the orders cannot differ.
+- **The IPN** (`finishSimplePayOrder`): the orderRef leads to the shipped cart and `completeSplitCart` does the rest. A cart still mixed when paid was paid as one and is still refused.
+
 ### Still to come
 
-- **P4-3c2b:** the split route that moves the lines and starts the shared payment, the completion of both orders from it, and the check at completion that the transaction's total is the two carts' sum.
 - **P4-3c3:** putting the lines back on a cancelled or failed payment (the failed-status IPN, which needs the "Rendszer értesítések" switch in the SimplePay admin, and the back page).
 - **P4-4:** the storefront: logo, statement checkbox, redirect to `paymentUrl`, and the back page with the texts section 3.13 requires.
 

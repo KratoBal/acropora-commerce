@@ -54,6 +54,11 @@ export type SplitCart = {
    */
   pickup_promo_codes: string[]
   has_shipping_method: boolean
+  /**
+   * The cart's payment is a SimplePay transaction shared with the other cart
+   * of the split (P4-3c): the lines were split before the payment started.
+   */
+  shared_payment: boolean
 }
 
 /** A promotion on the cart, as far as the split needs it. */
@@ -136,6 +141,15 @@ const mustLoad = async (ops: SplitOperations, cartId: string) => {
   return cart
 }
 
+/**
+ * The pickup cart's payment: the shared card transaction when the split was
+ * paid together (P4-3c), otherwise payment in the shop.
+ */
+const pickupProviderOf = (pickup: SplitCart, payAtStoreProviderId: string) =>
+  pickup.shared_payment && pickup.payment_provider_id
+    ? pickup.payment_provider_id
+    : payAtStoreProviderId
+
 const finishPickup = async (
   ops: SplitOperations,
   parentOrderId: string,
@@ -143,7 +157,8 @@ const finishPickup = async (
   payAtStoreProviderId: string
 ): Promise<SplitResult> => {
   try {
-    await ops.ensurePayment(pickupCartId, payAtStoreProviderId)
+    const pickup = await mustLoad(ops, pickupCartId)
+    await ops.ensurePayment(pickupCartId, pickupProviderOf(pickup, payAtStoreProviderId))
     const pickupOrderId = await ops.complete(pickupCartId)
     await ops.linkOrders(parentOrderId, pickupOrderId)
     return { order_ids: [parentOrderId, pickupOrderId], pending_pickup_cart_id: null }
@@ -203,6 +218,22 @@ export const completeSplitCart = async (
   // client: the shipped cart keeps what was chosen at checkout.
   const providerId = cart.payment_provider_id
 
+  // PAID TOGETHER (P4-3c): the lines were split before the payment started,
+  // and one card transaction covers both carts. Nothing moves now, and a
+  // failure moves nothing back: the payment belongs to these two carts as
+  // they are, and the next call (the IPN retries) completes them.
+  if (cart.shared_payment && providerId) {
+    if (pickupLines.length || !pickupCartId) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "The cart changed after its shared payment started, so it was not placed"
+      )
+    }
+    await ops.ensurePayment(cartId, providerId)
+    const parentOrderId = await ops.complete(cartId)
+    return finishPickup(ops, parentOrderId, pickupCartId, config.payAtStoreProviderId)
+  }
+
   if (!providerId) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
@@ -219,6 +250,32 @@ export const completeSplitCart = async (
     )
   }
 
+  const pickupId = await moveToPickupCart(ops, cart, pickupLines, pickupCartId)
+  await ops.ensurePayment(cartId, providerId)
+
+  let parentOrderId: string
+
+  try {
+    parentOrderId = await ops.complete(cartId)
+  } catch (error) {
+    await movePickupLinesBack(ops, cartId, pickupId)
+    throw error
+  }
+
+  return finishPickup(ops, parentOrderId, pickupId, config.payAtStoreProviderId)
+}
+
+/**
+ * Steps 1 and 2: the pickup lines to their own cart, with the dividing codes
+ * and the store pickup. Used by the completion and by the shared card payment
+ * (P4-3c), which splits before the payment starts.
+ */
+const moveToPickupCart = async (
+  ops: SplitOperations,
+  cart: SplitCart,
+  pickupLines: SplitLine[],
+  pickupCartId: string | null
+): Promise<string> => {
   // THE PICKUP ORDER MUST BE POSSIBLE BEFORE THE FIRST ORDER IS MADE (measured
   // on stage, 2026-09-29: a pickup product without a shipping profile let the
   // shipped order through and left the pickup cart pending). A gap known in
@@ -227,7 +284,7 @@ export const completeSplitCart = async (
 
   if (gaps.length) {
     ops.warn(
-      `Split completion refused for ${cartId}: not on the store pickup's shipping profile: ${gaps.join(", ")}`
+      `Split completion refused for ${cart.id}: not on the store pickup's shipping profile: ${gaps.join(", ")}`
     )
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
@@ -241,7 +298,7 @@ export const completeSplitCart = async (
   if (pickupLines.length) {
     await ops.addLines(pickupId, linesMissingOn(pickupLines, pickup))
     await ops.deleteLines(
-      cartId,
+      cart.id,
       pickupLines.map((line) => line.id)
     )
   }
@@ -252,27 +309,27 @@ export const completeSplitCart = async (
   if (!pickup.has_shipping_method) {
     await ops.setStorePickup(pickupId)
   }
-  await ops.ensurePayment(cartId, providerId)
 
-  let parentOrderId: string
+  return pickupId
+}
 
-  try {
-    parentOrderId = await ops.complete(cartId)
-  } catch (error) {
-    // Back to where the customer was: the pickup lines return to the cart
-    // they chose them in. The emptied pickup cart stays linked and is reused
-    // by the next attempt.
-    const now = await mustLoad(ops, pickupId)
-    const main = await mustLoad(ops, cartId)
-    await ops.addLines(cartId, linesMissingOn(now.items, main))
-    await ops.deleteLines(
-      pickupId,
-      now.items.map((line) => line.id)
-    )
-    throw error
-  }
-
-  return finishPickup(ops, parentOrderId, pickupId, config.payAtStoreProviderId)
+/**
+ * Back to where the customer was: the pickup lines return to the cart they
+ * chose them in. The emptied pickup cart stays linked and is reused by the
+ * next attempt.
+ */
+export const movePickupLinesBack = async (
+  ops: SplitOperations,
+  cartId: string,
+  pickupId: string
+) => {
+  const now = await mustLoad(ops, pickupId)
+  const main = await mustLoad(ops, cartId)
+  await ops.addLines(cartId, linesMissingOn(now.items, main))
+  await ops.deleteLines(
+    pickupId,
+    now.items.map((line) => line.id)
+  )
 }
 
 /**
@@ -307,3 +364,88 @@ export const shippingProfileGaps = (
   return Array.from(gaps)
 }
 
+
+export type SharedPaymentOperations = SplitOperations & {
+  /** The cart's total, as Medusa computes it now. */
+  cartTotal(cartId: string): Promise<number>
+  /** The payer's details the provider needs: email and billing address. */
+  payerOf(cartId: string): Promise<Record<string, unknown>>
+  /** A new payment session with this data; the SimplePay facts it got. */
+  startPayment(
+    cartId: string,
+    providerId: string,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>>
+}
+
+export type SharedPaymentStart = {
+  payment_url: string | null
+  total: number
+  shipped_total: number
+  pickup_total: number
+  pickup_cart_id: string
+}
+
+/**
+ * ONE CARD PAYMENT FOR BOTH ORDERS OF A MIXED CART (P4-3c, variant B).
+ *
+ * The lines are split BEFORE the payment starts, so the transaction is for
+ * the two finished carts together and the money cannot differ from the two
+ * orders' sum. The shipped cart's session starts it (`simplepay_joint`), the
+ * pickup cart's session carries it (`simplepay_joined`); both keys are set
+ * here only, never by the client.
+ *
+ * If anything fails before the customer is sent to pay, the lines move back
+ * and the cart is whole again. Called again (a second click, or after a
+ * cancelled payment), it reuses the split and starts a new transaction.
+ */
+export const startSharedSplitPayment = async (
+  cartId: string,
+  ops: SharedPaymentOperations,
+  config: { providerId: string }
+): Promise<SharedPaymentStart> => {
+  if (!config.providerId) {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Card payment is not configured")
+  }
+
+  const cart = await mustLoad(ops, cartId)
+
+  if (cart.completed_at) {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, `Cart ${cartId} is already completed`)
+  }
+
+  const pickupCartId = pickupCartIdOf(cart)
+  const splitIds = new Set(await ops.splitLineIds(cartId))
+  const pickupLines = cart.items.filter((line) => splitIds.has(line.id))
+
+  if (!pickupLines.length && !pickupCartId) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "This cart is not split; it is paid as one"
+    )
+  }
+
+  const pickupId = await moveToPickupCart(ops, cart, pickupLines, pickupCartId)
+
+  try {
+    const shipped = await ops.cartTotal(cartId)
+    const pickup = await ops.cartTotal(pickupId)
+    const payer = await ops.payerOf(cartId)
+    const facts = await ops.startPayment(cartId, config.providerId, {
+      ...payer,
+      simplepay_joint: { total: shipped + pickup },
+    })
+    await ops.startPayment(pickupId, config.providerId, { simplepay_joined: facts })
+
+    return {
+      payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,
+      total: shipped + pickup,
+      shipped_total: shipped,
+      pickup_total: pickup,
+      pickup_cart_id: pickupId,
+    }
+  } catch (error) {
+    await movePickupLinesBack(ops, cartId, pickupId)
+    throw error
+  }
+}

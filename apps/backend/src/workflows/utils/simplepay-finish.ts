@@ -19,9 +19,13 @@ import { resolveShippingOptionRoleBindings } from "./shipping-option-roles"
  * SimplePay again on the way (the provider authorizes by `query`), so the IPN
  * is never the only evidence.
  *
- * A MIXED cart is refused here: paying it by card means one transaction for
- * both orders, and that is P4-3c. Moving its lines after payment would restart
- * the payment. Refusing makes SimplePay retry, which keeps the case visible.
+ * A mixed cart paid by card is split BEFORE the payment starts
+ * (`POST /store/carts/:id/simplepay-start`, P4-3c): its orderRef leads to the
+ * shipped cart, whose pickup pair carries the same transaction, and
+ * `completeSplitCart` completes both without moving anything. A cart still
+ * MIXED here was paid as one, and is refused: moving its lines after payment
+ * would restart the payment. Refusing makes SimplePay retry, which keeps the
+ * case visible.
  */
 export const finishSimplePayOrder = async (
   container: MedusaContainer,
@@ -59,7 +63,7 @@ export const finishSimplePayOrder = async (
   if (decision?.split_line_ids.length) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      `Cart ${cartId} is mixed; one card transaction for both orders is not built yet (P4-3c)`
+      `Cart ${cartId} is mixed but was paid as one; a mixed cart is split before its card payment starts`
     )
   }
 

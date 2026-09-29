@@ -17,6 +17,11 @@ import {
   updateCartWorkflow,
 } from "@medusajs/medusa/core-flows"
 
+import {
+  SIMPLEPAY_DATA_KEY,
+  isSharedSimplePay,
+  simplePayFactsOf,
+} from "../../modules/simplepay/service"
 import { reconcileCartCashOnDeliveryFeeWorkflow } from "../reconcile-cart-cod-fee"
 import { loadCartShippingDecision } from "./load-cart-shipping-decision"
 import {
@@ -25,6 +30,7 @@ import {
   PICKUP_CART_METADATA_KEY,
   PICKUP_ORDER_METADATA_KEY,
   SplitCart,
+  SharedPaymentOperations,
   SplitOperations,
   pickupPromoCodes,
   shippingProfileGaps,
@@ -76,6 +82,7 @@ export const CART_FIELDS = [
   "promotions.application_method.allocation",
   "payment_collection.id",
   "payment_collection.payment_sessions.provider_id",
+  "payment_collection.payment_sessions.data",
   "shipping_methods.id",
   // The cart-order link's field alias (link-modules, definitions/order-cart).
   "order.id",
@@ -112,7 +119,32 @@ export const toSplitCart = (raw: any): SplitCart => ({
     }))
   ),
   has_shipping_method: (raw.shipping_methods ?? []).length > 0,
+  shared_payment: isSharedSimplePay(
+    simplePayFactsOf(raw.payment_collection?.payment_sessions?.[0]?.data)
+  ),
 })
+
+/**
+ * The payer's details SimplePay needs for 3DS (L758-773), from the cart itself:
+ * its email and billing address, never from the request.
+ */
+export const simplePayPayerOf = (raw: any): Record<string, unknown> => {
+  const address = raw?.billing_address ?? {}
+  const name = [address.first_name, address.last_name].filter(Boolean).join(" ")
+  return {
+    customer_email: raw?.email ?? undefined,
+    invoice: {
+      name,
+      company: address.company || undefined,
+      country: address.country_code ?? "hu",
+      city: address.city ?? "",
+      zip: address.postal_code ?? "",
+      address: address.address_1 ?? "",
+      address2: address.address_2 || undefined,
+      phone: address.phone || undefined,
+    },
+  }
+}
 
 /**
  * The Medusa side of `completeSplitCart`: each operation is one core workflow
@@ -331,3 +363,69 @@ export const splitCompletionOperations = (
     warn: (message) => logger.warn(message),
   }
 }
+
+/**
+ * The split's operations plus the three the shared card payment needs
+ * (P4-3c): a cart's total, its payer, and a payment session started with
+ * data only our server sets.
+ */
+export const sharedPaymentOperations = (
+  container: Container,
+  config: { storePickupOptionId: string }
+): SharedPaymentOperations => ({
+  ...splitCompletionOperations(container, config),
+
+  cartTotal: async (cartId) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "cart",
+      filters: { id: cartId },
+      fields: ["id", "total"],
+    })
+    const total = Number((data?.[0] as any)?.total)
+
+    if (!Number.isFinite(total)) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        `No total for cart ${cartId}`
+      )
+    }
+
+    return total
+  },
+
+  payerOf: async (cartId) => simplePayPayerOf(await loadRawCart(container, cartId)),
+
+  startPayment: async (cartId, providerId, data) => {
+    let raw = await loadRawCart(container, cartId)
+
+    if (!raw?.payment_collection?.id) {
+      await createPaymentCollectionForCartWorkflow(container).run({
+        input: { cart_id: cartId },
+      })
+      raw = await loadRawCart(container, cartId)
+    }
+
+    const collectionId = raw?.payment_collection?.id
+
+    if (!collectionId) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Cart ${cartId} has no payment collection`
+      )
+    }
+
+    // Replaces the collection's other sessions (Medusa deletes them first),
+    // so an earlier unpaid start is released.
+    const { result } = await createPaymentSessionsWorkflow(container).run({
+      input: {
+        payment_collection_id: collectionId,
+        provider_id: providerId,
+        customer_id: raw.customer_id ?? undefined,
+        data,
+      },
+    })
+
+    return ((result as any)?.data?.[SIMPLEPAY_DATA_KEY] ?? {}) as Record<string, unknown>
+  },
+})
