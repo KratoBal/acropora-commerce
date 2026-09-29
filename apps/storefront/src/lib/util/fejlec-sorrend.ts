@@ -21,7 +21,11 @@ export const FEJLEC_GYOKER_SORREND = [
 ] as const
 
 const kulcs = (handle: string | null | undefined) =>
-  (handle ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase()
+  (handle ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
 
 export function fejlecSorrend<T extends { handle?: string | null }>(
   gyokerek: readonly T[],
