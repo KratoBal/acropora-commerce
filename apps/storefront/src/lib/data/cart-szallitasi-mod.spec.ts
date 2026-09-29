@@ -44,10 +44,8 @@ describe("a szállítási mód beállítása", () => {
 
   it("adat nélküli módnál nem küld data mezőt", async () => {
     await setShippingMethod({ cartId: "cart_1", shippingMethodId: "so_gls" })
-    const [, torzs] = sdk.store.cart.addShippingMethod.mock.calls[0] as unknown as [
-      string,
-      unknown,
-    ]
+    const [, torzs] = sdk.store.cart.addShippingMethod.mock
+      .calls[0] as unknown as [string, unknown]
     expect(torzs).toEqual({ option_id: "so_gls" })
   })
 })

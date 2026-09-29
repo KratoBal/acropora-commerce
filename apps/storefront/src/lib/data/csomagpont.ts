@@ -1,10 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import type {
-  CsomagpontKereses,
-  FoxpostCsomagpont,
-} from "@lib/util/csomagpont"
+import type { CsomagpontKereses, FoxpostCsomagpont } from "@lib/util/csomagpont"
 
 type Valasz =
   | { available: true; pickup_points: FoxpostCsomagpont[]; count: number }
