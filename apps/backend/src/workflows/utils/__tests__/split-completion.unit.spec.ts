@@ -4,8 +4,10 @@ import {
   PICKUP_CART_METADATA_KEY,
   SplitCart,
   SplitLine,
+  SharedPaymentOperations,
   SplitOperations,
   completeSplitCart,
+  startSharedSplitPayment,
 } from "../split-completion"
 
 /**
@@ -20,6 +22,9 @@ import {
  */
 
 const PAY_AT_STORE = "pp_system_default"
+const SIMPLEPAY = "pp_simplepay_simplepay"
+/** Unit prices for the in-memory totals. */
+const PRICE: Record<string, number> = { v_eszkoz: 4950, v_korall: 8500 }
 const COD = "pp_acropora_cod"
 
 type Shop = {
@@ -31,7 +36,7 @@ type Shop = {
   warnings: string[]
   /** Variants whose product is not on the store pickup's profile. */
   profileGaps: Set<string>
-  ops: SplitOperations
+  ops: SharedPaymentOperations
 }
 
 const line = (id: string, variant: string, quantity = 1): SplitLine => ({
@@ -49,6 +54,7 @@ const cart = (id: string, items: SplitLine[], extra: Partial<SplitCart> = {}): S
   payment_provider_id: COD,
   pickup_promo_codes: [],
   has_shipping_method: true,
+  shared_payment: false,
   ...extra,
 })
 
@@ -134,6 +140,21 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
       shop.links.push([parent, pickup])
     },
     warn: (message) => shop.warnings.push(message),
+    cartTotal: async (id) =>
+      get(id).items.reduce((sum, l) => sum + (PRICE[l.variant_id ?? ""] ?? 0) * l.quantity, 0),
+    payerOf: async (id) => ({ customer_email: `${id}@example.hu`, invoice: { name: "Teszt Elek" } }),
+    startPayment: async (id, provider, data) => {
+      const keys = Object.keys(data).filter((k) => k.startsWith("simplepay"))
+      const jointTotal = (data.simplepay_joint as { total?: number } | undefined)?.total
+      step(`startPayment ${id} ${provider} ${JSON.stringify(keys)}${jointTotal !== undefined ? ` ${jointTotal}` : ""}`)
+      const c = get(id)
+      c.payment_provider_id = provider
+      c.shared_payment = true
+      const joint = data.simplepay_joint as { total: number } | undefined
+      return joint
+        ? { transactionId: 777, orderRef: `payses_${id}-x`, total: joint.total, paymentUrl: "https://sandbox.simplepay.hu/pay/x" }
+        : { ...(data.simplepay_joined as object), joined: true }
+    },
   }
   return shop
 }
@@ -360,5 +381,135 @@ describe("a mixed cart with a code that must not go twice", () => {
     await completeSplitCart("cart_1", shop.ops, config)
 
     expect(shop.log.filter((entry) => entry.startsWith("applyPromotions"))).toEqual([])
+  })
+})
+
+/**
+ * ONE CARD PAYMENT FOR BOTH ORDERS (P4-3c2b). What must fail: the payment
+ * started before the lines are split, or for anything but the two carts'
+ * sum; the pickup session starting a second transaction; a failed start
+ * leaving the lines split; a non-split cart started here; the completion of a
+ * shared payment moving lines, moving them back on failure, or making the
+ * pickup order pay in the shop.
+ */
+describe("starting one card payment for a mixed cart", () => {
+  const config = { providerId: SIMPLEPAY }
+
+  it("splits first, then starts one transaction for both carts, which the pickup session joins", async () => {
+    const shop = vegyes()
+
+    const result = await startSharedSplitPayment("cart_1", shop.ops, config)
+
+    expect(result).toEqual({
+      payment_url: "https://sandbox.simplepay.hu/pay/x",
+      total: 4950 + 17000,
+      shipped_total: 4950,
+      pickup_total: 17000,
+      pickup_cart_id: "cart_pickup_1",
+    })
+    expect(shop.log).toEqual([
+      "pickupProfileGaps v_korall",
+      "createPickupCart cart_1",
+      "addLines cart_pickup_1 v_korall",
+      "deleteLines cart_1 l2",
+      "applyPromotions cart_pickup_1 TAVASZ",
+      "setStorePickup cart_pickup_1",
+      `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"] 21950`,
+      `startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`,
+    ])
+  })
+
+  it("a failed start puts the lines back, so the cart is whole again", async () => {
+    const shop = vegyes()
+    shop.failOn.add(`startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`)
+
+    await expect(startSharedSplitPayment("cart_1", shop.ops, config)).rejects.toThrow("failed")
+
+    expect(shop.carts.get("cart_1")!.items.map((l) => l.variant_id).sort()).toEqual(["v_eszkoz", "v_korall"])
+    expect(shop.carts.get("cart_pickup_1")!.items).toEqual([])
+  })
+
+  it("refuses a cart that is not split, and a shop without card payment, with nothing moved", async () => {
+    const plain = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})
+    await expect(startSharedSplitPayment("cart_1", plain.ops, config)).rejects.toThrow("not split")
+
+    const shop = vegyes()
+    await expect(startSharedSplitPayment("cart_1", shop.ops, { providerId: "" })).rejects.toThrow("not configured")
+    expect([...plain.log, ...shop.log]).toEqual([])
+  })
+
+  it("started again, it reuses the split and starts a new transaction", async () => {
+    const shop = vegyes()
+    await startSharedSplitPayment("cart_1", shop.ops, config)
+    shop.log.length = 0
+
+    await startSharedSplitPayment("cart_1", shop.ops, config)
+
+    expect(shop.log).toEqual([
+      "applyPromotions cart_pickup_1 TAVASZ",
+      `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"] 21950`,
+      `startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`,
+    ])
+    expect(shop.carts.size).toBe(2)
+  })
+})
+
+describe("completing a split paid together", () => {
+  const paid = async () => {
+    const shop = vegyes()
+    await startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
+    shop.log.length = 0
+    return shop
+  }
+
+  it("moves nothing, and both orders keep the card payment", async () => {
+    const shop = await paid()
+
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+
+    expect(result).toEqual({ order_ids: ["order_1", "order_2"], pending_pickup_cart_id: null })
+    expect(shop.log).toEqual([
+      `ensurePayment cart_1 ${SIMPLEPAY}`,
+      "complete cart_1",
+      `ensurePayment cart_pickup_1 ${SIMPLEPAY}`,
+      "complete cart_pickup_1",
+      "linkOrders order_1 order_2",
+    ])
+  })
+
+  it("a failed completion moves nothing back: the payment belongs to the two carts as they are", async () => {
+    const shop = await paid()
+    shop.failOn.add("complete cart_1")
+
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow("failed")
+
+    expect(shop.log).toEqual([`ensurePayment cart_1 ${SIMPLEPAY}`, "complete cart_1"])
+    expect(shop.carts.get("cart_pickup_1")!.items.map((l) => l.variant_id)).toEqual(["v_korall"])
+  })
+
+  it("a pickup line added to the shipped cart after the payment started is refused, before anything moves", async () => {
+    const shop = await paid()
+    shop.carts.get("cart_1")!.items.push(line("l9", "v_korall"))
+    shop.split.set("cart_1", ["l9"])
+
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow("changed after its shared payment")
+    expect(shop.log).toEqual([])
+  })
+
+  it("called again after the shipped order, the pickup order also keeps the card payment", async () => {
+    const shop = await paid()
+    shop.failOn.add("complete cart_pickup_1")
+    await completeSplitCart("cart_1", shop.ops, config)
+    shop.failOn.clear()
+    shop.log.length = 0
+
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+
+    expect(result.order_ids).toHaveLength(2)
+    expect(shop.log).toEqual([
+      `ensurePayment cart_pickup_1 ${SIMPLEPAY}`,
+      "complete cart_pickup_1",
+      "linkOrders order_1 order_2",
+    ])
   })
 })

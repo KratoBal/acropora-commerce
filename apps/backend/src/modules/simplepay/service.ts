@@ -82,6 +82,26 @@ type SimplePayFacts = {
 /** The status a FINISHED transaction reads as when its total is not the one we started. */
 export const SIMPLEPAY_TOTAL_MISMATCH = "TOTAL_MISMATCH"
 
+export type SimplePaySessionFacts = SimplePayFacts
+
+/** The SimplePay facts on a payment session's data, if it has a transaction. */
+export const simplePayFactsOf = (data: unknown): SimplePayFacts | null => {
+  const facts = (data as Record<string, unknown> | null | undefined)?.[SIMPLEPAY_DATA_KEY] as
+    | SimplePayFacts
+    | undefined
+  return facts?.transactionId ? facts : null
+}
+
+/**
+ * Whether a session's transaction is shared with the other cart of a split
+ * (P4-3c): the pickup session that joined it, or the shipped session whose
+ * own amount is less than the transaction's total.
+ */
+export const isSharedSimplePay = (facts: SimplePayFacts | null): boolean =>
+  !!facts &&
+  (facts.joined === true ||
+    (facts.own !== undefined && Number(facts.own) !== Number(facts.total)))
+
 /**
  * THE TRANSACTION STATUS AS MEDUSA READS IT (statuses, L493-505).
  *
