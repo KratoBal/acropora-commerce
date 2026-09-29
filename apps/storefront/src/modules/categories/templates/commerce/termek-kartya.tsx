@@ -7,12 +7,7 @@ import {
   maximumOrderQuantity,
   minimumOrderQuantity,
 } from "@modules/products/components/product-actions/minimum-order-quantity"
-import {
-  anyVariantPurchasable,
-  availabilityOf,
-  inventoryKnownOf,
-  scarcityCountOf,
-} from "@modules/products/components/stock-state/availability"
+import { keszletSor } from "@modules/products/components/stock-state/availability"
 
 import KosarbaGomb from "./kosarba-gomb"
 
@@ -26,29 +21,13 @@ import KosarbaGomb from "./kosarba-gomb"
  * osszehasonlitas jele (nincs mogotte funkcio).
  */
 
-export type KeszletSor = { szoveg: string; kaphato: boolean }
-
-/**
- * A KESZLET SORA ugyanazon a szabalyon, mint a termeklap: darabszam CSAK ott
- * all, ahol a `scarcityCountOf` is kiirna (a leltarig a nulla keszlet nem
- * jelenti, hogy elfogyott, ezert nem minden kaphato termeknek van szama).
- */
-export function keszletSor(product: HttpTypes.StoreProduct): KeszletSor {
-  const allapot = availabilityOf({
-    inStock: anyVariantPurchasable(product),
-    uniquePiece: false,
-    inventoryKnown: inventoryKnownOf(product),
-  })
-  if (allapot !== "KAPHATO") return { szoveg: "Nincs raktáron", kaphato: false }
-  const db =
-    (product.variants?.length ?? 0) === 1
-      ? scarcityCountOf(product.variants?.[0])
-      : null
-  return {
-    szoveg: db ? `Raktáron – ${db} db` : "Rendelhető",
-    kaphato: true,
-  }
-}
+/*
+  A KESZLET SORA a termek-modulban el (`keszletSor`), mert a termeklap
+  zarosora is ezt mondja (P2, 3b). Innen tovabbadva, hogy a kartya es a
+  tesztjei valtozatlanul importalhassak.
+*/
+export { keszletSor }
+export type { KeszletSor } from "@modules/products/components/stock-state/availability"
 
 /**
  * A GYORS KOSARBA TETEL, HA SZABAD (acrobot dontese, 2026-09-29 09:02).

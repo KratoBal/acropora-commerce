@@ -500,12 +500,14 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     cim: "Ami még kellhet hozzá",
     varakozo: "Ide jönnek a tartozékok",
     oszlop: "teljes",
+    vilagosbanKeretNelkul: true,
   },
   {
     kulcs: "hasonlo",
     cim: "Hasonló termékek",
     varakozo: "Ide jönnek a hasonló termékek",
     oszlop: "teljes",
+    vilagosbanKeretNelkul: true,
   },
   {
     kulcs: "ragados-sav",

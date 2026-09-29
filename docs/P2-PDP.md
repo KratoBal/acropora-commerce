@@ -68,6 +68,36 @@ Measured locally on `radion-xr15-g6-pro-95w`: the bar is 42 px, "Leírás" is 15
 
 The other tabs (Spektrum & PAR, Értékelések, Letöltések) have no data; see the table below. The description's content is the old shop's HTML and is not reformatted here.
 
+## 3b: "Ami még kellhet hozzá" and the bottom summary bar
+
+**"Ami még kellhet hozzá" (`193:181`)** is our accessory list (`unas_accessory_ids`).
+- Light page: no box. A top rule and 31 px above; the heading 600/22, 18 px above the grid.
+- Four columns, 24 px apart. `RelatedProducts` gets `valtozat="1b"` and draws the frame's card (`KapcsolatKartya`): a 320 × 300 image without border, the name 500/14 and the price 400/14 in slate, 10 px apart.
+- The shared `ProductPreview` used by other lists is unchanged.
+- "Teljes lista →" (`193:184`) is not built: an accessory list has no list page.
+
+**"Hasonló termékek"** is not on the frame, but it has data (similar products, or the category fallback). On the light page it gets the same form, so the two sections read as one system. This is a deviation from `192:57`.
+
+**The bottom summary bar (`193:202`)**, desktop only, as before:
+- the content width (1352), white, a 1 px border all round, 20 px padding;
+- the price 700/20;
+- the second line is the stock line, by the same rule as the category card (`keszletSor`, moved from the card into `stock-state/availability.ts` and shared):
+  - "Raktáron – N db" only where the product page's scarcity rule gives a count;
+  - otherwise "Rendelhető" or "Nincs raktáron".
+- Previously the bar had no second line, because #342 had filled it from the action labels ("Kosárba" next to "Kosárba").
+- The name keeps "name · SKU"; the frame shows "name · 160 W", a spec value we do not have.
+- It is 92 px high against the frame's 88: the 50 px button with 20 px padding and the border.
+
+This also fixes a 3a-1 side effect: the 36 px price rule applied to every price on the light page, the summary bar's too. It is now scoped to the purchase card (`#vaz-ar`).
+
+Measured locally on `nyos-nitrate-minus-1000ml` at 1440 px:
+- the section: 1 px top rule, 31 px padding, no side border; heading 22 / 600 / 18 px below;
+- card 320 px wide, image 320 × 300;
+- the bar: 1352 px wide, white, 1 px border, stock line "Rendelhető", price 20 px;
+- the card price: 36 px.
+
+The coral product page is unchanged: full-width bar, no border, dark background. Side by side: fleet share `agents/murena/p2-kepek/pdp-3b-1440-figma-felul.png`.
+
 ### Left out (no data or no feature), for the whole 1b page
 
 | Frame element | Why |
