@@ -114,3 +114,46 @@ When the search endpoint returns zero results, the store page renders `NincsTala
 - **`q=led` with filters that leave nothing:** stays on the results page.
 
 Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/kereses-4b-1440-figma-balra.png`.
+
+## 4c: mobile (`254:50`, `254:107`)
+
+Below `small` (1024 px), on both search pages. The quick search layer's mobile frame (`254:3`) is left out, like `152:3`.
+
+**Results (`254:50`):**
+
+| Element | Figma | Built |
+|---|---|---|
+| Eyebrow | none | hidden below `small` |
+| Title (`254:59`) | "Találatok" 600/26 | same; 300/46 from `small` |
+| Search field (`254:60`) | 354 × 48, white, line border, 14 px, 17 px magnifier | same |
+| Count line (`254:63`) | 12.5 px | same, and the cut-off sentence too |
+| Pills (`254:64`) | 28 high, 9 px padding, 500/10.5, "Technika 9" without the dot | same; the dot shows only from `small` |
+| Filter row (`254:73`) | "Szűrők 2" and "Ajánlott sorrend", 173 × 42 each | "Szűrők N" (N = the active root and brands; no number when none) opens a native `<details>` panel over the grid with the same content as the desktop column. Next to it is the existing sort control (our options, 42 high). |
+| Group heading (`254:83`) | 600/18 | same, with the count on the right |
+| Grid (`254:84`) | two columns, 170 px cards, 14 px gap | two columns, 14 px gap. The Commerce card gets a `tomor` (compact) switch that applies only below `small`: a 100 px image, a 13/600 name, a 15/700 price, an 11.2 px stock line and a 36 px button. |
+
+- **The card switch** is on only for search. The category page keeps its one-column mobile card. Measured the same before and after at 390 and 1440 px: 358 × 452 and 337 × 472.
+- **The desktop search card** is unchanged: 340 × 472.
+- **Deviation:** the compact card keeps the stock line and the "Kosárba" / "Részletek" button. The frame's card (`254:87`) has neither, but they are the card's function.
+
+**No results (`254:107`):**
+
+| Element | Figma | Built |
+|---|---|---|
+| Title and field (`254:116`, `254:117`) | 600/26; the field 48 high, 14 px | same; no eyebrow |
+| Box (`254:120`) | 14 px padding, left-aligned; the title 600/18; the advice 12.5 px; tips 27 high, 500/11.5 | same. All five tips show, wrapping; the frame shows three. |
+| "Segítség a kereséshez" | not in the mobile frame | hidden below `small` |
+| Categories (`254:130`) | a list: "KATEGÓRIA" 600/9.5 heritage, the name 600/13.5, "Megnyitás" 11.8 | the same list; the third line is the product count ("8 termék") instead of "Megnyitás" |
+
+**Measured** locally against stage at 390 px on 2026-09-29:
+- **`q=led`:**
+  - title 26 / 600; field 358 × 48; pills 28 high, "Termékek 134";
+  - the filter button 175 × 42; the desktop column hidden;
+  - cards 172 × 268 in two columns;
+  - no horizontal scroll.
+- **The filter panel:** opens 358 wide with 14 links. Choosing a brand gives `?q=led&marka=…` and the button reads "Szűrők 1".
+- **`q=xyzzypump123`:**
+  - title 26; box 358 × 136; help button hidden;
+  - the first category row 69 high: "KATEGÓRIA / Korallok / 8 termék".
+
+Figma and ours, alternating (results, then no results): fleet share `agents/murena/p2-kepek/kereses-4c-390-figma-balra.png`.

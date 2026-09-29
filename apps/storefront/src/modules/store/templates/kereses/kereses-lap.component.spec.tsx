@@ -160,8 +160,32 @@ describe("a keresési találatok lapja", () => {
     await lap({ gyoker: "korall" })
     expect(screen.queryByTestId("kereses-markak")).toBeNull()
     expect(
-      screen.getByText("Ezekhez a találatokhoz nincs márkaadat."),
+      within(screen.getByTestId("kereses-szurok")).getByText(
+        "Ezekhez a találatokhoz nincs márkaadat.",
+      ),
     ).toBeTruthy()
+  })
+
+  /*
+   * MOBILON (254:73) a szuro egy "Szűrők N" gomb mogott all; N a bekapcsolt
+   * szurok szama (gyoker es markak). A panel ugyanazokat a marka-linkeket adja.
+   */
+  it("mobilon a Szűrők gomb a bekapcsolt szűrőket számolja, a panel ugyanazt adja", async () => {
+    await lap({ gyoker: "tech", markak: ["dd"] })
+    const mobil = screen.getByTestId("kereses-szurok-mobil")
+    expect(mobil.querySelector("summary")?.textContent).toBe("Szűrők 2")
+    const linkek = within(mobil)
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href"))
+    expect(linkek).toContain("?q=led&gyoker=tech")
+    expect(linkek).toContain("?q=led&gyoker=tech&marka=dd&marka=ati")
+    cleanup()
+
+    await lap()
+    expect(
+      screen.getByTestId("kereses-szurok-mobil").querySelector("summary")
+        ?.textContent,
+    ).toBe("Szűrők")
   })
 
   it("a szűrő a lekérdezésig jut: a gyökér és a márka metszete, 18-asával", async () => {
@@ -214,5 +238,10 @@ describe("a keresési találatok lapja", () => {
     expect(screen.getAllByTestId("commerce-termek-kartya")).toHaveLength(
       TALALAT_LAP,
     )
+    // Mobilon ket oszlop tomor kartyaval (254:84).
+    expect(
+      screen.getAllByTestId("commerce-termek-kartya")[0].querySelector("h2")
+        ?.className,
+    ).toContain("text-[13px]")
   })
 })
