@@ -52,7 +52,7 @@ Only the **technical (Commerce) categories** get the new page: the Termékek bra
   - name, 700/18;
   - price, 700/24;
   - stock line;
-  - the "Kosárba" button.
+  - the "Kosárba" button (see deviation 1).
 - **Brand** is the product's Medusa collection. On stage the 65 collections are brand names; 502 of 1492 products have one. Without a collection the brand line is left out, not guessed.
 - **Stock line**, by the product page's rule:
   - "Raktáron – N db" only where `scarcityCountOf` gives a count;
@@ -83,7 +83,10 @@ The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories
 
 ## Deviations
 
-1. **The "Kosárba" button opens the product page**, as the old card's did. Adding to the cart from the list is a separate feature. For a product that is not purchasable, the button says "Részletek" instead of promising a cart.
+1. **"Kosárba" really adds to the cart only where that is safe** (acrobot's decision, 2026-09-29 09:02). For a single-variant, purchasable product the button calls the product page's own cart action (`addToCart`). The quantity is the product's minimum order quantity, which is where the product page's counter starts. The button reports "Kosárba került" or "Nem sikerült, próbáld újra". In every other case the button is "Részletek" and opens the product page:
+   - more than one variant;
+   - not purchasable;
+   - the order maximum, or the managed stock without backorder, is below the minimum.
 2. **The filter search box sends to the shop search** (`/store?q=`). Searching inside the category comes with the search PR.
 3. **The quick bar scrolls horizontally.** The frame shows 5 children; Termékek has 21 non-empty ones.
 4. **Mobile (below `small`)** hides the Kategória section of the filters. The same links are in the scrolling quick bar, and the 21-row list would push the products down.

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/navigation", () => ({
@@ -6,7 +6,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/hu/categories/termekek",
 }))
 
-import CommerceTermekKartya, { keszletSor } from "./termek-kartya"
+const kosar = vi.hoisted(() => ({ addToCart: vi.fn() }))
+vi.mock("@lib/data/cart", () => kosar)
+
+import CommerceTermekKartya, { gyorsKosar, keszletSor } from "./termek-kartya"
 
 type Valtozat = {
   manage_inventory?: boolean | null
@@ -113,16 +116,72 @@ describe("a Commerce termékkártya", () => {
     expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
   })
 
-  it("a kártya a terméklapra visz; a gomb csak kapható terméknél ígér kosarat", () => {
+  describe("a gyors kosárba tétel döntése", () => {
+    it("egy kapható változat: a változat, a rendelési minimummal", () => {
+      expect(gyorsKosar(termek([raktaron(2)]))).toEqual({
+        variantId: "v0",
+        quantity: 1,
+      })
+      expect(
+        gyorsKosar(
+          termek([{ ...raktaron(0), allow_backorder: true }], {
+            metadata: { unas_minimum_order_quantity: "5" },
+          }),
+        ),
+      ).toEqual({ variantId: "v0", quantity: 5 })
+    })
+
+    it("nincs gyors út: több változat, nem kapható, vagy a készlet a minimum alatt", () => {
+      expect(gyorsKosar(termek([raktaron(2), raktaron(3)]))).toBeNull()
+      expect(gyorsKosar(termek([raktaron(0)]))).toBeNull()
+      expect(
+        gyorsKosar(
+          termek([raktaron(2)], {
+            metadata: { unas_minimum_order_quantity: "3" },
+          }),
+        ),
+      ).toBeNull()
+    })
+  })
+
+  it("egyváltozatos kapható terméknél a gomb tényleg kosárba tesz, és visszajelez", async () => {
+    kosar.addToCart.mockResolvedValueOnce(undefined)
+    render(<CommerceTermekKartya product={termek([raktaron(2)])} />)
+    expect(screen.queryByTestId("kartya-reszletek")).toBeNull()
+
+    fireEvent.click(screen.getByTestId("kartya-kosarba"))
+    expect(
+      await screen.findByText("Kosárba került", { selector: "button" }),
+    ).toBeTruthy()
+    expect(kosar.addToCart).toHaveBeenCalledWith({
+      variantId: "v0",
+      quantity: 1,
+      countryCode: "hu",
+    })
+  })
+
+  it("ha a kosárba tétel elbukik, azt mondja, nem azt, hogy sikerült", async () => {
+    kosar.addToCart.mockRejectedValueOnce(new Error("hálózat"))
+    render(<CommerceTermekKartya product={termek([raktaron(2)])} />)
+    fireEvent.click(screen.getByTestId("kartya-kosarba"))
+    expect(
+      await screen.findByText("Nem sikerült, próbáld újra", {
+        selector: "button",
+      }),
+    ).toBeTruthy()
+  })
+
+  it("több változatnál vagy nem kapható terméknél „Részletek”, a terméklapra", () => {
     const { rerender } = render(
-      <CommerceTermekKartya product={termek([raktaron(2)])} />,
+      <CommerceTermekKartya product={termek([raktaron(2), raktaron(3)])} />,
     )
-    const link = screen.getByRole("link")
-    expect(link.getAttribute("href")).toBe("/hu/products/radion-xr15")
-    expect(link.textContent).toContain("Kosárba")
+    expect(screen.queryByTestId("kartya-kosarba")).toBeNull()
+    expect(screen.getByTestId("kartya-reszletek").getAttribute("href")).toBe(
+      "/hu/products/radion-xr15",
+    )
 
     rerender(<CommerceTermekKartya product={termek([raktaron(0)])} />)
-    expect(screen.getByRole("link").textContent).toContain("Részletek")
-    expect(screen.getByRole("link").textContent).not.toContain("Kosárba")
+    expect(screen.queryByTestId("kartya-kosarba")).toBeNull()
+    expect(screen.getByTestId("kartya-reszletek").textContent).toBe("Részletek")
   })
 })

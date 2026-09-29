@@ -13,6 +13,8 @@ const adat = vi.hoisted(() => ({
   listProductsWithSort: vi.fn(),
 }))
 vi.mock("@lib/data/products", () => adat)
+// A kartya gombja a kosar szerver-muveletet importalja; itt nem hivodik.
+vi.mock("@lib/data/cart", () => ({ addToCart: vi.fn() }))
 
 import CommerceKategoriaLap, { LAP_MERET, kovetkezoLap } from "./kategoria-lap"
 
