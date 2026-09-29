@@ -13,6 +13,12 @@ type AllowedTransition = {
 
 const transitions: Record<OrderBusinessStatus, AllowedTransition[]> = {
   pending_processing: [
+    { to: "confirmed", actors: ["admin"] },
+    // The direct step stays: whether Visszaigazolva is mandatory is not decided.
+    { to: "stocking", actors: ["admin"] },
+    { to: "closed_unsuccessfully", actors: ["admin"] },
+  ],
+  confirmed: [
     { to: "stocking", actors: ["admin"] },
     { to: "closed_unsuccessfully", actors: ["admin"] },
   ],
