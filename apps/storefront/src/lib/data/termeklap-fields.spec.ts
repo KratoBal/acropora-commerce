@@ -8,6 +8,7 @@ import {
   TERMEKLAP_FIELDS,
   TERMEKLAP_MEZO_KATEGORIAK,
   TERMEKLAP_MEZO_METAADAT,
+  TERMEKLAP_MEZO_MARKA,
 } from "./termeklap-fields"
 
 /**
@@ -16,6 +17,11 @@ import {
  * dolgot tart eletben.
  */
 describe("a termeklap mezoi", () => {
+  it("a márkát (gyűjteményt) is lekéri a 192:57 felülcíméhez", () => {
+    expect(TERMEKLAP_MEZO_MARKA).toBe("*collection")
+    expect(TERMEKLAP_FIELDS).toContain(TERMEKLAP_MEZO_MARKA)
+  })
+
   it("kéri a kategóriákat, mert abból dől el a sötét-világos váltó", () => {
     expect(TERMEKLAP_FIELDS).toContain(TERMEKLAP_MEZO_KATEGORIAK)
   })

@@ -122,7 +122,12 @@ export default function ProductPrice({
         "akcios" jelentest, nem a szin.
       */}
       <span
-        className={clx("text-xl-semi", {
+        /*
+          A `termeklap-ar` HORGONY: a vilagos (muszaki) termeklapon a 192:57
+          ara (700/36, -0.5 px, 193:125) a `globals.css`-bol jon, a vilag
+          jelolojere kotve. A sotet (2a) lap a P3-ig valtozatlan.
+        */
+        className={clx("termeklap-ar text-xl-semi", {
           "font-bold": selectedPrice.price_type === "sale",
         })}
       >

@@ -75,7 +75,7 @@
  * nem tudjuk, melyiktol.
  */
 export const TERMEKLAP_FIELDS =
-  "*categories,+metadata," +
+  "*categories,+metadata,*collection," +
   "*variants.calculated_price,+variants.inventory_quantity," +
   "*variants.images,*variants.options,+tags"
 
@@ -87,6 +87,13 @@ export const TERMEKLAP_FIELDS =
  */
 export const TERMEKLAP_MEZO_KATEGORIAK = "*categories"
 export const TERMEKLAP_MEZO_METAADAT = "+metadata"
+
+/**
+ * A MARKA (P2, 2026-09-29): a termek Medusa-gyujtemenye. A 192:57 cim feletti
+ * felulcime ("AQUALIGHT · LED VILÁGÍTÁS") ebbol veszi a markat; a stage 65
+ * gyujtemenye mind markanev, 1492 termekbol 502 visel ilyet.
+ */
+export const TERMEKLAP_MEZO_MARKA = "*collection"
 
 /**
  * A `listProducts` alapertelmezesenek ot mezoje, kulon nevesitve. Azert

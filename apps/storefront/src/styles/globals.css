@@ -1017,3 +1017,15 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   font-weight: 600;
   color: var(--acr-mode-heading);
 }
+
+/*
+  A VILAGOS (MUSZAKI) TERMEKLAP ARA A 192:57 SZERINT (P2, 2026-09-29):
+  700/36, -0.5 px betukoz (193:125). A horgony a `ProductPrice` osztalya; a
+  sotet (2a) lap a P3-ig valtozatlan.
+*/
+[data-vilag="vilagos"] .termeklap-ar {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 47px;
+  letter-spacing: -0.5px;
+}

@@ -218,81 +218,47 @@ export const Cimsor = ({
     /* A HEZAG A TERVBOL: a cim `margin-top` erteke 8 px mobilon, 10 asztalon. */
     <div className="flex flex-col gap-2 lg:gap-2.5">
       {/*
-        A CIKKSZAM-SOR A CIM FOLOTT, ES CSAK A VILAGOS VILAGBAN.
+        A VILAGOS LAP FELULCIME A 192:57 SZERINT (P2, 2026-09-29): EGY sor,
+        "MÁRKA · LEVÉLKATEGÓRIA" (193:68, "AQUALIGHT · LED VILÁGÍTÁS"),
+        600/11, 1.4 px betukoz, navy (`--terv-kiemel-tinta` a vilagos
+        vilagban). A korabbi terv ket sora (cikkszam, teljes kategoria-lanc)
+        a kanonikus kereten nincs; a cikkszam a vasarlasi kartya "Bruttó ár ·
+        Cikkszám" soraban marad, tehat nem vesz el.
 
-        === A TERV, MERVE, NEM ATVEVE ===
-
-        A tervfajl 1b lapjan a cim ("Reef LED 160 Pro", 29 px) FOLOTT 26 pixellel KET
-        elem all, azonos tipografiaval (merve 2026-09-10, a tervfajl rendereleseből):
-
-            "CIKKSZÁM RL160P"    11 px, 400-as suly, betukoz 1.32 px
-            "AQUALIGHT"          ugyanaz
-
-        A 2a (sotet) lapon EZ NINCS: ott a cim folott a morzsamenu all (11 px, betukoz
-        0.88 px). Ezert szol ez a sor a VILAGOS vilagra, es ezert nem general egy
-        vilag-fuggetlen eyebrow-t.
-
-        === A MASODIK FEL SZANDEKOSAN HIANYZIK ===
-
-        A terv MARKAT is mutat ("AQUALIGHT"). Az adat NINCS MEG: a stage bolt 1492
-        termekebol NULLA visel marka-mezot (a metadata kulcsai kizarolag `unas_*` es
-        `unique_piece`). A cikkszam viszont 1492 / 1492 termeken all -- ezert megy ki
-        a fele, es ezert nem talalom ki a masikat.
-
-        === A SZIN A LEGKOZELEBBI TOKEN, UJ TOKEN NELKUL ===
-
-            terv          oklch(0.55 0.01 250)
-            a mi tokenunk `--terv-szoveg-halvany`, vilagosban oklch(0.5 0.012 60)
-
-        Az elteres a vilagossagban 0.05; a telitettseg gyakorlatilag azonos, es ezen a
-        telitettsegen a szinezet-kulonbseg (250 kontra 60) nem lathato. Uj tokent
-        felvenni ugyanaz a hiba lenne, amit a rez-tokeneknel mar egyszer elkovettunk:
-        a kovetkezo olvaso nem tudna, melyik a "helyes" halvany.
-
-        A HEZAGOT nem allitom kulon: a `gap-2 lg:gap-2.5` a tervbol jon, es a 26 pixeles
-        y-kulonbseg ebbol meg a 11 pixeles sor magassagabol all ossze.
+        A MARKA a termek gyujtemenye; ahol nincs, csak a kategoria all. A
+        sotet (2a) lap a besorolas-lancot tartja, a P3-ig valtozatlanul.
       */}
-      {vilagosVilag && sku && (
-        <p
-          className="uppercase"
-          style={{
-            fontSize: "11px",
-            fontWeight: 400,
-            letterSpacing: "1.32px",
-            color: "var(--terv-szoveg-halvany)",
-          }}
-          data-testid="vaz-eyebrow"
-        >
-          Cikkszám {sku}
-        </p>
-      )}
-      {/*
-        A BESOROLAS SORA REZ SZINU, ES A LANCOT MUTATJA, NEM EGY NEVET.
-
-        Itt korabban a LEGMELYEBB kategoria allt egyetlen, halvany sorban. A
-        tervlapon a cim folott a LANC all (`WYSIWYG · SPS · ACROPORIDAE`), rez
-        szinnel -- ket kulonbseg, es mind a ketto a tervbol jon.
-
-        A harmadik elem (a csalad-nev) nalunk NINCS, es nem is talaljuk ki: az
-        indoklas a `besorolasLanc` fejleceben all.
-      */}
-      {lanc.length > 0 && (
-        <p
-          className="text-xs uppercase tracking-wide"
-          /*
-            A REZ SZOVEG-VALTOZATA, NEM A FELULETI. Elso valtozatomban a
-            `--terv-kiemel` allt itt, es KET meglevo orzo azonnal pirosra
-            fordult: a `rez-szerepek.spec.ts` szerint `color:` poziciohoz
-            kizarolag a `--terv-kiemel-szoveg` es a `--terv-kiemel-tinta`
-            hasznalhato. A `--terv-kiemel` FELULET-token (akcent hatter), es
-            szovegkent a ket vilag egyiken olvashatatlan lenne.
-          */
-          style={{ color: "var(--terv-kiemel-tinta)" }}
-          data-testid="vaz-besorolas"
-        >
-          {lanc.join(" · ")}
-        </p>
-      )}
+      {vilagosVilag
+        ? (() => {
+            const felulcim = [
+              (termek.collection?.title ?? "").trim(),
+              lanc.at(-1) ?? "",
+            ].filter(Boolean)
+            return felulcim.length > 0 ? (
+              <p
+                className="uppercase"
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "1.4px",
+                  color: "var(--terv-kiemel-tinta)",
+                }}
+                data-testid="vaz-eyebrow"
+                data-cikkszam={sku ?? undefined}
+              >
+                {felulcim.join(" · ")}
+              </p>
+            ) : null
+          })()
+        : lanc.length > 0 && (
+            <p
+              className="text-xs uppercase tracking-wide"
+              style={{ color: "var(--terv-kiemel-tinta)" }}
+              data-testid="vaz-besorolas"
+            >
+              {lanc.join(" · ")}
+            </p>
+          )}
       {/*
         A CIM MERETE A TERVBOL JON, ES A KET CHOSEN LAP UGYANAZT MONDJA.
 

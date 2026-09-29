@@ -386,7 +386,39 @@ describe("a váz valódi tartalma", () => {
    * A TAGADAS MELLE POZITIV KONTROLL KELL: a nev es a besorolas ITT VAN. Egy
    * puszta "nincs X" allitast egy URES cimsor is kielegitene.
    */
-  it("a névvel, a besorolás láncával és a cikkszám-eyebrow-val tölti a címsort", () => {
+  /*
+    A 192:57 SZERINT (P2, 2026-09-29) a vilagos lap cim feletti sora EGY:
+    "MÁRKA · LEVÉLKATEGÓRIA" (193:68). A korabbi terv ket sora (cikkszam,
+    teljes lanc) kikerult; a cikkszam a vasarlasi kartyan marad, es az
+    eyebrow `data-cikkszam` attributuma is hordozza.
+  */
+  it("világos lapon a cím fölött egy sor: márka · levélkategória", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          {
+            ...(TERMEK_BOLTI_ALAK as object),
+            collection: { title: "Amtra" },
+          } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KATEGORIAK,
+        )}
+      />,
+    )
+
+    expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
+    const eyebrow = screen.getByTestId("vaz-eyebrow")
+    expect(eyebrow.textContent).toBe("Amtra · TDS mérők")
+    expect(eyebrow.getAttribute("data-cikkszam")).toBe("8023222196186")
+    expect(eyebrow.textContent).not.toContain("Cikkszám")
+    expect(screen.queryByTestId("vaz-besorolas")).toBeNull()
+  })
+
+  it("márka nélkül a felülcím csak a levélkategória", () => {
     render(
       <LapVaz
         tartalom={vazTartalom(
@@ -400,18 +432,44 @@ describe("a váz valódi tartalma", () => {
         )}
       />,
     )
+    expect(screen.getByTestId("vaz-eyebrow").textContent).toBe("TDS mérők")
+  })
 
-    expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
-
-    const besorolas = screen.getByTestId("vaz-besorolas").textContent
-
-    expect(besorolas).toBe("Tesztek, mérés, vezérlés · TDS mérők")
-    expect(besorolas).not.toContain("Termékek")
-
-    const eyebrow = screen.getByTestId("vaz-eyebrow")
-
-    expect(eyebrow.textContent).toContain("8023222196186")
-    expect(eyebrow.textContent).toContain("Cikkszám")
+  /*
+    A SOTET LAP A BESOROLAS-LANCOT TARTJA, NEM KAPJA A 192:57 FELULCIMET
+    (P2, 2026-09-29). A lenti "nincs eyebrow" allitas fixturaja csak egy
+    gyokeret visel, ott se lanc, se felulcim nem all -- tehat nem latja, ha
+    a sotet lap is az uj sort kapja. Ez a fixtura ket szint mely.
+  */
+  it("sötét lapon a besorolás lánca áll, nem a világos felülcím", () => {
+    const KORALL_LANC = [
+      { id: "k1", name: "Korallok", mpath: "k1", parent_category_id: null },
+      {
+        id: "k2",
+        name: "SPS - Korallok",
+        mpath: "k1.k2",
+        parent_category_id: "k1",
+      },
+    ]
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          {
+            ...(TERMEK as object),
+            categories: KORALL_LANC,
+            collection: { title: "Acropora" },
+          } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KORALL_LANC as never,
+        )}
+      />,
+    )
+    expect(screen.getByTestId("vaz-besorolas").textContent).toContain("SPS")
+    expect(screen.queryByTestId("vaz-eyebrow")).toBeNull()
   })
 
   /**
