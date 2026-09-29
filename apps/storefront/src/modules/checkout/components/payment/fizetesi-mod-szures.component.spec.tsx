@@ -2,6 +2,13 @@ import { HttpTypes } from "@medusajs/types"
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+// A bankkartyas szerver-muveletek (P4-4): a teszt-kornyezetben a `server-only`
+// orzo miatt nem toltodhetnek be, ezert mock.
+vi.mock("@lib/data/simplepay", () => ({
+  valasszKartyat: vi.fn().mockResolvedValue({ ok: true }),
+  inditsKartyasFizetest: vi.fn(),
+}))
+
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
   usePathname: () => "/hu/checkout",

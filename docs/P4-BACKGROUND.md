@@ -284,6 +284,28 @@ The data-transfer statement must be accepted **before** the transaction starts (
 3. The answer's `payment_url` is where the storefront sends the customer.
 - **Both run under the split lock.**
 
+### 4b. The storefront's card flow (P4-4)
+
+1. **Payment step.**
+   - Choosing the card method starts nothing: no payment session, because a SimplePay session is a started transaction.
+   - The statement and the logo show (section 4).
+   - "Tovább az ellenőrzéshez" waits for the tick. Then it calls `valasszKartyat` (→ `simplepay-choose`) and goes to the review with `fizetes=kartya` in the URL.
+   - Any other method removes that flag, so a customer who switches back does not keep the card button.
+2. **Review.** With `fizetes=kartya`, the button reads "Fizetés bankkártyával".
+   - It calls `inditsKartyasFizetest` (→ `simplepay-start`), which starts the transaction, splitting a mixed cart first.
+   - The browser then goes to SimplePay's `payment_url`.
+   - No order is placed here: the orders come after payment, from the IPN or the return.
+   - A refusal (for example `split_discount_changed`) is shown with the checkout's sentences.
+3. **Return, `/api/simplepay-vissza`.** This is where `SIMPLEPAY_BACK_URL` must point: `https://shop-staging.acropora.hu/api/simplepay-vissza`. The `api` prefix is outside the middleware.
+   - It asks the backend (`/store/simplepay/back`, which verifies `r` and `s` and queries the transaction).
+   - After a paid transaction it removes the cart cookie, as `placeOrder` does.
+   - It then redirects to the result page with the same `r` and `s`.
+4. **Result page, `/hu/checkout/simplepay`.** The page asks the backend again, so the result is never read from the URL. The texts follow section 3.13, in the shop's informal voice (`lib/util/simplepay-eredmeny.ts`):
+   - paid: "Sikeres tranzakció." with the SimplePay transaction id, and a link to the order;
+   - cancelled or timed out: the reason, **without** a transaction id and without the word "sikertelen" (3.13.1-2), plus the cart kept, with a link back to payment;
+   - failed: "Sikertelen tranzakció.", the id, and what to check, without the refusal's reason (3.13.3);
+   - pending, or not verifiable: a sentence that asks the customer to check the orders before paying again.
+
 ### 4. The storefront's SimplePay statement and logo (P4-4, first part)
 
 Balázs, 2026-09-29 21:05 UTC: "Murena beépítheti", for the test storefront, in today's look.
