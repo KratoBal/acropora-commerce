@@ -120,3 +120,29 @@ describe("a rendelés részletei", () => {
     expect(screen.queryByTestId("rendeles-allapot")).toBeNull()
   })
 })
+
+/**
+ * A PÁR A RÉSZLETEK OLDALÁN (P4-2). MI PIROSIT: ha a pár felirata nem látszik;
+ * ha nem a pár részleteire visz; ha pár nélkül is megjelenik valami.
+ */
+describe("egy leadásból két rendelés a részleteken", () => {
+  it("megnevezi a párt, és a pár részleteire visz", () => {
+    render(
+      <RendelesReszletek
+        rendeles={RENDELES}
+        allapot={ALLAPOT}
+        par={{ id: "order_4", felirat: "Egy leadásból: #4, bolti átvétel" }}
+      />,
+    )
+    const link = screen.getByTestId("rendeles-kapcsolt")
+    expect(link.textContent).toBe("Egy leadásból: #4, bolti átvétel")
+    expect(link.getAttribute("href")).toContain(
+      "/account/orders/details/order_4",
+    )
+  })
+
+  it("pár nélkül nincs ilyen sor", () => {
+    render(<RendelesReszletek rendeles={RENDELES} allapot={ALLAPOT} />)
+    expect(screen.queryByTestId("rendeles-kapcsolt")).toBeNull()
+  })
+})

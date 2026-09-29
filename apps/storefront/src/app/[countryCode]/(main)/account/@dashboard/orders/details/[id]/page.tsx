@@ -2,7 +2,11 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { retrieveOrder, retrieveOrderBusinessStatus } from "@lib/data/orders"
-import { rendelesSzam } from "@lib/util/rendelesek"
+import {
+  kapcsoltFelirat,
+  kapcsoltRendeles,
+  rendelesSzam,
+} from "@lib/util/rendelesek"
 import RendelesReszletek from "@modules/account/components/rendeles-reszletek"
 
 type Props = {
@@ -35,5 +39,22 @@ export default async function OrderDetailPage(props: Props) {
     notFound()
   }
 
-  return <RendelesReszletek rendeles={order} allapot={allapot} />
+  // P4-2: ha a rendelés egy vegyes kosár egyik fele, a párja is megjelenik.
+  const par = kapcsoltRendeles(order.metadata)
+  const parRendeles = par ? await retrieveOrder(par.id).catch(() => null) : null
+
+  return (
+    <RendelesReszletek
+      rendeles={order}
+      allapot={allapot}
+      par={
+        par && parRendeles
+          ? {
+              id: par.id,
+              felirat: kapcsoltFelirat(parRendeles.display_id, par.bolti),
+            }
+          : null
+      }
+    />
+  )
 }

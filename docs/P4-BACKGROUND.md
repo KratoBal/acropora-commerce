@@ -120,8 +120,9 @@ The storefront places every cart through this route; the core complete route ref
 - **The pair, named.** The confirmation page and both order cards in the account say "Egy leadásból: #13, bolti átvétel" (or "…, kiszállítás"), from the metadata link. The orders are fetched with `+metadata`.
 - **The payment step is unchanged:** the backend already offers the shipped part's methods. The shop part is paid in the shop, as the notice says.
 
+**Since 2b:** the order details page also names the pair, as a link to its details. Measured live on the account list first: #3 says "Egy leadásból: #4, bolti átvétel", and #4 says "…#3, kiszállítás".
+
 **Not in 2b:**
-- the pair on the order details page;
 - the Figma redesign of the cart and checkout (waits for Balázs's word);
 - the card payment for both orders in one transaction (P4-3).
 
