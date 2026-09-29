@@ -106,6 +106,20 @@ describe("POST /store/customers/me/password", () => {
     ])
   })
 
+  it("B's session changes B's password, not the first identity found", async () => {
+    const { updates, error } = await run("authid_b", {
+      current_password: "regi-b",
+      new_password: "uj-jelszo",
+    })
+    expect(error).toBeNull()
+    expect(updates).toEqual([
+      {
+        provider: "emailpass",
+        data: { entity_id: "b@example.hu", password: "uj-jelszo" },
+      },
+    ])
+  })
+
   it("refuses a wrong current password with 400 and writes nothing", async () => {
     const { res, updates, error } = await run("authid_a", {
       current_password: "rossz",
