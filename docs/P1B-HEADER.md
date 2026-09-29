@@ -75,11 +75,9 @@ No horizontal page scroll at 390, 1024, 1280 or 1440 px. The images are in the f
    - It now sits in its own band, as in every Reef frame. The first P1b build put it in the empty 370 px spacer, which was a misreading.
    - The placeholder keeps our four-word text ("Keresés termékre, fajra, márkára, cikkszámra"). This is acrobot's decision of 2026-09-09, recorded in `nav/index.tsx`. `215:41` says "Keresés termékre, fajra, cikkszámra vagy törzsnévre…".
 5. **Trust bar texts.** The height and the layout follow `217:41`. The texts are ours:
-   - Left: the frame's own sentence "Élő állat: kizárólag személyes átvétel" (true, per the handoff's pickup rule), then our "Élő megérkezési garancia · Élőállat-szállítás minden szerdán".
+   - Left: our "Élő megérkezési garancia · Élőállat-szállítás minden szerdán". The frame's "Élő állat: kizárólag személyes átvétel" is left out: next to ours it reads as a contradiction (acrobot's decision, 2026-09-29).
    - Right: our certificate (Balázs, 2026-09-09) instead of the frame's sample "Árukereső 4,9 / 5 · 312 értékelés". A made-up rating must not appear before a customer.
    - The content of the bar is an open question with Balázs.
-6. **Between 1024 and 1280 px** (our responsive rule; Figma draws 1440 only):
-   - the pickup sentence is hidden, otherwise the bar wraps to two lines (measured: 32 px);
-   - the header band's gaps are 20 px instead of 28, and the menu's 14 px instead of 18, otherwise the eight items overflow by 28 px (measured at 1024).
+6. **Between 1024 and 1280 px** (our responsive rule; Figma draws 1440 only): the header band's gaps are 20 px instead of 28, and the menu's 14 px instead of 18. Otherwise the eight items overflow by 28 px (measured at 1024).
 7. **No highlighted item on the product page.** `215:41` shows "Korallok" highlighted on the coral PDP. Our product route carries no category, so the header cannot tell. Category pages and the Hamarosan page do highlight their item.
 8. **The category drop-down panel** keeps its existing look and follows the page's world (`--terv-*`), not the header mode. Figma draws no panel; its restyle belongs to a mega-menu decision.

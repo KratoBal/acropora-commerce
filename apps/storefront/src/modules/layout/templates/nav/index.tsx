@@ -169,15 +169,13 @@ import CartButton from "@modules/layout/components/cart-button"
  */
 const BIZALMI_BAL =
   "Élő megérkezési garancia · Élőállat-szállítás minden szerdán"
-/**
- * A KANONIKUS KERET SAJAT BAL SZOVEGE (217:42), acrobot dontese
- * (2026-09-29 07:27): igaz allitas (a handoff uzleti szabalya: elo allatnal
- * csak szemelyes atvetel), tehat a mi szovegeink MELLE kerul, ha elfer. Elfer:
- * a sav 1352 pixelebol a ket oldal egyutt kb. 1050-et foglal (merve a kirakaton).
- * A Figma jobb oldali "Árukereső 4,9 / 5 · 312 értékelés" mintaszoveg; kitalalt
- * ertekelesszam nem kerulhet a vevo ele, ott a mi tanusitvanyunk marad.
- */
-const BIZALMI_ATVETEL = "Élő állat: kizárólag személyes átvétel"
+/*
+  A BIZALMI SAV SZOVEGE A MIENK, NEM A KERETE (acrobot dontese, 2026-09-29
+  07:45): az elrendezes a 217:41 szerint, a szoveg nem. A keret bal mondata
+  ("Élő állat: kizárólag személyes átvétel") a mienk mellett ELLENTMONDASNAK
+  olvashato, a jobb oldali "Árukereső 4,9 / 5 · 312 értékelés" pedig
+  mintaszoveg -- kitalalt ertekelesszam nem kerulhet a vevo ele.
+*/
 /**
  * A TANUSITVANY ES A KET SZAMA -- STATIKUS ERTEK, MERT NINCS LEKERDEZESUNK.
  *
@@ -296,16 +294,7 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
           data-tanusitvany-allapot={BIZALMI_TANUSITVANY_DATUM}
         >
           <div className="mx-auto flex h-full w-full max-w-[1352px] items-center justify-between text-[12.5px] leading-[16px]">
-            {/*
-              1024 ES 1280 KOZOTT AZ ATVETELI MONDAT NEM FER KI: a ket oldal
-              egyutt ~1000 pixel, a sav belseje 1024-nel 936 (merve: a szoveg
-              ket sorba tort, 32 px). A Figma csak 1440-et rajzol; ez a mi
-              reszponziv szabalyunk.
-            */}
-            <p>
-              <span className="hidden medium:inline">{BIZALMI_ATVETEL} · </span>
-              {BIZALMI_BAL}
-            </p>
+            <p>{BIZALMI_BAL}</p>
             <p className="flex items-center gap-6">
               <span>{BIZALMI_TANUSITVANY}</span>
               <span className="font-semibold text-acr-heritage">

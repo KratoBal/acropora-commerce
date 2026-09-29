@@ -512,6 +512,18 @@ describe("a fejléc geometriája a tervből", () => {
       nav.indexOf("</header>"),
     )
 
+  /**
+   * A BIZALMI SAV SZOVEGE A MIENK (acrobot, 2026-09-29 07:45): a keret bal
+   * mondata a mienk mellett ellentmondasnak olvashato, a jobb oldali ertekeles
+   * pedig kitalalt mintaszam. Egyik sem kerulhet vissza csendben.
+   */
+  it("a bizalmi sáv nem veszi át a keret szövegeit", () => {
+    // A komment idezi mindkettot; a KOD-ban (ertekadaskent) egyik sem allhat.
+    expect(nav).not.toMatch(/=\s*"Élő állat: kizárólag személyes átvétel"/)
+    expect(nav).not.toMatch(/=\s*"Árukereső/)
+    expect(nav).toContain("<p>{BIZALMI_BAL}</p>")
+  })
+
   it("a kereső a saját sávjában áll, a fejléc sávja alatt", () => {
     expect(nav.indexOf('data-testid="fejlec-kereso-sav"')).toBeGreaterThan(
       nav.indexOf("</nav>"),
