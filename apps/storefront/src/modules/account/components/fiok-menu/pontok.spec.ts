@@ -3,7 +3,13 @@ import { join } from "path"
 
 import { describe, expect, it } from "vitest"
 
-import { FIOK_PONTOK, aktivPont, fiokCim, fiokLeiras } from "./pontok"
+import {
+  FIOK_PONTOK,
+  aktivPont,
+  fiokCim,
+  fiokLeiras,
+  reszletekUtvonal,
+} from "./pontok"
 
 /**
  * A FIOK MENUJENEK PONTJAI. MI PIROSIT: ha egy pont nem letezo lapra visz; ha
@@ -58,5 +64,13 @@ describe("a fiók menüjének pontjai", () => {
       "Aktuális és korábbi rendeléseid egy helyen.",
     )
     expect(fiokLeiras("/hu/account/profile", "hu")).toBeUndefined()
+  })
+
+  it("a rendelés részletei saját keretben: csak a details útvonal", () => {
+    expect(reszletekUtvonal("/hu/account/orders/details/order_1", "hu")).toBe(
+      true,
+    )
+    expect(reszletekUtvonal("/hu/account/orders", "hu")).toBe(false)
+    expect(reszletekUtvonal("/hu/account/profile", "hu")).toBe(false)
   })
 })

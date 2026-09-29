@@ -23,13 +23,16 @@ const reszletek = (r: Rendeles) => `/account/orders/details/${r.id}`
 const tetelSzam = (r: Rendeles) =>
   (r.items ?? []).reduce((db, t) => db + (t.quantity ?? 0), 0)
 
-/** Az allapot cimkeje (249:41; mobilon 249:220). */
-function AllapotCimke({ allapot }: { allapot: UzletiAllapot }) {
+/**
+ * Az allapot cimkeje (249:41; mobilon 249:220). A keret szovegstilusa
+ * nagybetus (`textCase: UPPER`, 0.5 px betukoz); a szoveg maga a bolt neve.
+ */
+export function AllapotCimke({ allapot }: { allapot: UzletiAllapot }) {
   const fajta = allapotFajta(allapot.status)
   return (
     <span
       className={
-        "inline-flex h-[24px] shrink-0 items-center border bg-acr-mist px-2 text-[9.5px] font-semibold leading-[12px] small:h-[26px] small:px-[9px] small:text-[10.5px] small:leading-[14px] " +
+        "inline-flex h-[24px] shrink-0 items-center border bg-acr-mist px-2 text-[9.5px] font-semibold uppercase leading-[12px] tracking-[0.5px] small:h-[26px] small:px-[9px] small:text-[10.5px] small:leading-[14px] " +
         (fajta === "nyitott"
           ? "border-acr-heritage text-acr-heritage"
           : fajta === "teljesitve"
