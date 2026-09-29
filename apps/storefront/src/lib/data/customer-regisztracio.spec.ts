@@ -30,7 +30,7 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 
 import { ASZF_CIM, ASZF_METADATA_KULCS, ASZF_VERZIO } from "@lib/util/aszf"
 
-import { signup } from "./customer"
+import { login, signup } from "./customer"
 
 const urlap = (mezok: Record<string, string>) => {
   const fd = new FormData()
@@ -109,5 +109,24 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
       { metadata: Record<string, { verzio: string }> },
     ]
     expect(fuggo.metadata[ASZF_METADATA_KULCS].verzio).toBe(ASZF_VERZIO)
+  })
+})
+
+/*
+ * A BELEPES HIBAAGA (a P5-1 kalibraciojabol): a lekepezot visszaforditva
+ * (`String(error)`) minden allitas zold maradt, mert egyik sem futtatta a
+ * belepes elbukott agat. A stage-en mert szoveggel all itt.
+ */
+describe("a belépés hibája a vevő felé", () => {
+  it("rossz jelszónál magyar mondat, nem a szerver angol szövege", async () => {
+    sdk.auth.login.mockRejectedValue(new Error("Invalid email or password"))
+    const valasz = await login(
+      null,
+      urlap({ email: "vevo@example.hu", password: "rossz" }),
+    )
+    expect(valasz).toEqual({
+      state: "error",
+      error: "Hibás e-mail-cím vagy jelszó.",
+    })
   })
 })
