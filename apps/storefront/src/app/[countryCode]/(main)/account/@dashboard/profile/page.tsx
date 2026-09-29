@@ -1,52 +1,21 @@
 import { Metadata } from "next"
-import { STORE_NAME } from "@lib/store"
-
-import ProfilePhone from "@modules/account//components/profile-phone"
-import ProfileBillingAddress from "@modules/account/components/profile-billing-address"
-import ProfileEmail from "@modules/account/components/profile-email"
-import ProfileName from "@modules/account/components/profile-name"
 import { notFound } from "next/navigation"
-import { listRegions } from "@lib/data/regions"
+
 import { retrieveCustomer } from "@lib/data/customer"
+import { STORE_NAME } from "@lib/store"
+import ProfilUrlap from "@modules/account/components/profil-urlap"
 
 export const metadata: Metadata = {
-  title: "Profile",
-  description: `View and edit your ${STORE_NAME} profile.`,
+  title: "Profil",
+  description: `A(z) ${STORE_NAME} profilod: név, e-mail-cím, telefonszám.`,
 }
 
 export default async function Profile() {
   const customer = await retrieveCustomer()
-  const regions = await listRegions()
 
-  if (!customer || !regions) {
+  if (!customer) {
     notFound()
   }
 
-  return (
-    <div className="w-full" data-testid="profile-page-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Profile</h1>
-        <p className="text-base-regular">
-          Itt nézheted meg és módosíthatod a profilodat: a neved, az
-          e-mail-címed és a telefonszámod. A számlázási címedet és a jelszavadat
-          is itt tudod megváltoztatni.
-        </p>
-      </div>
-      <div className="flex flex-col gap-y-8 w-full">
-        <ProfileName customer={customer} />
-        <Divider />
-        <ProfileEmail customer={customer} />
-        <Divider />
-        <ProfilePhone customer={customer} />
-        <Divider />
-        {/* <ProfilePassword customer={customer} />
-        <Divider /> */}
-        <ProfileBillingAddress customer={customer} regions={regions} />
-      </div>
-    </div>
-  )
-}
-
-const Divider = () => {
-  return <div className="w-full h-px bg-gray-200" />
+  return <ProfilUrlap customer={customer} />
 }

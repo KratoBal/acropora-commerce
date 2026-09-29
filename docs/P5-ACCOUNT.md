@@ -59,3 +59,44 @@ Measured locally against the stage backend on 2026-09-29:
 - **Font:** the local dev server cannot download Hanken Grotesk and uses the fallback (the category page does the same); stage loads the real font.
 
 Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-auth-1440-figma-balra.png` and `p5-auth-390-figma-balra.png`.
+
+## 2. The account frame and the profile (`257:3`; mobile `257:212`)
+
+**The frame** (`AccountLayout`), for a signed-in customer:
+
+| Element | Figma | Built |
+|---|---|---|
+| Head (`257:17`) | "FIÓKOM" 600/10.5 heritage, the page title 600/34; 30 px top padding | same; the title comes from the route (`fiokCim`). Mobile: no eyebrow, title 600/25 (`257:218`). |
+| Menu (`257:21`) | 244 px column, 46 px rows 2 px apart; active: mist background with a 3 px heritage bar on the LEFT only, 600 ink (`257:22`); others: shell background, no border (stroke weight 0), 400 slate | same |
+| Mobile menu (`257:219`) | a row of 28 px tabs, 500/10.5; active: mist and heritage | same, scrolling horizontally |
+| Content (`257:34`) | 28 px from the menu | same |
+
+- **Only existing pages get a menu item:** Profil, Rendeléseim, Címek.
+  - Számlázási adatok and Beállítások are added by their own PRs (P5 items 5 and 6). A menu item that leads to a missing page is worse than none.
+  - Hűségpontok has no data.
+  - A test checks that every item has a page.
+- **Kijelentkezés** is not on the frame but is an account function. It sits under the menu as text, and at the end of the mobile tab row.
+- **The mobile tabs include Rendeléseim.** The frame's tab row (`257:219`) leaves it out, which would leave the orders unreachable from the account on mobile.
+- **The old "Kérdésed van?" band is gone:** it is not on the frame, and it led to a customer-service page that does not exist.
+- **The account's start page** (`/account`, the existing overview) is titled "Áttekintés". Its place is decided with the orders (item 4): the orders frame (`249:3`) starts its menu with "Áttekintés".
+
+**The profile** (`257:35`): a white card with a border and 20 px padding (on mobile no card, as `257:228`), and one "Mentés" button (`saveProfile`).
+
+| Frame | Built | Why |
+|---|---|---|
+| one "Név" field | Vezetéknév and Keresztnév | as at registration: the Medusa customer and invoices keep them apart |
+| E-mail, editable | E-mail, **read-only**, with the sentence "Az e-mail-cím itt nem módosítható." | the store API's customer update does not take the email (`StoreUpdateCustomer` omits it) |
+| Telefonszám | same; an emptied field **clears** the number (`null`) | `undefined` would keep the old number |
+
+- **The billing address** leaves the profile. Its own page, Számlázási adatok, is item 5. Until then it is not editable in the account; checkout still asks for it.
+- **Removed**, replaced by the new menu and the profile form: the old account menu and the per-field editors (name, email, phone, and a password editor that was never wired up). The billing editor and its `account-info` wrapper stay until item 5.
+
+Measured locally against stage on 2026-09-29, signed in as the stage test account (`teszt+p5@acropora.hu`, "Teszt P5"; see below):
+- **1440 px:** title 34; menu 244 wide, active row 46 high on mist; card 842 wide with a 1 px border; button 180 × 44.
+- **390 px:** title 25; tabs Profil / Rendeléseim / Címek; no card; button 358 × 46; no horizontal scroll.
+- **Saving:** a phone number saved and read back; emptied, saved and read back empty (cleared).
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-profil-1440-figma-balra.png`, `p5-profil-390-figma-balra.png`.
+
+**The stage test account** (acrobot, 2026-09-29): `teszt+p5@acropora.hu`, "Teszt P5", created through the stage storefront once it ran #411. Read back through the store API, the customer carries `metadata.aszf_elfogadas`, with the version, the submit time and the document address. The account stays for the later P5 items. Its password is kept outside the repo.
+

@@ -1,39 +1,34 @@
 import React from "react"
 
-import UnderlineLink from "@modules/common/components/interactive-link"
-
-import AccountNav from "../components/account-nav"
 import { HttpTypes } from "@medusajs/types"
+
+import FiokMenu, { FiokFej } from "../components/fiok-menu"
 
 interface AccountLayoutProps {
   customer: HttpTypes.StoreCustomer | null
   children: React.ReactNode
 }
 
+/**
+ * A BEJELENTKEZETT FIOK KERETE (P5, 257:3; mobilon 257:212).
+ *
+ * Fej ("FIÓKOM" es a lap cime), alatta a 244 px-es menu es a tartalom, 28 px
+ * kozzel. Mobilon a menu fulsor a cim alatt. A regi "Kérdésed van?" sav
+ * kimaradt: a keretben nincs, es egy nem letezo ugyfelszolgalati lapra vitt.
+ */
 const AccountLayout: React.FC<AccountLayoutProps> = ({
   customer,
   children,
 }) => {
   return (
-    <div className="flex-1 small:py-12" data-testid="account-page">
-      <div className="flex-1 content-container h-full max-w-5xl mx-auto bg-white flex flex-col">
-        <div className="grid grid-cols-1  small:grid-cols-[240px_1fr] py-12">
-          <div>{customer && <AccountNav customer={customer} />}</div>
-          <div className="flex-1">{children}</div>
+    <div className="bg-acr-shell font-acr-sans" data-testid="account-page">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 pb-16 pt-[18px] small:gap-0 small:px-[56px] small:pt-[30px]">
+        <div className="small:pb-[20px]">
+          <FiokFej />
         </div>
-        <div className="flex flex-col small:flex-row items-end justify-between small:border-t border-gray-200 py-12 gap-8">
-          <div>
-            <h3 className="text-xl-semi mb-4">Kérdésed van?</h3>
-            <span className="txt-medium">
-              A gyakori kérdéseket és válaszokat az ügyfélszolgálati oldalon
-              találod.
-            </span>
-          </div>
-          <div>
-            <UnderlineLink href="/customer-service">
-              Ügyfélszolgálat
-            </UnderlineLink>
-          </div>
+        <div className="flex flex-col gap-3 small:grid small:grid-cols-[244px_minmax(0,1fr)] small:gap-7">
+          <div>{customer && <FiokMenu />}</div>
+          <div className="min-w-0">{children}</div>
         </div>
       </div>
     </div>

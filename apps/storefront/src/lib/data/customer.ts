@@ -90,6 +90,37 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   return updateRes
 }
 
+export type ProfilMentesAllapot =
+  { state: "success" } | { state: "error"; error: string } | null
+
+/**
+ * A PROFIL MENTESE (P5, 257:3): egy urlap, egy "Mentés". A nev ket mezo, a
+ * telefonszam opcionalis. Az e-mail itt nem modosithato: a Medusa bolti
+ * API-janak vevo-frissitese kizarja (`StoreUpdateCustomer` Omit "email").
+ */
+export async function saveProfile(
+  _currentState: unknown,
+  formData: FormData,
+): Promise<ProfilMentesAllapot> {
+  const first_name = String(formData.get("first_name") ?? "").trim()
+  const last_name = String(formData.get("last_name") ?? "").trim()
+  const phone = String(formData.get("phone") ?? "").trim()
+
+  if (!first_name || !last_name) {
+    return { state: "error", error: "A vezetéknév és a keresztnév kötelező." }
+  }
+
+  try {
+    // An emptied phone is sent as null, so it is cleared; undefined would keep
+    // the old number.
+    await updateCustomer({ first_name, last_name, phone: phone || null })
+  } catch (error) {
+    return { state: "error", error: authHibaSzoveg(error) }
+  }
+
+  return { state: "success" }
+}
+
 export async function signup(
   _currentState: unknown,
   formData: FormData,

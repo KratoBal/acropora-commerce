@@ -51,6 +51,10 @@ describe("a fiók útvonalának kerete", () => {
     await lap()
     expect(screen.getByTestId("account-page")).toBeTruthy()
     expect(screen.getByTestId("fiok-slot")).toBeTruthy()
+    // A menu is a keret resze (a P5-2 kalibraciojabol: a menut kiveve minden
+    // allitas zold maradt).
+    expect(screen.getByTestId("account-nav")).toBeTruthy()
+    expect(screen.getByTestId("fiok-cim").textContent).toBe("Áttekintés")
     expect(screen.queryByTestId("belepo-slot")).toBeNull()
   })
 })
