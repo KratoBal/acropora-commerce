@@ -5,6 +5,7 @@ import SimplePayProviderService, {
   SIMPLEPAY_DATA_KEY,
   simplePayStatusToSession,
 } from "../service"
+import { sessionIdOfOrderRef } from "../ipn"
 import { signSimplePay } from "../signature"
 
 const KEY = "teszt-kulcs-nem-valodi"
@@ -84,7 +85,8 @@ describe("starting a SimplePay payment", () => {
       twoStep: false,
       invoice: { ...INVOICE, country: "hu" },
     })
-    expect(String(calls[0].body.orderRef)).toMatch(/^payses_1-/)
+    // The IPN finds the session again from this orderRef (P4-3b).
+    expect(sessionIdOfOrderRef(String(calls[0].body.orderRef))).toBe("payses_1")
     expect(String(calls[0].body.timeout)).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00$/)
     expect(result.id).toBe("501234567")
     expect(result.data?.[SIMPLEPAY_DATA_KEY]).toMatchObject({
