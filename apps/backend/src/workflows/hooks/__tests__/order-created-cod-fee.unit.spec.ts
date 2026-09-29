@@ -43,6 +43,7 @@ const merchandise = (id: string) => ({ id, metadata: null })
 const run = async (order: unknown) => {
   const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn() }
   const orderBusinessStatus = {
+    listOrderBusinessStatusModels: jest.fn().mockResolvedValue([]),
     transitionOrderBusinessStatus: jest.fn().mockResolvedValue({}),
   }
   const container = createMedusaContainer()

@@ -2,7 +2,7 @@ import type { Logger } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createOrderWorkflow } from "@medusajs/medusa/core-flows"
 
-import { transitionOrderBusinessStatusWorkflow } from "../transition-order-business-status"
+import { ensureInitialBusinessStatus } from "../utils/ensure-initial-business-status"
 
 import {
   findCashOnDeliveryFeeLineItems,
@@ -97,12 +97,7 @@ createOrderWorkflow.hooks.orderCreated(async ({ order }, { container }) => {
     )
   }
 
-  await transitionOrderBusinessStatusWorkflow(container).run({
-    input: {
-      order_id: (order as { id: string }).id,
-      to: "pending_processing",
-      actor: "system",
-      source: "order_created",
-    },
-  })
+  // Idempotent: the store checkout reaches the same function through the
+  // `order.placed` subscriber, and a second entry must not be written.
+  await ensureInitialBusinessStatus(container, (order as { id: string }).id)
 })
