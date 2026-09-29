@@ -64,7 +64,24 @@ Only the **technical (Commerce) categories** get the new page: the Termékek bra
   - The link keeps the sort and the option filters.
   - Page size 18, as in the frame.
 
-## Left out, and why
+## The lighting variant (`162:84`)
+
+The handoff also marks **`162:84` Lighting Category / Desktop — Hybrid** as CANONICAL. It is the same template.
+
+The one difference that can be built from data is the quick bar. On a subcategory the frame shows the **sibling** categories, with the current one highlighted and no "Összes" (`162:117`). Without this, a category with no children of its own would show only "Összes", a dead end.
+
+- A category with children shows "Összes" and its children, as before.
+- A category without children shows its siblings: one `parent_category_id` request, the current one highlighted (`aria-current`), and empty siblings left out. The current one stays even when it is empty, because the visitor has just arrived there.
+- If the sibling request fails, the bar falls back to "Összes".
+- The filter column has no Kategória section on such a page; the frame has none either.
+
+The frame's other filters have no data behind them, or cannot be served by the store API:
+- Akvárium hossza, Korallállomány and Elérhetőség have no such data;
+- Ár cannot be served: the Medusa store API cannot filter by price band, and even price sorting reads every page today.
+
+The Márka filter comes in a separate PR.
+
+
 
 The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories and 65 collections.
 

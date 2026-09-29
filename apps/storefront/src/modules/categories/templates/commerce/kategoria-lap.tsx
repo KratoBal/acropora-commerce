@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 
+import { listCategories } from "@lib/data/categories"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
 import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
@@ -70,6 +71,57 @@ export function kovetkezoLap(
   return `?${params.toString()}`
 }
 
+/**
+ * A LEVEL-KATEGORIA TESTVEREI (P2, a 162:117 szerint).
+ *
+ * A vilagitas kerete a gyors savban a TESTVER-kategoriakat mutatja, az
+ * aktualisat kiemelve. Nalunk egy gyerek nelkuli kategorian a sav kulonben
+ * csak az "Összes"-t mutatna, zsakutcakent. Gyerekes kategorianal, gyoker
+ * kategorianal, vagy ha a lekeres elbukik: nincs testver.
+ */
+async function testverek(
+  category: HttpTypes.StoreProductCategory,
+): Promise<HttpTypes.StoreProductCategory[]> {
+  const szulo = category.parent_category
+  if (!szulo || (category.category_children?.length ?? 0) > 0) return []
+  return listCategories({
+    parent_category_id: szulo.id,
+    fields: "id,name,handle",
+  }).catch(() => [])
+}
+
+export type SavElem = {
+  kategoria: HttpTypes.StoreProductCategory
+  szam: number | null
+  aktiv: boolean
+}
+
+/**
+ * A GYORS SAV ELEMEI. Gyerekes kategorian a gyerekek (elottuk az "Összes"),
+ * level-kategorian a testverek. Az ures kategoria kimarad, kiveve az
+ * aktualisat: arrol a latogato epp most jott.
+ */
+export function savElemek(
+  category: HttpTypes.StoreProductCategory,
+  gyerekek: HttpTypes.StoreProductCategory[],
+  testverLista: HttpTypes.StoreProductCategory[],
+  szamok: (number | null)[],
+): { mod: "gyerekek" | "testverek"; elemek: SavElem[] } {
+  const mod =
+    gyerekek.length > 0 || testverLista.length === 0 ? "gyerekek" : "testverek"
+  const lista = mod === "gyerekek" ? gyerekek : testverLista
+  return {
+    mod,
+    elemek: lista
+      .map((kategoria, index) => ({
+        kategoria,
+        szam: szamok[index] ?? null,
+        aktiv: kategoria.id === category.id,
+      }))
+      .filter(({ szam, aktiv }) => aktiv || szam !== 0),
+  }
+}
+
 export default async function CommerceKategoriaLap({
   category,
   nevek,
@@ -91,7 +143,7 @@ export default async function CommerceKategoriaLap({
     {
       response: { products, count },
     },
-    szamok,
+    { lista: testverLista, szamok },
   ] = await Promise.all([
     listProductsWithSort({
       page,
@@ -104,7 +156,13 @@ export default async function CommerceKategoriaLap({
       countryCode,
       optionValueIds,
     }),
-    alkategoriaSzamok(gyerekek, countryCode),
+    testverek(category).then(async (lista) => ({
+      lista,
+      szamok: await alkategoriaSzamok(
+        gyerekek.length > 0 ? gyerekek : lista,
+        countryCode,
+      ),
+    })),
   ])
 
   /*
@@ -112,9 +170,11 @@ export default async function CommerceKategoriaLap({
     (a stage-en ilyen a "biOrb" es a "Használt termékek OUTLET áron", 0-0
     termekkel). Ahol a szamlalas nem sikerult, a gyerek marad, szam nelkul.
   */
-  const lathatoGyerekek = gyerekek
-    .map((gyerek, index) => ({ gyerek, szam: szamok[index] }))
-    .filter(({ szam }) => szam !== 0)
+  const sav = savElemek(category, gyerekek, testverLista, szamok)
+  const lathatoGyerekek =
+    sav.mod === "gyerekek"
+      ? sav.elemek.map(({ kategoria, szam }) => ({ gyerek: kategoria, szam }))
+      : []
 
   const eddig = Math.min(page * LAP_MERET, count)
   const elso = count === 0 ? 0 : (page - 1) * LAP_MERET + 1
@@ -172,22 +232,33 @@ export default async function CommerceKategoriaLap({
             aria-label="Alkategóriák"
             data-testid="gyors-kategoriak"
           >
-            <li className="shrink-0">
-              <span
-                className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                aria-current="page"
-              >
-                Összes
-              </span>
-            </li>
-            {lathatoGyerekek.map(({ gyerek }) => (
-              <li key={gyerek.id} className="shrink-0">
-                <LocalizedClientLink
-                  href={`/categories/${gyerek.handle}`}
-                  className="flex h-[44px] items-center border border-acr-line bg-acr-white px-6 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
+            {sav.mod === "gyerekek" ? (
+              <li className="shrink-0">
+                <span
+                  className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
+                  aria-current="page"
                 >
-                  {nev(gyerek)}
-                </LocalizedClientLink>
+                  Összes
+                </span>
+              </li>
+            ) : null}
+            {sav.elemek.map(({ kategoria, aktiv }) => (
+              <li key={kategoria.id} className="shrink-0">
+                {aktiv ? (
+                  <span
+                    className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
+                    aria-current="page"
+                  >
+                    {nev(kategoria)}
+                  </span>
+                ) : (
+                  <LocalizedClientLink
+                    href={`/categories/${kategoria.handle}`}
+                    className="flex h-[44px] items-center border border-acr-line bg-acr-white px-6 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
+                  >
+                    {nev(kategoria)}
+                  </LocalizedClientLink>
+                )}
               </li>
             ))}
           </ul>
