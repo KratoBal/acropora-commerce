@@ -10,10 +10,13 @@ import { HttpTypes } from "@medusajs/types"
 
 type OrderCompletedTemplateProps = {
   order: HttpTypes.StoreOrder
+  /** P4-2: "Egy leadásból: #13, bolti átvétel", ha a leadás két rendelés lett. */
+  kapcsolt?: string | null
 }
 
 export default async function OrderCompletedTemplate({
   order,
+  kapcsolt,
 }: OrderCompletedTemplateProps) {
   return (
     <div className="py-6 min-h-[calc(100vh-64px)]">
@@ -30,6 +33,15 @@ export default async function OrderCompletedTemplate({
             <span>A rendelésedet sikeresen leadtad.</span>
           </Heading>
           <OrderDetails order={order} />
+          {kapcsolt ? (
+            <p
+              className="text-base-regular text-ui-fg-base"
+              data-testid="order-kapcsolt"
+            >
+              {kapcsolt}. A két rendelést egyszerre adtad le; a fiókodban
+              mindkettőt látod.
+            </p>
+          ) : null}
           <Heading level="h2" className="flex flex-row text-3xl-regular">
             Összegzés
           </Heading>

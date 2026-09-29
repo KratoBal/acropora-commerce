@@ -96,3 +96,32 @@ describe("a Rendeléseim lap", () => {
     ).toBe("/hu/store")
   })
 })
+
+/**
+ * EGY LEADÁSBÓL KÉT RENDELÉS (P4-2). MI PIROSIT: ha a pár száma nem látszik a
+ * kártyán; ha rossz irányt mond (melyik a bolti); ha a listán nem szereplő
+ * párra is kiír valamit.
+ */
+describe("egy leadásból két rendelés", () => {
+  const fo = rendeles("order_1", 12, {
+    metadata: { acropora_pickup_order_id: "order_2" },
+  })
+  const bolti = rendeles("order_2", 13, {
+    metadata: { acropora_parent_order_id: "order_1" },
+  })
+
+  it("mindkét kártya megnevezi a párját, a fajtájával", () => {
+    render(<Rendelesek rendelesek={[fo, bolti]} allapotok={[]} />)
+    expect(
+      screen.getAllByTestId("rendeles-kapcsolt").map((e) => e.textContent),
+    ).toEqual([
+      "Egy leadásból: #13, bolti átvétel",
+      "Egy leadásból: #12, kiszállítás",
+    ])
+  })
+
+  it("ha a pár nincs a listán, nem ír ki semmit", () => {
+    render(<Rendelesek rendelesek={[fo]} allapotok={[]} />)
+    expect(screen.queryByTestId("rendeles-kapcsolt")).toBeNull()
+  })
+})

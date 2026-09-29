@@ -7,6 +7,8 @@ import {
   rendelesDatum,
   rendelesDatumRovid,
   rendelesSzam,
+  kapcsoltFelirat,
+  kapcsoltRendeles,
 } from "./rendelesek"
 
 const allapot = (order_id: string, status: string, label = status) => ({
@@ -73,5 +75,26 @@ describe("a címke fajtája, a dátum és a szám", () => {
     expect(rendelesSzam(null)).toBe("")
     expect(fizetesiAllapot("captured")).toBe("kifizetve")
     expect(fizetesiAllapot("valami_uj")).toBe("")
+  })
+})
+
+describe("a pár-rendelés (P4-2)", () => {
+  it("a metadatából olvassa, mindkét irányban, és mondja, melyik a bolti", () => {
+    expect(kapcsoltRendeles({ acropora_pickup_order_id: "order_2" })).toEqual({
+      id: "order_2",
+      bolti: true,
+    })
+    expect(kapcsoltRendeles({ acropora_parent_order_id: "order_1" })).toEqual({
+      id: "order_1",
+      bolti: false,
+    })
+    expect(kapcsoltRendeles({})).toBeNull()
+    expect(kapcsoltRendeles(null)).toBeNull()
+    expect(kapcsoltRendeles({ acropora_pickup_order_id: 5 })).toBeNull()
+  })
+
+  it("a felirat a pár számát és fajtáját adja", () => {
+    expect(kapcsoltFelirat(13, true)).toBe("Egy leadásból: #13, bolti átvétel")
+    expect(kapcsoltFelirat(12, false)).toBe("Egy leadásból: #12, kiszállítás")
   })
 })

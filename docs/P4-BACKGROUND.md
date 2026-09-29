@@ -95,7 +95,21 @@ The storefront places every cart through this route; the core complete route ref
 - The order of the steps, the rollback and the repeat behaviour are unit-tested on an in-memory shop.
 - The Medusa calls themselves (cart creation, line moves, payment re-creation, the fee settling, both completions, the link) cannot run locally. They are measured on stage after merge, with a test cart: one pickup-only product and one ordinary product, cash on delivery.
 
+### 2b. The storefront, in today's look
+
+- **The notice.** A new "Két rendelés lesz belőle" band says "Az élő állat miatt két rendelésed keletkezik." and names the lines that go to the shop order. It shows:
+  - on the cart page (`SplitNotice`, from `split_line_ids`);
+  - at the top of the checkout, so it is visible at placement too (Balázs: "Már a kosár oldalon és rendelés leadásnál is jól láthatóan").
+- **The old pickup band** now shows only for a cart that is pickup-only as a whole. Its sentence no longer says "nem bontjuk két rendelésre" or "a műszaki tételeket is ide készítjük össze"; the test pins that they stay out.
+- **Placement.** `placeOrder` calls `POST /store/carts/:id/complete-split` for every cart and redirects to the first (shipped) order's confirmation. The country code is read from the cart before completion, because afterwards there is no cart to read it from.
+- **The pair, named.** The confirmation page and both order cards in the account say "Egy leadásból: #13, bolti átvétel" (or "…, kiszállítás"), from the metadata link. The orders are fetched with `+metadata`.
+- **The payment step is unchanged:** the backend already offers the shipped part's methods. The shop part is paid in the shop, as the notice says.
+
+**Not in 2b:**
+- the pair on the order details page;
+- the Figma redesign of the cart and checkout (waits for Balázs's word);
+- the card payment for both orders in one transaction (P4-3).
+
 ### Still to come
-- **2b:** the storefront. The notice on the cart page and at placement, the two parts in the existing checkout step, and a hint on the two orders in the account that they come from one placement.
 - **One SimplePay transaction for both orders:** part of P4-3.
 

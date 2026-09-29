@@ -20,7 +20,7 @@ export const retrieveOrder = async (id: string) => {
       method: "GET",
       query: {
         fields:
-          "*payment_collections.payments,*payment_collections.payment_sessions,*items,*items.metadata,*items.variant,*items.product,*shipping_address,*billing_address,*shipping_methods",
+          "*payment_collections.payments,*payment_collections.payment_sessions,*items,*items.metadata,*items.variant,*items.product,*shipping_address,*billing_address,*shipping_methods,+metadata",
       },
       headers,
       next,
@@ -50,7 +50,9 @@ export const listOrders = async (
         limit,
         offset,
         order: "-created_at",
-        fields: "*items,+items.metadata,*items.variant,*items.product",
+        // +metadata: a P4-2 pár-hivatkozás (egy leadásból két rendelés).
+        fields:
+          "*items,+items.metadata,*items.variant,*items.product,+metadata",
         ...filters,
       },
       headers,
