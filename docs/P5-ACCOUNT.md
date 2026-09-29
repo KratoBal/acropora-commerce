@@ -262,9 +262,13 @@ React 19 resets a form after its action. Uncontrolled fields go back to their `d
 
 So the test sees the reset itself, not a hand-set state.
 
-**Not covered here:**
-- **the address modals** (`address-card/add-address.tsx`, `edit-address-modal.tsx`). They are template forms with the same shape; their errors come only from the server.
-- **the checkout address form (P4).** It is not a P5 form.
+**The address dialogs are fixed the same way, in a follow-up PR.**
+- The add and edit dialogs (`address-card/`) return `ertekek` from `addCustomerAddress` / `updateCustomerAddress`: every text field plus the default tick (`cimUrlapErtekek` in `lib/util/cim.ts`).
+- Without the fix, a failed save emptied the add dialog, and put the edit dialog back to the saved address, the tick included.
+- The test runs React's real submit through the address book. With the dialog changes removed, both tests are red: the edit dialog came back with the saved name, and the add dialog came back empty.
+- One behaviour to know: after a failed edit, cancelling and reopening the same dialog still shows the typed values. The error state lives on until the next save; the saved address is shown again after a successful save or a page load.
+
+**Not covered here:** the checkout address form. It belongs to P4 and waits for Balázs's word.
 
 
 ## 6. Settings: password change (`257:159`; mobile `257:304`)
@@ -295,6 +299,15 @@ So the test sees the reset itself, not a hand-set state.
 **Known limits:**
 - Existing sessions stay valid after the change: Medusa's JWTs are not revoked, and other devices stay signed in.
 - There is no rate limit on the current-password check, as there is none on sign-in.
+
+**Measured live on stage after the deploy (2026-09-29 17:08, the test account, through the storefront, each step read back through the auth API):**
+1. **A wrong current password:** "A jelenlegi jelszó nem helyes.", and the original still signs in.
+2. **The change to a random new password:** "A jelszó megváltozott." After it, the new password signs in (200) and the original does not (401).
+3. **Sign-in with the new one** in a fresh session: works.
+4. **The change back:** "A jelszó megváltozott."
+5. **Then:** the original signs in (200), the new one does not (401), and sign-in with the original through the storefront works.
+
+The temporary password was written to a 0600 file before the change and deleted after the change back. The test account keeps its original password.
 
 **Deviation, measured (local `next dev` against stage, 1440 and 390):** the frame's field blocks are 76 px high on desktop and 72 on mobile, 7 px and 3 px below the box. The shared field component used on every P5 page is 69, so the card is 21 px shorter (375 against 396). Everything else matches: card 842 wide, title 26 px, box 800 × 48, button 180 × 44; on mobile no card, box 46, button full width at 46, no horizontal scroll.
 

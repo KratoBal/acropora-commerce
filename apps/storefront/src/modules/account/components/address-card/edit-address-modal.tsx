@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  type CimMentesAllapot,
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
@@ -34,7 +35,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
   const [formState, formAction] = useActionState(updateCustomerAddress, {
     success: false,
     error: null,
-  } as { success: boolean; error: string | null })
+  } as CimMentesAllapot)
+  // A failed save refills from the submitted values, not the saved ones
+  // (React 19 resets the form after the action).
+  const beirt = formState.error ? formState.ertekek : undefined
 
   const close = () => {
     setSuccessState(false)
@@ -135,8 +139,12 @@ const EditAddress: React.FC<EditAddressProps> = ({
           <Modal.Body>
             <div className="grid grid-cols-1 gap-y-2">
               <CimMezok
-                nev={address.address_name}
-                alapertelmezett={address.is_default_shipping}
+                nev={beirt?.address_name ?? address.address_name}
+                alapertelmezett={
+                  beirt
+                    ? beirt.is_default_shipping === "on"
+                    : address.is_default_shipping
+                }
               />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
@@ -144,7 +152,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="first_name"
                   required
                   autoComplete="given-name"
-                  defaultValue={address.first_name || undefined}
+                  defaultValue={
+                    beirt?.first_name ?? (address.first_name || undefined)
+                  }
                   data-testid="first-name-input"
                 />
                 <Input
@@ -152,7 +162,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="last_name"
                   required
                   autoComplete="family-name"
-                  defaultValue={address.last_name || undefined}
+                  defaultValue={
+                    beirt?.last_name ?? (address.last_name || undefined)
+                  }
                   data-testid="last-name-input"
                 />
               </div>
@@ -160,7 +172,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 label="Cégnév"
                 name="company"
                 autoComplete="organization"
-                defaultValue={address.company || undefined}
+                defaultValue={beirt?.company ?? (address.company || undefined)}
                 data-testid="company-input"
               />
               <Input
@@ -168,14 +180,18 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 name="address_1"
                 required
                 autoComplete="address-line1"
-                defaultValue={address.address_1 || undefined}
+                defaultValue={
+                  beirt?.address_1 ?? (address.address_1 || undefined)
+                }
                 data-testid="address-1-input"
               />
               <Input
                 label="Emelet, ajtó stb."
                 name="address_2"
                 autoComplete="address-line2"
-                defaultValue={address.address_2 || undefined}
+                defaultValue={
+                  beirt?.address_2 ?? (address.address_2 || undefined)
+                }
                 data-testid="address-2-input"
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
@@ -184,7 +200,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="postal_code"
                   required
                   autoComplete="postal-code"
-                  defaultValue={address.postal_code || undefined}
+                  defaultValue={
+                    beirt?.postal_code ?? (address.postal_code || undefined)
+                  }
                   data-testid="postal-code-input"
                 />
                 <Input
@@ -192,7 +210,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="city"
                   required
                   autoComplete="locality"
-                  defaultValue={address.city || undefined}
+                  defaultValue={beirt?.city ?? (address.city || undefined)}
                   data-testid="city-input"
                 />
               </div>
@@ -200,7 +218,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 label="Megye / állam"
                 name="province"
                 autoComplete="address-level1"
-                defaultValue={address.province || undefined}
+                defaultValue={
+                  beirt?.province ?? (address.province || undefined)
+                }
                 data-testid="state-input"
               />
               <CountrySelect
@@ -208,14 +228,16 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 region={region}
                 required
                 autoComplete="country"
-                defaultValue={address.country_code || undefined}
+                defaultValue={
+                  beirt?.country_code ?? (address.country_code || undefined)
+                }
                 data-testid="country-select"
               />
               <Input
                 label="Telefonszám"
                 name="phone"
                 autoComplete="phone"
-                defaultValue={address.phone || undefined}
+                defaultValue={beirt?.phone ?? (address.phone || undefined)}
                 data-testid="phone-input"
               />
             </div>
