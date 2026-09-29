@@ -28,14 +28,16 @@ function request(
   const updates: unknown[] = []
   const checked: unknown[] = []
   const auth = {
+    // like the database: a key that is not in the filter does not narrow it
     listProviderIdentities: async (filter: {
-      auth_identity_id: string
-      provider: string
+      auth_identity_id?: string
+      provider?: string
     }) =>
       IDENTITIES.filter(
         (i) =>
-          i.authId === filter.auth_identity_id &&
-          filter.provider === "emailpass",
+          (filter.auth_identity_id === undefined ||
+            i.authId === filter.auth_identity_id) &&
+          (filter.provider === undefined || filter.provider === "emailpass"),
       ).map((i) => ({ entity_id: i.email, auth_identity_id: i.authId })),
     authenticate: async (
       provider: string,
