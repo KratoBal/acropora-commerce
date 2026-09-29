@@ -22,7 +22,7 @@ The frames do not agree with each other on the brand treatment or the height. Th
   - `body:has([data-vilag="sotet"])`: the product page sets this, exactly as before;
   - `body:has([data-acr-mod="reef"])`: new. The category page sets it from the P1a/#391 rule (`categoryPageMode`). It is **not** `data-vilag`, because `globals.css` would then turn the whole category page dark, and category bodies stay as they are until P2.
 - **Colours.** Everything comes from `acr` tokens: background, border, text, heading, and `heritage` for the square, the help label and the focus ring.
-- **Navigation from data.** The desktop menu and the mobile menu both list the non-empty root categories from `listNonEmptyRootCategories`, in the loader's order. The hard-coded four names (`HEADER_MENU_ITEMS`) are gone. The root the category path is under is shown at weight 600 in the heading colour, as in Figma (`234:29`).
+- **Navigation from data.** The desktop menu and the mobile menu both list the non-empty root categories from `listNonEmptyRootCategories`, in Balázs's order (Termékek, Halak, Korallok, Gerinctelenek; see 3 below). The hard-coded four names (`HEADER_MENU_ITEMS`) are gone. The root the category path is under is shown at weight 600 in the heading colour, as in Figma (`234:29`).
 - **Search entry.** The existing search (GET `/store?q=`) sits in the Figma slot: 370 px wide, underlined, no magnifier (`234:36`).
 - **Right side.** "Fiók" (to `/account`) and "Kosár N": 13 px, weight 600, heading colour. On mobile only the count shows, at weight 500.
 - **Mobile.** Below `small` (1024 px) the header is 56 px with no trust bar. It has the two-bar icon, and behind it a panel with the search, the root categories (from data) and "Fiók".
@@ -51,7 +51,7 @@ Mode checked on three pages:
 
 1. **Brand in Commerce.** We use the orange square plus "ACROPORA", as in all Reef frames, both mobile frames and one Commerce frame (`201:7` / `253:58` use "ACROPORA" without the square). Two Commerce frames use a Belleza wordmark instead (`117:31`, `192:61`). One mark in both modes keeps the header one component.
 2. **Side padding and height in Commerce.** 44 px and 76 px as in Reef; the Commerce frames use 56 px and 74–88 px. The header's inner width stays 1352 px, which is 44 px on a 1440 screen.
-3. **Nav items.** Figma shows eight: Korallok, Halak, Gerinctelenek, Technika, Vízkezelés, Tudástár, Szolgáltatások, Akváriumaim. The build shows the **catalogue's root categories**; on stage today that is Termékek, Gerinctelenek, Halak, Korallok.
+3. **Nav items: decided by Balázs, no longer a deviation.** His decision of 2026-09-09 (Commerce frontend thread): "Mindenhol: Termékek, Halak, Korallok, Gerinctelenek". The items stay data-driven (the non-empty catalogue roots); `fejlecSorrend` (`src/lib/util/fejlec-sorrend.ts`, tested) orders them by handle, accent-insensitively, and an unknown new root goes to the end. Both the desktop and the mobile menu use that order. The footer follows the same decision separately.
    - "Technika" and "Vízkezelés" are not roots in the catalogue.
    - Tudástár, Szolgáltatások and Akváriumaim have no pages yet.
    - Links to missing pages were not added.
