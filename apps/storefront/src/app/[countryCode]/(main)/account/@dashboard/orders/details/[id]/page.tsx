@@ -41,9 +41,7 @@ export default async function OrderDetailPage(props: Props) {
 
   // P4-2: ha a rendelés egy vegyes kosár egyik fele, a párja is megjelenik.
   const par = kapcsoltRendeles(order.metadata)
-  const parRendeles = par
-    ? await retrieveOrder(par.id).catch(() => null)
-    : null
+  const parRendeles = par ? await retrieveOrder(par.id).catch(() => null) : null
 
   return (
     <RendelesReszletek

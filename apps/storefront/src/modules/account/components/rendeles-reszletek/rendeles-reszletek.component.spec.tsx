@@ -146,4 +146,3 @@ describe("egy leadásból két rendelés a részleteken", () => {
     expect(screen.queryByTestId("rendeles-kapcsolt")).toBeNull()
   })
 })
-
