@@ -255,8 +255,17 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
   - Together with the provider's FINISHED-total check, the money and the orders cannot differ.
 - **The IPN** (`finishSimplePayOrder`): the orderRef leads to the shipped cart and `completeSplitCart` does the rest. A cart still mixed when paid was paid as one and is still refused.
 
+**P4-3c3, putting a split back when its shared payment did not happen:**
+- **`rejoinSharedSplit`:** a split whose payment was shared and not completed gets its pickup lines back on the cart the customer chose them in. Moving them drops both payment sessions; the shipped one releases its unpaid transaction (cancel while INIT), and the joined one touches nothing. Anything else is left as it is: no split, not paid together, or either cart completed.
+- **The customer's return, `POST /store/simplepay/back`** with the `r` and `s` the storefront's back page received (section 3.12). It refuses a bad signature (401), another merchant or missing fields (400), and an unconfigured shop (503). Then SimplePay is **queried**, because the event is not proof (L1011-1012):
+  - paid (FINISHED) → the orders are made, as by the IPN; if that fails now, the IPN makes them later, and the answer is still `paid`;
+  - ended without payment (CANCELLED, TIMEOUT, NOTAUTHORIZED), or INIT while the customer came back with FAIL, CANCEL or TIMEOUT → the split is put back (`not_paid`);
+  - anything else → `pending`, nothing changes.
+  - The answer is for the back page to choose its text (section 3.13, P4-4).
+- **The IPN:** CANCELLED, TIMEOUT and NOTAUTHORIZED put the split back too, answering 500 if that fails, so SimplePay retries. These IPNs arrive only once the "Rendszer értesítések" switch is on in the SimplePay admin (L1121-1126).
+- **An old transaction whose session a newer start replaced** finds no cart and changes nothing: the newer start owns the cart.
+
 ### Still to come
 
-- **P4-3c3:** putting the lines back on a cancelled or failed payment (the failed-status IPN, which needs the "Rendszer értesítések" switch in the SimplePay admin, and the back page).
 - **P4-4:** the storefront: logo, statement checkbox, redirect to `paymentUrl`, and the back page with the texts section 3.13 requires.
 

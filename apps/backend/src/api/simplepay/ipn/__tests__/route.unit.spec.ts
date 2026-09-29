@@ -2,6 +2,10 @@ const finishSimplePayOrder = jest.fn()
 jest.mock("../../../../workflows/utils/simplepay-finish", () => ({
   finishSimplePayOrder: (...args: unknown[]) => finishSimplePayOrder(...args),
 }))
+const rejoinAfterUnpaidSimplePay = jest.fn()
+jest.mock("../../../../workflows/utils/simplepay-rejoin", () => ({
+  rejoinAfterUnpaidSimplePay: (...args: unknown[]) => rejoinAfterUnpaidSimplePay(...args),
+}))
 
 import middlewares from "../../../middlewares"
 import { signSimplePay } from "../../../../modules/simplepay/signature"
@@ -13,6 +17,7 @@ beforeEach(() => {
   process.env.SIMPLEPAY_MERCHANT = "TESZTMERCHANT"
   process.env.SIMPLEPAY_SECRET_KEY = KEY
   finishSimplePayOrder.mockReset()
+  rejoinAfterUnpaidSimplePay.mockReset()
 })
 afterAll(() => {
   process.env = savedEnv
@@ -71,10 +76,32 @@ describe("POST /simplepay/ipn", () => {
     expect(logger.error.mock.calls[0][0]).toContain("the cart is mixed")
   })
 
-  it("another status is acknowledged, and makes no order", async () => {
+  it.each(["CANCELLED", "TIMEOUT", "NOTAUTHORIZED"])(
+    "%s puts a split waiting for its shared payment back, and is answered signed (P4-3c3)",
+    async (status) => {
+      rejoinAfterUnpaidSimplePay.mockResolvedValue({ rejoined: true, cart_id: "cart_1" })
+      const body = ipn(status)
+      const { res } = await call(body, signSimplePay(body, KEY))
+      expect(rejoinAfterUnpaidSimplePay.mock.calls[0].slice(1)).toEqual(["payses_1-x", 501234567])
+      expect(finishSimplePayOrder).not.toHaveBeenCalled()
+      expect(res.statusCode).toBe(200)
+      expect(res.headers.Signature).toBe(signSimplePay(String(res.sent), KEY))
+    }
+  )
+
+  it("a split that could not be put back is an error, so SimplePay retries", async () => {
+    rejoinAfterUnpaidSimplePay.mockRejectedValue(new Error("the cart is locked"))
     const body = ipn("CANCELLED")
+    const { res, logger } = await call(body, signSimplePay(body, KEY))
+    expect(res.statusCode).toBe(500)
+    expect(logger.error.mock.calls[0][0]).toContain("the cart is locked")
+  })
+
+  it("another status is acknowledged, and makes no order", async () => {
+    const body = ipn("INPAYMENT")
     const { res } = await call(body, signSimplePay(body, KEY))
     expect(finishSimplePayOrder).not.toHaveBeenCalled()
+    expect(rejoinAfterUnpaidSimplePay).not.toHaveBeenCalled()
     expect(res.statusCode).toBe(200)
   })
 

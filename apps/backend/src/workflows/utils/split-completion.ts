@@ -486,3 +486,34 @@ export const startSharedSplitPayment = async (
     throw error
   }
 }
+
+/**
+ * A SHARED CARD PAYMENT THAT DID NOT HAPPEN (P4-3c3): cancelled, timed out,
+ * refused. The lines go back to the cart the customer chose them in, so the
+ * cart is whole again, as before the payment started. Moving them changes
+ * both totals, and Medusa then drops both payment sessions: the shipped one
+ * releases its unpaid transaction, the joined one touches nothing.
+ *
+ * Only for a split whose payment was shared and not completed; anything else
+ * is left as it is. Safe to run again.
+ */
+export const rejoinSharedSplit = async (
+  cartId: string,
+  ops: SplitOperations
+): Promise<{ rejoined: boolean }> => {
+  const cart = await mustLoad(ops, cartId)
+  const pickupCartId = pickupCartIdOf(cart)
+
+  if (cart.completed_at || !pickupCartId || !cart.shared_payment) {
+    return { rejoined: false }
+  }
+
+  const pickup = await mustLoad(ops, pickupCartId)
+
+  if (pickup.completed_at) {
+    return { rejoined: false }
+  }
+
+  await movePickupLinesBack(ops, cartId, pickupCartId)
+  return { rejoined: true }
+}
