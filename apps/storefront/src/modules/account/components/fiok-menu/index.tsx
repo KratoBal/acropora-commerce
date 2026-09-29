@@ -31,8 +31,9 @@ export function FiokFej() {
 
 /**
  * A FIOK MENUJE. Asztalon (257:21) 244 px-es oszlop, 46 px-es sorok 2 px
- * kozzel: az aktiv kod (mist) hatteru, rez keretes, 600; a tobbi shell
- * hatteru, vonal keretes, 400 pala. Mobilon (257:219) vizszintes fulsor,
+ * kozzel: az aktiv kod (mist) hatteru, CSAK BAL OLDALT 3 px-es rez savval
+ * (257:22), 600; a tobbi shell hatteru, keret nelkul (a keretvastagsag 0),
+ * 400 pala. Mobilon (257:219) vizszintes fulsor,
  * 28 px-es fulekkel, gorgetheto.
  *
  * A KIJELENTKEZES a keretben nincs, de a fiok funkcioja: a menu alatt all,
@@ -89,10 +90,10 @@ export default function FiokMenu() {
                 href={pont.href}
                 aria-current={aktiv === pont.href ? "page" : undefined}
                 className={
-                  "flex h-[46px] items-center border px-3 text-[13.5px] leading-[18px] " +
+                  "flex h-[46px] items-center px-3 text-[13.5px] leading-[18px] " +
                   (aktiv === pont.href
-                    ? "border-acr-heritage bg-acr-mist font-semibold text-acr-ink"
-                    : "border-acr-line bg-acr-shell text-acr-slate hover:text-acr-ink")
+                    ? "border-l-[3px] border-acr-heritage bg-acr-mist font-semibold text-acr-ink"
+                    : "bg-acr-shell text-acr-slate hover:text-acr-ink")
                 }
                 data-testid={pont.testId}
               >

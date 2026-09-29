@@ -67,7 +67,7 @@ Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-aut
 | Element | Figma | Built |
 |---|---|---|
 | Head (`257:17`) | "FIÓKOM" 600/10.5 heritage, the page title 600/34; 30 px top padding | same; the title comes from the route (`fiokCim`). Mobile: no eyebrow, title 600/25 (`257:218`). |
-| Menu (`257:21`) | 244 px column, 46 px rows 2 px apart; active: mist background, heritage border, 600 ink; others: shell background, line border, 400 slate | same |
+| Menu (`257:21`) | 244 px column, 46 px rows 2 px apart; active: mist background with a 3 px heritage bar on the LEFT only, 600 ink (`257:22`); others: shell background, no border (stroke weight 0), 400 slate | same |
 | Mobile menu (`257:219`) | a row of 28 px tabs, 500/10.5; active: mist and heritage | same, scrolling horizontally |
 | Content (`257:34`) | 28 px from the menu | same |
 
@@ -90,3 +90,13 @@ Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-aut
 
 - **The billing address** leaves the profile. Its own page, Számlázási adatok, is item 5. Until then it is not editable in the account; checkout still asks for it.
 - **Removed**, replaced by the new menu and the profile form: the old account menu and the per-field editors (name, email, phone, and a password editor that was never wired up). The billing editor and its `account-info` wrapper stay until item 5.
+
+Measured locally against stage on 2026-09-29, signed in as the stage test account (`teszt+p5@acropora.hu`, "Teszt P5"; see below):
+- **1440 px:** title 34; menu 244 wide, active row 46 high on mist; card 842 wide with a 1 px border; button 180 × 44.
+- **390 px:** title 25; tabs Profil / Rendeléseim / Címek; no card; button 358 × 46; no horizontal scroll.
+- **Saving:** a phone number saved and read back; emptied, saved and read back empty (cleared).
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-profil-1440-figma-balra.png`, `p5-profil-390-figma-balra.png`.
+
+**The stage test account** (acrobot, 2026-09-29): `teszt+p5@acropora.hu`, "Teszt P5", created through the stage storefront once it ran #411. Read back through the store API, the customer carries `metadata.aszf_elfogadas`, with the version, the submit time and the document address. The account stays for the later P5 items. Its password is kept outside the repo.
+

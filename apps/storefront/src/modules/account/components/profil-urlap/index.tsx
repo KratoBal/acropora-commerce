@@ -78,7 +78,7 @@ export default function ProfilUrlap({
         hiba={allapot?.state === "error" ? allapot.error : null}
         data-testid="profile-error"
       />
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-2 small:flex-row small:items-center small:gap-4">
         <button
           type="submit"
           className="flex h-[46px] w-full items-center justify-center bg-acr-heritage text-[13.5px] font-semibold text-acr-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--acr-color-heritage)] small:h-[44px] small:w-[180px]"
