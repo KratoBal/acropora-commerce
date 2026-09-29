@@ -21,6 +21,12 @@ When the email provider is decided, these three come together. The order-status 
 | "Emlékezz rám" | `256:31`, `256:119` | the session length is not adjustable on today's auth cookie |
 | "Hűségpontok" (menu item) | `249:3`, `257:3` | no loyalty data |
 
+## Screens without a frame
+
+| Screen | Why |
+|---|---|
+| The add/edit address dialog | no CANONICAL frame. The existing dialog stays, with the address name and the default checkbox added (P5-ACCOUNT, 3). |
+
 ## Built differently, on purpose
 
 - **Two name fields at registration** (Vezetéknév, Keresztnév) instead of one "Név". The Medusa customer and invoices keep them apart. (P5-ACCOUNT, 1)

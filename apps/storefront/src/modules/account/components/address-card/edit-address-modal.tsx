@@ -5,15 +5,16 @@ import {
   updateCustomerAddress,
 } from "@lib/data/customer"
 import useToggleState from "@lib/hooks/use-toggle-state"
-import { PencilSquare as Edit, Trash } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import CountrySelect from "@modules/checkout/components/country-select"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
-import { Button, Heading, Text, clx } from "@modules/common/components/ui"
-import Spinner from "@modules/common/icons/spinner"
+import { cimCim, cimSor } from "@lib/util/cim"
+import { Button, Heading, clx } from "@modules/common/components/ui"
 import React, { useActionState, useEffect, useState } from "react"
+
+import CimMezok from "../cim-mezok"
 
 type EditAddressProps = {
   region: HttpTypes.StoreRegion
@@ -61,60 +62,66 @@ const EditAddress: React.FC<EditAddressProps> = ({
 
   return (
     <>
+      {/*
+        A KARTYA (P5, 257:87; mobilon 257:258): feher, keretes, a tartalomhoz
+        simulo szelesseg, mobilon is (a keret kartyai 189 es 177 px-esek). Cim 600/15 (mobilon 14) az "ALAPÉRTELMEZETT"
+        jelolovel, a cim egy sorban 13 px palaban, alatta Szerkesztés (rez) es
+        Törlés (pala).
+      */}
       <div
         className={clx(
-          "border rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between transition-colors",
-          {
-            "border-gray-900": isActive,
-          },
+          "flex w-auto max-w-full flex-col gap-[6px] border bg-acr-white p-3 font-acr-sans small:gap-2 small:p-[18px]",
+          isActive ? "border-acr-ink" : "border-acr-line",
         )}
         data-testid="address-container"
       >
-        <div className="flex flex-col">
-          <Heading
-            className="text-left text-base-semi"
+        {/* Mobilon (257:258) a sorrend: nev, cim, jelolo, muveletek; asztalon a jelolo a nev mellett. */}
+        <div className="contents small:flex small:flex-row small:items-start small:gap-2">
+          <p
+            className="order-1 text-[14px] font-semibold leading-[18px] text-acr-ink small:order-none small:text-[15px] small:leading-[20px]"
             data-testid="address-name"
           >
-            {address.first_name} {address.last_name}
-          </Heading>
-          {address.company && (
-            <Text
-              className="txt-compact-small text-ui-fg-base"
-              data-testid="address-company"
+            {cimCim(address)}
+          </p>
+          {address.is_default_shipping ? (
+            <span
+              className="order-3 text-[9.5px] font-semibold uppercase leading-[12px] tracking-[0.7px] text-acr-heritage small:order-none"
+              data-testid="address-default"
             >
-              {address.company}
-            </Text>
-          )}
-          <Text className="flex flex-col text-left text-base-regular mt-2">
-            <span data-testid="address-address">
-              {address.address_1}
-              {address.address_2 && <span>, {address.address_2}</span>}
+              Alapértelmezett
             </span>
-            <span data-testid="address-postal-city">
-              {address.postal_code}, {address.city}
-            </span>
-            <span data-testid="address-province-country">
-              {address.province && `${address.province}, `}
-              {address.country_code?.toUpperCase()}
-            </span>
-          </Text>
+          ) : null}
         </div>
-        <div className="flex items-center gap-x-4">
+        <p
+          className="order-2 text-[12px] leading-[16px] small:order-none text-acr-slate small:text-[13px] small:leading-[17px]"
+          data-testid="address-address"
+        >
+          {cimSor(address)}
+        </p>
+        <div className="order-4 flex items-center gap-[14px] text-[11.5px] small:order-none leading-[15px] small:text-[12.5px] small:leading-[16px]">
           <button
-            className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
+            type="button"
+            className="font-medium text-acr-heritage hover:underline"
             onClick={open}
             data-testid="address-edit-button"
           >
-            <Edit />
             Szerkesztés
           </button>
+          <span
+            className="-mx-[10px] font-medium text-acr-heritage small:hidden"
+            aria-hidden="true"
+          >
+            ·
+          </span>
           <button
-            className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
+            type="button"
+            className="font-medium text-acr-heritage hover:underline disabled:opacity-60 small:font-normal small:text-acr-slate small:hover:text-acr-ink"
             onClick={removeAddress}
+            disabled={removing}
+            aria-busy={removing}
             data-testid="address-delete-button"
           >
-            {removing ? <Spinner /> : <Trash />}
-            Eltávolítás
+            Törlés
           </button>
         </div>
       </div>
@@ -127,6 +134,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
           <input type="hidden" name="addressId" value={address.id} />
           <Modal.Body>
             <div className="grid grid-cols-1 gap-y-2">
+              <CimMezok
+                nev={address.address_name}
+                alapertelmezett={address.is_default_shipping}
+              />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="Keresztnév"
