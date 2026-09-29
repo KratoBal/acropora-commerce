@@ -40,9 +40,10 @@ const feeLine = (id: string) => ({
 
 const merchandise = (id: string) => ({ id, metadata: null })
 
-const run = async (order: unknown) => {
+const run = async (order: unknown, existingStatuses: unknown[] = []) => {
   const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn() }
   const orderBusinessStatus = {
+    listOrderBusinessStatusModels: jest.fn().mockResolvedValue(existingStatuses),
     transitionOrderBusinessStatus: jest.fn().mockResolvedValue({}),
   }
   const container = createMedusaContainer()
@@ -128,5 +129,29 @@ describe("the order-created cash-on-delivery fee alarm", () => {
     const { logger } = await run({ id: "order_1" })
 
     expect(logger.error).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * THE HOOK SETS THE FIRST BUSINESS STATUS ONCE (from the order.placed fix's
+ * calibration: putting the old, non-idempotent call back left every assertion
+ * green). The store checkout reaches the same function through the
+ * `order.placed` subscriber, so the hook must not write a second entry.
+ */
+describe("the order-created hook's first business status", () => {
+  it("sets Feldolgozásra vár on an order without a status", async () => {
+    const { orderBusinessStatus } = await run({ id: "order_1", items: [] })
+
+    expect(orderBusinessStatus.transitionOrderBusinessStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ order_id: "order_1", to: "pending_processing" }),
+    )
+  })
+
+  it("writes nothing when the order already has a status", async () => {
+    const { orderBusinessStatus } = await run({ id: "order_1", items: [] }, [
+      { id: "ordbst_1", order_id: "order_1", status: "pending_processing" },
+    ])
+
+    expect(orderBusinessStatus.transitionOrderBusinessStatus).not.toHaveBeenCalled()
   })
 })
