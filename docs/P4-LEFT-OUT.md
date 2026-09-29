@@ -16,3 +16,12 @@ Measured on stage on 2026-09-29 by acrobot through the admin API: all 1502 stage
 - **Effect:** completing a cart fails with "The cart items require shipping profiles that are not satisfied by the current shipping methods".
 - **Workaround for the test order:** one product (Aquavital Perlonvatta 100g) was linked to Default by hand.
 - **Real fix:** the catalogue projection must set the profile. That is the frozen catalogue-migration area and goes to Balázs.
+
+## The pickup-point picker on the checkout screen
+
+P4-1 (`P4-BACKGROUND.md`, 1) adds the search and sends the chosen point with the shipping method. The checkout screen still offers no picker, so a customer cannot choose Foxpost yet. The checkout redesign waits for Balázs's word.
+
+## GLS pickup points
+
+"GLS csomagpont" and "GLS nehézáru csomagpont" exist only as shipping option names (`shipping-option-roles.ts`). There is no GLS point directory and no check of a chosen point. Building one needs the official GLS ParcelShop documentation; nothing is written from memory.
+

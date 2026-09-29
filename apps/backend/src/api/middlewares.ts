@@ -21,6 +21,7 @@ import {
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
+import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 
 export default defineMiddlewares({
   routes: [
@@ -81,6 +82,13 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/password",
       method: "POST",
       middlewares: [validateAndTransformBody(StoreChangePassword)],
+    },
+    {
+      matcher: "/store/foxpost/pickup-points",
+      method: "GET",
+      middlewares: [
+        validateAndTransformQuery(StoreGetFoxpostPickupPointsParams, {}),
+      ],
     },
     {
       matcher: "/store/shipping-class",

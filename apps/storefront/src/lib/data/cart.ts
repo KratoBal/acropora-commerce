@@ -273,9 +273,15 @@ export type PenztarEredmeny = { ok: true } | { ok: false; uzenet: string }
 export async function setShippingMethod({
   cartId,
   shippingMethodId,
+  data,
 }: {
   cartId: string
   shippingMethodId: string
+  /**
+   * A szallitasi mod sajat adata, a Foxpost-csomagpontnal kotelezo
+   * (`foxpostSzallitasiAdat`): a backend enelkul elutasitja a modot.
+   */
+  data?: Record<string, unknown>
 }): Promise<PenztarEredmeny> {
   const headers = {
     ...(await getAuthHeaders()),
@@ -284,7 +290,7 @@ export async function setShippingMethod({
   try {
     await sdk.store.cart.addShippingMethod(
       cartId,
-      { option_id: shippingMethodId },
+      { option_id: shippingMethodId, ...(data ? { data } : {}) },
       {},
       headers,
     )
