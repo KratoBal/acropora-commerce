@@ -472,6 +472,51 @@ describe("a váz valódi tartalma", () => {
     expect(screen.queryByTestId("vaz-eyebrow")).toBeNull()
   })
 
+  it("a világos termék leírása az 1b fül-sávot kapja, az élő állaté a régi alakot", () => {
+    const LEIRAS = "<p>Egy mondatnyi leírás.</p>"
+    const { unmount } = render(
+      <LapVaz
+        tartalom={vazTartalom(
+          { ...(TERMEK as object), description: LEIRAS } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KATEGORIAK,
+        )}
+      />,
+    )
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "Leírás",
+    ])
+    unmount()
+
+    const KORALL = [
+      { id: "k1", name: "Korallok", mpath: "k1", parent_category_id: null },
+    ]
+    render(
+      <LapVaz
+        vilag="sotet"
+        tartalom={vazTartalom(
+          {
+            ...(TERMEK as object),
+            description: LEIRAS,
+            categories: KORALL,
+          } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KORALL as never,
+        )}
+      />,
+    )
+    expect(screen.queryAllByRole("tab")).toHaveLength(0)
+    expect(screen.getByTestId("product-description")).toBeTruthy()
+  })
+
   /**
    * A PAR MASIK FELE: SOTET VILAGBAN NINCS EYEBROW.
    *

@@ -727,7 +727,12 @@ export function vazTartalom(
    */
   const tisztaLeiras = sanitizeDescription(termek.description)
   if (tisztaLeiras) {
-    tartalom.fulek = <ProductDescriptionTabs description={tisztaLeiras} />
+    tartalom.fulek = (
+      <ProductDescriptionTabs
+        description={tisztaLeiras}
+        valtozat={eloAllat ? undefined : "1b"}
+      />
+    )
   }
 
   /**
