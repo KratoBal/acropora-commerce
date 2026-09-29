@@ -189,9 +189,24 @@ The storefront places every cart through this route; the core complete route ref
   - Unconfigured, the provider loads and refuses every call.
   - It is offered only when linked to the region and named by `ACROPORA_PP_ONLINE_CARD`, which stays empty until the sandbox key is set.
 
+### 3b. The IPN (`POST /simplepay/ipn`)
+
+SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It is set in the SimplePay admin, not in the start request (L1147), and must be public without protection in front (L1154-1156). Stage: `https://commerce-stage.acropora.hu/simplepay/ipn`, to be set only once this route is deployed.
+
+- **Reading** (`ipn.ts`, `readSimplePayIpn`): the body is kept **raw** (`preserveRawBody` in `middlewares.ts`), because the signature covers the exact bytes.
+  - Unconfigured shop: 503. Empty or non-JSON body: 400. Bad signature: 401.
+  - Another merchant, or no `orderRef`, `transactionId` or `status`: 400.
+- **The answer** (`simplePayIpnAnswer`): the received fields unchanged, plus `receiveDate` (`2019-09-09T14:46:20+0000` form), signed over exactly the bytes sent, in the `Signature` header (L1189-1193). Pinned by a test on the document's own IPN example (L1179-1188).
+- **FINISHED makes the order** (`workflows/utils/simplepay-finish.ts`), even if the customer never returns (L372):
+  - the payment session is `orderRef` up to its last dash (`payses_…`); anything else is not ours;
+  - the IPN's `transactionId` must be the one stored on that session;
+  - then the same `completeSplitCart` the storefront uses, so whichever comes first makes the order and the second finds it made. On the way the provider asks SimplePay again (`query`), so the IPN is never the only evidence.
+  - **A mixed cart is refused** until P4-3c: its lines would have to move after payment.
+- **If the order cannot be made, the answer is 500**, and the error is logged with the orderRef and transaction. SimplePay then retries for three days (L1157-1174) instead of believing we are done. It waits 20 seconds for the answer (L1164).
+- **Every other status** (CANCELLED, TIMEOUT, …) is acknowledged with the signed answer and changes nothing.
+
 ### Still to come
 
-- **P4-3b:** `POST /simplepay/ipn`: signature check on the raw body, the answer per L1189-1193, then Medusa's payment update. Its URL goes into the SimplePay admin, only once it is live.
 - **P4-3c:** one transaction for the two orders of a split cart.
 - **P4-4:** the storefront: logo, statement checkbox, redirect to `paymentUrl`, and the back page with the texts section 3.13 requires.
 
