@@ -2,11 +2,19 @@ import { HttpTypes } from "@medusajs/types"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+// A bankkartyas szerver-muveletek (P4-4): a teszt-kornyezetben a `server-only`
+// orzo miatt nem toltodhetnek be, ezert mock.
+vi.mock("@lib/data/simplepay", () => ({
+  valasszKartyat: vi.fn().mockResolvedValue({ ok: true }),
+  inditsKartyasFizetest: vi.fn(),
+}))
+
 const lepesNeve = vi.hoisted(() => ({ ertek: "payment" }))
+const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }))
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
   usePathname: () => "/hu/checkout",
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => router,
   useSearchParams: () => new URLSearchParams(`step=${lepesNeve.ertek}`),
 }))
 vi.mock("@lib/data/cart", () => ({
@@ -18,10 +26,15 @@ vi.mock("@lib/data/payment", () => ({
     .mockResolvedValue({ ok: true, dij: 0, valasztottSzerep: "COD" }),
 }))
 
+import { initiatePaymentSession } from "@lib/data/cart"
+import { valasszKartyat } from "@lib/data/simplepay"
+import { waitFor } from "@testing-library/react"
+
 import Payment from "./index"
 
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
   lepesNeve.ertek = "payment"
 })
 
@@ -85,5 +98,49 @@ describe("a bankkártyás mód nyilatkozata", () => {
 
     expect(screen.getByTestId("simplepay-nyilatkozat-jelolo")).not.toBeChecked()
     expect(screen.getByTestId("submit-payment-button")).toBeDisabled()
+  })
+
+  /**
+   * A SORREND (P4-4): a kartya valasztasa nem indit semmit; a "Tovabb" a
+   * hattert keri, hogy vegye le a regi munkamenetet es a dijat, es az
+   * ellenorzesre a kartyas jelzessel visz. MI PIROSIT: munkamenet a pipa
+   * elott; a "Tovabb" a kartyas jelzes nelkul; mas modnal a jelzes megmarad.
+   */
+  it("a bankkártya választása nem indít munkamenetet", async () => {
+    lepes(UTANVET)
+    fireEvent.click(screen.getByText("Bankkártyás fizetés"))
+    await waitFor(() =>
+      expect(screen.getByTestId("simplepay-nyilatkozat")).toBeInTheDocument(),
+    )
+    expect(initiatePaymentSession).not.toHaveBeenCalled()
+  })
+
+  it("a Tovább a pipa után a háttérrel leveteti a régit, és kártyásként visz az ellenőrzésre", async () => {
+    lepes(KARTYA)
+    fireEvent.click(screen.getByTestId("simplepay-nyilatkozat-jelolo"))
+    fireEvent.click(screen.getByTestId("submit-payment-button"))
+
+    await waitFor(() => expect(router.push).toHaveBeenCalled())
+    expect(valasszKartyat).toHaveBeenCalledWith("cart-1")
+    expect(initiatePaymentSession).not.toHaveBeenCalled()
+    const cel = new URLSearchParams(
+      String(router.push.mock.calls[0][0]).split("?")[1],
+    )
+    expect(cel.get("step")).toBe("review")
+    expect(cel.get("fizetes")).toBe("kartya")
+  })
+
+  it("más módnál a kártyás jelzés lekerül", async () => {
+    lepesNeve.ertek = "payment&fizetes=kartya"
+    lepes(UTANVET)
+    fireEvent.click(screen.getByTestId("submit-payment-button"))
+
+    await waitFor(() => expect(router.push).toHaveBeenCalled())
+    const cel = new URLSearchParams(
+      String(router.push.mock.calls[0][0]).split("?")[1],
+    )
+    expect(cel.get("step")).toBe("review")
+    expect(cel.get("fizetes")).toBeNull()
+    expect(valasszKartyat).not.toHaveBeenCalled()
   })
 })

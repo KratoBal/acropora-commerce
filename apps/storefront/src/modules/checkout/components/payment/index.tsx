@@ -8,6 +8,7 @@ import {
 } from "@lib/util/fizetesi-modok"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
+import { valasszKartyat } from "@lib/data/simplepay"
 import { convertToLocale } from "@lib/util/money"
 import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
@@ -99,6 +100,14 @@ const Payment = ({
     setSelectedPaymentMethod(method)
     setUtanvetDij(0)
 
+    // A BANKKARTYA VALASZTASA MEG NEM INDIT SEMMIT (P4-4): a SimplePay-nel egy
+    // munkamenet egy elinditott tranzakcio, az pedig csak a nyilatkozat
+    // elfogadasa utan indulhat (8. fejezet). A "Tovabb" keszíti elo, a
+    // "Rendeles leadasa" inditja.
+    if (szerepe(method) === "ONLINE_CARD") {
+      return
+    }
+
     try {
       const inditas = await initiatePaymentSession(cart, {
         provider_id: method,
@@ -146,9 +155,10 @@ const Payment = ({
 
   // A bankkartyas modot a SZEREP mondja meg (a hatter szerepkiosztasa), nem a
   // szolgaltato azonositojanak alakja.
-  const kartyasValasztva =
-    megjelenitheto.find((mod) => mod.id === selectedPaymentMethod)?.role ===
-    "ONLINE_CARD"
+  function szerepe(mod: string) {
+    return megjelenitheto.find((m) => m.id === mod)?.role
+  }
+  const kartyasValasztva = szerepe(selectedPaymentMethod) === "ONLINE_CARD"
 
   /**
    * A CIMKE A SZEREPBOL JON, NEM AZ AZONOSITOBOL.
@@ -183,6 +193,23 @@ const Payment = ({
     (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||
     paidByGiftcard
 
+  /**
+   * Az ellenorzes lepesenek cime. A `fizetes=kartya` jelzi az ellenorzesnek,
+   * hogy bankkartyat valasztott a vevo (munkamenet meg nincs), es minden mas
+   * modnal LE KELL KERULNIE, kulonben egy kartyarol utanvetre valto vevonek
+   * a kartyas gomb maradna.
+   */
+  const ellenorzesUrl = (kartya: boolean) => {
+    const params = new URLSearchParams(searchParams)
+    params.set("step", "review")
+    if (kartya) {
+      params.set("fizetes", "kartya")
+    } else {
+      params.delete("fizetes")
+    }
+    return params.toString()
+  }
+
   const createQueryString = useCallback(
     (name: string, value: string) => {
       const params = new URLSearchParams(searchParams)
@@ -202,6 +229,25 @@ const Payment = ({
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
+      /*
+        BANKKARTYA: a hatter leveszi a korabbi munkamenetet es az utanvet-dijat,
+        hogy az ellenorzes a kartyaval fizetendo osszeget mutassa. Tranzakcio
+        itt sem indul; a valasztas az URL-ben megy tovabb az ellenorzesre.
+      */
+      if (kartyasValasztva) {
+        const eredmeny = await valasszKartyat(cart.id)
+
+        if (!eredmeny.ok) {
+          setError(eredmeny.uzenet)
+          return
+        }
+
+        router.refresh()
+        return router.push(pathname + "?" + ellenorzesUrl(true), {
+          scroll: false,
+        })
+      }
+
       const shouldInputPaymentDetails =
         isStripeLike(selectedPaymentMethod) && !activeSession
 
@@ -228,12 +274,9 @@ const Payment = ({
       }
 
       if (!shouldInputPaymentDetails) {
-        return router.push(
-          pathname + "?" + createQueryString("step", "review"),
-          {
-            scroll: false,
-          },
-        )
+        return router.push(pathname + "?" + ellenorzesUrl(false), {
+          scroll: false,
+        })
       }
     } catch {
       /*
