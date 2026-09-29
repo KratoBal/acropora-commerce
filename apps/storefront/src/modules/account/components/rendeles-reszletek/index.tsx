@@ -60,9 +60,15 @@ const Sor = ({ cimke, ertek }: { cimke: string; ertek: string }) => (
 export default function RendelesReszletek({
   rendeles,
   allapot,
+  par = null,
 }: {
   rendeles: Rendeles
   allapot: UzletiAllapot | null
+  /**
+   * P4-2: a rendelés párja ugyanabból a leadásból (a vegyes kosár kiszállított
+   * és bolti átvételes rendelése), a felirattal és a részletei azonosítójával.
+   */
+  par?: { id: string; felirat: string } | null
 }) {
   const penz = (osszeg: number | null | undefined) =>
     convertToLocale({
@@ -130,6 +136,15 @@ export default function RendelesReszletek({
           {` · ${penz(rendeles.total)}`}
           {fizetes ? ` · ${fizetes}` : ""}
         </p>
+        {par ? (
+          <LocalizedClientLink
+            href={`/account/orders/details/${par.id}`}
+            className="self-start text-[12.5px] leading-[16px] text-acr-ink underline underline-offset-2 hover:text-acr-heritage small:text-[14px] small:leading-[18px]"
+            data-testid="rendeles-kapcsolt"
+          >
+            {par.felirat}
+          </LocalizedClientLink>
+        ) : null}
       </header>
 
       {/* MOBIL FIZETESI DOBOZ (249:262) */}
