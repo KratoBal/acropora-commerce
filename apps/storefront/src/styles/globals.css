@@ -994,3 +994,26 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
     --fejlec-kereso-magassag: 0px;
   }
 }
+
+/*
+  A TERMEKLAP GYOKERE A FEJLEC MENUJEBEN KIEMELVE (2026-09-29).
+
+  A kanonikus 215:41 a korall termeklapon a "Korallok" pontot 600-as sulyban,
+  a cimszinben mutatja (217:51). A termek utvonala nem hordoz kategoriat, es a
+  fejlec a lapon KIVUL all, tehat a lap vaza teszi ki a jelolot
+  (`data-fejlec-gyoker`, a termek gyokereinek kulcsai), es ez a szabaly
+  hidalja at -- ugyanugy, ahogy a Reef mod is `:has()`-szal jut el a fejlecig.
+  Szerver-oldali, tehat nem villan hidrataciokor.
+
+  A lista a `FEJLEC_MENU_TERV` gyoker-kulcsait koveti; egy spec tartja
+  szinkronban (`fejlec-kiemeles.spec.ts`).
+*/
+body:has([data-fejlec-gyoker~="korallok"]) [data-fejlec-pont="korallok"],
+body:has([data-fejlec-gyoker~="halak"]) [data-fejlec-pont="halak"],
+body:has([data-fejlec-gyoker~="gerinctelenek"])
+  [data-fejlec-pont="gerinctelenek"],
+body:has([data-fejlec-gyoker~="technika"]) [data-fejlec-pont="technika"],
+body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
+  font-weight: 600;
+  color: var(--acr-mode-heading);
+}

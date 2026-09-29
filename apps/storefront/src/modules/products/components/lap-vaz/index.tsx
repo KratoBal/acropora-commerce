@@ -1177,6 +1177,13 @@ type LapVazProps = {
    */
   egyediPeldany?: boolean
   /**
+   * A TERMEK GYOKEREINEK KULCSAI (`kulcs(nev)`, pl. "korallok"). A fejlec
+   * menuje CSS-bol emeli ki a hozzajuk tartozo pontot (`globals.css`,
+   * `data-fejlec-gyoker`): a fejlec a lapon kivul all, es a termek utvonala
+   * nem hordoz kategoriat.
+   */
+  fejlecGyokerek?: string[]
+  /**
    * A MORZSAMENU, A SOTET FELULET TETEJEN.
    *
    * Slot, nem sajat tartalom, ugyanabbol az okbol, mint a foto es a vasarlasi
@@ -1455,6 +1462,7 @@ const LapVaz = ({
   tartalom = {},
   vilag = "vilagos",
   egyediPeldany = false,
+  fejlecGyokerek = [],
   morzsa,
   jelzesek = process.env.NODE_ENV !== "production",
 }: LapVazProps) => {
@@ -1505,6 +1513,9 @@ const LapVaz = ({
     <div
       data-testid="lap-teljes-szelesseg"
       data-vilag={vilag}
+      data-fejlec-gyoker={
+        fejlecGyokerek.length > 0 ? fejlecGyokerek.join(" ") : undefined
+      }
       /*
         A VIZSZINTES MARGO ITT ALL, NEM A BELSO DOBOZON -- ES EZ 32 PIXELT ER
         (merve 2026-09-08).

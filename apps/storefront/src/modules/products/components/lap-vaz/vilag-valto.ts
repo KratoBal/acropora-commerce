@@ -272,15 +272,31 @@ export function vilagaTermeknek(
   termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
   katalogus: Kategoria[] = [],
 ): Vilag {
-  const katok = (termek?.categories ?? []) as Kategoria[]
-
-  const gyokerek = gyokerNevek(katok)
-  const nevek =
-    gyokerek.length > 0 ? gyokerek : gyokerNevKatalogusbol(katok, katalogus)
+  const nevek = termekGyokerNevei(termek, katalogus)
 
   const eloAllat = nevek.some((nev) =>
     (ELO_ALLAT_GYOKEREK as readonly string[]).includes(nev),
   )
 
   return eloAllat ? "sotet" : "vilagos"
+}
+
+/**
+ * A TERMEK GYOKER-KATEGORIAINAK NEVEI, UGYANAZZAL A FELOLDASSAL, AMI A VILAGOT
+ * ADJA: elobb a termekkel jott gyokerek, ha nincs ilyen, a katalogusbol.
+ *
+ * A fejlec menuje ebbol emeli ki a termek gyokeret (2026-09-29, a 215:41 a
+ * korall termeklapon a "Korallok" pontot kiemelve mutatja). Egy fuggveny, ket
+ * olvaso: ha a fejlec mast latna gyokernek, mint a lap vilaga, egy korall
+ * termeklapon sotet lap allna vilagos kiemelessel.
+ */
+export function termekGyokerNevei(
+  termek: Pick<HttpTypes.StoreProduct, "categories"> | null | undefined,
+  katalogus: Kategoria[] = [],
+): string[] {
+  const katok = (termek?.categories ?? []) as Kategoria[]
+  const gyokerek = gyokerNevek(katok)
+  return gyokerek.length > 0
+    ? gyokerek
+    : gyokerNevKatalogusbol(katok, katalogus)
 }
