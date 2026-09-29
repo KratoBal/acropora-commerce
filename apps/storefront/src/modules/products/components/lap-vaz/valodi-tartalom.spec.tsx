@@ -435,6 +435,43 @@ describe("a váz valódi tartalma", () => {
     expect(screen.getByTestId("vaz-eyebrow").textContent).toBe("TDS mérők")
   })
 
+  /*
+    A SOTET LAP A BESOROLAS-LANCOT TARTJA, NEM KAPJA A 192:57 FELULCIMET
+    (P2, 2026-09-29). A lenti "nincs eyebrow" allitas fixturaja csak egy
+    gyokeret visel, ott se lanc, se felulcim nem all -- tehat nem latja, ha
+    a sotet lap is az uj sort kapja. Ez a fixtura ket szint mely.
+  */
+  it("sötét lapon a besorolás lánca áll, nem a világos felülcím", () => {
+    const KORALL_LANC = [
+      { id: "k1", name: "Korallok", mpath: "k1", parent_category_id: null },
+      {
+        id: "k2",
+        name: "SPS - Korallok",
+        mpath: "k1.k2",
+        parent_category_id: "k1",
+      },
+    ]
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          {
+            ...(TERMEK as object),
+            categories: KORALL_LANC,
+            collection: { title: "Acropora" },
+          } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KORALL_LANC as never,
+        )}
+      />,
+    )
+    expect(screen.getByTestId("vaz-besorolas").textContent).toContain("SPS")
+    expect(screen.queryByTestId("vaz-eyebrow")).toBeNull()
+  })
+
   /**
    * A PAR MASIK FELE: SOTET VILAGBAN NINCS EYEBROW.
    *
