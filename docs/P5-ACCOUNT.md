@@ -199,3 +199,46 @@ Measured locally against stage on 2026-09-29, signed in as the test account, on 
 - **The 4a list, live with the same order:** the open card "#1 · 2026. 09. 29. · fizetésre vár · 4950 Ft · Rendelés részletei".
 
 Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-rendeles-reszlet-1440-figma-balra.png`, `…-reszlet-390-…`, `…-lista-1440-…`, `…-lista-390-…`.
+
+## 5. Billing (`257:102`; mobile `257:269`)
+
+The menu gets its fourth item, "Számlázási adatok" ("Számlázás" on mobile, as in `257:225`).
+
+| Element | Figma | Built |
+|---|---|---|
+| Card (`257:134`) | white, border, 20 px padding, 14 px gaps; mobile: no card | same |
+| Type (`257:135`) | "Magánszemély" and "Cég", 36 high (mobile 33), no fill; active: heritage border, 600; other: line border, 400 | same, as a radio pair |
+| Fields | Cégnév; Adószám and Irányítószám in one row; one "Számlázási cím" field ("Budapest, Minta utca 12.") | Cégnév; Adószám and Irányítószám; **Város and "Utca, házszám" in two fields** |
+| Mentés | 180 × 44 heritage | same |
+
+**Where the data goes.** The customer's **default billing address** (`is_default_billing`) is used: updated if it exists, created otherwise.
+- The name is the customer's.
+- For a company: `company`, and the tax number under **`metadata.tax_id`** (acrobot's decision). It is stored as "12345678-1-23"; spaces and hyphens are accepted on input.
+- For a private person: both `null`, and the other metadata keys stay.
+- A newly created billing address is named "Számlázási cím". Medusa has no separate billing addresses, so it also shows under Címek, and the name makes it recognizable.
+
+**The tax number check** (`lib/util/szamlazas.ts`):
+- 8-1-2 digits;
+- the VAT code 1 to 5;
+- the check digit of the first eight digits: weights 9, 7, 3, 1, 9, 7, 3, and the eighth digit is (10 − sum mod 10) mod 10. Checked against two public company tax numbers; the tests use made-up, hand-computed numbers.
+- The EU form ("HU12345678") is not accepted here.
+- A wrong form and a wrong check digit give two different sentences.
+
+**Two bugs found live and fixed here.** Both come from React 19 resetting a form after its action:
+1. **After a failed save, every field emptied.** The error state now returns the submitted values, and the fields refill from them.
+2. **The radio pair jumped back to "Magánszemély" in the DOM** while the page still showed "Cég", so a company saved as a private person. The type is now sent by a hidden field from React state; the radios only drive the state.
+
+The same reset also empties the registration form after an error (#411), and puts the profile form (#412) back to its saved values. That is a separate follow-up.
+
+**Deviations:**
+- the address in two fields (Medusa keeps city and street apart; splitting one field would be a guess);
+- the private form hides Cégnév and Adószám (the frame shows only the company form);
+- the mobile tabs keep Rendeléseim.
+
+**Measured** locally against stage on 2026-09-29, with the test account:
+- **A wrong check digit** ("12345677-2-13"): the sentence about the check digit; the fields keep what was typed.
+- **Then "12345676 2 13":** "Mentve.". Read back through the store API, the billing address is company "Teszt P5 Kft.", `metadata.tax_id` "12345676-2-13", `is_default_billing` true.
+- **The second save updated that address;** no second one was created.
+- **Size:** 1440: card 842 wide; 390: no card; no horizontal scroll.
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-szamlazas-1440-figma-balra.png`, `p5-szamlazas-390-figma-balra.png`.

@@ -53,9 +53,9 @@ When the email provider is decided, these three come together. The order-status 
 - **Two name fields on the profile** too, and the **email is read-only**: the store API does not update it. (P5-ACCOUNT, 2)
 - **The mobile account tabs include Rendeléseim**, which the frame's tab row leaves out. (P5-ACCOUNT, 2)
 - **Kijelentkezés** is added under the menu; the frame has no sign-out. (P5-ACCOUNT, 2)
+- **Billing address in two fields** (Város, Utca, házszám) instead of one "Számlázási cím"; the private form hides Cégnév and Adószám. (P5-ACCOUNT, 5)
 
 ## Still to be measured with their PRs
 
 These come from the P5 inventory and are confirmed or corrected when their screen is built:
-- **Billing:** the tax number goes into the billing address's metadata under one documented key, `tax_id`, checked against the Hungarian 8-1-2 form (acrobot, 2026-09-29).
 - **Settings, password change:** there is no store route for a signed-in customer; it needs its own backend route.

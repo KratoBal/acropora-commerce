@@ -36,12 +36,15 @@ describe("a fiók menüjének pontjai", () => {
     }
   })
 
-  it("a keret sorrendje: Profil, Rendeléseim, Címek", () => {
+  it("a keret sorrendje: Profil, Rendeléseim, Címek, Számlázási adatok", () => {
     expect(FIOK_PONTOK.map((p) => p.cimke)).toEqual([
       "Profil",
       "Rendeléseim",
       "Címek",
+      "Számlázási adatok",
     ])
+    // A mobil ful a keret rovid alakja (257:225).
+    expect(FIOK_PONTOK[3].mobilCimke).toBe("Számlázás")
   })
 
   it("az aktív pont az útvonalból jön, a részletek a Rendeléseim alá tartoznak", () => {
