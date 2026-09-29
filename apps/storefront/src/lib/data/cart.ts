@@ -721,10 +721,11 @@ export async function retrieveCartShippingClass(): Promise<KosarSzallitasiOsztal
    * bolti atvetel jar, holott epp nem tudjuk.
    */
   return await sdk.client
-    .fetch<KosarSzallitasiOsztaly>(
-      "/store/shipping-class",
-      { query: { cart_id: cartId }, headers, cache: "no-store" },
-    )
+    .fetch<KosarSzallitasiOsztaly>("/store/shipping-class", {
+      query: { cart_id: cartId },
+      headers,
+      cache: "no-store",
+    })
     .catch(() => null)
 }
 

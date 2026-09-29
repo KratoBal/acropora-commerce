@@ -98,4 +98,3 @@ describe("a pár-rendelés (P4-2)", () => {
     expect(kapcsoltFelirat(12, false)).toBe("Egy leadásból: #12, kiszállítás")
   })
 })
-

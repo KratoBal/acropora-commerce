@@ -22,9 +22,7 @@ export default async function OrderConfirmedPage(props: Props) {
 
   // P4-2: egy vegyes kosár két rendelés lett; a visszaigazolás megnevezi a párt.
   const par = kapcsoltRendeles(order.metadata)
-  const parRendeles = par
-    ? await retrieveOrder(par.id).catch(() => null)
-    : null
+  const parRendeles = par ? await retrieveOrder(par.id).catch(() => null) : null
 
   return (
     <OrderCompletedTemplate

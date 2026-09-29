@@ -38,8 +38,8 @@ export default async function OrderCompletedTemplate({
               className="text-base-regular text-ui-fg-base"
               data-testid="order-kapcsolt"
             >
-              {kapcsolt}. A két rendelést egyszerre adtad le; a fiókodban mindkettőt
-              látod.
+              {kapcsolt}. A két rendelést egyszerre adtad le; a fiókodban
+              mindkettőt látod.
             </p>
           ) : null}
           <Heading level="h2" className="flex flex-row text-3xl-regular">

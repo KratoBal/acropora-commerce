@@ -233,7 +233,9 @@ describe("a két rendelés sávja", () => {
   ]
 
   it("csak akkor látszik, ha a háttér levált sorokat", () => {
-    expect(splitNoticeProps(tetelek, { split_line_ids: [] }).visible).toBe(false)
+    expect(splitNoticeProps(tetelek, { split_line_ids: [] }).visible).toBe(
+      false,
+    )
     expect(splitNoticeProps(tetelek, null).visible).toBe(false)
     expect(splitNoticeProps(tetelek, {}).visible).toBe(false)
   })
@@ -251,4 +253,3 @@ describe("a két rendelés sávja", () => {
     expect(SPLIT_REASON).toContain("kiszállítjuk")
   })
 })
-

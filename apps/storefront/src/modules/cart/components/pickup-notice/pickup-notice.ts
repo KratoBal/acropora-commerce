@@ -233,4 +233,3 @@ export function splitNoticeProps(
       .map((item) => item.product_title ?? item.title ?? ""),
   }
 }
-

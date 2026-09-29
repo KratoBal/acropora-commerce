@@ -141,4 +141,3 @@ export function kapcsoltFelirat(
     bolti ? "bolti átvétel" : "kiszállítás"
   }`
 }
-

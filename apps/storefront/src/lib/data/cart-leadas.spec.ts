@@ -24,7 +24,9 @@ const valaszok = (split: unknown) =>
       return split
     }
     if (ut.startsWith("/store/carts/"))
-      return { cart: { id: "cart_1", shipping_address: { country_code: "HU" } } }
+      return {
+        cart: { id: "cart_1", shipping_address: { country_code: "HU" } },
+      }
     throw new Error(`váratlan út: ${ut}`)
   })
 

@@ -51,7 +51,8 @@ export const listOrders = async (
         offset,
         order: "-created_at",
         // +metadata: a P4-2 pár-hivatkozás (egy leadásból két rendelés).
-        fields: "*items,+items.metadata,*items.variant,*items.product,+metadata",
+        fields:
+          "*items,+items.metadata,*items.variant,*items.product,+metadata",
         ...filters,
       },
       headers,
