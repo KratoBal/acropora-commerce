@@ -107,7 +107,12 @@ export default function RendelesReszletek({
           >
             {szam}
           </h1>
-          {allapot ? <AllapotCimke allapot={allapot} /> : null}
+          {/* Mobilon (249:257) a fejben nincs cimke: az allapot a Teljesítés dobozban all. */}
+          {allapot ? (
+            <span className="hidden small:inline-flex">
+              <AllapotCimke allapot={allapot} />
+            </span>
+          ) : null}
         </div>
         <p
           className="text-[12.5px] leading-[16px] text-acr-slate small:text-[14px] small:leading-[18px]"
