@@ -12,7 +12,11 @@ import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { markaAzonositok } from "@lib/util/marka-szuro"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
 import { kategoriaCanonical } from "@lib/util/kategoria-canonical"
-import { megjelenitendoNevek } from "@lib/util/kategoria-fa"
+import {
+  kategoriaFelmenoi,
+  megjelenitendoNevek,
+  teljesLanc,
+} from "@lib/util/kategoria-fa"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -137,9 +141,10 @@ export default async function CategoryPage(props: Props) {
     gyerekeivel). A roviditesrol viszont nem lehet a lancbol dontenni: az, hogy
     egy rovid nev EGYEDI-e, a teljes katalogus tulajdonsaga.
 
-    A mezolista szandekosan szuk (`id,name,parent_category_id`): a szabalyhoz
-    ennel tobb nem kell, es egy szeles lekerdezes minden kategoria-lapon
-    fizetne a tobbletet.
+    A mezolista szandekosan szuk (`id,name,handle,parent_category_id`): a
+    nevekhez es a felmeno-lanchoz ennel tobb nem kell, es egy szeles lekerdezes
+    minden kategoria-lapon fizetne a tobbletet. A `handle` a lanc linkjeihez
+    kell (2026-09-29).
 
     MIERT NEM HAGYJUK KI: enelkul a lap feltetel nelkul vagna, a termeklap
     morzsamenuje es a fejlec-menu viszont mar nem -- vagyis UGYANAZ a kategoria
@@ -147,12 +152,20 @@ export default async function CategoryPage(props: Props) {
     rosszabb, mint ha egyaltalan nem lenne.
   */
   const mindenKategoria = await listCategories({
-    fields: "id,name,parent_category_id",
+    fields: "id,name,handle,parent_category_id",
   })
 
   return (
     <CategoryTemplate
-      category={productCategory}
+      /*
+        A TELJES FELMENO-LANC a listabol: a bolt API csak egy szulo-szintet ad
+        (`kategoriaFelmenoi`). Enelkul a morzsamenu csonka, es egy mely korall
+        kategoria Commerce lapot kap.
+      */
+      category={teljesLanc(
+        productCategory,
+        kategoriaFelmenoi(productCategory.id, mindenKategoria),
+      )}
       nevek={megjelenitendoNevek(mindenKategoria)}
       sortBy={sortBy}
       page={page}

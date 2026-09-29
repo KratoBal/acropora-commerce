@@ -275,3 +275,66 @@ export const besorolasUt = (
   }
   return ki
 }
+
+export type FelmenoKategoria = { id: string; name: string; handle: string }
+
+/**
+ * EGY KATEGORIA FELMENOI A TELJES LISTABOL, A GYOKERTOL A SZULOIG.
+ *
+ * === MIERT NEM A BOLT SAJAT `parent_category` MEZOJEBOL ===
+ *
+ * A Medusa 2.20.1 bolt API a kert melyebb mezok ellenere (`*parent_category.
+ * parent_category...`) CSAK EGY szulo-szintet ad vissza. Merve 2026-09-29 a
+ * stage-en: az "Ecotech - LED világítások" szuloje megjon, a nagyszuloje nem.
+ * Ettol a morzsamenu csak egy felmenot mutatott, es ami rosszabb: a lap
+ * fajtajat es a fejlec modjat eldonto lanc sem latta a gyokeret, ezert a
+ * harom szint mely "SPS - WYSIWYG" korall-kategoria Commerce lapot es vilagos
+ * fejlecet kapott.
+ *
+ * A lista a kategorialapon amugy is megvan (a nevek miatt), tehat ez nem uj
+ * lekerdezes. Ciklusvedelemmel; egy hianyzo vagy nev nelkuli felmenonel a
+ * lanc ott megall.
+ */
+export const kategoriaFelmenoi = (
+  kategoriaId: string,
+  mind: {
+    id?: string | null
+    name?: string | null
+    handle?: string | null
+    parent_category_id?: string | null
+  }[],
+): FelmenoKategoria[] => {
+  const azonositora = new Map(
+    mind.flatMap((c) => (c.id ? [[c.id, c] as const] : [])),
+  )
+  const ut: FelmenoKategoria[] = []
+  const latott = new Set<string>([kategoriaId])
+  let szulo = azonositora.get(kategoriaId)?.parent_category_id
+  while (szulo && !latott.has(szulo)) {
+    latott.add(szulo)
+    const elem = azonositora.get(szulo)
+    if (!elem?.id || !elem.name || !elem.handle) break
+    ut.unshift({ id: elem.id, name: elem.name, handle: elem.handle })
+    szulo = elem.parent_category_id
+  }
+  return ut
+}
+
+type LancElem = FelmenoKategoria & { parent_category?: LancElem }
+
+/**
+ * A KATEGORIA A TELJES FELMENO-LANCCAL: a `parent_category` mezot a
+ * `kategoriaFelmenoi` eredmenyebol epiti fel, a gyokerig. Igy minden olvaso
+ * (morzsamenu, a lap fajtaja, a fejlec modja) valtozatlanul a
+ * `parent_category` lancon jarhat. Ures felmeno-listanal a kategoria
+ * valtozatlan marad.
+ */
+export const teljesLanc = <T extends object>(
+  kategoria: T,
+  felmenok: readonly FelmenoKategoria[],
+): T => {
+  if (felmenok.length === 0) return kategoria
+  let szulo: LancElem | undefined
+  for (const felmeno of felmenok) szulo = { ...felmeno, parent_category: szulo }
+  return { ...kategoria, parent_category: szulo }
+}
