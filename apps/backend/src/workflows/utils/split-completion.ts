@@ -116,7 +116,23 @@ export type SplitOperations = {
   complete(cartId: string): Promise<string>
   linkOrders(parentOrderId: string, pickupOrderId: string): Promise<void>
   warn(message: string): void
+  /**
+   * Runs `job` alone for this cart: a second call waits for the first and
+   * finds the state it left (`SPLIT_LOCK_KEY`).
+   */
+  withLock<T>(cartId: string, job: () => Promise<T>): Promise<T>
 }
+
+/**
+ * ONE SPLIT AT A TIME PER CART. A double click on "place order" or "pay", or
+ * the IPN arriving while the customer's return is being handled, would
+ * otherwise run two splits of the same cart at once: both find no pickup
+ * cart, both create one, and the lines end up spread over three carts.
+ * Medusa's own completion locks the cart id itself; the moves around it are
+ * ours, so they take their own key (a different one: holding the cart id
+ * here would block Medusa's completion inside it).
+ */
+export const SPLIT_LOCK_KEY = (cartId: string) => `split:${cartId}`
 
 export type SplitResult = {
   /** The shipped order first, then the pickup order. */
@@ -180,7 +196,13 @@ const finishPickup = async (
   }
 }
 
-export const completeSplitCart = async (
+export const completeSplitCart = (
+  cartId: string,
+  ops: SplitOperations,
+  config: { payAtStoreProviderId: string }
+): Promise<SplitResult> => ops.withLock(cartId, () => completeSplitCartLocked(cartId, ops, config))
+
+const completeSplitCartLocked = async (
   cartId: string,
   ops: SplitOperations,
   config: { payAtStoreProviderId: string }
@@ -436,7 +458,14 @@ export type SharedPaymentStart = {
  * and the cart is whole again. Called again (a second click, or after a
  * cancelled payment), it reuses the split and starts a new transaction.
  */
-export const startSharedSplitPayment = async (
+export const startSharedSplitPayment = (
+  cartId: string,
+  ops: SharedPaymentOperations,
+  config: { providerId: string }
+): Promise<SharedPaymentStart> =>
+  ops.withLock(cartId, () => startSharedSplitPaymentLocked(cartId, ops, config))
+
+const startSharedSplitPaymentLocked = async (
   cartId: string,
   ops: SharedPaymentOperations,
   config: { providerId: string }
@@ -497,7 +526,12 @@ export const startSharedSplitPayment = async (
  * Only for a split whose payment was shared and not completed; anything else
  * is left as it is. Safe to run again.
  */
-export const rejoinSharedSplit = async (
+export const rejoinSharedSplit = (
+  cartId: string,
+  ops: SplitOperations
+): Promise<{ rejoined: boolean }> => ops.withLock(cartId, () => rejoinSharedSplitLocked(cartId, ops))
+
+const rejoinSharedSplitLocked = async (
   cartId: string,
   ops: SplitOperations
 ): Promise<{ rejoined: boolean }> => {

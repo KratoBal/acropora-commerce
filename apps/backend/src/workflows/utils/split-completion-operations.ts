@@ -31,6 +31,7 @@ import {
   PICKUP_ORDER_METADATA_KEY,
   SplitCart,
   SharedPaymentOperations,
+  SPLIT_LOCK_KEY,
   SplitOperations,
   pickupPromoCodes,
   shippingProfileGaps,
@@ -369,6 +370,12 @@ export const splitCompletionOperations = (
         },
       ])
     },
+
+    // Redis-backed on stage (medusa-config: locking-redis). A second call
+    // waits up to a minute; the lock also expires after a minute, so a crashed
+    // job cannot hold the cart for good.
+    withLock: (cartId, job) =>
+      container.resolve(Modules.LOCKING).execute(SPLIT_LOCK_KEY(cartId), job, { timeout: 60 }),
 
     warn: (message) => logger.warn(message),
   }
