@@ -100,7 +100,7 @@ The storefront places every cart through this route; the core complete route ref
 **For a mixed cart** (`completeSplitCart` in `split-completion.ts`; the Medusa calls are in `split-completion-operations.ts`):
 1. **Move the pickup lines.** They go to a new pickup cart with the same customer, region, channel and addresses, linked both ways in metadata (`acropora_pickup_cart_id`, `acropora_parent_cart_id`). The promotion codes are applied to it where they are valid, but **only the codes that divide with the lines**: percentage codes and fixed per-item (`each`) codes (`pickupPromoCodes`).
    - Measured on stage (2026-09-29, the same two lines whole and split): a 10% code gave 950 Ft whole and 100 + 850 split. A fixed cart-level code (`fixed`, `across`) gave 635 Ft whole and 635 on **each** part, so it was taken twice. Such a code now stays on the shipped cart only.
-   - Two known limits. If the shipped part is smaller than the fixed discount, the customer gets less than the one cart would have given. An **automatic** fixed cart-level promotion applies itself to each cart, whatever the codes (not measured whether stage has one).
+   - Two known limits. If the shipped part is smaller than the fixed discount, the customer gets less than the one cart would have given. An **automatic** fixed cart-level promotion applies itself to each cart, whatever the codes. Stage has none: acrobot measured the promotion table on 2026-09-29, and both codes there are `is_automatic=false`.
 2. **Set the pickup cart's shipping:** the store pickup (`ACROPORA_SO_PICKUP`).
 3. **Re-make the shipped cart's payment:** the method the customer chose, read from the cart and never sent by the client.
    - Moving lines changes the total, and Medusa then deletes the payment session, so it is created again.
@@ -207,8 +207,22 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
 - **If the order cannot be made, the answer is 500**, and the error is logged with the orderRef and transaction. SimplePay then retries for three days (L1157-1174) instead of believing we are done. It waits 20 seconds for the answer (L1164).
 - **Every other status** (CANCELLED, TIMEOUT, …) is acknowledged with the signed answer and changes nothing.
 
+### 3c. One transaction for both orders of a split cart (P4-3c)
+
+**Decision (acrobot, 2026-09-29, variant B):** the cart is split **before** the payment starts, and the one transaction is for the two finished carts together. The money and the two orders' sum then cannot differ by construction. A cancelled or failed payment puts the lines back.
+
+**Built so far (P4-3c2a, the provider and its guard):**
+- **The shipped cart's session** carries `simplepay_joint: { total }`. It starts ONE transaction for that total, which must be at least the session's own amount.
+- **The pickup cart's session** carries `simplepay_joined: { transactionId, orderRef, total, … }`. It starts nothing and carries the shipped session's transaction.
+- **Both sessions keep `own`,** their own amount, apart from `total`, the transaction's.
+- **Dropping the pickup session never cancels the shared payment.**
+- **A new amount on either cart** is refused rather than restarted alone. The split's payment is started again for both.
+- **A FINISHED transaction whose `total` (L1392) is not the one we started** reads as `TOTAL_MISMATCH`, an error, never as paid. This holds for every SimplePay payment, split or not.
+- **The client cannot set these keys:** the store route that creates payment sessions refuses `simplepay`, `simplepay_joint` and `simplepay_joined` in its `data` (`refuse-client-simplepay-keys.ts`). Otherwise a cart could borrow someone else's paid transaction, or name its own amount. Only our split route sets them.
+
 ### Still to come
 
-- **P4-3c:** one transaction for the two orders of a split cart.
+- **P4-3c2b:** the split route that moves the lines and starts the shared payment, the completion of both orders from it, and the check at completion that the transaction's total is the two carts' sum.
+- **P4-3c3:** putting the lines back on a cancelled or failed payment (the failed-status IPN, which needs the "Rendszer értesítések" switch in the SimplePay admin, and the back page).
 - **P4-4:** the storefront: logo, statement checkbox, redirect to `paymentUrl`, and the back page with the texts section 3.13 requires.
 
