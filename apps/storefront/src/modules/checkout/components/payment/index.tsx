@@ -12,6 +12,7 @@ import { convertToLocale } from "@lib/util/money"
 import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import SimplePayNyilatkozat from "@modules/checkout/components/simplepay-nyilatkozat"
 import PaymentContainer, {
   StripePaymentContainer,
 } from "@modules/checkout/components/payment-container"
@@ -56,6 +57,12 @@ const Payment = ({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? "",
   )
+  /**
+   * A SIMPLEPAY NYILATKOZAT ELFOGADASA (P4-4). Minden megnyitaskor ujra kell:
+   * a SimplePay szerint a vevonek kifejezetten el kell fogadnia (8. fejezet),
+   * tehat nem orzunk meg egy korabbi pipat.
+   */
+  const [nyilatkozatElfogadva, setNyilatkozatElfogadva] = useState(false)
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -136,6 +143,12 @@ const Payment = ({
     availablePaymentMethods,
     engedelyezettModok,
   )
+
+  // A bankkartyas modot a SZEREP mondja meg (a hatter szerepkiosztasa), nem a
+  // szolgaltato azonositojanak alakja.
+  const kartyasValasztva =
+    megjelenitheto.find((mod) => mod.id === selectedPaymentMethod)?.role ===
+    "ONLINE_CARD"
 
   /**
    * A CIMKE A SZEREPBOL JON, NEM AZ AZONOSITOBOL.
@@ -236,6 +249,7 @@ const Payment = ({
 
   useEffect(() => {
     setError(null)
+    setNyilatkozatElfogadva(false)
   }, [isOpen])
 
   return (
@@ -351,6 +365,13 @@ const Payment = ({
             </Text>
           )}
 
+          {kartyasValasztva && (
+            <SimplePayNyilatkozat
+              elfogadva={nyilatkozatElfogadva}
+              onValtozas={setNyilatkozatElfogadva}
+            />
+          )}
+
           <ErrorMessage
             error={error}
             data-testid="payment-method-error-message"
@@ -363,7 +384,8 @@ const Payment = ({
             isLoading={isLoading}
             disabled={
               (isStripeLike(selectedPaymentMethod) && !paymentComplete) ||
-              (!selectedPaymentMethod && !paidByGiftcard)
+              (!selectedPaymentMethod && !paidByGiftcard) ||
+              (kartyasValasztva && !nyilatkozatElfogadva)
             }
             data-testid="submit-payment-button"
           >
