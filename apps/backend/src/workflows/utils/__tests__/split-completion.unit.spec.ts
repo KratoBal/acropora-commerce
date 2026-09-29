@@ -6,6 +6,7 @@ import {
   SplitLine,
   SharedPaymentOperations,
   SplitOperations,
+  SPLIT_LOCK_KEY,
   completeSplitCart,
   rejoinSharedSplit,
   startSharedSplitPayment,
@@ -39,6 +40,8 @@ type Shop = {
   profileGaps: Set<string>
   /** The discount Medusa would compute on a cart; none by default. */
   discountOf: (c: SplitCart) => number
+  /** The keys the jobs were run under, in order. */
+  locks: string[]
   ops: SharedPaymentOperations
 }
 
@@ -71,7 +74,10 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     warnings: [] as string[],
     profileGaps: new Set<string>(),
     discountOf: () => 0,
+    locks: [] as string[],
   } as Shop
+  // A real mutex per key: a second job waits for the first to finish.
+  const queues = new Map<string, Promise<unknown>>()
   let lineSeq = 0
   let cartSeq = 0
   let orderSeq = 0
@@ -145,6 +151,14 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     },
     warn: (message) => shop.warnings.push(message),
     discountTotal: async (id) => shop.discountOf(get(id)),
+    withLock: async (id, job) => {
+      const key = SPLIT_LOCK_KEY(id)
+      shop.locks.push(key)
+      const before = queues.get(key) ?? Promise.resolve()
+      const run = before.then(job, job)
+      queues.set(key, run.catch(() => undefined))
+      return run
+    },
     cartTotal: async (id) =>
       get(id).items.reduce((sum, l) => sum + (PRICE[l.variant_id ?? ""] ?? 0) * l.quantity, 0),
     payerOf: async (id) => ({ customer_email: `${id}@example.hu`, invoice: { name: "Teszt Elek" } }),
@@ -615,5 +629,36 @@ describe("putting a split back after its shared payment did not happen", () => {
     expect(await rejoinSharedSplit("cart_1", shipped.ops)).toEqual({ rejoined: false })
 
     expect([...shop.log, ...done.log, ...shipped.log].filter((e) => e.startsWith("addLines"))).toEqual([])
+  })
+})
+
+/**
+ * ONE SPLIT AT A TIME PER CART. What must fail: two placements of the same
+ * cart at once (a double click) making two pickup carts or a second shipped
+ * order; the lock taken on the cart id itself, which Medusa's own completion
+ * holds inside the job; the card start or the rejoin running unlocked.
+ */
+describe("two splits of the same cart at once", () => {
+  it("run one after the other: one pickup cart, one pair of orders, both answers the same", async () => {
+    const shop = vegyes()
+
+    const [first, second] = await Promise.all([
+      completeSplitCart("cart_1", shop.ops, config),
+      completeSplitCart("cart_1", shop.ops, config),
+    ])
+
+    expect(first).toEqual({ order_ids: ["order_1", "order_2"], pending_pickup_cart_id: null })
+    expect(second).toEqual(first)
+    expect([...shop.carts.keys()]).toEqual(["cart_1", "cart_pickup_1"])
+    expect(shop.log.filter((e) => e.startsWith("createPickupCart"))).toHaveLength(1)
+  })
+
+  it("take a key of their own, not the cart id Medusa locks, for every entry", async () => {
+    const shop = vegyes()
+    await startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })
+    await rejoinSharedSplit("cart_1", shop.ops)
+    await completeSplitCart("cart_1", shop.ops, config)
+
+    expect(shop.locks).toEqual(["split:cart_1", "split:cart_1", "split:cart_1"])
   })
 })

@@ -1,4 +1,6 @@
-import { simplePayPayerOf, toSplitCart } from "../split-completion-operations"
+import { Modules } from "@medusajs/framework/utils"
+
+import { simplePayPayerOf, splitCompletionOperations, toSplitCart } from "../split-completion-operations"
 
 /**
  * THE CART AS THE SHARED PAYMENT READS IT (P4-3c2b). What must fail: a split
@@ -25,5 +27,19 @@ describe("the cart's shared payment and payer", () => {
       customer_email: "vevo@example.hu",
       invoice: { name: "Teszt Elek", country: "hu", city: "Budapest", zip: "1111", address: "Minta utca 1." },
     })
+  })
+})
+
+describe("the split's lock", () => {
+  it("runs the job through Medusa's locking module, under the split key, waiting up to a minute", async () => {
+    const execute = jest.fn(async (_key: string, job: () => Promise<unknown>) => job())
+    const container = {
+      resolve: (key: string) => (key === Modules.LOCKING ? { execute } : { warn: jest.fn(), info: jest.fn() }),
+    }
+    const ops = splitCompletionOperations(container as never, { storePickupOptionId: "so_1" })
+
+    expect(await ops.withLock("cart_1", async () => "kesz")).toBe("kesz")
+    expect(execute.mock.calls[0][0]).toBe("split:cart_1")
+    expect((execute.mock.calls[0] as unknown[])[2]).toEqual({ timeout: 60 })
   })
 })

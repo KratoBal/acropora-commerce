@@ -162,8 +162,12 @@ The storefront places every cart through this route; the core complete route ref
 - the Figma redesign of the cart and checkout (waits for Balázs's word);
 - the card payment for both orders in one transaction (P4-3).
 
-### Still to come
-- **One SimplePay transaction for both orders:** part of P4-3.
+**One split at a time per cart.** The completion, the shared card start (3c) and the rejoin (3c3) each run under a lock on `split:<cart id>` (Medusa's locking module, Redis-backed on stage).
+- **Why:** without it, a double click, or the IPN arriving during the customer's return, could run two splits of the same cart at once. Both would create a pickup cart.
+- **The second call** waits up to a minute and finds the state the first one left. The lock also expires after a minute.
+- **The key is not the cart id itself,** because Medusa's own completion locks that key inside the job.
+
+**Since then:** the card payment for both orders in one transaction is P4-3c (section 3c).
 
 ## 3. SimplePay (P4-3, P4-4)
 
