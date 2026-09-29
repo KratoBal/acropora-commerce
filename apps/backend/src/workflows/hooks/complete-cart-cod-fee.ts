@@ -1,5 +1,6 @@
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
+import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
 
@@ -20,6 +21,10 @@ import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context
  * customer approved.
  */
 completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
+  // A workflow hook takes one handler, so the P4-2 check lives here too: a
+  // mixed cart is completed as two orders, never as one.
+  await assertCartNotMixed(cart, container)
+
   const context = await resolveCartPaymentContext(cart, container)
 
   assertCashOnDeliveryFeeMatchesPayment({

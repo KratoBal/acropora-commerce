@@ -35,9 +35,10 @@ import { resolveCartShippingClass } from "../../../workflows/utils/resolve-cart-
  *
  * === WHAT IS AND IS NOT RETURNED ===
  *
- * Two fields, and no more. The SOURCE is a line item id, not a product name or
+ * Three fields since P4-2. The SOURCE is a line item id, not a product name or
  * a title: the storefront already holds the cart and can resolve the name
- * itself. Sending more would be sending more than the naming needs.
+ * itself. `split_line_ids` lists the lines of the separate pickup order, also
+ * by id, for the same reason.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { cart_id } = req.validatedQuery as { cart_id: string };
@@ -80,8 +81,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       requires_shipping: item.requires_shipping,
     }));
 
-  const { shipping_class, shipping_class_source } =
+  const { shipping_class, shipping_class_source, split_line_ids } =
     await resolveCartShippingClass({ items: lines }, req.scope);
 
-  res.json({ shipping_class, shipping_class_source });
+  // P4-2: the lines that become the separate pickup order, so the cart can
+  // say before checkout that two orders will be created, and which lines go
+  // where. Empty when nothing is split.
+  res.json({ shipping_class, shipping_class_source, split_line_ids });
 };

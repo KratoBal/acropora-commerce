@@ -4,6 +4,7 @@ import {
   ShippingClassResult,
   ShippingRelevantItem,
   computeShippingClass,
+  pickupSplit,
 } from "./compute-shipping-class"
 import { createLivestockPredicate } from "./livestock"
 
@@ -71,7 +72,19 @@ export const normalizeCartShippingItems = (
   })
 
 /**
+ * The class of the order that ships, and the lines split off into the pickup
+ * order (P4-2; empty when there is nothing to split).
+ */
+export type CartShippingDecision = ShippingClassResult & {
+  split_line_ids: string[]
+}
+
+/**
  * Resolves the cart-wide scalar shipping class.
+ *
+ * Since P4-2 the class is that of the lines that SHIP: pickup-only lines in a
+ * mixed cart are split off into a pickup order (`pickupSplit`), so they no
+ * longer hide the courier options from the rest.
  *
  * Called from BOTH shipping-option listing workflows. It deliberately reads
  * only `items[].id`, `items[].variant_id` and `items[].requires_shipping`,
@@ -82,11 +95,11 @@ export const normalizeCartShippingItems = (
 export const resolveCartShippingClass = async (
   cart: CartForShipping,
   container: { resolve: (key: string) => any }
-): Promise<ShippingClassResult> => {
+): Promise<CartShippingDecision> => {
   const items = (cart?.items ?? []).filter(Boolean)
 
   if (!items.length) {
-    return computeShippingClass([])
+    return { ...computeShippingClass([]), split_line_ids: [] }
   }
 
   const variantIds = Array.from(
@@ -147,7 +160,7 @@ export const resolveCartShippingClass = async (
     }
   }
 
-  return computeShippingClass(
+  const { split_line_ids, rest } = pickupSplit(
     normalizeCartShippingItems(
       items,
       variantsById,
@@ -155,4 +168,6 @@ export const resolveCartShippingClass = async (
       createLivestockPredicate()
     )
   )
+
+  return { ...computeShippingClass(rest), split_line_ids }
 }

@@ -8,6 +8,7 @@ import {
 } from "../../../../workflows/utils/goods-total"
 import { ShippingOptionRole } from "../../../../workflows/utils/shipping-eligibility"
 import { resolveShippingOptionRoleBindings } from "../../../../workflows/utils/shipping-option-roles"
+import { SPLIT_LINE_IDS_CONTEXT_KEY } from "../../../../workflows/utils/split-pricing-context"
 import { COMMERCE_SETTINGS_MODULE } from "../../../commerce-settings"
 import { CommerceSettingsService } from "../../../commerce-settings/accessor"
 import AcroporaFulfillmentService from "../../service"
@@ -312,6 +313,35 @@ describe("Acropora calculated fulfillment provider", () => {
       })
     },
   )
+
+  /*
+   * P4-2 (Balázs, 2026-09-29): a mixed cart's pickup lines become their own
+   * order, and the free-shipping threshold counts the courier lines only. The
+   * pricing hook passes the split-off line ids; without them (the control) the
+   * same cart reaches the threshold.
+   */
+  it("prices the courier part without the lines split off into the pickup order", async () => {
+    const service = new AcroporaFulfillmentService(
+      cradleWith(configuredSettings),
+    )
+    const items = [
+      { id: "l1", unit_price: 30_000, quantity: 1, is_tax_inclusive: true },
+      { id: "l2", unit_price: 30_000, quantity: 1, is_tax_inclusive: true },
+    ] as GoodsTotalLineItem[]
+
+    const split = await service.calculatePrice({ id: idFor("GLS_NORMAL") }, {}, {
+      ...contextWith(items),
+      [SPLIT_LINE_IDS_CONTEXT_KEY]: ["l2"],
+    } as CalculateShippingOptionPriceDTO["context"])
+    const whole = await service.calculatePrice(
+      { id: idFor("GLS_NORMAL") },
+      {},
+      contextWith(items),
+    )
+
+    expect(split.calculated_amount).toBe(3_500)
+    expect(whole.calculated_amount).toBe(0)
+  })
 
   it("excludes a marked COD fee from the runtime goods total", async () => {
     const service = new AcroporaFulfillmentService(

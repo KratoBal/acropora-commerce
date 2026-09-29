@@ -26,6 +26,7 @@ import {
   FoxpostPickupPoint,
   FoxpostPickupPointsService,
 } from "../../services/foxpost-pickup-points"
+import { linesForCourierPrice } from "../../workflows/utils/split-pricing-context"
 
 const optionRole = (
   optionData: Record<string, unknown>,
@@ -242,7 +243,14 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
       }
     }
 
-    const goodsTotalHuf = calculateGoodsTotal(context.items)
+    // A mixed cart's pickup lines become their own order (P4-2): the courier
+    // price and its threshold count only the lines that ship.
+    const goodsTotalHuf = calculateGoodsTotal(
+      linesForCourierPrice(
+        context.items,
+        context as unknown as Record<string, unknown>,
+      ),
+    )
     const settings = await getShippingPricingSettings(this.commerceSettings_)
     const calculatedAmount = calculateShippingPrice({
       role,

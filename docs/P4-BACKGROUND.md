@@ -7,7 +7,7 @@ The plan splits it into four PRs:
 | PR | What | Waits on |
 |---|---|---|
 | P4-1 | pickup-point search, and the chosen point sent with the shipping method | nothing |
-| P4-2 | several shipping groups in one order | the free-shipping threshold with two groups (Balázs) |
+| P4-2 | a live animal's cart becomes two orders: the shipped one and a pickup one | nothing (decided 2026-09-29, section 2) |
 | P4-3 | SimplePay provider, backend | the sandbox key and the official API v2 documentation |
 | P4-4 | SimplePay redirect and return page, in the existing checkout step | P4-3 |
 
@@ -36,3 +36,41 @@ The plan splits it into four PRs:
 **Not in this PR:**
 - **The picker UI:** the checkout screens wait for Balázs's word, so nothing in the checkout calls these yet.
 - **GLS pickup points:** there is no GLS directory in the code, only the option names. It needs the official GLS ParcelShop documentation (`P4-LEFT-OUT.md`).
+
+## 2. Two orders from one cart (P4-2)
+
+**The decision.** Balázs, 2026-09-29, 16:06 to 16:09 UTC, through acrobot:
+- **The split:** when a cart has live animals and other items, placing the order creates **two orders**: the shipped one, and a pickup one for the pickup-only items.
+- **The customer:** pays in **one step**, and sees **two orders**.
+- **The notice:** the cart page and the order placement say clearly that the live animals make two orders.
+- **The threshold:** free shipping counts the courier items only.
+- **Payment:** the pickup part is paid in the shop, or together with the rest by card.
+
+This replaces the 2026-08-31 rule, where a live animal made the whole cart pickup-only and nothing was split.
+
+**Why two Medusa orders and not one, measured in 2.20.1:** a payment collection holds one payment session. `create-payment-session.js:120-123` deletes the existing session before creating a new one ("we don't support split payments at the moment"), and `complete-cart.js:340` authorizes `paymentSessions[0]` only. One order cannot carry cash on delivery and payment in the shop side by side.
+
+**Which lines split off:** the pickup-only lines, by the same three flags that made a cart pickup-only (`pickup_only`, `is_frozen`, livestock product type). This is `pickupSplit` in `compute-shipping-class.ts`.
+- They split off only from a **mixed** cart.
+- A cart of pickup-only lines alone stays one pickup order, as before.
+- A line that needs no shipping (the cash-on-delivery fee) never splits and never makes a cart mixed.
+
+### 2a1. The shipped part while the cart is still whole
+
+During checkout the cart stays **one cart**, so the cart page shows everything. Three things now leave the pickup lines out:
+
+1. **The shipping class:** it is computed from the lines that ship, so the courier options appear for them. `GET /store/shipping-class` also returns `split_line_ids`, the lines of the pickup order.
+2. **The courier price and its threshold:** a `setCalculatedShippingPricingContext` hook on **both** pricing paths passes the split-off line ids to the Acropora provider, which leaves them out of the goods total.
+   - The paths are `calculateShippingOptionsPricesWorkflow` (what the checkout shows) and `listShippingOptionsForCartWithPricingWorkflow` (what `addShippingMethod` and the refresh charge).
+   - With only one of them, the checkout would show one price and charge another.
+3. **Completion:** a mixed cart is **refused** by the `completeCartWorkflow` validate hook.
+   - Otherwise it would complete as one order, and a live animal would leave on a courier method.
+   - The split completion (2a2) moves the pickup lines to their own cart first, so neither cart is mixed when it completes.
+
+**The state between 2a1 and 2a2, on stage:** a mixed cart shows courier options and cannot be completed, because the split completion does not exist yet. Before 2a1 the same cart completed as one pickup order. Merging 2a1 and 2a2 close together keeps that window short.
+
+### Still to come
+- **2a2:** the split completion endpoint. It moves the pickup lines to a new cart linked in metadata, gives it the store pickup and payment in the shop, completes the shipped cart, then the pickup cart, and links the two orders in metadata. It moves the lines back if the first completion fails, and it is idempotent.
+- **2b:** the storefront. The notice on the cart page and at placement, the two parts in the existing checkout step, and a hint on the two orders in the account that they come from one placement.
+- **One SimplePay transaction for both orders:** part of P4-3.
+

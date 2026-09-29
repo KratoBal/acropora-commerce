@@ -4,7 +4,7 @@ import { GET } from "../route";
  * A ROUTE HAROM DOLGOT ALLIT, ES MIND A HAROM KULON ROMOLHAT EL:
  *
  *   csak azt a NEGY mezot kerdezi le, amit a feloldo olvas
- *   a valaszban a KET mezo all, tobb nem
+ *   a valaszban a HAROM mezo all, tobb nem (P4-2 ota a levalasztott sorok is)
  *   nem letezo kosarnal NEM ad ures osztalyt, hanem hibat
  *
  * A harmadik a legfontosabb: egy ures valasz ugyanugy nezne ki, mint egy
@@ -37,6 +37,7 @@ describe("GET /store/shipping-class", () => {
     feloldo.mockResolvedValue({
       shipping_class: "PICKUP_ONLY",
       shipping_class_source: "item_1",
+      split_line_ids: [],
     });
   });
 
@@ -47,10 +48,29 @@ describe("GET /store/shipping-class", () => {
 
     await GET(req as never, res as never);
 
-    expect(res.json).toHaveBeenCalledWith({
+    expect(res.json.mock.calls[0][0]).toStrictEqual({
       shipping_class: "PICKUP_ONLY",
       shipping_class_source: "item_1",
+      split_line_ids: [],
     });
+  });
+
+  // P4-2: the lines of the separate pickup order, so the cart can say before
+  // checkout that two orders will be created.
+  it("passes the split-off pickup lines through", async () => {
+    feloldo.mockResolvedValue({
+      shipping_class: "NORMAL",
+      shipping_class_source: null,
+      split_line_ids: ["item_2"],
+    });
+    const { req, res } = keres("cart_1", [
+      { id: "item_1", variant_id: "variant_1", requires_shipping: true },
+      { id: "item_2", variant_id: "variant_2", requires_shipping: true },
+    ]);
+
+    await GET(req as never, res as never);
+
+    expect(res.json.mock.calls[0][0].split_line_ids).toEqual(["item_2"]);
   });
 
   /**
