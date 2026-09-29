@@ -193,12 +193,23 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
     const own = hufTotal(input.amount)
 
     // THE PICKUP SESSION OF A SPLIT: the shipped session's transaction, no new start.
+    // The two parts TOGETHER must be exactly the transaction's total: the
+    // shipped session's own amount plus this one. If the pickup cart's total
+    // moved after the start (its promotions are computed again after the
+    // split), the orders would book more or less than was paid (nautilus's
+    // review of #433, 2026-09-29), so the payment is started again instead.
     if (joined) {
       const facts = joined as SimplePayFacts
-      if (!facts.transactionId || !facts.orderRef || own > hufTotal(facts.total)) {
+      const shippedOwn = Number(facts.own)
+      if (
+        !facts.transactionId ||
+        !facts.orderRef ||
+        !Number.isInteger(shippedOwn) ||
+        shippedOwn + own !== hufTotal(facts.total)
+      ) {
         throw new MedusaError(
           MedusaError.Types.INVALID_DATA,
-          "A joined SimplePay session needs the shared transaction, with a total that covers it"
+          "A joined SimplePay session needs the shared transaction, whose total is exactly the two carts together"
         )
       }
       return {

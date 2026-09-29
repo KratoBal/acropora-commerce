@@ -213,7 +213,9 @@ SimplePay calls this URL when a transaction ends (section 3.14, L1147-1203). It 
 
 **Built so far (P4-3c2a, the provider and its guard):**
 - **The shipped cart's session** carries `simplepay_joint: { total }`. It starts ONE transaction for that total, which must be at least the session's own amount.
-- **The pickup cart's session** carries `simplepay_joined: { transactionId, orderRef, total, … }`. It starts nothing and carries the shipped session's transaction.
+- **The pickup cart's session** carries `simplepay_joined: { transactionId, orderRef, total, own, … }`, the shipped session's facts. It starts nothing and carries the shipped session's transaction.
+  - It joins only if the two parts **together** are exactly the transaction's total: the shipped session's `own` plus its own amount.
+  - This matters because the pickup cart's promotions are computed again after the split, so its total can move after the start. Checking each part alone would let both orders book more than was paid (nautilus's review, 2026-09-29).
 - **Both sessions keep `own`,** their own amount, apart from `total`, the transaction's.
 - **Dropping the pickup session never cancels the shared payment.**
 - **A new amount on either cart** is refused rather than restarted alone. The split's payment is started again for both.

@@ -258,7 +258,7 @@ describe("a transaction shared by the two carts of a split", () => {
 
   it("the pickup session carries the shared transaction and calls no one", async () => {
     const { service, calls } = bolt({})
-    const shared = { transactionId: 501234567, orderRef: "payses_1-x", total: 13450, paymentUrl: STARTED.paymentUrl }
+    const shared = { transactionId: 501234567, orderRef: "payses_1-x", total: 13450, own: 4950, paymentUrl: STARTED.paymentUrl }
     const result = await service.initiatePayment({
       amount: 8500,
       currency_code: "huf",
@@ -267,16 +267,31 @@ describe("a transaction shared by the two carts of a split", () => {
 
     expect(calls).toEqual([])
     expect(result.id).toBe("501234567")
-    expect(result.data?.[SIMPLEPAY_DATA_KEY]).toEqual({ ...shared, timeout: undefined, own: 8500, joined: true })
+    expect(result.data?.[SIMPLEPAY_DATA_KEY]).toEqual({
+      transactionId: 501234567,
+      orderRef: "payses_1-x",
+      paymentUrl: STARTED.paymentUrl,
+      timeout: undefined,
+      total: 13450,
+      own: 8500,
+      joined: true,
+    })
     expect(result.data).not.toHaveProperty(SIMPLEPAY_JOINED_KEY)
+  })
 
-    await expect(
-      service.initiatePayment({
-        amount: 20000,
-        currency_code: "huf",
-        data: { [SIMPLEPAY_JOINED_KEY]: shared },
-      } as never)
-    ).rejects.toThrow("covers it")
+  it("joining is refused unless the two parts together are exactly the transaction's total", async () => {
+    const { service, calls } = bolt({})
+    const shared = { transactionId: 501234567, orderRef: "payses_1-x", total: 13450, own: 4950 }
+    const join = (amount: number, facts: Record<string, unknown>) =>
+      service.initiatePayment({ amount, currency_code: "huf", data: { [SIMPLEPAY_JOINED_KEY]: facts } } as never)
+
+    // The pickup cart grew after the start (its promotions computed again): 4950 + 9000 > 13450.
+    await expect(join(9000, shared)).rejects.toThrow("exactly the two carts together")
+    // Each part alone fits, only the sum is wrong: the old check let this through.
+    await expect(join(8000, shared)).rejects.toThrow("exactly the two carts together")
+    // Without the shipped part's own amount there is nothing to add up.
+    await expect(join(8500, { ...shared, own: undefined })).rejects.toThrow("exactly the two carts together")
+    expect(calls).toEqual([])
   })
 
   it("dropping the pickup session never cancels the shared payment", async () => {
