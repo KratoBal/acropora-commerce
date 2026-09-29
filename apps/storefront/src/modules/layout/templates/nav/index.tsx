@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import { listNonEmptyRootCategories } from "@lib/data/categories"
+import { fejlecSorrend } from "@lib/util/fejlec-sorrend"
 import { KosarLink } from "@modules/layout/components/cart-dropdown/kosar-link"
 import { getRegion } from "@lib/data/regions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -246,6 +247,12 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
   const menuAdat = region
     ? await listNonEmptyRootCategories(region.id)
     : { gyokerek: [], nevek: new Map<string, string>() }
+  /*
+    A MENU SORRENDJE Balazs dontese (2026-09-09): Termékek, Halak, Korallok,
+    Gerinctelenek -- asztalon es mobilon egyarant. A gyokerek adatbol jonnek,
+    csak a sorrendjuk ez (`fejlecSorrend`); ismeretlen uj gyoker a vegere kerul.
+  */
+  const menuGyokerek = fejlecSorrend(menuAdat.gyokerek)
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
@@ -293,7 +300,7 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
           }}
         >
           <MobilMenu
-            kategoriak={menuAdat.gyokerek}
+            kategoriak={menuGyokerek}
             nevek={menuAdat.nevek}
             keresoCel={countryCode ? `/${countryCode}/store` : "/store"}
           />
@@ -311,7 +318,7 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
             </span>
           </LocalizedClientLink>
           <div className="hidden min-w-0 small:flex">
-            <FejlecMenu kategoriak={menuAdat.gyokerek} nevek={menuAdat.nevek} />
+            <FejlecMenu kategoriak={menuGyokerek} nevek={menuAdat.nevek} />
           </div>
           <form
             action={countryCode ? `/${countryCode}/store` : "/store"}

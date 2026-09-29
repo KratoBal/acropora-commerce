@@ -60,6 +60,19 @@ describe("a fejléc fő sávja", () => {
     expect(tokenek).toContain('body:has([data-acr-mod="reef"]) [data-fejlec]')
   })
 
+  /**
+   * A MENU SORRENDJE (Balazs dontese, 2026-09-09) MINDKET menut vezerli. Ha
+   * valamelyik a nyers betoltoi sorrendet kapja, az asztali es a mobil menu
+   * mas sorrendet mutat.
+   */
+  it("mindkét menü a rendezett gyökereket kapja, nem a nyerset", () => {
+    expect(nav).toContain(
+      "const menuGyokerek = fejlecSorrend(menuAdat.gyokerek)",
+    )
+    expect(nav.match(/kategoriak=\{menuGyokerek\}/g) ?? []).toHaveLength(2)
+    expect(nav).not.toContain("kategoriak={menuAdat.gyokerek}")
+  })
+
   it("a fejléc tapad a lap tetejéhez", () => {
     expect(nav).toMatch(/sticky\s+top-0/)
   })
