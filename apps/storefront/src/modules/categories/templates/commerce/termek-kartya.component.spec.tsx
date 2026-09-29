@@ -98,6 +98,28 @@ describe("a Commerce termékkártya", () => {
     expect(screen.queryByTestId("kartya-marka")).toBeNull()
   })
 
+  /*
+   * A TOMOR ALAK (254:87) CSAK `small` ALATT HAT, es csak ha kerik. MI
+   * PIROSIT: ha a kategorialap (tomor nelkul) is a kis alakot kapja; ha a
+   * tomor kartya asztalon is kicsi marad (hianyzik a `small:` visszaallitas).
+   */
+  it("a tömör alak csak kérésre, és csak small alatt kicsinyít", () => {
+    const { rerender } = render(
+      <CommerceTermekKartya product={termek([raktaron(2)])} />,
+    )
+    const rendes = screen.getByRole("heading").className
+    expect(rendes).toContain("text-[18px]")
+    expect(rendes).not.toContain("text-[13px]")
+
+    rerender(<CommerceTermekKartya product={termek([raktaron(2)])} tomor />)
+    const tomor = screen.getByRole("heading").className
+    expect(tomor).toContain("text-[13px]")
+    expect(tomor).toContain("small:text-[18px]")
+    expect(screen.getByTestId("kartya-ar").className).toContain(
+      "small:text-[24px]",
+    )
+  })
+
   it("akciós árnál jelölő és áthúzott régi ár, különben egyik sem", () => {
     const akcios = {
       ...raktaron(2),

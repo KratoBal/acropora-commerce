@@ -66,14 +66,14 @@ export default async function NincsTalalatLap({
 
   return (
     <div className="bg-acr-shell font-acr-sans" data-testid="kereses-lap">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-[18px] px-4 pb-16 pt-8 small:px-[56px] small:pt-[34px]">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 pb-16 pt-[18px] small:gap-[18px] small:px-[56px] small:pt-[34px]">
         {/* FEJ (253:73-253:77): felulcim, cim, a mezo a kerdessel. */}
         <div className="flex flex-col gap-[18px]">
-          <p className="text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.2px] text-acr-heritage">
+          <p className="hidden text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.2px] text-acr-heritage small:block">
             Keresés
           </p>
           <h1
-            className="text-[30px] font-semibold leading-[40px] text-acr-ink small:text-[38px] small:leading-[50px]"
+            className="text-[26px] font-semibold leading-[34px] text-acr-ink small:text-[38px] small:leading-[50px]"
             data-testid="store-page-title"
           >
             Nincs találat
@@ -82,10 +82,10 @@ export default async function NincsTalalatLap({
         <form
           action={`/${countryCode}/store`}
           method="get"
-          className="flex h-[54px] items-center gap-[10px] border border-acr-line bg-acr-white px-[14px] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:[outline-color:var(--acr-color-heritage)]"
+          className="flex h-[48px] items-center gap-[10px] border border-acr-line bg-acr-white px-3 small:h-[54px] small:px-[14px] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:[outline-color:var(--acr-color-heritage)]"
         >
           <span
-            className="text-[18px] leading-[23px] text-acr-heritage"
+            className="text-[17px] leading-[22px] text-acr-heritage small:text-[18px] small:leading-[23px]"
             aria-hidden="true"
           >
             ⌕
@@ -98,7 +98,7 @@ export default async function NincsTalalatLap({
             type="search"
             name="q"
             defaultValue={kereses}
-            className="h-full min-w-0 flex-1 bg-transparent text-[15px] leading-[20px] text-acr-ink outline-none"
+            className="h-full min-w-0 flex-1 bg-transparent text-[14px] leading-[18px] text-acr-ink outline-none small:text-[15px] small:leading-[20px]"
           />
         </form>
 
@@ -109,22 +109,22 @@ export default async function NincsTalalatLap({
           "Triton" 76, "Amphiprion" 13, egy cikkszam 1 talalatot adott.
         */}
         <section
-          className="flex flex-col items-center gap-3 border border-acr-line bg-acr-white px-4 py-7 text-center small:px-7"
+          className="flex flex-col items-start gap-[10px] border border-acr-line bg-acr-white p-[14px] small:items-center small:gap-3 small:px-7 small:py-7 small:text-center"
           data-testid="kereses-nincs-talalat"
           aria-labelledby="kereses-nincs-talalat-cim"
         >
           <h2
             id="kereses-nincs-talalat-cim"
-            className="text-[22px] font-semibold leading-[30px] text-acr-ink small:text-[26px] small:leading-[34px]"
+            className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[26px] small:leading-[34px]"
           >
             Nem találtunk ilyet
           </h2>
-          <p className="max-w-[574px] text-[14px] leading-[18px] text-acr-slate">
+          <p className="max-w-[574px] text-[12.5px] leading-[18px] text-acr-slate small:text-[14px]">
             Próbáld rövidebb kifejezéssel, márkanévvel, cikkszámmal, magyar vagy
             tudományos névvel.
           </p>
           <ul
-            className="flex flex-wrap justify-center gap-[10px]"
+            className="flex flex-wrap gap-[6px] small:justify-center small:gap-[10px]"
             aria-label="Keresési tippek"
             data-testid="kereses-tippek"
           >
@@ -132,7 +132,7 @@ export default async function NincsTalalatLap({
               <li key={szo}>
                 <a
                   href={keresesCim({ q: szo })}
-                  className="flex h-[30px] items-center bg-acr-mist px-[10px] text-[12.5px] font-medium leading-[16px] text-acr-ink"
+                  className="flex h-[27px] items-center bg-acr-mist px-2 text-[11.5px] font-medium leading-[15px] text-acr-ink small:h-[30px] small:px-[10px] small:text-[12.5px] small:leading-[16px]"
                 >
                   {szo}
                 </a>
@@ -141,7 +141,7 @@ export default async function NincsTalalatLap({
           </ul>
           <a
             href={`/${countryCode}/hamarosan/szakerto`}
-            className="flex h-[44px] w-full max-w-[280px] items-center justify-center border border-acr-heritage text-[13.5px] font-semibold leading-[18px] text-acr-ink"
+            className="hidden h-[44px] w-full max-w-[280px] items-center justify-center border small:flex border-acr-heritage text-[13.5px] font-semibold leading-[18px] text-acr-ink"
             data-testid="kereses-segitseg"
           >
             Segítség a kereséshez
@@ -149,36 +149,39 @@ export default async function NincsTalalatLap({
         </section>
 
         {/*
-          KATEGORIAK (253:94): a keret "Népszerű kategóriák" cime nepszeruseget
+          KATEGORIAK (253:94; mobilon 254:130 lista, felulcimmel): a keret "Népszerű kategóriák" cime nepszeruseget
           allitana, arra nincs adat. A kartyak a fejlec menujenek azon pontjai,
           amelyeknek van oldala, a menu sorrendjeben.
         */}
         {kartyak.length > 0 ? (
           <section
-            className="flex flex-col gap-[18px] pt-[18px]"
+            className="flex flex-col gap-3 small:gap-[18px] small:pt-[18px]"
             aria-labelledby="kereses-kategoriak-cim"
           >
             <h2
               id="kereses-kategoriak-cim"
-              className="text-[22px] font-semibold leading-[29px] text-acr-ink"
+              className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[22px] small:leading-[29px]"
             >
               Kategóriák
             </h2>
             <ul
-              className="grid grid-cols-1 gap-3 xsmall:grid-cols-2 medium:grid-cols-4"
+              className="grid grid-cols-1 gap-3 small:grid-cols-2 medium:grid-cols-4"
               data-testid="kereses-kategoriak"
             >
               {kartyak.map((kartya, i) => (
                 <li key={kartya.id}>
                   <a
                     href={`/${countryCode}/categories/${kartya.handle}`}
-                    className="flex h-[110px] flex-col gap-[5px] border border-acr-line bg-acr-white p-4 hover:border-acr-slate"
+                    className="flex flex-col gap-[3px] py-[9px] small:h-[110px] small:gap-[5px] small:border small:border-acr-line small:bg-acr-white small:p-4 small:hover:border-acr-slate"
                   >
-                    <span className="text-[15px] font-semibold leading-[20px] text-acr-ink">
+                    <span className="text-[9.5px] font-semibold uppercase leading-[12px] tracking-[0.8px] text-acr-heritage small:hidden">
+                      Kategória
+                    </span>
+                    <span className="text-[13.5px] font-semibold leading-[18px] text-acr-ink small:text-[15px] small:leading-[20px]">
                       {kartya.felirat}
                     </span>
                     {szamok[i] !== undefined ? (
-                      <span className="text-[12.5px] leading-[16px] text-acr-slate">
+                      <span className="text-[11.8px] leading-[15px] text-acr-slate small:text-[12.5px] small:leading-[16px]">
                         {szamok[i]} termék
                       </span>
                     ) : null}

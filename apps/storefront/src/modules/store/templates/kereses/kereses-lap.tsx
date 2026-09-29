@@ -15,6 +15,10 @@ import CommerceRendezes from "@modules/categories/templates/commerce/rendezes"
 import CommerceTermekKartya from "@modules/categories/templates/commerce/termek-kartya"
 
 import NincsTalalatLap from "./nincs-talalat-lap"
+
+/** A gyoker-ful alakja: mobilon 28 magas, 500/10.5 (254:64); asztalon 40, 14 px (152:119). */
+const FUL =
+  "flex h-[28px] items-center border px-[9px] text-[10.5px] font-medium leading-[14px] small:h-[40px] small:px-3 small:text-[14px] small:leading-[22px] "
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -119,15 +123,57 @@ export default async function KeresesLap({
       page: valtozas.page,
     })
 
+  const aktivSzurok = (gyoker ? 1 : 0) + markak.length
+  /** A szuro tartalma: asztalon az oszlopban, mobilon a "Szűrők" panelben. */
+  const szuroTorzs = (asztali: boolean) => (
+    <>
+      <div className="flex items-center justify-between">
+        <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
+          Szűrés
+        </h2>
+        {gyoker || markak.length > 0 ? (
+          <a
+            href={cim({ gyoker: null, markak: [] })}
+            className="text-[14px] text-acr-ocean"
+          >
+            Törlés
+          </a>
+        ) : null}
+      </div>
+      {markaLista.length > 0 ? (
+        <section
+          className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
+          data-testid={asztali ? "kereses-markak" : undefined}
+        >
+          <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
+            Márka
+          </h3>
+          <MarkaLista
+            sorok={markaLista}
+            aktiv={markak}
+            link={(id) => cim({ markak: markaValtas(markak, id) })}
+          />
+        </section>
+      ) : (
+        <p className="text-[14px] leading-[22px] text-acr-slate">
+          Ezekhez a találatokhoz nincs márkaadat.
+        </p>
+      )}
+    </>
+  )
+
   return (
     <div className="bg-acr-shell font-acr-sans" data-testid="kereses-lap">
-      {/* FEJ (152:108): felulcim, cim, a nagy kereso mezo a kerdessel. */}
-      <header className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 pb-6 pt-8 small:px-[56px] small:pt-[42px]">
-        <p className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-heritage">
+      {/*
+        FEJ (152:108; mobilon 254:58): felulcim, cim, a nagy kereso mezo a
+        kerdessel. Mobilon nincs felulcim, a cim 600/26, a mezo 48 magas.
+      */}
+      <header className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 pb-6 pt-[18px] small:px-[56px] small:pt-[42px]">
+        <p className="hidden text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-heritage small:block">
           Keresés
         </p>
         <h1
-          className="text-[34px] font-light leading-[40px] tracking-[-1px] text-acr-ink small:text-[46px] small:leading-[62px]"
+          className="text-[26px] font-semibold leading-[34px] text-acr-ink small:text-[46px] small:font-light small:leading-[62px] small:tracking-[-1px]"
           data-testid="store-page-title"
         >
           Találatok
@@ -135,10 +181,10 @@ export default async function KeresesLap({
         <form
           action={`/${countryCode}/store`}
           method="get"
-          className="flex h-[64px] items-center gap-3 border border-acr-slate bg-acr-shell px-4 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:[outline-color:var(--acr-color-heritage)]"
+          className="flex h-[48px] items-center gap-[10px] border border-acr-line bg-acr-white px-3 small:h-[64px] small:gap-3 small:border-acr-slate small:bg-acr-shell small:px-4 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:[outline-color:var(--acr-color-heritage)]"
         >
           <span
-            className="text-[28px] leading-[34px] text-acr-heritage"
+            className="text-[17px] leading-[22px] text-acr-heritage small:text-[28px] small:leading-[34px]"
             aria-hidden="true"
           >
             ⌕
@@ -151,11 +197,11 @@ export default async function KeresesLap({
             type="search"
             name="q"
             defaultValue={kereses}
-            className="h-full min-w-0 flex-1 bg-transparent text-[18px] leading-[30px] text-acr-ink outline-none"
+            className="h-full min-w-0 flex-1 bg-transparent text-[14px] leading-[18px] text-acr-ink outline-none small:text-[18px] small:leading-[30px]"
           />
         </form>
         <p
-          className="text-[14px] leading-[22px] text-acr-slate"
+          className="text-[12.5px] leading-[16px] text-acr-slate small:text-[14px] small:leading-[22px]"
           data-testid="kereses-talalatszam"
         >
           {talalat.count} találat erre: „{kereses}”
@@ -167,7 +213,7 @@ export default async function KeresesLap({
         */}
         {talalat.csonkolt ? (
           <p
-            className="text-[14px] leading-[22px] text-acr-slate"
+            className="text-[12.5px] leading-[16px] text-acr-slate small:text-[14px] small:leading-[22px]"
             data-testid="kereses-csonkolt"
           >
             Több mint {talalat.count} termék illik erre a keresésre, itt a{" "}
@@ -178,7 +224,7 @@ export default async function KeresesLap({
         {/* GYOKER-FULEK (152:119): "Összes" es a talalatok gyokerei. */}
         {gyokerek.length > 1 ? (
           <ul
-            className="flex gap-2 overflow-x-auto pt-1"
+            className="flex gap-[6px] overflow-x-auto pt-1 small:gap-2"
             aria-label="Találatok kategóriánként"
             data-testid="kereses-gyokerek"
           >
@@ -187,9 +233,9 @@ export default async function KeresesLap({
                 href={cim({ gyoker: null, markak: [] })}
                 aria-current={gyoker ? undefined : "page"}
                 className={
-                  "flex h-[40px] items-center border px-3 text-[14px] leading-[22px] " +
+                  FUL +
                   (gyoker
-                    ? "border-acr-line bg-acr-white text-acr-ink"
+                    ? "border-acr-line bg-acr-white text-acr-ink small:font-normal"
                     : "border-acr-heritage bg-acr-heritage font-medium text-acr-white")
                 }
               >
@@ -202,13 +248,14 @@ export default async function KeresesLap({
                   href={cim({ gyoker: sor.id, markak: [] })}
                   aria-current={gyoker === sor.id ? "page" : undefined}
                   className={
-                    "flex h-[40px] items-center border px-3 text-[14px] leading-[22px] " +
+                    FUL +
                     (gyoker === sor.id
                       ? "border-acr-heritage bg-acr-heritage font-medium text-acr-white"
-                      : "border-acr-line bg-acr-white text-acr-ink")
+                      : "border-acr-line bg-acr-white text-acr-ink small:font-normal")
                   }
                 >
-                  {sor.nev} · {sor.szam}
+                  {sor.nev}
+                  <span className="hidden small:inline">{" ·"}</span> {sor.szam}
                 </a>
               </li>
             ))}
@@ -216,44 +263,34 @@ export default async function KeresesLap({
         ) : null}
       </header>
 
-      <div className="mx-auto grid max-w-[1440px] gap-7 px-4 pb-16 small:grid-cols-[240px_minmax(0,1fr)] small:px-[56px]">
+      <div className="mx-auto grid max-w-[1440px] gap-3 px-4 pb-16 small:grid-cols-[240px_minmax(0,1fr)] small:gap-7 small:px-[56px]">
+        {/*
+          MOBILON (254:73) a szuro egy "Szűrők" gomb mogott all, mellette a
+          rendezes; a panel a racs fole nyilik. Natív <details>, JS nelkul. Az
+          asztali oszlop ugyanazt a tartalmat rajzolja; a ket peldany a
+          lathatosagban kulonbozik, nem a tartalomban.
+        */}
+        <div className="relative flex gap-2 small:hidden">
+          <details className="group w-1/2" data-testid="kereses-szurok-mobil">
+            <summary className="flex h-[42px] cursor-pointer list-none items-center justify-center border border-acr-line bg-acr-white text-[12.5px] font-medium leading-[16px] text-acr-ink [&::-webkit-details-marker]:hidden">
+              Szűrők{aktivSzurok > 0 ? ` ${aktivSzurok}` : ""}
+            </summary>
+            <div className="absolute inset-x-0 top-full z-10 mt-2 flex flex-col gap-4 border border-acr-line bg-acr-white p-4">
+              {szuroTorzs(false)}
+            </div>
+          </details>
+          {count > 1 ? (
+            <div className="w-1/2 [&_label]:h-[42px] [&_label]:border-acr-line [&_select]:w-full [&_select]:text-[12.5px]">
+              <CommerceRendezes sortBy={sortBy ?? "created_at"} />
+            </div>
+          ) : null}
+        </div>
         <aside
-          className="flex flex-col gap-4 self-start border border-acr-line bg-acr-white p-4"
+          className="hidden flex-col gap-4 self-start border border-acr-line bg-acr-white p-4 small:flex"
           aria-label="Szűrés"
           data-testid="kereses-szurok"
         >
-          <div className="flex items-center justify-between">
-            <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
-              Szűrés
-            </h2>
-            {gyoker || markak.length > 0 ? (
-              <a
-                href={cim({ gyoker: null, markak: [] })}
-                className="text-[14px] text-acr-ocean"
-              >
-                Törlés
-              </a>
-            ) : null}
-          </div>
-          {markaLista.length > 0 ? (
-            <section
-              className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
-              data-testid="kereses-markak"
-            >
-              <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                Márka
-              </h3>
-              <MarkaLista
-                sorok={markaLista}
-                aktiv={markak}
-                link={(id) => cim({ markak: markaValtas(markak, id) })}
-              />
-            </section>
-          ) : (
-            <p className="text-[14px] leading-[22px] text-acr-slate">
-              Ezekhez a találatokhoz nincs márkaadat.
-            </p>
-          )}
+          {szuroTorzs(true)}
         </aside>
 
         <section aria-label="Találatok" id="kereses-talalatok">
@@ -261,9 +298,9 @@ export default async function KeresesLap({
             A CSOPORT FEJE (152:189): a kivalasztott gyoker neve 300/28, jobbra
             a szam. A rendezes a keretben nincs, a bolt meglevo funkcioja: marad.
           */}
-          <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 small:mb-[18px]">
             <h2
-              className="text-[24px] font-light leading-[32px] tracking-[-0.6px] text-acr-ink small:text-[28px] small:leading-[50px]"
+              className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[28px] small:font-light small:leading-[50px] small:tracking-[-0.6px]"
               data-testid="kereses-csoport-cim"
             >
               {gyokerek.find((sor) => sor.id === gyoker)?.nev ??
@@ -274,7 +311,9 @@ export default async function KeresesLap({
                 {count} találat
               </span>
               {count > 1 ? (
-                <CommerceRendezes sortBy={sortBy ?? "created_at"} />
+                <div className="hidden small:block">
+                  <CommerceRendezes sortBy={sortBy ?? "created_at"} />
+                </div>
               ) : null}
             </div>
           </div>
@@ -287,12 +326,12 @@ export default async function KeresesLap({
             </p>
           ) : (
             <ul
-              className="grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
+              className="grid grid-cols-2 gap-[14px] small:gap-x-5 small:gap-y-[26px] medium:grid-cols-3"
               data-testid="products-list"
             >
               {products.map((product) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya product={product} />
+                  <CommerceTermekKartya product={product} tomor />
                 </li>
               ))}
             </ul>

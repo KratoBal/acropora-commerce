@@ -101,10 +101,13 @@ describe("a nincs-találat lap", () => {
     ).getAllByRole("link")
     expect(kartyak.map((a) => [a.getAttribute("href"), a.textContent])).toEqual(
       [
-        ["/hu/categories/korallok", "Korallok8 termék"],
-        ["/hu/categories/halak", "Halak57 termék"],
-        ["/hu/categories/gerinctelenek", "Gerinctelenek7 termék"],
-        ["/hu/categories/vízkezelés---termékek", "Vízkezelés128 termék"],
+        ["/hu/categories/korallok", "KategóriaKorallok8 termék"],
+        ["/hu/categories/halak", "KategóriaHalak57 termék"],
+        ["/hu/categories/gerinctelenek", "KategóriaGerinctelenek7 termék"],
+        [
+          "/hu/categories/vízkezelés---termékek",
+          "KategóriaVízkezelés128 termék",
+        ],
       ],
     )
     // Az alkategoria szama a reszfara szol, egy termeknyi lekeressel.
@@ -123,8 +126,9 @@ describe("a nincs-találat lap", () => {
     // allitas dolga.
     const kartya = within(screen.getByTestId("kereses-kategoriak"))
       .getAllByRole("link")
-      .find((a) => a.textContent?.startsWith("Vízkezelés"))
-    expect(kartya?.textContent).toBe("Vízkezelés")
+      .find((a) => a.textContent?.includes("Vízkezelés"))
+    // A mobil felulcim ("Kategória") a nev elott all; szam nem kovetkezik.
+    expect(kartya?.textContent).toBe("KategóriaVízkezelés")
   })
 
   it("régió nélkül nincs kategória-rész, az üres állapot marad", async () => {
