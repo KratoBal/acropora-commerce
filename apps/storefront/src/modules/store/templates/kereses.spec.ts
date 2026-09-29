@@ -138,6 +138,21 @@ describe("a keresés eljut a hívóktól a lekérdezésig", () => {
    * A CIMZETT 2026-09-29 OTA A TALALATI LAP (P2, 4a): kereseskor a sablon azt
    * rajzolja, es a lapozott lista mar nem kap keresest.
    */
+  /*
+   * A SZUROK VARRATA (a 4a kalibraciojabol): a `gyoker={gyoker}` sort
+   * kiveve az utvonalbol minden allitas zold maradt, holott a fulek onnantol
+   * semmit nem szurtek volna. Ezert all itt kulon, mind a ket szemre.
+   */
+  it("az útvonal és a sablon a gyökeret és a márkákat is továbbadja", () => {
+    const utvonalBlokk = elemBlokk(utvonal, "StoreTemplate")
+    const sablonBlokk = elemBlokk(sablon, "KeresesLap")
+
+    expect(utvonalBlokk).toContain("gyoker={gyoker}")
+    expect(utvonalBlokk).toContain("markak={markaAzonositok(")
+    expect(sablonBlokk).toContain("gyoker={gyoker}")
+    expect(sablonBlokk).toContain("markak={markak}")
+  })
+
   it("a sablon a TALÁLATI LAPNAK adja át a keresést", () => {
     const blokk = elemBlokk(sablon, "KeresesLap")
 
