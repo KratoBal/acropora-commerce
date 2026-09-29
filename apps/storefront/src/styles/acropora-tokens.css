@@ -117,3 +117,37 @@ body:has([data-vilag="sotet"]) [data-fejlec],
 body:has([data-acr-mod="reef"]) [data-fejlec] {
   --fejlec-mezo-hatter: var(--acr-color-deep);
 }
+
+/*
+  A VILAGOS (MUSZAKI) TERMEKLAP A FIGMA 1b KERETE SZERINT (P2, 2026-09-29).
+
+  A handoff CANONICAL "Lighting PDP / Desktop -- 1b Hybrid" kerete (192:57) a
+  Foundations Commerce szineit es a Hanken Grotesk betut hasznalja. A lap
+  vaza a regi `--terv-*` tokenekbol festi magat; itt ugyanazokat a tokeneket
+  allitjuk at, ugyanugy, ahogy a `globals.css` sotet blokkja teszi, csak a
+  vilagos vilagra. EZERT ALL EBBEN A FAJLBAN: ez a hid a Foundations es a
+  regi nevek kozott, es a regi `:root` ertekek (a tobbi lape) valtozatlanok. Csak a `data-vilag="vilagos"` feluletre hat (a termeklap vaza), a
+  tobbi regi lap a `:root` ertekein marad.
+
+  A szinek a Foundations primitivjei (`--acr-color-*`), a keret merve:
+    hatter #fbfbf9 shell (193:57)   kartya #ffffff (193:123)   keret #e3e1dc line
+    szoveg #0d1a28 ink              halvany #4a5866 slate      Kosárba #d5782f heritage
+    felulcim #0f2338 navy (193:68)
+*/
+[data-vilag="vilagos"] {
+  --terv-hatter: var(--acr-color-shell);
+  --terv-hatter-lap: var(--acr-color-white);
+  --terv-hatter-halvany: var(--acr-color-shell);
+  --terv-doboz-hatter: var(--acr-color-white);
+  --terv-kiemel: var(--acr-color-heritage);
+  --terv-kiemel-szoveg: var(--acr-color-white);
+  --terv-kiemel-tinta: var(--acr-color-navy);
+  --terv-szoveg: var(--acr-color-ink);
+  --terv-szoveg-halvany: var(--acr-color-slate);
+  --terv-utvonal: var(--acr-color-slate);
+  --terv-keret: var(--acr-color-line);
+  --terv-keret-meleg: var(--acr-color-line);
+  /* A keret MINDEN szovege Hanken, a technikai ertekek is (cikkszam). */
+  --terv-betu-fo-lanc: var(--acr-font-hanken), system-ui, sans-serif;
+  --terv-betu-mono-lanc: var(--acr-font-hanken), system-ui, sans-serif;
+}

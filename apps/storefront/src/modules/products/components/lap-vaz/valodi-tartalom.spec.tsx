@@ -386,7 +386,39 @@ describe("a váz valódi tartalma", () => {
    * A TAGADAS MELLE POZITIV KONTROLL KELL: a nev es a besorolas ITT VAN. Egy
    * puszta "nincs X" allitast egy URES cimsor is kielegitene.
    */
-  it("a névvel, a besorolás láncával és a cikkszám-eyebrow-val tölti a címsort", () => {
+  /*
+    A 192:57 SZERINT (P2, 2026-09-29) a vilagos lap cim feletti sora EGY:
+    "MÁRKA · LEVÉLKATEGÓRIA" (193:68). A korabbi terv ket sora (cikkszam,
+    teljes lanc) kikerult; a cikkszam a vasarlasi kartyan marad, es az
+    eyebrow `data-cikkszam` attributuma is hordozza.
+  */
+  it("világos lapon a cím fölött egy sor: márka · levélkategória", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          {
+            ...(TERMEK_BOLTI_ALAK as object),
+            collection: { title: "Amtra" },
+          } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KATEGORIAK,
+        )}
+      />,
+    )
+
+    expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
+    const eyebrow = screen.getByTestId("vaz-eyebrow")
+    expect(eyebrow.textContent).toBe("Amtra · TDS mérők")
+    expect(eyebrow.getAttribute("data-cikkszam")).toBe("8023222196186")
+    expect(eyebrow.textContent).not.toContain("Cikkszám")
+    expect(screen.queryByTestId("vaz-besorolas")).toBeNull()
+  })
+
+  it("márka nélkül a felülcím csak a levélkategória", () => {
     render(
       <LapVaz
         tartalom={vazTartalom(
@@ -400,18 +432,7 @@ describe("a váz valódi tartalma", () => {
         )}
       />,
     )
-
-    expect(screen.getByTestId("vaz-termek-nev").textContent).toContain("Amtra")
-
-    const besorolas = screen.getByTestId("vaz-besorolas").textContent
-
-    expect(besorolas).toBe("Tesztek, mérés, vezérlés · TDS mérők")
-    expect(besorolas).not.toContain("Termékek")
-
-    const eyebrow = screen.getByTestId("vaz-eyebrow")
-
-    expect(eyebrow.textContent).toContain("8023222196186")
-    expect(eyebrow.textContent).toContain("Cikkszám")
+    expect(screen.getByTestId("vaz-eyebrow").textContent).toBe("TDS mérők")
   })
 
   /**
