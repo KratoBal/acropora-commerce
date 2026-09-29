@@ -1,9 +1,15 @@
 /**
- * MIKOR CSAK SZEMÉLYES ÁTVÉTEL VÁLASZTHATÓ (Balázs szabálya, 2026-08-31).
+ * MIKOR CSAK SZEMÉLYES ÁTVÉTEL VÁLASZTHATÓ.
  *
- * Ha a kosárban ÉLŐ ÁLLAT van, akkor az EGÉSZ kosárra csak a személyes átvétel
- * marad. Nem bontjuk két rendelésre, és nem kérdezzük meg, hogy a többit
- * postázzuk-e.
+ * FELÜLÍRVA 2026-09-29-én (Balázs, acrobot közvetítésével, 16:06–16:09 UTC): ha
+ * a kosárban élő állat ÉS kiszállítható tétel is van, a leadás KÉT RENDELÉST
+ * csinál: a kiszállítottat és egy bolti átvételeset. A vevő egyszerre adja le,
+ * és két rendelésként látja; a kosár és a leadás ezt jól láthatóan kiírja
+ * (`splitNoticeProps`, `SPLIT_*`).
+ *
+ * A régi szabály (2026-08-31: élő állatnál az EGÉSZ kosár csak átvétel, "nem
+ * bontjuk két rendelésre") innentől csak arra a kosárra áll, amiben MINDEN tétel
+ * csak boltban vehető át: ott nincs mit bontani, egy bolti rendelés lesz.
  *
  * === A HELYETTESITO JEL MEGSZUNT, ES EZ A FAJL A BIZONYITEKA ===
  *
@@ -170,9 +176,16 @@ export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át."
  * A KULONBSEG, AMIERT EZ KET DONTES ES NEM EGY: az elso azt irja le, amit a
  * rendszer MAR CSINAL (merheto, es merve is van); a masodik olyat igerne,
  * aminek a teljesuleset a kod nem tudja garantalni.
+ *
+ * === 2026-09-29: AZ ELSO RESZ KIKERULT, ES UGYANEZERT ===
+ *
+ * A "nem bontjuk ket rendelesre" azert kerult be, mert a rendszert irta le. P4-2
+ * ota a rendszer MAST csinal: a vegyes kosar ket rendeles lesz (a
+ * `SPLIT_REASON` mondja), ez a sav pedig mar csak a CSUPA bolti atveteles
+ * kosarnal all. A mondat tehat ugyanazzal a merccel esett ki, amivel bekerult.
  */
 export const PICKUP_REASON =
-  "Egy élő példányt nem adunk fel csomagként, ezért a teljes kosarat a boltban veszed át: nem bontjuk két rendelésre, a műszaki tételeket is ide készítjük össze."
+  "Egy élő példányt nem adunk fel csomagként, ezért ezt a rendelést a boltban veszed át."
 
 /** A bolt címe és nyitvatartása, a tervből. */
 export const SHOP_ADDRESS = "1106 Budapest, Pesti Gábor utca 35"
@@ -180,3 +193,44 @@ export const SHOP_HOURS = "Kedd–Péntek 10–18, Szombat 10–14"
 
 /** Meddig tartjuk fenn a példányt. A tervben álló ígéret. */
 export const HOLD_PROMISE = "Az élő példányt 5 munkanapig tartjuk fenn."
+
+/**
+ * A KÉT RENDELÉS SÁVJA (P4-2, Balázs 2026-09-29): "Már a kosár oldalon és
+ * rendelés leadásánál is jól láthatóan írjuk ki, hogy az élő állat miatt két
+ * rendelése keletkezik." Megjelenik a kosárban és a pénztárban.
+ */
+export const SPLIT_TITLE = "Két rendelés lesz belőle"
+
+export const SPLIT_LEAD = "Az élő állat miatt két rendelésed keletkezik."
+
+export const SPLIT_REASON =
+  "Egyszerre adod le, de két rendelés lesz belőle: az élő állatot a boltban veszed át és ott fizeted, a többit kiszállítjuk. A fiókodban mindkettőt látod."
+
+export interface SplitNoticeProps {
+  visible: boolean
+  /** A bolti átvételes rendelésbe kerülő tételek neve. */
+  lines: string[]
+}
+
+/**
+ * A KÉT RENDELÉS SÁVJÁNAK BEMENETE, a háttér `split_line_ids` válaszából. A
+ * `null` (a végpont nem válaszolt) nem jelenít meg sávot: nem állítunk
+ * bontást, amiről nem tudunk.
+ */
+export function splitNoticeProps(
+  items: readonly {
+    id: string
+    title?: string | null
+    product_title?: string | null
+  }[],
+  shippingClass?: { split_line_ids?: string[] | null } | null,
+): SplitNoticeProps {
+  const ids = new Set(shippingClass?.split_line_ids ?? [])
+  return {
+    visible: ids.size > 0,
+    lines: items
+      .filter((item) => ids.has(item.id))
+      .map((item) => item.product_title ?? item.title ?? ""),
+  }
+}
+

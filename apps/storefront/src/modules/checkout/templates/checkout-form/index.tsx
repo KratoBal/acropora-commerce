@@ -1,3 +1,4 @@
+import { retrieveCartShippingClass } from "@lib/data/cart"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
@@ -8,6 +9,8 @@ import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
+import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
+import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
 
 export default async function CheckoutForm({
   cart,
@@ -34,6 +37,8 @@ export default async function CheckoutForm({
    * ag viszont nehezebben olvashato lenne.
    */
   const fizetesiLehetosegek = await getCartPaymentOptions(cart.id)
+  // P4-2: a két rendelés sávja a leadásnál is látszik (Balázs, 2026-09-29).
+  const szallitasiOsztaly = await retrieveCartShippingClass()
 
   if (!shippingMethods || !paymentMethods) {
     return null
@@ -41,6 +46,8 @@ export default async function CheckoutForm({
 
   return (
     <div className="w-full grid grid-cols-1 gap-y-8">
+      <SplitNotice {...splitNoticeProps(cart.items ?? [], szallitasiOsztaly)} />
+
       <Addresses cart={cart} customer={customer} />
 
       <Shipping cart={cart} availableShippingMethods={shippingMethods} />

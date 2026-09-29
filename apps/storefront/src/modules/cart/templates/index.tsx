@@ -1,5 +1,9 @@
 import PickupNotice from "../components/pickup-notice"
-import { pickupNoticeProps } from "../components/pickup-notice/pickup-notice"
+import {
+  pickupNoticeProps,
+  splitNoticeProps,
+} from "../components/pickup-notice/pickup-notice"
+import SplitNotice from "../components/pickup-notice/split-notice"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
@@ -28,6 +32,8 @@ const CartTemplate = ({
   shippingClass?: {
     shipping_class: string
     shipping_class_source: string | null
+    /** P4-2: a bolti átvételes rendelésbe kerülő sorok. */
+    split_line_ids?: string[]
   } | null
 }) => {
   return (
@@ -100,6 +106,10 @@ const CartTemplate = ({
               */}
               <PickupNotice
                 {...pickupNoticeProps(cart?.items ?? [], shippingClass)}
+              />
+              {/* P4-2: vegyes kosárnál két rendelés lesz, és ezt itt mondjuk ki. */}
+              <SplitNotice
+                {...splitNoticeProps(cart?.items ?? [], shippingClass)}
               />
               {!customer && (
                 <>

@@ -106,3 +106,39 @@ const FIZETES: Record<string, string> = {
 export function fizetesiAllapot(status: string | null | undefined): string {
   return (status && FIZETES[status]) || ""
 }
+
+/**
+ * EGY LEADÁSBÓL KÉT RENDELÉS (P4-2, Balázs 2026-09-29): a vegyes kosár a
+ * kiszállított és egy bolti átvételes rendelés lesz, és a háttér a kettőt
+ * mindkét irányban összeköti a metadatában (`split-completion.ts`). A vevő
+ * mindkettőt látja; a kártya és a visszaigazolás megnevezi a párját.
+ */
+export const BOLTI_RENDELES_KULCS = "acropora_pickup_order_id"
+export const FO_RENDELES_KULCS = "acropora_parent_order_id"
+
+export type KapcsoltRendeles = {
+  id: string
+  /** Igaz, ha a PÁR a bolti átvételes rendelés. */
+  bolti: boolean
+}
+
+export function kapcsoltRendeles(
+  metadata: Record<string, unknown> | null | undefined,
+): KapcsoltRendeles | null {
+  const bolti = metadata?.[BOLTI_RENDELES_KULCS]
+  if (typeof bolti === "string" && bolti) return { id: bolti, bolti: true }
+  const fo = metadata?.[FO_RENDELES_KULCS]
+  if (typeof fo === "string" && fo) return { id: fo, bolti: false }
+  return null
+}
+
+/** "Egy leadásból: #13, bolti átvétel" -- a pár száma és a fajtája. */
+export function kapcsoltFelirat(
+  displayId: number | string | null | undefined,
+  bolti: boolean,
+): string {
+  return `Egy leadásból: ${rendelesSzam(displayId)}, ${
+    bolti ? "bolti átvétel" : "kiszállítás"
+  }`
+}
+

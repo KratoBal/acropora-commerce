@@ -7,6 +7,10 @@ import {
   pickupNoticeProps,
   pickupNoticeVisible,
   pickupOnlyLinesFromClass,
+  SPLIT_LEAD,
+  SPLIT_REASON,
+  SPLIT_TITLE,
+  splitNoticeProps,
 } from "./pickup-notice"
 
 describe("az átvételi sáv szövege", () => {
@@ -47,13 +51,27 @@ describe("az átvételi sáv szövege", () => {
    * SZANDEKOSAN nincs benne: az a bolt gyakorlatarol szolo igeret, amit a
    * kirakat nem tud garantalni.)
    */
-  it("megmondja, hogy a rendelés EGYBEN marad", () => {
-    expect(PICKUP_REASON).toContain("nem bontjuk két rendelésre")
-    expect(PICKUP_REASON).toContain("teljes kosarat")
+  /*
+   * P4-2 (Balázs, 2026-09-29): a sáv már csak a CSUPA bolti átvételes kosárnál
+   * jelenik meg; a vegyes kosár két rendelés lesz, azt a `SPLIT_*` szöveg mondja.
+   * A régi mondat ("nem bontjuk két rendelésre", "a műszaki tételeket is ide
+   * készítjük össze") innentől hamis lenne, ezért nem szabad visszajönnie.
+   */
+  it("a bolti rendelést mondja, és nem ígéri, hogy a vegyes kosár egyben marad", () => {
+    expect(PICKUP_REASON).toContain("a boltban veszed át")
+    expect(PICKUP_REASON).not.toContain("nem bontjuk")
+    expect(PICKUP_REASON).not.toContain("műszaki")
   })
 
   it("nincs két kötőjel a vevőnek szánt szövegekben", () => {
-    for (const szoveg of [PICKUP_TITLE, PICKUP_LEAD, PICKUP_REASON]) {
+    for (const szoveg of [
+      PICKUP_TITLE,
+      PICKUP_LEAD,
+      PICKUP_REASON,
+      SPLIT_TITLE,
+      SPLIT_LEAD,
+      SPLIT_REASON,
+    ]) {
       expect(szoveg).not.toContain("--")
     }
   })
@@ -202,3 +220,35 @@ describe("pickupNoticeProps", () => {
     ).toEqual({ visible: true, lines: [] })
   })
 })
+
+/**
+ * A KÉT RENDELÉS SÁVJA (P4-2). MI PIROSIT: ha bontás nélkül is megjelenik; ha
+ * nem a háttér által levált sorokat nevezi meg; ha a sor nevét a változat
+ * nevéből veszi a termék neve helyett.
+ */
+describe("a két rendelés sávja", () => {
+  const tetelek = [
+    { id: "l1", title: "Egy", product_title: "Perlonvatta" },
+    { id: "l2", title: "Standard", product_title: "Mithrax tarisznyarák" },
+  ]
+
+  it("csak akkor látszik, ha a háttér levált sorokat", () => {
+    expect(splitNoticeProps(tetelek, { split_line_ids: [] }).visible).toBe(false)
+    expect(splitNoticeProps(tetelek, null).visible).toBe(false)
+    expect(splitNoticeProps(tetelek, {}).visible).toBe(false)
+  })
+
+  it("a bolti rendelésbe kerülő tételt nevezi meg, a termék nevével", () => {
+    expect(splitNoticeProps(tetelek, { split_line_ids: ["l2"] })).toEqual({
+      visible: true,
+      lines: ["Mithrax tarisznyarák"],
+    })
+  })
+
+  it("kimondja, hogy két rendelés lesz, és hogy mit hol vesz át és fizet", () => {
+    expect(SPLIT_LEAD).toContain("két rendelésed")
+    expect(SPLIT_REASON).toContain("a boltban veszed át és ott fizeted")
+    expect(SPLIT_REASON).toContain("kiszállítjuk")
+  })
+})
+

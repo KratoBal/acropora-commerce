@@ -587,10 +587,27 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
     ...(await getAuthHeaders()),
   }
 
-  let cartRes: Awaited<ReturnType<typeof sdk.store.cart.complete>>
+  // A leadas UTAN nincs kosar, amibol az orszagkodot kiolvassuk: elotte.
+  const orszag = await retrieveCart(id, "id,*shipping_address")
+    .then((kosar) => kosar?.shipping_address?.country_code?.toLowerCase())
+    .catch(() => undefined)
+
+  /*
+    A LEADAS A BONTO UTON MEGY (P4-2a2), MINDEN KOSARNAL. Egy vegyes kosar (elo
+    allat es kiszallithato tetel) ket rendeles lesz, a kiszallitott elol; minden
+    mas kosar egy, pontosan ugy, mint a gyari lezarasnal. A gyari ut a vegyes
+    kosarat elutasitja, tehat egyetlen utunk van.
+  */
+  let valasz: {
+    orders: { id: string; display_id: number | null }[]
+    pending_pickup_cart_id: string | null
+  }
 
   try {
-    cartRes = await sdk.store.cart.complete(id, {}, headers)
+    valasz = await sdk.client.fetch(`/store/carts/${id}/complete-split`, {
+      method: "POST",
+      headers,
+    })
   } catch (hiba) {
     const allapot = hibaAllapota(hiba)
     console.error(
@@ -604,15 +621,23 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
   const cartCacheTag = await getCacheTag("carts")
   revalidateTag(cartCacheTag)
 
-  if (cartRes?.type === "order") {
-    const countryCode =
-      cartRes.order.shipping_address?.country_code?.toLowerCase()
+  const elso = valasz?.orders?.[0]
+
+  if (elso) {
+    if (valasz.pending_pickup_cart_id) {
+      // A kiszallitott rendeles all, a bolti meg nem: a hatter egy ujabb
+      // hivasra befejezi. A vevo a meglevo rendelesre jut.
+      console.error(
+        "A bolti átvételes rendelés még nem jött létre:",
+        valasz.pending_pickup_cart_id,
+      )
+    }
 
     const orderCacheTag = await getCacheTag("orders")
     revalidateTag(orderCacheTag)
 
     removeCartId()
-    redirect(`/${countryCode}/order/${cartRes?.order.id}/confirmed`)
+    redirect(`/${orszag ?? "hu"}/order/${elso.id}/confirmed`)
   }
 
   /*
@@ -670,10 +695,17 @@ export async function updateRegion(countryCode: string, currentPath: string) {
  * modositassal valtozik. Egy gyorsitotarazott valasz azt allitana a vevonek,
  * hogy meg mindig bolti atvetel jar, miutan kivette az elo allatot.
  */
-export async function retrieveCartShippingClass(): Promise<{
+export type KosarSzallitasiOsztaly = {
   shipping_class: string
   shipping_class_source: string | null
-} | null> {
+  /**
+   * P4-2: a kulon, bolti atveteles rendelesbe kerulo sorok. Ures, ha nincs
+   * bontas (a vegpont regebbi valasza nem hozza: akkor is ures).
+   */
+  split_line_ids?: string[]
+}
+
+export async function retrieveCartShippingClass(): Promise<KosarSzallitasiOsztaly | null> {
   const cartId = await getCartId()
   if (!cartId) return null
 
@@ -689,7 +721,7 @@ export async function retrieveCartShippingClass(): Promise<{
    * bolti atvetel jar, holott epp nem tudjuk.
    */
   return await sdk.client
-    .fetch<{ shipping_class: string; shipping_class_source: string | null }>(
+    .fetch<KosarSzallitasiOsztaly>(
       "/store/shipping-class",
       { query: { cart_id: cartId }, headers, cache: "no-store" },
     )

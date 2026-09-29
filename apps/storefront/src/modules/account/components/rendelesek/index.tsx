@@ -4,6 +4,8 @@ import { convertToLocale } from "@lib/util/money"
 import {
   allapotFajta,
   fizetesiAllapot,
+  kapcsoltFelirat,
+  kapcsoltRendeles,
   rendelesCsoportok,
   rendelesDatum,
   rendelesDatumRovid,
@@ -52,7 +54,14 @@ export function AllapotCimke({ allapot }: { allapot: UzletiAllapot }) {
  * csoportjai (249:46) es a "Számla" gomb (249:68) nem epulnek: az elso a P4
  * hattere, a masodikhoz nincs szamla-adat (docs/P5-LEFT-OUT.md).
  */
-function NyitottKartya({ sor }: { sor: RendelesSor<Rendeles> }) {
+function NyitottKartya({
+  sor,
+  kapcsolt,
+}: {
+  sor: RendelesSor<Rendeles>
+  /** P4-2: "Egy leadásból: #13, bolti átvétel", ha van pár. */
+  kapcsolt?: string | null
+}) {
   const { rendeles, allapot } = sor
   const fizetes = fizetesiAllapot(rendeles.payment_status)
   return (
@@ -84,6 +93,14 @@ function NyitottKartya({ sor }: { sor: RendelesSor<Rendeles> }) {
         </span>
         {fizetes ? ` · ${fizetes}` : ""}
       </p>
+      {kapcsolt ? (
+        <p
+          className="text-[12.5px] leading-[16px] text-acr-ink"
+          data-testid="rendeles-kapcsolt"
+        >
+          {kapcsolt}
+        </p>
+      ) : null}
       <p className="text-[20px] font-bold leading-[26px] text-acr-ink small:hidden">
         {osszeg(rendeles)}
       </p>
@@ -103,7 +120,13 @@ function NyitottKartya({ sor }: { sor: RendelesSor<Rendeles> }) {
  * cimke, osszeg, alatta datum es tetelszam a "megtekintés" linkkel. Mobilon
  * az egesz kartya link: szam es allapot bal oldalt, osszeg jobbra.
  */
-function KorabbiKartya({ sor }: { sor: RendelesSor<Rendeles> }) {
+function KorabbiKartya({
+  sor,
+  kapcsolt,
+}: {
+  sor: RendelesSor<Rendeles>
+  kapcsolt?: string | null
+}) {
   const { rendeles, allapot } = sor
   return (
     <article
@@ -138,6 +161,9 @@ function KorabbiKartya({ sor }: { sor: RendelesSor<Rendeles> }) {
         </div>
         <p className="text-[12.5px] leading-[16px] text-acr-slate">
           {rendelesDatum(rendeles.created_at)} · {tetelSzam(rendeles)} tétel ·{" "}
+          {kapcsolt ? (
+            <span data-testid="rendeles-kapcsolt">{kapcsolt} · </span>
+          ) : null}
           <LocalizedClientLink
             href={reszletek(rendeles)}
             className="underline underline-offset-2 hover:text-acr-ink"
@@ -182,10 +208,23 @@ export default function Rendelesek({
   }
 
   const { nyitott, korabbi } = rendelesCsoportok(rendelesek, allapotok)
+  // P4-2: a pár száma a listából jön; ha a pár nincs a listán (lapozás), nincs
+  // mit megnevezni, és a sor elmarad.
+  const szamok = new Map(rendelesek.map((r) => [r.id, r.display_id]))
+  const kapcsolt = (r: Rendeles) => {
+    const par = kapcsoltRendeles(r.metadata)
+    return par && szamok.has(par.id)
+      ? kapcsoltFelirat(szamok.get(par.id), par.bolti)
+      : null
+  }
   return (
     <div className="flex flex-col gap-3 font-acr-sans small:gap-[18px]">
       {nyitott.map((sor) => (
-        <NyitottKartya key={sor.rendeles.id} sor={sor} />
+        <NyitottKartya
+          key={sor.rendeles.id}
+          sor={sor}
+          kapcsolt={kapcsolt(sor.rendeles)}
+        />
       ))}
       {korabbi.length > 0 ? (
         <section className="flex flex-col gap-3 small:gap-[18px]">
@@ -193,7 +232,11 @@ export default function Rendelesek({
             Korábbi rendelések
           </h2>
           {korabbi.map((sor) => (
-            <KorabbiKartya key={sor.rendeles.id} sor={sor} />
+            <KorabbiKartya
+              key={sor.rendeles.id}
+              sor={sor}
+              kapcsolt={kapcsolt(sor.rendeles)}
+            />
           ))}
         </section>
       ) : null}
