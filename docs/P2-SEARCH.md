@@ -41,7 +41,7 @@ When there is a query, the store page now renders `KeresesLap` (`modules/store/t
 
 **Stage roots:** the shop's technical root is called "Termékek". The frame's "Technika" pill is that root here, under its real name.
 
-**Empty sets:** the zero-result decision still goes through `keresesSzuro`. An empty id set never reaches the product query, because Medusa could ignore it and return the whole catalogue. With zero results the sentence names the query; with filters that leave nothing, it says so.
+**Empty sets:** the zero-result decision still goes through `keresesSzuro`. An empty id set never reaches the product query, because Medusa could ignore it and return the whole catalogue. With zero results the no-results page (4b) stands; with filters that leave nothing, the results page says so and keeps the filters to undo.
 
 ### #375 and #379, absorbed
 
@@ -78,8 +78,39 @@ Measured on 2026-09-29 locally with `next dev` against the stage backend:
   - "Termékek": 134 results;
   - plus the first brand: 14;
   - a new search from the field ("lehabzo", no accent): 65 results, filters cleared.
-- **Zero results:** the query "zzzzqqqqxxxx" gives the sentence and no product query.
+- **Zero results:** the query "zzzzqqqqxxxx" gives no product query (the page itself is 4b).
 - **390 px:** no horizontal scroll. The mobile frames are 4c.
 - **`/store` without a query:** unchanged ("Minden termék").
 
 Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/kereses-4a-1440-figma-balra.png`.
+
+## 4b: no results (`253:57`)
+
+When the search endpoint returns zero results, the store page renders `NincsTalalatLap` (`modules/store/templates/kereses/nincs-talalat-lap.tsx`) instead of the results page. A results page emptied by filters is not this state: there the filters can be undone, so it stays on the results page with one sentence.
+
+| Element | Figma | Built |
+|---|---|---|
+| Eyebrow and title (`253:73`, `253:74`) | "KERESÉS" 600/10.5, 1.2 px; "Nincs találat" 600/38 | same; the title is 30 px below `small` |
+| Search field (`253:75`) | 1328 × 54, white, line border, 15 px | same, pre-filled with the query |
+| Empty-state box (`253:78`) | white, border, 28 px padding, 300 high | same, with its height from the content (238 px) instead of a fixed 300 |
+| "Nem találtunk ilyet" and the advice (`253:79`, `253:80`) | 600/26; the advice sentence in slate | same text. The sentence is measured true: the endpoint searches name, description and SKU, and on 2026-09-29 "Triton" (a brand) gave 76, "Amphiprion" (a scientific name) 13, and a SKU 1. |
+| Search tips (`253:81`) | ReefLED, Acropora, Bohóchal, KH teszt, MP40 | the same five words, as search links. Measured on stage on 2026-09-29: 1, 69, 17, 58 and 4 results. The constant's header says to remove a word that ever returns zero. |
+| "Segítség a kereséshez" (`253:92`) | 280 × 44, heritage border | same; it goes to the Hamarosan page (`szakerto`), like the header's expert button |
+| "Népszerű kategóriák" (`253:94`) | four curated cards: WYSIWYG korallok, Tengeri halak, Világítás, Víztesztek, with a curated subtitle | **"Kategóriák"**, see below |
+
+**The categories:**
+- The cards are the header menu's items that have a page, in the menu's order: Korallok, Halak, Gerinctelenek, Vízkezelés. Technika, Tudástár, Szolgáltatások and Akváriumaim go to Hamarosan, so they get no card.
+- The subtitle is the item's product count for the whole subtree. For the roots it comes from the header's existing counts; for Vízkezelés (a subcategory) it takes one `limit: 1` request. If the count fails, the card shows no number rather than zero.
+- The title is "Kategóriák", not "Népszerű kategóriák": there is no popularity data behind "népszerű".
+- The frame's subtitles ("Egyedi példányok", "Tartási adatokkal") are copy we have no source for.
+
+**Measured** locally against stage on 2026-09-29:
+- **1440 px, `q=xyzzypump123`:**
+  - title 38 / 600; field 1328 × 54; box 1328 wide;
+  - the five tips; the help button 280 × 44;
+  - four cards 110 high: Korallok 8, Halak 125, Gerinctelenek 28, Vízkezelés 128.
+- **Links:** the ReefLED tip, the Vízkezelés card and the help button each answer 200.
+- **390 px:** no horizontal scroll (mobile is 4c).
+- **`q=led` with filters that leave nothing:** stays on the results page.
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/kereses-4b-1440-figma-balra.png`.
