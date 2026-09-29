@@ -3,19 +3,19 @@ import { MedusaError } from "@medusajs/framework/utils"
 
 import { PAYMENT_ROLE_PROVIDER_ENV } from "../../../../../workflows/utils/payment-providers"
 import { resolveShippingOptionRoleBindings } from "../../../../../workflows/utils/shipping-option-roles"
-import { startSharedSplitPayment } from "../../../../../workflows/utils/split-completion"
+import { startCardPayment } from "../../../../../workflows/utils/split-completion"
 import { sharedPaymentOperations } from "../../../../../workflows/utils/split-completion-operations"
 
 /**
  * POST /store/carts/:id/simplepay-start
  *
- * Starts ONE card payment for both orders of a mixed cart (P4-3c): the lines
- * are split first, then one SimplePay transaction is started for the two
- * carts together. The answer carries the `payment_url` the customer is sent
- * to, and the totals. The amounts, the payer and the provider are read on the
- * server; the request carries nothing but the cart id.
- *
- * A cart that is not split is paid the ordinary way, and is refused here.
+ * Starts the card payment (P4-3c, P4-4), called at placement, after the
+ * customer accepted SimplePay's data-transfer statement. A cart that is not
+ * split gets one transaction; a mixed cart is split first, and one
+ * transaction covers both carts. The answer carries the `payment_url` the
+ * customer is sent to, and the totals. The amounts, the payer and the
+ * provider are read on the server; the request carries nothing but the cart
+ * id.
  */
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const storePickup = resolveShippingOptionRoleBindings().find(
@@ -29,7 +29,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   }
 
-  const started = await startSharedSplitPayment(
+  const started = await startCardPayment(
     req.params.id,
     sharedPaymentOperations(req.scope, { storePickupOptionId: storePickup.id }),
     { providerId: process.env[PAYMENT_ROLE_PROVIDER_ENV.ONLINE_CARD]?.trim() ?? "" }

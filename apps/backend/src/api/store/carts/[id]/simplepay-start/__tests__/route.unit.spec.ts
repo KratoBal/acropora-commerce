@@ -1,8 +1,8 @@
-const startSharedSplitPayment = jest.fn(async () => ({ payment_url: "https://sandbox.simplepay.hu/pay/x", total: 13450 }))
+const startCardPayment = jest.fn(async () => ({ payment_url: "https://sandbox.simplepay.hu/pay/x", total: 13450 }))
 const sharedPaymentOperations = jest.fn(() => ({ ops: true }))
 
 jest.mock("../../../../../../workflows/utils/split-completion", () => ({
-  startSharedSplitPayment: (...args: unknown[]) => (startSharedSplitPayment as any)(...args),
+  startCardPayment: (...args: unknown[]) => (startCardPayment as any)(...args),
 }))
 jest.mock("../../../../../../workflows/utils/split-completion-operations", () => ({
   sharedPaymentOperations: (...args: unknown[]) => (sharedPaymentOperations as any)(...args),
@@ -26,8 +26,8 @@ describe("POST /store/carts/:id/simplepay-start", () => {
       process.env = saved
     }
 
-    expect(startSharedSplitPayment.mock.calls[0][0]).toBe("cart_1")
-    expect(startSharedSplitPayment.mock.calls[0][2]).toEqual({ providerId: "pp_simplepay_simplepay" })
+    expect(startCardPayment.mock.calls[0][0]).toBe("cart_1")
+    expect(startCardPayment.mock.calls[0][2]).toEqual({ providerId: "pp_simplepay_simplepay" })
     expect((sharedPaymentOperations.mock.calls[0] as unknown[])[1]).toEqual({ storePickupOptionId: "so_bolt" })
     expect(res.json).toHaveBeenCalledWith({ payment_url: "https://sandbox.simplepay.hu/pay/x", total: 13450 })
   })
