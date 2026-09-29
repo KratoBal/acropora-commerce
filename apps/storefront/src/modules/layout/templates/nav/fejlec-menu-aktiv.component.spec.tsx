@@ -63,4 +63,13 @@ describe("a fejléc-menü az aktuális gyökeret kiemeli", () => {
     render(<FejlecMenu pontok={PONTOK} />)
     expect(kiemeltek()).toEqual(["Tudástár"])
   })
+
+  it("minden pont viseli a kiemelés kulcsát (data-fejlec-pont)", () => {
+    allapot.utvonal = "/hu"
+    render(<FejlecMenu pontok={PONTOK} />)
+    const kulcsok = Array.from(
+      document.querySelectorAll("[data-fejlec-pont]"),
+    ).map((e) => e.getAttribute("data-fejlec-pont"))
+    expect(kulcsok).toEqual(["korallok", "halak", "vizkezeles", "tudastar"])
+  })
 })

@@ -3,7 +3,11 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
-import { ELO_ALLAT_GYOKEREK, vilagaTermeknek } from "./vilag-valto"
+import {
+  ELO_ALLAT_GYOKEREK,
+  termekGyokerNevei,
+  vilagaTermeknek,
+} from "./vilag-valto"
 
 /**
  * A FIXTÚRÁK A STAGE VALÓDI ALAKJÁT KÖVETIK: a Medusa a termék kategóriái közt
@@ -339,5 +343,21 @@ describe("a katalógus, amiből a gyökér feloldódik", () => {
       romlott.indexOf(")", romlott.indexOf("listCategories({")),
     )
     expect(regiAlak).not.toContain("limit")
+  })
+})
+
+describe("a termék gyökereinek nevei (a fejléc kiemeléséhez)", () => {
+  it("a termékkel jött gyökér nevét adja", () => {
+    expect(termekGyokerNevei(KORALL)).toEqual(["Korallok"])
+    expect(termekGyokerNevei(MUSZAKI)).toEqual(["Termékek"])
+  })
+
+  it("leveles kategóriánál a katalógusból oldja fel, ahogy a világ is", () => {
+    expect(termekGyokerNevei(LEVELES_KORALL)).toEqual([])
+    expect(termekGyokerNevei(LEVELES_KORALL, KATALOGUS)).toEqual(["Korallok"])
+  })
+
+  it("kategória nélkül üres", () => {
+    expect(termekGyokerNevei(null)).toEqual([])
   })
 })

@@ -2,7 +2,7 @@
 
 import { ArrowRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import { FejlecMenuPont } from "@lib/util/fejlec-menu-pontok"
+import { FejlecMenuPont, kulcs } from "@lib/util/fejlec-menu-pontok"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
@@ -215,6 +215,7 @@ export const FejlecMenu = ({
                 aria-expanded={openName === pont.felirat}
                 onClick={(event) => toggle(pont.felirat, event.currentTarget)}
                 data-testid={`category-menu-trigger-${pont.felirat}`}
+                data-fejlec-pont={kulcs(pont.felirat)}
               >
                 {pont.felirat}
               </button>
@@ -235,6 +236,7 @@ export const FejlecMenu = ({
               className={osztaly(aktiv)}
               aria-current={aktiv ? "page" : undefined}
               data-testid={`fejlec-menu-link-${pont.felirat}`}
+              data-fejlec-pont={kulcs(pont.felirat)}
             >
               {pont.felirat}
             </LocalizedClientLink>

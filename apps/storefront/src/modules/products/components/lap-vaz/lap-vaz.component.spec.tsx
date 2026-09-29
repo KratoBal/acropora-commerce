@@ -1041,6 +1041,25 @@ describe("a lap teljes szélességű sötét felülete", () => {
     expect(teljes().getAttribute("data-vilag")).toBe("sotet")
   })
 
+  /**
+   * A FEJLEC KIEMELESENEK JELOLOJE (2026-09-29): a teljes szelessegu felulet
+   * viseli, mert a fejlec a lapon kivul all, es a `globals.css` `:has()`
+   * szabalya ezt keresi. Ures listanal NEM all ott: egy ures ertek senkit nem
+   * emel ki, de egy kesobbi `[data-fejlec-gyoker]` szabalyt feleslegesen
+   * elsutne.
+   */
+  it("a teljes szélességű felület viseli a fejléc-gyökér jelölőjét", () => {
+    render(<LapVaz vilag="sotet" fejlecGyokerek={["korallok", "termekek"]} />)
+    expect(teljes().getAttribute("data-fejlec-gyoker")).toBe(
+      "korallok termekek",
+    )
+  })
+
+  it("gyökér nélkül nincs fejléc-gyökér jelölő", () => {
+    render(<LapVaz vilag="sotet" />)
+    expect(teljes().hasAttribute("data-fejlec-gyoker")).toBe(false)
+  })
+
   it("a hátteret a teljes szélességű felület viszi, tokenből", () => {
     render(<LapVaz vilag="sotet" />)
 

@@ -2,7 +2,11 @@ import { HttpTypes } from "@medusajs/types"
 import LapVaz from "@modules/products/components/lap-vaz"
 import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 import { vazTartalom } from "@modules/products/components/lap-vaz/valodi-tartalom"
-import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
+import {
+  termekGyokerNevei,
+  vilagaTermeknek,
+} from "@modules/products/components/lap-vaz/vilag-valto"
+import { kulcs } from "@lib/util/fejlec-menu-pontok"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import React from "react"
 
@@ -144,6 +148,9 @@ const MuszakiLap = ({
   return (
     <LapVaz
       vilag={vilagaTermeknek(product, kategoriak)}
+      fejlecGyokerek={[
+        ...new Set(termekGyokerNevei(product, kategoriak).map(kulcs)),
+      ]}
       /*
        * UGYANAZ A PREDIKATUM, AMI A JELVENYT IS VEZERLI -- nem masodik forras.
        * A `hasonlo` doboz WYSIWYG-felirata csak akkor all, ha a termek TENYLEG
