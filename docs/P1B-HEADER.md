@@ -57,12 +57,12 @@ Measured on 2026-09-29 locally with `next dev` against the stage backend. Fonts 
 
 | Our header | Figma | Size | Differing pixels |
 |---|---|---|---|
-| desktop, three bands | `215:41`, top 182 px | 1440×182 | 7.31 % |
+| desktop, three bands | `215:41`, top 182 px | 1440×182 | 6.96 % |
 | mobile | `220:3`, top 56 px | 390×56 | 3.40 % |
 
 Geometry: 36 / 76 / 70 px, the field 1120×46 at y = 123.5, the button 220×46. This matches the frame exactly. The pixel difference is in the texts, listed below. The menu also renders about 11 px wider in Chromium than in Figma (648 against 637), the same text rasterisation as in P1a.
 
-The product page's sticky panel was measured at 150 px of scroll. Its top is at 182, the header's bottom, so the header covers nothing while the panel sticks. Further down, the panel leaves with its container, as before.
+The product page's sticky panel was measured at 1440 px. From 125 px of scroll its top is at 182, the header's bottom, so the header covers nothing while the panel sticks. Further down, the panel leaves with its container, as before. At 1024 px the panel is as tall as its grid cell (596 px), so it has no room to stick and scrolls with the page. That comes from the grid, not from the header height.
 
 No horizontal page scroll at 390, 1024, 1280 or 1440 px. The images are in the fleet share `agents/murena/p1b-kepek/`: `korall-1440-*.png` and `korall-390-*.png`, each Figma above ours, with the difference image.
 
