@@ -1,4 +1,5 @@
 import {
+  shippingProfileGaps,
   PARENT_CART_METADATA_KEY,
   PICKUP_CART_METADATA_KEY,
   SplitCart,
@@ -28,6 +29,8 @@ type Shop = {
   failOn: Set<string>
   links: [string, string][]
   warnings: string[]
+  /** Variants whose product is not on the store pickup's profile. */
+  profileGaps: Set<string>
   ops: SplitOperations
 }
 
@@ -57,6 +60,7 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     failOn: new Set<string>(),
     links: [] as [string, string][],
     warnings: [] as string[],
+    profileGaps: new Set<string>(),
   } as Shop
   let lineSeq = 0
   let cartSeq = 0
@@ -102,6 +106,12 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     },
     applyPromotions: async (id, codes) => {
       step(`applyPromotions ${id} ${codes.join(",")}`)
+    },
+    pickupProfileGaps: async (lines) => {
+      step(`pickupProfileGaps ${lines.map((l) => l.variant_id).join(",")}`)
+      return lines
+        .filter((l) => shop.profileGaps.has(l.variant_id ?? ""))
+        .map((l) => `prod_${l.variant_id}`)
     },
     setStorePickup: async (id) => {
       step(`setStorePickup ${id}`)
@@ -149,6 +159,7 @@ describe("completing a mixed cart", () => {
     expect(pickup.payment_provider_id).toBe(PAY_AT_STORE)
     expect(shop.links).toEqual([["order_1", "order_2"]])
     expect(shop.log).toEqual([
+      "pickupProfileGaps v_korall",
       "createPickupCart cart_1",
       "addLines cart_pickup_1 v_korall",
       "deleteLines cart_1 l2",
@@ -182,6 +193,50 @@ describe("completing a mixed cart", () => {
       "No payment method is selected"
     )
     expect(shop.log).toEqual([])
+  })
+})
+
+describe("the pickup order must be possible before the first order", () => {
+  // Measured on stage, 2026-09-29: a pickup product without a shipping
+  // profile let the shipped order through and left the pickup cart pending.
+  it("a pickup product off the store pickup's profile refuses the placement, with nothing moved", async () => {
+    const shop = vegyes()
+    shop.profileGaps.add("v_korall")
+
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow(
+      "Some pickup items cannot be collected in the shop yet"
+    )
+    expect(shop.log).toEqual(["pickupProfileGaps v_korall"])
+    expect(shop.carts.get("cart_1")!.items).toHaveLength(2)
+    expect(shop.warnings[0]).toContain("prod_v_korall")
+  })
+
+  it("a cart that is not mixed is not checked", async () => {
+    const shop = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})
+    shop.profileGaps.add("v_eszkoz")
+    await completeSplitCart("cart_1", shop.ops, config)
+    expect(shop.log).toEqual(["complete cart_1"])
+  })
+})
+
+describe("which products are off the store pickup's profile", () => {
+  const variants = [
+    { id: "v1", product: { id: "p1", shipping_profile: { id: "sp_default" } } },
+    { id: "v2", product: { id: "p2", shipping_profile: null } },
+    { id: "v3", product: { id: "p3", shipping_profile: { id: "sp_masik" } } },
+  ]
+
+  it("names the products without the pickup's profile, once each", () => {
+    expect(
+      shippingProfileGaps(variants, ["v1", "v2", "v3", "v2"], "sp_default")
+    ).toEqual(["p2", "p3"])
+  })
+
+  it("a variant it cannot find, or an unknown pickup profile, is a gap", () => {
+    expect(shippingProfileGaps(variants, ["v9"], "sp_default")).toEqual([
+      "variant v9",
+    ])
+    expect(shippingProfileGaps(variants, ["v1"], null)).toEqual(["p1"])
   })
 })
 

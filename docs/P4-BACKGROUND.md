@@ -87,7 +87,22 @@ The storefront places every cart through this route; the core complete route ref
 
 **Refused before anything moves:**
 - a mixed cart without a payment choice;
-- payment in the shop not configured.
+- payment in the shop not configured;
+- a pickup product that is not on the store pickup option's shipping profile. Medusa would refuse to complete the pickup cart only **after** the shipped order was made.
+
+**Measured on stage, 2026-09-29, with the test account:**
+- The first placement made the shipped order #3 and left the pickup cart pending. The Mithrax product had no shipping profile, per the core completion's message: "The cart items require shipping profiles that are not satisfied by the current shipping methods".
+- acrobot linked the product to the Default profile. A repeated call then made the pickup order #4 and linked the two, with no second shipped order.
+- **So the failure path worked live.** The profile check above was added so that a gap known in advance never gets that far.
+
+**The two orders of the live test:**
+
+| Order | What it holds | Payment |
+|---|---|---|
+| #3 (`order_01M3Q1RGV3FDWZ4EW8QTKZN9J0`) | Aquavital Perlonvatta 1000 Ft, COD fee 450 Ft, GLS home delivery 3500 Ft; 4950 Ft in total | cash on delivery |
+| #4 (`order_01M3Q1W37PRVZPEBQ89TB6EXKR`) | Mithrax 8500 Ft, store pickup 0 Ft | payment in the shop |
+
+- Each points to the other in metadata.
 
 **The answer:** `{ orders: [{ id, display_id }], pending_pickup_cart_id }`, the shipped order first.
 

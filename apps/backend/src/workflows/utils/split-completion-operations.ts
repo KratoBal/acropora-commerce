@@ -26,6 +26,7 @@ import {
   PICKUP_ORDER_METADATA_KEY,
   SplitCart,
   SplitOperations,
+  shippingProfileGaps,
 } from "./split-completion"
 
 type Container = MedusaContainer
@@ -198,6 +199,28 @@ export const splitCompletionOperations = (
           }`
         )
       }
+    },
+
+    pickupProfileGaps: async (lines) => {
+      const query = container.resolve(ContainerRegistrationKeys.QUERY)
+      const { data: options } = await query.graph({
+        entity: "shipping_option",
+        filters: { id: config.storePickupOptionId },
+        fields: ["id", "shipping_profile_id"],
+      })
+      const variantIds = lines.map((line) => line.variant_id)
+      const { data: variants } = await query.graph({
+        entity: "variant",
+        filters: {
+          id: variantIds.filter((id): id is string => typeof id === "string"),
+        },
+        fields: ["id", "product.id", "product.shipping_profile.id"],
+      })
+      return shippingProfileGaps(
+        (variants ?? []) as any[],
+        variantIds,
+        options?.[0]?.shipping_profile_id ?? null
+      )
     },
 
     setStorePickup: async (cartId) => {
