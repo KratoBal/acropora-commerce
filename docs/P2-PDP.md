@@ -98,6 +98,33 @@ Measured locally on `nyos-nitrate-minus-1000ml` at 1440 px:
 
 The coral product page is unchanged: full-width bar, no border, dark background. Side by side: fleet share `agents/murena/p2-kepek/pdp-3b-1440-figma-felul.png`.
 
+## 3c: mobile (`196:3`)
+
+On the light page, below `lg` (1024 px):
+
+| Element | Figma | Built |
+|---|---|---|
+| Breadcrumb | none | hidden |
+| Eyebrow (`196:15`) | "BRAND · SKU", heritage, 500/10.5, 1.2 px | the eyebrow has a mobile part and a desktop part (`lg:hidden` / `hidden lg:inline`). The desktop keeps "brand · category", navy, 600/11. |
+| Price (`196:18`) | 700/28 | 28 px on mobile, 36 px from `lg` |
+| Purchase group (`196:17`–`196:28`) | no card; price, picker and stock on the page ground | the shared purchase panel loses its border, padding and background |
+| Tabs (`196:41`) | 14 px, 22 px apart | `text-[14px] lg:text-[15px]`, `gap-[22px] lg:gap-7` |
+| Sticky bar (`196:67`) | price 600/16, "Kosárba" 126 × 50 | price 16 / 600; the button at least 126 px |
+
+- **Why the panel rule uses `!important`:** the purchase panel's border, padding and background are inline styles (the frame's shared panel, and older guards pin that form). A normal rule would lose to them. The rule's scope is narrow: light page, below `lg`, one marker.
+- **Deviations:**
+  - The quantity control and the in-page "Kosárba" stay on mobile. The frame has only the sticky bar, but the minimum-order and step rules live in that control.
+  - The spec rows (`196:54`) have no structured data.
+  - "Csomaggal −8%" in the sticky bar (`196:69`) has no bundle behind it.
+  - The sizing helper (`196:35`) is not built.
+
+Measured locally on `nyos-nitrate-minus-1000ml`:
+- 390 px: breadcrumb hidden; panel 0 border, 0 padding, transparent; price 28 px; eyebrow "Nyos · 4260246927295" in heritage; sticky price 16 px; button 126 px; tab 14 px; no horizontal scroll.
+- 1440 px: unchanged (panel 1 px / 24 px / white, price 36, tab 15).
+- The coral product page at 390 px is unchanged.
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/pdp-3c-390-figma-balra.png`.
+
 ### Left out (no data or no feature), for the whole 1b page
 
 | Frame element | Why |

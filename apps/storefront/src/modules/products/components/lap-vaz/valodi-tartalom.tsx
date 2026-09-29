@@ -230,23 +230,33 @@ export const Cimsor = ({
       */}
       {vilagosVilag
         ? (() => {
-            const felulcim = [
-              (termek.collection?.title ?? "").trim(),
-              lanc.at(-1) ?? "",
-            ].filter(Boolean)
-            return felulcim.length > 0 ? (
+            const marka = (termek.collection?.title ?? "").trim()
+            const asztali = [marka, lanc.at(-1) ?? ""].filter(Boolean)
+            /*
+              MOBILON MAS A SOR (196:15, "AQUALIGHT · RL160P"): marka ·
+              cikkszam, rez szinnel, 500/10.5, 1.2 px betukozzel. Az asztali
+              (193:68) marka · levelkategoria, navy, 600/11.
+            */
+            const mobil = [marka, sku ?? ""].filter(Boolean)
+            return asztali.length > 0 || mobil.length > 0 ? (
               <p
                 className="uppercase"
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  letterSpacing: "1.4px",
-                  color: "var(--terv-kiemel-tinta)",
-                }}
                 data-testid="vaz-eyebrow"
                 data-cikkszam={sku ?? undefined}
               >
-                {felulcim.join(" · ")}
+                <span
+                  className="text-[10.5px] font-medium tracking-[1.2px] text-acr-heritage lg:hidden"
+                  data-testid="vaz-eyebrow-mobil"
+                >
+                  {mobil.join(" · ")}
+                </span>
+                <span
+                  className="hidden text-[11px] font-semibold tracking-[1.4px] lg:inline"
+                  style={{ color: "var(--terv-kiemel-tinta)" }}
+                  data-testid="vaz-eyebrow-asztali"
+                >
+                  {asztali.join(" · ")}
+                </span>
               </p>
             ) : null
           })()
