@@ -106,14 +106,16 @@ export async function searchGlsPickupPoints(
       valasz.available
         ? {
             elerheto: true,
-            pontok: valasz.pickup_points.map(({ id, name, zip, city, address }) => ({
-              id,
-              name,
-              // A Foxpost cime iranyitoszammal kezdodik; a GLS-e is igy latszik.
-              address: `${zip} ${city}, ${address}`,
-              zip,
-              city,
-            })),
+            pontok: valasz.pickup_points.map(
+              ({ id, name, zip, city, address }) => ({
+                id,
+                name,
+                // A Foxpost cime iranyitoszammal kezdodik; a GLS-e is igy latszik.
+                address: `${zip} ${city}, ${address}`,
+                zip,
+                city,
+              }),
+            ),
             talalat: valasz.count,
           }
         : NINCS,
@@ -131,4 +133,3 @@ export async function retrieveGlsOptions(): Promise<GlsPontMod[]> {
     .then((valasz) => valasz.options ?? [])
     .catch(() => [])
 }
-

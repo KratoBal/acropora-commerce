@@ -20,7 +20,8 @@ vi.mock("@lib/data/fulfillment", () => ({
   calculatePriceForShippingOption: vi.fn(async () => null),
 }))
 vi.mock("@lib/data/csomagpont", () => ({
-  searchFoxpostPickupPoints: (...args: unknown[]) => searchFoxpostPickupPoints(...args),
+  searchFoxpostPickupPoints: (...args: unknown[]) =>
+    searchFoxpostPickupPoints(...args),
   searchGlsPickupPoints: (...args: unknown[]) => searchGlsPickupPoints(...args),
 }))
 
@@ -95,13 +96,23 @@ describe("a GLS-csomagpont választó", () => {
   it("a keresés a mód azonosítójával megy, és a pont a GLS adatában kerül a módra", async () => {
     searchGlsPickupPoints.mockResolvedValue({
       elerheto: true,
-      pontok: [{ id: "SHOP1", name: "Bolt", address: "2100 Gödöllő, Fő tér 1.", zip: "2100", city: "Gödöllő" }],
+      pontok: [
+        {
+          id: "SHOP1",
+          name: "Bolt",
+          address: "2100 Gödöllő, Fő tér 1.",
+          zip: "2100",
+          city: "Gödöllő",
+        },
+      ],
       talalat: 1,
     })
     setShippingMethod.mockResolvedValue({ ok: true })
     rajzol()
     fireEvent.click(radio(2))
-    fireEvent.change(screen.getByTestId("csomagpont-kereses"), { target: { value: "2100" } })
+    fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
+      target: { value: "2100" },
+    })
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
@@ -123,7 +134,13 @@ describe("a GLS-csomagpont választó", () => {
         {
           id: "sm-1",
           shipping_option_id: "so-gls",
-          data: { gls_pickup_point: { id: "SHOP1", name: "Bolt", address: "2100 Gödöllő, Fő tér 1." } },
+          data: {
+            gls_pickup_point: {
+              id: "SHOP1",
+              name: "Bolt",
+              address: "2100 Gödöllő, Fő tér 1.",
+            },
+          },
         },
       ]),
     )
@@ -133,10 +150,16 @@ describe("a GLS-csomagpont választó", () => {
   })
 
   it("a Foxpost ugyanabban a lépésben a Foxpost keresőjét használja", async () => {
-    searchFoxpostPickupPoints.mockResolvedValue({ elerheto: true, pontok: [], talalat: 0 })
+    searchFoxpostPickupPoints.mockResolvedValue({
+      elerheto: true,
+      pontok: [],
+      talalat: 0,
+    })
     rajzol()
     fireEvent.click(radio(3))
-    fireEvent.change(screen.getByTestId("csomagpont-kereses"), { target: { value: "Gödöllő" } })
+    fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
+      target: { value: "Gödöllő" },
+    })
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })

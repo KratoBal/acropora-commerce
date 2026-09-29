@@ -81,8 +81,8 @@ export default function CsomagpontValaszto({
           className="txt-medium text-ui-fg-base"
           data-testid="csomagpont-nem-elerheto"
         >
-          A {szolgaltato} csomagpontjai most nem érhetők el. Válassz másik szállítási
-          módot.
+          A {szolgaltato} csomagpontjai most nem érhetők el. Válassz másik
+          szállítási módot.
         </p>
       ) : null}
       {eredmeny?.elerheto && eredmeny.pontok.length === 0 ? (

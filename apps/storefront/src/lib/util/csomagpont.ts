@@ -32,4 +32,3 @@ export function glsSzallitasiAdat(pontId: string) {
 
 /** Egy GLS csomagpontos szallitasi mod, es hogy nehezarus-e (csak csomagbolt). */
 export type GlsPontMod = { option_id: string; heavy: boolean }
-
