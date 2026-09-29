@@ -83,4 +83,27 @@ describe("a mentett címek listája", () => {
         .checked,
     ).toBe(true)
   })
+
+  /*
+   * A FELVEVO ABLAK IS MEGKAPJA A KET MEZOT (a P5-3 kalibraciojabol: a mezoket
+   * a felvevo ablakbol kiveve minden allitas zold maradt). Az elso cimnel a
+   * pipa alapbol be van jelolve, a tobbinel nem.
+   */
+  it("a felvevő ablakban is ott a két mező; az első címnél alapból alapértelmezett", () => {
+    lista([])
+    fireEvent.click(screen.getByTestId("add-address-button"))
+    expect(screen.getByTestId("address-name-input")).toBeTruthy()
+    expect(
+      (screen.getByTestId("address-default-checkbox") as HTMLInputElement)
+        .checked,
+    ).toBe(true)
+    cleanup()
+
+    lista([cim("a", { is_default_shipping: true })])
+    fireEvent.click(screen.getByTestId("add-address-button"))
+    expect(
+      (screen.getByTestId("address-default-checkbox") as HTMLInputElement)
+        .checked,
+    ).toBe(false)
+  })
 })

@@ -57,14 +57,19 @@ describe("a cím mentése", () => {
     })
   })
 
+  /*
+   * A KONTROLL `true`-t ker (a P5-3 kalibraciojabol): `false`-szal ez az
+   * allitas nem tudta megkulonboztetni a sajat jelzot a hianyzo pipatol, mert
+   * mind a ketto `false`-t ad.
+   */
   it("a régi hívó (mezők nélkül) a saját jelzőit kapja", async () => {
     await addCustomerAddress(
-      { isDefaultBilling: true, isDefaultShipping: false },
+      { isDefaultBilling: true, isDefaultShipping: true },
       urlap(CIM),
     )
     const [adat] = sdk.store.customer.createAddress.mock.calls[0]
     expect(adat.is_default_billing).toBe(true)
-    expect(adat.is_default_shipping).toBe(false)
+    expect(adat.is_default_shipping).toBe(true)
     expect(adat.address_name).toBeUndefined()
   })
 
