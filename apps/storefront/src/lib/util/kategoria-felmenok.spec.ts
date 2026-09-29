@@ -47,6 +47,17 @@ describe("a kategória felmenői", () => {
     expect(kategoriaFelmenoi("wys", lyukas).map((f) => f.id)).toEqual(["sps"])
   })
 
+  it("handle vagy név nélküli felmenőnél a lánc ott megáll (halott link helyett)", () => {
+    const handleNelkul = LISTA.map((k) =>
+      k.id === "sps" ? { ...k, handle: null } : k,
+    )
+    expect(kategoriaFelmenoi("wys", handleNelkul)).toEqual([])
+    const nevNelkul = LISTA.map((k) =>
+      k.id === "sps" ? { ...k, name: "" } : k,
+    )
+    expect(kategoriaFelmenoi("wys", nevNelkul)).toEqual([])
+  })
+
   it("a ciklus nem végtelen", () => {
     const kor = [
       { id: "a", name: "A", handle: "a", parent_category_id: "b" },
