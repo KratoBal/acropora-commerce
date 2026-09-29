@@ -33,7 +33,9 @@ import {
 } from "./cookies"
 
 export type CustomerAuthState =
-  | { state: "error"; error: string }
+  // `ertekek`: the submitted values (never the passwords), so the form can
+  // refill after React 19 resets it following the action.
+  | { state: "error"; error: string; ertekek?: Record<string, string> }
   | { state: "verification_required"; email: string }
   | { state: "success" }
   | null
@@ -98,7 +100,10 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
 }
 
 export type ProfilMentesAllapot =
-  { state: "success" } | { state: "error"; error: string } | null
+  | { state: "success" }
+  // `ertekek`: the submitted values, so the form refills after the reset.
+  | { state: "error"; error: string; ertekek: Record<string, string> }
+  | null
 
 /**
  * A PROFIL MENTESE (P5, 257:3): egy urlap, egy "Mentés". A nev ket mezo, a
@@ -112,9 +117,14 @@ export async function saveProfile(
   const first_name = String(formData.get("first_name") ?? "").trim()
   const last_name = String(formData.get("last_name") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim()
+  const ertekek = { first_name, last_name, phone }
 
   if (!first_name || !last_name) {
-    return { state: "error", error: "A vezetéknév és a keresztnév kötelező." }
+    return {
+      state: "error",
+      error: "A vezetéknév és a keresztnév kötelező.",
+      ertekek,
+    }
   }
 
   try {
@@ -122,7 +132,7 @@ export async function saveProfile(
     // the old number.
     await updateCustomer({ first_name, last_name, phone: phone || null })
   } catch (error) {
-    return { state: "error", error: authHibaSzoveg(error) }
+    return { state: "error", error: authHibaSzoveg(error), ertekek }
   }
 
   return { state: "success" }
@@ -232,6 +242,18 @@ export async function signup(
   _currentState: unknown,
   formData: FormData,
 ): Promise<CustomerAuthState> {
+  // The passwords are not sent back: they are typed again.
+  const ertekek = {
+    last_name: String(formData.get("last_name") ?? ""),
+    first_name: String(formData.get("first_name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    aszf: formData.get("aszf") ? "on" : "",
+  }
+  const eredmeny = await regisztral(formData)
+  return eredmeny?.state === "error" ? { ...eredmeny, ertekek } : eredmeny
+}
+
+async function regisztral(formData: FormData): Promise<CustomerAuthState> {
   const password = formData.get("password") as string
 
   // The checkbox and the repeated password are checked on the server too: the
@@ -288,7 +310,12 @@ export async function login(
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  return completeLogin(email, password)
+  const eredmeny = await completeLogin(email, password)
+  // The email is sent back so the form refills after the reset; the password
+  // is not.
+  return eredmeny?.state === "error"
+    ? { ...eredmeny, ertekek: { email: String(email ?? "") } }
+    : eredmeny
 }
 
 // Logs the customer in and reconciles the customer record. The behavior is

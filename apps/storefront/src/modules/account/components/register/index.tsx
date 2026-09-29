@@ -25,6 +25,9 @@ type Props = {
  */
 const Register = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(signup, null)
+  // After a failed submit the fields refill from the submitted values: React 19
+  // resets the form after the action. The passwords are typed again.
+  const beirt = message?.state === "error" ? message.ertekek : undefined
 
   return (
     <AuthKartya
@@ -47,6 +50,7 @@ const Register = ({ setCurrentView }: Props) => {
           cimke="Vezetéknév"
           name="last_name"
           required
+          defaultValue={beirt?.last_name ?? ""}
           autoComplete="family-name"
           data-testid="last-name-input"
         />
@@ -54,6 +58,7 @@ const Register = ({ setCurrentView }: Props) => {
           cimke="Keresztnév"
           name="first_name"
           required
+          defaultValue={beirt?.first_name ?? ""}
           autoComplete="given-name"
           data-testid="first-name-input"
         />
@@ -63,6 +68,7 @@ const Register = ({ setCurrentView }: Props) => {
           type="email"
           required
           autoComplete="email"
+          defaultValue={beirt?.email ?? ""}
           data-testid="email-input"
         />
         <AuthMezo
@@ -86,6 +92,7 @@ const Register = ({ setCurrentView }: Props) => {
             type="checkbox"
             name="aszf"
             required
+            defaultChecked={beirt?.aszf === "on"}
             className="mt-px h-[15px] w-[15px] shrink-0 accent-[var(--acr-color-navy)]"
             data-testid="aszf-checkbox"
           />
