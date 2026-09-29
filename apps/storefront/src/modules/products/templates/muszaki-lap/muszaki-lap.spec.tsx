@@ -478,6 +478,30 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
    * kommentblokk, ami SZO SZERINT idezi a regi alakot. Kommentek nelkul ez az
    * allitas hamisan bukna el a sajat magyarazatatol.
    */
+  /*
+    ES A KESOBBI CIMKE-FORRAS (P2, 3b, 2026-09-29): a vilagos lapon a sor a
+    keszletet mondja, a `keszletSor` szabalyaval (a kategoria-kartyaval
+    kozos, #396). Az orzo fele valtozatlan: a cselekves-terkep NEM lehet a
+    forrasa, es a sotet lap cimke nelkul marad.
+  */
+  it("a váz ágán mindkét kapcsolat-lista a világ szerinti változatot kapja", () => {
+    const ag = forras.slice(
+      forras.indexOf("if (hasznaljaVazat(product, categories)) {"),
+    )
+    expect(ag).toContain(
+      'const vilagosLap = vilagaTermeknek(product, categories) === "vilagos"',
+    )
+    const listak = ag
+      .split("<RelatedProducts")
+      .slice(1)
+      .map((resz) => resz.slice(0, resz.indexOf("/>")))
+      .slice(0, 2)
+    expect(listak).toHaveLength(2)
+    for (const lista of listak) {
+      expect(lista).toContain('valtozat={vilagosLap ? "1b" : undefined}')
+    }
+  })
+
   it("a záró sor nem kap címkét a cselekvés-térképből", () => {
     const kezdet = forras.indexOf("<ZaroSor")
     expect(kezdet).toBeGreaterThan(0)
@@ -488,7 +512,10 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
 
     const elem = forras.slice(kezdet, veg)
     expect(elem).toContain("nev={zarosorNeve(product)}")
-    expect(elem).not.toContain("cimke=")
+    expect(elem).not.toContain("availabilityLabel")
+    expect(elem).toContain(
+      "cimke={vilagosLap ? keszletSor(product).szoveg : undefined}",
+    )
   })
 })
 

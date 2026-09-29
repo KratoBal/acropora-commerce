@@ -415,3 +415,30 @@ export function inventoryKnownOf(product: {
       typeof variant.inventory_quantity === "number",
   )
 }
+
+export type KeszletSor = { szoveg: string; kaphato: boolean }
+
+/**
+ * A KESZLET SORA ugyanazon a szabalyon, mint a termeklap: darabszam CSAK ott
+ * all, ahol a `scarcityCountOf` is kiirna (a leltarig a nulla keszlet nem
+ * jelenti, hogy elfogyott, ezert nem minden kaphato termeknek van szama).
+ */
+export function keszletSor(product: {
+  variants?: Parameters<typeof anyVariantPurchasable>[0]["variants"] &
+    Parameters<typeof inventoryKnownOf>[0]["variants"]
+}): KeszletSor {
+  const allapot = availabilityOf({
+    inStock: anyVariantPurchasable(product),
+    uniquePiece: false,
+    inventoryKnown: inventoryKnownOf(product),
+  })
+  if (allapot !== "KAPHATO") return { szoveg: "Nincs raktáron", kaphato: false }
+  const db =
+    (product.variants?.length ?? 0) === 1
+      ? scarcityCountOf(product.variants?.[0])
+      : null
+  return {
+    szoveg: db ? `Raktáron – ${db} db` : "Rendelhető",
+    kaphato: true,
+  }
+}

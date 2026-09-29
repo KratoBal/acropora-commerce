@@ -59,7 +59,8 @@ describe("a világos terméklap tokenjei", () => {
   })
 
   it("az ár a 192:57 szerint, a világos jelölőre kötve", () => {
-    const ar = blokk(GLOBALS, '[data-vilag="vilagos"] .termeklap-ar {')
+    // A vasarlasi kartya ara: a zarosor sajat, 20 pixeles arat nem erinti.
+    const ar = blokk(GLOBALS, '[data-vilag="vilagos"] #vaz-ar .termeklap-ar {')
     expect(ar).toContain("font-size: 36px")
     expect(ar).toContain("font-weight: 700")
     expect(ar).toContain("letter-spacing: -0.5px")
@@ -86,5 +87,27 @@ describe("a világos terméklap tokenjei", () => {
     expect(TOKENEK).toContain(
       "--termeklap-belyeg-aktiv: var(--acr-color-navy);",
     )
+  })
+
+  /*
+    3b (193:181, 193:202): a kapcsolat-szakaszok felso vonallal es 600/22
+    cimmel, a zarosor a tartalom szelessegeben, feher, keretes, 700/20-as
+    arral.
+  */
+  it("a lap alja a 192:57 szerint", () => {
+    const alja = GLOBALS.slice(GLOBALS.indexOf("A VILAGOS TERMEKLAP ALJA"))
+    expect(alja).toMatch(
+      /\[data-vilag="vilagos"\] #vaz-kiegeszitok,\s*\[data-vilag="vilagos"\] #vaz-hasonlo \{\s*border-top: 1px solid var\(--terv-keret\);\s*padding-top: 31px;/,
+    )
+    expect(alja).toMatch(
+      /> h2 \{\s*font-size: 22px;\s*line-height: 29px;\s*font-weight: 600;\s*margin-bottom: 18px;/,
+    )
+    expect(
+      blokk(alja, '[data-vilag="vilagos"] .termeklap-zarosor .termeklap-ar {'),
+    ).toContain("font-size: 20px")
+    const sav = blokk(alja, '[data-vilag="vilagos"] .termeklap-zarosor {')
+    expect(sav).toContain("max-width: 1352px")
+    expect(sav).toContain("border: 1px solid var(--terv-keret)")
+    expect(sav).toContain("background: var(--terv-hatter-lap)")
   })
 })

@@ -2,6 +2,7 @@ import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { HttpTypes } from "@medusajs/types"
 import Product from "../product-preview"
+import KapcsolatKartya from "./kapcsolat-kartya"
 import {
   KAPCSOLAT_HATAR,
   kapcsolatForras,
@@ -50,6 +51,12 @@ type RelatedProductsProps = {
    * kategoriakat tartalmazza, az oseiket nem -- ezert nem lehet itt levezetni.
    */
   tartalekKategoriaId?: string | null
+  /**
+   * A VILAGOS (MUSZAKI) TERMEKLAP A 192:57 SZERINT (P2, 3b): negy oszlop, 24
+   * pixeles kozzel, a keret sajat kartyajaval (193:185). Nelkule a korabbi
+   * racs es a kozos `ProductPreview` marad.
+   */
+  valtozat?: "1b"
 }
 
 export default async function RelatedProducts({
@@ -58,6 +65,7 @@ export default async function RelatedProducts({
   fejlecNelkul = false,
   kapcsolat = "hasonlo",
   tartalekKategoriaId,
+  valtozat,
 }: RelatedProductsProps) {
   const region = await getRegion(countryCode)
 
@@ -155,13 +163,26 @@ export default async function RelatedProducts({
         </div>
       )}
 
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((product) => (
-          <li key={product.id}>
-            <Product region={region} product={product} />
-          </li>
-        ))}
-      </ul>
+      {valtozat === "1b" ? (
+        <ul
+          className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4"
+          data-testid="kapcsolat-racs-1b"
+        >
+          {products.map((product) => (
+            <li key={product.id}>
+              <KapcsolatKartya product={product} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+          {products.map((product) => (
+            <li key={product.id}>
+              <Product region={region} product={product} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

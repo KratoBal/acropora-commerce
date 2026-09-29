@@ -14,6 +14,7 @@ import {
   availabilityLabel,
   availabilityOf,
   inventoryKnownOf,
+  keszletSor,
   SIMILAR_ITEMS_LABEL,
   similarItemsHref,
   uniquePieceOf,
@@ -27,6 +28,7 @@ import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import { besorolasUt } from "@lib/util/kategoria-fa"
+import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -138,6 +140,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
    * mukodik a vazon belul is.
    */
   if (hasznaljaVazat(product, categories)) {
+    /*
+      A VILAGOS (MUSZAKI) LAP A 192:57 SZERINT (P2, 3b): a kapcsolodo
+      termekek a keret kartyajat kapjak, a zarosor masodik sora a keszletet
+      (193:206). A sotet (2a) lap a P3-ig valtozatlan.
+    */
+    const vilagosLap = vilagaTermeknek(product, categories) === "vilagos"
     return (
       <>
         {/*
@@ -197,6 +205,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                     <RelatedProducts
                       product={product}
                       countryCode={countryCode}
+                      valtozat={vilagosLap ? "1b" : undefined}
                       fejlecNelkul
                       /*
                         A TARTALEK KATEGORIA ITT SZAMOLODIK, ES NEM A
@@ -234,6 +243,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       product={product}
                       countryCode={countryCode}
                       kapcsolat="kiegeszito"
+                      valtozat={vilagosLap ? "1b" : undefined}
                       fejlecNelkul
                     />
                   </Suspense>
@@ -315,32 +325,20 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                     kepUrl={product.thumbnail ?? product.images?.[0]?.url}
                     nev={zarosorNeve(product)}
                     /*
-                      CIMKE NINCS -- ES EZ NEM ELMARADT BEKOTES.
+                      A CIMKE A KESZLET, ES CSAK A VILAGOS LAPON (P2, 3b, a
+                      192:57 193:206 sora szerint).
 
-                      A tervben a masodik sor KESZLET-ALLAPOT. A #342 ezt az
-                      `availabilityLabel` terkepbol toltotte fel, az viszont
-                      CSELEKVES-feliratokat tarol, es igy a sor ugyanazt mondta,
-                      mint a mellette allo gomb. Mind a ket ag igy allt:
-
-                        KAPHATO    cimke "Kosárba"        gomb "Kosárba"
-                                   MERVE a kiszolgalt lapon (2026-09-10,
-                                   NYOS QUANTUM 220 EQ, 1440 szelesseg)
-                        ELFOGYOTT  cimke "Nincs raktáron" gomb "Nincs raktáron"
-                                   a FORRASBOL kovetkezik: az `alsoCselekves`
-                                   harmadik aga ugyanezt a konstanst rajzolja.
-                                   Elo peldanyt erre nem mertem: a ket lap,
-                                   amit megneztem, KAPHATO es ELADVA volt.
-
-                      Nem hibazik es nem hasal el: ket helyen all ugyanaz a szo,
-                      ot centire egymastol.
-
-                      POZITIV KESZLET-MONDATOT NEM IRUNK HELYETTE. Forrasunk
-                      nincs ra (merve 2026-09-07: a bolt minden termeke nulla
-                      keszleten all, tehat a nulla nem meres, hanem az atvitel
-                      hianya), es a mobil sav pontosan ugyanezert all cimke
-                      nelkul. A `ZaroSor` megtartja a propot: a tervbeli sor
-                      letezik, csak a forrasa nincs meg.
+                      Itt korabban CIMKE NEM allt: a #342 a cselekves-
+                      feliratokbol toltotte (a sor ugyanazt mondta, mint a
+                      gomb), es pozitiv keszlet-mondatra akkor nem volt
+                      forras. Azota van egy elfogadott szabaly ugyanerre a
+                      kategoria-kartyan (#396): "Raktáron – N db" csak ott,
+                      ahol a termeklap darabszam-szabalya (`scarcityCountOf`)
+                      is kiirna, kulonben "Rendelhető" vagy "Nincs raktáron"
+                      (`keszletSor`). A sotet lap mobil savja es zarosora a
+                      P3-ig cimke nelkul marad.
                     */
+                    cimke={vilagosLap ? keszletSor(product).szoveg : undefined}
                     ar={<ProductPrice product={product} />}
                     cselekves={alsoCselekves("zarosor")}
                   />

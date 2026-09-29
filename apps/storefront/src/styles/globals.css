@@ -1023,7 +1023,7 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   700/36, -0.5 px betukoz (193:125). A horgony a `ProductPrice` osztalya; a
   sotet (2a) lap a P3-ig valtozatlan.
 */
-[data-vilag="vilagos"] .termeklap-ar {
+[data-vilag="vilagos"] #vaz-ar .termeklap-ar {
   font-size: 36px;
   font-weight: 700;
   line-height: 47px;
@@ -1052,4 +1052,41 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   [data-vilag="vilagos"] .termeklap-belyeg {
     aspect-ratio: 126 / 82;
   }
+}
+
+/*
+  A VILAGOS TERMEKLAP ALJA A 192:57 SZERINT (P2, 3b).
+
+  "Ami még kellhet hozzá" (193:181): nem keretes doboz, hanem egy felso
+  vonallal elvalasztott szakasz, 600/22 cimmel, 18 pixelre a racstol. A
+  "Hasonló termékek" a kereten nincs, de van adata, tehat ugyanigy all.
+
+  Az also osszegzo sav (193:202): a tartalom szelessegeben (1352), feher,
+  korben keretes, 20 pixeles belso margoval. Csak asztalon latszik, mint
+  eddig. A sotet (2a) lap a P3-ig valtozatlan.
+*/
+[data-vilag="vilagos"] #vaz-kiegeszitok,
+[data-vilag="vilagos"] #vaz-hasonlo {
+  border-top: 1px solid var(--terv-keret);
+  padding-top: 31px;
+}
+[data-vilag="vilagos"] #vaz-kiegeszitok > h2,
+[data-vilag="vilagos"] #vaz-hasonlo > h2 {
+  font-size: 22px;
+  line-height: 29px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+/* Az osszegzo sav ara 700/20 (193:207), nem a vasarlasi kartya 36-a. */
+[data-vilag="vilagos"] .termeklap-zarosor .termeklap-ar {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+}
+[data-vilag="vilagos"] .termeklap-zarosor {
+  max-width: 1352px;
+  margin-inline: auto;
+  border: 1px solid var(--terv-keret);
+  background: var(--terv-hatter-lap);
+  padding: 20px;
 }
