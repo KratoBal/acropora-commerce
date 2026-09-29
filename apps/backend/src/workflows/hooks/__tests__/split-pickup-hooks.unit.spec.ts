@@ -121,4 +121,33 @@ describe("completing a cart", () => {
       )
     ).rejects.toThrow(MIXED_CART_MESSAGE)
   })
+
+  it("refuses a cart whose card payment is not its total (P4-3c)", async () => {
+    const graph = async ({ entity, filters }: any) => {
+      if (entity === "cart")
+        return {
+          data: [
+            {
+              id: "cart_1",
+              total: 4950,
+              metadata: {},
+              items: [{ id: "l1", variant_id: "v1", requires_shipping: true }],
+              payment_collection: {
+                payment_sessions: [{ data: { simplepay: { transactionId: 1, orderRef: "r", total: 5000, own: 5000 } } }],
+              },
+            },
+          ],
+        }
+      if (entity === "variant")
+        return { data: [{ id: "v1", product: { id: "p1" } }].filter((v) => filters.id.includes(v.id)) }
+      return { data: [] }
+    }
+
+    await expect(
+      handlers.completeValidate!(
+        { cart: { id: "cart_1", items: [{ id: "l1", variant_id: "v1", requires_shipping: true }] } },
+        { container: { resolve: () => ({ graph }) } }
+      )
+    ).rejects.toThrow("the cart's total is 4950")
+  })
 })

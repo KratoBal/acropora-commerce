@@ -144,7 +144,9 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
       get(id).items.reduce((sum, l) => sum + (PRICE[l.variant_id ?? ""] ?? 0) * l.quantity, 0),
     payerOf: async (id) => ({ customer_email: `${id}@example.hu`, invoice: { name: "Teszt Elek" } }),
     startPayment: async (id, provider, data) => {
-      step(`startPayment ${id} ${provider} ${JSON.stringify(Object.keys(data).filter((k) => k.startsWith("simplepay")))}`)
+      const keys = Object.keys(data).filter((k) => k.startsWith("simplepay"))
+      const jointTotal = (data.simplepay_joint as { total?: number } | undefined)?.total
+      step(`startPayment ${id} ${provider} ${JSON.stringify(keys)}${jointTotal !== undefined ? ` ${jointTotal}` : ""}`)
       const c = get(id)
       c.payment_provider_id = provider
       c.shared_payment = true
@@ -412,7 +414,7 @@ describe("starting one card payment for a mixed cart", () => {
       "deleteLines cart_1 l2",
       "applyPromotions cart_pickup_1 TAVASZ",
       "setStorePickup cart_pickup_1",
-      `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"]`,
+      `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"] 21950`,
       `startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`,
     ])
   })
@@ -445,7 +447,7 @@ describe("starting one card payment for a mixed cart", () => {
 
     expect(shop.log).toEqual([
       "applyPromotions cart_pickup_1 TAVASZ",
-      `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"]`,
+      `startPayment cart_1 ${SIMPLEPAY} ["simplepay_joint"] 21950`,
       `startPayment cart_pickup_1 ${SIMPLEPAY} ["simplepay_joined"]`,
     ])
     expect(shop.carts.size).toBe(2)
