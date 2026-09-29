@@ -124,6 +124,19 @@ describe("a kosár-hivatkozás a fejlécben", () => {
    * A MEGJEGYZESEKET KISZEDJUK, kulonben a sajat magyarazo szovegunk lenne a
    * talalat: a fenti bekezdes maga is leirja a keresett szot.
    */
+  it("mobilon az üres kosár száma halvány, a nem üresé a címszín (220:3, 226:123)", () => {
+    const { rerender } = render(<KosarLink darab={0} />)
+    const ures = screen.getByTestId("nav-cart-link").className.split(" ")
+    expect(ures).toContain("text-acr-mode-text")
+    expect(ures).toContain("small:text-acr-mode-heading")
+    expect(ures).not.toContain("text-acr-mode-heading")
+
+    rerender(<KosarLink darab={2} />)
+    const teli = screen.getByTestId("nav-cart-link").className.split(" ")
+    expect(teli).toContain("text-acr-mode-heading")
+    expect(teli).not.toContain("text-acr-mode-text")
+  })
+
   it("a nav Suspense-tartaléka ezt a komponenst használja, nem másolatot", () => {
     const nyers = readFileSync(
       join(__dirname, "..", "..", "templates", "nav", "index.tsx"),

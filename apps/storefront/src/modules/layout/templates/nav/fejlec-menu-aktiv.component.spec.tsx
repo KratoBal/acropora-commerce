@@ -1,15 +1,39 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+const allapot = vi.hoisted(() => ({
+  utvonal: "/hu/categories/halak/tengeri-halak",
+}))
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
-  usePathname: () => "/hu/categories/halak/tengeri-halak",
+  usePathname: () => allapot.utvonal,
 }))
 
 import { FejlecMenu } from "./fejlec-menu"
 
-const gyoker = (id: string, name: string, handle: string) =>
-  ({ id, name, handle, category_children: [] }) as never
+const gyoker = (id: string, name: string, handle: string) => ({
+  tipus: "gyoker" as const,
+  felirat: name,
+  kategoria: { id, name, handle, category_children: [] } as never,
+})
+const PONTOK = [
+  gyoker("k1", "Korallok", "korallok"),
+  gyoker("k2", "Halak", "halak"),
+  {
+    tipus: "oldal" as const,
+    felirat: "Vízkezelés",
+    handle: "vízkezelés---termékek",
+  },
+  { tipus: "hamarosan" as const, felirat: "Tudástár", tema: "tudastar" },
+]
+const kiemeltek = () =>
+  Array.from(
+    document.querySelectorAll(
+      '[data-testid^="category-menu-trigger-"], [data-testid^="fejlec-menu-link-"]',
+    ),
+  )
+    .filter((e) => e.className.includes("font-semibold"))
+    .map((e) => e.textContent)
 
 /**
  * AZ AKTUALIS GYOKER KIEMELESE (P1b): a Figma a hal-listan a "Halak" pontot
@@ -23,20 +47,20 @@ describe("a fejléc-menü az aktuális gyökeret kiemeli", () => {
   afterEach(cleanup)
 
   it("a Halak lapon pontosan a Halak pont kiemelt", () => {
-    render(
-      <FejlecMenu
-        kategoriak={[
-          gyoker("k1", "Korallok", "korallok"),
-          gyoker("k2", "Halak", "halak"),
-          gyoker("k3", "Termékek", "termekek"),
-        ]}
-      />,
-    )
-    const kiemelt = ["Korallok", "Halak", "Termékek"].filter((nev) =>
-      screen
-        .getByTestId(`category-menu-trigger-${nev}`)
-        .className.includes("font-semibold"),
-    )
-    expect(kiemelt).toEqual(["Halak"])
+    allapot.utvonal = "/hu/categories/halak/tengeri-halak"
+    render(<FejlecMenu pontok={PONTOK} />)
+    expect(kiemeltek()).toEqual(["Halak"])
+  })
+
+  it("az alkategória-oldalon a hozzá tartozó link kiemelt", () => {
+    allapot.utvonal = "/hu/categories/v%C3%ADzkezel%C3%A9s---term%C3%A9kek"
+    render(<FejlecMenu pontok={PONTOK} />)
+    expect(kiemeltek()).toEqual(["Vízkezelés"])
+  })
+
+  it("a Hamarosan lapon a témája kiemelt", () => {
+    allapot.utvonal = "/hu/hamarosan/tudastar"
+    render(<FejlecMenu pontok={PONTOK} />)
+    expect(kiemeltek()).toEqual(["Tudástár"])
   })
 })

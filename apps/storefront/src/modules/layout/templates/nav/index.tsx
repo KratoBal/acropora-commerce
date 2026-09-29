@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 
 import { listNonEmptyRootCategories } from "@lib/data/categories"
-import { fejlecSorrend } from "@lib/util/fejlec-sorrend"
+import { fejlecMenuPontok } from "@lib/util/fejlec-menu-pontok"
 import { KosarLink } from "@modules/layout/components/cart-dropdown/kosar-link"
 import { getRegion } from "@lib/data/regions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -170,6 +170,15 @@ import CartButton from "@modules/layout/components/cart-button"
 const BIZALMI_BAL =
   "Élő megérkezési garancia · Élőállat-szállítás minden szerdán"
 /**
+ * A KANONIKUS KERET SAJAT BAL SZOVEGE (217:42), acrobot dontese
+ * (2026-09-29 07:27): igaz allitas (a handoff uzleti szabalya: elo allatnal
+ * csak szemelyes atvetel), tehat a mi szovegeink MELLE kerul, ha elfer. Elfer:
+ * a sav 1352 pixelebol a ket oldal egyutt kb. 1050-et foglal (merve a kirakaton).
+ * A Figma jobb oldali "Árukereső 4,9 / 5 · 312 értékelés" mintaszoveg; kitalalt
+ * ertekelesszam nem kerulhet a vevo ele, ott a mi tanusitvanyunk marad.
+ */
+const BIZALMI_ATVETEL = "Élő állat: kizárólag személyes átvétel"
+/**
  * A TANUSITVANY ES A KET SZAMA -- STATIKUS ERTEK, MERT NINCS LEKERDEZESUNK.
  *
  * Balazs szava (2026-09-09 11:06:53Z): "az jelenleg 4.8 213 ertekelesbol", es
@@ -236,6 +245,9 @@ const KERESO_HELYKITOLTO = "Keresés termékre, fajra, márkára, cikkszámra"
 /** A Figma fejlec-frame-jeinek jobb oldali szovege (234:37, 253:58). */
 const FIOK_FELIRAT = "Fiók"
 
+/** A kereso sav szakerto-gombja (217:69); celoldal meg nincs, a Hamarosan lapra visz. */
+const SZAKERTO_FELIRAT = "Kérdezz a szakértőnktől"
+
 export default async function Nav({ countryCode }: { countryCode?: string }) {
   /**
    * A MENU A VALODI GYOKEREKBOL EPUL, DE CSAK A NEM URESEKBOL.
@@ -248,11 +260,11 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
     ? await listNonEmptyRootCategories(region.id)
     : { gyokerek: [], nevek: new Map<string, string>() }
   /*
-    A MENU SORRENDJE Balazs dontese (2026-09-09): Termékek, Halak, Korallok,
-    Gerinctelenek -- asztalon es mobilon egyarant. A gyokerek adatbol jonnek,
-    csak a sorrendjuk ez (`fejlecSorrend`); ismeretlen uj gyoker a vegere kerul.
+    A MENU A KANONIKUS KERETBOL (215:41, Balazs 2026-09-29: "a menu is minden
+    elemevel"): nyolc pont, a keret sorrendjeben, asztalon es mobilon. A
+    katalogus csak azt donti el, hova mutat egy pont (`fejlecMenuPontok`).
   */
-  const menuGyokerek = fejlecSorrend(menuAdat.gyokerek)
+  const menuPontok = fejlecMenuPontok(menuAdat.gyokerek)
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
@@ -263,98 +275,156 @@ export default async function Nav({ countryCode }: { countryCode?: string }) {
         jelolon at a lap sotet vilaga (termeklap) vagy Reef-jeloloje
         (kategorialap) atkapcsolja, lasd `acropora-tokens.css`.
 
-        A Figma kanonikus frame-jei, amikbol a meretek jonnek:
-          asztali Commerce   253:58 (Search / No Results), 201:7 (Cart 3a)
-          asztali Reef       234:23 (Fish listing), 217:46, 239:25
-          mobil Commerce     196:4 (Lighting PDP 1b mobile)
-          mobil Reef         226:123 (WYSIWYG listing mobile)
-        Az elteresek es az okuk: `docs/P1B-HEADER.md`.
+        A KANONIKUS KERETEK (Balazs, 2026-09-29 05:23 UTC): asztalon a 215:41
+        (WYSIWYG Coral PDP 2a Hybrid), mobilon a 220:3. Asztalon HAROM sav
+        all, egymas alatt, mindegyik teljes szelessegu, sajat also kerettel:
+          bizalmi sav   217:41   36 px
+          fejlec sav    217:46   76 px   marka, menu, (ures 370 px), Fiók, Kosár
+          kereso sav    217:62   70 px   mezo + szakerto-gomb
+        Mobilon csak a fejlec sav all (220:4, 56 px). Az elteresek es az okuk:
+        `docs/P1B-HEADER.md`.
       */}
       <header
-        className="relative w-full border-b border-acr-mode-border bg-acr-mode-bg font-acr-sans text-acr-mode-text px-[18px] small:px-[44px]"
+        className="relative w-full bg-acr-mode-bg font-acr-sans text-acr-mode-text"
         data-fejlec
         data-testid="fejlec"
       >
         <div
-          className="mx-auto hidden w-full items-center justify-between border-b border-acr-mode-border text-[12.5px] small:flex"
-          style={{
-            height: "var(--fejlec-bizalmi-magassag)",
-            maxWidth: "1352px",
-          }}
+          className="hidden border-b border-acr-mode-border px-[44px] small:block"
+          style={{ height: "var(--fejlec-bizalmi-magassag)" }}
           data-testid="fejlec-bizalmi-sav"
           data-tanusitvany-allapot={BIZALMI_TANUSITVANY_DATUM}
         >
-          <p>{BIZALMI_BAL}</p>
-          <p className="flex items-center gap-6">
-            <span>{BIZALMI_TANUSITVANY}</span>
-            <span className="font-semibold text-acr-heritage">
-              {BIZALMI_SEGITSEG}
-            </span>
-          </p>
+          <div className="mx-auto flex h-full w-full max-w-[1352px] items-center justify-between text-[12.5px] leading-[16px]">
+            {/*
+              1024 ES 1280 KOZOTT AZ ATVETELI MONDAT NEM FER KI: a ket oldal
+              egyutt ~1000 pixel, a sav belseje 1024-nel 936 (merve: a szoveg
+              ket sorba tort, 32 px). A Figma csak 1440-et rajzol; ez a mi
+              reszponziv szabalyunk.
+            */}
+            <p>
+              <span className="hidden medium:inline">{BIZALMI_ATVETEL} · </span>
+              {BIZALMI_BAL}
+            </p>
+            <p className="flex items-center gap-6">
+              <span>{BIZALMI_TANUSITVANY}</span>
+              <span className="font-semibold text-acr-heritage">
+                {BIZALMI_SEGITSEG}
+              </span>
+            </p>
+          </div>
         </div>
-        <nav
-          className="mx-auto flex w-full items-center gap-[14px] small:gap-[28px]"
-          style={{
-            height: "calc(var(--fejlec-magassag) - 1px)",
-            maxWidth: "1352px",
-          }}
-        >
-          <MobilMenu
-            kategoriak={menuGyokerek}
-            nevek={menuAdat.nevek}
-            keresoCel={countryCode ? `/${countryCode}/store` : "/store"}
-          />
-          <LocalizedClientLink
-            href="/"
-            className="flex min-w-0 shrink-0 items-center gap-[14px] small:gap-3"
-            data-testid="nav-store-link"
+        <div className="border-b border-acr-mode-border px-[18px] small:px-[44px]">
+          <nav
+            /*
+              A NYOLC MENUPONT 1024-NEL 28 PIXELLEL NEM FERT EL (merve: a menu
+              620 szeles, a tartalma 648). 1280 alatt szukebb kozok, folotte a
+              Figma 28 es 18 pixele.
+            */
+            className="mx-auto flex w-full items-center gap-[14px] small:gap-[20px] medium:gap-[28px]"
+            style={{
+              height: "calc(var(--fejlec-magassag) - 1px)",
+              maxWidth: "1352px",
+            }}
           >
-            <span
-              className="block h-[22px] w-[22px] shrink-0 bg-acr-heritage small:h-[30px] small:w-[30px]"
-              aria-hidden="true"
+            <MobilMenu
+              pontok={menuPontok}
+              keresoCel={countryCode ? `/${countryCode}/store` : "/store"}
             />
-            <span className="text-[16px] font-bold leading-[21px] tracking-[1.6px] text-acr-mode-heading small:text-[20px] small:leading-[26px] small:tracking-[2.1px]">
-              ACROPORA
-            </span>
-          </LocalizedClientLink>
-          <div className="hidden min-w-0 small:flex">
-            <FejlecMenu kategoriak={menuGyokerek} nevek={menuAdat.nevek} />
-          </div>
-          <form
-            action={countryCode ? `/${countryCode}/store` : "/store"}
-            method="get"
-            className={
-              "ml-auto hidden h-[32px] w-full max-w-[370px] items-center border-b border-acr-mode-border small:flex " +
-              "focus-within:outline focus-within:outline-2 " +
-              "focus-within:outline-offset-4 " +
-              "focus-within:[outline-color:var(--acr-color-heritage)]"
-            }
-            data-testid="fejlec-kereso"
-          >
-            <label className="sr-only" htmlFor="fejlec-kereso-mezo">
-              {KERESO_HELYKITOLTO}
-            </label>
-            <input
-              id="fejlec-kereso-mezo"
-              type="search"
-              name="q"
-              placeholder={KERESO_HELYKITOLTO}
-              className="h-full w-full bg-transparent text-[13px] text-acr-mode-heading outline-none placeholder:text-acr-mode-text"
-            />
-          </form>
-          <div className="ml-auto flex shrink-0 items-center gap-[28px] text-[13px] leading-[17px] small:ml-0">
             <LocalizedClientLink
-              href="/account"
-              className="hidden small:inline"
-              data-testid="nav-account-link"
+              href="/"
+              className="flex min-w-0 shrink-0 items-center gap-[14px] small:gap-3"
+              data-testid="nav-store-link"
             >
-              {FIOK_FELIRAT}
+              <span
+                className="block h-[22px] w-[22px] shrink-0 bg-acr-heritage small:h-[30px] small:w-[30px]"
+                aria-hidden="true"
+              />
+              <span className="text-[16px] font-bold leading-[21px] tracking-[1.5px] text-acr-mode-heading small:text-[20px] small:leading-[26px] small:tracking-[2.1px]">
+                ACROPORA
+              </span>
             </LocalizedClientLink>
-            <Suspense fallback={<KosarLink darab={0} />}>
-              <CartButton />
-            </Suspense>
+            <div className="hidden min-w-0 small:flex">
+              <FejlecMenu pontok={menuPontok} nevek={menuAdat.nevek} />
+            </div>
+            {/*
+              A 370 PIXELES HELY A FEJLEC SAVBAN URES (217:59 "nav-spacer"):
+              a kereso a sajat savjaban all, alatta. A P1b ide tette, ez
+              tevedes volt (2026-09-29-en visszamerve, minden Reef keretben).
+            */}
+            <div className="ml-auto flex shrink-0 items-center gap-[28px] text-[13px] leading-[17px]">
+              <LocalizedClientLink
+                href="/account"
+                className="hidden small:inline"
+                data-testid="nav-account-link"
+              >
+                {FIOK_FELIRAT}
+              </LocalizedClientLink>
+              <Suspense fallback={<KosarLink darab={0} />}>
+                <CartButton />
+              </Suspense>
+            </div>
+          </nav>
+        </div>
+        <div
+          className="hidden border-b border-acr-mode-border px-[44px] small:block"
+          style={{ height: "var(--fejlec-kereso-magassag)" }}
+          data-testid="fejlec-kereso-sav"
+        >
+          <div className="mx-auto flex h-full w-full max-w-[1352px] items-center gap-3">
+            <form
+              action={countryCode ? `/${countryCode}/store` : "/store"}
+              method="get"
+              className={
+                "flex h-[46px] min-w-0 flex-1 items-center gap-[10px] border border-acr-mode-border px-[15px] " +
+                "focus-within:outline focus-within:outline-2 " +
+                "focus-within:outline-offset-2 " +
+                "focus-within:[outline-color:var(--acr-color-heritage)]"
+              }
+              style={{ background: "var(--fejlec-mezo-hatter)" }}
+              data-testid="fejlec-kereso"
+            >
+              <svg
+                viewBox="0 0 18 18"
+                className="h-[18px] w-[18px] shrink-0 text-acr-mode-text"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="8.25"
+                  cy="8.25"
+                  r="5.25"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.35"
+                />
+                <path
+                  d="M12.25 12.25 15 15"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.35"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <label className="sr-only" htmlFor="fejlec-kereso-mezo">
+                {KERESO_HELYKITOLTO}
+              </label>
+              <input
+                id="fejlec-kereso-mezo"
+                type="search"
+                name="q"
+                placeholder={KERESO_HELYKITOLTO}
+                className="h-full w-full bg-transparent text-[14px] text-acr-mode-heading outline-none placeholder:text-acr-mode-text"
+              />
+            </form>
+            <LocalizedClientLink
+              href="/hamarosan/szakerto"
+              className="flex h-[46px] w-[220px] shrink-0 items-center justify-center border border-acr-heritage text-[13px] font-semibold leading-[17px] text-acr-mode-heading"
+              data-testid="fejlec-szakerto"
+            >
+              {SZAKERTO_FELIRAT}
+            </LocalizedClientLink>
           </div>
-        </nav>
+        </div>
       </header>
     </div>
   )

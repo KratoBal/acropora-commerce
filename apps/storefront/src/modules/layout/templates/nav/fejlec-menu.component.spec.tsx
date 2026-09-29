@@ -44,6 +44,18 @@ const categories = [
   root("Gerinctelenek", [{ name: "Rákok" }]),
 ]
 /**
+ * A MENU PONTJAI: a fixtura minden gyokere egy "gyoker" tipusu pont, a nevevel
+ * feliratkent. Ezek a lenyilo viselkedeset merik; a feloldast (melyik pont
+ * milyen tipusu) a `fejlecMenuPontok` sajat specje meri.
+ */
+const gyokerPontok = (lista: unknown[]) =>
+  lista.map((c) => ({
+    tipus: "gyoker" as const,
+    felirat: (c as { name: string }).name,
+    kategoria: c as never,
+  }))
+
+/**
  * A MEGJELENITENDO NEVEK TERKEPE, KEZZEL -- ES SZANDEKOSAN NEM A SZABALYBOL.
  *
  * A roviditesi szabalyt (`megjelenitendoNevek`) a sajat specje meri. ITT az a
@@ -57,7 +69,7 @@ const NEVEK = new Map<string, string>([
 ])
 
 const open = () => {
-  render(<FejlecMenu kategoriak={categories} nevek={NEVEK} />)
+  render(<FejlecMenu pontok={gyokerPontok(categories)} nevek={NEVEK} />)
   fireEvent.click(screen.getByTestId("category-menu-trigger-Termékek"))
 }
 
@@ -166,7 +178,7 @@ describe("a kis lenyíló kategóriamenü", () => {
   })
 
   it("a kategória-sáv magán belül görget", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+    render(<FejlecMenu pontok={gyokerPontok(categories)} />)
 
     const sav = document.querySelector('nav[aria-label="Kategóriák"]')
 
@@ -176,7 +188,7 @@ describe("a kis lenyíló kategóriamenü", () => {
   })
 
   it("a sáv nem visel shrink-0 osztályt", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+    render(<FejlecMenu pontok={gyokerPontok(categories)} />)
 
     const sav = document.querySelector('nav[aria-label="Kategóriák"]')
 
@@ -194,7 +206,7 @@ describe("a kis lenyíló kategóriamenü", () => {
    * a teljes. Egy elemenkenti levezetes epp ott adna rosszat.
    */
   it("a második hasáb a kapott rövid nevet mutatja", () => {
-    render(<FejlecMenu kategoriak={categories} nevek={NEVEK} />)
+    render(<FejlecMenu pontok={gyokerPontok(categories)} nevek={NEVEK} />)
     fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
 
     const link = screen.getByTestId("category-menu-category-link")
@@ -203,7 +215,7 @@ describe("a kis lenyíló kategóriamenü", () => {
   })
 
   it("a harmadik szint is a kapott nevet mutatja", () => {
-    render(<FejlecMenu kategoriak={categories} nevek={NEVEK} />)
+    render(<FejlecMenu pontok={gyokerPontok(categories)} nevek={NEVEK} />)
     fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
     fireEvent.click(screen.getByTestId("category-menu-category-expand"))
 
@@ -225,7 +237,7 @@ describe("a kis lenyíló kategóriamenü", () => {
   it("ütköző névnél a teljes alakot mutatja", () => {
     render(
       <FejlecMenu
-        kategoriak={categories}
+        pontok={gyokerPontok(categories)}
         nevek={new Map([["Halak-Gébek - Halak", "Gébek - Halak"]])}
       />,
     )
@@ -244,7 +256,7 @@ describe("a kis lenyíló kategóriamenü", () => {
    * megszuntet. A teljes nev sosem ketertelmu.
    */
   it("térkép nélkül a teljes nevet mutatja", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+    render(<FejlecMenu pontok={gyokerPontok(categories)} />)
     fireEvent.click(screen.getByTestId("category-menu-trigger-Halak"))
 
     expect(
@@ -253,45 +265,54 @@ describe("a kis lenyíló kategóriamenü", () => {
   })
 
   /*
-    A LISTA ADATBOL JON (P1b, 2026-09-29). A fenti fejlec-megjegyzes nyitott
-    kerdese (`659272df`: a negy nev tartalmi szabaly volt-e) eldolt: Balazs
-    szabalya, hogy a kategoriafa adatbol jojjon, ne legyen beegetve (a P1b
-    hatokore, acrobot 24348). A menu tehat a kapott gyokereket mutatja, a kapott
-    sorrendben.
+    A LISTA A FIGMA KERETBOL JON (2026-09-29, 215:41; Balazs: "a menu is minden
+    elemevel"). A fenti nyitott kerdes (`659272df`) igy dolt el: a nyolc pont
+    es a sorrendjuk a `fejlecMenuPontok`-ban all, es ott mert. Itt az a
+    kerdes, hogy a menu a KAPOTT pontokat mutatja-e, a kapott sorrendben, es
+    hogy a nem-gyoker pont LINK-e, nem lenyilo.
   */
   /** A fixtura `never`-kent tipizalt; a nevet innen olvassuk ki. */
   const fixturaNevek = (lista: unknown[]) =>
     lista.map((c) => (c as { name: string }).name)
 
-  it("a fejléc a kapott gyökereket kínálja, névre pontosan", () => {
-    render(<FejlecMenu kategoriak={categories} />)
+  it("a fejléc a kapott pontokat kínálja, a feliratukkal", () => {
+    render(<FejlecMenu pontok={gyokerPontok(categories)} />)
 
-    expect(gyokerNevek().slice().sort()).toEqual(
-      fixturaNevek(categories).sort(),
-    )
+    expect(gyokerNevek()).toEqual(fixturaNevek(categories))
   })
 
-  it("a gyökerek a kapott sorrendben állnak", () => {
-    render(<FejlecMenu kategoriak={[...categories].reverse()} />)
+  it("a pontok a kapott sorrendben állnak", () => {
+    render(<FejlecMenu pontok={gyokerPontok([...categories].reverse())} />)
 
     expect(gyokerNevek()).toEqual(fixturaNevek([...categories].reverse()))
   })
 
-  /**
-   * ES A FORDITOTTJA ANNAK, AMI ITT KORABBAN ALLT: a fa otodik gyokere IS
-   * bekerul. Korabban ez az allitas azt varta, hogy NE jelenjen meg (a kezzel
-   * valogatott lista es a fa kulonbsege). Mostantol a lista maga a fa: egy
-   * beegetett nevsor pontosan ezen buknek el.
-   */
-  it("a fa ötödik gyökere is a fejlécbe kerül", () => {
+  it("az oldal- és a Hamarosan-pont link, nem lenyíló", () => {
     render(
       <FejlecMenu
-        kategoriak={[...categories, root("Édesvízi akvarisztika")] as never}
+        pontok={[
+          ...gyokerPontok(categories.slice(0, 1)),
+          {
+            tipus: "oldal",
+            felirat: "Vízkezelés",
+            handle: "vízkezelés---termékek",
+          },
+          { tipus: "hamarosan", felirat: "Tudástár", tema: "tudastar" },
+        ]}
       />,
     )
 
-    expect(gyokerNevek()).toHaveLength(categories.length + 1)
-    expect(gyokerNevek()).toContain("Édesvízi akvarisztika")
+    expect(gyokerNevek()).toEqual(["Termékek"])
+    const oldal = screen.getByTestId("fejlec-menu-link-Vízkezelés")
+    const hamarosan = screen.getByTestId("fejlec-menu-link-Tudástár")
+    expect(oldal.tagName).toBe("A")
+    expect(oldal.getAttribute("href")).toBe(
+      "/hu/categories/vízkezelés---termékek",
+    )
+    expect(hamarosan.getAttribute("href")).toBe("/hu/hamarosan/tudastar")
+    expect(oldal.getAttribute("aria-expanded")).toBeNull()
+    expect(oldal.className).toContain("text-[13.5px]")
+    expect(hamarosan.className).toContain("font-normal")
   })
 
   it("a rögzített menüpont alatt megjelenik a három hasáb", () => {
@@ -332,7 +353,7 @@ describe("a kis lenyíló kategóriamenü", () => {
   */
   const balSzelre = (px: number) => {
     cleanup()
-    render(<FejlecMenu kategoriak={categories} />)
+    render(<FejlecMenu pontok={gyokerPontok(categories)} />)
     const gomb = screen.getByTestId("category-menu-trigger-Termékek")
     gomb.getBoundingClientRect = () =>
       ({
