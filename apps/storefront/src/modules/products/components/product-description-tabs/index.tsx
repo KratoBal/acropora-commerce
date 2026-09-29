@@ -4,6 +4,13 @@ import { useId, useState } from "react"
 
 type ProductDescriptionTabsProps = {
   description: string | null
+  /**
+   * A VILAGOS (MUSZAKI) LAP A 192:57 SZERINT (P2, 2026-09-29): a "Leírás" all
+   * ELOL es aktivan (193:106), a ful-sav egyetlen fulnel is latszik, es a fulek
+   * a keret meretei szerint (193:105). Nelkule a korabbi terv sorrendje es
+   * alakja marad (a sotet lap, P3).
+   */
+  valtozat?: "1b"
 }
 
 type Tab = {
@@ -74,7 +81,9 @@ const hasVisibleContent = (html: string) =>
  */
 const ProductDescriptionTabs = ({
   description,
+  valtozat,
 }: ProductDescriptionTabsProps) => {
+  const egyB = valtozat === "1b"
   const baseId = useId()
   const tables = description?.match(TABLE_PATTERN) ?? []
   const prose = description?.replace(TABLE_PATTERN, "") ?? ""
@@ -101,18 +110,15 @@ const ProductDescriptionTabs = ({
 
     (Forras: exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html)
   */
-  const tabs: Tab[] = [
-    ...(tables.length
-      ? [
-          {
-            label: "Műszaki adatok",
-            rovidCimke: "Adatok",
-            html: tables.join(""),
-          },
-        ]
-      : []),
-    ...(hasVisibleContent(prose) ? [{ label: "Leírás", html: prose }] : []),
-  ]
+  const adatFul: Tab[] = tables.length
+    ? [{ label: "Műszaki adatok", rovidCimke: "Adatok", html: tables.join("") }]
+    : []
+  const leirasFul: Tab[] = hasVisibleContent(prose)
+    ? [{ label: "Leírás", html: prose }]
+    : []
+  const tabs: Tab[] = egyB
+    ? [...leirasFul, ...adatFul]
+    : [...adatFul, ...leirasFul]
   const [activeIndex, setActiveIndex] = useState(0)
 
   /*
@@ -130,7 +136,7 @@ const ProductDescriptionTabs = ({
     tovabbra is a regi bolte, es a megjelenest a lap vilaga adja.
   */
   if (!tabs.length) return null
-  if (tabs.length === 1) {
+  if (tabs.length === 1 && !egyB) {
     return (
       <div
         className="leiras-tartalom text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
@@ -144,7 +150,11 @@ const ProductDescriptionTabs = ({
   return (
     <div data-testid="product-description-tabs">
       <div
-        className="flex border-b border-[var(--terv-keret)]"
+        className={
+          egyB
+            ? "flex gap-7 border-b border-[var(--terv-keret)] pt-5"
+            : "flex border-b border-[var(--terv-keret)]"
+        }
         role="tablist"
         aria-label="Termékadatok"
       >
@@ -160,7 +170,11 @@ const ProductDescriptionTabs = ({
               id={`${baseId}-tab-${index}`}
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveIndex(index)}
-              className={`px-4 py-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-b-2 border-[var(--terv-szoveg)] text-[var(--terv-szoveg)]" : "text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`}
+              className={
+                egyB
+                  ? `-mb-px border-b-2 pb-0 text-[15px] leading-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-[var(--terv-szoveg)] font-semibold text-[var(--terv-szoveg)]" : "border-transparent font-medium text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`
+                  : `px-4 py-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--terv-kiemel)] ${selected ? "border-b-2 border-[var(--terv-szoveg)] text-[var(--terv-szoveg)]" : "text-[var(--terv-szoveg-halvany)] hover:text-[var(--terv-szoveg)]"}`
+              }
             >
               {/*
                 KET FELIRAT, EGY GOMB -- ES NEM KET GOMB.
@@ -189,7 +203,7 @@ const ProductDescriptionTabs = ({
         id={`${baseId}-panel-${activeIndex}`}
         role="tabpanel"
         aria-labelledby={`${baseId}-tab-${activeIndex}`}
-        className="leiras-tartalom pt-4 text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]"
+        className={`leiras-tartalom ${egyB ? "pt-[18px]" : "pt-4"} text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]`}
         dangerouslySetInnerHTML={{ __html: activeTab.html }}
       />
     </div>

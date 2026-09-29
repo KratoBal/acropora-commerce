@@ -53,6 +53,21 @@ On desktop (from `lg`, 1024 px), light page only:
 - The dark (2a) page is unchanged: its photo box keeps the 1 px border and 16 px padding (measured on the coral product page).
 - The video thumbnail (`193:83`) is not built: no product has a video.
 
+## 3a-3: the tab bar
+
+`192:57` shows a tab bar above the description (`193:104`): "Leírás" first and active, then Műszaki adatok, Spektrum & PAR, Értékelések and Letöltések. The earlier design put the data tab first, and hid the bar when there was only one tab.
+
+On the light page (the caller passes `valtozat="1b"` when the product is not livestock):
+- **Order:** "Leírás" first and active; "Műszaki adatok" (the tables pulled out of the description) second, when there are any.
+- **Bar:** shown even with a single tab, 42 px high.
+- **Tabs:** 15 px, active 600 in ink with a 2 px underline, inactive 500 in slate, 28 px apart; content 18 px below.
+- **Box:** the tabs section has no box on the light page (`vilagosbanKeretNelkul`).
+- **Dark page:** keeps the earlier order, the single-tab form and its box (P3).
+
+Measured locally on `radion-xr15-g6-pro-95w`: the bar is 42 px, "Leírás" is 15 px / 600 / 2 px underline, and the section has 0 border and 0 padding. The coral product page is unchanged (1 px border, 16 px padding, no bar).
+
+The other tabs (Spektrum & PAR, Értékelések, Letöltések) have no data; see the table below. The description's content is the old shop's HTML and is not reformatted here.
+
 ### Left out (no data or no feature), for the whole 1b page
 
 | Frame element | Why |

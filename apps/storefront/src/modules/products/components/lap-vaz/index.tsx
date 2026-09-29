@@ -121,6 +121,12 @@ type VazSzakasz = {
    * Ugyanaz a 34 pixel, ugyanaz a dontes: itt nem dontom el helyette.
    */
   mobilTeljesSzelesseg?: boolean
+  /**
+   * A VILAGOS LAPON KERET NELKUL (P2, 2026-09-29). A kanonikus 192:57 bal
+   * oszlopaban a ful-sav es a tartalma nem keretes doboz (193:104); a sotet
+   * (2a) lap a P3-ig a keretet tartja.
+   */
+  vilagosbanKeretNelkul?: boolean
 }
 
 /**
@@ -399,6 +405,7 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     cim: "",
     varakozo: "Leírás és műszaki adatok",
     oszlop: "bal",
+    vilagosbanKeretNelkul: true,
   },
   /*
     A `muszaki-adatok` SZAKASZ KIKERULT, ES NEM AZERT, MERT URES VOLT.
@@ -1731,7 +1738,12 @@ const LapVaz = ({
                   <VazDoboz
                     key={szakasz.kulcs}
                     szakasz={szakasz}
-                    keretNelkul={kozos || Boolean(szakasz.keretNelkul)}
+                    keretNelkul={
+                      kozos ||
+                      Boolean(szakasz.keretNelkul) ||
+                      (vilag === "vilagos" &&
+                        Boolean(szakasz.vilagosbanKeretNelkul))
+                    }
                     jelzesek={jelzesek}
                   >
                     {tartalom[szakasz.kulcs]}

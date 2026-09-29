@@ -241,3 +241,61 @@ describe("a fülek színei a terv tokenjein állnak", () => {
     expect(aktiv?.className).not.toContain("border-ui-fg-interactive")
   })
 })
+
+/*
+  AZ 1b VALTOZAT (192:57, P2, 2026-09-29): a vilagos (muszaki) lapon a
+  "Leírás" all ELOL es aktivan (193:106), a ful-sav egyetlen fulnel is
+  latszik, es a fulek a keret meretei szerint. A sotet lap (valtozat nelkul)
+  a korabbi sorrendet es alakot tartja.
+
+  MI PIROSIT: ha az 1b-ben az adat-ful all elol; ha egy fulnel eltunik a sav;
+  ha az aktiv ful nem 600-as es nem 15 pixeles; ha a valtozat nelkuli alak
+  megvaltozik.
+*/
+describe("az 1b fül-sáv (192:57)", () => {
+  const fulek = () =>
+    screen
+      .getAllByRole("tab")
+      .map((t) => [t.textContent, t.getAttribute("aria-selected")])
+
+  it("a Leírás áll elöl és aktívan, az adat utána", () => {
+    render(
+      <ProductDescriptionTabs description={PROZA + TABLAZAT} valtozat="1b" />,
+    )
+    expect(fulek()).toEqual([
+      ["Leírás", "true"],
+      ["AdatokMűszaki adatok", "false"],
+    ])
+    expect(screen.getByRole("tabpanel").textContent).toContain("Aqualight")
+  })
+
+  it("egyetlen fülnél is áll a sáv", () => {
+    render(<ProductDescriptionTabs description={PROZA} valtozat="1b" />)
+    expect(fulek()).toEqual([["Leírás", "true"]])
+    expect(screen.queryByTestId("product-description")).toBeNull()
+  })
+
+  it("az aktív fül 600-as, 15 pixeles, aláhúzással; a többi 500-as", () => {
+    render(
+      <ProductDescriptionTabs description={PROZA + TABLAZAT} valtozat="1b" />,
+    )
+    const [aktiv, masik] = screen.getAllByRole("tab")
+    expect(aktiv.className).toContain("text-[15px]")
+    expect(aktiv.className).toContain("font-semibold")
+    expect(aktiv.className).toContain("border-[var(--terv-szoveg)]")
+    expect(masik.className).toContain("font-medium")
+    expect(masik.className).toContain("border-transparent")
+  })
+
+  it("változat nélkül a korábbi sorrend és egyfüles alak marad", () => {
+    const { unmount } = render(
+      <ProductDescriptionTabs description={PROZA + TABLAZAT} />,
+    )
+    expect(fulek()[0][1]).toBe("true")
+    expect(fulek()[0][0]).toContain("Műszaki adatok")
+    unmount()
+    render(<ProductDescriptionTabs description={PROZA} />)
+    expect(screen.queryAllByRole("tab")).toHaveLength(0)
+    expect(screen.getByTestId("product-description")).toBeTruthy()
+  })
+})
