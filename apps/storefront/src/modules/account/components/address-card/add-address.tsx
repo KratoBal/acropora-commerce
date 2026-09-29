@@ -96,14 +96,14 @@ const AddAddress = ({
               <Input
                 label="Cégnév"
                 name="company"
-                  defaultValue={beirt?.company}
+                defaultValue={beirt?.company}
                 autoComplete="organization"
                 data-testid="company-input"
               />
               <Input
                 label="Cím"
                 name="address_1"
-                  defaultValue={beirt?.address_1}
+                defaultValue={beirt?.address_1}
                 required
                 autoComplete="address-line1"
                 data-testid="address-1-input"
@@ -111,7 +111,7 @@ const AddAddress = ({
               <Input
                 label="Emelet, ajtó stb."
                 name="address_2"
-                  defaultValue={beirt?.address_2}
+                defaultValue={beirt?.address_2}
                 autoComplete="address-line2"
                 data-testid="address-2-input"
               />
@@ -136,7 +136,7 @@ const AddAddress = ({
               <Input
                 label="Megye / állam"
                 name="province"
-                  defaultValue={beirt?.province}
+                defaultValue={beirt?.province}
                 autoComplete="address-level1"
                 data-testid="state-input"
               />
@@ -151,7 +151,7 @@ const AddAddress = ({
               <Input
                 label="Telefonszám"
                 name="phone"
-                  defaultValue={beirt?.phone}
+                defaultValue={beirt?.phone}
                 autoComplete="phone"
                 data-testid="phone-input"
               />

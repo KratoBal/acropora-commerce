@@ -97,4 +97,3 @@ export function cimUrlapErtekek(urlap: FormData): Record<string, string> {
     urlap.get("is_default_shipping") === "on" ? "on" : ""
   return ertekek
 }
-
