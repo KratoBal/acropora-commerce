@@ -42,6 +42,25 @@ The plan splits it into four PRs:
 **Not in this PR:**
 - **GLS pickup points:** there is no GLS directory in the code, only the option names. It needs the official GLS ParcelShop documentation (`P4-LEFT-OUT.md`).
 
+### 1b. The GLS pickup-point picker
+
+acrobot's decision, 2026-09-29: our own picker from GLS's public list, **no third-party script in the checkout**, and both GLS ids stored on the order.
+
+**The source:** GLS's own map widget reads its points from `map.gls-croatia.com/data/deliveryPoints/{country}.json`, measured in the widget's code.
+- The file was downloaded to `exchange/gls-widget-2026-09-29/data/deliveryPoints/hu.json`: 4081 points, 926 parcel shops and 3155 lockers, shape `{"items": [...]}`.
+- **Fields:** `id`, `goldId`, `name`, `contact.{postalCode, city, address}`, `type`, `features`, `lockerSaturation`.
+
+**Backend:**
+- `GlsPickupPointsService` fetches the list on the server and caches it for a day, like Foxpost.
+- **It leaves out** out-of-order lockers (369, as the widget itself disables them), points without `delivery`, unknown types and malformed rows.
+- **The search** is shared with Foxpost (`pickup-point-search.ts`), so both answer the same way.
+- **`glsPointAllowed` holds the heavy rule in one place:** the heavy-goods option offers parcel shops only; the ordinary GLS pickup point offers both kinds (acrobot, 2026-09-29).
+- **`GET /store/gls`** names the options that go to a point (by binding: `ACROPORA_SO_GLS_POINT`, `ACROPORA_SO_GLS_HEAVY_POINT`), because "GLS csomagpont" shares its role with home delivery.
+- **`GET /store/gls/pickup-points?q&option_id`** searches with the rule of that option; the browser sends no heavy flag.
+- **The fulfillment provider** requires `data.gls_pickup_point.id` for those options, checks it against our copy of the list and the rule, and stores `id`, `gold_id`, name, address and type. Label printing (MyGLS) needs one of the two ids, and it is not yet known which.
+
+**Storefront:** the Foxpost picker became carrier-neutral (`szolgaltato` and `kereso` props). The shipping step keeps one map from option to carrier, so Foxpost and GLS take the same path: choosing opens the picker, the point sets the method, and the cart's point is shown back.
+
 ## 2. Two orders from one cart (P4-2)
 
 **The decision.** Balázs, 2026-09-29, 16:06 to 16:09 UTC, through acrobot:

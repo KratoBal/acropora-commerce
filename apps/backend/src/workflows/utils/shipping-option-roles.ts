@@ -87,3 +87,33 @@ export const buildShippingOptionRoleMap = (
       binding.role,
     ])
   )
+
+/**
+ * THE GLS OPTIONS THAT GO TO A PICKUP POINT (P4), by their binding, not by
+ * role: "GLS csomagpont" shares GLS_NORMAL with home delivery, so the role
+ * alone cannot tell them apart. `heavy` limits the choice to parcel shops
+ * (`glsPointAllowed`).
+ */
+const GLS_POINT_OPTIONS: Record<string, { heavy: boolean }> = {
+  ACROPORA_SO_GLS_POINT: { heavy: false },
+  ACROPORA_SO_GLS_HEAVY_POINT: { heavy: true },
+}
+
+export const glsPointOptions = (
+  env: NodeJS.ProcessEnv = process.env
+): { option_id: string; heavy: boolean }[] =>
+  resolveShippingOptionRoleBindings(env)
+    .filter((binding) => binding.env in GLS_POINT_OPTIONS)
+    .map((binding) => ({
+      option_id: binding.id,
+      heavy: GLS_POINT_OPTIONS[binding.env].heavy,
+    }))
+
+export const glsPointOptionOf = (
+  optionId: string,
+  env: NodeJS.ProcessEnv = process.env
+): { heavy: boolean } | null => {
+  const found = glsPointOptions(env).find((o) => o.option_id === optionId)
+  return found ? { heavy: found.heavy } : null
+}
+

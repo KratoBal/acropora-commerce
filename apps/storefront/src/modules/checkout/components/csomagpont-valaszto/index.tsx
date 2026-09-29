@@ -17,7 +17,13 @@ import { Button } from "@modules/common/components/ui"
 export default function CsomagpontValaszto({
   kivalasztott,
   onValaszt,
+  szolgaltato = "Foxpost",
+  kereso = (kereses: string) => searchFoxpostPickupPoints(kereses),
 }: {
+  /** A futarszolgalat neve a mondatokban ("Foxpost", "GLS"). */
+  szolgaltato?: string
+  /** A kereses: a Foxpost es a GLS ugyanabban az alakban valaszol. */
+  kereso?: (kereses: string) => Promise<CsomagpontKereses>
   /** A kosarban mar allo pont, ha van. */
   kivalasztott?: { name?: string; address?: string } | null
   onValaszt: (pont: FoxpostCsomagpont) => void | Promise<void>
@@ -30,7 +36,7 @@ export default function CsomagpontValaszto({
     esemeny.preventDefault()
     if (!kereses.trim()) return
     setBetolt(true)
-    setEredmeny(await searchFoxpostPickupPoints(kereses))
+    setEredmeny(await kereso(kereses))
     setBetolt(false)
   }
 
@@ -46,7 +52,7 @@ export default function CsomagpontValaszto({
         </p>
       ) : (
         <p className="txt-medium text-ui-fg-muted">
-          Válaszd ki, melyik Foxpost csomagpontba kéred a csomagot.
+          Válaszd ki, melyik {szolgaltato} csomagpontba kéred a csomagot.
         </p>
       )}
       <form onSubmit={keres} className="flex gap-2" role="search">
@@ -75,8 +81,8 @@ export default function CsomagpontValaszto({
           className="txt-medium text-ui-fg-base"
           data-testid="csomagpont-nem-elerheto"
         >
-          A Foxpost csomagpontjai most nem érhetők el. Válassz másik szállítási
-          módot.
+          A {szolgaltato} csomagpontjai most nem érhetők el. Válassz másik
+          szállítási módot.
         </p>
       ) : null}
       {eredmeny?.elerheto && eredmeny.pontok.length === 0 ? (

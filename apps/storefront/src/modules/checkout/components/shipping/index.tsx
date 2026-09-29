@@ -2,7 +2,16 @@
 import { Radio, RadioGroup } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
-import { foxpostSzallitasiAdat } from "@lib/util/csomagpont"
+import {
+  searchFoxpostPickupPoints,
+  searchGlsPickupPoints,
+} from "@lib/data/csomagpont"
+import {
+  type CsomagpontKereses,
+  foxpostSzallitasiAdat,
+  glsSzallitasiAdat,
+  type GlsPontMod,
+} from "@lib/util/csomagpont"
 import { convertToLocale } from "@lib/util/money"
 import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
@@ -27,6 +36,16 @@ type ShippingProps = {
    * modot elutasitja.
    */
   foxpostOptionId?: string | null
+  /** A GLS csomagpontos modok (`GET /store/gls`); ugyanigy valasztot nyitnak. */
+  glsOptions?: GlsPontMod[]
+}
+
+/** Egy csomagpontos mod: kinel, hogyan keres, es milyen adatot kuld a modhoz. */
+type PontMod = {
+  szolgaltato: string
+  kereso: (kereses: string) => Promise<CsomagpontKereses>
+  adat: (pontId: string) => Record<string, unknown>
+  adatKulcs: "foxpost_pickup_point" | "gls_pickup_point"
 }
 
 function formatAddress(address: HttpTypes.StoreCartAddress) {
@@ -59,7 +78,27 @@ const Shipping: React.FC<ShippingProps> = ({
   cart,
   availableShippingMethods,
   foxpostOptionId = null,
+  glsOptions = [],
 }) => {
+  // CSOMAGPONTOS MODOK, EGY HELYEN: a Foxpost es a GLS ugyanigy viselkedik
+  // (Balazs, 2026-09-29: a ket valaszto amennyire lehet, egyforma legyen).
+  const pontModok = new Map<string, PontMod>()
+  if (foxpostOptionId) {
+    pontModok.set(foxpostOptionId, {
+      szolgaltato: "Foxpost",
+      kereso: (q) => searchFoxpostPickupPoints(q),
+      adat: foxpostSzallitasiAdat,
+      adatKulcs: "foxpost_pickup_point",
+    })
+  }
+  for (const gls of glsOptions) {
+    pontModok.set(gls.option_id, {
+      szolgaltato: "GLS",
+      kereso: (q) => searchGlsPickupPoints(q, gls.option_id),
+      adat: glsSzallitasiAdat,
+      adatKulcs: "gls_pickup_point",
+    })
+  }
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
 
@@ -159,9 +198,9 @@ const Shipping: React.FC<ShippingProps> = ({
       setShowPickupOptions(PICKUP_OPTION_OFF)
     }
 
-    // FOXPOST: a mod csak csomagponttal allithato be. A valaszto nyilik meg,
-    // es a pont kivalasztasa allitja be a modot (`handleFoxpostPont`).
-    if (foxpostOptionId && id === foxpostOptionId) {
+    // CSOMAGPONTOS MOD (Foxpost, GLS): csak ponttal allithato be. A valaszto
+    // nyilik meg, es a pont kivalasztasa allitja be a modot (`handlePont`).
+    if (pontModok.has(id)) {
       setShippingMethodId(id)
       return
     }
@@ -204,15 +243,19 @@ const Shipping: React.FC<ShippingProps> = ({
     }
   }
 
-  const handleFoxpostPont = async (pont: { id: string }) => {
-    if (!foxpostOptionId) return
+  const aktivPontMod = shippingMethodId
+    ? pontModok.get(shippingMethodId)
+    : undefined
+
+  const handlePont = async (pont: { id: string }) => {
+    if (!shippingMethodId || !aktivPontMod) return
     setError(null)
     setIsLoading(true)
     try {
       const eredmeny = await setShippingMethod({
         cartId: cart.id,
-        shippingMethodId: foxpostOptionId,
-        data: foxpostSzallitasiAdat(pont.id),
+        shippingMethodId,
+        data: aktivPontMod.adat(pont.id),
       })
       if (!eredmeny.ok) setError(eredmeny.uzenet)
     } catch {
@@ -225,11 +268,11 @@ const Shipping: React.FC<ShippingProps> = ({
   // A kosarban allo mod: a "Tovabb" csak akkor mehet, ha a KIVALASZTOTT mod
   // tenyleg a kosarban all. Foxpostnal a pont kivalasztasaig nem all ott.
   const kosarMod = cart.shipping_methods?.at(-1)
-  const foxpostPont =
-    kosarMod?.shipping_option_id === foxpostOptionId
-      ? ((kosarMod?.data as Record<string, unknown> | undefined)
-          ?.foxpost_pickup_point as
-          { name?: string; address?: string } | undefined)
+  const kosarPont =
+    aktivPontMod && kosarMod?.shipping_option_id === shippingMethodId
+      ? ((kosarMod?.data as Record<string, unknown> | undefined)?.[
+          aktivPontMod.adatKulcs
+        ] as { name?: string; address?: string } | undefined)
       : undefined
 
   useEffect(() => {
@@ -379,10 +422,13 @@ const Shipping: React.FC<ShippingProps> = ({
                     )
                   })}
                 </RadioGroup>
-                {foxpostOptionId && shippingMethodId === foxpostOptionId ? (
+                {aktivPontMod ? (
                   <CsomagpontValaszto
-                    kivalasztott={foxpostPont ?? null}
-                    onValaszt={handleFoxpostPont}
+                    key={shippingMethodId ?? ""}
+                    szolgaltato={aktivPontMod.szolgaltato}
+                    kereso={aktivPontMod.kereso}
+                    kivalasztott={kosarPont ?? null}
+                    onValaszt={handlePont}
                   />
                 ) : null}
               </div>

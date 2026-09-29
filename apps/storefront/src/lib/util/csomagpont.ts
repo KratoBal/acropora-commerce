@@ -24,3 +24,11 @@ export type CsomagpontKereses = {
 export function foxpostSzallitasiAdat(pontId: string) {
   return { foxpost_pickup_point: { id: pontId } }
 }
+
+/** A GLS-csomagpont szallitasi adata (P4): csak az azonosito megy, a tobbit a hatter irja. */
+export function glsSzallitasiAdat(pontId: string) {
+  return { gls_pickup_point: { id: pontId } }
+}
+
+/** Egy GLS csomagpontos szallitasi mod, es hogy nehezarus-e (csak csomagbolt). */
+export type GlsPontMod = { option_id: string; heavy: boolean }

@@ -1,7 +1,11 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import type { CsomagpontKereses, FoxpostCsomagpont } from "@lib/util/csomagpont"
+import type {
+  CsomagpontKereses,
+  FoxpostCsomagpont,
+  GlsPontMod,
+} from "@lib/util/csomagpont"
 
 type Valasz =
   | { available: true; pickup_points: FoxpostCsomagpont[]; count: number }
@@ -63,4 +67,69 @@ export async function retrieveFoxpostOption(): Promise<{
       cache: "no-store",
     })
     .catch(() => null)
+}
+
+type GlsValasz =
+  | {
+      available: true
+      pickup_points: {
+        id: string
+        name: string
+        zip: string
+        city: string
+        address: string
+      }[]
+      count: number
+    }
+  | { available: false; reason: string }
+
+/**
+ * GLS-CSOMAGPONT KERESES (P4), a Foxposteval azonos alakban, hogy a ket
+ * valaszto egyforma legyen. A szallitasi modot is atadja: a nehezarus mod a
+ * hatter szerint csak csomagboltot kinal, nem a bongeszo dont.
+ */
+export async function searchGlsPickupPoints(
+  kereses: string,
+  optionId: string,
+  limit = 20,
+): Promise<CsomagpontKereses> {
+  const q = kereses.trim()
+  if (!q) return NINCS
+
+  return sdk.client
+    .fetch<GlsValasz>(`/store/gls/pickup-points`, {
+      method: "GET",
+      query: { q, option_id: optionId, limit },
+      cache: "no-store",
+    })
+    .then((valasz) =>
+      valasz.available
+        ? {
+            elerheto: true,
+            pontok: valasz.pickup_points.map(
+              ({ id, name, zip, city, address }) => ({
+                id,
+                name,
+                // A Foxpost cime iranyitoszammal kezdodik; a GLS-e is igy latszik.
+                address: `${zip} ${city}, ${address}`,
+                zip,
+                city,
+              }),
+            ),
+            talalat: valasz.count,
+          }
+        : NINCS,
+    )
+    .catch(() => NINCS)
+}
+
+/** A GLS csomagpontos szallitasi modok (`GET /store/gls`); hibanal ures. */
+export async function retrieveGlsOptions(): Promise<GlsPontMod[]> {
+  return sdk.client
+    .fetch<{ options: GlsPontMod[] }>(`/store/gls`, {
+      method: "GET",
+      cache: "no-store",
+    })
+    .then((valasz) => valasz.options ?? [])
+    .catch(() => [])
 }

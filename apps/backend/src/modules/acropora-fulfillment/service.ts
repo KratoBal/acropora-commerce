@@ -19,6 +19,7 @@ import { calculateGoodsTotal } from "../../workflows/utils/goods-total"
 import { ShippingOptionRole } from "../../workflows/utils/shipping-eligibility"
 import {
   buildShippingOptionRoleMap,
+  glsPointOptionOf,
   resolveShippingOptionRoleBindings,
 } from "../../workflows/utils/shipping-option-roles"
 import { calculateShippingPrice } from "../../workflows/utils/shipping-pricing"
@@ -26,6 +27,11 @@ import {
   FoxpostPickupPoint,
   FoxpostPickupPointsService,
 } from "../../services/foxpost-pickup-points"
+import {
+  GlsPickupPointsService,
+  glsPointAddress,
+  glsPointAllowed,
+} from "../../services/gls-pickup-points"
 import { linesForCourierPrice } from "../../workflows/utils/split-pricing-context"
 
 const optionRole = (
@@ -157,11 +163,13 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
 
   protected readonly commerceSettings_: CommerceSettingsService
   protected readonly foxpostPickupPoints_: FoxpostPickupPointsService
+  protected readonly glsPickupPoints_: GlsPickupPointsService
 
   constructor(
     dependencies: {
       commerce_settings: CommerceSettingsService
       foxpostPickupPoints?: FoxpostPickupPointsService
+      glsPickupPoints?: GlsPickupPointsService
     },
   ) {
     super()
@@ -172,6 +180,15 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
     )
       ? dependencies.foxpostPickupPoints ?? new FoxpostPickupPointsService()
       : new FoxpostPickupPointsService()
+    // The same guard as above: the module loader passes an awilix cradle, and
+    // reading an unregistered key from it THROWS (measured by the "pickup at
+    // zero" test, which builds the provider from an isolated cradle).
+    this.glsPickupPoints_ = Object.prototype.hasOwnProperty.call(
+      dependencies,
+      "glsPickupPoints",
+    )
+      ? dependencies.glsPickupPoints ?? new GlsPickupPointsService()
+      : new GlsPickupPointsService()
   }
 
   async getFulfillmentOptions(): Promise<FulfillmentOption[]> {
@@ -191,6 +208,11 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
     _context: ValidateFulfillmentDataContext,
   ): Promise<Record<string, unknown>> {
     const role = optionRole(optionData)
+
+    const glsPoint = glsPointOptionOf(String(optionData.id))
+    if (glsPoint) {
+      return this.validateGlsPickupPoint(data, glsPoint.heavy)
+    }
 
     if (role !== "FOXPOST") {
       return data
@@ -218,6 +240,57 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
     }
 
     return persistedFoxpostPickupPoint(pickupPoint)
+  }
+
+  /**
+   * A GLS PICKUP-POINT OPTION NEEDS A POINT (P4), like Foxpost: the id comes
+   * from the browser, everything stored comes from our own copy of GLS's list.
+   * A heavy parcel goes only to a parcel shop (`glsPointAllowed`). Both GLS ids
+   * are kept: label printing (MyGLS) needs one of them, and it is not yet known
+   * which (acrobot, 2026-09-29).
+   */
+  private async validateGlsPickupPoint(
+    data: Record<string, unknown>,
+    heavy: boolean,
+  ): Promise<Record<string, unknown>> {
+    const chosen = data.gls_pickup_point
+    const id =
+      chosen && typeof chosen === "object" ? Reflect.get(chosen, "id") : undefined
+
+    if (typeof id !== "string" || !id.trim()) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "GLS pickup-point shipping needs a gls_pickup_point id",
+      )
+    }
+
+    const availability = await this.glsPickupPoints_.getAvailability()
+
+    if (!availability.available) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "GLS pickup points are currently unavailable",
+      )
+    }
+
+    const point = availability.pickup_points.find((candidate) => candidate.id === id)
+
+    if (!point || !glsPointAllowed(point, heavy)) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "The selected GLS pickup point is unavailable for this shipping method",
+      )
+    }
+
+    return {
+      gls_pickup_point: {
+        id: point.id,
+        gold_id: point.gold_id,
+        name: point.name,
+        address: glsPointAddress(point),
+        type: point.type,
+      },
+    }
   }
 
   async validateOption(data: Record<string, unknown>): Promise<boolean> {
