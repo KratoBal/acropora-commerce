@@ -65,6 +65,9 @@ const lap = async (props: Record<string, unknown> = {}) =>
   )
 
 beforeEach(() => {
+  // Alapbol ures testver-lista: egy `undefined` valasz az egesz lapot
+  // eltorne, es az a teszt-dupla hibaja lenne, nem a kode.
+  katAdat.listCategories.mockResolvedValue([])
   adat.listProducts.mockImplementation(async ({ queryParams }) => {
     const ertek = SZAMOK[queryParams.category_id[0]]
     if (ertek instanceof Error) throw ertek
