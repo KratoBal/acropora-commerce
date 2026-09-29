@@ -26,6 +26,7 @@ import {
   PICKUP_ORDER_METADATA_KEY,
   SplitCart,
   SplitOperations,
+  pickupPromoCodes,
   shippingProfileGaps,
 } from "./split-completion"
 
@@ -55,7 +56,7 @@ const copyAddress = (address: Record<string, unknown> | null | undefined) =>
       )
     : undefined
 
-const CART_FIELDS = [
+export const CART_FIELDS = [
   "id",
   "completed_at",
   "metadata",
@@ -71,6 +72,8 @@ const CART_FIELDS = [
   "items.quantity",
   "items.metadata",
   "promotions.code",
+  "promotions.application_method.type",
+  "promotions.application_method.allocation",
   "payment_collection.id",
   "payment_collection.payment_sessions.provider_id",
   "shipping_methods.id",
@@ -88,7 +91,7 @@ const loadRawCart = async (container: Container, cartId: string) => {
   return data?.[0] ?? null
 }
 
-const toSplitCart = (raw: any): SplitCart => ({
+export const toSplitCart = (raw: any): SplitCart => ({
   id: raw.id,
   completed_at: raw.completed_at ?? null,
   order_id: raw.order?.id ?? null,
@@ -101,9 +104,13 @@ const toSplitCart = (raw: any): SplitCart => ({
   })),
   payment_provider_id:
     raw.payment_collection?.payment_sessions?.[0]?.provider_id ?? null,
-  promo_codes: (raw.promotions ?? [])
-    .map((promotion: any) => promotion?.code)
-    .filter((code: unknown): code is string => typeof code === "string"),
+  pickup_promo_codes: pickupPromoCodes(
+    (raw.promotions ?? []).filter(Boolean).map((promotion: any) => ({
+      code: promotion.code ?? null,
+      type: promotion.application_method?.type ?? null,
+      allocation: promotion.application_method?.allocation ?? null,
+    }))
+  ),
   has_shipping_method: (raw.shipping_methods ?? []).length > 0,
 })
 

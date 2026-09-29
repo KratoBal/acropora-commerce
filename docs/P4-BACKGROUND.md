@@ -98,7 +98,9 @@ During checkout the cart stays **one cart**, so the cart page shows everything. 
 The storefront places every cart through this route; the core complete route refuses a mixed cart (2a1). A cart that is not mixed becomes one order, exactly as before.
 
 **For a mixed cart** (`completeSplitCart` in `split-completion.ts`; the Medusa calls are in `split-completion-operations.ts`):
-1. **Move the pickup lines.** They go to a new pickup cart with the same customer, region, channel and addresses, linked both ways in metadata (`acropora_pickup_cart_id`, `acropora_parent_cart_id`). The promotion codes are applied to it where they are valid.
+1. **Move the pickup lines.** They go to a new pickup cart with the same customer, region, channel and addresses, linked both ways in metadata (`acropora_pickup_cart_id`, `acropora_parent_cart_id`). The promotion codes are applied to it where they are valid, but **only the codes that divide with the lines**: percentage codes and fixed per-item (`each`) codes (`pickupPromoCodes`).
+   - Measured on stage (2026-09-29, the same two lines whole and split): a 10% code gave 950 Ft whole and 100 + 850 split. A fixed cart-level code (`fixed`, `across`) gave 635 Ft whole and 635 on **each** part, so it was taken twice. Such a code now stays on the shipped cart only.
+   - Two known limits. If the shipped part is smaller than the fixed discount, the customer gets less than the one cart would have given. An **automatic** fixed cart-level promotion applies itself to each cart, whatever the codes (not measured whether stage has one).
 2. **Set the pickup cart's shipping:** the store pickup (`ACROPORA_SO_PICKUP`).
 3. **Re-make the shipped cart's payment:** the method the customer chose, read from the cart and never sent by the client.
    - Moving lines changes the total, and Medusa then deletes the payment session, so it is created again.
