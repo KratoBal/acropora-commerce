@@ -1,75 +1,68 @@
 import { login } from "@lib/data/customer"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
-import ErrorMessage from "@modules/checkout/components/error-message"
-import { SubmitButton } from "@modules/checkout/components/submit-button"
-import Input from "@modules/common/components/input"
 import { useActionState } from "react"
+
+import { AuthGomb, AuthHiba, AuthKartya, AuthMezo, AuthValto } from "../auth"
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
 }
 
+/**
+ * BELEPES (P5, 256:3; mobilon 256:103). A keret "Emlékezz rám" es
+ * "Elfelejtett jelszó" sora nem epul: az elsohoz a munkamenet hossza nem
+ * allithato, a masodikhoz nincs levelkuldes (docs/P5-LEFT-OUT.md).
+ */
 const Login = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(login, null)
 
   return (
-    <div
-      className="max-w-sm w-full flex flex-col items-center"
+    <AuthKartya
+      cim="Bejelentkezés"
+      leiras="Lépj be a rendeléseidhez, címeidhez és számláidhoz."
+      mobilLeiras="Lépj be a rendeléseidhez és számláidhoz."
       data-testid="login-page"
     >
-      <h1 className="text-large-semi uppercase mb-6">Üdv újra!</h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-8">
-        Jelentkezz be a kényelmesebb vásárlásért.
-      </p>
       {message?.state === "verification_required" && (
-        <div
-          className="w-full mb-6 text-center text-base-regular text-ui-fg-base bg-ui-bg-subtle border border-ui-border-base rounded-rounded p-4"
+        <p
+          className="border border-acr-line bg-acr-mist p-3 text-[13px] leading-[19px] text-acr-ink"
           data-testid="login-verification-message"
         >
           Ellenőrző linket küldtünk ide: <strong>{message.email}</strong>.
           Ellenőrizd az e-mail-címedet, majd jelentkezz be.
-        </div>
+        </p>
       )}
-      <form className="w-full" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
-          <Input
-            label="E-mail-cím"
-            name="email"
-            type="email"
-            title="Adj meg érvényes e-mail-címet."
-            autoComplete="email"
-            required
-            data-testid="email-input"
-          />
-          <Input
-            label="Jelszó"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            data-testid="password-input"
-          />
-        </div>
-        <ErrorMessage
-          error={message?.state === "error" ? message.error : null}
+      <form className="flex flex-col gap-[14px]" action={formAction}>
+        <AuthMezo
+          cimke="E-mail"
+          name="email"
+          type="email"
+          title="Adj meg érvényes e-mail-címet."
+          autoComplete="email"
+          required
+          data-testid="email-input"
+        />
+        <AuthMezo
+          cimke="Jelszó"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          data-testid="password-input"
+        />
+        <AuthHiba
+          hiba={message?.state === "error" ? message.error : null}
           data-testid="login-error-message"
         />
-        <SubmitButton data-testid="sign-in-button" className="w-full mt-6">
-          Belépés
-        </SubmitButton>
+        <AuthGomb data-testid="sign-in-button">Bejelentkezés</AuthGomb>
       </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Még nincs fiókod?{" "}
-        <button
-          onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
-          className="underline"
-          data-testid="register-button"
-        >
-          Regisztráció
-        </button>
-        .
-      </span>
-    </div>
+      <AuthValto
+        mondat="Nincs még fiókod?"
+        gomb="Regisztráció"
+        onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
+        data-testid="register-button"
+      />
+    </AuthKartya>
   )
 }
 

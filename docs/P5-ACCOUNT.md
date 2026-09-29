@@ -1,0 +1,61 @@
+# P5: sign-in, registration and the account
+
+Scope: P5 (Balázs, 2026-09-29 11:14 UTC: "Jojjon a P5"). It covers:
+- sign-in, registration, password reset;
+- orders, order details;
+- profile, addresses, billing, settings.
+
+Stage only. The homepage still waits ("A kezdolap meg varjon").
+
+The handoff (`262:3`) marks a CANONICAL desktop and mobile frame for every screen:
+- **Auth:** `256:3` / `256:36` / `256:75`; mobile `256:103` / `256:124` / `256:151`.
+- **Orders:** `249:3` / `249:96`; mobile `249:204` / `249:252`.
+- **Account:** `257:3` / `257:51` / `257:102` / `257:159`; mobile `257:212` / `257:242` / `257:269` / `257:304`.
+
+The prerequisite, the seventh order status (Visszaigazolva), is in #409. What was left out, and why: `P5-LEFT-OUT.md`.
+
+## 1. Sign-in and registration (`256:3`, `256:36`; mobile `256:103`, `256:124`)
+
+The flow is the existing one: the `/account` page with the `@login` slot, the email/password provider, and the email-verification detour. What changed is the look, the registration fields, the ÁSZF record and the error text.
+
+| Element | Figma | Built |
+|---|---|---|
+| Page | the auth area on the shell background; desktop: a white 500 px card with a border, 36/40 px padding, 14 px gaps | same. On mobile there is no card (the frame has none). Signed out, the page is no longer wrapped in the account frame (side menu, "Kérdésed van?" band). |
+| Eyebrow, title, text (`256:19`–`256:21`) | "FIÓK" 600/10.5 heritage; the title 600/30 (mobile 26); the text 13.5 (mobile 13) in a 40 px box | same; no eyebrow on mobile |
+| Fields (`256:22`) | label 12.5 slate; input 48 (mobile 46) high, shell background, line border, 14 px | same |
+| Button (`256:33`) | heritage, 50 (mobile 48) high, 600/14.5 | same |
+| Bottom line (`256:35`) | "Nincs még fiókod? Regisztráció", all slate | same; the action word is underlined because it is a button |
+| Registration fields (`256:55`–`256:67`) | Név, E-mail, Jelszó, Jelszó újra | **Vezetéknév and Keresztnév instead of one Név field** (see below), then E-mail, Jelszó, Jelszó újra |
+| ÁSZF checkbox (`256:71`) | "☐ Elfogadom az ÁSZF-et és az adatkezelési tájékoztatót." | a real, required checkbox. "ÁSZF-et" and "adatkezelési tájékoztatót" link to the footer's addresses. |
+
+- **Two name fields:** the Medusa customer stores first and last name separately, and invoices need them separately. Splitting one field at a space would be a guess.
+- **Phone:** it moved to the profile, as the frame shows it there (`257:3`).
+- **Server-side checks** (`regisztracioHiba`): the checkbox, and that the two passwords are equal. The browser's `required` does not stop a direct POST.
+- **The ÁSZF record** (acrobot's decision, 2026-09-29 13:26). Registration writes a timestamp and the ÁSZF version into the customer's metadata:
+
+      metadata.aszf_elfogadas = {
+        idopont:    "<ISO time of submit>",
+        verzio:     "unas-shop-2026-09-29",
+        dokumentum: "<the ÁSZF address>"
+      }
+
+  It is written when the customer is created. With email verification that happens later, so the record travels in the pending-customer cookie. A customer who already existed gets no new record.
+- **The version is our own label**, not the page's date. The new storefront has no ÁSZF of its own yet: the link goes to today's shop, whose page loads its text by script, and the downloaded HTML carries no date (measured 2026-09-29). When the ÁSZF text changes, or the storefront gets its own ÁSZF page (required before go-live, see the footer's list), raise `ASZF_VERZIO` and change the address. Old records keep the old version.
+- **Errors in Hungarian** (`authHibaSzoveg`). Until now the server's raw English error reached the customer; measured against stage, a wrong password showed "Error: Invalid email or password". Now:
+  - a wrong email or password gives "Hibás e-mail-cím vagy jelszó.";
+  - an existing account sends the customer to sign in;
+  - anything else gets a general sentence, and the raw text is not shown.
+- **Error colour:** the Foundations palette has none, so the message is ink 500 with `role="alert"`. The error state's own look is P6.
+- **Left out** (listed in `P5-LEFT-OUT.md`):
+  - "Emlékezz rám";
+  - "Elfelejtett jelszó";
+  - the frame's own mobile header (`256:104`): the P1b header stays.
+
+Measured locally against the stage backend on 2026-09-29:
+- **1440 px:** card 500 wide, white, 1 px border; title 30/600; input 418 × 48; button 50 high.
+- **390 px:** no card; title 26; input 358 × 46; button 48; no horizontal scroll.
+- **A wrong password** shows "Hibás e-mail-cím vagy jelszó.".
+- **Not done live:** a registration. It would create a customer on stage. The metadata path is covered by `customer-regisztracio.spec.ts`, with the SDK mocked.
+- **Font:** the local dev server cannot download Hanken Grotesk and uses the fallback (the category page does the same); stage loads the real font.
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-auth-1440-figma-balra.png` and `p5-auth-390-figma-balra.png`.

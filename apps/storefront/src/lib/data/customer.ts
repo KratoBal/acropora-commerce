@@ -1,6 +1,12 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import {
+  ASZF_METADATA_KULCS,
+  aszfElfogadas,
+  regisztracioHiba,
+} from "@lib/util/aszf"
+import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { FetchError } from "@medusajs/js-sdk"
@@ -89,11 +95,24 @@ export async function signup(
   formData: FormData,
 ): Promise<CustomerAuthState> {
   const password = formData.get("password") as string
+
+  // The checkbox and the repeated password are checked on the server too: the
+  // browser's `required` does not stop a direct POST.
+  const hiba = regisztracioHiba({
+    aszf: formData.get("aszf"),
+    jelszo: formData.get("password"),
+    jelszoUjra: formData.get("password_again"),
+  })
+  if (hiba) return { state: "error", error: hiba }
+
   const customerForm = {
     email: formData.get("email") as string,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
-    phone: formData.get("phone") as string,
+    phone: (formData.get("phone") as string | null) ?? undefined,
+    // The acceptance is recorded at submit time and survives email
+    // verification in the pending-customer cookie.
+    metadata: { [ASZF_METADATA_KULCS]: aszfElfogadas(new Date()) },
   }
 
   try {
@@ -110,7 +129,7 @@ export async function signup(
       fetchError.statusText !== "Unauthorized" ||
       fetchError.message !== "Identity with email already exists"
     ) {
-      return { state: "error", error: String(error) }
+      return { state: "error", error: authHibaSzoveg(error) }
     }
   }
 
@@ -146,7 +165,7 @@ async function completeLogin(
   try {
     result = await sdk.auth.login("customer", "emailpass", { email, password })
   } catch (error) {
-    return { state: "error", error: String(error) }
+    return { state: "error", error: authHibaSzoveg(error) }
   }
 
   // A `location` is returned by third-party auth providers, which this flow
@@ -154,7 +173,7 @@ async function completeLogin(
   if (typeof result === "object" && "location" in result) {
     return {
       state: "error",
-      error: "This login method isn't supported by the storefront.",
+      error: ALTALANOS_AUTH_HIBA,
     }
   }
 
@@ -176,7 +195,7 @@ async function completeLogin(
   if (typeof result !== "string") {
     return {
       state: "error",
-      error: "Authentication requires additional steps that aren't supported.",
+      error: ALTALANOS_AUTH_HIBA,
     }
   }
 
@@ -202,6 +221,7 @@ async function completeLogin(
           first_name: pending?.first_name,
           last_name: pending?.last_name,
           phone: pending?.phone,
+          metadata: pending?.metadata,
         },
         {},
         { authorization: `Bearer ${token}` },
@@ -212,7 +232,7 @@ async function completeLogin(
         password,
       })) as string
     } catch (error) {
-      return { state: "error", error: String(error) }
+      return { state: "error", error: authHibaSzoveg(error) }
     }
 
     await removePendingCustomer()
@@ -226,7 +246,7 @@ async function completeLogin(
   try {
     await transferCart()
   } catch (error) {
-    return { state: "error", error: String(error) }
+    return { state: "error", error: authHibaSzoveg(error) }
   }
 
   return { state: "success" }

@@ -1,117 +1,129 @@
 "use client"
 
 import { useActionState } from "react"
-import { STORE_NAME } from "@lib/store"
-import Input from "@modules/common/components/input"
-import { LOGIN_VIEW } from "@modules/account/templates/login-template"
-import ErrorMessage from "@modules/checkout/components/error-message"
-import { SubmitButton } from "@modules/checkout/components/submit-button"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+
 import { signup } from "@lib/data/customer"
+import { ADATKEZELES_CIM, ASZF_CIM } from "@lib/util/aszf"
+import { LOGIN_VIEW } from "@modules/account/templates/login-template"
+
+import { AuthGomb, AuthHiba, AuthKartya, AuthMezo, AuthValto } from "../auth"
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
 }
 
+/**
+ * REGISZTRACIO (P5, 256:36; mobilon 256:124).
+ *
+ * A keret egyetlen "Név" mezot mutat; itt KET mezo all (vezeteknev,
+ * keresztnev), mert a Medusa vevo ket mezon tarolja, es a szamla is kulon
+ * kezeli. Szetvagni egy mezot szokoznel talalgatas lenne. A telefonszam a
+ * profilba kerul, ahogy a keret is mutatja (257:3).
+ *
+ * AZ ASZF-PIPA KOTELEZO, es az elfogadas IDOBELYEGGEL ES VERZIOVAL rogzul a
+ * vevon (`lib/util/aszf.ts`). A szerver is ellenorzi, nem csak a bongeszo.
+ */
 const Register = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(signup, null)
 
   return (
-    <div
-      className="max-w-sm flex flex-col items-center"
+    <AuthKartya
+      cim="Regisztráció"
+      leiras="Hozd létre az Acropora fiókodat a gyorsabb vásárláshoz."
+      mobilLeiras="Hozd létre az Acropora fiókodat."
       data-testid="register-page"
     >
-      <h1 className="text-large-semi uppercase mb-6">
-        Legyél a {STORE_NAME} tagja
-      </h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-4">
-        Hozd létre a {STORE_NAME}-fiókodat a kényelmesebb vásárlási élményért.
-      </p>
       {message?.state === "verification_required" && (
-        <div
-          className="w-full mb-4 text-center text-base-regular text-ui-fg-base bg-ui-bg-subtle border border-ui-border-base rounded-rounded p-4"
+        <p
+          className="border border-acr-line bg-acr-mist p-3 text-[13px] leading-[19px] text-acr-ink"
           data-testid="register-verification-message"
         >
           Ellenőrző linket küldtünk ide: <strong>{message.email}</strong>. Nézd
           meg a postafiókodat, ellenőrizd az e-mail-címedet, majd jelentkezz be.
-        </div>
+        </p>
       )}
-      <form className="w-full flex flex-col" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
-          <Input
-            label="Keresztnév"
-            name="first_name"
+      <form className="flex flex-col gap-[14px]" action={formAction}>
+        <AuthMezo
+          cimke="Vezetéknév"
+          name="last_name"
+          required
+          autoComplete="family-name"
+          data-testid="last-name-input"
+        />
+        <AuthMezo
+          cimke="Keresztnév"
+          name="first_name"
+          required
+          autoComplete="given-name"
+          data-testid="first-name-input"
+        />
+        <AuthMezo
+          cimke="E-mail"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          data-testid="email-input"
+        />
+        <AuthMezo
+          cimke="Jelszó"
+          name="password"
+          type="password"
+          required
+          autoComplete="new-password"
+          data-testid="password-input"
+        />
+        <AuthMezo
+          cimke="Jelszó újra"
+          name="password_again"
+          type="password"
+          required
+          autoComplete="new-password"
+          data-testid="password-again-input"
+        />
+        <label className="flex items-start gap-2 text-[12.3px] leading-[16px] text-acr-slate small:text-[12.5px]">
+          <input
+            type="checkbox"
+            name="aszf"
             required
-            autoComplete="given-name"
-            data-testid="first-name-input"
+            className="mt-px h-[15px] w-[15px] shrink-0 accent-[var(--acr-color-navy)]"
+            data-testid="aszf-checkbox"
           />
-          <Input
-            label="Vezetéknév"
-            name="last_name"
-            required
-            autoComplete="family-name"
-            data-testid="last-name-input"
-          />
-          <Input
-            label="E-mail-cím"
-            name="email"
-            required
-            type="email"
-            autoComplete="email"
-            data-testid="email-input"
-          />
-          <Input
-            label="Telefonszám"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            data-testid="phone-input"
-          />
-          <Input
-            label="Jelszó"
-            name="password"
-            required
-            type="password"
-            autoComplete="new-password"
-            data-testid="password-input"
-          />
-        </div>
-        <ErrorMessage
-          error={message?.state === "error" ? message.error : null}
+          <span>
+            Elfogadom az{" "}
+            <a
+              href={ASZF_CIM}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-acr-ink"
+            >
+              ÁSZF-et
+            </a>{" "}
+            és az{" "}
+            <a
+              href={ADATKEZELES_CIM}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-acr-ink"
+            >
+              adatkezelési tájékoztatót
+            </a>
+            .
+          </span>
+        </label>
+        <AuthHiba
+          hiba={message?.state === "error" ? message.error : null}
           data-testid="register-error"
         />
-        <span className="text-center text-ui-fg-base text-small-regular mt-6">
-          A fiók létrehozásával elfogadod a {STORE_NAME}{" "}
-          <LocalizedClientLink
-            href="/content/privacy-policy"
-            className="underline"
-          >
-            Adatkezelési tájékoztató
-          </LocalizedClientLink>{" "}
-          és a(z){" "}
-          <LocalizedClientLink
-            href="/content/terms-of-use"
-            className="underline"
-          >
-            Felhasználási feltételek
-          </LocalizedClientLink>
-          .
-        </span>
-        <SubmitButton className="w-full mt-6" data-testid="register-button">
-          Regisztráció
-        </SubmitButton>
+        <AuthGomb data-testid="register-button">Fiók létrehozása</AuthGomb>
       </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Már van fiókod?{" "}
-        <button
-          onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
-          className="underline"
-        >
-          Belépés
-        </button>
-        .
-      </span>
-    </div>
+      <AuthValto
+        mondat="Már van fiókod?"
+        gomb="Bejelentkezés"
+        onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
+        data-testid="sign-in-link"
+      />
+    </AuthKartya>
   )
 }
 

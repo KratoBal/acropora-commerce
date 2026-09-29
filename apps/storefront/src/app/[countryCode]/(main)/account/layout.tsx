@@ -11,9 +11,16 @@ export default async function AccountPageLayout({
 }) {
   const customer = await retrieveCustomer().catch(() => null)
 
+  /*
+    BEJELENTKEZES NELKUL a belepo lap a sajat, teljes szelessegu alapjan all
+    (P5, 256:3): a fiok kerete (oldalmenu, "Kérdésed van?" sav) csak a
+    bejelentkezett vevonek szol.
+  */
+  if (!customer) return login
+
   return (
     <AccountLayout customer={customer}>
-      {customer ? dashboard : login}
+      {dashboard}
       {/* TODO: Re-add Toaster component when needed */}
     </AccountLayout>
   )
