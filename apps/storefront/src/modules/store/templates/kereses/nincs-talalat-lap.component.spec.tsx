@@ -119,9 +119,11 @@ describe("a nincs-találat lap", () => {
   it("hibás számolásnál a kártya szám nélkül áll, nem nullával", async () => {
     adat.listProducts.mockRejectedValue(new Error("halozati hiba"))
     await lap()
+    // Nev szerint, nem hely szerint: a kartyak szama es sorrendje mas
+    // allitas dolga.
     const kartya = within(screen.getByTestId("kereses-kategoriak"))
       .getAllByRole("link")
-      .at(-1)
+      .find((a) => a.textContent?.startsWith("Vízkezelés"))
     expect(kartya?.textContent).toBe("Vízkezelés")
   })
 

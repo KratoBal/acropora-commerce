@@ -18,8 +18,13 @@ vi.mock("@lib/data/termek-kereses", () => kereses)
 // A nulla-talalat lap (4b) sajat adatot ker; a sajat spec meri, itt ures.
 vi.mock("@lib/data/regions", () => ({ getRegion: vi.fn(async () => null) }))
 vi.mock("@lib/data/categories", () => ({
-  listNonEmptyRootCategories: vi.fn(),
-  listCategoryIdsWithDescendants: vi.fn(),
+  // Alapertek, nem `undefined`: egy ures valasz a teszt-dupla hibaja lenne.
+  listNonEmptyRootCategories: vi.fn(async () => ({
+    gyokerek: [],
+    nevek: new Map(),
+    szamok: new Map(),
+  })),
+  listCategoryIdsWithDescendants: vi.fn(async () => []),
 }))
 // A kartya gombja a kosar szerver-muveletet importalja; itt nem hivodik.
 vi.mock("@lib/data/cart", () => ({ addToCart: vi.fn() }))
