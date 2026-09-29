@@ -296,5 +296,7 @@ So the test sees the reset itself, not a hand-set state.
 - Existing sessions stay valid after the change: Medusa's JWTs are not revoked, and other devices stay signed in.
 - There is no rate limit on the current-password check, as there is none on sign-in.
 
+**Deviation, measured (local `next dev` against stage, 1440 and 390):** the frame's field blocks are 76 px high on desktop and 72 on mobile, 7 px and 3 px below the box. The shared field component used on every P5 page is 69, so the card is 21 px shorter (375 against 396). Everything else matches: card 842 wide, title 26 px, box 800 × 48, button 180 × 44; on mobile no card, box 46, button full width at 46, no horizontal scroll.
+
 **Left out:** the "Értesítések" card and "Hűségpontok" (`P5-LEFT-OUT.md`).
 
