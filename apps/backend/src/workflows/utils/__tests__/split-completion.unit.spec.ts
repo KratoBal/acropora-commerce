@@ -36,6 +36,8 @@ type Shop = {
   warnings: string[]
   /** Variants whose product is not on the store pickup's profile. */
   profileGaps: Set<string>
+  /** The discount Medusa would compute on a cart; none by default. */
+  discountOf: (c: SplitCart) => number
   ops: SharedPaymentOperations
 }
 
@@ -67,6 +69,7 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     links: [] as [string, string][],
     warnings: [] as string[],
     profileGaps: new Set<string>(),
+    discountOf: () => 0,
   } as Shop
   let lineSeq = 0
   let cartSeq = 0
@@ -140,6 +143,7 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
       shop.links.push([parent, pickup])
     },
     warn: (message) => shop.warnings.push(message),
+    discountTotal: async (id) => shop.discountOf(get(id)),
     cartTotal: async (id) =>
       get(id).items.reduce((sum, l) => sum + (PRICE[l.variant_id ?? ""] ?? 0) * l.quantity, 0),
     payerOf: async (id) => ({ customer_email: `${id}@example.hu`, invoice: { name: "Teszt Elek" } }),
@@ -511,5 +515,61 @@ describe("completing a split paid together", () => {
       "complete cart_pickup_1",
       "linkOrders order_1 order_2",
     ])
+  })
+})
+
+/**
+ * THE DISCOUNT MAY NOT CHANGE BY SPLITTING (acrobot's decision, 2026-09-29).
+ * Measured on stage: an automatic fixed cart-level promotion landed on both
+ * carts (635 + 635 instead of 635), a code targeting the pickup item and a
+ * minimum-subtotal code landed on neither. What must fail: a split placed or
+ * paid with another discount than the whole cart's; the lines left split
+ * after the refusal; the refusal without its code (the storefront's sentence
+ * hangs on it); a rounding difference refused.
+ */
+describe("a split that would change the discount", () => {
+  // An automatic fixed promotion: 635 on every cart that has lines.
+  const automatic = (c: SplitCart) => (c.items.length ? 635 : 0)
+
+  it("is refused before any order, and the lines go back", async () => {
+    const shop = vegyes()
+    shop.discountOf = automatic
+
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow(
+      "split_discount_changed: the discount changes"
+    )
+
+    expect(shop.carts.get("cart_1")!.items.map((l) => l.variant_id).sort()).toEqual(["v_eszkoz", "v_korall"])
+    expect(shop.carts.get("cart_pickup_1")!.items).toEqual([])
+    expect(shop.log.some((entry) => entry.startsWith("ensurePayment") || entry.startsWith("complete"))).toBe(false)
+    expect(shop.warnings.join()).toContain("1270 split, 635 whole")
+  })
+
+  it("the shared card payment is not started either", async () => {
+    const shop = vegyes()
+    shop.discountOf = automatic
+
+    await expect(startSharedSplitPayment("cart_1", shop.ops, { providerId: SIMPLEPAY })).rejects.toThrow(
+      "split_discount_changed"
+    )
+    expect(shop.log.some((entry) => entry.startsWith("startPayment"))).toBe(false)
+  })
+
+  it("a discount that is lost by the split is refused the same way", async () => {
+    const shop = vegyes()
+    // A minimum-subtotal code: only the whole cart (two lines) meets it.
+    shop.discountOf = (c) => (c.items.length === 2 ? 1150 : 0)
+
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow("split_discount_changed")
+  })
+
+  it("a percentage split into two roundings is the same discount", async () => {
+    const shop = vegyes()
+    // 950 whole; 100 + 849.9999999 split, as measured.
+    shop.discountOf = (c) =>
+      c.items.length === 2 ? 950 : c.items.some((l) => l.variant_id === "v_korall") ? 849.9999999 : 100
+
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+    expect(result.order_ids).toHaveLength(2)
   })
 })

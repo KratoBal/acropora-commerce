@@ -32,6 +32,12 @@ export const PARENT_CART_METADATA_KEY = "acropora_parent_cart_id"
 export const PICKUP_ORDER_METADATA_KEY = "acropora_pickup_order_id"
 export const PARENT_ORDER_METADATA_KEY = "acropora_parent_order_id"
 
+/**
+ * The code in the refusal's message when the split would change the discount;
+ * the storefront shows the customer what to do on it.
+ */
+export const SPLIT_DISCOUNT_CHANGED = "split_discount_changed"
+
 export type SplitLine = {
   id: string
   variant_id: string | null
@@ -97,6 +103,8 @@ export type SplitOperations = {
   /** Applies the codes that are valid on the cart; the others are skipped. */
   applyPromotions(cartId: string, codes: string[]): Promise<void>
   setStorePickup(cartId: string): Promise<void>
+  /** The cart's discount total, as Medusa computes it now. */
+  discountTotal(cartId: string): Promise<number>
   /**
    * The products among these lines that are NOT on the store pickup option's
    * shipping profile, by product id. Medusa refuses to complete a cart whose
@@ -292,6 +300,19 @@ const moveToPickupCart = async (
     )
   }
 
+  // THE DISCOUNT MAY NOT CHANGE BY SPLITTING (acrobot's decision, 2026-09-29,
+  // after measuring on stage): Medusa computes promotions per cart, so an
+  // automatic cart-level promotion lands on BOTH carts, and a code whose rule
+  // only the whole cart meets (a minimum, or a target on the pickup items)
+  // lands on neither. Measured before and after the move; on a difference the
+  // lines go back and the placement stops.
+  //
+  // NOTE FOR WHOEVER ADDS AN AUTOMATIC PROMOTION: an automatic fixed
+  // cart-level promotion changes the discount of EVERY mixed cart, so every
+  // mixed cart would be refused here. Stage has none today
+  // (measured 2026-09-29).
+  const discountBefore = pickupLines.length ? await ops.discountTotal(cart.id) : null
+
   const pickupId = pickupCartId ?? (await ops.createPickupCart(cart))
   const pickup = await mustLoad(ops, pickupId)
 
@@ -308,6 +329,22 @@ const moveToPickupCart = async (
   }
   if (!pickup.has_shipping_method) {
     await ops.setStorePickup(pickupId)
+  }
+
+  if (discountBefore !== null) {
+    const discountAfter = (await ops.discountTotal(cart.id)) + (await ops.discountTotal(pickupId))
+
+    // Under 1 Ft is the rounding of two carts, not a different discount.
+    if (Math.abs(discountAfter - discountBefore) >= 1) {
+      ops.warn(
+        `Split refused for ${cart.id}: the discount would be ${discountAfter} split, ${discountBefore} whole`
+      )
+      await movePickupLinesBack(ops, cart.id, pickupId)
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `${SPLIT_DISCOUNT_CHANGED}: the discount changes when this cart is split into two orders, so nothing was placed`
+      )
+    }
   }
 
   return pickupId

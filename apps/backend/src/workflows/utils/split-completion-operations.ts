@@ -262,6 +262,16 @@ export const splitCompletionOperations = (
       )
     },
 
+    discountTotal: async (cartId) => {
+      const query = container.resolve(ContainerRegistrationKeys.QUERY)
+      const { data } = await query.graph({
+        entity: "cart",
+        filters: { id: cartId },
+        fields: ["id", "discount_total"],
+      })
+      return Number((data?.[0] as any)?.discount_total ?? 0)
+    },
+
     setStorePickup: async (cartId) => {
       await addShippingMethodToCartWorkflow(container).run({
         input: {
