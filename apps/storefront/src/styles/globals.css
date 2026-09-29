@@ -71,8 +71,15 @@
     termeklap jobb paneljenek tapadasa.
   */
   --fejlec-bizalmi-magassag: 36px;
+  /*
+    A KERESO SAV (2026-09-29): a kanonikus 215:41-ben a kereso KULON sav a
+    fejlec alatt (217:62), 70 pixel a kerettel. A teljes fejlec tehat harom
+    savbol all (36 + 76 + 70 = 182), es a ragados panelek ezt olvassak.
+  */
+  --fejlec-kereso-magassag: 70px;
   --fejlec-teljes-magassag: calc(
-    var(--fejlec-magassag) + var(--fejlec-bizalmi-magassag)
+    var(--fejlec-magassag) + var(--fejlec-bizalmi-magassag) +
+      var(--fejlec-kereso-magassag)
   );
 
   /* hatterek */
@@ -977,12 +984,13 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
 
 /*
   A MOBIL FEJLEC (P1b, 2026-09-29): a Figma 390 pixeles fejlece 56 pixel, es a
-  bizalmi sav nem all benne. A `small` torespont (1024 px) alatt a ket valtozo
+  bizalmi sav meg a kereso sav nem all benne (220:3). A `small` torespont (1024 px) alatt a ket valtozo
   ezt adja, tehat a ragados panelek eltolasa is kovetik.
 */
 @media (max-width: 1023.98px) {
   :root {
     --fejlec-magassag: 56px;
     --fejlec-bizalmi-magassag: 0px;
+    --fejlec-kereso-magassag: 0px;
   }
 }

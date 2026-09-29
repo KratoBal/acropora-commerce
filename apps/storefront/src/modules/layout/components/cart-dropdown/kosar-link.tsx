@@ -38,9 +38,18 @@ export const KosarLink = ({ darab }: { darab: number }) => (
     "Kosár 0", 13 pixel, 600-as suly, a mod cimszineben (234:38, 201:7). Mobilon
     csak a darabszam all (196:10, 226:129). A felolvaso tovabbra is a teljes
     "Kosár · N" alakot kapja.
+
+    AZ URES KOSAR MOBILON HALVANY (2026-09-29, a kanonikus 220:3 szerint): ott
+    a "0" a mod szovegszineben all (220:10), mig a 226:129 "1"-e a cimszinben.
+    Asztalon a "Kosár 0" is cimszinu (217:61), tehat a kulonbseg csak mobilon el.
   */
   <LocalizedClientLink
-    className="flex items-center text-[13px] font-medium leading-[17px] text-acr-mode-heading small:font-semibold"
+    className={
+      "flex items-center text-[13px] font-medium leading-[17px] small:font-semibold " +
+      (darab === 0
+        ? "text-acr-mode-text small:text-acr-mode-heading"
+        : "text-acr-mode-heading")
+    }
     href="/cart"
     aria-label={kosarFelirat(darab)}
     data-testid="nav-cart-link"

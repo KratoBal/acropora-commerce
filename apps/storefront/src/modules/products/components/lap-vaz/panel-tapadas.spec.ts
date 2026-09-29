@@ -86,12 +86,20 @@ describe("a jobb panel a fejléc aljához tapad", () => {
    * lenyilo panel keplebeen), es a harmadik helyrol (a tapado panel)
    * HIANYZOTT. Egy szam, ami tobb helyen all, pontosan igy csuszik szet.
    */
-  it("a teljes fejléc a két változóból számol", () => {
+  it("a teljes fejléc a három sáv változójából számol", () => {
     expect(css.match(/--fejlec-bizalmi-magassag:/g) ?? []).toHaveLength(2)
-    // Mobilon a Figma fejleceben nincs bizalmi sav.
+    // Mobilon a Figma fejleceben (220:3) nincs bizalmi es kereso sav.
     expect(mobilBlokk()).toMatch(/--fejlec-bizalmi-magassag:\s*0px/)
+    /*
+      A KERESO SAV (215:41, 217:62) 70 pixel, es a teljes fejlecbe tartozik:
+      ha kimarad a keplebol, a tapado panel 70 pixellel a kereso sav ALA
+      csuszik -- ugyanaz a hiba, amit a bizalmi savval egyszer mar elkovettunk.
+    */
+    expect(css.match(/--fejlec-kereso-magassag:/g) ?? []).toHaveLength(2)
+    expect(css).toMatch(/--fejlec-kereso-magassag:\s*70px/)
+    expect(mobilBlokk()).toMatch(/--fejlec-kereso-magassag:\s*0px/)
     expect(css).toMatch(
-      /--fejlec-teljes-magassag:\s*calc\(\s*var\(--fejlec-magassag\)\s*\+\s*var\(--fejlec-bizalmi-magassag\)/,
+      /--fejlec-teljes-magassag:\s*calc\(\s*var\(--fejlec-magassag\)\s*\+\s*var\(--fejlec-bizalmi-magassag\)\s*\+\s*var\(--fejlec-kereso-magassag\)\s*\)/,
     )
   })
 

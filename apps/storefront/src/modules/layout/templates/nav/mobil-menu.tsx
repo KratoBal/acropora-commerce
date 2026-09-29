@@ -1,6 +1,7 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
+import { FejlecMenuPont } from "@lib/util/fejlec-menu-pontok"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useEffect, useId, useState } from "react"
 
@@ -9,30 +10,33 @@ type Category = HttpTypes.StoreProductCategory
 /**
  * A MOBIL FEJLEC MENUJE (P1b, 2026-09-29).
  *
- * A Figma mobil fejlece (196:4 Commerce, 226:123 Reef) egy KET VONALAS
- * menu-ikont rajzol a bal szelen: 20x2 pixeles vonalak, 4 pixel kozzel, a
- * mod cimszineben. Mogotte panel nincs a tervben, tehat a panel tartalma a
- * meglevo fejlec kepessegeibol all ossze, uj funkcio nelkul:
+ * A Figma mobil fejlece (220:3 a kanonikus, 196:4 es 226:123 ugyanigy) egy
+ * KET VONALAS menu-ikont rajzol a bal szelen: 20x1.5 pixeles vonalak, 4 pixel
+ * kozzel, a mod cimszineben. Mogotte panel nincs a tervben, tehat a panel
+ * tartalma a meglevo fejlec kepessegeibol all ossze, uj funkcio nelkul:
  *
- *   - a gyoker-kategoriak, ADATBOL (ugyanaz a lista, mint az asztali menu);
+ *   - a menupontok, ugyanaz a nyolc, mint az asztali menuben
+ *     (`fejlecMenuPontok`), de itt mind kozvetlen link;
  *   - a kereso, ugyanarra a `/store` lapra, ugyanazzal a `q` mezovel;
  *   - a fiok linkje.
  *
  * Asztalon (`small` fole) rejtve: ott az asztali menu es kereso all.
  */
 export const MobilMenu = ({
-  kategoriak,
-  nevek,
+  pontok,
   keresoCel,
 }: {
-  kategoriak: Category[]
-  nevek?: Map<string, string>
+  pontok: FejlecMenuPont<Category>[]
   keresoCel: string
 }) => {
   const [nyitva, setNyitva] = useState(false)
   const panelId = useId()
-  const nev = (category: Category) =>
-    nevek?.get(category.id) ?? (category.name ?? "").trim()
+  const cel = (pont: FejlecMenuPont<Category>) =>
+    pont.tipus === "gyoker"
+      ? `/categories/${pont.kategoria.handle}`
+      : pont.tipus === "oldal"
+        ? `/categories/${pont.handle}`
+        : `/hamarosan/${pont.tema}`
 
   useEffect(() => {
     if (!nyitva) return
@@ -54,8 +58,8 @@ export const MobilMenu = ({
         onClick={() => setNyitva((most) => !most)}
         data-testid="mobil-menu-gomb"
       >
-        <span className="block h-[2px] w-[20px] bg-acr-mode-heading" />
-        <span className="block h-[2px] w-[20px] bg-acr-mode-heading" />
+        <span className="block h-[1.5px] w-[20px] bg-acr-mode-heading" />
+        <span className="block h-[1.5px] w-[20px] bg-acr-mode-heading" />
       </button>
       <div
         id={panelId}
@@ -80,15 +84,15 @@ export const MobilMenu = ({
           />
         </form>
         <ul className="flex flex-col">
-          {kategoriak.map((category) => (
-            <li key={category.id}>
+          {pontok.map((pont) => (
+            <li key={pont.felirat}>
               <LocalizedClientLink
-                href={`/categories/${category.handle}`}
+                href={cel(pont)}
                 className="block py-[10px] text-[15px] text-acr-mode-heading"
                 onClick={() => setNyitva(false)}
-                data-testid={`mobil-menu-kategoria-${category.handle}`}
+                data-testid={`mobil-menu-pont-${pont.felirat}`}
               >
-                {nev(category)}
+                {pont.felirat}
               </LocalizedClientLink>
             </li>
           ))}

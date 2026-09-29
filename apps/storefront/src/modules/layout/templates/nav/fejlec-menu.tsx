@@ -2,6 +2,7 @@
 
 import { ArrowRightMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
+import { FejlecMenuPont } from "@lib/util/fejlec-menu-pontok"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
@@ -9,12 +10,10 @@ import { usePathname } from "next/navigation"
 type Category = HttpTypes.StoreProductCategory
 
 /*
-  A MENUPONTOK ADATBOL JONNEK (P1b, 2026-09-29). Itt korabban egy kodba irt
-  negyes lista allt ("Termékek", "Halak", "Korallok", "Gerinctelenek"), es a
-  menu csak azt a negy nevet kereste a gyokerek kozott. Balazs szabalya: minden,
-  amit epitunk, egyszer publikus alap lehet -- egy beegetett katalogus-nev nem
-  az. A menu most a nem ures gyoker-kategoriakat mutatja, a betolto
-  sorrendjeben (`listNonEmptyRootCategories`).
+  A MENUPONTOK A FIGMA KERETBOL JONNEK (2026-09-29, 215:41), a feloldasuk a
+  katalogusbol: `fejlecMenuPontok`. Egy katalogus-gyokerhez tartozo pont a
+  lenyilot nyitja; egy alkategoria-oldalas pont (Vizkezeles) arra mutat; a
+  tobbi a Hamarosan lapra.
 */
 /**
  * A GYORSLINKEK -- ES CSAK AZ EGYIKNEK VAN CELPONTJA.
@@ -67,10 +66,10 @@ const sortedChildren = (category: Category | undefined) =>
   )
 
 export const FejlecMenu = ({
-  kategoriak,
+  pontok,
   nevek,
 }: {
-  kategoriak: Category[]
+  pontok: FejlecMenuPont<Category>[]
   /**
    * A MEGJELENITENDO NEVEK, AZONOSITO SZERINT -- A BETOLTOTOL, NEM ITT SZAMOLVA.
    *
@@ -95,10 +94,10 @@ export const FejlecMenu = ({
     a termeklapon az utvonal nem hordoz kategoriat, ott nincs kiemeles.
   */
   const pathname = usePathname() ?? ""
+  const szeletek = pathname.split("/").filter(Boolean)
   const aktivHandle =
-    pathname.split("/").filter(Boolean)[1] === "categories"
-      ? decodeURIComponent(pathname.split("/").filter(Boolean)[2] ?? "")
-      : null
+    szeletek[1] === "categories" ? decodeURIComponent(szeletek[2] ?? "") : null
+  const aktivTema = szeletek[1] === "hamarosan" ? (szeletek[2] ?? null) : null
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [panelLeft, setPanelLeft] = useState(16)
   const categoryButtons = useRef<(HTMLButtonElement | null)[]>([])
@@ -114,7 +113,10 @@ export const FejlecMenu = ({
   const nev = (category: Category) =>
     nevek?.get(category.id) ?? (category.name ?? "").trim()
 
-  const root = kategoriak.find((category) => category.name === openName)
+  const nyitott = pontok.find(
+    (pont) => pont.tipus === "gyoker" && pont.felirat === openName,
+  )
+  const root = nyitott?.tipus === "gyoker" ? nyitott.kategoria : undefined
   const categories = sortedChildren(root)
 
   const close = () => {
@@ -186,7 +188,7 @@ export const FejlecMenu = ({
         kovetkeztetek a hatasra.
       */}
       <nav
-        className="flex min-w-0 items-center gap-[18px] overflow-x-auto"
+        className="flex min-w-0 items-center gap-[14px] overflow-x-auto medium:gap-[18px]"
         aria-label="Kategóriák"
       >
         {/*
@@ -194,24 +196,50 @@ export const FejlecMenu = ({
           szovegszineben; a NYITOTT pont 600-as sulyu a cimszinben, ugyanugy,
           mint a Figma aktiv pontja ("Halak" a hal-listan).
         */}
-        {kategoriak.map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            className={
-              "shrink-0 whitespace-nowrap text-[13.5px] leading-[17.5px] " +
-              (openName === category.name || aktivHandle === category.handle
-                ? "font-semibold text-acr-mode-heading"
-                : "font-normal text-acr-mode-text")
-            }
-            aria-controls={panelId}
-            aria-expanded={openName === category.name}
-            onClick={(event) => toggle(category.name, event.currentTarget)}
-            data-testid={`category-menu-trigger-${category.name}`}
-          >
-            {nev(category)}
-          </button>
-        ))}
+        {pontok.map((pont) => {
+          const osztaly = (kiemelt: boolean) =>
+            "shrink-0 whitespace-nowrap text-[13.5px] leading-[17.5px] " +
+            (kiemelt
+              ? "font-semibold text-acr-mode-heading"
+              : "font-normal text-acr-mode-text")
+          if (pont.tipus === "gyoker") {
+            return (
+              <button
+                key={pont.felirat}
+                type="button"
+                className={osztaly(
+                  openName === pont.felirat ||
+                    aktivHandle === pont.kategoria.handle,
+                )}
+                aria-controls={panelId}
+                aria-expanded={openName === pont.felirat}
+                onClick={(event) => toggle(pont.felirat, event.currentTarget)}
+                data-testid={`category-menu-trigger-${pont.felirat}`}
+              >
+                {pont.felirat}
+              </button>
+            )
+          }
+          const href =
+            pont.tipus === "oldal"
+              ? `/categories/${pont.handle}`
+              : `/hamarosan/${pont.tema}`
+          const aktiv =
+            pont.tipus === "oldal"
+              ? aktivHandle === pont.handle
+              : aktivTema === pont.tema
+          return (
+            <LocalizedClientLink
+              key={pont.felirat}
+              href={href}
+              className={osztaly(aktiv)}
+              aria-current={aktiv ? "page" : undefined}
+              data-testid={`fejlec-menu-link-${pont.felirat}`}
+            >
+              {pont.felirat}
+            </LocalizedClientLink>
+          )
+        })}
       </nav>
 
       {openName ? (

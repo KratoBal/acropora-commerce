@@ -103,3 +103,17 @@ body:has([data-acr-mod="reef"]) [data-fejlec] {
   --acr-mode-action-bg: var(--acr-color-heritage);
   --acr-mode-action-text: var(--acr-color-abyss);
 }
+
+/*
+ * A FEJLEC KERESO MEZOJENEK HATTERE (2026-09-29). Nem mod-token, mert a
+ * Foundations mod-kartyai (9:10, 9:17) nem adjak; a ket kanonikus keret adja:
+ * Commerce 201:21 feher, Reef 217:63 `deep`. Ugyanaz a ket jelolo kapcsolja,
+ * mint a fejlec tobbi szinet.
+ */
+[data-fejlec] {
+  --fejlec-mezo-hatter: var(--acr-color-white);
+}
+body:has([data-vilag="sotet"]) [data-fejlec],
+body:has([data-acr-mod="reef"]) [data-fejlec] {
+  --fejlec-mezo-hatter: var(--acr-color-deep);
+}

@@ -61,16 +61,16 @@ describe("a fejléc fő sávja", () => {
   })
 
   /**
-   * A MENU SORRENDJE (Balazs dontese, 2026-09-09) MINDKET menut vezerli. Ha
-   * valamelyik a nyers betoltoi sorrendet kapja, az asztali es a mobil menu
-   * mas sorrendet mutat.
+   * A MENU A KANONIKUS KERETBOL (215:41, Balazs 2026-09-29: "a menu is minden
+   * elemevel") MINDKET menut vezerli. Ha valamelyik a nyers gyokereket kapja,
+   * az asztali es a mobil menu mast mutat.
    */
-  it("mindkét menü a rendezett gyökereket kapja, nem a nyerset", () => {
+  it("mindkét menü a feloldott Figma-pontokat kapja, nem a nyers gyökereket", () => {
     expect(nav).toContain(
-      "const menuGyokerek = fejlecSorrend(menuAdat.gyokerek)",
+      "const menuPontok = fejlecMenuPontok(menuAdat.gyokerek)",
     )
-    expect(nav.match(/kategoriak=\{menuGyokerek\}/g) ?? []).toHaveLength(2)
-    expect(nav).not.toContain("kategoriak={menuAdat.gyokerek}")
+    expect(nav.match(/pontok=\{menuPontok\}/g) ?? []).toHaveLength(2)
+    expect(nav).not.toContain("kategoriak=")
   })
 
   it("a fejléc tapad a lap tetejéhez", () => {
@@ -491,7 +491,9 @@ describe("a fejléc geometriája a tervből", () => {
     expect(nav).toContain("small:text-[20px]")
     expect(nav).toContain("small:tracking-[2.1px]")
     expect(nav).toContain("text-[16px]")
-    expect(nav).toContain("tracking-[1.6px]")
+    // a kanonikus mobil keret (220:9) 1.5 pixelt ad; a 196:4 1.6-ja nem
+    expect(nav).toContain("tracking-[1.5px]")
+    expect(nav).not.toContain("tracking-[1.6px]")
   })
 
   it("a mobil négyzet 22 pixel", () => {
@@ -500,16 +502,51 @@ describe("a fejléc geometriája a tervből", () => {
   })
 
   /**
-   * A KERESO MAGASSAGA BEAGYAZOTT STILUSBAN ALL, nem osztalyban -- ezert mas
-   * alakra keresunk. Nem kovetkezetlenseg: a mezo magassagat a doboz adja.
+   * A KERESO KULON SAVBAN ALL, A FEJLEC ALATT (215:41, 217:62), es a fejlec
+   * savjaban a 370 pixeles hely URES (217:59 "nav-spacer"). A P1b a keresot
+   * abba a helyre tette, alulvonalasan, nagyito nelkul; ez tevedes volt.
    */
-  it("a kereső-hely 370 pixel széles és alulvonalas (Figma 234:36)", () => {
-    expect(nav).toContain("max-w-[370px]")
-    expect(nav).toMatch(/border-b border-acr-mode-border small:flex/)
+  const keresoSav = () =>
+    nav.slice(
+      nav.indexOf('data-testid="fejlec-kereso-sav"'),
+      nav.indexOf("</header>"),
+    )
+
+  /**
+   * A BIZALMI SAV SZOVEGE A MIENK (acrobot, 2026-09-29 07:45): a keret bal
+   * mondata a mienk mellett ellentmondasnak olvashato, a jobb oldali ertekeles
+   * pedig kitalalt mintaszam. Egyik sem kerulhet vissza csendben.
+   */
+  it("a bizalmi sáv nem veszi át a keret szövegeit", () => {
+    // A komment idezi mindkettot; a KOD-ban (ertekadaskent) egyik sem allhat.
+    expect(nav).not.toMatch(/=\s*"Élő állat: kizárólag személyes átvétel"/)
+    expect(nav).not.toMatch(/=\s*"Árukereső/)
+    expect(nav).toContain("<p>{BIZALMI_BAL}</p>")
   })
 
-  it("a nagyító-jel kikerült: a Figma kereső-helye nem rajzol ilyet", () => {
-    expect(nav).not.toContain("h-[13px]")
+  it("a kereső a saját sávjában áll, a fejléc sávja alatt", () => {
+    expect(nav.indexOf('data-testid="fejlec-kereso-sav"')).toBeGreaterThan(
+      nav.indexOf("</nav>"),
+    )
+    expect(keresoSav()).toContain('data-testid="fejlec-kereso"')
+    expect(nav).toContain('height: "var(--fejlec-kereso-magassag)"')
+    expect(nav).not.toContain("max-w-[370px]")
+  })
+
+  it("a kereső mező a Figma alakjában: 46 px, keret, nagyító, 14 px", () => {
+    const sav = keresoSav()
+    expect(sav).toContain("h-[46px] min-w-0 flex-1")
+    expect(sav).toContain("border border-acr-mode-border px-[15px]")
+    expect(sav).toContain("var(--fejlec-mezo-hatter)")
+    expect(sav).toContain("<svg")
+    expect(sav).toContain("text-[14px]")
+  })
+
+  it("a szakértő-gomb 220 px, narancs keret, a Hamarosan lapra visz", () => {
+    const sav = keresoSav()
+    expect(sav).toContain('href="/hamarosan/szakerto"')
+    expect(sav).toContain("w-[220px]")
+    expect(sav).toContain("border-acr-heritage")
   })
 
   /**
