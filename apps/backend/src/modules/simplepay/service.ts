@@ -200,11 +200,11 @@ class SimplePayProviderService extends AbstractPaymentProvider<SimplePayOptions>
     // review of #433, 2026-09-29), so the payment is started again instead.
     if (joined) {
       const facts = joined as SimplePayFacts
+      // A missing `own` is NaN, and NaN never adds up: no separate guard needed.
       const shippedOwn = Number(facts.own)
       if (
         !facts.transactionId ||
         !facts.orderRef ||
-        !Number.isInteger(shippedOwn) ||
         shippedOwn + own !== hufTotal(facts.total)
       ) {
         throw new MedusaError(
