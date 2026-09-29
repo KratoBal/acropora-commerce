@@ -32,7 +32,7 @@ afterEach(() => {
  * kilepest; ha a fej cime nem az utvonalbol jon.
  */
 describe("a fiók menüje", () => {
-  it("asztalon a négy pont, az aktív jelölve", () => {
+  it("asztalon az öt pont, az aktív jelölve", () => {
     render(<FiokMenu />)
     const asztali = screen.getByTestId("account-nav")
     const linkek = within(asztali).getAllByRole("link")
@@ -41,9 +41,11 @@ describe("a fiók menüje", () => {
       "Rendeléseim",
       "Címek",
       "Számlázási adatok",
+      "Beállítások",
     ])
     expect(linkek.map((a) => a.getAttribute("aria-current"))).toEqual([
       "page",
+      null,
       null,
       null,
       null,
@@ -62,6 +64,7 @@ describe("a fiók menüje", () => {
       "Rendeléseim",
       "Címek",
       "Számlázás",
+      "Beállítások",
     ])
     expect(fulek[2].getAttribute("aria-current")).toBe("page")
   })
@@ -76,5 +79,22 @@ describe("a fiók menüje", () => {
     render(<FiokFej />)
     expect(screen.getByTestId("fiok-cim").textContent).toBe("Profil")
     expect(screen.getByText("Fiókom")).toBeTruthy()
+  })
+
+  it("a beállítások lapján a Beállítások az aktív pont és a cím", () => {
+    nav.utvonal = "/hu/account/settings"
+    render(
+      <>
+        <FiokFej />
+        <FiokMenu />
+      </>,
+    )
+    expect(screen.getByTestId("fiok-cim").textContent).toBe("Beállítások")
+    const aktiv = within(screen.getByTestId("account-nav"))
+      .getAllByRole("link")
+      .filter((a) => a.getAttribute("aria-current") === "page")
+    expect(aktiv.map((a) => a.getAttribute("href"))).toEqual([
+      "/hu/account/settings",
+    ])
   })
 })

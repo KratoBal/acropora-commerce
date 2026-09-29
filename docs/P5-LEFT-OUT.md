@@ -10,7 +10,7 @@ The backend has no notification module: `medusa-config.ts` lists none, so no ema
 |---|---|---|
 | Password reset screen | `256:75`, `256:151` | Medusa's reset route exists, but its token has to reach the customer by email. The screen would promise "küldünk linket" and nothing would be sent. |
 | "Elfelejtett jelszó" link on sign-in | `256:32`, `256:120` | it leads to the screen above |
-| Settings: notifications ("Rendelési és szállítási értesítések", "Marketing e-mailek") | `257:159` | no emails exist, and no data model stores the choices |
+| Settings: the "Értesítések" card ("Rendelési és szállítási értesítések", "Marketing e-mailek") | `257:207`, `257:335` | no emails exist, and no data model stores the choices; a marketing consent also needs a legal decision on how it is recorded |
 
 When the email provider is decided, these three come together. The order-status emails (five statuses, Visszaigazolva included) are on kanban card `ef84489d`.
 
@@ -19,7 +19,7 @@ When the email provider is decided, these three come together. The order-status 
 | Frame element | Node | Why |
 |---|---|---|
 | "Emlékezz rám" | `256:31`, `256:119` | the session length is not adjustable on today's auth cookie |
-| "Hűségpontok" (menu item) | `249:3`, `257:3` | no loyalty data |
+| "Hűségpontok" (menu item) | `249:3`, `257:3`, `257:186` | no loyalty data |
 
 ## Screens without a frame
 

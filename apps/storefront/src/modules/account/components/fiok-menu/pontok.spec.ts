@@ -36,12 +36,14 @@ describe("a fiók menüjének pontjai", () => {
     }
   })
 
-  it("a keret sorrendje: Profil, Rendeléseim, Címek, Számlázási adatok", () => {
+  it("a keret sorrendje: Profil, Rendeléseim, Címek, Számlázási adatok, Beállítások", () => {
+    // A keret Hűségpontok pontja kimarad: nincs mogotte adat (P5-LEFT-OUT).
     expect(FIOK_PONTOK.map((p) => p.cimke)).toEqual([
       "Profil",
       "Rendeléseim",
       "Címek",
       "Számlázási adatok",
+      "Beállítások",
     ])
     // A mobil ful a keret rovid alakja (257:225).
     expect(FIOK_PONTOK[3].mobilCimke).toBe("Számlázás")

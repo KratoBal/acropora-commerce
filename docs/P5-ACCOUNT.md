@@ -265,3 +265,38 @@ So the test sees the reset itself, not a hand-set state.
 **Not covered here:**
 - **the address modals** (`address-card/add-address.tsx`, `edit-address-modal.tsx`). They are template forms with the same shape; their errors come only from the server.
 - **the checkout address form (P4).** It is not a P5 form.
+
+
+## 6. Settings: password change (`257:159`; mobile `257:304`)
+
+| Element | Figma | Built |
+|---|---|---|
+| Card (`257:191`) | white, border, 20 px padding, 14 px gaps, 842 wide | same; mobile: no card, 12 px gaps (`257:309`) |
+| Title (`257:192`) | "Jelszó módosítása" 600/20 | same; mobile 600/17 (`257:320`) |
+| Fields | "Jelenlegi jelszó", "Új jelszó", "Új jelszó újra"; label 12.5, box 48 | same, password fields with `current-password` / `new-password` |
+| Button (`257:205`) | "Jelszó mentése" 180 × 44, heritage | same; mobile full width, 46 (`257:333`) |
+| Menu | "Beállítások" item, active: 3 px heritage left border, mist | the fifth item |
+
+**Why a new backend route.**
+- Medusa's `/auth/customer/emailpass/update` accepts only a single-use reset token. `validate-token.js` checks for `purpose: "reset"` and a `jti`, and refuses session tokens outright.
+- That token leaves only through the `auth.password_reset` event, and no email is sent.
+
+**The new route:** `POST /store/customers/me/password`, body `current_password` and `new_password`.
+- The session comes from Medusa's `/store/customers/me*` middleware.
+- The password identity is looked up from the session's auth identity, never from the body; the body refuses an `email` field.
+- The current password is checked with the emailpass `authenticate`, and the returned identity must be the session's.
+- Then the same `updateProvider` call runs that Medusa's own update route makes.
+- A wrong current password is 400, not 401: a 401 would read as an expired sign-in.
+
+**Rules:** no length rule, as at registration (acrobot, 2026-09-29); only empty fields and differing new passwords are refused.
+
+**No password comes back from the server,** so every field is empty after a submit, success or error. The frame shows no success sentence. One is added ("A jelszó megváltozott."), because empty fields alone would not tell the customer it worked.
+
+**Known limits:**
+- Existing sessions stay valid after the change: Medusa's JWTs are not revoked, and other devices stay signed in.
+- There is no rate limit on the current-password check, as there is none on sign-in.
+
+**Deviation, measured (local `next dev` against stage, 1440 and 390):** the frame's field blocks are 76 px high on desktop and 72 on mobile, 7 px and 3 px below the box. The shared field component used on every P5 page is 69, so the card is 21 px shorter (375 against 396). Everything else matches: card 842 wide, title 26 px, box 800 × 48, button 180 × 44; on mobile no card, box 46, button full width at 46, no horizontal scroll.
+
+**Left out:** the "Értesítések" card and "Hűségpontok" (`P5-LEFT-OUT.md`).
+
