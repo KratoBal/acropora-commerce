@@ -97,4 +97,31 @@ describe("a kosár összegzése", () => {
       "1200",
     )
   })
+
+  /**
+   * A SZALLITAS SORA IS BRUTTO (merve 2026-09-29, GLS csomagpont 3500 Ft a teszt
+   * bolton): a netto 2756 nem allhat a lapon, a brutto 3500 igen.
+   */
+  it("a szállítás BRUTTÓ: a nettó és az adó összege, a nettó nem áll a lapon", () => {
+    const { container } = render(
+      <CartTotals
+        totals={{
+          ...MERT,
+          item_subtotal: 787.4015748031496,
+          item_tax_total: 212.5984251968504,
+          shipping_subtotal: 2755.9055118110236,
+          shipping_tax_total: 744.0944881889764,
+          tax_total: 956.6929133858268,
+          total: 4500,
+        }}
+      />,
+    )
+
+    expect(
+      Number(screen.getByTestId("cart-shipping").getAttribute("data-value")),
+    ).toBeCloseTo(3500, 6)
+    const szoveg = (container.textContent ?? "").replace(/\s/g, "")
+    expect(szoveg).toContain("3500")
+    expect(szoveg).not.toContain("2756")
+  })
 })

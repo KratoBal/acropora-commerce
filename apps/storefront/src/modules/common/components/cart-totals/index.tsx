@@ -17,6 +17,8 @@ type CartTotalsProps = {
      */
     item_tax_total?: number | null
     shipping_subtotal?: number | null
+    /** A SZALLITAS ADOJA: ugyanugy bruttositja a szallitas sorat, mint a tetelekét. */
+    shipping_tax_total?: number | null
     discount_subtotal?: number | null
   }
 }
@@ -29,6 +31,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
     item_subtotal,
     item_tax_total,
     shipping_subtotal,
+    shipping_tax_total,
     discount_subtotal,
   } = totals
 
@@ -57,6 +60,14 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
    */
   const item_gross = (item_subtotal ?? 0) + (item_tax_total ?? 0)
 
+  /**
+   * A SZALLITAS IS BRUTTO, UGYANEZERT (merve 2026-09-29, a teszt bolton, GLS
+   * csomagpont 3500 Ft): `shipping_subtotal` 2755,91 (NETTO), `shipping_tax_total`
+   * 744,09, a ketto egyutt pontosan 3500. A sor eddig a nettot mutatta, tehat a
+   * vevo 1000 + 2756 = 4500-at latott, ami nem ad ki osszeget.
+   */
+  const shipping_gross = (shipping_subtotal ?? 0) + (shipping_tax_total ?? 0)
+
   return (
     <div>
       <div className="flex flex-col gap-y-2 txt-medium text-ui-fg-subtle ">
@@ -81,8 +92,8 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
         </div>
         <div className="flex items-center justify-between">
           <span>Szállítás</span>
-          <span data-testid="cart-shipping" data-value={shipping_subtotal || 0}>
-            {convertToLocale({ amount: shipping_subtotal ?? 0, currency_code })}
+          <span data-testid="cart-shipping" data-value={shipping_gross}>
+            {convertToLocale({ amount: shipping_gross, currency_code })}
           </span>
         </div>
         {!!discount_subtotal && (
