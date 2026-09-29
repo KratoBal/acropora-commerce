@@ -1,11 +1,19 @@
 "use client"
 
+import type React from "react"
+
 import { useParams, usePathname } from "next/navigation"
 
 import { signout } from "@lib/data/customer"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { FIOK_PONTOK, aktivPont, fiokCim, fiokLeiras } from "./pontok"
+import {
+  FIOK_PONTOK,
+  aktivPont,
+  fiokCim,
+  fiokLeiras,
+  reszletekUtvonal,
+} from "./pontok"
 
 /**
  * A FIOK FEJE (257:17): "FIÓKOM" felulcim es a lap cime. Mobilon (257:218)
@@ -121,5 +129,33 @@ export default function FiokMenu() {
         </button>
       </div>
     </nav>
+  )
+}
+
+/**
+ * A FIOK KERETE, UTVONAL SZERINT. A legtobb lapon fej, menu es tartalom
+ * (257:3). A rendeles reszletei (249:96) sajat keretben allnak: menu es kozos
+ * fej nelkul, a teljes szelessegben; a lap a sajat fejet rajzolja.
+ */
+export function FiokKeret({ children }: { children: React.ReactNode }) {
+  const utvonal = usePathname() ?? ""
+  const { countryCode } = useParams() as { countryCode: string }
+
+  if (reszletekUtvonal(utvonal, countryCode)) {
+    return <div data-testid="fiok-reszletek-keret">{children}</div>
+  }
+
+  return (
+    <>
+      <div className="small:pb-[20px]">
+        <FiokFej />
+      </div>
+      <div className="flex flex-col gap-3 small:grid small:grid-cols-[244px_minmax(0,1fr)] small:gap-7">
+        <div>
+          <FiokMenu />
+        </div>
+        <div className="min-w-0">{children}</div>
+      </div>
+    </>
   )
 }

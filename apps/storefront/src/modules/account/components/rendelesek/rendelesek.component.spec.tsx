@@ -47,6 +47,8 @@ describe("a Rendeléseim lap", () => {
     const cimke = within(kartya).getByTestId("rendeles-allapot")
     expect(cimke.textContent).toBe("Visszaigazolva")
     expect(cimke.getAttribute("data-fajta")).toBe("nyitott")
+    // A keret szovegstilusa nagybetus (249:42, textCase UPPER); a szoveg a bolt neve.
+    expect(cimke.className).toContain("uppercase")
     expect(kartya.textContent).toContain("2026. szeptember 28. · kifizetve")
     expect(within(kartya).getByTestId("rendeles-osszeg").textContent).toMatch(
       /396\s?980/,

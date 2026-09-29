@@ -69,3 +69,15 @@ export function fiokCim(utvonal: string, countryCode: string): string {
   const pont = FIOK_PONTOK.find((p) => p.href === aktiv)
   return pont?.cimke ?? "Áttekintés"
 }
+
+/**
+ * A RENDELES RESZLETEI SAJAT KERETBEN ALLNAK (249:96): menu es kozos fej
+ * nelkul, a lap sajat fejevel ("RENDELÉSEM", a rendelesszam).
+ */
+export function reszletekUtvonal(
+  utvonal: string,
+  countryCode: string,
+): boolean {
+  const helyi = utvonal.replace(new RegExp(`^/${countryCode}(?=/|$)`), "")
+  return helyi.startsWith("/account/orders/details/")
+}

@@ -20,7 +20,7 @@ export const retrieveOrder = async (id: string) => {
       method: "GET",
       query: {
         fields:
-          "*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product",
+          "*payment_collections.payments,*payment_collections.payment_sessions,*items,*items.metadata,*items.variant,*items.product,*shipping_address,*billing_address,*shipping_methods",
       },
       headers,
       next,
@@ -78,6 +78,26 @@ export const listOrderBusinessStatuses = async (): Promise<UzletiAllapot[]> => {
     )
     .then(({ business_statuses }) => business_statuses ?? [])
     .catch(() => [])
+}
+
+/**
+ * EGY RENDELES UZLETI ALLAPOTA (#410). Ha nincs (meg) allapota, `null`; hiba
+ * eseten is `null`, hogy a reszletek lapja allapot nelkul is megjelenjen.
+ */
+export const retrieveOrderBusinessStatus = async (
+  orderId: string,
+): Promise<UzletiAllapot | null> => {
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  return sdk.client
+    .fetch<{ business_status: UzletiAllapot | null }>(
+      `/store/customers/me/order-business-statuses/${encodeURIComponent(orderId)}`,
+      { method: "GET", headers, cache: "no-store" },
+    )
+    .then(({ business_status }) => business_status ?? null)
+    .catch(() => null)
 }
 
 export const createTransferRequest = async (

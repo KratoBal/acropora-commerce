@@ -37,6 +37,15 @@ When the email provider is decided, these three come together. The order-status 
 | "ACR-2026-…" order number | `249:40` | Medusa's display id ("#12") |
 | The desktop head sentence about groups and live animals | `249:20` | it promises P4 features; the mobile sentence is used |
 
+## Order details (4b), measured
+
+| Frame element | Node | Why |
+|---|---|---|
+| Fulfillment groups (Normál csomag, Nagyméretű termék, Élőállat), each with its own status | `249:121`–`249:137`, `249:267`–`249:277` | P4 background; one "Szállítás" block with the order's shipping method |
+| Parcel tracking line | `249:128` | no tracking data |
+| "Számla letöltése" | `249:198`, `249:301` | no invoice data |
+| "…és látjuk mindhárom teljesítési csoportot" | `249:202` | the groups do not exist yet |
+
 ## Built differently, on purpose
 
 - **Two name fields at registration** (Vezetéknév, Keresztnév) instead of one "Név". The Medusa customer and invoices keep them apart. (P5-ACCOUNT, 1)
@@ -48,6 +57,5 @@ When the email provider is decided, these three come together. The order-status 
 ## Still to be measured with their PRs
 
 These come from the P5 inventory and are confirmed or corrected when their screen is built:
-- **Order details (4b):** parcel tracking and invoice download have no data. The fulfillment groups are P4.
 - **Billing:** the tax number goes into the billing address's metadata under one documented key, `tax_id`, checked against the Hungarian 8-1-2 form (acrobot, 2026-09-29).
 - **Settings, password change:** there is no store route for a signed-in customer; it needs its own backend route.

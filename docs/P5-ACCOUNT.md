@@ -168,3 +168,34 @@ Measured locally against stage on 2026-09-29, signed in as the test account, whi
 - no horizontal scroll at 1440 or 390.
 
 The cards themselves are covered by component tests. A live image of them needs an order on the test account.
+
+## 4b. Order details (`249:96`; mobile `249:252`)
+
+**Its own frame.** The details page has no account menu and no shared head (`249:96` spans the page). `FiokKeret` drops both on `/account/orders/details/…`, and the page draws its own head.
+
+| Element | Figma | Built |
+|---|---|---|
+| Head (`249:110`) | "RENDELÉSEM" 600/10.5; the number 600/36 (mobile 24) with the status pill; "date · payment method · total · payment status" 14 px | same |
+| Mobile payment box (`249:262`) | mist, "Fizetés sikeres" 600/16, "SimplePay · total" | same box: the payment status ("Fizetésre vár") and "method · total" |
+| Teljesítés (`249:119`) | white card, 23 px title; per fulfillment group a mist block: group label, pill, method 600/15, items, address or tracking | one block, "SZÁLLÍTÁS": the business status pill, the shipping method, the items, "Szállítási cím: …". Mobile: label, method, status text. |
+| Tételek (`249:145`) | rows: name 600/14, "N db" 12.5 slate, price 500/14, line separators | same; the cash-on-delivery fee line is not a product and is not listed here |
+| Összesítés (`249:172`) | Termékek, the per-group shipping rows, "Fizetett összeg", "Fizetés" | Termékek, the fee under its own name, the shipping method, then **"Végösszeg"**, or "Fizetett összeg" only when the payment is captured, then "Fizetés" (method · status) |
+| Számlázás (`249:193`) | company, address, tax number, "Számla letöltése" | company (or the name), the address line, the tax number when the billing address carries one (`metadata.tax_id`, P5 item 5); no invoice button |
+| "Kérdésed van a rendelésről?" (`249:200`) | mist box; mobile: a heritage button (`249:303`) | the same, as `mailto:` the shop address with the order number in the subject. The frame's "we see all three fulfillment groups" is left out. |
+
+- **The status pill** is upper case with 0.5 px letter spacing: the frame's text style (`textCase: UPPER`) on every pill. The list page (4a) had missed it, because my Figma dump printed the characters but not the text case. Fixed here for both pages.
+- **Deviation:** a "‹ Rendeléseim" link above the head. The desktop frame has no way back, and without the menu this page would otherwise be a dead end. The mobile frame's own header has a back arrow; the P1b header stays.
+- **Deviation:** the items list shows on mobile too. The mobile frame (`249:252`) leaves it out, but it is the order's content.
+- **Left out** (`P5-LEFT-OUT.md`):
+  - the fulfillment groups (P4);
+  - parcel tracking ("A feladás után itt jelenik meg a csomagkövetés");
+  - "Számla letöltése".
+- **Removed:** the old account order details template and its now unused order summary component.
+
+Measured locally against stage on 2026-09-29, signed in as the test account, on its real order (`order_01M3PMCXWK4B0CW80EJA11AMZE`, #1):
+- **1440 px:** no menu; main column 888 and side 412 (Figma 872 / 404). The summary reads "Termékek 1000 Ft · Utánvét kezelési díj 450 Ft · GLS házhozszállítás 3500 Ft · Végösszeg 4950 Ft · Fizetés Utánvét · fizetésre vár".
+- **390 px:** the payment box, then Teljesítés, Tételek, Összesítés, Számlázás, the question button; no horizontal scroll.
+- **The order has no pill:** it was placed before #415. A new test order after #415's deploy proves the status separately.
+- **The 4a list, live with the same order:** the open card "#1 · 2026. 09. 29. · fizetésre vár · 4950 Ft · Rendelés részletei".
+
+Figma on the left, ours on the right: fleet share `agents/murena/p2-kepek/p5-rendeles-reszlet-1440-figma-balra.png`, `…-reszlet-390-…`, `…-lista-1440-…`, `…-lista-390-…`.
