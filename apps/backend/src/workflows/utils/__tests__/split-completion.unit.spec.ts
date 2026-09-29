@@ -47,7 +47,7 @@ const cart = (id: string, items: SplitLine[], extra: Partial<SplitCart> = {}): S
   metadata: {},
   items,
   payment_provider_id: COD,
-  promo_codes: [],
+  pickup_promo_codes: [],
   has_shipping_method: true,
   ...extra,
 })
@@ -142,7 +142,7 @@ const config = { payAtStoreProviderId: PAY_AT_STORE }
 
 const vegyes = () =>
   makeShop(
-    [cart("cart_1", [line("l1", "v_eszkoz"), line("l2", "v_korall", 2)], { promo_codes: ["TAVASZ"] })],
+    [cart("cart_1", [line("l1", "v_eszkoz"), line("l2", "v_korall", 2)], { pickup_promo_codes: ["TAVASZ"] })],
     { cart_1: ["l2"] }
   )
 
@@ -347,5 +347,18 @@ describe("a cart that is not mixed", () => {
     await expect(completeSplitCart("cart_x", shop.ops, config)).rejects.toThrow(
       "was not found"
     )
+  })
+})
+
+describe("a mixed cart with a code that must not go twice", () => {
+  it("the pickup cart gets no promotion call when none of the codes divide", async () => {
+    const shop = makeShop(
+      [cart("cart_1", [line("l1", "v_eszkoz"), line("l2", "v_korall")], { pickup_promo_codes: [] })],
+      { cart_1: ["l2"] }
+    )
+
+    await completeSplitCart("cart_1", shop.ops, config)
+
+    expect(shop.log.filter((entry) => entry.startsWith("applyPromotions"))).toEqual([])
   })
 })

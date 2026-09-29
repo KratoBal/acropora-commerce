@@ -48,9 +48,38 @@ export type SplitCart = {
   items: SplitLine[]
   /** The provider of the payment session the customer chose, if any. */
   payment_provider_id: string | null
-  promo_codes: string[]
+  /**
+   * The cart's promotion codes that also go on the pickup cart
+   * (`pickupPromoCodes`); the shipped cart keeps all of its own.
+   */
+  pickup_promo_codes: string[]
   has_shipping_method: boolean
 }
+
+/** A promotion on the cart, as far as the split needs it. */
+export type CartPromotion = {
+  code: string | null
+  /** `application_method.type`: "percentage" or "fixed". */
+  type: string | null
+  /** `application_method.allocation`: "each" (per item) or "across" (the whole target once). */
+  allocation: string | null
+}
+
+/**
+ * THE CODES THAT MAY GO ON THE PICKUP CART TOO: only those that divide with the
+ * lines, so the two orders together get what the one cart would have got.
+ *
+ * Measured on stage, 2026-09-29, with the same lines in one cart and split in
+ * two: a 10% code gave 950 Ft whole and 100 + 850 split. A fixed cart-level
+ * code (fixed, across) gave 635 Ft whole and 635 on EACH part: applied to
+ * both carts, it is taken twice. A fixed per-item code (each) divides like a
+ * percentage one. So a fixed "across" code stays on the shipped cart only.
+ */
+export const pickupPromoCodes = (promotions: CartPromotion[]): string[] =>
+  promotions
+    .filter((promotion) => promotion.type === "percentage" || promotion.allocation === "each")
+    .map((promotion) => promotion.code)
+    .filter((code): code is string => typeof code === "string" && code.length > 0)
 
 export type SplitOperations = {
   loadCart(cartId: string): Promise<SplitCart | null>
@@ -217,8 +246,8 @@ export const completeSplitCart = async (
     )
   }
 
-  if (cart.promo_codes.length) {
-    await ops.applyPromotions(pickupId, cart.promo_codes)
+  if (cart.pickup_promo_codes.length) {
+    await ops.applyPromotions(pickupId, cart.pickup_promo_codes)
   }
   if (!pickup.has_shipping_method) {
     await ops.setStorePickup(pickupId)
