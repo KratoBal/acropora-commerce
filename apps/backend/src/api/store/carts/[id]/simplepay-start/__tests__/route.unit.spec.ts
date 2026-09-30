@@ -31,4 +31,25 @@ describe("POST /store/carts/:id/simplepay-start", () => {
     expect((sharedPaymentOperations.mock.calls[0] as unknown[])[1]).toEqual({ storePickupOptionId: "so_bolt" })
     expect(res.json).toHaveBeenCalledWith({ payment_url: "https://sandbox.simplepay.hu/pay/x", total: 13450 })
   })
+
+  /**
+   * STRIPE MAY BE LISTED IN THE SAME ROLE. What must fail: this start using
+   * whichever card provider is first, or Stripe when SimplePay is not listed.
+   */
+  it("takes SimplePay by name from the card list, and nothing if it is not listed", async () => {
+    const call = async (list: string) => {
+      startCardPayment.mockClear()
+      const saved = { ...process.env }
+      Object.assign(process.env, { ACROPORA_PP_ONLINE_CARD: list, ACROPORA_SO_PICKUP: "so_bolt" })
+      try {
+        await POST({ params: { id: "cart_1" }, body: {}, scope: {} } as never, { json: jest.fn() } as never)
+      } finally {
+        process.env = saved
+      }
+      return (startCardPayment.mock.calls[0] as unknown[])[2]
+    }
+
+    expect(await call("pp_stripe_stripe, pp_simplepay_simplepay")).toEqual({ providerId: "pp_simplepay_simplepay" })
+    expect(await call("pp_stripe_stripe")).toEqual({ providerId: "" })
+  })
 })

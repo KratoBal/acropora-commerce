@@ -55,6 +55,7 @@ describe("POST /store/carts/:id/complete-split", () => {
 
     const body = await call({
       ACROPORA_PP_PAY_AT_STORE: " pp_system_default ",
+      ACROPORA_PP_ONLINE_CARD: "pp_simplepay_simplepay,pp_stripe_stripe",
       ACROPORA_SO_PICKUP: "so_bolti",
     })
 
@@ -64,6 +65,7 @@ describe("POST /store/carts/:id/complete-split", () => {
     expect(completeSplitCart.mock.calls[0][0]).toBe("cart_1")
     expect(completeSplitCart.mock.calls[0][2]).toEqual({
       payAtStoreProviderId: "pp_system_default",
+      onlineCardProviderIds: ["pp_simplepay_simplepay", "pp_stripe_stripe"],
     })
     expect(body).toEqual({
       orders: [
@@ -87,7 +89,11 @@ describe("POST /store/carts/:id/complete-split", () => {
   it("passes an empty provider when payment in the shop is not configured", async () => {
     completeSplitCart.mockResolvedValue({ order_ids: [], pending_pickup_cart_id: null })
     delete process.env.ACROPORA_PP_PAY_AT_STORE
+    delete process.env.ACROPORA_PP_ONLINE_CARD
     await call({})
-    expect(completeSplitCart.mock.calls[0][2]).toEqual({ payAtStoreProviderId: "" })
+    expect(completeSplitCart.mock.calls[0][2]).toEqual({
+      payAtStoreProviderId: "",
+      onlineCardProviderIds: [],
+    })
   })
 })

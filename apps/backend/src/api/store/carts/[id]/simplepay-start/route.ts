@@ -1,7 +1,8 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 
-import { PAYMENT_ROLE_PROVIDER_ENV } from "../../../../../workflows/utils/payment-providers"
+import { SIMPLEPAY_PROVIDER_ID } from "../../../../../modules/simplepay"
+import { onlineCardProviderIds } from "../../../../../workflows/utils/payment-providers"
 import { resolveShippingOptionRoleBindings } from "../../../../../workflows/utils/shipping-option-roles"
 import { startCardPayment } from "../../../../../workflows/utils/split-completion"
 import { sharedPaymentOperations } from "../../../../../workflows/utils/split-completion-operations"
@@ -32,7 +33,13 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const started = await startCardPayment(
     req.params.id,
     sharedPaymentOperations(req.scope, { storePickupOptionId: storePickup.id }),
-    { providerId: process.env[PAYMENT_ROLE_PROVIDER_ENV.ONLINE_CARD]?.trim() ?? "" }
+    // SimplePay by name: the card role may list Stripe too, and this start is
+    // SimplePay's. Not listed means not configured, as before.
+    {
+      providerId: onlineCardProviderIds().includes(SIMPLEPAY_PROVIDER_ID)
+        ? SIMPLEPAY_PROVIDER_ID
+        : "",
+    }
   )
 
   res.json(started)

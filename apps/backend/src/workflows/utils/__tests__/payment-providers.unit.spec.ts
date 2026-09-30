@@ -1,6 +1,8 @@
 import {
   allowedPaymentProvidersFor,
   buildProviderRoleMap,
+  onlineCardProviderIds,
+  providersForMixedCart,
 } from "../payment-providers"
 import { allowedPaymentRolesFor } from "../payment-eligibility"
 
@@ -82,5 +84,47 @@ describe("which providers a cart may pay with", () => {
       { id: "pp_acropora_cod", role: "COD" },
       { id: "pp_system_default", role: "PAY_AT_STORE" },
     ])
+  })
+})
+
+/**
+ * STRIPE NEXT TO SIMPLEPAY (Balázs 2026-09-30, test storefront only). What must
+ * fail: a second card provider that is not offered, or offered first; a mixed
+ * cart offered Stripe, which the split at completion cannot pay.
+ */
+describe("two card providers", () => {
+  const KARTYAK = {
+    ...ELES_KORNYEZET,
+    ACROPORA_PP_ONLINE_CARD: " pp_simplepay_simplepay , pp_stripe_stripe,pp_simplepay_simplepay ",
+  } as NodeJS.ProcessEnv
+
+  it("both are offered, in the listed order, SimplePay first", () => {
+    expect(onlineCardProviderIds(KARTYAK)).toEqual([
+      "pp_simplepay_simplepay",
+      "pp_stripe_stripe",
+    ])
+    expect(
+      allowedPaymentProvidersFor(
+        allowedPaymentRolesFor(["PICKUP"]),
+        buildProviderRoleMap(KARTYAK)
+      )
+    ).toEqual([
+      { id: "pp_simplepay_simplepay", role: "ONLINE_CARD" },
+      { id: "pp_stripe_stripe", role: "ONLINE_CARD" },
+      { id: "pp_system_default", role: "PAY_AT_STORE" },
+    ])
+  })
+
+  it("a mixed cart keeps SimplePay and the other roles, and loses Stripe", () => {
+    const offer = allowedPaymentProvidersFor(
+      allowedPaymentRolesFor(["PICKUP"]),
+      buildProviderRoleMap(KARTYAK)
+    )
+
+    expect(providersForMixedCart(offer, true)).toEqual([
+      { id: "pp_simplepay_simplepay", role: "ONLINE_CARD" },
+      { id: "pp_system_default", role: "PAY_AT_STORE" },
+    ])
+    expect(providersForMixedCart(offer, false)).toEqual(offer)
   })
 })
