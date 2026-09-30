@@ -1,3 +1,4 @@
+import { SIMPLEPAY_PROVIDER_ID } from "../../modules/simplepay"
 import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
 
 /**
@@ -18,6 +19,14 @@ import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
  *
  * This is the SimplePay integration point. Nothing else in the codebase names a
  * payment provider.
+ *
+ * ONE ROLE, SEVERAL PROVIDERS (Stripe next to SimplePay, Balázs 2026-09-30
+ * 22:36 UTC, test storefront only): a variable may name several ids separated
+ * by commas, and the order is the offer's order, so the first is the default:
+ *
+ *   ACROPORA_PP_ONLINE_CARD=pp_simplepay_simplepay,pp_stripe_stripe
+ *
+ * An id may belong to one role only; the first role that names it keeps it.
  */
 export const PAYMENT_ROLE_PROVIDER_ENV: Record<PaymentRole, string> = {
   ONLINE_CARD: "ACROPORA_PP_ONLINE_CARD",
@@ -25,16 +34,32 @@ export const PAYMENT_ROLE_PROVIDER_ENV: Record<PaymentRole, string> = {
   PAY_AT_STORE: "ACROPORA_PP_PAY_AT_STORE",
 }
 
+/** The ids a variable names: one, or several separated by commas, in order. */
+export const providerIdsOf = (value: string | undefined): string[] =>
+  Array.from(
+    new Set(
+      (value ?? "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )
+  )
+
+/** The online card providers, in the offer's order (the first is the default). */
+export const onlineCardProviderIds = (
+  env: NodeJS.ProcessEnv = process.env
+): string[] => providerIdsOf(env[PAYMENT_ROLE_PROVIDER_ENV.ONLINE_CARD])
+
 export const buildProviderRoleMap = (
   env: NodeJS.ProcessEnv = process.env
 ): Map<string, PaymentRole> => {
   const map = new Map<string, PaymentRole>()
 
   for (const [role, variable] of Object.entries(PAYMENT_ROLE_PROVIDER_ENV)) {
-    const providerId = env[variable]?.trim()
-
-    if (providerId) {
-      map.set(providerId, role as PaymentRole)
+    for (const providerId of providerIdsOf(env[variable])) {
+      if (!map.has(providerId)) {
+        map.set(providerId, role as PaymentRole)
+      }
     }
   }
 
@@ -80,3 +105,30 @@ export const resolvePaymentRole = (
   providerRoles: Map<string, PaymentRole>
 ): PaymentRole | null =>
   (providerId && providerRoles.get(providerId)) || null
+
+/**
+ * THE CARD PROVIDERS THAT CAN PAY A MIXED CART. Only SimplePay: its start
+ * (`simplepay-start`) moves the pickup lines BEFORE the payment, and one
+ * transaction covers both carts (P4-3c). Any other card payment is confirmed on
+ * the whole cart first, and the split at completion would re-create the
+ * session, discarding the payment the customer just confirmed.
+ *
+ * Whether and how Stripe pays a mixed cart is Balázs's decision, not made yet
+ * (acrobot 25421); until then a mixed cart is not offered Stripe.
+ */
+export const SPLIT_PAYING_CARD_PROVIDERS: ReadonlySet<string> = new Set([
+  SIMPLEPAY_PROVIDER_ID,
+])
+
+/** The offer for a cart that will be split: card only where a split can be paid. */
+export const providersForMixedCart = (
+  providers: AllowedPaymentProvider[],
+  mixed: boolean
+): AllowedPaymentProvider[] =>
+  mixed
+    ? providers.filter(
+        (provider) =>
+          provider.role !== "ONLINE_CARD" ||
+          SPLIT_PAYING_CARD_PROVIDERS.has(provider.id)
+      )
+    : providers

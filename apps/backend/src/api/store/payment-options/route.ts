@@ -3,7 +3,10 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 
 import { reconcileCartCashOnDeliveryFeeWorkflow } from "../../../workflows/reconcile-cart-cod-fee"
 import { loadCartCashOnDeliveryFeeState } from "../../../workflows/utils/load-cart-cod-fee-state"
+import { loadCartShippingDecision } from "../../../workflows/utils/load-cart-shipping-decision"
+import { providersForMixedCart } from "../../../workflows/utils/payment-providers"
 import { resolveCartPaymentContext } from "../../../workflows/utils/resolve-cart-payment-context"
+import { PICKUP_CART_METADATA_KEY } from "../../../workflows/utils/split-completion"
 
 /**
  * Which payment methods a cart may use, and what the cash-on-delivery fee would
@@ -36,6 +39,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     filters: { id: cart_id },
     fields: [
       "id",
+      "metadata",
       "shipping_methods.shipping_option_id",
       "payment_collection.payment_sessions.provider_id",
     ],
@@ -52,10 +56,20 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const context = await resolveCartPaymentContext(cart, req.scope)
 
+  // A cart that will be split (pickup-only lines), or already is, gets card
+  // payment only where a split can be paid (`providersForMixedCart`).
+  const decision = await loadCartShippingDecision(cart_id, req.scope)
+  const mixed =
+    !!decision?.split_line_ids.length ||
+    !!(cart.metadata as Record<string, unknown> | null)?.[PICKUP_CART_METADATA_KEY]
+
   res.json({
     payment_options: {
       allowed_payment_roles: context.allowed_payment_roles,
-      allowed_payment_providers: context.allowed_payment_providers,
+      allowed_payment_providers: providersForMixedCart(
+        context.allowed_payment_providers,
+        mixed
+      ),
       selected_payment_role: context.selected_payment_role,
       cash_on_delivery_fee: context.cash_on_delivery_fee,
     },

@@ -1,6 +1,7 @@
 import { loadEnv, defineConfig } from "@medusajs/framework/utils"
 
 import { COMMERCE_SETTINGS_MODULE } from "./src/modules/commerce-settings"
+import { stripeProviders } from "./src/workflows/utils/stripe-config"
 import { STORE_RELATIONS_LIMIT } from "./src/api/store-relations-limit"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
@@ -83,6 +84,10 @@ module.exports = defineConfig({
               backUrl: process.env.SIMPLEPAY_BACK_URL,
             },
           },
+          // Stripe, pp_stripe_stripe: only when STRIPE_API_KEY is set (see
+          // src/workflows/utils/stripe-config.ts). Offered only once linked to the region
+          // and listed in ACROPORA_PP_ONLINE_CARD after SimplePay.
+          ...stripeProviders(),
         ],
       },
     },

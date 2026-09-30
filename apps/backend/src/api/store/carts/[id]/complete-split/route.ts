@@ -1,7 +1,10 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 
-import { PAYMENT_ROLE_PROVIDER_ENV } from "../../../../../workflows/utils/payment-providers"
+import {
+  PAYMENT_ROLE_PROVIDER_ENV,
+  onlineCardProviderIds,
+} from "../../../../../workflows/utils/payment-providers"
 import { completeSplitCart } from "../../../../../workflows/utils/split-completion"
 import { splitCompletionOperations } from "../../../../../workflows/utils/split-completion-operations"
 import { resolveShippingOptionRoleBindings } from "../../../../../workflows/utils/shipping-option-roles"
@@ -41,6 +44,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     {
       payAtStoreProviderId:
         process.env[PAYMENT_ROLE_PROVIDER_ENV.PAY_AT_STORE]?.trim() ?? "",
+      onlineCardProviderIds: onlineCardProviderIds(),
     }
   )
 

@@ -3,7 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 
 import { SimplePayIpn } from "../../modules/simplepay/ipn"
 import { loadCartShippingDecision } from "./load-cart-shipping-decision"
-import { PAYMENT_ROLE_PROVIDER_ENV } from "./payment-providers"
+import { PAYMENT_ROLE_PROVIDER_ENV, onlineCardProviderIds } from "./payment-providers"
 import { completeSplitCart } from "./split-completion"
 import { splitCompletionOperations } from "./split-completion-operations"
 import { resolveShippingOptionRoleBindings } from "./shipping-option-roles"
@@ -46,6 +46,9 @@ export const finishSimplePayOrder = async (
   return completeSplitCart(
     cartId,
     splitCompletionOperations(container, { storePickupOptionId: storePickup?.id ?? "" }),
-    { payAtStoreProviderId: process.env[PAYMENT_ROLE_PROVIDER_ENV.PAY_AT_STORE]?.trim() ?? "" }
+    {
+      payAtStoreProviderId: process.env[PAYMENT_ROLE_PROVIDER_ENV.PAY_AT_STORE]?.trim() ?? "",
+      onlineCardProviderIds: onlineCardProviderIds(),
+    }
   )
 }

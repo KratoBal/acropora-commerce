@@ -196,16 +196,27 @@ const finishPickup = async (
   }
 }
 
+export type SplitCompletionConfig = {
+  payAtStoreProviderId: string
+  /**
+   * The online card providers (`ACROPORA_PP_ONLINE_CARD`). A card payment is
+   * confirmed before completion; the split below re-creates the shipped cart's
+   * session, which would discard it. A card pays a split only together, started
+   * split (the PAID TOGETHER branch).
+   */
+  onlineCardProviderIds: readonly string[]
+}
+
 export const completeSplitCart = (
   cartId: string,
   ops: SplitOperations,
-  config: { payAtStoreProviderId: string }
+  config: SplitCompletionConfig
 ): Promise<SplitResult> => ops.withLock(cartId, () => completeSplitCartLocked(cartId, ops, config))
 
 const completeSplitCartLocked = async (
   cartId: string,
   ops: SplitOperations,
-  config: { payAtStoreProviderId: string }
+  config: SplitCompletionConfig
 ): Promise<SplitResult> => {
   const cart = await mustLoad(ops, cartId)
   const pickupCartId = pickupCartIdOf(cart)
@@ -268,6 +279,15 @@ const completeSplitCartLocked = async (
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       "No payment method is selected for the shipped part"
+    )
+  }
+
+  // Checked before anything moves (see SplitCompletionConfig): a card chosen for
+  // the whole cart cannot survive the split.
+  if (config.onlineCardProviderIds.includes(providerId)) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "A card payment for a cart with pickup-only items starts split; this one was not"
     )
   }
 

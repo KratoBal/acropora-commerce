@@ -196,7 +196,11 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
   return shop
 }
 
-const config = { payAtStoreProviderId: PAY_AT_STORE }
+const STRIPE = "pp_stripe_stripe"
+const config = {
+  payAtStoreProviderId: PAY_AT_STORE,
+  onlineCardProviderIds: [SIMPLEPAY, STRIPE],
+}
 
 const vegyes = () =>
   makeShop(
@@ -252,6 +256,25 @@ describe("completing a mixed cart", () => {
     )
     expect(shop.log).toEqual([])
   })
+
+  /*
+    A CARD CHOSEN FOR THE WHOLE CART (Stripe next to SimplePay). The split
+    below re-creates the shipped cart's session, which would discard a payment
+    the customer already confirmed. What must fail: the lines moving, or a new
+    session, before the refusal.
+  */
+  it("refuses a card chosen for the whole mixed cart, and moves nothing", async () => {
+    const shop = makeShop(
+      [cart("cart_1", [line("l1", "v_eszkoz"), line("l2", "v_korall")], { payment_provider_id: STRIPE })],
+      { cart_1: ["l2"] }
+    )
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow(
+      "A card payment for a cart with pickup-only items starts split"
+    )
+    expect(shop.log).toEqual([])
+    expect(shop.carts.get("cart_1")!.items).toHaveLength(2)
+    expect(shop.carts.get("cart_1")!.payment_provider_id).toBe(STRIPE)
+  })
 })
 
 describe("the pickup order must be possible before the first order", () => {
@@ -302,7 +325,10 @@ describe("configuration", () => {
   it("without payment in the shop configured, refuses before moving anything", async () => {
     const shop = vegyes()
     await expect(
-      completeSplitCart("cart_1", shop.ops, { payAtStoreProviderId: "" })
+      completeSplitCart("cart_1", shop.ops, {
+        payAtStoreProviderId: "",
+        onlineCardProviderIds: [],
+      })
     ).rejects.toThrow("Payment in the shop is not configured")
     expect(shop.log).toEqual([])
   })
