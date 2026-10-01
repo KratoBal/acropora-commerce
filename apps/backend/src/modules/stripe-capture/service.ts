@@ -57,6 +57,12 @@ type CaptureRecords = {
 
 const major = (value: unknown): number => Number(new BigNumber(value as any).numeric)
 
+type StripeRefund = { amount: number; status?: string; metadata?: Record<string, string> | null }
+
+/** The refund's metadata: which Medusa payment it belongs to, and which Medusa refund it is. */
+const REFUND_PAYMENT_KEY = "acropora_payment"
+const REFUND_RECORD_KEY = "acropora_refund"
+
 const StripeProviderService = (
   StripePaymentModule as unknown as {
     services: (new (cradle: Record<string, unknown>, options: unknown) => any)[]
@@ -67,6 +73,7 @@ export default class AcroporaStripeService extends StripeProviderService {
   static identifier = "stripe"
 
   protected readonly captureRecords_: CaptureRecords | null
+  protected readonly refundRecords_: CaptureRecords | null
 
   constructor(cradle: Record<string, unknown>, options: unknown) {
     super(cradle, options)
@@ -82,6 +89,13 @@ export default class AcroporaStripeService extends StripeProviderService {
       records = null
     }
     this.captureRecords_ = records
+    let refunds: CaptureRecords | null = null
+    try {
+      refunds = (cradle.refundService as CaptureRecords | undefined) ?? null
+    } catch {
+      refunds = null
+    }
+    this.refundRecords_ = refunds
   }
 
   /** The share facts travel with every answer that replaces the session data. */
@@ -343,6 +357,77 @@ export default class AcroporaStripeService extends StripeProviderService {
     )
 
     return { data: captured as Record<string, unknown> }
+  }
+
+  /**
+   * A SHARED INTENT IS REFUNDED PER ORDER, TO THE UNIT (acrobot 25694, stage
+   * #24/#25). Medusa limits a refund to what was captured on the payment, but
+   * with a tolerance of one unit of the currency (`refundPayment_`, the epsilon
+   * of HUF's 0 decimals is 1 Ft): on a single intent Stripe stops the excess, on
+   * the shared intent the excess came out of the OTHER order's part (+1 Ft on
+   * #24 left #25's own refund 1 Ft short, and Stripe refused it).
+   *
+   * So a refund of a shared payment is checked here, exactly: this payment's
+   * captured part (`a:<payment>` on the intent) minus what Stripe has already
+   * refunded for it. Every refund carries the payment and the Medusa refund in
+   * its metadata; a retried refund (same record) is found and replayed, not
+   * counted twice. The refund the capture released (the uncaptured rest) has no
+   * such metadata and counts for no order.
+   */
+  async refundPayment(input: {
+    amount: unknown
+    data?: Record<string, unknown>
+    context?: { idempotency_key?: string }
+  }): Promise<any> {
+    const share = stripeShareFactsOf(input.data)
+    if (!share) return super.refundPayment(input)
+
+    const refundId = input.context?.idempotency_key
+    if (!refundId || !this.refundRecords_) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "The card refund has no refund record to take its payment from"
+      )
+    }
+    const record = (await this.refundRecords_.retrieve(refundId, {
+      select: ["id", "payment_id"],
+    })) as { payment_id?: string }
+    const paymentId = record.payment_id
+    if (!paymentId) {
+      throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "The refund record names no payment")
+    }
+
+    const stripe = (this as any).stripe_
+    const intent = await stripe.paymentIntents.retrieve(share.transactionId)
+    const units = smallestUnit(major(input.amount), intent.currency)
+    const existing = await stripe.refunds.list({ payment_intent: share.transactionId, limit: 100 })
+    const ours = (existing.data as StripeRefund[]).filter(
+      (refund) => refund.metadata?.[REFUND_PAYMENT_KEY] === paymentId && refund.status !== "failed" && refund.status !== "canceled"
+    )
+
+    // the same Medusa refund retried (a lost answer): it is already there
+    if (ours.some((refund) => refund.metadata?.[REFUND_RECORD_KEY] === refundId)) {
+      return { data: { ...(input.data ?? {}) } }
+    }
+
+    const part = Number(intent.metadata?.[capturedPartKey(paymentId)] ?? NaN)
+    const refunded = ours.reduce((sum, refund) => sum + refund.amount, 0)
+    if (!Number.isFinite(part) || refunded + units > part) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Ennyi nem téríthető vissza erről a rendelésről: a levont rész ${Number.isFinite(part) ? part / 100 : "ismeretlen"}, ebből már visszatérítve ${refunded / 100}.`
+      )
+    }
+
+    await stripe.refunds.create(
+      {
+        payment_intent: share.transactionId,
+        amount: units,
+        metadata: { [REFUND_PAYMENT_KEY]: paymentId, [REFUND_RECORD_KEY]: refundId },
+      },
+      { idempotencyKey: refundId }
+    )
+    return { data: { ...(input.data ?? {}) } }
   }
 
   /**

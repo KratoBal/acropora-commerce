@@ -406,12 +406,25 @@ describe("capturing the shared Stripe payment", () => {
  */
 describe("refunding the pickup's part of the shared payment", () => {
   it("refunds the amount on the shared intent", async () => {
+    // a közös fizetés visszatérítése 2026-10-01 óta a saját útján megy (a
+    // fizetésenkénti pontos határ, lásd a refundPayment-blokkot alább)
     const service = new AcroporaStripeService(
-      { captureService: { retrieve: jest.fn() } },
+      {
+        captureService: { retrieve: jest.fn() },
+        refundService: { retrieve: jest.fn(async (id: string) => ({ id, payment_id: "pay_pick" })) },
+      },
       { apiKey: "sk_test_helyi_proba" }
     )
-    const refunds = { create: jest.fn(async () => ({ id: "re_1" })) }
-    ;(service as any).stripe_ = { refunds, paymentIntents: {} }
+    const refunds = {
+      create: jest.fn(async () => ({ id: "re_1" })),
+      list: jest.fn(async () => ({ data: [] })),
+    }
+    ;(service as any).stripe_ = {
+      refunds,
+      paymentIntents: {
+        retrieve: jest.fn(async () => ({ id: "pi_joint", currency: "huf", metadata: { "a:pay_pick": "1700000" } })),
+      },
+    }
     await service.refundPayment({
       amount: 8500,
       data: {
@@ -422,7 +435,11 @@ describe("refunding the pickup's part of the shared payment", () => {
       context: { idempotency_key: "ref_1" },
     })
     expect(refunds.create).toHaveBeenCalledWith(
-      { amount: 850_000, payment_intent: "pi_joint" },
+      {
+        amount: 850_000,
+        payment_intent: "pi_joint",
+        metadata: { acropora_payment: "pay_pick", acropora_refund: "ref_1" },
+      },
       { idempotencyKey: "ref_1" }
     )
   })
@@ -472,5 +489,86 @@ describe("AcroporaStripeService webhook", () => {
     expect((await event("payment_intent.amount_capturable_updated", { amount_capturable: 2_780_000 })).action).toBe(
       "authorized"
     )
+  })
+})
+
+/*
+  A KÖZÖS INTENT VISSZATÉRÍTÉSE RENDELÉSENKÉNT, EGYSÉGRE PONTOSAN (acrobot 25694,
+  stage #24/#25: +1 Ft a #24-ről a #25 részéből ment el). MI PIROSÍT: ha a levont
+  részen túl, akár 1 egységgel, visszatérítene; ha a másik fizetés vagy a
+  felszabadított maradék visszatérítése a határba számítana; ha egy újrapróbált
+  visszatérítés kétszer menne ki; ha a visszatérítés nem vinné a fizetést és a
+  Medusa-rekordot a metadatában; ha a nem közös fizetés útja megváltozna.
+*/
+describe("AcroporaStripeService.refundPayment", () => {
+  const SHARED = { id: "pi_joint", stripe_share: { transactionId: "pi_joint", total: 7459, own: 5199 } }
+  const makeRefund = (opts: { refunds?: Record<string, unknown>[]; payment?: string; parts?: Record<string, string> }) => {
+    const service = new AcroporaStripeService(
+      {
+        captureService: { retrieve: jest.fn() },
+        refundService: { retrieve: jest.fn(async (id: string) => ({ id, payment_id: opts.payment ?? "pay_ship" })) },
+      },
+      { apiKey: "sk_test_helyi_proba" }
+    )
+    const create = jest.fn(async (params: Record<string, unknown>) => ({ id: "re_new", ...params }))
+    ;(service as any).stripe_ = {
+      paymentIntents: {
+        retrieve: jest.fn(async () => ({
+          id: "pi_joint",
+          currency: "huf",
+          metadata: opts.parts ?? { "a:pay_ship": "519900", "a:pay_pick": "226000" },
+        })),
+      },
+      refunds: { list: jest.fn(async () => ({ data: opts.refunds ?? [] })), create },
+    }
+    return { service, create }
+  }
+  const refund = (service: any, amount: number, id = "ref_1") =>
+    service.refundPayment({ amount, data: SHARED, context: { idempotency_key: id } })
+
+  it("refunds within the order's own captured part, marked with the payment and the record", async () => {
+    const { service, create } = makeRefund({})
+    await refund(service, 33)
+    expect(create).toHaveBeenCalledWith(
+      {
+        payment_intent: "pi_joint",
+        amount: 3300,
+        metadata: { acropora_payment: "pay_ship", acropora_refund: "ref_1" },
+      },
+      { idempotencyKey: "ref_1" }
+    )
+  })
+
+  it("refuses even one unit beyond the order's part, though the shared intent has room", async () => {
+    const { service, create } = makeRefund({
+      refunds: [{ amount: 519900, status: "succeeded", metadata: { acropora_payment: "pay_ship", acropora_refund: "ref_0" } }],
+    })
+    await expect(refund(service, 1)).rejects.toThrow("Ennyi nem téríthető vissza")
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it("the other order's refunds and the released rest do not count against this order", async () => {
+    const { service, create } = makeRefund({
+      refunds: [
+        { amount: 226000, status: "succeeded", metadata: { acropora_payment: "pay_pick", acropora_refund: "ref_p" } },
+        { amount: 1050000, status: "succeeded", metadata: {} },
+      ],
+    })
+    await refund(service, 5199)
+    expect(create).toHaveBeenCalledTimes(1)
+  })
+
+  it("a retried refund is not sent twice", async () => {
+    const { service, create } = makeRefund({
+      refunds: [{ amount: 3300, status: "succeeded", metadata: { acropora_payment: "pay_ship", acropora_refund: "ref_1" } }],
+    })
+    await refund(service, 33, "ref_1")
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it("a payment that is not shared keeps the stock refund", async () => {
+    const { service, create } = makeRefund({})
+    await service.refundPayment({ amount: 33, data: { id: "pi_single", currency: "huf" }, context: { idempotency_key: "ref_s" } })
+    expect(create).toHaveBeenCalledWith({ amount: 3300, payment_intent: "pi_single" }, { idempotencyKey: "ref_s" })
   })
 })

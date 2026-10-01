@@ -41,6 +41,8 @@ export type CapturePaymentSide = {
     /** The payment's collection; the order edit's capture sets its amount. */
     collection_id?: string
   } | null
+  /** The order's payments are all canceled (the order was canceled before the capture). */
+  payment_canceled?: boolean
 }
 
 export type SharedCaptureOperations = {
@@ -72,7 +74,14 @@ export const captureSharedStripePayment = async (
   }
 
   const pickup = pair.pickup
-  if (!pickup?.payment) {
+  /*
+    A PICKUP ORDER CANCELED BEFORE THE CAPTURE (acrobot 25694, stage #28/#29: the
+    animal's order canceled, then Kiszállítás refused with "no pickup order
+    payment", the hold stuck). Its payment is canceled, so its part is 0: only
+    the shipped part is captured, and Stripe releases the rest.
+  */
+  const pickupPayment = pickup?.payment ?? null
+  if (!pickup || (!pickupPayment && !pickup.payment_canceled)) {
     throw new MedusaError(
       MedusaError.Types.UNEXPECTED_STATE,
       `The shared card payment of order ${orderId} has no pickup order payment`
@@ -81,7 +90,7 @@ export const captureSharedStripePayment = async (
 
   // Each order's current amount, never more than its part of the hold.
   const shippedAmount = Math.min(shipped.total, shipped.payment.amount)
-  const pickupAmount = Math.min(pickup.total, pickup.payment.amount)
+  const pickupAmount = pickupPayment ? Math.min(pickup.total, pickupPayment.amount) : 0
 
   if (!(shippedAmount > 0)) {
     throw new MedusaError(
@@ -91,15 +100,15 @@ export const captureSharedStripePayment = async (
   }
 
   const booked = (side: CapturePaymentSide, amount: number) =>
-    side.payment!.captured === amount
+    !side.payment || side.payment.captured === amount
   const partial = (side: CapturePaymentSide, amount: number) =>
-    side.payment!.captured > 0 && side.payment!.captured !== amount
+    !!side.payment && side.payment.captured > 0 && side.payment.captured !== amount
 
   // Captured earlier, when an order edit was confirmed (capture-before-order-edit):
   // the hold is gone, so an item dropped since then is a refund, not a capture.
   if (
     shipped.payment.captured > 0 &&
-    pickup.payment.captured > 0 &&
+    (pickupPayment?.captured ?? 0) > 0 &&
     (partial(shipped, shippedAmount) || partial(pickup, pickupAmount))
   ) {
     return { captured: false, reason: "already_captured" }
@@ -117,8 +126,8 @@ export const captureSharedStripePayment = async (
       total: 0,
       parts: {
         [shipped.payment.id]: smallestUnit(shippedAmount, shipped.currency_code),
-        ...(pickupAmount > 0
-          ? { [pickup.payment.id]: smallestUnit(pickupAmount, pickup.currency_code) }
+        ...(pickupPayment && pickupAmount > 0
+          ? { [pickupPayment.id]: smallestUnit(pickupAmount, pickup.currency_code) }
           : {}),
       },
     }
@@ -131,8 +140,8 @@ export const captureSharedStripePayment = async (
     await ops.capture(shipped.payment.id, shippedAmount)
   }
 
-  if (pickupAmount > 0 && !booked(pickup, pickupAmount)) {
-    await ops.capture(pickup.payment.id, pickupAmount)
+  if (pickupPayment && pickupAmount > 0 && !booked(pickup, pickupAmount)) {
+    await ops.capture(pickupPayment.id, pickupAmount)
   }
 
   return { captured: true, shipped: shippedAmount, pickup: pickupAmount }
