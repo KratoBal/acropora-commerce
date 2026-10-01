@@ -65,6 +65,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   res.json({
     payment_options: {
+      // the storefront takes the split card path (Stripe: the deferred card
+      // field, confirmed at placement after stripe-start) for a mixed cart
+      split: mixed,
       allowed_payment_roles: context.allowed_payment_roles,
       allowed_payment_providers: providersForMixedCart(
         context.allowed_payment_providers,

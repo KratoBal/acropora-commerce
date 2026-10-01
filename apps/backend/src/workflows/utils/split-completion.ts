@@ -477,6 +477,8 @@ export type SharedPaymentOperations = SplitOperations & {
 
 export type SharedPaymentStart = {
   payment_url: string | null
+  /** Stripe: the joint intent's client secret, to confirm the card with. */
+  client_secret?: string | null
   total: number
   shipped_total: number
   pickup_total: number
@@ -524,7 +526,8 @@ export const SIMPLEPAY_SHARE: CardShare = {
 
 export const STRIPE_SHARE: CardShare = {
   factsKey: STRIPE_SHARE_KEY,
-  joint: (total) => ({ [STRIPE_JOINT_KEY]: { total } }),
+  // card only: the storefront's deferred card field asks for card alone
+  joint: (total) => ({ [STRIPE_JOINT_KEY]: { total }, payment_method_types: ["card"] }),
   joined: (facts) => ({ [STRIPE_JOINED_KEY]: facts }),
 }
 
@@ -608,6 +611,7 @@ const startCardPaymentLocked = async (
 
     return {
       payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,
+      ...(typeof facts.clientSecret === "string" ? { client_secret: facts.clientSecret } : {}),
       total: shipped + pickup,
       shipped_total: shipped,
       pickup_total: pickup,
@@ -633,6 +637,31 @@ export const rejoinSharedSplit = (
   cartId: string,
   ops: SplitOperations
 ): Promise<{ rejoined: boolean }> => ops.withLock(cartId, () => rejoinSharedSplitLocked(cartId, ops))
+
+/**
+ * A SHARED STRIPE PAYMENT THAT DID NOT HAPPEN: the split is undone as for
+ * SimplePay (`rejoinSharedSplit`), and both carts' payment sessions are
+ * dropped. The shipped session's drop cancels the joint intent (no hold stays
+ * on the card); the pickup session only joined, its drop touches nothing.
+ */
+export const rejoinAndClearSharedSplit = (
+  cartId: string,
+  ops: SharedPaymentOperations
+): Promise<{ rejoined: boolean }> =>
+  ops.withLock(cartId, async () => {
+    const cart = await mustLoad(ops, cartId)
+    const pickupCartId = pickupCartIdOf(cart)
+    const { rejoined } = await rejoinSharedSplitLocked(cartId, ops)
+
+    if (rejoined) {
+      await ops.clearPayment(cartId)
+      if (pickupCartId) {
+        await ops.clearPayment(pickupCartId)
+      }
+    }
+
+    return { rejoined }
+  })
 
 const rejoinSharedSplitLocked = async (
   cartId: string,

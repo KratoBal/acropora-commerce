@@ -151,7 +151,12 @@ export default class AcroporaStripeService extends StripeProviderService {
         ...started,
         data: {
           ...(started.data ?? {}),
-          [STRIPE_SHARE_KEY]: { transactionId: started.id, total, own } satisfies StripeShareFacts,
+          [STRIPE_SHARE_KEY]: {
+            transactionId: started.id,
+            total,
+            own,
+            clientSecret: (started.data as { client_secret?: string } | undefined)?.client_secret,
+          } satisfies StripeShareFacts,
         },
       }
     }
