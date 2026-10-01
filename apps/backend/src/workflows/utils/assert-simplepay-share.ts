@@ -3,8 +3,8 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 import {
   SimplePaySessionFacts,
   isSharedSimplePay,
-  simplePayFactsOf,
 } from "../../modules/simplepay/service"
+import { cardShareFactsOf } from "./card-share-facts"
 import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "./split-completion"
 
 /** A cart as the check sees it: its total and its SimplePay facts, if any. */
@@ -83,7 +83,7 @@ const loadShareView = async (
   }
 
   const sessions = (raw.payment_collection?.payment_sessions ?? []) as { data?: unknown }[]
-  const facts = sessions.map((session) => simplePayFactsOf(session?.data)).find(Boolean) ?? null
+  const facts = sessions.map((session) => cardShareFactsOf(session?.data)).find(Boolean) ?? null
 
   return { id: raw.id, total: Number(raw.total), metadata: raw.metadata ?? null, facts }
 }

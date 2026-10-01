@@ -7,6 +7,7 @@ import {
   SharedPaymentOperations,
   SplitOperations,
   SPLIT_LOCK_KEY,
+  STRIPE_SHARE,
   chooseCardPayment,
   completeSplitCart,
   rejoinSharedSplit,
@@ -173,16 +174,21 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     cartTotal: async (id) =>
       get(id).items.reduce((sum, l) => sum + (PRICE[l.variant_id ?? ""] ?? 0) * l.quantity, 0),
     payerOf: async (id) => ({ customer_email: `${id}@example.hu`, invoice: { name: "Teszt Elek" } }),
-    startPayment: async (id, provider, data) => {
-      const keys = Object.keys(data).filter((k) => k.startsWith("simplepay"))
-      const jointTotal = (data.simplepay_joint as { total?: number } | undefined)?.total
-      step(`startPayment ${id} ${provider} ${JSON.stringify(keys)}${jointTotal !== undefined ? ` ${jointTotal}` : ""}`)
+    startPayment: async (id, provider, data, factsKey) => {
+      const keys = Object.keys(data).filter((k) => k.startsWith("simplepay") || k.startsWith("stripe"))
+      const joint = (data.simplepay_joint ?? data.stripe_joint) as { total: number } | undefined
+      const joined = data.simplepay_joined ?? data.stripe_joined
+      const jointTotal = joint?.total
+      step(
+        `startPayment ${id} ${provider} ${JSON.stringify(keys)}${jointTotal !== undefined ? ` ${jointTotal}` : ""}${
+          factsKey && factsKey !== "simplepay" ? ` key=${factsKey}` : ""
+        }`
+      )
       const c = get(id)
       c.payment_provider_id = provider
       c.shared_payment = true
-      const joint = data.simplepay_joint as { total: number } | undefined
-      if (data.simplepay_joined) {
-        return { ...(data.simplepay_joined as object), joined: true }
+      if (joined) {
+        return { ...(joined as object), joined: true }
       }
       c.shared_payment = !!joint
       return {
@@ -457,6 +463,51 @@ describe("a mixed cart with a code that must not go twice", () => {
  */
 describe("starting one card payment for a mixed cart", () => {
   const config = { providerId: SIMPLEPAY }
+
+  /*
+    STRIPE, THE SAME SPLIT (Balázs 2026-10-01: one Stripe payment for both
+    orders). What must fail: the Stripe keys not reaching the sessions, the
+    facts read from SimplePay's key, or the lock letting a mixed cart through.
+  */
+  it("Stripe: splits first, one intent for both carts, which the pickup session joins", async () => {
+    const shop = vegyes()
+
+    const result = await startCardPayment("cart_1", shop.ops, {
+      providerId: STRIPE,
+      share: STRIPE_SHARE,
+    })
+
+    expect(result.total).toBe(4950 + 17000)
+    expect(shop.log.slice(-2)).toEqual([
+      `startPayment cart_1 ${STRIPE} ["stripe_joint"] 21950 key=stripe_share`,
+      `startPayment cart_pickup_1 ${STRIPE} ["stripe_joined"] key=stripe_share`,
+    ])
+  })
+
+  it("the Stripe lock refuses a mixed cart before anything changes", async () => {
+    const shop = vegyes()
+
+    await expect(
+      startCardPayment("cart_1", shop.ops, {
+        providerId: STRIPE,
+        share: STRIPE_SHARE,
+        allowSplit: false,
+      })
+    ).rejects.toThrow("does not pay a cart with pickup-only items yet")
+    expect(shop.log).toEqual([])
+    expect(shop.carts.get("cart_1")!.items).toHaveLength(2)
+  })
+
+  it("the lock leaves a cart that is not split alone", async () => {
+    const plain = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})
+
+    await startCardPayment("cart_1", plain.ops, {
+      providerId: STRIPE,
+      share: STRIPE_SHARE,
+      allowSplit: false,
+    })
+    expect(plain.log.at(-1)).toBe(`startPayment cart_1 ${STRIPE} [] key=stripe_share`)
+  })
 
   it("splits first, then starts one transaction for both carts, which the pickup session joins", async () => {
     const shop = vegyes()
