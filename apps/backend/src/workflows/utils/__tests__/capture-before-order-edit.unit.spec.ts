@@ -137,6 +137,28 @@ describe("captureBeforeOrderEdit", () => {
     expect(log).toEqual(["collection pay_col_1 17300", "capture fails", "collection pay_col_1 27800"])
   })
 
+  /*
+    EGY MÁSIK KÁRTYÁS SZOLGÁLTATÓ LEVONATLAN ZÁROLÁSA (c64d463f). MI PIROSÍT: ha egy
+    kétlépéses (AUTHORIZED, nem levont) SimplePay-fizetésnél a szerkesztés átmenne
+    (a Medusa csendben törölné a zárolást); ha a ma egylépéses, már levont
+    SimplePay, vagy az utánvét és a bolti fizetés szerkesztése megállna.
+  */
+  it("another card provider's uncaptured hold stops the edit; captured, or not a card, passes", async () => {
+    const cards = ["pp_stripe_stripe", "pp_simplepay_simplepay"]
+    const held = opsFor([single({ provider_id: "pp_simplepay_simplepay", captured: 0 })], 17300)
+    expect((await captureBeforeOrderEdit("order_1", held.ops, cards)).action).toBe("refuse")
+    expect(held.log).toEqual([])
+    for (const payment of [
+      { provider_id: "pp_simplepay_simplepay", captured: 27800 },
+      { provider_id: "pp_acropora_cod", captured: 0 },
+      { provider_id: "pp_system_default", captured: 0 },
+    ]) {
+      const { ops, log } = opsFor([single(payment)], 17300)
+      expect(await captureBeforeOrderEdit("order_1", ops, cards)).toEqual({ action: "pass", reason: "no_card_hold" })
+      expect(log).toEqual([])
+    }
+  })
+
   it("no requested edit: nothing is touched", async () => {
     const { ops, log } = opsFor([single()], null)
     expect(await captureBeforeOrderEdit("order_1", ops)).toEqual({ action: "pass", reason: "no_requested_edit" })
