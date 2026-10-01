@@ -56,3 +56,16 @@ export const engedelyezettFizetesiModok = <T extends { id: string }>(
 
     return talalat ? [{ ...talalat, role: mod.role }] : []
   })
+
+/**
+ * A VEVO ALTAL OLVASOTT FELIRAT EGY MODRA. A szerepe adja (lasd fent); a Stripe
+ * kartyas modja kiegeszitest kap, mert mellette a SimplePay is kartyas, es ket
+ * egyforma "Bankkártyás fizetés" sor kozott a vevo nem tudna valasztani
+ * (Stripe a SimplePay mellett, Balazs 2026-09-30, csak a teszt kirakaton).
+ * A Stripe felismerese az azonosito elotagja (`pp_stripe_`), ugyanaz, amit a
+ * sablon `isStripeLike`-ja a kartyamezohoz hasznal.
+ */
+export const fizetesiModCimke = (mod: EngedelyezettFizetesiMod): string =>
+  mod.role === "ONLINE_CARD" && mod.id.startsWith("pp_stripe_")
+    ? `${FIZETESI_SZEREP_CIMKE.ONLINE_CARD} (Stripe)`
+    : FIZETESI_SZEREP_CIMKE[mod.role]

@@ -2,10 +2,11 @@
 import { RadioGroup } from "@headlessui/react"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import {
-  FIZETESI_SZEREP_CIMKE,
   type EngedelyezettFizetesiMod,
   engedelyezettFizetesiModok,
+  fizetesiModCimke,
 } from "@lib/util/fizetesi-modok"
+import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
 import { valasszKartyat } from "@lib/data/simplepay"
@@ -100,11 +101,12 @@ const Payment = ({
     setSelectedPaymentMethod(method)
     setUtanvetDij(0)
 
-    // A BANKKARTYA VALASZTASA MEG NEM INDIT SEMMIT (P4-4): a SimplePay-nel egy
-    // munkamenet egy elinditott tranzakcio, az pedig csak a nyilatkozat
-    // elfogadasa utan indulhat (8. fejezet). A "Tovabb" keszíti elo, a
-    // "Rendeles leadasa" inditja.
-    if (szerepe(method) === "ONLINE_CARD") {
+    // A SIMPLEPAY VALASZTASA MEG NEM INDIT SEMMIT (P4-4): ott egy munkamenet
+    // egy elinditott tranzakcio, az pedig csak a nyilatkozat elfogadasa utan
+    // indulhat (8. fejezet). A "Tovabb" keszíti elo, a "Rendeles leadasa"
+    // inditja. A Stripe-nak viszont MOST kell a munkamenet: abbol kapja a
+    // kartyamezo a titkos kulcsat, tehat az a tobbi moddal egyutt indul.
+    if (simplePayE(method)) {
       return
     }
 
@@ -148,17 +150,30 @@ const Payment = ({
     }
   }
 
+  // Stripe publikus kulcs nelkul a kartyamezo nem toltodne be: a mod akkor
+  // nem jelenik meg (`stripe-kulcs.ts`).
   const megjelenitheto = engedelyezettFizetesiModok(
     availablePaymentMethods,
     engedelyezettModok,
-  )
+  ).filter((mod) => STRIPE_PUBLIKUS_KULCS || !isStripeLike(mod.id))
 
   // A bankkartyas modot a SZEREP mondja meg (a hatter szerepkiosztasa), nem a
   // szolgaltato azonositojanak alakja.
   function szerepe(mod: string) {
     return megjelenitheto.find((m) => m.id === mod)?.role
   }
-  const kartyasValasztva = szerepe(selectedPaymentMethod) === "ONLINE_CARD"
+  /*
+    KET KARTYAS SZOLGALTATO LEHET (Stripe a SimplePay mellett, Balazs
+    2026-09-30, csak a teszt kirakaton). A SimplePay utja (nyilatkozat, a
+    tranzakcio a leadaskor indul) a kartyas szerep NEM Stripe szolgaltatojae; a
+    Stripe a sablon sajat utjat jarja (kartyamezo itt, megerosites a leadaskor).
+    A Stripe felismerese ugyanaz az `isStripeLike`, amit a kartyamezo es a
+    leado gomb is hasznal.
+  */
+  function simplePayE(mod: string) {
+    return szerepe(mod) === "ONLINE_CARD" && !isStripeLike(mod)
+  }
+  const kartyasValasztva = simplePayE(selectedPaymentMethod)
 
   /**
    * A CIMKE A SZEREPBOL JON, NEM AZ AZONOSITOBOL.
@@ -175,7 +190,7 @@ const Payment = ({
       megjelenitheto.map((mod) => [
         mod.id,
         {
-          title: FIZETESI_SZEREP_CIMKE[mod.role],
+          title: fizetesiModCimke(mod),
           icon: paymentInfoMap[mod.id]?.icon ?? <CreditCard />,
         },
       ]),

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   FIZETESI_SZEREP_CIMKE,
   engedelyezettFizetesiModok,
+  fizetesiModCimke,
 } from "./fizetesi-modok"
 
 const REGIO = [{ id: "pp_system_default" }, { id: "pp_acropora_cod" }]
@@ -59,5 +60,23 @@ describe("engedelyezettFizetesiModok", () => {
     // PD-002: "Fizetés átvételkor", nem "Fizetés a boltban".
     expect(FIZETESI_SZEREP_CIMKE.PAY_AT_STORE).toBe("Fizetés átvételkor")
     expect(Object.values(FIZETESI_SZEREP_CIMKE).every(Boolean)).toBe(true)
+  })
+})
+
+/**
+ * KET KARTYAS SZOLGALTATO (Stripe a SimplePay mellett). MI PIROSIT: ket
+ * egyforma "Bankkártyás fizetés" sor, vagy a kiegeszites mas modon is.
+ */
+describe("fizetesiModCimke", () => {
+  it("a Stripe kártyás módja megkülönböztetve, a többi a szerepéé", () => {
+    expect(
+      fizetesiModCimke({ id: "pp_stripe_stripe", role: "ONLINE_CARD" }),
+    ).toBe("Bankkártyás fizetés (Stripe)")
+    expect(
+      fizetesiModCimke({ id: "pp_simplepay_simplepay", role: "ONLINE_CARD" }),
+    ).toBe("Bankkártyás fizetés")
+    expect(fizetesiModCimke({ id: "pp_acropora_cod", role: "COD" })).toBe(
+      "Utánvét",
+    )
   })
 })
