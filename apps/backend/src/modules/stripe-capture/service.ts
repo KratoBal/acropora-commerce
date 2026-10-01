@@ -1,5 +1,5 @@
 import StripePaymentModule from "@medusajs/medusa/payment-stripe"
-import { BigNumber, MedusaError } from "@medusajs/framework/utils"
+import { BigNumber, MedusaError, PaymentActions } from "@medusajs/framework/utils"
 
 import {
   STRIPE_CAPTURE_PARTS_KEY,
@@ -344,4 +344,36 @@ export default class AcroporaStripeService extends StripeProviderService {
 
     return { data: captured as Record<string, unknown> }
   }
+
+  /**
+   * THE `payment_intent.succeeded` THAT FOLLOWS OUR OWN CAPTURE (acrobot 25657).
+   *
+   * Medusa's webhook turns `succeeded` into a capture of the session's payment
+   * for `amount_received`. When this provider captured LESS than the hold (an
+   * item dropped) or one capture for a mixed cart's two payments, Medusa has
+   * booked it already, per payment; the webhook's second capture is refused
+   * (here, or by the module's own limit) and shows as an error, retried. Those
+   * captures are left out. A full capture of a single payment still passes: the
+   * module ignores it if booked, and books it if the capture came from
+   * elsewhere (the Stripe dashboard).
+   */
+  async getWebhookActionAndData(webhookData: unknown) {
+    const result = await super.getWebhookActionAndData(webhookData)
+    if (result.action !== PaymentActions.SUCCESSFUL) return result
+    const intent = (this as any).constructWebhookEvent(webhookData).data.object
+    return capturedHereInParts(intent)
+      ? { action: PaymentActions.NOT_SUPPORTED }
+      : result
+  }
 }
+
+/** A capture this provider made smaller than the hold, or for a mixed cart's parts. */
+export const capturedHereInParts = (intent: {
+  amount?: number
+  amount_received?: number
+  metadata?: Record<string, string> | null
+}): boolean =>
+  (typeof intent.amount === "number" &&
+    typeof intent.amount_received === "number" &&
+    intent.amount_received < intent.amount) ||
+  Object.keys(intent.metadata ?? {}).some((key) => key.startsWith(capturedPartKey("")))

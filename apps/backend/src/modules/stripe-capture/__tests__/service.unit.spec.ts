@@ -427,3 +427,50 @@ describe("refunding the pickup's part of the shared payment", () => {
     )
   })
 })
+
+/*
+  THE `succeeded` WEBHOOK AFTER OUR OWN CAPTURE (acrobot 25657). MI PIROSÍT: ha
+  egy kisebb levonás vagy a vegyes kosár közös levonása után a webhook még egy
+  levonást kérne; ha egy teljes, egy fizetéses levonás (például a Stripe
+  felületéről) nem jutna el a Medusáig; ha a többi esemény is elnémulna.
+*/
+describe("AcroporaStripeService webhook", () => {
+  const event = (type: string, object: Record<string, unknown>) => {
+    const { service } = make({})
+    ;(service as any).constructWebhookEvent = () => ({
+      type,
+      data: {
+        object: {
+          id: "pi_1",
+          currency: "huf",
+          amount: 2_780_000,
+          amount_received: 2_780_000,
+          amount_capturable: 0,
+          metadata: { session_id: "payses_1" },
+          ...object,
+        },
+      },
+    })
+    return service.getWebhookActionAndData({ data: {}, rawData: "", headers: {} })
+  }
+
+  it("a smaller capture than the hold is left out", async () => {
+    expect((await event("payment_intent.succeeded", { amount_received: 1_730_000 })).action).toBe(
+      "not_supported"
+    )
+  })
+
+  it("a mixed cart's shared capture is left out, even at the full amount", async () => {
+    const result = await event("payment_intent.succeeded", {
+      metadata: { session_id: "payses_1", "a:pay_ship": "1730000", "a:pay_pick": "1050000" },
+    })
+    expect(result.action).toBe("not_supported")
+  })
+
+  it("a full capture of one payment still reaches Medusa, and other events too", async () => {
+    expect((await event("payment_intent.succeeded", {})).action).toBe("captured")
+    expect((await event("payment_intent.amount_capturable_updated", { amount_capturable: 2_780_000 })).action).toBe(
+      "authorized"
+    )
+  })
+})
