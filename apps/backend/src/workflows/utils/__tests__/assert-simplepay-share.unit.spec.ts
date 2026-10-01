@@ -72,4 +72,30 @@ describe("the completion's check reads both carts", () => {
     const grown = { ...good, cart_p: raw("cart_p", 9000, { ...pickup().facts, own: 9000 }, { [PARENT_CART_METADATA_KEY]: "cart_1" }) }
     await expect(assertSimplePayShare("cart_1", container(grown))).rejects.toThrow("two carts' sum")
   })
+
+  /*
+    THE SHARED STRIPE PAYMENT IS CHECKED THE SAME WAY (Balázs 2026-10-01): its
+    facts have SimplePay's shape under their own key. What must fail: a Stripe
+    split whose intent is not the two carts' sum passing the completion.
+  */
+  it("reads a shared Stripe payment the same way", async () => {
+    const stripeRaw = (id: string, total: number, facts: unknown, metadata: Record<string, unknown>) => ({
+      id,
+      total,
+      metadata,
+      payment_collection: { payment_sessions: [{ data: { id: "pi_1", stripe_share: facts } }] },
+    })
+    const good = {
+      cart_1: stripeRaw("cart_1", 4950, { transactionId: "pi_1", total: 13450, own: 4950 }, { [PICKUP_CART_METADATA_KEY]: "cart_p" }),
+      cart_p: stripeRaw("cart_p", 8500, { transactionId: "pi_1", total: 13450, own: 8500, joined: true }, { [PARENT_CART_METADATA_KEY]: "cart_1" }),
+    }
+    await expect(assertSimplePayShare("cart_1", container(good))).resolves.toBeUndefined()
+    await expect(assertSimplePayShare("cart_p", container(good))).resolves.toBeUndefined()
+
+    const grown = {
+      ...good,
+      cart_p: stripeRaw("cart_p", 9000, { transactionId: "pi_1", total: 13450, own: 9000, joined: true }, { [PARENT_CART_METADATA_KEY]: "cart_1" }),
+    }
+    await expect(assertSimplePayShare("cart_1", container(grown))).rejects.toThrow("two carts' sum")
+  })
 })

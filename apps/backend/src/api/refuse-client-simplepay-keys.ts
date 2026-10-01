@@ -9,12 +9,20 @@ import {
   SIMPLEPAY_JOINED_KEY,
   SIMPLEPAY_JOINT_KEY,
 } from "../modules/simplepay/service"
+import {
+  STRIPE_JOINED_KEY,
+  STRIPE_JOINT_KEY,
+  STRIPE_SHARE_KEY,
+} from "../modules/stripe-capture/share"
 
 /** The session data keys only our own server code may set. */
 export const SERVER_ONLY_SIMPLEPAY_KEYS = [
   SIMPLEPAY_DATA_KEY,
   SIMPLEPAY_JOINT_KEY,
   SIMPLEPAY_JOINED_KEY,
+  STRIPE_SHARE_KEY,
+  STRIPE_JOINT_KEY,
+  STRIPE_JOINED_KEY,
 ] as const
 
 /**

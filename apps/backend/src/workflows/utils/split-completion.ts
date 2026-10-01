@@ -1,4 +1,14 @@
 import { MedusaError } from "@medusajs/framework/utils"
+import {
+  SIMPLEPAY_DATA_KEY,
+  SIMPLEPAY_JOINED_KEY,
+  SIMPLEPAY_JOINT_KEY,
+} from "../../modules/simplepay/service"
+import {
+  STRIPE_JOINED_KEY,
+  STRIPE_JOINT_KEY,
+  STRIPE_SHARE_KEY,
+} from "../../modules/stripe-capture/share"
 
 /**
  * THE SPLIT COMPLETION (P4-2a2): one mixed cart becomes two orders.
@@ -449,11 +459,15 @@ export type SharedPaymentOperations = SplitOperations & {
   cartTotal(cartId: string): Promise<number>
   /** The payer's details the provider needs: email and billing address. */
   payerOf(cartId: string): Promise<Record<string, unknown>>
-  /** A new payment session with this data; the SimplePay facts it got. */
+  /**
+   * A new payment session with this data; the provider's facts it got, read
+   * from the session data under `factsKey` (SimplePay's when not given).
+   */
   startPayment(
     cartId: string,
     providerId: string,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
+    factsKey?: string
   ): Promise<Record<string, unknown>>
   /** Removes the cash-on-delivery fee lines, if any: a card payment owes none. */
   dropCashOnDeliveryFee(cartId: string): Promise<void>
@@ -489,18 +503,52 @@ export type SharedPaymentStart = {
  * and the cart is whole again. Called again (a second click, or after a
  * cancelled payment), it reuses the split and starts a new transaction.
  */
+/**
+ * HOW A CARD PROVIDER SHARES ONE PAYMENT BETWEEN A SPLIT'S TWO CARTS: where
+ * its facts are on the session data, and the data that starts the shared
+ * payment on the shipped cart (`joint`) and joins it from the pickup cart
+ * (`joined`). SimplePay's is the default; Stripe's came with Balázs's
+ * 2026-10-01 decision (one Stripe payment for both orders).
+ */
+export type CardShare = {
+  factsKey: string
+  joint: (total: number) => Record<string, unknown>
+  joined: (facts: Record<string, unknown>) => Record<string, unknown>
+}
+
+export const SIMPLEPAY_SHARE: CardShare = {
+  factsKey: SIMPLEPAY_DATA_KEY,
+  joint: (total) => ({ [SIMPLEPAY_JOINT_KEY]: { total } }),
+  joined: (facts) => ({ [SIMPLEPAY_JOINED_KEY]: facts }),
+}
+
+export const STRIPE_SHARE: CardShare = {
+  factsKey: STRIPE_SHARE_KEY,
+  joint: (total) => ({ [STRIPE_JOINT_KEY]: { total } }),
+  joined: (facts) => ({ [STRIPE_JOINED_KEY]: facts }),
+}
+
+export type CardStartConfig = {
+  providerId: string
+  share?: CardShare
+  /** `false`: a cart that would be split is refused (the Stripe lock). */
+  allowSplit?: boolean
+}
+
 export const startCardPayment = (
   cartId: string,
   ops: SharedPaymentOperations,
-  config: { providerId: string }
+  config: CardStartConfig
 ): Promise<SharedPaymentStart> =>
   ops.withLock(cartId, () => startCardPaymentLocked(cartId, ops, config))
 
 const startCardPaymentLocked = async (
   cartId: string,
   ops: SharedPaymentOperations,
-  config: { providerId: string }
+  config: CardStartConfig
 ): Promise<SharedPaymentStart> => {
+  const share = config.share ?? SIMPLEPAY_SHARE
+
   if (!config.providerId) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Card payment is not configured")
   }
@@ -515,12 +563,26 @@ const startCardPaymentLocked = async (
   const splitIds = new Set(await ops.splitLineIds(cartId))
   const pickupLines = cart.items.filter((line) => splitIds.has(line.id))
 
+  // Checked before anything changes (the fee, the lines): a refused split
+  // leaves the cart as it was.
+  if ((pickupLines.length || pickupCartId) && config.allowSplit === false) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "This card payment does not pay a cart with pickup-only items yet"
+    )
+  }
+
   await ops.dropCashOnDeliveryFee(cartId)
 
   // NOT SPLIT: one transaction for the cart itself, with its payer.
   if (!pickupLines.length && !pickupCartId) {
     const total = await ops.cartTotal(cartId)
-    const facts = await ops.startPayment(cartId, config.providerId, await ops.payerOf(cartId))
+    const facts = await ops.startPayment(
+      cartId,
+      config.providerId,
+      await ops.payerOf(cartId),
+      share.factsKey
+    )
     return {
       payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,
       total,
@@ -536,11 +598,13 @@ const startCardPaymentLocked = async (
     const shipped = await ops.cartTotal(cartId)
     const pickup = await ops.cartTotal(pickupId)
     const payer = await ops.payerOf(cartId)
-    const facts = await ops.startPayment(cartId, config.providerId, {
-      ...payer,
-      simplepay_joint: { total: shipped + pickup },
-    })
-    await ops.startPayment(pickupId, config.providerId, { simplepay_joined: facts })
+    const facts = await ops.startPayment(
+      cartId,
+      config.providerId,
+      { ...payer, ...share.joint(shipped + pickup) },
+      share.factsKey
+    )
+    await ops.startPayment(pickupId, config.providerId, share.joined(facts), share.factsKey)
 
     return {
       payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,

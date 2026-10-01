@@ -21,7 +21,6 @@ import {
 import {
   SIMPLEPAY_DATA_KEY,
   isSharedSimplePay,
-  simplePayFactsOf,
 } from "../../modules/simplepay/service"
 import { reconcileCartCashOnDeliveryFeeWorkflow } from "../reconcile-cart-cod-fee"
 import { planCashOnDeliveryFee } from "./cod-fee-reconciliation"
@@ -39,6 +38,7 @@ import {
   pickupPromoCodes,
   shippingProfileGaps,
 } from "./split-completion"
+import { cardShareFactsOf } from "./card-share-facts"
 
 type Container = MedusaContainer
 
@@ -124,8 +124,9 @@ export const toSplitCart = (raw: any): SplitCart => ({
     }))
   ),
   has_shipping_method: (raw.shipping_methods ?? []).length > 0,
+  // a shared card payment of either provider: the facts have the same shape
   shared_payment: isSharedSimplePay(
-    simplePayFactsOf(raw.payment_collection?.payment_sessions?.[0]?.data)
+    cardShareFactsOf(raw.payment_collection?.payment_sessions?.[0]?.data)
   ),
 })
 
@@ -417,7 +418,7 @@ export const sharedPaymentOperations = (
 
   payerOf: async (cartId) => simplePayPayerOf(await loadRawCart(container, cartId)),
 
-  startPayment: async (cartId, providerId, data) => {
+  startPayment: async (cartId, providerId, data, factsKey = SIMPLEPAY_DATA_KEY) => {
     let raw = await loadRawCart(container, cartId)
 
     if (!raw?.payment_collection?.id) {
@@ -447,7 +448,7 @@ export const sharedPaymentOperations = (
       },
     })
 
-    return ((result as any)?.data?.[SIMPLEPAY_DATA_KEY] ?? {}) as Record<string, unknown>
+    return ((result as any)?.data?.[factsKey] ?? {}) as Record<string, unknown>
   },
 
   dropCashOnDeliveryFee: async (cartId) => {

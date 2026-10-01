@@ -25,7 +25,15 @@ const call = (body: unknown) => {
  * the guard not on the store route.
  */
 describe("the store payment-session route", () => {
-  it.each(["simplepay_joined", "simplepay_joint", "simplepay"])("refuses %s in the client's data", (key) => {
+  it.each([
+    "simplepay_joined",
+    "simplepay_joint",
+    "simplepay",
+    // the shared Stripe payment (Balázs 2026-10-01): the same rule
+    "stripe_joined",
+    "stripe_joint",
+    "stripe_share",
+  ])("refuses %s in the client's data", (key) => {
     const { res, next } = call({ provider_id: "pp_simplepay_simplepay", data: { [key]: { transactionId: 1 } } })
     expect(res.statusCode).toBe(400)
     expect(String((res.sent as { message: string }).message)).toContain(key)

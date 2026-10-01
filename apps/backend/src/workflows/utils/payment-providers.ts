@@ -132,3 +132,12 @@ export const providersForMixedCart = (
           SPLIT_PAYING_CARD_PROVIDERS.has(provider.id)
       )
     : providers
+
+/**
+ * THE LOCK ON STRIPE FOR MIXED CARTS (acrobot 25507: it stays until the new
+ * way is complete and tested). Off unless ACROPORA_STRIPE_MIXED_CART is exactly
+ * "true": the shared Stripe payment (one intent for both orders) needs the
+ * capture at shipment for both, which comes in a later part.
+ */
+export const stripeMixedCartEnabled = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.ACROPORA_STRIPE_MIXED_CART?.trim() === "true"

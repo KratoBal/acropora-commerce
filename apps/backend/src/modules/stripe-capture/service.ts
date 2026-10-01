@@ -1,6 +1,13 @@
 import StripePaymentModule from "@medusajs/medusa/payment-stripe"
-import { MedusaError } from "@medusajs/framework/utils"
+import { BigNumber, MedusaError } from "@medusajs/framework/utils"
 
+import {
+  STRIPE_JOINED_KEY,
+  STRIPE_JOINT_KEY,
+  STRIPE_SHARE_KEY,
+  type StripeShareFacts,
+  stripeShareFactsOf,
+} from "./share"
 import { smallestUnit } from "./smallest-unit"
 
 /**
@@ -45,6 +52,8 @@ type CaptureRecords = {
   ): Promise<{ id: string; amount: unknown }>
 }
 
+const major = (value: unknown): number => Number(new BigNumber(value as any).numeric)
+
 const StripeProviderService = (
   StripePaymentModule as unknown as {
     services: (new (cradle: Record<string, unknown>, options: unknown) => any)[]
@@ -72,6 +81,123 @@ export default class AcroporaStripeService extends StripeProviderService {
     this.captureRecords_ = records
   }
 
+  /** The share facts travel with every answer that replaces the session data. */
+  private keepShare(
+    input: { data?: Record<string, unknown> },
+    out: { data?: Record<string, unknown>; [key: string]: unknown }
+  ) {
+    const share = stripeShareFactsOf(input.data)
+    return share ? { ...out, data: { ...(out.data ?? {}), [STRIPE_SHARE_KEY]: share } } : out
+  }
+
+  async initiatePayment(input: {
+    amount: unknown
+    currency_code: string
+    data?: Record<string, unknown>
+    context?: Record<string, unknown>
+  }): Promise<any> {
+    const {
+      [STRIPE_JOINT_KEY]: joint,
+      [STRIPE_JOINED_KEY]: joined,
+      ...data
+    } = (input.data ?? {}) as Record<string, unknown>
+    const own = major(input.amount)
+
+    // THE PICKUP SESSION: the shipped session's intent, no new one. The two
+    // parts must be exactly the intent's amount (as with SimplePay).
+    if (joined) {
+      const facts = joined as Partial<StripeShareFacts>
+      if (
+        !facts.transactionId ||
+        Number(facts.own) + own !== Number(facts.total)
+      ) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          "A joined Stripe session needs the shared payment, whose amount is exactly the two carts together"
+        )
+      }
+      const stripe = (this as any).stripe_
+      const intent = await stripe.paymentIntents.retrieve(facts.transactionId)
+      const status = (this as any).getStatus(intent) as { status: string }
+      return {
+        id: intent.id,
+        status: status.status,
+        data: {
+          id: intent.id,
+          [STRIPE_SHARE_KEY]: {
+            transactionId: intent.id,
+            total: Number(facts.total),
+            own,
+            joined: true,
+          } satisfies StripeShareFacts,
+        },
+      }
+    }
+
+    // THE SHIPPED SESSION OF A SPLIT: one intent for both carts.
+    if (joint) {
+      const total = major((joint as { total?: unknown }).total)
+      if (!(total >= own)) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          `A joint Stripe total (${total}) cannot be less than this session's amount (${own})`
+        )
+      }
+      const started = await super.initiatePayment({ ...input, amount: total, data })
+      return {
+        ...started,
+        data: {
+          ...(started.data ?? {}),
+          [STRIPE_SHARE_KEY]: { transactionId: started.id, total, own } satisfies StripeShareFacts,
+        },
+      }
+    }
+
+    return super.initiatePayment({ ...input, data })
+  }
+
+  async authorizePayment(input: { data?: Record<string, unknown> }): Promise<any> {
+    return this.keepShare(input, await super.authorizePayment(input))
+  }
+
+  async retrievePayment(input: { data?: Record<string, unknown> }): Promise<any> {
+    return this.keepShare(input, await super.retrievePayment(input))
+  }
+
+  /**
+   * A shared intent cannot follow one cart's new amount: the split's payment is
+   * started again, for both carts (as with SimplePay). The same amount keeps it.
+   */
+  async updatePayment(input: {
+    amount: unknown
+    data?: Record<string, unknown>
+    [key: string]: unknown
+  }): Promise<any> {
+    const share = stripeShareFactsOf(input.data)
+    if (share) {
+      if (major(input.amount) === Number(share.own)) {
+        return { data: input.data ?? {} }
+      }
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "The amount of a split cart's shared Stripe payment changed; start the payment again"
+      )
+    }
+    return super.updatePayment(input)
+  }
+
+  /** The shared intent belongs to the shipped session: dropping the pickup one must not cancel it. */
+  async cancelPayment(input: { data?: Record<string, unknown> }): Promise<any> {
+    if (stripeShareFactsOf(input.data)?.joined) {
+      return { data: input.data ?? {} }
+    }
+    return super.cancelPayment(input)
+  }
+
+  async deletePayment(input: { data?: Record<string, unknown> }): Promise<any> {
+    return this.cancelPayment(input)
+  }
+
   async capturePayment({
     data,
     context,
@@ -79,6 +205,15 @@ export default class AcroporaStripeService extends StripeProviderService {
     data?: Record<string, unknown>
     context?: { idempotency_key?: string }
   }): Promise<{ data: Record<string, unknown> }> {
+    // THE SHARED PAYMENT IS CAPTURED TOGETHER, at shipment: one cart's capture
+    // alone would take its part and release the other's.
+    if (stripeShareFactsOf(data)) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "This card payment is shared by two orders; it is captured for both together at shipment"
+      )
+    }
+
     const id = data?.id as string | undefined
     const captureId = context?.idempotency_key
 
