@@ -47,7 +47,9 @@ const refuse = (message: string): EditCaptureResult => ({ action: "refuse", mess
 
 export const captureBeforeOrderEdit = async (
   orderId: string,
-  ops: EditCaptureOperations
+  ops: EditCaptureOperations,
+  /** The online card providers (`ACROPORA_PP_ONLINE_CARD`): real money held on a card. */
+  onlineCardProviders: readonly string[] = []
 ): Promise<EditCaptureResult> => {
   const newTotal = await ops.requestedEditTotal(orderId)
 
@@ -58,7 +60,29 @@ export const captureBeforeOrderEdit = async (
   const own = (await ops.loadPair(orderId))?.shipped
   const payment = own?.payment
 
-  if (!payment || payment.provider_id !== STRIPE_PROVIDER_ID) {
+  if (!payment) {
+    return { action: "pass", reason: "no_card_hold" }
+  }
+
+  /*
+    ANOTHER CARD PROVIDER WITH AN UNCAPTURED HOLD (c64d463f, acrobot 25718).
+    SimplePay is one step today: its payment is captured when the order is
+    placed, so Medusa's confirm leaves it alone. A two-step setup would leave
+    it AUTHORIZED, and the confirm would cancel the hold silently, as it did to
+    Stripe (#15). Only Stripe's capture is ours to make here; for another card
+    provider the edit stops and says so. Cash on delivery and pay-at-store are
+    not card holds, and are left to Medusa.
+  */
+  if (payment.provider_id !== STRIPE_PROVIDER_ID) {
+    if (
+      payment.provider_id &&
+      onlineCardProviders.includes(payment.provider_id) &&
+      payment.captured === 0
+    ) {
+      return refuse(
+        "A kártyás fizetés még nincs levonva, és a szerkesztés megerősítése elvinné a zárolást. Előbb vond le a fizetést, utána szerkeszd a rendelést."
+      )
+    }
     return { action: "pass", reason: "no_card_hold" }
   }
 

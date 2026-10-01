@@ -5,6 +5,7 @@ import type {
 } from "@medusajs/framework/http"
 
 import { captureBeforeOrderEdit } from "../workflows/utils/capture-before-order-edit"
+import { onlineCardProviderIds } from "../workflows/utils/payment-providers"
 import { editCaptureOperations } from "../workflows/utils/capture-before-order-edit-operations"
 
 /**
@@ -21,7 +22,11 @@ export const captureBeforeOrderEditConfirm = async (
   let result: Awaited<ReturnType<typeof captureBeforeOrderEdit>>
 
   try {
-    result = await captureBeforeOrderEdit(req.params.id, editCaptureOperations(req.scope))
+    result = await captureBeforeOrderEdit(
+      req.params.id,
+      editCaptureOperations(req.scope),
+      onlineCardProviderIds()
+    )
   } catch (error) {
     res.status(400).json({
       type: "not_allowed",
