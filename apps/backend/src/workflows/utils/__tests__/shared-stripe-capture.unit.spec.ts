@@ -99,6 +99,24 @@ describe("captureSharedStripePayment", () => {
     expect(log).toEqual([])
   })
 
+  /*
+    CAPTURED EARLIER, AT AN ORDER EDIT (capture-before-order-edit): both parts
+    are booked, and an item dropped since makes the totals differ. MI PIROSÍT:
+    if Kiszállítás then refused as "partly booked" (the status change would be
+    stuck), or tried to capture again.
+  */
+  it("both parts captured at an edit, an item dropped since: left alone, that is a refund", async () => {
+    const { ops, log } = opsFor({
+      shipped: shipped(3000, { captured: 4000 }),
+      pickup: pickup(17000, { captured: 17000 }),
+    })
+    expect(await captureSharedStripePayment("order_ship", ops)).toEqual({
+      captured: false,
+      reason: "already_captured",
+    })
+    expect(log).toEqual([])
+  })
+
   it("not a shared Stripe payment, or the pickup order itself: nothing is touched", async () => {
     for (const pair of [
       null,

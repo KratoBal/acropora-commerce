@@ -19,7 +19,9 @@ import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
  *
  * Steps: the parts go on the shipped payment's data; its capture makes the
  * single Stripe capture (the provider, `captureShared`); then the pickup
- * payment books its part. Safe to run again: a part already booked is skipped,
+ * payment books its part. An order edit captures EARLIER, before Medusa's
+ * confirm would cancel the hold (capture-before-order-edit.ts); this one then
+ * finds both parts booked and leaves them. Safe to run again: a part already booked is skipped,
  * and the provider accepts the pickup's booking only against the recorded part.
  */
 export type CapturePaymentSide = {
@@ -34,6 +36,10 @@ export type CapturePaymentSide = {
     /** What Medusa has booked as captured on it so far. */
     captured: number
     data: Record<string, unknown> | null
+    /** The payment provider; the order edit's capture acts only on Stripe. */
+    provider_id?: string
+    /** The payment's collection; the order edit's capture sets its amount. */
+    collection_id?: string
   } | null
 }
 
@@ -48,7 +54,7 @@ export type SharedCaptureOperations = {
 }
 
 export type SharedCaptureResult =
-  | { captured: false; reason: "not_shared" }
+  | { captured: false; reason: "not_shared" | "already_captured" }
   | { captured: true; shipped: number; pickup: number }
 
 export const captureSharedStripePayment = async (
@@ -88,6 +94,16 @@ export const captureSharedStripePayment = async (
     side.payment!.captured === amount
   const partial = (side: CapturePaymentSide, amount: number) =>
     side.payment!.captured > 0 && side.payment!.captured !== amount
+
+  // Captured earlier, when an order edit was confirmed (capture-before-order-edit):
+  // the hold is gone, so an item dropped since then is a refund, not a capture.
+  if (
+    shipped.payment.captured > 0 &&
+    pickup.payment.captured > 0 &&
+    (partial(shipped, shippedAmount) || partial(pickup, pickupAmount))
+  ) {
+    return { captured: false, reason: "already_captured" }
+  }
 
   if (partial(shipped, shippedAmount) || partial(pickup, pickupAmount)) {
     throw new MedusaError(

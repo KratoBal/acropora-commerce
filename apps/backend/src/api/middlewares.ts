@@ -24,6 +24,7 @@ import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
 import { refuseClientSimplePayKeys } from "./refuse-client-simplepay-keys";
+import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
 
 export default defineMiddlewares({
   routes: [
@@ -60,6 +61,13 @@ export default defineMiddlewares({
       matcher: "/admin/commerce-settings/:key",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminUpdateCommerceSetting)],
+    },
+    {
+      // Medusa's confirm cancels an uncaptured card hold; the hold is captured first.
+      // Runs after the admin authentication (the loader applies it to /admin first).
+      matcher: "/admin/order-edits/:id/confirm",
+      method: "POST",
+      middlewares: [captureBeforeOrderEditConfirm],
     },
     {
       matcher: "/admin/order-business-status/:order_id",

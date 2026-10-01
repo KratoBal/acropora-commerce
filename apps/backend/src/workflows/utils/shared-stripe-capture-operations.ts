@@ -15,14 +15,16 @@ const ORDER_FIELDS = [
   "total",
   "currency_code",
   "metadata",
+  "payment_collections.id",
   "payment_collections.payments.id",
+  "payment_collections.payments.provider_id",
   "payment_collections.payments.amount",
   "payment_collections.payments.data",
   "payment_collections.payments.canceled_at",
   "payment_collections.payments.captures.amount",
 ]
 
-const loadSide = async (
+export const loadSide = async (
   container: Container,
   orderId: string
 ): Promise<(CapturePaymentSide & { metadata: Record<string, unknown> | null }) | null> => {
@@ -40,7 +42,9 @@ const loadSide = async (
 
   // The order's live payment: the one not canceled.
   const payment = (order.payment_collections ?? [])
-    .flatMap((collection: any) => collection?.payments ?? [])
+    .flatMap((collection: any) =>
+      (collection?.payments ?? []).filter(Boolean).map((candidate: any) => ({ ...candidate, collection_id: collection.id }))
+    )
     .find((candidate: any) => candidate && !candidate.canceled_at)
 
   return {
@@ -57,6 +61,8 @@ const loadSide = async (
             0
           ),
           data: payment.data ?? null,
+          provider_id: payment.provider_id,
+          collection_id: payment.collection_id,
         }
       : null,
   }
