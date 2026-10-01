@@ -41,11 +41,10 @@ export const loadSide = async (
   }
 
   // The order's live payment: the one not canceled.
-  const payment = (order.payment_collections ?? [])
-    .flatMap((collection: any) =>
-      (collection?.payments ?? []).filter(Boolean).map((candidate: any) => ({ ...candidate, collection_id: collection.id }))
-    )
-    .find((candidate: any) => candidate && !candidate.canceled_at)
+  const payments = (order.payment_collections ?? []).flatMap((collection: any) =>
+    (collection?.payments ?? []).filter(Boolean).map((candidate: any) => ({ ...candidate, collection_id: collection.id }))
+  )
+  const payment = payments.find((candidate: any) => !candidate.canceled_at)
 
   return {
     order_id: order.id,
@@ -65,6 +64,8 @@ export const loadSide = async (
           collection_id: payment.collection_id,
         }
       : null,
+    // canceled with the order (the payments exist, none is live)
+    payment_canceled: !payment && payments.length > 0,
   }
 }
 

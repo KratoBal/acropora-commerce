@@ -25,6 +25,7 @@ import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
 import { refuseClientSimplePayKeys } from "./refuse-client-simplepay-keys";
 import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
+import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 
 export default defineMiddlewares({
   routes: [
@@ -61,6 +62,13 @@ export default defineMiddlewares({
       matcher: "/admin/commerce-settings/:key",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminUpdateCommerceSetting)],
+    },
+    {
+      // Medusa's cancel swallows a failed refund; the captured money is refunded first,
+      // loudly, and a mixed cart's shipped order waits for its pickup order.
+      matcher: "/admin/orders/:id/cancel",
+      method: "POST",
+      middlewares: [refundBeforeOrderCancel],
     },
     {
       // Medusa's confirm cancels an uncaptured card hold; the hold is captured first.

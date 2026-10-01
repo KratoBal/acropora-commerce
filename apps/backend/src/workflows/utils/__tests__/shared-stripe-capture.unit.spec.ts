@@ -129,6 +129,26 @@ describe("captureSharedStripePayment", () => {
     }
   })
 
+  /*
+    A KISZÁLLÍTÁS ELŐTT TÖRÖLT BOLTI RENDELÉS (acrobot 25694, stage #28/#29). MI
+    PIROSÍT: ha a törölt bolti fizetés megállítaná a Kiszállítást; ha a része
+    benne maradna a levonásban; ha egy fizetés nélküli, de NEM törölt bolti
+    rendelés is átmenne.
+  */
+  it("a pickup order canceled before the capture is part 0: only the shipped part is captured", async () => {
+    const canceled: CapturePaymentSide = { ...pickup(), payment: null, payment_canceled: true }
+    const { ops, log } = opsFor({ shipped: shipped(), pickup: canceled })
+    expect(await captureSharedStripePayment("order_ship", ops)).toEqual({
+      captured: true,
+      shipped: 4950,
+      pickup: 0,
+    })
+    expect(log).toEqual([
+      'data pay_ship {"total":495000,"parts":{"pay_ship":495000}}',
+      "capture pay_ship 4950",
+    ])
+  })
+
   it("a shared payment without its pickup payment is refused", async () => {
     const { ops } = opsFor({ shipped: shipped(), pickup: null })
     await expect(captureSharedStripePayment("order_ship", ops)).rejects.toThrow("no pickup order payment")
