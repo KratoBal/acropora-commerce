@@ -34,8 +34,11 @@ const Payment = ({
   cart,
   availablePaymentMethods,
   engedelyezettModok,
+  vegyes = false,
 }: {
   cart: HttpTypes.StoreCart
+  /** A kosár vegyes: a Stripe ilyenkor a halasztott úton fizet (lásd lent). */
+  vegyes?: boolean
   availablePaymentMethods: { id: string }[]
   /**
    * Amit a HATTER enged ennek a kosarnak, szerepekkel egyutt. A
@@ -106,7 +109,7 @@ const Payment = ({
     // indulhat (8. fejezet). A "Tovabb" keszíti elo, a "Rendeles leadasa"
     // inditja. A Stripe-nak viszont MOST kell a munkamenet: abbol kapja a
     // kartyamezo a titkos kulcsat, tehat az a tobbi moddal egyutt indul.
-    if (simplePayE(method)) {
+    if (simplePayE(method) || stripeKozosE(method)) {
       return
     }
 
@@ -174,6 +177,15 @@ const Payment = ({
     return szerepe(mod) === "ONLINE_CARD" && !isStripeLike(mod)
   }
   const kartyasValasztva = simplePayE(selectedPaymentMethod)
+  /*
+    VEGYES KOSÁR STRIPE-PAL (Balázs 2026-10-01, 1-es út): a kártyamező
+    halasztott (a burok adja), munkamenet itt nem indul; a kosár bontása és a
+    két rendelés közös fizetése a leadáskor jön (`StripeKozosGomb`).
+  */
+  function stripeKozosE(mod: string) {
+    return vegyes && isStripeLike(mod)
+  }
+  const stripeKozosValasztva = stripeKozosE(selectedPaymentMethod)
 
   /**
    * A CIMKE A SZEREPBOL JON, NEM AZ AZONOSITOBOL.
@@ -209,15 +221,18 @@ const Payment = ({
     paidByGiftcard
 
   /**
-   * Az ellenorzes lepesenek cime. A `fizetes=kartya` jelzi az ellenorzesnek,
+   * Az ellenorzes lepesenek cime (a `fizetes=stripe` a vegyes kosar Stripe-
+   * utja, lasd lent). A `fizetes=kartya` jelzi az ellenorzesnek,
    * hogy bankkartyat valasztott a vevo (munkamenet meg nincs), es minden mas
    * modnal LE KELL KERULNIE, kulonben egy kartyarol utanvetre valto vevonek
    * a kartyas gomb maradna.
    */
-  const ellenorzesUrl = (kartya: boolean) => {
+  const ellenorzesUrl = (kartya: boolean | "stripe") => {
     const params = new URLSearchParams(searchParams)
     params.set("step", "review")
-    if (kartya) {
+    if (kartya === "stripe") {
+      params.set("fizetes", "stripe")
+    } else if (kartya) {
       params.set("fizetes", "kartya")
     } else {
       params.delete("fizetes")
@@ -249,6 +264,24 @@ const Payment = ({
         hogy az ellenorzes a kartyaval fizetendo osszeget mutassa. Tranzakcio
         itt sem indul; a valasztas az URL-ben megy tovabb az ellenorzesre.
       */
+      /*
+        STRIPE A VEGYES KOSÁRON: mint a SimplePay-nél, a háttér leveszi a
+        korábbi munkamenetet és az utánvét-díjat; a fizetés a leadáskor indul.
+      */
+      if (stripeKozosValasztva) {
+        const eredmeny = await valasszKartyat(cart.id)
+
+        if (!eredmeny.ok) {
+          setError(eredmeny.uzenet)
+          return
+        }
+
+        router.refresh()
+        return router.push(pathname + "?" + ellenorzesUrl("stripe"), {
+          scroll: false,
+        })
+      }
+
       if (kartyasValasztva) {
         const eredmeny = await valasszKartyat(cart.id)
 
@@ -447,7 +480,9 @@ const Payment = ({
             }
             data-testid="submit-payment-button"
           >
-            {!activeSession && isStripeLike(selectedPaymentMethod)
+            {!activeSession &&
+            isStripeLike(selectedPaymentMethod) &&
+            !stripeKozosValasztva
               ? "Add meg a fizetési adatokat"
               : "Tovább az ellenőrzéshez"}
           </Button>

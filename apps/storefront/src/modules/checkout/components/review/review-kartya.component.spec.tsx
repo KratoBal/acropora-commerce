@@ -12,6 +12,11 @@ vi.mock("@lib/data/simplepay", () => ({
   valasszKartyat: vi.fn(),
   inditsKartyasFizetest: vi.fn(),
 }))
+// a vegyes kosar Stripe-utjanak szerver-muveletei (a `server-only` orzo miatt mock)
+vi.mock("@lib/data/stripe", () => ({
+  inditsStripeKozosFizetest: vi.fn(),
+  stripeVisszarendezes: vi.fn(),
+}))
 vi.mock("@lib/data/cart", () => ({ placeOrder: vi.fn() }))
 vi.mock("@stripe/react-stripe-js", () => ({
   useElements: () => null,
@@ -49,6 +54,20 @@ describe("az ellenőrzés lépése", () => {
   it("jelzés nélkül nincs bankkártyás gomb", () => {
     lepes.ertek = "step=review"
     render(<Review cart={kosar} fizetesiSzerep={null} />)
+    expect(screen.queryByText("Fizetés bankkártyával")).toBeNull()
+  })
+
+  /*
+    VEGYES KOSÁR, STRIPE (Balázs 2026-10-01): a fizetési lépés `fizetes=stripe`
+    jelzése a közös Stripe-fizetés gombjához visz. MI PIROSÍT: ha a jelzés nem
+    jutna el a gombig (a vevő a „Válassz fizetési módot” tiltott gombját látná).
+  */
+  it("a Stripe-jelzésre a közös Stripe-fizetés gombja áll", () => {
+    lepes.ertek = "step=review&fizetes=stripe"
+    render(<Review cart={kosar} fizetesiSzerep={null} />)
+    expect(screen.getByTestId("submit-order-button")).toHaveTextContent(
+      "Rendelés leadása",
+    )
     expect(screen.queryByText("Fizetés bankkártyával")).toBeNull()
   })
 })

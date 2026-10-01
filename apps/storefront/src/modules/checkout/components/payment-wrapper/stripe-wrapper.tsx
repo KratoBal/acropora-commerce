@@ -52,3 +52,31 @@ const StripeWrapper: React.FC<StripeWrapperProps> = ({
 }
 
 export default StripeWrapper
+
+/**
+ * A HALASZTOTT KÁRTYAMEZŐ: Elements PaymentIntent nélkül (a `@stripe/stripe-js`
+ * 8.11 `StripeElementsOptionsMode` alakja). Az intent a leadáskor készül
+ * (`stripe-start`), ugyanerre az összegre, csak kártyára, kézi levonással;
+ * a megerősítés a `clientSecret`-tel megy (`StripeKozosGomb`).
+ */
+export const StripeHalasztott: React.FC<{
+  osszeg: number
+  penznem: string
+  stripePromise: Promise<Stripe | null>
+  children: React.ReactNode
+}> = ({ osszeg, penznem, stripePromise, children }) => (
+  <StripeContext.Provider value={true}>
+    <Elements
+      stripe={stripePromise}
+      options={{
+        mode: "payment",
+        amount: osszeg,
+        currency: penznem.toLowerCase(),
+        captureMethod: "manual",
+        paymentMethodTypes: ["card"],
+      }}
+    >
+      {children}
+    </Elements>
+  </StripeContext.Provider>
+)

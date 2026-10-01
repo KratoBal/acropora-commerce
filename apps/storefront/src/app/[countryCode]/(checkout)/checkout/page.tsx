@@ -1,5 +1,7 @@
 import { retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getCartPaymentOptions } from "@lib/data/payment"
+import { isStripeLike } from "@lib/constants"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
@@ -58,10 +60,19 @@ export default async function Checkout(props: {
   }
 
   const customer = await retrieveCustomer()
+  /*
+    VEGYES KOSÁR STRIPE-PAL (Balázs 2026-10-01): a kártyamező ilyenkor
+    halasztott, a közös fizetés a leadáskor készül. A burok ehhez tudja meg,
+    hogy a kosár vegyes-e, és kínálja-e a háttér a Stripe-ot.
+  */
+  const lehetosegek = await getCartPaymentOptions(cart.id)
+  const vegyesStripe =
+    !!lehetosegek?.split &&
+    lehetosegek.allowed_payment_providers.some((mod) => isStripeLike(mod.id))
 
   return (
     <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
-      <PaymentWrapper cart={cart}>
+      <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
         <CheckoutForm cart={cart} customer={customer} />
       </PaymentWrapper>
       <CheckoutSummary cart={cart} />
