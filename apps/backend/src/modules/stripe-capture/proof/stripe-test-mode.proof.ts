@@ -21,6 +21,18 @@ const key = process.env.STRIPE_PROOF_KEY ?? ""
 
 const proof = key.startsWith("sk_test_") ? describe : describe.skip
 
+/**
+ * What was refunded on purpose: a charge's amount_refunded also counts the
+ * part of the hold a smaller capture released, so that part comes off.
+ */
+function explicitlyRefunded(charge: {
+  amount: number
+  amount_captured: number
+  amount_refunded: number
+}): number {
+  return charge.amount_refunded - (charge.amount - charge.amount_captured)
+}
+
 proof("partial capture in Stripe test mode", () => {
   jest.setTimeout(60_000)
 
@@ -70,9 +82,14 @@ proof("partial capture in Stripe test mode", () => {
     // nothing is held any more: the rest of the authorization is released
     expect(after.amount_capturable).toBe(0)
     expect(charge.amount).toBe(authorizedUnits)
+    // a smaller capture, not a full one followed by a refund: a full capture
+    // would show the authorized amount here
     expect(charge.amount_captured).toBe(bookedUnits)
-    // and it was a smaller capture, not a full one followed by a refund
-    expect(charge.amount_refunded).toBe(0)
+    // Stripe counts the released rest of the hold in amount_refunded too
+    // (measured 2026-10-01: 300 000 of a 1 200 000 hold, 900 000 captured), so
+    // only what is above that rest was refunded on purpose: nothing here
+    expect(explicitlyRefunded(charge)).toBe(0)
+    const refunds = await stripe.refunds.list({ payment_intent: authorized.id })
 
     // a second capture is refused, not booked while Stripe takes nothing
     await expect(
@@ -91,6 +108,7 @@ proof("partial capture in Stripe test mode", () => {
         capturable_after: after.amount_capturable,
         charge_captured: charge.amount_captured,
         charge_refunded: charge.amount_refunded,
+        refund_objects: refunds.data.map((refund: { amount: number }) => refund.amount),
       })
     )
   })
@@ -206,7 +224,13 @@ proof("the mixed cart's one payment in Stripe test mode", () => {
     const refunded = await stripe.paymentIntents.retrieve(share.transactionId, {
       expand: ["latest_charge"],
     })
-    expect(refunded.latest_charge.amount_refunded).toBe(smallestUnit(ANIMAL_REFUND, "huf"))
+    // amount_refunded also holds the released rest of the hold (21 950 - 21 000
+    // Ft; measured 2026-10-01: 945 000 = 95 000 + 850 000), so the refund is
+    // what is above that rest, and Stripe has a refund of exactly that amount
+    const animalUnits = smallestUnit(ANIMAL_REFUND, "huf")
+    expect(explicitlyRefunded(refunded.latest_charge)).toBe(animalUnits)
+    const refunds = await stripe.refunds.list({ payment_intent: share.transactionId })
+    expect(refunds.data.map((refund: { amount: number }) => refund.amount)).toContain(animalUnits)
 
     console.log(
       JSON.stringify({
@@ -215,6 +239,7 @@ proof("the mixed cart's one payment in Stripe test mode", () => {
         captured: after.amount_received,
         booked: parts.parts,
         refunded: refunded.latest_charge.amount_refunded,
+        refund_objects: refunds.data.map((refund: { amount: number }) => refund.amount),
       })
     )
   })
