@@ -26,6 +26,11 @@ export type StripeShareFacts = {
   own: number
   /** Set on the pickup session that carries the shipped session's intent. */
   joined?: boolean
+  /**
+   * The intent's client secret, on the SHIPPED session only: the storefront
+   * confirms the card with it at placement (the deferred card field).
+   */
+  clientSecret?: string
 }
 
 export const stripeShareFactsOf = (data: unknown): StripeShareFacts | null => {

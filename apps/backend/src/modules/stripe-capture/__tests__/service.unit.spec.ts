@@ -186,7 +186,13 @@ describe("the shared Stripe payment", () => {
       paymentIntents: {
         create: jest.fn(async (request: Record<string, unknown>) => {
           created.push(request)
-          return { id: "pi_joint", status, amount: request.amount, currency: "huf" }
+          return {
+            id: "pi_joint",
+            status,
+            amount: request.amount,
+            currency: "huf",
+            client_secret: "pi_joint_secret_x",
+          }
         }),
         retrieve: jest.fn(async (id: string) => ({ id, status, amount: 2_195_000, currency: "huf" })),
         update: jest.fn(async (id: string, params: Record<string, unknown>) => ({ id, status, ...params })),
@@ -215,7 +221,12 @@ describe("the shared Stripe payment", () => {
     })
     expect(created[0].amount).toBe(2_195_000)
     expect(created[0]).not.toHaveProperty("stripe_joint")
-    expect(out.data.stripe_share).toEqual({ transactionId: "pi_joint", total: 21950, own: 4950 })
+    expect(out.data.stripe_share).toEqual({
+      transactionId: "pi_joint",
+      total: 21950,
+      own: 4950,
+      clientSecret: "pi_joint_secret_x",
+    })
   })
 
   it("the pickup session joins the intent, makes none, and its part must add up", async () => {

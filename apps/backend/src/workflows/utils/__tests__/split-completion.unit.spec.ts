@@ -8,6 +8,7 @@ import {
   SplitOperations,
   SPLIT_LOCK_KEY,
   STRIPE_SHARE,
+  rejoinAndClearSharedSplit,
   chooseCardPayment,
   completeSplitCart,
   rejoinSharedSplit,
@@ -73,6 +74,7 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
     carts: new Map(carts.map((c) => [c.id, structuredClone(c)])),
     split: new Map(Object.entries(split)),
     log: [] as string[],
+    stripeStartData: [] as Record<string, unknown>[],
     failOn: new Set<string>(),
     links: [] as [string, string][],
     warnings: [] as string[],
@@ -189,6 +191,11 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
       c.shared_payment = true
       if (joined) {
         return { ...(joined as object), joined: true }
+      }
+      if (factsKey === "stripe_share") {
+        c.shared_payment = !!joint
+        shop.stripeStartData.push(data)
+        return { transactionId: "pi_1", total: joint?.total ?? PRICE_TOTAL(c), own: PRICE_TOTAL(c), clientSecret: "pi_1_secret" }
       }
       c.shared_payment = !!joint
       return {
@@ -478,6 +485,11 @@ describe("starting one card payment for a mixed cart", () => {
     })
 
     expect(result.total).toBe(4950 + 17000)
+    // the storefront confirms the card with the joint intent's secret
+    expect(result.client_secret).toBe("pi_1_secret")
+    expect(result.payment_url).toBeNull()
+    // card only, as the deferred card field asks
+    expect(shop.stripeStartData[0].payment_method_types).toEqual(["card"])
     expect(shop.log.slice(-2)).toEqual([
       `startPayment cart_1 ${STRIPE} ["stripe_joint"] 21950 key=stripe_share`,
       `startPayment cart_pickup_1 ${STRIPE} ["stripe_joined"] key=stripe_share`,
@@ -797,5 +809,31 @@ describe("choosing card payment", () => {
     shop.carts.get("cart_1")!.completed_at = "2026-09-29T20:00:00Z"
     await expect(chooseCardPayment("cart_1", shop.ops)).rejects.toThrow("already completed")
     expect(shop.log).toEqual([])
+  })
+})
+
+/**
+ * A SHARED STRIPE PAYMENT THAT DID NOT HAPPEN (Balázs 2026-10-01). What must
+ * fail: the lines left split, a session left on either cart (the joint one
+ * would keep a hold on the card), or a cart that is not shared touched.
+ */
+describe("rejoinAndClearSharedSplit", () => {
+  it("puts the lines back and drops both carts' payment sessions", async () => {
+    const shop = vegyes()
+    await startCardPayment("cart_1", shop.ops, { providerId: STRIPE, share: STRIPE_SHARE })
+    shop.log.length = 0
+
+    expect(await rejoinAndClearSharedSplit("cart_1", shop.ops)).toEqual({ rejoined: true })
+    expect(shop.carts.get("cart_1")!.items.map((l) => l.variant_id).sort()).toEqual(["v_eszkoz", "v_korall"])
+    expect(shop.log.filter((entry) => entry.startsWith("clearPayment"))).toEqual([
+      "clearPayment cart_1",
+      "clearPayment cart_pickup_1",
+    ])
+  })
+
+  it("a cart that is not split, or not shared, is left alone", async () => {
+    const plain = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})
+    expect(await rejoinAndClearSharedSplit("cart_1", plain.ops)).toEqual({ rejoined: false })
+    expect(plain.log.filter((entry) => !entry.startsWith("lock"))).toEqual([])
   })
 })

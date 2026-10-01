@@ -1,4 +1,5 @@
 import { SIMPLEPAY_PROVIDER_ID } from "../../modules/simplepay"
+import { STRIPE_PROVIDER_ID } from "./stripe-config"
 import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
 
 /**
@@ -123,13 +124,17 @@ export const SPLIT_PAYING_CARD_PROVIDERS: ReadonlySet<string> = new Set([
 /** The offer for a cart that will be split: card only where a split can be paid. */
 export const providersForMixedCart = (
   providers: AllowedPaymentProvider[],
-  mixed: boolean
+  mixed: boolean,
+  env: NodeJS.ProcessEnv = process.env
 ): AllowedPaymentProvider[] =>
   mixed
     ? providers.filter(
         (provider) =>
           provider.role !== "ONLINE_CARD" ||
-          SPLIT_PAYING_CARD_PROVIDERS.has(provider.id)
+          SPLIT_PAYING_CARD_PROVIDERS.has(provider.id) ||
+          // Stripe pays a mixed cart once the lock is open (one payment for both
+          // orders, captured at Kiszállítás; Balázs 2026-10-01)
+          (provider.id === STRIPE_PROVIDER_ID && stripeMixedCartEnabled(env))
       )
     : providers
 
