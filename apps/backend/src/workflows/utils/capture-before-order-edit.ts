@@ -83,35 +83,51 @@ export const captureBeforeOrderEdit = async (
   }
 
   const share = stripeShareFactsOf(payment.data)
+  const root = share?.joined ? await ops.parentOrderId(orderId) : orderId
 
-  if (share) {
-    // The one capture for both orders; the shipped order is the root of the pair.
-    const root = share.joined ? await ops.parentOrderId(orderId) : orderId
-
-    if (!root) {
-      return refuse("A vegyes kosár bolti rendeléséhez nem található a szállított rendelés.")
-    }
-
-    const result = await captureSharedStripePayment(root, {
-      ...ops,
-      loadPair: async (id) => {
-        const pair = await ops.loadPair(id)
-        const edited = (side: CapturePaymentSide | null) =>
-          side && side.order_id === orderId ? { ...side, total: newTotal } : side
-        return pair && { shipped: edited(pair.shipped)!, pickup: edited(pair.pickup) }
-      },
-    })
-
-    if (!result.captured) {
-      return refuse("A vegyes kosár közös kártyás fizetését nem sikerült levonni.")
-    }
-  } else {
-    await ops.capture(payment.id, newTotal)
+  if (share && !root) {
+    return refuse("A vegyes kosár bolti rendeléséhez nem található a szállított rendelés.")
   }
 
-  // The collection still asks for the whole hold; the order now owes the new total.
-  if (payment.collection_id) {
-    await ops.setCollectionAmount(payment.collection_id, newTotal)
+  // The collection asks for the new total BEFORE the capture: the payment module
+  // recomputes the collection's status on capture, and so finds it COMPLETED
+  // (set after, the amount was right but the status stayed AUTHORIZED; stage
+  // order #17). If the capture fails, the collection asks for the hold again.
+  const collectionId = payment.collection_id
+  if (collectionId) {
+    await ops.setCollectionAmount(collectionId, newTotal)
+  }
+
+  let captured: boolean
+  try {
+    if (share) {
+      // The one capture for both orders; the shipped order is the root of the pair.
+      const result = await captureSharedStripePayment(root!, {
+        ...ops,
+        loadPair: async (id) => {
+          const pair = await ops.loadPair(id)
+          const edited = (side: CapturePaymentSide | null) =>
+            side && side.order_id === orderId ? { ...side, total: newTotal } : side
+          return pair && { shipped: edited(pair.shipped)!, pickup: edited(pair.pickup) }
+        },
+      })
+      captured = result.captured
+    } else {
+      await ops.capture(payment.id, newTotal)
+      captured = true
+    }
+  } catch (error) {
+    if (collectionId) {
+      await ops.setCollectionAmount(collectionId, payment.amount)
+    }
+    throw error
+  }
+
+  if (!captured) {
+    if (collectionId) {
+      await ops.setCollectionAmount(collectionId, payment.amount)
+    }
+    return refuse("A vegyes kosár közös kártyás fizetését nem sikerült levonni.")
   }
 
   return { action: "captured", amount: newTotal }

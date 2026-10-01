@@ -97,17 +97,17 @@ describe("captureBeforeOrderEdit", () => {
   it("captures the edited total before the confirm, and the collection asks for no more", async () => {
     const { ops, log } = opsFor([single()], 17300)
     expect(await captureBeforeOrderEdit("order_1", ops)).toEqual({ action: "captured", amount: 17300 })
-    expect(log).toEqual(["capture pay_1 17300", "collection pay_col_1 17300"])
+    expect(log).toEqual(["collection pay_col_1 17300", "capture pay_1 17300"])
   })
 
   it("mixed cart, the shipped order edited: one capture, the shipped part at its new total", async () => {
     const { ops, log } = opsFor([shipped(), pickup()], 4000, MIXED_PAIRS)
     expect(await captureBeforeOrderEdit("order_ship", ops)).toEqual({ action: "captured", amount: 4000 })
     expect(log).toEqual([
+      "collection pay_col_ship 4000",
       'data pay_ship {"total":2100000,"parts":{"pay_ship":400000,"pay_pick":1700000}}',
       "capture pay_ship 4000",
       "capture pay_pick 17000",
-      "collection pay_col_ship 4000",
     ])
   })
 
@@ -115,11 +115,26 @@ describe("captureBeforeOrderEdit", () => {
     const { ops, log } = opsFor([shipped(), pickup()], 8500, MIXED_PAIRS)
     expect(await captureBeforeOrderEdit("order_pick", ops)).toEqual({ action: "captured", amount: 8500 })
     expect(log).toEqual([
+      "collection pay_col_pick 8500",
       'data pay_ship {"total":1345000,"parts":{"pay_ship":495000,"pay_pick":850000}}',
       "capture pay_ship 4950",
       "capture pay_pick 8500",
-      "collection pay_col_pick 8500",
     ])
+  })
+
+  /*
+    THE COLLECTION BEFORE THE CAPTURE (stage #17: set after, its status stayed
+    AUTHORIZED). MI PIROSÍT: if the amount went on after the capture; if a failed
+    capture left the collection asking for the smaller amount.
+  */
+  it("a failed capture: the collection asks for the hold again, the error goes on", async () => {
+    const { ops, log } = opsFor([single()], 17300)
+    ops.capture = async () => {
+      log.push("capture fails")
+      throw new Error("hold expired")
+    }
+    await expect(captureBeforeOrderEdit("order_1", ops)).rejects.toThrow("hold expired")
+    expect(log).toEqual(["collection pay_col_1 17300", "capture fails", "collection pay_col_1 27800"])
   })
 
   it("no requested edit: nothing is touched", async () => {
