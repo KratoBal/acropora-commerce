@@ -2,6 +2,9 @@ import StripePaymentModule from "@medusajs/medusa/payment-stripe"
 import { BigNumber, MedusaError } from "@medusajs/framework/utils"
 
 import {
+  STRIPE_CAPTURE_PARTS_KEY,
+  type StripeCaptureParts,
+  capturedPartKey,
   STRIPE_JOINED_KEY,
   STRIPE_JOINT_KEY,
   STRIPE_SHARE_KEY,
@@ -198,6 +201,76 @@ export default class AcroporaStripeService extends StripeProviderService {
     return this.cancelPayment(input)
   }
 
+  /**
+   * ONE CAPTURE FOR BOTH ORDERS. A payment may book its capture only for the
+   * part recorded for it: the payment carrying the parts (the shipped one)
+   * makes the single Stripe capture for their sum and records them on the
+   * intent; any later capture (the pickup payment, or a retry) is accepted only
+   * when the intent is captured and its recorded part equals the booked amount.
+   * Anything else is refused, so Medusa never books what Stripe did not take.
+   */
+  private async captureShared(
+    share: StripeShareFacts,
+    data: Record<string, unknown>,
+    captureId: string | undefined
+  ): Promise<{ data: Record<string, unknown> }> {
+    if (!captureId || !this.captureRecords_) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "The card capture has no capture record to take its amount from"
+      )
+    }
+    const record = (await this.captureRecords_.retrieve(captureId, {
+      select: ["id", "amount", "payment_id"],
+    })) as { amount: unknown; payment_id?: string }
+    const paymentId = record.payment_id
+    const stripe = (this as any).stripe_
+    const intent = await stripe.paymentIntents.retrieve(share.transactionId)
+    const units = smallestUnit(Number(record.amount), intent.currency)
+    const parts = data[STRIPE_CAPTURE_PARTS_KEY] as StripeCaptureParts | undefined
+    const kept = { ...data, [STRIPE_SHARE_KEY]: share }
+
+    if (!paymentId) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "The capture record names no payment"
+      )
+    }
+
+    if (intent.status === "requires_capture" && parts && parts.parts[paymentId] === units) {
+      const sum = Object.values(parts.parts).reduce((total, part) => total + part, 0)
+      if (sum !== parts.total || parts.total > intent.amount_capturable) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          `The shared card payment cannot be captured for ${parts.total} (authorized ${intent.amount_capturable})`
+        )
+      }
+      await stripe.paymentIntents.update(share.transactionId, {
+        metadata: Object.fromEntries(
+          Object.entries(parts.parts).map(([id, part]) => [capturedPartKey(id), String(part)])
+        ),
+      })
+      const captured = await stripe.paymentIntents.capture(
+        share.transactionId,
+        { amount_to_capture: parts.total },
+        { idempotencyKey: captureId }
+      )
+      return { data: { ...kept, id: captured.id } }
+    }
+
+    if (
+      intent.status === "succeeded" &&
+      intent.metadata?.[capturedPartKey(paymentId)] === String(units)
+    ) {
+      return { data: kept }
+    }
+
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "This card payment is shared by two orders; it is captured for both together at shipment"
+    )
+  }
+
   async capturePayment({
     data,
     context,
@@ -205,13 +278,10 @@ export default class AcroporaStripeService extends StripeProviderService {
     data?: Record<string, unknown>
     context?: { idempotency_key?: string }
   }): Promise<{ data: Record<string, unknown> }> {
-    // THE SHARED PAYMENT IS CAPTURED TOGETHER, at shipment: one cart's capture
-    // alone would take its part and release the other's.
-    if (stripeShareFactsOf(data)) {
-      throw new MedusaError(
-        MedusaError.Types.NOT_ALLOWED,
-        "This card payment is shared by two orders; it is captured for both together at shipment"
-      )
+    // THE SHARED PAYMENT IS CAPTURED TOGETHER, at "Kiszállítás" (see share.ts).
+    const share = stripeShareFactsOf(data)
+    if (share) {
+      return this.captureShared(share, data ?? {}, context?.idempotency_key)
     }
 
     const id = data?.id as string | undefined
