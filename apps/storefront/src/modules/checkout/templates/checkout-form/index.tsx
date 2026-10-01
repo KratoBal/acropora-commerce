@@ -63,6 +63,7 @@ export default async function CheckoutForm({
 
       <Payment
         cart={cart}
+        vegyes={fizetesiLehetosegek?.split ?? false}
         availablePaymentMethods={paymentMethods}
         engedelyezettModok={
           fizetesiLehetosegek?.allowed_payment_providers ?? []

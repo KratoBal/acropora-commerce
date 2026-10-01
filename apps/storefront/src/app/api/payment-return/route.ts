@@ -1,6 +1,7 @@
 import { sdk } from "@lib/config"
 import { placeOrder } from "@lib/data/cart"
 import { getAuthHeaders, setCartId } from "@lib/data/cookies"
+import { stripeVisszarendezes } from "@lib/data/stripe"
 import { HttpTypes } from "@medusajs/types"
 import { unstable_rethrow } from "next/navigation"
 import { NextRequest, NextResponse } from "next/server"
@@ -53,6 +54,12 @@ export async function GET(req: NextRequest) {
   // back into `requires_payment_method`, so the Payment Element can mount
   // against it again — return to the payment step and let them retry.
   if (redirectStatus === "failed") {
+    /*
+      A VEGYES KOSÁR KÖZÖS STRIPE-FIZETÉSE NEM JÖTT LÉTRE (Balázs 2026-10-01):
+      a háttér visszarendezi a kosarat, és elengedi a zárolást. Egy nem bontott
+      kosárnál a hívás nem mozdít semmit.
+    */
+    await stripeVisszarendezes(cartId)
     const params = new URLSearchParams({ step: "payment" })
 
     // Forward Stripe's own return parameters so the checkout step can tell how

@@ -40,6 +40,8 @@ export const listCartPaymentMethods = async (regionId: string) => {
 export type FizetesiSzerepValasz = "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
 
 export type KosarFizetesiLehetosegek = {
+  /** A kosár vegyes (élő állat + kiszállítandó): két rendelés lesz belőle. */
+  split?: boolean
   allowed_payment_providers: EngedelyezettFizetesiMod[]
   selected_payment_role: FizetesiSzerepValasz
   cash_on_delivery_fee: number

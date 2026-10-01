@@ -2,13 +2,16 @@
 
 import { loadStripe } from "@stripe/stripe-js"
 import React from "react"
-import StripeWrapper from "./stripe-wrapper"
+import StripeWrapper, { StripeHalasztott } from "./stripe-wrapper"
+import { stripeEgyseg } from "@lib/util/stripe-egyseg"
 import { HttpTypes } from "@medusajs/types"
 import { isStripeLike } from "@lib/constants"
 import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
 
 type PaymentWrapperProps = {
   cart: HttpTypes.StoreCart
+  /** Vegyes kosár, és a háttér kínálja a Stripe-ot: halasztott kártyamező. */
+  vegyesStripe?: boolean
   children: React.ReactNode
 }
 
@@ -22,7 +25,11 @@ const stripePromise = stripeKey
     )
   : null
 
-const PaymentWrapper: React.FC<PaymentWrapperProps> = ({ cart, children }) => {
+const PaymentWrapper: React.FC<PaymentWrapperProps> = ({
+  cart,
+  vegyesStripe,
+  children,
+}) => {
   const paymentSession = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending",
   )
@@ -40,6 +47,25 @@ const PaymentWrapper: React.FC<PaymentWrapperProps> = ({ cart, children }) => {
       >
         {children}
       </StripeWrapper>
+    )
+  }
+
+  /*
+    VEGYES KOSÁR: HALASZTOTT KÁRTYAMEZŐ (Balázs 2026-10-01, 1-es út). A vevő
+    a leadásig egy kosarat lát, mint a SimplePay-nél; a kosár bontása és a két
+    rendelés közös PaymentIntentje csak a leadáskor készül (`stripe-start`),
+    és a kártya azon erősítődik meg. A mező ezért intent nélkül áll, az
+    intenttel egyező beállítással: a kosár összege, csak kártya, kézi levonás.
+  */
+  if (vegyesStripe && stripePromise) {
+    return (
+      <StripeHalasztott
+        osszeg={stripeEgyseg(Number(cart.total ?? 0), cart.currency_code)}
+        penznem={cart.currency_code}
+        stripePromise={stripePromise}
+      >
+        {children}
+      </StripeHalasztott>
     )
   }
 

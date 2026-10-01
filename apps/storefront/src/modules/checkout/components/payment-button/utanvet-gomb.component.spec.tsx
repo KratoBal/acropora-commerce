@@ -8,6 +8,11 @@ vi.mock("@lib/data/simplepay", () => ({
   valasszKartyat: vi.fn().mockResolvedValue({ ok: true }),
   inditsKartyasFizetest: vi.fn(),
 }))
+// a vegyes kosar Stripe-utjanak szerver-muveletei (a `server-only` orzo miatt mock)
+vi.mock("@lib/data/stripe", () => ({
+  inditsStripeKozosFizetest: vi.fn(),
+  stripeVisszarendezes: vi.fn(),
+}))
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
