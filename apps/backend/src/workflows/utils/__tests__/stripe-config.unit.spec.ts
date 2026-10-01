@@ -11,12 +11,12 @@ describe("stripeProviders", () => {
     expect(stripeProviders({ STRIPE_API_KEY: "  " } as NodeJS.ProcessEnv)).toEqual([])
   })
 
-  it("with a key: Medusa's provider, manual capture, the secret only if set", () => {
+  it("with a key: our capture subclass of Medusa's provider, manual capture, the secret only if set", () => {
     expect(
       stripeProviders({ STRIPE_API_KEY: " kulcs " } as NodeJS.ProcessEnv)
     ).toEqual([
       {
-        resolve: "@medusajs/medusa/payment-stripe",
+        resolve: "./src/modules/stripe-capture",
         id: "stripe",
         options: { apiKey: "kulcs", capture: false },
       },
