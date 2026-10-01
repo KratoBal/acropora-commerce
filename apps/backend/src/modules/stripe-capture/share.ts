@@ -34,3 +34,22 @@ export const stripeShareFactsOf = (data: unknown): StripeShareFacts | null => {
     | undefined
   return facts?.transactionId ? facts : null
 }
+
+/**
+ * THE SHARED PAYMENT'S CAPTURE FOR BOTH ORDERS (part 2, at "Kiszállítás"). The
+ * orchestration puts the two orders' parts on the shipped payment's data
+ * before capturing it; the provider takes the whole sum from Stripe in ONE
+ * capture and writes each part into the intent's metadata. The pickup
+ * payment's capture then finds its part there and books it without a second
+ * Stripe call. Amounts are in Stripe's smallest unit, keyed by Medusa payment id.
+ */
+export const STRIPE_CAPTURE_PARTS_KEY = "stripe_capture_parts"
+
+export type StripeCaptureParts = {
+  /** The sum of the parts: what Stripe captures. */
+  total: number
+  parts: Record<string, number>
+}
+
+/** The intent's metadata key for one payment's captured part (Stripe keys: 40 chars at most). */
+export const capturedPartKey = (paymentId: string): string => `a:${paymentId}`
