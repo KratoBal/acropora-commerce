@@ -105,9 +105,43 @@ describe("a műszaki lap", () => {
     variants: [],
   } as never
 
+  const leirassal = (description: string) =>
+    ({ ...(termek as object), description }) as never
+
   it("tudással a blokk a lapon áll", () => {
     render(<MuszakiLap product={termek} tudas={KZ} />)
     expect(screen.getByTestId("termek-tudas")).toBeTruthy()
+  })
+
+  /*
+    KZ Amino stage meres (acrobot, 2026-10-03 21:03-21:12 UTC): a visszaallitott
+    lead a store route-on mar az eredeti volt, a lapon 3 percig a regi, mert a
+    lap az orokre gyorsitotarazott termek-leirasbol rajzolt. MI PIROSIT: ha a
+    leiras-ful a termek `description` mezojet mutatja, amikor a tudas hoz
+    jovahagyott szoveget.
+  */
+  it("a jóváhagyott szöveg a tudásból kerül a leírás-fülbe, nem a termék leírásából", () => {
+    render(
+      <MuszakiLap
+        product={leirassal("<p>Régi gyorsítótárazott lead.</p>")}
+        tudas={KZ}
+      />,
+    )
+    const ful = screen.getByRole("tabpanel")
+    expect(ful.innerHTML).toBe(
+      "<p>Első bekezdés.</p>\n<p>Második bekezdés.</p>\n<p>A leírásban áll.</p>",
+    )
+    expect(ful.textContent).not.toContain("Régi")
+  })
+
+  it("jóváhagyott szöveg nélkül a termék leírása marad", () => {
+    render(
+      <MuszakiLap
+        product={leirassal("<p>A mai leírás.</p>")}
+        tudas={{ ...KZ, copy: [] }}
+      />,
+    )
+    expect(screen.getByRole("tabpanel").textContent).toBe("A mai leírás.")
   })
 
   it("tudás nélkül a lap betűre a mai", () => {

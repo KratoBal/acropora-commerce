@@ -10,7 +10,7 @@ import { kulcs } from "@lib/util/fejlec-menu-pontok"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import React from "react"
 import type { TermekTudas } from "@lib/data/product-knowledge"
-import { TermekTudasBlokk, vanTudas } from "./termek-tudas"
+import { TermekTudasBlokk, tudasLeiras, vanTudas } from "./termek-tudas"
 
 /**
  * A MUSZAKI TERMEKLAP: A VAZ BEKOTESE, ES CSAK A MUSZAKI TERMEKEKRE.
@@ -154,8 +154,14 @@ const MuszakiLap = ({
   morzsaResz,
   tudas,
 }: Props) => {
+  /*
+    A JOVAHAGYOTT SZOVEG A TUDASBOL JON, NEM A TERMEK LEIRASABOL, ha van: a
+    termek-lekeres orokre gyorsitotarazott, a tudas 60 mp-enkent frissul
+    (`tudasLeiras`). Csak a leiras-ful kapja; a lap tobbi resze a termeket latja.
+  */
+  const leiras = tudasLeiras(tudas)
   const tartalom = vazTartalom(
-    product,
+    leiras ? { ...product, description: leiras } : product,
     vasarlasAktiv,
     hasonloResz,
     fotoResz,

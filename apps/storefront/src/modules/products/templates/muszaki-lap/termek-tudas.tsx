@@ -5,9 +5,8 @@ import React from "react"
  * A TERMEK-TUDAS BLOKK A MUSZAKI LAPON (KZ Amino szelet, PD-014).
  *
  * Az Acropora OS-ben elfogadott TENYEK, ahogy a vetites a Medusaba irta. A
- * jovahagyott szoveg (lead + body) NEM itt all, hanem a leiras-fulben: a vetites
- * a termek `description` mezojebe irja (PR A). Egy hely, egy szoveg (acrobot
- * dontese, 26138). A blokk NEM dont: amit kap, azt mutatja, harom szaballyal:
+ * jovahagyott szoveg (lead + body) NEM itt all, hanem a leiras-fulben, a
+ * `tudasLeiras` alakjaban. Egy hely, egy szoveg (acrobot dontese, 26138). A blokk NEM dont: amit kap, azt mutatja, harom szaballyal:
  *
  *   ertek, VERIFIED vagy SUGGESTED   az ertek latszik (ember fogadta el)
  *   CONFLICTING_SOURCES              a mezo latszik "A források eltérnek"
@@ -65,6 +64,46 @@ function reszek(tudas: TermekTudas) {
     kulcs: lathato(KULCS_TENYEK),
     szakaszok: lathato(SZAKASZOK),
   }
+}
+
+/**
+ * A JOVAHAGYOTT SZOVEG (lead, majd body) A LEIRAS HELYERE, HTML-KENT, vagy `null`.
+ *
+ * A vetites ugyanezt a szoveget a termek `description` mezojebe is irja (PR A),
+ * de a termek-lekeres orokre gyorsitotarazott (`force-cache`, ervenytelenites
+ * nelkul), a tudas-lekeres viszont 60 mp-enkent frissul. A stage merese
+ * (acrobot, 2026-10-03 21:03-21:12 UTC): egy visszaallitott lead a store
+ * route-on es a Medusa leirasban mar az eredeti volt, a lapon 3 percig meg a
+ * regi, mert a lap a `description`-bol rajzolt. Ezert a lap a szoveget innen
+ * veszi, ha van; a hely ugyanaz (a leiras-ful), csak a forras frissebb.
+ *
+ * A `copy` tomb CSAK jovahagyott, nem elavult blokkot hord (az OS szuri), es ha
+ * ures, az OS a leirast sem irja at: ilyenkor `null`, es a lap a mai leirast
+ * mutatja. Az alak ugyanaz, mint az OS `copyToHtml`-je: ures sor bekezdest
+ * bont, a sortores szokoz, minden szoveg escape-elve.
+ */
+export function tudasLeiras(
+  tudas: TermekTudas | null | undefined,
+): string | null {
+  const blokkok = (tudas?.copy ?? [])
+    .filter((c) => c.block === "lead" || c.block === "body")
+    .sort((a, b) => (a.block === b.block ? 0 : a.block === "lead" ? -1 : 1))
+  const html = blokkok
+    .flatMap((c) => c.body.split(/\n{2,}/))
+    .map((p) => p.replace(/\s*\n\s*/g, " ").trim())
+    .filter(Boolean)
+    .map((p) => `<p>${escapeHtml(p)}</p>`)
+    .join("\n")
+  return html === "" ? null : html
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
 }
 
 /**
