@@ -22,6 +22,7 @@ import {
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
+import type { TermekTudas } from "@lib/data/product-knowledge"
 import VasarlasKeret from "./vasarlas-keret"
 import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
@@ -36,6 +37,8 @@ type ProductTemplateProps = {
   countryCode: string
   images: HttpTypes.StoreProductImage[]
   categories: HttpTypes.StoreProductCategory[]
+  /** A termek-tudas az OS vetitesebol (PD-014); a muszaki lap mutatja. */
+  tudas?: TermekTudas | null
 }
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
@@ -44,6 +47,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   countryCode,
   images,
   categories,
+  tudas,
 }) => {
   if (!product || !product.id) {
     return notFound()
@@ -177,6 +181,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             <MuszakiLap
               product={product}
               kategoriak={categories}
+              tudas={tudas}
               morzsaResz={
                 <ProductBreadcrumb product={product} categories={categories} />
               }
@@ -195,6 +200,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             <MuszakiLap
               product={product}
               kategoriak={categories}
+              tudas={tudas}
               morzsaResz={
                 <ProductBreadcrumb product={product} categories={categories} />
               }

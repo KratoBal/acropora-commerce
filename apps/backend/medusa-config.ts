@@ -142,6 +142,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/order-business-status",
     },
     {
+      resolve: "./src/modules/product-knowledge",
+    },
+    {
       resolve: "@medusajs/medusa/caching",
       options: {
         providers: [
