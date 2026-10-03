@@ -4,8 +4,10 @@ import React from "react"
 /**
  * A TERMEK-TUDAS BLOKK A MUSZAKI LAPON (KZ Amino szelet, PD-014).
  *
- * Az Acropora OS-ben elfogadott tenyek es jovahagyott szoveg, ahogy a vetites
- * a Medusaba irta. A blokk NEM dont: amit kap, azt mutatja, harom szaballyal:
+ * Az Acropora OS-ben elfogadott TENYEK, ahogy a vetites a Medusaba irta. A
+ * jovahagyott szoveg (lead + body) NEM itt all, hanem a leiras-fulben: a vetites
+ * a termek `description` mezojebe irja (PR A). Egy hely, egy szoveg (acrobot
+ * dontese, 26138). A blokk NEM dont: amit kap, azt mutatja, harom szaballyal:
  *
  *   ertek, VERIFIED vagy SUGGESTED   az ertek latszik (ember fogadta el)
  *   CONFLICTING_SOURCES              a mezo latszik "A források eltérnek"
@@ -60,7 +62,6 @@ function reszek(tudas: TermekTudas) {
       .map(([mezo, cimke]) => [mezo, cimke, megjelenes(tudas, mezo)] as const)
       .filter(([, , m]) => m)
   return {
-    lead: tudas.copy.find((c) => c.block === "lead")?.body,
     kulcs: lathato(KULCS_TENYEK),
     szakaszok: lathato(SZAKASZOK),
   }
@@ -73,26 +74,19 @@ function reszek(tudas: TermekTudas) {
  */
 export function vanTudas(tudas: TermekTudas | null | undefined): boolean {
   if (!tudas) return false
-  const { lead, kulcs, szakaszok } = reszek(tudas)
-  return Boolean(lead) || kulcs.length > 0 || szakaszok.length > 0
+  const { kulcs, szakaszok } = reszek(tudas)
+  return kulcs.length > 0 || szakaszok.length > 0
 }
 
 export function TermekTudasBlokk({ tudas }: { tudas: TermekTudas | null }) {
   if (!tudas || !vanTudas(tudas)) return null
-  const { lead, kulcs, szakaszok } = reszek(tudas)
+  const { kulcs, szakaszok } = reszek(tudas)
 
   return (
     <section
       data-testid="termek-tudas"
       className="mt-6 flex flex-col gap-4 text-small-regular text-[var(--terv-szoveg-halvany)]"
     >
-      {lead
-        ? lead.split(/\n{2,}/).map((bekezdes, i) => (
-            <p key={i} data-testid="tudas-lead">
-              {bekezdes}
-            </p>
-          ))
-        : null}
       {kulcs.length ? (
         <dl data-testid="tudas-kulcs" className="grid grid-cols-3 gap-3">
           {kulcs.map(([mezo, cimke, m]) => (

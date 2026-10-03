@@ -64,9 +64,8 @@ describe("a termék-tudás blokk", () => {
     expect(screen.getByTestId("tudas-manufacturerInfo").textContent).toContain(
       "Korallen-Zucht",
     )
-    expect(
-      screen.getAllByTestId("tudas-lead").map((p) => p.textContent),
-    ).toEqual(["Első bekezdés.", "Második bekezdés."])
+    // a jóváhagyott szöveg a leírás-fülben áll, nem itt (acrobot 26138)
+    expect(screen.queryByText(/bekezdés/)).toBeNull()
   })
 
   it("MISSING, UNVERIFIED és a lehetséges hibás érték nem kerül a vevő elé", () => {
@@ -90,6 +89,8 @@ describe("a termék-tudás blokk", () => {
     expect(vanTudas(ures)).toBe(false)
     expect(vanTudas(null)).toBe(false)
     expect(vanTudas(KZ)).toBe(true)
+    // csak szöveg, tény nélkül: a blokknak nincs mit mutatnia
+    expect(vanTudas({ ...KZ, facts: [] })).toBe(false)
     expect(
       render(<TermekTudasBlokk tudas={ures} />).container.firstChild,
     ).toBeNull()
