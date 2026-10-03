@@ -19,6 +19,7 @@ import {
   StorePostPaymentOptions,
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
+import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
 import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
@@ -45,6 +46,11 @@ export default defineMiddlewares({
       matcher: "/admin/shipping-attributes/:id",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminShippingAttributeFlags)],
+    },
+    {
+      matcher: "/admin/product-knowledge/:product_id",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutProductKnowledge)],
     },
     {
       matcher: "/admin/commerce-settings",

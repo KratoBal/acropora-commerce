@@ -9,6 +9,7 @@ import { listProducts } from "@lib/data/products"
 import { TERMEKLAP_FIELDS } from "@lib/data/termeklap-fields"
 import { getRegion, listRegions } from "@lib/data/regions"
 import { listCategories } from "@lib/data/categories"
+import { termekTudas } from "@lib/data/product-knowledge"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/types"
 
@@ -149,6 +150,8 @@ export default async function ProductPage(props: Props) {
   const categories = await listCategories({
     fields: "id,name,handle,parent_category_id",
   })
+  // a termek-tudas (PD-014): hiba vagy hianyzo tudas eseten null, a lap a mai
+  const tudas = await termekTudas(pricedProduct.id)
 
   return (
     <ProductTemplate
@@ -157,6 +160,7 @@ export default async function ProductPage(props: Props) {
       countryCode={params.countryCode}
       images={images ?? []}
       categories={categories ?? []}
+      tudas={tudas}
     />
   )
 }

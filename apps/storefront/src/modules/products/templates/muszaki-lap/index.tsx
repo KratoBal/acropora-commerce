@@ -9,6 +9,8 @@ import {
 import { kulcs } from "@lib/util/fejlec-menu-pontok"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import React from "react"
+import type { TermekTudas } from "@lib/data/product-knowledge"
+import { TermekTudasBlokk, vanTudas } from "./termek-tudas"
 
 /**
  * A MUSZAKI TERMEKLAP: A VAZ BEKOTESE, ES CSAK A MUSZAKI TERMEKEKRE.
@@ -133,6 +135,12 @@ type Props = {
   kiegeszitoResz?: React.ReactNode
   /** A morzsamenu. A vaz a sotet felulet tetejere teszi. */
   morzsaResz?: React.ReactNode
+  /**
+   * A TERMEK-TUDAS, ahogy az Acropora OS vetiti (KZ Amino szelet, PD-014).
+   * ADAT, nem node: a lap csak akkor tesz blokkot a `fulek` ala, ha van mit
+   * mutatni, kulonben a lap beture a mai.
+   */
+  tudas?: TermekTudas | null
 }
 
 const MuszakiLap = ({
@@ -144,7 +152,39 @@ const MuszakiLap = ({
   ragadosResz,
   kiegeszitoResz,
   morzsaResz,
+  tudas,
 }: Props) => {
+  const tartalom = vazTartalom(
+    product,
+    vasarlasAktiv,
+    hasonloResz,
+    fotoResz,
+    ragadosResz,
+    kiegeszitoResz,
+    kategoriak,
+    /*
+      A TARTALEK KATEGORIA A KAPUNAK IS KELL, NEM CSAK A KOMPONENSNEK.
+
+      A `hasonlo` doboz kapuja a `vazTartalom`-ban all, es ha az szukebb,
+      mint a komponens dontese, a slot ki sem kerul -- a komponens uj aga
+      sosem fut le. Ugyanabbol a fuggvenybol szamolodik, mint a besorolas
+      sora, hogy a ket olvaso ne vezesse le ketfele ugyanazt.
+    */
+    besorolasUt(product, kategoriak ?? []).at(-1)?.id,
+  )
+  /*
+    A TUDAS-BLOKK A LEIRAS ALA KERUL, A `fulek` SLOTBA, ES NEM UJ SZAKASZKENT:
+    a vaz szakasz-listaja a terv, es egy uj szakasz a tobbi termek lapjan is
+    helyet (vagy varakozo szoveget) kapna. Igy csak az a lap valtozik, ahol
+    van mit mutatni.
+  */
+  if (vanTudas(tudas))
+    tartalom.fulek = (
+      <>
+        {tartalom.fulek}
+        <TermekTudasBlokk tudas={tudas!} />
+      </>
+    )
   return (
     <LapVaz
       vilag={vilagaTermeknek(product, kategoriak)}
@@ -158,24 +198,7 @@ const MuszakiLap = ({
        */
       egyediPeldany={uniquePieceOf(product.metadata)}
       morzsa={morzsaResz}
-      tartalom={vazTartalom(
-        product,
-        vasarlasAktiv,
-        hasonloResz,
-        fotoResz,
-        ragadosResz,
-        kiegeszitoResz,
-        kategoriak,
-        /*
-          A TARTALEK KATEGORIA A KAPUNAK IS KELL, NEM CSAK A KOMPONENSNEK.
-
-          A `hasonlo` doboz kapuja a `vazTartalom`-ban all, es ha az szukebb,
-          mint a komponens dontese, a slot ki sem kerul -- a komponens uj aga
-          sosem fut le. Ugyanabbol a fuggvenybol szamolodik, mint a besorolas
-          sora, hogy a ket olvaso ne vezesse le ketfele ugyanazt.
-        */
-        besorolasUt(product, kategoriak ?? []).at(-1)?.id,
-      )}
+      tartalom={tartalom}
     />
   )
 }
