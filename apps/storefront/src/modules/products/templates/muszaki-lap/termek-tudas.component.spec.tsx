@@ -105,6 +105,9 @@ describe("a műszaki lap", () => {
     variants: [],
   } as never
 
+  const leirassal = (description: string) =>
+    ({ ...(termek as object), description }) as never
+
   it("tudással a blokk a lapon áll", () => {
     render(<MuszakiLap product={termek} tudas={KZ} />)
     expect(screen.getByTestId("termek-tudas")).toBeTruthy()
@@ -120,10 +123,7 @@ describe("a műszaki lap", () => {
   it("a jóváhagyott szöveg a tudásból kerül a leírás-fülbe, nem a termék leírásából", () => {
     render(
       <MuszakiLap
-        product={{
-          ...termek,
-          description: "<p>Régi gyorsítótárazott lead.</p>",
-        }}
+        product={leirassal("<p>Régi gyorsítótárazott lead.</p>")}
         tudas={KZ}
       />,
     )
@@ -137,13 +137,11 @@ describe("a műszaki lap", () => {
   it("jóváhagyott szöveg nélkül a termék leírása marad", () => {
     render(
       <MuszakiLap
-        product={{ ...termek, description: "<p>A mai leírás.</p>" }}
+        product={leirassal("<p>A mai leírás.</p>")}
         tudas={{ ...KZ, copy: [] }}
       />,
     )
-    expect(screen.getByRole("tabpanel").textContent).toBe(
-      "A mai leírás.",
-    )
+    expect(screen.getByRole("tabpanel").textContent).toBe("A mai leírás.")
   })
 
   it("tudás nélkül a lap betűre a mai", () => {
