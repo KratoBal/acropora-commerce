@@ -13,7 +13,16 @@ import { cardLast4Of, renderRefundMail } from "./refund-mail"
  */
 export type MailToSend = {
   to: string
-  template: "order-placed" | "payment-refunded" | "order-shipped"
+  template:
+    | "order-placed"
+    | "payment-refunded"
+    | "order-shipped"
+    | "order-status-confirmed"
+    | "order-status-out_for_delivery"
+    | "order-status-ready_for_pickup"
+    | "order-status-closed"
+  /** The notification's `trigger_type`; the template when not given. */
+  trigger?: string
   idempotency_key: string
   resource_id: string
   content: MailContent
@@ -40,7 +49,12 @@ export type OrderMailDeps = {
  * finds both orders and only reads them. So the mail names both orders even
  * when the customer closed the tab after paying.
  */
-export const prepareOrderPlacedMail = async (orderId: string, deps: OrderMailDeps): Promise<PrepareResult> => {
+export const prepareOrderPlacedMail = async (
+  orderId: string,
+  deps: OrderMailDeps,
+  /** A resend from the OS ("Értesítő újraküldése"): a new key, so it goes again. */
+  resendAt?: number
+): Promise<PrepareResult> => {
   const cart = await deps.cartOf(orderId)
   if (typeof cart?.metadata?.[PARENT_CART_METADATA_KEY] === "string") {
     return { action: "skip", reason: "pickup_half" }
@@ -65,7 +79,7 @@ export const prepareOrderPlacedMail = async (orderId: string, deps: OrderMailDep
     mail: {
       to,
       template: "order-placed",
-      idempotency_key: `order-placed:${orderId}`,
+      idempotency_key: orderPlacedKey(orderId, resendAt),
       resource_id: orderId,
       content: renderOrderPlacedMail(
         orders.map(({ id, email: _email, ...order }) => ({ ...order, pickup: id !== orderId }))
@@ -73,6 +87,9 @@ export const prepareOrderPlacedMail = async (orderId: string, deps: OrderMailDep
     },
   }
 }
+
+export const orderPlacedKey = (orderId: string, resendAt?: number) =>
+  `order-placed:${orderId}${resendAt === undefined ? "" : `:resend:${resendAt}`}`
 
 export type LoadedPayment = {
   id: string

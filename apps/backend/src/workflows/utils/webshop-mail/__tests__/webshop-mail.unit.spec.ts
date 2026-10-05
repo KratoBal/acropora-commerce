@@ -166,6 +166,16 @@ describe("when the order confirmation goes", () => {
     expect(mail.content.text).toContain("Rendelés #38 (átvétel a boltban)")
   })
 
+  // MI PIROSÍT: ha az OS újraküldése (Feldolgozásra vár sor) a régi kulcson menne, és így elnyelné a modul
+  it("a resend from the OS is a new key on the same confirmation", async () => {
+    const { deps: d } = deps(null)
+    const result = await prepareOrderPlacedMail("order_1", d, 1759680000000)
+    expect(result).toMatchObject({
+      action: "send",
+      mail: { template: "order-placed", idempotency_key: "order-placed:order_1:resend:1759680000000" },
+    })
+  })
+
   it("no address, or a missing order: nothing is sent", async () => {
     const noMail = { ...deps(null).deps, loadOrder: async () => order("order_1", 36, { email: " " }) }
     expect(await prepareOrderPlacedMail("order_1", noMail)).toEqual({ action: "skip", reason: "no_email" })
