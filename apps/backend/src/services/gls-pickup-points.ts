@@ -13,11 +13,19 @@ import {
  * The shape is measured on the downloaded file (4081 points: 926 parcel-shop,
  * 3155 parcel-locker; `{"items": [...]}`), not taken from the widget.
  */
-const GLS_PICKUP_POINTS_URL =
-  "https://map.gls-croatia.com/data/deliveryPoints/hu.json";
+/*
+  GLS HUNGARY'S OWN ADDRESS (the GLS prompt, point 7). Measured 2026-10-05:
+  map.gls-hungary.com and map.gls-croatia.com serve the byte-identical hu.json
+  (4084 points), so the Hungarian one is taken.
+*/
+export const GLS_PICKUP_POINTS_URL =
+  "https://map.gls-hungary.com/data/deliveryPoints/hu.json";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export type GlsPointType = "parcel-shop" | "parcel-locker";
+
+/** A parcel locker's load (the GLS prompt, point 6); `outOfOrder` cannot be chosen. */
+export type GlsLockerSaturation = "lowVolume" | "highVolume" | "outOfOrder";
 
 export type GlsPickupPoint = {
   id: string;
@@ -29,7 +37,18 @@ export type GlsPickupPoint = {
   /** Street address, as the list gives it. */
   address: string;
   type: GlsPointType;
+  /** Opening hours, a row per open day: 1 = Monday ... 7 = Sunday. */
+  hours: { day: number; from: string; to: string }[];
+  /** GLS's own feature keys: delivery, pickup, acceptsCard, acceptsCash, ... */
+  features: string[];
+  has_wheelchair_access: boolean;
+  /** GLS's load flag: on lockers, and on some parcel shops; null when GLS gives none. */
+  locker_saturation: GlsLockerSaturation | null;
+  /** The locker's own number on its door, when GLS gives one. */
+  external_id: string | null;
 };
+
+const SATURATIONS: readonly string[] = ["lowVolume", "highVolume", "outOfOrder"];
 
 export type GlsAvailability =
   | { available: true; pickup_points: GlsPickupPoint[] }
@@ -51,7 +70,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  */
 const toPickupPoint = (value: unknown): GlsPickupPoint | null => {
   if (!isRecord(value) || !isRecord(value.contact)) return null;
-  const { id, goldId, name, type, features, lockerSaturation } = value;
+  const { id, goldId, name, type, features, lockerSaturation, hours, externalId, hasWheelchairAccess } = value;
   const { postalCode, city, address } = value.contact;
 
   if (
@@ -63,22 +82,62 @@ const toPickupPoint = (value: unknown): GlsPickupPoint | null => {
     typeof address !== "string" ||
     (type !== "parcel-shop" && type !== "parcel-locker") ||
     !Array.isArray(features) ||
-    !features.includes("delivery") ||
-    lockerSaturation === "outOfOrder"
+    !features.includes("delivery")
   ) {
     return null;
   }
 
-  return { id, gold_id: goldId, name, zip: postalCode, city, address, type };
+  /*
+    AN OUT-OF-ORDER LOCKER IS KEPT, NOT DROPPED (the GLS prompt, point 6, and
+    Figma 508:426): the checkout shows it greyed out, "Jelenleg nem
+    választható.", and it can never be chosen (`glsPointSelectable`, checked
+    again when the order's shipping is set).
+  */
+  return {
+    id,
+    gold_id: goldId,
+    name,
+    zip: postalCode,
+    city,
+    address,
+    type,
+    hours: Array.isArray(hours)
+      ? hours.flatMap((row) =>
+          Array.isArray(row) && typeof row[0] === "number" && typeof row[1] === "string" && typeof row[2] === "string"
+            ? [{ day: row[0], from: row[1], to: row[2] }]
+            : []
+        )
+      : [],
+    features: features.filter((feature): feature is string => typeof feature === "string"),
+    has_wheelchair_access: hasWheelchairAccess === true,
+    /*
+      ON ANY KIND OF POINT, not only lockers: measured 2026-10-05, GLS gives it
+      on 268 of the 921 parcel shops too, 16 of them `outOfOrder`. Kept as GLS
+      says it, so such a shop is not offered either (the old filter dropped it).
+    */
+    locker_saturation:
+      typeof lockerSaturation === "string" && SATURATIONS.includes(lockerSaturation)
+        ? (lockerSaturation as GlsLockerSaturation)
+        : null,
+    external_id: typeof externalId === "string" && externalId ? externalId : null,
+  };
 };
+
+/** An out-of-order locker is listed but cannot be chosen. */
+export const glsPointSelectable = (point: GlsPickupPoint) => point.locker_saturation !== "outOfOrder";
 
 /**
  * WHICH POINTS AN OPTION MAY USE (acrobot, 2026-09-29): heavy goods only to a
  * parcel shop (a locker does not take them); the ordinary GLS pickup point to
  * either. The one place this rule lives.
  */
-export const glsPointAllowed = (point: GlsPickupPoint, heavy: boolean) =>
+/** The option's rule (heavy goods only to a parcel shop); the point may still be out of order. */
+export const glsPointFitsOption = (point: GlsPickupPoint, heavy: boolean) =>
   !heavy || point.type === "parcel-shop";
+
+/** What an order may be shipped to: fits the option, and can be chosen now. */
+export const glsPointAllowed = (point: GlsPickupPoint, heavy: boolean) =>
+  glsPointFitsOption(point, heavy) && glsPointSelectable(point);
 
 /** "1011 BUDAPEST I. KERÜLET, Batthyány tér 5 -6": the address as shown and stored. */
 export const glsPointAddress = (point: GlsPickupPoint) =>
@@ -125,10 +184,16 @@ export class GlsPickupPointsService {
     query,
     heavy,
     limit = DEFAULT_PICKUP_POINT_SEARCH_LIMIT,
+    includeUnavailable = false,
   }: {
     query: string;
     heavy: boolean;
     limit?: number;
+    /**
+     * Out-of-order lockers too, for a checkout that shows them greyed out.
+     * Off by default, so a checkout that would let one be clicked never gets one.
+     */
+    includeUnavailable?: boolean;
   }): Promise<GlsPickupPointSearch> {
     const availability = await this.getAvailability();
     if (!availability.available) return availability;
@@ -136,7 +201,9 @@ export class GlsPickupPointsService {
     return {
       available: true,
       ...searchPickupPoints(
-        availability.pickup_points.filter((point) => glsPointAllowed(point, heavy)),
+        availability.pickup_points.filter((point) =>
+          includeUnavailable ? glsPointFitsOption(point, heavy) : glsPointAllowed(point, heavy)
+        ),
         query,
         limit,
       ),

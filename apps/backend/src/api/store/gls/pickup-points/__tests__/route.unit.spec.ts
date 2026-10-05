@@ -11,6 +11,7 @@ afterAll(() => {
 const items = [
   { id: "SHOP", goldId: 1, name: "Bolt", contact: { postalCode: "2100", city: "Gödöllő", address: "Fő tér 1." }, features: ["delivery"], type: "parcel-shop" },
   { id: "LOCKER", goldId: 2, name: "Automata", contact: { postalCode: "2100", city: "Gödöllő", address: "Piac 1." }, features: ["delivery"], type: "parcel-locker" },
+  { id: "BROKEN", goldId: 3, name: "Rossz automata", contact: { postalCode: "2100", city: "Gödöllő", address: "Piac 2." }, features: ["delivery"], type: "parcel-locker", lockerSaturation: "outOfOrder" },
 ];
 
 // The routes build their service at import time, from fetch and the env.
@@ -60,6 +61,26 @@ describe("GET /store/gls and /store/gls/pickup-points", () => {
     expect((ordinary.body as { pickup_points: { id: string }[] }).pickup_points.map((p) => p.id)).toEqual(["LOCKER", "SHOP"].sort());
     const heavy = await call(search, { q: "2100", option_id: "so_nehez", limit: 20 });
     expect((heavy.body as { pickup_points: { id: string }[] }).pickup_points.map((p) => p.id)).toEqual(["SHOP"]);
+  });
+
+  /*
+    THE GREYED-OUT LOCKER (the GLS prompt, point 6): only a checkout that asks
+    gets it, flagged. What must fail: today's checkout (which would let it be
+    clicked) getting it; the asking one not.
+  */
+  it("an out-of-order locker comes only when asked, flagged", async () => {
+    const { search } = await load();
+    const ids = (body: unknown) => (body as { pickup_points: { id: string }[] }).pickup_points.map((p) => p.id).sort();
+    const plain = await call(search, { q: "2100", option_id: "so_pont", limit: 20, include_unavailable: "false" });
+    expect(ids(plain.body)).toEqual(["LOCKER", "SHOP"]);
+    const asked = await call(search, { q: "2100", option_id: "so_pont", limit: 20, include_unavailable: "true" });
+    expect(ids(asked.body)).toEqual(["BROKEN", "LOCKER", "SHOP"]);
+    const broken = (asked.body as { pickup_points: { id: string; locker_saturation: string }[] }).pickup_points.find(
+      (p) => p.id === "BROKEN",
+    );
+    expect(broken?.locker_saturation).toBe("outOfOrder");
+    expect(StoreGetGlsPickupPointsParams.parse({ q: "x", option_id: "y" }).include_unavailable).toBe("false");
+    expect(StoreGetGlsPickupPointsParams.safeParse({ q: "x", option_id: "y", include_unavailable: "igen" }).success).toBe(false);
   });
 
   it("refuses an option that is not a GLS point option", async () => {

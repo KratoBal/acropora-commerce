@@ -79,7 +79,7 @@ describe("order query projection", () => {
           shipping_methods: [
             {
               name: "GLS csomagpont",
-              data: { gls_pickup_point: { id: "HU-123", name: "GLS Mammut" } },
+              data: { gls_pickup_point: { id: "HU-123", name: "GLS Mammut", type: "parcel-shop" } },
             },
           ],
           payment_collections: [
@@ -117,7 +117,7 @@ describe("order query projection", () => {
       currency_code: "huf",
       customer_name: "Nagy Emese",
       phone: "+36 30 555 0137",
-      pickup_point: { id: "HU-123", name: "GLS Mammut" },
+      pickup_point: { id: "HU-123", name: "GLS Mammut", type: "parcel-shop" },
       payment: {
         provider_id: "pp_stripe_stripe",
         status: "authorized",
@@ -168,5 +168,27 @@ describe("order query projection", () => {
     expect(withPayments([{ ...card, captures: [{ amount: 900 }] }])).toBeNull()
     expect(withPayments([{ ...card, provider_id: "pp_system_default" }])).toBeNull()
     expect(withPayments([card], { acropora_payment: { state: "awaiting_payment" } })).toBeNull()
+  })
+
+  /*
+    THE POINT'S KIND FOR THE OS LIST (nautilus 26535): GLS ParcelShop or
+    automata from the stored `type`; a Foxpost point has none, even if its
+    data carried one.
+  */
+  it("gives a GLS point's kind, and none for Foxpost", () => {
+    const row = (data: Record<string, unknown>) =>
+      projectOrderQueryRows({
+        pageOrders: [{ ...order("o", null), shipping_methods: [{ name: "x", data }] }],
+        customerOrders: [],
+        statuses: [],
+        history: [],
+      })[0].pickup_point
+    expect(row({ gls_pickup_point: { id: "L1", name: "GLS Automata", type: "parcel-locker" } })).toEqual({
+      id: "L1",
+      name: "GLS Automata",
+      type: "parcel-locker",
+    })
+    expect(row({ foxpost_pickup_point: { id: "F1", name: "Foxpost", type: "APM" } })?.type).toBeNull()
+    expect(row({ gls_pickup_point: { id: "S1", name: "Régi mentés" } })?.type).toBeNull()
   })
 })
