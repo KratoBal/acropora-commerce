@@ -6,6 +6,7 @@ import {
   stripeShareFactsOf,
 } from "../../modules/stripe-capture/share"
 import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
+import { refuseWhileEditing } from "./order-edit-hold"
 import {
   capturePlainStripePayment,
   type PlainCaptureResult,
@@ -42,8 +43,10 @@ export type CapturePaymentSide = {
     data: Record<string, unknown> | null
     /** The payment provider; the order edit's capture acts only on Stripe. */
     provider_id?: string
-    /** The payment's collection; the order edit's capture sets its amount. */
+    /** The payment's collection; an order edit's confirm sets its amount. */
     collection_id?: string
+    /** The collection's status; AWAITING only while an order edit is being confirmed. */
+    collection_status?: string | null
   } | null
   /** The order's payments are all canceled (the order was canceled before the capture). */
   payment_canceled?: boolean
@@ -91,6 +94,8 @@ export const captureSharedStripePayment = async (
       `The shared card payment of order ${orderId} has no pickup order payment`
     )
   }
+  // an order edit's confirm is moving one of the two collections: retry, take nothing
+  refuseWhileEditing([shipped, pickup])
 
   // Each order's current amount, never more than its part of the hold.
   const shippedAmount = Math.min(shipped.total, shipped.payment.amount)

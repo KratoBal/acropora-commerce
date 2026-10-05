@@ -16,6 +16,7 @@ const ORDER_FIELDS = [
   "currency_code",
   "metadata",
   "payment_collections.id",
+  "payment_collections.status",
   "payment_collections.payments.id",
   "payment_collections.payments.provider_id",
   "payment_collections.payments.amount",
@@ -42,7 +43,13 @@ export const loadSide = async (
 
   // The order's live payment: the one not canceled.
   const payments = (order.payment_collections ?? []).flatMap((collection: any) =>
-    (collection?.payments ?? []).filter(Boolean).map((candidate: any) => ({ ...candidate, collection_id: collection.id }))
+    (collection?.payments ?? [])
+      .filter(Boolean)
+      .map((candidate: any) => ({
+        ...candidate,
+        collection_id: collection.id,
+        collection_status: collection.status ?? null,
+      }))
   )
   const payment = payments.find((candidate: any) => !candidate.canceled_at)
 
@@ -62,6 +69,7 @@ export const loadSide = async (
           data: payment.data ?? null,
           provider_id: payment.provider_id,
           collection_id: payment.collection_id,
+          collection_status: payment.collection_status,
         }
       : null,
     // canceled with the order (the payments exist, none is live)
