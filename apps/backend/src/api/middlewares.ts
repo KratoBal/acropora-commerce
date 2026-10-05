@@ -27,6 +27,7 @@ import {
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
 import { StorePostCartNotes } from "./store/cart-notes/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
+import { AdminGetOrderPickupPointsParams, AdminPostOrderPickupPoint } from "./admin/order-shipping/validators";
 import {
   AdminReleaseOrderPaymentHold,
   AdminSendOrderPaymentLink,
@@ -174,6 +175,17 @@ export default defineMiddlewares({
       matcher: "/admin/order-notes/:order_id",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminPostOrderNotes)],
+    },
+    {
+      // a placed order's pickup point, changed from the OS (card d3b54954, S1)
+      matcher: "/admin/order-shipping/:order_id/points",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(AdminGetOrderPickupPointsParams, {})],
+    },
+    {
+      matcher: "/admin/order-shipping/:order_id/point",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostOrderPickupPoint)],
     },
     {
       matcher: "/store/payment-options",
