@@ -1,11 +1,6 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
-import {
-  Hanken_Grotesk,
-  JetBrains_Mono,
-  Newsreader,
-  Space_Grotesk,
-} from "next/font/google"
+import localFont from "next/font/local"
 import "styles/globals.css"
 // A Figma Foundations tokenek (P1a): csak `--acr-*` valtozok, meglevo stilust nem irnak felul.
 import "styles/acropora-tokens.css"
@@ -18,21 +13,28 @@ import "styles/acropora-tokens.css"
  * a technikai értékeké -- teljesítmény, méret, cikkszám --, ahol az azonos
  * karakterszélesség olvashatóbb.
  *
- * A `next/font` a BUILD IDEJEN tolti le es a sajat kiszolgalonkrol adja tovabb,
- * tehat a vevo bongeszoje nem keresi meg a Google-t. Ennek az ara egy uj
- * BUILD-IDEJU fugges egy kulso szolgaltatastol -- ugyanaz a fajta, mint a Store
- * API hivasa a kategoria-oldalaknal, es ugyanugy meg tud allitani egy epitest.
+ * A BETUK A REPOBOL JONNEK (`app/betuk/`, acrobot 26240, 2026-10-05). A
+ * `next/font/google` a build alatt toltotte le oket a Google-tol, es a stage
+ * buildje ezen ketszer is elakadt (`Cannot read properties of null (reading
+ * 1)`, 10-03 es 10-05). A fajlok a `google/fonts` valtozo-sulyu forrasabol
+ * vagva, ugyanazzal a latin + latin-ext tartomannyal; a forras, a parancs es a
+ * visszameres a `betuk/FORRAS.md`-ben all. A vevo bongeszoje tovabbra sem
+ * keresi meg a Google-t, es a valtozo-nevek valtozatlanok.
  */
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin", "latin-ext"],
+const spaceGrotesk = localFont({
+  src: "./betuk/space-grotesk.woff2",
+  weight: "300 700",
   display: "swap",
   variable: "--terv-betu-fo",
 })
 
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ["latin", "latin-ext"],
+const jetBrainsMono = localFont({
+  src: "./betuk/jetbrains-mono.woff2",
+  weight: "100 800",
   display: "swap",
   variable: "--terv-betu-mono",
+  // monospace betunek nincs illo Arial- vagy Times-tartaleka
+  adjustFontFallback: false,
 })
 
 /**
@@ -45,11 +47,18 @@ const jetBrainsMono = JetBrains_Mono({
  * szamitott stilusai), es a negyes szam a sulyat is megadja: ez a HANGSULY
  * betuje, nem a torzsszovege.
  */
-const newsreader = Newsreader({
-  subsets: ["latin", "latin-ext"],
+const newsreader = localFont({
+  src: [
+    { path: "./betuk/newsreader.woff2", weight: "200 800", style: "normal" },
+    {
+      path: "./betuk/newsreader-italic.woff2",
+      weight: "200 800",
+      style: "italic",
+    },
+  ],
   display: "swap",
-  style: ["italic", "normal"],
   variable: "--terv-betu-kiemelt",
+  adjustFontFallback: "Times New Roman",
 })
 
 /**
@@ -58,9 +67,9 @@ const newsreader = Newsreader({
  * `--acr-font-sans` token olvassa; mas stilus nem hivatkozik ra, tehat a tobbi
  * lap betukeszlete nem valtozik.
  */
-const hankenGrotesk = Hanken_Grotesk({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500", "600", "700"],
+const hankenGrotesk = localFont({
+  src: "./betuk/hanken-grotesk.woff2",
+  weight: "100 900",
   display: "swap",
   variable: "--acr-font-hanken",
 })
