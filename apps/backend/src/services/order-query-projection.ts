@@ -89,8 +89,13 @@ export type OrderQueryRow = {
   }
 }
 
+/**
+ * The name in Hungarian order: family name first. The storefront's
+ * `last_name` is the family name (labelled "Vezetéknév", `family-name`), so it
+ * leads; the OS order page and the invoice use the same order.
+ */
 const nameOf = (address: QueryAddress | undefined): string | null => {
-  const name = [address?.first_name, address?.last_name]
+  const name = [address?.last_name, address?.first_name]
     .map((part) => part?.trim())
     .filter(Boolean)
     .join(" ")
