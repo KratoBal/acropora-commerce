@@ -14,7 +14,7 @@ type QueryAddress = {
   phone?: string | null
 } | null
 
-type QueryPickupPoint = { id?: string; name?: string } | null | undefined
+type QueryPickupPoint = { id?: string; name?: string; type?: string } | null | undefined
 
 type QueryOrder = {
   id: string
@@ -81,7 +81,11 @@ export type OrderQueryRow = {
   currency_code: string | null
   customer_name: string | null
   phone: string | null
-  pickup_point: { id: string | null; name: string } | null
+  /**
+   * `type`: a GLS point's kind as stored (`parcel-shop`, `parcel-locker`), so
+   * the OS list can say GLS ParcelShop or GLS automata; null for Foxpost.
+   */
+  pickup_point: { id: string | null; name: string; type: string | null } | null
   payment: {
     provider_id: string | null
     status: string | null
@@ -119,8 +123,14 @@ const nameOf = (address: QueryAddress | undefined): string | null => {
 
 const pickupPointOf = (order: QueryOrder) => {
   const data = order.shipping_methods?.[0]?.data
-  const point = data?.foxpost_pickup_point ?? data?.gls_pickup_point
-  return point?.name ? { id: point.id ?? null, name: point.name } : null
+  const fox = data?.foxpost_pickup_point
+  const point = fox ?? data?.gls_pickup_point
+  if (!point?.name) return null
+  return {
+    id: point.id ?? null,
+    name: point.name,
+    type: !fox && typeof point.type === "string" ? point.type : null,
+  }
 }
 
 const paymentOf = (order: QueryOrder): OrderQueryRow["payment"] => {

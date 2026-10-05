@@ -290,6 +290,15 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
       )
     }
 
+    /*
+      WHAT THE ORDER KEEPS (the GLS prompt, point 4). The first five keys are
+      the ones the OS reads today (nautilus: `type` gives ParcelShop or
+      locker) and do not change; the rest is the point's full record, for the
+      selected-point block, the success page and the label. All of it from our
+      own copy of GLS's list; from the browser only the id, and which picker
+      it came from.
+    */
+    const source = Reflect.get(chosen as object, "source")
     return {
       gls_pickup_point: {
         id: point.id,
@@ -297,6 +306,15 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
         name: point.name,
         address: glsPointAddress(point),
         type: point.type,
+        zip: point.zip,
+        city: point.city,
+        street: point.address,
+        hours: point.hours,
+        features: point.features,
+        has_wheelchair_access: point.has_wheelchair_access,
+        locker_saturation: point.locker_saturation,
+        external_id: point.external_id,
+        source: source === "finder" ? "finder" : "fallback",
       },
     }
   }

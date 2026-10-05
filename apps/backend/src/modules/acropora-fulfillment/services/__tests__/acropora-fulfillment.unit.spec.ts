@@ -536,10 +536,31 @@ describe("GLS pickup-point shipping", () => {
   const HEAVY_POINT = bindingId("ACROPORA_SO_GLS_HEAVY_POINT")
   const HOME = bindingId("ACROPORA_SO_GLS_HOME")
 
+  /*
+    THE ORDER KEEPS THE POINT'S FULL RECORD (the GLS prompt, point 4). What
+    must fail: the five keys the OS reads changed; the record (hours,
+    features, load, door number) taken from the browser instead of our list;
+    a `source` other than the two pickers stored as sent.
+  */
   it("stores the point from our list, with both GLS ids, whatever the browser sent", async () => {
-    const stored = await withGls([pont("SHOP1", "parcel-shop")]).validateFulfillmentData(
+    const stored = await withGls([
+      pont("SHOP1", "parcel-shop", {
+        hours: [[1, "08:00", "17:30"]],
+        features: ["acceptsCash", "delivery"],
+        hasWheelchairAccess: true,
+        externalId: "",
+      }),
+    ]).validateFulfillmentData(
       { id: POINT },
-      { gls_pickup_point: { id: "SHOP1", name: "Kitalált név" } },
+      {
+        gls_pickup_point: {
+          id: "SHOP1",
+          name: "Kitalált név",
+          features: ["kitalalt"],
+          locker_saturation: "lowVolume",
+          source: "finder",
+        },
+      },
       {} as never,
     )
     expect(stored).toEqual({
@@ -549,8 +570,34 @@ describe("GLS pickup-point shipping", () => {
         name: "Pont SHOP1",
         address: "1011 Budapest, Fő utca 1.",
         type: "parcel-shop",
+        zip: "1011",
+        city: "Budapest",
+        street: "Fő utca 1.",
+        hours: [{ day: 1, from: "08:00", to: "17:30" }],
+        features: ["acceptsCash", "delivery"],
+        has_wheelchair_access: true,
+        locker_saturation: null,
+        external_id: null,
+        source: "finder",
       },
     })
+    const odd = await withGls([pont("SHOP1", "parcel-shop")]).validateFulfillmentData(
+      { id: POINT },
+      { gls_pickup_point: { id: "SHOP1", source: "<script>" } },
+      {} as never,
+    )
+    expect((odd.gls_pickup_point as { source: string }).source).toBe("fallback")
+  })
+
+  it("an out-of-order locker cannot be shipped to, whichever picker sent it", async () => {
+    const service = withGls([pont("LOCKER1", "parcel-locker", { lockerSaturation: "outOfOrder" })])
+    await expect(
+      service.validateFulfillmentData(
+        { id: POINT },
+        { gls_pickup_point: { id: "LOCKER1", source: "finder" } },
+        {} as never,
+      ),
+    ).rejects.toThrow("unavailable for this shipping method")
   })
 
   it("refuses a GLS point option without a point, or with an unknown one", async () => {

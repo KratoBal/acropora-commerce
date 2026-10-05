@@ -18,7 +18,7 @@ export const GET = async (
   req: MedusaRequest<unknown, StoreGetGlsPickupPointsParamsType>,
   res: MedusaResponse,
 ) => {
-  const { q, option_id, limit } =
+  const { q, option_id, limit, include_unavailable } =
     req.validatedQuery as StoreGetGlsPickupPointsParamsType;
   const option = glsPointOptionOf(option_id);
 
@@ -33,6 +33,7 @@ export const GET = async (
     query: q,
     heavy: option.heavy,
     limit,
+    includeUnavailable: include_unavailable === "true",
   });
 
   res.status(answer.available ? 200 : 503).json(answer);

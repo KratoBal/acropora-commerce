@@ -17,6 +17,8 @@ export const StoreGetGlsPickupPointsParams = z
       .min(1)
       .max(MAX_PICKUP_POINT_SEARCH_LIMIT)
       .default(DEFAULT_PICKUP_POINT_SEARCH_LIMIT),
+    // the checkout that greys out an out-of-order locker asks for it (GLS prompt, point 6)
+    include_unavailable: z.enum(["true", "false"]).default("false"),
   })
   .strict();
 
