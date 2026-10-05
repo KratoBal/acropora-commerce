@@ -21,6 +21,7 @@ import {
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
 import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators";
+import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
@@ -90,6 +91,12 @@ export default defineMiddlewares({
       matcher: "/admin/payments/:id/capture",
       method: "POST",
       middlewares: [captureOnlyOrderTotal],
+    },
+    {
+      // The OS's notice that a parcel exists: the "Feladtuk" mail (order-shipping-notice).
+      matcher: "/admin/order-shipping-notice/:order_id",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminOrderShippingNotice)],
     },
     {
       matcher: "/admin/order-business-status/:order_id",

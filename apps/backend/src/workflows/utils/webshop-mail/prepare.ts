@@ -13,7 +13,7 @@ import { cardLast4Of, renderRefundMail } from "./refund-mail"
  */
 export type MailToSend = {
   to: string
-  template: "order-placed" | "payment-refunded"
+  template: "order-placed" | "payment-refunded" | "order-shipped"
   idempotency_key: string
   resource_id: string
   content: MailContent
