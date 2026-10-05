@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { convertToLocale } from "./money"
 
@@ -65,6 +65,23 @@ describe("a pénz-alak", () => {
    * alapertelmezes epp ezt rontotta el (`1,200`), es a hiba ott sem a
    * tizedesben volt.
    */
+  /**
+   * A NEGYJEGYU IS TAGOLVA (acrobot 26313: "1 490 Ft", ahogy a Figma). A
+   * magyar locale-adat alapbol "1490 Ft"-ot adna. MI PIROSIT: ha a tagolas
+   * visszakerul a locale alapertekere.
+   */
+  it("a négyjegyű összeg is tagolva", () => {
+    for (const [osszeg, vart] of [
+      [1490, "1 490 Ft"],
+      [1000, "1 000 Ft"],
+      [999, "999 Ft"],
+    ] as const) {
+      expect(
+        szokozNelkul(convertToLocale({ amount: osszeg, currency_code: "huf" })),
+      ).toBe(vart)
+    }
+  })
+
   it("az ezres tagolás szóköz, nem vessző", () => {
     const ki = convertToLocale({ amount: 1234567, currency_code: "huf" })
 
@@ -79,5 +96,59 @@ describe("a pénz-alak", () => {
    */
   it("deviza nélkül a puszta összeg megy vissza", () => {
     expect(convertToLocale({ amount: 1200, currency_code: "" })).toBe("1200")
+  })
+
+  /**
+   * A BONGESZO SZABALYAVAL IS (mérve 2026-10-05): a Chromium 130 ICU-adata a
+   * HUF-ot alapbol KET tizedessel formazza (`45 190,00 Ft`), a Node 22-e
+   * nullaval. A fenti allitasok Node alatt futnak, tehat egy olyan valtozatot,
+   * ami a tizedest a kornyezetre bizza, nem fognak meg -- 2026-10-05-ig ezert
+   * volt zold, mikozben a kirakat tizedest mutatott.
+   *
+   * Itt az `Intl.NumberFormat` a bongeszo alapertekevel fut: ha a hivas nem
+   * nevezi meg a tizedesek szamat, 2 lesz, pont mint a Chromiumban. MI PIROSIT:
+   * ha a `convertToLocale` megint a futtatora bizza a tizedest.
+   */
+  describe("a böngésző alapértékével (HUF: 2 tizedes)", () => {
+    const eredeti = Intl.NumberFormat
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it("akkor sem mutat tizedest", () => {
+      // `function`, nem nyil-fuggveny: a hivo `new`-val hivja
+      vi.spyOn(Intl, "NumberFormat").mockImplementation(function (
+        locale?: string | string[],
+        opciok: Intl.NumberFormatOptions = {},
+      ) {
+        const huf = String(opciok.currency).toUpperCase() === "HUF"
+        const max = opciok.maximumFractionDigits ?? (huf ? 2 : undefined)
+        const min =
+          opciok.minimumFractionDigits ??
+          (huf ? Math.min(2, max ?? 2) : undefined)
+        return new eredeti(locale, {
+          ...opciok,
+          minimumFractionDigits: min,
+          maximumFractionDigits: max,
+        })
+      } as unknown as typeof Intl.NumberFormat)
+
+      // a kontroll: a hamisitott Intl tenyleg a bongeszo alakjat adja
+      expect(
+        szokozNelkul(
+          new Intl.NumberFormat("hu-HU", {
+            style: "currency",
+            currency: "HUF",
+          }).format(45190),
+        ),
+      ).toBe("45 190,00 Ft")
+
+      expect(
+        szokozNelkul(convertToLocale({ amount: 45190, currency_code: "huf" })),
+      ).toBe("45 190 Ft")
+      expect(
+        szokozNelkul(convertToLocale({ amount: 1490, currency_code: "huf" })),
+      ).toBe("1 490 Ft")
+    })
   })
 })
