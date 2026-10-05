@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 import type { Logger } from "@medusajs/framework/types"
 
 import { shippedMailOperations } from "../../../../workflows/utils/webshop-mail/operations"
-import { sendShopMail } from "../../../../workflows/utils/webshop-mail/send"
+import { deliverShopMail } from "../../../../workflows/utils/webshop-mail/deliver"
 import { prepareShippedMail } from "../../../../workflows/utils/webshop-mail/shipped"
 import { AdminOrderShippingNoticeType } from "../validators"
 
@@ -31,7 +31,12 @@ export const POST = async (
     return
   }
 
-  await sendShopMail(req.scope.resolve(Modules.NOTIFICATION), result.mail)
+  const delivery = await deliverShopMail(req.scope, result.mail)
+  if (!delivery.sent) {
+    // the OS renders the mail later (Levélsablonok outbox); the parcel stands
+    res.json({ sent: false, reason: "queued", message: delivery.reason })
+    return
+  }
   req.scope
     .resolve<Logger>(ContainerRegistrationKeys.LOGGER)
     .info(

@@ -1,8 +1,9 @@
 import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
 import type { Logger } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
-import { operationsOrSkip, sendShopMail } from "../workflows/utils/webshop-mail/send"
+import { deliverShopMail } from "../workflows/utils/webshop-mail/deliver"
+import { operationsOrSkip } from "../workflows/utils/webshop-mail/send"
 import { prepareRefundMail } from "../workflows/utils/webshop-mail/prepare"
 import { refundMailOperations } from "../workflows/utils/webshop-mail/operations"
 
@@ -21,7 +22,9 @@ export default async function paymentRefundedMail({ event, container }: Subscrib
   try {
     const result = await prepareRefundMail(paymentId, refundMailOperations(container))
     if (result.action === "send") {
-      await sendShopMail(container.resolve(Modules.NOTIFICATION), result.mail)
+      const delivery = await deliverShopMail(container, result.mail)
+      if (!delivery.sent)
+        logger.warn(`Payment ${paymentId}: the refund mail waits for the OS renderer: ${delivery.reason}`)
     }
   } catch (error) {
     logger.error(

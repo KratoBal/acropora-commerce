@@ -24,8 +24,8 @@ export type OutboxRowState = {
   created_at: Date | string
   sent_at: Date | string | null
   attempts: number
-  /** Set by a permanent or config failure: no timed retry. */
-  failure_kind: OsRenderFailure["kind"] | null
+  /** Set by a failure (`transient`, `permanent`, `config`); as stored, a string. */
+  failure_kind: OsRenderFailure["kind"] | string | null
   alerted_at: Date | string | null
 }
 

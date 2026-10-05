@@ -200,6 +200,7 @@ export const prepareStatusMail = async (
       idempotency_key: key,
       resource_id: order.id,
       content: renderStatusMail(status, order),
+      render: { template: statusMailTemplate(status), facts: { order } },
     },
   }
 }

@@ -112,6 +112,14 @@ export const preparePaymentDelayedMail = async (
       idempotency_key: key,
       resource_id: order.id,
       content: renderPaymentDelayedMail(order, input),
+      render: {
+        template: "order-payment-delayed",
+        facts: {
+          order,
+          amount: input.amount,
+          pickup_display_id: input.pickupDisplayId,
+        },
+      },
     },
   }
 }

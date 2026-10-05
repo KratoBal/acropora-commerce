@@ -138,6 +138,16 @@ export const preparePaymentLinkMail = async (
       idempotency_key: key,
       resource_id: order.id,
       content: renderPaymentLinkMail(order, input),
+      render: {
+        template: input.reminder ? "order-payment-reminder" : "order-payment-link",
+        facts: {
+          order,
+          url: input.url,
+          expires_at: input.expiresAt,
+          amount: input.amount,
+          pickup: input.pickup,
+        },
+      },
     },
   }
 }

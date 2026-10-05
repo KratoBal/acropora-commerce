@@ -114,6 +114,20 @@ export const prepareShippedMail = async (
   if (await deps.alreadySent(key)) return { status: "skip", reason: "already_sent" }
 
   const point = notice.carrier === "foxpost" ? order.foxpost_point : order.gls_point
+  const shipped = {
+    display_id: order.display_id,
+    carrier: notice.carrier,
+    destination_title: point?.name ?? order.method_name,
+    destination_address: point?.address ?? order.shipping_address,
+    gls_point: notice.carrier === "gls" && !!order.gls_point,
+    tracking_number: notice.tracking_number,
+    tracking_url: notice.tracking_url ?? null,
+    items: order.items.filter((item) => !item.fee).map(({ title, quantity }) => ({ title, quantity })),
+    cod_amount: order.cash_on_delivery ? order.total : null,
+    foxpost_logo_url: foxpostLogoUrl(env),
+    gls_logo_url: notice.carrier === "gls" ? glsLogoUrl(env, order.gls_point) : null,
+    gls_point_type: notice.carrier === "gls" ? (order.gls_point?.type ?? null) : null,
+  }
   return {
     status: "send",
     mail: {
@@ -121,21 +135,8 @@ export const prepareShippedMail = async (
       template: "order-shipped",
       idempotency_key: key,
       resource_id: order.id,
-      content: renderShippedMail({
-        display_id: order.display_id,
-        carrier: notice.carrier,
-        destination_title: point?.name ?? order.method_name,
-        destination_address: point?.address ?? order.shipping_address,
-        gls_point: notice.carrier === "gls" && !!order.gls_point,
-        tracking_number: notice.tracking_number,
-        tracking_url: notice.tracking_url ?? null,
-        items: order.items.filter((item) => !item.fee),
-        cod_amount: order.cash_on_delivery ? order.total : null,
-        foxpost_logo_url: foxpostLogoUrl(env),
-        gls_logo_url:
-          notice.carrier === "gls" ? glsLogoUrl(env, order.gls_point) : null,
-        gls_point_type: notice.carrier === "gls" ? order.gls_point?.type ?? null : null,
-      }),
+      content: renderShippedMail(shipped),
+      render: { template: "order-shipped", facts: { shipped } },
     },
   }
 }
