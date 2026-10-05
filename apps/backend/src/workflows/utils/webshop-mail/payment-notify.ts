@@ -48,18 +48,35 @@ export const notifyHoldReleased = async (
  */
 export const notifyPaymentLink = async (
   container: MedusaContainer,
-  input: { orderId: string; pickupOrderId: string | null; sentAt: string; url: string; expiresAt: string; amount: number }
+  input: {
+    orderId: string
+    pickupOrderId: string | null
+    sentAt: string
+    url: string
+    expiresAt: string
+    amount: number
+    /** The day-3 reminder of this link (L4). */
+    reminder?: boolean
+  }
 ): Promise<PaymentNotification> => {
   try {
     const pickup = input.pickupOrderId ? await orderMailOperations(container).loadOrder(input.pickupOrderId) : null
     const result = await preparePaymentLinkMail(
-      { orderId: input.orderId, sentAt: input.sentAt, url: input.url, expiresAt: input.expiresAt, amount: input.amount, pickup },
+      {
+        orderId: input.orderId,
+        sentAt: input.sentAt,
+        url: input.url,
+        expiresAt: input.expiresAt,
+        amount: input.amount,
+        pickup,
+        reminder: input.reminder,
+      },
       paymentLinkMailOperations(container)
     )
     if (result.status === "skip") return { sent: false, reason: result.reason }
     await sendShopMail(container.resolve(Modules.NOTIFICATION), result.mail)
     return { sent: true }
   } catch (error) {
-    return failed(container, input.orderId, "payment-link", error)
+    return failed(container, input.orderId, input.reminder ? "payment-reminder" : "payment-link", error)
   }
 }

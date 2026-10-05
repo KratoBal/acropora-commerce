@@ -23,6 +23,7 @@ export type MailToSend = {
     | "order-status-closed"
     | "order-payment-delayed"
     | "order-payment-link"
+    | "order-payment-reminder"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string

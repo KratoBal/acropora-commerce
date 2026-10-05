@@ -12,20 +12,22 @@ type AllowedTransition = {
 }
 
 const transitions: Record<OrderBusinessStatus, AllowedTransition[]> = {
+  // `system` closes only an order whose payment link ran out (source
+  // `payment_deadline`, checked below), and only before it left the shop
   pending_processing: [
     { to: "confirmed", actors: ["admin"] },
     // The direct step stays: whether Visszaigazolva is mandatory is not decided.
     { to: "stocking", actors: ["admin"] },
-    { to: "closed_unsuccessfully", actors: ["admin"] },
+    { to: "closed_unsuccessfully", actors: ["admin", "system"] },
   ],
   confirmed: [
     { to: "stocking", actors: ["admin"] },
-    { to: "closed_unsuccessfully", actors: ["admin"] },
+    { to: "closed_unsuccessfully", actors: ["admin", "system"] },
   ],
   stocking: [
     { to: "out_for_delivery", actors: ["admin"] },
     { to: "ready_for_pickup", actors: ["admin"] },
-    { to: "closed_unsuccessfully", actors: ["admin"] },
+    { to: "closed_unsuccessfully", actors: ["admin", "system"] },
   ],
   out_for_delivery: [
     { to: "closed", actors: ["carrier", "admin"] },
@@ -83,6 +85,14 @@ export const assertBusinessStatusTransition = ({
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
       `${from} cannot transition to ${to}`,
+    )
+  }
+
+  // the system's only close is the payment deadline's (plan 2.5, decision 2)
+  if (actor === "system" && source !== "payment_deadline") {
+    throw new MedusaError(
+      MedusaError.Types.UNAUTHORIZED,
+      `system cannot transition ${from} to ${to} from ${source}`,
     )
   }
 

@@ -78,3 +78,40 @@ describe("preparePaymentLinkMail", () => {
     expect(await preparePaymentLinkMail(input, deps(rendeles({ email: null })), ON)).toEqual({ status: "skip", reason: "no_email" })
   })
 })
+
+/**
+ * THE DAY-3 REMINDER (L4): the same link, as a reminder, once per link. What
+ * must fail: the reminder sharing the link mail's key (it would never go, the
+ * link mail being sent already); a second reminder for the same link.
+ */
+describe("the payment reminder", () => {
+  const input = {
+    orderId: "order_45",
+    sentAt: "2026-10-06T10:00:00.000Z",
+    url: URL,
+    expiresAt: "2026-10-12T10:00:00.000Z",
+    amount: 4950,
+    pickup: null,
+    reminder: true,
+  }
+  const deps = (sent: string[] = []) => ({
+    loadOrder: async () => rendeles(),
+    alreadySent: async (key: string) => sent.includes(key),
+  })
+
+  it("its own key and template, the same link and amount, said as a reminder", async () => {
+    const result = (await preparePaymentLinkMail(input, deps(["order-payment-link:order_45:2026-10-06T10:00:00.000Z"]), ON)) as any
+    expect(result.status).toBe("send")
+    expect(result.mail.template).toBe("order-payment-reminder")
+    expect(result.mail.idempotency_key).toBe("order-payment-reminder:order_45:2026-10-06T10:00:00.000Z")
+    expect(result.mail.content.subject).toBe("Emlékeztető: még kifizetheted a rendelésedet (#45)")
+    expect(result.mail.content.text).toContain(`Fizetés: ${URL}`)
+    expect(result.mail.content.text).toContain(`FIZETENDŐ: 4${NBSP}950 Ft`)
+  })
+
+  it("once per link", async () => {
+    expect(
+      await preparePaymentLinkMail(input, deps(["order-payment-reminder:order_45:2026-10-06T10:00:00.000Z"]), ON)
+    ).toEqual({ status: "skip", reason: "already_sent" })
+  })
+})

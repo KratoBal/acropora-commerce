@@ -191,3 +191,39 @@ describe("nextBusinessStatuses", () => {
     expect(nextBusinessStatuses("stocking", "carrier")).toEqual([])
   })
 })
+
+/**
+ * THE PAYMENT DEADLINE'S CLOSE (the lejáró zárolás plan, 2.5). What must fail:
+ * the system closing an order for any other reason; the deadline closing an
+ * order that already left the shop; the admin's own steps changed.
+ */
+describe("the system's payment-deadline close", () => {
+  const close = (from: string, source = "payment_deadline") => () =>
+    assertBusinessStatusTransition({
+      from: from as never,
+      to: "closed_unsuccessfully",
+      actor: "system",
+      source: source as never,
+    })
+
+  it("closes an order still in the shop, only for the payment deadline", () => {
+    for (const from of ["pending_processing", "confirmed", "stocking"]) {
+      expect(close(from)).not.toThrow()
+      expect(close(from, "admin")).toThrow(/system cannot transition/)
+    }
+  })
+
+  it("not once it left the shop or is collected", () => {
+    for (const from of ["out_for_delivery", "ready_for_pickup"]) {
+      expect(close(from)).toThrow(/cannot transition/)
+    }
+  })
+
+  it("the system takes no other step, and the admin's list is unchanged", () => {
+    expect(() =>
+      assertBusinessStatusTransition({ from: "stocking", to: "out_for_delivery", actor: "system", source: "payment_deadline" })
+    ).toThrow(/system cannot transition/)
+    expect(nextBusinessStatuses("stocking", "admin")).toEqual(["out_for_delivery", "ready_for_pickup", "closed_unsuccessfully"])
+    expect(nextBusinessStatuses("stocking", "system")).toEqual(["closed_unsuccessfully"])
+  })
+})
