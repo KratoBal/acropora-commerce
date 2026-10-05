@@ -12,6 +12,9 @@ import { type ShippedCarrier, renderShippedMail } from "./shipped-mail"
  *   sent: false, mail_off            the shop's mail channel is off (no key yet)
  *   sent: false, no_email            the order has no e-mail address
  *   sent: false, already_sent        this order and parcel number were mailed
+ *   sent: false, stub_parcel         a STUB- number from the OS's stand-in
+ *                                    carrier (its default mode): never a real
+ *                                    parcel, so never in a customer's mail
  *
  * Idempotent on the order and the parcel number: a retried call sends
  * nothing more, a new number (a relabelled parcel) does.
@@ -43,8 +46,18 @@ export type ShippedDeps = {
 
 export type ShippedResult =
   | { status: "not_found" }
-  | { status: "skip"; reason: "mail_off" | "no_email" | "already_sent" }
+  | { status: "skip"; reason: "mail_off" | "no_email" | "already_sent" | "stub_parcel" }
   | { status: "send"; mail: MailToSend }
+
+/**
+ * The OS's stand-in carrier numbers its parcels `STUB-…` (acropora-os
+ * `stub-carrier.client.ts`, `STUB_PARCEL_PREFIX`), so a stage run never looks
+ * real (nautilus 26359: such a number must never reach the "Feladtuk" mail).
+ */
+export const STUB_PARCEL_PREFIX = "STUB-"
+
+export const isStubParcelNumber = (trackingNumber: string) =>
+  trackingNumber.trim().toUpperCase().startsWith(STUB_PARCEL_PREFIX)
 
 export const shippedKey = (orderId: string, trackingNumber: string) =>
   `order-shipped:${orderId}:${trackingNumber}`
@@ -69,6 +82,8 @@ export const prepareShippedMail = async (
 ): Promise<ShippedResult> => {
   const order = await deps.loadOrder(orderId)
   if (!order) return { status: "not_found" }
+  // before the switch: the answer names the stub even while the channel is off
+  if (isStubParcelNumber(notice.tracking_number)) return { status: "skip", reason: "stub_parcel" }
   if (webshopMailState(env) !== "on") return { status: "skip", reason: "mail_off" }
   const to = order.email?.trim()
   if (!to) return { status: "skip", reason: "no_email" }

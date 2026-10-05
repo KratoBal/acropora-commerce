@@ -116,6 +116,25 @@ describe("when the shipping mail goes", () => {
     expect(d.alreadySent).toHaveBeenCalledWith("order-shipped:order_42:1")
   })
 
+  // MI PIROSÍT: ha az OS álszolgáltatójának STUB- száma levélbe kerülne (nautilus 26359)
+  it("a STUB- parcel number never goes into a mail, whatever the case or the channel", async () => {
+    for (const tracking_number of ["STUB-FOXPOST-1A2B3C4D5E6F", " stub-gls-0001 "]) {
+      const d = deps(rendeles())
+      expect(await prepareShippedMail("order_42", { carrier: "foxpost", tracking_number }, d, ON)).toEqual({
+        status: "skip",
+        reason: "stub_parcel",
+      })
+      expect(d.alreadySent).not.toHaveBeenCalled()
+      expect(await prepareShippedMail("order_42", { carrier: "gls", tracking_number }, deps(rendeles()), {})).toEqual({
+        status: "skip",
+        reason: "stub_parcel",
+      })
+    }
+    // KONTROLL: egy valódi szám, ami csak tartalmazza a szót, megy
+    const real = await prepareShippedMail("order_42", { carrier: "foxpost", tracking_number: "CLFOXSTUB0001" }, deps(rendeles()), ON)
+    expect(real.status).toBe("send")
+  })
+
   it("the logo only from an https storefront address", () => {
     expect(foxpostLogoUrl({})).toBeNull()
     expect(foxpostLogoUrl({ ACROPORA_WEBSHOP_URL: "http://shop.test" })).toBeNull()
