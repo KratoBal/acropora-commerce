@@ -6,6 +6,10 @@ import {
   stripeShareFactsOf,
 } from "../../modules/stripe-capture/share"
 import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
+import {
+  capturePlainStripePayment,
+  type PlainCaptureResult,
+} from "./plain-stripe-capture"
 
 /**
  * THE SHARED STRIPE PAYMENT IS CAPTURED AT "KISZÁLLÍTÁS" (Balázs, 2026-10-01
@@ -163,8 +167,13 @@ export const captureOnTransition = async (
   input: { order_id: string; to: string },
   ops: SharedCaptureOperations,
   assertAllowed: () => Promise<void>
-): Promise<SharedCaptureResult | null> => {
+): Promise<SharedCaptureResult | PlainCaptureResult | null> => {
   if (input.to !== CAPTURE_ON_STATUS) return null
   await assertAllowed()
-  return captureSharedStripePayment(input.order_id, ops)
+  const shared = await captureSharedStripePayment(input.order_id, ops)
+  // not a mixed cart's shared payment: the order's own card payment (C2)
+  if (!shared.captured && shared.reason === "not_shared") {
+    return capturePlainStripePayment(input.order_id, ops)
+  }
+  return shared
 }

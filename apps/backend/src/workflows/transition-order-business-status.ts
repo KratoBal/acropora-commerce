@@ -35,7 +35,9 @@ export const transitionOrderBusinessStatusStep = createStep(
  * (`captureSharedStripePayment`). It runs BEFORE the status changes: if the
  * capture fails (an expired hold, a refused card), the status does not change
  * and the admin sees why, instead of the goods leaving with no money taken.
- * Any other status, and any order without a shared Stripe payment, passes.
+ * A plain card order's own Stripe payment is captured the same way, for the
+ * order's current total (`capturePlainStripePayment`, C2). Any other status,
+ * and an order paid otherwise (cash on delivery, at the store), passes.
  * The transition rules are checked BEFORE the capture (`captureOnTransition`).
  */
 export const captureSharedStripePaymentStep = createStep(
