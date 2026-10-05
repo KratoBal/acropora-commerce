@@ -130,6 +130,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/order-business-status",
     },
+    // the shop's mails on their way to the OS renderer (Levélsablonok)
+    {
+      resolve: "./src/modules/webshop-mail-outbox",
+    },
     {
       resolve: "./src/modules/product-knowledge",
     },
