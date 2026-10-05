@@ -60,4 +60,76 @@ describe("order query projection", () => {
       purchased_without_registration: true,
     })
   })
+
+  /**
+   * THE OS LIST'S FIELDS. What must fail: the name or phone not taken from the
+   * shipping address first (the billing one is the fallback), a GLS point
+   * missed because only Foxpost is read, the payment's captured part lost,
+   * or the mixed cart's pair not named from the order's metadata.
+   */
+  it("gives the OS list the buyer, the pickup point, the payment and the mixed cart's pair", () => {
+    const [shipped, guest] = projectOrderQueryRows({
+      pageOrders: [
+        {
+          ...order("order_ship", "customer_1"),
+          currency_code: "huf",
+          metadata: { acropora_pickup_order_id: "order_pick" },
+          shipping_address: { first_name: " Nagy ", last_name: "Emese", phone: "+36 30 555 0137" },
+          billing_address: { first_name: "Számlázó", last_name: "Név", phone: "+36 1 000 0000" },
+          shipping_methods: [
+            {
+              name: "GLS csomagpont",
+              data: { gls_pickup_point: { id: "HU-123", name: "GLS Mammut" } },
+            },
+          ],
+          payment_collections: [
+            {
+              status: "authorized",
+              amount: 26390,
+              captured_amount: 0,
+              refunded_amount: 0,
+              payments: [{ provider_id: "pp_stripe_stripe" }],
+            },
+          ],
+        },
+        {
+          ...order("order_pick", null),
+          metadata: { acropora_parent_order_id: "order_ship" },
+          shipping_address: null,
+          billing_address: { first_name: "Vendég", last_name: null, phone: null },
+        },
+      ],
+      customerOrders: [],
+      statuses: [],
+      history: [],
+    })
+
+    expect({
+      currency_code: shipped.currency_code,
+      customer_name: shipped.customer_name,
+      phone: shipped.phone,
+      pickup_point: shipped.pickup_point,
+      payment: shipped.payment,
+      related_order: shipped.related_order,
+    }).toEqual({
+      currency_code: "huf",
+      customer_name: "Nagy Emese",
+      phone: "+36 30 555 0137",
+      pickup_point: { id: "HU-123", name: "GLS Mammut" },
+      payment: {
+        provider_id: "pp_stripe_stripe",
+        status: "authorized",
+        amount: 26390,
+        captured_amount: 0,
+        refunded_amount: 0,
+      },
+      related_order: { id: "order_pick", role: "pickup" },
+    })
+    expect([guest.customer_name, guest.phone, guest.payment, guest.related_order]).toEqual([
+      "Vendég",
+      null,
+      null,
+      { id: "order_ship", role: "parent" },
+    ])
+  })
 })

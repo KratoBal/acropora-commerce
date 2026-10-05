@@ -156,14 +156,35 @@ describe("captureSharedStripePayment", () => {
 })
 
 describe("captureOnTransition", () => {
+  const allowed = async () => undefined
+
   it("only Kiszállítás (out_for_delivery) captures", async () => {
     for (const to of ["confirmed", "stocking", "ready_for_pickup", "closed"]) {
       const { ops, log } = opsFor({ shipped: shipped(), pickup: pickup() })
-      expect(await captureOnTransition({ order_id: "order_ship", to }, ops)).toBeNull()
+      expect(
+        await captureOnTransition({ order_id: "order_ship", to }, ops, allowed)
+      ).toBeNull()
       expect(log).toEqual([])
     }
     const { ops, log } = opsFor({ shipped: shipped(), pickup: pickup() })
-    await captureOnTransition({ order_id: "order_ship", to: "out_for_delivery" }, ops)
+    await captureOnTransition({ order_id: "order_ship", to: "out_for_delivery" }, ops, allowed)
     expect(log).toHaveLength(3)
+  })
+
+  /**
+   * A REFUSED TRANSITION TAKES NO MONEY. The capture step runs before the
+   * status step and is not undone when that fails, so the rules are asked
+   * first. What must fail: an order still in Feldolgozásra vár sent to
+   * Kiszállítás capturing the shared payment before the refusal.
+   */
+  it("asks the transition rules first: a refused Kiszállítás captures nothing", async () => {
+    const { ops, log } = opsFor({ shipped: shipped(), pickup: pickup() })
+    const refused = async () => {
+      throw new Error("pending_processing cannot transition to out_for_delivery")
+    }
+    await expect(
+      captureOnTransition({ order_id: "order_ship", to: "out_for_delivery" }, ops, refused)
+    ).rejects.toThrow("cannot transition")
+    expect(log).toEqual([])
   })
 })
