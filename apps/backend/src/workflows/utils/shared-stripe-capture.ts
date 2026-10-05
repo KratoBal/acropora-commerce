@@ -150,9 +150,21 @@ export const captureSharedStripePayment = async (
 /** The status whose transition captures the shared payment: the shop's "Kiszállítás". */
 export const CAPTURE_ON_STATUS = "out_for_delivery"
 
-/** The transition's part: only `out_for_delivery` captures, every other status passes. */
+/**
+ * The transition's part: only `out_for_delivery` captures, every other status
+ * passes.
+ *
+ * THE TRANSITION RULES ARE ASKED FIRST (`assertAllowed`). The capture runs
+ * before the status step, and a capture is not undone when a later step fails:
+ * without this, a refused Kiszállítás (an order still in Feldolgozásra vár)
+ * took the money and then kept the old status.
+ */
 export const captureOnTransition = async (
   input: { order_id: string; to: string },
-  ops: SharedCaptureOperations
-): Promise<SharedCaptureResult | null> =>
-  input.to === CAPTURE_ON_STATUS ? captureSharedStripePayment(input.order_id, ops) : null
+  ops: SharedCaptureOperations,
+  assertAllowed: () => Promise<void>
+): Promise<SharedCaptureResult | null> => {
+  if (input.to !== CAPTURE_ON_STATUS) return null
+  await assertAllowed()
+  return captureSharedStripePayment(input.order_id, ops)
+}

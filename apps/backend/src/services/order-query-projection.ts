@@ -2,6 +2,18 @@ import {
   ORDER_BUSINESS_STATUS_LABELS,
   OrderBusinessStatus,
 } from "../modules/order-business-status/types"
+import {
+  PARENT_ORDER_METADATA_KEY,
+  PICKUP_ORDER_METADATA_KEY,
+} from "../workflows/utils/split-completion"
+
+type QueryAddress = {
+  first_name?: string | null
+  last_name?: string | null
+  phone?: string | null
+} | null
+
+type QueryPickupPoint = { id?: string; name?: string } | null | undefined
 
 type QueryOrder = {
   id: string
@@ -10,8 +22,24 @@ type QueryOrder = {
   created_at: Date
   total: number
   email: string
-  shipping_methods?: { name: string }[]
-  payment_collections?: { payments?: { provider_id: string }[] }[]
+  currency_code?: string
+  metadata?: Record<string, unknown> | null
+  shipping_address?: QueryAddress
+  billing_address?: QueryAddress
+  shipping_methods?: {
+    name: string
+    data?: {
+      foxpost_pickup_point?: QueryPickupPoint
+      gls_pickup_point?: QueryPickupPoint
+    } | null
+  }[]
+  payment_collections?: {
+    status?: string
+    amount?: number
+    captured_amount?: number
+    refunded_amount?: number
+    payments?: { provider_id: string }[]
+  }[]
 }
 
 type QueryStatus = {
@@ -39,12 +67,61 @@ export type OrderQueryRow = {
   shipping_method: string | null
   payment_method: string | null
   invoice_status: null
+  /** The OS list (acropora-os "Rendelések"): who, where to, how it is paid, and its pair. */
+  currency_code: string | null
+  customer_name: string | null
+  phone: string | null
+  pickup_point: { id: string | null; name: string } | null
+  payment: {
+    provider_id: string | null
+    status: string | null
+    amount: number | null
+    captured_amount: number | null
+    refunded_amount: number | null
+  } | null
+  /** A mixed cart's other order: the pickup order of a shipped one, or the shipped parent. */
+  related_order: { id: string; role: "pickup" | "parent" } | null
   customer_signals: {
     is_new_customer: boolean
     unsuccessful_closed_order_count: number
     has_other_open_order: boolean
     purchased_without_registration: boolean
   }
+}
+
+const nameOf = (address: QueryAddress | undefined): string | null => {
+  const name = [address?.first_name, address?.last_name]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ")
+  return name || null
+}
+
+const pickupPointOf = (order: QueryOrder) => {
+  const data = order.shipping_methods?.[0]?.data
+  const point = data?.foxpost_pickup_point ?? data?.gls_pickup_point
+  return point?.name ? { id: point.id ?? null, name: point.name } : null
+}
+
+const paymentOf = (order: QueryOrder): OrderQueryRow["payment"] => {
+  const collection = order.payment_collections?.[0]
+  if (!collection) return null
+  return {
+    provider_id: collection.payments?.[0]?.provider_id ?? null,
+    status: collection.status ?? null,
+    amount: collection.amount ?? null,
+    captured_amount: collection.captured_amount ?? null,
+    refunded_amount: collection.refunded_amount ?? null,
+  }
+}
+
+// the keys `linkOrders` writes on the two orders of a mixed cart
+const relatedOrderOf = (order: QueryOrder): OrderQueryRow["related_order"] => {
+  const pickup = order.metadata?.[PICKUP_ORDER_METADATA_KEY]
+  if (typeof pickup === "string" && pickup) return { id: pickup, role: "pickup" }
+  const parent = order.metadata?.[PARENT_ORDER_METADATA_KEY]
+  if (typeof parent === "string" && parent) return { id: parent, role: "parent" }
+  return null
 }
 
 const isOpen = (status: OrderBusinessStatus | undefined) =>
@@ -115,6 +192,15 @@ export const projectOrderQueryRows = ({
       shipping_method: order.shipping_methods?.[0]?.name ?? null,
       payment_method: order.payment_collections?.[0]?.payments?.[0]?.provider_id ?? null,
       invoice_status: null,
+      currency_code: order.currency_code ?? null,
+      customer_name: nameOf(order.shipping_address) ?? nameOf(order.billing_address),
+      phone:
+        order.shipping_address?.phone?.trim() ||
+        order.billing_address?.phone?.trim() ||
+        null,
+      pickup_point: pickupPointOf(order),
+      payment: paymentOf(order),
+      related_order: relatedOrderOf(order),
       customer_signals: {
         is_new_customer: !!order.customer_id && customerOrders.length === 1,
         unsuccessful_closed_order_count: otherOrders.filter(

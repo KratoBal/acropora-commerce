@@ -73,6 +73,12 @@ describe("Foxpost pickup-point availability", () => {
           opening_hours: { hetfo: "00:00-24:00" },
           latitude: 47.5,
           longitude: 19.1,
+          // nor the extended fields: empty, not dropped
+          variant: "",
+          payment_options: [],
+          services: [],
+          icon_url: null,
+          findme: "",
         },
       ],
     });
@@ -178,5 +184,42 @@ describe("Foxpost pickup-point search", () => {
       service.searchPickupPoints({ query: "budapest" }),
     ).resolves.toEqual({ available: false, reason: "missing_configuration" });
   });
-});
 
+  /**
+   * THE EXTENDED DIRECTORY (foxplus.json, measured 2026-10-05: 5008 points,
+   * 1837 "FOXPOST A-BOX", 1832 "FOXPOST Z-BOX", 1339 "Packeta Z-Pont"). The
+   * point below is a Z-Pont in the source's shape. MI PIROSÍT: a Z-Pont named a
+   * Foxpost locker, a foreign icon address passed to the <img>, Foxpost's
+   * HTML reaching the checkout as markup.
+   */
+  it("reads the type, payment options, services, icon and find-me note", async () => {
+    const zPont = {
+      ...sourcePickupPoint,
+      operator_id: "hu5000",
+      name: "Packeta Z-Pont Teszt Trafik",
+      variant: "Packeta Z-Pont",
+      paymentOptions: ["cash"],
+      service: ["pick up"],
+      iconUrl: "https://cdn.foxpost.hu/icons/Z-POINT_icon_low.png",
+      findme:
+        "A trafik a sarkon van.<br/><br/><b>Fizetési lehetőség: </b><br/>Fizetés készpénzzel<br/>",
+    };
+    const service = new FoxpostPickupPointsService({
+      env: configuredEnv,
+      fetcher: fetcherWith([zPont, { ...zPont, operator_id: "hu5001", iconUrl: "http://evil.test/x.png" }]),
+    });
+
+    const availability = await service.getAvailability();
+    if (!availability.available) throw new Error("expected the directory");
+    const [point, foreign] = availability.pickup_points;
+    expect(point).toMatchObject({
+      id: "hu5000",
+      variant: "Packeta Z-Pont",
+      payment_options: ["cash"],
+      services: ["pick up"],
+      icon_url: "https://cdn.foxpost.hu/icons/Z-POINT_icon_low.png",
+      findme: "A trafik a sarkon van.\n\nFizetési lehetőség:\nFizetés készpénzzel",
+    });
+    expect(foreign.icon_url).toBeNull();
+  });
+});

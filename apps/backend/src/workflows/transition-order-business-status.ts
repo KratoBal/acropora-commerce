@@ -36,11 +36,19 @@ export const transitionOrderBusinessStatusStep = createStep(
  * capture fails (an expired hold, a refused card), the status does not change
  * and the admin sees why, instead of the goods leaving with no money taken.
  * Any other status, and any order without a shared Stripe payment, passes.
+ * The transition rules are checked BEFORE the capture (`captureOnTransition`).
  */
 export const captureSharedStripePaymentStep = createStep(
   "capture-shared-stripe-payment",
-  async (input: { order_id: string; to: string }, { container }) => {
-    const result = await captureOnTransition(input, sharedCaptureOperations(container))
+  async (input: TransitionOrderBusinessStatusInput, { container }) => {
+    const service = container.resolve<OrderBusinessStatusModuleService>(
+      ORDER_BUSINESS_STATUS_MODULE,
+    )
+    const result = await captureOnTransition(
+      input,
+      sharedCaptureOperations(container),
+      () => service.assertTransitionAllowed(input),
+    )
     return new StepResponse({ captured: result?.captured ?? false })
   },
 )

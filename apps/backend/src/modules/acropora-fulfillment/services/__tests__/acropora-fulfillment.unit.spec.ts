@@ -52,6 +52,9 @@ const foxpostPickupPointsWith = (configured = true) =>
           open: { hetfo: "00:00-24:00" },
           geolat: 47.5,
           geolng: 19.1,
+          variant: "FOXPOST A-BOX",
+          paymentOptions: ["card", "link"],
+          service: ["pick up", "dispatch"],
         },
       ],
     }),
@@ -263,6 +266,10 @@ describe("Acropora calculated fulfillment provider", () => {
         id: "HU1234",
         name: "FOXPOST A-BOX Test",
         address: "1111 Budapest, Teszt utca 1.",
+        // the type, from the directory: the order and the OS name it right
+        variant: "FOXPOST A-BOX",
+        payment_options: ["card", "link"],
+        services: ["pick up", "dispatch"],
       },
     })
   })

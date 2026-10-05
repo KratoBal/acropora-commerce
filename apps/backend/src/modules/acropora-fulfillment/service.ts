@@ -93,11 +93,19 @@ const selectedFoxpostPickupPointId = (data: Record<string, unknown>): string => 
   return id
 }
 
+/**
+ * What the order keeps of the point, from Foxpost's directory, never from the
+ * browser. The type travels with it (the confirmation and the OS name a Z-Pont
+ * a Z-Pont), and what it accepts and does, for the success page.
+ */
 const persistedFoxpostPickupPoint = (pickupPoint: FoxpostPickupPoint) => ({
   foxpost_pickup_point: {
     id: pickupPoint.id,
     name: pickupPoint.name,
     address: pickupPoint.address,
+    variant: pickupPoint.variant,
+    payment_options: pickupPoint.payment_options,
+    services: pickupPoint.services,
   },
 })
 

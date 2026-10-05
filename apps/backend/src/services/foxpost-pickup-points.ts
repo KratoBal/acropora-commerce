@@ -17,6 +17,13 @@ type FoxpostSourcePoint = {
   // present and never required, so a point without them is not dropped.
   zip?: unknown;
   city?: unknown;
+  // The extended directory's fields (Foxpost's foxplus.json, measured
+  // 2026-10-05: all 5008 points carry them). Read when present, never required.
+  variant?: unknown;
+  paymentOptions?: unknown;
+  service?: unknown;
+  iconUrl?: unknown;
+  findme?: unknown;
 };
 
 type FoxpostFetchResponse = {
@@ -35,6 +42,20 @@ export type FoxpostPickupPoint = {
   opening_hours: Record<string, string>;
   latitude: number;
   longitude: number;
+  /**
+   * The point's type in Foxpost's own words: "FOXPOST A-BOX", "FOXPOST Z-BOX"
+   * or "Packeta Z-Pont" (the three values on 2026-10-05). Shown as it is, so a
+   * Z-Pont is never called a Foxpost locker. Empty when the source has none.
+   */
+  variant: string;
+  /** "card", "cash", "link", "app": what the point accepts (Foxpost's codes). */
+  payment_options: string[];
+  /** "pick up", "dispatch": what the point does (Foxpost's codes). */
+  services: string[];
+  /** Foxpost's own icon for the point's type; only an https address on cdn.foxpost.hu. */
+  icon_url: string | null;
+  /** Foxpost's "find me" note as plain text (their HTML, tags removed). */
+  findme: string;
 };
 
 export {
@@ -97,6 +118,44 @@ const isFoxpostSourcePoint = (value: unknown): value is FoxpostSourcePoint => {
   );
 };
 
+const stringsOf = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+
+/**
+ * THE ICON IS FOXPOST'S, OR NONE. The address goes into an <img> on the
+ * checkout; anything but Foxpost's own CDN over https is dropped rather than
+ * shown.
+ */
+const foxpostIconUrl = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "cdn.foxpost.hu"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Foxpost writes "find me" as HTML (`<br/>`, `<b>`). The checkout shows text:
+ * line breaks stay, every tag goes, the few entities become characters.
+ */
+export const findmeText = (value: unknown): string =>
+  typeof value !== "string"
+    ? ""
+    : value
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
 const toPickupPoint = (point: FoxpostSourcePoint): FoxpostPickupPoint => ({
   id: point.operator_id,
   name: point.name,
@@ -106,6 +165,11 @@ const toPickupPoint = (point: FoxpostSourcePoint): FoxpostPickupPoint => ({
   opening_hours: point.open,
   latitude: point.geolat,
   longitude: point.geolng,
+  variant: typeof point.variant === "string" ? point.variant.trim() : "",
+  payment_options: stringsOf(point.paymentOptions),
+  services: stringsOf(point.service),
+  icon_url: foxpostIconUrl(point.iconUrl),
+  findme: findmeText(point.findme),
 });
 
 // The search is shared with the GLS directory (P4), so both pickers answer
