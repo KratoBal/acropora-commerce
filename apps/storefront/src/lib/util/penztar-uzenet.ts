@@ -106,3 +106,11 @@ export { hibaAllapota }
 /** Az ASZF-elfogadas rogzitese nem sikerult: a fizetes el sem indul. */
 export const ASZF_ROGZITES_HIBA =
   "Az ÁSZF elfogadását most nem sikerült rögzíteni, ezért a fizetés nem indult el. Próbáld újra."
+
+/**
+ * Ha a vevo megjegyzese nem mentheto (kartya d3b54954): a tovabblepes
+ * megall, mert egy csendben elveszett megjegyzes rosszabb a hibauzenetnel.
+ * Ures mezovel a vevo tovabbmehet.
+ */
+export const MEGJEGYZES_MENTES_HIBA =
+  "A megjegyzést most nem sikerült elmenteni. Próbáld újra, vagy hagyd üresen a mezőt."
