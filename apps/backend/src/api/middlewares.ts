@@ -27,6 +27,7 @@ import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validat
 import { refuseClientSessionData } from "./refuse-client-session-data";
 import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
+import { captureOnlyOrderTotal } from "./capture-only-order-total";
 
 export default defineMiddlewares({
   routes: [
@@ -82,6 +83,13 @@ export default defineMiddlewares({
       matcher: "/admin/order-edits/:id/confirm",
       method: "POST",
       middlewares: [captureBeforeOrderEditConfirm],
+    },
+    {
+      // A card payment is captured for its order's current total; a smaller
+      // amount only through an order edit (admin-capture-guard.ts).
+      matcher: "/admin/payments/:id/capture",
+      method: "POST",
+      middlewares: [captureOnlyOrderTotal],
     },
     {
       matcher: "/admin/order-business-status/:order_id",
