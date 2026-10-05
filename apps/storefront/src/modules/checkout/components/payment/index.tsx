@@ -7,16 +7,27 @@ import {
   fizetesiModCimke,
 } from "@lib/util/fizetesi-modok"
 import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
-import { initiatePaymentSession } from "@lib/data/cart"
+import { initiatePaymentSession, placeOrder } from "@lib/data/cart"
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
 import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { convertToLocale } from "@lib/util/money"
-import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
+import {
+  FIZETES_MOST_NEM_SIKERULT,
+  RENDELES_MOST_NEM_SIKERULT,
+} from "@lib/util/penztar-uzenet"
+import { type StripeAllapot, stripeGombFelirat } from "@lib/util/stripe-allapot"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer, {
   StripePaymentContainer,
 } from "@modules/checkout/components/payment-container"
+import {
+  STRIPE_CTA_OSZTALY,
+  StripeKozosGomb,
+  StripePaymentButton,
+} from "@modules/checkout/components/payment-button"
+import StripeAllapotPanel from "@modules/checkout/components/stripe-allapot"
+import { StripeContext } from "@modules/checkout/components/payment-wrapper/stripe-wrapper"
 import Divider from "@modules/common/components/divider"
 import {
   Button,
@@ -26,8 +37,13 @@ import {
   clx,
 } from "@modules/common/components/ui"
 import { HttpTypes } from "@medusajs/types"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import {
+  unstable_rethrow,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
+import { useCallback, useContext, useEffect, useRef, useState } from "react"
 
 const Payment = ({
   cart,
@@ -69,6 +85,20 @@ const Payment = ({
   const isOpen = searchParams.get("step") === "payment"
 
   /*
+    A STRIPE-FIZETES ALLAPOTA (a keretek 477:*): a gomb jelzi, a panel mutatja.
+    A 3DS utani visszateres (`payment-return`) az URL-ben hozza:
+      ellenorzes=1          a bank jovahagyta, a leadas most jon ("Ellenőrzés…")
+      redirect_status=failed a bank elutasitotta ("Próbáld újra")
+  */
+  const [stripeAllapot, setStripeAllapot] = useState<StripeAllapot>(() =>
+    searchParams.get("ellenorzes") === "1"
+      ? "ellenorzes"
+      : searchParams.get("redirect_status") === "failed"
+        ? "elutasitva"
+        : "alap",
+  )
+
+  /*
     AZ ELSO AG EDDIG NEMA VOLT, ES EZ KULON HIBA A HATAR-HIBA MELLETT.
 
     A hivas `await`-tel allt, `catch` NELKUL: ha a fizetesi munkamenet
@@ -96,11 +126,27 @@ const Payment = ({
     setError(null)
     setSelectedPaymentMethod(method)
     setUtanvetDij(0)
+    setStripeAllapot("alap")
 
-    // A VEGYES KOSAR STRIPE-FIZETESE MEG NEM INDIT SEMMIT: a kosar bontasa es
-    // a kozos PaymentIntent a leadaskor keszul. Minden mas modnak MOST kell a
-    // munkamenet: a Stripe kartyamezoje abbol kapja a titkos kulcsat.
+    /*
+      A VEGYES KOSAR STRIPE-FIZETESE MEG NEM INDIT FIZETEST: a kosar bontasa es
+      a kozos PaymentIntent a leadaskor keszul. A hatter MOST leveszi a korabbi
+      munkamenetet es az utanvet-dijat (`card-choose`), mert a leado gomb a
+      redesign ota ugyanebben a lepesben all (a keretek szerint), es a mezo
+      alatt mar a kartyaval fizetendo osszegnek kell latszania. Minden mas
+      modnak MOST kell a munkamenet: a Stripe mezo abbol kapja a titkat.
+    */
     if (stripeKozosE(method)) {
+      try {
+        const eredmeny = await valasszKartyatVegyesKosarra(cart.id)
+        if (!eredmeny.ok) {
+          setError(eredmeny.uzenet)
+          return
+        }
+        router.refresh()
+      } catch {
+        setError(FIZETES_MOST_NEM_SIKERULT)
+      }
       return
     }
 
@@ -195,19 +241,14 @@ const Payment = ({
     paidByGiftcard
 
   /**
-   * Az ellenorzes lepesenek cime. A `fizetes=stripe` a vegyes kosar Stripe-
-   * utja (munkamenet meg nincs, lasd lent), es minden mas modnal LE KELL
-   * KERULNIE, kulonben egy kartyarol utanvetre valto vevonek a kartyas gomb
-   * maradna.
+   * Az ellenorzes lepesenek cime. A `fizetes` jelzes minden mas modnal LE KELL
+   * KERULJON: a bankkartya leado gombja a redesign ota a fizetesi lepesben
+   * all, az ellenorzesre csak a tobbi mod jut.
    */
-  const ellenorzesUrl = (stripeKozos: boolean) => {
+  const ellenorzesUrl = () => {
     const params = new URLSearchParams(searchParams)
     params.set("step", "review")
-    if (stripeKozos) {
-      params.set("fizetes", "stripe")
-    } else {
-      params.delete("fizetes")
-    }
+    params.delete("fizetes")
     return params.toString()
   }
 
@@ -230,26 +271,6 @@ const Payment = ({
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
-      /*
-        STRIPE A VEGYES KOSÁRON: a háttér leveszi a korábbi munkamenetet és az
-        utánvét-díjat, hogy az ellenőrzés a kártyával fizetendő összeget
-        mutassa; a fizetés a leadáskor indul, a választás az URL-ben megy
-        tovább az ellenőrzésre.
-      */
-      if (stripeKozosValasztva) {
-        const eredmeny = await valasszKartyatVegyesKosarra(cart.id)
-
-        if (!eredmeny.ok) {
-          setError(eredmeny.uzenet)
-          return
-        }
-
-        router.refresh()
-        return router.push(pathname + "?" + ellenorzesUrl(true), {
-          scroll: false,
-        })
-      }
-
       const shouldInputPaymentDetails =
         isStripeLike(selectedPaymentMethod) && !activeSession
 
@@ -276,7 +297,7 @@ const Payment = ({
       }
 
       if (!shouldInputPaymentDetails) {
-        return router.push(pathname + "?" + ellenorzesUrl(false), {
+        return router.push(pathname + "?" + ellenorzesUrl(), {
           scroll: false,
         })
       }
@@ -295,6 +316,53 @@ const Payment = ({
   useEffect(() => {
     setError(null)
   }, [isOpen])
+
+  /*
+    A 3DS UTANI ELLENORZES (477:619 / 477:1217): a `payment-return` utvonal mar
+    ellenorizte, hogy a visszaterites ehhez a kosarhoz es munkamenethez
+    tartozik, es hogy a bank jovahagyta. A leadas itt jon, a vevo pedig addig a
+    "Fizetés ellenőrzése…" allapotot latja, nem a sima penztarat. Siker eseten
+    a `placeOrder` atiranyit a visszaigazolo lapra; ha visszater, az kudarc.
+  */
+  const ellenorzesFut = useRef(false)
+  useEffect(() => {
+    if (stripeAllapot !== "ellenorzes" || ellenorzesFut.current) {
+      return
+    }
+    ellenorzesFut.current = true
+    placeOrder()
+      .then((eredmeny) => {
+        if (!eredmeny.ok) {
+          setError(eredmeny.uzenet)
+          setStripeAllapot("alap")
+        }
+      })
+      .catch((hiba) => {
+        unstable_rethrow(hiba)
+        setError(RENDELES_MOST_NEM_SIKERULT)
+        setStripeAllapot("alap")
+      })
+  }, [stripeAllapot])
+
+  /** Az "Egy fizetés" sor: mindig a kosar teljes fizetendo osszege. */
+  const egyFizetes = `Egy fizetés${stripeKozosValasztva ? " · a két rendelés együtt" : ""} · ${convertToLocale(
+    {
+      amount: cart.total ?? 0,
+      currency_code: cart.currency_code,
+    },
+  )}`
+  const stripeValasztva = isStripeLike(selectedPaymentMethod) && !paidByGiftcard
+  /*
+    A GOMB A STRIPE KORNYEZETEBEN ELHET CSAK (`useStripe`). A nem bontott
+    kosarnal a munkamenet a valasztas UTAN keszul el, es a burok csak akkor
+    adja az Elements-et; addig egy letiltott helyorzo all a helyen.
+  */
+  const stripeKesz = useContext(StripeContext)
+  const nemKesz =
+    !cart.shipping_address ||
+    !cart.billing_address ||
+    !cart.email ||
+    (cart.shipping_methods?.length ?? 0) < 1
 
   return (
     <div className="bg-white">
@@ -326,34 +394,58 @@ const Payment = ({
       </div>
       <div>
         <div className={isOpen ? "block" : "hidden"}>
-          {!paidByGiftcard && megjelenitheto.length > 0 && (
-            <>
-              <RadioGroup
-                value={selectedPaymentMethod}
-                onChange={(value: string) => setPaymentMethod(value)}
-              >
-                {megjelenitheto.map((paymentMethod) => (
-                  <div key={paymentMethod.id}>
-                    {isStripeLike(paymentMethod.id) ? (
-                      <StripePaymentContainer
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        paymentInfoMap={cimkek}
-                        setError={setError}
-                        setPaymentComplete={setPaymentComplete}
-                      />
-                    ) : (
-                      <PaymentContainer
-                        paymentInfoMap={cimkek}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                      />
-                    )}
-                  </div>
-                ))}
-              </RadioGroup>
-            </>
+          {/*
+            A 3DS UTANI ELLENORZES (477:619 / 477:1217): a munkamenet ekkor mar
+            nem "pending", tehat a kartyamezo nem allna; a panel onalloan all,
+            a gomb "Ellenőrzés…", es a leadas a fenti hatasban fut.
+          */}
+          {stripeAllapot === "ellenorzes" && (
+            <div
+              className="relative mb-3 min-h-[180px] border border-acr-line bg-acr-white"
+              data-testid="stripe-ellenorzes-blokk"
+            >
+              <StripeAllapotPanel allapot="ellenorzes" />
+            </div>
           )}
+          {stripeAllapot === "ellenorzes" && (
+            <Button size="large" className="mt-4" disabled aria-busy>
+              {stripeGombFelirat("ellenorzes")}
+            </Button>
+          )}
+          {stripeAllapot !== "ellenorzes" &&
+            !paidByGiftcard &&
+            megjelenitheto.length > 0 && (
+              <>
+                <RadioGroup
+                  value={selectedPaymentMethod}
+                  onChange={(value: string) => setPaymentMethod(value)}
+                >
+                  {megjelenitheto.map((paymentMethod) => (
+                    <div key={paymentMethod.id}>
+                      {isStripeLike(paymentMethod.id) ? (
+                        <StripePaymentContainer
+                          paymentProviderId={paymentMethod.id}
+                          selectedPaymentOptionId={selectedPaymentMethod}
+                          paymentInfoMap={cimkek}
+                          setError={setError}
+                          setPaymentComplete={setPaymentComplete}
+                          egyFizetes={egyFizetes}
+                          allapot={
+                            <StripeAllapotPanel allapot={stripeAllapot} />
+                          }
+                        />
+                      ) : (
+                        <PaymentContainer
+                          paymentInfoMap={cimkek}
+                          paymentProviderId={paymentMethod.id}
+                          selectedPaymentOptionId={selectedPaymentMethod}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </RadioGroup>
+              </>
+            )}
 
           {/*
             AZ URES LISTA NEM URES KEPERNYO.
@@ -414,23 +506,84 @@ const Payment = ({
             data-testid="payment-method-error-message"
           />
 
-          <Button
-            size="large"
-            className="mt-6"
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            disabled={
-              (isStripeLike(selectedPaymentMethod) && !paymentComplete) ||
-              (!selectedPaymentMethod && !paidByGiftcard)
-            }
-            data-testid="submit-payment-button"
-          >
-            {!activeSession &&
-            isStripeLike(selectedPaymentMethod) &&
-            !stripeKozosValasztva
-              ? "Add meg a fizetési adatokat"
-              : "Tovább az ellenőrzéshez"}
-          </Button>
+          {/*
+            A BANKKARTYA LEADO GOMBJA A FIZETESI LEPESBEN ALL (a keretek
+            szerint: a mezo, a bizalmi mondat es a "Rendelés leadása" egy
+            nezetben). Mobilon a kepernyo aljara ragad, a fizetendo osszeggel;
+            a helyfoglalo alatta azert van, hogy a ragado sav ne takarja el az
+            oldal aljat. A tobbi mod utja (Tovább az ellenőrzéshez) valtozatlan.
+          */}
+          {stripeAllapot === "ellenorzes" ? null : stripeValasztva && isOpen ? (
+            <>
+              <Text className="mt-6 txt-medium text-ui-fg-subtle">
+                A rendelés leadásával megerősíted, hogy elolvastad és elfogadod
+                az általános szerződési feltételeket, az értékesítési és
+                visszaküldési szabályzatot, valamint az adatkezelési
+                tájékoztatót.
+              </Text>
+              <div
+                className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-x-4 border-t border-acr-line bg-acr-white px-4 py-3 small:static small:mt-4 small:border-0 small:bg-transparent small:p-0"
+                data-testid="stripe-cta-sav"
+              >
+                <div className="min-w-0 flex-1 small:hidden">
+                  <p className="text-[12px] leading-[16px] text-acr-slate">
+                    Bankkártya
+                  </p>
+                  <p className="text-[16px] font-semibold leading-[22px] text-acr-ink">
+                    {convertToLocale({
+                      amount: cart.total ?? 0,
+                      currency_code: cart.currency_code,
+                    })}
+                  </p>
+                </div>
+                <div className="flex-1 small:flex-none">
+                  {!stripeKesz ? (
+                    <Button
+                      size="large"
+                      disabled
+                      className={STRIPE_CTA_OSZTALY}
+                      data-testid="submit-order-button"
+                    >
+                      {stripeGombFelirat("alap")}
+                    </Button>
+                  ) : stripeKozosValasztva ? (
+                    <StripeKozosGomb
+                      cart={cart}
+                      notReady={nemKesz}
+                      data-testid="submit-order-button"
+                      onAllapot={setStripeAllapot}
+                      kezdoAllapot={stripeAllapot}
+                      className={STRIPE_CTA_OSZTALY}
+                    />
+                  ) : (
+                    <StripePaymentButton
+                      cart={cart}
+                      notReady={nemKesz || !activeSession}
+                      data-testid="submit-order-button"
+                      onAllapot={setStripeAllapot}
+                      kezdoAllapot={stripeAllapot}
+                      className={STRIPE_CTA_OSZTALY}
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="h-[76px] small:hidden" aria-hidden="true" />
+            </>
+          ) : (
+            <Button
+              size="large"
+              className="mt-6"
+              onClick={handleSubmit}
+              isLoading={isLoading}
+              disabled={
+                (isStripeLike(selectedPaymentMethod) && !paymentComplete) ||
+                (!selectedPaymentMethod && !paidByGiftcard)
+              }
+              data-testid="submit-payment-button"
+            >
+              Tovább az ellenőrzéshez
+            </Button>
+          )}
         </div>
 
         <div className={isOpen ? "hidden" : "block"}>

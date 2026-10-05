@@ -21,9 +21,17 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/hu/checkout",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams("step=payment"),
+  unstable_rethrow: () => {},
 }))
 vi.mock("@lib/data/cart", () => ({
   initiatePaymentSession: vi.fn().mockResolvedValue({ ok: true }),
+  placeOrder: vi.fn(),
+}))
+// a Stripe a teszt-kornyezetben nem tolt be: a mezo es a gomb horgai csonkok
+vi.mock("@stripe/react-stripe-js", () => ({
+  PaymentElement: () => <div data-testid="stripe-kartyamezo" />,
+  useStripe: () => null,
+  useElements: () => null,
 }))
 vi.mock("@lib/data/payment", () => ({
   egyeztesdAzUtanvetDijat: vi
@@ -85,7 +93,7 @@ describe("a kártyás mód a fizetési lépésben", () => {
     expect(screen.queryByText("Bankkártyás fizetés (Stripe)")).toBeNull()
   })
 
-  it("a Stripe választása munkamenetet indít", async () => {
+  it("a Stripe választása munkamenetet indít, és a leadó gomb a fizetési lépésben áll", async () => {
     lepes()
     fireEvent.click(screen.getByText("Bankkártyás fizetés"))
     await waitFor(() =>
@@ -94,6 +102,12 @@ describe("a kártyás mód a fizetési lépésben", () => {
         { provider_id: STRIPE },
       ),
     )
+    // a keretek szerint: "Rendelés leadása" a mezo mellett, nem "Tovább"
+    expect(await screen.findByTestId("submit-order-button")).toHaveTextContent(
+      "Rendelés leadása",
+    )
+    expect(screen.queryByTestId("submit-payment-button")).toBeNull()
+    expect(screen.getByTestId("stripe-cta-sav")).toBeInTheDocument()
   })
 
   it("publikus kulcs nélkül a Stripe nem jelenik meg", () => {

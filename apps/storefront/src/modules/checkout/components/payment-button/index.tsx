@@ -14,7 +14,13 @@ import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import { unstable_rethrow, useParams } from "next/navigation"
-import React, { useState } from "react"
+import React, { useRef, useState } from "react"
+import {
+  ELUTASITOTT_KARTYA,
+  type StripeAllapot,
+  stripeGombFelirat,
+  stripeHibaFajta,
+} from "@lib/util/stripe-allapot"
 import ErrorMessage from "../error-message"
 
 type PaymentButtonProps = {
@@ -96,7 +102,8 @@ const szamlazasiAdatok = (cart: HttpTypes.StoreCart) => ({
     cart.billing_address?.first_name + " " + cart.billing_address?.last_name,
   address: {
     city: cart.billing_address?.city ?? undefined,
-    country: cart.billing_address?.country_code ?? undefined,
+    // a Stripe ISO-kodot var; a mezoben az orszagot nem kerdezzuk (`STRIPE_FIZETESI_MEZO`)
+    country: cart.billing_address?.country_code?.toUpperCase() ?? undefined,
     line1: cart.billing_address?.address_1 ?? undefined,
     line2: cart.billing_address?.address_2 ?? undefined,
     postal_code: cart.billing_address?.postal_code ?? undefined,
@@ -105,6 +112,54 @@ const szamlazasiAdatok = (cart: HttpTypes.StoreCart) => ({
   email: cart.email,
   phone: cart.billing_address?.phone ?? undefined,
 })
+
+type StripeGombProps = {
+  cart: HttpTypes.StoreCart
+  notReady: boolean
+  "data-testid"?: string
+  /** A fizetesi lepes allapot-panelje ebbol tudja, mit mutasson. */
+  onAllapot?: (allapot: StripeAllapot) => void
+  /** Az indulo allapot (a 3DS utani elutasitas: "Próbáld újra"). */
+  kezdoAllapot?: StripeAllapot
+  className?: string
+}
+
+/**
+ * A FIZETESI LEPES LEADO GOMBJA A KERETEK SZERINT: heritage hatter, feher
+ * felirat, mobilon teljes szelesseg. A `!` azert kell, mert a UI-gomb a sajat
+ * fekete hatteret is kiteszi, es a ketto kozott csak a CSS sorrendje dontene.
+ */
+export const STRIPE_CTA_OSZTALY =
+  "w-full !rounded-none !bg-acr-heritage !text-acr-white hover:!opacity-90 disabled:!bg-acr-slate whitespace-nowrap !px-4 !text-[15px] !font-semibold small:w-auto small:!px-6 small:!text-lg small:!font-normal small:min-w-[260px]"
+
+/**
+ * A MEZO NEM SZERKESZTHETO, AMIG A FIZETES FUT (a prompt 8. pontja). A Payment
+ * Element sajat `readOnly` beallitasa; a kartyaadathoz igy sem nyulunk.
+ */
+const mezoZarolasa = (
+  elements: ReturnType<typeof useElements>,
+  zarva: boolean,
+) => {
+  elements?.getElement("payment")?.update({ readOnly: zarva })
+}
+
+/**
+ * A ket Stripe-gomb kozos allapota: a felirat, a zarolas es a jelzes a
+ * fizetesi lepes fele. Dupla kattintas nem indit masodik fizetest: amig fut,
+ * a kezelo azonnal visszater.
+ */
+const useStripeAllapot = (
+  onAllapot: StripeGombProps["onAllapot"],
+  kezdoAllapot: StripeAllapot | undefined,
+) => {
+  const [allapot, setAllapot] = useState<StripeAllapot>(kezdoAllapot ?? "alap")
+  const fut = useRef(false)
+  const jelez = (uj: StripeAllapot) => {
+    setAllapot(uj)
+    onAllapot?.(uj)
+  }
+  return { allapot, jelez, fut }
+}
 
 /**
  * VEGYES KOSÁR, STRIPE (Balázs 2026-10-01, 1-es út): a két rendelés EGY
@@ -123,17 +178,16 @@ const szamlazasiAdatok = (cart: HttpTypes.StoreCart) => ({
  * választhasson. A 3-D Secure átirányítás után a `payment-return` útvonal
  * fejezi be ugyanígy.
  */
-const StripeKozosGomb = ({
+export const StripeKozosGomb = ({
   cart,
   notReady,
   "data-testid": dataTestId,
-}: {
-  cart: HttpTypes.StoreCart
-  notReady: boolean
-  "data-testid"?: string
-}) => {
-  const [submitting, setSubmitting] = useState(false)
+  onAllapot,
+  kezdoAllapot,
+  className,
+}: StripeGombProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
   const stripe = useStripe()
   const elements = useElements()
   const { countryCode } = useParams()
@@ -143,32 +197,49 @@ const StripeKozosGomb = ({
       const eredmeny = await placeOrder()
       if (!eredmeny.ok) {
         setErrorMessage(eredmeny.uzenet)
+        jelez("alap")
       }
     } catch (hiba) {
       // a sikeres leadas `redirect`-tel zarul (lasd fent): azt atengedjuk
       unstable_rethrow(hiba)
       setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
+      jelez("alap")
+    }
+  }
+
+  const elutasitva = () => {
+    if (onAllapot) {
+      jelez("elutasitva")
+    } else {
+      setErrorMessage(ELUTASITOTT_KARTYA)
+      jelez("elutasitva")
     }
   }
 
   const handlePayment = async () => {
-    if (!stripe || !elements) {
+    if (!stripe || !elements || fut.current) {
       return
     }
 
-    setSubmitting(true)
+    fut.current = true
     setErrorMessage(null)
+    jelez("feldolgozas")
+    mezoZarolasa(elements, true)
 
     try {
       const ellenorzes = await elements.submit()
       if (ellenorzes.error) {
-        setErrorMessage(ellenorzes.error.message ?? FIZETES_MOST_NEM_SIKERULT)
+        if (stripeHibaFajta(ellenorzes.error) !== "validacio") {
+          setErrorMessage(ellenorzes.error.message ?? FIZETES_MOST_NEM_SIKERULT)
+        }
+        jelez("alap")
         return
       }
 
       const inditas = await inditsStripeKozosFizetest(cart.id)
       if (!inditas.ok) {
         setErrorMessage(inditas.uzenet)
+        jelez("alap")
         return
       }
 
@@ -182,8 +253,8 @@ const StripeKozosGomb = ({
         redirect: "if_required",
       })
 
-      const zarolva = (allapot?: string) =>
-        allapot === "requires_capture" || allapot === "succeeded"
+      const zarolva = (allapotNev?: string) =>
+        allapotNev === "requires_capture" || allapotNev === "succeeded"
 
       if (error) {
         if (zarolva(error.payment_intent?.status)) {
@@ -191,7 +262,14 @@ const StripeKozosGomb = ({
           return
         }
         await stripeVisszarendezes(cart.id)
-        setErrorMessage(error.message ?? FIZETES_MOST_NEM_SIKERULT)
+        if (stripeHibaFajta(error) === "elutasitas") {
+          elutasitva()
+        } else {
+          if (stripeHibaFajta(error) !== "validacio") {
+            setErrorMessage(error.message ?? FIZETES_MOST_NEM_SIKERULT)
+          }
+          jelez("alap")
+        }
         return
       }
 
@@ -201,22 +279,31 @@ const StripeKozosGomb = ({
       }
 
       await stripeVisszarendezes(cart.id)
-      setErrorMessage(FIZETES_MOST_NEM_SIKERULT)
+      elutasitva()
     } finally {
-      setSubmitting(false)
+      fut.current = false
+      mezoZarolasa(elements, false)
     }
   }
 
   return (
     <>
       <Button
-        disabled={!stripe || !elements || notReady}
+        disabled={
+          !stripe ||
+          !elements ||
+          notReady ||
+          allapot === "feldolgozas" ||
+          allapot === "ellenorzes"
+        }
         onClick={handlePayment}
         size="large"
-        isLoading={submitting}
+        className={className}
+        aria-busy={allapot === "feldolgozas" || allapot === "ellenorzes"}
         data-testid={dataTestId}
+        data-allapot={allapot}
       >
-        Rendelés leadása
+        {stripeGombFelirat(allapot)}
       </Button>
       <ErrorMessage
         error={errorMessage}
@@ -226,17 +313,21 @@ const StripeKozosGomb = ({
   )
 }
 
-const StripePaymentButton = ({
+/**
+ * A NEM BONTOTT KOSAR STRIPE-GOMBJA: a munkamenet a mod valasztasakor
+ * keszult, itt a kartya megerositese es a leadas jon. Ugyanaz az allapotgep,
+ * mint a vegyes kosarnal; a visszarendezes itt nem kell, mert nincs bontas.
+ */
+export const StripePaymentButton = ({
   cart,
   notReady,
   "data-testid": dataTestId,
-}: {
-  cart: HttpTypes.StoreCart
-  notReady: boolean
-  "data-testid"?: string
-}) => {
-  const [submitting, setSubmitting] = useState(false)
+  onAllapot,
+  kezdoAllapot,
+  className,
+}: StripeGombProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
 
   /*
     A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL.
@@ -254,20 +345,17 @@ const StripePaymentButton = ({
 
       if (!eredmeny.ok) {
         setErrorMessage(eredmeny.uzenet)
+        jelez("alap")
       }
     } catch (hiba) {
       /*
         A VEZERLO-DOBAST ATENGEDJUK. A sikeres rendeles `redirect`-tel zarul,
-        es a Next azt kivetelkent valositja meg. A szerver-muvelet valaszat a
-        keret dolgozza fel, tehat ez a dobas VALOSZINULEG el sem jut idaig --
-        de VALODI RENDELES NELKUL ezt nem tudom lemerni, es a regi
-        `.catch(...)` alak ugyanezt a kockazatot vitte, csak orzo nelkul.
-        Nem-Next hibara ez a hivas nem csinal semmit.
+        es a Next azt kivetelkent valositja meg. Nem-Next hibara ez a hivas
+        nem csinal semmit.
       */
       unstable_rethrow(hiba)
       setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
-    } finally {
-      setSubmitting(false)
+      jelez("alap")
     }
   }
 
@@ -275,17 +363,18 @@ const StripePaymentButton = ({
   const elements = useElements()
   const { countryCode } = useParams()
 
-  const disabled = !stripe || !elements ? true : false
-
   const handlePayment = async () => {
-    if (!stripe || !elements || !cart) {
+    if (!stripe || !elements || !cart || fut.current) {
       return
     }
 
-    setSubmitting(true)
+    fut.current = true
+    setErrorMessage(null)
+    jelez("feldolgozas")
+    mezoZarolasa(elements, true)
 
-    await stripe
-      .confirmPayment({
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: visszateresiCim(cart.id, countryCode),
@@ -295,45 +384,62 @@ const StripePaymentButton = ({
         // card payments still complete inline.
         redirect: "if_required",
       })
-      .then(({ error, paymentIntent }) => {
-        if (error) {
-          const pi = error.payment_intent
 
-          if (
-            (pi && pi.status === "requires_capture") ||
-            (pi && pi.status === "succeeded")
-          ) {
-            onPaymentCompleted()
-            return
-          }
-
-          setErrorMessage(error.message || null)
-          setSubmitting(false)
-          return
-        }
+      if (error) {
+        const pi = error.payment_intent
 
         if (
-          paymentIntent.status === "requires_capture" ||
-          paymentIntent.status === "succeeded"
+          (pi && pi.status === "requires_capture") ||
+          (pi && pi.status === "succeeded")
         ) {
-          onPaymentCompleted()
+          await onPaymentCompleted()
           return
         }
 
-        setSubmitting(false)
-      })
+        const fajta = stripeHibaFajta(error)
+        if (fajta === "elutasitas") {
+          if (!onAllapot) setErrorMessage(ELUTASITOTT_KARTYA)
+          jelez("elutasitva")
+        } else {
+          if (fajta !== "validacio") setErrorMessage(error.message || null)
+          jelez("alap")
+        }
+        return
+      }
+
+      if (
+        paymentIntent.status === "requires_capture" ||
+        paymentIntent.status === "succeeded"
+      ) {
+        await onPaymentCompleted()
+        return
+      }
+
+      jelez("alap")
+    } finally {
+      fut.current = false
+      mezoZarolasa(elements, false)
+    }
   }
 
   return (
     <>
       <Button
-        disabled={disabled || notReady}
+        disabled={
+          !stripe ||
+          !elements ||
+          notReady ||
+          allapot === "feldolgozas" ||
+          allapot === "ellenorzes"
+        }
         onClick={handlePayment}
         size="large"
-        isLoading={submitting}
+        className={className}
+        aria-busy={allapot === "feldolgozas" || allapot === "ellenorzes"}
         data-testid={dataTestId}
+        data-allapot={allapot}
       >
-        Rendelés leadása
+        {stripeGombFelirat(allapot)}
       </Button>
       <ErrorMessage
         error={errorMessage}

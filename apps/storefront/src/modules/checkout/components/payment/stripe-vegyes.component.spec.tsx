@@ -20,9 +20,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/hu/checkout",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams("step=payment"),
+  unstable_rethrow: () => {},
 }))
 vi.mock("@lib/data/cart", () => ({
   initiatePaymentSession: vi.fn().mockResolvedValue({ ok: true }),
+  placeOrder: vi.fn(),
 }))
 vi.mock("@lib/data/payment", () => ({
   egyeztesdAzUtanvetDijat: vi
@@ -42,6 +44,8 @@ vi.mock("@stripe/react-stripe-js", () => ({
     useEffect(() => onChange({ complete: true }), [onChange])
     return <div data-testid="kartyamezo" />
   },
+  useStripe: () => ({}),
+  useElements: () => ({}),
 }))
 
 import { initiatePaymentSession } from "@lib/data/cart"
@@ -66,17 +70,20 @@ const kosar = {
 } as unknown as HttpTypes.StoreCart
 
 /**
- * VEGYES KOSÁR, STRIPE (Balázs 2026-10-01, 1-es út). MI PIROSÍT: ha a Stripe
- * választása munkamenetet indítana (a kosár már a fizetési lépésben bomlana,
- * és a vevő elveszítené az élő állatot az összegzőből); ha a Tovább nem a
- * Stripe-jelzéssel vinne az ellenőrzésre.
+ * VEGYES KOSÁR, STRIPE (Balázs 2026-10-01, 1-es út; a redesign 2026-10-05).
+ * MI PIROSÍT: ha a Stripe választása munkamenetet indítana (a kosár már a
+ * fizetési lépésben bomlana, és a vevő elveszítené az élő állatot az
+ * összegzőből); ha a korábbi munkamenet és az utánvét-díj nem kerülne le a
+ * választáskor (a mező alatt rossz összeg állna); ha a leadó gomb nem a
+ * fizetési lépésben, a közös Stripe-fizetés gombjaként állna; ha az "Egy
+ * fizetés" sor nem mondaná ki, hogy a két rendelés együtt.
  */
 describe("a fizetési lépés vegyes kosárnál", () => {
-  it("a Stripe választása nem indít munkamenetet, a Tovább a Stripe-jelzéssel visz", async () => {
+  it("a Stripe választása nem indít munkamenetet, leveszi a régit, és a közös gomb a lépésben áll", async () => {
     render(
       <StripeContext.Provider value={true}>
         <Payment
-          cart={kosar}
+          cart={{ ...kosar, total: 22500, currency_code: "huf" } as never}
           vegyes
           availablePaymentMethods={[{ id: STRIPE }]}
           engedelyezettModok={[{ id: STRIPE, role: "ONLINE_CARD" }]}
@@ -85,20 +92,18 @@ describe("a fizetési lépés vegyes kosárnál", () => {
     )
     fireEvent.click(screen.getByText("Bankkártyás fizetés"))
     await screen.findByTestId("kartyamezo")
-    expect(initiatePaymentSession).not.toHaveBeenCalled()
-
-    const gomb = screen.getByTestId("submit-payment-button")
-    await waitFor(() => expect(gomb).toBeEnabled())
-    expect(gomb).toHaveTextContent("Tovább az ellenőrzéshez")
-    fireEvent.click(gomb)
-
-    await waitFor(() => expect(router.push).toHaveBeenCalled())
-    expect(valasszKartyatVegyesKosarra).toHaveBeenCalledWith("cart-1")
-    const cel = new URLSearchParams(
-      String(router.push.mock.calls[0][0]).split("?")[1],
+    await waitFor(() =>
+      expect(valasszKartyatVegyesKosarra).toHaveBeenCalledWith("cart-1"),
     )
-    expect(cel.get("step")).toBe("review")
-    expect(cel.get("fizetes")).toBe("stripe")
+    expect(router.refresh).toHaveBeenCalled()
     expect(initiatePaymentSession).not.toHaveBeenCalled()
+
+    expect(screen.getByTestId("submit-order-button")).toHaveTextContent(
+      "Rendelés leadása",
+    )
+    expect(screen.queryByTestId("submit-payment-button")).toBeNull()
+    expect(screen.getByTestId("egy-fizetes").textContent).toMatch(
+      /^Egy fizetés · a két rendelés együtt · 22\s500\sFt$/,
+    )
   })
 })

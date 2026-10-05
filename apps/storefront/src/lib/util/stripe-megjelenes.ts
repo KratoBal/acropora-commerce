@@ -125,6 +125,12 @@ export const stripeElementsBeallitas = (vilag: StripeVilag) => ({
 export const STRIPE_FIZETESI_MEZO = {
   layout: "accordion" as const,
   wallets: { applePay: "auto", googlePay: "auto", link: "never" } as const,
+  /*
+    AZ ORSZAGOT NEM KERDEZZUK UJRA (a keretekben nincs ilyen mezo): a kosar
+    szamlazasi cimebol megy at a megerositesnel (`szamlazasiAdatok`). A Stripe
+    a "never" mezot csak akkor fogadja el, ha a megerosites hozza az erteket.
+  */
+  fields: { billingDetails: { address: { country: "never" } } } as const,
 }
 
 /** Sotet feluleten all-e a penztar: ugyanaz a ket jelolo, amit a CSS figyel. */

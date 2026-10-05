@@ -1,9 +1,7 @@
 import { sdk } from "@lib/config"
-import { placeOrder } from "@lib/data/cart"
 import { getAuthHeaders, setCartId } from "@lib/data/cookies"
 import { stripeVisszarendezes } from "@lib/data/stripe"
 import { HttpTypes } from "@medusajs/types"
-import { unstable_rethrow } from "next/navigation"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest) {
@@ -80,25 +78,17 @@ export async function GET(req: NextRequest) {
   }
 
   /*
-    A `placeOrder` MA EREDMENYT AD, NEM DOB -- ES EZ AZ AG EZERT VALTOZATLAN.
-
-    Korabban a Medusa-hiba a `catch`-be esett, es onnan ment a `order_failed`
-    cimre. Ma ugyanaz a hiba EREDMENYKENT jon vissza, es a fuggveny vegen allo
-    UGYANARRA a sorra esik at. A ket ut celja beture azonos, tehat a kifele
-    lathato viselkedes nem valtozik.
-
-    A `try/catch` NEM KERULHET KI: a SIKERES rendeles `redirect`-tel zarul, azt
-    pedig a Next kivetelkent valositja meg, es az `unstable_rethrow` engedi at.
-    Ha ezt elvennenk, minden sikeres rendeles a hiba-cimen kotne ki.
+    A BANK JOVAHAGYTA: A LEADAS A FIZETESI LEPESBEN JON, AZ "ELLENŐRZÉS…"
+    ALLAPOTBAN (a keretek 477:619 / 477:1217). Eddig itt, a vevo szamara
+    lathatatlanul futott le, es a vevo egy ures toltes utan kerult a
+    visszaigazolo lapra vagy a kosarba. A kosar es a munkamenet ellenorzese
+    fent megtortent; a leadast (`placeOrder`) a fizetesi lepes inditja, es
+    sikernel ugyanugy a visszaigazolo lapra visz.
   */
-  try {
-    await placeOrder(cartId)
-  } catch (error) {
-    unstable_rethrow(error)
-
-    return NextResponse.redirect(`${origin}${prefix}/cart?error=order_failed`)
-  }
-
-  // Only reached when the cart did not convert into an order.
-  return NextResponse.redirect(`${origin}${prefix}/cart?error=order_failed`)
+  return NextResponse.redirect(
+    `${origin}${prefix}/checkout?${new URLSearchParams({
+      step: "payment",
+      ellenorzes: "1",
+    })}`,
+  )
 }
