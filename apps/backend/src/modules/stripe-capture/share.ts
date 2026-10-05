@@ -7,7 +7,7 @@
  * - `stripe_joined` on the pickup cart's session: no new intent, it carries the
  *   shipped session's intent and its own part.
  *
- * Both keys are set by our server code only (`refuseClientCardShareKeys`).
+ * Both keys are set by our server code only (`refuseClientSessionData`).
  * Stripe captures an intent once; the shared payment is therefore captured
  * TOGETHER at shipment (a later part); until then a capture of a shared
  * payment is refused here, so nothing can be captured half.
