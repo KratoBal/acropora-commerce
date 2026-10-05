@@ -24,6 +24,7 @@ export default function CsomagpontValaszto({
   szolgaltato = "Foxpost",
   kereso = (kereses: string) => searchFoxpostPickupPoints(kereses),
   szovegek,
+  keresoCimke = "Irányítószám vagy város",
 }: {
   /**
    * Sajat allapot-szovegek (a FOXPOST tartalek listaja, Figma 486:346): a
@@ -35,6 +36,8 @@ export default function CsomagpontValaszto({
   szolgaltato?: string
   /** A kereses: a Foxpost es a GLS ugyanabban az alakban valaszol. */
   kereso?: (kereses: string) => Promise<CsomagpontKereses>
+  /** A kereso mezo felirata (a GLS-nel a pont neve is kereshato). */
+  keresoCimke?: string
   /** A kosarban mar allo pont, ha van. */
   kivalasztott?: { name?: string; address?: string } | null
   onValaszt: (pont: FoxpostCsomagpont) => void | Promise<void>
@@ -72,7 +75,7 @@ export default function CsomagpontValaszto({
       )}
       <form onSubmit={keres} className="flex gap-2" role="search">
         <label className="flex flex-1 flex-col gap-1 txt-small text-ui-fg-subtle">
-          Irányítószám vagy város
+          {keresoCimke}
           <input
             name="csomagpont_kereses"
             value={kereses}
@@ -125,10 +128,27 @@ export default function CsomagpontValaszto({
               <button
                 type="button"
                 onClick={() => onValaszt(pont)}
-                className="w-full border border-ui-border-base px-4 py-3 text-left hover:shadow-borders-interactive-with-active"
+                // az uzemen kivuli GLS-pont latszik, de nem valaszthato (a prompt 6. pontja)
+                disabled={pont.nem_valaszthato}
+                aria-disabled={pont.nem_valaszthato || undefined}
+                className={
+                  pont.nem_valaszthato
+                    ? "w-full cursor-not-allowed border border-ui-border-base bg-acr-mist/40 px-4 py-3 text-left opacity-60"
+                    : "w-full border border-ui-border-base px-4 py-3 text-left hover:shadow-borders-interactive-with-active"
+                }
                 data-testid="csomagpont"
               >
                 <span className="flex items-start gap-3">
+                  {pont.tipus_logo ? (
+                    // a GLS hivatalos logoja a pont fajtajahoz, helyi kepkent
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={pont.tipus_logo}
+                      alt={pont.variant ?? ""}
+                      className="mt-1 h-[14px] w-auto shrink-0"
+                      data-testid="csomagpont-tipus-logo"
+                    />
+                  ) : null}
                   {pont.icon_url ? (
                     // A Foxpost sajat tipus-ikonja (iconUrl), a hatter csak a
                     // cdn.foxpost.hu cimet engedi at; next/image itt nem kell.
@@ -157,12 +177,24 @@ export default function CsomagpontValaszto({
                     <span className="block txt-small text-ui-fg-subtle">
                       {pont.address}
                     </span>
-                    {foxpostPontReszletek(pont) ? (
+                    {(pont.reszletek ?? foxpostPontReszletek(pont)) ? (
                       <span
                         className="block txt-small text-ui-fg-subtle"
                         data-testid="csomagpont-reszletek"
                       >
-                        {foxpostPontReszletek(pont)}
+                        {pont.reszletek ?? foxpostPontReszletek(pont)}
+                      </span>
+                    ) : null}
+                    {pont.figyelmeztetes ? (
+                      <span
+                        className={
+                          pont.nem_valaszthato
+                            ? "mt-1 block txt-small text-ui-fg-base"
+                            : "mt-1 block txt-small text-acr-heritage"
+                        }
+                        data-testid="csomagpont-figyelmeztetes"
+                      >
+                        {pont.figyelmeztetes}
                       </span>
                     ) : null}
                   </span>

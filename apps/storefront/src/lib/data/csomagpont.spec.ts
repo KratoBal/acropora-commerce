@@ -6,6 +6,7 @@ vi.mock("@lib/config", () => ({ sdk }))
 import { foxpostSzallitasiAdat } from "@lib/util/csomagpont"
 
 import {
+  retrieveGlsModok,
   retrieveGlsOptions,
   searchFoxpostPickupPoints,
   searchGlsPickupPoints,
@@ -111,8 +112,14 @@ describe("a GLS-csomagpont keresése", () => {
     const valasz = await searchGlsPickupPoints(" 2100 ", "so_gls")
     const [ut, opciok] = sdk.client.fetch.mock.calls[0]
     expect(ut).toBe("/store/gls/pickup-points")
+    // az üzemen kívüli pont is jön: a lista letiltva mutatja
     expect(opciok).toMatchObject({
-      query: { q: "2100", option_id: "so_gls", limit: 20 },
+      query: {
+        q: "2100",
+        option_id: "so_gls",
+        limit: 20,
+        include_unavailable: "true",
+      },
     })
     expect(valasz.pontok[0]).toEqual({
       id: "SHOP1",
@@ -120,11 +127,74 @@ describe("a GLS-csomagpont keresése", () => {
       address: "2100 Gödöllő, Fő tér 1.",
       zip: "2100",
       city: "Gödöllő",
+      variant: "GLS ParcelShop",
+      tipus_logo: "/images/gls-csomagpont.png",
+      reszletek: "",
+      nem_valaszthato: false,
+      figyelmeztetes: null,
+    })
+  })
+
+  it("a pont fajtája, nyitvatartása, jellemzői és telítettsége a sorba kerül", async () => {
+    sdk.client.fetch.mockResolvedValue({
+      available: true,
+      pickup_points: [
+        {
+          id: "L1",
+          name: "GLS Automata",
+          zip: "2100",
+          city: "Gödöllő",
+          address: "Piac 2.",
+          type: "parcel-locker",
+          hours: [1, 2, 3, 4, 5, 6, 7].map((day) => ({
+            day,
+            from: "00:00",
+            to: "24:00",
+          })),
+          features: ["acceptsCard", "delivery"],
+          has_wheelchair_access: true,
+          locker_saturation: "outOfOrder",
+        },
+        {
+          id: "L2",
+          name: "Tele",
+          zip: "2100",
+          city: "Gödöllő",
+          address: "Fő tér 1.",
+          type: "parcel-locker",
+          locker_saturation: "highVolume",
+        },
+      ],
+      count: 2,
+    })
+    const [rossz, tele] = (await searchGlsPickupPoints("2100", "so_gls")).pontok
+    expect(rossz).toMatchObject({
+      variant: "GLS Automata",
+      tipus_logo: "/images/gls-automata.png",
+      reszletek: "0–24 · bankkártya · akadálymentes",
+      nem_valaszthato: true,
+      figyelmeztetes: "Jelenleg nem választható.",
+    })
+    expect(tele).toMatchObject({
+      nem_valaszthato: false,
+      figyelmeztetes: "Magas kihasználtság: a kézbesítés hosszabb lehet.",
     })
   })
 
   it("a GLS-módok hibája üres listát ad, nem dob", async () => {
     sdk.client.fetch.mockRejectedValue(new Error("503"))
     expect(await retrieveGlsOptions()).toEqual([])
+    expect(await retrieveGlsModok()).toEqual({ pont: [], haz: [] })
+  })
+
+  it("a csomagpontos és a házhoz szállító GLS-módok együtt jönnek", async () => {
+    sdk.client.fetch.mockResolvedValue({
+      options: [{ option_id: "so_pont", heavy: false }],
+      home_options: [{ option_id: "so_haz", heavy: false }],
+    })
+    expect(await retrieveGlsModok()).toEqual({
+      pont: [{ option_id: "so_pont", heavy: false }],
+      haz: [{ option_id: "so_haz", heavy: false }],
+    })
   })
 })

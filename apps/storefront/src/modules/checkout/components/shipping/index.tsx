@@ -12,6 +12,7 @@ import {
   glsSzallitasiAdat,
   type GlsPontMod,
 } from "@lib/util/csomagpont"
+import { GLS_LOGO, SZALLITASI_SOR } from "@lib/util/gls"
 import { megjegyzesekKosarbol, megjegyzesValtozas } from "@lib/util/megjegyzes"
 import { convertToLocale } from "@lib/util/money"
 import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
@@ -23,6 +24,9 @@ import FoxpostValaszto, {
   type FoxpostKivalasztott,
 } from "@modules/checkout/components/foxpost-valaszto"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import GlsValaszto, {
+  type GlsKivalasztott,
+} from "@modules/checkout/components/gls-valaszto"
 import RendelesMegjegyzes from "@modules/checkout/components/rendeles-megjegyzes"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
@@ -44,6 +48,8 @@ type ShippingProps = {
   foxpostOptionId?: string | null
   /** A GLS csomagpontos modok (`GET /store/gls`); ugyanigy valasztot nyitnak. */
   glsOptions?: GlsPontMod[]
+  /** A GLS hazhoz szallito modok (`GET /store/gls`): a soruk GLS-logot kap. */
+  glsHomeOptions?: GlsPontMod[]
 }
 
 /** Egy csomagpontos mod: kinel, hogyan keres, es milyen adatot kuld a modhoz. */
@@ -85,6 +91,7 @@ const Shipping: React.FC<ShippingProps> = ({
   availableShippingMethods,
   foxpostOptionId = null,
   glsOptions = [],
+  glsHomeOptions = [],
 }) => {
   // CSOMAGPONTOS MODOK, EGY HELYEN: a Foxpost es a GLS ugyanigy viselkedik
   // (Balazs, 2026-09-29: a ket valaszto amennyire lehet, egyforma legyen).
@@ -276,7 +283,10 @@ const Shipping: React.FC<ShippingProps> = ({
     ? pontModok.get(shippingMethodId)
     : undefined
 
-  const handlePont = async (pont: { id: string }) => {
+  const handlePont = async (
+    pont: { id: string },
+    forras?: "finder" | "fallback",
+  ) => {
     if (!shippingMethodId || !aktivPontMod) return
     setError(null)
     setIsLoading(true)
@@ -284,7 +294,10 @@ const Shipping: React.FC<ShippingProps> = ({
       const eredmeny = await setShippingMethod({
         cartId: cart.id,
         shippingMethodId,
-        data: aktivPontMod.adat(pont.id),
+        data:
+          aktivPontMod.adatKulcs === "gls_pickup_point"
+            ? glsSzallitasiAdat(pont.id, forras ?? "fallback")
+            : aktivPontMod.adat(pont.id),
       })
       if (!eredmeny.ok) setError(eredmeny.uzenet)
     } catch {
@@ -304,6 +317,29 @@ const Shipping: React.FC<ShippingProps> = ({
         ] as FoxpostKivalasztott | undefined)
       : undefined
   const foxpostAktiv = !!foxpostOptionId && shippingMethodId === foxpostOptionId
+  const glsPontAktiv = glsOptions.find((o) => o.option_id === shippingMethodId)
+
+  /**
+   * A SOR SZOVEGE ES LOGOJA SZOLGALTATONKENT (a GLS-prompt 2. pontja, Figma
+   * 508:34-508:70): a mod neve az adatbazisban marad, a vevo ezt latja.
+   */
+  const sorOf = (optionId: string) => {
+    if (optionId === foxpostOptionId)
+      return { ...SZALLITASI_SOR.foxpost, logo: "foxpost" as const }
+    const pont = glsOptions.find((o) => o.option_id === optionId)
+    if (pont)
+      return {
+        ...(pont.heavy ? SZALLITASI_SOR.glsPontNehez : SZALLITASI_SOR.glsPont),
+        logo: GLS_LOGO.csomagpont,
+      }
+    const haz = glsHomeOptions.find((o) => o.option_id === optionId)
+    if (haz)
+      return {
+        ...(haz.heavy ? SZALLITASI_SOR.glsHazNehez : SZALLITASI_SOR.glsHaz),
+        logo: GLS_LOGO.altalanos,
+      }
+    return null
+  }
 
   useEffect(() => {
     setError(null)
@@ -416,29 +452,38 @@ const Shipping: React.FC<ShippingProps> = ({
                         className={clx(
                           "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
                           {
-                            "border-ui-border-interactive":
+                            // az Acropora narancs kijeloles (a GLS-prompt 8. pontja)
+                            "border-acr-heritage shadow-[inset_0_0_0_1px_var(--acr-color-heritage)]":
                               option.id === shippingMethodId,
                             "hover:shadow-brders-none cursor-not-allowed":
                               isDisabled,
                           },
                         )}
                       >
-                        <div className="flex items-center gap-x-4">
+                        <div className="flex min-w-0 items-center gap-x-4">
                           <MedusaRadio
                             checked={option.id === shippingMethodId}
                           />
-                          {option.id === foxpostOptionId ? (
-                            // A hivatalos megnevezes es logo (Figma 486:3);
-                            // a mod neve az adatbazisban marad, ahogy van.
-                            <span className="flex flex-col">
+                          {sorOf(option.id) ? (
+                            // A szolgaltato sajat megnevezese es logoja (a
+                            // GLS-prompt 2. pontja); a mod neve az
+                            // adatbazisban marad, ahogy van.
+                            <span className="flex min-w-0 flex-col">
                               <span
                                 className="text-base-regular"
-                                data-testid="foxpost-mod-nev"
+                                data-testid={
+                                  option.id === foxpostOptionId
+                                    ? "foxpost-mod-nev"
+                                    : "szallitasi-sor-nev"
+                                }
                               >
-                                FOXPOST – Packeta Group
+                                {sorOf(option.id)!.nev}
                               </span>
-                              <span className="text-[12px] text-ui-fg-subtle">
-                                Csomagautomata vagy Packeta átvételi pont
+                              <span
+                                className="text-[12px] text-ui-fg-subtle"
+                                data-testid="szallitasi-sor-leiras"
+                              >
+                                {sorOf(option.id)!.leiras}
                               </span>
                             </span>
                           ) : (
@@ -447,8 +492,21 @@ const Shipping: React.FC<ShippingProps> = ({
                             </span>
                           )}
                         </div>
-                        {option.id === foxpostOptionId ? (
-                          <FoxpostLogo className="ml-auto mr-6 hidden h-[30px] w-auto small:block" />
+                        {sorOf(option.id)?.logo === "foxpost" ? (
+                          <FoxpostLogo className="ml-auto mr-6 hidden h-[30px] w-auto shrink-0 small:block" />
+                        ) : sorOf(option.id)?.logo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={sorOf(option.id)!.logo}
+                            alt=""
+                            className={clx(
+                              "ml-auto mr-4 w-auto shrink-0",
+                              sorOf(option.id)!.logo === GLS_LOGO.altalanos
+                                ? "h-[22px]"
+                                : "h-[28px]",
+                            )}
+                            data-testid="szallitasi-sor-logo"
+                          />
                         ) : null}
                         <span className="justify-self-end text-ui-fg-base">
                           {option.price_type === "flat" ? (
@@ -476,6 +534,14 @@ const Shipping: React.FC<ShippingProps> = ({
                     key={shippingMethodId ?? ""}
                     kivalasztott={kosarPont ?? null}
                     onValaszt={handlePont}
+                  />
+                ) : glsPontAktiv ? (
+                  <GlsValaszto
+                    key={shippingMethodId ?? ""}
+                    optionId={glsPontAktiv.option_id}
+                    nehez={glsPontAktiv.heavy}
+                    kivalasztott={(kosarPont as GlsKivalasztott) ?? null}
+                    onValaszt={(id, forras) => handlePont({ id }, forras)}
                   />
                 ) : aktivPontMod ? (
                   <CsomagpontValaszto

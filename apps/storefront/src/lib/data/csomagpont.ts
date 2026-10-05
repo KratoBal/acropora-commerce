@@ -6,6 +6,14 @@ import type {
   FoxpostCsomagpont,
   GlsPontMod,
 } from "@lib/util/csomagpont"
+import {
+  type GlsPont,
+  glsJellemzok,
+  glsNyitvatartas,
+  glsTelitettsegAllapot,
+  glsTipusFelirat,
+  glsTipusLogo,
+} from "@lib/util/gls"
 
 type Valasz =
   | { available: true; pickup_points: FoxpostCsomagpont[]; count: number }
@@ -88,13 +96,7 @@ export async function retrieveFoxpostOption(): Promise<{
 type GlsValasz =
   | {
       available: true
-      pickup_points: {
-        id: string
-        name: string
-        zip: string
-        city: string
-        address: string
-      }[]
+      pickup_points: GlsPont[]
       count: number
     }
   | { available: false; reason: string }
@@ -115,23 +117,32 @@ export async function searchGlsPickupPoints(
   return sdk.client
     .fetch<GlsValasz>(`/store/gls/pickup-points`, {
       method: "GET",
-      query: { q, option_id: optionId, limit },
+      // az uzemen kivuli pont is jojjon: a lista letiltva mutatja (a prompt 6. pontja)
+      query: { q, option_id: optionId, limit, include_unavailable: "true" },
       cache: "no-store",
     })
     .then((valasz) =>
       valasz.available
         ? {
             elerheto: true,
-            pontok: valasz.pickup_points.map(
-              ({ id, name, zip, city, address }) => ({
-                id,
-                name,
+            pontok: valasz.pickup_points.map((pont) => {
+              const allapot = glsTelitettsegAllapot(pont.locker_saturation)
+              return {
+                id: pont.id,
+                name: pont.name,
                 // A Foxpost cime iranyitoszammal kezdodik; a GLS-e is igy latszik.
-                address: `${zip} ${city}, ${address}`,
-                zip,
-                city,
-              }),
-            ),
+                address: `${pont.zip} ${pont.city}, ${pont.address}`,
+                zip: pont.zip,
+                city: pont.city,
+                variant: glsTipusFelirat(pont.type),
+                tipus_logo: glsTipusLogo(pont.type),
+                reszletek: [glsNyitvatartas(pont.hours), ...glsJellemzok(pont)]
+                  .filter(Boolean)
+                  .join(" · "),
+                nem_valaszthato: !allapot.valaszthato,
+                figyelmeztetes: allapot.figyelmeztetes,
+              }
+            }),
             talalat: valasz.count,
           }
         : NINCS,
@@ -141,11 +152,26 @@ export async function searchGlsPickupPoints(
 
 /** A GLS csomagpontos szallitasi modok (`GET /store/gls`); hibanal ures. */
 export async function retrieveGlsOptions(): Promise<GlsPontMod[]> {
+  return (await retrieveGlsModok()).pont
+}
+
+/**
+ * A GLS MODJAI EGYBEN (`GET /store/gls`): a csomagpontosak es a hazhoz
+ * szallitok, mindegyik a nehezaru-jelzovel. A penztar ebbol tudja, melyik
+ * sorhoz melyik GLS-logo es leiras tartozik (a prompt 2. pontja).
+ */
+export async function retrieveGlsModok(): Promise<{
+  pont: GlsPontMod[]
+  haz: GlsPontMod[]
+}> {
   return sdk.client
-    .fetch<{ options: GlsPontMod[] }>(`/store/gls`, {
-      method: "GET",
-      cache: "no-store",
-    })
-    .then((valasz) => valasz.options ?? [])
-    .catch(() => [])
+    .fetch<{ options?: GlsPontMod[]; home_options?: GlsPontMod[] }>(
+      `/store/gls`,
+      { method: "GET", cache: "no-store" },
+    )
+    .then((valasz) => ({
+      pont: valasz.options ?? [],
+      haz: valasz.home_options ?? [],
+    }))
+    .catch(() => ({ pont: [], haz: [] }))
 }

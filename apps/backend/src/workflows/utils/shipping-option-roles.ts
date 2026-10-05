@@ -109,6 +109,26 @@ export const glsPointOptions = (
       heavy: GLS_POINT_OPTIONS[binding.env].heavy,
     }))
 
+/**
+ * THE GLS HOME-DELIVERY OPTIONS, by binding (the GLS prompt, point 2): the
+ * checkout shows them with GLS's own logo and words, and the role alone cannot
+ * tell them from the point options.
+ */
+const GLS_HOME_OPTIONS: Record<string, { heavy: boolean }> = {
+  ACROPORA_SO_GLS_HOME: { heavy: false },
+  ACROPORA_SO_GLS_HEAVY_HOME: { heavy: true },
+}
+
+export const glsHomeOptions = (
+  env: NodeJS.ProcessEnv = process.env
+): { option_id: string; heavy: boolean }[] =>
+  resolveShippingOptionRoleBindings(env)
+    .filter((binding) => binding.env in GLS_HOME_OPTIONS)
+    .map((binding) => ({
+      option_id: binding.id,
+      heavy: GLS_HOME_OPTIONS[binding.env].heavy,
+    }))
+
 export const glsPointOptionOf = (
   optionId: string,
   env: NodeJS.ProcessEnv = process.env

@@ -109,11 +109,13 @@ const KERESO_PONT = {
  * kosárban álló pont típusa vagy részletei nem látszanak.
  */
 describe("a Foxpost átvételi pont választó a szállítási lépésben", () => {
+  // a név és a leírás Balázs GLS-promptjának 2. pontja szerint (2026-10-05)
   it("a mód hivatalos néven és logóval áll a listában", () => {
     rajzol()
-    expect(screen.getByTestId("foxpost-mod-nev").textContent).toBe(
-      "FOXPOST – Packeta Group",
-    )
+    expect(screen.getByTestId("foxpost-mod-nev").textContent).toBe("FOXPOST")
+    expect(
+      screen.getByTestId("foxpost-mod-nev").parentElement?.textContent,
+    ).toContain("FOXPOST automata vagy átvételi pont · 1–2 munkanap")
     expect(screen.getAllByTestId("foxpost-logo").length).toBeGreaterThan(0)
   })
 

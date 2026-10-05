@@ -19,6 +19,8 @@ const load = async (fetchOk = true) => {
   jest.resetModules();
   process.env.ACROPORA_SO_GLS_POINT = "so_pont";
   process.env.ACROPORA_SO_GLS_HEAVY_POINT = "so_nehez";
+  process.env.ACROPORA_SO_GLS_HOME = "so_haz";
+  process.env.ACROPORA_SO_GLS_HEAVY_HOME = "so_nehez_haz";
   global.fetch = jest.fn(async () =>
     fetchOk ? { ok: true, json: async () => ({ items }) } : Promise.reject(new Error("net")),
   ) as never;
@@ -45,12 +47,16 @@ const call = async (GET: (req: never, res: never) => Promise<void>, validatedQue
  * for an option that is not a GLS point one; a broken list answering 200.
  */
 describe("GET /store/gls and /store/gls/pickup-points", () => {
-  it("names the point options and the heavy one", async () => {
+  it("names the point options, the home ones, and which are heavy", async () => {
     const { options } = await load();
     expect((await call(options)).body).toEqual({
       options: [
         { option_id: "so_pont", heavy: false },
         { option_id: "so_nehez", heavy: true },
+      ],
+      home_options: [
+        { option_id: "so_haz", heavy: false },
+        { option_id: "so_nehez_haz", heavy: true },
       ],
     });
   });
