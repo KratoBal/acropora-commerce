@@ -70,9 +70,20 @@ export default function TransferRequestForm() {
               <Text className="text-medim-pl text-neutral-950">
                 A(z) {state.order?.id} rendelés átvételét kérted
               </Text>
-              <Text className="text-base-regular text-neutral-600">
-                Átvételi kérelemről szóló e-mail elküldve ide:{" "}
-                {state.order?.email}
+              {/*
+                NEM ALLITJUK, HOGY LEVELET KULDTUNK (Balazs, 2026-10-05). Az
+                atvetelt a rendeles eredeti cimere kuldott token hagyja jova
+                (`order/[id]/transfer/[token]`); a commerce hatter levelet nem
+                kuld, tehat az atvetel ma NEM fejezheto be. Ez a szoveg ezt
+                mondja meg.
+              */}
+              <Text
+                className="text-base-regular text-neutral-600"
+                data-testid="transfer-request-note"
+              >
+                A kérelmet rögzítettük. A jóváhagyó levél küldése még nincs
+                bekötve, ezért az átvételhez kérjük, vedd fel velünk a
+                kapcsolatot.
               </Text>
             </div>
           </div>
