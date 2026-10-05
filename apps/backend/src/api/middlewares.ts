@@ -25,7 +25,11 @@ import {
   AdminTransitionOrderBusinessStatus,
 } from "./admin/order-business-status/validators";
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
-import { AdminReleaseOrderPaymentHold } from "./admin/order-payment/validators";
+import {
+  AdminReleaseOrderPaymentHold,
+  AdminSendOrderPaymentLink,
+} from "./admin/order-payment/validators";
+import { StoreOrderPaymentEmptyBody } from "./store/order-payment/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
@@ -139,6 +143,23 @@ export default defineMiddlewares({
       matcher: "/admin/order-payment/:order_id/release-hold",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminReleaseOrderPaymentHold)],
+    },
+    {
+      // "Fizetési link küldése": the link for what the order owes now.
+      matcher: "/admin/order-payment/:order_id/payment-link",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminSendOrderPaymentLink)],
+    },
+    {
+      // The payment page's Stripe session; the token in the path is all it takes.
+      matcher: "/store/order-payment/:token/session",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StoreOrderPaymentEmptyBody)],
+    },
+    {
+      matcher: "/store/order-payment/:token/complete",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StoreOrderPaymentEmptyBody)],
     },
     {
       matcher: "/store/payment-options",

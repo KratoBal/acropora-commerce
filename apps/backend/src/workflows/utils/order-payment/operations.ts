@@ -1,7 +1,17 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules, PaymentCollectionStatus } from "@medusajs/framework/utils"
+import {
+  createOrUpdateOrderPaymentCollectionWorkflow,
+  createPaymentSessionsWorkflow,
+} from "@medusajs/medusa/core-flows"
 
 import { PARENT_ORDER_METADATA_KEY, PICKUP_ORDER_METADATA_KEY } from "../split-completion"
+import { capturePlainStripePayment } from "../plain-stripe-capture"
+import { captureSharedStripePayment } from "../shared-stripe-capture"
+import { sharedCaptureOperations } from "../shared-stripe-capture-operations"
+import { STRIPE_PROVIDER_ID } from "../stripe-config"
+import type { LinkCollection, PayByLinkOperations } from "./pay-by-link"
+import type { PaymentLinkOperations } from "./payment-link"
 import type { ReleaseHoldOperations, ReleaseSide } from "./release-hold"
 
 const ORDER_FIELDS = [
@@ -53,6 +63,10 @@ export const loadOrderPaymentSide = async (
   }
 }
 
+const setOrderMetadata = (container: MedusaContainer) => async (orderId: string, metadata: Record<string, unknown>) => {
+  await container.resolve(Modules.ORDER).updateOrders([{ id: orderId, metadata }])
+}
+
 /** The Medusa side of `releaseHold`. */
 export const releaseHoldOperations = (container: MedusaContainer): ReleaseHoldOperations => ({
   loadPair: async (orderId) => {
@@ -79,7 +93,75 @@ export const releaseHoldOperations = (container: MedusaContainer): ReleaseHoldOp
     })
   },
 
-  setMetadata: async (orderId, metadata) => {
-    await container.resolve(Modules.ORDER).updateOrders([{ id: orderId, metadata }])
+  setMetadata: setOrderMetadata(container),
+})
+
+/** The Medusa side of `sendPaymentLink`. */
+export const paymentLinkOperations = (container: MedusaContainer): PaymentLinkOperations => ({
+  loadPair: releaseHoldOperations(container).loadPair,
+
+  ensureCollection: async (orderId) => {
+    const { result } = await createOrUpdateOrderPaymentCollectionWorkflow(container).run({
+      input: { order_id: orderId },
+    })
+    const collection = (Array.isArray(result) ? result[0] : result) as { id?: string; amount?: unknown } | undefined
+    return collection?.id ? { id: collection.id, amount: Number(collection.amount) } : null
   },
+
+  setMetadata: setOrderMetadata(container),
+})
+
+/** The Medusa side of the link's payment (`startLinkSession`, `completeLinkPayment`). */
+export const payByLinkOperations = (container: MedusaContainer): PayByLinkOperations => ({
+  loadPair: releaseHoldOperations(container).loadPair,
+
+  collection: async (collectionId): Promise<LinkCollection | null> => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "payment_collection",
+      filters: { id: collectionId },
+      fields: [
+        "id",
+        "amount",
+        "status",
+        "payment_sessions.id",
+        "payment_sessions.provider_id",
+        "payment_sessions.status",
+        "payment_sessions.data",
+        "payment_sessions.created_at",
+      ],
+    })
+    const collection = data?.[0] as any
+    if (!collection) return null
+    return {
+      id: collection.id,
+      amount: Number(collection.amount),
+      status: collection.status ?? null,
+      sessions: (collection.payment_sessions ?? []).filter(Boolean).map((session: any) => ({
+        id: session.id,
+        provider_id: session.provider_id,
+        status: session.status ?? null,
+        data: session.data ?? null,
+        created_at: session.created_at ?? null,
+      })),
+    }
+  },
+
+  startSession: async (collectionId, data) => {
+    const { result } = await createPaymentSessionsWorkflow(container).run({
+      input: { payment_collection_id: collectionId, provider_id: STRIPE_PROVIDER_ID, data },
+    })
+    return ((result as any)?.data as Record<string, unknown> | undefined) ?? null
+  },
+
+  authorizeSession: async (sessionId) =>
+    !!(await container.resolve(Modules.PAYMENT).authorizePaymentSession(sessionId, {})),
+
+  capture: async (orderId) => {
+    const ops = sharedCaptureOperations(container)
+    const shared = await captureSharedStripePayment(orderId, ops)
+    if (!shared.captured && shared.reason === "not_shared") await capturePlainStripePayment(orderId, ops)
+  },
+
+  setMetadata: setOrderMetadata(container),
 })
