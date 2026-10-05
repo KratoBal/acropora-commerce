@@ -65,6 +65,23 @@ describe("a pénz-alak", () => {
    * alapertelmezes epp ezt rontotta el (`1,200`), es a hiba ott sem a
    * tizedesben volt.
    */
+  /**
+   * A NEGYJEGYU IS TAGOLVA (acrobot 26313: "1 490 Ft", ahogy a Figma). A
+   * magyar locale-adat alapbol "1490 Ft"-ot adna. MI PIROSIT: ha a tagolas
+   * visszakerul a locale alapertekere.
+   */
+  it("a négyjegyű összeg is tagolva", () => {
+    for (const [osszeg, vart] of [
+      [1490, "1 490 Ft"],
+      [1000, "1 000 Ft"],
+      [999, "999 Ft"],
+    ] as const) {
+      expect(
+        szokozNelkul(convertToLocale({ amount: osszeg, currency_code: "huf" })),
+      ).toBe(vart)
+    }
+  })
+
   it("az ezres tagolás szóköz, nem vessző", () => {
     const ki = convertToLocale({ amount: 1234567, currency_code: "huf" })
 
@@ -129,6 +146,9 @@ describe("a pénz-alak", () => {
       expect(
         szokozNelkul(convertToLocale({ amount: 45190, currency_code: "huf" })),
       ).toBe("45 190 Ft")
+      expect(
+        szokozNelkul(convertToLocale({ amount: 1490, currency_code: "huf" })),
+      ).toBe("1 490 Ft")
     })
   })
 })

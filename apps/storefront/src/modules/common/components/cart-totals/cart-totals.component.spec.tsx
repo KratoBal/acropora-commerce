@@ -53,8 +53,10 @@ describe("a kosár összegzése", () => {
     const { container } = render(<CartTotals totals={MERT} />)
 
     expect(container.textContent ?? "").not.toContain("945")
-    // ES A POZITIV FELE: a brutto ERTEK viszont OTT all, kiirva.
-    expect(container.textContent ?? "").toContain("1200")
+    // ES A POZITIV FELE: a brutto ERTEK viszont OTT all, kiirva. A tagolo
+    // szokoz (2026-10-05 ota a negyjegyu is tagolt: "1 200 Ft") nem resze az
+    // allitasnak, ezert a szam a szokozok nelkuli szovegben keresendo.
+    expect((container.textContent ?? "").replace(/\s/g, "")).toContain("1200")
   })
 
   /**

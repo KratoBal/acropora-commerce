@@ -20,6 +20,19 @@ type ConvertToLocaleParams = {
  */
 const EGESZ_DEVIZAK = new Set(["huf"])
 
+/**
+ * A NEGYJEGYU OSSZEG IS TAGOLVA: "1 490 Ft", ahogy a Figma es Balazs irja
+ * (acrobot 26313). A magyar locale-adat alapbol csak otjegytol tagol
+ * ("1150 Ft"); az "always" ezt kapcsolja ki. A TypeScript itt hasznalt lib-je
+ * a `useGrouping`-ot meg csak logikai ertekkent ismeri, ezert a kasztolas.
+ * Egy regi bongeszo, ami az "always"-t nem ismeri, igaznak veszi: ott marad a
+ * locale sajat tagolasa, hiba nincs.
+ */
+const MINDIG_TAGOL = { useGrouping: "always" } as unknown as Pick<
+  Intl.NumberFormatOptions,
+  "useGrouping"
+>
+
 export const convertToLocale = ({
   amount,
   currency_code,
@@ -45,6 +58,7 @@ export const convertToLocale = ({
         currency: currency_code,
         minimumFractionDigits: minimumFractionDigits ?? (egesz ? 0 : undefined),
         maximumFractionDigits: maximumFractionDigits ?? (egesz ? 0 : undefined),
+        ...MINDIG_TAGOL,
       }).format(amount)
     : amount.toString()
 }
