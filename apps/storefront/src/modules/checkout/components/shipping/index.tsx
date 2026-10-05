@@ -1,6 +1,6 @@
 "use client"
 import { Radio, RadioGroup } from "@headlessui/react"
-import { setShippingMethod } from "@lib/data/cart"
+import { mentsMegjegyzeseket, setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import {
   searchFoxpostPickupPoints,
@@ -12,6 +12,7 @@ import {
   glsSzallitasiAdat,
   type GlsPontMod,
 } from "@lib/util/csomagpont"
+import { megjegyzesekKosarbol, megjegyzesValtozas } from "@lib/util/megjegyzes"
 import { convertToLocale } from "@lib/util/money"
 import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
@@ -22,6 +23,7 @@ import FoxpostValaszto, {
   type FoxpostKivalasztott,
 } from "@modules/checkout/components/foxpost-valaszto"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import RendelesMegjegyzes from "@modules/checkout/components/rendeles-megjegyzes"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
 import { Button, clx, Heading, Text } from "@modules/common/components/ui"
@@ -112,6 +114,9 @@ const Shipping: React.FC<ShippingProps> = ({
     Record<string, number>
   >({})
   const [error, setError] = useState<string | null>(null)
+  const [megjegyzesek, setMegjegyzesek] = useState(() =>
+    megjegyzesekKosarbol(cart.metadata),
+  )
   const [shippingMethodId, setShippingMethodId] = useState<string | null>(
     cart.shipping_methods?.at(-1)?.shipping_option_id || null,
   )
@@ -186,7 +191,27 @@ const Shipping: React.FC<ShippingProps> = ({
     router.push(pathname + "?step=delivery", { scroll: false })
   }
 
-  const handleSubmit = () => {
+  // A futarnak szolo megjegyzes csak hazhoz szallitasnal el (kartya d3b54954).
+  const hazhoz =
+    !!shippingMethodId &&
+    !pontModok.has(shippingMethodId) &&
+    !_pickupMethods?.some((m) => m.id === shippingMethodId)
+
+  const handleSubmit = async () => {
+    const valtozas = megjegyzesValtozas(
+      megjegyzesekKosarbol(cart.metadata),
+      megjegyzesek,
+      hazhoz,
+    )
+    if (valtozas) {
+      setIsLoading(true)
+      const eredmeny = await mentsMegjegyzeseket(cart.id, valtozas)
+      setIsLoading(false)
+      if (!eredmeny.ok) {
+        setError(eredmeny.uzenet)
+        return
+      }
+    }
     router.push(pathname + "?step=payment", { scroll: false })
   }
 
@@ -542,6 +567,12 @@ const Shipping: React.FC<ShippingProps> = ({
               </div>
             </div>
           )}
+
+          <RendelesMegjegyzes
+            ertek={megjegyzesek}
+            valtozik={setMegjegyzesek}
+            hazhoz={hazhoz}
+          />
 
           <div>
             <ErrorMessage

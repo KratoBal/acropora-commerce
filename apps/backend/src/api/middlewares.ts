@@ -25,6 +25,8 @@ import {
   AdminTransitionOrderBusinessStatus,
 } from "./admin/order-business-status/validators";
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
+import { StorePostCartNotes } from "./store/cart-notes/validators";
+import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import {
   AdminReleaseOrderPaymentHold,
   AdminSendOrderPaymentLink,
@@ -160,6 +162,18 @@ export default defineMiddlewares({
       matcher: "/store/order-payment/:token/complete",
       method: "POST",
       middlewares: [validateAndTransformBody(StoreOrderPaymentEmptyBody)],
+    },
+    {
+      // the checkout's two notes (card d3b54954)
+      matcher: "/store/cart-notes/:cart_id",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostCartNotes)],
+    },
+    {
+      // the order page's two note pencils (card d3b54954)
+      matcher: "/admin/order-notes/:order_id",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostOrderNotes)],
     },
     {
       matcher: "/store/payment-options",

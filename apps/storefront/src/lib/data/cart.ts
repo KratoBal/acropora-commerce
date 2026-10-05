@@ -7,6 +7,7 @@ import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
   ASZF_ROGZITES_HIBA,
   fizetesUzenet,
+  MEGJEGYZES_MENTES_HIBA,
   rendelesHibaUzenet,
   rendelesUzenet,
   szallitasUzenet,
@@ -619,6 +620,29 @@ export async function rogzitsAszfElfogadast(
     return { ok: true }
   } catch {
     return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
+  }
+}
+
+/**
+ * A VEVO KET MEGJEGYZESE A KOSARRA (kartya d3b54954), a szallitasi lepes
+ * vegen. Sajat hatter-vegpont, nem a nyers `cart.update`: az csak ezt a ket
+ * kulcsot irja, vagja es hosszra korlatozza, a kosar tobbi metaadatahoz (ASZF,
+ * bontas) nem enged hozzaferest.
+ */
+export async function mentsMegjegyzeseket(
+  cartId: string,
+  torzs: { customer_note?: string | null; carrier_note?: string | null },
+): Promise<PenztarEredmeny> {
+  try {
+    await sdk.client.fetch(`/store/cart-notes/${cartId}`, {
+      method: "POST",
+      body: torzs,
+      headers: { ...(await getAuthHeaders()) },
+    })
+    revalidateTag(await getCacheTag("carts"))
+    return { ok: true }
+  } catch {
+    return { ok: false, uzenet: MEGJEGYZES_MENTES_HIBA }
   }
 }
 
