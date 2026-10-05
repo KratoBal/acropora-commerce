@@ -34,6 +34,8 @@ import {
 export type ReleaseSide = {
   order_id: string
   display_id: number | null
+  /** The order's current total (the difference over the hold is counted from it). */
+  total?: number
   metadata: Record<string, unknown> | null
   payments: (OrderPaymentFacts & {
     data: Record<string, unknown> | null

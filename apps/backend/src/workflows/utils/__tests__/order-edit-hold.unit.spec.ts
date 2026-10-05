@@ -93,9 +93,28 @@ describe("orderEditHoldDecision", () => {
     expect((await orderEditHoldDecision("order_1", opsFor(captured, 30000).ops)).action).toBe("refuse")
   })
 
-  it("more than the hold, nothing left to pay, or no collection: refused", async () => {
+  /**
+   * AN ITEM ADDED OVER THE HOLD (Balázs 2026-10-05 18:01 UTC, plan section 5):
+   * the edit goes through keeping the hold, the difference goes through a
+   * link. A mixed cart's shared hold is still refused. What must fail: a plain
+   * order's edit over the hold refused, or let through without keeping the
+   * hold (Medusa would cancel it); a mixed cart's let through.
+   */
+  it("over the hold: a plain order keeps the hold, a mixed cart's share is refused", async () => {
+    expect(await orderEditHoldDecision("order_1", opsFor(single(), 30000).ops)).toEqual({
+      action: "keep_hold",
+      collectionId: "pay_col_1",
+      newTotal: 30000,
+    })
+    const shared = single({ data: { id: "pi_joint", stripe_share: { transactionId: "pi_joint", total: 21950, own: 14000 } } })
+    expect(await orderEditHoldDecision("order_1", opsFor(shared, 30000).ops)).toEqual({
+      action: "refuse",
+      message: expect.stringMatching(/Vegyes kosárnál a különbözetre/),
+    })
+  })
+
+  it("nothing left to pay, or no collection: refused", async () => {
     for (const [side, total, words] of [
-      [single(), 30000, /többe kerül/],
       [single(), 0, /törölni kell/],
       [single({ collection_id: undefined }), 100, /gyűjtője nem található/],
     ] as const) {

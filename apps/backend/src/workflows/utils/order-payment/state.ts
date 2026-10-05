@@ -43,6 +43,11 @@ const STORED_STATES: readonly string[] = ["awaiting_payment", "link_sent", "remi
 
 export type StoredOrderPayment = {
   state: StoredOrderPaymentState
+  /**
+   * Which payment the state is about: the released hold (L1, the default), or
+   * the difference over a hold that stays (plan section 5).
+   */
+  kind?: "release" | "difference"
   /** When the release started, ISO; without `released_at` it stopped half way (`releaseHold`). */
   releasing_at?: string
   /** When the hold was released, ISO. */
@@ -90,6 +95,8 @@ export type OrderPaymentView = {
   hold: OrderPaymentHold | null
   link: { sent_at: string; expires_at: string; reminded_at: string | null; amount: number; url: string } | null
   paid_at: string | null
+  /** What the payment link would charge now; null when nothing is owed. */
+  due: { amount: number; reason: "released" | "difference" } | null
 }
 
 const iso = (value: Date | string): string => new Date(value).toISOString()
@@ -103,13 +110,24 @@ export const storedOrderPaymentOf = (
   return stored as StoredOrderPayment
 }
 
-/** The live card hold: a Stripe payment neither canceled nor captured. */
-export const livePaymentOf = (payments: readonly OrderPaymentFacts[]): OrderPaymentFacts | null =>
-  payments.find((payment) => !payment.canceled_at) ?? null
+const isStripe = (payment: OrderPaymentFacts) => payment.provider_id === STRIPE_PROVIDER_ID
+const isLive = (payment: OrderPaymentFacts) => !payment.canceled_at
+const time = (value: Date | string | null | undefined) => (value ? new Date(value).getTime() : 0)
+
+/**
+ * THE LIVE CARD HOLD: a Stripe payment neither canceled nor captured. An order
+ * can carry two live payments (the hold and a paid difference, plan section
+ * 5); the hold is the uncaptured one, and of two uncaptured ones the earlier
+ * (the order's own, not a link's being paid this second).
+ */
+export const holdPaymentOf = (payments: readonly OrderPaymentFacts[]): OrderPaymentFacts | null =>
+  payments
+    .filter((payment) => isLive(payment) && isStripe(payment) && payment.captured === 0)
+    .sort((a, b) => time(a.created_at) - time(b.created_at))[0] ?? null
 
 export const holdOf = (payments: readonly OrderPaymentFacts[]): OrderPaymentHold | null => {
-  const live = livePaymentOf(payments)
-  if (!live || live.provider_id !== STRIPE_PROVIDER_ID || live.captured > 0 || !live.created_at) return null
+  const live = holdPaymentOf(payments)
+  if (!live?.created_at) return null
   const authorized = new Date(live.created_at)
   return {
     authorized_at: authorized.toISOString(),
@@ -118,44 +136,90 @@ export const holdOf = (payments: readonly OrderPaymentFacts[]): OrderPaymentHold
   }
 }
 
+/**
+ * WHAT THE HOLD DOES NOT COVER (plan section 5): an item added after the order
+ * made it cost more than the card holds. The difference is the order's total
+ * less the hold and less what was already paid on other card payments (an
+ * earlier difference link).
+ */
+export const differenceOf = (input: { payments: readonly OrderPaymentFacts[]; total?: number | null }): number => {
+  const hold = holdPaymentOf(input.payments)
+  if (!hold || typeof input.total !== "number") return 0
+  const paidElsewhere = input.payments
+    .filter((payment) => payment !== hold && isLive(payment) && isStripe(payment))
+    .reduce((sum, payment) => sum + payment.captured, 0)
+  return Math.max(0, input.total - hold.amount - paidElsewhere)
+}
+
+const linkView = (link: StoredOrderPayment["link"]): OrderPaymentView["link"] =>
+  link
+    ? {
+        sent_at: link.sent_at,
+        expires_at: link.expires_at,
+        reminded_at: link.reminded_at ?? null,
+        amount: link.amount,
+        url: link.url,
+      }
+    : null
+
 /** What `GET /admin/order-payment/:order_id` answers, and the OS shows. */
 export const orderPaymentView = (input: {
   metadata: Record<string, unknown> | null | undefined
   payments: readonly OrderPaymentFacts[]
+  /** The order's current total; without it no difference is counted. */
+  total?: number | null
 }): OrderPaymentView => {
   const stored = storedOrderPaymentOf(input.metadata)
-  if (stored) {
-    const link = stored.link
+
+  // THE RELEASED HOLD (L1, L2): the stored state is the state, there is no hold
+  if (stored && stored.kind !== "difference") {
+    const owes = stored.state === "awaiting_payment" || stored.state === "link_sent" || stored.state === "reminded"
+    const amount = stored.link?.amount ?? input.total ?? null
     return {
       state: stored.state,
-      // released: the hold is gone, whatever Stripe kept of it
       hold: null,
-      link: link
-        ? {
-            sent_at: link.sent_at,
-            expires_at: link.expires_at,
-            reminded_at: link.reminded_at ?? null,
-            amount: link.amount,
-            url: link.url,
-          }
-        : null,
+      link: linkView(stored.link),
       paid_at: stored.paid_at ?? null,
+      due: owes && typeof amount === "number" ? { amount, reason: "released" } : null,
     }
   }
 
   const hold = holdOf(input.payments)
-  if (hold) return { state: "hold", hold, link: null, paid_at: null }
+  if (hold) {
+    const difference = differenceOf(input)
+    /*
+      The hold stays; the difference's link (if one went) says where the
+      payment is, while it is for TODAY's difference. An edit since moved the
+      difference: that link no longer pays (its collection is closed with the
+      edit), and the order waits for a new one.
+    */
+    const waiting =
+      stored?.kind === "difference" && stored.state !== "paid" && stored.link?.amount === difference ? stored : null
+    if (difference > 0 || waiting) {
+      return {
+        state: waiting?.state ?? "awaiting_payment",
+        hold,
+        link: linkView(waiting?.link),
+        paid_at: null,
+        due: { amount: waiting?.link?.amount ?? difference, reason: "difference" },
+      }
+    }
+    return { state: "hold", hold, link: null, paid_at: null, due: null }
+  }
 
-  const live = livePaymentOf(input.payments)
-  if (live && live.provider_id === STRIPE_PROVIDER_ID && live.captured > 0) {
+  const captured = input.payments
+    .filter((payment) => isLive(payment) && isStripe(payment) && payment.captured > 0)
+    .sort((a, b) => time(b.captured_at) - time(a.captured_at))
+  if (captured.length) {
     return {
       state: "paid",
       hold: null,
       link: null,
-      paid_at: live.captured_at ? iso(live.captured_at) : null,
+      paid_at: captured[0].captured_at ? iso(captured[0].captured_at) : null,
+      due: null,
     }
   }
-  return { state: "none", hold: null, link: null, paid_at: null }
+  return { state: "none", hold: null, link: null, paid_at: null, due: null }
 }
 
 /** The order list's field: when the live hold runs out, ISO; null without one. */
@@ -163,6 +227,10 @@ export const holdExpiresAt = (input: {
   metadata: Record<string, unknown> | null | undefined
   payments: readonly OrderPaymentFacts[]
 }): string | null => orderPaymentView(input).hold?.expires_at ?? null
+
+/** Kiszállítás refused while an added item's difference is not paid (plan section 5). */
+export const DIFFERENCE_UNPAID =
+  "Fizetésre vár: a rendelés többe kerül, mint a kártyán zárolt összeg, és a különbözet még nincs kifizetve. Küldd ki a fizetési linket a különbözetre, és várd meg a fizetést."
 
 /** The states in which the order waits for the customer's money: no parcel may leave. */
 export const AWAITING_PAYMENT_STATES: readonly OrderPaymentState[] = [
@@ -186,6 +254,8 @@ export const refuseWhileAwaitingPayment = (metadata: Record<string, unknown> | n
     MedusaError.Types.NOT_ALLOWED,
     stored.state === "expired"
       ? "Fizetésre vár: a fizetési határidő lejárt, a rendelés nem szállítható ki."
-      : "Fizetésre vár: a kártyás zárolást feloldottuk, ezért a csomag csak a vevő fizetése után indulhat. Előbb küldd ki a fizetési linket, és várd meg a fizetést."
+      : stored.kind === "difference"
+        ? DIFFERENCE_UNPAID
+        : "Fizetésre vár: a kártyás zárolást feloldottuk, ezért a csomag csak a vevő fizetése után indulhat. Előbb küldd ki a fizetési linket, és várd meg a fizetést."
   )
 }

@@ -3,6 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { stripeShareFactsOf } from "../../modules/stripe-capture/share"
 import { refuseWhileEditing } from "./order-edit-hold"
 import { guardAdminCapture } from "./admin-capture-guard"
+import { DIFFERENCE_UNPAID } from "./order-payment/state"
 import type { SharedCaptureOperations } from "./shared-stripe-capture"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 
@@ -45,33 +46,37 @@ export const capturePlainStripePayment = async (
   // an order edit's confirm is moving the collection: retry, take nothing
   refuseWhileEditing([order])
 
-  if (!(order.total > 0)) {
+  /*
+    WHAT THE HOLD OWES: the order's total, less a difference already paid
+    through a link (plan section 5: an item added after the order, over the
+    hold). Without such a payment it is the total, as before.
+  */
+  const owed = order.total - (order.other_captured ?? 0)
+
+  if (!(owed > 0)) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
       `A rendelés végösszege ${order.total} Ft, nincs mit levonni a kártyáról. Ha a rendelés üres, törölni kell, nem kiszállítani.`
     )
   }
 
-  // the guard compares with the order's total; the hold is a separate bound
-  if (order.total > payment.amount) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      `A rendelés végösszege (${order.total} Ft) több, mint a kártyán zárolt összeg (${payment.amount} Ft): a többletet külön fizetéssel kell rendezni. A levonás nem történt meg.`
-    )
+  // the guard compares with what is owed; the hold is a separate bound
+  if (owed > payment.amount) {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DIFFERENCE_UNPAID)
   }
 
-  const verdict = await guardAdminCapture(payment.id, order.total, {
+  const verdict = await guardAdminCapture(payment.id, owed, {
     load: async () => ({
       provider_id: payment.provider_id ?? null,
       amount: payment.amount,
       captured: payment.captured,
-      order: { id: order.order_id, total: order.total },
+      order: { id: order.order_id, total: owed },
     }),
   })
   if (verdict.action === "refuse") {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, verdict.message)
   }
 
-  await ops.capture(payment.id, order.total)
-  return { captured: true, amount: order.total }
+  await ops.capture(payment.id, owed)
+  return { captured: true, amount: owed }
 }

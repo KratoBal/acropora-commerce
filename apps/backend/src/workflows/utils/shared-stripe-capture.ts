@@ -51,6 +51,12 @@ export type CapturePaymentSide = {
   } | null
   /** The order's payments are all canceled (the order was canceled before the capture). */
   payment_canceled?: boolean
+  /**
+   * Captured on the order's OTHER live payments: a difference paid through a
+   * link (plan section 5). The payment above is then the hold, and it owes
+   * the total less this.
+   */
+  other_captured?: number
   /** The order's metadata: its payment state (`order-payment/state.ts`) lives there. */
   metadata?: Record<string, unknown> | null
 }

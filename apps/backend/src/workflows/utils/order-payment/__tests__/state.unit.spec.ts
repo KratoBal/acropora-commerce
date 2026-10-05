@@ -40,6 +40,7 @@ describe("orderPaymentView", () => {
       hold: { authorized_at: AUTHORIZED, expires_at: "2026-10-12T08:00:00.000Z", amount: 22150 },
       link: null,
       paid_at: null,
+      due: null,
     })
   })
 
@@ -48,7 +49,7 @@ describe("orderPaymentView", () => {
       metadata: null,
       payments: [card({ captured: 11650, captured_at: "2026-10-06T09:00:00.000Z" })],
     })
-    expect(view).toEqual({ state: "paid", hold: null, link: null, paid_at: "2026-10-06T09:00:00.000Z" })
+    expect(view).toEqual({ state: "paid", hold: null, link: null, paid_at: "2026-10-06T09:00:00.000Z", due: null })
   })
 
   it("the live payment is the one not canceled: an earlier canceled one is not the hold", () => {
@@ -65,7 +66,7 @@ describe("orderPaymentView", () => {
       [card({ canceled_at: "2026-10-05T09:00:00.000Z" })],
       [],
     ]) {
-      expect(orderPaymentView({ metadata: null, payments })).toEqual({ state: "none", hold: null, link: null, paid_at: null })
+      expect(orderPaymentView({ metadata: null, payments })).toEqual({ state: "none", hold: null, link: null, paid_at: null, due: null })
     }
   })
 
@@ -75,7 +76,7 @@ describe("orderPaymentView", () => {
       metadata: stored("awaiting_payment", { released_at: "2026-10-05T10:00:00.000Z" }),
       payments: [card()],
     })
-    expect(view).toEqual({ state: "awaiting_payment", hold: null, link: null, paid_at: null })
+    expect(view).toEqual({ state: "awaiting_payment", hold: null, link: null, paid_at: null, due: null })
   })
 
   it("a stored link is given as the plan's shape", () => {

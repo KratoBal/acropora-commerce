@@ -58,6 +58,11 @@ export type PayByLinkOperations = {
   authorizeSession(sessionId: string): Promise<boolean>
   /** The order's card payment captured: a mixed cart's both parts in one Stripe capture. */
   capture(orderId: string): Promise<void>
+  /**
+   * The payments of ONE collection captured: a difference link's (plan section
+   * 5). The order's hold beside it stays for Kiszállítás.
+   */
+  captureCollection(collectionId: string): Promise<void>
   setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
 }
 
@@ -193,7 +198,9 @@ export const completeLinkPayment = async (
     if (!authorized) throw notConfirmed()
   }
 
-  await ops.capture(resolved.pair.primary.order_id)
+  // a difference link takes only its own payment; the hold waits for Kiszállítás
+  if (resolved.stored!.kind === "difference") await ops.captureCollection(ids.shipped)
+  else await ops.capture(resolved.pair.primary.order_id)
 
   const paidAt = now().toISOString()
   for (const side of [resolved.pair.primary, ...(resolved.pair.pickup ? [resolved.pair.pickup] : [])]) {

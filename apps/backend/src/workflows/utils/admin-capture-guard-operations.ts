@@ -36,7 +36,8 @@ export const adminCaptureOperations = (container: MedusaContainer): AdminCapture
         (sum: number, capture: any) => sum + Number(capture?.amount ?? 0),
         0
       ),
-      order: order ? { id: order.order_id, total: order.total } : null,
+      // what the order still owes on its hold: a difference paid through a link is not taken twice
+      order: order ? { id: order.order_id, total: order.total - (order.other_captured ?? 0) } : null,
     }
   },
 })
