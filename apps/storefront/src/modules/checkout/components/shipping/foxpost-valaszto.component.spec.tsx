@@ -24,6 +24,7 @@ vi.mock("@lib/data/csomagpont", () => ({
 }))
 
 import Shipping from "./index"
+import { FOXPOST_KERESO_ORIGIN } from "@modules/checkout/components/foxpost-kereso"
 
 afterEach(cleanup)
 beforeEach(() => {
@@ -71,40 +72,132 @@ const PONT = {
   city: "Gödöllő",
 }
 
+const valasztottPont = (
+  adat: unknown,
+  origin = FOXPOST_KERESO_ORIGIN,
+  forras?: Window | null,
+) => {
+  const keret = screen.getByTestId("foxpost-kereso-keret") as HTMLIFrameElement
+  window.dispatchEvent(
+    new MessageEvent("message", {
+      data: typeof adat === "string" ? adat : JSON.stringify(adat),
+      origin,
+      source: forras === undefined ? keret.contentWindow : forras,
+    }),
+  )
+}
+
+/** A hivatalos kereso uzenete: a foxplus.json alaku pont, JSON szovegkent (mérve). */
+const KERESO_PONT = {
+  place_id: 680,
+  operator_id: "hu53",
+  name: "FOXPOST A-BOX Bp. 01. ker. Batthyány téri Vásárcsarnok",
+  address: "1011 Budapest, I, 01 Batthyány tér 5.",
+  zip: "1011",
+  city: "Budapest",
+  variant: "FOXPOST A-BOX",
+  paymentOptions: ["card", "link"],
+  service: ["pick up", "dispatch"],
+}
+
 /**
- * A FOXPOST-CSOMAGPONT VÁLASZTÓ (P4). MI PIROSIT: ha a Foxpost kiválasztása
- * pont nélkül beállítja a módot (a háttér elutasítaná); ha a választott pont
- * nem jut el a mód adatába; ha a "Tovább" a pont kiválasztása előtt is mehet;
- * ha a kosárban álló pont nem látszik.
+ * A FOXPOST ÁTVÉTELI PONT VÁLASZTÓ (Figma 486:3, 486:191, 486:346).
+ * MI PIROSIT: ha a Foxpost kiválasztása pont nélkül beállítja a módot; ha nem
+ * a hivatalos kereső nyílik meg elsőként; ha más ablak vagy más forrás
+ * üzenete pontot állít; ha a kereső pontja nem jut el a mód adatába; ha a
+ * lista-tartalék nem érhető el; ha a "Tovább" a pont előtt is mehet; ha a
+ * kosárban álló pont típusa vagy részletei nem látszanak.
  */
-describe("a Foxpost-csomagpont választó a szállítási lépésben", () => {
-  it("a Foxpost kiválasztása a választót nyitja, és még nem állít módot", () => {
+describe("a Foxpost átvételi pont választó a szállítási lépésben", () => {
+  it("a mód hivatalos néven és logóval áll a listában", () => {
     rajzol()
-    expect(screen.queryByTestId("csomagpont-valaszto")).toBeNull()
+    expect(screen.getByTestId("foxpost-mod-nev").textContent).toBe(
+      "FOXPOST – Packeta Group",
+    )
+    expect(screen.getAllByTestId("foxpost-logo").length).toBeGreaterThan(0)
+  })
+
+  it("a Foxpost kiválasztása a hivatalos keresőt nyitja, és még nem állít módot", () => {
+    rajzol()
+    expect(screen.queryByTestId("foxpost-kereso")).toBeNull()
     fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
-    expect(screen.getByTestId("csomagpont-valaszto")).toBeTruthy()
+    const keret = screen.getByTestId(
+      "foxpost-kereso-keret",
+    ) as HTMLIFrameElement
+    expect(keret.getAttribute("src")).toBe(
+      "https://cdn.foxpost.hu/apt-finder/v1/app/",
+    )
+    expect(screen.queryByTestId("csomagpont-valaszto")).toBeNull()
     expect(setShippingMethod).not.toHaveBeenCalled()
   })
 
-  it("a keresés a beírt szöveggel megy, és a választott pont a mód adatába kerül", async () => {
+  it("a kereső pontja az azonosítójával kerül a mód adatába", async () => {
+    setShippingMethod.mockResolvedValue({ ok: true })
+    rajzol()
+    fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
+    await act(async () => valasztottPont(KERESO_PONT))
+    expect(setShippingMethod).toHaveBeenCalledWith({
+      cartId: "cart-1",
+      shippingMethodId: "so-fox",
+      data: { foxpost_pickup_point: { id: "hu53" } },
+    })
+  })
+
+  it("más forrás, más ablak vagy rossz alakú üzenet nem állít pontot", async () => {
+    rajzol()
+    fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
+    await act(async () => {
+      valasztottPont(KERESO_PONT, "https://evil.example")
+      valasztottPont(KERESO_PONT, FOXPOST_KERESO_ORIGIN, window)
+      valasztottPont("nem json")
+      valasztottPont({ name: "azonosító nélkül" })
+    })
+    expect(setShippingMethod).not.toHaveBeenCalled()
+  })
+
+  it("kérésre a foxplus.json lista jön, a Figma mondataival, és onnan is választható", async () => {
     searchFoxpostPickupPoints.mockResolvedValue({
       elerheto: true,
-      pontok: [PONT],
+      pontok: [
+        {
+          ...PONT,
+          variant: "Packeta Z-Pont",
+          services: ["pick up"],
+          payment_options: ["cash"],
+          icon_url: "https://cdn.foxpost.hu/icons/Z-POINT_icon_low.png",
+          findme: "A trafik a sarkon van.",
+        },
+      ],
       talalat: 1,
     })
     setShippingMethod.mockResolvedValue({ ok: true })
     rajzol()
     fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
+    fireEvent.click(screen.getByTestId("foxpost-kereso-lista"))
+    expect(screen.getByTestId("csomagpont-valaszto").textContent).toContain(
+      "Keress irányítószámra vagy városra.",
+    )
     fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
       target: { value: "Gödöllő" },
     })
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
-    expect(searchFoxpostPickupPoints).toHaveBeenCalledWith("Gödöllő")
-
+    // a Z-Pont Z-Pontként, a saját ikonjával, és csak azzal, amit tud
+    expect(screen.getByTestId("csomagpont-tipus").textContent).toBe(
+      "Packeta Z-Pont",
+    )
+    expect(screen.getByTestId("csomagpont-ikon").getAttribute("src")).toBe(
+      "https://cdn.foxpost.hu/icons/Z-POINT_icon_low.png",
+    )
+    expect(screen.getByTestId("csomagpont-reszletek").textContent).toBe(
+      "Csak csomagátvétel · Fizetés: készpénz",
+    )
+    expect(screen.getByTestId("csomagpont-findme").textContent).toBe(
+      "A trafik a sarkon van.",
+    )
     await act(async () => {
-      fireEvent.click(await screen.findByTestId("csomagpont"))
+      fireEvent.click(screen.getByTestId("csomagpont"))
     })
     expect(setShippingMethod).toHaveBeenCalledWith({
       cartId: "cart-1",
@@ -113,43 +206,25 @@ describe("a Foxpost-csomagpont választó a szállítási lépésben", () => {
     })
   })
 
-  it("a Tovább gomb a pont kiválasztásáig nem mehet, akkor sem, ha más mód áll a kosárban", () => {
-    rajzol(kosar([{ id: "sm-1", shipping_option_id: "so-gls", data: {} }]))
-    fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
-    expect(
-      (screen.getByTestId("submit-delivery-option-button") as HTMLButtonElement)
-        .disabled,
-    ).toBe(true)
+  it("ha a kereső nem tölt be időben, magától a lista jön", async () => {
+    vi.useFakeTimers()
+    try {
+      rajzol()
+      fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
+      expect(screen.queryByTestId("csomagpont-valaszto")).toBeNull()
+      await act(async () => {
+        vi.advanceTimersByTime(15_000)
+      })
+      expect(screen.getByTestId("csomagpont-valaszto")).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
-  it("a kosárban álló pontot megmutatja, és a Tovább mehet", () => {
-    rajzol(
-      kosar([
-        {
-          id: "sm-1",
-          shipping_option_id: "so-fox",
-          data: {
-            foxpost_pickup_point: {
-              id: "HU1",
-              name: PONT.name,
-              address: PONT.address,
-            },
-          },
-        },
-      ]),
-    )
-    expect(screen.getByTestId("csomagpont-kivalasztott").textContent).toBe(
-      `Kiválasztott csomagpont: ${PONT.name}, ${PONT.address}`,
-    )
-    expect(
-      (screen.getByTestId("submit-delivery-option-button") as HTMLButtonElement)
-        .disabled,
-    ).toBe(false)
-  })
-
-  it("nem elérhető Foxpostnál és találat nélkül kimondja", async () => {
+  it("a lista hibája és üressége a Figma mondataival szól, hibánál Újra", async () => {
     rajzol()
     fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
+    fireEvent.click(screen.getByTestId("foxpost-kereso-lista"))
     fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
       target: { value: "x" },
     })
@@ -161,18 +236,67 @@ describe("a Foxpost-csomagpont választó a szállítási lépésben", () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
-    expect(screen.getByTestId("csomagpont-nem-elerheto")).toBeTruthy()
-
+    expect(screen.getByTestId("csomagpont-nem-elerheto").textContent).toContain(
+      "Nem sikerült betölteni a FOXPOST pontokat.",
+    )
     searchFoxpostPickupPoints.mockResolvedValueOnce({
       elerheto: true,
       pontok: [],
       talalat: 0,
     })
     await act(async () => {
-      fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
+      fireEvent.click(screen.getByTestId("csomagpont-ujra"))
     })
     await waitFor(() =>
-      expect(screen.getByTestId("csomagpont-nincs")).toBeTruthy(),
+      expect(screen.getByTestId("csomagpont-nincs").textContent).toBe(
+        "Nem találtunk átvételi pontot. Próbáld irányítószámmal.",
+      ),
     )
+  })
+
+  it("a Tovább gomb a pont kiválasztásáig nem mehet, akkor sem, ha más mód áll a kosárban", () => {
+    rajzol(kosar([{ id: "sm-1", shipping_option_id: "so-gls", data: {} }]))
+    fireEvent.click(screen.getAllByTestId("delivery-option-radio")[1])
+    expect(
+      (screen.getByTestId("submit-delivery-option-button") as HTMLButtonElement)
+        .disabled,
+    ).toBe(true)
+  })
+
+  it("a kosárban álló pontot típussal és részletekkel mutatja, a Tovább mehet, és másik választható", () => {
+    rajzol(
+      kosar([
+        {
+          id: "sm-1",
+          shipping_option_id: "so-fox",
+          data: {
+            foxpost_pickup_point: {
+              id: "hu53",
+              name: KERESO_PONT.name,
+              address: KERESO_PONT.address,
+              variant: "FOXPOST A-BOX",
+              services: ["pick up", "dispatch"],
+              payment_options: ["card", "link"],
+            },
+          },
+        },
+      ]),
+    )
+    const kartya = screen.getByTestId("foxpost-kivalasztott")
+    expect(kartya.textContent).toContain(KERESO_PONT.name)
+    expect(kartya.textContent).toContain(KERESO_PONT.address)
+    expect(screen.getByTestId("foxpost-kivalasztott-tipus").textContent).toBe(
+      "FOXPOST A-BOX",
+    )
+    expect(
+      screen.getByTestId("foxpost-kivalasztott-reszletek").textContent,
+    ).toBe("Csomagfeladás és -átvétel · Fizetés: bankkártya, fizetési link")
+    expect(screen.queryByTestId("foxpost-kereso")).toBeNull()
+    expect(
+      (screen.getByTestId("submit-delivery-option-button") as HTMLButtonElement)
+        .disabled,
+    ).toBe(false)
+    fireEvent.click(screen.getByTestId("foxpost-masik-pont"))
+    expect(screen.getByTestId("foxpost-kereso")).toBeTruthy()
   })
 })

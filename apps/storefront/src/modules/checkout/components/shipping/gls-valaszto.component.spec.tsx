@@ -157,6 +157,9 @@ describe("a GLS-csomagpont választó", () => {
     })
     rajzol()
     fireEvent.click(radio(3))
+    // a hivatalos kereső nyílik; a lista-tartalék is a Foxpost listájából keres
+    expect(screen.getByTestId("foxpost-kereso")).toBeTruthy()
+    fireEvent.click(screen.getByTestId("foxpost-kereso-lista"))
     fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
       target: { value: "Gödöllő" },
     })

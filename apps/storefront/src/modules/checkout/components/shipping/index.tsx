@@ -17,6 +17,10 @@ import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import CsomagpontValaszto from "@modules/checkout/components/csomagpont-valaszto"
+import FoxpostLogo from "@modules/checkout/components/foxpost-logo"
+import FoxpostValaszto, {
+  type FoxpostKivalasztott,
+} from "@modules/checkout/components/foxpost-valaszto"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
@@ -272,8 +276,9 @@ const Shipping: React.FC<ShippingProps> = ({
     aktivPontMod && kosarMod?.shipping_option_id === shippingMethodId
       ? ((kosarMod?.data as Record<string, unknown> | undefined)?.[
           aktivPontMod.adatKulcs
-        ] as { name?: string; address?: string } | undefined)
+        ] as FoxpostKivalasztott | undefined)
       : undefined
+  const foxpostAktiv = !!foxpostOptionId && shippingMethodId === foxpostOptionId
 
   useEffect(() => {
     setError(null)
@@ -397,10 +402,29 @@ const Shipping: React.FC<ShippingProps> = ({
                           <MedusaRadio
                             checked={option.id === shippingMethodId}
                           />
-                          <span className="text-base-regular">
-                            {option.name}
-                          </span>
+                          {option.id === foxpostOptionId ? (
+                            // A hivatalos megnevezes es logo (Figma 486:3);
+                            // a mod neve az adatbazisban marad, ahogy van.
+                            <span className="flex flex-col">
+                              <span
+                                className="text-base-regular"
+                                data-testid="foxpost-mod-nev"
+                              >
+                                FOXPOST – Packeta Group
+                              </span>
+                              <span className="text-[12px] text-ui-fg-subtle">
+                                Csomagautomata vagy Packeta átvételi pont
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-base-regular">
+                              {option.name}
+                            </span>
+                          )}
                         </div>
+                        {option.id === foxpostOptionId ? (
+                          <FoxpostLogo className="ml-auto mr-6 hidden h-[30px] w-auto small:block" />
+                        ) : null}
                         <span className="justify-self-end text-ui-fg-base">
                           {option.price_type === "flat" ? (
                             convertToLocale({
@@ -422,7 +446,13 @@ const Shipping: React.FC<ShippingProps> = ({
                     )
                   })}
                 </RadioGroup>
-                {aktivPontMod ? (
+                {foxpostAktiv ? (
+                  <FoxpostValaszto
+                    key={shippingMethodId ?? ""}
+                    kivalasztott={kosarPont ?? null}
+                    onValaszt={handlePont}
+                  />
+                ) : aktivPontMod ? (
                   <CsomagpontValaszto
                     key={shippingMethodId ?? ""}
                     szolgaltato={aktivPontMod.szolgaltato}

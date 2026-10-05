@@ -3,7 +3,11 @@
 import { useState } from "react"
 
 import { searchFoxpostPickupPoints } from "@lib/data/csomagpont"
-import type { CsomagpontKereses, FoxpostCsomagpont } from "@lib/util/csomagpont"
+import {
+  type CsomagpontKereses,
+  type FoxpostCsomagpont,
+  foxpostPontReszletek,
+} from "@lib/util/csomagpont"
 import { Button } from "@modules/common/components/ui"
 
 /**
@@ -19,7 +23,14 @@ export default function CsomagpontValaszto({
   onValaszt,
   szolgaltato = "Foxpost",
   kereso = (kereses: string) => searchFoxpostPickupPoints(kereses),
+  szovegek,
 }: {
+  /**
+   * Sajat allapot-szovegek (a FOXPOST tartalek listaja, Figma 486:346): a
+   * kezdo segitseg, a talalat nelkuli es a betoltesi hiba mondata. Hibanal
+   * ilyenkor "Újra" gomb is van. Nelkule a regi (GLS) mondatok maradnak.
+   */
+  szovegek?: { ures: string; nincs: string; hiba: string }
   /** A futarszolgalat neve a mondatokban ("Foxpost", "GLS"). */
   szolgaltato?: string
   /** A kereses: a Foxpost es a GLS ugyanabban az alakban valaszol. */
@@ -32,12 +43,15 @@ export default function CsomagpontValaszto({
   const [eredmeny, setEredmeny] = useState<CsomagpontKereses | null>(null)
   const [betolt, setBetolt] = useState(false)
 
-  const keres = async (esemeny: React.FormEvent) => {
-    esemeny.preventDefault()
+  const futtat = async () => {
     if (!kereses.trim()) return
     setBetolt(true)
     setEredmeny(await kereso(kereses))
     setBetolt(false)
+  }
+  const keres = async (esemeny: React.FormEvent) => {
+    esemeny.preventDefault()
+    await futtat()
   }
 
   return (
@@ -52,7 +66,8 @@ export default function CsomagpontValaszto({
         </p>
       ) : (
         <p className="txt-medium text-ui-fg-muted">
-          Válaszd ki, melyik {szolgaltato} csomagpontba kéred a csomagot.
+          {szovegek?.ures ??
+            `Válaszd ki, melyik ${szolgaltato} csomagpontba kéred a csomagot.`}
         </p>
       )}
       <form onSubmit={keres} className="flex gap-2" role="search">
@@ -81,8 +96,18 @@ export default function CsomagpontValaszto({
           className="txt-medium text-ui-fg-base"
           data-testid="csomagpont-nem-elerheto"
         >
-          A {szolgaltato} csomagpontjai most nem érhetők el. Válassz másik
-          szállítási módot.
+          {szovegek?.hiba ??
+            `A ${szolgaltato} csomagpontjai most nem érhetők el. Válassz másik szállítási módot.`}
+          {szovegek ? (
+            <button
+              type="button"
+              onClick={() => void futtat()}
+              className="ml-2 text-acr-heritage underline underline-offset-2"
+              data-testid="csomagpont-ujra"
+            >
+              Újra
+            </button>
+          ) : null}
         </p>
       ) : null}
       {eredmeny?.elerheto && eredmeny.pontok.length === 0 ? (
@@ -90,7 +115,7 @@ export default function CsomagpontValaszto({
           className="txt-medium text-ui-fg-base"
           data-testid="csomagpont-nincs"
         >
-          Nincs találat erre a keresésre.
+          {szovegek?.nincs ?? "Nincs találat erre a keresésre."}
         </p>
       ) : null}
       {eredmeny?.elerheto && eredmeny.pontok.length > 0 ? (
@@ -103,13 +128,57 @@ export default function CsomagpontValaszto({
                 className="w-full border border-ui-border-base px-4 py-3 text-left hover:shadow-borders-interactive-with-active"
                 data-testid="csomagpont"
               >
-                <span className="block txt-medium-plus text-ui-fg-base">
-                  {pont.name}
-                </span>
-                <span className="block txt-small text-ui-fg-subtle">
-                  {pont.address}
+                <span className="flex items-start gap-3">
+                  {pont.icon_url ? (
+                    // A Foxpost sajat tipus-ikonja (iconUrl), a hatter csak a
+                    // cdn.foxpost.hu cimet engedi at; next/image itt nem kell.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={pont.icon_url}
+                      alt=""
+                      width={28}
+                      height={28}
+                      className="mt-0.5 h-7 w-7 shrink-0 object-contain"
+                      data-testid="csomagpont-ikon"
+                    />
+                  ) : null}
+                  <span className="min-w-0">
+                    {pont.variant ? (
+                      <span
+                        className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-acr-slate"
+                        data-testid="csomagpont-tipus"
+                      >
+                        {pont.variant}
+                      </span>
+                    ) : null}
+                    <span className="block txt-medium-plus text-ui-fg-base">
+                      {pont.name}
+                    </span>
+                    <span className="block txt-small text-ui-fg-subtle">
+                      {pont.address}
+                    </span>
+                    {foxpostPontReszletek(pont) ? (
+                      <span
+                        className="block txt-small text-ui-fg-subtle"
+                        data-testid="csomagpont-reszletek"
+                      >
+                        {foxpostPontReszletek(pont)}
+                      </span>
+                    ) : null}
+                  </span>
                 </span>
               </button>
+              {pont.findme ? (
+                <details className="px-4 pb-2 txt-small text-ui-fg-subtle">
+                  <summary className="cursor-pointer">Hol találom?</summary>
+                  <p
+                    className="whitespace-pre-line"
+                    data-testid="csomagpont-findme"
+                  >
+                    {pont.findme}
+                  </p>
+                </details>
+              ) : null}
             </li>
           ))}
         </ul>

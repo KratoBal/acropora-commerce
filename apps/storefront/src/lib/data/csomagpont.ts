@@ -37,12 +37,28 @@ export async function searchFoxpostPickupPoints(
         ? {
             elerheto: true,
             pontok: valasz.pickup_points.map(
-              ({ id, name, address, zip, city }) => ({
+              ({
                 id,
                 name,
                 address,
                 zip,
                 city,
+                variant,
+                payment_options,
+                services,
+                icon_url,
+                findme,
+              }) => ({
+                id,
+                name,
+                address,
+                zip,
+                city,
+                variant,
+                payment_options,
+                services,
+                icon_url,
+                findme,
               }),
             ),
             talalat: valasz.count,
