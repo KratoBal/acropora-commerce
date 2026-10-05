@@ -20,7 +20,7 @@ export const sendShopMail = (notifications: NotificationModule, mail: MailToSend
     to: mail.to,
     channel: "email",
     template: mail.template,
-    trigger_type: mail.template,
+    trigger_type: mail.trigger ?? mail.template,
     resource_id: mail.resource_id,
     resource_type: "order",
     idempotency_key: mail.idempotency_key,

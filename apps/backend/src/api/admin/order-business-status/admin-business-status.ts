@@ -1,5 +1,5 @@
 import { MedusaContainer } from "@medusajs/framework/types"
-import { MedusaError } from "@medusajs/framework/utils"
+import { MedusaError, Modules } from "@medusajs/framework/utils"
 
 import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-status"
 import OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
@@ -8,6 +8,7 @@ import {
   ORDER_BUSINESS_STATUS_LABELS,
   OrderBusinessStatus,
 } from "../../../modules/order-business-status/types"
+import { statusMailTrigger } from "../../../workflows/utils/webshop-mail/status-mail"
 
 /**
  * THE BUSINESS STATUS FOR THE ACROPORA OS (its "Rendelések" page). The OS
@@ -32,7 +33,79 @@ export type AdminOrderBusinessStatusDetail = {
     actor: string
     source: string
     created_at: string
+    /** The customer's mail of this change: the newest one, resends included; null: none. */
+    notification: RowNotification | null
   }[]
+}
+
+/**
+ * "Értesítő email elküldve" in the OS's history table (Rendelések prompt,
+ * point 10): sent, failed or still pending, and when. `resent` counts the
+ * mails beyond the first.
+ */
+export type RowNotification = {
+  status: "sent" | "failed" | "pending"
+  at: string
+  template: string
+  resent: number
+}
+
+type StoredNotification = {
+  template: string
+  trigger_type?: string | null
+  status: "pending" | "success" | "failure"
+  created_at: Date | string
+}
+
+const NOTIFICATION_STATUS: Record<StoredNotification["status"], RowNotification["status"]> = {
+  success: "sent",
+  failure: "failed",
+  pending: "pending",
+}
+
+const summary = (mails: StoredNotification[]): RowNotification | null => {
+  const newest = mails.at(-1)
+  if (!newest) return null
+  return {
+    status: NOTIFICATION_STATUS[newest.status] ?? "pending",
+    at: iso(newest.created_at),
+    template: newest.template,
+    resent: mails.length - 1,
+  }
+}
+
+/**
+ * The order's mails, oldest first. When the shop has no notification module
+ * (the mail switch off), there are none: every row says null.
+ */
+const orderNotifications = async (scope: MedusaContainer, orderId: string): Promise<StoredNotification[]> => {
+  let module: { listNotifications(filters: Record<string, unknown>, config?: Record<string, unknown>): Promise<StoredNotification[]> }
+  try {
+    module = scope.resolve(Modules.NOTIFICATION)
+  } catch {
+    return []
+  }
+  const found = await module.listNotifications(
+    { resource_id: orderId },
+    { order: { created_at: "ASC" } },
+  )
+  return [...found].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+}
+
+/**
+ * Which mails belong to a history row. The creation row's mail is the order
+ * confirmation; any other row's are the ones whose trigger names the row. A
+ * Kiszállítás row with none of its own shows the "Feladtuk" mail, the one the
+ * status mail stood back for (`shipped_mail_sent`).
+ */
+const mailsOfRow = (
+  row: { id?: string; source: string; to_status: string },
+  mails: StoredNotification[],
+): StoredNotification[] => {
+  if (row.source === "order_created") return mails.filter((mail) => mail.template === "order-placed")
+  const own = row.id ? mails.filter((mail) => mail.trigger_type === statusMailTrigger(row.id!)) : []
+  if (own.length || row.to_status !== "out_for_delivery") return own
+  return mails.filter((mail) => mail.template === "order-shipped")
 }
 
 const label = (status: string): string =>
@@ -52,6 +125,7 @@ export async function adminStatusDetail(
       await service.retrieveOrderBusinessStatusForOrder(orderId)
     const current = status.status as OrderBusinessStatus
     const latest = history.at(-1)
+    const mails = await orderNotifications(scope, orderId)
     return {
       order_id: status.order_id,
       status: current,
@@ -70,6 +144,7 @@ export async function adminStatusDetail(
         actor: row.actor,
         source: row.source,
         created_at: iso(row.created_at),
+        notification: summary(mailsOfRow(row, mails)),
       })),
     }
   } catch (error) {

@@ -8,6 +8,7 @@ import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
 import type { ShippedDeps, ShippedOrder } from "./shipped"
+import type { StatusMailDeps } from "./status-mail"
 
 const ORDER_FIELDS = [
   "id",
@@ -115,6 +116,23 @@ export const refundMailOperations = (container: MedusaContainer): RefundMailDeps
   },
 })
 
+/*
+  THE MODULE'S OWN ANSWER IS AMBIGUOUS, SO WE ASK. Measured in
+  @medusajs/notification 2.20.1 (createNotifications_): a key already sent
+  creates nothing (empty answer), and a key whose earlier send FAILED is sent
+  again, also with an empty answer. So "already sent" is read from the
+  notification list: a notification matching the filter whose status is not
+  failure. The `idempotency_key` filter is the one the module filters on
+  internally; the public filter type does not name it, hence the cast.
+*/
+const notificationSent = async (container: MedusaContainer, filters: Record<string, unknown>): Promise<boolean> => {
+  const notifications = container.resolve(Modules.NOTIFICATION) as unknown as {
+    listNotifications(filters: Record<string, unknown>): Promise<{ status?: string }[]>
+  }
+  const found = await notifications.listNotifications(filters)
+  return found.some((notification) => notification.status !== "failure")
+}
+
 /** The Medusa side of the "feladtuk" mail (`prepareShippedMail`). */
 export const shippedMailOperations = (container: MedusaContainer): ShippedDeps => ({
   loadOrder: async (orderId): Promise<ShippedOrder | null> => {
@@ -173,20 +191,12 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
     }
   },
 
-  /*
-    THE MODULE'S OWN ANSWER IS AMBIGUOUS, SO WE ASK. Measured in
-    @medusajs/notification 2.20.1 (createNotifications_): a key already sent
-    creates nothing (empty answer), and a key whose earlier send FAILED is sent
-    again, also with an empty answer. So "already sent" is read from the
-    notification list: a notification with this key whose status is not
-    failure. The list filter is the same `idempotency_key` the module filters on
-    internally; the public filter type does not name it, hence the cast.
-  */
-  alreadySent: async (key) => {
-    const notifications = container.resolve(Modules.NOTIFICATION) as unknown as {
-      listNotifications(filters: Record<string, unknown>): Promise<{ status?: string }[]>
-    }
-    const found = await notifications.listNotifications({ idempotency_key: key })
-    return found.some((notification) => notification.status !== "failure")
-  },
+  alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
+})
+
+/** The Medusa side of the status mails (`prepareStatusMail`). */
+export const statusMailOperations = (container: MedusaContainer): StatusMailDeps => ({
+  loadOrder: orderMailOperations(container).loadOrder,
+  alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
+  shippedMailSent: (orderId) => notificationSent(container, { resource_id: orderId, template: "order-shipped" }),
 })

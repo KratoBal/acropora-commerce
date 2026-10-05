@@ -20,7 +20,10 @@ import {
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
-import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-status/validators";
+import {
+  AdminResendOrderStatusNotification,
+  AdminTransitionOrderBusinessStatus,
+} from "./admin/order-business-status/validators";
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
@@ -120,6 +123,14 @@ export default defineMiddlewares({
       method: "POST",
       middlewares: [
         validateAndTransformBody(AdminTransitionOrderBusinessStatus),
+      ],
+    },
+    {
+      // "Értesítő újraküldése": the mail of one status change again.
+      matcher: "/admin/order-business-status/:order_id/resend-notification",
+      method: "POST",
+      middlewares: [
+        validateAndTransformBody(AdminResendOrderStatusNotification),
       ],
     },
     {

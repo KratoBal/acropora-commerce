@@ -1,7 +1,10 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 
+import { ORDER_BUSINESS_STATUS_MODULE } from "../../../../modules/order-business-status"
+import OrderBusinessStatusModuleService from "../../../../modules/order-business-status/service"
 import { transitionOrderBusinessStatusWorkflow } from "../../../../workflows/transition-order-business-status"
+import { notifyStatusChange, type StatusNotification } from "../../../../workflows/utils/webshop-mail/status-notify"
 import { AdminTransitionOrderBusinessStatusType } from "../validators"
 import { adminStatusDetail } from "../admin-business-status"
 
@@ -21,13 +24,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
  * The current backend has one authenticated administrative boundary but no
  * finer application role model. It records this manual operation as `admin`;
  * future carrier callbacks use the same workflow with actor `carrier`.
+ *
+ * THE CUSTOMER'S MAIL GOES AFTER THE CHANGE, NOT INSIDE IT: a mail that could
+ * not go does not undo a status the shop already acted on. `notification`
+ * says what happened to it (see `notifyStatusChange`).
  */
 export const POST = async (
   req: MedusaRequest<AdminTransitionOrderBusinessStatusType>,
   res: MedusaResponse,
 ) => {
   const { order_id } = req.params
-  const { status } = req.validatedBody
+  const { status, notify_customer } = req.validatedBody
 
   const { result: business_status } = await transitionOrderBusinessStatusWorkflow(
     req.scope,
@@ -40,5 +47,16 @@ export const POST = async (
     },
   })
 
-  res.json({ business_status })
+  let notification: StatusNotification = { sent: false, reason: "not_requested" }
+  if (notify_customer !== false) {
+    const { history } = await req.scope
+      .resolve<OrderBusinessStatusModuleService>(ORDER_BUSINESS_STATUS_MODULE)
+      .retrieveOrderBusinessStatusForOrder(order_id)
+    const row = history.at(-1)
+    notification = row
+      ? await notifyStatusChange(req.scope, { orderId: order_id, status, historyId: row.id })
+      : { sent: false, reason: "order_missing" }
+  }
+
+  res.json({ business_status, notification })
 }
