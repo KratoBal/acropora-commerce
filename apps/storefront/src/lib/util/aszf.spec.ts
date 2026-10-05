@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { REGI_BOLT_HIVATKOZASOK } from "@modules/layout/templates/footer/hivatkozasok"
+import { SAJAT_HIVATKOZASOK } from "@modules/layout/templates/footer/hivatkozasok"
 
 import {
   ADATKEZELES_CIM,
@@ -16,20 +16,23 @@ import {
  * jon (akkor elesiteskor az egyik helyen atirodna, a masikon nem).
  */
 describe("az ÁSZF-elfogadás rekordja", () => {
-  it("időbélyeg, verzió és a dokumentum címe", () => {
+  it("időbélyeg, a Fogyasztóbarát-verzió és a Fogyasztóbarát forrása (2026-10-05)", () => {
     expect(aszfElfogadas(new Date("2026-09-29T11:30:00.000Z"))).toEqual({
       idopont: "2026-09-29T11:30:00.000Z",
-      verzio: ASZF_VERZIO,
-      dokumentum: ASZF_CIM,
+      verzio: "fogyasztobarat-JPNFMVH0",
+      dokumentum: "https://admin.fogyasztobarat.hu/api.php?aszf=JPNFMVH0",
     })
-    expect(ASZF_VERZIO).not.toBe("")
+    expect(ASZF_VERZIO).not.toContain("unas")
   })
 
-  it("a két cím a lábléc listájából jön, nem külön beírva", () => {
-    const cimek = REGI_BOLT_HIVATKOZASOK.map((h) => h.cim)
+  it("a két cím a lábléc listájából jön, és a kirakat saját oldala", () => {
+    const cimek = SAJAT_HIVATKOZASOK.map((h) => h.cim)
     expect(cimek).toContain(ASZF_CIM)
     expect(cimek).toContain(ADATKEZELES_CIM)
-    expect(ASZF_CIM).not.toBe(ADATKEZELES_CIM)
+    expect([ASZF_CIM, ADATKEZELES_CIM]).toEqual([
+      "/jogi/aszf",
+      "/jogi/adatkezeles",
+    ])
   })
 })
 
