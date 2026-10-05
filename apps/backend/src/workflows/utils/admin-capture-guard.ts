@@ -12,10 +12,10 @@ import { STRIPE_PROVIDER_ID } from "./stripe-config"
  * - The amount captured from the admin is the order's CURRENT total: the
  *   requested `amount`, or, when it is left out, what Medusa would take (the
  *   payment's amount).
- * - A SMALLER amount only through an order edit. The edit's confirm captures
- *   the new total itself (`captureBeforeOrderEdit`), through the payment
- *   module, not through this route; after a confirmed edit the order's total IS
- *   the smaller amount, so a capture from here matches it again.
+ * - A SMALLER amount only through an order edit. The edit's confirm keeps the
+ *   hold and lowers the order's total (`order-edit-hold.ts`); after a
+ *   confirmed edit the order's total IS the smaller amount, so a capture from
+ *   here matches it again.
  * - On a mixed cart each payment is measured against ITS OWN order: the
  *   shipped order's total for the shipped payment, the pickup order's for the
  *   pickup one (the parts recorded on the shared intent). The shared capture

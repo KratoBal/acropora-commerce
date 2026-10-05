@@ -29,7 +29,7 @@ import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
 import { refuseClientSessionData } from "./refuse-client-session-data";
-import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
+import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 import { captureOnlyOrderTotal } from "./capture-only-order-total";
 import {
@@ -87,11 +87,11 @@ export default defineMiddlewares({
       middlewares: [refundBeforeOrderCancel],
     },
     {
-      // Medusa's confirm cancels an uncaptured card hold; the hold is captured first.
+      // Medusa's confirm would cancel an uncaptured card hold; it runs with the hold kept.
       // Runs after the admin authentication (the loader applies it to /admin first).
       matcher: "/admin/order-edits/:id/confirm",
       method: "POST",
-      middlewares: [captureBeforeOrderEditConfirm],
+      middlewares: [orderEditConfirmKeepsHold],
     },
     {
       // No ÁSZF acceptance on the cart: no shared PaymentIntent (aszf-guard.ts).

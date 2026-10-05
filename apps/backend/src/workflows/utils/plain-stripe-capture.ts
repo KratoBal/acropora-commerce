@@ -1,6 +1,7 @@
 import { MedusaError } from "@medusajs/framework/utils"
 
 import { stripeShareFactsOf } from "../../modules/stripe-capture/share"
+import { refuseWhileEditing } from "./order-edit-hold"
 import { guardAdminCapture } from "./admin-capture-guard"
 import type { SharedCaptureOperations } from "./shared-stripe-capture"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
@@ -41,6 +42,8 @@ export const capturePlainStripePayment = async (
   }
   if (stripeShareFactsOf(payment.data)) return { captured: false, reason: "shared" }
   if (payment.captured > 0) return { captured: false, reason: "already_captured" }
+  // an order edit's confirm is moving the collection: retry, take nothing
+  refuseWhileEditing([order])
 
   if (!(order.total > 0)) {
     throw new MedusaError(
