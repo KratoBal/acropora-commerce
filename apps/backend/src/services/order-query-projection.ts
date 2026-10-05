@@ -6,6 +6,7 @@ import {
   PARENT_ORDER_METADATA_KEY,
   PICKUP_ORDER_METADATA_KEY,
 } from "../workflows/utils/split-completion"
+import { holdExpiresAt, type OrderPaymentFacts } from "../workflows/utils/order-payment/state"
 
 type QueryAddress = {
   first_name?: string | null
@@ -38,8 +39,17 @@ type QueryOrder = {
     amount?: number
     captured_amount?: number
     refunded_amount?: number
-    payments?: { provider_id: string }[]
+    payments?: QueryPayment[]
   }[]
+}
+
+type QueryPayment = {
+  provider_id: string
+  amount?: number
+  created_at?: Date | string | null
+  canceled_at?: Date | string | null
+  captured_at?: Date | string | null
+  captures?: { amount: number }[]
 }
 
 type QueryStatus = {
@@ -78,6 +88,11 @@ export type OrderQueryRow = {
     amount: number | null
     captured_amount: number | null
     refunded_amount: number | null
+    /**
+     * When the live card hold runs out (ISO), null without one: released,
+     * captured, or not a card. The OS's "a zárolás 2 nap múlva lejár" reads it.
+     */
+    hold_expires_at: string | null
   } | null
   /** A mixed cart's other order: the pickup order of a shipped one, or the shipped parent. */
   related_order: { id: string; role: "pickup" | "parent" } | null
@@ -117,8 +132,23 @@ const paymentOf = (order: QueryOrder): OrderQueryRow["payment"] => {
     amount: collection.amount ?? null,
     captured_amount: collection.captured_amount ?? null,
     refunded_amount: collection.refunded_amount ?? null,
+    hold_expires_at: holdExpiresAt({ metadata: order.metadata, payments: paymentFactsOf(order) }),
   }
 }
+
+/** Every payment of every collection, as the payment state reads them. */
+const paymentFactsOf = (order: QueryOrder): OrderPaymentFacts[] =>
+  (order.payment_collections ?? []).flatMap((collection) =>
+    (collection.payments ?? []).map((payment, index) => ({
+      id: String(index),
+      provider_id: payment.provider_id ?? null,
+      amount: payment.amount ?? 0,
+      created_at: payment.created_at ?? null,
+      canceled_at: payment.canceled_at ?? null,
+      captured_at: payment.captured_at ?? null,
+      captured: (payment.captures ?? []).reduce((sum, capture) => sum + capture.amount, 0),
+    }))
+  )
 
 // the keys `linkOrders` writes on the two orders of a mixed cart
 const relatedOrderOf = (order: QueryOrder): OrderQueryRow["related_order"] => {

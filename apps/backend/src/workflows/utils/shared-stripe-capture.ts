@@ -7,6 +7,7 @@ import {
 } from "../../modules/stripe-capture/share"
 import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
 import { refuseWhileEditing } from "./order-edit-hold"
+import { refuseWhileAwaitingPayment } from "./order-payment/state"
 import {
   capturePlainStripePayment,
   type PlainCaptureResult,
@@ -50,6 +51,8 @@ export type CapturePaymentSide = {
   } | null
   /** The order's payments are all canceled (the order was canceled before the capture). */
   payment_canceled?: boolean
+  /** The order's metadata: its payment state (`order-payment/state.ts`) lives there. */
+  metadata?: Record<string, unknown> | null
 }
 
 export type SharedCaptureOperations = {
@@ -167,6 +170,11 @@ export const CAPTURE_ON_STATUS = "out_for_delivery"
  * before the status step, and a capture is not undone when a later step fails:
  * without this, a refused Kiszállítás (an order still in Feldolgozásra vár)
  * took the money and then kept the old status.
+ *
+ * AN ORDER WAITING FOR PAYMENT DOES NOT GO OUT (the lejáró zárolás plan, 2.1):
+ * after "Csúszik a szállítás" its card hold is released, so no capture finds a
+ * live card payment and the order would pass like cash on delivery. Its
+ * payment state is asked before any capture.
  */
 export const captureOnTransition = async (
   input: { order_id: string; to: string },
@@ -175,6 +183,7 @@ export const captureOnTransition = async (
 ): Promise<SharedCaptureResult | PlainCaptureResult | null> => {
   if (input.to !== CAPTURE_ON_STATUS) return null
   await assertAllowed()
+  refuseWhileAwaitingPayment((await ops.loadPair(input.order_id))?.shipped.metadata)
   const shared = await captureSharedStripePayment(input.order_id, ops)
   // not a mixed cart's shared payment: the order's own card payment (C2)
   if (!shared.captured && shared.reason === "not_shared") {

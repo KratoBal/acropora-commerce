@@ -187,4 +187,34 @@ describe("captureOnTransition", () => {
     ).rejects.toThrow("cannot transition")
     expect(log).toEqual([])
   })
+
+  /**
+   * AN ORDER WAITING FOR PAYMENT DOES NOT GO OUT (the lejáró zárolás plan,
+   * 2.1). Its released hold leaves no live card payment, so without this the
+   * capture passes like cash on delivery. What must fail: a released order, a
+   * plain or a mixed one, going to Kiszállítás; a paid one refused.
+   */
+  it("refuses Kiszállítás while the order waits for payment, a plain and a mixed one", async () => {
+    const waiting = { acropora_payment: { state: "awaiting_payment", released_at: "2026-10-05T19:00:00.000Z" } }
+    const released = (side: CapturePaymentSide): CapturePaymentSide => ({ ...side, payment: null, payment_canceled: true, metadata: waiting })
+    for (const pair of [
+      { shipped: released(side("order_plain", 14000, { id: "pay_plain", amount: 14000 })), pickup: null },
+      { shipped: released(shipped()), pickup: released(pickup()) },
+    ]) {
+      const { ops, log } = opsFor(pair)
+      await expect(
+        captureOnTransition({ order_id: pair.shipped.order_id, to: "out_for_delivery" }, ops, allowed)
+      ).rejects.toThrow(/^Fizetésre vár/)
+      expect(log).toEqual([])
+    }
+  })
+
+  it("a paid order (the link's payment captured) goes out without a second capture", async () => {
+    const paid = side("order_plain", 14000, { id: "pay_link", amount: 14000, captured: 14000, provider_id: "pp_stripe_stripe" })
+    const { ops, log } = opsFor({ shipped: { ...paid, metadata: { acropora_payment: { state: "paid" } } }, pickup: null })
+    expect(
+      await captureOnTransition({ order_id: "order_plain", to: "out_for_delivery" }, ops, allowed)
+    ).toEqual({ captured: false, reason: "already_captured" })
+    expect(log).toEqual([])
+  })
 })

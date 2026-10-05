@@ -21,6 +21,7 @@ export type MailToSend = {
     | "order-status-out_for_delivery"
     | "order-status-ready_for_pickup"
     | "order-status-closed"
+    | "order-payment-delayed"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string

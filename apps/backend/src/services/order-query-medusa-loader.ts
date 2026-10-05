@@ -33,6 +33,12 @@ export const ORDER_OVERVIEW_FIELDS = [
   "payment_collections.captured_amount",
   "payment_collections.refunded_amount",
   "payment_collections.payments.provider_id",
+  // the live card hold's expiry (`hold_expires_at`)
+  "payment_collections.payments.amount",
+  "payment_collections.payments.created_at",
+  "payment_collections.payments.canceled_at",
+  "payment_collections.payments.captured_at",
+  "payment_collections.payments.captures.amount",
 ]
 
 // the customer-wide signals need only who ordered and the order's own facts
@@ -47,6 +53,11 @@ const plain = (order: any) => ({
     amount: collection.amount == null ? undefined : Number(collection.amount),
     captured_amount: collection.captured_amount == null ? undefined : Number(collection.captured_amount),
     refunded_amount: collection.refunded_amount == null ? undefined : Number(collection.refunded_amount),
+    payments: (collection.payments ?? []).filter(Boolean).map((payment: any) => ({
+      ...payment,
+      amount: payment.amount == null ? undefined : Number(payment.amount),
+      captures: (payment.captures ?? []).filter(Boolean).map((capture: any) => ({ amount: Number(capture.amount) })),
+    })),
   })),
 })
 

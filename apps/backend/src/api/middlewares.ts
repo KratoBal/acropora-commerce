@@ -25,6 +25,7 @@ import {
   AdminTransitionOrderBusinessStatus,
 } from "./admin/order-business-status/validators";
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
+import { AdminReleaseOrderPaymentHold } from "./admin/order-payment/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
@@ -132,6 +133,12 @@ export default defineMiddlewares({
       middlewares: [
         validateAndTransformBody(AdminResendOrderStatusNotification),
       ],
+    },
+    {
+      // "Csúszik a szállítás": the card hold released, the order waiting for payment.
+      matcher: "/admin/order-payment/:order_id/release-hold",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminReleaseOrderPaymentHold)],
     },
     {
       matcher: "/store/payment-options",
