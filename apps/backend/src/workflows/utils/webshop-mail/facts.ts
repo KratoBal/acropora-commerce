@@ -129,6 +129,11 @@ export const WEBSHOP_MAIL_FACTS_CONTRACT = {
     "items",
     "cod_amount",
     "foxpost_logo_url",
+    // G3 (#490), both optional, added while v1 had not yet rendered a mail
+    // anywhere (the switch off, the OS endpoint not merged): told to the OS
+    // side, so v1 carries them from the start rather than a v2
+    "gls_logo_url",
+    "gls_point_type",
   ],
   RefundMailFacts: ["display_id", "amount", "refunded_total", "last4"],
 } as const

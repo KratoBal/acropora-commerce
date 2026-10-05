@@ -30,6 +30,10 @@ export type ShippedMailFacts = {
   cod_amount: number | null
   /** The official FOXPOST logo on the storefront, absolute; null: no image. */
   foxpost_logo_url: string | null
+  /** The GLS logo for this parcel (its point's kind, or home delivery), absolute; null: no image. */
+  gls_logo_url?: string | null
+  /** A GLS point's kind (parcel-shop / parcel-locker), for the logo's alt text. */
+  gls_point_type?: string | null
 }
 
 export const SHOP_CONTACT = "webshop@acropora.hu"
@@ -67,10 +71,17 @@ export const renderShippedMail = (facts: ShippedMailFacts): MailContent => {
     SHOP_NAME,
   ].join("\n\n")
 
+  const glsAlt = !facts.gls_point
+    ? "GLS"
+    : facts.gls_point_type === "parcel-locker"
+      ? "GLS Automata"
+      : "GLS Csomagpont"
   const logo =
     facts.carrier === "foxpost" && facts.foxpost_logo_url
       ? `<img src="${escapeHtml(facts.foxpost_logo_url)}" alt="FOXPOST – Packeta Group" width="140" style="display:block;margin-bottom:8px;" />`
-      : ""
+      : facts.carrier === "gls" && facts.gls_logo_url
+        ? `<img src="${escapeHtml(facts.gls_logo_url)}" alt="${glsAlt}" ${facts.gls_point ? 'width="140"' : 'width="64"'} style="display:block;margin-bottom:8px;" />`
+        : ""
   const button = facts.tracking_url
     ? `<p style="margin:16px 0 0;"><a href="${escapeHtml(facts.tracking_url)}" style="display:block;background:#0f1720;color:#ffffff;text-align:center;padding:12px 16px;text-decoration:none;font-weight:bold;">Csomag követése</a></p>`
     : ""

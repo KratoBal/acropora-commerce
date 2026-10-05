@@ -2,6 +2,7 @@ import { HttpTypes } from "@medusajs/types"
 
 import { convertToLocale } from "@lib/util/money"
 import {
+  GLS_KOVETKEZO_LEPES,
   KOVETKEZO_LEPES,
   type Teljesites,
   sikeroldal,
@@ -96,7 +97,9 @@ export default async function OrderCompletedTemplate({
                     Mi történik ezután?
                   </p>
                   <p className="mt-1 text-[13px] text-acr-slate">
-                    {KOVETKEZO_LEPES}
+                    {lap.teljesitesek.some((t) => t.szallito === "gls")
+                      ? GLS_KOVETKEZO_LEPES
+                      : KOVETKEZO_LEPES}
                   </p>
                 </div>
               ) : null}
@@ -166,6 +169,16 @@ function TeljesitesBlokk({
     >
       <div className="flex flex-col gap-3 small:flex-row small:items-start">
         {foxpost ? <FoxpostLogo className="h-[44px] w-auto shrink-0" /> : null}
+        {t.logo ? (
+          // a GLS hivatalos logoja a pont fajtajahoz (GLS-prompt 10)
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={t.logo}
+            alt=""
+            className="h-[22px] w-auto shrink-0 small:mt-1"
+            data-testid="teljesites-logo"
+          />
+        ) : null}
         <div className="min-w-0">
           <p
             className={clx(

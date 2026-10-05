@@ -95,7 +95,37 @@ describe("when the shipping mail goes", () => {
     const htext = (haz as { mail: { content: { text: string } } }).mail.content.text
     expect(htext).toContain("GLS házhozszállítás")
     expect(htext).toContain("1111 Budapest, Teszt utca 1.")
-    expect((haz as { mail: { content: { html: string } } }).mail.content.html).not.toContain("<img")
+  })
+
+  /**
+   * THE GLS BRANDING (the GLS prompt, point 12; Figma 508:594, 508:613): the
+   * point's own kind's logo, the general GLS logo at home, from the
+   * storefront's images; no image without the storefront's address.
+   */
+  it("GLS: the logo of the point's kind, the general one at home, none without the storefront", async () => {
+    const html = async (order: Parameters<typeof rendeles>[0], env = ON) =>
+      ((await prepareShippedMail("order_42", { carrier: "gls", tracking_number: "GLS9" }, deps(rendeles(order)), env)) as {
+        mail: { content: { html: string } }
+      }).mail.content.html
+    const pont = (type: string | null) => ({
+      foxpost_point: null,
+      gls_point: { name: "Pont", address: "1111 Budapest, X u. 1.", type },
+    })
+    const base = new URL(ON.ACROPORA_WEBSHOP_URL!).origin
+    expect(await html(pont("parcel-locker"))).toContain(`<img src="${base}/images/gls-automata.png" alt="GLS Automata"`)
+    expect(await html(pont("parcel-shop"))).toContain(`<img src="${base}/images/gls-csomagpont.png" alt="GLS Csomagpont"`)
+    // an order saved before the kind was stored: the Csomagpont logo
+    expect(await html(pont(null))).toContain("/images/gls-csomagpont.png")
+    expect(await html({ foxpost_point: null, method_name: "GLS házhozszállítás" })).toContain(
+      `<img src="${base}/images/gls.png" alt="GLS"`
+    )
+    const { ACROPORA_WEBSHOP_URL: _ignored, ...withoutStorefront } = ON
+    expect(await html(pont("parcel-locker"), withoutStorefront as typeof ON)).not.toContain("<img")
+    // a Foxpost parcel never gets a GLS logo
+    const fox = (await prepareShippedMail("order_42", { carrier: "foxpost", tracking_number: "F1" }, deps(rendeles()), ON)) as {
+      mail: { content: { html: string } }
+    }
+    expect(fox.mail.content.html).not.toContain("/images/gls")
   })
 
   it("not sent: unknown order, switched off, no address, already sent for this parcel", async () => {
