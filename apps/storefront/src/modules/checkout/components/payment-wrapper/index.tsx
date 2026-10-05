@@ -52,7 +52,7 @@ const PaymentWrapper: React.FC<PaymentWrapperProps> = ({
 
   /*
     VEGYES KOSÁR: HALASZTOTT KÁRTYAMEZŐ (Balázs 2026-10-01, 1-es út). A vevő
-    a leadásig egy kosarat lát, mint a SimplePay-nél; a kosár bontása és a két
+    a leadásig egy kosarat lát; a kosár bontása és a két
     rendelés közös PaymentIntentje csak a leadáskor készül (`stripe-start`),
     és a kártya azon erősítődik meg. A mező ezért intent nélkül áll, az
     intenttel egyező beállítással: a kosár összege, csak kártya, kézi levonás.

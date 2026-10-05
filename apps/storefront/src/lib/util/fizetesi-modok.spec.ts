@@ -36,7 +36,7 @@ describe("engedelyezettFizetesiModok", () => {
   it("amit a hatter enged, de a regio nem kinal, az kiesik", () => {
     expect(
       engedelyezettFizetesiModok(REGIO, [
-        { id: "pp_simplepay", role: "ONLINE_CARD" },
+        { id: "pp_masik_kartya", role: "ONLINE_CARD" },
         { id: "pp_acropora_cod", role: "COD" },
       ]),
     ).toEqual([{ id: "pp_acropora_cod", role: "COD" }])
@@ -64,16 +64,14 @@ describe("engedelyezettFizetesiModok", () => {
 })
 
 /**
- * KET KARTYAS SZOLGALTATO (Stripe a SimplePay mellett). MI PIROSIT: ket
- * egyforma "Bankkártyás fizetés" sor, vagy a kiegeszites mas modon is.
+ * A STRIPE AZ EGYETLEN KARTYAS SZOLGALTATO (Balazs 2026-10-05). MI PIROSIT: a
+ * felirat a szolgaltato nevet hordozza (a vevo egy cegnevet olvasna a
+ * fizetesi mod helyett), vagy nem a szerepbol jon.
  */
 describe("fizetesiModCimke", () => {
-  it("a Stripe kártyás módja megkülönböztetve, a többi a szerepéé", () => {
+  it("a felirat a szerepé, a szolgáltató neve nélkül", () => {
     expect(
       fizetesiModCimke({ id: "pp_stripe_stripe", role: "ONLINE_CARD" }),
-    ).toBe("Bankkártyás fizetés (Stripe)")
-    expect(
-      fizetesiModCimke({ id: "pp_simplepay_simplepay", role: "ONLINE_CARD" }),
     ).toBe("Bankkártyás fizetés")
     expect(fizetesiModCimke({ id: "pp_acropora_cod", role: "COD" })).toBe(
       "Utánvét",

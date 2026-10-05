@@ -6,6 +6,7 @@ import Radio from "@modules/common/components/radio"
 
 import { isManual } from "@lib/constants"
 import SkeletonCardDetails from "@modules/skeletons/components/skeleton-card-details"
+import { STRIPE_FIZETESI_MEZO } from "@lib/util/stripe-megjelenes"
 import { PaymentElement } from "@stripe/react-stripe-js"
 import PaymentTest from "../payment-test"
 import { StripeContext } from "../payment-wrapper/stripe-wrapper"
@@ -91,7 +92,7 @@ export const StripePaymentContainer = ({
               A kártya adatai:
             </Text>
             <PaymentElement
-              options={{ layout: "accordion" }}
+              options={STRIPE_FIZETESI_MEZO}
               onChange={(e) => {
                 setError(null)
                 setPaymentComplete(e.complete)

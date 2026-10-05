@@ -1,5 +1,7 @@
 # P4: the checkout background
 
+> **2026-10-05: SimplePay is removed.** Balázs decided that only Stripe stays (card, Apple Pay, Google Pay; no Link). The SimplePay provider, its IPN, its start and return routes, and the data-transfer notice are gone from the code. The SimplePay sections below are kept as history: they explain why the shared payment of a mixed cart looks the way it does. Stripe follows the same split pattern (`stripe-start`, one PaymentIntent for both orders).
+
 Balázs allowed the P4 **background** on 2026-09-29 15:32 UTC: several shipping groups in one cart (live animals collected in person, equipment by courier), SimplePay, and the pickup-point picker. Scope is the test storefront and the stage backend only. Redrawing the cart and checkout screens is **not** part of it; that waits for his separate word, and so does P3.
 
 The plan splits it into four PRs:

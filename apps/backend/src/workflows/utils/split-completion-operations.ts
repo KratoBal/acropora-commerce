@@ -19,9 +19,9 @@ import {
 } from "@medusajs/medusa/core-flows"
 
 import {
-  SIMPLEPAY_DATA_KEY,
-  isSharedSimplePay,
-} from "../../modules/simplepay/service"
+  isSharedCardPayment,
+  stripeShareFactsOf,
+} from "../../modules/stripe-capture/share"
 import { reconcileCartCashOnDeliveryFeeWorkflow } from "../reconcile-cart-cod-fee"
 import { planCashOnDeliveryFee } from "./cod-fee-reconciliation"
 import { loadCartCashOnDeliveryFeeState } from "./load-cart-cod-fee-state"
@@ -38,7 +38,6 @@ import {
   pickupPromoCodes,
   shippingProfileGaps,
 } from "./split-completion"
-import { cardShareFactsOf } from "./card-share-facts"
 
 type Container = MedusaContainer
 
@@ -124,33 +123,10 @@ export const toSplitCart = (raw: any): SplitCart => ({
     }))
   ),
   has_shipping_method: (raw.shipping_methods ?? []).length > 0,
-  // a shared card payment of either provider: the facts have the same shape
-  shared_payment: isSharedSimplePay(
-    cardShareFactsOf(raw.payment_collection?.payment_sessions?.[0]?.data)
+  shared_payment: isSharedCardPayment(
+    stripeShareFactsOf(raw.payment_collection?.payment_sessions?.[0]?.data)
   ),
 })
-
-/**
- * The payer's details SimplePay needs for 3DS (L758-773), from the cart itself:
- * its email and billing address, never from the request.
- */
-export const simplePayPayerOf = (raw: any): Record<string, unknown> => {
-  const address = raw?.billing_address ?? {}
-  const name = [address.first_name, address.last_name].filter(Boolean).join(" ")
-  return {
-    customer_email: raw?.email ?? undefined,
-    invoice: {
-      name,
-      company: address.company || undefined,
-      country: address.country_code ?? "hu",
-      city: address.city ?? "",
-      zip: address.postal_code ?? "",
-      address: address.address_1 ?? "",
-      address2: address.address_2 || undefined,
-      phone: address.phone || undefined,
-    },
-  }
-}
 
 /**
  * The Medusa side of `completeSplitCart`: each operation is one core workflow
@@ -416,9 +392,7 @@ export const sharedPaymentOperations = (
     return total
   },
 
-  payerOf: async (cartId) => simplePayPayerOf(await loadRawCart(container, cartId)),
-
-  startPayment: async (cartId, providerId, data, factsKey = SIMPLEPAY_DATA_KEY) => {
+  startPayment: async (cartId, providerId, data, factsKey) => {
     let raw = await loadRawCart(container, cartId)
 
     if (!raw?.payment_collection?.id) {

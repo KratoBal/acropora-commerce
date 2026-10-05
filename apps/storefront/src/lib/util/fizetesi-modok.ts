@@ -58,14 +58,10 @@ export const engedelyezettFizetesiModok = <T extends { id: string }>(
   })
 
 /**
- * A VEVO ALTAL OLVASOTT FELIRAT EGY MODRA. A szerepe adja (lasd fent); a Stripe
- * kartyas modja kiegeszitest kap, mert mellette a SimplePay is kartyas, es ket
- * egyforma "Bankkártyás fizetés" sor kozott a vevo nem tudna valasztani
- * (Stripe a SimplePay mellett, Balazs 2026-09-30, csak a teszt kirakaton).
- * A Stripe felismerese az azonosito elotagja (`pp_stripe_`), ugyanaz, amit a
- * sablon `isStripeLike`-ja a kartyamezohoz hasznal.
+ * A VEVO ALTAL OLVASOTT FELIRAT EGY MODRA: a szerepe adja (lasd fent). A Stripe
+ * az egyetlen kartyas szolgaltato (Balazs, 2026-10-05), tehat a kartyas sornak
+ * nem kell megkulonbozteto kiegeszites; az Apple Pay es a Google Pay a
+ * kartyamezoben jelenik meg, ha a vevo eszkoze tudja.
  */
 export const fizetesiModCimke = (mod: EngedelyezettFizetesiMod): string =>
-  mod.role === "ONLINE_CARD" && mod.id.startsWith("pp_stripe_")
-    ? `${FIZETESI_SZEREP_CIMKE.ONLINE_CARD} (Stripe)`
-    : FIZETESI_SZEREP_CIMKE[mod.role]
+  FIZETESI_SZEREP_CIMKE[mod.role]

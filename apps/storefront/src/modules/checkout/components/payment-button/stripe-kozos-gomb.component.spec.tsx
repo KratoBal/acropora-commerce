@@ -20,7 +20,6 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
   unstable_rethrow: () => {},
 }))
-vi.mock("@lib/data/simplepay", () => ({ inditsKartyasFizetest: vi.fn() }))
 vi.mock("@lib/data/cart", () => ({
   placeOrder: vi.fn(async () => {
     sorrend.log.push("placeOrder")

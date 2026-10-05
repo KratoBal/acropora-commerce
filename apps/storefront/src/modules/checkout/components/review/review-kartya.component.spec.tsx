@@ -2,15 +2,11 @@ import { HttpTypes } from "@medusajs/types"
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-const lepes = vi.hoisted(() => ({ ertek: "step=review&fizetes=kartya" }))
+const lepes = vi.hoisted(() => ({ ertek: "step=review&fizetes=stripe" }))
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(lepes.ertek),
   useParams: () => ({ countryCode: "hu" }),
   unstable_rethrow: vi.fn(),
-}))
-vi.mock("@lib/data/simplepay", () => ({
-  valasszKartyat: vi.fn(),
-  inditsKartyasFizetest: vi.fn(),
 }))
 // a vegyes kosar Stripe-utjanak szerver-muveletei (a `server-only` orzo miatt mock)
 vi.mock("@lib/data/stripe", () => ({
@@ -27,7 +23,7 @@ import Review from "./index"
 
 afterEach(() => {
   cleanup()
-  lepes.ertek = "step=review&fizetes=kartya"
+  lepes.ertek = "step=review&fizetes=stripe"
 })
 
 const kosar = {
@@ -40,21 +36,19 @@ const kosar = {
 } as unknown as HttpTypes.StoreCart
 
 /**
- * AZ ELLENORZES LEPESE ES A KARTYAS VALASZTAS (P4-4). MI PIROSIT: ha a
- * fizetesi lepes `fizetes=kartya` jelzese nem jut el a gombig.
+ * AZ ELLENORZES LEPESE ES A KARTYAS VALASZTAS. MI PIROSIT: ha a fizetesi lepes
+ * jelzese nem jut el a gombig; ha a megszunt SimplePay `fizetes=kartya`
+ * jelzese meg mindig gombot adna.
  */
 describe("az ellenőrzés lépése", () => {
-  it("a kártyás jelzésre a bankkártyás gomb áll", () => {
-    render(<Review cart={kosar} fizetesiSzerep={null} />)
-    expect(screen.getByTestId("submit-order-button")).toHaveTextContent(
-      "Fizetés bankkártyával",
-    )
-  })
-
-  it("jelzés nélkül nincs bankkártyás gomb", () => {
-    lepes.ertek = "step=review"
-    render(<Review cart={kosar} fizetesiSzerep={null} />)
-    expect(screen.queryByText("Fizetés bankkártyával")).toBeNull()
+  it("a megszűnt kártyás jelzés nem ad leadó gombot, és jelzés nélkül sincs", () => {
+    for (const ertek of ["step=review&fizetes=kartya", "step=review"]) {
+      lepes.ertek = ertek
+      render(<Review cart={kosar} fizetesiSzerep={null} />)
+      expect(screen.queryByText("Rendelés leadása")).toBeNull()
+      expect(screen.getByText("Válassz fizetési módot")).toBeInTheDocument()
+      cleanup()
+    }
   })
 
   /*
@@ -68,6 +62,5 @@ describe("az ellenőrzés lépése", () => {
     expect(screen.getByTestId("submit-order-button")).toHaveTextContent(
       "Rendelés leadása",
     )
-    expect(screen.queryByText("Fizetés bankkártyával")).toBeNull()
   })
 })

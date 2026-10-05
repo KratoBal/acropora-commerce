@@ -36,7 +36,7 @@ const withRemittance = (data: Record<string, unknown> = {}) => ({
 /** A cart that selected cash on delivery through the real provider id. */
 const envWithCodProvider = {
   ACROPORA_PP_COD: CASH_ON_DELIVERY_PROVIDER_ID,
-  ACROPORA_PP_ONLINE_CARD: "pp_simplepay_simplepay",
+  ACROPORA_PP_ONLINE_CARD: "pp_masik_kartya",
 } as NodeJS.ProcessEnv
 
 const feeLine = (id: string, unit_price = 450) => ({
@@ -177,7 +177,7 @@ describe("3. no payment record is created at checkout", () => {
 
 describe("4. a cart that does not pay on delivery owes no fee", () => {
   it("owes nothing when the card provider is selected", () => {
-    expect(feeDueFor("pp_simplepay_simplepay", "GLS_NORMAL")).toBe(0)
+    expect(feeDueFor("pp_masik_kartya", "GLS_NORMAL")).toBe(0)
   })
 
   it("owes nothing when no payment method is selected yet", () => {
@@ -234,7 +234,7 @@ describe("6. the duplicate protection still holds with the new provider", () => 
 
   it("takes the fee off when the payment method changes away", () => {
     const plan = planCashOnDeliveryFee({
-      dueHuf: feeDueFor("pp_simplepay_simplepay", "GLS_NORMAL"),
+      dueHuf: feeDueFor("pp_masik_kartya", "GLS_NORMAL"),
       items: [goodsLine, feeLine("cali_fee")],
     })
 

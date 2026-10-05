@@ -55,7 +55,7 @@ describe("POST /store/carts/:id/complete-split", () => {
 
     const body = await call({
       ACROPORA_PP_PAY_AT_STORE: " pp_system_default ",
-      ACROPORA_PP_ONLINE_CARD: "pp_simplepay_simplepay,pp_stripe_stripe",
+      ACROPORA_PP_ONLINE_CARD: "pp_masik_kartya,pp_stripe_stripe",
       ACROPORA_SO_PICKUP: "so_bolti",
     })
 
@@ -65,7 +65,7 @@ describe("POST /store/carts/:id/complete-split", () => {
     expect(completeSplitCart.mock.calls[0][0]).toBe("cart_1")
     expect(completeSplitCart.mock.calls[0][2]).toEqual({
       payAtStoreProviderId: "pp_system_default",
-      onlineCardProviderIds: ["pp_simplepay_simplepay", "pp_stripe_stripe"],
+      onlineCardProviderIds: ["pp_masik_kartya", "pp_stripe_stripe"],
     })
     expect(body).toEqual({
       orders: [

@@ -7,9 +7,8 @@ import {
 import { allowedPaymentRolesFor } from "../payment-eligibility"
 
 /**
- * The environment of a live-like installation: cash on delivery and the
- * built-in provider are mapped, online card is not, because no SimplePay
- * provider is registered yet.
+ * The environment of an installation without STRIPE_API_KEY: cash on delivery
+ * and the built-in provider are mapped, online card is not.
  */
 const ELES_KORNYEZET = {
   ACROPORA_PP_COD: "pp_acropora_cod",
@@ -88,43 +87,47 @@ describe("which providers a cart may pay with", () => {
 })
 
 /**
- * STRIPE NEXT TO SIMPLEPAY (Balázs 2026-09-30, test storefront only). What must
- * fail: a second card provider that is not offered, or offered first; a mixed
- * cart offered Stripe, which the split at completion cannot pay.
+ * STRIPE, THE ONLY CARD PROVIDER (Balázs 2026-10-05). What must fail: Stripe
+ * not offered; a mixed cart offered a card while the Stripe lock is shut, or
+ * offered any card provider other than Stripe (the split at completion cannot
+ * pay it); the lock open and Stripe still missing.
  */
-describe("two card providers", () => {
-  const KARTYAK = {
+describe("the card provider", () => {
+  const KARTYA = {
     ...ELES_KORNYEZET,
-    ACROPORA_PP_ONLINE_CARD: " pp_simplepay_simplepay , pp_stripe_stripe,pp_simplepay_simplepay ",
+    // listed twice and padded: one id, trimmed
+    ACROPORA_PP_ONLINE_CARD: " pp_stripe_stripe , pp_masik_kartya,pp_stripe_stripe ",
   } as NodeJS.ProcessEnv
 
-  it("both are offered, in the listed order, SimplePay first", () => {
-    expect(onlineCardProviderIds(KARTYAK)).toEqual([
-      "pp_simplepay_simplepay",
-      "pp_stripe_stripe",
-    ])
+  it("Stripe is offered, in the listed order", () => {
+    expect(onlineCardProviderIds(KARTYA)).toEqual(["pp_stripe_stripe", "pp_masik_kartya"])
     expect(
       allowedPaymentProvidersFor(
         allowedPaymentRolesFor(["PICKUP"]),
-        buildProviderRoleMap(KARTYAK)
+        buildProviderRoleMap(KARTYA)
       )
     ).toEqual([
-      { id: "pp_simplepay_simplepay", role: "ONLINE_CARD" },
       { id: "pp_stripe_stripe", role: "ONLINE_CARD" },
+      { id: "pp_masik_kartya", role: "ONLINE_CARD" },
       { id: "pp_system_default", role: "PAY_AT_STORE" },
     ])
   })
 
-  it("a mixed cart keeps SimplePay and the other roles, and loses Stripe", () => {
+  it("a mixed cart gets Stripe only with the lock open, and never another card", () => {
     const offer = allowedPaymentProvidersFor(
       allowedPaymentRolesFor(["PICKUP"]),
-      buildProviderRoleMap(KARTYAK)
+      buildProviderRoleMap(KARTYA)
     )
 
-    expect(providersForMixedCart(offer, true)).toEqual([
-      { id: "pp_simplepay_simplepay", role: "ONLINE_CARD" },
+    expect(providersForMixedCart(offer, true, KARTYA)).toEqual([
       { id: "pp_system_default", role: "PAY_AT_STORE" },
     ])
-    expect(providersForMixedCart(offer, false)).toEqual(offer)
+    expect(
+      providersForMixedCart(offer, true, { ...KARTYA, ACROPORA_STRIPE_MIXED_CART: "true" })
+    ).toEqual([
+      { id: "pp_stripe_stripe", role: "ONLINE_CARD" },
+      { id: "pp_system_default", role: "PAY_AT_STORE" },
+    ])
+    expect(providersForMixedCart(offer, false, KARTYA)).toEqual(offer)
   })
 })

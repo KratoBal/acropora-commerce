@@ -2,7 +2,6 @@
 
 import { isManual, isStripeLike } from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
-import { inditsKartyasFizetest } from "@lib/data/simplepay"
 import {
   inditsStripeKozosFizetest,
   stripeVisszarendezes,
@@ -30,8 +29,6 @@ type PaymentButtonProps = {
    * egy letiltott gombot latna egy ervenyes fizetesi mod mellett.
    */
   fizetesiSzerep?: "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
-  /** A vevo bankkartyat valasztott es elfogadta a nyilatkozatot (P4-4). */
-  kartyas?: boolean
   /** Vegyes kosar, Stripe: a kozos fizetes a leadaskor keszul. */
   stripeKozos?: boolean
   "data-testid": string
@@ -40,7 +37,6 @@ type PaymentButtonProps = {
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   fizetesiSzerep,
-  kartyas,
   stripeKozos,
   "data-testid": dataTestId,
 }) => {
@@ -54,15 +50,6 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
 
   switch (true) {
-    // BANKKARTYA (P4-4): a tranzakcio ITT indul, a nyilatkozat elfogadasa utan.
-    case !!kartyas:
-      return (
-        <SimplePayGomb
-          notReady={notReady}
-          cartId={cart.id}
-          data-testid={dataTestId}
-        />
-      )
     case !!stripeKozos:
       return (
         <StripeKozosGomb
@@ -121,7 +108,7 @@ const szamlazasiAdatok = (cart: HttpTypes.StoreCart) => ({
 
 /**
  * VEGYES KOSÁR, STRIPE (Balázs 2026-10-01, 1-es út): a két rendelés EGY
- * Stripe-fizetése a leadáskor készül, a SimplePay mintájára.
+ * Stripe-fizetése a leadáskor készül.
  *
  * A sorrend kötött:
  * 1. `elements.submit()`: a halasztott kártyamező ellenőrzése, mielőtt bármi
@@ -419,60 +406,3 @@ const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
 }
 
 export default PaymentButton
-
-/**
- * A BANKKARTYAS LEADAS (P4-4): a hatter elinditja a tranzakciot (vegyes
- * kosarnal a bontas utan), es a vevo a SimplePay fizetooldalara megy. A
- * rendeles a fizetes utan jon letre (az IPN vagy a visszateres), nem itt.
- */
-const SimplePayGomb = ({
-  notReady,
-  cartId,
-  "data-testid": dataTestId,
-}: {
-  notReady: boolean
-  cartId: string
-  "data-testid"?: string
-}) => {
-  const [submitting, setSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  const handlePayment = async () => {
-    setSubmitting(true)
-    setErrorMessage(null)
-
-    try {
-      const eredmeny = await inditsKartyasFizetest(cartId)
-
-      if (!eredmeny.ok) {
-        setErrorMessage(eredmeny.uzenet)
-        setSubmitting(false)
-        return
-      }
-
-      // Az oldal elhagyasa: a gomb toltes allapotban marad, amig a bongeszo atvisz.
-      window.location.assign(eredmeny.cim)
-    } catch {
-      setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <>
-      <Button
-        disabled={notReady}
-        isLoading={submitting}
-        onClick={handlePayment}
-        size="large"
-        data-testid={dataTestId}
-      >
-        Fizetés bankkártyával
-      </Button>
-      <ErrorMessage
-        error={errorMessage}
-        data-testid="simplepay-payment-error-message"
-      />
-    </>
-  )
-}

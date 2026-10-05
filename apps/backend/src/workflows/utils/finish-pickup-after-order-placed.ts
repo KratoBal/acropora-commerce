@@ -10,8 +10,7 @@ import { PICKUP_CART_METADATA_KEY } from "./split-completion"
  * was completed only by our `complete-split` route, which the customer's
  * browser calls. A customer who closes the tab after paying would leave the
  * shipped order placed and the animal's order missing, its money in the hold,
- * and the capture at Kiszállítás stuck on "no pickup order payment". SimplePay
- * has its IPN for this; Stripe had nothing.
+ * and the capture at Kiszállítás stuck on "no pickup order payment".
  *
  * So `order.placed` for a cart with a pickup cart runs the same completion the
  * route runs. It is idempotent and takes the same lock: if the route is

@@ -133,7 +133,7 @@ describe("completing a cart", () => {
               metadata: {},
               items: [{ id: "l1", variant_id: "v1", requires_shipping: true }],
               payment_collection: {
-                payment_sessions: [{ data: { simplepay: { transactionId: 1, orderRef: "r", total: 5000, own: 5000 } } }],
+                payment_sessions: [{ data: { id: "pi_1", stripe_share: { transactionId: "pi_1", total: 5000, own: 5000 } } }],
               },
             },
           ],

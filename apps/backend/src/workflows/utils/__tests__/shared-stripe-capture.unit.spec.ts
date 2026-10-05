@@ -120,7 +120,7 @@ describe("captureSharedStripePayment", () => {
   it("not a shared Stripe payment, or the pickup order itself: nothing is touched", async () => {
     for (const pair of [
       null,
-      { shipped: side("o", 100, { id: "p", amount: 100, data: { simplepay: { transactionId: 1 } } }), pickup: null },
+      { shipped: side("o", 100, { id: "p", amount: 100, data: { id: "pi_1" } }), pickup: null },
       { shipped: pickup(), pickup: null },
     ]) {
       const { ops, log } = opsFor(pair)

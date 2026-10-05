@@ -69,24 +69,9 @@ module.exports = defineConfig({
             resolve: "./src/modules/acropora-payment",
             id: "cod",
           },
-          {
-            // P4-3a: SimplePay API v2 card payment, pp_simplepay_simplepay.
-            // Unconfigured it loads but refuses every call, and it is not
-            // offered until it is linked to a region and named by
-            // ACROPORA_PP_ONLINE_CARD. SIMPLEPAY_SANDBOX is the sandbox unless
-            // it is exactly "false".
-            resolve: "./src/modules/simplepay",
-            id: "simplepay",
-            options: {
-              merchant: process.env.SIMPLEPAY_MERCHANT,
-              secretKey: process.env.SIMPLEPAY_SECRET_KEY,
-              sandbox: process.env.SIMPLEPAY_SANDBOX,
-              backUrl: process.env.SIMPLEPAY_BACK_URL,
-            },
-          },
-          // Stripe, pp_stripe_stripe: only when STRIPE_API_KEY is set (see
-          // src/workflows/utils/stripe-config.ts). Offered only once linked to the region
-          // and listed in ACROPORA_PP_ONLINE_CARD after SimplePay.
+          // Stripe, pp_stripe_stripe, the only card provider: only when
+          // STRIPE_API_KEY is set (see src/workflows/utils/stripe-config.ts).
+          // Offered once linked to the region and named by ACROPORA_PP_ONLINE_CARD.
           ...stripeProviders(),
         ],
       },
