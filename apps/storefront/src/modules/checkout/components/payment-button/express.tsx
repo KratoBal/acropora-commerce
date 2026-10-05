@@ -69,7 +69,10 @@ export default function ExpressFizetes({
   tiltva,
   onAllapot,
   onHiba,
+  elotte,
 }: {
+  /** A fizetes inditasa elott (az ASZF rogzitese); ha nem sikerul, nincs fizetes. */
+  elotte?: () => Promise<{ ok: true } | { ok: false; uzenet: string }>
   cart: HttpTypes.StoreCart
   vegyes: boolean
   tiltva: boolean
@@ -104,6 +107,15 @@ export default function ExpressFizetes({
     onHiba(null)
     onAllapot("feldolgozas")
     try {
+      if (elotte) {
+        const elozetes = await elotte()
+        if (!elozetes.ok) {
+          esemeny.paymentFailed({ reason: "fail" })
+          onHiba(elozetes.uzenet)
+          onAllapot("alap")
+          return
+        }
+      }
       let titok: string | undefined
       if (vegyes) {
         const ellenorzes = await elements.submit()

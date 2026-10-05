@@ -38,6 +38,28 @@ export const PICKUP_ORDER_METADATA_KEY = "acropora_pickup_order_id"
 export const PARENT_ORDER_METADATA_KEY = "acropora_parent_order_id"
 
 /**
+ * THE ÁSZF ACCEPTANCE TRAVELS TO THE PICKUP CART (card 4a2b252d; barracuda's
+ * measurement, 5371). The storefront writes it on the cart before the payment
+ * starts (`aszf_elfogadas`: time, version, document, the same record as at
+ * registration). Medusa copies a cart's metadata onto its order
+ * (`completeCartWorkflow`, core-flows 2.20.1 complete-cart.js:454), so the
+ * shipped order has it; the pickup cart is created here, and got only its
+ * parent's id, so the live-animal order was placed without the record.
+ */
+export const ASZF_METADATA_KEY = "aszf_elfogadas"
+
+/** The pickup cart's metadata: its parent, and the parent's ÁSZF acceptance if there is one. */
+export const pickupCartMetadata = (
+  parentId: string,
+  parentMetadata: Record<string, unknown> | null | undefined
+): Record<string, unknown> => ({
+  [PARENT_CART_METADATA_KEY]: parentId,
+  ...(parentMetadata?.[ASZF_METADATA_KEY] !== undefined
+    ? { [ASZF_METADATA_KEY]: parentMetadata[ASZF_METADATA_KEY] }
+    : {}),
+})
+
+/**
  * The code in the refusal's message when the split would change the discount;
  * the storefront shows the customer what to do on it.
  */

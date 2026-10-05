@@ -35,6 +35,7 @@ import {
   SharedPaymentOperations,
   SPLIT_LOCK_KEY,
   SplitOperations,
+  pickupCartMetadata,
   pickupPromoCodes,
   shippingProfileGaps,
 } from "./split-completion"
@@ -167,7 +168,7 @@ export const splitCompletionOperations = (
           currency_code: raw.currency_code,
           shipping_address: copyAddress(raw.shipping_address),
           billing_address: copyAddress(raw.billing_address),
-          metadata: { [PARENT_CART_METADATA_KEY]: from.id },
+          metadata: pickupCartMetadata(from.id, raw.metadata),
         },
       })
       await updateCartWorkflow(container).run({
