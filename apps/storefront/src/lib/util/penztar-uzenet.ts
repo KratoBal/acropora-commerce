@@ -102,3 +102,7 @@ export function rendelesHibaUzenet(hiba: unknown): string {
 }
 
 export { hibaAllapota }
+
+/** Az ASZF-elfogadas rogzitese nem sikerult: a fizetes el sem indul. */
+export const ASZF_ROGZITES_HIBA =
+  "Az ÁSZF elfogadását most nem sikerült rögzíteni, ezért a fizetés nem indult el. Próbáld újra."

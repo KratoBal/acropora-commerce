@@ -14,9 +14,17 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("step=payment"),
   unstable_rethrow: () => {},
 }))
+const cartMock = vi.hoisted(() => ({
+  rogzitsAszfElfogadast: vi.fn(),
+  placeOrder: vi.fn(),
+}))
 vi.mock("@lib/data/cart", () => ({
   initiatePaymentSession: vi.fn().mockResolvedValue({ ok: true }),
-  placeOrder: vi.fn(),
+  placeOrder: cartMock.placeOrder,
+  rogzitsAszfElfogadast: cartMock.rogzitsAszfElfogadast,
+}))
+const stripeMock = vi.hoisted(() => ({
+  confirmPayment: vi.fn(),
 }))
 vi.mock("@lib/data/payment", () => ({
   egyeztesdAzUtanvetDijat: vi
@@ -54,7 +62,7 @@ vi.mock("@stripe/react-stripe-js", async () => {
       }, [onReady])
       return <div data-testid="stripe-express" />
     },
-    useStripe: () => ({}),
+    useStripe: () => stripeMock,
     useElements: () => ({ getElement: () => null }),
   }
 })
@@ -161,5 +169,49 @@ describe("a fizetési oldal", () => {
     oldal()
     const cim = screen.getByRole("heading", { name: "Fizetés" })
     expect(cim.parentElement?.className).toContain("hidden")
+  })
+
+  /**
+   * AZ ASZF A KOSARRA KERUL, MIELOTT A FIZETES INDUL (kartya 4a2b252d). MI
+   * PIROSIT: ha a megerosites a rogzites elott, vagy nelkule indulna; ha a
+   * rogzites hibaja utan is lenne fizetes.
+   */
+  it("a leadás előbb az ÁSZF-et rögzíti a kosáron, aztán erősít meg", async () => {
+    cartMock.rogzitsAszfElfogadast.mockResolvedValue({ ok: true })
+    stripeMock.confirmPayment.mockResolvedValue({
+      error: { type: "card_error", message: "elutasitva" },
+    })
+    oldal()
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("aszf-pipa"))
+    })
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("submit-order-button"))
+    })
+    expect(cartMock.rogzitsAszfElfogadast).toHaveBeenCalledWith("cart-1")
+    expect(stripeMock.confirmPayment).toHaveBeenCalledTimes(1)
+    expect(
+      cartMock.rogzitsAszfElfogadast.mock.invocationCallOrder[0],
+    ).toBeLessThan(stripeMock.confirmPayment.mock.invocationCallOrder[0])
+  })
+
+  it("ha a rögzítés nem sikerül, nincs fizetés, és a hiba kiíródik", async () => {
+    cartMock.rogzitsAszfElfogadast.mockResolvedValue({
+      ok: false,
+      uzenet: "Az ÁSZF elfogadását most nem sikerült rögzíteni.",
+    })
+    oldal()
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("aszf-pipa"))
+    })
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("submit-order-button"))
+    })
+    expect(stripeMock.confirmPayment).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText(
+        "Az ÁSZF elfogadását most nem sikerült rögzíteni.",
+      ),
+    ).toBeInTheDocument()
   })
 })

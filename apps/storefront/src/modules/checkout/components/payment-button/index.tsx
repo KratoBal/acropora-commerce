@@ -122,6 +122,11 @@ type StripeGombProps = {
   /** Az indulo allapot (a 3DS utani elutasitas: "Próbáld újra"). */
   kezdoAllapot?: StripeAllapot
   className?: string
+  /**
+   * Ami a fizetes INDITASA ELOTT kell (a fizetesi oldalon: az ASZF-elfogadas
+   * rogzitese a kosaron). Ha nem sikerul, a fizetes el sem indul.
+   */
+  elotte?: () => Promise<{ ok: true } | { ok: false; uzenet: string }>
 }
 
 /**
@@ -185,6 +190,7 @@ export const StripeKozosGomb = ({
   onAllapot,
   kezdoAllapot,
   className,
+  elotte,
 }: StripeGombProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
@@ -227,6 +233,14 @@ export const StripeKozosGomb = ({
     mezoZarolasa(elements, true)
 
     try {
+      if (elotte) {
+        const elozetes = await elotte()
+        if (!elozetes.ok) {
+          setErrorMessage(elozetes.uzenet)
+          jelez("alap")
+          return
+        }
+      }
       const ellenorzes = await elements.submit()
       if (ellenorzes.error) {
         if (stripeHibaFajta(ellenorzes.error) !== "validacio") {
@@ -325,6 +339,7 @@ export const StripePaymentButton = ({
   onAllapot,
   kezdoAllapot,
   className,
+  elotte,
 }: StripeGombProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
@@ -374,6 +389,14 @@ export const StripePaymentButton = ({
     mezoZarolasa(elements, true)
 
     try {
+      if (elotte) {
+        const elozetes = await elotte()
+        if (!elozetes.ok) {
+          setErrorMessage(elozetes.uzenet)
+          jelez("alap")
+          return
+        }
+      }
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {

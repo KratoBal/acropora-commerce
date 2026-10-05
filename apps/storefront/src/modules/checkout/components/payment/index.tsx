@@ -7,7 +7,11 @@ import {
   fizetesiModCimke,
 } from "@lib/util/fizetesi-modok"
 import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
-import { initiatePaymentSession, placeOrder } from "@lib/data/cart"
+import {
+  initiatePaymentSession,
+  placeOrder,
+  rogzitsAszfElfogadast,
+} from "@lib/data/cart"
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
 import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { convertToLocale } from "@lib/util/money"
@@ -292,6 +296,14 @@ const Payment = ({
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
+      // a fizetesi oldalon az ASZF a kosarra kerul, mielott tovabblepunk
+      if (oldal) {
+        const rogzites = await rogzitsAszfElfogadast(cart.id)
+        if (!rogzites.ok) {
+          setError(rogzites.uzenet)
+          return
+        }
+      }
       const shouldInputPaymentDetails =
         isStripeLike(selectedPaymentMethod) && !activeSession
 
@@ -390,6 +402,8 @@ const Payment = ({
     mod cimkejevel ("Fizetés: Bankkártya"), es az ASZF pipa nelkul tiltva all.
   */
   const nemElfogadva = oldal && !aszfElfogadva
+  // a fizetesi oldalon a pipa a kosarra kerul, mielott barmilyen fizetes indul
+  const aszfRogzites = oldal ? () => rogzitsAszfElfogadast(cart.id) : undefined
   const ctaOsztaly = oldal
     ? `${STRIPE_CTA_OSZTALY} small:!w-full small:!min-w-0`
     : STRIPE_CTA_OSZTALY
@@ -473,6 +487,7 @@ const Payment = ({
                             oldal && stripeKesz ? (
                               <ExpressFizetes
                                 cart={cart}
+                                elotte={aszfRogzites}
                                 vegyes={!!stripeKozosValasztva}
                                 tiltva={nemElfogadva}
                                 onAllapot={setStripeAllapot}
@@ -619,6 +634,7 @@ const Payment = ({
                         ) : stripeKozosValasztva ? (
                           <StripeKozosGomb
                             cart={cart}
+                            elotte={aszfRogzites}
                             notReady={nemKesz || nemElfogadva}
                             data-testid="submit-order-button"
                             onAllapot={setStripeAllapot}
@@ -628,6 +644,7 @@ const Payment = ({
                         ) : (
                           <StripePaymentButton
                             cart={cart}
+                            elotte={aszfRogzites}
                             notReady={nemKesz || !activeSession || nemElfogadva}
                             data-testid="submit-order-button"
                             onAllapot={setStripeAllapot}

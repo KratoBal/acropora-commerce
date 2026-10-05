@@ -12,6 +12,7 @@ import {
   chooseCardPayment,
   completeSplitCart,
   startCardPayment,
+  pickupCartMetadata,
 } from "../split-completion"
 
 /**
@@ -799,5 +800,26 @@ describe("rejoinAndClearSharedSplit", () => {
     const plain = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})
     expect(await rejoinAndClearSharedSplit("cart_1", plain.ops)).toEqual({ rejoined: false })
     expect(plain.log.filter((entry) => !entry.startsWith("lock"))).toEqual([])
+  })
+})
+
+/**
+ * THE PICKUP CART CARRIES THE ÁSZF ACCEPTANCE (card 4a2b252d). MI PIROSÍT: ha
+ * a bolti kosár (és így az élő állatos rendelés) a rekord nélkül készülne; ha
+ * más metaadat is átszivárogna a szülőről; ha rekord nélkül kitalált kulcs
+ * keletkezne.
+ */
+describe("the pickup cart's metadata", () => {
+  const rekord = { idopont: "2026-10-05T13:30:00.000Z", verzio: "fogyasztobarat-X", dokumentum: "https://x" }
+
+  it("carries the parent's ÁSZF record, and only that", () => {
+    expect(
+      pickupCartMetadata("cart_1", { aszf_elfogadas: rekord, acropora_pickup_cart_id: "cart_2", egyeb: 1 })
+    ).toEqual({ acropora_parent_cart_id: "cart_1", aszf_elfogadas: rekord })
+  })
+
+  it("without a record, only the parent's id", () => {
+    expect(pickupCartMetadata("cart_1", null)).toEqual({ acropora_parent_cart_id: "cart_1" })
+    expect(pickupCartMetadata("cart_1", { egyeb: 1 })).toEqual({ acropora_parent_cart_id: "cart_1" })
   })
 })
