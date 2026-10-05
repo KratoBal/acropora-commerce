@@ -167,7 +167,14 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
     const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
     const point = (key: string) => {
       const p = method?.data?.[key]
-      return p?.name ? { name: String(p.name), address: String(p.address ?? "") } : null
+      return p?.name
+        ? {
+            name: String(p.name),
+            address: String(p.address ?? ""),
+            // a GLS point's kind (G1), for the mail's logo
+            type: typeof p.type === "string" ? p.type : null,
+          }
+        : null
     }
     const address = order.shipping_address
     return {

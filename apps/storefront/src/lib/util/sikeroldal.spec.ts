@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { KOVETKEZO_LEPES, sikeroldal } from "./sikeroldal"
+import { GLS_KOVETKEZO_LEPES, KOVETKEZO_LEPES, sikeroldal } from "./sikeroldal"
 
 /**
  * A VISSZAIGAZOLO LAP (Figma 488:2 / 488:55 / 488:94). MI PIROSIT: ha a
@@ -125,11 +125,23 @@ describe("a visszaigazoló lap", () => {
       null,
       false,
     )
+    // a GLS házhozszállítás GLS-ként, a GLS logójával (a GLS-prompt 10. pontja)
     expect(haz.teljesitesek[0]).toMatchObject({
-      szallito: "haz",
+      szallito: "gls",
       hely: "GLS házhozszállítás",
       cim: "1111 Budapest, Teszt utca 1.",
+      logo: "/images/gls.png",
     })
+    const masik = sikeroldal(
+      {
+        ...foxpostRendeles,
+        shipping_methods: [{ name: "Házhozszállítás", total: 3500, data: {} }],
+      },
+      null,
+      false,
+    )
+    expect(masik.teljesitesek[0]).toMatchObject({ szallito: "haz" })
+    expect(masik.teljesitesek[0].logo).toBeUndefined()
     expect(
       sikeroldal(boltiRendeles, null, false).teljesitesek[0].szallito,
     ).toBe("bolt")
@@ -137,5 +149,54 @@ describe("a visszaigazoló lap", () => {
 
   it("nem ígér követési számot levélben", () => {
     expect(KOVETKEZO_LEPES).not.toMatch(/e-mail|levél|küldjük/i)
+    expect(GLS_KOVETKEZO_LEPES).not.toMatch(/e-mail|levél|küldjük/i)
+    expect(GLS_KOVETKEZO_LEPES).toContain(
+      "A GLS követési szám akkor jelenik meg",
+    )
+  })
+
+  it("a GLS-pont a fajtájával, logójával és a nyitvatartással a cím mellett", () => {
+    const pont = (type?: string) =>
+      sikeroldal(
+        {
+          ...foxpostRendeles,
+          shipping_methods: [
+            {
+              name: "GLS csomagpont",
+              total: 1490,
+              data: {
+                gls_pickup_point: {
+                  id: "L1",
+                  name: "GLS Automata – Allee",
+                  address: "1117 Budapest, Október huszonharmadika utca 8–10.",
+                  ...(type ? { type } : {}),
+                  hours: [1, 2, 3, 4, 5, 6, 7].map((day) => ({
+                    day,
+                    from: "00:00",
+                    to: "24:00",
+                  })),
+                },
+              },
+            },
+          ],
+        },
+        null,
+        false,
+      ).teljesitesek[0]
+    expect(pont("parcel-locker")).toMatchObject({
+      szallito: "gls",
+      tipus: "GLS Automata",
+      cim: "1117 Budapest, Október huszonharmadika utca 8–10. · 0–24",
+      logo: "/images/gls-automata.png",
+    })
+    expect(pont("parcel-shop")).toMatchObject({
+      tipus: "GLS ParcelShop",
+      logo: "/images/gls-csomagpont.png",
+    })
+    // egy fajta nélkül mentett régi pont: a régi felirat, a Csomagpont-logó
+    expect(pont()).toMatchObject({
+      tipus: "GLS csomagpont",
+      logo: "/images/gls-csomagpont.png",
+    })
   })
 })

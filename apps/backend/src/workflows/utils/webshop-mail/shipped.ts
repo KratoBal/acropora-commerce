@@ -35,7 +35,8 @@ export type ShippedOrder = {
   items: { title: string; quantity: number; fee: boolean }[]
   method_name: string
   foxpost_point: { name: string; address: string } | null
-  gls_point: { name: string; address: string } | null
+  /** `type`: parcel-shop or parcel-locker, as stored (G1); null on an older order. */
+  gls_point: { name: string; address: string; type?: string | null } | null
   shipping_address: string
 }
 
@@ -62,17 +63,39 @@ export const isStubParcelNumber = (trackingNumber: string) =>
 export const shippedKey = (orderId: string, trackingNumber: string) =>
   `order-shipped:${orderId}:${trackingNumber}`
 
-/** The official logo on the storefront, for the mail's <img>; https only. */
-export const foxpostLogoUrl = (env: NodeJS.ProcessEnv): string | null => {
+/** An image on the storefront, for the mail's <img>; https only. */
+const storefrontImageUrl = (env: NodeJS.ProcessEnv, path: string): string | null => {
   const base = env.ACROPORA_WEBSHOP_URL?.trim()
   if (!base) return null
   try {
-    const url = new URL("/images/foxpost-packeta-group.png", base)
+    const url = new URL(path, base)
     return url.protocol === "https:" ? url.toString() : null
   } catch {
     return null
   }
 }
+
+/** The official logo on the storefront, for the mail's <img>; https only. */
+export const foxpostLogoUrl = (env: NodeJS.ProcessEnv): string | null =>
+  storefrontImageUrl(env, "/images/foxpost-packeta-group.png")
+
+/**
+ * THE GLS LOGO OF THE MAIL (the GLS prompt, point 12; Figma 508:594, 508:613):
+ * the point's own kind (GLS Automata, or GLS Csomagpont for a ParcelShop), the
+ * general GLS logo for home delivery. The same files the checkout shows.
+ */
+export const glsLogoUrl = (
+  env: NodeJS.ProcessEnv,
+  point: { type?: string | null } | null
+): string | null =>
+  storefrontImageUrl(
+    env,
+    !point
+      ? "/images/gls.png"
+      : point.type === "parcel-locker"
+        ? "/images/gls-automata.png"
+        : "/images/gls-csomagpont.png"
+  )
 
 export const prepareShippedMail = async (
   orderId: string,
@@ -109,6 +132,9 @@ export const prepareShippedMail = async (
         items: order.items.filter((item) => !item.fee),
         cod_amount: order.cash_on_delivery ? order.total : null,
         foxpost_logo_url: foxpostLogoUrl(env),
+        gls_logo_url:
+          notice.carrier === "gls" ? glsLogoUrl(env, order.gls_point) : null,
+        gls_point_type: notice.carrier === "gls" ? order.gls_point?.type ?? null : null,
       }),
     },
   }

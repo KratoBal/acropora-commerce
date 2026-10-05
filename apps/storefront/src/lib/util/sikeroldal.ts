@@ -1,3 +1,4 @@
+import { GLS_LOGO, glsNyitvatartas, glsTipusFelirat, glsTipusLogo } from "./gls"
 import { isStripeLike } from "@lib/constants"
 import { SHOP_ADDRESS } from "@modules/cart/components/pickup-notice/pickup-notice"
 import { rendelesSzam } from "@lib/util/rendelesek"
@@ -16,7 +17,22 @@ import { rendelesSzam } from "@lib/util/rendelesek"
 export const KOVETKEZO_LEPES =
   "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt."
 
-type Pont = { id?: string; name?: string; address?: string; variant?: string }
+type Pont = {
+  id?: string
+  name?: string
+  address?: string
+  variant?: string
+  /** GLS: parcel-shop vagy parcel-locker (a hatter irja, G1). */
+  type?: string
+  hours?: { day: number; from: string; to: string }[]
+}
+
+/**
+ * A GLS-RENDELES KOVETKEZO LEPESE, szo szerint a GLS-prompt 10. pontjabol: a
+ * kovetesi szam a pénztár után még nem feltétlenül létezik.
+ */
+export const GLS_KOVETKEZO_LEPES =
+  "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt."
 
 type Rendeles = {
   id: string
@@ -67,6 +83,8 @@ export type Teljesites = {
   atvetelkorFizetendo: number | null
   /** Az utanvet kezelesi dija kulon sorban (488:94), ha van; kulonben null. */
   kezelesiDij: number | null
+  /** A szolgaltato logoja a `public/images` alatt (GLS); a FOXPOST-e kulon komponens. */
+  logo?: string
 }
 
 /**
@@ -157,20 +175,25 @@ export function teljesites(
     }
   }
   if (gls?.name) {
+    // a pont fajtaja (ParcelShop vagy Automata) es a sajat logoja (GLS-prompt 10)
+    const nyitva = glsNyitvatartas(gls.hours)
     return {
       ...alap,
       cimke,
       szallito: "gls",
-      tipus: "GLS csomagpont",
+      tipus: gls.type ? glsTipusFelirat(gls.type) : "GLS csomagpont",
       hely: gls.name,
-      cim: gls.address ?? "",
+      cim: [gls.address, nyitva].filter(Boolean).join(" · "),
+      logo: glsTipusLogo(gls.type),
     }
   }
   const cim = rendeles.shipping_address
+  // a GLS hazhozszallitasat a mod neve mondja meg (a mi elnevezesunk, P4)
+  const glsHaz = /^GLS\b/i.test(mod?.name ?? "")
   return {
     ...alap,
     cimke,
-    szallito: "haz",
+    szallito: glsHaz ? "gls" : "haz",
     tipus: mod?.name ?? "",
     hely: mod?.name ?? "",
     cim: [
@@ -179,6 +202,7 @@ export function teljesites(
     ]
       .filter(Boolean)
       .join(", "),
+    ...(glsHaz ? { logo: GLS_LOGO.altalanos } : {}),
   }
 }
 
