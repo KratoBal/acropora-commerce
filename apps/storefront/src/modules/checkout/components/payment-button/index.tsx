@@ -93,7 +93,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
 }
 
 /** A Stripe visszatérési címe (3-D Secure és átirányításos módok után). */
-const visszateresiCim = (cartId: string, countryCode: unknown) =>
+export const visszateresiCim = (cartId: string, countryCode: unknown) =>
   `${window.location.origin}/api/payment-return?cart_id=${cartId}&country_code=${countryCode}`
 
 /** A vevő számlázási adatai a kártya megerősítéséhez, a kosárból. */
