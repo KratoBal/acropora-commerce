@@ -61,13 +61,31 @@ describe("capturePlainStripePayment", () => {
 
   it("refuses more than the hold and a zero order, loudly, and captures nothing", async () => {
     for (const [total, message] of [
-      [15000, /több, mint a kártyán zárolt összeg/],
+      // an item added over the hold, its difference not paid (plan section 5)
+      [15000, /^Fizetésre vár: a rendelés többe kerül, mint a kártyán zárolt összeg/],
       [0, /nincs mit levonni/],
     ] as const) {
       const { ops, log } = opsFor(order(total))
       await expect(capturePlainStripePayment("order_plain", ops)).rejects.toThrow(message)
       expect(log).toEqual([])
     }
+  })
+
+  /**
+   * AN ITEM ADDED OVER THE HOLD, ITS DIFFERENCE PAID THROUGH A LINK (plan
+   * section 5): the hold is taken for the rest, not for the whole total. What
+   * must fail: the total taken from the hold (the difference charged twice,
+   * or refused as over the hold); an unpaid part of the difference passing.
+   */
+  it("takes from the hold only what the paid difference does not cover", async () => {
+    const paid = { ...order(16500), other_captured: 2500 }
+    const { ops, log } = opsFor(paid)
+    expect(await capturePlainStripePayment("order_plain", ops)).toEqual({ captured: true, amount: 14000 })
+    expect(log).toEqual(["capture pay_plain 14000"])
+
+    const short = opsFor({ ...order(16500), other_captured: 2000 })
+    await expect(capturePlainStripePayment("order_plain", short.ops)).rejects.toThrow(/különbözet még nincs kifizetve/)
+    expect(short.log).toEqual([])
   })
 
   it("leaves cash on delivery, an already captured payment and a mixed cart's share alone", async () => {

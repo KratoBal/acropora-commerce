@@ -1,6 +1,8 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys, Modules, PaymentCollectionStatus } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError, Modules, PaymentCollectionStatus } from "@medusajs/framework/utils"
 import {
+  capturePaymentWorkflow,
+  createOrderPaymentCollectionWorkflow,
   createOrUpdateOrderPaymentCollectionWorkflow,
   createPaymentSessionsWorkflow,
 } from "@medusajs/medusa/core-flows"
@@ -17,6 +19,7 @@ import type { ReleaseHoldOperations, ReleaseSide } from "./release-hold"
 const ORDER_FIELDS = [
   "id",
   "display_id",
+  "total",
   "metadata",
   "payment_collections.id",
   "payment_collections.status",
@@ -42,6 +45,7 @@ export const loadOrderPaymentSide = async (
   return {
     order_id: order.id,
     display_id: order.display_id ?? null,
+    total: Number(order.total),
     metadata: order.metadata ?? null,
     payments: (order.payment_collections ?? []).filter(Boolean).flatMap((collection: any) =>
       (collection.payments ?? []).filter(Boolean).map((payment: any) => ({
@@ -108,6 +112,15 @@ export const paymentLinkOperations = (container: MedusaContainer): PaymentLinkOp
     return collection?.id ? { id: collection.id, amount: Number(collection.amount) } : null
   },
 
+  openCollection: async (orderId, amount) => {
+    const { result } = await createOrderPaymentCollectionWorkflow(container).run({
+      input: { order_id: orderId, amount },
+    })
+    const collection = (Array.isArray(result) ? result[0] : result) as { id?: string; amount?: unknown } | undefined
+    if (!collection?.id) throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `No payment collection was opened for order ${orderId}`)
+    return { id: collection.id, amount: Number(collection.amount) }
+  },
+
   setMetadata: setOrderMetadata(container),
 })
 
@@ -156,6 +169,21 @@ export const payByLinkOperations = (container: MedusaContainer): PayByLinkOperat
 
   authorizeSession: async (sessionId) =>
     !!(await container.resolve(Modules.PAYMENT).authorizePaymentSession(sessionId, {})),
+
+  captureCollection: async (collectionId) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "payment_collection",
+      filters: { id: collectionId },
+      fields: ["payments.id", "payments.amount", "payments.canceled_at", "payments.captures.amount"],
+    })
+    const payments = ((data?.[0] as any)?.payments ?? []).filter((payment: any) => payment && !payment.canceled_at)
+    for (const payment of payments) {
+      const captured = (payment.captures ?? []).reduce((sum: number, c: any) => sum + Number(c?.amount ?? 0), 0)
+      if (captured > 0) continue
+      await capturePaymentWorkflow(container).run({ input: { payment_id: payment.id, amount: Number(payment.amount) } })
+    }
+  },
 
   capture: async (orderId) => {
     const ops = sharedCaptureOperations(container)

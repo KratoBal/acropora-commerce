@@ -1,5 +1,6 @@
 import { MedusaError } from "@medusajs/framework/utils"
 
+import { stripeShareFactsOf } from "../../modules/stripe-capture/share"
 import type { SharedCaptureOperations } from "./shared-stripe-capture"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 
@@ -32,9 +33,11 @@ import { STRIPE_PROVIDER_ID } from "./stripe-config"
  * THE CONDITION IS MEDUSA'S, so a test reads the installed workflow and turns
  * red if an upgrade changes it (order-edit-hold.medusa.unit.spec.ts).
  *
- * What is refused, as before: more than the hold, more than was already
- * captured, nothing left to pay (that is a cancel, not an edit), and another
- * card provider's uncaptured hold (only Stripe's is ours to keep).
+ * What is refused, as before: more than was already captured, nothing left to
+ * pay (that is a cancel, not an edit), and another card provider's uncaptured
+ * hold (only Stripe's is ours to keep). More than the hold is refused only on
+ * a mixed cart's shared hold; a plain order's difference goes through a
+ * payment link (plan section 5).
  */
 export type EditHoldOperations = Pick<SharedCaptureOperations, "loadPair"> & {
   /** The order's total with its REQUESTED edit applied; null if none is requested. */
@@ -43,6 +46,12 @@ export type EditHoldOperations = Pick<SharedCaptureOperations, "loadPair"> & {
   holdCollection(collectionId: string): Promise<boolean>
   /** AWAITING -> AUTHORIZED, only if it is still AWAITING; false if it was not. */
   releaseCollection(collectionId: string): Promise<boolean>
+  /**
+   * The order's open collections other than the hold's (a difference link's,
+   * plan section 5) closed: after an edit their amount is not what the order
+   * owes, and a new link is sent for the new difference.
+   */
+  closeOtherOpenCollections(orderId: string, holdCollectionId: string): Promise<void>
 }
 
 export type EditHoldDecision =
@@ -98,9 +107,16 @@ export const orderEditHoldDecision = async (
     return refuse("A szerkesztés után a rendelésben nem marad fizetendő összeg: a rendelést törölni kell, nem szerkeszteni.")
   }
 
-  if (newTotal > payment.amount) {
+  /*
+    OVER THE HOLD (Balázs, 2026-10-05 18:01 UTC; plan section 5): an item
+    added after the order. The edit goes through and the hold stays; the
+    difference is paid through a payment link, and Kiszállítás waits for it
+    (`plainStripeCapture`). A mixed cart's shared hold is not split this way
+    yet: there the edit is still refused.
+  */
+  if (newTotal > payment.amount && stripeShareFactsOf(payment.data)) {
     return refuse(
-      `A szerkesztés után a rendelés többe kerül (${newTotal} Ft), mint amennyit a kártyán zároltunk (${payment.amount} Ft). A többletet külön fizetéssel kell rendezni.`
+      `A szerkesztés után a rendelés többe kerül (${newTotal} Ft), mint amennyit a kártyán zároltunk (${payment.amount} Ft). Vegyes kosárnál a különbözetre még nem küldhető fizetési link: a többletet külön fizetéssel kell rendezni.`
     )
   }
 

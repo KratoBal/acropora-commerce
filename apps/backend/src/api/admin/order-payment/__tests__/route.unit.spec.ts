@@ -57,6 +57,7 @@ describe("GET /admin/order-payment/:order_id", () => {
         hold: { authorized_at: "2026-10-05T08:00:00.000Z", expires_at: "2026-10-12T08:00:00.000Z", amount: 22150 },
         link: null,
         paid_at: null,
+        due: null,
       },
     ])
   })

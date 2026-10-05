@@ -35,6 +35,12 @@ export type PaymentLinkOperations = {
    * released hold, or the open one with its amount brought up to date.
    */
   ensureCollection(orderId: string): Promise<{ id: string; amount: number } | null>
+  /**
+   * A NEW collection for exactly this amount (Medusa's
+   * `createOrderPaymentCollectionWorkflow`): the difference's own, beside the
+   * hold's, which `ensureCollection` would cancel and reopen.
+   */
+  openCollection(orderId: string, amount: number): Promise<{ id: string; amount: number }>
   setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
 }
 
@@ -67,9 +73,12 @@ export const sendPaymentLink = async (
   if (!pair) throw new MedusaError(MedusaError.Types.NOT_FOUND, `Order ${orderId} was not found`)
   const sides = [pair.primary, ...(pair.pickup ? [pair.pickup] : [])]
 
+  const view = orderPaymentView(pair.primary)
+  if (view.due?.reason === "difference") return sendDifferenceLink(pair, view.due.amount, ops, config, now)
+
   const stored = storedOrderPaymentOf(pair.primary.metadata)
   if (!stored || !stored.released_at) {
-    refuse(REFUSALS[orderPaymentView(pair.primary).state] ?? REFUSALS.hold)
+    refuse(REFUSALS[view.state] ?? REFUSALS.hold)
   }
   if (stored!.state === "paid" || stored!.state === "expired") refuse(REFUSALS[stored!.state])
 
@@ -119,5 +128,53 @@ export const sendPaymentLink = async (
       display_id: side.display_id,
       amount: own,
     })),
+  }
+}
+
+/**
+ * THE DIFFERENCE OVER A HOLD THAT STAYS (Balázs, 2026-10-05 18:01 UTC; plan
+ * section 5): an item was added after the order, and the order costs more
+ * than the card holds. The hold is taken at Kiszállítás as before; the link
+ * pays only the difference, through its own new collection, so the hold's
+ * collection is never touched. Kiszállítás waits until it is paid.
+ */
+const sendDifferenceLink = async (
+  pair: { primary: ReleaseSide; pickup: ReleaseSide | null },
+  amount: number,
+  ops: PaymentLinkOperations,
+  config: PaymentLinkConfig,
+  now: () => Date
+): Promise<SentPaymentLink> => {
+  // a mixed cart's shared hold is not split this way (its edit over the hold is refused)
+  if (pair.pickup) refuse("Vegyes kosárnál a különbözetre még nem küldhető fizetési link.")
+  const order = pair.primary
+  const collection = await ops.openCollection(order.order_id, amount)
+
+  const sentAt = now()
+  const expiresAt = new Date(sentAt.getTime() + LINK_DAYS * DAY_MS)
+  const token = signPaymentLink(
+    { order_id: order.order_id, collection_id: collection.id, amount, expires_at: expiresAt.getTime() },
+    config.secret
+  )
+  const url = paymentLinkUrl(config, token)
+  const link: NonNullable<StoredOrderPayment["link"]> = {
+    collection_id: collection.id,
+    pickup_collection_id: null,
+    sent_at: sentAt.toISOString(),
+    expires_at: expiresAt.toISOString(),
+    reminded_at: null,
+    amount,
+    url,
+  }
+  await ops.setMetadata(order.order_id, {
+    ...(order.metadata ?? {}),
+    [ORDER_PAYMENT_METADATA_KEY]: { kind: "difference", state: "link_sent", link } satisfies StoredOrderPayment,
+  })
+
+  return {
+    state: "link_sent",
+    link: { url, expires_at: link.expires_at, amount },
+    sent_at: link.sent_at,
+    orders: [{ order_id: order.order_id, display_id: order.display_id, amount }],
   }
 }

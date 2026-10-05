@@ -22,6 +22,7 @@ const ORDER_FIELDS = [
   "payment_collections.payments.amount",
   "payment_collections.payments.data",
   "payment_collections.payments.canceled_at",
+  "payment_collections.payments.created_at",
   "payment_collections.payments.captures.amount",
 ]
 
@@ -41,7 +42,8 @@ export const loadSide = async (
     return null
   }
 
-  // The order's live payment: the one not canceled.
+  const captured = (candidate: any) =>
+    (candidate.captures ?? []).reduce((sum: number, capture: any) => sum + Number(capture?.amount ?? 0), 0)
   const payments = (order.payment_collections ?? []).flatMap((collection: any) =>
     (collection?.payments ?? [])
       .filter(Boolean)
@@ -51,7 +53,18 @@ export const loadSide = async (
         collection_status: collection.status ?? null,
       }))
   )
-  const payment = payments.find((candidate: any) => !candidate.canceled_at)
+  /*
+    THE ORDER'S PAYMENT: the one not canceled. AN ORDER MAY CARRY TWO (plan
+    section 5: the hold, and a difference paid through a link), and then it is
+    the HOLD: the uncaptured one, of two the earlier. Taking the paid
+    difference instead would read the order as captured, and Kiszállítás would
+    never take the hold; an order edit would let Medusa cancel it.
+  */
+  const live = payments.filter((candidate: any) => !candidate.canceled_at)
+  const uncaptured = live
+    .filter((candidate: any) => captured(candidate) === 0)
+    .sort((a: any, b: any) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime())
+  const payment = uncaptured[0] ?? live[0]
 
   return {
     order_id: order.id,
@@ -62,10 +75,7 @@ export const loadSide = async (
       ? {
           id: payment.id,
           amount: Number(payment.amount),
-          captured: (payment.captures ?? []).reduce(
-            (sum: number, capture: any) => sum + Number(capture?.amount ?? 0),
-            0
-          ),
+          captured: captured(payment),
           data: payment.data ?? null,
           provider_id: payment.provider_id,
           collection_id: payment.collection_id,
@@ -74,6 +84,10 @@ export const loadSide = async (
       : null,
     // canceled with the order (the payments exist, none is live)
     payment_canceled: !payment && payments.length > 0,
+    // a difference paid through a link, on the order's other live payments
+    other_captured: live
+      .filter((candidate: any) => candidate !== payment)
+      .reduce((sum: number, candidate: any) => sum + captured(candidate), 0),
   }
 }
 

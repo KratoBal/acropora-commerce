@@ -44,5 +44,7 @@ export const orderEditConfirmKeepsHold = async (
       input: { order_id: req.params.id, confirmed_by: req.auth_context.actor_id },
     })
   )
+  // a difference link sent before this edit is for an amount the order no longer owes
+  await ops.closeOtherOpenCollections(req.params.id, decision.collectionId)
   res.json({ order_preview: result })
 }

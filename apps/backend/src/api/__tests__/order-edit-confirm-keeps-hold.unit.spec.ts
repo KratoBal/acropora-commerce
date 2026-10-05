@@ -1,11 +1,13 @@
 const ops = {
   hold: jest.fn(async () => true),
   release: jest.fn(async () => true),
+  closeOthers: jest.fn(async () => undefined),
 }
 jest.mock("../../workflows/utils/order-edit-hold-operations", () => ({
   editHoldOperations: jest.fn(() => ({
     holdCollection: ops.hold,
     releaseCollection: ops.release,
+    closeOtherOpenCollections: ops.closeOthers,
   })),
 }))
 jest.mock("../../workflows/utils/order-edit-hold", () => ({
@@ -57,6 +59,7 @@ describe("the admin order edit confirm", () => {
     run.mockReset()
     ops.hold.mockClear()
     ops.release.mockClear()
+    ops.closeOthers.mockClear()
   })
 
   it("a refused edit stops with 400, nothing else runs", async () => {
@@ -73,6 +76,7 @@ describe("the admin order edit confirm", () => {
     const { next } = await call()
     expect(next).toHaveBeenCalledTimes(1)
     expect(run).not.toHaveBeenCalled()
+    expect(ops.closeOthers).not.toHaveBeenCalled()
   })
 
   it("an uncaptured hold: Medusa's confirm runs HERE, between hold and release, and answers as Medusa does", async () => {
@@ -80,11 +84,14 @@ describe("the admin order edit confirm", () => {
     run.mockImplementationOnce(async () => {
       expect(ops.hold).toHaveBeenCalledWith("pay_col_1")
       expect(ops.release).not.toHaveBeenCalled()
+      expect(ops.closeOthers).not.toHaveBeenCalled()
       return { result: { id: "order_1", total: 24300 } }
     })
     const { res, next } = await call()
     expect(run).toHaveBeenCalledWith({ input: { order_id: "order_1", confirmed_by: "user_1" } })
     expect(ops.release).toHaveBeenCalledWith("pay_col_1")
+    // a difference link sent before the edit is closed, after the confirm (plan section 5)
+    expect(ops.closeOthers).toHaveBeenCalledWith("order_1", "pay_col_1")
     expect(res.sent).toEqual({ order_preview: { id: "order_1", total: 24300 } })
     expect(next).not.toHaveBeenCalled()
   })

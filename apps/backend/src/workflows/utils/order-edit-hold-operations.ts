@@ -45,4 +45,22 @@ export const editHoldOperations = (container: MedusaContainer): EditHoldOperatio
 
   holdCollection: (collectionId) => moveCollection(container, collectionId, "authorized", "awaiting"),
   releaseCollection: (collectionId) => moveCollection(container, collectionId, "awaiting", "authorized"),
+
+  closeOtherOpenCollections: async (orderId, holdCollectionId) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "order",
+      filters: { id: orderId },
+      fields: ["payment_collections.id", "payment_collections.status"],
+    })
+    const open = ((data?.[0] as any)?.payment_collections ?? []).filter(
+      (collection: any) =>
+        collection?.id !== holdCollectionId && (collection?.status === "not_paid" || collection?.status === "awaiting")
+    )
+    for (const collection of open) {
+      await container
+        .resolve(Modules.PAYMENT)
+        .updatePaymentCollections({ id: collection.id, status: collection.status } as never, { status: "canceled" } as never)
+    }
+  },
 })
