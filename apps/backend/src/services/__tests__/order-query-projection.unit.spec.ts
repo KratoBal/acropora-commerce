@@ -74,8 +74,8 @@ describe("order query projection", () => {
           ...order("order_ship", "customer_1"),
           currency_code: "huf",
           metadata: { acropora_pickup_order_id: "order_pick" },
-          shipping_address: { first_name: " Nagy ", last_name: "Emese", phone: "+36 30 555 0137" },
-          billing_address: { first_name: "Számlázó", last_name: "Név", phone: "+36 1 000 0000" },
+          shipping_address: { first_name: "Emese", last_name: " Nagy ", phone: "+36 30 555 0137" },
+          billing_address: { first_name: "Név", last_name: "Számlázó", phone: "+36 1 000 0000" },
           shipping_methods: [
             {
               name: "GLS csomagpont",
