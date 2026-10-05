@@ -50,7 +50,10 @@ export type StoredOrderPayment = {
   /** The released hold, forint: this order's part of it. */
   released_amount?: number
   link?: {
+    /** The collection the link pays (a mixed cart: the shipped order's). */
     collection_id: string
+    /** A mixed cart's pickup order's collection, paid with the same Stripe payment. */
+    pickup_collection_id?: string | null
     sent_at: string
     expires_at: string
     reminded_at?: string | null

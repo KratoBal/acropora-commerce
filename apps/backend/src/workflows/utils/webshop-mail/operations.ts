@@ -9,6 +9,7 @@ import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
 import type { ShippedDeps, ShippedOrder } from "./shipped"
 import type { PaymentDelayedDeps } from "./payment-delayed-mail"
+import type { PaymentLinkMailDeps } from "./payment-link-mail"
 import type { StatusMailDeps } from "./status-mail"
 
 const ORDER_FIELDS = [
@@ -204,6 +205,12 @@ export const statusMailOperations = (container: MedusaContainer): StatusMailDeps
 
 /** The Medusa side of the "csúszik" mail (`preparePaymentDelayedMail`). */
 export const paymentDelayedMailOperations = (container: MedusaContainer): PaymentDelayedDeps => ({
+  loadOrder: orderMailOperations(container).loadOrder,
+  alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
+})
+
+/** The Medusa side of the payment link's mail (`preparePaymentLinkMail`). */
+export const paymentLinkMailOperations = (container: MedusaContainer): PaymentLinkMailDeps => ({
   loadOrder: orderMailOperations(container).loadOrder,
   alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
 })
