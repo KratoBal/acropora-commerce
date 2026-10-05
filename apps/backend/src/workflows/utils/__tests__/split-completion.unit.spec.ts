@@ -13,6 +13,7 @@ import {
   completeSplitCart,
   startCardPayment,
   pickupCartMetadata,
+  sessionStartFacts,
 } from "../split-completion"
 
 /**
@@ -193,7 +194,11 @@ const makeShop = (carts: SplitCart[], split: Record<string, string[]>): Shop => 
       }
       c.shared_payment = !!joint
       shop.stripeStartData.push(data)
-      return { transactionId: "pi_1", total: joint?.total ?? PRICE_TOTAL(c), own: PRICE_TOTAL(c), clientSecret: "pi_1_secret" }
+      // what the real operation gives back (`sessionStartFacts`): a joint
+      // session its share facts, a plain one only its own client secret
+      return joint
+        ? { transactionId: "pi_1", total: joint.total, own: PRICE_TOTAL(c), clientSecret: "pi_1_secret" }
+        : { clientSecret: "pi_1_secret" }
     },
   }
   return shop
@@ -533,6 +538,23 @@ describe("starting one card payment for a mixed cart", () => {
     })
     expect(plain.log).toEqual(["dropCashOnDeliveryFee cart_1", `startPayment cart_1 ${STRIPE} []`])
     expect(plain.carts.size).toBe(1)
+    // card only, like the joint intent: the deferred card field asks for card alone
+    expect(plain.stripeStartData[0]).toEqual({ payment_method_types: ["card"] })
+  })
+
+  /*
+    THE PLAIN SESSION'S SECRET (acrobot 26333; stage 2026-10-05: a plain cart's
+    stripe-start answered without one). MI PIROSÍT: ha egy sima munkamenet
+    titok nélkül térne vissza; ha a közös munkamenet nem a saját tényeit adná.
+  */
+  it("a started session gives its share facts, or a plain one its own secret", () => {
+    expect(sessionStartFacts({ id: "pi_9", client_secret: "pi_9_secret_z", status: "requires_payment_method" }, "stripe_share")).toEqual({
+      clientSecret: "pi_9_secret_z",
+    })
+    expect(
+      sessionStartFacts({ stripe_share: { transactionId: "pi_1", clientSecret: "pi_1_secret" }, client_secret: "x" }, "stripe_share")
+    ).toEqual({ transactionId: "pi_1", clientSecret: "pi_1_secret" })
+    expect(sessionStartFacts(null, "stripe_share")).toEqual({})
   })
 
   it("refuses a shop without card payment, and a completed cart, with nothing changed", async () => {

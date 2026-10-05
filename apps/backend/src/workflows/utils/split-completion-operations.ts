@@ -37,6 +37,7 @@ import {
   SplitOperations,
   pickupCartMetadata,
   pickupPromoCodes,
+  sessionStartFacts,
   shippingProfileGaps,
 } from "./split-completion"
 
@@ -423,7 +424,7 @@ export const sharedPaymentOperations = (
       },
     })
 
-    return ((result as any)?.data?.[factsKey] ?? {}) as Record<string, unknown>
+    return sessionStartFacts((result as any)?.data, factsKey)
   },
 
   dropCashOnDeliveryFee: async (cartId) => {

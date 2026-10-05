@@ -2,10 +2,14 @@ import { HttpTypes } from "@medusajs/types"
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("@lib/data/stripe", () => ({
-  valasszKartyatVegyesKosarra: vi.fn().mockResolvedValue({ ok: true }),
+const stripeData = vi.hoisted(() => ({
   inditsStripeKozosFizetest: vi.fn(),
   stripeVisszarendezes: vi.fn(),
+}))
+vi.mock("@lib/data/stripe", () => ({
+  valasszKartyatVegyesKosarra: vi.fn().mockResolvedValue({ ok: true }),
+  inditsStripeKozosFizetest: stripeData.inditsStripeKozosFizetest,
+  stripeVisszarendezes: stripeData.stripeVisszarendezes,
 }))
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
@@ -35,15 +39,17 @@ vi.mock("@lib/util/stripe-kulcs", () => ({
   STRIPE_PUBLIKUS_KULCS: "pk_test_helyi_proba",
 }))
 // a Stripe csonkjai: a gyors fizetes `ready` esemenye egy Apple Pay-es eszkozt mond
-const tarca = vi.hoisted(() => ({ van: true }))
+const tarca = vi.hoisted(() => ({ van: true, paymentFailed: vi.fn() }))
 vi.mock("@stripe/react-stripe-js", async () => {
   const { useEffect } = await import("react")
   return {
     PaymentElement: () => <div data-testid="stripe-kartyamezo" />,
     ExpressCheckoutElement: ({
       onReady,
+      onConfirm,
     }: {
       onReady: (e: unknown) => void
+      onConfirm: (e: unknown) => void
     }) => {
       useEffect(() => {
         onReady({
@@ -60,10 +66,15 @@ vi.mock("@stripe/react-stripe-js", async () => {
             : undefined,
         })
       }, [onReady])
-      return <div data-testid="stripe-express" />
+      return (
+        <button
+          data-testid="stripe-express"
+          onClick={() => onConfirm({ paymentFailed: tarca.paymentFailed })}
+        />
+      )
     },
     useStripe: () => stripeMock,
-    useElements: () => ({ getElement: () => null }),
+    useElements: () => ({ getElement: () => null, submit: async () => ({}) }),
   }
 })
 
@@ -105,6 +116,7 @@ const oldal = () =>
         <Payment
           cart={kosar()}
           oldal
+          halasztott
           availablePaymentMethods={[{ id: STRIPE }]}
           engedelyezettModok={[{ id: STRIPE, role: "ONLINE_CARD" }]}
         />
@@ -176,8 +188,17 @@ describe("a fizetési oldal", () => {
    * PIROSIT: ha a megerosites a rogzites elott, vagy nelkule indulna; ha a
    * rogzites hibaja utan is lenne fizetes.
    */
-  it("a leadás előbb az ÁSZF-et rögzíti a kosáron, aztán erősít meg", async () => {
+  /**
+   * A SIMA KOSAR IS A HALASZTOTT UTON (acrobot 26333, A ut). MI PIROSIT: ha a
+   * sima kosar a mezo meglevo titkaval erositene meg (az intent az ASZF elott
+   * keszult volna); ha az intent az ASZF-rekord elott indulna.
+   */
+  it("a leadás sorrendje: ÁSZF a kosáron, aztán az intent (stripe-start), aztán a megerősítés az új titokkal", async () => {
     cartMock.rogzitsAszfElfogadast.mockResolvedValue({ ok: true })
+    stripeData.inditsStripeKozosFizetest.mockResolvedValue({
+      ok: true,
+      titok: "pi_uj_secret_x",
+    })
     stripeMock.confirmPayment.mockResolvedValue({
       error: { type: "card_error", message: "elutasitva" },
     })
@@ -190,9 +211,18 @@ describe("a fizetési oldal", () => {
     })
     expect(cartMock.rogzitsAszfElfogadast).toHaveBeenCalledWith("cart-1")
     expect(stripeMock.confirmPayment).toHaveBeenCalledTimes(1)
+    expect(stripeData.inditsStripeKozosFizetest).toHaveBeenCalledWith("cart-1")
     expect(
       cartMock.rogzitsAszfElfogadast.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      stripeData.inditsStripeKozosFizetest.mock.invocationCallOrder[0],
+    )
+    expect(
+      stripeData.inditsStripeKozosFizetest.mock.invocationCallOrder[0],
     ).toBeLessThan(stripeMock.confirmPayment.mock.invocationCallOrder[0])
+    expect(stripeMock.confirmPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ clientSecret: "pi_uj_secret_x" }),
+    )
   })
 
   it("ha a rögzítés nem sikerül, nincs fizetés, és a hiba kiíródik", async () => {
@@ -208,10 +238,47 @@ describe("a fizetési oldal", () => {
       fireEvent.click(await screen.findByTestId("submit-order-button"))
     })
     expect(stripeMock.confirmPayment).not.toHaveBeenCalled()
+    expect(stripeData.inditsStripeKozosFizetest).not.toHaveBeenCalled()
     expect(
       await screen.findByText(
         "Az ÁSZF elfogadását most nem sikerült rögzíteni.",
       ),
     ).toBeInTheDocument()
+  })
+
+  /**
+   * A TARCA A SIMA KOSARON IS UGYANAZ AZ UT (acrobot 26333). MI PIROSIT: ha az
+   * Apple Pay / Google Pay megerosites az ASZF-rekord vagy az intent elott,
+   * vagy azok nelkul indulna.
+   */
+  it("a tárca megerősítése: ÁSZF, intent, megerősítés az új titokkal, leadás", async () => {
+    cartMock.rogzitsAszfElfogadast.mockResolvedValue({ ok: true })
+    stripeData.inditsStripeKozosFizetest.mockResolvedValue({
+      ok: true,
+      titok: "pi_tarca_secret_y",
+    })
+    stripeMock.confirmPayment.mockResolvedValue({
+      paymentIntent: { status: "requires_capture" },
+    })
+    cartMock.placeOrder.mockResolvedValue({ ok: true })
+    oldal()
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("aszf-pipa"))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("stripe-express"))
+    })
+    const sorrend = [
+      cartMock.rogzitsAszfElfogadast.mock.invocationCallOrder[0],
+      stripeData.inditsStripeKozosFizetest.mock.invocationCallOrder[0],
+      stripeMock.confirmPayment.mock.invocationCallOrder[0],
+      cartMock.placeOrder.mock.invocationCallOrder[0],
+    ]
+    expect(sorrend.every((n) => typeof n === "number")).toBe(true)
+    expect([...sorrend].sort((a, b) => a - b)).toEqual(sorrend)
+    expect(stripeMock.confirmPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ clientSecret: "pi_tarca_secret_y" }),
+    )
+    expect(tarca.paymentFailed).not.toHaveBeenCalled()
   })
 })

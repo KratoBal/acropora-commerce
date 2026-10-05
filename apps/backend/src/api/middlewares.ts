@@ -30,6 +30,7 @@ import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confi
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 import { captureOnlyOrderTotal } from "./capture-only-order-total";
 import {
+  aszfBeforeCardSession,
   aszfBeforeCardStart,
   aszfBeforePlaceOrder,
 } from "./require-aszf-acceptance";
@@ -155,7 +156,7 @@ export default defineMiddlewares({
     {
       matcher: "/store/payment-collections/:id/payment-sessions",
       method: "POST",
-      middlewares: [refuseClientSessionData],
+      middlewares: [refuseClientSessionData, aszfBeforeCardSession],
     },
     {
       matcher: "/store/shipping-class",

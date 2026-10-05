@@ -59,6 +59,7 @@ export default async function FizetesiOldal({
               <Payment
                 cart={cart}
                 oldal
+                halasztott
                 vegyes={lehetosegek?.split ?? false}
                 availablePaymentMethods={paymentMethods ?? []}
                 engedelyezettModok={
