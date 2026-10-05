@@ -128,6 +128,23 @@ describe("when the shipping mail goes", () => {
     expect(fox.mail.content.html).not.toContain("/images/gls")
   })
 
+  it("the OS renders from the same facts as the built-in text, the GLS logo and the point's kind included", async () => {
+    const result = (await prepareShippedMail(
+      "order_42",
+      { carrier: "gls", tracking_number: "GLS9" },
+      deps(rendeles({ foxpost_point: null, gls_point: { name: "Pont", address: "1111 Budapest, X u. 1.", type: "parcel-locker" } })),
+      ON
+    )) as { mail: { render: { template: string; facts: { shipped: Record<string, unknown> } } } }
+    const base = new URL(ON.ACROPORA_WEBSHOP_URL!).origin
+    expect(result.mail.render.template).toBe("order-shipped")
+    expect(result.mail.render.facts.shipped).toMatchObject({
+      carrier: "gls",
+      gls_point: true,
+      gls_logo_url: `${base}/images/gls-automata.png`,
+      gls_point_type: "parcel-locker",
+    })
+  })
+
   it("not sent: unknown order, switched off, no address, already sent for this parcel", async () => {
     expect(await prepareShippedMail("x", { carrier: "foxpost", tracking_number: "1" }, deps(null), ON)).toEqual({ status: "not_found" })
     expect(await prepareShippedMail("x", { carrier: "foxpost", tracking_number: "1" }, deps(rendeles()), {})).toEqual({

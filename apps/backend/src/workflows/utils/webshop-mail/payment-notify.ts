@@ -4,7 +4,8 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { orderMailOperations, paymentDelayedMailOperations, paymentLinkMailOperations } from "./operations"
 import { type PaymentDelayedInput, type PaymentDelayedSkip, preparePaymentDelayedMail } from "./payment-delayed-mail"
 import { type PaymentLinkMailSkip, preparePaymentLinkMail } from "./payment-link-mail"
-import { sendShopMail } from "./send"
+import { deliverShopMail } from "./deliver"
+import type { DeliveryResult } from "./outbox-delivery"
 
 /**
  * WHAT HAPPENED TO THE CUSTOMER'S MAIL OF A PAYMENT STEP, in the same shape as
@@ -17,7 +18,11 @@ import { sendShopMail } from "./send"
  */
 export type PaymentNotification =
   | { sent: true }
-  | { sent: false; reason: PaymentDelayedSkip | PaymentLinkMailSkip | "not_requested" | "failed" }
+  | { sent: false; reason: PaymentDelayedSkip | PaymentLinkMailSkip | "not_requested" | "failed" | "queued" }
+
+/** A mail the OS cannot render now waits in the outbox (Levélsablonok): not a failure. */
+const outcome = (delivery: DeliveryResult): PaymentNotification =>
+  delivery.sent ? { sent: true } : { sent: false, reason: "queued" }
 
 const failed = (container: MedusaContainer, orderId: string, mail: string, error: unknown): PaymentNotification => {
   container
@@ -34,8 +39,7 @@ export const notifyHoldReleased = async (
   try {
     const result = await preparePaymentDelayedMail(input, paymentDelayedMailOperations(container))
     if (result.status === "skip") return { sent: false, reason: result.reason }
-    await sendShopMail(container.resolve(Modules.NOTIFICATION), result.mail)
-    return { sent: true }
+    return outcome(await deliverShopMail(container, result.mail))
   } catch (error) {
     return failed(container, input.orderId, "payment-delayed", error)
   }
@@ -74,8 +78,7 @@ export const notifyPaymentLink = async (
       paymentLinkMailOperations(container)
     )
     if (result.status === "skip") return { sent: false, reason: result.reason }
-    await sendShopMail(container.resolve(Modules.NOTIFICATION), result.mail)
-    return { sent: true }
+    return outcome(await deliverShopMail(container, result.mail))
   } catch (error) {
     return failed(container, input.orderId, input.reminder ? "payment-reminder" : "payment-link", error)
   }

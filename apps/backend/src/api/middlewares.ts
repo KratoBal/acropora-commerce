@@ -28,6 +28,7 @@ import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validato
 import { StorePostCartNotes } from "./store/cart-notes/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import { AdminGetOrderPickupPointsParams, AdminPostOrderPickupPoint } from "./admin/order-shipping/validators";
+import { AdminGetWebshopMailOutboxParams } from "./admin/webshop-mail/outbox/validators";
 import {
   AdminReleaseOrderPaymentHold,
   AdminSendOrderPaymentLink,
@@ -186,6 +187,12 @@ export default defineMiddlewares({
       matcher: "/admin/order-shipping/:order_id/point",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminPostOrderPickupPoint)],
+    },
+    {
+      // the shop's mails that did not go (Levélsablonok)
+      matcher: "/admin/webshop-mail/outbox",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(AdminGetWebshopMailOutboxParams, {})],
     },
     {
       matcher: "/store/payment-options",

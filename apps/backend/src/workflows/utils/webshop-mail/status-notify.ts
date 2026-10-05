@@ -4,7 +4,9 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import type { OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { orderMailOperations, statusMailOperations } from "./operations"
 import { prepareOrderPlacedMail } from "./prepare"
-import { operationsOrSkip, sendShopMail } from "./send"
+import { deliverShopMail } from "./deliver"
+import type { DeliveryResult } from "./outbox-delivery"
+import { operationsOrSkip } from "./send"
 import { prepareStatusMail, type StatusMailSkip } from "./status-mail"
 
 /**
@@ -20,7 +22,11 @@ import { prepareStatusMail, type StatusMailSkip } from "./status-mail"
  */
 export type StatusNotification =
   | { sent: true }
-  | { sent: false; reason: StatusMailSkip | "not_requested" | "failed" | "pickup_half" }
+  | { sent: false; reason: StatusMailSkip | "not_requested" | "failed" | "pickup_half" | "queued" }
+
+/** A mail the OS cannot render now waits in the outbox (Levélsablonok): not a failure. */
+const outcome = (delivery: DeliveryResult): StatusNotification =>
+  delivery.sent ? { sent: true } : { sent: false, reason: "queued" }
 
 /**
  * Sends the mail of one history row. A failed send never undoes the status
@@ -41,14 +47,12 @@ export const notifyStatusChange = async (
         const reason = result.reason === "pickup_half" || result.reason === "no_email" ? result.reason : "order_missing"
         return { sent: false, reason }
       }
-      await sendShopMail(container.resolve(Modules.NOTIFICATION), result.mail)
-      return { sent: true }
+      return outcome(await deliverShopMail(container, result.mail))
     }
 
     const result = await prepareStatusMail(input, statusMailOperations(container))
     if (result.status === "skip") return { sent: false, reason: result.reason }
-    await sendShopMail(container.resolve(Modules.NOTIFICATION), result.mail)
-    return { sent: true }
+    return outcome(await deliverShopMail(container, result.mail))
   } catch (error) {
     logger.error(
       `Order ${input.orderId}: the ${input.status} status mail failed: ${error instanceof Error ? error.message : String(error)}`

@@ -1,3 +1,4 @@
+import type { MailRenderFacts } from "./outbox-delivery"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-completion"
 import { type MailContent, type MailOrder, renderOrderPlacedMail } from "./order-placed-mail"
@@ -29,6 +30,11 @@ export type MailToSend = {
   idempotency_key: string
   resource_id: string
   content: MailContent
+  /**
+   * What the OS renders this mail from (Levélsablonok): the builder's own
+   * input. Used only with ACROPORA_WEBSHOP_MAIL_RENDERER=os (`deliverShopMail`).
+   */
+  render?: MailRenderFacts
 }
 
 export type PrepareResult = { action: "send"; mail: MailToSend } | { action: "skip"; reason: string }
@@ -77,6 +83,7 @@ export const prepareOrderPlacedMail = async (
   const to = orders[0].email?.trim()
   if (!to) return { action: "skip", reason: "no_email" }
 
+  const mailOrders = orders.map(({ id, email: _email, ...order }) => ({ ...order, pickup: id !== orderId }))
   return {
     action: "send",
     mail: {
@@ -84,9 +91,8 @@ export const prepareOrderPlacedMail = async (
       template: "order-placed",
       idempotency_key: orderPlacedKey(orderId, resendAt),
       resource_id: orderId,
-      content: renderOrderPlacedMail(
-        orders.map(({ id, email: _email, ...order }) => ({ ...order, pickup: id !== orderId }))
-      ),
+      content: renderOrderPlacedMail(mailOrders),
+      render: { template: "order-placed", facts: { orders: mailOrders } },
     },
   }
 }
@@ -121,6 +127,12 @@ export const prepareRefundMail = async (paymentId: string, deps: RefundMailDeps)
     time(refund.created_at) >= time(latest.created_at) ? refund : latest
   )
 
+  const refund = {
+    display_id: payment.order.display_id,
+    amount: newest.amount,
+    refunded_total: payment.refunds.reduce((sum, refund) => sum + refund.amount, 0),
+    last4: cardLast4Of([payment.session_data, payment.payment_data]),
+  }
   return {
     action: "send",
     mail: {
@@ -128,12 +140,8 @@ export const prepareRefundMail = async (paymentId: string, deps: RefundMailDeps)
       template: "payment-refunded",
       idempotency_key: `payment-refunded:${newest.id}`,
       resource_id: payment.order.id,
-      content: renderRefundMail({
-        display_id: payment.order.display_id,
-        amount: newest.amount,
-        refunded_total: payment.refunds.reduce((sum, refund) => sum + refund.amount, 0),
-        last4: cardLast4Of([payment.session_data, payment.payment_data]),
-      }),
+      content: renderRefundMail(refund),
+      render: { template: "payment-refunded", facts: { refund } },
     },
   }
 }

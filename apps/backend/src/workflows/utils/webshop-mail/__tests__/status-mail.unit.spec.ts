@@ -209,6 +209,38 @@ describe("notifyStatusChange", () => {
     expect(errors.join()).toContain("provider down")
   })
 
+  it("with the OS rendering and the OS down, the mail waits in the outbox: queued, not failed", async () => {
+    process.env = {
+      ...process.env,
+      ACROPORA_WEBSHOP_MAIL_RENDERER: "os",
+      ACROPORA_OS_MAIL_RENDER_URL: "https://os.example.test/integrations/webshop-mail/render",
+      ACROPORA_OS_MAIL_TOKEN: "proba-token-nem-valodi",
+    }
+    const fetch = jest
+      .spyOn(global, "fetch")
+      .mockImplementation(async () => ({ status: 503, json: async () => ({ message: "Karbantartás" }) }) as Response)
+    const notification = { createNotifications: jest.fn(async () => [{}]), listNotifications: jest.fn(async () => []) }
+    const rows: Array<Record<string, unknown>> = []
+    const outbox = {
+      listWebshopMailOutboxes: async () => [],
+      createWebshopMailOutboxes: async (row: Record<string, unknown>) => (rows.push({ id: "wmout_1", ...row }), rows[0]),
+      updateWebshopMailOutboxes: async (changes: Record<string, unknown>) => Object.assign(rows[0], changes),
+    }
+    const { scope } = container(notification, medusaOrder)
+    const resolve = (scope as { resolve: (key: string) => unknown }).resolve
+    const withOutbox = { resolve: (key: string) => (key === "webshop_mail_outbox" ? outbox : resolve(key)) } as never
+    try {
+      expect(await notifyStatusChange(withOutbox, { orderId: "order_42", status: "confirmed", historyId: "h1" })).toEqual({
+        sent: false,
+        reason: "queued",
+      })
+    } finally {
+      fetch.mockRestore()
+    }
+    expect(notification.createNotifications).not.toHaveBeenCalled()
+    expect(rows[0]).toMatchObject({ template: "order-status-confirmed", failure_kind: "transient" })
+  })
+
   it("sends with the row's trigger, on the order", async () => {
     const notification = { createNotifications: jest.fn(async () => [{}]), listNotifications: jest.fn(async () => []) }
     const { scope } = container(notification, medusaOrder)
