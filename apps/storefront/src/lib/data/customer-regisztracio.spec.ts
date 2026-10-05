@@ -28,7 +28,7 @@ vi.mock("./cookies", () => suti)
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 
-import { ASZF_CIM, ASZF_METADATA_KULCS, ASZF_VERZIO } from "@lib/util/aszf"
+import { ASZF_FORRAS, ASZF_METADATA_KULCS, ASZF_VERZIO } from "@lib/util/aszf"
 
 import { login, signup } from "./customer"
 
@@ -118,7 +118,7 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     const [adat] = sdk.store.customer.create.mock.calls[0]
     const elfogadas = adat.metadata[ASZF_METADATA_KULCS]
     expect(elfogadas.verzio).toBe(ASZF_VERZIO)
-    expect(elfogadas.dokumentum).toBe(ASZF_CIM)
+    expect(elfogadas.dokumentum).toBe(ASZF_FORRAS)
     const ido = Date.parse(elfogadas.idopont)
     expect(ido).toBeGreaterThanOrEqual(elotte - 1000)
     expect(ido).toBeLessThanOrEqual(Date.now())

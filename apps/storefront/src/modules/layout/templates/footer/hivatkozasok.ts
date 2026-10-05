@@ -1,3 +1,5 @@
+import { JOGI_DOKUMENTUMOK, jogiOldal } from "@lib/util/fogyasztobarat"
+
 /**
  * A LABLEC HIVATKOZASAI, EGY HELYEN.
  *
@@ -75,6 +77,17 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
   { cimke: "Regisztráció", oszlop: "fiok", cim: "/account" },
   { cimke: "Profilom", oszlop: "fiok", cim: "/account" },
   { cimke: "Kosár", oszlop: "fiok", cim: "/cart" },
+  /*
+    A FOGYASZTOBARAT DOKUMENTUMAI (2026-10-05): a jogi szovegek mostantol a
+    kirakat SAJAT oldalain allnak (`/jogi/<slug>`), a tartalmat a Fogyasztobarat
+    adja. Az ASZF es az adatkezelesi tajekoztato ezzel kikerult a regi boltra
+    mutato listabol (kartya a3e48575).
+  */
+  ...JOGI_DOKUMENTUMOK.map((d) => ({
+    cimke: d.cim,
+    oszlop: "informaciok" as const,
+    cim: jogiOldal(d.slug),
+  })),
 ] as const
 
 /**
@@ -88,16 +101,6 @@ export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
     cimke: "Kedvenceim",
     oszlop: "fiok",
     cim: "https://shop.acropora.hu/shop_order_track.php?tab=favourite",
-  },
-  {
-    cimke: "Általános szerződési feltételek",
-    oszlop: "informaciok",
-    cim: "https://shop.acropora.hu/shop_help.php?tab=terms",
-  },
-  {
-    cimke: "Adatkezelési tájékoztató",
-    oszlop: "informaciok",
-    cim: "https://shop.acropora.hu/shop_help.php?tab=privacy",
   },
   {
     cimke: "Fizetés",

@@ -3,31 +3,35 @@
  * regisztracio IDOBELYEGET es az ASZF VERZIOJAT irja a vevo metadata
  * mezojebe. Egy kotelezo pipa magaban nem bizonyitek; ez az.
  *
- * === A VERZIO MIERT SAJAT AZONOSITO, ES NEM AZ OLDAL DATUMA ===
+ * === 2026-10-05 OTA A FOGYASZTOBARAT DOKUMENTUMA ===
  *
- * Az uj kirakatnak meg nincs sajat ASZF-je: a hivatkozas a MAI boltba visz
- * (`REGI_BOLT_HIVATKOZASOK`, a lablec listaja). Azon a lapon a tartalom
- * szkriptbol toltodik, a letoltott HTML-ben nincs datum (merve 2026-09-29).
- * A verzio tehat a MI azonositonk, a dokumentum cimevel egyutt.
+ * Eddig a hivatkozas a regi boltba vitt (`unas-shop-2026-09-29`). Mostantol az
+ * ASZF-et es az adatkezelesi tajekoztatot a Fogyasztobarat adja, a kirakat sajat
+ * oldalan (`/jogi/aszf`, `/jogi/adatkezeles`; Balazs kerese, Fogyasztobarat
+ * szal). A rogzitett dokumentum a Fogyasztobarat FORRASA (a bolt azonositojaval),
+ * a verzio a bolt azonositoja: a szoveget a Fogyasztobarat tartja karban, es az
+ * elfogadas idopontja mondja meg, melyik allapotat fogadta el a vevo.
  *
- * AMI EZT ERVENYTELENITI: ha az ASZF szovege valtozik, vagy az uj kirakat
- * sajat ASZF-lapot kap (az elesites elott kotelezo), az `ASZF_VERZIO`-t
- * emelni kell ES a cimet atirni. A regi elfogadasok a regi verziot orzik.
+ * A regi elfogadasok a regi verziot orzik (`unas-shop-2026-09-29`).
  */
-import { REGI_BOLT_HIVATKOZASOK } from "@modules/layout/templates/footer/hivatkozasok"
+import {
+  FOGYASZTOBARAT_ID,
+  dokumentumForras,
+  jogiOldal,
+} from "@lib/util/fogyasztobarat"
 
 /** A metadata kulcs a vevon. A P4 es a fiok ugyanezt olvassa. */
 export const ASZF_METADATA_KULCS = "aszf_elfogadas"
 
-/** A ma hivatkozott ASZF azonositoja; ASZF-valtozaskor emelni kell. */
-export const ASZF_VERZIO = "unas-shop-2026-09-29"
+/** A ma elfogadott ASZF azonositoja: a Fogyasztobarat dokumentuma, a bolt azonositojaval. */
+export const ASZF_VERZIO = `fogyasztobarat-${FOGYASZTOBARAT_ID}`
 
-const cim = (cimke: string) =>
-  REGI_BOLT_HIVATKOZASOK.find((h) => h.cimke === cimke)?.cim ?? ""
+/** Az ASZF es az adatkezelesi tajekoztato a kirakat sajat oldalan. */
+export const ASZF_CIM = jogiOldal("aszf")
+export const ADATKEZELES_CIM = jogiOldal("adatkezeles")
 
-/** Az ASZF es az adatkezelesi tajekoztato cime, a lablec egyetlen listajabol. */
-export const ASZF_CIM = cim("Általános szerződési feltételek")
-export const ADATKEZELES_CIM = cim("Adatkezelési tájékoztató")
+/** Amit az elfogadas rekordja dokumentumkent megnevez: a Fogyasztobarat forrasa. */
+export const ASZF_FORRAS = dokumentumForras("aszf")
 
 export type AszfElfogadas = {
   idopont: string
@@ -40,7 +44,7 @@ export function aszfElfogadas(most: Date): AszfElfogadas {
   return {
     idopont: most.toISOString(),
     verzio: ASZF_VERZIO,
-    dokumentum: ASZF_CIM,
+    dokumentum: ASZF_FORRAS,
   }
 }
 
