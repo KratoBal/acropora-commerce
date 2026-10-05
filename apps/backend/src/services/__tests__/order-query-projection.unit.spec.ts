@@ -88,7 +88,9 @@ describe("order query projection", () => {
               amount: 26390,
               captured_amount: 0,
               refunded_amount: 0,
-              payments: [{ provider_id: "pp_stripe_stripe" }],
+              payments: [
+                { provider_id: "pp_stripe_stripe", amount: 26390, created_at: "2026-10-05T08:00:00.000Z", captures: [] },
+              ],
             },
           ],
         },
@@ -122,6 +124,7 @@ describe("order query projection", () => {
         amount: 26390,
         captured_amount: 0,
         refunded_amount: 0,
+        hold_expires_at: "2026-10-12T08:00:00.000Z",
       },
       related_order: { id: "order_pick", role: "pickup" },
     })
@@ -131,5 +134,39 @@ describe("order query projection", () => {
       null,
       { id: "order_ship", role: "parent" },
     ])
+  })
+
+  /**
+   * THE LIST'S HOLD EXPIRY (nautilus 26484: the OS list reads it, does not
+   * count it). What must fail: an expiry shown for a released, a captured or a
+   * cash order; the expiry not 7 days after the authorization; a later live
+   * payment's hold read from an earlier, canceled one.
+   */
+  it("gives hold_expires_at only for a live, uncaptured card hold", () => {
+    const withPayments = (payments: Record<string, unknown>[], metadata: Record<string, unknown> | null = null) =>
+      projectOrderQueryRows({
+        pageOrders: [
+          {
+            ...order("order_1", null),
+            metadata,
+            payment_collections: [{ status: "authorized", amount: 1000, payments: payments as never }],
+          },
+        ],
+        customerOrders: [],
+        statuses: [],
+        history: [],
+      })[0].payment?.hold_expires_at
+    const card = { provider_id: "pp_stripe_stripe", amount: 1000, created_at: "2026-10-05T08:00:00.000Z", captures: [] }
+
+    expect(withPayments([card])).toBe("2026-10-12T08:00:00.000Z")
+    expect(
+      withPayments([
+        { ...card, created_at: "2026-10-01T08:00:00.000Z", canceled_at: "2026-10-02T08:00:00.000Z" },
+        card,
+      ])
+    ).toBe("2026-10-12T08:00:00.000Z")
+    expect(withPayments([{ ...card, captures: [{ amount: 900 }] }])).toBeNull()
+    expect(withPayments([{ ...card, provider_id: "pp_system_default" }])).toBeNull()
+    expect(withPayments([card], { acropora_payment: { state: "awaiting_payment" } })).toBeNull()
   })
 })

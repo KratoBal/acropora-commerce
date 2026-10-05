@@ -74,7 +74,15 @@ describe("GET /admin/order-overview", () => {
     const [row] = page.orders
     expect([row.total, row.payment]).toEqual([
       26390,
-      { provider_id: "pp_stripe_stripe", status: "authorized", amount: 26390, captured_amount: 0, refunded_amount: 0 },
+      {
+        provider_id: "pp_stripe_stripe",
+        status: "authorized",
+        amount: 26390,
+        captured_amount: 0,
+        refunded_amount: 0,
+        // the fixture's payment has no creation time: no hold to expire
+        hold_expires_at: null,
+      },
     ])
     expect(row.business_status.code).toBe("stocking")
   })
