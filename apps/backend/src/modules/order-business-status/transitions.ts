@@ -39,6 +39,18 @@ const transitions: Record<OrderBusinessStatus, AllowedTransition[]> = {
   closed_unsuccessfully: [{ to: "stocking", actors: ["admin"] }],
 }
 
+/**
+ * Where an order may go next from `from`, for `actor`, in the table's order.
+ * The OS offers only these in its "Státusz módosítása" list.
+ */
+export const nextBusinessStatuses = (
+  from: OrderBusinessStatus,
+  actor: OrderBusinessStatusActor,
+): OrderBusinessStatus[] =>
+  transitions[from]
+    .filter((transition) => transition.actors.includes(actor))
+    .map((transition) => transition.to)
+
 export const assertBusinessStatusTransition = ({
   from,
   to,

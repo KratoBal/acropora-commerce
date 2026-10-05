@@ -1,4 +1,7 @@
-import { assertBusinessStatusTransition } from "../transitions"
+import {
+  assertBusinessStatusTransition,
+  nextBusinessStatuses,
+} from "../transitions"
 import {
   ORDER_BUSINESS_STATUSES,
   ORDER_BUSINESS_STATUS_LABELS,
@@ -152,5 +155,39 @@ describe("the seventh business status, Visszaigazolva", () => {
    */
   it("keeps the existing Feldolgozásra vár to Készletezés alatt step", () => {
     expect(admin("pending_processing", "stocking")).not.toThrow()
+  })
+})
+
+/**
+ * THE LIST THE OS OFFERS. What must fail: a next status the rules refuse
+ * (the OS would offer a step the backend rejects), a missing allowed one, a
+ * terminal status offering anything, or the carrier getting admin-only steps.
+ */
+describe("nextBusinessStatuses", () => {
+  it("is exactly the set the rules allow, for every status and actor", () => {
+    for (const from of ORDER_BUSINESS_STATUSES)
+      for (const actor of ["admin", "carrier"] as const) {
+        const allowedByRules = ORDER_BUSINESS_STATUSES.filter((to) => {
+          try {
+            assertBusinessStatusTransition({ from, to, actor, source: "admin" })
+            return true
+          } catch {
+            return false
+          }
+        })
+        expect([...nextBusinessStatuses(from, actor)].sort()).toEqual(
+          [...allowedByRules].sort(),
+        )
+      }
+  })
+
+  it("names the admin steps from Készletezés alatt, and none from Megrendelés lezárva", () => {
+    expect(nextBusinessStatuses("stocking", "admin")).toEqual([
+      "out_for_delivery",
+      "ready_for_pickup",
+      "closed_unsuccessfully",
+    ])
+    expect(nextBusinessStatuses("closed", "admin")).toEqual([])
+    expect(nextBusinessStatuses("stocking", "carrier")).toEqual([])
   })
 })

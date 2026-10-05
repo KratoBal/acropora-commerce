@@ -46,6 +46,22 @@ class OrderBusinessStatusModuleService extends MedusaService({
     return status
   }
 
+  /**
+   * The transition rules alone, without writing: the workflow asks this BEFORE
+   * it captures a payment, so a refused step takes no money.
+   */
+  async assertTransitionAllowed({
+    order_id,
+    to,
+    actor,
+    source,
+  }: TransitionOrderBusinessStatusInput): Promise<void> {
+    const [current] = await this.listOrderBusinessStatusModels({ order_id })
+    const from = (current?.status ?? null) as OrderBusinessStatus | null
+
+    assertBusinessStatusTransition({ from, to, actor, source })
+  }
+
   async retrieveOrderBusinessStatusForOrder(order_id: string) {
     const [status] = await this.listOrderBusinessStatusModels({ order_id })
 
