@@ -7,6 +7,7 @@ import Radio from "@modules/common/components/radio"
 import { isManual } from "@lib/constants"
 import SkeletonCardDetails from "@modules/skeletons/components/skeleton-card-details"
 import { STRIPE_FIZETESI_MEZO } from "@lib/util/stripe-megjelenes"
+import { STRIPE_BIZALMI_SZOVEG } from "@lib/util/stripe-allapot"
 import { PaymentElement } from "@stripe/react-stripe-js"
 import PaymentTest from "../payment-test"
 import { StripeContext } from "../payment-wrapper/stripe-wrapper"
@@ -96,9 +97,9 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
 
 export default PaymentContainer
 
-/** A bizalmi mondat, szo szerint a prompt 4. pontja szerint. */
-export const STRIPE_BIZALMI_SZOVEG =
-  "A kártyaadatokat a Stripe biztonságos fizetési rendszere kezeli; az Acropora nem fér hozzá a kártyaadataidhoz."
+// A bizalmi mondat egy sima modulban el (a szerver-oldali fizetesi oldal is
+// olvassa, es ez a fajl kliens-konyvtarakat huz be); innen tovabbadva.
+export { STRIPE_BIZALMI_SZOVEG }
 
 /**
  * A BANKKARTYAS MOD: a kartya, alatta KOZVETLENUL a Stripe mezo (a keret
@@ -116,7 +117,10 @@ export const StripePaymentContainer = ({
   setPaymentComplete,
   egyFizetes,
   allapot,
+  express,
 }: Omit<PaymentContainerProps, "children" | "alcim" | "jel"> & {
+  /** A gyors fizetes (Apple Pay / Google Pay) a mezo folott; csak a fizetesi oldalon. */
+  express?: React.ReactNode
   setError: (error: string | null) => void
   setPaymentComplete: (complete: boolean) => void
   /** Az "Egy fizetés · …" sor szovege (a teljes fizetendo osszeggel). */
@@ -142,6 +146,7 @@ export const StripePaymentContainer = ({
           className="relative mb-3 border border-acr-line bg-acr-white px-3 py-4 small:px-4"
           data-testid="stripe-panel"
         >
+          {stripeReady ? express : null}
           {stripeReady ? (
             <PaymentElement
               options={STRIPE_FIZETESI_MEZO}

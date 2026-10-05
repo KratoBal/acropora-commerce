@@ -5,6 +5,7 @@ import { isStripeLike } from "@lib/constants"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import FizetesiOldal from "@modules/checkout/templates/fizetesi-oldal"
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 
@@ -50,8 +51,10 @@ export const metadata: Metadata = {
  */
 export default async function Checkout(props: {
   params: Promise<{ countryCode: string }>
+  searchParams?: Promise<{ step?: string }>
 }) {
   const { countryCode } = await props.params
+  const { step } = (await props.searchParams) ?? {}
   const cart = await retrieveCart()
 
   // A KET AGAT EGYUTT KEZELJUK, mert a vevo szamara ugyanaz: nincs mit fizetni.
@@ -69,6 +72,19 @@ export default async function Checkout(props: {
   const vegyesStripe =
     !!lehetosegek?.split &&
     lehetosegek.allowed_payment_providers.some((mod) => isStripeLike(mod.id))
+
+  /*
+    A FIZETESI LEPES A FIGMA SZERINTI OLDAL (209:3 / 209:133). A burok az
+    egesz oldalt fogja, mert a cselekvo gomb az osszesitoben all, es a Stripe
+    mezojevel egy kornyezetben kell eljen. A tobbi lepes valtozatlan.
+  */
+  if (step === "payment") {
+    return (
+      <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
+        <FizetesiOldal cart={cart} />
+      </PaymentWrapper>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
