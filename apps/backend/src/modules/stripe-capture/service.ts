@@ -400,6 +400,15 @@ export default class AcroporaStripeService extends StripeProviderService {
     const stripe = (this as any).stripe_
     const intent = await stripe.paymentIntents.retrieve(share.transactionId)
     const units = smallestUnit(major(input.amount), intent.currency)
+    /*
+      THE ONE PLACE STRIPE'S REFUND LIST IS READ, AND ONLY TO GUARD. Refunds are
+      otherwise read from Medusa's records alone (acrobot 26265): a capture
+      smaller than the hold releases the rest as a Stripe refund object (stage
+      #36), and a charge's `amount_refunded` counts it too. Here only refunds
+      carrying OUR metadata count (this payment, a Medusa refund record); the
+      released rest has none and counts for no order. Nothing read here is
+      booked or shown anywhere.
+    */
     const existing = await stripe.refunds.list({ payment_intent: share.transactionId, limit: 100 })
     const ours = (existing.data as StripeRefund[]).filter(
       (refund) => refund.metadata?.[REFUND_PAYMENT_KEY] === paymentId && refund.status !== "failed" && refund.status !== "canceled"

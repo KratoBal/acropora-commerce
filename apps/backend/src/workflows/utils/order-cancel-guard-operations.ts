@@ -57,6 +57,13 @@ export const orderCancelOperations = (
           return {
             id: payment.id,
             captured,
+            /*
+              REFUNDS ARE READ FROM MEDUSA'S RECORDS ONLY (acrobot 26265). Never
+              from Stripe's refund list or a charge's `amount_refunded`: a
+              capture smaller than the hold releases the rest as a Stripe REFUND
+              object (stage #36: re_...1fcLSKAV, 4 000 Ft, never taken), which
+              there reads like money paid back.
+            */
             outstanding: captured - sum(payment.refunds),
             canceled: !!payment.canceled_at,
             data: payment.data ?? null,
