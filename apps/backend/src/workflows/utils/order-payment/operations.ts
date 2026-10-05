@@ -12,6 +12,9 @@ import { capturePlainStripePayment } from "../plain-stripe-capture"
 import { captureSharedStripePayment } from "../shared-stripe-capture"
 import { sharedCaptureOperations } from "../shared-stripe-capture-operations"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
+import { transitionOrderBusinessStatusWorkflow } from "../../transition-order-business-status"
+import { notifyPaymentLink } from "../webshop-mail/payment-notify"
+import type { DeadlineOperations } from "./deadlines"
 import type { LinkCollection, PayByLinkOperations } from "./pay-by-link"
 import type { PaymentLinkOperations } from "./payment-link"
 import type { ReleaseHoldOperations, ReleaseSide } from "./release-hold"
@@ -193,3 +196,40 @@ export const payByLinkOperations = (container: MedusaContainer): PayByLinkOperat
 
   setMetadata: setOrderMetadata(container),
 })
+
+/** The Medusa side of `runPaymentDeadlines` (the hourly job). */
+export const deadlineOperations = (container: MedusaContainer): DeadlineOperations => {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
+  return {
+    candidates: async (since) => {
+      const query = container.resolve(ContainerRegistrationKeys.QUERY)
+      const sides: ReleaseSide[] = []
+      for (let skip = 0; ; skip += 200) {
+        const { data } = await query.graph({
+          entity: "order",
+          filters: { updated_at: { $gte: since } },
+          fields: ["id", "display_id", "metadata"],
+          pagination: { skip, take: 200, order: { updated_at: "ASC" } },
+        })
+        for (const order of (data ?? []) as any[]) {
+          sides.push({ order_id: order.id, display_id: order.display_id ?? null, metadata: order.metadata ?? null, payments: [] })
+        }
+        if (!data || data.length < 200) return sides
+      }
+    },
+
+    loadPair: releaseHoldOperations(container).loadPair,
+
+    setMetadata: setOrderMetadata(container),
+
+    remind: (input) => notifyPaymentLink(container, { ...input, reminder: true }),
+
+    close: async (orderId) => {
+      await transitionOrderBusinessStatusWorkflow(container).run({
+        input: { order_id: orderId, to: "closed_unsuccessfully", actor: "system", source: "payment_deadline" },
+      })
+    },
+
+    log: (message) => logger.warn(message),
+  }
+}

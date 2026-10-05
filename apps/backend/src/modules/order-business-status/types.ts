@@ -34,6 +34,8 @@ export type OrderBusinessStatusSource =
   | "order_created"
   | "admin"
   | "carrier"
+  /** The payment link's deadline passed unpaid (the lejáró zárolás plan, 2.5). */
+  | "payment_deadline"
 
 export type OrderBusinessStatusTransition = {
   from: OrderBusinessStatus | null

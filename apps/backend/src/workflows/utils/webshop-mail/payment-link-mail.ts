@@ -13,8 +13,11 @@ import { SHOP_CONTACT } from "./shipped-mail"
  * The parcel's departure is tied to the payment, not to a day.
  */
 export const PAYMENT_LINK_TEMPLATE = "order-payment-link" as const
+/** Day 3 without payment (plan 2.5): the same mail, as a reminder. Once per link. */
+export const PAYMENT_REMINDER_TEMPLATE = "order-payment-reminder" as const
 
-export const paymentLinkMailKey = (orderId: string, sentAt: string) => `${PAYMENT_LINK_TEMPLATE}:${orderId}:${sentAt}`
+export const paymentLinkMailKey = (orderId: string, sentAt: string, reminder = false) =>
+  `${reminder ? PAYMENT_REMINDER_TEMPLATE : PAYMENT_LINK_TEMPLATE}:${orderId}:${sentAt}`
 
 export type PaymentLinkMailInput = {
   orderId: string
@@ -25,6 +28,8 @@ export type PaymentLinkMailInput = {
   amount: number
   /** A mixed cart's pickup order, paid with the same link. */
   pickup: LoadedOrder | null
+  /** The day-3 reminder of the same link (L4). */
+  reminder?: boolean
 }
 
 /** "2026. október 11.", the shop's own calendar day. */
@@ -44,7 +49,7 @@ const linesOf = (order: LoadedOrder) => [
 
 export const renderPaymentLinkMail = (
   order: LoadedOrder,
-  input: Pick<PaymentLinkMailInput, "url" | "expiresAt" | "amount" | "pickup">
+  input: Pick<PaymentLinkMailInput, "url" | "expiresAt" | "amount" | "pickup" | "reminder">
 ): MailContent => {
   const id = `#${order.display_id}`
   const pickup = input.pickup
@@ -62,8 +67,8 @@ export const renderPaymentLinkMail = (
     ...(pickup ? [{ title: `Bolti átvételes rendelésed (#${pickup.display_id})`, lines: linesOf(pickup) }] : []),
   ]
 
-  const eyebrow = "FIZETÉS"
-  const title = "Kifizetheted a rendelésedet"
+  const eyebrow = input.reminder ? "EMLÉKEZTETŐ" : "FIZETÉS"
+  const title = input.reminder ? "Még kifizetheted a rendelésedet" : "Kifizetheted a rendelésedet"
   const text = [
     eyebrow,
     `${title}\nRendelés: ${orders}`,
@@ -93,7 +98,10 @@ export const renderPaymentLinkMail = (
     ].join("\n")
   )
 
-  return { subject: `Kifizetheted a rendelésedet (${id})`, text, html }
+  const subject = input.reminder
+    ? `Emlékeztető: még kifizetheted a rendelésedet (${id})`
+    : `Kifizetheted a rendelésedet (${id})`
+  return { subject, text, html }
 }
 
 export type PaymentLinkMailDeps = {
@@ -114,7 +122,7 @@ export const preparePaymentLinkMail = async (
   env: NodeJS.ProcessEnv = process.env
 ): Promise<PaymentLinkMailResult> => {
   if (webshopMailState(env) !== "on") return { status: "skip", reason: "mail_off" }
-  const key = paymentLinkMailKey(input.orderId, input.sentAt)
+  const key = paymentLinkMailKey(input.orderId, input.sentAt, input.reminder)
   if (await deps.alreadySent(key)) return { status: "skip", reason: "already_sent" }
 
   const order = await deps.loadOrder(input.orderId)
@@ -126,7 +134,7 @@ export const preparePaymentLinkMail = async (
     status: "send",
     mail: {
       to,
-      template: PAYMENT_LINK_TEMPLATE,
+      template: input.reminder ? PAYMENT_REMINDER_TEMPLATE : PAYMENT_LINK_TEMPLATE,
       idempotency_key: key,
       resource_id: order.id,
       content: renderPaymentLinkMail(order, input),
