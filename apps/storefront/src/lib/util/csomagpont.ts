@@ -20,6 +20,17 @@ export type FoxpostCsomagpont = {
   icon_url?: string | null
   /** A Foxpost "find me" jegyzete, sima szovegkent. */
   findme?: string
+  /**
+   * A GLS-pont sajat, helyi logoja a fajtajahoz (ParcelShop vagy automata;
+   * `public/images`), nem kulso cim.
+   */
+  tipus_logo?: string
+  /** A GLS-pont nem valaszthato most (`outOfOrder`): a sor latszik, de tiltott. */
+  nem_valaszthato?: boolean
+  /** Egy rovid figyelmezteto sor (a GLS `highVolume`-ja, vagy hogy miert tiltott). */
+  figyelmeztetes?: string | null
+  /** A szolgaltato sajat reszlet-sora; ha van, a Foxpost-fele helyett ez latszik. */
+  reszletek?: string
 }
 
 const FIZETESI_LEHETOSEG: Record<string, string> = {
@@ -110,9 +121,16 @@ export function foxpostSzallitasiAdat(pontId: string) {
   return { foxpost_pickup_point: { id: pontId } }
 }
 
-/** A GLS-csomagpont szallitasi adata (P4): csak az azonosito megy, a tobbit a hatter irja. */
-export function glsSzallitasiAdat(pontId: string) {
-  return { gls_pickup_point: { id: pontId } }
+/**
+ * A GLS-csomagpont szallitasi adata (P4): csak az azonosito megy, es hogy
+ * melyik valasztobol jott (`finder`: a hivatalos kereso, `fallback`: a
+ * tartalek lista); a tobbit a hatter irja a sajat listajabol.
+ */
+export function glsSzallitasiAdat(
+  pontId: string,
+  forras: "finder" | "fallback" = "fallback",
+) {
+  return { gls_pickup_point: { id: pontId, source: forras } }
 }
 
 /** Egy GLS csomagpontos szallitasi mod, es hogy nehezarus-e (csak csomagbolt). */
