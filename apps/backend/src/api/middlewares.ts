@@ -28,6 +28,10 @@ import { refuseClientSessionData } from "./refuse-client-session-data";
 import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 import { captureOnlyOrderTotal } from "./capture-only-order-total";
+import {
+  aszfBeforeCardStart,
+  aszfBeforePlaceOrder,
+} from "./require-aszf-acceptance";
 
 export default defineMiddlewares({
   routes: [
@@ -83,6 +87,18 @@ export default defineMiddlewares({
       matcher: "/admin/order-edits/:id/confirm",
       method: "POST",
       middlewares: [captureBeforeOrderEditConfirm],
+    },
+    {
+      // No ÁSZF acceptance on the cart: no shared PaymentIntent (aszf-guard.ts).
+      matcher: "/store/carts/:id/stripe-start",
+      method: "POST",
+      middlewares: [aszfBeforeCardStart],
+    },
+    {
+      // No ÁSZF acceptance on the cart: no order, unless a card is already held.
+      matcher: "/store/carts/:id/complete-split",
+      method: "POST",
+      middlewares: [aszfBeforePlaceOrder],
     },
     {
       // A card payment is captured for its order's current total; a smaller
