@@ -1,7 +1,7 @@
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
 import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
-import { assertSimplePayShare } from "../utils/assert-simplepay-share"
+import { assertCardShare } from "../utils/assert-card-share"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
 
@@ -27,7 +27,7 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
   await assertCartNotMixed(cart, container)
   // And the P4-3c one: a card payment covers exactly this cart, or this cart
   // and its split pair together.
-  await assertSimplePayShare(cart.id, container)
+  await assertCardShare(cart.id, container)
 
   const context = await resolveCartPaymentContext(cart, container)
 

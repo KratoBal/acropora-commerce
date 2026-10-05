@@ -9,9 +9,10 @@ import {
 import { useEffect } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("@lib/data/simplepay", () => ({
-  valasszKartyat: vi.fn().mockResolvedValue({ ok: true }),
-  inditsKartyasFizetest: vi.fn(),
+vi.mock("@lib/data/stripe", () => ({
+  valasszKartyatVegyesKosarra: vi.fn().mockResolvedValue({ ok: true }),
+  inditsStripeKozosFizetest: vi.fn(),
+  stripeVisszarendezes: vi.fn(),
 }))
 const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }))
 vi.mock("next/navigation", () => ({
@@ -44,7 +45,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
 }))
 
 import { initiatePaymentSession } from "@lib/data/cart"
-import { valasszKartyat } from "@lib/data/simplepay"
+import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { StripeContext } from "../payment-wrapper/stripe-wrapper"
 import Payment from "./index"
 
@@ -53,7 +54,6 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-const SIMPLEPAY = "pp_simplepay_simplepay"
 const STRIPE = "pp_stripe_stripe"
 
 const kosar = {
@@ -69,8 +69,7 @@ const kosar = {
  * VEGYES KOSÁR, STRIPE (Balázs 2026-10-01, 1-es út). MI PIROSÍT: ha a Stripe
  * választása munkamenetet indítana (a kosár már a fizetési lépésben bomlana,
  * és a vevő elveszítené az élő állatot az összegzőből); ha a Tovább nem a
- * Stripe-jelzéssel vinne az ellenőrzésre; ha a SimplePay nyilatkozata jelenne
- * meg a Stripe-nál.
+ * Stripe-jelzéssel vinne az ellenőrzésre.
  */
 describe("a fizetési lépés vegyes kosárnál", () => {
   it("a Stripe választása nem indít munkamenetet, a Tovább a Stripe-jelzéssel visz", async () => {
@@ -79,18 +78,14 @@ describe("a fizetési lépés vegyes kosárnál", () => {
         <Payment
           cart={kosar}
           vegyes
-          availablePaymentMethods={[{ id: SIMPLEPAY }, { id: STRIPE }]}
-          engedelyezettModok={[
-            { id: SIMPLEPAY, role: "ONLINE_CARD" },
-            { id: STRIPE, role: "ONLINE_CARD" },
-          ]}
+          availablePaymentMethods={[{ id: STRIPE }]}
+          engedelyezettModok={[{ id: STRIPE, role: "ONLINE_CARD" }]}
         />
       </StripeContext.Provider>,
     )
-    fireEvent.click(screen.getByText("Bankkártyás fizetés (Stripe)"))
+    fireEvent.click(screen.getByText("Bankkártyás fizetés"))
     await screen.findByTestId("kartyamezo")
     expect(initiatePaymentSession).not.toHaveBeenCalled()
-    expect(screen.queryByTestId("simplepay-nyilatkozat")).toBeNull()
 
     const gomb = screen.getByTestId("submit-payment-button")
     await waitFor(() => expect(gomb).toBeEnabled())
@@ -98,7 +93,7 @@ describe("a fizetési lépés vegyes kosárnál", () => {
     fireEvent.click(gomb)
 
     await waitFor(() => expect(router.push).toHaveBeenCalled())
-    expect(valasszKartyat).toHaveBeenCalledWith("cart-1")
+    expect(valasszKartyatVegyesKosarra).toHaveBeenCalledWith("cart-1")
     const cel = new URLSearchParams(
       String(router.push.mock.calls[0][0]).split("?")[1],
     )

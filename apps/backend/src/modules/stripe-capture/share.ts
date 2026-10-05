@@ -1,14 +1,13 @@
 /**
  * ONE STRIPE PAYMENT FOR BOTH ORDERS OF A MIXED CART (Balázs, 2026-10-01 06:00
- * UTC: variant 1, acrobot 25507). The SimplePay pattern (P4-3c), with the same
- * facts shape so the same checks read both:
+ * UTC: variant 1, acrobot 25507):
  *
  * - `stripe_joint` on the shipped cart's session: ONE PaymentIntent for the two
  *   carts together (`total`), this session's own part is `own`;
  * - `stripe_joined` on the pickup cart's session: no new intent, it carries the
  *   shipped session's intent and its own part.
  *
- * Both keys are set by our server code only (`refuseClientSimplePayKeys`).
+ * Both keys are set by our server code only (`refuseClientCardShareKeys`).
  * Stripe captures an intent once; the shared payment is therefore captured
  * TOGETHER at shipment (a later part); until then a capture of a shared
  * payment is refused here, so nothing can be captured half.
@@ -18,7 +17,7 @@ export const STRIPE_JOINT_KEY = "stripe_joint"
 export const STRIPE_JOINED_KEY = "stripe_joined"
 
 export type StripeShareFacts = {
-  /** The shared PaymentIntent (named like SimplePay's, so one check reads both). */
+  /** The shared PaymentIntent. */
   transactionId: string
   /** The intent's amount, in major units: the two carts together. */
   total: number
@@ -39,6 +38,15 @@ export const stripeShareFactsOf = (data: unknown): StripeShareFacts | null => {
     | undefined
   return facts?.transactionId ? facts : null
 }
+
+/**
+ * Whether a session's PaymentIntent is shared with the other cart of a split:
+ * the pickup session that joined it, or the shipped session whose own part is
+ * less than the intent's total.
+ */
+export const isSharedCardPayment = (facts: StripeShareFacts | null): boolean =>
+  !!facts &&
+  (facts.joined === true || (facts.own !== undefined && Number(facts.own) !== Number(facts.total)))
 
 /**
  * THE SHARED PAYMENT'S CAPTURE FOR BOTH ORDERS (part 2, at "Kiszállítás"). The

@@ -8,9 +8,12 @@ import {
 } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("@lib/data/simplepay", () => ({
-  valasszKartyat: vi.fn().mockResolvedValue({ ok: true }),
-  inditsKartyasFizetest: vi.fn(),
+// A Stripe szerver-muveletei: a teszt-kornyezetben a `server-only` orzo miatt
+// nem toltodhetnek be, ezert mock.
+vi.mock("@lib/data/stripe", () => ({
+  valasszKartyatVegyesKosarra: vi.fn().mockResolvedValue({ ok: true }),
+  inditsStripeKozosFizetest: vi.fn(),
+  stripeVisszarendezes: vi.fn(),
 }))
 const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }))
 vi.mock("next/navigation", () => ({
@@ -44,8 +47,8 @@ afterEach(() => {
   kulcs.ertek = "pk_test_helyi_proba"
 })
 
-const SIMPLEPAY = "pp_simplepay_simplepay"
 const STRIPE = "pp_stripe_stripe"
+const COD = "pp_acropora_cod"
 
 const kosar = () =>
   ({
@@ -61,52 +64,42 @@ const lepes = () =>
   render(
     <Payment
       cart={kosar()}
-      availablePaymentMethods={[{ id: SIMPLEPAY }, { id: STRIPE }]}
+      availablePaymentMethods={[{ id: STRIPE }, { id: COD }]}
       engedelyezettModok={[
-        { id: SIMPLEPAY, role: "ONLINE_CARD" },
         { id: STRIPE, role: "ONLINE_CARD" },
+        { id: COD, role: "COD" },
       ]}
     />,
   )
 
 /**
- * STRIPE A SIMPLEPAY MELLETT (Balazs 2026-09-30, csak a teszt kirakaton). MI
- * PIROSIT: ha a ket kartyas mod egyforma felirattal allna; ha a Stripe a
- * SimplePay utjat jarna (nyilatkozat, munkamenet nelkul); ha a SimplePay
- * elkezdene munkamenetet inditani; ha kulcs nelkul is megjelenne a Stripe.
+ * A STRIPE AZ EGYETLEN KARTYAS MOD (Balazs 2026-10-05). MI PIROSIT: ha a
+ * kartyas sor nem a szerep feliratat viselne; ha a Stripe valasztasa nem
+ * inditana munkamenetet (a kartyamezo nem kapna titkot); ha kulcs nelkul is
+ * megjelenne a Stripe.
  */
-describe("két kártyás mód a fizetési lépésben", () => {
-  it("mindkettő megjelenik, a Stripe megkülönböztetve", () => {
+describe("a kártyás mód a fizetési lépésben", () => {
+  it("a Stripe a szerep feliratával jelenik meg, megkülönböztetés nélkül", () => {
     lepes()
     expect(screen.getByText("Bankkártyás fizetés")).toBeInTheDocument()
-    expect(screen.getByText("Bankkártyás fizetés (Stripe)")).toBeInTheDocument()
+    expect(screen.queryByText("Bankkártyás fizetés (Stripe)")).toBeNull()
   })
 
-  it("a Stripe választása munkamenetet indít, és nincs SimplePay nyilatkozat", async () => {
+  it("a Stripe választása munkamenetet indít", async () => {
     lepes()
-    fireEvent.click(screen.getByText("Bankkártyás fizetés (Stripe)"))
+    fireEvent.click(screen.getByText("Bankkártyás fizetés"))
     await waitFor(() =>
       expect(initiatePaymentSession).toHaveBeenCalledWith(
         expect.objectContaining({ id: "cart-1" }),
         { provider_id: STRIPE },
       ),
     )
-    expect(screen.queryByTestId("simplepay-nyilatkozat")).toBeNull()
-  })
-
-  it("a SimplePay választása továbbra sem indít munkamenetet, és kéri a nyilatkozatot", async () => {
-    lepes()
-    fireEvent.click(screen.getByText("Bankkártyás fizetés"))
-    await waitFor(() =>
-      expect(screen.getByTestId("simplepay-nyilatkozat")).toBeInTheDocument(),
-    )
-    expect(initiatePaymentSession).not.toHaveBeenCalled()
   })
 
   it("publikus kulcs nélkül a Stripe nem jelenik meg", () => {
     kulcs.ertek = ""
     lepes()
-    expect(screen.getByText("Bankkártyás fizetés")).toBeInTheDocument()
-    expect(screen.queryByText("Bankkártyás fizetés (Stripe)")).toBeNull()
+    expect(screen.queryByText("Bankkártyás fizetés")).toBeNull()
+    expect(screen.getByText("Utánvét")).toBeInTheDocument()
   })
 })

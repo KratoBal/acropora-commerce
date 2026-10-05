@@ -9,12 +9,11 @@ import {
 import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
-import { valasszKartyat } from "@lib/data/simplepay"
+import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { convertToLocale } from "@lib/util/money"
 import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
-import SimplePayNyilatkozat from "@modules/checkout/components/simplepay-nyilatkozat"
 import PaymentContainer, {
   StripePaymentContainer,
 } from "@modules/checkout/components/payment-container"
@@ -62,12 +61,6 @@ const Payment = ({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? "",
   )
-  /**
-   * A SIMPLEPAY NYILATKOZAT ELFOGADASA (P4-4). Minden megnyitaskor ujra kell:
-   * a SimplePay szerint a vevonek kifejezetten el kell fogadnia (8. fejezet),
-   * tehat nem orzunk meg egy korabbi pipat.
-   */
-  const [nyilatkozatElfogadva, setNyilatkozatElfogadva] = useState(false)
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -104,12 +97,10 @@ const Payment = ({
     setSelectedPaymentMethod(method)
     setUtanvetDij(0)
 
-    // A SIMPLEPAY VALASZTASA MEG NEM INDIT SEMMIT (P4-4): ott egy munkamenet
-    // egy elinditott tranzakcio, az pedig csak a nyilatkozat elfogadasa utan
-    // indulhat (8. fejezet). A "Tovabb" keszíti elo, a "Rendeles leadasa"
-    // inditja. A Stripe-nak viszont MOST kell a munkamenet: abbol kapja a
-    // kartyamezo a titkos kulcsat, tehat az a tobbi moddal egyutt indul.
-    if (simplePayE(method) || stripeKozosE(method)) {
+    // A VEGYES KOSAR STRIPE-FIZETESE MEG NEM INDIT SEMMIT: a kosar bontasa es
+    // a kozos PaymentIntent a leadaskor keszul. Minden mas modnak MOST kell a
+    // munkamenet: a Stripe kartyamezoje abbol kapja a titkos kulcsat.
+    if (stripeKozosE(method)) {
       return
     }
 
@@ -160,23 +151,6 @@ const Payment = ({
     engedelyezettModok,
   ).filter((mod) => STRIPE_PUBLIKUS_KULCS || !isStripeLike(mod.id))
 
-  // A bankkartyas modot a SZEREP mondja meg (a hatter szerepkiosztasa), nem a
-  // szolgaltato azonositojanak alakja.
-  function szerepe(mod: string) {
-    return megjelenitheto.find((m) => m.id === mod)?.role
-  }
-  /*
-    KET KARTYAS SZOLGALTATO LEHET (Stripe a SimplePay mellett, Balazs
-    2026-09-30, csak a teszt kirakaton). A SimplePay utja (nyilatkozat, a
-    tranzakcio a leadaskor indul) a kartyas szerep NEM Stripe szolgaltatojae; a
-    Stripe a sablon sajat utjat jarja (kartyamezo itt, megerosites a leadaskor).
-    A Stripe felismerese ugyanaz az `isStripeLike`, amit a kartyamezo es a
-    leado gomb is hasznal.
-  */
-  function simplePayE(mod: string) {
-    return szerepe(mod) === "ONLINE_CARD" && !isStripeLike(mod)
-  }
-  const kartyasValasztva = simplePayE(selectedPaymentMethod)
   /*
     VEGYES KOSÁR STRIPE-PAL (Balázs 2026-10-01, 1-es út): a kártyamező
     halasztott (a burok adja), munkamenet itt nem indul; a kosár bontása és a
@@ -221,19 +195,16 @@ const Payment = ({
     paidByGiftcard
 
   /**
-   * Az ellenorzes lepesenek cime (a `fizetes=stripe` a vegyes kosar Stripe-
-   * utja, lasd lent). A `fizetes=kartya` jelzi az ellenorzesnek,
-   * hogy bankkartyat valasztott a vevo (munkamenet meg nincs), es minden mas
-   * modnal LE KELL KERULNIE, kulonben egy kartyarol utanvetre valto vevonek
-   * a kartyas gomb maradna.
+   * Az ellenorzes lepesenek cime. A `fizetes=stripe` a vegyes kosar Stripe-
+   * utja (munkamenet meg nincs, lasd lent), es minden mas modnal LE KELL
+   * KERULNIE, kulonben egy kartyarol utanvetre valto vevonek a kartyas gomb
+   * maradna.
    */
-  const ellenorzesUrl = (kartya: boolean | "stripe") => {
+  const ellenorzesUrl = (stripeKozos: boolean) => {
     const params = new URLSearchParams(searchParams)
     params.set("step", "review")
-    if (kartya === "stripe") {
+    if (stripeKozos) {
       params.set("fizetes", "stripe")
-    } else if (kartya) {
-      params.set("fizetes", "kartya")
     } else {
       params.delete("fizetes")
     }
@@ -260,30 +231,13 @@ const Payment = ({
     setIsLoading(true)
     try {
       /*
-        BANKKARTYA: a hatter leveszi a korabbi munkamenetet es az utanvet-dijat,
-        hogy az ellenorzes a kartyaval fizetendo osszeget mutassa. Tranzakcio
-        itt sem indul; a valasztas az URL-ben megy tovabb az ellenorzesre.
-      */
-      /*
-        STRIPE A VEGYES KOSÁRON: mint a SimplePay-nél, a háttér leveszi a
-        korábbi munkamenetet és az utánvét-díjat; a fizetés a leadáskor indul.
+        STRIPE A VEGYES KOSÁRON: a háttér leveszi a korábbi munkamenetet és az
+        utánvét-díjat, hogy az ellenőrzés a kártyával fizetendő összeget
+        mutassa; a fizetés a leadáskor indul, a választás az URL-ben megy
+        tovább az ellenőrzésre.
       */
       if (stripeKozosValasztva) {
-        const eredmeny = await valasszKartyat(cart.id)
-
-        if (!eredmeny.ok) {
-          setError(eredmeny.uzenet)
-          return
-        }
-
-        router.refresh()
-        return router.push(pathname + "?" + ellenorzesUrl("stripe"), {
-          scroll: false,
-        })
-      }
-
-      if (kartyasValasztva) {
-        const eredmeny = await valasszKartyat(cart.id)
+        const eredmeny = await valasszKartyatVegyesKosarra(cart.id)
 
         if (!eredmeny.ok) {
           setError(eredmeny.uzenet)
@@ -340,7 +294,6 @@ const Payment = ({
 
   useEffect(() => {
     setError(null)
-    setNyilatkozatElfogadva(false)
   }, [isOpen])
 
   return (
@@ -407,8 +360,8 @@ const Payment = ({
 
             Eddig a `&&` miatt SEMMI nem jelent meg: a vevo egy cim nelkuli,
             letiltott gombos lepest latott, es nem tudta, rajta mulik-e. Ez az
-            allapot ma valodi -- a bankkartyas szerephez nincs szolgaltato --,
-            tehat nem elmeleti ag.
+            allapot valodi lehet (STRIPE_API_KEY nelkul a bankkartyas szerephez
+            nincs szolgaltato), tehat nem elmeleti ag.
           */}
           {!paidByGiftcard && megjelenitheto.length === 0 && (
             <Text
@@ -456,13 +409,6 @@ const Payment = ({
             </Text>
           )}
 
-          {kartyasValasztva && (
-            <SimplePayNyilatkozat
-              elfogadva={nyilatkozatElfogadva}
-              onValtozas={setNyilatkozatElfogadva}
-            />
-          )}
-
           <ErrorMessage
             error={error}
             data-testid="payment-method-error-message"
@@ -475,8 +421,7 @@ const Payment = ({
             isLoading={isLoading}
             disabled={
               (isStripeLike(selectedPaymentMethod) && !paymentComplete) ||
-              (!selectedPaymentMethod && !paidByGiftcard) ||
-              (kartyasValasztva && !nyilatkozatElfogadva)
+              (!selectedPaymentMethod && !paidByGiftcard)
             }
             data-testid="submit-payment-button"
           >

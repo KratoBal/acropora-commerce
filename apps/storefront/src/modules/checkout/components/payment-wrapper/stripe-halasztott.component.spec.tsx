@@ -17,6 +17,7 @@ vi.mock("@lib/util/stripe-kulcs", () => ({
 }))
 
 import PaymentWrapper from "./index"
+import { stripeElementsBeallitas } from "@lib/util/stripe-megjelenes"
 
 afterEach(() => {
   cleanup()
@@ -51,6 +52,8 @@ describe("PaymentWrapper, vegyes kosár", () => {
         currency: "huf",
         captureMethod: "manual",
         paymentMethodTypes: ["card"],
+        // a Foundations megjelenés, magyarul (`stripe-megjelenes.ts`)
+        ...stripeElementsBeallitas("commerce"),
       },
     ])
   })

@@ -66,11 +66,10 @@ export const captureBeforeOrderEdit = async (
 
   /*
     ANOTHER CARD PROVIDER WITH AN UNCAPTURED HOLD (c64d463f, acrobot 25718).
-    SimplePay is one step today: its payment is captured when the order is
-    placed, so Medusa's confirm leaves it alone. A two-step setup would leave
-    it AUTHORIZED, and the confirm would cancel the hold silently, as it did to
-    Stripe (#15). Only Stripe's capture is ours to make here; for another card
-    provider the edit stops and says so. Cash on delivery and pay-at-store are
+    Stripe is the only card provider today. Should another be named for the
+    card role, an AUTHORIZED payment of it would be cancelled silently by the
+    confirm, as it was for Stripe (#15). Only Stripe's capture is ours to make
+    here; for another card provider the edit stops and says so. Cash on delivery and pay-at-store are
     not card holds, and are left to Medusa.
   */
   if (payment.provider_id !== STRIPE_PROVIDER_ID) {

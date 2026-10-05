@@ -60,7 +60,6 @@ const Review = ({
           <PaymentButton
             cart={cart}
             fizetesiSzerep={fizetesiSzerep}
-            kartyas={searchParams.get("fizetes") === "kartya"}
             stripeKozos={searchParams.get("fizetes") === "stripe"}
             data-testid="submit-order-button"
           />

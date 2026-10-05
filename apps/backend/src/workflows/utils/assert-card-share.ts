@@ -1,37 +1,37 @@
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 
 import {
-  SimplePaySessionFacts,
-  isSharedSimplePay,
-} from "../../modules/simplepay/service"
-import { cardShareFactsOf } from "./card-share-facts"
+  type StripeShareFacts,
+  isSharedCardPayment,
+  stripeShareFactsOf,
+} from "../../modules/stripe-capture/share"
 import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "./split-completion"
 
-/** A cart as the check sees it: its total and its SimplePay facts, if any. */
+/** A cart as the check sees it: its total and its shared card payment's facts, if any. */
 export type ShareView = {
   id: string
   total: number
   metadata: Record<string, unknown> | null
-  facts: SimplePaySessionFacts | null
+  facts: StripeShareFacts | null
 }
 
 /**
  * WHAT A CARD PAYMENT MUST COVER BEFORE A CART BECOMES AN ORDER (P4-3c).
  *
- * - One cart, one transaction: its own amount is the cart's total.
+ * - One cart, one PaymentIntent: its own amount is the cart's total.
  * - The shipped cart of a split paid together: its own amount is its total,
- *   and the transaction's total is its total plus the pickup cart's, whose
- *   session carries the same transaction.
- * - The pickup cart: its own amount is its total, and the transaction is the
+ *   and the intent's total is its total plus the pickup cart's, whose
+ *   session carries the same intent.
+ * - The pickup cart: its own amount is its total, and the intent is the
  *   shipped cart's.
  *
- * The provider already refuses a FINISHED transaction for another total than
- * it started; this closes the rest: a total that no longer matches the carts,
- * or a session carrying a transaction that is not its split's.
+ * The provider already refuses a joined session whose part does not complete
+ * the intent's amount; this closes the rest: a total that no longer matches
+ * the carts, or a session carrying an intent that is not its split's.
  *
  * Returns the reason to refuse, or null.
  */
-export const simplePayShareProblem = (cart: ShareView, other: ShareView | null): string | null => {
+export const cardShareProblem = (cart: ShareView, other: ShareView | null): string | null => {
   const facts = cart.facts
 
   if (!facts) {
@@ -54,7 +54,7 @@ export const simplePayShareProblem = (cart: ShareView, other: ShareView | null):
       : "The pickup cart's card payment is not its shipped cart's"
   }
 
-  if (isSharedSimplePay(facts)) {
+  if (isSharedCardPayment(facts)) {
     const pickup = other?.facts
     return pickup?.joined &&
       String(pickup.transactionId) === String(facts.transactionId) &&
@@ -83,13 +83,13 @@ const loadShareView = async (
   }
 
   const sessions = (raw.payment_collection?.payment_sessions ?? []) as { data?: unknown }[]
-  const facts = sessions.map((session) => cardShareFactsOf(session?.data)).find(Boolean) ?? null
+  const facts = sessions.map((session) => stripeShareFactsOf(session?.data)).find(Boolean) ?? null
 
   return { id: raw.id, total: Number(raw.total), metadata: raw.metadata ?? null, facts }
 }
 
 /** The completion's check (the `validate` hook): throws when the card payment does not cover the cart. */
-export const assertSimplePayShare = async (
+export const assertCardShare = async (
   cartId: string,
   container: { resolve: (key: string) => any }
 ) => {
@@ -101,13 +101,13 @@ export const assertSimplePayShare = async (
 
   const otherKey = cart.facts.joined
     ? PARENT_CART_METADATA_KEY
-    : isSharedSimplePay(cart.facts)
+    : isSharedCardPayment(cart.facts)
       ? PICKUP_CART_METADATA_KEY
       : null
   const otherId = otherKey ? cart.metadata?.[otherKey] : null
   const other = typeof otherId === "string" && otherId ? await loadShareView(container, otherId) : null
 
-  const problem = simplePayShareProblem(cart, other)
+  const problem = cardShareProblem(cart, other)
 
   if (problem) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, problem)

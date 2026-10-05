@@ -24,7 +24,7 @@ import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-statu
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
-import { refuseClientSimplePayKeys } from "./refuse-client-simplepay-keys";
+import { refuseClientCardShareKeys } from "./refuse-client-card-share-keys";
 import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 
@@ -124,13 +124,7 @@ export default defineMiddlewares({
     {
       matcher: "/store/payment-collections/:id/payment-sessions",
       method: "POST",
-      middlewares: [refuseClientSimplePayKeys],
-    },
-    {
-      // SimplePay signs the exact bytes it sends; the IPN is checked on them.
-      matcher: "/simplepay/ipn",
-      method: "POST",
-      bodyParser: { preserveRawBody: true },
+      middlewares: [refuseClientCardShareKeys],
     },
     {
       matcher: "/store/shipping-class",

@@ -1,9 +1,41 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { hibaAllapota, rendelesHibaUzenet } from "@lib/util/penztar-uzenet"
+import {
+  fizetesUzenet,
+  hibaAllapota,
+  rendelesHibaUzenet,
+} from "@lib/util/penztar-uzenet"
 import { revalidateTag } from "next/cache"
 import { getAuthHeaders, getCacheTag } from "./cookies"
+
+/**
+ * A VEGYES KOSÁR KÁRTYÁS FIZETÉSÉNEK VÁLASZTÁSA: a fizetési lépés „Tovább”
+ * gombja. A háttér leveszi a korábbi munkamenetet és az utánvét-díjat, hogy az
+ * ellenőrzés a kártyával fizetendő összeget mutassa; fizetés NEM indul.
+ *
+ * Minden ág ÉRTÉKKEL tér vissza, nem dob: a szerver-műveletből dobott hiba
+ * üzenetét produkcióban a Next lecseréli (#371).
+ */
+export async function valasszKartyatVegyesKosarra(
+  cartId: string,
+): Promise<{ ok: true } | { ok: false; uzenet: string }> {
+  try {
+    await sdk.client.fetch(`/store/carts/${cartId}/card-choose`, {
+      method: "POST",
+      headers: { ...(await getAuthHeaders()) },
+    })
+  } catch (hiba) {
+    console.error(
+      "A bankkártyás fizetés választása nem sikerült:",
+      hibaAllapota(hiba) ?? "(nincs állapotkód)",
+    )
+    return { ok: false, uzenet: fizetesUzenet(hibaAllapota(hiba)) }
+  }
+
+  revalidateTag(await getCacheTag("carts"))
+  return { ok: true }
+}
 
 /**
  * A VEGYES KOSÁR STRIPE-FIZETÉSE A LEADÁSKOR (Balázs 2026-10-01, 1-es út):

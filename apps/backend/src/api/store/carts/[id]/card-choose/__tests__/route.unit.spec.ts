@@ -13,7 +13,7 @@ import { POST } from "../route"
  * THE CARD CHOICE ROUTE (P4-4). What must fail: the choice not reaching the
  * cart named in the path, or with another store pickup option than ours.
  */
-describe("POST /store/carts/:id/simplepay-choose", () => {
+describe("POST /store/carts/:id/card-choose", () => {
   it("drops the old payment of the cart in the path, and answers ok", async () => {
     const saved = { ...process.env }
     process.env.ACROPORA_SO_PICKUP = "so_bolt"

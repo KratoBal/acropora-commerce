@@ -26,8 +26,8 @@ import { PICKUP_CART_METADATA_KEY } from "../../../workflows/utils/split-complet
  * resolved to provider ids. It exists because a storefront cannot do that
  * resolution: the role-to-provider map lives in this process's environment.
  * An allowed role with no provider yields no entry, so the list can be empty
- * while the roles are not - today that is what ONLINE_CARD looks like, since
- * no SimplePay provider is registered.
+ * while the roles are not - that is what ONLINE_CARD looks like without
+ * STRIPE_API_KEY.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { cart_id } = req.validatedQuery as { cart_id: string }

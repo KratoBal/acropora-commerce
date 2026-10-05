@@ -66,11 +66,11 @@ describe("the admin order edit confirm", () => {
   // MI PIROSÍT: ha a köztes réteg nem adná át a kártyás szolgáltatók listáját
   // (akkor a nem Stripe zárolás-őr soha nem szólna, c64d463f)
   it("hands the online card providers to the decision", async () => {
-    process.env.ACROPORA_PP_ONLINE_CARD = "pp_simplepay_simplepay,pp_stripe_stripe"
+    process.env.ACROPORA_PP_ONLINE_CARD = "pp_masik_kartya,pp_stripe_stripe"
     decide.mockResolvedValueOnce({ action: "pass", reason: "no_card_hold" })
     await call()
     expect(decide).toHaveBeenLastCalledWith("order_1", expect.anything(), [
-      "pp_simplepay_simplepay",
+      "pp_masik_kartya",
       "pp_stripe_stripe",
     ])
     delete process.env.ACROPORA_PP_ONLINE_CARD

@@ -18,7 +18,7 @@ import { smallestUnit } from "./smallest-unit"
  *
  * Balázs, 2026-10-01 04:44 UTC (Eldöntendő thread, acrobot 25495): when an item
  * drops out, the capture takes the SMALLER amount in the first place, not the
- * whole amount followed by a refund. Test storefront only; SimplePay stays.
+ * whole amount followed by a refund.
  *
  * WHY THE STOCK PROVIDER CANNOT: measured in the installed packages,
  * - `@medusajs/payment-stripe` 2.20.1 `capturePayment` calls
@@ -121,7 +121,7 @@ export default class AcroporaStripeService extends StripeProviderService {
     const own = major(input.amount)
 
     // THE PICKUP SESSION: the shipped session's intent, no new one. The two
-    // parts must be exactly the intent's amount (as with SimplePay).
+    // parts must be exactly the intent's amount.
     if (joined) {
       const facts = joined as Partial<StripeShareFacts>
       if (
@@ -188,7 +188,7 @@ export default class AcroporaStripeService extends StripeProviderService {
 
   /**
    * A shared intent cannot follow one cart's new amount: the split's payment is
-   * started again, for both carts (as with SimplePay). The same amount keeps it.
+   * started again, for both carts. The same amount keeps it.
    */
   async updatePayment(input: {
     amount: unknown

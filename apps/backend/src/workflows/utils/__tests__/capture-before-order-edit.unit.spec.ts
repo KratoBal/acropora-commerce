@@ -139,17 +139,17 @@ describe("captureBeforeOrderEdit", () => {
 
   /*
     EGY MÁSIK KÁRTYÁS SZOLGÁLTATÓ LEVONATLAN ZÁROLÁSA (c64d463f). MI PIROSÍT: ha egy
-    kétlépéses (AUTHORIZED, nem levont) SimplePay-fizetésnél a szerkesztés átmenne
-    (a Medusa csendben törölné a zárolást); ha a ma egylépéses, már levont
-    SimplePay, vagy az utánvét és a bolti fizetés szerkesztése megállna.
+    kétlépéses (AUTHORIZED, nem levont) másik kártyás fizetésnél a szerkesztés
+    átmenne (a Medusa csendben törölné a zárolást); ha egy már levont másik
+    kártyás fizetés, vagy az utánvét és a bolti fizetés szerkesztése megállna.
   */
   it("another card provider's uncaptured hold stops the edit; captured, or not a card, passes", async () => {
-    const cards = ["pp_stripe_stripe", "pp_simplepay_simplepay"]
-    const held = opsFor([single({ provider_id: "pp_simplepay_simplepay", captured: 0 })], 17300)
+    const cards = ["pp_stripe_stripe", "pp_masik_kartya"]
+    const held = opsFor([single({ provider_id: "pp_masik_kartya", captured: 0 })], 17300)
     expect((await captureBeforeOrderEdit("order_1", held.ops, cards)).action).toBe("refuse")
     expect(held.log).toEqual([])
     for (const payment of [
-      { provider_id: "pp_simplepay_simplepay", captured: 27800 },
+      { provider_id: "pp_masik_kartya", captured: 27800 },
       { provider_id: "pp_acropora_cod", captured: 0 },
       { provider_id: "pp_system_default", captured: 0 },
     ]) {
@@ -165,8 +165,8 @@ describe("captureBeforeOrderEdit", () => {
     expect(log).toEqual([])
   })
 
-  it("not a Stripe payment (SimplePay, cash on delivery): nothing is touched", async () => {
-    for (const provider_id of ["pp_simplepay_simplepay", "pp_acropora_cod", "pp_system_default"]) {
+  it("not a Stripe payment (another card, cash on delivery): nothing is touched", async () => {
+    for (const provider_id of ["pp_masik_kartya", "pp_acropora_cod", "pp_system_default"]) {
       const { ops, log } = opsFor([single({ provider_id })], 17300)
       expect(await captureBeforeOrderEdit("order_1", ops)).toEqual({ action: "pass", reason: "no_card_hold" })
       expect(log).toEqual([])

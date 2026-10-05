@@ -14,8 +14,8 @@ import { POST } from "../route"
 
 /**
  * THE STRIPE START (Balázs 2026-10-01: one Stripe payment for both orders).
- * What must fail: a provider but Stripe, or Stripe when it is not listed; the
- * SimplePay share used; the lock open without ACROPORA_STRIPE_MIXED_CART=true.
+ * What must fail: a provider but Stripe, or Stripe when it is not listed; a
+ * share but Stripe's used; the lock open without ACROPORA_STRIPE_MIXED_CART=true.
  */
 const call = async (env: Record<string, string>) => {
   startCardPayment.mockClear()
@@ -33,7 +33,7 @@ const call = async (env: Record<string, string>) => {
 describe("POST /store/carts/:id/stripe-start", () => {
   it("starts with Stripe by name and its share; the lock is closed by default", async () => {
     const { config, res } = await call({
-      ACROPORA_PP_ONLINE_CARD: "pp_simplepay_simplepay,pp_stripe_stripe",
+      ACROPORA_PP_ONLINE_CARD: "pp_masik_kartya,pp_stripe_stripe",
     })
     expect(config).toEqual({ providerId: "pp_stripe_stripe", share: STRIPE_SHARE, allowSplit: false })
     expect((sharedPaymentOperations.mock.calls[0] as unknown[])[1]).toEqual({ storePickupOptionId: "so_bolt" })
@@ -47,7 +47,7 @@ describe("POST /store/carts/:id/stripe-start", () => {
   })
 
   it("not listed for the card role: not configured", async () => {
-    expect((await call({ ACROPORA_PP_ONLINE_CARD: "pp_simplepay_simplepay" })).config).toMatchObject({
+    expect((await call({ ACROPORA_PP_ONLINE_CARD: "pp_masik_kartya" })).config).toMatchObject({
       providerId: "",
     })
   })

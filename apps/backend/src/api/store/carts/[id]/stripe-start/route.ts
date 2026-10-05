@@ -13,8 +13,8 @@ import { STRIPE_PROVIDER_ID } from "../../../../../workflows/utils/stripe-config
 /**
  * POST /store/carts/:id/stripe-start
  *
- * The Stripe counterpart of `simplepay-start` (Balázs, 2026-10-01: one Stripe
- * payment for both orders of a mixed cart). A mixed cart is split BEFORE the
+ * The card payment of a mixed cart (Balázs, 2026-10-01: one Stripe payment
+ * for both orders). A mixed cart is split BEFORE the
  * card is confirmed, and one PaymentIntent covers both carts (the shipped
  * cart's session starts it, the pickup cart's session joins it); a cart that
  * is not split gets its own intent. The storefront then confirms the card on

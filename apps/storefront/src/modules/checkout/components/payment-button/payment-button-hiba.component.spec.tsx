@@ -3,12 +3,6 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { fireEvent } from "@testing-library/dom"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-// A bankkartyas szerver-muveletek (P4-4): a teszt-kornyezetben a `server-only`
-// orzo miatt nem toltodhetnek be, ezert mock.
-vi.mock("@lib/data/simplepay", () => ({
-  valasszKartyat: vi.fn().mockResolvedValue({ ok: true }),
-  inditsKartyasFizetest: vi.fn(),
-}))
 // a vegyes kosar Stripe-utjanak szerver-muveletei (a `server-only` orzo miatt mock)
 vi.mock("@lib/data/stripe", () => ({
   inditsStripeKozosFizetest: vi.fn(),

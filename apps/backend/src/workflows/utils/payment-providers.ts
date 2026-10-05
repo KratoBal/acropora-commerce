@@ -1,4 +1,3 @@
-import { SIMPLEPAY_PROVIDER_ID } from "../../modules/simplepay"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
 
@@ -7,27 +6,18 @@ import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
  *
  * Filled from the environment, and an unset role stays unmapped on purpose.
  *
- * Cash on delivery is wired: the Acropora COD provider is registered in
- * medusa-config.ts, and its id is a historical constant rather than a choice
+ * Cash on delivery is the Acropora COD provider registered in medusa-config.ts,
+ * and its id is a historical constant rather than a choice
  * (CASH_ON_DELIVERY_PROVIDER_ID). Pay-at-store can only be the built-in system
- * provider today. Online card is still unwired: no SimplePay provider is
- * registered, so there is no id to name, and naming a provider that does not
- * exist has the same effect as a typo.
+ * provider today. Online card is Stripe, the only card provider (Balázs,
+ * 2026-10-05: SimplePay goes), registered when STRIPE_API_KEY is set:
  *
- *   ACROPORA_PP_ONLINE_CARD=              (blocked on the SimplePay integration)
+ *   ACROPORA_PP_ONLINE_CARD=pp_stripe_stripe
  *   ACROPORA_PP_COD=pp_acropora_cod
  *   ACROPORA_PP_PAY_AT_STORE=pp_system_default
  *
- * This is the SimplePay integration point. Nothing else in the codebase names a
- * payment provider.
- *
- * ONE ROLE, SEVERAL PROVIDERS (Stripe next to SimplePay, Balázs 2026-09-30
- * 22:36 UTC, test storefront only): a variable may name several ids separated
- * by commas, and the order is the offer's order, so the first is the default:
- *
- *   ACROPORA_PP_ONLINE_CARD=pp_simplepay_simplepay,pp_stripe_stripe
- *
- * An id may belong to one role only; the first role that names it keeps it.
+ * A variable may name several ids separated by commas, in the offer's order
+ * (the first is the default); an id belongs to the first role that names it.
  */
 export const PAYMENT_ROLE_PROVIDER_ENV: Record<PaymentRole, string> = {
   ONLINE_CARD: "ACROPORA_PP_ONLINE_CARD",
@@ -79,9 +69,9 @@ export type AllowedPaymentProvider = { id: string; role: PaymentRole }
  * anything failing, because both halves keep working on their own.
  *
  * A role with no provider yields nothing, and that is the honest answer rather
- * than an omission: ONLINE_CARD has no id today, because no SimplePay provider
- * is registered. A cart whose only allowed role is unmapped therefore gets an
- * EMPTY list, which is what "there is nothing you can pay with here" looks
+ * than an omission: without STRIPE_API_KEY, ONLINE_CARD has no registered id. A
+ * cart whose only allowed role is unmapped therefore gets an EMPTY list, which
+ * is what "there is nothing you can pay with here" looks
  * like. The caller has to render that, not skip it.
  *
  * The order follows PAYMENT_ROLES rather than the map's insertion order, so
@@ -108,20 +98,13 @@ export const resolvePaymentRole = (
   (providerId && providerRoles.get(providerId)) || null
 
 /**
- * THE CARD PROVIDERS THAT CAN PAY A MIXED CART. Only SimplePay: its start
- * (`simplepay-start`) moves the pickup lines BEFORE the payment, and one
- * transaction covers both carts (P4-3c). Any other card payment is confirmed on
- * the whole cart first, and the split at completion would re-create the
- * session, discarding the payment the customer just confirmed.
- *
- * Whether and how Stripe pays a mixed cart is Balázs's decision, not made yet
- * (acrobot 25421); until then a mixed cart is not offered Stripe.
+ * The offer for a cart that will be split: card only where a split can be
+ * paid. Stripe pays a mixed cart with one PaymentIntent for both orders
+ * (`stripe-start` moves the pickup lines BEFORE the card is confirmed,
+ * captured together at Kiszállítás; Balázs 2026-10-01), once its lock is open.
+ * Any other card payment would be confirmed on the whole cart first, and the
+ * split at completion would re-create the session, discarding it.
  */
-export const SPLIT_PAYING_CARD_PROVIDERS: ReadonlySet<string> = new Set([
-  SIMPLEPAY_PROVIDER_ID,
-])
-
-/** The offer for a cart that will be split: card only where a split can be paid. */
 export const providersForMixedCart = (
   providers: AllowedPaymentProvider[],
   mixed: boolean,
@@ -131,9 +114,6 @@ export const providersForMixedCart = (
     ? providers.filter(
         (provider) =>
           provider.role !== "ONLINE_CARD" ||
-          SPLIT_PAYING_CARD_PROVIDERS.has(provider.id) ||
-          // Stripe pays a mixed cart once the lock is open (one payment for both
-          // orders, captured at Kiszállítás; Balázs 2026-10-01)
           (provider.id === STRIPE_PROVIDER_ID && stripeMixedCartEnabled(env))
       )
     : providers

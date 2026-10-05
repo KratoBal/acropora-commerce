@@ -1,10 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils"
 import {
-  SIMPLEPAY_DATA_KEY,
-  SIMPLEPAY_JOINED_KEY,
-  SIMPLEPAY_JOINT_KEY,
-} from "../../modules/simplepay/service"
-import {
   STRIPE_JOINED_KEY,
   STRIPE_JOINT_KEY,
   STRIPE_SHARE_KEY,
@@ -71,8 +66,8 @@ export type SplitCart = {
   pickup_promo_codes: string[]
   has_shipping_method: boolean
   /**
-   * The cart's payment is a SimplePay transaction shared with the other cart
-   * of the split (P4-3c): the lines were split before the payment started.
+   * The cart's payment is a Stripe PaymentIntent shared with the other cart of
+   * the split (P4-3c): the lines were split before the payment started.
    */
   shared_payment: boolean
 }
@@ -135,8 +130,8 @@ export type SplitOperations = {
 
 /**
  * ONE SPLIT AT A TIME PER CART. A double click on "place order" or "pay", or
- * the IPN arriving while the customer's return is being handled, would
- * otherwise run two splits of the same cart at once: both find no pickup
+ * the order-placed subscriber running while the storefront completes the
+ * split, would otherwise run two splits of the same cart at once: both find no pickup
  * cart, both create one, and the lines end up spread over three carts.
  * Medusa's own completion locks the cart id itself; the moves around it are
  * ours, so they take their own key (a different one: holding the cart id
@@ -176,7 +171,7 @@ const mustLoad = async (ops: SplitOperations, cartId: string) => {
 }
 
 /**
- * The pickup cart's payment: the shared card transaction when the split was
+ * The pickup cart's payment: the shared PaymentIntent when the split was
  * paid together (P4-3c), otherwise payment in the shop.
  */
 const pickupProviderOf = (pickup: SplitCart, payAtStoreProviderId: string) =>
@@ -270,9 +265,9 @@ const completeSplitCartLocked = async (
   const providerId = cart.payment_provider_id
 
   // PAID TOGETHER (P4-3c): the lines were split before the payment started,
-  // and one card transaction covers both carts. Nothing moves now, and a
-  // failure moves nothing back: the payment belongs to these two carts as
-  // they are, and the next call (the IPN retries) completes them.
+  // and one PaymentIntent covers both carts. Nothing moves now, and a failure
+  // moves nothing back: the payment belongs to these two carts as they are,
+  // and the next call completes them.
   if (cart.shared_payment && providerId) {
     if (pickupLines.length || !pickupCartId) {
       throw new MedusaError(
@@ -457,17 +452,15 @@ export const shippingProfileGaps = (
 export type SharedPaymentOperations = SplitOperations & {
   /** The cart's total, as Medusa computes it now. */
   cartTotal(cartId: string): Promise<number>
-  /** The payer's details the provider needs: email and billing address. */
-  payerOf(cartId: string): Promise<Record<string, unknown>>
   /**
    * A new payment session with this data; the provider's facts it got, read
-   * from the session data under `factsKey` (SimplePay's when not given).
+   * from the session data under `factsKey`.
    */
   startPayment(
     cartId: string,
     providerId: string,
     data: Record<string, unknown>,
-    factsKey?: string
+    factsKey: string
   ): Promise<Record<string, unknown>>
   /** Removes the cash-on-delivery fee lines, if any: a card payment owes none. */
   dropCashOnDeliveryFee(cartId: string): Promise<void>
@@ -476,8 +469,7 @@ export type SharedPaymentOperations = SplitOperations & {
 }
 
 export type SharedPaymentStart = {
-  payment_url: string | null
-  /** Stripe: the joint intent's client secret, to confirm the card with. */
+  /** The joint intent's client secret, to confirm the card with. */
   client_secret?: string | null
   total: number
   shipped_total: number
@@ -486,42 +478,15 @@ export type SharedPaymentStart = {
 }
 
 /**
- * THE CARD PAYMENT STARTS HERE (P4-3c, P4-4), after the customer accepted
- * SimplePay's data-transfer statement: a cart that is not split gets one
- * transaction for itself; a mixed cart is split first (below).
- *
- * The cash-on-delivery fee goes first, so a customer who switched from cash on
- * delivery is not charged it by card, and the amount SimplePay gets is final.
- *
- * ONE CARD PAYMENT FOR BOTH ORDERS OF A MIXED CART (P4-3c, variant B).
- *
- * The lines are split BEFORE the payment starts, so the transaction is for
- * the two finished carts together and the money cannot differ from the two
- * orders' sum. The shipped cart's session starts it (`simplepay_joint`), the
- * pickup cart's session carries it (`simplepay_joined`); both keys are set
- * here only, never by the client.
- *
- * If anything fails before the customer is sent to pay, the lines move back
- * and the cart is whole again. Called again (a second click, or after a
- * cancelled payment), it reuses the split and starts a new transaction.
- */
-/**
- * HOW A CARD PROVIDER SHARES ONE PAYMENT BETWEEN A SPLIT'S TWO CARTS: where
+ * HOW THE CARD PROVIDER SHARES ONE PAYMENT BETWEEN A SPLIT'S TWO CARTS: where
  * its facts are on the session data, and the data that starts the shared
  * payment on the shipped cart (`joint`) and joins it from the pickup cart
- * (`joined`). SimplePay's is the default; Stripe's came with Balázs's
- * 2026-10-01 decision (one Stripe payment for both orders).
+ * (`joined`). Stripe, the only card provider (Balázs, 2026-10-05).
  */
 export type CardShare = {
   factsKey: string
   joint: (total: number) => Record<string, unknown>
   joined: (facts: Record<string, unknown>) => Record<string, unknown>
-}
-
-export const SIMPLEPAY_SHARE: CardShare = {
-  factsKey: SIMPLEPAY_DATA_KEY,
-  joint: (total) => ({ [SIMPLEPAY_JOINT_KEY]: { total } }),
-  joined: (facts) => ({ [SIMPLEPAY_JOINED_KEY]: facts }),
 }
 
 export const STRIPE_SHARE: CardShare = {
@@ -533,11 +498,30 @@ export const STRIPE_SHARE: CardShare = {
 
 export type CardStartConfig = {
   providerId: string
-  share?: CardShare
+  share: CardShare
   /** `false`: a cart that would be split is refused (the Stripe lock). */
   allowSplit?: boolean
 }
 
+/**
+ * THE CARD PAYMENT STARTS HERE (P4-3c): a cart that is not split gets one
+ * PaymentIntent for itself; a mixed cart is split first (below).
+ *
+ * The cash-on-delivery fee goes first, so a customer who switched from cash on
+ * delivery is not charged it by card, and the intent's amount is final.
+ *
+ * ONE CARD PAYMENT FOR BOTH ORDERS OF A MIXED CART (P4-3c, variant B).
+ *
+ * The lines are split BEFORE the payment starts, so the intent is for the two
+ * finished carts together and the money cannot differ from the two orders'
+ * sum. The shipped cart's session starts it (`stripe_joint`), the pickup
+ * cart's session carries it (`stripe_joined`); both keys are set here only,
+ * never by the client.
+ *
+ * If anything fails before the card is confirmed, the lines move back and the
+ * cart is whole again. Called again (a second click, or after a failed card),
+ * it reuses the split and starts a new intent.
+ */
 export const startCardPayment = (
   cartId: string,
   ops: SharedPaymentOperations,
@@ -550,7 +534,7 @@ const startCardPaymentLocked = async (
   ops: SharedPaymentOperations,
   config: CardStartConfig
 ): Promise<SharedPaymentStart> => {
-  const share = config.share ?? SIMPLEPAY_SHARE
+  const share = config.share
 
   if (!config.providerId) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Card payment is not configured")
@@ -577,17 +561,12 @@ const startCardPaymentLocked = async (
 
   await ops.dropCashOnDeliveryFee(cartId)
 
-  // NOT SPLIT: one transaction for the cart itself, with its payer.
+  // NOT SPLIT: one intent for the cart itself.
   if (!pickupLines.length && !pickupCartId) {
     const total = await ops.cartTotal(cartId)
-    const facts = await ops.startPayment(
-      cartId,
-      config.providerId,
-      await ops.payerOf(cartId),
-      share.factsKey
-    )
+    const facts = await ops.startPayment(cartId, config.providerId, {}, share.factsKey)
     return {
-      payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,
+      ...(typeof facts.clientSecret === "string" ? { client_secret: facts.clientSecret } : {}),
       total,
       shipped_total: total,
       pickup_total: 0,
@@ -600,17 +579,15 @@ const startCardPaymentLocked = async (
   try {
     const shipped = await ops.cartTotal(cartId)
     const pickup = await ops.cartTotal(pickupId)
-    const payer = await ops.payerOf(cartId)
     const facts = await ops.startPayment(
       cartId,
       config.providerId,
-      { ...payer, ...share.joint(shipped + pickup) },
+      share.joint(shipped + pickup),
       share.factsKey
     )
     await ops.startPayment(pickupId, config.providerId, share.joined(facts), share.factsKey)
 
     return {
-      payment_url: typeof facts.paymentUrl === "string" ? facts.paymentUrl : null,
       ...(typeof facts.clientSecret === "string" ? { client_secret: facts.clientSecret } : {}),
       total: shipped + pickup,
       shipped_total: shipped,
@@ -624,25 +601,15 @@ const startCardPaymentLocked = async (
 }
 
 /**
- * A SHARED CARD PAYMENT THAT DID NOT HAPPEN (P4-3c3): cancelled, timed out,
- * refused. The lines go back to the cart the customer chose them in, so the
- * cart is whole again, as before the payment started. Moving them changes
- * both totals, and Medusa then drops both payment sessions: the shipped one
- * releases its unpaid transaction, the joined one touches nothing.
+ * A SHARED CARD PAYMENT THAT DID NOT HAPPEN (P4-3c3): the card was refused or
+ * the customer gave up. The lines go back to the cart the customer chose them
+ * in, so the cart is whole again, as before the payment started, and both
+ * carts' payment sessions are dropped. The shipped session's drop cancels the
+ * joint intent (no hold stays on the card); the pickup session only joined,
+ * its drop touches nothing.
  *
  * Only for a split whose payment was shared and not completed; anything else
  * is left as it is. Safe to run again.
- */
-export const rejoinSharedSplit = (
-  cartId: string,
-  ops: SplitOperations
-): Promise<{ rejoined: boolean }> => ops.withLock(cartId, () => rejoinSharedSplitLocked(cartId, ops))
-
-/**
- * A SHARED STRIPE PAYMENT THAT DID NOT HAPPEN: the split is undone as for
- * SimplePay (`rejoinSharedSplit`), and both carts' payment sessions are
- * dropped. The shipped session's drop cancels the joint intent (no hold stays
- * on the card); the pickup session only joined, its drop touches nothing.
  */
 export const rejoinAndClearSharedSplit = (
   cartId: string,
@@ -685,11 +652,10 @@ const rejoinSharedSplitLocked = async (
 }
 
 /**
- * THE CUSTOMER CHOSE CARD PAYMENT (P4-4), before accepting the statement and
- * before any transaction: the cash-on-delivery fee and the earlier payment
- * session go, so the review shows the amount the card will be charged, and
- * nothing is started yet. The transaction starts at placement
- * (`startCardPayment`), after the acceptance.
+ * THE CUSTOMER CHOSE CARD PAYMENT FOR A MIXED CART, before any intent: the
+ * cash-on-delivery fee and the earlier payment session go, so the review shows
+ * the amount the card will be charged, and nothing is started yet. The intent
+ * starts at placement (`startCardPayment`).
  */
 export const chooseCardPayment = (cartId: string, ops: SharedPaymentOperations): Promise<void> =>
   ops.withLock(cartId, async () => {

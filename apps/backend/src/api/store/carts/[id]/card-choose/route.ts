@@ -6,12 +6,13 @@ import { chooseCardPayment } from "../../../../../workflows/utils/split-completi
 import { sharedPaymentOperations } from "../../../../../workflows/utils/split-completion-operations"
 
 /**
- * POST /store/carts/:id/simplepay-choose
+ * POST /store/carts/:id/card-choose
  *
- * The customer chose card payment in the payment step (P4-4). The earlier
- * payment session and the cash-on-delivery fee go, so the review shows what
- * the card will be charged; no transaction starts here. It starts at
- * placement (`simplepay-start`), after the statement is accepted.
+ * The customer chose card payment for a mixed cart in the payment step. The
+ * earlier payment session and the cash-on-delivery fee go, so the review shows
+ * what the card will be charged; no payment starts here. It starts at
+ * placement (`stripe-start`), where the cart is split and one PaymentIntent
+ * covers both orders.
  */
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const storePickup = resolveShippingOptionRoleBindings().find(

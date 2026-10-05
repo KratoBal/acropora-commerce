@@ -66,8 +66,27 @@ const JELOLO = "data-vilag"
 const kodSzoveg = (szoveg: string) =>
   szoveg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
 
+/**
+ * A KITEVES JSX-ATTRIBUTUM (szokoz vagy sortores utan), NEM CSS-SZELEKTOR.
+ *
+ * Merve 2026-10-05: a Stripe mezo megjelenese (`stripe-megjelenes.ts`) a
+ * lapbol OLVASSA ki a vilagot egy `querySelector`-ral, ugyanazzal a
+ * szelektorral, amit a CSS figyel (`[data-vilag="sotet"]`). Ez nem allit
+ * vilagot, tehat nem hasznalo; a szamlalo eddig megis annak vette, mert a
+ * szoveg ugyanaz. A szelektor `[` utan all, az attributum szokoz utan.
+ */
+const KITESZI = new RegExp(`(^|\\s)${JELOLO}=`, "m")
+
 const osszesHasznalo = forrasFajlok(GYOKER)
-  .filter((ut) => kodSzoveg(readFileSync(ut, "utf-8")).includes(`${JELOLO}=`))
+  .filter((ut) => KITESZI.test(kodSzoveg(readFileSync(ut, "utf-8"))))
+  .map((ut) => ut.slice(GYOKER.length + 1))
+
+/** Akik csak OLVASSAK a jelolot (CSS-szelektorkent), kiteves nelkul. */
+const olvasok = forrasFajlok(GYOKER)
+  .filter((ut) => {
+    const kod = kodSzoveg(readFileSync(ut, "utf-8"))
+    return kod.includes(`[${JELOLO}=`) && !KITESZI.test(kod)
+  })
   .map((ut) => ut.slice(GYOKER.length + 1))
 
 /**
@@ -105,6 +124,19 @@ describe("ki állítja be a világot", () => {
     expect(
       osszesHasznalo.filter((ut) => FEJLESZTOI_MINTALAPOK.includes(ut)),
     ).toEqual(FEJLESZTOI_MINTALAPOK)
+  })
+
+  /**
+   * A SZURO KONTROLLJA, MINDKET IRANYBA: az ismert olvaso (a Stripe mezo)
+   * nincs a hasznalok kozott, de a keresés latja; es egy attributum-alak
+   * hasznalonak, egy szelektor-alak nem annak szamit.
+   */
+  it("a jelölőt csak olvasó Stripe-mező nem kiteszi a világot", () => {
+    expect(olvasok).toContain(join("lib", "util", "stripe-megjelenes.ts"))
+    expect(hasznalok).not.toContain(join("lib", "util", "stripe-megjelenes.ts"))
+    expect(KITESZI.test(`<div ${JELOLO}={vilag}>`)).toBe(true)
+    expect(KITESZI.test(`<div\n  ${JELOLO}="sotet">`)).toBe(true)
+    expect(KITESZI.test(`querySelector('[${JELOLO}="sotet"]')`)).toBe(false)
   })
 
   it("a kosár fa SEHOL nem állít világot", () => {

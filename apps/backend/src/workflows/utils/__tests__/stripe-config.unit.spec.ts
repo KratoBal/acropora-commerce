@@ -3,7 +3,7 @@ import { stripeProviders } from "../stripe-config"
 /**
  * THE STRIPE PROVIDER IS REGISTERED ONLY WITH A KEY. What must fail: an entry
  * without `apiKey` (its validateOptions would throw and stop the payment
- * module, SimplePay with it); an automatic capture.
+ * module, cash on delivery with it); an automatic capture.
  */
 describe("stripeProviders", () => {
   it("no key, or only whitespace: nothing is registered", () => {

@@ -1,8 +1,7 @@
 /**
- * STRIPE, A SECOND CARD PROVIDER NEXT TO SIMPLEPAY (Balázs, 2026-09-30 22:36
- * UTC, Stripe thread: "vegyuk fel a stripeot a fejlesztesbe ugy hogy a
- * simplepay is maradjon meg"). Test storefront only; SimplePay stays the
- * default (it is listed first in ACROPORA_PP_ONLINE_CARD).
+ * STRIPE, THE ONLY CARD PROVIDER (Balázs, 2026-10-05 09:33 UTC: only Stripe
+ * stays, SimplePay goes; card, Apple Pay and Google Pay, no Link). It came in
+ * next to SimplePay on 2026-09-30 and replaced it after the trial.
  *
  * The provider is Medusa's own, `@medusajs/payment-stripe` 2.20.1 (a dependency
  * of `@medusajs/medusa`, resolved as `@medusajs/medusa/payment-stripe`), behind
@@ -11,8 +10,8 @@
  * (dist/types/index.d.ts), measured in the installed version, not assumed.
  *
  * NO KEY, NO PROVIDER. The provider's `validateOptions` throws on a missing
- * `apiKey`, and a throwing provider stops the payment module, SimplePay and
- * cash on delivery with it. So without STRIPE_API_KEY it is not registered at
+ * `apiKey`, and a throwing provider stops the payment module, and cash on
+ * delivery with it. So without STRIPE_API_KEY it is not registered at
  * all, and nothing about the other payment methods changes.
  *
  * `capture: false` is the package's default made explicit: the card is

@@ -11,12 +11,11 @@ jest.mock("../../../../workflows/utils/load-cart-shipping-decision", () => ({
 import { GET } from "../route"
 
 /**
- * THE OFFER FOR A CART THAT WILL BE SPLIT (Stripe next to SimplePay). What must
- * fail: Stripe offered to a cart with pickup-only lines, or to one already split
- * (its shipped half names the pickup cart); SimplePay or the other roles lost.
+ * THE OFFER FOR A CART THAT WILL BE SPLIT. What must fail: Stripe offered to a
+ * cart with pickup-only lines while its lock is shut, or to one already split
+ * (its shipped half names the pickup cart); the other roles lost.
  */
 const KINALAT = [
-  { id: "pp_simplepay_simplepay", role: "ONLINE_CARD" },
   { id: "pp_stripe_stripe", role: "ONLINE_CARD" },
   { id: "pp_system_default", role: "PAY_AT_STORE" },
 ]
@@ -73,14 +72,11 @@ describe("GET /store/payment-options", () => {
   })
 
   it("a cart with pickup-only lines is not offered Stripe", async () => {
-    expect(await call(["l2"])).toEqual([KINALAT[0], KINALAT[2]])
+    expect(await call(["l2"])).toEqual([KINALAT[1]])
   })
 
   it("an already split shipped cart is not offered Stripe either", async () => {
-    expect(await call([], { acropora_pickup_cart_id: "cart_2" })).toEqual([
-      KINALAT[0],
-      KINALAT[2],
-    ])
+    expect(await call([], { acropora_pickup_cart_id: "cart_2" })).toEqual([KINALAT[1]])
   })
 
   /*
