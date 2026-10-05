@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("next/font/google", () => ({
-  Hanken_Grotesk: () => ({ variable: "hanken" }),
-  Belleza: () => ({ variable: "belleza" }),
+vi.mock("next/font/local", () => ({
+  default: ({ variable }: { variable: string }) => ({ variable }),
 }))
 
 import TokenMintalap, { dynamic, mintalapEngedelyezett } from "./page"

@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { Belleza, Hanken_Grotesk } from "next/font/google"
+import localFont from "next/font/local"
 import { notFound } from "next/navigation"
 
 import foundations from "../../styles/__fixtures__/figma-foundations.json"
@@ -23,15 +23,16 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-const hanken = Hanken_Grotesk({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500"],
+// a repobol, mint a layout betui (`app/betuk/FORRAS.md`)
+const hanken = localFont({
+  src: "../betuk/hanken-grotesk.woff2",
+  weight: "100 900",
   display: "swap",
   variable: "--acr-font-hanken",
 })
 
-const belleza = Belleza({
-  subsets: ["latin", "latin-ext"],
+const belleza = localFont({
+  src: "../betuk/belleza.woff2",
   weight: "400",
   display: "swap",
   variable: "--acr-font-belleza",
