@@ -1,4 +1,5 @@
 import { getBaseURL } from "@lib/util/env"
+import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
 import { Metadata } from "next"
 import {
   Hanken_Grotesk,
@@ -88,6 +89,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     >
       <body>
         <main className="relative">{props.children}</main>
+        {/* a Fogyasztobarat widgetje minden oldalon (Balazs kerese, 2026-10-05) */}
+        <FogyasztobaratWidget />
       </body>
     </html>
   )

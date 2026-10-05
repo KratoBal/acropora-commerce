@@ -3,6 +3,8 @@ import { join } from "path"
 
 import { describe, expect, it } from "vitest"
 
+import { JOGI_DOKUMENTUMOK } from "@lib/util/fogyasztobarat"
+
 import {
   CEG,
   OSZLOP_SORREND,
@@ -27,29 +29,31 @@ const kodSzoveg = (szoveg: string) =>
  * ugyis meg fognak szunni, amikor sajat lapokat kapnak.
  */
 describe("a lábléc hivatkozásai", () => {
-  it("hat tetelnek van sajat utvonala, es mind relativ", () => {
-    expect(SAJAT_HIVATKOZASOK).toHaveLength(6)
+  // 2026-10-05: 6 + a het Fogyasztobarat-dokumentum (`/jogi/<slug>`)
+  it("tizenharom tetelnek van sajat utvonala, es mind relativ", () => {
+    expect(SAJAT_HIVATKOZASOK).toHaveLength(13)
 
     for (const h of SAJAT_HIVATKOZASOK) {
       expect(h.cim.startsWith("/")).toBe(true)
     }
   })
 
-  it("het tetel a regi boltba visz, mind teljes cimmel", () => {
-    expect(REGI_BOLT_HIVATKOZASOK).toHaveLength(7)
+  // 2026-10-05: az ASZF es az adatkezelesi tajekoztato kikerult (kartya a3e48575)
+  it("ot tetel a regi boltba visz, mind teljes cimmel", () => {
+    expect(REGI_BOLT_HIVATKOZASOK).toHaveLength(5)
 
     for (const h of REGI_BOLT_HIVATKOZASOK) {
       expect(h.cim.startsWith("https://shop.acropora.hu/")).toBe(true)
     }
   })
 
-  it("a tizenharom felirat mind kulonbozik", () => {
+  it("a tizennyolc felirat mind kulonbozik", () => {
     const cimkek = [...SAJAT_HIVATKOZASOK, ...REGI_BOLT_HIVATKOZASOK].map(
       (h) => h.cimke,
     )
 
-    expect(cimkek).toHaveLength(13)
-    expect(new Set(cimkek).size).toBe(13)
+    expect(cimkek).toHaveLength(18)
+    expect(new Set(cimkek).size).toBe(18)
   })
 
   /**
@@ -64,8 +68,30 @@ describe("a lábléc hivatkozásai", () => {
 
     expect(db("oldalterkep")).toBe(2)
     expect(db("fiok")).toBe(5)
-    expect(db("informaciok")).toBe(6)
+    // a negy megmaradt regi-bolti tetel es a het jogi dokumentum
+    expect(db("informaciok")).toBe(11)
     expect(OSZLOP_SORREND).toHaveLength(3)
+  })
+})
+
+/*
+  A JOGI DOKUMENTUMOK (Fogyasztobarat, 2026-10-05; kartya a3e48575). Ami
+  pirosit: az ASZF vagy az adatkezelesi tajekoztato megint a regi boltba visz;
+  egy dokumentumnak nincs lablec-linkje.
+*/
+describe("a jogi dokumentumok a kirakat saját oldalán", () => {
+  it("az ÁSZF és az adatkezelési tájékoztató a /jogi oldalra visz, nem a régi boltba", () => {
+    const mind = [...SAJAT_HIVATKOZASOK, ...REGI_BOLT_HIVATKOZASOK]
+    const cim = (cimke: string) => mind.find((h) => h.cimke === cimke)?.cim
+    expect(cim("Általános szerződési feltételek")).toBe("/jogi/aszf")
+    expect(cim("Adatkezelési tájékoztató")).toBe("/jogi/adatkezeles")
+  })
+
+  it("mind a hét dokumentumnak van lábléc-linkje", () => {
+    const cimek = SAJAT_HIVATKOZASOK.map((h) => h.cim)
+    for (const d of JOGI_DOKUMENTUMOK)
+      expect(cimek).toContain(`/jogi/${d.slug}`)
+    expect(JOGI_DOKUMENTUMOK).toHaveLength(7)
   })
 })
 
@@ -167,8 +193,8 @@ describe("a külső címek egyetlen helyen állnak", () => {
     expect(lablec.match(/shop\.acropora\.hu/g)).toBeNull()
   })
 
-  it("a hét cím mind a listában áll", () => {
-    expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toHaveLength(7)
+  it("az öt cím mind a listában áll", () => {
+    expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toHaveLength(5)
   })
 })
 
