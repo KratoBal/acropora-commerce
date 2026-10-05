@@ -11,31 +11,56 @@ import { StripePaymentContainer } from "./index"
 
 afterEach(cleanup)
 
+const rajzol = (kivalasztott: string | null) =>
+  render(
+    <StripeContext.Provider value={true}>
+      <RadioGroup value={kivalasztott} onChange={() => {}}>
+        <StripePaymentContainer
+          paymentProviderId="pp_stripe_stripe"
+          selectedPaymentOptionId={kivalasztott}
+          paymentInfoMap={{
+            pp_stripe_stripe: { title: "Bankkártyás fizetés", icon: <span /> },
+          }}
+          setError={() => {}}
+          setPaymentComplete={() => {}}
+          egyFizetes="Egy fizetés · 22 500 Ft"
+        />
+      </RadioGroup>
+    </StripeContext.Provider>,
+  )
+
 /**
- * A STRIPE KARTYAMEZO FELIRATA MAGYARUL (a sablon angol mondata helyett). MI
- * PIROSIT: ha a vevo angol szoveget olvasna a magyar penztarban.
+ * A BANKKARTYAS MOD A KERETEK SZERINT (desktop 209:3, mobil 209:133). MI
+ * PIROSIT: a Stripe hivatalos szovegjele helyett barmi mas (vagy semmi); a
+ * mezo nem KOZVETLENUL a kivalasztott mod alatt all, vagy nem kivalasztott
+ * modnal is megjelenik; a bizalmi mondat nem szo szerinti; hianyzik az "Egy
+ * fizetés" sor; a "Kártya · Apple Pay · Google Pay" alcim.
  */
 describe("a Stripe kártyamező", () => {
-  it("betöltött Stripe mellett magyar felirattal áll", () => {
-    render(
-      <StripeContext.Provider value={true}>
-        <RadioGroup value="pp_stripe_stripe" onChange={() => {}}>
-          <StripePaymentContainer
-            paymentProviderId="pp_stripe_stripe"
-            selectedPaymentOptionId="pp_stripe_stripe"
-            paymentInfoMap={{
-              pp_stripe_stripe: {
-                title: "Bankkártyás fizetés (Stripe)",
-                icon: <span />,
-              },
-            }}
-            setError={() => {}}
-            setPaymentComplete={() => {}}
-          />
-        </RadioGroup>
-      </StripeContext.Provider>,
+  it("kiválasztva: cím, alcím, a Stripe szövegjele, alatta a mező, a bizalmi mondat és az egy fizetés", () => {
+    rajzol("pp_stripe_stripe")
+    expect(screen.getByText("Bankkártyás fizetés")).toBeInTheDocument()
+    expect(
+      screen.getByText("Kártya · Apple Pay · Google Pay"),
+    ).toBeInTheDocument()
+    const logo = screen.getByTestId("stripe-logo")
+    expect(logo).toHaveAttribute("alt", "Stripe")
+    expect(logo.getAttribute("src")).toContain("stripe-wordmark-blurple.svg")
+    expect(screen.getByTestId("kivalasztva-cimke")).toBeInTheDocument()
+    const panel = screen.getByTestId("stripe-panel")
+    expect(panel).toContainElement(screen.getByTestId("stripe-kartyamezo"))
+    expect(screen.getByTestId("stripe-bizalmi-szoveg")).toHaveTextContent(
+      "A kártyaadatokat a Stripe biztonságos fizetési rendszere kezeli; az Acropora nem fér hozzá a kártyaadataidhoz.",
     )
-    expect(screen.getByTestId("stripe-kartyamezo")).toBeInTheDocument()
-    expect(screen.getByText("A kártya adatai:")).toBeInTheDocument()
+    expect(screen.getByTestId("egy-fizetes")).toHaveTextContent(
+      "Egy fizetés · 22 500 Ft",
+    )
+  })
+
+  it("nem kiválasztva: a kártya áll, a mező és a panel nem", () => {
+    rajzol("pp_acropora_cod")
+    expect(screen.getByText("Bankkártyás fizetés")).toBeInTheDocument()
+    expect(screen.queryByTestId("stripe-panel")).toBeNull()
+    expect(screen.queryByTestId("kivalasztva-cimke")).toBeNull()
   })
 })

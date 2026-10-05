@@ -10,7 +10,11 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 const sorrend = vi.hoisted(() => ({ log: [] as string[] }))
 const stripe = vi.hoisted(() => ({ confirmPayment: vi.fn() }))
-const elements = vi.hoisted(() => ({ submit: vi.fn() }))
+const mezo = vi.hoisted(() => ({ update: vi.fn() }))
+const elements = vi.hoisted(() => ({
+  submit: vi.fn(),
+  getElement: vi.fn(() => mezo),
+}))
 
 vi.mock("@stripe/react-stripe-js", () => ({
   useStripe: () => stripe,
@@ -134,5 +138,65 @@ describe("StripeKozosGomb", () => {
     lead()
     expect(await screen.findByText("Most nem sikerült.")).toBeInTheDocument()
     expect(stripe.confirmPayment).not.toHaveBeenCalled()
+  })
+
+  /*
+    A REDESIGN ALLAPOTAI (a keretek 477:*). MI PIROSIT: a bank elutasitasa nem
+    a rogzitett mondattal es nem "Próbáld újra" gombbal jelenik meg; a Stripe
+    sajat validacios hibaja meg egyszer kiirodik; a mezo nem zarolodik a
+    fizetes alatt; egy dupla kattintas masodik fizetest indit.
+  */
+  it("a bank elutasítása: a rögzített mondat, a gomb „Próbáld újra”, a kosár visszarendeződik", async () => {
+    elements.submit.mockResolvedValue({})
+    stripe.confirmPayment.mockResolvedValue({
+      error: {
+        type: "card_error",
+        message: "Your card was declined.",
+        payment_intent: { status: "requires_payment_method" },
+      },
+    })
+    lead()
+    expect(
+      await screen.findByText(
+        "A kártyás fizetés nem sikerült. Próbáld újra vagy válassz másik fizetési módot.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId("submit")).toHaveTextContent("Próbáld újra")
+    expect(screen.queryByText("Your card was declined.")).toBeNull()
+    expect(stripeVisszarendezes).toHaveBeenCalledWith("cart-1")
+  })
+
+  it("a Stripe validációs hibáját nem írja ki még egyszer, és a háttérhez sem nyúl", async () => {
+    elements.submit.mockResolvedValue({
+      error: { type: "validation_error", message: "Hibás kártyaszám." },
+    })
+    lead()
+    await waitFor(() =>
+      expect(screen.getByTestId("submit")).toHaveTextContent(
+        "Rendelés leadása",
+      ),
+    )
+    expect(screen.queryByText("Hibás kártyaszám.")).toBeNull()
+    expect(inditsStripeKozosFizetest).not.toHaveBeenCalled()
+  })
+
+  it("fizetés közben a mező zárolva, a gomb „Feldolgozás…”, és egy dupla kattintás egy fizetés", async () => {
+    let enged: (v: unknown) => void = () => {}
+    elements.submit.mockResolvedValue({})
+    stripe.confirmPayment.mockImplementation(
+      () => new Promise((r) => (enged = r)),
+    )
+    render(<PaymentButton cart={kosar} stripeKozos data-testid="submit" />)
+    const gomb = screen.getByTestId("submit")
+    fireEvent.click(gomb)
+    fireEvent.click(gomb)
+    await waitFor(() => expect(stripe.confirmPayment).toHaveBeenCalled())
+    expect(gomb).toHaveTextContent("Feldolgozás…")
+    expect(mezo.update).toHaveBeenCalledWith({ readOnly: true })
+    enged({ paymentIntent: { status: "requires_capture" } })
+    await waitFor(() => expect(placeOrder).toHaveBeenCalled())
+    expect(inditsStripeKozosFizetest).toHaveBeenCalledTimes(1)
+    expect(stripe.confirmPayment).toHaveBeenCalledTimes(1)
+    expect(mezo.update).toHaveBeenLastCalledWith({ readOnly: false })
   })
 })

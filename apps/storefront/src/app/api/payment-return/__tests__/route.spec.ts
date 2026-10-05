@@ -48,9 +48,19 @@ describe("GET /api/payment-return", () => {
     expect(placeOrder).not.toHaveBeenCalled()
   })
 
-  it("sikeres fizetés: nem rendez vissza, lead", async () => {
-    await GET(keres("succeeded")).catch(() => undefined)
+  /*
+    A REDESIGN OTA (2026-10-05) A SIKERES VISSZATERES NEM ITT AD LE, hanem a
+    fizetesi lepes "Ellenőrzés…" allapotaba visz (477:619), es a leadas ott
+    fut. MI PIROSIT: ha az utvonal ujra maga adna le (a vevo nem latna az
+    ellenorzest), vagy ha nem az ellenorzes jelzesevel vinne vissza.
+  */
+  it("sikeres fizetés: nem rendez vissza, és az ellenőrzés állapotába visz", async () => {
+    const valasz = await GET(keres("succeeded"))
     expect(stripeVisszarendezes).not.toHaveBeenCalled()
-    expect(placeOrder).toHaveBeenCalled()
+    expect(placeOrder).not.toHaveBeenCalled()
+    const cel = new URL(valasz.headers.get("location") ?? "")
+    expect(cel.pathname).toBe("/hu/checkout")
+    expect(cel.searchParams.get("step")).toBe("payment")
+    expect(cel.searchParams.get("ellenorzes")).toBe("1")
   })
 })
