@@ -2,6 +2,7 @@ import { loadEnv, defineConfig } from "@medusajs/framework/utils"
 
 import { COMMERCE_SETTINGS_MODULE } from "./src/modules/commerce-settings"
 import { stripeProviders } from "./src/workflows/utils/stripe-config"
+import { webshopMailModules } from "./src/workflows/utils/webshop-mail-config"
 import { STORE_RELATIONS_LIMIT } from "./src/api/store-relations-limit"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
@@ -117,6 +118,9 @@ module.exports = defineConfig({
         ],
       },
     },
+    // The shop's own mail (Gmail), only when ACROPORA_WEBSHOP_MAIL=on and its
+    // keys are set; otherwise no entry at all (src/workflows/utils/webshop-mail-config.ts).
+    ...webshopMailModules(),
     {
       resolve: "./src/modules/shipping-attributes",
     },
