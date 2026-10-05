@@ -37,3 +37,7 @@ export const stripeHibaFajta = (
     : hiba?.type === "card_error"
       ? "elutasitas"
       : "egyeb"
+
+/** A bizalmi mondat, szo szerint a prompt 4. pontja szerint. */
+export const STRIPE_BIZALMI_SZOVEG =
+  "A kártyaadatokat a Stripe biztonságos fizetési rendszere kezeli; az Acropora nem fér hozzá a kártyaadataidhoz."

@@ -27,6 +27,7 @@ import {
   StripePaymentButton,
 } from "@modules/checkout/components/payment-button"
 import StripeAllapotPanel from "@modules/checkout/components/stripe-allapot"
+import ExpressFizetes from "@modules/checkout/components/payment-button/express"
 import { StripeContext } from "@modules/checkout/components/payment-wrapper/stripe-wrapper"
 import Divider from "@modules/common/components/divider"
 import {
@@ -44,13 +45,23 @@ import {
   useSearchParams,
 } from "next/navigation"
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+import { useAszf } from "@modules/checkout/components/aszf-elfogadas"
+import { PENZTAR_CTA_HELY } from "@modules/checkout/components/rendelesed"
 
 const Payment = ({
   cart,
   availablePaymentMethods,
   engedelyezettModok,
   vegyes = false,
+  oldal = false,
 }: {
+  /**
+   * A Figma szerinti fizetesi oldalon (209:3): a lap cime a kartyae, a
+   * cselekvo gomb az osszesitobe kerul (`PENZTAR_CTA_HELY`), es az ASZF pipa
+   * nelkul tiltva all. Nelkule a regi, lepesenkenti penztar viselkedese.
+   */
+  oldal?: boolean
   cart: HttpTypes.StoreCart
   /** A kosár vegyes: a Stripe ilyenkor a halasztott úton fizet (lásd lent). */
   vegyes?: boolean
@@ -82,7 +93,17 @@ const Payment = ({
   const router = useRouter()
   const pathname = usePathname()
 
-  const isOpen = searchParams.get("step") === "payment"
+  const isOpen = oldal || searchParams.get("step") === "payment"
+  const { elfogadva: aszfElfogadva } = useAszf()
+  /*
+    A GOMB HELYE AZ OSSZESITOBEN: a fizetesi resz rajzolja oda (portal), igy a
+    Stripe kornyezete (Elements) es ez az allapot a gombbal marad. A hely a
+    megjelenes utan derul ki; addig a gomb itt all.
+  */
+  const [ctaHely, setCtaHely] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    if (oldal) setCtaHely(document.getElementById(PENZTAR_CTA_HELY))
+  }, [oldal])
 
   /*
     A STRIPE-FIZETES ALLAPOTA (a keretek 477:*): a gomb jelzi, a panel mutatja.
@@ -364,9 +385,24 @@ const Payment = ({
     !cart.email ||
     (cart.shipping_methods?.length ?? 0) < 1
 
+  /*
+    A CSELEKVO GOMB BLOKKJA. Oldal-modban az osszesitobe kerul, a valasztott
+    mod cimkejevel ("Fizetés: Bankkártya"), es az ASZF pipa nelkul tiltva all.
+  */
+  const nemElfogadva = oldal && !aszfElfogadva
+  const ctaOsztaly = oldal
+    ? `${STRIPE_CTA_OSZTALY} small:!w-full small:!min-w-0`
+    : STRIPE_CTA_OSZTALY
+  const gombBlokk = (tartalom: React.ReactNode) =>
+    oldal && ctaHely ? createPortal(tartalom, ctaHely) : tartalom
+
   return (
     <div className="bg-white">
-      <div className="flex flex-row items-center justify-between mb-6">
+      <div
+        className={clx("flex flex-row items-center justify-between mb-6", {
+          hidden: oldal,
+        })}
+      >
         <Heading
           level="h2"
           className={clx(
@@ -432,6 +468,17 @@ const Payment = ({
                           egyFizetes={egyFizetes}
                           allapot={
                             <StripeAllapotPanel allapot={stripeAllapot} />
+                          }
+                          express={
+                            oldal && stripeKesz ? (
+                              <ExpressFizetes
+                                cart={cart}
+                                vegyes={!!stripeKozosValasztva}
+                                tiltva={nemElfogadva}
+                                onAllapot={setStripeAllapot}
+                                onHiba={setError}
+                              />
+                            ) : undefined
                           }
                         />
                       ) : (
@@ -513,77 +560,112 @@ const Payment = ({
             a helyfoglalo alatta azert van, hogy a ragado sav ne takarja el az
             oldal aljat. A tobbi mod utja (Tovább az ellenőrzéshez) valtozatlan.
           */}
-          {stripeAllapot === "ellenorzes" ? null : stripeValasztva && isOpen ? (
-            <>
-              <Text className="mt-6 txt-medium text-ui-fg-subtle">
-                A rendelés leadásával megerősíted, hogy elolvastad és elfogadod
-                az általános szerződési feltételeket, az értékesítési és
-                visszaküldési szabályzatot, valamint az adatkezelési
-                tájékoztatót.
-              </Text>
-              <div
-                className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-x-4 border-t border-acr-line bg-acr-white px-4 py-3 small:static small:mt-4 small:border-0 small:bg-transparent small:p-0"
-                data-testid="stripe-cta-sav"
-              >
-                <div className="min-w-0 flex-1 small:hidden">
-                  <p className="text-[12px] leading-[16px] text-acr-slate">
-                    Bankkártya
-                  </p>
-                  <p className="text-[16px] font-semibold leading-[22px] text-acr-ink">
-                    {convertToLocale({
-                      amount: cart.total ?? 0,
-                      currency_code: cart.currency_code,
-                    })}
-                  </p>
-                </div>
-                <div className="flex-1 small:flex-none">
-                  {!stripeKesz ? (
-                    <Button
-                      size="large"
-                      disabled
-                      className={STRIPE_CTA_OSZTALY}
-                      data-testid="submit-order-button"
+          {stripeAllapot === "ellenorzes"
+            ? null
+            : stripeValasztva && isOpen
+              ? gombBlokk(
+                  <>
+                    {oldal ? (
+                      <p
+                        className="flex items-center gap-2 border-l-2 border-acr-heritage bg-acr-mist px-3 py-2 text-[13px] text-acr-slate"
+                        data-testid="valasztott-fizetes"
+                      >
+                        Fizetés
+                        <span className="font-medium text-acr-ink">
+                          Bankkártya
+                        </span>
+                      </p>
+                    ) : (
+                      <Text className="mt-6 txt-medium text-ui-fg-subtle">
+                        A rendelés leadásával megerősíted, hogy elolvastad és
+                        elfogadod az általános szerződési feltételeket, az
+                        értékesítési és visszaküldési szabályzatot, valamint az
+                        adatkezelési tájékoztatót.
+                      </Text>
+                    )}
+                    <div
+                      className={clx(
+                        "fixed inset-x-0 bottom-0 z-40 flex items-center gap-x-4 border-t border-acr-line bg-acr-white px-4 py-3 small:static small:border-0 small:bg-transparent small:p-0",
+                        !oldal && "small:mt-4",
+                      )}
+                      data-testid="stripe-cta-sav"
                     >
-                      {stripeGombFelirat("alap")}
-                    </Button>
-                  ) : stripeKozosValasztva ? (
-                    <StripeKozosGomb
-                      cart={cart}
-                      notReady={nemKesz}
-                      data-testid="submit-order-button"
-                      onAllapot={setStripeAllapot}
-                      kezdoAllapot={stripeAllapot}
-                      className={STRIPE_CTA_OSZTALY}
-                    />
-                  ) : (
-                    <StripePaymentButton
-                      cart={cart}
-                      notReady={nemKesz || !activeSession}
-                      data-testid="submit-order-button"
-                      onAllapot={setStripeAllapot}
-                      kezdoAllapot={stripeAllapot}
-                      className={STRIPE_CTA_OSZTALY}
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="h-[76px] small:hidden" aria-hidden="true" />
-            </>
-          ) : (
-            <Button
-              size="large"
-              className="mt-6"
-              onClick={handleSubmit}
-              isLoading={isLoading}
-              disabled={
-                (isStripeLike(selectedPaymentMethod) && !paymentComplete) ||
-                (!selectedPaymentMethod && !paidByGiftcard)
-              }
-              data-testid="submit-payment-button"
-            >
-              Tovább az ellenőrzéshez
-            </Button>
-          )}
+                      <div className="min-w-0 flex-1 small:hidden">
+                        <p className="text-[12px] leading-[16px] text-acr-slate">
+                          Bankkártya
+                        </p>
+                        <p className="text-[16px] font-semibold leading-[22px] text-acr-ink">
+                          {convertToLocale({
+                            amount: cart.total ?? 0,
+                            currency_code: cart.currency_code,
+                          })}
+                        </p>
+                      </div>
+                      <div
+                        className={clx(
+                          "flex-1",
+                          oldal ? "small:w-full" : "small:flex-none",
+                        )}
+                      >
+                        {!stripeKesz ? (
+                          <Button
+                            size="large"
+                            disabled
+                            className={ctaOsztaly}
+                            data-testid="submit-order-button"
+                          >
+                            {stripeGombFelirat("alap")}
+                          </Button>
+                        ) : stripeKozosValasztva ? (
+                          <StripeKozosGomb
+                            cart={cart}
+                            notReady={nemKesz || nemElfogadva}
+                            data-testid="submit-order-button"
+                            onAllapot={setStripeAllapot}
+                            kezdoAllapot={stripeAllapot}
+                            className={ctaOsztaly}
+                          />
+                        ) : (
+                          <StripePaymentButton
+                            cart={cart}
+                            notReady={nemKesz || !activeSession || nemElfogadva}
+                            data-testid="submit-order-button"
+                            onAllapot={setStripeAllapot}
+                            kezdoAllapot={stripeAllapot}
+                            className={ctaOsztaly}
+                          />
+                        )}
+                      </div>
+                    </div>
+                    {nemElfogadva ? (
+                      <p
+                        className="text-[12px] text-acr-slate"
+                        data-testid="aszf-hianyzik"
+                      >
+                        A rendelés leadásához fogadd el az ÁSZF-et és az
+                        adatkezelési tájékoztatót.
+                      </p>
+                    ) : null}
+                    <div className="h-[76px] small:hidden" aria-hidden="true" />
+                  </>,
+                )
+              : gombBlokk(
+                  <Button
+                    size="large"
+                    className={oldal ? "w-full" : "mt-6"}
+                    onClick={handleSubmit}
+                    isLoading={isLoading}
+                    disabled={
+                      nemElfogadva ||
+                      (isStripeLike(selectedPaymentMethod) &&
+                        !paymentComplete) ||
+                      (!selectedPaymentMethod && !paidByGiftcard)
+                    }
+                    data-testid="submit-payment-button"
+                  >
+                    Tovább az ellenőrzéshez
+                  </Button>,
+                )}
         </div>
 
         <div className={isOpen ? "hidden" : "block"}>
@@ -631,7 +713,7 @@ const Payment = ({
           ) : null}
         </div>
       </div>
-      <Divider className="mt-8" />
+      {oldal ? null : <Divider className="mt-8" />}
     </div>
   )
 }
