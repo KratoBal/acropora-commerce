@@ -25,7 +25,8 @@ type PaymentWrapperProps = {
 const stripeKey = STRIPE_PUBLIKUS_KULCS || undefined
 
 const medusaAccountId = process.env.NEXT_PUBLIC_MEDUSA_PAYMENTS_ACCOUNT_ID
-const stripePromise = stripeKey
+/** A Stripe.js egyszer toltodik be; a „Rendelés fizetése” oldal is ezt hasznalja. */
+export const stripePromise = stripeKey
   ? loadStripe(
       stripeKey,
       medusaAccountId ? { stripeAccount: medusaAccountId } : undefined,

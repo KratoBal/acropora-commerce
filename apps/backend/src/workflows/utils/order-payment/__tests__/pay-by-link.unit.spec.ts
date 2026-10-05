@@ -160,6 +160,11 @@ describe("startLinkSession", () => {
   it("refuses a link that is not open, and a payment already authorized", async () => {
     const paid = opsFor(plainPair({ ...linked(), state: "paid" }), { col_ship: collection("col_ship", 9800) })
     await expect(startLinkSession(tokenFor(), paid.ops, SECRET, NOW)).rejects.toThrow(/már kifizetted/)
+    // superseded: says what to do, and claims no mail (mails are off on stage)
+    const newer = opsFor(plainPair(linked({ amount: 9000 })), { col_ship: collection("col_ship", 9800) })
+    const refused = await startLinkSession(tokenFor(), newer.ops, SECRET, NOW).catch((error) => error)
+    expect(refused.message).toMatch(/újabb fizetési link készült/)
+    expect(refused.message).not.toMatch(/levelünk|küldtünk|elküldtük/i)
     const going = opsFor(plainPair(), { col_ship: collection("col_ship", 9800, [{ status: "authorized" }]) })
     await expect(startLinkSession(tokenFor(), going.ops, SECRET, NOW)).rejects.toThrow(/már folyamatban/)
     expect([...paid.log, ...going.log]).toEqual([])
