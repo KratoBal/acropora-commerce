@@ -1,5 +1,5 @@
 import { retrieveOrder } from "@lib/data/orders"
-import { kapcsoltFelirat, kapcsoltRendeles } from "@lib/util/rendelesek"
+import { kapcsoltRendeles } from "@lib/util/rendelesek"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
@@ -8,8 +8,8 @@ type Props = {
   params: Promise<{ id: string }>
 }
 export const metadata: Metadata = {
-  title: "Order Confirmed",
-  description: "You purchase was successful",
+  title: "Rendelés visszaigazolása",
+  description: "A rendelésedet sikeresen leadtad.",
 }
 
 export default async function OrderConfirmedPage(props: Props) {
@@ -27,11 +27,8 @@ export default async function OrderConfirmedPage(props: Props) {
   return (
     <OrderCompletedTemplate
       order={order}
-      kapcsolt={
-        par && parRendeles
-          ? kapcsoltFelirat(parRendeles.display_id, par.bolti)
-          : null
-      }
+      par={parRendeles}
+      parBolti={par?.bolti ?? false}
     />
   )
 }
