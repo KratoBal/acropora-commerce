@@ -1,11 +1,13 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { cartOfOrder, completeSplitForCart } from "../complete-split-for-cart"
 import type { PaymentRole } from "../payment-eligibility"
 import { buildProviderRoleMap } from "../payment-providers"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
+import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
+import type { ShippedDeps, ShippedOrder } from "./shipped"
 
 const ORDER_FIELDS = [
   "id",
@@ -110,5 +112,81 @@ export const refundMailOperations = (container: MedusaContainer): RefundMailDeps
       payment_data: payment.data ?? null,
       order: order?.id ? { id: order.id, display_id: order.display_id, email: order.email ?? null } : null,
     }
+  },
+})
+
+/** The Medusa side of the "feladtuk" mail (`prepareShippedMail`). */
+export const shippedMailOperations = (container: MedusaContainer): ShippedDeps => ({
+  loadOrder: async (orderId): Promise<ShippedOrder | null> => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({
+      entity: "order",
+      filters: { id: orderId },
+      fields: [
+        "id",
+        "display_id",
+        "email",
+        "total",
+        "items.title",
+        "items.product_title",
+        "items.variant_title",
+        "items.quantity",
+        "items.metadata",
+        "shipping_address.postal_code",
+        "shipping_address.city",
+        "shipping_address.address_1",
+        "shipping_methods.name",
+        "shipping_methods.data",
+        "payment_collections.payments.provider_id",
+        "payment_collections.payments.canceled_at",
+        "payment_collections.payment_sessions.provider_id",
+      ],
+    })
+    const order = data?.[0] as any
+    if (!order) return null
+    const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
+    const point = (key: string) => {
+      const p = method?.data?.[key]
+      return p?.name ? { name: String(p.name), address: String(p.address ?? "") } : null
+    }
+    const address = order.shipping_address
+    return {
+      id: order.id,
+      display_id: order.display_id,
+      email: order.email ?? null,
+      total: Number(order.total),
+      cash_on_delivery: roleOf(order, buildProviderRoleMap()) === "COD",
+      items: (order.items ?? []).filter(Boolean).map((item: any) => ({
+        title: lineTitle(item),
+        quantity: Number(item.quantity),
+        fee: isCashOnDeliveryFeeLineItem(item),
+      })),
+      method_name: String(method?.name ?? ""),
+      foxpost_point: point("foxpost_pickup_point"),
+      gls_point: point("gls_pickup_point"),
+      shipping_address: [
+        [address?.postal_code, address?.city].filter(Boolean).join(" "),
+        address?.address_1,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    }
+  },
+
+  /*
+    THE MODULE'S OWN ANSWER IS AMBIGUOUS, SO WE ASK. Measured in
+    @medusajs/notification 2.20.1 (createNotifications_): a key already sent
+    creates nothing (empty answer), and a key whose earlier send FAILED is sent
+    again, also with an empty answer. So "already sent" is read from the
+    notification list: a notification with this key whose status is not
+    failure. The list filter is the same `idempotency_key` the module filters on
+    internally; the public filter type does not name it, hence the cast.
+  */
+  alreadySent: async (key) => {
+    const notifications = container.resolve(Modules.NOTIFICATION) as unknown as {
+      listNotifications(filters: Record<string, unknown>): Promise<{ status?: string }[]>
+    }
+    const found = await notifications.listNotifications({ idempotency_key: key })
+    return found.some((notification) => notification.status !== "failure")
   },
 })

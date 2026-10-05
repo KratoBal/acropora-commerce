@@ -1,0 +1,100 @@
+import { webshopMailState } from "../webshop-mail-config"
+import type { MailToSend } from "./prepare"
+import { type ShippedCarrier, renderShippedMail } from "./shipped-mail"
+
+/**
+ * WHEN THE "FELADTUK" MAIL GOES (Foxpost brief point 12; endpoint agreed with
+ * nautilus, 26342/26345). The OS calls the shipping-notice endpoint once the
+ * parcel exists at the carrier, with the carrier's barcode. The answer says
+ * what happened, so the OS can log it:
+ *
+ *   sent: true                       the mail went out
+ *   sent: false, mail_off            the shop's mail channel is off (no key yet)
+ *   sent: false, no_email            the order has no e-mail address
+ *   sent: false, already_sent        this order and parcel number were mailed
+ *
+ * Idempotent on the order and the parcel number: a retried call sends
+ * nothing more, a new number (a relabelled parcel) does.
+ */
+export type ShippingNotice = {
+  carrier: ShippedCarrier
+  tracking_number: string
+  tracking_url?: string
+  parcel_id?: string
+}
+
+export type ShippedOrder = {
+  id: string
+  display_id: number | string
+  email: string | null
+  total: number
+  cash_on_delivery: boolean
+  items: { title: string; quantity: number; fee: boolean }[]
+  method_name: string
+  foxpost_point: { name: string; address: string } | null
+  gls_point: { name: string; address: string } | null
+  shipping_address: string
+}
+
+export type ShippedDeps = {
+  loadOrder(orderId: string): Promise<ShippedOrder | null>
+  alreadySent(idempotencyKey: string): Promise<boolean>
+}
+
+export type ShippedResult =
+  | { status: "not_found" }
+  | { status: "skip"; reason: "mail_off" | "no_email" | "already_sent" }
+  | { status: "send"; mail: MailToSend }
+
+export const shippedKey = (orderId: string, trackingNumber: string) =>
+  `order-shipped:${orderId}:${trackingNumber}`
+
+/** The official logo on the storefront, for the mail's <img>; https only. */
+export const foxpostLogoUrl = (env: NodeJS.ProcessEnv): string | null => {
+  const base = env.ACROPORA_WEBSHOP_URL?.trim()
+  if (!base) return null
+  try {
+    const url = new URL("/images/foxpost-packeta-group.png", base)
+    return url.protocol === "https:" ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+export const prepareShippedMail = async (
+  orderId: string,
+  notice: ShippingNotice,
+  deps: ShippedDeps,
+  env: NodeJS.ProcessEnv = process.env
+): Promise<ShippedResult> => {
+  const order = await deps.loadOrder(orderId)
+  if (!order) return { status: "not_found" }
+  if (webshopMailState(env) !== "on") return { status: "skip", reason: "mail_off" }
+  const to = order.email?.trim()
+  if (!to) return { status: "skip", reason: "no_email" }
+  const key = shippedKey(order.id, notice.tracking_number)
+  if (await deps.alreadySent(key)) return { status: "skip", reason: "already_sent" }
+
+  const point = notice.carrier === "foxpost" ? order.foxpost_point : order.gls_point
+  return {
+    status: "send",
+    mail: {
+      to,
+      template: "order-shipped",
+      idempotency_key: key,
+      resource_id: order.id,
+      content: renderShippedMail({
+        display_id: order.display_id,
+        carrier: notice.carrier,
+        destination_title: point?.name ?? order.method_name,
+        destination_address: point?.address ?? order.shipping_address,
+        gls_point: notice.carrier === "gls" && !!order.gls_point,
+        tracking_number: notice.tracking_number,
+        tracking_url: notice.tracking_url ?? null,
+        items: order.items.filter((item) => !item.fee),
+        cod_amount: order.cash_on_delivery ? order.total : null,
+        foxpost_logo_url: foxpostLogoUrl(env),
+      }),
+    },
+  }
+}
