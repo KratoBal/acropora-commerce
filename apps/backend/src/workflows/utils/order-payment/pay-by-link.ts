@@ -111,7 +111,9 @@ export const resolvePaymentLink = async (
 const NOT_OPEN: Record<Exclude<LinkState, "open">, string> = {
   paid: "Ezt a rendelést már kifizetted, köszönjük!",
   expired: "Ez a fizetési link lejárt. Írj nekünk, és segítünk.",
-  superseded: "Ez a fizetési link már nem érvényes: a legutóbbi levelünkben küldött linket használd.",
+  // no sent mail is claimed: on stage mails are off (the storefront's guard, Balázs)
+  superseded:
+    "Ez a fizetési link már nem érvényes: a rendelésedhez újabb fizetési link készült. Ha nem találod, írj nekünk a webshop@acropora.hu címre.",
 }
 
 const mustBeOpen = (resolved: ResolvedLink | null): ResolvedLink => {
