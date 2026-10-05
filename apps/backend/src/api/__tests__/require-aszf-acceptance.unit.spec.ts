@@ -1,4 +1,8 @@
-import { aszfBeforeCardStart, aszfBeforePlaceOrder } from "../require-aszf-acceptance"
+import {
+  aszfBeforeCardSession,
+  aszfBeforeCardStart,
+  aszfBeforePlaceOrder,
+} from "../require-aszf-acceptance"
 import middlewares from "../middlewares"
 
 const call = async (mw: typeof aszfBeforeCardStart, cart: unknown) => {
@@ -51,5 +55,58 @@ describe("the ÁSZF net on the store routes", () => {
       )?.middlewares
     expect(on("/store/carts/:id/stripe-start")).toContain(aszfBeforeCardStart)
     expect(on("/store/carts/:id/complete-split")).toContain(aszfBeforePlaceOrder)
+  })
+
+  /**
+   * A STRIPE-MUNKAMENET PAYMENTINTENT (acrobot 26333, A út). MI PIROSÍT: ha a
+   * fizetési gyűjteményen közvetlenül, rekord nélkül Stripe-munkamenet
+   * készülhetne; ha az utánvétes munkamenetet is megállítaná.
+   */
+  describe("a direct session on the payment collection", () => {
+    const sessionCall = async (provider: string, metadata: Record<string, unknown> | null) => {
+      const res = {
+        statusCode: 0,
+        sent: undefined as unknown,
+        status(code: number) {
+          this.statusCode = code
+          return this
+        },
+        json(b: unknown) {
+          this.sent = b
+        },
+      }
+      const next = jest.fn()
+      const graph = jest.fn(async ({ entity }: { entity: string }) =>
+        entity === "payment_collection"
+          ? { data: [{ id: "pay_col_1", cart: { id: "cart_1" } }] }
+          : { data: [{ id: "cart_1", metadata, payment_collection: null }] }
+      )
+      await aszfBeforeCardSession(
+        { params: { id: "pay_col_1" }, body: { provider_id: provider }, scope: { resolve: () => ({ graph }) } } as never,
+        res as never,
+        next
+      )
+      return { res, next, graph }
+    }
+
+    it("a Stripe session without the record: 400, no intent", async () => {
+      const { res, next } = await sessionCall("pp_stripe_stripe", null)
+      expect(res.statusCode).toBe(400)
+      expect(next).not.toHaveBeenCalled()
+    })
+
+    it("a Stripe session with the record, or any other provider: passes", async () => {
+      expect((await sessionCall("pp_stripe_stripe", { aszf_elfogadas: { idopont: "x" } })).next).toHaveBeenCalled()
+      const cod = await sessionCall("pp_acropora_cod", null)
+      expect(cod.next).toHaveBeenCalled()
+      expect(cod.graph).not.toHaveBeenCalled()
+    })
+
+    it("guards the payment-sessions route", () => {
+      const route = (middlewares.routes ?? []).find(
+        (r) => r.matcher === "/store/payment-collections/:id/payment-sessions"
+      )
+      expect(route?.middlewares).toContain(aszfBeforeCardSession)
+    })
   })
 })

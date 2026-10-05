@@ -69,9 +69,10 @@ export default async function Checkout(props: {
     hogy a kosár vegyes-e, és kínálja-e a háttér a Stripe-ot.
   */
   const lehetosegek = await getCartPaymentOptions(cart.id)
-  const vegyesStripe =
-    !!lehetosegek?.split &&
-    lehetosegek.allowed_payment_providers.some((mod) => isStripeLike(mod.id))
+  const stripeKinalva = !!lehetosegek?.allowed_payment_providers.some((mod) =>
+    isStripeLike(mod.id),
+  )
+  const vegyesStripe = !!lehetosegek?.split && stripeKinalva
 
   /*
     A FIZETESI LEPES A FIGMA SZERINTI OLDAL (209:3 / 209:133). A burok az
@@ -80,7 +81,11 @@ export default async function Checkout(props: {
   */
   if (step === "payment") {
     return (
-      <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
+      <PaymentWrapper
+        cart={cart}
+        vegyesStripe={vegyesStripe}
+        mindigHalasztott={stripeKinalva}
+      >
         <FizetesiOldal cart={cart} />
       </PaymentWrapper>
     )

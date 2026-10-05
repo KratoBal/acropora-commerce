@@ -59,7 +59,14 @@ const Payment = ({
   engedelyezettModok,
   vegyes = false,
   oldal = false,
+  halasztott = false,
 }: {
+  /**
+   * Minden kartyas fizetes a halasztott uton megy (acrobot 26333, A ut): a
+   * valasztas a munkamenetet leveszi (`card-choose`), az intent a kattintaskor
+   * keszul (`stripe-start`), az ASZF-rekord utan. A vegyes kosar mar igy ment.
+   */
+  halasztott?: boolean
   /**
    * A Figma szerinti fizetesi oldalon (209:3): a lap cime a kartyae, a
    * cselekvo gomb az osszesitobe kerul (`PENZTAR_CTA_HELY`), es az ASZF pipa
@@ -228,7 +235,7 @@ const Payment = ({
     két rendelés közös fizetése a leadáskor jön (`StripeKozosGomb`).
   */
   function stripeKozosE(mod: string) {
-    return vegyes && isStripeLike(mod)
+    return (vegyes || halasztott) && isStripeLike(mod)
   }
   const stripeKozosValasztva = stripeKozosE(selectedPaymentMethod)
 
@@ -378,7 +385,7 @@ const Payment = ({
   }, [stripeAllapot])
 
   /** Az "Egy fizetés" sor: mindig a kosar teljes fizetendo osszege. */
-  const egyFizetes = `Egy fizetés${stripeKozosValasztva ? " · a két rendelés együtt" : ""} · ${convertToLocale(
+  const egyFizetes = `Egy fizetés${vegyes && stripeKozosValasztva ? " · a két rendelés együtt" : ""} · ${convertToLocale(
     {
       amount: cart.total ?? 0,
       currency_code: cart.currency_code,

@@ -12,6 +12,13 @@ type PaymentWrapperProps = {
   cart: HttpTypes.StoreCart
   /** Vegyes kosár, és a háttér kínálja a Stripe-ot: halasztott kártyamező. */
   vegyesStripe?: boolean
+  /**
+   * A FIZETESI OLDALON MINDEN KARTYAS KOSAR HALASZTOTT (acrobot 26333, A ut):
+   * a mezo intent nelkul all, az intent a kattintaskor keszul (`stripe-start`),
+   * az ASZF-rekord utan. Egy korabbi, fuggo Stripe-munkamenet ilyenkor sem
+   * ad titkot a mezonek: a megerosites az uj titokkal megy.
+   */
+  mindigHalasztott?: boolean
   children: React.ReactNode
 }
 
@@ -28,11 +35,24 @@ const stripePromise = stripeKey
 const PaymentWrapper: React.FC<PaymentWrapperProps> = ({
   cart,
   vegyesStripe,
+  mindigHalasztott,
   children,
 }) => {
   const paymentSession = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending",
   )
+
+  if (mindigHalasztott && stripePromise) {
+    return (
+      <StripeHalasztott
+        osszeg={stripeEgyseg(Number(cart.total ?? 0), cart.currency_code)}
+        penznem={cart.currency_code}
+        stripePromise={stripePromise}
+      >
+        {children}
+      </StripeHalasztott>
+    )
+  }
 
   if (
     isStripeLike(paymentSession?.provider_id) &&

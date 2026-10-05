@@ -476,7 +476,9 @@ export type SharedPaymentOperations = SplitOperations & {
   cartTotal(cartId: string): Promise<number>
   /**
    * A new payment session with this data; the provider's facts it got, read
-   * from the session data under `factsKey`.
+   * from the session data under `factsKey`; a session that carries no such
+   * facts (a cart that is not split) gives its own client secret as
+   * `clientSecret` (`sessionStartFacts`).
    */
   startPayment(
     cartId: string,
@@ -509,6 +511,8 @@ export type CardShare = {
   factsKey: string
   joint: (total: number) => Record<string, unknown>
   joined: (facts: Record<string, unknown>) => Record<string, unknown>
+  /** A cart that is not split: its own intent, set up like the joint one. */
+  plain: () => Record<string, unknown>
 }
 
 export const STRIPE_SHARE: CardShare = {
@@ -516,6 +520,9 @@ export const STRIPE_SHARE: CardShare = {
   // card only: the storefront's deferred card field asks for card alone
   joint: (total) => ({ [STRIPE_JOINT_KEY]: { total }, payment_method_types: ["card"] }),
   joined: (facts) => ({ [STRIPE_JOINED_KEY]: facts }),
+  // card only, as the deferred card field asks (acrobot 26333: the plain cart
+  // takes the same deferred path as the mixed one)
+  plain: () => ({ payment_method_types: ["card"] }),
 }
 
 export type CardStartConfig = {
@@ -586,7 +593,7 @@ const startCardPaymentLocked = async (
   // NOT SPLIT: one intent for the cart itself.
   if (!pickupLines.length && !pickupCartId) {
     const total = await ops.cartTotal(cartId)
-    const facts = await ops.startPayment(cartId, config.providerId, {}, share.factsKey)
+    const facts = await ops.startPayment(cartId, config.providerId, share.plain(), share.factsKey)
     return {
       ...(typeof facts.clientSecret === "string" ? { client_secret: facts.clientSecret } : {}),
       total,
@@ -690,3 +697,21 @@ export const chooseCardPayment = (cartId: string, ops: SharedPaymentOperations):
     await ops.clearPayment(cartId)
     await ops.dropCashOnDeliveryFee(cartId)
   })
+
+/**
+ * WHAT A STARTED SESSION GIVES BACK (acrobot 26333). A shared session keeps its
+ * facts under `factsKey`, the joint intent's secret among them. A plain
+ * session has none: its data is the provider's own (for Stripe the
+ * PaymentIntent, `client_secret` on top). Measured on stage 2026-10-05: a plain
+ * cart's `stripe-start` answered without a secret, so the storefront could not
+ * confirm the card.
+ */
+export const sessionStartFacts = (
+  sessionData: Record<string, unknown> | null | undefined,
+  factsKey: string
+): Record<string, unknown> => {
+  const facts = sessionData?.[factsKey]
+  if (facts && typeof facts === "object") return facts as Record<string, unknown>
+  const secret = sessionData?.client_secret
+  return typeof secret === "string" ? { clientSecret: secret } : {}
+}
