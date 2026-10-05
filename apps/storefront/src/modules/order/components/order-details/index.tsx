@@ -15,8 +15,14 @@ const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
 
   return (
     <div>
+      {/*
+        NEM ALLITJUK, HOGY LEVELET KULDTUNK (Balazs, 2026-10-05): a commerce
+        hatter ma egyetlen vevoi levelet sem kuld (nincs ertesito modul), tehat
+        a regi "A rendelés visszaigazolását elküldtük ide" mondat valotlan volt.
+        Amig a visszaigazolo level nem megy ki, a cimet csak megnevezzuk.
+      */}
       <Text>
-        A rendelés visszaigazolását elküldtük ide:{" "}
+        A rendeléshez megadott e-mail-cím:{" "}
         <span
           className="text-ui-fg-medium-plus font-semibold"
           data-testid="order-email"

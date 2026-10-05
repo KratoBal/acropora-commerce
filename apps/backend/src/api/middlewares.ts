@@ -24,7 +24,7 @@ import { AdminTransitionOrderBusinessStatus } from "./admin/order-business-statu
 import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
-import { refuseClientCardShareKeys } from "./refuse-client-card-share-keys";
+import { refuseClientSessionData } from "./refuse-client-session-data";
 import { captureBeforeOrderEditConfirm } from "./capture-before-order-edit-confirm";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 
@@ -124,7 +124,7 @@ export default defineMiddlewares({
     {
       matcher: "/store/payment-collections/:id/payment-sessions",
       method: "POST",
-      middlewares: [refuseClientCardShareKeys],
+      middlewares: [refuseClientSessionData],
     },
     {
       matcher: "/store/shipping-class",

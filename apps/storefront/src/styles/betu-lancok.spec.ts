@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest"
 /**
  * AMI BETOLTODIK, ANNAK LEGYEN HIVOHELYE -- KULONBEN A VEVO FIZET ERTE SEMMIERT.
  *
- * A `layout.tsx` HAROM betutipust tolt be a `next/font`-tal, es mind a harom
+ * A `layout.tsx` HAROM betutipust tolt be a `next/font/local`-lal, es mind a harom
  * valtozo-osztalya rakerul a gyoker `<html>` elemre. Vagyis a betu LETOLTODIK
  * minden lapbetolteskor, fuggetlenul attol, hogy renderel-e benne barmi.
  *
@@ -78,7 +78,12 @@ describe("a betöltött betűtípusoknak van hívóhelye", () => {
    * es a fenti sor tovabbra is zold. Ez a sor koti ossze a kettot.
    */
   it("mindhárom betű betöltődik a layoutban", () => {
-    for (const betu of ["Space_Grotesk", "JetBrains_Mono", "Newsreader"]) {
+    // 2026-10-05 ota a repobol (`app/betuk/`), a fajl neveben (`next/font/local`)
+    for (const betu of [
+      "./betuk/space-grotesk.woff2",
+      "./betuk/jetbrains-mono.woff2",
+      "./betuk/newsreader.woff2",
+    ]) {
       expect(LAYOUT).toContain(betu)
     }
   })
