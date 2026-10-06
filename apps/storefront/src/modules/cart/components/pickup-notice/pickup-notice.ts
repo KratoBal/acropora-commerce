@@ -204,12 +204,51 @@ export const SPLIT_TITLE = "Két rendelés lesz belőle"
 export const SPLIT_LEAD = "Az élő állat miatt két rendelésed keletkezik."
 
 export const SPLIT_REASON =
-  "Egyszerre adod le, de két rendelés lesz belőle: az élő állatot a boltban veszed át és ott fizeted, a többit kiszállítjuk. A fiókodban mindkettőt látod."
+  "Egyszerre adod le, de két rendelés lesz belőle: az élő állatos rendelés és a kiszállítandó. A fiókodban mindkettőt látod."
+
+/** Az átvétel helye (acrobot 26682, Balázs 2026-09-29, emlék 1933). */
+export const SPLIT_PICKUP = "Az élő állatot a boltban veszed át."
+
+/**
+ * A FIZETÉS MONDATA A VÁLASZTOTT MÓD SZERINT (acrobot 26682; Balázs
+ * 2026-09-29, emlék 1933: a vevő két rendelést lát, és a fizetés egy lépésben
+ * megy a kettőre; az élő állatos rész a boltban IS fizethető, lehetőségként).
+ * A régi mondat minden módnál azt állította, hogy az élő állatot a boltban
+ * fizeted, ami kártyánál hamis: ott egy fizetés viszi a kettőt.
+ *
+ * Amíg nincs választott mód (a kosárban), a mondat mindkét utat leírja, mert
+ * az egyetlen fizetés utánvétnél nem igaz.
+ */
+export type SplitFizetes = "kartya" | "utanvet" | null
+
+export const SPLIT_PAYMENT: Record<"kartya" | "utanvet" | "nincs", string> = {
+  kartya: "Kártyás fizetésnél a két rendelést egy fizetéssel rendezed.",
+  utanvet:
+    "Utánvétnél a kiszállított rendelést a csomag átvételekor fizeted, az élő állatot a boltban.",
+  nincs:
+    "Kártyával a két rendelést egy fizetéssel rendezed; utánvétnél a kiszállított rendelést átvételkor, az élő állatot a boltban fizeted.",
+}
+
+/** A választott fizetés a kosár élő fizetési munkamenetéből (a pénztár ugyanígy olvassa). */
+export function splitFizetes(
+  providerId: string | null | undefined,
+): SplitFizetes {
+  if (!providerId) return null
+  if (
+    providerId.startsWith("pp_stripe_") ||
+    providerId.startsWith("pp_medusa-")
+  )
+    return "kartya"
+  if (providerId === "pp_acropora_cod") return "utanvet"
+  return null
+}
 
 export interface SplitNoticeProps {
   visible: boolean
   /** A bolti átvételes rendelésbe kerülő tételek neve. */
   lines: string[]
+  /** A választott fizetés; `null`, amíg nincs. */
+  fizetes: SplitFizetes
 }
 
 /**
@@ -224,10 +263,13 @@ export function splitNoticeProps(
     product_title?: string | null
   }[],
   shippingClass?: { split_line_ids?: string[] | null } | null,
+  /** A kosár élő fizetési munkamenetének szolgáltatója, ha van. */
+  paymentProviderId?: string | null,
 ): SplitNoticeProps {
   const ids = new Set(shippingClass?.split_line_ids ?? [])
   return {
     visible: ids.size > 0,
+    fizetes: splitFizetes(paymentProviderId),
     lines: items
       .filter((item) => ids.has(item.id))
       .map((item) => item.product_title ?? item.title ?? ""),

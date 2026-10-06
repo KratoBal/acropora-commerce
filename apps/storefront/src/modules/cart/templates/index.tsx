@@ -109,7 +109,13 @@ const CartTemplate = ({
               />
               {/* P4-2: vegyes kosárnál két rendelés lesz, és ezt itt mondjuk ki. */}
               <SplitNotice
-                {...splitNoticeProps(cart?.items ?? [], shippingClass)}
+                {...splitNoticeProps(
+                  cart?.items ?? [],
+                  shippingClass,
+                  cart?.payment_collection?.payment_sessions?.find(
+                    (session) => session.status === "pending",
+                  )?.provider_id,
+                )}
               />
               {!customer && (
                 <>

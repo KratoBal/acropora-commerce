@@ -1,5 +1,6 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveFoxpostOption, retrieveGlsModok } from "@lib/data/csomagpont"
+import { foxpostTiltottTetel } from "@lib/util/csomagpont"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
@@ -50,7 +51,15 @@ export default async function CheckoutForm({
 
   return (
     <div className="w-full grid grid-cols-1 gap-y-8">
-      <SplitNotice {...splitNoticeProps(cart.items ?? [], szallitasiOsztaly)} />
+      <SplitNotice
+        {...splitNoticeProps(
+          cart.items ?? [],
+          szallitasiOsztaly,
+          cart.payment_collection?.payment_sessions?.find(
+            (session) => session.status === "pending",
+          )?.provider_id,
+        )}
+      />
 
       <Addresses cart={cart} customer={customer} />
 
@@ -60,6 +69,10 @@ export default async function CheckoutForm({
         foxpostOptionId={foxpost?.option_id ?? null}
         glsOptions={glsModok.pont}
         glsHomeOptions={glsModok.haz}
+        foxpostTiltottTetel={foxpostTiltottTetel(
+          cart.items ?? [],
+          szallitasiOsztaly,
+        )}
       />
 
       <Payment

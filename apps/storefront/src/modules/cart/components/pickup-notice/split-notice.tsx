@@ -2,8 +2,11 @@ import {
   SHOP_ADDRESS,
   SHOP_HOURS,
   SPLIT_LEAD,
+  SPLIT_PAYMENT,
+  SPLIT_PICKUP,
   SPLIT_REASON,
   SPLIT_TITLE,
+  type SplitFizetes,
 } from "./pickup-notice"
 
 /**
@@ -17,9 +20,11 @@ import {
 export default function SplitNotice({
   lines,
   visible = true,
+  fizetes = null,
 }: {
   lines: readonly string[]
   visible?: boolean
+  fizetes?: SplitFizetes
 }) {
   if (!visible) return null
 
@@ -45,7 +50,14 @@ export default function SplitNotice({
         className="text-[12.5px] leading-relaxed font-kiemelt"
         style={{ color: "var(--terv-szoveg-halvany)" }}
       >
-        {SPLIT_REASON}
+        {SPLIT_REASON} {SPLIT_PICKUP}
+      </p>
+      <p
+        className="text-[12.5px] leading-relaxed font-kiemelt"
+        style={{ color: "var(--terv-szoveg-halvany)" }}
+        data-testid="split-notice-payment"
+      >
+        {SPLIT_PAYMENT[fizetes ?? "nincs"]}
       </p>
       {lines.length > 0 && (
         <ul
@@ -54,7 +66,7 @@ export default function SplitNotice({
           data-testid="split-notice-lines"
         >
           {lines.map((cim) => (
-            <li key={cim}>{cim} · a boltban veszed át és ott fizeted</li>
+            <li key={cim}>{cim} · a boltban veszed át</li>
           ))}
         </ul>
       )}
