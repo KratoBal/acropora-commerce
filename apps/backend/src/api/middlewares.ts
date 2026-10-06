@@ -25,6 +25,7 @@ import {
   AdminTransitionOrderBusinessStatus,
 } from "./admin/order-business-status/validators";
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
+import { AdminPostOrderSplit } from "./admin/order-split/validators";
 import { StorePostCartNotes } from "./store/cart-notes/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import { AdminGetOrderPickupPointsParams, AdminPostOrderPickupPoint } from "./admin/order-shipping/validators";
@@ -193,6 +194,12 @@ export default defineMiddlewares({
       matcher: "/admin/webshop-mail/outbox",
       method: "GET",
       middlewares: [validateAndTransformQuery(AdminGetWebshopMailOutboxParams, {})],
+    },
+    {
+      // a placed order split into two linked orders (card 0a14f739, C/3)
+      matcher: "/admin/order-split/:order_id",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostOrderSplit)],
     },
     {
       matcher: "/store/payment-options",
