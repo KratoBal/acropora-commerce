@@ -80,12 +80,19 @@ for (const line of lines) {
   if (isSeparator(cells)) continue
 
   const maybeHeader = cells.map(cleanCell)
-  if (
-    maybeHeader.includes("App") &&
-    maybeHeader.includes("Route pattern") &&
-    maybeHeader.includes("Component area")
-  ) {
-    header = maybeHeader
+
+  if (maybeHeader[0] === "Figma Page / Section") {
+    const required = ["App", "Route pattern", "Component area"]
+    const missingHeaders = required.filter((name) => !maybeHeader.includes(name))
+
+    if (missingHeaders.length) {
+      errors.push(
+        `Hibás FIGMA-MAP tábla fejléc; hiányzik: ${missingHeaders.join(", ")}`,
+      )
+      header = null
+    } else {
+      header = maybeHeader
+    }
     continue
   }
 
@@ -129,6 +136,13 @@ for (const line of lines) {
       errors.push(String(error.message ?? error))
     }
   }
+}
+
+const minimumExpectedReferences = 40
+if (checked < minimumExpectedReferences) {
+  errors.push(
+    `Túl kevés ellenőrzött hivatkozás: ${checked}; minimum: ${minimumExpectedReferences}. Valószínűleg kimaradt vagy hibás fejlécű tábla.`,
+  )
 }
 
 if (errors.length || missing.length) {
