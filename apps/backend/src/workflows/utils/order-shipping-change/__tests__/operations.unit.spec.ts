@@ -67,11 +67,12 @@ describe("replaceMethod", () => {
       old_method_id: "sm_old",
       option,
       data: { foxpost_pickup_point: { id: "P9" } },
+      tax_inclusive: true,
       actor: "Kovács Anna",
     })
     expect(calls.map(([name]) => name)).toEqual(["begin", "addMethod", "actions", "request", "confirm"])
     expect(calls[1][1]).toEqual({ order_id: "order_1", shipping_option_id: "so_fox", custom_amount: 1290 })
-    expect(w.methodUpdates).toEqual([[{ id: "sm_new", data: { foxpost_pickup_point: { id: "P9" } } }]])
+    expect(w.methodUpdates).toEqual([[{ id: "sm_new", is_tax_inclusive: true, data: { foxpost_pickup_point: { id: "P9" } } }]])
     expect(calls[2][1]).toEqual([
       {
         action: "SHIPPING_REMOVE",
@@ -85,26 +86,40 @@ describe("replaceMethod", () => {
 
   it("a card hold is kept, and an old difference link closed", async () => {
     decision.mockResolvedValue({ action: "keep_hold", collectionId: "paycol_1", newTotal: 13000 })
-    await shippingChangeOperations(container().scope).replaceMethod("order_1", { old_method_id: "sm_old", option, data: {}, actor: "u" })
+    await shippingChangeOperations(container().scope).replaceMethod("order_1", { old_method_id: "sm_old", option, data: {}, tax_inclusive: true, actor: "u" })
     expect(calls.map(([name]) => name)).toEqual(["begin", "addMethod", "actions", "request", "confirm", "closeOther"])
   })
 
-  it("a home method has no data to set", async () => {
+  it("a home method has no data to set, only the old method's tax mode", async () => {
     decision.mockResolvedValue({ action: "pass", reason: "no_card_hold" })
     const w = container()
     await shippingChangeOperations(w.scope).replaceMethod("order_1", {
       old_method_id: "sm_old",
       option: { ...option, id: "so_home", needs_point: false },
       data: {},
+      tax_inclusive: true,
       actor: "u",
     })
-    expect(w.methodUpdates).toEqual([])
+    expect(w.methodUpdates).toEqual([[{ id: "sm_new", is_tax_inclusive: true }]])
+  })
+
+  it("the new method takes the old one's tax mode either way, never Medusa's default for a custom amount", async () => {
+    decision.mockResolvedValue({ action: "pass", reason: "no_card_hold" })
+    const w = container()
+    await shippingChangeOperations(w.scope).replaceMethod("order_1", {
+      old_method_id: "sm_old",
+      option: { ...option, id: "so_home", needs_point: false },
+      data: {},
+      tax_inclusive: false,
+      actor: "u",
+    })
+    expect(w.methodUpdates).toEqual([[{ id: "sm_new", is_tax_inclusive: false }]])
   })
 
   it("a refused rise cancels the open edit and throws the rules' message", async () => {
     decision.mockResolvedValue({ action: "refuse", message: "A közös zárolásnál nem lehet többet levonni." })
     await expect(
-      shippingChangeOperations(container().scope).replaceMethod("order_1", { old_method_id: "sm_old", option, data: {}, actor: "u" })
+      shippingChangeOperations(container().scope).replaceMethod("order_1", { old_method_id: "sm_old", option, data: {}, tax_inclusive: true, actor: "u" })
     ).rejects.toThrow("A közös zárolásnál nem lehet többet levonni.")
     expect(calls.map(([name]) => name)).toEqual(["begin", "addMethod", "actions", "request", "cancelEdit"])
   })
