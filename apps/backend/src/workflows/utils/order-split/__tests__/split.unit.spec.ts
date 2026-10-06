@@ -26,6 +26,9 @@ const order = (extra: Partial<SplitSource> = {}): SplitSource => ({
   paid: false,
   payment_state: "none",
   reservation_locations: { i1: "sloc_1", i2: "sloc_1" },
+  reservations: [
+    { line_item_id: "i1", inventory_item_id: "iitem_1", location_id: "sloc_1", quantity: 3, allow_backorder: false },
+  ],
   ...extra,
 })
 
@@ -90,7 +93,11 @@ const fakeOps = (start: SplitSource) => {
   const orders = new Map<string, SplitSource>([[start.id, start]])
   const calls: string[] = []
   const created: Array<{ moved: unknown; metadata: Record<string, unknown> }> = []
-  const ops: SplitOperations & { failReduce?: boolean; failCreate?: boolean } = {
+  const ops: SplitOperations & { failReduce?: boolean; failCreate?: boolean; stock?: string | null } = {
+    stockProblem: async () => {
+      calls.push("stock")
+      return ops.stock ?? null
+    },
     loadOrder: async (id) => {
       const o = orders.get(id)
       return o ? JSON.parse(JSON.stringify(o)) : null
@@ -139,6 +146,7 @@ describe("splitOrder", () => {
     const w = fakeOps(order())
     const result = await splitOrder("order_A", ask, "user_key", w.ops)
     expect(w.calls).toEqual([
+      "stock",
       "metadata:order_A",
       "reduce:order_A",
       "create",
@@ -155,10 +163,20 @@ describe("splitOrder", () => {
       parent_total: 6000,
       total: 2000,
       payment_state: "none",
+      resumed: false,
     })
     expect(w.created[0]).toEqual({
       moved: [
-        { from_item_id: "i1", variant_id: "var_i1", title: "Termék i1", quantity: 2, unit_price: 1000, metadata: null, location_id: "sloc_1" },
+        {
+          from_item_id: "i1",
+          variant_id: "var_i1",
+          title: "Termék i1",
+          quantity: 2,
+          unit_price: 1000,
+          metadata: null,
+          location_id: "sloc_1",
+          allow_backorder: false,
+        },
       ],
       metadata: { aszf_elfogadas: { verzio: "1" }, acropora_customer_note: "Délután", acropora_split_from_order_id: "order_A" },
     })
@@ -189,6 +207,32 @@ describe("splitOrder", () => {
     expect(result).toMatchObject({ status: "done", order_id: "order_B1" })
     expect(w.created).toHaveLength(1)
     expect((w.created[0].moved as Array<{ quantity: number }>)[0].quantity).toBe(2)
+  })
+
+  it("a split left half done is finished by the NEXT request too, whatever its id and lines (acrobot 26807, #52)", async () => {
+    const w = fakeOps(order())
+    w.ops.failCreate = true
+    await expect(splitOrder("order_A", ask, "user_key", w.ops)).rejects.toThrow("create failed")
+    w.ops.failCreate = false
+    // the OS's dialog was closed: a new request id, and other lines
+    const result = await splitOrder("order_A", { ...ask, request_id: "req-2", lines: [{ item_id: "i2", quantity: 1 }] }, "user_key", w.ops)
+    expect(result).toMatchObject({ status: "done", order_id: "order_B1", resumed: true })
+    expect(w.created).toHaveLength(1)
+    expect((w.created[0].moved as Array<{ from_item_id: string; quantity: number }>)[0]).toMatchObject({ from_item_id: "i1", quantity: 2 })
+    const requests = w.orders.get("order_A")!.metadata!.acropora_split_requests as Record<string, { done: boolean }>
+    expect(Object.keys(requests)).toEqual(["req-1"])
+    expect(requests["req-1"]!.done).toBe(true)
+    // i2 was not touched by the second request
+    expect(w.orders.get("order_A")!.items.find((i) => i.id === "i2")!.quantity).toBe(1)
+  })
+
+  it("a line B could not hold is refused before anything changes", async () => {
+    const w = fakeOps(order())
+    w.ops.stock = "A(z) „Termék i1” tételből nincs elég szabad készlet az új rendeléshez, ezért a rendelés nem bontható szét. Semmi nem változott."
+    const result = await splitOrder("order_A", ask, "user_key", w.ops)
+    expect(result).toEqual({ status: "invalid", message: w.ops.stock })
+    expect(w.calls).toEqual(["stock"])
+    expect(w.orders.get("order_A")!.metadata!.acropora_split_requests).toBeUndefined()
   })
 
   it("a split that stopped after B was made does not make a second B", async () => {
