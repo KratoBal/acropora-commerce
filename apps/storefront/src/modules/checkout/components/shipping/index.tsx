@@ -9,6 +9,7 @@ import {
 import {
   type CsomagpontKereses,
   foxpostSzallitasiAdat,
+  foxpostTiltvaSzoveg,
   glsSzallitasiAdat,
   type GlsPontMod,
 } from "@lib/util/csomagpont"
@@ -50,6 +51,11 @@ type ShippingProps = {
   glsOptions?: GlsPontMod[]
   /** A GLS hazhoz szallito modok (`GET /store/gls`): a soruk GLS-logot kap. */
   glsHomeOptions?: GlsPontMod[]
+  /**
+   * A tetel neve, ami miatt a FOXPOST nem jar (Foxpost-prompt 7.5,
+   * `foxpostTiltottTetel`); `null`, ha jar, vagy nem tudjuk megnevezni.
+   */
+  foxpostTiltottTetel?: string | null
 }
 
 /** Egy csomagpontos mod: kinel, hogyan keres, es milyen adatot kuld a modhoz. */
@@ -92,6 +98,7 @@ const Shipping: React.FC<ShippingProps> = ({
   foxpostOptionId = null,
   glsOptions = [],
   glsHomeOptions = [],
+  foxpostTiltottTetel = null,
 }) => {
   // CSOMAGPONTOS MODOK, EGY HELYEN: a Foxpost es a GLS ugyanigy viselkedik
   // (Balazs, 2026-09-29: a ket valaszto amennyire lehet, egyforma legyen).
@@ -529,6 +536,20 @@ const Shipping: React.FC<ShippingProps> = ({
                     )
                   })}
                 </RadioGroup>
+                {foxpostTiltottTetel ? (
+                  // a FOXPOST nem csak eltunik: a vevo latja, melyik tetel miatt (Figma 486:346)
+                  <p
+                    className="mt-3 border px-4 py-3 text-[13px]"
+                    style={{
+                      borderColor: "var(--terv-keret-meleg)",
+                      background: "var(--terv-hatter-lap)",
+                      color: "var(--terv-kiemel-tinta)",
+                    }}
+                    data-testid="foxpost-tiltva"
+                  >
+                    {foxpostTiltvaSzoveg(foxpostTiltottTetel)}
+                  </p>
+                ) : null}
                 {foxpostAktiv ? (
                   <FoxpostValaszto
                     key={shippingMethodId ?? ""}

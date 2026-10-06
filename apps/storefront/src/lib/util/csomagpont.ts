@@ -161,3 +161,36 @@ export function glsSzallitasiAdat(
 
 /** Egy GLS csomagpontos szallitasi mod, es hogy nehezarus-e (csak csomagbolt). */
 export type GlsPontMod = { option_id: string; heavy: boolean }
+
+/**
+ * A "FOXPOST LETILTVA" ALLAPOT (Foxpost-prompt 7.5; Figma 486:346): ha egy
+ * tetel miatt a FOXPOST nem jar, a sor nem csak eltunik, hanem a vevo latja,
+ * melyik tetel miatt. A dontes a hattere (`/store/shipping-class`: az osztaly
+ * es a donto sor); itt csak megnevezzuk.
+ *
+ * Csak akkor szol, ha FUTARRAL tovabbra is mehet (nehezaru, vagy "Foxpost
+ * nelkul" tetel): a csak bolti atvetelt az atveteli sav mondja ki.
+ */
+const FOXPOST_NELKULI_OSZTALYOK = ["NO_FOXPOST", "HEAVY"]
+
+export function foxpostTiltottTetel(
+  tetelek: readonly {
+    id: string
+    title?: string | null
+    product_title?: string | null
+  }[],
+  osztaly?: {
+    shipping_class?: string | null
+    shipping_class_source?: string | null
+  } | null,
+): string | null {
+  if (!osztaly?.shipping_class) return null
+  if (!FOXPOST_NELKULI_OSZTALYOK.includes(osztaly.shipping_class)) return null
+  const tetel = tetelek.find((t) => t.id === osztaly.shipping_class_source)
+  const nev = (tetel?.product_title ?? tetel?.title ?? "").trim()
+  return nev || null
+}
+
+/** A Figma 486:346 "FOXPOST letiltva" mondata. */
+export const foxpostTiltvaSzoveg = (tetel: string) =>
+  `Ez a tétel nem küldhető automatába: ${tetel}.`

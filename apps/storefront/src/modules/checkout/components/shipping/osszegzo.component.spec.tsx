@@ -7,7 +7,8 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
   usePathname: () => "/hu/checkout",
   useRouter: () => ({ push: vi.fn() }),
-  useSearchParams: () => new URLSearchParams("step=payment"),
+  useSearchParams: () =>
+    new URLSearchParams(globalThis.__lepes ?? "step=payment"),
 }))
 vi.mock("@lib/data/cart", () => ({ setShippingMethod: vi.fn() }))
 vi.mock("@lib/data/fulfillment", () => ({
@@ -19,6 +20,11 @@ vi.mock("@lib/data/csomagpont", () => ({
 }))
 
 import Shipping from "./index"
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __lepes: string | undefined
+}
 
 afterEach(cleanup)
 
@@ -95,5 +101,42 @@ describe("a szállítási lépés összegzője", () => {
       />,
     )
     expect(screen.queryByTestId("delivery-summary-point")).toBeNull()
+  })
+})
+
+/**
+ * A "FOXPOST LETILTVA" SAV A NYITOTT SZALLITASI LEPESBEN (7.5). MI PIROSIT: ha
+ * a FOXPOST csak eltunne, a tetel megnevezese nelkul.
+ */
+describe("a FOXPOST letiltva sáv", () => {
+  it("megnevezi a tételt, ami miatt nem jár, és csak akkor áll ott", () => {
+    globalThis.__lepes = "step=delivery"
+    try {
+      const { unmount } = render(
+        <Shipping
+          cart={kosar([])}
+          availableShippingMethods={[mod("so-home", "GLS házhoz")]}
+          foxpostOptionId="so-fox"
+          foxpostTiltottTetel="Acropora tenisz „Miami Vice”"
+        />,
+      )
+      expect(screen.getByTestId("foxpost-tiltva").textContent).toBe(
+        "Ez a tétel nem küldhető automatába: Acropora tenisz „Miami Vice”.",
+      )
+      unmount()
+      render(
+        <Shipping
+          cart={kosar([])}
+          availableShippingMethods={[
+            mod("so-home", "GLS házhoz"),
+            mod("so-fox", "Foxpost"),
+          ]}
+          foxpostOptionId="so-fox"
+        />,
+      )
+      expect(screen.queryByTestId("foxpost-tiltva")).toBeNull()
+    } finally {
+      globalThis.__lepes = undefined
+    }
   })
 })

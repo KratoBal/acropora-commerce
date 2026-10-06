@@ -244,12 +244,31 @@ describe("a két rendelés sávja", () => {
     expect(splitNoticeProps(tetelek, { split_line_ids: ["l2"] })).toEqual({
       visible: true,
       lines: ["Mithrax tarisznyarák"],
+      fizetes: null,
     })
   })
 
-  it("kimondja, hogy két rendelés lesz, és hogy mit hol vesz át és fizet", () => {
+  it("kimondja, hogy két rendelés lesz, és nem állít egy fizetési módot mindenkire", () => {
     expect(SPLIT_LEAD).toContain("két rendelésed")
-    expect(SPLIT_REASON).toContain("a boltban veszed át és ott fizeted")
-    expect(SPLIT_REASON).toContain("kiszállítjuk")
+    expect(SPLIT_REASON).toContain("két rendelés lesz belőle")
+    expect(SPLIT_REASON).not.toContain("fizeted")
+  })
+
+  it("a választott fizetést a kosár élő munkamenetéből olvassa", () => {
+    expect(
+      splitNoticeProps(tetelek, { split_line_ids: ["l2"] }, "pp_stripe_stripe")
+        .fizetes,
+    ).toBe("kartya")
+    expect(
+      splitNoticeProps(tetelek, { split_line_ids: ["l2"] }, "pp_acropora_cod")
+        .fizetes,
+    ).toBe("utanvet")
+    expect(
+      splitNoticeProps(tetelek, { split_line_ids: ["l2"] }, "pp_system_default")
+        .fizetes,
+    ).toBeNull()
+    expect(
+      splitNoticeProps(tetelek, { split_line_ids: ["l2"] }, null).fizetes,
+    ).toBeNull()
   })
 })
