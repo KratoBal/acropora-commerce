@@ -67,6 +67,15 @@ describe("the order confirmation", () => {
     expect(renderOrderPlacedMail([{ ...pickup, payment: "PAY_AT_STORE" }]).text).toContain("a boltban, átvételkor")
   })
 
+  // bb3a6bd5: the proforma comes from the OS by a button, with Balázs's 8-day deadline
+  it("prepayment by bank transfer says the proforma comes by email, 8 days, and the order waits for the money", () => {
+    const text = renderOrderPlacedMail([{ ...shipped, payment: "BANK_TRANSFER" }]).text
+    expect(text).toContain("banki átutalással")
+    expect(text).toContain("8 napos fizetési határidővel")
+    expect(text).toContain("a befizetés beérkezése után teljesítjük")
+    expect(text).toContain("Előre utalás")
+  })
+
   it("a catalogue title is escaped in the HTML", () => {
     const mail = renderOrderPlacedMail([
       { ...shipped, items: [{ title: '<img src=x onerror="a">', quantity: 1, total: 1 }] },

@@ -74,7 +74,7 @@ export type WebshopMailFactsOf = {
   "order-payment-reminder": PaymentLinkFacts
   "payment-refunded": CommonFacts & { refund: RefundMailFacts }
   /** The split notice: the part that comes now (`order`), the one that comes later, and how both are paid. */
-  "order-split": CommonFacts & { order: LoadedOrder; split_order: LoadedOrder; payment: "card" | "cod" | "store" }
+  "order-split": CommonFacts & { order: LoadedOrder; split_order: LoadedOrder; payment: "card" | "cod" | "store" | "transfer" }
 }
 
 /** The render request for one template. */

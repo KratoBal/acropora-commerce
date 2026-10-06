@@ -9,7 +9,12 @@ import { ShippingOptionRole } from "./shipping-eligibility"
  * A NORMAL cart may end up on store pickup, and then cash on delivery must not
  * be offered even though the cart itself was never restricted.
  */
-export const PAYMENT_ROLES = ["ONLINE_CARD", "COD", "PAY_AT_STORE"] as const
+export const PAYMENT_ROLES = [
+  "ONLINE_CARD",
+  "COD",
+  "PAY_AT_STORE",
+  "BANK_TRANSFER",
+] as const
 
 export type PaymentRole = (typeof PAYMENT_ROLES)[number]
 
@@ -35,13 +40,20 @@ export type PaymentRole = (typeof PAYMENT_ROLES)[number]
  * `FOXPOST` (inherited from the original build, never separately confirmed):
  * card or cash on delivery. Balázs has not been asked about this one; it is
  * recorded as unconfirmed rather than presented as decided.
+ *
+ * `BANK_TRANSFER` on EVERY shipping method (Balázs, 2026-10-06 16:31 UTC:
+ * "Elore utalas kell. Leadja a rendelest es mi kuldjuk neki gombbal a
+ * dijbekerot"; offered with every method on murena's proposal, approved by
+ * acrobot 2026-10-06 18:34, card bb3a6bd5). It is a prepayment: the order
+ * waits for the money, so no shipping method carries a risk with it. Balázs
+ * did not name the methods one by one; the list is the proposal, not his.
  */
 export const SHIPPING_ROLE_PAYMENTS: Record<ShippingOptionRole, PaymentRole[]> =
   {
-    PICKUP: ["ONLINE_CARD", "PAY_AT_STORE"],
-    GLS_NORMAL: ["ONLINE_CARD", "COD"],
-    GLS_HEAVY: ["ONLINE_CARD", "COD"],
-    FOXPOST: ["ONLINE_CARD", "COD"],
+    PICKUP: ["ONLINE_CARD", "PAY_AT_STORE", "BANK_TRANSFER"],
+    GLS_NORMAL: ["ONLINE_CARD", "COD", "BANK_TRANSFER"],
+    GLS_HEAVY: ["ONLINE_CARD", "COD", "BANK_TRANSFER"],
+    FOXPOST: ["ONLINE_CARD", "COD", "BANK_TRANSFER"],
   }
 
 /**

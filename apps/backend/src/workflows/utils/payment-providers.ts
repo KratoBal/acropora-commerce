@@ -15,6 +15,13 @@ import { PAYMENT_ROLES, PaymentRole } from "./payment-eligibility"
  *   ACROPORA_PP_ONLINE_CARD=pp_stripe_stripe
  *   ACROPORA_PP_COD=pp_acropora_cod
  *   ACROPORA_PP_PAY_AT_STORE=pp_system_default
+ *   ACROPORA_PP_BANK_TRANSFER=pp_acropora_transfer
+ *
+ * Prepayment by bank transfer (card bb3a6bd5) is its own provider
+ * (BANK_TRANSFER_PROVIDER_ID), the cash-on-delivery shape: the order is placed
+ * with the payment still pending, and it is paid when the transfer arrives.
+ * It cannot share the system provider with pay-at-store: an id belongs to one
+ * role only, so the two would collide in the map.
  *
  * A variable may name several ids separated by commas, in the offer's order
  * (the first is the default); an id belongs to the first role that names it.
@@ -23,6 +30,7 @@ export const PAYMENT_ROLE_PROVIDER_ENV: Record<PaymentRole, string> = {
   ONLINE_CARD: "ACROPORA_PP_ONLINE_CARD",
   COD: "ACROPORA_PP_COD",
   PAY_AT_STORE: "ACROPORA_PP_PAY_AT_STORE",
+  BANK_TRANSFER: "ACROPORA_PP_BANK_TRANSFER",
 }
 
 /** The ids a variable names: one, or several separated by commas, in order. */

@@ -60,7 +60,7 @@ describe("turning stored rows into the eligibility map", () => {
       { shipping_role: "GLS_NORMAL", payment_role: "ONLINE_CARD", position: 1 },
       {
         shipping_role: "GLS_NORMAL",
-        payment_role: "BANK_TRANSFER",
+        payment_role: "VOUCHER",
         position: 2,
       },
       { shipping_role: "GLS_EXPRESS", payment_role: "COD", position: 1 },

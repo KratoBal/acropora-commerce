@@ -94,10 +94,11 @@ describe("a seed hét mért tétele", () => {
     ]);
   });
 
-  it("két fizetési szolgáltató, az utánvéttel együtt", () => {
+  it("három fizetési szolgáltató: a beépített, az utánvét és az előre utalás (bb3a6bd5)", () => {
     expect([...SEED_SETTINGS.fizetesiSzolgaltatok]).toEqual([
       "pp_system_default",
       "pp_acropora_cod",
+      "pp_acropora_transfer",
     ]);
   });
 

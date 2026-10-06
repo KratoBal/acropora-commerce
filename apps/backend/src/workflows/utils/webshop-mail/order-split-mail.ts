@@ -21,7 +21,7 @@ export const orderSplitKey = (orderId: string, splitOrderId: string) =>
   `${ORDER_SPLIT_TEMPLATE}:${orderId}:${splitOrderId}`
 
 /** How the two parts are paid: the original order's payment. */
-export type SplitPayment = "card" | "cod" | "store"
+export type SplitPayment = "card" | "cod" | "store" | "transfer"
 
 export type OrderSplitInput = {
   /** The original order, the part that comes now. */
@@ -38,6 +38,9 @@ const PAYMENT_LINES: Record<SplitPayment, string[]> = {
   ],
   cod: ["Mindkét részt a csomag átvételekor fizeted, utánvéttel, mindegyiknél a saját összegét. A második részért külön utánvét-díjat nem számolunk fel."],
   store: ["Mindkét részt az üzletben fizeted, az átvételkor."],
+  transfer: [
+    "Mindkét részt előre, banki átutalással fizeted, mindegyiket a saját összegével. A második részhez külön díjbekérőt küldünk.",
+  ],
 }
 
 const linesOf = (order: LoadedOrder) => [

@@ -19,7 +19,7 @@ describe("which providers a cart may pay with", () => {
   it("a heavy delivery offers cash on delivery, and nothing else that is mapped", () => {
     const roles = allowedPaymentRolesFor(["GLS_HEAVY"])
 
-    expect(roles).toEqual(["ONLINE_CARD", "COD"])
+    expect(roles).toEqual(["ONLINE_CARD", "COD", "BANK_TRANSFER"])
     expect(
       allowedPaymentProvidersFor(roles, buildProviderRoleMap(ELES_KORNYEZET))
     ).toEqual([{ id: "pp_acropora_cod", role: "COD" }])
@@ -34,10 +34,35 @@ describe("which providers a cart may pay with", () => {
   it("store pickup offers paying in the shop, and NOT cash on delivery", () => {
     const roles = allowedPaymentRolesFor(["PICKUP"])
 
-    expect(roles).toEqual(["ONLINE_CARD", "PAY_AT_STORE"])
+    expect(roles).toEqual(["ONLINE_CARD", "PAY_AT_STORE", "BANK_TRANSFER"])
     expect(
       allowedPaymentProvidersFor(roles, buildProviderRoleMap(ELES_KORNYEZET))
     ).toEqual([{ id: "pp_system_default", role: "PAY_AT_STORE" }])
+  })
+
+  /*
+    PREPAYMENT BY BANK TRANSFER (bb3a6bd5) is its own provider: once it is
+    mapped, it is offered next to the others, and it never takes the system
+    provider's place (pay-at-store keeps that, an id belongs to one role).
+  */
+  it("a mapped transfer provider is offered beside the others, and pay-at-store keeps the system one", () => {
+    const env = {
+      ...ELES_KORNYEZET,
+      ACROPORA_PP_BANK_TRANSFER: "pp_acropora_transfer",
+    } as NodeJS.ProcessEnv
+    const map = buildProviderRoleMap(env)
+    expect(
+      allowedPaymentProvidersFor(allowedPaymentRolesFor(["PICKUP"]), map)
+    ).toEqual([
+      { id: "pp_system_default", role: "PAY_AT_STORE" },
+      { id: "pp_acropora_transfer", role: "BANK_TRANSFER" },
+    ])
+    expect(
+      allowedPaymentProvidersFor(allowedPaymentRolesFor(["FOXPOST"]), map)
+    ).toEqual([
+      { id: "pp_acropora_cod", role: "COD" },
+      { id: "pp_acropora_transfer", role: "BANK_TRANSFER" },
+    ])
   })
 
   it("a cart with no shipping method chosen may pay with nothing", () => {

@@ -82,10 +82,14 @@ export const toShippingRolePayments = (
 export const SHIPPING_PAYMENT_RULE_SEED: ShippingPaymentRuleRow[] = [
   { shipping_role: "PICKUP", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "PICKUP", payment_role: "PAY_AT_STORE", position: 2 },
+  { shipping_role: "PICKUP", payment_role: "BANK_TRANSFER", position: 3 },
   { shipping_role: "GLS_NORMAL", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "GLS_NORMAL", payment_role: "COD", position: 2 },
+  { shipping_role: "GLS_NORMAL", payment_role: "BANK_TRANSFER", position: 3 },
   { shipping_role: "GLS_HEAVY", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "GLS_HEAVY", payment_role: "COD", position: 2 },
+  { shipping_role: "GLS_HEAVY", payment_role: "BANK_TRANSFER", position: 3 },
   { shipping_role: "FOXPOST", payment_role: "ONLINE_CARD", position: 1 },
   { shipping_role: "FOXPOST", payment_role: "COD", position: 2 },
+  { shipping_role: "FOXPOST", payment_role: "BANK_TRANSFER", position: 3 },
 ]

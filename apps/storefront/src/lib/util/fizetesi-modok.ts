@@ -17,7 +17,12 @@
  * but the region does not offer cannot be used, and one the region offers but
  * the backend does not allow must not be offered. Both directions drop.
  */
-export const FIZETESI_SZEREPEK = ["ONLINE_CARD", "COD", "PAY_AT_STORE"] as const
+export const FIZETESI_SZEREPEK = [
+  "ONLINE_CARD",
+  "COD",
+  "PAY_AT_STORE",
+  "BANK_TRANSFER",
+] as const
 
 export type FizetesiSzerep = (typeof FIZETESI_SZEREPEK)[number]
 
@@ -37,7 +42,22 @@ export const FIZETESI_SZEREP_CIMKE: Record<FizetesiSzerep, string> = {
   // PD-002 (Balázs, 2026-09-28): a bolti fizetés CSAK személyes átvételnél
   // áll, ezért a felirat az átvételt nevezi meg, nem a helyet.
   PAY_AT_STORE: "Fizetés átvételkor",
+  // bb3a6bd5 (Balázs, 2026-10-06): a díjbekérőt az OS-ből gombbal küldjük
+  BANK_TRANSFER: "Előre utalás",
 }
+
+/**
+ * A MOD KARTYAJANAK ALCIME, ha a cim magaban nem mondja meg, mi tortenik. Az
+ * elore utalasnal a vevo nem fizet a penztarban: a dijbekerot emailben kapja,
+ * es a hatarido (8 nap) Balazs dontese (2026-10-06 16:32 UTC).
+ */
+export const FIZETESI_SZEREP_ALCIM: Partial<Record<FizetesiSzerep, string>> = {
+  BANK_TRANSFER: "Díjbekérő emailben, 8 napos fizetési határidővel",
+}
+
+export const fizetesiModAlcim = (
+  mod: EngedelyezettFizetesiMod,
+): string | undefined => FIZETESI_SZEREP_ALCIM[mod.role]
 
 /**
  * The region's providers, narrowed to what this cart may use, each carrying
