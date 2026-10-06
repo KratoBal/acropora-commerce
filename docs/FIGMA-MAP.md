@@ -58,6 +58,7 @@ Szándékos design-eltérést a **Megjegyzés** mezőben kell dokumentálni. Ké
 | Verify account | nincs | `apps/storefront` | `[countryCode]/(main)/verify-account/**` | `account/` | 2026-10-06 · 14ea991 | — |
 | Storefront layout | nincs | `apps/storefront` | `[countryCode]/(main)/layout.tsx`<br>`[countryCode]/(checkout)/layout.tsx`<br>`layout.tsx` | `layout/`<br>`common/` | 2026-10-06 · 14ea991 | Közös header/footer/layout elemek. |
 | Design tokens preview | nincs | `apps/storefront` | `tokenek/**` | `common/` | 2026-10-06 · 14ea991 | Fejlesztői token preview; Figma token dokumentáció: `docs/P1A-FIGMA-TOKENS.md`. |
+| Betűk / font assets | nincs | `apps/storefront` | `betuk/**` | `—` | 2026-10-06 · 14ea991 | Az app root alatt élő font- és licencforrások; nincs külön storefront module. |
 
 ## Commerce Design System / shared UI
 
