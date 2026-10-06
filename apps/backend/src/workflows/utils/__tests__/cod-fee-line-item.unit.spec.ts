@@ -50,6 +50,40 @@ describe("cash-on-delivery fee line item", () => {
       expect(item.is_tax_inclusive).toBe(true)
     })
 
+    it("takes no coupon: Medusa's own promotion math leaves the fee whole (790da0cd)", () => {
+      expect(item.is_discountable).toBe(false)
+      // the real computation of Medusa 2.20.1, as the cart runs it: a 10%
+      // order-level coupon over one product line and the fee line
+      const { getComputedActionsForItems } = require("@medusajs/promotion/dist/utils/compute-actions/line-items")
+      const actions = getComputedActionsForItems(
+        {
+          id: "promo_10",
+          code: "TIZ",
+          is_tax_inclusive: true,
+          application_method: {
+            type: "percentage",
+            value: 10,
+            target_type: "order",
+            allocation: "across",
+            target_rules: [],
+          },
+        },
+        [
+          { id: "goods", quantity: 1, subtotal: 7874, original_total: 10000 },
+          {
+            id: "fee",
+            quantity: 1,
+            subtotal: 354,
+            original_total: 450,
+            is_discountable: item.is_discountable,
+          },
+        ],
+        new Map(),
+        "across"
+      )
+      expect(actions.map((a: { item_id: string }) => a.item_id)).toEqual(["goods"])
+    })
+
     it("does not require shipping, or the order could not be completed", () => {
       // A line with no variant has no shipping profile, and cart completion
       // demands a profile for every line that requires shipping.
