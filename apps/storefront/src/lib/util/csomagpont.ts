@@ -37,7 +37,8 @@ const FIZETESI_LEHETOSEG: Record<string, string> = {
   card: "bankkártya",
   cash: "készpénz",
   link: "fizetési link",
-  app: "FOXPOST alkalmazás",
+  // a Foxpost-prompt 6. pontja: a Packeta alkalmazasa (a FOXPOST a Packeta Group resze)
+  app: "Packeta app",
 }
 
 /**
@@ -116,9 +117,34 @@ export type CsomagpontKereses = {
   talalat: number
 }
 
-/** A szallitasi mod adata a kivalasztott csomagponttal (`setShippingMethod`). */
-export function foxpostSzallitasiAdat(pontId: string) {
-  return { foxpost_pickup_point: { id: pontId } }
+/**
+ * A szallitasi mod adata a kivalasztott csomagponttal (`setShippingMethod`):
+ * csak az azonosito, es hogy melyik valasztobol jott (`finder`: a hivatalos
+ * kereso, `fallback`: a tartalek lista), mint a GLS-nel. A tobbit a hatter
+ * irja a sajat listajabol.
+ */
+export function foxpostSzallitasiAdat(
+  pontId: string,
+  forras: "finder" | "fallback" = "fallback",
+) {
+  return { foxpost_pickup_point: { id: pontId, source: forras } }
+}
+
+/**
+ * A PONT TIPUSA A VEVO SZAVAIVAL (a Foxpost-prompt 5. pontja): ne jelenjen meg
+ * egy Z-BOX vagy egy Z-Pont FOXPOST automatakent. A Foxpost sajat cimkei
+ * (merve 2026-10-05, a foxplus.json `variant` mezoje): "FOXPOST A-BOX",
+ * "FOXPOST Z-BOX", "Packeta Z-Pont". A Z-BOX a Foxpost listajaban is "FOXPOST"
+ * elotaggal all, a prompt szerint viszont Packeta Z-BOX. Ismeretlen tipus a
+ * Foxpost szavaival marad: abbol sem lesz automata.
+ */
+export function foxpostPontTipus(variant: string | null | undefined): string {
+  const nyers = (variant ?? "").trim()
+  const kod = nyers.toUpperCase().replace(/\s+/g, " ")
+  if (/\bZ-?BOX\b/.test(kod)) return "Packeta Z-BOX"
+  if (/\bZ-?PONT\b/.test(kod)) return "Packeta Z-Pont / átvevőhely"
+  if (/\bA-?BOX\b/.test(kod) || kod === "FOXPOST") return "FOXPOST automata"
+  return nyers
 }
 
 /**

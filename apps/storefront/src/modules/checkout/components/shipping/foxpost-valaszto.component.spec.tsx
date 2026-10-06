@@ -141,7 +141,7 @@ describe("a Foxpost átvételi pont választó a szállítási lépésben", () =
     expect(setShippingMethod).toHaveBeenCalledWith({
       cartId: "cart-1",
       shippingMethodId: "so-fox",
-      data: { foxpost_pickup_point: { id: "hu53" } },
+      data: { foxpost_pickup_point: { id: "hu53", source: "finder" } },
     })
   })
 
@@ -187,7 +187,7 @@ describe("a Foxpost átvételi pont választó a szállítási lépésben", () =
     })
     // a Z-Pont Z-Pontként, a saját ikonjával, és csak azzal, amit tud
     expect(screen.getByTestId("csomagpont-tipus").textContent).toBe(
-      "Packeta Z-Pont",
+      "Packeta Z-Pont / átvevőhely",
     )
     expect(screen.getByTestId("csomagpont-ikon").getAttribute("src")).toBe(
       "https://cdn.foxpost.hu/icons/Z-POINT_icon_low.png",
@@ -204,7 +204,7 @@ describe("a Foxpost átvételi pont választó a szállítási lépésben", () =
     expect(setShippingMethod).toHaveBeenCalledWith({
       cartId: "cart-1",
       shippingMethodId: "so-fox",
-      data: { foxpost_pickup_point: { id: "HU1" } },
+      data: { foxpost_pickup_point: { id: "HU1", source: "fallback" } },
     })
   })
 
@@ -265,6 +265,33 @@ describe("a Foxpost átvételi pont választó a szállítási lépésben", () =
     ).toBe(true)
   })
 
+  it("egy Z-BOX a kosárban Packeta Z-BOX-ként áll, a saját ikonjával (5. és 19. pont)", () => {
+    rajzol(
+      kosar([
+        {
+          id: "sm-1",
+          shipping_option_id: "so-fox",
+          data: {
+            foxpost_pickup_point: {
+              id: "zbox1",
+              name: "Z-BOX Gödöllő Auchan",
+              address: "2100 Gödöllő, Kenyérgyári út 1.",
+              variant: "FOXPOST Z-BOX",
+              icon_url: "https://cdn.foxpost.hu/icons/zbox.png",
+              services: ["pick up"],
+            },
+          },
+        },
+      ]),
+    )
+    expect(screen.getByTestId("foxpost-kivalasztott-tipus").textContent).toBe(
+      "Packeta Z-BOX",
+    )
+    expect(
+      screen.getByTestId("foxpost-kivalasztott-ikon").getAttribute("src"),
+    ).toBe("https://cdn.foxpost.hu/icons/zbox.png")
+  })
+
   it("a kosárban álló pontot típussal és részletekkel mutatja, a Tovább mehet, és másik választható", () => {
     rajzol(
       kosar([
@@ -288,8 +315,10 @@ describe("a Foxpost átvételi pont választó a szállítási lépésben", () =
     expect(kartya.textContent).toContain(KERESO_PONT.name)
     expect(kartya.textContent).toContain(KERESO_PONT.address)
     expect(screen.getByTestId("foxpost-kivalasztott-tipus").textContent).toBe(
-      "FOXPOST A-BOX",
+      "FOXPOST automata",
     )
+    // a tipus hivatalos ikonja, ha a pont rekordja hordozza (19. pont)
+    expect(screen.queryByTestId("foxpost-kivalasztott-ikon")).toBeNull()
     expect(
       screen.getByTestId("foxpost-kivalasztott-reszletek").textContent,
     ).toBe("Csomagfeladás és -átvétel · Fizetés: bankkártya, fizetési link")

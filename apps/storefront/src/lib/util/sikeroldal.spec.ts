@@ -56,7 +56,7 @@ describe("a visszaigazoló lap", () => {
       {
         cimke: "1. Kiszállítandó rendelés",
         szallito: "foxpost",
-        tipus: "FOXPOST A-BOX",
+        tipus: "FOXPOST automata",
         hely: "FOXPOST A-BOX Bp. 02. ker. Budagyöngye",
         cim: "1026 Budapest, Szilágyi E. fasor 121.",
         tetelek: ["Hanna HI780-25 · 1 db"],
