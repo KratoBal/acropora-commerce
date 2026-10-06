@@ -28,7 +28,11 @@ import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validato
 import { AdminPostOrderSplit } from "./admin/order-split/validators";
 import { StorePostCartNotes } from "./store/cart-notes/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
-import { AdminGetOrderPickupPointsParams, AdminPostOrderPickupPoint } from "./admin/order-shipping/validators";
+import {
+  AdminGetOrderPickupPointsParams,
+  AdminPostOrderPickupPoint,
+  AdminPostOrderShippingMethod,
+} from "./admin/order-shipping/validators";
 import { AdminGetWebshopMailOutboxParams } from "./admin/webshop-mail/outbox/validators";
 import {
   AdminReleaseOrderPaymentHold,
@@ -200,6 +204,12 @@ export default defineMiddlewares({
       matcher: "/admin/order-split/:order_id",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminPostOrderSplit)],
+    },
+    {
+      // a placed order's shipping method changed from the OS (card 0a14f739, C/2)
+      matcher: "/admin/order-shipping/:order_id/method",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostOrderShippingMethod)],
     },
     {
       matcher: "/store/payment-options",

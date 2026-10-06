@@ -12,6 +12,7 @@ jest.mock("@medusajs/medusa/core-flows", () => {
     orderEditUpdateItemQuantityWorkflow: wf("quantities"),
     requestOrderEditRequestWorkflow: wf("request"),
     confirmOrderEditRequestWorkflow: wf("confirm"),
+    cancelBeginOrderEditWorkflow: wf("cancelEdit"),
     createOrderWorkflow: wf("createOrder", (input: { items: Array<{ metadata: unknown }> }) => ({
       id: "order_B",
       total: 2000,
@@ -122,7 +123,8 @@ describe("reduceLines", () => {
   it("a refused edit stops before the confirm", async () => {
     decision.mockResolvedValue({ action: "refuse", message: "nem" })
     await expect(splitOperations(container().scope).reduceLines("order_A", [{ item_id: "i1", quantity: 1 }], "u")).rejects.toThrow("nem")
-    expect(calls.map(([name]) => name)).not.toContain("confirm")
+    // the open edit is canceled, or the next attempt would fail at its begin
+    expect(calls.map(([name]) => name)).toEqual(["begin", "quantities", "request", "cancelEdit"])
   })
 })
 

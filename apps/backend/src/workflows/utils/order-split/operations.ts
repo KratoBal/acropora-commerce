@@ -1,22 +1,18 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import {
-  beginOrderEditOrderWorkflow,
-  confirmOrderEditRequestWorkflow,
   createOrderPaymentCollectionWorkflow,
   createOrderWorkflow,
   createPaymentSessionsWorkflow,
   orderEditUpdateItemQuantityWorkflow,
-  requestOrderEditRequestWorkflow,
 } from "@medusajs/medusa/core-flows"
 
 import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-status"
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import type { OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { ensureInitialBusinessStatus } from "../ensure-initial-business-status"
-import { confirmKeepingHold, orderEditHoldDecision } from "../order-edit-hold"
-import { editHoldOperations } from "../order-edit-hold-operations"
-import { buildProviderRoleMap, onlineCardProviderIds } from "../payment-providers"
+import { buildProviderRoleMap } from "../payment-providers"
+import { runOrderEdit } from "../run-order-edit"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import type { PlannedLine, SplitOperations, SplitSource } from "./split"
 
@@ -142,8 +138,8 @@ const setMetadata = (container: MedusaContainer) => async (orderId: string, meta
 
 /**
  * A's lines to their new quantities, through a Medusa order edit: begin,
- * set the quantities, request, confirm. The confirm takes the same path as the
- * admin's (`order-edit-confirm-keeps-hold.ts`): an uncaptured card hold stays.
+ * set the quantities, request, confirm (`runOrderEdit`: the admin's hold-keeping
+ * confirm, and the edit canceled if anything fails before it).
  */
 const reduceLines = (container: MedusaContainer) => async (
   orderId: string,
@@ -156,20 +152,11 @@ const reduceLines = (container: MedusaContainer) => async (
   const changes = remaining.filter((line) => current.has(line.item_id) && current.get(line.item_id) !== line.quantity)
   if (!changes.length) return
 
-  await beginOrderEditOrderWorkflow(container).run({
-    input: { order_id: orderId, created_by: actor, description: "Szétbontás" },
+  await runOrderEdit(container, { order_id: orderId, actor, description: "Szétbontás" }, async () => {
+    await orderEditUpdateItemQuantityWorkflow(container).run({
+      input: { order_id: orderId, items: changes.map((line) => ({ id: line.item_id, quantity: line.quantity })) },
+    })
   })
-  await orderEditUpdateItemQuantityWorkflow(container).run({
-    input: { order_id: orderId, items: changes.map((line) => ({ id: line.item_id, quantity: line.quantity })) },
-  })
-  await requestOrderEditRequestWorkflow(container).run({ input: { order_id: orderId, requested_by: actor } })
-
-  const ops = editHoldOperations(container)
-  const decision = await orderEditHoldDecision(orderId, ops, onlineCardProviderIds())
-  if (decision.action === "refuse") throw new MedusaError(MedusaError.Types.NOT_ALLOWED, decision.message)
-  const confirm = () => confirmOrderEditRequestWorkflow(container).run({ input: { order_id: orderId, confirmed_by: actor } })
-  if (decision.action === "pass") await confirm()
-  else await confirmKeepingHold(decision.collectionId, ops, confirm)
 }
 
 /**
