@@ -40,6 +40,8 @@ export type ChangeOrder = {
     shipping_option_id: string | null
     amount: number
     data: Record<string, unknown> | null
+    /** Whether its amount includes the tax; the new method takes the same. */
+    is_tax_inclusive: boolean
   } | null
 }
 
@@ -73,7 +75,14 @@ export type ChangeOperations = {
   /** One order edit: the old method out, the new one in with its data, confirmed keeping a hold. */
   replaceMethod(
     orderId: string,
-    change: { old_method_id: string; option: CourierOption; data: Record<string, unknown>; actor: string }
+    change: {
+      old_method_id: string
+      option: CourierOption
+      data: Record<string, unknown>
+      /** The old method's: our option amounts are priced the way the checkout priced it. */
+      tax_inclusive: boolean
+      actor: string
+    }
   ): Promise<void>
   /** After the change: the payment state, and whether a difference is owed. */
   payment(orderId: string): Promise<{ state: string; difference_due: boolean }>
@@ -187,7 +196,7 @@ export const changeShippingMethod = async (
   }
 
   const actor = input.actor ?? apiActor
-  await ops.replaceMethod(orderId, { old_method_id: current.id, option, data, actor })
+  await ops.replaceMethod(orderId, { old_method_id: current.id, option, data, tax_inclusive: current.is_tax_inclusive, actor })
 
   const after = (await ops.loadOrder(orderId))!
   const history = Array.isArray(after.metadata?.[SHIPPING_HISTORY_KEY]) ? (after.metadata![SHIPPING_HISTORY_KEY] as unknown[]) : []

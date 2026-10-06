@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { MedusaContainer, UpdateOrderShippingMethodDTO } from "@medusajs/framework/types"
 import { ChangeActionType, ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import { createOrderChangeActionsWorkflow, createOrderEditShippingMethodWorkflow } from "@medusajs/medusa/core-flows"
 
@@ -48,6 +48,7 @@ const loadOrder = async (container: MedusaContainer, orderId: string): Promise<C
       "shipping_methods.shipping_option_id",
       "shipping_methods.amount",
       "shipping_methods.data",
+      "shipping_methods.is_tax_inclusive",
       "payment_collections.payments.provider_id",
       "payment_collections.payments.captured_at",
       "payment_collections.payments.canceled_at",
@@ -75,7 +76,13 @@ const loadOrder = async (container: MedusaContainer, orderId: string): Promise<C
       : null,
     paid: payments.some((p: any) => p.captured_at && !p.canceled_at),
     method: method
-      ? { id: method.id, shipping_option_id: method.shipping_option_id ?? null, amount: Number(method.amount), data: method.data ?? null }
+      ? {
+          id: method.id,
+          shipping_option_id: method.shipping_option_id ?? null,
+          amount: Number(method.amount),
+          data: method.data ?? null,
+          is_tax_inclusive: method.is_tax_inclusive !== false,
+        }
       : null,
   }
 }
@@ -132,9 +139,20 @@ const replaceMethod = (container: MedusaContainer): ChangeOperations["replaceMet
     if (!orderChange || !added) {
       throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `The new shipping method of order ${orderId} was not found in its edit`)
     }
-    if (Object.keys(change.data).length) {
-      await container.resolve(Modules.ORDER).updateOrderShippingMethods([{ id: added.reference_id, data: change.data }])
+    /*
+      THE NEW METHOD IS PRICED LIKE THE OLD ONE (measured 2026-10-06 on the
+      test shop): Medusa takes `is_tax_inclusive` from the option's calculated
+      price, also for our custom amount, and gave the new method `false`. Its
+      3500 Ft was then a net price: 4445 Ft with the 27% tax, and a 3295 Ft
+      difference link instead of 2350. Our option amounts are the checkout's
+      prices, so the new method takes the old one's flag.
+    */
+    const update: UpdateOrderShippingMethodDTO & { is_tax_inclusive: boolean } = {
+      id: added.reference_id,
+      is_tax_inclusive: change.tax_inclusive,
+      ...(Object.keys(change.data).length ? { data: change.data } : {}),
     }
+    await container.resolve(Modules.ORDER).updateOrderShippingMethods([update])
     await createOrderChangeActionsWorkflow(container).run({
       input: [
         {

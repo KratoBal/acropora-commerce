@@ -71,7 +71,7 @@ const order = (extra: Partial<ChangeOrder> = {}): ChangeOrder => ({
   total: 11990,
   payment_role: "COD",
   paid: false,
-  method: { id: "sm_1", shipping_option_id: GLS_HOME, amount: 1990, data: {} },
+  method: { id: "sm_1", shipping_option_id: GLS_HOME, amount: 1990, data: {}, is_tax_inclusive: true },
   ...extra,
 })
 
@@ -93,7 +93,7 @@ const fakeOps = (start: ChangeOrder, opts: { payment?: { state: string; differen
       current = {
         ...current,
         total: current.total - current.method!.amount + change.option.amount,
-        method: { id: "sm_2", shipping_option_id: change.option.id, amount: change.option.amount, data: change.data },
+        method: { id: "sm_2", shipping_option_id: change.option.id, amount: change.option.amount, data: change.data, is_tax_inclusive: change.tax_inclusive },
       }
     },
     payment: async () => opts.payment ?? { state: "none", difference_due: false },
@@ -112,7 +112,7 @@ describe("changeBlock", () => {
     expect(changeBlock(order({ fulfillments: [{ id: "f", canceled_at: null }] }))).toBe("fulfilled")
     expect(changeBlock(order({ business_status: "out_for_delivery" }))).toBe("status")
     expect(changeBlock(order({ paid: true }))).toBe("paid")
-    expect(changeBlock(order({ method: { id: "sm", shipping_option_id: PICKUP, amount: 0, data: {} } }))).toBe("not_courier")
+    expect(changeBlock(order({ method: { id: "sm", shipping_option_id: PICKUP, amount: 0, data: {}, is_tax_inclusive: true } }))).toBe("not_courier")
     expect(changeBlock(order({ method: null }))).toBe("not_courier")
   })
 })
@@ -129,6 +129,12 @@ describe("listChangeOptions", () => {
 })
 
 describe("changeShippingMethod", () => {
+  it("the new method is told the old one's tax mode (a net-priced old method stays net)", async () => {
+    const w = fakeOps(order({ method: { id: "sm_1", shipping_option_id: GLS_HOME, amount: 1990, data: {}, is_tax_inclusive: false } }))
+    await changeShippingMethod("order_1", { shipping_option_id: FOXPOST, point_id: "P9" }, "user_key", w.ops)
+    expect(w.replaced.map((change) => change.tax_inclusive)).toEqual([false])
+  })
+
   it("home to Foxpost: the point is checked, the method replaced in one step, the difference and history recorded", async () => {
     const w = fakeOps(order())
     const result = await changeShippingMethod(
@@ -143,6 +149,7 @@ describe("changeShippingMethod", () => {
         old_method_id: "sm_1",
         option: { id: FOXPOST, name: "Foxpost csomagpont", amount: 1290, carrier: "foxpost", needs_point: true, heavy: false },
         data: { foxpost_pickup_point: { id: "P9", name: "Pont" } },
+        tax_inclusive: true,
         actor: "Kovács Anna",
       },
     ])
@@ -170,7 +177,7 @@ describe("changeShippingMethod", () => {
   })
 
   it("a rise over a card hold says the difference is due", async () => {
-    const w = fakeOps(order({ payment_role: "ONLINE_CARD", method: { id: "sm_1", shipping_option_id: FOXPOST, amount: 1290, data: {} } }), {
+    const w = fakeOps(order({ payment_role: "ONLINE_CARD", method: { id: "sm_1", shipping_option_id: FOXPOST, amount: 1290, data: {}, is_tax_inclusive: true } }), {
       payment: { state: "awaiting_payment", difference_due: true },
     })
     expect(await changeShippingMethod("order_1", { shipping_option_id: GLS_HOME }, "u", w.ops)).toMatchObject({
@@ -182,7 +189,7 @@ describe("changeShippingMethod", () => {
   })
 
   it("the same method and point changes nothing", async () => {
-    const w = fakeOps(order({ method: { id: "sm_1", shipping_option_id: FOXPOST, amount: 1290, data: { foxpost_pickup_point: { id: "P9" } } } }))
+    const w = fakeOps(order({ method: { id: "sm_1", shipping_option_id: FOXPOST, amount: 1290, data: { foxpost_pickup_point: { id: "P9" } }, is_tax_inclusive: true } }))
     expect(await changeShippingMethod("order_1", { shipping_option_id: FOXPOST, point_id: "P9" }, "u", w.ops)).toMatchObject({
       changed: false,
       difference: 0,
