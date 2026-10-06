@@ -1,3 +1,4 @@
+import { foxpostPontTipus } from "./csomagpont"
 import { GLS_LOGO, glsNyitvatartas, glsTipusFelirat, glsTipusLogo } from "./gls"
 import { isStripeLike } from "@lib/constants"
 import { SHOP_ADDRESS } from "@modules/cart/components/pickup-notice/pickup-notice"
@@ -169,7 +170,8 @@ export function teljesites(
       ...alap,
       cimke,
       szallito: "foxpost",
-      tipus: fox.variant ?? "",
+      // a vevo szavaival: egy Z-BOX vagy Z-Pont sem FOXPOST automata (Foxpost-prompt 5.)
+      tipus: foxpostPontTipus(fox.variant),
       hely: fox.name,
       cim: fox.address ?? "",
     }

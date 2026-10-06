@@ -38,7 +38,7 @@ describe("a szállítási mód beállítása", () => {
     expect(cartId).toBe("cart_1")
     expect(torzs).toEqual({
       option_id: "so_foxpost",
-      data: { foxpost_pickup_point: { id: "HU1" } },
+      data: { foxpost_pickup_point: { id: "HU1", source: "fallback" } },
     })
   })
 

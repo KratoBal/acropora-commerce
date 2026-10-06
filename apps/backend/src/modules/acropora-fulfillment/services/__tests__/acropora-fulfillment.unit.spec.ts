@@ -270,8 +270,79 @@ describe("Acropora calculated fulfillment provider", () => {
         variant: "FOXPOST A-BOX",
         payment_options: ["card", "link"],
         services: ["pick up", "dispatch"],
+        // the rest of the record (the Foxpost prompt, point 19), from the directory too
+        provider: "foxpost",
+        zip: "",
+        city: "",
+        icon_url: null,
+        opening_hours: { hetfo: "00:00-24:00" },
+        // no picker named: the list (the official finder sends "finder")
+        source: "fallback",
       },
     })
+  })
+
+  it("keeps which picker the point came from: the official finder or the list", async () => {
+    const service = new AcroporaFulfillmentService(cradleWith(configuredSettings))
+    const stored = (await service.validateFulfillmentData(
+      { id: idFor("FOXPOST") },
+      { foxpost_pickup_point: { id: "HU1234", source: "finder" } },
+      {},
+    )) as { foxpost_pickup_point: { source: string } }
+    expect(stored.foxpost_pickup_point.source).toBe("finder")
+    const odd = (await service.validateFulfillmentData(
+      { id: idFor("FOXPOST") },
+      { foxpost_pickup_point: { id: "HU1234", source: "<script>" } },
+      {},
+    )) as { foxpost_pickup_point: { source: string } }
+    expect(odd.foxpost_pickup_point.source).toBe("fallback")
+  })
+
+  /**
+   * A POINT NEWER THAN OUR COPY (the Foxpost prompt, point 6: no old copy as
+   * the source of truth): the official finder shows Foxpost's live network,
+   * our copy is up to a day old. The list is read again once; a point still
+   * not there is refused as before.
+   */
+  it("reads the directory again once for a point missing from our copy", async () => {
+    const point = (id: string) => ({
+      operator_id: id,
+      name: `FOXPOST A-BOX ${id}`,
+      address: "1111 Budapest, Teszt utca 1.",
+      open: {},
+      geolat: 47.5,
+      geolng: 19.1,
+      variant: "FOXPOST A-BOX",
+      paymentOptions: [],
+      service: ["pick up"],
+    })
+    let reads = 0
+    const directory = new FoxpostPickupPointsService({
+      env: { FOXPOST_API_USER: "u", FOXPOST_API_PASSWORD: "p", FOXPOST_API_KEY: "k" },
+      fetcher: async () => {
+        reads++
+        // the first read is yesterday's copy; the new point exists from the second
+        const points = reads === 1 ? [point("HU1")] : [point("HU1"), point("HU_NEW")]
+        return { ok: true, json: async () => points }
+      },
+    })
+    const service = new AcroporaFulfillmentService(cradleWith(configuredSettings, directory))
+
+    await service.validateFulfillmentData({ id: idFor("FOXPOST") }, { foxpost_pickup_point: { id: "HU1" } }, {})
+    expect(reads).toBe(1)
+    await expect(
+      service.validateFulfillmentData({ id: idFor("FOXPOST") }, { foxpost_pickup_point: { id: "HU_NEW" } }, {}),
+    ).resolves.toMatchObject({ foxpost_pickup_point: { id: "HU_NEW" } })
+    expect(reads).toBe(2)
+
+    // a point that does not exist is still refused, and does not make us read the list again and again
+    await expect(
+      service.validateFulfillmentData({ id: idFor("FOXPOST") }, { foxpost_pickup_point: { id: "HU_FAKE" } }, {}),
+    ).rejects.toThrow("The selected Foxpost pickup point is unavailable")
+    await expect(
+      service.validateFulfillmentData({ id: idFor("FOXPOST") }, { foxpost_pickup_point: { id: "HU_FAKE2" } }, {}),
+    ).rejects.toThrow("The selected Foxpost pickup point is unavailable")
+    expect(reads).toBe(2)
   })
 
   it("keeps pickup at zero without reading carrier settings", async () => {

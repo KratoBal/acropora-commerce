@@ -98,7 +98,17 @@ const selectedFoxpostPickupPointId = (data: Record<string, unknown>): string => 
  * browser. The type travels with it (the confirmation and the OS name a Z-Pont
  * a Z-Pont), and what it accepts and does, for the success page.
  */
-const persistedFoxpostPickupPoint = (pickupPoint: FoxpostPickupPoint) => ({
+/*
+  WHAT THE ORDER KEEPS (the Foxpost prompt, point 19). The first six keys are
+  the ones read today (the OS, the mails, the success page) and do not change;
+  the rest is the point's record for the type's icon, the opening hours, and
+  which picker it came from. All of it from our own copy of Foxpost's list;
+  from the browser only the id, and the picker.
+*/
+const persistedFoxpostPickupPoint = (
+  pickupPoint: FoxpostPickupPoint,
+  source: "finder" | "fallback",
+) => ({
   foxpost_pickup_point: {
     id: pickupPoint.id,
     name: pickupPoint.name,
@@ -106,6 +116,12 @@ const persistedFoxpostPickupPoint = (pickupPoint: FoxpostPickupPoint) => ({
     variant: pickupPoint.variant,
     payment_options: pickupPoint.payment_options,
     services: pickupPoint.services,
+    provider: "foxpost",
+    zip: pickupPoint.zip,
+    city: pickupPoint.city,
+    icon_url: pickupPoint.icon_url,
+    opening_hours: pickupPoint.opening_hours,
+    source,
   },
 })
 
@@ -236,9 +252,16 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
     }
 
     const pickupPointId = selectedFoxpostPickupPointId(data)
-    const pickupPoint = availability.pickup_points.find(
-      (candidate) => candidate.id === pickupPointId,
-    )
+    const findIn = (points: FoxpostPickupPoint[]) =>
+      points.find((candidate) => candidate.id === pickupPointId)
+    let pickupPoint = findIn(availability.pickup_points)
+
+    // a point newer than our copy (chosen in the official finder): the list
+    // is read again once before the point is refused (the prompt, point 6)
+    if (!pickupPoint) {
+      const fresh = await this.foxpostPickupPoints_.getAvailability({ refresh: true })
+      if (fresh.available) pickupPoint = findIn(fresh.pickup_points)
+    }
 
     if (!pickupPoint) {
       throw new MedusaError(
@@ -247,7 +270,11 @@ class AcroporaFulfillmentService extends AbstractFulfillmentProviderService {
       )
     }
 
-    return persistedFoxpostPickupPoint(pickupPoint)
+    const chosen = data.foxpost_pickup_point as { source?: unknown }
+    return persistedFoxpostPickupPoint(
+      pickupPoint,
+      chosen.source === "finder" ? "finder" : "fallback",
+    )
   }
 
   /**

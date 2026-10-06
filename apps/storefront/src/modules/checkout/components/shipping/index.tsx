@@ -297,7 +297,7 @@ const Shipping: React.FC<ShippingProps> = ({
         data:
           aktivPontMod.adatKulcs === "gls_pickup_point"
             ? glsSzallitasiAdat(pont.id, forras ?? "fallback")
-            : aktivPontMod.adat(pont.id),
+            : foxpostSzallitasiAdat(pont.id, forras ?? "fallback"),
       })
       if (!eredmeny.ok) setError(eredmeny.uzenet)
     } catch {
@@ -533,7 +533,7 @@ const Shipping: React.FC<ShippingProps> = ({
                   <FoxpostValaszto
                     key={shippingMethodId ?? ""}
                     kivalasztott={kosarPont ?? null}
-                    onValaszt={handlePont}
+                    onValaszt={(pont, forras) => handlePont(pont, forras)}
                   />
                 ) : glsPontAktiv ? (
                   <GlsValaszto
@@ -675,6 +675,15 @@ const Shipping: React.FC<ShippingProps> = ({
                     currency_code: cart?.currency_code,
                   })}
                 </Text>
+                {kosarPont?.name ? (
+                  // a valasztott pont a lezart lepesben is latszik (Foxpost-prompt 4. pont)
+                  <Text
+                    className="txt-medium text-ui-fg-subtle break-words"
+                    data-testid="delivery-summary-point"
+                  >
+                    {kosarPont.name}
+                  </Text>
+                ) : null}
               </div>
             )}
           </div>

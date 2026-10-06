@@ -5,6 +5,14 @@ import {
 
 const FOXPOST_PICKUP_POINTS_URL = "https://cdn.foxpost.hu/foxplus.json";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+/**
+ * A FORCED REFRESH AT MOST THIS OFTEN (the Foxpost prompt, point 6: no old copy
+ * as the source of truth). A point chosen in the official finder but missing
+ * from our copy may simply be newer than it, so the list is fetched again once
+ * before the point is refused; an unknown id sent again and again does not
+ * make us fetch the whole directory every time.
+ */
+const FORCED_REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000;
 
 type FoxpostSourcePoint = {
   operator_id: string;
@@ -189,6 +197,7 @@ export class FoxpostPickupPointsService {
     expiresAt: number;
     pickupPoints: FoxpostPickupPoint[];
   } | null = null;
+  private lastForcedRefreshAt: number | null = null;
 
   constructor({
     env = process.env,
@@ -200,15 +209,27 @@ export class FoxpostPickupPointsService {
     this.now = now;
   }
 
-  async getAvailability(): Promise<FoxpostAvailability> {
+  /**
+   * `refresh: true` reads the directory again even if our copy is fresh, but
+   * not more often than `FORCED_REFRESH_MIN_INTERVAL_MS`; inside that window
+   * it answers from the copy.
+   */
+  async getAvailability({ refresh = false }: { refresh?: boolean } = {}): Promise<FoxpostAvailability> {
     if (!this.isConfigured()) {
       return { available: false, reason: "missing_configuration" };
     }
 
+    const forced =
+      refresh &&
+      (this.lastForcedRefreshAt === null ||
+        this.now() - this.lastForcedRefreshAt >= FORCED_REFRESH_MIN_INTERVAL_MS);
     const cached = this.getCachedPickupPoints();
 
-    if (cached) {
+    if (cached && !forced) {
       return { available: true, pickup_points: cached };
+    }
+    if (forced) {
+      this.lastForcedRefreshAt = this.now();
     }
 
     try {

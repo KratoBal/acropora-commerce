@@ -7,6 +7,7 @@ import {
   type CsomagpontKereses,
   type FoxpostCsomagpont,
   foxpostPontReszletek,
+  foxpostPontTipus,
 } from "@lib/util/csomagpont"
 import { Button } from "@modules/common/components/ui"
 
@@ -168,7 +169,9 @@ export default function CsomagpontValaszto({
                         className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-acr-slate"
                         data-testid="csomagpont-tipus"
                       >
-                        {pont.variant}
+                        {szolgaltato === "FOXPOST"
+                          ? foxpostPontTipus(pont.variant)
+                          : pont.variant}
                       </span>
                     ) : null}
                     <span className="block txt-medium-plus text-ui-fg-base">

@@ -6,6 +6,7 @@ import { searchFoxpostPickupPoints } from "@lib/data/csomagpont"
 import {
   type FoxpostCsomagpont,
   foxpostPontReszletek,
+  foxpostPontTipus,
 } from "@lib/util/csomagpont"
 import CsomagpontValaszto from "@modules/checkout/components/csomagpont-valaszto"
 import FoxpostKereso from "@modules/checkout/components/foxpost-kereso"
@@ -17,6 +18,8 @@ export type FoxpostKivalasztott = {
   variant?: string
   services?: string[]
   payment_options?: string[]
+  /** A tipus hivatalos ikonja; a hatter csak cdn.foxpost.hu https cimet ir ide. */
+  icon_url?: string | null
 }
 
 /** A tartalek lista szovegei a Figma allapotai szerint (486:346). */
@@ -44,18 +47,30 @@ export default function FoxpostValaszto({
   onValaszt,
 }: {
   kivalasztott?: FoxpostKivalasztott | null
-  onValaszt: (pont: FoxpostCsomagpont) => void | Promise<void>
+  /** `forras`: a hivatalos kereso (`finder`) vagy a tartalek lista (`fallback`). */
+  onValaszt: (
+    pont: FoxpostCsomagpont,
+    forras: "finder" | "fallback",
+  ) => void | Promise<void>
 }) {
   const [mod, setMod] = useState<"kereso" | "lista" | null>(
     kivalasztott?.name ? null : "kereso",
   )
 
   const valaszt = useCallback(
-    async (pont: FoxpostCsomagpont) => {
-      await onValaszt(pont)
+    async (pont: FoxpostCsomagpont, forras: "finder" | "fallback") => {
+      await onValaszt(pont, forras)
       setMod(null)
     },
     [onValaszt],
+  )
+  const keresobol = useCallback(
+    (pont: FoxpostCsomagpont) => valaszt(pont, "finder"),
+    [valaszt],
+  )
+  const listabol = useCallback(
+    (pont: FoxpostCsomagpont) => valaszt(pont, "fallback"),
+    [valaszt],
   )
   const tartalek = useCallback(() => setMod("lista"), [])
 
@@ -86,17 +101,29 @@ export default function FoxpostValaszto({
           </p>
           {kivalasztott?.variant ? (
             <p
-              className="text-[12px] text-acr-slate"
+              className="flex items-center gap-2 text-[12px] text-acr-slate"
               data-testid="foxpost-kivalasztott-tipus"
             >
-              {kivalasztott.variant}
+              {kivalasztott.icon_url ? (
+                // a Foxpost sajat tipus-ikonja (a hatter szuri), mint a listaban
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={kivalasztott.icon_url}
+                  alt=""
+                  className="h-5 w-5 shrink-0 object-contain"
+                  data-testid="foxpost-kivalasztott-ikon"
+                />
+              ) : null}
+              {foxpostPontTipus(kivalasztott.variant)}
             </p>
           ) : null}
-          <p className="text-[15px] font-medium text-acr-ink">
+          <p className="min-w-0 break-words text-[15px] font-medium text-acr-ink">
             {kivalasztott?.name}
           </p>
           {kivalasztott?.address ? (
-            <p className="text-[13px] text-acr-slate">{kivalasztott.address}</p>
+            <p className="min-w-0 break-words text-[13px] text-acr-slate">
+              {kivalasztott.address}
+            </p>
           ) : null}
           {foxpostPontReszletek(kivalasztott ?? {}) ? (
             <p
@@ -118,7 +145,7 @@ export default function FoxpostValaszto({
       ) : null}
 
       {mod === "kereso" ? (
-        <FoxpostKereso onValaszt={valaszt} onTartalek={tartalek} />
+        <FoxpostKereso onValaszt={keresobol} onTartalek={tartalek} />
       ) : null}
 
       {mod === "lista" ? (
@@ -126,7 +153,7 @@ export default function FoxpostValaszto({
           szolgaltato="FOXPOST"
           kereso={(kereses: string) => searchFoxpostPickupPoints(kereses)}
           kivalasztott={null}
-          onValaszt={valaszt}
+          onValaszt={listabol}
           szovegek={FOXPOST_LISTA_SZOVEGEK}
         />
       ) : null}

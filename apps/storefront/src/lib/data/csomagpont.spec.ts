@@ -84,7 +84,7 @@ describe("a Foxpost-csomagpont keresése", () => {
 
   it("a szállítási mód adata a backend által ellenőrzött alak", () => {
     expect(foxpostSzallitasiAdat("HU1")).toEqual({
-      foxpost_pickup_point: { id: "HU1" },
+      foxpost_pickup_point: { id: "HU1", source: "fallback" },
     })
   })
 })
