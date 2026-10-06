@@ -13,10 +13,28 @@
  * elfogadas idopontja mondja meg, melyik allapotat fogadta el a vevo.
  *
  * A regi elfogadasok a regi verziot orzik (`unas-shop-2026-09-29`).
+ *
+ * === 2026-10-06: A REKORD AZT ALLITJA, AMIT A VEVO KAPOTT (kartya 4a2b252d) ===
+ *
+ * A Fogyasztobarat-bekotes kapcsoloval jar (`NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED`),
+ * es Balazs 2026-10-05-en kikapcsoltatta. Kikapcsolva a `/jogi/aszf` oldal NEM a
+ * Fogyasztobarat szoveget mutatja, hanem a mai bolt ASZF-jere visz -- a rekord
+ * eddig megis a Fogyasztobarat verziojat irta. Mostantol (acrobot dontese,
+ * 2026-10-06 17:06):
+ *
+ *   kikapcsolva   a mai bolt ASZF-je, a regi verzioval (`unas-shop-2026-09-29`)
+ *   bekapcsolva   a Fogyasztobarat dokumentuma, a HATALYDATUMMAL es a tartalom
+ *                 LENYOMATAVAL, amit a szerver az elfogadaskor kerdez le
+ *
+ * A Fogyasztobarat fejlecben nem ad verziot (se ETag, se Last-Modified, merve
+ * 2026-10-06); a dokumentum szovege viszont kimondja, mitol hatalyos. A ketto
+ * egyutt mondja meg, MELYIK szoveget fogadta el a vevo, akkor is, ha a
+ * Fogyasztobarat a regi allapotot nem adja vissza.
  */
 import {
   FOGYASZTOBARAT_ID,
   dokumentumForras,
+  jogiDokumentum,
   jogiOldal,
 } from "@lib/util/fogyasztobarat"
 
@@ -33,19 +51,66 @@ export const ADATKEZELES_CIM = jogiOldal("adatkezeles")
 /** Amit az elfogadas rekordja dokumentumkent megnevez: a Fogyasztobarat forrasa. */
 export const ASZF_FORRAS = dokumentumForras("aszf")
 
+/** A mai bolt ASZF-je: ezt kapja a vevo, amig a Fogyasztobarat ki van kapcsolva. */
+export const ASZF_VERZIO_MAI_BOLT = "unas-shop-2026-09-29"
+export const ASZF_FORRAS_MAI_BOLT = jogiDokumentum("aszf")!.maiBoltCim!
+
+/** A lenyomat helyen, ha a lekeres nem sikerult: a rendeles ettol meg leadhato. */
+export const LENYOMAT_NINCS = "nincs"
+
+/**
+ * Amit a vevo az elfogadas pillanataban kapott. A Fogyasztobarat agon a
+ * hatalydatum es a lenyomat `null`, ha a szerver nem tudta lekerdezni.
+ */
+export type AszfDokumentumAllapot =
+  | { tipus: "mai-bolt" }
+  | {
+      tipus: "fogyasztobarat"
+      hatalyos: string | null
+      lenyomat: string | null
+    }
+
 export type AszfElfogadas = {
   idopont: string
   verzio: string
   dokumentum: string
+  /** Csak a Fogyasztobarat agon: a dokumentum szerinti hatalydatum (ÉÉÉÉ-HH-NN). */
+  hatalyos?: string | null
+  /** Csak a Fogyasztobarat agon: `sha256:<hex>`, vagy `nincs`. */
+  lenyomat?: string
 }
 
-/** Az elfogadas rekordja egy adott pillanatra. */
-export function aszfElfogadas(most: Date): AszfElfogadas {
+/** Az elfogadas rekordja egy adott pillanatra, abbol, amit a vevo kapott. */
+export function aszfElfogadas(
+  most: Date,
+  dokumentum: AszfDokumentumAllapot,
+): AszfElfogadas {
+  if (dokumentum.tipus === "mai-bolt")
+    return {
+      idopont: most.toISOString(),
+      verzio: ASZF_VERZIO_MAI_BOLT,
+      dokumentum: ASZF_FORRAS_MAI_BOLT,
+    }
   return {
     idopont: most.toISOString(),
     verzio: ASZF_VERZIO,
     dokumentum: ASZF_FORRAS,
+    hatalyos: dokumentum.hatalyos,
+    lenyomat: dokumentum.lenyomat ?? LENYOMAT_NINCS,
   }
+}
+
+/**
+ * A HATALYDATUM A DOKUMENTUM SZOVEGEBOL. A Fogyasztobarat az ASZF fejleceben
+ * irja: „<bolt> - hatályos ettől a naptól: <span …>2026-10-05</span>”. Ha nincs
+ * ilyen sor, `null`: a rekord nem talal ki datumot.
+ */
+export function aszfHatalyDatum(html: string): string | null {
+  const talalat =
+    /hat[aá]lyos\s+ett[oő]l\s+a\s+napt[oó]l:\s*(?:<[^>]*>\s*)*(\d{4}-\d{2}-\d{2})/i.exec(
+      html,
+    )
+  return talalat ? talalat[1]! : null
 }
 
 /**
