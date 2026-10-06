@@ -61,6 +61,11 @@ describe("renderOrderSplitMail", () => {
     expect(renderOrderSplitMail(parent, split, "cod").text).toContain("A második részért külön utánvét-díjat nem számolunk fel.")
     expect(renderOrderSplitMail(parent, split, "store").text).toContain("Mindkét részt az üzletben fizeted, az átvételkor.")
     expect(renderOrderSplitMail(parent, split, "cod").text).not.toContain("fizetési linket")
+    // bb3a6bd5: both parts by transfer, the second with its own proforma
+    const transfer = renderOrderSplitMail(parent, split, "transfer").text
+    expect(transfer).toContain("banki átutalással")
+    expect(transfer).toContain("külön díjbekérőt")
+    expect(transfer).not.toContain("üzletben")
   })
 
   it("promises no day, and escapes what comes from the shop's data", () => {

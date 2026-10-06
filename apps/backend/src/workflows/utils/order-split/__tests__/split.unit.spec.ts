@@ -297,4 +297,11 @@ describe("splitOrder", () => {
     expect(await splitOrder("order_A", ask, "u", w.ops)).toMatchObject({ status: "done", payment_state: "none" })
     expect(w.calls.at(-1)).toBe("notify:order_A:order_B1:store")
   })
+
+  // bb3a6bd5: a transfer order's notice says transfer, never "pay in the shop"
+  it("a bank-transfer order splits like cash on delivery, and its notice says transfer", async () => {
+    const w = fakeOps(order({ payment_role: "BANK_TRANSFER" }))
+    expect(await splitOrder("order_A", ask, "u", w.ops)).toMatchObject({ status: "done", payment_state: "none" })
+    expect(w.calls.at(-1)).toBe("notify:order_A:order_B1:transfer")
+  })
 })

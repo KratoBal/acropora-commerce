@@ -128,8 +128,16 @@ export type SplitResult =
 /** What B carries over from A besides its lines: the ÁSZF acceptance and the customer's notes. */
 const CARRIED_METADATA_KEYS = ["aszf_elfogadas", "acropora_customer_note", "acropora_carrier_note"]
 
+/** Every role has its own kind; a new role must be named here, not fall into "store". */
+const SPLIT_PAYMENT_OF: Record<NonNullable<SplitSource["payment_role"]>, SplitPayment> = {
+  ONLINE_CARD: "card",
+  COD: "cod",
+  PAY_AT_STORE: "store",
+  BANK_TRANSFER: "transfer",
+}
+
 const paymentOf = (source: SplitSource): SplitPayment =>
-  source.payment_role === "ONLINE_CARD" ? "card" : source.payment_role === "COD" ? "cod" : "store"
+  source.payment_role ? SPLIT_PAYMENT_OF[source.payment_role] : "store"
 
 const requestsOf = (metadata: Record<string, unknown> | null): Record<string, SplitRequestRecord> => {
   const value = metadata?.[SPLIT_REQUESTS_KEY]

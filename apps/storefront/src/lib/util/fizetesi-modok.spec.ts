@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   FIZETESI_SZEREP_CIMKE,
   engedelyezettFizetesiModok,
+  fizetesiModAlcim,
   fizetesiModCimke,
 } from "./fizetesi-modok"
 
@@ -76,5 +77,20 @@ describe("fizetesiModCimke", () => {
     expect(fizetesiModCimke({ id: "pp_acropora_cod", role: "COD" })).toBe(
       "Utánvét",
     )
+  })
+
+  // bb3a6bd5: a pénztárban nem fizet; a díjbekérő emailben jön, 8 napos határidővel
+  it("az előre utalás címe és alcíme megmondja, mi történik; a többinek nincs alcíme", () => {
+    const utalas = {
+      id: "pp_acropora_transfer",
+      role: "BANK_TRANSFER",
+    } as const
+    expect(fizetesiModCimke(utalas)).toBe("Előre utalás")
+    expect(fizetesiModAlcim(utalas)).toBe(
+      "Díjbekérő emailben, 8 napos fizetési határidővel",
+    )
+    expect(
+      fizetesiModAlcim({ id: "pp_acropora_cod", role: "COD" }),
+    ).toBeUndefined()
   })
 })

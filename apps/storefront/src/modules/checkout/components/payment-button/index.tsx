@@ -2,6 +2,7 @@
 
 import { isManual, isStripeLike } from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
+import type { FizetesiSzerepValasz } from "@lib/data/payment"
 import {
   inditsStripeKozosFizetest,
   stripeVisszarendezes,
@@ -34,7 +35,7 @@ type PaymentButtonProps = {
    * masodik forrasa lenne. E nelkul a gomb a `default:` agra esne, es a vevo
    * egy letiltott gombot latna egy ervenyes fizetesi mod mellett.
    */
-  fizetesiSzerep?: "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
+  fizetesiSzerep?: FizetesiSzerepValasz
   /** Vegyes kosar, Stripe: a kozos fizetes a leadaskor keszul. */
   stripeKozos?: boolean
   "data-testid": string
@@ -84,6 +85,15 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
       a dij es a valasztott mod osszeillik-e.
     */
     case fizetesiSzerep === "COD" && !!paymentSession:
+      return (
+        <KozvetlenRendelesGomb notReady={notReady} data-testid={dataTestId} />
+      )
+    /*
+      ELORE UTALAS (bb3a6bd5): a penztarban nincs mit fizetni, a rendeles
+      leadodik, es a fizetes fuggoben marad, amig az utalas be nem erkezik. A
+      dijbekerot az OS-bol kuldjuk gombbal.
+    */
+    case fizetesiSzerep === "BANK_TRANSFER" && !!paymentSession:
       return (
         <KozvetlenRendelesGomb notReady={notReady} data-testid={dataTestId} />
       )

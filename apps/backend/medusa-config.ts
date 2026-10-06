@@ -70,6 +70,12 @@ module.exports = defineConfig({
             resolve: "./src/modules/acropora-payment",
             id: "cod",
           },
+          // prepayment by bank transfer, pp_acropora_transfer (card bb3a6bd5);
+          // offered once linked to the region and named by ACROPORA_PP_BANK_TRANSFER
+          {
+            resolve: "./src/modules/acropora-transfer",
+            id: "transfer",
+          },
           // Stripe, pp_stripe_stripe, the only card provider: only when
           // STRIPE_API_KEY is set (see src/workflows/utils/stripe-config.ts).
           // Offered once linked to the region and named by ACROPORA_PP_ONLINE_CARD.

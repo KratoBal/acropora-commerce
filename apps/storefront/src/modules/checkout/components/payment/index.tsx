@@ -4,6 +4,7 @@ import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import {
   type EngedelyezettFizetesiMod,
   engedelyezettFizetesiModok,
+  fizetesiModAlcim,
   fizetesiModCimke,
 } from "@lib/util/fizetesi-modok"
 import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
@@ -508,6 +509,7 @@ const Payment = ({
                           paymentInfoMap={cimkek}
                           paymentProviderId={paymentMethod.id}
                           selectedPaymentOptionId={selectedPaymentMethod}
+                          alcim={fizetesiModAlcim(paymentMethod)}
                         />
                       )}
                     </div>

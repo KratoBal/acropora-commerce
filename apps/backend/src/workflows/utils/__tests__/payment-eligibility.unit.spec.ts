@@ -20,6 +20,7 @@ describe("payment eligibility by selected shipping option", () => {
     expect(allowedPaymentRolesFor(["PICKUP"])).toEqual([
       "ONLINE_CARD",
       "PAY_AT_STORE",
+      "BANK_TRANSFER",
     ])
   })
 
@@ -31,6 +32,7 @@ describe("payment eligibility by selected shipping option", () => {
     expect(allowedPaymentRolesFor(["GLS_NORMAL"])).toEqual([
       "ONLINE_CARD",
       "COD",
+      "BANK_TRANSFER",
     ])
   })
 
@@ -40,6 +42,7 @@ describe("payment eligibility by selected shipping option", () => {
     expect(allowedPaymentRolesFor(["GLS_HEAVY"])).toEqual([
       "ONLINE_CARD",
       "COD",
+      "BANK_TRANSFER",
     ])
     expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(true)
     expect(isPaymentRoleAllowedFor("PAY_AT_STORE", ["GLS_HEAVY"])).toBe(false)
@@ -53,11 +56,16 @@ describe("payment eligibility by selected shipping option", () => {
     expect(allowedPaymentRolesFor(["PICKUP"])).toEqual([
       "ONLINE_CARD",
       "PAY_AT_STORE",
+      "BANK_TRANSFER",
     ])
   })
 
   it("Foxpost allows online card and cash on delivery", () => {
-    expect(allowedPaymentRolesFor(["FOXPOST"])).toEqual(["ONLINE_CARD", "COD"])
+    expect(allowedPaymentRolesFor(["FOXPOST"])).toEqual([
+      "ONLINE_CARD",
+      "COD",
+      "BANK_TRANSFER",
+    ])
   })
 
   it("pay at store is offered for pickup and for nothing else", () => {
@@ -65,6 +73,13 @@ describe("payment eligibility by selected shipping option", () => {
       expect(isPaymentRoleAllowedFor("PAY_AT_STORE", [role])).toBe(
         role === "PICKUP"
       )
+    }
+  })
+
+  it("prepayment by bank transfer is offered for every shipping option (bb3a6bd5)", () => {
+    // Balázs, 2026-10-06: "Elore utalas kell"; every method on the approved proposal
+    for (const role of SHIPPING_OPTION_ROLES) {
+      expect(isPaymentRoleAllowedFor("BANK_TRANSFER", [role])).toBe(true)
     }
   })
 
@@ -89,10 +104,12 @@ describe("payment eligibility by selected shipping option", () => {
     // passing while proving nothing.
     expect(allowedPaymentRolesFor(["PICKUP", "GLS_NORMAL"])).toEqual([
       "ONLINE_CARD",
+      "BANK_TRANSFER",
     ])
     expect(allowedPaymentRolesFor(["GLS_NORMAL", "GLS_HEAVY"])).toEqual([
       "ONLINE_CARD",
       "COD",
+      "BANK_TRANSFER",
     ])
   })
 
@@ -239,7 +256,12 @@ describe("resolving the selected payment role", () => {
 })
 
 describe("the payment role set", () => {
-  it("has exactly the three roles the business uses", () => {
-    expect([...PAYMENT_ROLES]).toEqual(["ONLINE_CARD", "COD", "PAY_AT_STORE"])
+  it("has exactly the four roles the business uses", () => {
+    expect([...PAYMENT_ROLES]).toEqual([
+      "ONLINE_CARD",
+      "COD",
+      "PAY_AT_STORE",
+      "BANK_TRANSFER",
+    ])
   })
 })

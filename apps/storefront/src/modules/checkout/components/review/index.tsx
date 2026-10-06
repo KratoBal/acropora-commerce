@@ -5,6 +5,7 @@ import { Heading, Text, clx } from "@modules/common/components/ui"
 import PaymentButton from "../payment-button"
 import { useSearchParams } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
+import type { FizetesiSzerepValasz } from "@lib/data/payment"
 
 const Review = ({
   cart,
@@ -12,7 +13,7 @@ const Review = ({
 }: {
   cart: HttpTypes.StoreCart
   /** Amivel a kosar fizet, a hatter szavaval. Lasd a gomb propjanak fejlecet. */
-  fizetesiSzerep?: "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
+  fizetesiSzerep?: FizetesiSzerepValasz
 }) => {
   const searchParams = useSearchParams()
 

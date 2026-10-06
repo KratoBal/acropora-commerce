@@ -51,6 +51,7 @@ const PAYMENT_LABEL: Record<PaymentRole, string> = {
   ONLINE_CARD: "Bankkártya",
   COD: "Utánvét",
   PAY_AT_STORE: "Fizetés a boltban",
+  BANK_TRANSFER: "Előre utalás",
 }
 
 type StatusCopy = { eyebrow: string; title: string; subject: string; lead: string[] }

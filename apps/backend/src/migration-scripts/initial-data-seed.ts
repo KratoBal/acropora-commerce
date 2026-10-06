@@ -173,7 +173,12 @@ export const SEED_SETTINGS = {
   csatorna: CSATORNA_NEVE,
   raktar: RAKTAR_NEVE,
   szallitasiModok: SZALLITASI_MODOK,
-  fizetesiSzolgaltatok: ["pp_system_default", "pp_acropora_cod"],
+  fizetesiSzolgaltatok: [
+    "pp_system_default",
+    "pp_acropora_cod",
+    // elore utalas (bb3a6bd5)
+    "pp_acropora_transfer",
+  ],
 } as const;
 
 /**
@@ -265,8 +270,9 @@ export default async function initial_data_seed({
             name: SEED_SETTINGS.regio.nev,
             currency_code: SEED_SETTINGS.regio.penznem,
             countries: [SEED_SETTINGS.ado.orszag],
-            // MIND A KETTO ENGEDELYEZVE a teszt gepen. A pp_acropora_cod a sajat
-            // utanvet-szolgaltatonk, a pp_system_default a beepitett.
+            // MIND ENGEDELYEZVE a teszt gepen. A pp_acropora_cod a sajat
+            // utanvet-szolgaltatonk, a pp_acropora_transfer az elore utalase
+            // (bb3a6bd5), a pp_system_default a beepitett.
             payment_providers: [...SEED_SETTINGS.fizetesiSzolgaltatok],
           },
         ],

@@ -37,7 +37,8 @@ export const listCartPaymentMethods = async (regionId: string) => {
     })
 }
 
-export type FizetesiSzerepValasz = "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | null
+export type FizetesiSzerepValasz =
+  "ONLINE_CARD" | "COD" | "PAY_AT_STORE" | "BANK_TRANSFER" | null
 
 export type KosarFizetesiLehetosegek = {
   /** A kosár vegyes (élő állat + kiszállítandó): két rendelés lesz belőle. */

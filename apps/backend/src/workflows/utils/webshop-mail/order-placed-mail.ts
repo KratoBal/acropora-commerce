@@ -33,6 +33,7 @@ const PAYMENT_LABEL: Record<PaymentRole, string> = {
   ONLINE_CARD: "Bankkártya",
   COD: "Utánvét",
   PAY_AT_STORE: "Fizetés a boltban",
+  BANK_TRANSFER: "Előre utalás",
 }
 
 const paymentSentence = (role: PaymentRole | null): string | null => {
@@ -44,6 +45,9 @@ const paymentSentence = (role: PaymentRole | null): string | null => {
       return "Az összeget a csomag átvételekor fizeted."
     case "PAY_AT_STORE":
       return "Az összeget a boltban, átvételkor fizeted."
+    case "BANK_TRANSFER":
+      // card bb3a6bd5: the proforma goes by a button in the OS, with an 8-day deadline (Balázs, 2026-10-06)
+      return "Az összeget előre, banki átutalással fizeted: a díjbekérőt emailben küldjük, 8 napos fizetési határidővel. A rendelést a befizetés beérkezése után teljesítjük."
     default:
       return null
   }
