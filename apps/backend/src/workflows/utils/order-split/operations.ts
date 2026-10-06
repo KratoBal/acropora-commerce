@@ -22,6 +22,10 @@ import { runOrderEdit } from "../run-order-edit"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import type { PlannedLine, SplitOperations, SplitSource } from "./split"
 
+// THE QUANTITY ARRIVES ONLY WITH ITS DETAIL (measured 2026-10-06 on the test
+// shop, a read-only query.graph probe on order #52): with "items.quantity" alone
+// the order module returns it undefined; asking "items.detail.quantity" too
+// loads the versioned order item, and then both are numbers.
 const ORDER_FIELDS = [
   "id",
   "status",
@@ -38,7 +42,9 @@ const ORDER_FIELDS = [
   "items.variant_id",
   "items.title",
   "items.quantity",
+  "items.detail.quantity",
   "items.unit_price",
+  "items.detail.unit_price",
   "items.adjustments.amount",
   "items.is_tax_inclusive",
   "items.metadata",

@@ -124,3 +124,29 @@ describe("replaceMethod", () => {
     expect(calls.map(([name]) => name)).toEqual(["begin", "addMethod", "actions", "request", "cancelEdit"])
   })
 })
+
+describe("goodsTotal", () => {
+  // Medusa as measured on the test shop (2026-10-06, order #52): the quantity
+  // comes only when the item's detail is asked for too
+  const medusaLike = (fields: string[]) => {
+    const withDetail = fields.includes("items.detail.quantity")
+    const line = (id: string, unit_price: number) => ({
+      id,
+      unit_price,
+      is_tax_inclusive: true,
+      metadata: null,
+      ...(withDetail ? { quantity: 1, detail: { quantity: 1 } } : {}),
+    })
+    return { data: [{ items: [line("i1", 10500), line("i2", 4800)] }] }
+  }
+  const scope = {
+    resolve: (key: string) => {
+      if (key === "query") return { graph: async (q: { fields: string[] }) => medusaLike(q.fields) }
+      throw new Error(`unexpected resolve ${key}`)
+    },
+  } as never
+
+  it("reads the quantities with their detail, so the goods total is the real one, not 0", async () => {
+    expect(await shippingChangeOperations(scope).goodsTotal("order_1")).toBe(15300)
+  })
+})

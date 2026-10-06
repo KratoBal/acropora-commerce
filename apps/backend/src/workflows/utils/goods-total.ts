@@ -75,6 +75,15 @@ export const calculateGoodsTotal = (items: GoodsTotalLineItem[]): number => {
 
     assertTaxInclusive(item, index)
 
+    // a line read without its quantity or price must not count as 0
+    // (MathBN.convert(undefined) is 0; measured on the test shop, 2026-10-06)
+    if (item.quantity == null || item.unit_price == null) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Goods line ${index} was read without its ${item.quantity == null ? "quantity" : "unit price"}. The goods total would count it as 0.`
+      )
+    }
+
     const lineTotal = MathBN.mult(item.unit_price, item.quantity)
 
     if (
