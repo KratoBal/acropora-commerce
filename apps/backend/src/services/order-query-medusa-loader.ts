@@ -39,6 +39,9 @@ export const ORDER_OVERVIEW_FIELDS = [
   "payment_collections.payments.canceled_at",
   "payment_collections.payments.captured_at",
   "payment_collections.payments.captures.amount",
+  // cash on delivery and bank transfer have no payment record, only a session
+  "payment_collections.payment_sessions.provider_id",
+  "payment_collections.payment_sessions.status",
 ]
 
 // the customer-wide signals need only who ordered and the order's own facts
