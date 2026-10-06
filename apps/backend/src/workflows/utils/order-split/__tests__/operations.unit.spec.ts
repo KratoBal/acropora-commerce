@@ -69,8 +69,16 @@ const container = (variants: Record<string, unknown> = {}) => {
       resolve: (key: string) => {
         if (key === "query")
           return {
-            graph: async (q: { entity: string; filters: { id: string } }) => {
-              if (q.entity === "order") return { data: q.filters.id === "order_A" ? [JSON.parse(JSON.stringify(orderRow))] : [{ display_id: 202, total: 2000 }] }
+            graph: async (q: { entity: string; filters: { id: string }; fields?: string[] }) => {
+              if (q.entity === "order" && q.filters.id === "order_A") {
+                // Medusa as measured on the test shop (2026-10-06, order #52): without
+                // "items.detail.quantity" in the fields the quantity does not load
+                const row = JSON.parse(JSON.stringify(orderRow))
+                if (!q.fields?.includes("items.detail.quantity"))
+                  for (const item of row.items) delete item.quantity
+                return { data: [row] }
+              }
+              if (q.entity === "order") return { data: [{ display_id: 202, total: 2000 }] }
               if (q.entity === "product_variant") return { data: [variants[q.filters.id]] }
               return { data: [] }
             },

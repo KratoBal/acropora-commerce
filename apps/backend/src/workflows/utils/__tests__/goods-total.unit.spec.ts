@@ -125,3 +125,14 @@ describe("goods total", () => {
     })
   })
 })
+
+describe("a line read without its numbers", () => {
+  it("a missing quantity or unit price stops the total instead of counting as 0", () => {
+    expect(() =>
+      calculateGoodsTotal([{ unit_price: 10500, quantity: undefined as never, is_tax_inclusive: true }])
+    ).toThrow("Goods line 0 was read without its quantity")
+    expect(() =>
+      calculateGoodsTotal([{ unit_price: null as never, quantity: 1, is_tax_inclusive: true }])
+    ).toThrow("Goods line 0 was read without its unit price")
+  })
+})
