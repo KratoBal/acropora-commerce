@@ -12,6 +12,11 @@ export const AdminGetOrderPickupPointsParams = z
       .min(1)
       .max(MAX_PICKUP_POINT_SEARCH_LIMIT)
       .default(DEFAULT_PICKUP_POINT_SEARCH_LIMIT),
+    /**
+     * The method the order is CHANGING TO (C/2, nautilus 26644): its carrier
+     * and heavy-goods rule decide the list. Without it, the order's own method.
+     */
+    option_id: z.string().trim().min(1).max(100).optional(),
   })
   .strict()
 
@@ -33,3 +38,16 @@ export const AdminPostOrderPickupPoint = z
   .strict()
 
 export type AdminPostOrderPickupPointType = z.infer<typeof AdminPostOrderPickupPoint>
+
+/** The method change (C/2): the new method, and for a point method its point in the same step. */
+export const AdminPostOrderShippingMethod = z
+  .object({
+    shipping_option_id: z.string().trim().min(1).max(100),
+    point_id: z.string().trim().min(1).max(100).optional(),
+    source: z.enum(["finder", "fallback"]).optional(),
+    /** The OS user's name, as stated (the admin key is the same for every OS user). */
+    actor: z.string().trim().min(1).max(100).optional(),
+  })
+  .strict()
+
+export type AdminPostOrderShippingMethodType = z.infer<typeof AdminPostOrderShippingMethod>
