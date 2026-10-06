@@ -1,3 +1,4 @@
+import type { AszfDokumentumAllapot } from "@lib/util/aszf"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const sdk = vi.hoisted(() => ({
@@ -27,8 +28,23 @@ const suti = vi.hoisted(() => {
 vi.mock("./cookies", () => suti)
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
+// amit a vevo a regisztraciokor kapott (kartya 4a2b252d): a teszt allitja be
+const dokumentum = vi.hoisted(() => ({
+  aszfDokumentumMost: vi.fn(async (): Promise<AszfDokumentumAllapot> => ({
+    tipus: "fogyasztobarat",
+    hatalyos: "2026-10-05",
+    lenyomat: "sha256:abc",
+  })),
+}))
+vi.mock("./aszf-dokumentum", () => dokumentum)
 
-import { ASZF_FORRAS, ASZF_METADATA_KULCS, ASZF_VERZIO } from "@lib/util/aszf"
+import {
+  ASZF_FORRAS,
+  ASZF_FORRAS_MAI_BOLT,
+  ASZF_METADATA_KULCS,
+  ASZF_VERZIO,
+  ASZF_VERZIO_MAI_BOLT,
+} from "@lib/util/aszf"
 
 import { login, signup } from "./customer"
 
@@ -119,6 +135,8 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     const elfogadas = adat.metadata[ASZF_METADATA_KULCS]
     expect(elfogadas.verzio).toBe(ASZF_VERZIO)
     expect(elfogadas.dokumentum).toBe(ASZF_FORRAS)
+    expect(elfogadas.hatalyos).toBe("2026-10-05")
+    expect(elfogadas.lenyomat).toBe("sha256:abc")
     const ido = Date.parse(elfogadas.idopont)
     expect(ido).toBeGreaterThanOrEqual(elotte - 1000)
     expect(ido).toBeLessThanOrEqual(Date.now())
@@ -140,6 +158,21 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
       { metadata: Record<string, { verzio: string }> },
     ]
     expect(fuggo.metadata[ASZF_METADATA_KULCS].verzio).toBe(ASZF_VERZIO)
+  })
+
+  /*
+   * KIKAPCSOLT FOGYASZTOBARATNAL A VEVO A MAI BOLT ASZF-JET KAPTA (kartya
+   * 4a2b252d): a rekord azt allitja, nem a Fogyasztobarat verziojat.
+   */
+  it("kikapcsolt Fogyasztóbarátnál a mai bolt ÁSZF-jét rögzíti", async () => {
+    dokumentum.aszfDokumentumMost.mockResolvedValueOnce({ tipus: "mai-bolt" })
+    await signup(null, urlap(JO))
+    const [adat] = sdk.store.customer.create.mock.calls[0]
+    expect(adat.metadata[ASZF_METADATA_KULCS]).toEqual({
+      idopont: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      verzio: ASZF_VERZIO_MAI_BOLT,
+      dokumentum: ASZF_FORRAS_MAI_BOLT,
+    })
   })
 })
 

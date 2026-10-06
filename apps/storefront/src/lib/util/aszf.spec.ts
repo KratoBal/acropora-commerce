@@ -7,6 +7,7 @@ import {
   ASZF_CIM,
   ASZF_VERZIO,
   aszfElfogadas,
+  aszfHatalyDatum,
   regisztracioHiba,
 } from "./aszf"
 
@@ -16,13 +17,41 @@ import {
  * jon (akkor elesiteskor az egyik helyen atirodna, a masikon nem).
  */
 describe("az ÁSZF-elfogadás rekordja", () => {
-  it("időbélyeg, a Fogyasztóbarát-verzió és a Fogyasztóbarát forrása (2026-10-05)", () => {
-    expect(aszfElfogadas(new Date("2026-09-29T11:30:00.000Z"))).toEqual({
+  const most = new Date("2026-09-29T11:30:00.000Z")
+
+  it("bekapcsolt Fogyasztóbarátnál a forrás, a hatálydátum és a lenyomat (2026-10-06)", () => {
+    expect(
+      aszfElfogadas(most, {
+        tipus: "fogyasztobarat",
+        hatalyos: "2026-10-05",
+        lenyomat: "sha256:abc",
+      }),
+    ).toEqual({
       idopont: "2026-09-29T11:30:00.000Z",
       verzio: "fogyasztobarat-JPNFMVH0",
       dokumentum: "https://admin.fogyasztobarat.hu/api.php?aszf=JPNFMVH0",
+      hatalyos: "2026-10-05",
+      lenyomat: "sha256:abc",
     })
     expect(ASZF_VERZIO).not.toContain("unas")
+  })
+
+  it("ha a lekérés nem sikerült, a rekord kimondja: lenyomat nincs, dátum nincs", () => {
+    expect(
+      aszfElfogadas(most, {
+        tipus: "fogyasztobarat",
+        hatalyos: null,
+        lenyomat: null,
+      }),
+    ).toMatchObject({ hatalyos: null, lenyomat: "nincs" })
+  })
+
+  it("kikapcsolt Fogyasztóbarátnál azt rögzíti, amit a vevő kapott: a mai bolt ÁSZF-jét", () => {
+    expect(aszfElfogadas(most, { tipus: "mai-bolt" })).toEqual({
+      idopont: "2026-09-29T11:30:00.000Z",
+      verzio: "unas-shop-2026-09-29",
+      dokumentum: "https://shop.acropora.hu/shop_help.php?tab=terms",
+    })
   })
 
   it("a két cím a lábléc listájából jön, és a kirakat saját oldala", () => {
@@ -33,6 +62,24 @@ describe("az ÁSZF-elfogadás rekordja", () => {
       "/jogi/aszf",
       "/jogi/adatkezeles",
     ])
+  })
+})
+
+/**
+ * A HATALYDATUM A DOKUMENTUM SZOVEGEBOL. MI PIROSIT: ha a Fogyasztobarat
+ * fejlecenek alakjabol (a datum egy `inserted_var` spanban) nem olvassa ki; ha
+ * datum nelkuli szovegre kitalal egyet.
+ */
+describe("az ÁSZF hatálydátuma", () => {
+  it("a Fogyasztóbarát fejlécéből, a span mögül", () => {
+    const fejlec =
+      '<p style="text-align: center;"><span class="inserted_var">bolt.example</span> - hatályos ettől a naptól: <span class="inserted_var">2026-10-05</span></p>'
+    expect(aszfHatalyDatum(fejlec)).toBe("2026-10-05")
+  })
+
+  it("dátum nélküli szövegre null, nem kitalált dátum", () => {
+    expect(aszfHatalyDatum("<p>Hibakód: 1002</p>")).toBeNull()
+    expect(aszfHatalyDatum("<p>2026-10-05</p>")).toBeNull()
   })
 })
 

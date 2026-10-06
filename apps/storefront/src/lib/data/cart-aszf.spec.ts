@@ -1,3 +1,4 @@
+import type { AszfDokumentumAllapot } from "@lib/util/aszf"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const sdk = vi.hoisted(() => ({
@@ -16,8 +17,21 @@ vi.mock("./cookies", () => ({
 vi.mock("./regions", () => ({ getRegion: vi.fn() }))
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
+const dokumentum = vi.hoisted(() => ({
+  aszfDokumentumMost: vi.fn(async (): Promise<AszfDokumentumAllapot> => ({
+    tipus: "fogyasztobarat",
+    hatalyos: "2026-10-05",
+    lenyomat: null,
+  })),
+}))
+vi.mock("./aszf-dokumentum", () => dokumentum)
 
-import { ASZF_VERZIO } from "@lib/util/aszf"
+import {
+  ASZF_FORRAS,
+  ASZF_FORRAS_MAI_BOLT,
+  ASZF_VERZIO,
+  ASZF_VERZIO_MAI_BOLT,
+} from "@lib/util/aszf"
 
 import { rogzitsAszfElfogadast } from "./cart"
 
@@ -41,10 +55,30 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     ]
     expect(id).toBe("cart_1")
     expect(torzs.metadata.acropora_pickup_cart_id).toBe("cart_2")
+    // a lekeres nem adott lenyomatot: a rekord kimondja, hogy nincs
     expect(torzs.metadata.aszf_elfogadas).toEqual({
       idopont: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       verzio: ASZF_VERZIO,
-      dokumentum: expect.any(String),
+      dokumentum: ASZF_FORRAS,
+      hatalyos: "2026-10-05",
+      lenyomat: "nincs",
+    })
+  })
+
+  it("kikapcsolt Fogyasztóbarátnál a mai bolt ÁSZF-je kerül a kosárra (4a2b252d)", async () => {
+    dokumentum.aszfDokumentumMost.mockResolvedValueOnce({ tipus: "mai-bolt" })
+    sdk.client.fetch.mockResolvedValueOnce({
+      cart: { id: "cart_1", metadata: null },
+    })
+    expect(await rogzitsAszfElfogadast("cart_1")).toEqual({ ok: true })
+    const [, torzs] = sdk.store.cart.update.mock.calls[0] as unknown as [
+      string,
+      { metadata: Record<string, unknown> },
+    ]
+    expect(torzs.metadata.aszf_elfogadas).toEqual({
+      idopont: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      verzio: ASZF_VERZIO_MAI_BOLT,
+      dokumentum: ASZF_FORRAS_MAI_BOLT,
     })
   })
 

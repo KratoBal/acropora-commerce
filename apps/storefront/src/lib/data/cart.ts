@@ -13,6 +13,7 @@ import {
   szallitasUzenet,
 } from "@lib/util/penztar-uzenet"
 import { ASZF_METADATA_KULCS, aszfElfogadas } from "@lib/util/aszf"
+import { aszfDokumentumMost } from "./aszf-dokumentum"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -602,7 +603,10 @@ export async function rogzitsAszfElfogadast(
 ): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
   if (!id) return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
+  // az elfogadas pillanata a kattintase, nem a dokumentum lekeresenek vege
+  const most = new Date()
   try {
+    const dokumentum = await aszfDokumentumMost()
     const kosar = await retrieveCart(id, "id,metadata")
     const headers = { ...(await getAuthHeaders()) }
     await sdk.store.cart.update(
@@ -610,7 +614,7 @@ export async function rogzitsAszfElfogadast(
       {
         metadata: {
           ...((kosar?.metadata as Record<string, unknown> | null) ?? {}),
-          [ASZF_METADATA_KULCS]: aszfElfogadas(new Date()),
+          [ASZF_METADATA_KULCS]: aszfElfogadas(most, dokumentum),
         },
       },
       {},

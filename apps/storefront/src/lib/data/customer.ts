@@ -6,6 +6,7 @@ import {
   aszfElfogadas,
   regisztracioHiba,
 } from "@lib/util/aszf"
+import { aszfDokumentumMost } from "./aszf-dokumentum"
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
 import {
   alapertelmezettUrlapbol,
@@ -324,6 +325,9 @@ async function regisztral(formData: FormData): Promise<CustomerAuthState> {
   })
   if (hiba) return { state: "error", error: hiba }
 
+  // az elfogadas pillanata, es amit a vevo akkor kapott (kartya 4a2b252d)
+  const elfogadva = new Date()
+  const dokumentum = await aszfDokumentumMost()
   const customerForm = {
     email: formData.get("email") as string,
     first_name: formData.get("first_name") as string,
@@ -331,7 +335,7 @@ async function regisztral(formData: FormData): Promise<CustomerAuthState> {
     phone: (formData.get("phone") as string | null) ?? undefined,
     // The acceptance is recorded at submit time and survives email
     // verification in the pending-customer cookie.
-    metadata: { [ASZF_METADATA_KULCS]: aszfElfogadas(new Date()) },
+    metadata: { [ASZF_METADATA_KULCS]: aszfElfogadas(elfogadva, dokumentum) },
   }
 
   try {
