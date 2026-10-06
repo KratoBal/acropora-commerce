@@ -1,0 +1,91 @@
+/**
+ * THE STOREFRONT'S CACHE, EMPTIED WHEN A PRICE CHANGES (card 2d22116c;
+ * Balázs 2026-10-06 22:05 UTC, „Mehet a 2,7,6,8”, test storefront only).
+ *
+ * The storefront fetches products with `force-cache`, so a buyer saw an old
+ * price until the next deploy. Measured on 2026-10-07 with nautilus: prices
+ * are written through the variant's admin route by the OS price projection,
+ * and that write ends in the pricing module, whose MedusaService emits
+ * `pricing.price.created|updated|deleted` for every ORM change (2.20.1,
+ * `interceptEntityMutationEvents`). So the signal is Medusa's own event,
+ * whatever path wrote the price.
+ *
+ * One price write is one event, and a projection run writes hundreds. The
+ * calls are coalesced: the first event starts a short window, and the window
+ * ends in ONE call. A failed call is logged and never thrown: a cache that
+ * stays stale until the next change is better than a price write that fails.
+ */
+export const PRICE_CHANGE_EVENTS = [
+  "pricing.price.created",
+  "pricing.price.updated",
+  "pricing.price.deleted",
+] as const
+
+export type StorefrontRevalidateConfig = { url: string; secret: string }
+
+/** Off (null) without both: the storefront's address and the shared secret. */
+export const storefrontRevalidateConfig = (
+  env: NodeJS.ProcessEnv
+): StorefrontRevalidateConfig | null => {
+  const base = env.ACROPORA_STOREFRONT_URL?.trim().replace(/\/+$/, "") ?? ""
+  const secret = env.STOREFRONT_REVALIDATE_SECRET?.trim() ?? ""
+  return base && secret ? { url: `${base}/api/revalidate`, secret } : null
+}
+
+type Logger = { info(message: string): void; warn(message: string): void }
+
+export async function sendStorefrontRevalidate(
+  config: StorefrontRevalidateConfig,
+  logger: Logger,
+  fetchImpl: typeof fetch = fetch
+): Promise<boolean> {
+  try {
+    const response = await fetchImpl(config.url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-revalidate-secret": config.secret,
+      },
+      body: JSON.stringify({ tags: ["products"] }),
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!response.ok) {
+      logger.warn(
+        `Storefront revalidate after a price change failed: HTTP ${response.status}.`
+      )
+      return false
+    }
+    logger.info("Storefront product cache emptied after a price change.")
+    return true
+  } catch (error) {
+    logger.warn(
+      `Storefront revalidate after a price change failed: ${
+        error instanceof Error ? error.message : String(error)
+      }.`
+    )
+    return false
+  }
+}
+
+/**
+ * One call per window. `request()` is cheap and synchronous: the subscriber
+ * calls it for every event, and only the first in a window starts a timer.
+ */
+export function revalidateCoalescer(
+  send: () => Promise<unknown>,
+  windowMs: number,
+  timer: (run: () => void, ms: number) => unknown = (run, ms) =>
+    setTimeout(run, ms)
+) {
+  let pending = false
+  return {
+    request(): void {
+      if (pending) return
+      pending = true
+      timer(() => {
+        pending = false
+        void send()
+      }, windowMs)
+    },
+  }
+}
