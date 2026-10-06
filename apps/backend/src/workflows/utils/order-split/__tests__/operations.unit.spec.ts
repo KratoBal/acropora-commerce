@@ -15,6 +15,7 @@ jest.mock("@medusajs/medusa/core-flows", () => {
     requestOrderEditRequestWorkflow: wf("request"),
     confirmOrderEditRequestWorkflow: wf("confirm"),
     cancelBeginOrderEditWorkflow: wf("cancelEdit"),
+    cancelOrderWorkflow: wf("cancelOrder"),
     createOrderWorkflow: wf("createOrder", (input: { items: Array<{ metadata: unknown }> }) => ({
       id: "order_B",
       total: 2000,
@@ -57,7 +58,10 @@ const orderRow = {
   payment_collections: [{ payments: [{ provider_id: "pp_acropora_cod", captured_at: null, canceled_at: null }], payment_sessions: [] }],
 }
 
-const container = (variants: Record<string, unknown> = {}) => {
+const container = (
+  variants: Record<string, unknown> = {},
+  stock: { available?: number; held?: number; heldBackorder?: boolean; reserveFails?: boolean } = {}
+) => {
   const reservationsMade: unknown[] = []
   const authorized: string[] = []
   const errors: string[] = []
@@ -86,8 +90,20 @@ const container = (variants: Record<string, unknown> = {}) => {
         if (key === "order_business_status") return { listOrderBusinessStatusModels: async () => [{ status: "stocking" }] }
         if (key === "inventory")
           return {
-            listReservationItems: async () => [{ line_item_id: "i1", location_id: "sloc_bolt" }],
-            createReservationItems: async (r: unknown[]) => reservationsMade.push(...r),
+            listReservationItems: async () => [
+              {
+                line_item_id: "i1",
+                location_id: "sloc_bolt",
+                inventory_item_id: "iitem_1",
+                quantity: { value: String(stock.held ?? 3), precision: 20 },
+                allow_backorder: stock.heldBackorder ?? false,
+              },
+            ],
+            retrieveAvailableQuantity: async () => stock.available ?? 10,
+            createReservationItems: async (r: unknown[]) => {
+              if (stock.reserveFails) throw new Error("Not enough stock available for item iitem_1 at location sloc_bolt")
+              reservationsMade.push(...r)
+            },
           }
         if (key === "payment") return { authorizePaymentSession: async (id: string) => authorized.push(id) }
         if (key === "order") return { updateOrders: async () => undefined }
@@ -236,7 +252,9 @@ describe("createSplitOrder", () => {
     expect(input.shipping_address).toEqual({ first_name: "Vevő", last_name: "Próba", city: "Budapest" })
     expect(input).toMatchObject({ region_id: "reg_hu", sales_channel_id: "sc_1", customer_id: "cus_1", email: "vevo@example.test" })
     expect(input.metadata).toEqual({ acropora_split_from_order_id: "order_A" })
-    expect(w.reservationsMade).toEqual([{ line_item_id: "ordli_B0", inventory_item_id: "iitem_1", location_id: "sloc_bolt", quantity: 2 }])
+    expect(w.reservationsMade).toEqual([
+      { line_item_id: "ordli_B0", inventory_item_id: "iitem_1", location_id: "sloc_bolt", quantity: 2, allow_backorder: false },
+    ])
     expect(calls.find(([name]) => name === "collection")![1]).toEqual({ order_id: "order_B", amount: 2000 })
     expect(calls.find(([name]) => name === "session")![1]).toEqual({ payment_collection_id: "paycol_B", provider_id: "pp_acropora_cod" })
     expect(w.authorized).toEqual(["payses_B"])
@@ -258,10 +276,68 @@ describe("createSplitOrder", () => {
     expect(w.authorized).toEqual([])
   })
 
+  it("B's reservation may go over the stock where A's did, or where the variant allows it (the test shop's #52)", async () => {
+    const overStock = container({ var_i1: { manage_inventory: true, inventory_items: [{ inventory_item_id: "iitem_1", required_quantity: 1 }] } })
+    let ops = splitOperations(overStock.scope)
+    await ops.createSplitOrder((await ops.loadOrder("order_A")) as SplitSource, [{ ...moved[0]!, allow_backorder: true }], {})
+    expect(overStock.reservationsMade).toMatchObject([{ allow_backorder: true }])
+
+    calls.length = 0
+    const variantAllows = container({
+      var_i1: { manage_inventory: true, allow_backorder: true, inventory_items: [{ inventory_item_id: "iitem_1", required_quantity: 1 }] },
+    })
+    ops = splitOperations(variantAllows.scope)
+    await ops.createSplitOrder((await ops.loadOrder("order_A")) as SplitSource, moved, {})
+    expect(variantAllows.reservationsMade).toMatchObject([{ allow_backorder: true }])
+  })
+
+  it("a reservation refused after B exists cancels B, and the error goes on (no B left behind, as #53 was)", async () => {
+    const w = container({ var_i1: { manage_inventory: true, inventory_items: [{ inventory_item_id: "iitem_1", required_quantity: 1 }] } }, { reserveFails: true })
+    const ops = splitOperations(w.scope)
+    await expect(ops.createSplitOrder((await ops.loadOrder("order_A")) as SplitSource, moved, {})).rejects.toThrow("Not enough stock")
+    expect(calls.map(([name]) => name)).toEqual(["createOrder", "cancelOrder"])
+    expect(calls[1]![1]).toEqual({ order_id: "order_B" })
+  })
+
   it("an unmanaged variant gets no reservation", async () => {
     const w = container({ var_i1: { manage_inventory: false, inventory_items: [{ inventory_item_id: "iitem_1" }] } })
     const ops = splitOperations(w.scope)
     await ops.createSplitOrder((await ops.loadOrder("order_A")) as SplitSource, moved, {})
     expect(w.reservationsMade).toEqual([])
+  })
+})
+
+describe("stockProblem", () => {
+  const line: PlannedLine = {
+    from_item_id: "i1",
+    variant_id: "var_i1",
+    title: "Termék 1",
+    quantity: 2,
+    unit_price: 1000,
+    metadata: null,
+    location_id: "sloc_bolt",
+  }
+  const managed = { var_i1: { manage_inventory: true, inventory_items: [{ inventory_item_id: "iitem_1", required_quantity: 1 }] } }
+  const check = async (variants: Record<string, unknown>, stock: Parameters<typeof container>[1], moved = [line]) => {
+    const ops = splitOperations(container(variants, stock).scope)
+    return ops.stockProblem((await ops.loadOrder("order_A")) as SplitSource, moved)
+  }
+
+  it("what A holds for the line counts, because A's reduction releases it first", async () => {
+    expect(await check(managed, { available: 0, held: 2 })).toBeNull()
+  })
+
+  it("no free stock and nothing held: refused before anything changes, the line named", async () => {
+    expect(await check(managed, { available: 0, held: 0 })).toBe(
+      "A(z) „Termék 1” tételből nincs elég szabad készlet az új rendeléshez, ezért a rendelés nem bontható szét. Semmi nem változott."
+    )
+  })
+
+  it("a line A held over the stock, a variant that allows backorder, or an unmanaged one is never refused", async () => {
+    expect(await check(managed, { available: 0, held: 0 }, [{ ...line, allow_backorder: true }])).toBeNull()
+    expect(
+      await check({ var_i1: { ...managed.var_i1, allow_backorder: true } }, { available: 0, held: 0 })
+    ).toBeNull()
+    expect(await check({ var_i1: { manage_inventory: false } }, { available: 0, held: 0 })).toBeNull()
   })
 })

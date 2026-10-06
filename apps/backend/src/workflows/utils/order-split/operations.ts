@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 import {
+  cancelOrderWorkflow,
   createOrderPaymentCollectionWorkflow,
   createOrderWorkflow,
   createPaymentSessionsWorkflow,
@@ -103,10 +104,25 @@ const loadOrder = async (container: MedusaContainer, orderId: string): Promise<L
         .listReservationItems({ line_item_id: items.map((item: any) => item.id) })
     : []
   const reservationLocations: Record<string, string | null> = {}
-  for (const reservation of reservations as Array<{ line_item_id?: string | null; location_id: string }>) {
-    if (reservation.line_item_id && !reservationLocations[reservation.line_item_id]) {
+  const heldReservations: SplitSource["reservations"] = []
+  for (const reservation of reservations as Array<{
+    line_item_id?: string | null
+    location_id: string
+    inventory_item_id: string
+    quantity: unknown
+    allow_backorder?: boolean | null
+  }>) {
+    if (!reservation.line_item_id) continue
+    if (!reservationLocations[reservation.line_item_id]) {
       reservationLocations[reservation.line_item_id] = reservation.location_id
     }
+    heldReservations.push({
+      line_item_id: reservation.line_item_id,
+      inventory_item_id: reservation.inventory_item_id,
+      location_id: reservation.location_id,
+      quantity: medusaNumber(reservation.quantity, `The quantity of reservation of item ${reservation.line_item_id}`),
+      allow_backorder: reservation.allow_backorder === true,
+    })
   }
 
   const method = (order.shipping_methods ?? []).filter(Boolean).at(-1) ?? null
@@ -134,6 +150,7 @@ const loadOrder = async (container: MedusaContainer, orderId: string): Promise<L
     payment_role: providerId ? (roles.get(providerId) ?? (providerId === STRIPE_PROVIDER_ID ? "ONLINE_CARD" : null)) : null,
     paid: payments.some((p: any) => p.captured_at && !p.canceled_at),
     reservation_locations: reservationLocations,
+    reservations: heldReservations,
     region_id: order.region_id,
     sales_channel_id: order.sales_channel_id,
     customer_id: order.customer_id,
@@ -232,51 +249,124 @@ const createSplitOrder = (container: MedusaContainer) => async (
   })
   const order = created as unknown as { id: string; total: unknown; items?: Array<{ id: string; variant_id?: string | null; metadata?: Record<string, unknown> | null }> }
 
-  // the reservations, where A's were
-  const query = container.resolve(ContainerRegistrationKeys.QUERY)
-  const reservations: Array<{ line_item_id: string; inventory_item_id: string; location_id: string; quantity: number }> = []
-  for (const item of order.items ?? []) {
-    const line = moved.find((m) => m.from_item_id === item.metadata?.acropora_split_from_item_id)
-    if (!line?.location_id || !item.variant_id) continue
-    const { data } = await query.graph({
-      entity: "product_variant",
-      filters: { id: item.variant_id },
-      fields: ["manage_inventory", "inventory_items.inventory_item_id", "inventory_items.required_quantity"],
+  try {
+    // the reservations, where A's were, with A's leave to go over the stock
+    const reservations: Array<{
+      line_item_id: string
+      inventory_item_id: string
+      location_id: string
+      quantity: number
+      allow_backorder: boolean
+    }> = []
+    for (const item of order.items ?? []) {
+      const line = moved.find((m) => m.from_item_id === item.metadata?.acropora_split_from_item_id)
+      if (!line?.location_id || !item.variant_id) continue
+      const variant = await loadVariantStock(container, item.variant_id)
+      if (!variant?.manage_inventory) continue
+      for (const link of variant.inventory_items) {
+        reservations.push({
+          line_item_id: item.id,
+          inventory_item_id: link.inventory_item_id,
+          location_id: line.location_id,
+          quantity: line.quantity * link.required_quantity,
+          allow_backorder: line.allow_backorder === true || variant.allow_backorder,
+        })
+      }
+    }
+    if (reservations.length) await container.resolve(Modules.INVENTORY).createReservationItems(reservations)
+
+    if (card) return { id: order.id }
+
+    // the payment, of A's kind, for B's own total
+    const { result: collections } = await createOrderPaymentCollectionWorkflow(container).run({
+      input: { order_id: order.id, amount: Number(order.total) },
     })
-    const variant = data?.[0] as any
-    if (!variant?.manage_inventory) continue
-    for (const link of variant.inventory_items ?? []) {
-      if (!link?.inventory_item_id) continue
-      reservations.push({
-        line_item_id: item.id,
+    const collection = (Array.isArray(collections) ? collections[0] : collections) as { id?: string } | undefined
+    if (!collection?.id) throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `No payment collection for order ${order.id}`)
+    const { result: session } = await createPaymentSessionsWorkflow(container).run({
+      input: { payment_collection_id: collection.id, provider_id: source.payment_provider_id },
+    })
+    await container.resolve(Modules.PAYMENT).authorizePaymentSession((session as { id: string }).id, {})
+
+    return { id: order.id }
+  } catch (error) {
+    /*
+      NO ORDER LEFT BEHIND (measured on the test shop, 2026-10-06: #53 was
+      created, its reservation was refused, and it stayed, unknown to the
+      split). B is canceled before the error goes on; A's record keeps no id,
+      so the next request finishes the split with a new B.
+    */
+    await cancelOrderWorkflow(container)
+      .run({ input: { order_id: order.id } })
+      .catch((cancelError: unknown) =>
+        container
+          .resolve(ContainerRegistrationKeys.LOGGER)
+          .error(`Split: order ${order.id} could not be canceled after a failed split: ${String(cancelError)}`)
+      )
+    throw error
+  }
+}
+
+type VariantStock = {
+  manage_inventory: boolean
+  allow_backorder: boolean
+  inventory_items: Array<{ inventory_item_id: string; required_quantity: number }>
+}
+
+const loadVariantStock = async (container: MedusaContainer, variantId: string): Promise<VariantStock | null> => {
+  const { data } = await container.resolve(ContainerRegistrationKeys.QUERY).graph({
+    entity: "product_variant",
+    filters: { id: variantId },
+    fields: ["manage_inventory", "allow_backorder", "inventory_items.inventory_item_id", "inventory_items.required_quantity"],
+  })
+  const variant = data?.[0] as any
+  if (!variant) return null
+  return {
+    manage_inventory: variant.manage_inventory === true,
+    allow_backorder: variant.allow_backorder === true,
+    inventory_items: (variant.inventory_items ?? [])
+      .filter((link: any) => link?.inventory_item_id)
+      .map((link: any) => ({
         inventory_item_id: link.inventory_item_id,
-        location_id: line.location_id,
-        quantity: line.quantity * Number(link.required_quantity ?? 1),
-      })
+        required_quantity: Number(link.required_quantity ?? 1),
+      })),
+  }
+}
+
+/**
+ * BEFORE A IS TOUCHED: can every moved line be reserved for B? A line that
+ * may go over the stock (A's reservation did, or the variant allows it) can;
+ * another needs the free stock plus what A holds for it (A's reduction
+ * releases that first) to cover what moves.
+ */
+const stockProblem = (container: MedusaContainer): SplitOperations["stockProblem"] => async (source, moved) => {
+  const inventory = container.resolve(Modules.INVENTORY)
+  for (const line of moved) {
+    if (!line.location_id || !line.variant_id || line.allow_backorder) continue
+    const variant = await loadVariantStock(container, line.variant_id)
+    if (!variant?.manage_inventory || variant.allow_backorder) continue
+    for (const link of variant.inventory_items) {
+      const needed = line.quantity * link.required_quantity
+      const held = source.reservations
+        .filter((r) => r.line_item_id === line.from_item_id && r.inventory_item_id === link.inventory_item_id)
+        .reduce((sum, r) => sum + r.quantity, 0)
+      const free = medusaNumber(
+        await inventory.retrieveAvailableQuantity(link.inventory_item_id, [line.location_id]),
+        `The available quantity of ${link.inventory_item_id}`
+      )
+      if (free + Math.min(held, needed) < needed) {
+        return `A(z) „${line.title}” tételből nincs elég szabad készlet az új rendeléshez, ezért a rendelés nem bontható szét. Semmi nem változott.`
+      }
     }
   }
-  if (reservations.length) await container.resolve(Modules.INVENTORY).createReservationItems(reservations)
-
-  if (card) return { id: order.id }
-
-  // the payment, of A's kind, for B's own total
-  const { result: collections } = await createOrderPaymentCollectionWorkflow(container).run({
-    input: { order_id: order.id, amount: Number(order.total) },
-  })
-  const collection = (Array.isArray(collections) ? collections[0] : collections) as { id?: string } | undefined
-  if (!collection?.id) throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `No payment collection for order ${order.id}`)
-  const { result: session } = await createPaymentSessionsWorkflow(container).run({
-    input: { payment_collection_id: collection.id, provider_id: source.payment_provider_id },
-  })
-  await container.resolve(Modules.PAYMENT).authorizePaymentSession((session as { id: string }).id, {})
-
-  return { id: order.id }
+  return null
 }
 
 export const splitOperations = (container: MedusaContainer): SplitOperations => ({
   loadOrder: (orderId) => loadOrder(container, orderId),
   setMetadata: setMetadata(container),
   reduceLines: reduceLines(container),
+  stockProblem: stockProblem(container),
   createSplitOrder: createSplitOrder(container),
   startBusinessStatus: async (orderId) => {
     await ensureInitialBusinessStatus(container, orderId)

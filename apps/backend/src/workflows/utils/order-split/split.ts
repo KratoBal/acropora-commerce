@@ -46,6 +46,12 @@ export const SPLIT_REQUESTS_KEY = "acropora_split_requests"
 export type PlannedLine = Extract<ReturnType<typeof planSplit>, { status: "ok" }>["moved"][number] & {
   /** Where A's reservation of this line was: B's goes there. */
   location_id: string | null
+  /**
+   * A's reservation for the line was allowed over the stock (the variant's
+   * backorder at checkout): B's takes the same, the stock is not asked twice
+   * for what A already held. Missing on records made before 2026-10-06.
+   */
+  allow_backorder?: boolean
 }
 
 export type SplitRequestRecord = {
@@ -67,6 +73,14 @@ export type SplitSource = SplitOrder & {
   payment_state: string
   /** Where each line's reservation is, by line id. */
   reservation_locations: Record<string, string | null>
+  /** A's reservations, as the stock check and B's reservations need them. */
+  reservations: Array<{
+    line_item_id: string
+    inventory_item_id: string
+    location_id: string
+    quantity: number
+    allow_backorder: boolean
+  }>
 }
 
 export type SplitOperations = {
@@ -74,7 +88,18 @@ export type SplitOperations = {
   setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
   /** Step 2: the lines to these quantities (0 removes); a line already there is left alone. */
   reduceLines(orderId: string, remaining: SplitRequestRecord["remaining"], actor: string): Promise<void>
-  /** Step 3: the new order, its reservations and its payment; answers its id. */
+  /**
+   * Before anything changes: the Hungarian reason a moved line could not be
+   * reserved for B, or null. What A holds for the line counts, because A's
+   * reduction releases it first.
+   */
+  stockProblem(source: SplitSource, moved: PlannedLine[]): Promise<string | null>
+  /**
+   * Step 3: the new order, its reservations and its payment; answers its id.
+   * If a step after the order's creation fails, the new order is canceled
+   * before the error goes on: no order is left behind that the split does not
+   * know.
+   */
   createSplitOrder(source: SplitSource, moved: PlannedLine[], metadata: Record<string, unknown>): Promise<{ id: string }>
   /** Step 4: "Feldolgozásra vár" by the system, if the order has no status yet. */
   startBusinessStatus(orderId: string): Promise<void>
@@ -96,6 +121,8 @@ export type SplitResult =
       total: number
       /** B's payment: a card order's waits for its own link; the others pay as A does. */
       payment_state: "awaiting_payment" | "none"
+      /** An earlier split left half done was finished instead of this request's lines. */
+      resumed: boolean
     }
 
 /** What B carries over from A besides its lines: the ÁSZF acceptance and the customer's notes. */
@@ -122,7 +149,19 @@ export const splitOrder = async (
 ): Promise<SplitResult> => {
   const source = await ops.loadOrder(orderId)
   if (!source) return { status: "not_found" }
-  let record = requestsOf(source.metadata)[input.request_id]
+  /*
+    A SPLIT LEFT HALF DONE IS FINISHED FIRST, whatever request comes (acrobot
+    26807, option (a); measured on the test shop, 2026-10-06: A's line was
+    moved out, B could not be reserved, and the OS asks again with a new
+    request id). Its record carries every step, so finishing it is the same
+    idempotent run as sending its own request again; the new request's lines
+    are not used.
+  */
+  const requests = requestsOf(source.metadata)
+  const unfinished = Object.entries(requests).find(([, r]) => r && !r.done)
+  const requestId = requests[input.request_id] ? input.request_id : (unfinished?.[0] ?? input.request_id)
+  let record = requests[requestId]
+  const resumed = requestId !== input.request_id
 
   if (!record) {
     const block = splitBlock(source, source.paid)
@@ -134,13 +173,21 @@ export const splitOrder = async (
     }
     const plan = planSplit(source, input.lines)
     if (plan.status === "invalid") return plan
+    // before A changes: B must be able to hold what moves (2026-10-06, #52)
+    const plannedMoves = plan.moved.map((line) => ({
+      ...line,
+      location_id: source.reservation_locations[line.from_item_id] ?? null,
+      allow_backorder: source.reservations.some((r) => r.line_item_id === line.from_item_id && r.allow_backorder),
+    }))
+    const stock = await ops.stockProblem(source, plannedMoves)
+    if (stock) return { status: "invalid", message: stock }
     record = {
       order_id: null,
-      moved: plan.moved.map((line) => ({ ...line, location_id: source.reservation_locations[line.from_item_id] ?? null })),
+      moved: plannedMoves,
       remaining: plan.remaining,
       done: false,
     }
-    await ops.setMetadata(source.id, withRecord(source.metadata, input.request_id, record))
+    await ops.setMetadata(source.id, withRecord(source.metadata, requestId, record))
   }
 
   if (!record.done) {
@@ -153,14 +200,14 @@ export const splitOrder = async (
       const created = await ops.createSplitOrder(source, record.moved, { ...carried, [SPLIT_FROM_ORDER_KEY]: source.id })
       record = { ...record, order_id: created.id }
       const afterEdit = (await ops.loadOrder(source.id))!
-      await ops.setMetadata(source.id, withRecord(afterEdit.metadata, input.request_id, record))
+      await ops.setMetadata(source.id, withRecord(afterEdit.metadata, requestId, record))
     }
 
     const fresh = (await ops.loadOrder(source.id))!
     const linked = Array.isArray(fresh.metadata?.[SPLIT_ORDER_IDS_KEY]) ? (fresh.metadata![SPLIT_ORDER_IDS_KEY] as string[]) : []
     record = { ...record, done: true }
     await ops.setMetadata(source.id, {
-      ...withRecord(fresh.metadata, input.request_id, record),
+      ...withRecord(fresh.metadata, requestId, record),
       [SPLIT_ORDER_IDS_KEY]: linked.includes(record.order_id!) ? linked : [...linked, record.order_id!],
     })
     await ops.startBusinessStatus(record.order_id!)
@@ -176,5 +223,6 @@ export const splitOrder = async (
     parent_total: parent!.total,
     total: created!.total,
     payment_state: source.payment_role === "ONLINE_CARD" ? "awaiting_payment" : "none",
+    resumed,
   }
 }
