@@ -24,8 +24,12 @@ export type SplitLine = {
   variant_id: string | null
   title: string
   quantity: number
-  /** What the line costs now, tax and discount included (forint). */
-  total: number
+  /**
+   * The line's stored price per unit (forint), on the line's own tax basis
+   * (`is_tax_inclusive`, which the new order's line copies). Not a computed
+   * total: a discounted line is refused below, so nothing else is in it.
+   */
+  unit_price: number
   /** The line's discount, forint; a discounted line is not split in this round. */
   discount_total?: number | null
   metadata?: Record<string, unknown> | null
@@ -66,7 +70,7 @@ export type MovedLine = {
   variant_id: string | null
   title: string
   quantity: number
-  /** The line's price per unit as the customer pays it now; the new order's unit price. */
+  /** A's stored price per unit; the new order's unit price, on the same tax basis. */
   unit_price: number
   metadata: Record<string, unknown> | null
 }
@@ -99,7 +103,7 @@ export const planSplit = (order: SplitOrder, lines: Array<{ item_id: string; qua
     if (!Number.isInteger(line.quantity) || line.quantity < 1) return invalid("A mennyiség legalább 1 legyen.")
     const total = (asked.get(item.id) ?? 0) + line.quantity
     if (total > item.quantity) return invalid(`A(z) „${item.title}” tételből csak ${item.quantity} db van a rendelésben.`)
-    if (Number(item.discount_total ?? 0) > 0) {
+    if ((item.discount_total ?? 0) > 0) {
       return invalid(`A(z) „${item.title}” tétel kedvezményes; kedvezményes tétel most nem vihető át.`)
     }
     asked.set(item.id, total)
@@ -117,7 +121,7 @@ export const planSplit = (order: SplitOrder, lines: Array<{ item_id: string; qua
         variant_id: item.variant_id,
         title: item.title,
         quantity,
-        unit_price: Number(item.total) / item.quantity,
+        unit_price: item.unit_price,
         metadata: item.metadata ?? null,
       }
     }),

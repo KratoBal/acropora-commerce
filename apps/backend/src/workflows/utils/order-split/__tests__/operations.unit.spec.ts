@@ -49,8 +49,8 @@ const orderRow = {
   shipping_address: { id: "addr_1", first_name: "Vevő", last_name: "Próba", city: "Budapest", created_at: "x" },
   billing_address: { id: "addr_2", first_name: "Vevő", last_name: "Próba" },
   items: [
-    { id: "i1", variant_id: "var_i1", title: "Termék 1", quantity: 3, total: 3000, discount_total: 0, is_tax_inclusive: true, metadata: null },
-    { id: "i2", variant_id: "var_i2", title: "Termék 2", quantity: 1, total: 5000, discount_total: 0, is_tax_inclusive: true, metadata: null },
+    { id: "i1", variant_id: "var_i1", title: "Termék 1", quantity: 3, unit_price: 1000, adjustments: [], is_tax_inclusive: true, metadata: null },
+    { id: "i2", variant_id: "var_i2", title: "Termék 2", quantity: 1, unit_price: 5000, adjustments: [], is_tax_inclusive: true, metadata: null },
   ],
   shipping_methods: [{ name: "Foxpost csomagpont", shipping_option_id: "so_fox", data: { foxpost_pickup_point: { id: "P1" } } }],
   fulfillments: [],
@@ -109,6 +109,59 @@ describe("loadOrder", () => {
       payment_role: "COD",
       paid: false,
       reservation_locations: { i1: "sloc_bolt" },
+    })
+  })
+
+  // the order's lines as query.graph may give them; restored after each case
+  const withItems = async (items: unknown[], run: () => Promise<void>) => {
+    const original = orderRow.items
+    orderRow.items = items as typeof orderRow.items
+    try {
+      await run()
+    } finally {
+      orderRow.items = original
+    }
+  }
+
+  it("quantities and prices in Medusa's raw { value, precision } form are plain numbers, never NaN (the test shop's null split)", async () => {
+    await withItems(
+      [
+        {
+          id: "i1",
+          variant_id: "var_i1",
+          title: "Termék 1",
+          quantity: { value: "1", precision: 20 },
+          unit_price: { value: "10500", precision: 20 },
+          adjustments: [],
+          is_tax_inclusive: true,
+          metadata: null,
+        },
+        { id: "i2", variant_id: "var_i2", title: "Termék 2", quantity: "1", unit_price: 4800, adjustments: null, is_tax_inclusive: true, metadata: null },
+      ],
+      async () => {
+        const source = await splitOperations(container().scope).loadOrder("order_A")
+        expect(source!.items.map(({ id, quantity, unit_price, discount_total }) => ({ id, quantity, unit_price, discount_total }))).toEqual([
+          { id: "i1", quantity: 1, unit_price: 10500, discount_total: 0 },
+          { id: "i2", quantity: 1, unit_price: 4800, discount_total: 0 },
+        ])
+      }
+    )
+  })
+
+  it("a line's discount is the sum of its adjustments, so a discounted line is still refused", async () => {
+    await withItems(
+      [{ ...orderRow.items[0], adjustments: [{ amount: { value: "150", precision: 20 } }, { amount: 50 }] }, orderRow.items[1]],
+      async () => {
+        const source = await splitOperations(container().scope).loadOrder("order_A")
+        expect(source!.items[0].discount_total).toBe(200)
+      }
+    )
+  })
+
+  it("a quantity that did not load stops the split loudly instead of counting as 0 or NaN", async () => {
+    const { quantity: _quantity, ...noQuantity } = orderRow.items[0]
+    await withItems([noQuantity, orderRow.items[1]], async () => {
+      await expect(splitOperations(container().scope).loadOrder("order_A")).rejects.toThrow("The quantity of item i1 was not loaded")
     })
   })
 })
