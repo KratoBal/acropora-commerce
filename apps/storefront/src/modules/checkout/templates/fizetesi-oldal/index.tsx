@@ -13,7 +13,6 @@ import PenztarLepesek from "@modules/checkout/components/penztar-lepesek"
 import RendelesiAdatok from "@modules/checkout/components/rendelesi-adatok"
 import Rendelesed from "@modules/checkout/components/rendelesed"
 import SzallitasiCsoportok from "@modules/checkout/components/szallitasi-csoportok"
-import { STRIPE_BIZALMI_SZOVEG } from "@lib/util/stripe-allapot"
 import DiscountCode from "@modules/checkout/components/discount-code"
 
 /**
@@ -29,6 +28,11 @@ import DiscountCode from "@modules/checkout/components/discount-code"
  * A KOSAR ES A FIZETES LOGIKAJA VALTOZATLAN: ugyanaz a `Payment` komponens
  * fut, csak oldal-modban (cim nelkul, a gombot az osszesitobe rajzolja, es az
  * ASZF pipat varja).
+ *
+ * A STRIPE BIZALMI MONDATA NEM ITT ALL (acrobot 27110, jovahagyva): a
+ * veglegesites kartyaja minden modnal latszik, a mondat viszont csak a
+ * bankkartyas fizetesrol igaz. A kartya paneljen all, ami csak a bankkartya
+ * kivalasztasakor nyilik ki (`StripePaymentContainer`).
  */
 export default async function FizetesiOldal({
   cart,
@@ -77,9 +81,6 @@ export default async function FizetesiOldal({
               data-testid="veglegesites"
             >
               <AszfNegyzet />
-              <p className="mt-4 text-[12px] leading-[17px] text-acr-slate">
-                {STRIPE_BIZALMI_SZOVEG}
-              </p>
             </PenztarKartya>
           </div>
           <aside className="flex flex-col gap-4 small:sticky small:top-4 small:self-start">

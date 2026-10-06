@@ -35,6 +35,7 @@ import {
 } from "./admin/order-shipping/validators";
 import { AdminGetWebshopMailOutboxParams } from "./admin/webshop-mail/outbox/validators";
 import {
+  AdminRecordTransferReceipt,
   AdminReleaseOrderPaymentHold,
   AdminSendOrderPaymentLink,
 } from "./admin/order-payment/validators";
@@ -146,6 +147,12 @@ export default defineMiddlewares({
       middlewares: [
         validateAndTransformBody(AdminResendOrderStatusNotification),
       ],
+    },
+    {
+      // "Megjött az előre utalás" (bb3a6bd5): the bank-transfer session captured.
+      matcher: "/admin/order-payment/:order_id/transfer-receipt",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminRecordTransferReceipt)],
     },
     {
       // "Csúszik a szállítás": the card hold released, the order waiting for payment.
