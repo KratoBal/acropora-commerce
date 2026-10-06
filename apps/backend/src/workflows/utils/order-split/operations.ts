@@ -11,6 +11,11 @@ import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-st
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import type { OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { ensureInitialBusinessStatus } from "../ensure-initial-business-status"
+import { loadOrderPaymentSide } from "../order-payment/operations"
+import { ORDER_PAYMENT_METADATA_KEY, orderPaymentView } from "../order-payment/state"
+import { deliverShopMail } from "../webshop-mail/deliver"
+import { orderSplitMailOperations } from "../webshop-mail/operations"
+import { prepareOrderSplitMail } from "../webshop-mail/order-split-mail"
 import { buildProviderRoleMap } from "../payment-providers"
 import { runOrderEdit } from "../run-order-edit"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
@@ -98,7 +103,9 @@ const loadOrder = async (container: MedusaContainer, orderId: string): Promise<L
   }
 
   const method = (order.shipping_methods ?? []).filter(Boolean).at(-1) ?? null
+  const paymentSide = await loadOrderPaymentSide(container, orderId)
   return {
+    payment_state: paymentSide ? orderPaymentView(paymentSide).state : "none",
     id: order.id,
     status: order.status,
     display_id: order.display_id,
@@ -163,6 +170,8 @@ const reduceLines = (container: MedusaContainer) => async (
  * B: the moved lines at A's price per unit, A's shipping method and point at
  * 0 Ft (D1), its lines reserved where A's were, and a payment of A's kind for
  * its own total (cash on delivery without a second fee, D3; pay at the shop).
+ * A card order's B has none yet: it is born "Fizetésre vár" and is paid
+ * through its own link, sent when it can ship.
  * The `createOrderWorkflow` hook gives it "Feldolgozásra vár".
  */
 const createSplitOrder = (container: MedusaContainer) => async (
@@ -174,6 +183,8 @@ const createSplitOrder = (container: MedusaContainer) => async (
   if (!source.payment_provider_id) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, `Order ${source.id} has no payment to copy`)
   }
+  // a card order's B: no payment of its own yet, it waits for its link (C/3, Balázs "2"; acrobot 26651)
+  const card = source.payment_role === "ONLINE_CARD"
   const { result: created } = await createOrderWorkflow(container).run({
     input: {
       region_id: source.region_id,
@@ -201,7 +212,12 @@ const createSplitOrder = (container: MedusaContainer) => async (
             },
           ]
         : [],
-      metadata,
+      metadata: card
+        ? {
+            ...metadata,
+            [ORDER_PAYMENT_METADATA_KEY]: { state: "awaiting_payment", kind: "split", split_at: new Date().toISOString() },
+          }
+        : metadata,
     } as never,
   })
   const order = created as unknown as { id: string; total: unknown; items?: Array<{ id: string; variant_id?: string | null; metadata?: Record<string, unknown> | null }> }
@@ -231,6 +247,8 @@ const createSplitOrder = (container: MedusaContainer) => async (
   }
   if (reservations.length) await container.resolve(Modules.INVENTORY).createReservationItems(reservations)
 
+  if (card) return { id: order.id }
+
   // the payment, of A's kind, for B's own total
   const { result: collections } = await createOrderPaymentCollectionWorkflow(container).run({
     input: { order_id: order.id, amount: Number(order.total) },
@@ -252,6 +270,21 @@ export const splitOperations = (container: MedusaContainer): SplitOperations => 
   createSplitOrder: createSplitOrder(container),
   startBusinessStatus: async (orderId) => {
     await ensureInitialBusinessStatus(container, orderId)
+  },
+  notifySplit: async (orderId, splitOrderId, payment) => {
+    try {
+      const result = await prepareOrderSplitMail({ orderId, splitOrderId, payment }, orderSplitMailOperations(container))
+      if (result.status === "send") await deliverShopMail(container, result.mail)
+    } catch (error) {
+      // the split stands; a missing notice is logged, with the orders named, to be sent by hand
+      container
+        .resolve(ContainerRegistrationKeys.LOGGER)
+        .error(
+          `Orders ${orderId} and ${splitOrderId} were split, but the customer's notice failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        )
+    }
   },
   orderSummary: async (orderId) => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)

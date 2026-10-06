@@ -5,8 +5,11 @@ import { splitOperations } from "../../../../workflows/utils/order-split/operati
 import { splitOrder } from "../../../../workflows/utils/order-split/split"
 import type { AdminPostOrderSplitType } from "../validators"
 
-/** A card-paid order: how its second part is paid is Balázs's decision (D2). */
-const CARD_PENDING_MESSAGE = "Kártyával fizetett rendelés szétbontása még nem elérhető: a második rész fizetési módjáról most születik döntés."
+const BLOCKED_PAYMENT_MESSAGE = {
+  card_not_held:
+    "A kártyás rendelés most nem bontható szét: a zárolása már nem áll (feloldották vagy levonták). Előbb rendezd a fizetését.",
+  unknown_payment: "A rendelés fizetési módja nem ismert, ezért nem bontható szét.",
+} as const
 
 /**
  * POST /admin/order-split/:order_id  { lines: [{item_id, quantity}], request_id, actor? }
@@ -23,7 +26,12 @@ export const POST = async (req: AuthenticatedMedusaRequest<AdminPostOrderSplitTy
       res.status(404).json({ message: "Nincs ilyen rendelés." })
       return
     case "blocked":
-      res.status(409).json({ message: result.reason === "card_pending" ? CARD_PENDING_MESSAGE : SPLIT_BLOCK_MESSAGE[result.reason] })
+      res.status(409).json({
+        message:
+          result.reason === "card_not_held" || result.reason === "unknown_payment"
+            ? BLOCKED_PAYMENT_MESSAGE[result.reason]
+            : SPLIT_BLOCK_MESSAGE[result.reason],
+      })
       return
     case "invalid":
       res.status(422).json({ message: result.message })

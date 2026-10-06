@@ -23,6 +23,7 @@ const order = (extra: Partial<SplitSource> = {}): SplitSource => ({
   items: [line("i1", 3, 3000), line("i2", 1, 5000)],
   payment_role: "COD",
   paid: false,
+  payment_state: "none",
   reservation_locations: { i1: "sloc_1", i2: "sloc_1" },
   ...extra,
 })
@@ -119,6 +120,9 @@ const fakeOps = (start: SplitSource) => {
     startBusinessStatus: async (id) => {
       calls.push(`status:${id}`)
     },
+    notifySplit: async (id, splitId, payment) => {
+      calls.push(`notify:${id}:${splitId}:${payment}`)
+    },
     orderSummary: async (id) => {
       const o = orders.get(id)!
       return { display_id: o.display_id, total: o.id === "order_A" ? o.items.reduce((s, i) => s + i.total, 0) : 2000 }
@@ -133,7 +137,15 @@ describe("splitOrder", () => {
   it("records the request first, reduces A before B exists, then links them and starts B's status", async () => {
     const w = fakeOps(order())
     const result = await splitOrder("order_A", ask, "user_key", w.ops)
-    expect(w.calls).toEqual(["metadata:order_A", "reduce:order_A", "create", "metadata:order_A", "metadata:order_A", "status:order_B1"])
+    expect(w.calls).toEqual([
+      "metadata:order_A",
+      "reduce:order_A",
+      "create",
+      "metadata:order_A",
+      "metadata:order_A",
+      "status:order_B1",
+      "notify:order_A:order_B1:cod",
+    ])
     expect(result).toEqual({
       status: "done",
       order_id: "order_B1",
@@ -207,12 +219,21 @@ describe("splitOrder", () => {
     expect(w.created).toHaveLength(0)
   })
 
-  it("a card order waits for the decision, an order with no known payment too, and nothing is written", async () => {
-    for (const payment_role of ["ONLINE_CARD", null] as const) {
-      const w = fakeOps(order({ payment_role }))
-      expect(await splitOrder("order_A", ask, "u", w.ops)).toEqual({ status: "blocked", reason: "card_pending" })
+  it("a card order splits while its hold stands: B waits for its own link, and the notice says card", async () => {
+    const w = fakeOps(order({ payment_role: "ONLINE_CARD", payment_state: "hold" }))
+    expect(await splitOrder("order_A", ask, "u", w.ops)).toMatchObject({ status: "done", payment_state: "awaiting_payment" })
+    expect(w.calls.at(-1)).toBe("notify:order_A:order_B1:card")
+  })
+
+  it("a card order whose hold no longer stands, or an order with no known payment, is refused and nothing is written", async () => {
+    for (const payment_state of ["awaiting_payment", "link_sent", "paid", "expired"]) {
+      const w = fakeOps(order({ payment_role: "ONLINE_CARD", payment_state }))
+      expect(await splitOrder("order_A", ask, "u", w.ops)).toEqual({ status: "blocked", reason: "card_not_held" })
       expect(w.calls).toEqual([])
     }
+    const unknown = fakeOps(order({ payment_role: null }))
+    expect(await splitOrder("order_A", ask, "u", unknown.ops)).toEqual({ status: "blocked", reason: "unknown_payment" })
+    expect(unknown.calls).toEqual([])
   })
 
   it("a blocked or invalid split writes nothing", async () => {
@@ -228,6 +249,7 @@ describe("splitOrder", () => {
 
   it("a pay-at-store order splits like cash on delivery", async () => {
     const w = fakeOps(order({ payment_role: "PAY_AT_STORE" }))
-    expect((await splitOrder("order_A", ask, "u", w.ops)).status).toBe("done")
+    expect(await splitOrder("order_A", ask, "u", w.ops)).toMatchObject({ status: "done", payment_state: "none" })
+    expect(w.calls.at(-1)).toBe("notify:order_A:order_B1:store")
   })
 })

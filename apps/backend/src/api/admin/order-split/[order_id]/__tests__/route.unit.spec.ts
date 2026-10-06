@@ -48,7 +48,7 @@ describe("POST /admin/order-split/:order_id", () => {
     ])
   })
 
-  it("404, 409 (blocked, card pending) and 422 in Hungarian", async () => {
+  it("404, 409 (blocked, a card without its hold, an unknown payment) and 422 in Hungarian", async () => {
     splitOrder.mockResolvedValue({ status: "not_found" })
     expect(await call()).toMatchObject({ statusCode: 404, body: { message: "Nincs ilyen rendelés." } })
     splitOrder.mockResolvedValue({ status: "blocked", reason: "paid" })
@@ -56,8 +56,16 @@ describe("POST /admin/order-split/:order_id", () => {
       statusCode: 409,
       body: { message: "A rendelés már ki van fizetve; kifizetett rendelés szétbontása most nem lehetséges." },
     })
-    splitOrder.mockResolvedValue({ status: "blocked", reason: "card_pending" })
-    expect(((await call()).body as { message: string }).message).toContain("Kártyával fizetett rendelés szétbontása még nem elérhető")
+    splitOrder.mockResolvedValue({ status: "blocked", reason: "card_not_held" })
+    expect(await call()).toMatchObject({
+      statusCode: 409,
+      body: {
+        message:
+          "A kártyás rendelés most nem bontható szét: a zárolása már nem áll (feloldották vagy levonták). Előbb rendezd a fizetését.",
+      },
+    })
+    splitOrder.mockResolvedValue({ status: "blocked", reason: "unknown_payment" })
+    expect(await call()).toMatchObject({ statusCode: 409, body: { message: "A rendelés fizetési módja nem ismert, ezért nem bontható szét." } })
     splitOrder.mockResolvedValue({ status: "invalid", message: "Jelölj ki legalább egy tételt." })
     expect(await call()).toMatchObject({ statusCode: 422, body: { message: "Jelölj ki legalább egy tételt." } })
   })

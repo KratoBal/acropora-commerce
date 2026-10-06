@@ -7,7 +7,9 @@ jest.mock("@medusajs/medusa/core-flows", () => {
       return { result: typeof result === "function" ? (result as (i: unknown) => unknown)(args.input) : result }
     },
   })
+  // the real module for everything else: the import chain composes other workflows at load time
   return {
+    ...jest.requireActual("@medusajs/medusa/core-flows"),
     beginOrderEditOrderWorkflow: wf("begin"),
     orderEditUpdateItemQuantityWorkflow: wf("quantities"),
     requestOrderEditRequestWorkflow: wf("request"),
@@ -58,9 +60,11 @@ const orderRow = {
 const container = (variants: Record<string, unknown> = {}) => {
   const reservationsMade: unknown[] = []
   const authorized: string[] = []
+  const errors: string[] = []
   return {
     reservationsMade,
     authorized,
+    errors,
     scope: {
       resolve: (key: string) => {
         if (key === "query")
@@ -79,6 +83,7 @@ const container = (variants: Record<string, unknown> = {}) => {
           }
         if (key === "payment") return { authorizePaymentSession: async (id: string) => authorized.push(id) }
         if (key === "order") return { updateOrders: async () => undefined }
+        if (key === "logger") return { error: (m: string) => errors.push(m), info: () => undefined, warn: () => undefined }
         throw new Error(`unexpected resolve ${key}`)
       },
     } as never,
@@ -128,6 +133,21 @@ describe("reduceLines", () => {
   })
 })
 
+describe("notifySplit", () => {
+  it("a notice that fails is logged with both orders named, and the split stands (no throw)", async () => {
+    process.env = {
+      ...process.env,
+      ACROPORA_WEBSHOP_MAIL: "on",
+      GMAIL_WEBSHOP_CLIENT_ID: "a",
+      GMAIL_WEBSHOP_CLIENT_SECRET: "b",
+      GMAIL_WEBSHOP_REFRESH_TOKEN: "c",
+    }
+    const w = container()
+    await expect(splitOperations(w.scope).notifySplit("order_A", "order_B", "card")).resolves.toBeUndefined()
+    expect(w.errors).toEqual([expect.stringContaining("Orders order_A and order_B were split, but the customer's notice failed")])
+  })
+})
+
 describe("createSplitOrder", () => {
   const moved: PlannedLine[] = [
     { from_item_id: "i1", variant_id: "var_i1", title: "Termék 1", quantity: 2, unit_price: 1000, metadata: null, location_id: "sloc_bolt" },
@@ -159,6 +179,22 @@ describe("createSplitOrder", () => {
     expect(calls.find(([name]) => name === "collection")![1]).toEqual({ order_id: "order_B", amount: 2000 })
     expect(calls.find(([name]) => name === "session")![1]).toEqual({ payment_collection_id: "paycol_B", provider_id: "pp_acropora_cod" })
     expect(w.authorized).toEqual(["payses_B"])
+  })
+
+  it("a card order's B gets no payment: it is born waiting for its own link", async () => {
+    process.env = { ...process.env, ACROPORA_PP_ONLINE_CARD: "pp_stripe_stripe" }
+    const w = container({ var_i1: { manage_inventory: false } })
+    const ops = splitOperations(w.scope)
+    const source = (await ops.loadOrder("order_A")) as SplitSource
+    await ops.createSplitOrder({ ...source, payment_role: "ONLINE_CARD" } as SplitSource, moved, { acropora_split_from_order_id: "order_A" })
+    const [, input] = calls.find(([name]) => name === "createOrder")! as [string, Record<string, any>]
+    expect(input.metadata).toMatchObject({
+      acropora_split_from_order_id: "order_A",
+      acropora_payment: { state: "awaiting_payment", kind: "split" },
+    })
+    expect(calls.map(([name]) => name)).not.toContain("collection")
+    expect(calls.map(([name]) => name)).not.toContain("session")
+    expect(w.authorized).toEqual([])
   })
 
   it("an unmanaged variant gets no reservation", async () => {

@@ -118,6 +118,18 @@ describe("refuseWhileAwaitingPayment", () => {
     expect(() => refuseWhileAwaitingPayment(stored("expired"))).toThrow(/fizetési határidő lejárt/)
   })
 
+  it("a split-off card order waits for its own link, and says so", () => {
+    const split = (state: string) => ({ acropora_payment: { state, kind: "split", split_at: "2026-10-06T07:00:00.000Z" } })
+    for (const state of ["awaiting_payment", "link_sent", "reminded"]) {
+      expect(() => refuseWhileAwaitingPayment(split(state))).toThrow(/szétbontásból született/)
+    }
+    expect(() => refuseWhileAwaitingPayment(split("paid"))).not.toThrow()
+    expect(orderPaymentView({ metadata: split("awaiting_payment"), payments: [], total: 4200 })).toMatchObject({
+      state: "awaiting_payment",
+      due: { amount: 4200, reason: "released" },
+    })
+  })
+
   it("lets a held, paid or cash order go", () => {
     for (const metadata of [null, {}, stored("paid")]) {
       expect(() => refuseWhileAwaitingPayment(metadata)).not.toThrow()

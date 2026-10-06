@@ -96,6 +96,16 @@ describe("sendPaymentLink", () => {
     })
   })
 
+  it("a split-off card order (C/3): no hold ever, a link for its own total, its split facts kept", async () => {
+    const split = { [ORDER_PAYMENT_METADATA_KEY]: { state: "awaiting_payment", kind: "split", split_at: "2026-10-06T07:00:00.000Z" } }
+    const { ops, written } = opsFor({ primary: order("order_B", 202, split, []), pickup: null }, { order_B: { id: "col_B", amount: 4200 } })
+    const sent = await sendPaymentLink("order_B", ops, CONFIG, () => NOW)
+    expect(sent.link.amount).toBe(4200)
+    expect(written.get("order_B")).toMatchObject({
+      [ORDER_PAYMENT_METADATA_KEY]: { kind: "split", split_at: "2026-10-06T07:00:00.000Z", state: "link_sent", link: { collection_id: "col_B" } },
+    })
+  })
+
   it("a mixed cart: both orders' totals in one link, both orders link_sent", async () => {
     const { ops, written } = opsFor(
       { primary: order("order_ship", 45, released(4950)), pickup: order("order_pick", 46, released(17000)) },

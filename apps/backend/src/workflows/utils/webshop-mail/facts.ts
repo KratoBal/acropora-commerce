@@ -20,7 +20,11 @@ import type { StatusMailStatus } from "./status-mail"
  */
 export const WEBSHOP_MAIL_FACTS_VERSION = 1 as const
 
-/** The ten templates (acrobot 26554): the prompt's eight, link and reminder apart, and the closed status. */
+/**
+ * The templates. The ten (acrobot 26554): the prompt's eight, link and
+ * reminder apart, and the closed status; the eleventh, the split notice (C/3,
+ * acrobot 26651), added while v1 had not yet rendered a mail anywhere.
+ */
 export const WEBSHOP_MAIL_TEMPLATES = [
   "order-placed",
   "order-status-confirmed",
@@ -32,6 +36,7 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   "order-payment-link",
   "order-payment-reminder",
   "payment-refunded",
+  "order-split",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]
 
@@ -68,6 +73,8 @@ export type WebshopMailFactsOf = {
   "order-payment-link": PaymentLinkFacts
   "order-payment-reminder": PaymentLinkFacts
   "payment-refunded": CommonFacts & { refund: RefundMailFacts }
+  /** The split notice: the part that comes now (`order`), the one that comes later, and how both are paid. */
+  "order-split": CommonFacts & { order: LoadedOrder; split_order: LoadedOrder; payment: "card" | "cod" | "store" }
 }
 
 /** The render request for one template. */
