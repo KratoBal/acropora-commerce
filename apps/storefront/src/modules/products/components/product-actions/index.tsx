@@ -212,10 +212,12 @@ export default function ProductActions({
 
     setIsAdding(true)
 
+    // a regi termeklap-ag: a maximumot itt is atadjuk, a backend amugy is orzi
     await addToCart({
       variantId: selectedVariant.id,
       quantity,
       countryCode,
+      rendelesiMaximum: orderMaximum,
     })
 
     setIsAdding(false)

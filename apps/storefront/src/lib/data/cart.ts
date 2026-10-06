@@ -5,6 +5,10 @@ import medusaError from "@lib/util/medusa-error"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
+  kosarbaTehetoMennyiseg,
+  type KosarbaTetel,
+} from "@modules/products/components/product-actions/minimum-order-quantity"
+import {
   ASZF_ROGZITES_HIBA,
   fizetesUzenet,
   MEGJEGYZES_MENTES_HIBA,
@@ -130,15 +134,24 @@ export async function updateCart(data: HttpTypes.StoreUpdateCart) {
     .catch(medusaError)
 }
 
+/**
+ * KOSARBA TETEL, EREDMENNYEL, NEM KIVETELLEL (kartya 6994c9a3), ugyanazert,
+ * amiert az `updateLineItem` is igy dolgozik: egy dobott hiba uzenetet a Next
+ * a szerver-muvelet hataran lecsereli. A `rendelesiMaximum` a termek
+ * metaadatabol jon (a hivo ismeri a termeket); ha van, a kosarban mar levo
+ * mennyiseggel egyutt vagjuk a maradek keretre, es a vevo megkapja, miert.
+ */
 export async function addToCart({
   variantId,
   quantity,
   countryCode,
+  rendelesiMaximum = null,
 }: {
   variantId: string
   quantity: number
   countryCode: string
-}) {
+  rendelesiMaximum?: number | null
+}): Promise<KosarEredmeny> {
   if (!variantId) {
     throw new Error("Missing variant ID when adding to cart")
   }
@@ -149,28 +162,53 @@ export async function addToCart({
     throw new Error("Error retrieving or creating cart")
   }
 
+  let tetel: KosarbaTetel = { kind: "teljes", mennyiseg: quantity }
+  if (rendelesiMaximum !== null) {
+    const sorok = await retrieveCart(cart.id, "id,*items")
+    const kosarban = (sorok?.items ?? [])
+      .filter((sor) => sor.variant_id === variantId)
+      .reduce((osszeg, sor) => osszeg + Number(sor.quantity), 0)
+    tetel = kosarbaTehetoMennyiseg({
+      kert: quantity,
+      rendelesiMaximum,
+      kosarban,
+    })
+    if (tetel.kind === "tele") return { ok: false, uzenet: tetel.uzenet }
+  }
+
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .createLineItem(
+  try {
+    await sdk.store.cart.createLineItem(
       cart.id,
       {
         variant_id: variantId,
-        quantity,
+        quantity: tetel.mennyiseg,
       },
       {},
       headers,
     )
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    console.error(
+      "A kosárba tétel nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return { ok: false, uzenet: kosarUzenet(allapot) }
+  }
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+  const cartCacheTag = await getCacheTag("carts")
+  revalidateTag(cartCacheTag)
+
+  const fulfillmentCacheTag = await getCacheTag("fulfillment")
+  revalidateTag(fulfillmentCacheTag)
+
+  return tetel.kind === "vagott"
+    ? { ok: true, megjegyzes: tetel.megjegyzes }
+    : { ok: true }
 }
 
 /**
@@ -181,7 +219,8 @@ export async function addToCart({
  * valtozatlanul atmegy rajta. A reszletes indoklas a `kosar-uzenet.ts`
  * fejlecben all.
  */
-export type KosarEredmeny = { ok: true } | { ok: false; uzenet: string }
+export type KosarEredmeny =
+  { ok: true; megjegyzes?: string } | { ok: false; uzenet: string }
 
 export async function updateLineItem({
   lineId,

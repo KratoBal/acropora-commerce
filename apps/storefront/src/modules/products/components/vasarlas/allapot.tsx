@@ -128,6 +128,10 @@ export function VasarlasProvider({
     () => kezdoOpciok(product),
   )
   const [isAdding, setIsAdding] = useState(false)
+  const [kosarVisszajelzes, setKosarVisszajelzes] = useState<{
+    szoveg: string
+    hiba: boolean
+  } | null>(null)
   /**
    * A KEZDŐÉRTÉK A TERMÉK MINIMUMA, nem beégetett 1. Tizenhat terméknél a
    * minimum nem 1 (nyolcnál 10, hétnél 100, egynél 5), és ott az 1 olyan
@@ -301,13 +305,22 @@ export function VasarlasProvider({
     if (!selectedVariant?.id) return null
 
     setIsAdding(true)
+    setKosarVisszajelzes(null)
 
-    await addToCart({
+    const eredmeny = await addToCart({
       variantId: selectedVariant.id,
       quantity,
       countryCode,
+      rendelesiMaximum: orderMaximum,
     })
 
+    setKosarVisszajelzes(
+      eredmeny.ok
+        ? eredmeny.megjegyzes
+          ? { szoveg: eredmeny.megjegyzes, hiba: false }
+          : null
+        : { szoveg: eredmeny.uzenet, hiba: true },
+    )
     setIsAdding(false)
   }
 
@@ -329,6 +342,7 @@ export function VasarlasProvider({
     uniquePiece,
     similarHref,
     isAdding,
+    kosarVisszajelzes,
     disabled: !!disabled,
     handleAddToCart,
   }

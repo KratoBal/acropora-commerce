@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   canIncreaseOrderQuantity,
+  kosarbaTehetoMennyiseg,
   maximumOrderQuantity,
   minimumOrderQuantity,
   normaliseOrderQuantity,
@@ -306,5 +307,43 @@ describe("a léptető alatti mondat", () => {
     expect(orderQuantityHint({ minimum: 1, step: 1, orderMaximum: 50 })).toBe(
       "Ebből a termékből legfeljebb 50 darab rendelhető.",
     )
+  })
+})
+
+/*
+  A KOSARBA TETEL A RENDELESI MAXIMUMIG (6994c9a3). MI PIROSIT: a kosarban
+  levot nem szamolja; maximum nelkul vag; a megjegyzes nem a valodi szamot
+  mondja; a pontosan kitoltott keret „tele” helyett vagast mond.
+*/
+describe("kosarbaTehetoMennyiseg", () => {
+  it("maximum nélkül, vagy ha belefér, a kért mennyiség", () => {
+    expect(
+      kosarbaTehetoMennyiseg({
+        kert: 500,
+        rendelesiMaximum: null,
+        kosarban: 900,
+      }),
+    ).toEqual({ kind: "teljes", mennyiseg: 500 })
+    expect(
+      kosarbaTehetoMennyiseg({ kert: 10, rendelesiMaximum: 100, kosarban: 90 }),
+    ).toEqual({ kind: "teljes", mennyiseg: 10 })
+  })
+
+  it("a maradékra vág, üres kosárnál a „már benne volt” nélkül", () => {
+    expect(
+      kosarbaTehetoMennyiseg({ kert: 150, rendelesiMaximum: 100, kosarban: 0 }),
+    ).toEqual({
+      kind: "vagott",
+      mennyiseg: 100,
+      megjegyzes:
+        "Ebből a termékből egy rendelésbe legfeljebb 100 darab tehető, ezért 100 darabot tettünk a kosárba.",
+    })
+  })
+
+  it("tele kosárnál nem vág, hanem kimondja", () => {
+    expect(
+      kosarbaTehetoMennyiseg({ kert: 1, rendelesiMaximum: 100, kosarban: 100 })
+        .kind,
+    ).toBe("tele")
   })
 })

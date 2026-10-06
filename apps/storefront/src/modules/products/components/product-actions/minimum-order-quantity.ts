@@ -255,3 +255,42 @@ export function canIncreaseOrderQuantity(input: {
     input.quantity
   )
 }
+
+/**
+ * A KOSARBA TETEL A RENDELESI MAXIMUMIG (kartya 6994c9a3).
+ *
+ * A termeklap valasztoja a maximumig enged, de nem tudja, mennyi van mar a
+ * kosarban: egy masodik kosarba tetel eddig a maximum folott is atment. Ez a
+ * fuggveny a kosarban mar levo mennyiseggel szamol, es a kert mennyiseget a
+ * maradek keretre vagja. A vevo latja, miert: a megjegyzes a szamot is megmondja.
+ *
+ * A backend ugyanezt elutasitja (`order-maximum.ts`), ez a kirakat oldala: itt
+ * a vevo kap mondatot, ott a kozvetlen hivas nem jut at.
+ */
+export type KosarbaTetel =
+  | { kind: "teljes"; mennyiseg: number }
+  | { kind: "vagott"; mennyiseg: number; megjegyzes: string }
+  | { kind: "tele"; uzenet: string }
+
+export function kosarbaTehetoMennyiseg(input: {
+  kert: number
+  rendelesiMaximum: number | null
+  kosarban: number
+}): KosarbaTetel {
+  const { kert, rendelesiMaximum: maximum, kosarban } = input
+  if (maximum === null) return { kind: "teljes", mennyiseg: kert }
+  const maradek = maximum - kosarban
+  if (maradek <= 0)
+    return {
+      kind: "tele",
+      uzenet: `Ebből a termékből egy rendelésbe legfeljebb ${maximum} darab tehető, és ${kosarban} darab már a kosaradban van.`,
+    }
+  if (kert <= maradek) return { kind: "teljes", mennyiseg: kert }
+  return {
+    kind: "vagott",
+    mennyiseg: maradek,
+    megjegyzes:
+      `Ebből a termékből egy rendelésbe legfeljebb ${maximum} darab tehető, ezért ${maradek} darabot tettünk a kosárba` +
+      (kosarban > 0 ? ` (${kosarban} darab már benne volt).` : "."),
+  }
+}
