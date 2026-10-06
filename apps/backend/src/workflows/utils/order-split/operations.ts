@@ -17,6 +17,7 @@ import { deliverShopMail } from "../webshop-mail/deliver"
 import { orderSplitMailOperations } from "../webshop-mail/operations"
 import { prepareOrderSplitMail } from "../webshop-mail/order-split-mail"
 import { buildProviderRoleMap } from "../payment-providers"
+import { medusaNumber } from "../medusa-number"
 import { runOrderEdit } from "../run-order-edit"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import type { PlannedLine, SplitOperations, SplitSource } from "./split"
@@ -37,8 +38,8 @@ const ORDER_FIELDS = [
   "items.variant_id",
   "items.title",
   "items.quantity",
-  "items.total",
-  "items.discount_total",
+  "items.unit_price",
+  "items.adjustments.amount",
   "items.is_tax_inclusive",
   "items.metadata",
   "shipping_methods.name",
@@ -116,9 +117,12 @@ const loadOrder = async (container: MedusaContainer, orderId: string): Promise<L
       id: item.id,
       variant_id: item.variant_id ?? null,
       title: item.title,
-      quantity: Number(item.quantity),
-      total: Number(item.total),
-      discount_total: Number(item.discount_total ?? 0),
+      quantity: medusaNumber(item.quantity, `The quantity of item ${item.id}`),
+      unit_price: medusaNumber(item.unit_price, `The unit price of item ${item.id}`),
+      // the line's discount from its own adjustments, not a computed total that may not be loaded
+      discount_total: (item.adjustments ?? [])
+        .filter(Boolean)
+        .reduce((sum: number, adjustment: any) => sum + medusaNumber(adjustment.amount, `An adjustment of item ${item.id}`), 0),
       metadata: item.metadata ?? null,
     })),
     payment_role: providerId ? (roles.get(providerId) ?? (providerId === STRIPE_PROVIDER_ID ? "ONLINE_CARD" : null)) : null,

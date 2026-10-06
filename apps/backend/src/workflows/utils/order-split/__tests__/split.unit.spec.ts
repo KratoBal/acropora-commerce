@@ -7,6 +7,7 @@ const line = (id: string, quantity: number, total: number, extra: Partial<SplitO
   variant_id: `var_${id}`,
   title: `Termék ${id}`,
   quantity,
+  unit_price: total / quantity,
   total,
   discount_total: 0,
   metadata: null,
