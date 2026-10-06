@@ -368,6 +368,18 @@ export function MennyisegDoboz() {
         isAdding={a.isAdding}
         disabled={a.disabled || a.isAdding}
       />
+      {a.kosarVisszajelzes ? (
+        <p
+          role={a.kosarVisszajelzes.hiba ? "alert" : "status"}
+          data-testid="kosar-visszajelzes"
+          // a hiba ugyanazzal a szinnel, mint a kosar soran (`ErrorMessage`)
+          className={`mt-3 text-small-regular ${
+            a.kosarVisszajelzes.hiba ? "text-rose-500" : "text-ui-fg-subtle"
+          }`}
+        >
+          {a.kosarVisszajelzes.szoveg}
+        </p>
+      ) : null}
     </div>
   )
 }

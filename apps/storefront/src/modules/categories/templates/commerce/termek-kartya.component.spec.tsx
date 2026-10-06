@@ -167,7 +167,7 @@ describe("a Commerce termékkártya", () => {
   })
 
   it("egyváltozatos kapható terméknél a gomb tényleg kosárba tesz, és visszajelez", async () => {
-    kosar.addToCart.mockResolvedValueOnce(undefined)
+    kosar.addToCart.mockResolvedValueOnce({ ok: true })
     render(<CommerceTermekKartya product={termek([raktaron(2)])} />)
     expect(screen.queryByTestId("kartya-reszletek")).toBeNull()
 
@@ -179,7 +179,42 @@ describe("a Commerce termékkártya", () => {
       variantId: "v0",
       quantity: 1,
       countryCode: "hu",
+      rendelesiMaximum: null,
     })
+  })
+
+  /*
+    A RENDELESI MAXIMUM A KARTYAN IS (6994c9a3). MI PIROSIT: a kartya nem adja
+    at a maximumot; a vagas vagy a tele kosar oka nem latszik; a tele kosar
+    „próbáld újra”-t mond oka nelkul.
+  */
+  it("átadja a rendelési maximumot, és kiírja a vágás vagy a tele kosár okát", async () => {
+    const korlatos = termek([raktaron(500)], {
+      metadata: { unas_maximum_order_quantity: "100" },
+    })
+    kosar.addToCart.mockResolvedValueOnce({
+      ok: true,
+      megjegyzes: "legfeljebb 100 darab tehető, ezért 10 darabot",
+    })
+    const { unmount } = render(<CommerceTermekKartya product={korlatos} />)
+    fireEvent.click(screen.getByTestId("kartya-kosarba"))
+    expect(
+      (await screen.findByTestId("kartya-kosar-mondat")).textContent,
+    ).toMatch(/10 darabot/)
+    expect(kosar.addToCart).toHaveBeenCalledWith(
+      expect.objectContaining({ rendelesiMaximum: 100 }),
+    )
+    unmount()
+
+    kosar.addToCart.mockResolvedValueOnce({
+      ok: false,
+      uzenet: "és 100 darab már a kosaradban van.",
+    })
+    render(<CommerceTermekKartya product={korlatos} />)
+    fireEvent.click(screen.getByTestId("kartya-kosarba"))
+    expect(
+      (await screen.findByTestId("kartya-kosar-mondat")).textContent,
+    ).toMatch(/már a kosaradban van/)
   })
 
   it("ha a kosárba tétel elbukik, azt mondja, nem azt, hogy sikerült", async () => {

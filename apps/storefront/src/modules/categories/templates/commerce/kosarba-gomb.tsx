@@ -24,19 +24,36 @@ export default function KosarbaGomb({
   variantId,
   quantity,
   termekNev,
+  rendelesiMaximum = null,
 }: {
   variantId: string
   quantity: number
   termekNev: string
+  /** A termek rendelesi maximuma (kartya 6994c9a3); `null`: nincs. */
+  rendelesiMaximum?: number | null
 }) {
   const countryCode = useParams().countryCode as string
   const [allapot, setAllapot] = useState<Allapot>("kesz")
+  // a rendelesi maximum miatti vagas vagy elutasitas OKA, lathatoan
+  const [mondat, setMondat] = useState<string | null>(null)
 
   const kosarba = async () => {
     setAllapot("folyamatban")
+    setMondat(null)
     try {
-      await addToCart({ variantId, quantity, countryCode })
-      setAllapot("sikerult")
+      const eredmeny = await addToCart({
+        variantId,
+        quantity,
+        countryCode,
+        rendelesiMaximum,
+      })
+      if (eredmeny.ok) {
+        setAllapot("sikerult")
+        setMondat(eredmeny.megjegyzes ?? null)
+      } else {
+        setAllapot("hiba")
+        setMondat(eredmeny.uzenet)
+      }
     } catch {
       setAllapot("hiba")
     }
@@ -57,6 +74,14 @@ export default function KosarbaGomb({
       <span className="sr-only" role="status" aria-live="polite">
         {allapot === "sikerult" || allapot === "hiba" ? FELIRAT[allapot] : ""}
       </span>
+      {mondat ? (
+        <p
+          className="mt-2 text-[12px] leading-[16px] text-acr-slate"
+          data-testid="kartya-kosar-mondat"
+        >
+          {mondat}
+        </p>
+      ) : null}
     </>
   )
 }

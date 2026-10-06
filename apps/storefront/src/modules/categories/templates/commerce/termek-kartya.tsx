@@ -207,6 +207,7 @@ export default function CommerceTermekKartya({
               variantId={gyors.variantId}
               quantity={gyors.quantity}
               termekNev={product.title ?? ""}
+              rendelesiMaximum={maximumOrderQuantity(product)}
             />
           ) : (
             <LocalizedClientLink

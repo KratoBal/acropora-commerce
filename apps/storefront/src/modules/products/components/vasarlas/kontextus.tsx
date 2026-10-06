@@ -43,6 +43,11 @@ export type VasarlasAllapot = {
   uniquePiece: boolean
   similarHref: string
   isAdding: boolean
+  /**
+   * A KOSARBA TETEL VISSZAJELZESE (kartya 6994c9a3): ha a rendelesi maximum
+   * miatt kevesebb ment a kosarba, vagy semmi, a vevo itt latja, miert.
+   */
+  kosarVisszajelzes: { szoveg: string; hiba: boolean } | null
   disabled: boolean
   handleAddToCart: () => Promise<null | void>
 }
