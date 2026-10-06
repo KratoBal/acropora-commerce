@@ -44,6 +44,7 @@ import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
 import { refuseClientSessionData } from "./refuse-client-session-data";
+import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
 import { captureOnlyOrderTotal } from "./capture-only-order-total";
@@ -248,6 +249,17 @@ export default defineMiddlewares({
       middlewares: [
         validateAndTransformQuery(StoreGetGlsPickupPointsParams, {}),
       ],
+    },
+    {
+      // 790da0cd: a discount comes off the products only, never the shipping
+      matcher: "/admin/promotions",
+      method: "POST",
+      middlewares: [refuseShippingDiscount],
+    },
+    {
+      matcher: "/admin/promotions/:id",
+      method: "POST",
+      middlewares: [refuseShippingDiscount],
     },
     {
       matcher: "/store/payment-collections/:id/payment-sessions",

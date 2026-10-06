@@ -78,6 +78,15 @@ export type CashOnDeliveryFeeLineItemData = {
    * which would make the order impossible to complete.
    */
   requires_shipping: false
+  /**
+   * NO COUPON TAKES ANYTHING OFF THE FEE (card 790da0cd; Balázs, 2026-10-06
+   * 16:44:50 UTC: „Szazalekos kupon es minden egyeb kedvezmeny: csak a
+   * termekek arabol vonodhat”). The fee is not a product's price. Medusa
+   * spreads an `order` or `items` promotion over the line items, and skips a
+   * line whose `is_discountable` is false (promotion 2.20.1,
+   * compute-actions/line-items); without this a 10% coupon cut the fee too.
+   */
+  is_discountable: false
   metadata: CashOnDeliveryFeeMetadata
 }
 
@@ -125,6 +134,7 @@ export const buildCashOnDeliveryFeeLineItem = (
     is_custom_price: true,
     is_tax_inclusive: true,
     requires_shipping: false,
+    is_discountable: false,
     metadata: {
       [ACROPORA_LINE_ITEM_KIND_METADATA_KEY]: "fee",
       [ACROPORA_FEE_TYPE_METADATA_KEY]: CASH_ON_DELIVERY_FEE_TYPE,
