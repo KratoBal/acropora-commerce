@@ -6,6 +6,7 @@ import type { PaymentRole } from "../payment-eligibility"
 import { buildProviderRoleMap } from "../payment-providers"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
+import { medusaNumber } from "../medusa-number"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
 import type { ShippedDeps, ShippedOrder } from "./shipped"
 import type { OrderSplitMailDeps } from "./order-split-mail"
@@ -18,11 +19,13 @@ const ORDER_FIELDS = [
   "display_id",
   "email",
   "total",
+  "items.id",
   "items.title",
   "items.product_title",
   "items.variant_title",
   "items.quantity",
   "items.total",
+  "shipping_methods.id",
   "shipping_methods.name",
   "shipping_methods.total",
   "payment_collections.payments.provider_id",
@@ -61,15 +64,15 @@ export const orderMailOperations = (container: MedusaContainer): OrderMailDeps =
       id: order.id,
       display_id: order.display_id,
       email: order.email ?? null,
-      total: Number(order.total),
+      total: medusaNumber(order.total, `The total of order ${order.id}`),
       items: (order.items ?? []).filter(Boolean).map((item: any) => ({
         title: lineTitle(item),
-        quantity: Number(item.quantity),
-        total: Number(item.total),
+        quantity: medusaNumber(item.quantity, `The quantity of item ${item.id}`),
+        total: medusaNumber(item.total, `The total of item ${item.id}`),
       })),
       shipping: (order.shipping_methods ?? []).filter(Boolean).map((method: any) => ({
         name: String(method.name ?? ""),
-        amount: Number(method.total),
+        amount: medusaNumber(method.total, `The total of shipping method ${method.id}`),
       })),
       payment: roleOf(order, buildProviderRoleMap()),
     }
@@ -109,7 +112,7 @@ export const refundMailOperations = (container: MedusaContainer): RefundMailDeps
       provider_id: payment.provider_id ?? null,
       refunds: (payment.refunds ?? []).filter(Boolean).map((refund: any) => ({
         id: refund.id,
-        amount: Number(refund.amount),
+        amount: medusaNumber(refund.amount, `The amount of refund ${refund.id}`),
         created_at: refund.created_at ?? null,
       })),
       session_data: payment.payment_session?.data ?? null,
@@ -148,6 +151,7 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
         "display_id",
         "email",
         "total",
+        "items.id",
         "items.title",
         "items.product_title",
         "items.variant_title",
@@ -182,11 +186,11 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
       id: order.id,
       display_id: order.display_id,
       email: order.email ?? null,
-      total: Number(order.total),
+      total: medusaNumber(order.total, `The total of order ${order.id}`),
       cash_on_delivery: roleOf(order, buildProviderRoleMap()) === "COD",
       items: (order.items ?? []).filter(Boolean).map((item: any) => ({
         title: lineTitle(item),
-        quantity: Number(item.quantity),
+        quantity: medusaNumber(item.quantity, `The quantity of item ${item.id}`),
         fee: isCashOnDeliveryFeeLineItem(item),
       })),
       method_name: String(method?.name ?? ""),
