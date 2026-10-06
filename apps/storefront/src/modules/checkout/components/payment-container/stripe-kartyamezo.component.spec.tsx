@@ -62,5 +62,7 @@ describe("a Stripe kártyamező", () => {
     expect(screen.getByText("Bankkártyás fizetés")).toBeInTheDocument()
     expect(screen.queryByTestId("stripe-panel")).toBeNull()
     expect(screen.queryByTestId("kivalasztva-cimke")).toBeNull()
+    // a bizalmi mondat csak a bankkartyarol igaz (acrobot 27110)
+    expect(screen.queryByText(/kártyaadatokat/)).toBeNull()
   })
 })
