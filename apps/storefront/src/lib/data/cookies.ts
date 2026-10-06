@@ -33,20 +33,27 @@ export const getCacheTag = async (tag: string): Promise<string> => {
   }
 }
 
+/**
+ * A LEKERES CIMKEI: a latogatonkenti ES a kozos (kartya 2d22116c).
+ *
+ * Eddig CSAK a latogatonkenti cimke allt (`products-<_medusa_cache_id>`),
+ * suti nelkul pedig SEMMI, mikozben a termek-lekeres `force-cache`. Egy
+ * arvaltozasra tehat semmi nem tudta egyszerre minden latogato gyorsitotarat
+ * uriteni: a kozponti `revalidateTag` a latogatonkenti cimket nem eri el, a
+ * cimke nelkuli bejegyzest pedig semmi. A KOZOS cimke (`products`) ezt adja
+ * meg: az `/api/revalidate` egy hivassal mindet uriti. A latogatonkenti marad,
+ * mert a kosar es a fiok a sajat urites-hivasaiban arra epit.
+ */
 export const getCacheOptions = async (
   tag: string,
-): Promise<{ tags: string[] } | Record<string, never>> => {
+): Promise<{ tags: string[] }> => {
   if (typeof window !== "undefined") {
-    return {}
+    return { tags: [tag] }
   }
 
   const cacheTag = await getCacheTag(tag)
 
-  if (!cacheTag) {
-    return {}
-  }
-
-  return { tags: [`${cacheTag}`] }
+  return { tags: cacheTag ? [cacheTag, tag] : [tag] }
 }
 
 // `sameSite: "lax"` rather than `"strict"`: the customer returns from a
