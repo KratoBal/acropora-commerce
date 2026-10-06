@@ -77,7 +77,8 @@ export const sendPaymentLink = async (
   if (view.due?.reason === "difference") return sendDifferenceLink(pair, view.due.amount, ops, config, now)
 
   const stored = storedOrderPaymentOf(pair.primary.metadata)
-  if (!stored || !stored.released_at) {
+  // a released hold (L1), or a split-off order that never had one (C/3)
+  if (!stored || (!stored.released_at && stored.kind !== "split")) {
     refuse(REFUSALS[view.state] ?? REFUSALS.hold)
   }
   if (stored!.state === "paid" || stored!.state === "expired") refuse(REFUSALS[stored!.state])

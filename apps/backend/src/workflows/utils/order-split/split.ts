@@ -1,4 +1,5 @@
 import type { PaymentRole } from "../payment-eligibility"
+import type { SplitPayment } from "../webshop-mail/order-split-mail"
 import {
   SPLIT_FROM_ORDER_KEY,
   SPLIT_ORDER_IDS_KEY,
@@ -24,12 +25,21 @@ import {
  *    kind: cash on delivery for its own total, no second fee (D3); pay at the
  *    shop. Its id goes on A's record at once.
  * 4. The link is written on A and B is given "Feldolgozásra vár" (D5).
+ * 5. The customer is told (`order-split-mail.ts`, acrobot 26651).
+ *
+ * A CARD ORDER (Balázs, 2026-10-06 05:31 UTC, "2"): A keeps its hold, and
+ * Kiszállítás takes only A's reduced total (the capture takes the order's
+ * current total; the rest of the hold is released). B is born unpaid, its
+ * state "Fizetésre vár" (`kind: "split"`), WITHOUT a link: the OS sends the
+ * link when B can ship (acrobot 26651, (b)), so the link's day-3 and day-6
+ * deadlines count from then. Until paid, B cannot go out
+ * (`refuseWhileAwaitingPayment`).
  *
  * The OS sends a `request_id` per split. The same id again answers with the
  * B already made, or finishes a split that stopped half way: no second order
  * is made (one gap is left and named: B created and the write of its id on A
- * failing in the same second). A card-paid order waits for Balázs's decision
- * on how B is paid (D2); a paid order is not split in this round (D4).
+ * failing in the same second). A paid order is not split in this round (D4),
+ * nor a card order whose hold no longer stands.
  */
 export const SPLIT_REQUESTS_KEY = "acropora_split_requests"
 
@@ -53,6 +63,8 @@ export type SplitSource = SplitOrder & {
   payment_role: PaymentRole | null
   /** Any of its payments captured. */
   paid: boolean
+  /** The card order's payment state (`orderPaymentView`): a card order splits only while its hold stands. */
+  payment_state: string
   /** Where each line's reservation is, by line id. */
   reservation_locations: Record<string, string | null>
 }
@@ -66,12 +78,14 @@ export type SplitOperations = {
   createSplitOrder(source: SplitSource, moved: PlannedLine[], metadata: Record<string, unknown>): Promise<{ id: string }>
   /** Step 4: "Feldolgozásra vár" by the system, if the order has no status yet. */
   startBusinessStatus(orderId: string): Promise<void>
+  /** Step 5: the customer's notice (one per split; a failure is logged, never undoes the split). */
+  notifySplit(orderId: string, splitOrderId: string, payment: SplitPayment): Promise<void>
   orderSummary(orderId: string): Promise<{ display_id: number | string; total: number } | null>
 }
 
 export type SplitResult =
   | { status: "not_found" }
-  | { status: "blocked"; reason: SplitBlock | "card_pending" }
+  | { status: "blocked"; reason: SplitBlock | "card_not_held" | "unknown_payment" }
   | { status: "invalid"; message: string }
   | {
       status: "done"
@@ -80,11 +94,15 @@ export type SplitResult =
       parent_order_id: string
       parent_total: number
       total: number
-      payment_state: "none"
+      /** B's payment: a card order's waits for its own link; the others pay as A does. */
+      payment_state: "awaiting_payment" | "none"
     }
 
 /** What B carries over from A besides its lines: the ÁSZF acceptance and the customer's notes. */
 const CARRIED_METADATA_KEYS = ["aszf_elfogadas", "acropora_customer_note", "acropora_carrier_note"]
+
+const paymentOf = (source: SplitSource): SplitPayment =>
+  source.payment_role === "ONLINE_CARD" ? "card" : source.payment_role === "COD" ? "cod" : "store"
 
 const requestsOf = (metadata: Record<string, unknown> | null): Record<string, SplitRequestRecord> => {
   const value = metadata?.[SPLIT_REQUESTS_KEY]
@@ -109,8 +127,10 @@ export const splitOrder = async (
   if (!record) {
     const block = splitBlock(source, source.paid)
     if (block) return { status: "blocked", reason: block }
-    if (source.payment_role === "ONLINE_CARD" || source.payment_role === null) {
-      return { status: "blocked", reason: "card_pending" }
+    if (source.payment_role === null) return { status: "blocked", reason: "unknown_payment" }
+    // a card order (Balázs, 2026-10-06 05:31 UTC): A keeps its hold, B is paid through its own link
+    if (source.payment_role === "ONLINE_CARD" && source.payment_state !== "hold") {
+      return { status: "blocked", reason: "card_not_held" }
     }
     const plan = planSplit(source, input.lines)
     if (plan.status === "invalid") return plan
@@ -144,6 +164,7 @@ export const splitOrder = async (
       [SPLIT_ORDER_IDS_KEY]: linked.includes(record.order_id!) ? linked : [...linked, record.order_id!],
     })
     await ops.startBusinessStatus(record.order_id!)
+    await ops.notifySplit(source.id, record.order_id!, paymentOf(source))
   }
 
   const [parent, created] = await Promise.all([ops.orderSummary(source.id), ops.orderSummary(record.order_id!)])
@@ -154,6 +175,6 @@ export const splitOrder = async (
     parent_order_id: source.id,
     parent_total: parent!.total,
     total: created!.total,
-    payment_state: "none",
+    payment_state: source.payment_role === "ONLINE_CARD" ? "awaiting_payment" : "none",
   }
 }

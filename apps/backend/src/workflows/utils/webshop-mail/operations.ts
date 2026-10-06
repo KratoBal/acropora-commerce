@@ -8,6 +8,7 @@ import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
 import type { ShippedDeps, ShippedOrder } from "./shipped"
+import type { OrderSplitMailDeps } from "./order-split-mail"
 import type { PaymentDelayedDeps } from "./payment-delayed-mail"
 import type { PaymentLinkMailDeps } from "./payment-link-mail"
 import type { StatusMailDeps } from "./status-mail"
@@ -212,6 +213,12 @@ export const statusMailOperations = (container: MedusaContainer): StatusMailDeps
 
 /** The Medusa side of the "csúszik" mail (`preparePaymentDelayedMail`). */
 export const paymentDelayedMailOperations = (container: MedusaContainer): PaymentDelayedDeps => ({
+  loadOrder: orderMailOperations(container).loadOrder,
+  alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
+})
+
+/** The Medusa side of the split notice (`prepareOrderSplitMail`). */
+export const orderSplitMailOperations = (container: MedusaContainer): OrderSplitMailDeps => ({
   loadOrder: orderMailOperations(container).loadOrder,
   alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
 })

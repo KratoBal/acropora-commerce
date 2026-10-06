@@ -44,10 +44,14 @@ const STORED_STATES: readonly string[] = ["awaiting_payment", "link_sent", "remi
 export type StoredOrderPayment = {
   state: StoredOrderPaymentState
   /**
-   * Which payment the state is about: the released hold (L1, the default), or
-   * the difference over a hold that stays (plan section 5).
+   * Which payment the state is about: the released hold (L1, the default),
+   * the difference over a hold that stays (plan section 5), or a split-off
+   * order that never had a hold (C/3, Balázs 2026-10-06 05:31 UTC: it is
+   * paid through its own link).
    */
-  kind?: "release" | "difference"
+  kind?: "release" | "difference" | "split"
+  /** A split-off order: when it was split off, ISO. */
+  split_at?: string
   /** When the release started, ISO; without `released_at` it stopped half way (`releaseHold`). */
   releasing_at?: string
   /** When the hold was released, ISO. */
@@ -232,6 +236,10 @@ export const holdExpiresAt = (input: {
 export const DIFFERENCE_UNPAID =
   "Fizetésre vár: a rendelés többe kerül, mint a kártyán zárolt összeg, és a különbözet még nincs kifizetve. Küldd ki a fizetési linket a különbözetre, és várd meg a fizetést."
 
+/** Kiszállítás refused while a split-off card order is not paid (C/3). */
+export const SPLIT_UNPAID =
+  "Fizetésre vár: ez a rendelés egy szétbontásból született, és a saját összegét a vevő fizetési linkkel fizeti. Küldd ki a fizetési linket, és várd meg a fizetést."
+
 /** The states in which the order waits for the customer's money: no parcel may leave. */
 export const AWAITING_PAYMENT_STATES: readonly OrderPaymentState[] = [
   "awaiting_payment",
@@ -256,6 +264,8 @@ export const refuseWhileAwaitingPayment = (metadata: Record<string, unknown> | n
       ? "Fizetésre vár: a fizetési határidő lejárt, a rendelés nem szállítható ki."
       : stored.kind === "difference"
         ? DIFFERENCE_UNPAID
-        : "Fizetésre vár: a kártyás zárolást feloldottuk, ezért a csomag csak a vevő fizetése után indulhat. Előbb küldd ki a fizetési linket, és várd meg a fizetést."
+        : stored.kind === "split"
+          ? SPLIT_UNPAID
+          : "Fizetésre vár: a kártyás zárolást feloldottuk, ezért a csomag csak a vevő fizetése után indulhat. Előbb küldd ki a fizetési linket, és várd meg a fizetést."
   )
 }
