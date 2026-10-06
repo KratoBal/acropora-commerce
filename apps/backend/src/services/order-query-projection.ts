@@ -40,6 +40,7 @@ type QueryOrder = {
     captured_amount?: number
     refunded_amount?: number
     payments?: QueryPayment[]
+    payment_sessions?: { provider_id: string; status?: string | null }[]
   }[]
 }
 
@@ -133,11 +134,30 @@ const pickupPointOf = (order: QueryOrder) => {
   }
 }
 
+/**
+ * WHICH PROVIDER PAYS THE ORDER. Cash on delivery and bank transfer authorize
+ * as `pending_authorization`, and Medusa then records NO payment: the order
+ * has only its session (measured on stage, 2026-10-06: ten COD orders, zero
+ * payment rows). So the recorded payment first, then the live session; a
+ * canceled or failed session is not how the order is paid.
+ */
+export const providerIdOf = (
+  collection: NonNullable<QueryOrder["payment_collections"]>[number] | undefined
+): string | null => {
+  if (!collection) return null
+  const recorded = collection.payments?.[0]?.provider_id
+  if (recorded) return recorded
+  const live = (collection.payment_sessions ?? []).find(
+    (session) => session && session.status !== "canceled" && session.status !== "error"
+  )
+  return live?.provider_id ?? null
+}
+
 const paymentOf = (order: QueryOrder): OrderQueryRow["payment"] => {
   const collection = order.payment_collections?.[0]
   if (!collection) return null
   return {
-    provider_id: collection.payments?.[0]?.provider_id ?? null,
+    provider_id: providerIdOf(collection),
     status: collection.status ?? null,
     amount: collection.amount ?? null,
     captured_amount: collection.captured_amount ?? null,
@@ -235,7 +255,7 @@ export const projectOrderQueryRows = ({
         changed_at: latestHistory?.created_at ?? null,
       },
       shipping_method: order.shipping_methods?.[0]?.name ?? null,
-      payment_method: order.payment_collections?.[0]?.payments?.[0]?.provider_id ?? null,
+      payment_method: providerIdOf(order.payment_collections?.[0]),
       invoice_status: null,
       currency_code: order.currency_code ?? null,
       customer_name: nameOf(order.shipping_address) ?? nameOf(order.billing_address),

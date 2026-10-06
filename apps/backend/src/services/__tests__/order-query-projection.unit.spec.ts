@@ -142,6 +142,55 @@ describe("order query projection", () => {
    * cash order; the expiry not 7 days after the authorization; a later live
    * payment's hold read from an earlier, canceled one.
    */
+  /*
+    A PENDING PAYMENT (measured on stage, 2026-10-06): cash on delivery and
+    bank transfer leave only a session in pending_authorization, and no
+    payment record. WHAT TURNS RED: the list shows such an order with no
+    payment method; a canceled or failed session is taken for the payer; the
+    session overrides a recorded payment.
+  */
+  it("names the provider of an order paid later from its session", () => {
+    const rowWith = (collection: Record<string, unknown>) =>
+      projectOrderQueryRows({
+        pageOrders: [
+          {
+            ...order("order_cod", null),
+            payment_collections: [{ status: "not_paid", amount: 1000, payments: [], ...collection }],
+          },
+        ] as never,
+        customerOrders: [],
+        statuses: [],
+        history: [],
+      })[0]
+
+    const cod = rowWith({
+      payment_sessions: [{ provider_id: "pp_acropora_cod", status: "pending_authorization" }],
+    })
+    expect(cod.payment?.provider_id).toBe("pp_acropora_cod")
+    expect(cod.payment_method).toBe("pp_acropora_cod")
+
+    const retried = rowWith({
+      payment_sessions: [
+        { provider_id: "pp_stripe_stripe", status: "canceled" },
+        { provider_id: "pp_acropora_transfer", status: "error" },
+        { provider_id: "pp_acropora_transfer", status: "pending_authorization" },
+      ],
+    })
+    expect(retried.payment?.provider_id).toBe("pp_acropora_transfer")
+
+    expect(
+      rowWith({ payment_sessions: [{ provider_id: "pp_stripe_stripe", status: "canceled" }] }).payment
+        ?.provider_id
+    ).toBeNull()
+
+    const recorded = rowWith({
+      payments: [{ provider_id: "pp_stripe_stripe", amount: 1000, captures: [] }],
+      payment_sessions: [{ provider_id: "pp_acropora_cod", status: "pending_authorization" }],
+    })
+    expect(recorded.payment?.provider_id).toBe("pp_stripe_stripe")
+    expect(recorded.payment_method).toBe("pp_stripe_stripe")
+  })
+
   it("gives hold_expires_at only for a live, uncaptured card hold", () => {
     const withPayments = (payments: Record<string, unknown>[], metadata: Record<string, unknown> | null = null) =>
       projectOrderQueryRows({

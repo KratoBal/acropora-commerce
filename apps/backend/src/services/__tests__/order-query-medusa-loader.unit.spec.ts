@@ -45,6 +45,9 @@ describe("medusaOrderQueryLoader", () => {
         "payment_collections.payments.created_at",
         "payment_collections.payments.canceled_at",
         "payment_collections.payments.captures.amount",
+        // cash on delivery and bank transfer: only a session, no payment
+        "payment_collections.payment_sessions.provider_id",
+        "payment_collections.payment_sessions.status",
       ])
     )
     const payment = (orders[0] as any).payment_collections[0].payments[0]
