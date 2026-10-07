@@ -91,7 +91,10 @@ export async function storeLapTorzs(
       kereses={kereses}
       gyoker={gyoker}
       markak={markaAzonositok(searchParams[MARKA_PARAM])}
-      lapozoKeres={lapozoKeres(searchParams)}
+      lapozo={{
+        alap: `/${params.countryCode}/store`,
+        keres: lapozoKeres(searchParams),
+      }}
     />
   )
 }

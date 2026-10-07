@@ -197,6 +197,27 @@ export const SZABALYOK = {
     return hibak
   },
 
+  /**
+   * BELSO UTRA SEMMI NEM MUTAT (FE-7 3. resz; acrobot 27511). A `?v_id` es a
+   * `?page` a `next.config` atirasaval belso utra (`/_v/`, `/_p/`, `/_szurt/`)
+   * megy, amit kivulrol 404 fogad. Ha egy link, a canonical vagy az `og:url` a
+   * belso alakot adja (peldaul mert a lapozo a router utjabol epit), a kereso
+   * 404-re jut. A kodolt alakot (`%5F`) is nezi.
+   */
+  "belso-ut-link": (k, v) => {
+    const belso = (cim: string) => {
+      const u = utvonal(cim, v.ut)
+      const masodik = u?.ut.split("/")[2] ?? ""
+      return ["_v", "_p", "_szurt"].includes(masodik)
+    }
+    return [
+      ...k.linkek.filter(belso).map((h) => `belső útra mutató link: ${h}`),
+      ...[k.canonical, k.ogUrl]
+        .filter((c): c is string => !!c && belso(c))
+        .map((c) => `belső út a canonicalban vagy az og:url-ben: ${c}`),
+    ]
+  },
+
   "termek-linkek": (k) =>
     k.termekLinkek.length ? [] : ["nincs <a href> termék-link a lapon"],
 

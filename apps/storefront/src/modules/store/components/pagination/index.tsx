@@ -3,21 +3,23 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-import { lapHref } from "./lap-href"
+import { lapHref, type LapozoCel } from "./lap-href"
 
 export function Pagination({
   page,
   totalPages,
-  keres = "",
+  cel,
   "data-testid": dataTestid,
 }: {
   page: number
   totalPages: number
   /**
-   * A linkek query-je a `page` nelkul, a SZERVERTOL (`lapozoKeres`). FE-7: a
-   * `useSearchParams` egy statikus lapon a lapozot a HTML-bol kivenne.
+   * A linkek nyilvanos alap-utja es query-je, a SZERVERTOL (`LapozoCel`).
+   * FE-7: a `useSearchParams` egy statikus lapon a lapozot a HTML-bol kivenne,
+   * a `usePathname` pedig a belso `_p` utat adhatna. Nelkule (regi hivo) a
+   * mai cim, query nelkul.
    */
-  keres?: string
+  cel?: LapozoCel
   "data-testid"?: string
 }) {
   const pathname = usePathname()
@@ -47,7 +49,7 @@ export function Pagination({
     ) : (
       <Link
         key={p}
-        href={lapHref(pathname, keres, p)}
+        href={lapHref(cel?.alap ?? pathname, cel?.keres ?? "", p)}
         className="txt-xlarge-plus text-ui-fg-muted hover:text-ui-fg-subtle"
       >
         {label}

@@ -15,6 +15,7 @@ import { HttpTypes } from "@medusajs/types"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
 import type { CategoryPageKind } from "./category-page-data"
+import type { LapozoCel } from "@modules/store/components/pagination/lap-href"
 
 const PRODUCT_LIMIT = 12
 
@@ -160,7 +161,7 @@ export default async function CategoryProducts({
   sortBy,
   optionValueIds,
   kind,
-  lapozoKeres,
+  lapozo,
 }: {
   categoryId: string
   countryCode: string
@@ -168,8 +169,8 @@ export default async function CategoryProducts({
   sortBy?: SortOptions
   optionValueIds?: OptionValueIds
   kind: CategoryPageKind
-  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
-  lapozoKeres?: string
+  /** A lapozo nyilvanos celja a szervertol (`LapozoCel`, FE-7 3. resz). */
+  lapozo?: LapozoCel
 }) {
   const {
     response: { products, count },
@@ -212,7 +213,7 @@ export default async function CategoryProducts({
             data-testid="category-product-pagination"
             page={page}
             totalPages={totalPages}
-            keres={lapozoKeres}
+            cel={lapozo}
           />
         </div>
       ) : null}

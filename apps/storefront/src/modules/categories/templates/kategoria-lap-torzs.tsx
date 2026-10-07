@@ -15,6 +15,7 @@ import { LAP_MERET as COMMERCE_LAP_MERET } from "@modules/categories/templates/c
 import { listProducts } from "@lib/data/products"
 import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
 import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
+import { kategoriaCanonical } from "@lib/util/kategoria-canonical"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -108,7 +109,10 @@ export async function kategoriaLapTorzs(
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
       markak={markak}
-      lapozoKeres={lapozoKeres(searchParams)}
+      lapozo={{
+        alap: kategoriaCanonical(params.countryCode, params.category),
+        keres: lapozoKeres(searchParams),
+      }}
     />
   )
 }

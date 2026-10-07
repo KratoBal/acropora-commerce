@@ -52,7 +52,10 @@ export async function markaLapTorzs(
       sortBy={sortBy}
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
-      lapozoKeres={lapozoKeres(searchParams)}
+      lapozo={{
+        alap: `/${params.countryCode}/collections/${params.handle}`,
+        keres: lapozoKeres(searchParams),
+      }}
     />
   )
 }

@@ -5,6 +5,7 @@ import { OptionValueIds } from "@lib/util/product-option-filters"
 import ProductPreview from "@modules/products/components/product-preview"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import type { LapozoCel } from "@modules/store/components/pagination/lap-href"
 
 const PRODUCT_LIMIT = 12
 
@@ -25,7 +26,7 @@ export default async function PaginatedProducts({
   countryCode,
   optionValueIds,
   includeDescendants = true,
-  lapozoKeres,
+  lapozo,
 }: {
   sortBy?: SortOptions
   page: number
@@ -35,8 +36,8 @@ export default async function PaginatedProducts({
   countryCode: string
   optionValueIds?: OptionValueIds
   includeDescendants?: boolean
-  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
-  lapozoKeres?: string
+  /** A lapozo nyilvanos celja a szervertol (`LapozoCel`, FE-7 3. resz). */
+  lapozo?: LapozoCel
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -114,7 +115,7 @@ export default async function PaginatedProducts({
           data-testid="product-pagination"
           page={page}
           totalPages={totalPages}
-          keres={lapozoKeres}
+          cel={lapozo}
         />
       )}
     </>

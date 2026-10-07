@@ -42,3 +42,13 @@ export function lapozoKeres(
   }
   return params.toString()
 }
+
+/**
+ * A LAPOZO CELJA A SZERVERTOL (FE-7 3. resz): a NYILVANOS alap-ut es a query.
+ *
+ * Az alap-utat sem a `usePathname` adja: a `_p/N` lap a belso uton renderelodik,
+ * es ha egy rendereles (peldaul a hatterben futo ujraervenyesites) a belso utat
+ * latna, a linkek `/_p/...`-re mutatnanak, amit kivulrol 404 fogad (barracuda
+ * vegleges review, acrobot 27511). A lap torzse tudja a nyilvanos cimet.
+ */
+export type LapozoCel = { alap: string; keres: string }

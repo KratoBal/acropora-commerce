@@ -7,6 +7,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 
 import KeresesLap from "./kereses/kereses-lap"
 import PaginatedProducts from "./paginated-products"
+import type { LapozoCel } from "@modules/store/components/pagination/lap-href"
 
 const StoreTemplate = ({
   sortBy,
@@ -16,7 +17,7 @@ const StoreTemplate = ({
   kereses,
   gyoker,
   markak,
-  lapozoKeres,
+  lapozo,
 }: {
   sortBy?: SortOptions
   page?: string
@@ -28,8 +29,8 @@ const StoreTemplate = ({
   gyoker?: string
   /** A talalati lap marka-szuroje (`?marka=`), csak kereseskor. */
   markak?: string[]
-  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
-  lapozoKeres?: string
+  /** A lapozo nyilvanos celja a szervertol (`LapozoCel`, FE-7 3. resz). */
+  lapozo?: LapozoCel
 }) => {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
@@ -68,7 +69,7 @@ const StoreTemplate = ({
             page={pageNumber}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
-            lapozoKeres={lapozoKeres}
+            lapozo={lapozo}
           />
         </Suspense>
       </div>

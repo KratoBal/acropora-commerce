@@ -106,6 +106,11 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
   }
 })()
 
+// a belso-ut szabaly minden mintan fut (FE-7 3. resz): egy lapon sem lehet
+// `/_p/`, `/_v/` vagy `/_szurt/` link, canonical vagy og:url
+for (const tipus of Object.keys(TERV) as MintaTipus[])
+  TERV[tipus] = [...TERV[tipus], "belso-ut-link"]
+
 type Lap = { valasz: Valasz; html: string; k: OldalKivonat }
 const tar = new Map<string, Promise<Lap>>()
 
@@ -215,11 +220,9 @@ describe("változat közvetlen URL-je (Balázs 2. pontja)", () => {
   it("a ?v_id az első HTML-ben a kért változatot mutatja", async (ctx) => {
     const minta = mintaja("termek-valtozatos")
     if (!minta.ut || !minta.valtozat) {
-      const v = varhato("v-id", minta.tipus)!
-      kihagyottak.push(`v_id: nincs minta (${minta.hianyzik}); ${v.gazda}`)
-      ctx.skip(
-        `NINCS MINTA: ${minta.hianyzik} (a kiszolgálás gazdája: ${v.gazda})`,
-      )
+      // a v_id kiszolgalasa az FE-7 3. reszeben kesz (#522); itt csak a minta hianyzik
+      kihagyottak.push(`v_id: nincs minta (${minta.hianyzik})`)
+      ctx.skip(`NINCS MINTA: ${minta.hianyzik}`)
       return
     }
     /*

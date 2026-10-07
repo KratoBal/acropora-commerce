@@ -39,20 +39,10 @@ export const VARHATO: readonly Varhato[] = [
     ok: "a keresés és a facet noindexe az FE-4-ben jön (robots.txt-tiltás nélkül)",
   },
   {
-    szabaly: "lapozas-canonical",
-    gazda: "FE-4",
-    ok: "a 2. lap ma az 1. lapra canonicalizál (D9)",
-  },
-  {
     szabaly: "canonical-onmaga",
     tipusok: ["marka"],
     gazda: "P0 PR 11",
     ok: "a márkalapnak nincs canonicalja",
-  },
-  {
-    szabaly: "v-id",
-    gazda: "FE-7 3. rész",
-    ok: "a ?v_id közvetlen megnyitása az első HTML-ben a változatot mutassa",
   },
 ]
 
