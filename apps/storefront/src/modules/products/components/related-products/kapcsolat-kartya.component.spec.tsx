@@ -46,6 +46,10 @@ describe("a kapcsolódó termék 1b kártyája", () => {
     expect(
       screen.getByTestId("kapcsolat-kartya-kep").parentElement?.className,
     ).toContain("aspect-[32/30]")
+    // termekkep: a neve az alt-ja, nem ures (Balazs 5. pontja)
+    expect(screen.getByTestId("kapcsolat-kartya-kep").getAttribute("alt")).toBe(
+      "Függesztő szett 60 cm",
+    )
   })
 
   it("kép nélkül üres a kép helye, nem kitalált kép", () => {
