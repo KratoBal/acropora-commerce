@@ -58,6 +58,16 @@ describe("AdminPutUrlRedirects", () => {
 });
 
 describe("the fingerprint", () => {
+  it("the test vector shared with the OS (medusa-redirect-projection.spec.ts)", () => {
+    expect(
+      redirectsHash([
+        r("/b", "/hu/termek/b"),
+        r("/Pumpa", "/hu/termek/p"),
+        r("/spd/1/Á", "/hu/termek/a"),
+      ]),
+    ).toBe("e940fd01f827505f2388bbb2c28fbaeaf5bc86d8c9f27de68b265b1df7217832");
+  });
+
   it("does not depend on the order the rows arrive in", () => {
     const egyik = [r("/b", "/x"), r("/A", "/y")];
     expect(redirectsHash(egyik)).toBe(redirectsHash([...egyik].reverse()));
