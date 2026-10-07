@@ -1,11 +1,18 @@
 import { z } from "@medusajs/framework/zod";
 
-/** A path: starts with `/`, no whitespace or control character, no query. */
+/**
+ * A path of this shop: starts with one `/` (not `//` and not `/\`, which a
+ * browser takes as another domain, so the 301 would be an open redirect), and
+ * has no `\`, whitespace, control character or query.
+ */
 const PATH = z
   .string()
   .min(1)
   .max(2048)
-  .regex(/^\/[^\s?#\u0000-\u001f\u007f]*$/, "a path without query or space");
+  .regex(
+    /^\/(?![/\\])[^\s?#\\\u0000-\u001f\u007f]*$/,
+    "a path of this shop, without query or space",
+  );
 
 const Redirect = z
   .object({

@@ -45,6 +45,16 @@ describe("AdminPutUrlRedirects", () => {
     expect(ok([{ ...r("/a", "/x"), status: 302 }])).toBe(false);
     expect(ok([{ ...r("/a", "/x"), extra: 1 }])).toBe(false);
   });
+
+  it("refuses a destination a browser takes as another domain (open redirect)", () => {
+    for (const cel of [
+      "//idegen.hu/x",
+      "/\\idegen.hu/x",
+      "/hu\\termek",
+      "https://idegen.hu/x",
+    ])
+      expect(ok([r("/a", cel)])).toBe(false);
+  });
 });
 
 describe("the fingerprint", () => {
