@@ -34,6 +34,18 @@ type Props = {
  * Ugyanaz az ok, mint a gyujtemeny-lapnal, es ugyanaz a kezeles: a bukas marad,
  * de az uzenet megmondja, hogy a bolt nem valaszol es nem a kod a hibas.
  */
+
+/*
+ * MEG DINAMIKUS, ES EZT KI IS MONDJA (FE-7, 1-2. resz): a lap `searchParams`-ot
+ * olvas. Amig a sutit az elrendezes olvasta, a lap az elso sortol dinamikus
+ * volt. Most a `generateStaticParams` miatt a Next ISR-utnak veheti, es ha az
+ * epites egy lapot sem rendelt elore (ures lista), futaskor a `searchParams`
+ * `DYNAMIC_SERVER_USAGE` 500-at ad -- merve 2026-10-07 a gyujtemeny-lapon egy
+ * helyi epitesen. A 3. resz belso utvonalra viszi a parametereket, es ez a sor
+ * akkor kikerul.
+ */
+export const dynamic = "force-dynamic"
+
 export async function generateStaticParams() {
   try {
     const product_categories = await listCategories()
