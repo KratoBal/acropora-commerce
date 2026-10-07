@@ -82,7 +82,13 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "termek-valtozatos": ["statusz-200", "egy-h1"],
     "kategoria-felso": felso,
     "kategoria-level": [...kategoria, "lapozo-linkek"],
-    "kategoria-lap2": ["statusz-200", "egy-main", "lapozas-canonical"],
+    // a lapozas indexelheto marad (sajat canonicallal): a noindex csak a szurt lape
+    "kategoria-lap2": [
+      "statusz-200",
+      "egy-main",
+      "lapozas-canonical",
+      "indexelheto",
+    ],
     marka: [
       "statusz-200",
       "egy-main",
@@ -102,6 +108,8 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
       "canonical-alap",
     ],
     facet: ["statusz-200", "egy-main", "noindex", "canonical-alap"],
+    // a rendezes nem indexelheto (FE-4): ugyanaz a szabaly, mint a faceté
+    rendezes: ["statusz-200", "egy-main", "noindex", "canonical-alap"],
     "nem-letezo": ["statusz-404", "noindex"],
   }
 })()
