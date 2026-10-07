@@ -41,7 +41,7 @@ describe("POST /api/revalidate", () => {
     expect(cache.revalidateTag).not.toHaveBeenCalled()
   })
 
-  it("csak a products címke üríthető", async () => {
+  it("csak a products és a redirects címke üríthető", async () => {
     vi.stubEnv("STOREFRONT_REVALIDATE_SECRET", "a-helyes-titok")
     for (const torzs of [
       { tags: ["carts"] },
@@ -59,5 +59,12 @@ describe("POST /api/revalidate", () => {
     expect(valasz.status).toBe(200)
     expect(await valasz.json()).toEqual({ revalidated: ["products"] })
     expect(cache.revalidateTag.mock.calls).toEqual([["products"]])
+  })
+
+  it("a régi címek listája (SEO P0 PR 7c) a redirects címkét üríti", async () => {
+    vi.stubEnv("STOREFRONT_REVALIDATE_SECRET", "a-helyes-titok")
+    const valasz = await POST(keres("a-helyes-titok", { tags: ["redirects"] }))
+    expect(valasz.status).toBe(200)
+    expect(cache.revalidateTag.mock.calls).toEqual([["redirects"]])
   })
 })
