@@ -1,6 +1,7 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
+import { getImageProps } from "next/image"
 
 /**
  * A KEP-BLOKK MERETEZESE, ES A SZAMOK A TERVLAPROL JONNEK.
@@ -173,9 +174,17 @@ export const TovabbiKepek = ({
         if (!kep.url) return null
 
         const kivalasztva = kivalasztott === i
+        // FE-3: a Next optimalizaloja, a csempe merete (asztalon 126x82, lasd CSS)
+        const { props: csempe } = getImageProps({
+          src: kep.url,
+          alt: "",
+          width: 252,
+          height: 164,
+          sizes: "(min-width: 1024px) 126px, 33vw",
+        })
         const kepElem = (
           <img
-            src={kep.url}
+            {...csempe}
             alt=""
             className="termeklap-belyeg aspect-square w-full object-cover"
             data-testid="tovabbi-kep"

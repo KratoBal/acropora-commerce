@@ -56,11 +56,16 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "indexelheto",
     "json-ld-product",
     "json-ld-breadcrumb",
+    "json-ld-morzsa-egyezik",
     "alt",
     "fo-kep-nem-lusta",
+    "fo-kep-kiemelt",
+    "kep-meretezes",
     "rejtett-ful",
   ]
   const kategoria: SzabalyKulcs[] = [
+    "json-ld-breadcrumb",
+    "json-ld-morzsa-egyezik",
     "statusz-200",
     "egy-h1",
     "egy-main",
@@ -81,7 +86,12 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "termek-elfogyott": termek,
     "termek-valtozatos": ["statusz-200", "egy-h1"],
     "kategoria-felso": felso,
-    "kategoria-level": [...kategoria, "lapozo-linkek"],
+    "kategoria-level": [
+      ...kategoria,
+      "lapozo-linkek",
+      "kep-meretezes",
+      "elso-listakep-nem-lusta",
+    ],
     // a lapozas indexelheto marad (sajat canonicallal): a noindex csak a szurt lape
     "kategoria-lap2": [
       "statusz-200",
@@ -98,6 +108,8 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
       "indexelheto",
       "termek-linkek",
       "alt",
+      "kep-meretezes",
+      "elso-listakep-nem-lusta",
     ],
     kereses: [
       "statusz-200",
@@ -115,9 +127,16 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
 })()
 
 // a belso-ut szabaly minden mintan fut (FE-7 3. resz): egy lapon sem lehet
-// `/_p/`, `/_v/` vagy `/_szurt/` link, canonical vagy og:url
+// `/_p/`, `/_v/` vagy `/_szurt/` link, canonical vagy og:url; es a bolt meg a
+// webhely JSON-LD-je minden INDEXELHETO lapon all (FE-2a). A 404-en nem: a
+// Next not-found renderelese a layout JSON-LD-jet csak az RSC-adatban viszi,
+// elemkent nem (merve 2026-10-07, helyi epites), es egy 404 nem kerul indexbe.
 for (const tipus of Object.keys(TERV) as MintaTipus[])
-  TERV[tipus] = [...TERV[tipus], "belso-ut-link"]
+  TERV[tipus] = [
+    ...TERV[tipus],
+    "belso-ut-link",
+    ...(tipus === "nem-letezo" ? [] : (["json-ld-szervezet"] as const)),
+  ]
 
 type Lap = { valasz: Valasz; html: string; k: OldalKivonat }
 const tar = new Map<string, Promise<Lap>>()

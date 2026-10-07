@@ -22,9 +22,12 @@ const PRODUCT_LIMIT = 12
 function ProductCard({
   product,
   kind,
+  elso = false,
 }: {
   product: HttpTypes.StoreProduct
   kind: CategoryPageKind
+  /** A lista elso kartyaja: a kepe nem lusta (FE-3). */
+  elso?: boolean
 }) {
   const firstVariant = product.variants?.[0]
   const availability = availabilityOf({
@@ -49,6 +52,7 @@ function ProductCard({
               images={product.images}
               size="full"
               className="aspect-square rounded-none p-0"
+              prioritas={elso}
             />
             {kind === "livestock" &&
             uniquePieceOf(product.metadata) &&
@@ -201,9 +205,9 @@ export default async function CategoryProducts({
         className="grid grid-cols-2 gap-x-4 gap-y-9 medium:grid-cols-3"
         data-testid="category-products-list"
       >
-        {products.map((product) => (
+        {products.map((product, i) => (
           <li key={product.id}>
-            <ProductCard product={product} kind={kind} />
+            <ProductCard product={product} kind={kind} elso={i === 0} />
           </li>
         ))}
       </ul>

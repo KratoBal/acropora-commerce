@@ -223,13 +223,23 @@ describe("linkek és JSON-LD", () => {
     const termek = {
       "@type": "Product",
       name: "Vitalis",
-      offers: { price: "1990", priceCurrency: "HUF" },
+      offers: {
+        price: 1990,
+        priceCurrency: "HUF",
+        availability: "https://schema.org/InStock",
+      },
     }
+    // FE-2a: a lapon latszo ar es elerhetoseg, a kirakat jelolesevel
+    const LAP =
+      '<span data-testid="product-price" data-value="1990">1 990 Ft</span><button data-testid="add-product-button" data-elerhetoseg="KAPHATO">Kosárba</button>'
     expect(
-      fut("json-ld-product", oldal(JO_FEJ, `<h1>Vitalis</h1>${ld(termek)}`)),
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, `<h1>Vitalis</h1>${LAP}${ld(termek)}`),
+      ),
     ).toEqual([])
     expect(
-      fut("json-ld-product", oldal(JO_FEJ, `<h1>Más</h1>${ld(termek)}`)),
+      fut("json-ld-product", oldal(JO_FEJ, `<h1>Más</h1>${LAP}${ld(termek)}`)),
     ).toHaveLength(1)
     expect(
       fut(
@@ -361,5 +371,159 @@ describe("belső útra mutató link (FE-7)", () => {
     const fej =
       '<title>X | Acropora</title><link rel="canonical" href="https://shop-staging.acropora.hu/hu/_p/2/categories/x"/><meta property="og:url" content="/hu/_p/2/categories/x"/>'
     expect(fut("belso-ut-link", oldal(fej, ""), v)).toHaveLength(2)
+  })
+})
+
+/*
+  A JSON-LD A LAPON LATSZO ERTEKET ALLITJA (FE-2a). MI PIROSIT: mas ar vagy
+  elerhetoseg, mint a lapon; latszo ar nelkul is atmegy; SearchAction a
+  webhelyen; hianyzo szervezet; a morzsamenu mas nevet vagy mas szamu elemet ad.
+*/
+describe("strukturált adat a látható laphoz mérve (FE-2a)", () => {
+  const ld = (x: unknown) =>
+    `<script type="application/ld+json">${JSON.stringify(x)}</script>`
+  const ajanlat = (felul: Record<string, unknown> = {}) => ({
+    "@type": "Product",
+    name: "Vitalis",
+    offers: {
+      price: 1990,
+      priceCurrency: "HUF",
+      availability: "https://schema.org/InStock",
+      ...felul,
+    },
+  })
+  const lap = (ar: string, el: string) =>
+    `<h1>Vitalis</h1><span data-testid="product-price" data-value="${ar}">x</span><button data-elerhetoseg="${el}">x</button>`
+
+  it("az ár és az elérhetőség a lapé", () => {
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("1990", "KAPHATO") + ld(ajanlat())),
+      ),
+    ).toEqual([])
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("2490", "KAPHATO") + ld(ajanlat())),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("1990", "ELFOGYOTT") + ld(ajanlat())),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(
+          JO_FEJ,
+          lap("1990", "ELFOGYOTT") +
+            ld(ajanlat({ availability: "https://schema.org/OutOfStock" })),
+        ),
+      ),
+    ).toEqual([])
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, "<h1>Vitalis</h1>" + ld(ajanlat()))),
+    ).toHaveLength(2)
+  })
+
+  it("szervezet és webhely, SearchAction nélkül", () => {
+    const jo =
+      ld({ "@type": "Organization", name: "Acropora" }) +
+      ld({ "@type": "WebSite", name: "Acropora" })
+    expect(fut("json-ld-szervezet", oldal(JO_FEJ, jo))).toEqual([])
+    expect(
+      fut("json-ld-szervezet", oldal(JO_FEJ, ld({ "@type": "WebSite" }))),
+    ).toHaveLength(1)
+    const kereso =
+      ld({ "@type": "Organization" }) +
+      ld({ "@type": "WebSite", potentialAction: { "@type": "SearchAction" } })
+    expect(fut("json-ld-szervezet", oldal(JO_FEJ, kereso))).toHaveLength(1)
+  })
+
+  it("a morzsamenü JSON-LD-je a látható morzsamenü, a / jel nélkül", () => {
+    const nav =
+      '<nav aria-label="Morzsamenü"><ol><li><a href="/hu/categories/t">Termékek</a><span aria-hidden="true">/</span></li><li aria-current="page">Hanna</li></ol></nav>'
+    const morzsa = (...nevek: string[]) =>
+      ld({
+        "@type": "BreadcrumbList",
+        itemListElement: nevek.map((name, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name,
+        })),
+      })
+    expect(
+      fut(
+        "json-ld-morzsa-egyezik",
+        oldal(JO_FEJ, nav + morzsa("Termékek", "Hanna")),
+      ),
+    ).toEqual([])
+    expect(
+      fut(
+        "json-ld-morzsa-egyezik",
+        oldal(JO_FEJ, nav + morzsa("Termékek - Gyökér", "Hanna")),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut("json-ld-morzsa-egyezik", oldal(JO_FEJ, nav + morzsa("Hanna"))),
+    ).not.toEqual([])
+    // a termeklap vege a cikkszamot mutatja: az utolso nev a H1-gyel is jo
+    const termekNav =
+      '<h1>Hanna HI780-25</h1><nav aria-label="Morzsamenü"><ol><li><a href="/hu/categories/t">Termékek</a></li><li aria-current="page"><span aria-hidden="true">/</span><span>HI780-25</span></li></ol></nav>'
+    expect(
+      fut(
+        "json-ld-morzsa-egyezik",
+        oldal(JO_FEJ, termekNav + morzsa("Termékek", "Hanna HI780-25")),
+      ),
+    ).toEqual([])
+  })
+})
+
+/*
+  A TERMEKKEPEK MERETEZESE ES RANGJA (FE-3). MI PIROSIT: srcset nelkuli vagy
+  meret nelkuli termekkep atmegy; a fill-es listakep (a doboz aranya tartja)
+  hibanak szamit; a fo kep fetchpriority nelkul atmegy; az elso listakep
+  lusta, vagy egy kep nelkuli lista zold.
+*/
+describe("termékképek: méretezés és rang (FE-3)", () => {
+  const LISTA_FILL =
+    '<a href="/hu/products/a"><img alt="A" loading="lazy" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=x&amp;w=384&amp;q=50 384w" src="/_next/image?url=x&amp;w=3840&amp;q=50" style="position:absolute;height:100%;width:100%"/></a>'
+  const LISTA_ELSO =
+    '<a href="/hu/products/b"><img alt="B" fetchpriority="high" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=y&amp;w=384&amp;q=50 384w" src="/_next/image?url=y&amp;w=3840&amp;q=50"/></a>'
+  const FO =
+    '<img alt="Fő" fetchpriority="high" width="1600" height="1000" decoding="async" sizes="100vw" srcset="/_next/image?url=z&amp;w=640&amp;q=75 640w" src="/_next/image?url=z&amp;w=3840&amp;q=75" class="termeklap-nagykep w-full"/>'
+  const NYERS =
+    '<a href="/hu/products/c"><img alt="C" src="https://bolt/static/c.webp"/></a>'
+
+  it("srcset és méret (width/height vagy fill) kell minden termékképen", () => {
+    expect(
+      fut("kep-meretezes", oldal(JO_FEJ, LISTA_ELSO + LISTA_FILL + FO)),
+    ).toEqual([])
+    expect(fut("kep-meretezes", oldal(JO_FEJ, NYERS))).toHaveLength(2)
+  })
+
+  it("a fő kép fetchpriority=high", () => {
+    expect(fut("fo-kep-kiemelt", oldal(JO_FEJ, FO))).toEqual([])
+    expect(
+      fut(
+        "fo-kep-kiemelt",
+        oldal(JO_FEJ, FO.replace(' fetchpriority="high"', "")),
+      ),
+    ).toHaveLength(1)
+  })
+
+  it("az első listakép nem lusta; kép nélküli lista hiba", () => {
+    expect(
+      fut("elso-listakep-nem-lusta", oldal(JO_FEJ, LISTA_ELSO + LISTA_FILL)),
+    ).toEqual([])
+    expect(
+      fut("elso-listakep-nem-lusta", oldal(JO_FEJ, LISTA_FILL + LISTA_ELSO)),
+    ).toHaveLength(1)
+    expect(
+      fut("elso-listakep-nem-lusta", oldal(JO_FEJ, "<p>üres</p>")),
+    ).toHaveLength(1)
   })
 })

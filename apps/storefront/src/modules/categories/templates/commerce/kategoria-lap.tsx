@@ -458,9 +458,9 @@ export default async function CommerceKategoriaLap({
               className="grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
               data-testid="category-products-list"
             >
-              {products.map((product) => (
+              {products.map((product, i) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya product={product} />
+                  <CommerceTermekKartya product={product} elso={i === 0} />
                 </li>
               ))}
             </ul>

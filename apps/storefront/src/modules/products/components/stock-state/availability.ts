@@ -442,3 +442,46 @@ export function keszletSor(product: {
     kaphato: true,
   }
 }
+
+/**
+ * KOSARBA TEHETO-E A VALTOZAT. Ez allt eddig a vasarlasi allapot
+ * `useMemo`-jaban; azert kerult ide, mert a strukturalt adat (FE-2a) UGYANEZT
+ * a dontest allitja a keresonek, es ket levezetes elobb-utobb elcsuszik.
+ */
+export type ElerhetosegValtozat = {
+  manage_inventory?: boolean | null
+  allow_backorder?: boolean | null
+  inventory_quantity?: number | null
+}
+
+export function valtozatKaphato(
+  valtozat: ElerhetosegValtozat | null | undefined,
+): boolean {
+  // keszletet nem kezelunk: mindig kosarba teheto
+  if (valtozat && !valtozat.manage_inventory) return true
+  // utanrendelheto: kosarba teheto
+  if (valtozat?.allow_backorder) return true
+  // van keszlet
+  return !!valtozat?.manage_inventory && (valtozat?.inventory_quantity || 0) > 0
+}
+
+/** Kosarba teheto, de csak utanrendelesre: kezelt keszlet, nulla darab. */
+export function csakUtanrendelesre(
+  valtozat: ElerhetosegValtozat | null | undefined,
+): boolean {
+  return (
+    !!valtozat?.manage_inventory &&
+    !!valtozat.allow_backorder &&
+    (valtozat.inventory_quantity || 0) <= 0
+  )
+}
+
+/** A keszlet ismert-e (a vasarlasi allapot `inventoryKnown`-ja, ugyanaz a szabaly). */
+export function keszletIsmert(
+  valtozat: ElerhetosegValtozat | null | undefined,
+): boolean {
+  return (
+    !valtozat?.manage_inventory ||
+    typeof valtozat?.inventory_quantity === "number"
+  )
+}

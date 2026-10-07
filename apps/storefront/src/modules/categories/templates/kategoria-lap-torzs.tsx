@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { HttpTypes } from "@medusajs/types"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
@@ -10,6 +11,9 @@ import {
 import { markaAzonositok } from "@lib/util/marka-szuro"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import CategoryTemplate from "@modules/categories/templates"
+import { morzsaLd } from "@lib/seo/strukturalt-adat"
+import { getBaseURL } from "@lib/util/env"
+import JsonLd from "@modules/common/components/json-ld"
 import { categoryPageKind } from "@modules/categories/templates/category-page-data"
 import { LAP_MERET as COMMERCE_LAP_MERET } from "@modules/categories/templates/commerce/kategoria-lap"
 import { listProducts } from "@lib/data/products"
@@ -95,24 +99,46 @@ export async function kategoriaLapTorzs(
     if (!lapszamLetezik(lap, darab, meret)) notFound()
   }
 
+  /*
+    A MORZSAMENU JSON-LD-JE (FE-2a): ugyanaz a lanc es ugyanazok a nevek, mint
+    a lapon latszo morzsamenu mindket sablonban (`commerce/kategoria-lap` es
+    `category-breadcrumbs`): a `parent_category` lanc, a `nevek` terkeppel, a
+    tartalek a nyers nev.
+  */
+  const nevek = megjelenitendoNevek(mindenKategoria)
+  const alap = getBaseURL()
+  const morzsaLanc: HttpTypes.StoreProductCategory[] = []
+  for (let k: typeof lanc | null | undefined = lanc; k; k = k.parent_category)
+    morzsaLanc.unshift(k)
+  const morzsa = morzsaLd(
+    morzsaLanc.map((k) => ({
+      nev: nevek.get(k.id) ?? (k.name ?? "").trim(),
+      // a handle ekezetet es vesszot is tartalmazhat: kodolt alak
+      url: `${alap}/${params.countryCode}/categories/${encodeURIComponent(k.handle ?? "")}`,
+    })),
+  )
+
   return (
-    <CategoryTemplate
-      /*
+    <>
+      <JsonLd adat={morzsa} />
+      <CategoryTemplate
+        /*
         A TELJES FELMENO-LANC a listabol: a bolt API csak egy szulo-szintet ad
         (`kategoriaFelmenoi`). Enelkul a morzsamenu csonka, es egy mely korall
         kategoria Commerce lapot kap.
       */
-      category={lanc}
-      nevek={megjelenitendoNevek(mindenKategoria)}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
-      markak={markak}
-      lapozo={{
-        alap: kategoriaCanonical(params.countryCode, params.category),
-        keres: lapozoKeres(searchParams),
-      }}
-    />
+        category={lanc}
+        nevek={megjelenitendoNevek(mindenKategoria)}
+        sortBy={sortBy}
+        page={page}
+        countryCode={params.countryCode}
+        optionValueIds={optionValueIds}
+        markak={markak}
+        lapozo={{
+          alap: kategoriaCanonical(params.countryCode, params.category),
+          keres: lapozoKeres(searchParams),
+        }}
+      />
+    </>
   )
 }

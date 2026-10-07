@@ -17,6 +17,12 @@ export type KepAdat = {
   /** a termeklap fo kepe */
   foKep: boolean
   lusta: boolean
+  /** van `srcset` (FE-3: a Next optimalizalojanak valtozatai) */
+  srcset: boolean
+  /** `width` es `height`, vagy `fill` (a doboz aranya tartja a helyet) */
+  meretezett: boolean
+  /** `fetchpriority="high"` */
+  kiemelt: boolean
 }
 
 export type OldalKivonat = {
@@ -39,6 +45,12 @@ export type OldalKivonat = {
   lapLinkek: string[]
   /** minden `<a href>` link (a belso-ut szabalyhoz, FE-7 3. resz) */
   linkek: string[]
+  /** a lapon latszo ar(ak): `[data-testid="product-price"]` `data-value` (FE-2a) */
+  latottArak: number[]
+  /** a lapon latszo elerhetoseg(ek): `data-elerhetoseg` (KAPHATO, ELFOGYOTT, ELADVA) */
+  latottElerhetosegek: string[]
+  /** a lapon latszo morzsamenu elemei, a `/` jel nelkul (az elso morzsamenu) */
+  morzsaNevek: string[]
   /** a fulek (`role="tab"`) szama */
   fulDb: number
   /** a ful-panelek (`role="tabpanel"`): a szoveguk hossza, es rejtett-e */
@@ -90,6 +102,11 @@ export function kivonat(html: string): OldalKivonat {
       foKep,
       tartalmi: foKep || !!img.closest(TERMEK_LINK),
       lusta: img.getAttribute("loading") === "lazy",
+      srcset: !!img.getAttribute("srcset"),
+      meretezett:
+        (img.hasAttribute("width") && img.hasAttribute("height")) ||
+        img.getAttribute("data-nimg") === "fill",
+      kiemelt: img.getAttribute("fetchpriority") === "high",
     }
   })
 
@@ -118,6 +135,31 @@ export function kivonat(html: string): OldalKivonat {
     ),
     linkek: Array.from(doc.querySelectorAll("a[href]")).map(
       (a) => a.getAttribute("href") ?? "",
+    ),
+    latottArak: Array.from(
+      doc.querySelectorAll('[data-testid="product-price"][data-value]'),
+    )
+      .map((e) => Number(e.getAttribute("data-value")))
+      .filter((n) => Number.isFinite(n)),
+    latottElerhetosegek: Array.from(
+      doc.querySelectorAll("[data-elerhetoseg]"),
+    ).map((e) => e.getAttribute("data-elerhetoseg") ?? ""),
+    morzsaNevek: Array.from(
+      doc
+        .querySelector('nav[aria-label="Morzsamenü"]')
+        ?.querySelectorAll("li") ?? [],
+    ).map((li) =>
+      Array.from(li.childNodes)
+        .filter(
+          // a `/` elvalaszto `aria-hidden` span: nem resze a nevnek
+          (n) =>
+            n.nodeType !== 1 ||
+            (n as Element).getAttribute("aria-hidden") !== "true",
+        )
+        .map((n) => n.textContent ?? "")
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim(),
     ),
     fulDb: doc.querySelectorAll('[role="tab"]').length,
     panelek: Array.from(doc.querySelectorAll('[role="tabpanel"]')).map((p) => ({
