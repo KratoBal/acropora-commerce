@@ -16,7 +16,7 @@ import { mintak, type Minta } from "@lib/seo/html-szerzodes/mintaoldalak"
 
 import { A11Y_VARHATO, a11yVarhato } from "./a11y-varhato"
 import { allomasMost, vezerlokMost, type Allomas } from "./billentyuzet"
-import { tesztKosar, type KosarAllapot } from "./teszt-kosar"
+import { TESZT_HOSZTOK, tesztKosar, type KosarAllapot } from "./teszt-kosar"
 
 /**
  * AKADALYMENTESSEG A MINTAOLDALAKON ES A PENZTAR-UTON (SEO frontend FE-9).
@@ -173,6 +173,24 @@ const LAPOK = [
   "kosar",
   ...Object.keys(PENZTAR_LEPESEK),
 ]
+
+/*
+  A TESZT BOLTBAN A KOSARNAK LETRE KELL JONNIE (barracuda atvetele, #523). Nelkule
+  a penztar harom lepese "nincs teszt-kosar" okkal kihagyodik, es vele a
+  kritikus-or is vak marad a penztaron: a "0 kritikus" csendben igaz lenne. Ezert
+  egy teszt-hoszton a kosar hianya PIROS, nem kihagyott. Mas hoszton (pl. egy
+  elesre allitott futasnal) a kosar szandekosan nem jon letre, ott kihagyott.
+*/
+describe("a teszt-kosár", () => {
+  it("a teszt boltban létrejön, és eljut a fizetés lépésig", (ctx) => {
+    const hoszt = new URL(BACKEND).hostname
+    if (!(TESZT_HOSZTOK as readonly string[]).includes(hoszt))
+      return ctx.skip(`a backend (${hoszt}) nem teszt bolt: ott nem írunk`)
+    expect(KOSAR.kosarId, "a teszt-kosár nem jött létre").not.toBeNull()
+    if (KOSAR.kosarId !== null)
+      expect(KOSAR.lepesek).toEqual(["address", "delivery", "payment"])
+  })
+})
 
 describe("axe (WCAG A/AA és best-practice)", () => {
   for (const lap of LAPOK) {
