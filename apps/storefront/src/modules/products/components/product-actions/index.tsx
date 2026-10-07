@@ -7,7 +7,8 @@ import { Button } from "@modules/common/components/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { isEqual } from "lodash"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
+import { aktualisKeres } from "@lib/util/aktualis-keres"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 import StockState from "../stock-state"
@@ -48,7 +49,6 @@ export default function ProductActions({
 }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
@@ -103,7 +103,8 @@ export default function ProductActions({
   }, [product.variants, options])
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
+    // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
+    const params = aktualisKeres()
     const value = isValidVariant ? selectedVariant?.id : null
 
     if (params.get("v_id") === value) {

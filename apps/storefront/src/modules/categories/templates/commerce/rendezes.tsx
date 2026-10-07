@@ -1,6 +1,8 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+
+import { aktualisKeres } from "@lib/util/aktualis-keres"
 
 import {
   RENDEZES_CIM,
@@ -19,10 +21,10 @@ import {
 export default function CommerceRendezes({ sortBy }: { sortBy: SortOptions }) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   const valtas = (ertek: string) => {
-    const params = new URLSearchParams(searchParams?.toString() ?? "")
+    // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
+    const params = aktualisKeres()
     params.set("sortBy", ertek)
     params.delete("page")
     router.push(`${pathname}?${params.toString()}`, { scroll: false })

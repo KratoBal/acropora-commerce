@@ -3,12 +3,8 @@
 import { addToCart } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { isEqual } from "lodash"
-import {
-  useParams,
-  usePathname,
-  useSearchParams,
-  useRouter,
-} from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
+import { aktualisKeres } from "@lib/util/aktualis-keres"
 import { useEffect, useMemo, useState } from "react"
 
 import {
@@ -118,7 +114,6 @@ export function VasarlasProvider({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   /*
     LUSTA KEZDOERTEK, NEM URES OBJEKTUM: igy a KISZOLGALON is ki van valasztva
@@ -193,7 +188,8 @@ export function VasarlasProvider({
   }, [product.variants, options])
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
+    // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
+    const params = aktualisKeres()
     const value = isValidVariant ? selectedVariant?.id : null
 
     if (params.get("v_id") === value) {
