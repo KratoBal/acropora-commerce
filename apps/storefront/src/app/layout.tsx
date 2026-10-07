@@ -1,6 +1,7 @@
 import { getBaseURL } from "@lib/util/env"
 import { szervezetLd, webhelyLd } from "@lib/seo/strukturalt-adat"
 import JsonLd from "@modules/common/components/json-ld"
+import RumJelento from "@modules/common/components/rum-jelento"
 import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
 import { Metadata } from "next"
 import localFont from "next/font/local"
@@ -61,6 +62,15 @@ const newsreader = localFont({
   ],
   display: "swap",
   variable: "--terv-betu-kiemelt",
+  /*
+    NINCS ELOTOLTES (FE-7). A ket fajl 416 KB (196 + 220), es a `font-kiemelt`
+    ma csak a kosar komponenseiben all (pickup-notice, split-notice,
+    line-state, empty-cart-message); a publikus lapokon egyszer sem (merve a
+    stage-en 2026-10-07: kezdolap es termeklap, 0 elofordulas). Az elotoltes
+    minden lapon az LCP-kep elol vette el a savszelesseget. A betu a kosarban
+    a `swap` miatt a tartalekkal azonnal latszik, es betoltodik, amikor kell.
+  */
+  preload: false,
   adjustFontFallback: "Times New Roman",
 })
 
@@ -105,6 +115,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <main className="relative">{props.children}</main>
         {/* a Fogyasztobarat widgetje minden oldalon (Balazs kerese, 2026-10-05) */}
         <FogyasztobaratWidget />
+        {/* FE-7 RUM: a Core Web Vitals a /api/rum utra, oldaltipusonkent */}
+        <RumJelento />
       </body>
     </html>
   )
