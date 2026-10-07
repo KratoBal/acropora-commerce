@@ -1,5 +1,7 @@
 import { Metadata } from "next"
 
+import { szurtMetaadat } from "@lib/seo/oldal-metaadat"
+
 import {
   storeLapTorzs,
   storeMetaadat,
@@ -19,7 +21,7 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
-  return storeMetaadat(countryCode, await props.searchParams)
+  return szurtMetaadat(storeMetaadat(countryCode, await props.searchParams))
 }
 
 export default async function StoreSzurt(props: Props) {

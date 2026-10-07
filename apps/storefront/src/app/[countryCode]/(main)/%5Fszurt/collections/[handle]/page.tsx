@@ -1,5 +1,7 @@
 import { Metadata } from "next"
 
+import { szurtMetaadat } from "@lib/seo/oldal-metaadat"
+
 import {
   markaLapTorzs,
   type MarkaKeres,
@@ -19,7 +21,7 @@ type Props = {
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  return alapMetaadat({ params: props.params })
+  return szurtMetaadat(await alapMetaadat({ params: props.params }))
 }
 
 export default async function MarkaSzurt(props: Props) {

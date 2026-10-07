@@ -24,6 +24,7 @@ export type MintaTipus =
   | "marka"
   | "kereses"
   | "facet"
+  | "rendezes"
   | "nem-letezo"
 
 export type Minta = {
@@ -237,6 +238,16 @@ export function mintakAdatbol(
           tipus: "facet",
           ut: null,
           hianyzik: "a levél-kategória termékeinek nincs márkája",
+        },
+    level
+      ? {
+          tipus: "rendezes",
+          ut: p(`/categories/${level.handle}?sortBy=price_asc`),
+        }
+      : {
+          tipus: "rendezes",
+          ut: null,
+          hianyzik: "nincs termékes levél-kategória",
         },
     {
       tipus: "nem-letezo",
