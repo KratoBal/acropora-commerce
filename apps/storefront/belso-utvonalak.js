@@ -81,8 +81,17 @@ function belsoAtirasok() {
  * lennenek.
  */
 function belsoUtKivulrol(pathname) {
-  const masodik = pathname.split("/")[2]
-  return BELSO_ELOTAGOK.includes(masodik)
+  const masodik = pathname.split("/")[2] ?? ""
+  // A kodolt alak (`%5Fv`, `%5fv`) is belso ut. Merve 2026-10-07: a Next maga
+  // sem szolgalja ki (404), de ez az o utvonal-illesztesen mulik, nem rajtunk
+  // (barracuda elozetes review, 3. pont), ezert az orzo a dekodolt alakot nezi.
+  let dekodolt = masodik
+  try {
+    dekodolt = decodeURIComponent(masodik)
+  } catch {
+    // hibas kodolas: a nyers alak marad
+  }
+  return BELSO_ELOTAGOK.includes(dekodolt)
 }
 
 module.exports = {

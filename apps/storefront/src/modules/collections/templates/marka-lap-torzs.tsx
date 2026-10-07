@@ -4,6 +4,8 @@ import { getCollectionByHandle } from "@lib/data/collections"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import CollectionTemplate from "@modules/collections/templates"
+import { listProducts } from "@lib/data/products"
+import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
 import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
@@ -31,6 +33,16 @@ export async function markaLapTorzs(
 
   if (!collection) {
     notFound()
+  }
+
+  // a nem letezo lapszam 404 (`lapszam.ts`); a lista 12-es lapokat mutat
+  const lap = csakLapszam(searchParams)
+  if (lap !== null) {
+    const darab = await listProducts({
+      countryCode: params.countryCode,
+      queryParams: { collection_id: [collection.id], limit: 1 },
+    }).then(({ response }) => response.count)
+    if (!lapszamLetezik(lap, darab, 12)) notFound()
   }
 
   return (

@@ -48,9 +48,11 @@ describe("a kategória-sablon ágai", () => {
     expect(route).toContain("markak={markak}")
     // A teljes felmeno-lanc a listabol (a bolt API csak egy szulot ad).
     expect(route).toContain('fields: "id,name,handle,parent_category_id"')
+    // FE-7 3. resz: a lanc valtozoba kerult, mert a lapszam-ellenorzes is hasznalja
     expect(route).toMatch(
-      /category=\{teljesLanc\(\s*productCategory,\s*kategoriaFelmenoi\(productCategory\.id, mindenKategoria\),?\s*\)\}/,
+      /const lanc = teljesLanc\(\s*productCategory,\s*kategoriaFelmenoi\(productCategory\.id, mindenKategoria\),?\s*\)/,
     )
+    expect(route).toContain("category={lanc}")
     const ag = sablon.slice(
       sablon.indexOf("<CommerceKategoriaLap"),
       sablon.indexOf("</main>"),

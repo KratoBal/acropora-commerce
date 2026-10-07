@@ -8,6 +8,10 @@ import { MARKA_PARAM, markaAzonositok } from "@lib/util/marka-szuro"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
+import { lapozottCim } from "@lib/util/belso-lap-metaadat"
+import { listProducts } from "@lib/data/products"
+import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
+import { notFound } from "next/navigation"
 import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
 
 /**
@@ -42,8 +46,10 @@ export function storeMetaadat(
   const { cim, leiras } = keresesMetaadat(
     typeof searchParams.q === "string" ? searchParams.q : null,
   )
+  const lapozott = Number.isFinite(oldal) && oldal > 1
   return {
-    title: cim,
+    // a lapozott lap cime a lapszammal (`belso-lap-metaadat.ts`)
+    title: lapozott ? lapozottCim(cim, oldal) : cim,
     description: leiras,
     alternates: {
       canonical: storeCanonical(
@@ -54,10 +60,20 @@ export function storeMetaadat(
   }
 }
 
-export function storeLapTorzs(
+export async function storeLapTorzs(
   params: { countryCode: string },
   searchParams: StoreKeres,
 ) {
+  // a nem letezo lapszam 404 (`lapszam.ts`); a lista 12-es lapokat mutat
+  const lap = csakLapszam(searchParams)
+  if (lap !== null) {
+    const darab = await listProducts({
+      countryCode: params.countryCode,
+      queryParams: { limit: 1 },
+    }).then(({ response }) => response.count)
+    if (!lapszamLetezik(lap, darab, 12)) notFound()
+  }
+
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
   const kereses = keresesSzovege(searchParams.q)

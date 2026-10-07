@@ -156,6 +156,9 @@ export async function middleware(request: NextRequest) {
       response.cookies.set(CACHE_AZONOSITO_SUTI, cacheId, {
         maxAge: CACHE_AZONOSITO_ELETTARTAM_MP,
       })
+      // a `Set-Cookie`-s valaszt kozbulso tar ne tarolja: kulonben ugyanazt a
+      // cache-azonositot adna ki mindenkinek (barracuda elozetes review, 4.)
+      response.headers.set("Cache-Control", "private, no-store")
       return response
     }
     return NextResponse.next()

@@ -75,6 +75,20 @@ export async function termekLapTorzs(
     notFound()
   }
 
+  /*
+    IDEGEN VALTOZAT: 404 (FE-7 3. resz, barracuda elozetes review, 2. lelet).
+    Az atiras csak az alakot nezi (`variant_` + 26 jel), tehat egy kitalalt
+    azonosito eddig 200-at es egy uj ISR-bejegyzest kapott: a tar kivulrol
+    korlatlanul tolthato volt. A torzs elejen all, nem `Suspense` alatt, hogy a
+    valasz tenyleg 404 legyen.
+  */
+  if (
+    selectedVariantId &&
+    !pricedProduct.variants?.some((v) => v.id === selectedVariantId)
+  ) {
+    notFound()
+  }
+
   const images = getImagesForVariant(pricedProduct, selectedVariantId)
   const categories = await listCategories({
     fields: "id,name,handle,parent_category_id",
