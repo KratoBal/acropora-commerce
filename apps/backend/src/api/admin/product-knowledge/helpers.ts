@@ -26,13 +26,14 @@ export const productKnowledgeOf = async (
   return {
     product_id,
     facts: facts
-      .map(({ field, value, unit, status, source_type, revision }) => ({
+      .map(({ field, value, unit, status, source_type, revision, public: p }) => ({
         field,
         value: value ?? null,
         unit: unit ?? null,
         status,
         source_type: source_type ?? null,
         revision,
+        public: p,
       }))
       .sort((a, b) => a.field.localeCompare(b.field)),
     copy: copy

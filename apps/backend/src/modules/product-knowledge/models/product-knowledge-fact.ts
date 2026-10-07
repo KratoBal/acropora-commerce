@@ -22,6 +22,14 @@ export const ProductKnowledgeFact = model
     status: model.text(),
     source_type: model.text().nullable(),
     revision: model.number(),
+    /**
+     * The OS definition's `public` flag (SEO P0 PR 2c). The store route hands
+     * out a fact only if it is VERIFIED AND public: the second gate, as for
+     * the status. Default `false`: a row written before the OS sent the flag
+     * stays hidden until the next projection writes it (brief: a full
+     * knowledge re-projection right after the deploy).
+     */
+    public: model.boolean().default(false),
   })
   .indexes([
     {

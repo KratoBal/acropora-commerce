@@ -15,6 +15,7 @@ const fact = (over: Record<string, unknown> = {}) => ({
   status: "VERIFIED",
   source_type: "MANUFACTURER_PAGE",
   revision: 1,
+  public: true,
   ...over,
 })
 
@@ -177,3 +178,36 @@ describe("the routes", () => {
     ])
   })
 })
+
+/*
+  THE PUBLIC GATE (SEO P0 PR 2c). What turns it red: a VERIFIED fact whose OS
+  definition is not public reaching the buyer; the admin route filtering it (the
+  OS diff would never see the row); a PUT without the flag accepted (an old OS
+  would store hidden facts without a word).
+*/
+describe("the public flag", () => {
+  it("the validator requires a boolean public on every fact", () => {
+    const ok = (f: unknown) =>
+      AdminPutProductKnowledge.safeParse({ facts: [f], copy: [] }).success
+    expect(ok(fact())).toBe(true)
+    expect(ok(fact({ public: false }))).toBe(true)
+    const { public: _p, ...nincs } = fact()
+    expect(ok(nincs)).toBe(false)
+    expect(ok(fact({ public: "true" }))).toBe(false)
+  })
+
+  it("store GET hides a VERIFIED but non-public fact; admin GET keeps it with its flag", async () => {
+    const rejtett = [fact({ field: "warranty", value: "2 év", public: false })]
+    expect(
+      (await call(storeGet, scope(true, rejtett).scope)).product_knowledge
+    ).toEqual(SHAPE)
+    const admin = (await call(adminGet, scope(true, rejtett).scope))
+      .product_knowledge as { facts: { field: string; public: boolean }[] }
+    expect(admin.facts.map((f) => [f.field, f.public])).toEqual([
+      ["dosing", true],
+      ["packSize", true],
+      ["warranty", false],
+    ])
+  })
+})
+
