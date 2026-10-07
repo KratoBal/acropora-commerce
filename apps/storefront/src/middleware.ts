@@ -2,6 +2,11 @@ import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
 import { statikusGyokerUt } from "@lib/util/statikus-utak"
 import { belsoUtKivulrol } from "../belso-utvonalak"
+import {
+  CACHE_AZONOSITO_ELETTARTAM_MP,
+  CACHE_AZONOSITO_SUTI,
+  cacheAzonositoKell,
+} from "@lib/util/cache-azonosito"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -133,10 +138,12 @@ export async function middleware(request: NextRequest) {
   const urlHasCountry = firstPathSegment === country.toLowerCase()
 
   if (urlHasCountry) {
-    if (!cacheIdCookie) {
+    // FE-7 3. resz: csak annak, akinek kosara vagy belepese van; a publikus
+    // lap valasza igy `Set-Cookie` nelkul megy (`cache-azonosito.ts`).
+    if (cacheAzonositoKell(request.cookies)) {
       const response = NextResponse.next()
-      response.cookies.set("_medusa_cache_id", cacheId, {
-        maxAge: 60 * 60 * 24,
+      response.cookies.set(CACHE_AZONOSITO_SUTI, cacheId, {
+        maxAge: CACHE_AZONOSITO_ELETTARTAM_MP,
       })
       return response
     }
