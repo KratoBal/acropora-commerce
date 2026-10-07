@@ -43,6 +43,7 @@ function ProductCard({
         <div className={sold ? "opacity-55" : ""}>
           <div className="relative">
             <Thumbnail
+              alt={product.title ?? ""}
               thumbnail={product.thumbnail}
               images={product.images}
               size="full"

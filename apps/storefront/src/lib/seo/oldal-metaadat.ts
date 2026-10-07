@@ -143,3 +143,60 @@ export const ANGOL_HELYKITOLTOK: readonly RegExp[] = [
   /View your cart/i,
   /Verify your email/i,
 ]
+
+/**
+ * ANGOL SZAVAK A LAPOK STATIKUS SZOVEGEIBEN (barracuda atvetele, #519).
+ *
+ * Az `ANGOL_HELYKITOLTOK` csak a MAR MEGTALALT starter-szovegeket ismeri, tehat
+ * egy uj lap mas angol szovege (pl. a regi „Order Confirmed” / „You purchase was
+ * successful”) atcsuszik rajta. Ez a lista a szavakra figyel. CSAK a lapok
+ * statikus `title` es `description` szovegere valo: termeknevekben (Coral Food,
+ * All-in-one) angol szo jogosan allhat, ezert a renderelt cimre nem.
+ *
+ * A hatar betu-alapu (`\p{L}`), nem `\b`: a `\b` az ekezetes betut nem-betunek
+ * latja, es egy magyar szo belsejeben is hatart talalna.
+ */
+export const ANGOL_SZAVAK = [
+  "the",
+  "your",
+  "our",
+  "all",
+  "and",
+  "with",
+  "order",
+  "orders",
+  "confirmed",
+  "purchase",
+  "successful",
+  "view",
+  "verify",
+  "email",
+  "account",
+  "sign",
+  "login",
+  "cart",
+  "checkout",
+  "store",
+  "shop",
+  "product",
+  "products",
+  "collection",
+  "category",
+  "explore",
+  "search",
+  "results",
+  "page",
+  "not",
+  "found",
+  "welcome",
+] as const
+
+const ANGOL_SZO = new RegExp(
+  `(?<!\\p{L})(${ANGOL_SZAVAK.join("|")})(?!\\p{L})`,
+  "iu",
+)
+
+/** Az elso angol szo a szovegben, vagy `null`. */
+export function angolSzo(szoveg: string): string | null {
+  return ANGOL_SZO.exec(szoveg)?.[1] ?? null
+}

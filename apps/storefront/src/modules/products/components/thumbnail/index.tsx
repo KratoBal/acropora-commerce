@@ -6,6 +6,13 @@ import PlaceholderImage from "@modules/common/icons/placeholder-image"
 
 type ThumbnailProps = {
   thumbnail?: string | null
+  /**
+   * A KEP ALT-JA: A TERMEK NEVE (Balazs 2026-10-07, 5. pont; barracuda atvetele,
+   * #519). Itt korabban a "Thumbnail" szo allt alt-kent minden listakepen, ami a
+   * dontesben szo szerint tiltott. Nev nelkul a kep diszitokent `alt=""`-t kap,
+   * nem egy generikus szot.
+   */
+  alt?: string
   images?: { url?: string }[] | null
   size?: "small" | "medium" | "large" | "full" | "square"
   isFeatured?: boolean
@@ -32,6 +39,7 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   isFeatured: _isFeatured,
   className,
   "data-testid": dataTestid,
+  alt = "",
 }) => {
   const initialImage = thumbnail || images?.[0]?.url
 
@@ -78,7 +86,7 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
       )}
       data-testid={dataTestid}
     >
-      <ImageOrPlaceholder image={initialImage} size={size} />
+      <ImageOrPlaceholder image={initialImage} size={size} alt={alt} />
     </Container>
   )
 }
@@ -86,11 +94,12 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
 const ImageOrPlaceholder = ({
   image,
   size,
-}: Pick<ThumbnailProps, "size"> & { image?: string }) => {
+  alt,
+}: Pick<ThumbnailProps, "size"> & { image?: string; alt: string }) => {
   return image ? (
     <Image
       src={image}
-      alt="Thumbnail"
+      alt={alt}
       /**
        * BELEFER, NEM BELEVAG (`contain`, nem `cover`).
        *

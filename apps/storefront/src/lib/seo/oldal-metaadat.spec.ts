@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   ANGOL_HELYKITOLTOK,
+  angolSzo,
   kategoriaLeiras,
   keresesMetaadat,
   kezdolapLeiras,
@@ -137,11 +138,34 @@ describe("egyetlen lap sem ad angol helykitöltőt", () => {
       for (const m of Array.from(
         forras.matchAll(/\b(title|description):\s*["`]([^"`]+)["`]/g),
       ))
-        if (angol(m[2]!))
+        // a `${...}` kifejezes kod, nem szoveg (pl. `${STORE_NAME}`): kimarad
+        if (angol(m[2]!) || angolSzo(m[2]!.replace(/\$\{[^}]*\}/g, " ")))
           talalatok.push(`${relative(gyoker, ut)}: ${m[1]} = ${m[2]}`)
     }
     // ismert pozitiv kontroll: a kereso tenyleg lapokat latott
     expect(lapok).toBeGreaterThan(20)
     expect(talalatok).toEqual([])
+  })
+})
+
+describe("angol szó a statikus szövegben", () => {
+  it("a régi visszaigazoló lap szövegét a lista nélkül is megfogja", () => {
+    // a 343b6da-ban ez allt az order/[id]/confirmed lapon; a tiltolista nem latta
+    expect(angolSzo("Order Confirmed")).toBe("Order")
+    expect(angolSzo("You purchase was successful")).toBe("purchase")
+    expect(angolSzo("Explore all of our products.")).not.toBeNull()
+  })
+
+  it("magyar szövegben ékezet mellett sem talál hamisan", () => {
+    for (const s of [
+      "Rendelés visszaigazolása",
+      "A rendelésedet sikeresen leadtad.",
+      "E-mail-cím megerősítése",
+      "Állatok és korallok",
+      "Összes termék | Acropora",
+      "Kosár",
+      "Pénztár",
+    ])
+      expect(angolSzo(s), s).toBeNull()
   })
 })
