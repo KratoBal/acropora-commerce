@@ -356,6 +356,16 @@ jobs:
       # vegen egy helyen all ("KIHAGYOTT").
       #
       # Ha a kirakat nem indul el, a naplo vege kiirodik, es a lepes piros.
+      #
+      # AKADALYMENTESSEG (FE-9), UGYANEBBEN A LEPESBEN: az axe es a
+      # billentyuzetes bejaras VALODI bongeszoben fut (fej nelkuli Chromium a
+      # `playwright-core`-bol), mert a kontraszt es a fokusz-stilus a szamolt
+      # CSS-bol all. A penztar lepeseihez a teszt egy kosarat hoz letre a TESZT
+      # boltban (`teszt-kosar.ts`; mas hosztra nem ir). Az ismert hibak listaja
+      # az `a11y-varhato.ts`-ben all, ugyanazzal a ket iranyu kotessel.
+      - name: Fej nelkuli Chromium (akadalymentesseg)
+        run: pnpm --filter @dtc/storefront exec playwright-core install --with-deps chromium-headless-shell
+
       - name: SEO HTML-szerzodes
         run: |
           pnpm --filter @dtc/storefront start > /tmp/kirakat.log 2>&1 &

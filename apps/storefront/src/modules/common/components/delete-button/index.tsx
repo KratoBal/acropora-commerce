@@ -47,10 +47,16 @@ const DeleteButton = ({
         className,
       )}
     >
+      {/*
+        IKON-GOMBNAL A NEV AZ `aria-label`-BEN (FE-9, axe `button-name`): a
+        kosar sora a felirat nelkuli kukat mutatja, es a felolvaso eddig
+        egy nev nelkuli gombot olvasott fel. Ha van felirat, az a nev.
+      */}
       <button
         className="flex gap-x-1 text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer"
         onClick={() => handleDelete(id)}
         data-testid={dataTestid}
+        aria-label={children ? undefined : "Tétel törlése"}
       >
         {isDeleting ? <Spinner className="animate-spin" /> : <Trash />}
         <span>{children}</span>

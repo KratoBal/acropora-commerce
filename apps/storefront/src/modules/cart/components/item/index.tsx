@@ -190,6 +190,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
               <NotIncrementable />
             ) : (
               <CartItemSelect
+                aria-label="Mennyiség"
                 value={item.quantity}
                 onChange={(value) =>
                   changeQuantity(parseInt(value.target.value))

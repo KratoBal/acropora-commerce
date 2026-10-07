@@ -5,12 +5,19 @@ const Radio = ({
   checked: boolean
   "data-testid"?: string
 }) => {
+  /*
+    CSAK JELZO, NEM VEZERLO (FE-9; barracuda atvetele, #523). Mindharom hivo egy
+    valodi radio vagy listaelem (headlessui `Radio`, `Listbox.Option`) BELSEJEBE
+    teszi, es az a fokuszalhato vezerlo, sajat lathato fokusszal (mert
+    billentyuzettel 2026-10-07). Gombkent itt egy masodik, nev nelkuli
+    Tab-allomas allt, mindig `aria-checked="true"`-val (axe `button-name`
+    kritikus, `nested-interactive`, `target-size`). Ugyanaz az elrendezes, mint
+    a gombe; a felolvaso elol rejtett, mert a kulso vezerlo mondja ki az allapotot.
+  */
   return (
     <>
-      <button
-        type="button"
-        role="radio"
-        aria-checked="true"
+      <span
+        aria-hidden="true"
         data-state={checked ? "checked" : "unchecked"}
         className="group relative flex h-5 w-5 items-center justify-center outline-none"
         data-testid={dataTestId || "radio-button"}
@@ -25,7 +32,7 @@ const Radio = ({
             </span>
           )}
         </div>
-      </button>
+      </span>
     </>
   )
 }
