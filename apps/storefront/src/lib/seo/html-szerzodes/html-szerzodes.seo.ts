@@ -2,6 +2,7 @@
 import { beforeAll, describe, expect, it, type TestContext } from "vitest"
 
 import { ELES_HOSZTOK } from "@lib/util/robots-hazirend"
+import { szuroLink } from "@lib/seo/szuro-link"
 
 import { kivonat, type OldalKivonat } from "./kivonat"
 import { mintak, type Minta, type MintaTipus } from "./mintaoldalak"
@@ -257,6 +258,24 @@ describe("változat közvetlen URL-je (Balázs 2. pontja)", () => {
       "v-id",
       valtozatHibak(minta.valtozat.opciok, vIddel, vIdNelkul),
     )
+  })
+})
+
+/*
+ * A SZURO-LINK SZABALY POZITIV KONTROLLJA (FE-4b). A szabaly egy szurt link
+ * nelkuli lapon uresen zold. A facet mintan a marka-lista mindig szurt linket
+ * ad; ha ott nulla van, a szabaly zoldje semmit nem merne. (A kereses mintaja
+ * ma egymarkas talalat, szurt link nelkul: ott a szabalyt a unit-fixtura meri.)
+ */
+describe("a szűrő-link szabály lát szűrt linket", () => {
+  it("facet", async (ctx) => {
+    const minta = mintaja("facet")
+    if (!minta?.ut) return ctx.skip(`nincs minta (${minta?.hianyzik})`)
+    const { k } = await lap(minta.ut)
+    expect(
+      k.linkRel.filter((l) => szuroLink(l.href)).length,
+      minta.ut,
+    ).toBeGreaterThan(0)
   })
 })
 
