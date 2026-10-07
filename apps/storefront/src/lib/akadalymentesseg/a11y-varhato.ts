@@ -42,8 +42,8 @@ const LAPOK_KOZOS = [
 
 /**
  * A PENZTAR MERT HIBAI (2026-10-07, a teszt boltban, FE-1 + FE-8 + FE-9 build):
- * - a cim-urlap mezoinek `<label htmlFor={name}>`-je nem kotodik, mert az
- *   `input`-nak nincs `id`-je (`common/components/input`): 8 mezo nev nelkul;
+ * - (JAVITVA ebben a PR-ben, acrobot 27463: a kozos `Input` cimkeje es mezoje
+ *   ossze van kotve; a cim-urlap 8 mezoje nevet kapott);
  * - az orszag `select`-je nev nelkul, es a fokusza nem latszik;
  * - a szallitasi es fizetesi mod radiojaban egy belso, nev nelkuli `button` is
  *   kap Tab-allomast, lathato fokusz nelkul (20x20 px celpont);
@@ -59,8 +59,6 @@ export const A11Y_VARHATO: readonly A11yVarhato[] = [
   ]),
   ...penztar("penztar-cim", [
     "color-contrast",
-    "label",
-    "label-title-only",
     "page-has-heading-one",
     "select-name",
     "bill:lathato-fokusz",
