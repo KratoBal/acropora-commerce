@@ -261,6 +261,12 @@ describe("lapozó és fülek (barracuda átvétele, #519)", () => {
     expect(fut("lapozo-linkek", jo, v)).toEqual([])
     expect(fut("lapozo-linkek", mas, v)).toHaveLength(1)
     expect(fut("lapozo-linkek", gomb, v)).toHaveLength(1)
+    // a kategoria valodi lapozoja relativ linket ad (2026-10-07, a kirakat HTML-jebol)
+    const relativ = oldal(
+      JO_FEJ,
+      '<a href="?page=2" class="flex h-[54px] w-full max-w-[320px] items-center justify-center bo">Továbbiak</a>',
+    )
+    expect(fut("lapozo-linkek", relativ, v)).toEqual([])
     // csak a 3. lapra mutato link: nem a 2. lap
     const harmadik = oldal(JO_FEJ, '<a href="/hu/categories/x?page=3">3</a>')
     expect(fut("lapozo-linkek", harmadik, v)).toHaveLength(1)

@@ -26,10 +26,11 @@ export default function KapcsolatKartya({
       data-testid="kapcsolat-kartya"
     >
       <div className="aspect-[32/30] w-full overflow-hidden bg-acr-white">
+        {/* termekkep, tehat a neve az alt-ja (Balazs 2026-10-07, 5. pont) */}
         {kep ? (
           <img
             src={kep}
-            alt=""
+            alt={product.title ?? ""}
             className="h-full w-full object-contain"
             data-testid="kapcsolat-kartya-kep"
           />

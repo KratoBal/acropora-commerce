@@ -126,9 +126,9 @@ describe("a várható-piros lista", () => {
       ).toBe(true)
   })
 
-  it("a típus-szűkítés köt: a felső kategória ALT-ja nem várható", () => {
-    expect(varhato("alt", "kategoria-level")?.gazda).toBe("P0 PR 9")
-    expect(varhato("alt", "kategoria-felso")).toBeNull()
+  it("a típus-szűkítés köt: a keresés noindexe várható, a 404-é nem", () => {
+    expect(varhato("noindex", "kereses")?.gazda).toBe("FE-4")
     expect(varhato("noindex", "nem-letezo")).toBeNull()
+    expect(varhato("alt", "termek-gtin")).toBeNull()
   })
 })

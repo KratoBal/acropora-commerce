@@ -30,9 +30,17 @@ const cimNev = (cim: string) => cim.replace(/\s*\|\s*[^|]+$/, "").trim()
 
 const angol = (s: string) => ANGOL_HELYKITOLTOK.some((m) => m.test(s))
 
-function utvonal(cim: string): { ut: string; query: string } | null {
+/**
+ * Az ut es a query. A `viszonyitva` a lap sajat utja: egy relativ link
+ * (`?page=2`) ahhoz kepest ertendo, nem a gyokerhez (a kategoria lapozoja
+ * pontosan ilyet ad, merve 2026-10-07).
+ */
+function utvonal(
+  cim: string,
+  viszonyitva = "/",
+): { ut: string; query: string } | null {
   try {
-    const u = new URL(cim, "http://alap.invalid")
+    const u = new URL(cim, new URL(viszonyitva, "http://alap.invalid"))
     return { ut: decodeURIComponent(u.pathname), query: u.search }
   } catch {
     return null
@@ -163,7 +171,7 @@ export const SZABALYOK = {
   "lapozo-linkek": (k, v) => {
     const sajat = utvonal(v.ut)?.ut
     return k.lapLinkek.some((h) => {
-      const u = utvonal(h)
+      const u = utvonal(h, v.ut)
       return u?.ut === sajat && new URLSearchParams(u.query).get("page") === "2"
     })
       ? []

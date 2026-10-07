@@ -50,18 +50,6 @@ export const VARHATO: readonly Varhato[] = [
     ok: "a márkalapnak nincs canonicalja",
   },
   {
-    szabaly: "alt",
-    tipusok: [
-      "termek-gtin",
-      "termek-gtin-nelkul",
-      "termek-elfogyott",
-      "kategoria-level",
-      "marka",
-    ],
-    gazda: "P0 PR 9",
-    ok: 'a listakép alt-ja "Thumbnail", a kapcsolódó termékek képe alt=""',
-  },
-  {
     szabaly: "v-id",
     gazda: "FE-7 3. rész",
     ok: "a ?v_id közvetlen megnyitása az első HTML-ben a változatot mutassa",
