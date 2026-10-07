@@ -11,9 +11,12 @@ export default async function ProductPreview({
   product,
   isFeatured,
   region: _region,
+  elso = false,
 }: {
   product: HttpTypes.StoreProduct
   isFeatured?: boolean
+  /** A lista elso kartyaja: a kepe nem lusta (FE-3). */
+  elso?: boolean
   region: HttpTypes.StoreRegion
 }) {
   // const pricedProduct = await listProducts({
@@ -72,6 +75,7 @@ export default async function ProductPreview({
             images={product.images}
             size="full"
             isFeatured={isFeatured}
+            prioritas={elso}
           />
           {egyediPeldany && <UniquePieceBadge />}
         </div>

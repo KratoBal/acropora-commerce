@@ -61,8 +61,11 @@ export function gyorsKosar(
 export default function CommerceTermekKartya({
   product,
   tomor = false,
+  elso = false,
 }: {
   product: HttpTypes.StoreProduct
+  /** A lista elso kartyaja: a kepe a hajtas felett all, nem lusta (FE-3). */
+  elso?: boolean
   /**
    * TOMOR ALAK `small` ALATT (a keresesi talalatok mobil kerete, 254:87):
    * ket oszlop 170 px-es kartyakkal, 100 px-es kep, 13 px-es nev, 15 px-es
@@ -123,6 +126,7 @@ export default function CommerceTermekKartya({
               images={product.images}
               size="full"
               className="h-full rounded-none p-0 shadow-none"
+              prioritas={elso}
             />
           </div>
           <div

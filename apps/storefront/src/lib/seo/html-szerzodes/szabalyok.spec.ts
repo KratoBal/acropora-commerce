@@ -481,3 +481,49 @@ describe("strukturált adat a látható laphoz mérve (FE-2a)", () => {
     ).toEqual([])
   })
 })
+
+/*
+  A TERMEKKEPEK MERETEZESE ES RANGJA (FE-3). MI PIROSIT: srcset nelkuli vagy
+  meret nelkuli termekkep atmegy; a fill-es listakep (a doboz aranya tartja)
+  hibanak szamit; a fo kep fetchpriority nelkul atmegy; az elso listakep
+  lusta, vagy egy kep nelkuli lista zold.
+*/
+describe("termékképek: méretezés és rang (FE-3)", () => {
+  const LISTA_FILL =
+    '<a href="/hu/products/a"><img alt="A" loading="lazy" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=x&amp;w=384&amp;q=50 384w" src="/_next/image?url=x&amp;w=3840&amp;q=50" style="position:absolute;height:100%;width:100%"/></a>'
+  const LISTA_ELSO =
+    '<a href="/hu/products/b"><img alt="B" fetchpriority="high" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=y&amp;w=384&amp;q=50 384w" src="/_next/image?url=y&amp;w=3840&amp;q=50"/></a>'
+  const FO =
+    '<img alt="Fő" fetchpriority="high" width="1600" height="1000" decoding="async" sizes="100vw" srcset="/_next/image?url=z&amp;w=640&amp;q=75 640w" src="/_next/image?url=z&amp;w=3840&amp;q=75" class="termeklap-nagykep w-full"/>'
+  const NYERS =
+    '<a href="/hu/products/c"><img alt="C" src="https://bolt/static/c.webp"/></a>'
+
+  it("srcset és méret (width/height vagy fill) kell minden termékképen", () => {
+    expect(
+      fut("kep-meretezes", oldal(JO_FEJ, LISTA_ELSO + LISTA_FILL + FO)),
+    ).toEqual([])
+    expect(fut("kep-meretezes", oldal(JO_FEJ, NYERS))).toHaveLength(2)
+  })
+
+  it("a fő kép fetchpriority=high", () => {
+    expect(fut("fo-kep-kiemelt", oldal(JO_FEJ, FO))).toEqual([])
+    expect(
+      fut(
+        "fo-kep-kiemelt",
+        oldal(JO_FEJ, FO.replace(' fetchpriority="high"', "")),
+      ),
+    ).toHaveLength(1)
+  })
+
+  it("az első listakép nem lusta; kép nélküli lista hiba", () => {
+    expect(
+      fut("elso-listakep-nem-lusta", oldal(JO_FEJ, LISTA_ELSO + LISTA_FILL)),
+    ).toEqual([])
+    expect(
+      fut("elso-listakep-nem-lusta", oldal(JO_FEJ, LISTA_FILL + LISTA_ELSO)),
+    ).toHaveLength(1)
+    expect(
+      fut("elso-listakep-nem-lusta", oldal(JO_FEJ, "<p>üres</p>")),
+    ).toHaveLength(1)
+  })
+})

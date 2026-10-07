@@ -1,4 +1,5 @@
 import React from "react"
+import { getImageProps } from "next/image"
 
 /**
  * AZ ASZTALI ZAROSOR -- A TERV MASIK ALSO SAVJA.
@@ -126,7 +127,14 @@ const ZaroSor = ({ kepUrl, nev, cimke, ar, cselekves }: ZaroSorProps) => {
       >
         {kepUrl ? (
           <img
-            src={kepUrl}
+            // FE-3: a Next optimalizaloja, a 48 px-es belyeg ketszeres felbontasban
+            {...getImageProps({
+              src: kepUrl,
+              alt: "",
+              width: 96,
+              height: 96,
+              sizes: "48px",
+            }).props}
             alt=""
             className="h-full w-full object-cover"
             data-testid="zarosor-belyeg-kep"

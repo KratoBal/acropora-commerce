@@ -17,6 +17,12 @@ export type KepAdat = {
   /** a termeklap fo kepe */
   foKep: boolean
   lusta: boolean
+  /** van `srcset` (FE-3: a Next optimalizalojanak valtozatai) */
+  srcset: boolean
+  /** `width` es `height`, vagy `fill` (a doboz aranya tartja a helyet) */
+  meretezett: boolean
+  /** `fetchpriority="high"` */
+  kiemelt: boolean
 }
 
 export type OldalKivonat = {
@@ -96,6 +102,11 @@ export function kivonat(html: string): OldalKivonat {
       foKep,
       tartalmi: foKep || !!img.closest(TERMEK_LINK),
       lusta: img.getAttribute("loading") === "lazy",
+      srcset: !!img.getAttribute("srcset"),
+      meretezett:
+        (img.hasAttribute("width") && img.hasAttribute("height")) ||
+        img.getAttribute("data-nimg") === "fill",
+      kiemelt: img.getAttribute("fetchpriority") === "high",
     }
   })
 

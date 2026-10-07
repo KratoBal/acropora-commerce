@@ -329,9 +329,13 @@ export default async function KeresesLap({
               className="grid grid-cols-2 gap-[14px] small:gap-x-5 small:gap-y-[26px] medium:grid-cols-3"
               data-testid="products-list"
             >
-              {products.map((product) => (
+              {products.map((product, i) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya product={product} tomor />
+                  <CommerceTermekKartya
+                    product={product}
+                    tomor
+                    elso={i === 0}
+                  />
                 </li>
               ))}
             </ul>

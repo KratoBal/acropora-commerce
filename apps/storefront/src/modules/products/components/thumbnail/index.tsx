@@ -17,6 +17,12 @@ type ThumbnailProps = {
   size?: "small" | "medium" | "large" | "full" | "square"
   isFeatured?: boolean
   className?: string
+  /**
+   * A HAJTAS FELETTI ELSO LISTAKEP (FE-3): nem lusta, `fetchpriority="high"`.
+   * A lista adja meg az elso elemen; a tobbi kep lusta marad, kulonben a
+   * bongeszo minden listakepet egyszerre kerne.
+   */
+  prioritas?: boolean
   "data-testid"?: string
 }
 
@@ -40,6 +46,7 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   className,
   "data-testid": dataTestid,
   alt = "",
+  prioritas = false,
 }) => {
   const initialImage = thumbnail || images?.[0]?.url
 
@@ -86,7 +93,12 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
       )}
       data-testid={dataTestid}
     >
-      <ImageOrPlaceholder image={initialImage} size={size} alt={alt} />
+      <ImageOrPlaceholder
+        image={initialImage}
+        size={size}
+        alt={alt}
+        prioritas={prioritas}
+      />
     </Container>
   )
 }
@@ -95,7 +107,12 @@ const ImageOrPlaceholder = ({
   image,
   size,
   alt,
-}: Pick<ThumbnailProps, "size"> & { image?: string; alt: string }) => {
+  prioritas,
+}: Pick<ThumbnailProps, "size"> & {
+  image?: string
+  alt: string
+  prioritas: boolean
+}) => {
   return image ? (
     <Image
       src={image}
@@ -117,6 +134,7 @@ const ImageOrPlaceholder = ({
       className="absolute inset-0 object-contain object-center bg-white"
       draggable={false}
       quality={50}
+      priority={prioritas}
       sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
       fill
     />

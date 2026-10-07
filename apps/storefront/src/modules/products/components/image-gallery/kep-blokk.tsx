@@ -1,5 +1,6 @@
 "use client"
 
+import { getImageProps } from "next/image"
 import { useState } from "react"
 
 import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
@@ -46,10 +47,30 @@ export const KepBlokk = ({
 
   const nagy = ervenyes[kivalasztott] ?? ervenyes[0]
 
+  /*
+    A FO KEP A NEXT OPTIMALIZALOJAN AT (FE-3, a webshop sajat optimalizaloja,
+    `sharp` a storefront kontenerben): `srcset`/`sizes`, szelesseg es
+    magassag, es `fetchpriority="high"` eloltoltessel, mert ez a lap LCP-eleme.
+    A `getImageProps` a sima `<img>`-et tartja meg: az osztalyok, a jelolo es a
+    CSS-horgony (`termeklap-nagykep`) valtozatlanok. A 1600x1000 a 16:10-es
+    asztali doboz aranya; a valodi dobozt a CSS-arany adja, igy nincs elugras.
+  */
+  const { props: nagyKep } = getImageProps({
+    src: nagy.url ?? "",
+    alt,
+    width: 1600,
+    height: 1000,
+    sizes: "(min-width: 1024px) 860px, 100vw",
+    priority: kivalasztott === 0,
+    // a `getImageProps` a `priority`-bol nem tesz `fetchpriority`-t (merve a
+    // helyi epitesen, 15.5.24), ezert kulon all
+    fetchPriority: kivalasztott === 0 ? "high" : undefined,
+  })
+
   return (
     <div className="flex flex-col gap-2" data-testid="vaz-foto-blokk">
       <img
-        src={nagy.url ?? ""}
+        {...nagyKep}
         alt={alt}
         className={`termeklap-nagykep w-full ${KEP_ARANY_OSZTALY}`}
         style={{ objectFit: "contain" }}
