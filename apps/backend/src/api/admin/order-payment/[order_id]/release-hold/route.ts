@@ -3,6 +3,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { releaseHoldOperations } from "../../../../../workflows/utils/order-payment/operations"
 import { releaseHold } from "../../../../../workflows/utils/order-payment/release-hold"
 import { notifyHoldReleased, type PaymentNotification } from "../../../../../workflows/utils/webshop-mail/payment-notify"
+import { answerRefusal } from "../../refusal"
 import type { AdminReleaseOrderPaymentHoldType } from "../../validators"
 
 /**
@@ -19,7 +20,13 @@ export const POST = async (req: MedusaRequest<AdminReleaseOrderPaymentHoldType>,
   const { order_id } = req.params
   const { notify_customer } = req.validatedBody
 
-  const result = await releaseHold(order_id, releaseHoldOperations(req.scope))
+  let result: Awaited<ReturnType<typeof releaseHold>>
+  try {
+    result = await releaseHold(order_id, releaseHoldOperations(req.scope))
+  } catch (error) {
+    if (answerRefusal(res, error)) return
+    throw error
+  }
 
   const [shipped, pickup] = result.orders
   let notification: PaymentNotification = { sent: false, reason: "not_requested" }

@@ -1,9 +1,12 @@
+import { getHttpResponseFromError } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 
 import { GET } from "../[order_id]/route"
 import { POST as RELEASE } from "../[order_id]/release-hold/route"
+import { POST as TRANSFER } from "../[order_id]/transfer-receipt/route"
 import { loadOrderPaymentSide } from "../../../../workflows/utils/order-payment/operations"
 import { releaseHold } from "../../../../workflows/utils/order-payment/release-hold"
+import { recordTransferReceipt } from "../../../../workflows/utils/order-payment/transfer-receipt"
 import { notifyHoldReleased } from "../../../../workflows/utils/webshop-mail/payment-notify"
 
 jest.mock("../../../../workflows/utils/order-payment/operations", () => ({
@@ -11,6 +14,10 @@ jest.mock("../../../../workflows/utils/order-payment/operations", () => ({
   releaseHoldOperations: jest.fn(() => "ops"),
 }))
 jest.mock("../../../../workflows/utils/order-payment/release-hold", () => ({ releaseHold: jest.fn() }))
+jest.mock("../../../../workflows/utils/order-payment/transfer-receipt", () => ({ recordTransferReceipt: jest.fn() }))
+jest.mock("../../../../workflows/utils/order-payment/transfer-receipt-operations", () => ({
+  transferReceiptOperations: jest.fn(() => "transfer-ops"),
+}))
 jest.mock("../../../../workflows/utils/webshop-mail/payment-notify", () => ({
   notifyHoldReleased: jest.fn(async () => ({ sent: true })),
 }))
@@ -24,7 +31,15 @@ jest.mock("../../../../workflows/utils/webshop-mail/payment-notify", () => ({
  */
 const respond = () => {
   const sent: unknown[] = []
-  return { sent, res: { json: (body: unknown) => void sent.push(body) } }
+  const statuses: number[] = []
+  const res = {
+    json: (body: unknown) => void sent.push(body),
+    status: (code: number) => {
+      statuses.push(code)
+      return res
+    },
+  }
+  return { sent, statuses, res }
 }
 
 beforeEach(() => jest.clearAllMocks())
@@ -86,6 +101,11 @@ describe("POST /admin/order-payment/:order_id/release-hold", () => {
     await RELEASE({ params: { order_id: "order_pick" }, scope: "scope", validatedBody: body } as never, res as never)
     return sent[0]
   }
+  const callWithStatus = async (body: Record<string, unknown>) => {
+    const { sent, statuses, res } = respond()
+    await RELEASE({ params: { order_id: "order_pick" }, scope: "scope", validatedBody: body } as never, res as never)
+    return { status: statuses[0], body: sent[0] }
+  }
 
   it("releases, then mails from the shipped half naming the pickup one", async () => {
     ;(releaseHold as jest.Mock).mockResolvedValue(released)
@@ -114,9 +134,60 @@ describe("POST /admin/order-payment/:order_id/release-hold", () => {
     expect(notifyHoldReleased).not.toHaveBeenCalled()
   })
 
-  it("a refused release is the caller's error, and no mail goes", async () => {
+  it("a refused release is a 409 with its own sentence, and no mail goes", async () => {
     ;(releaseHold as jest.Mock).mockRejectedValue(new MedusaError(MedusaError.Types.CONFLICT, "már levontuk"))
-    await expect(call({})).rejects.toMatchObject({ type: MedusaError.Types.CONFLICT })
+    expect(await callWithStatus({})).toEqual({
+      status: 409,
+      body: { type: "conflict", code: "refused", message: "már levontuk" },
+    })
     expect(notifyHoldReleased).not.toHaveBeenCalled()
+  })
+
+  it("an unknown order still goes to the error handler", async () => {
+    ;(releaseHold as jest.Mock).mockRejectedValue(new MedusaError(MedusaError.Types.NOT_FOUND, "nincs ilyen"))
+    await expect(call({})).rejects.toMatchObject({ type: MedusaError.Types.NOT_FOUND })
+  })
+})
+
+/**
+ * THE REFUSAL'S SENTENCE REACHES THE OS (stage trial 2026-10-07, order #56).
+ * What must fail: the route letting a CONFLICT go to Medusa's error handler,
+ * which answers the fixed English line instead of the Hungarian refusal.
+ */
+describe("POST /admin/order-payment/:order_id/transfer-receipt", () => {
+  const sentence = "Az összeg eltér: a rendelés 5950 HUF, a beérkezés 5900."
+  const call = async () => {
+    const { sent, statuses, res } = respond()
+    await TRANSFER(
+      { params: { order_id: "order_56" }, scope: "scope", validatedBody: { reference: "R", received_at: "2026-10-07", amount: 5900 } } as never,
+      res as never
+    )
+    return { status: statuses[0], body: sent[0] }
+  }
+
+  it("the handler's own mapping would lose the sentence: this is why the route answers", () => {
+    const mapped = getHttpResponseFromError(new MedusaError(MedusaError.Types.CONFLICT, sentence))
+    expect(mapped.statusCode).toBe(409)
+    expect(mapped.body.message).not.toBe(sentence)
+  })
+
+  it("a refusal is a 409 with the Hungarian sentence in the body", async () => {
+    ;(recordTransferReceipt as jest.Mock).mockRejectedValue(new MedusaError(MedusaError.Types.CONFLICT, sentence))
+    expect(await call()).toEqual({ status: 409, body: { type: "conflict", code: "refused", message: sentence } })
+  })
+
+  it("a recorded receipt answers the result as it was", async () => {
+    ;(recordTransferReceipt as jest.Mock).mockResolvedValue({ recorded: true, payment_id: "pay_1" })
+    expect(await call()).toEqual({ status: undefined, body: { recorded: true, payment_id: "pay_1" } })
+    expect(recordTransferReceipt).toHaveBeenCalledWith(
+      "order_56",
+      { reference: "R", received_at: "2026-10-07", amount: 5900 },
+      "transfer-ops"
+    )
+  })
+
+  it("an unknown order still goes to the error handler", async () => {
+    ;(recordTransferReceipt as jest.Mock).mockRejectedValue(new MedusaError(MedusaError.Types.NOT_FOUND, "Order x was not found"))
+    await expect(call()).rejects.toMatchObject({ type: MedusaError.Types.NOT_FOUND })
   })
 })
