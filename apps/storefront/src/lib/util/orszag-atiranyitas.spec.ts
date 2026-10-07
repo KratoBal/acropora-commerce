@@ -41,7 +41,9 @@ describe("az országkód nélküli út átirányítása", () => {
       .filter((c) => c.isDirectory() && c.name.startsWith("("))
       .flatMap((csoport) =>
         readdirSync(join(gyoker, csoport.name), { withFileTypes: true })
-          .filter((m) => m.isDirectory() && !/^[([_@]/.test(m.name))
+          // a `%5F` mappa belso ut (`/_p`, `/_v`, `/_szurt`, FE-7 3. resz):
+          // kivulrol 404, nem nyilvanos lap-szakasz (`belso-utvonalak.js`)
+          .filter((m) => m.isDirectory() && !/^([([_@]|%5F)/.test(m.name))
           .map((m) => m.name),
       )
       .sort()

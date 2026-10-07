@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 const sdk = vi.hoisted(() => ({ client: { fetch: vi.fn() } }))
 vi.mock("@lib/config", () => ({ sdk }))
 vi.mock("./cookies", () => ({
-  getCacheOptions: async () => ({ tags: ["products-kitalalt"] }),
+  getPublicCacheOptions: async (tag: string) => ({ tags: [tag] }),
 }))
 
 import { termekTudas } from "./product-knowledge"
@@ -27,7 +27,8 @@ describe("a termék-tudás lekérése", () => {
     const [ut, opciok] = sdk.client.fetch.mock.calls[0]
     expect(ut).toBe("/store/product-knowledge/prod_kitalalt")
     expect(opciok.cache).toBeUndefined()
-    expect(opciok.next.tags).toEqual(["products-kitalalt"])
+    // FE-7: a publikus lekérés csak a közös címkét viszi, sütiből semmit
+    expect(opciok.next.tags).toEqual(["products"])
     expect(opciok.next.revalidate).toBeGreaterThan(0)
     expect(opciok.next.revalidate).toBeLessThanOrEqual(300)
   })

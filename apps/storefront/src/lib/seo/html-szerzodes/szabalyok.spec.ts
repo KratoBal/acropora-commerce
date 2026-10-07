@@ -332,3 +332,34 @@ describe("a ?v_id: a kijelölt opció, kontrollal (barracuda átvétele, #521)",
     ])
   })
 })
+
+/*
+  BELSO UTRA SEMMI NEM MUTAT (FE-7 3. resz). MI PIROSIT: a lapozo vagy a
+  canonical a belso `/_p/` vagy `/_v/` utat adja (kivulrol 404); a kodolt alak
+  atjut; a nyilvanos lapszamos link hibanak latszik.
+*/
+describe("belső útra mutató link (FE-7)", () => {
+  const v = { ...V, ut: "/hu/categories/x?page=2" }
+
+  it("a nyilvános lapszámos és változatos link rendben", () => {
+    const jo = oldal(
+      JO_FEJ,
+      '<a href="/hu/categories/x?page=3">3</a><a href="?page=1">1</a><a href="/hu/products/h?v_id=variant_01M1NKD0MAH36C3YMC0QX64NZB">v</a>',
+    )
+    expect(fut("belso-ut-link", jo, v)).toEqual([])
+  })
+
+  it("a belső lapozott, változat- és szűrt út hiba, kódolva is", () => {
+    const rossz = oldal(
+      JO_FEJ,
+      '<a href="/hu/_p/3/categories/x">3</a><a href="/hu/%5Fv/variant_01M1NKD0MAH36C3YMC0QX64NZB/products/h">v</a><a href="/hu/_szurt/store?q=a">s</a>',
+    )
+    expect(fut("belso-ut-link", rossz, v)).toHaveLength(3)
+  })
+
+  it("a canonical és az og:url sem lehet belső", () => {
+    const fej =
+      '<title>X | Acropora</title><link rel="canonical" href="https://shop-staging.acropora.hu/hu/_p/2/categories/x"/><meta property="og:url" content="/hu/_p/2/categories/x"/>'
+    expect(fut("belso-ut-link", oldal(fej, ""), v)).toHaveLength(2)
+  })
+})

@@ -62,10 +62,13 @@ import { VasarlasProvider } from "@modules/products/components/vasarlas/allapot"
 export default async function VasarlasKeret({
   id,
   region,
+  valtozatId,
   children,
 }: {
   id: string
   region: HttpTypes.StoreRegion
+  /** A cimbol jovo valtozat (FE-7 3. resz, `_v` belso ut). */
+  valtozatId?: string
   children: React.ReactNode
 }) {
   const product = await listProducts({
@@ -77,5 +80,9 @@ export default async function VasarlasKeret({
     return <>{children}</>
   }
 
-  return <VasarlasProvider product={product}>{children}</VasarlasProvider>
+  return (
+    <VasarlasProvider product={product} valtozatId={valtozatId}>
+      {children}
+    </VasarlasProvider>
+  )
 }

@@ -7,7 +7,9 @@ import { Button } from "@modules/common/components/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { isEqual } from "lodash"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
+import { aktualisKeres } from "@lib/util/aktualis-keres"
+import { kezdoOpciok } from "@modules/products/components/vasarlas/allapot"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 import StockState from "../stock-state"
@@ -26,10 +28,13 @@ import {
 } from "./minimum-order-quantity"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
+  /** A cimbol jovo valtozat (FE-7 3. resz, `_v` belso ut); lasd `kezdoOpciok`. */
+  valtozatId?: string
   disabled?: boolean
 }
 
@@ -44,13 +49,15 @@ const optionsAsKeymap = (
 
 export default function ProductActions({
   product,
+  valtozatId,
   disabled,
 }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
-  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [options, setOptions] = useState<Record<string, string | undefined>>(
+    () => (valtozatId ? kezdoOpciok(product, valtozatId) : {}),
+  )
   const [isAdding, setIsAdding] = useState(false)
   /**
    * A KEZDŐÉRTÉK A TERMÉK MINIMUMA, nem beégetett 1. Tizenhat terméknél a
@@ -103,7 +110,8 @@ export default function ProductActions({
   }, [product.variants, options])
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
+    // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
+    const params = aktualisKeres()
     const value = isValidVariant ? selectedVariant?.id : null
 
     if (params.get("v_id") === value) {
@@ -219,6 +227,7 @@ export default function ProductActions({
       countryCode,
       rendelesiMaximum: orderMaximum,
     })
+    kosarValtozott()
 
     setIsAdding(false)
   }

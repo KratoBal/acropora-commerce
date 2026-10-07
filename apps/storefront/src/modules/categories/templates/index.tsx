@@ -14,6 +14,7 @@ import {
 } from "./category-page-data"
 import { Breadcrumbs } from "./category-breadcrumbs"
 import CommerceKategoriaLap from "./commerce/kategoria-lap"
+import type { LapozoCel } from "@modules/store/components/pagination/lap-href"
 
 const PRODUCT_LIMIT = 12
 
@@ -25,6 +26,7 @@ export default function CategoryTemplate({
   countryCode,
   optionValueIds,
   markak,
+  lapozo,
 }: {
   category: HttpTypes.StoreProductCategory
   /**
@@ -46,6 +48,8 @@ export default function CategoryTemplate({
   countryCode: string
   optionValueIds?: OptionValueIds
   markak?: string[]
+  /** A lapozo nyilvanos celja a szervertol (`LapozoCel`, FE-7 3. resz). */
+  lapozo?: LapozoCel
 }) {
   if (!category || !countryCode) notFound()
 
@@ -221,6 +225,7 @@ export default function CategoryTemplate({
             optionValueIds={optionValueIds}
             page={pageNumber}
             sortBy={sortBy}
+            lapozo={lapozo}
           />
         </Suspense>
       </section>

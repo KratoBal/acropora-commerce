@@ -1,4 +1,5 @@
 const checkEnvVariables = require("./check-env-variables")
+const { belsoAtirasok } = require("./belso-utvonalak")
 
 checkEnvVariables()
 
@@ -13,6 +14,11 @@ const S3_PATHNAME = process.env.MEDUSA_CLOUD_S3_PATHNAME
  */
 const nextConfig = {
   reactStrictMode: true,
+  // FE-7 3. resz: a `?v_id` es a `?page` belso utvonalra (ISR), a szurok a
+  // dinamikus `_szurt` utra. Az indok es a meres: `belso-utvonalak.js`.
+  async rewrites() {
+    return { beforeFiles: belsoAtirasok() }
+  },
   logging: {
     fetches: {
       fullUrl: true,

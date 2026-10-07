@@ -1,13 +1,10 @@
 import { Metadata } from "next"
 
-import { listCartOptions, retrieveCart } from "@lib/data/cart"
-import { retrieveCustomer } from "@lib/data/customer"
 import { getBaseURL } from "@lib/util/env"
-import { StoreCartShippingOption } from "@medusajs/types"
-import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
+import { KosarAllapotProvider } from "@modules/layout/components/kosar-allapot"
+import KosarSziget from "@modules/layout/components/kosar-allapot/kosar-sziget"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
-import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -20,38 +17,25 @@ export const metadata: Metadata = {
  *
  * Az elrendezes eddig nem kerte el, mert nem volt ra szuksege. A Next.js
  * atadja, csak deklaralni kell.
+ *
+ * AZ ELRENDEZES NEM OLVAS SUTIT (FE-7, Balazs 2026-10-07). Eddig itt jott a
+ * vevo es a kosar (`retrieveCustomer`, `retrieveCart`), es egy suti olvasasa a
+ * Next.js-ben minden alatta levo lapot dinamikussa tesz: a teszt kirakaton
+ * mind a tiz laptipus `private, no-store` valaszt adott. A kosar es a vevo
+ * most kliensoldalon jon (`KosarAllapotProvider`), a lap gyorsitotarazhato.
  */
 export default async function PageLayout(props: {
   children: React.ReactNode
   params: Promise<{ countryCode: string }>
 }) {
   const { countryCode } = await props.params
-  const customer = await retrieveCustomer()
-  const cart = await retrieveCart()
-  let shippingOptions: StoreCartShippingOption[] = []
-
-  if (cart) {
-    const { shipping_options } = await listCartOptions()
-
-    shippingOptions = shipping_options
-  }
 
   return (
-    <>
+    <KosarAllapotProvider>
       <Nav countryCode={countryCode} />
-      {customer && cart && (
-        <CartMismatchBanner customer={customer} cart={cart} />
-      )}
-
-      {cart && (
-        <FreeShippingPriceNudge
-          variant="popup"
-          cart={cart}
-          shippingOptions={shippingOptions}
-        />
-      )}
+      <KosarSziget />
       {props.children}
       <Footer />
-    </>
+    </KosarAllapotProvider>
   )
 }

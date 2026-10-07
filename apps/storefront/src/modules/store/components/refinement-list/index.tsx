@@ -1,12 +1,11 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useMemo } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { useCallback } from "react"
 
-import {
-  OPTION_VALUE_QUERY_KEY,
-  parseOptionValueIds,
-} from "@lib/util/product-option-filters"
+import { aktualisKeres } from "@lib/util/aktualis-keres"
+
+import { OPTION_VALUE_QUERY_KEY } from "@lib/util/product-option-filters"
 import OptionsPicker from "./options-picker"
 import SortProducts, { SortOptions } from "./sort-products"
 
@@ -14,27 +13,34 @@ type RefinementListProps = {
   sortBy: SortOptions
   search?: boolean
   hideOptionsPicker?: boolean
+  /**
+   * A kivalasztott opcio-ertekek, a SZERVERTOL (a lap mar ertelmezte a
+   * cimet). FE-7: a render nem olvas `useSearchParams`-t, mert az egy
+   * statikus lapon kivenne a komponenst a HTML-bol.
+   */
+  selectedOptionValueIds?: string[]
   "data-testid"?: string
 }
 
 const RefinementList = ({
   sortBy,
   hideOptionsPicker = false,
+  selectedOptionValueIds = [],
   "data-testid": dataTestId,
 }: RefinementListProps) => {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   const updateQueryParams = useCallback(
     (updater: (params: URLSearchParams) => void) => {
-      const params = new URLSearchParams(searchParams.toString())
+      // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
+      const params = aktualisKeres()
+      const currentQuery = params.toString()
       updater(params)
 
       params.delete("page")
 
       const queryString = params.toString()
-      const currentQuery = searchParams.toString()
       const nextPath = queryString ? `${pathname}?${queryString}` : pathname
       const currentPath = currentQuery
         ? `${pathname}?${currentQuery}`
@@ -44,16 +50,11 @@ const RefinementList = ({
         router.push(nextPath)
       }
     },
-    [pathname, router, searchParams],
+    [pathname, router],
   )
 
   const setQueryParams = (name: string, value: string) =>
     updateQueryParams((params) => params.set(name, value))
-
-  const selectedOptionValueIds = useMemo(
-    () => parseOptionValueIds(searchParams),
-    [searchParams],
-  )
 
   const setOptionValueIds = (valueIds: string[]) =>
     updateQueryParams((params) => {

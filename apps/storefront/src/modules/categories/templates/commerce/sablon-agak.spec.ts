@@ -38,19 +38,8 @@ describe("a kategória-sablon ágai", () => {
 
   it("a márka a címből a route-on és a sablonon át a lapig ér", () => {
     const route = readFileSync(
-      join(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        "..",
-        "app",
-        "[countryCode]",
-        "(main)",
-        "categories",
-        "[...category]",
-        "page.tsx",
-      ),
+      // FE-7 3. resz: a route torzse a kozos modulban (alaplap, `_p`, `_szurt`)
+      join(__dirname, "..", "kategoria-lap-torzs.tsx"),
       "utf8",
     )
     expect(route).toContain(
@@ -59,9 +48,11 @@ describe("a kategória-sablon ágai", () => {
     expect(route).toContain("markak={markak}")
     // A teljes felmeno-lanc a listabol (a bolt API csak egy szulot ad).
     expect(route).toContain('fields: "id,name,handle,parent_category_id"')
+    // FE-7 3. resz: a lanc valtozoba kerult, mert a lapszam-ellenorzes is hasznalja
     expect(route).toMatch(
-      /category=\{teljesLanc\(\s*productCategory,\s*kategoriaFelmenoi\(productCategory\.id, mindenKategoria\),?\s*\)\}/,
+      /const lanc = teljesLanc\(\s*productCategory,\s*kategoriaFelmenoi\(productCategory\.id, mindenKategoria\),?\s*\)/,
     )
+    expect(route).toContain("category={lanc}")
     const ag = sablon.slice(
       sablon.indexOf("<CommerceKategoriaLap"),
       sablon.indexOf("</main>"),
