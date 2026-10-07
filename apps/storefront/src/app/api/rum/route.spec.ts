@@ -17,6 +17,25 @@ const keres = (torzs: string, fejlec: Record<string, string> = {}) =>
 
 afterEach(() => vi.restoreAllMocks())
 
+/** Darabolt torzs `content-length` nelkul; a szamlalo mutatja, hany darabot olvastak ki. */
+function daraboltKeres(darabszam: number, darabMeret: number) {
+  let kiolvasva = 0
+  const folyam = new ReadableStream<Uint8Array>({
+    pull(vezerlo) {
+      if (kiolvasva >= darabszam) return vezerlo.close()
+      kiolvasva += 1
+      vezerlo.enqueue(new Uint8Array(darabMeret).fill(0x61))
+    },
+  })
+  const keres = new NextRequest("http://localhost/api/rum", {
+    method: "POST",
+    body: folyam,
+    // a Node fetch a folyam-torzshoz ezt keri
+    duplex: "half",
+  } as ConstructorParameters<typeof NextRequest>[1])
+  return { keres, kiolvasva: () => kiolvasva }
+}
+
 describe("POST /api/rum", () => {
   it("egy érvényes mérés 204, és egy JSON sor kerül a naplóba", async () => {
     const naplo = vi.spyOn(console, "log").mockImplementation(() => {})
@@ -43,6 +62,16 @@ describe("POST /api/rum", () => {
       JSON.stringify({ n: "LCP", v: 1, r: "good", t: "<script>" }),
     ])
       expect((await POST(keres(torzs))).status).toBe(400)
+    expect(naplo).not.toHaveBeenCalled()
+  })
+
+  it("content-length nélkül a túl nagy törzset nem olvassa végig: 413", async () => {
+    const naplo = vi.spyOn(console, "log").mockImplementation(() => {})
+    const { keres: k, kiolvasva } = daraboltKeres(100, 300)
+    expect(k.headers.get("content-length")).toBeNull()
+    expect((await POST(k)).status).toBe(413)
+    // 512 bajt felett megall: a 300 bajtos darabokbol legfeljebb harmat ker
+    expect(kiolvasva()).toBeLessThanOrEqual(3)
     expect(naplo).not.toHaveBeenCalled()
   })
 

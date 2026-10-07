@@ -1,4 +1,4 @@
-import { lstat, readdir } from "node:fs/promises"
+import { lstat, readdir, stat } from "node:fs/promises"
 import { join } from "node:path"
 
 /**
@@ -61,11 +61,32 @@ export function cacheMeretBeallitas(
   }
 }
 
-/** Egy meres: a hatar folott riasztas-sort ir, es visszaadja a meretet MB-ban. */
+/** Letezik-e a gyorsitotar konyvtara (es konyvtar-e). */
+export async function konyvtarLetezik(konyvtar: string): Promise<boolean> {
+  const adat = await stat(konyvtar).catch(() => null)
+  return adat?.isDirectory() ?? false
+}
+
+/**
+ * Egy meres: a hatar folott riasztas-sort ir, es visszaadja a meretet MB-ban.
+ *
+ * A HIANYZO KONYVTAR KULON, MEGNEVEZETT SOR (barracuda, #530): egy nem letezo
+ * konyvtar merete 0 lenne, ugyanugy, mint egy ures gyorsitotare, es egy
+ * rossz helyre nezo figyelo (masik munkakonyvtar, standalone kep) orokre
+ * nullat merne riasztas nelkul. Ilyenkor `null` jon vissza.
+ */
 export async function cacheMeretMeres(
   beallitas: CacheMeretBeallitas,
   naplo: (sor: string) => void = (sor) => console.warn(sor),
-): Promise<number> {
+): Promise<number | null> {
+  if (!(await konyvtarLetezik(beallitas.konyvtar))) {
+    naplo(
+      `CACHE-MERET-NINCS-KONYVTAR ${JSON.stringify({
+        konyvtar: beallitas.konyvtar,
+      })}`,
+    )
+    return null
+  }
   const mb =
     Math.round(((await konyvtarMeret(beallitas.konyvtar)) / 1024 / 1024) * 10) /
     10
@@ -94,11 +115,13 @@ export function cacheMeretFigyelo(
       // a figyelo hibaja nem allithatja meg a kirakatot
     })
   void cacheMeretMeres(beallitas, naplo)
-    .then((mb) =>
-      console.log(
-        `cache-meret: ${mb} MB (${beallitas.konyvtar}), hatar ${beallitas.hatarMb} MB`,
-      ),
-    )
+    .then((mb) => {
+      // hianyzo konyvtarnal a megnevezett sor mar kiment
+      if (mb !== null)
+        console.log(
+          `cache-meret: ${mb} MB (${beallitas.konyvtar}), hatar ${beallitas.hatarMb} MB`,
+        )
+    })
     .catch(() => undefined)
   const idozito = setInterval(meres, beallitas.intervallumMs)
   idozito.unref()

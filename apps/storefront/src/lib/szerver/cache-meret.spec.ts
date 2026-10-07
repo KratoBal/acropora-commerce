@@ -67,6 +67,35 @@ describe("cacheMeretMeres", () => {
     )
   })
 
+  it("a hiányzó könyvtár külön, megnevezett sor, nem 0 MB", async () => {
+    const naplo = vi.fn()
+    const mb = await cacheMeretMeres(
+      {
+        konyvtar: "/nincs/ilyen/.next/cache",
+        hatarMb: 1,
+        intervallumMs: 60_000,
+      },
+      naplo,
+    )
+    expect(mb).toBeNull()
+    expect(naplo).toHaveBeenCalledTimes(1)
+    const sor = naplo.mock.calls[0]![0] as string
+    expect(sor.startsWith("CACHE-MERET-NINCS-KONYVTAR ")).toBe(true)
+    expect(sor).toContain("/nincs/ilyen/.next/cache")
+  })
+
+  it("egy létező, üres gyorsítótár 0 MB, és nem szól", async () => {
+    const konyvtar = cache({})
+    const naplo = vi.fn()
+    expect(
+      await cacheMeretMeres(
+        { konyvtar, hatarMb: 1, intervallumMs: 60_000 },
+        naplo,
+      ),
+    ).toBe(0)
+    expect(naplo).not.toHaveBeenCalled()
+  })
+
   it("a határ alatt nem szól", async () => {
     const konyvtar = cache({ "kicsi.bin": 1024 })
     const naplo = vi.fn()
