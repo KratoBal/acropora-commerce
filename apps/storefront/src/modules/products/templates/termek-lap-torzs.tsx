@@ -149,7 +149,7 @@ export async function termekLapTorzs(
  *   elerhetoseg    `valtozatKaphato` + `availabilityOf`, mint a vasarlasi doboz
  *   cikkszam       `cikkszam`, mint a lap cim alatti sora
  *
- *   gtin           a valtozat `ean`/`upc`/`barcode` ervenyes kodja (FE-2b)
+ *   gtin           a valtozat `ean`/`upc` ervenyes kodja (FE-2b; a `barcode` nem forras)
  *
  * TOBBVALTOZATOS TERMEKEN ProductGroup (FE-2b): a valtozatok a sajat
  * araval es keszletevel, ugyanugy, ahogy a lap a `?v_id=` kivalasztasa utan
