@@ -223,13 +223,23 @@ describe("linkek és JSON-LD", () => {
     const termek = {
       "@type": "Product",
       name: "Vitalis",
-      offers: { price: "1990", priceCurrency: "HUF" },
+      offers: {
+        price: 1990,
+        priceCurrency: "HUF",
+        availability: "https://schema.org/InStock",
+      },
     }
+    // FE-2a: a lapon latszo ar es elerhetoseg, a kirakat jelolesevel
+    const LAP =
+      '<span data-testid="product-price" data-value="1990">1 990 Ft</span><button data-testid="add-product-button" data-elerhetoseg="KAPHATO">Kosárba</button>'
     expect(
-      fut("json-ld-product", oldal(JO_FEJ, `<h1>Vitalis</h1>${ld(termek)}`)),
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, `<h1>Vitalis</h1>${LAP}${ld(termek)}`),
+      ),
     ).toEqual([])
     expect(
-      fut("json-ld-product", oldal(JO_FEJ, `<h1>Más</h1>${ld(termek)}`)),
+      fut("json-ld-product", oldal(JO_FEJ, `<h1>Más</h1>${LAP}${ld(termek)}`)),
     ).toHaveLength(1)
     expect(
       fut(
@@ -361,5 +371,113 @@ describe("belső útra mutató link (FE-7)", () => {
     const fej =
       '<title>X | Acropora</title><link rel="canonical" href="https://shop-staging.acropora.hu/hu/_p/2/categories/x"/><meta property="og:url" content="/hu/_p/2/categories/x"/>'
     expect(fut("belso-ut-link", oldal(fej, ""), v)).toHaveLength(2)
+  })
+})
+
+/*
+  A JSON-LD A LAPON LATSZO ERTEKET ALLITJA (FE-2a). MI PIROSIT: mas ar vagy
+  elerhetoseg, mint a lapon; latszo ar nelkul is atmegy; SearchAction a
+  webhelyen; hianyzo szervezet; a morzsamenu mas nevet vagy mas szamu elemet ad.
+*/
+describe("strukturált adat a látható laphoz mérve (FE-2a)", () => {
+  const ld = (x: unknown) =>
+    `<script type="application/ld+json">${JSON.stringify(x)}</script>`
+  const ajanlat = (felul: Record<string, unknown> = {}) => ({
+    "@type": "Product",
+    name: "Vitalis",
+    offers: {
+      price: 1990,
+      priceCurrency: "HUF",
+      availability: "https://schema.org/InStock",
+      ...felul,
+    },
+  })
+  const lap = (ar: string, el: string) =>
+    `<h1>Vitalis</h1><span data-testid="product-price" data-value="${ar}">x</span><button data-elerhetoseg="${el}">x</button>`
+
+  it("az ár és az elérhetőség a lapé", () => {
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("1990", "KAPHATO") + ld(ajanlat())),
+      ),
+    ).toEqual([])
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("2490", "KAPHATO") + ld(ajanlat())),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("1990", "ELFOGYOTT") + ld(ajanlat())),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(
+          JO_FEJ,
+          lap("1990", "ELFOGYOTT") +
+            ld(ajanlat({ availability: "https://schema.org/OutOfStock" })),
+        ),
+      ),
+    ).toEqual([])
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, "<h1>Vitalis</h1>" + ld(ajanlat()))),
+    ).toHaveLength(2)
+  })
+
+  it("szervezet és webhely, SearchAction nélkül", () => {
+    const jo =
+      ld({ "@type": "Organization", name: "Acropora" }) +
+      ld({ "@type": "WebSite", name: "Acropora" })
+    expect(fut("json-ld-szervezet", oldal(JO_FEJ, jo))).toEqual([])
+    expect(
+      fut("json-ld-szervezet", oldal(JO_FEJ, ld({ "@type": "WebSite" }))),
+    ).toHaveLength(1)
+    const kereso =
+      ld({ "@type": "Organization" }) +
+      ld({ "@type": "WebSite", potentialAction: { "@type": "SearchAction" } })
+    expect(fut("json-ld-szervezet", oldal(JO_FEJ, kereso))).toHaveLength(1)
+  })
+
+  it("a morzsamenü JSON-LD-je a látható morzsamenü, a / jel nélkül", () => {
+    const nav =
+      '<nav aria-label="Morzsamenü"><ol><li><a href="/hu/categories/t">Termékek</a><span aria-hidden="true">/</span></li><li aria-current="page">Hanna</li></ol></nav>'
+    const morzsa = (...nevek: string[]) =>
+      ld({
+        "@type": "BreadcrumbList",
+        itemListElement: nevek.map((name, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name,
+        })),
+      })
+    expect(
+      fut(
+        "json-ld-morzsa-egyezik",
+        oldal(JO_FEJ, nav + morzsa("Termékek", "Hanna")),
+      ),
+    ).toEqual([])
+    expect(
+      fut(
+        "json-ld-morzsa-egyezik",
+        oldal(JO_FEJ, nav + morzsa("Termékek - Gyökér", "Hanna")),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut("json-ld-morzsa-egyezik", oldal(JO_FEJ, nav + morzsa("Hanna"))),
+    ).not.toEqual([])
+    // a termeklap vege a cikkszamot mutatja: az utolso nev a H1-gyel is jo
+    const termekNav =
+      '<h1>Hanna HI780-25</h1><nav aria-label="Morzsamenü"><ol><li><a href="/hu/categories/t">Termékek</a></li><li aria-current="page"><span aria-hidden="true">/</span><span>HI780-25</span></li></ol></nav>'
+    expect(
+      fut(
+        "json-ld-morzsa-egyezik",
+        oldal(JO_FEJ, termekNav + morzsa("Termékek", "Hanna HI780-25")),
+      ),
+    ).toEqual([])
   })
 })
