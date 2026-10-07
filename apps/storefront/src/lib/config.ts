@@ -1,5 +1,7 @@
 import Medusa, { FetchArgs, FetchInput } from "@medusajs/js-sdk"
 
+import { epitesKozbenUjraprobal } from "@lib/util/epites-ujraprobalas"
+
 // Defaults to standard port for Medusa server
 let MEDUSA_BACKEND_URL = "http://localhost:9000"
 
@@ -34,5 +36,25 @@ sdk.client.fetch = async <T>(
     ...init,
     headers: newHeaders,
   }
-  return originalFetch(input, init)
+  /*
+    BUILD KOZBEN a bolt atmeneti kieseset (502/503/504, halozati hiba) kb. egy
+    percig ujraprobaljuk, csak GET-nel; futasidoben valtozatlan. Minden
+    SDK-hivas (az `sdk.store.*` is) ezen a burkolon megy at. Reszletek:
+    `lib/util/epites-ujraprobalas`.
+  */
+  const keresInit = init
+  return epitesKozbenUjraprobal(() => originalFetch<T>(input, keresInit), {
+    method: init.method,
+    url: keresLeiras(input, init.query),
+  })
+}
+
+/** A keres olvashato alakja a build-naploba: utvonal es a lekerdezes (a handle-lel). */
+function keresLeiras(input: FetchInput, query: FetchArgs["query"]): string {
+  const ut = String(input)
+  if (!query || typeof query !== "object") return ut
+  const parameterek = Object.entries(query as Record<string, unknown>)
+    .filter(([, ertek]) => ertek !== undefined && ertek !== null)
+    .map(([kulcs, ertek]) => `${kulcs}=${String(ertek)}`)
+  return parameterek.length ? `${ut}?${parameterek.join("&")}` : ut
 }
