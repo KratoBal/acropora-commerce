@@ -2,6 +2,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
 import { recordTransferReceipt } from "../../../../../workflows/utils/order-payment/transfer-receipt"
 import { transferReceiptOperations } from "../../../../../workflows/utils/order-payment/transfer-receipt-operations"
+import { answerRefusal } from "../../refusal"
 import type { AdminRecordTransferReceiptType } from "../../validators"
 
 /**
@@ -12,6 +13,11 @@ import type { AdminRecordTransferReceiptType } from "../../validators"
  */
 export const POST = async (req: MedusaRequest<AdminRecordTransferReceiptType>, res: MedusaResponse) => {
   const { order_id } = req.params
-  const result = await recordTransferReceipt(order_id, req.validatedBody, transferReceiptOperations(req.scope))
-  res.json(result)
+  try {
+    const result = await recordTransferReceipt(order_id, req.validatedBody, transferReceiptOperations(req.scope))
+    res.json(result)
+  } catch (error) {
+    if (answerRefusal(res, error)) return
+    throw error
+  }
 }
