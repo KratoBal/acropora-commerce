@@ -7,6 +7,7 @@ import { transitionOrderBusinessStatusWorkflow } from "../../../../workflows/tra
 import { notifyStatusChange, type StatusNotification } from "../../../../workflows/utils/webshop-mail/status-notify"
 import { AdminTransitionOrderBusinessStatusType } from "../validators"
 import { adminStatusDetail } from "../admin-business-status"
+import { answerRefusal } from "../../../refusal"
 
 /** The order's business status, its history and the admin's next steps (the OS reads it). */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -36,16 +37,29 @@ export const POST = async (
   const { order_id } = req.params
   const { status, notify_customer } = req.validatedBody
 
-  const { result: business_status } = await transitionOrderBusinessStatusWorkflow(
-    req.scope,
-  ).run({
-    input: {
-      order_id,
-      to: status,
-      actor: "admin",
-      source: "admin",
-    },
-  })
+  /*
+    A capture inside the transition can refuse with a CONFLICT ("A rendelés
+    szerkesztése épp most fut ..."); it comes out of the workflow serialized,
+    and the error handler would replace its sentence (see `answerRefusal`).
+  */
+  let business_status: Awaited<
+    ReturnType<ReturnType<typeof transitionOrderBusinessStatusWorkflow>["run"]>
+  >["result"]
+  try {
+    ;({ result: business_status } = await transitionOrderBusinessStatusWorkflow(
+      req.scope,
+    ).run({
+      input: {
+        order_id,
+        to: status,
+        actor: "admin",
+        source: "admin",
+      },
+    }))
+  } catch (error) {
+    if (answerRefusal(res, error)) return
+    throw error
+  }
 
   let notification: StatusNotification = { sent: false, reason: "not_requested" }
   if (notify_customer !== false) {

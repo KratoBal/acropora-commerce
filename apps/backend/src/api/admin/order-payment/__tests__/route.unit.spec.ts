@@ -3,15 +3,22 @@ import { MedusaError } from "@medusajs/framework/utils"
 
 import { GET } from "../[order_id]/route"
 import { POST as RELEASE } from "../[order_id]/release-hold/route"
+import { POST as LINK } from "../[order_id]/payment-link/route"
 import { POST as TRANSFER } from "../[order_id]/transfer-receipt/route"
 import { loadOrderPaymentSide } from "../../../../workflows/utils/order-payment/operations"
 import { releaseHold } from "../../../../workflows/utils/order-payment/release-hold"
+import { sendPaymentLink } from "../../../../workflows/utils/order-payment/payment-link"
 import { recordTransferReceipt } from "../../../../workflows/utils/order-payment/transfer-receipt"
 import { notifyHoldReleased } from "../../../../workflows/utils/webshop-mail/payment-notify"
 
 jest.mock("../../../../workflows/utils/order-payment/operations", () => ({
   loadOrderPaymentSide: jest.fn(),
   releaseHoldOperations: jest.fn(() => "ops"),
+  paymentLinkOperations: jest.fn(() => "link-ops"),
+}))
+jest.mock("../../../../workflows/utils/order-payment/payment-link", () => ({ sendPaymentLink: jest.fn() }))
+jest.mock("../../../../workflows/utils/order-payment/link-config", () => ({
+  requirePaymentLinkConfig: () => ({ secret: "s", baseUrl: "https://example.test" }),
 }))
 jest.mock("../../../../workflows/utils/order-payment/release-hold", () => ({ releaseHold: jest.fn() }))
 jest.mock("../../../../workflows/utils/order-payment/transfer-receipt", () => ({ recordTransferReceipt: jest.fn() }))
@@ -189,5 +196,18 @@ describe("POST /admin/order-payment/:order_id/transfer-receipt", () => {
   it("an unknown order still goes to the error handler", async () => {
     ;(recordTransferReceipt as jest.Mock).mockRejectedValue(new MedusaError(MedusaError.Types.NOT_FOUND, "Order x was not found"))
     await expect(call()).rejects.toMatchObject({ type: MedusaError.Types.NOT_FOUND })
+  })
+})
+
+describe("POST /admin/order-payment/:order_id/payment-link", () => {
+  it("a refused link is a 409 with its own sentence", async () => {
+    const sentence = "Ehhez a rendeléshez most nem küldhető fizetési link."
+    ;(sendPaymentLink as jest.Mock).mockRejectedValue(new MedusaError(MedusaError.Types.CONFLICT, sentence))
+    const { sent, statuses, res } = respond()
+    await LINK({ params: { order_id: "order_1" }, scope: "scope", validatedBody: {} } as never, res as never)
+    expect({ status: statuses[0], body: sent[0] }).toEqual({
+      status: 409,
+      body: { type: "conflict", code: "refused", message: sentence },
+    })
   })
 })

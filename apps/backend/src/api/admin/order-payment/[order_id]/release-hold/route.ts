@@ -3,7 +3,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { releaseHoldOperations } from "../../../../../workflows/utils/order-payment/operations"
 import { releaseHold } from "../../../../../workflows/utils/order-payment/release-hold"
 import { notifyHoldReleased, type PaymentNotification } from "../../../../../workflows/utils/webshop-mail/payment-notify"
-import { answerRefusal } from "../../refusal"
+import { answerRefusal } from "../../../../refusal"
 import type { AdminReleaseOrderPaymentHoldType } from "../../validators"
 
 /**
