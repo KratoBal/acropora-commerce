@@ -2,6 +2,7 @@
 import { beforeAll, describe, expect, it, type TestContext } from "vitest"
 
 import { ELES_HOSZTOK } from "@lib/util/robots-hazirend"
+import { szuroLink } from "@lib/seo/szuro-link"
 
 import { kivonat, type OldalKivonat } from "./kivonat"
 import { mintak, type Minta, type MintaTipus } from "./mintaoldalak"
@@ -131,11 +132,14 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
 // webhely JSON-LD-je minden INDEXELHETO lapon all (FE-2a). A 404-en nem: a
 // Next not-found renderelese a layout JSON-LD-jet csak az RSC-adatban viszi,
 // elemkent nem (merve 2026-10-07, helyi epites), es egy 404 nem kerul indexbe.
+// A szuro-link szabaly is minden mintan fut (FE-4b): szurt lapra mutato link
+// csak `nofollow`-val all.
 for (const tipus of Object.keys(TERV) as MintaTipus[])
   TERV[tipus] = [
     ...TERV[tipus],
     "belso-ut-link",
     ...(tipus === "nem-letezo" ? [] : (["json-ld-szervezet"] as const)),
+    "szuro-link-nofollow",
   ]
 
 type Lap = { valasz: Valasz; html: string; k: OldalKivonat }
@@ -266,6 +270,24 @@ describe("változat közvetlen URL-je (Balázs 2. pontja)", () => {
       "v-id",
       valtozatHibak(minta.valtozat.opciok, vIddel, vIdNelkul),
     )
+  })
+})
+
+/*
+ * A SZURO-LINK SZABALY POZITIV KONTROLLJA (FE-4b). A szabaly egy szurt link
+ * nelkuli lapon uresen zold. A facet mintan a marka-lista mindig szurt linket
+ * ad; ha ott nulla van, a szabaly zoldje semmit nem merne. (A kereses mintaja
+ * ma egymarkas talalat, szurt link nelkul: ott a szabalyt a unit-fixtura meri.)
+ */
+describe("a szűrő-link szabály lát szűrt linket", () => {
+  it("facet", async (ctx) => {
+    const minta = mintaja("facet")
+    if (!minta?.ut) return ctx.skip(`nincs minta (${minta?.hianyzik})`)
+    const { k } = await lap(minta.ut)
+    expect(
+      k.linkRel.filter((l) => szuroLink(l.href)).length,
+      minta.ut,
+    ).toBeGreaterThan(0)
   })
 })
 

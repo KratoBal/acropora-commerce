@@ -1,4 +1,5 @@
 import type { MarkaSor } from "@lib/util/marka-szuro"
+import { szuroLinkRel } from "@lib/seo/szuro-link"
 
 /**
  * A MARKA-LISTA (117:108): a kategorialap es a keresesi talalatok szurooszlopa
@@ -18,10 +19,12 @@ export default function MarkaLista({
 }) {
   const sor = (marka: MarkaSor) => {
     const be = aktiv.includes(marka.id)
+    const href = link(marka.id)
     return (
       <li key={marka.id}>
         <a
-          href={link(marka.id)}
+          href={href}
+          rel={szuroLinkRel(href)}
           aria-current={be ? "true" : undefined}
           className={
             "flex items-center justify-between gap-2 text-[14px] leading-[22px] hover:text-acr-ink " +

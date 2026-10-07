@@ -45,6 +45,8 @@ export type OldalKivonat = {
   lapLinkek: string[]
   /** minden `<a href>` link (a belso-ut szabalyhoz, FE-7 3. resz) */
   linkek: string[]
+  /** minden `<a href>` link a `rel` ertekevel (a szuro-link szabalyhoz, FE-4b) */
+  linkRel: { href: string; rel: string | null }[]
   /** a lapon latszo ar(ak): `[data-testid="product-price"]` `data-value` (FE-2a) */
   latottArak: number[]
   /** a lapon latszo elerhetoseg(ek): `data-elerhetoseg` (KAPHATO, ELFOGYOTT, ELADVA) */
@@ -136,6 +138,10 @@ export function kivonat(html: string): OldalKivonat {
     linkek: Array.from(doc.querySelectorAll("a[href]")).map(
       (a) => a.getAttribute("href") ?? "",
     ),
+    linkRel: Array.from(doc.querySelectorAll("a[href]")).map((a) => ({
+      href: a.getAttribute("href") ?? "",
+      rel: a.getAttribute("rel"),
+    })),
     latottArak: Array.from(
       doc.querySelectorAll('[data-testid="product-price"][data-value]'),
     )

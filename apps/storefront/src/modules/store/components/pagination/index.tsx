@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { szuroLinkRel } from "@lib/seo/szuro-link"
+
 import { lapHref, type LapozoCel } from "./lap-href"
 
 export function Pagination({
@@ -50,6 +52,7 @@ export function Pagination({
       <Link
         key={p}
         href={lapHref(cel?.alap ?? pathname, cel?.keres ?? "", p)}
+        rel={szuroLinkRel(lapHref(cel?.alap ?? pathname, cel?.keres ?? "", p))}
         className="txt-xlarge-plus text-ui-fg-muted hover:text-ui-fg-subtle"
       >
         {label}
