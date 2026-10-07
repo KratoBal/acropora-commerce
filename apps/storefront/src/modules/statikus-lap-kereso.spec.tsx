@@ -31,12 +31,8 @@ afterEach(() => {
 */
 const MODULOK = __dirname
 
-/** Dinamikus lapok (penztar, fiok), es a lapozo, ami a #519 utan kerul at. */
-const KIVETELEK = [
-  "checkout/",
-  "account/",
-  "store/components/pagination/index.tsx",
-]
+/** Dinamikus lapok: a penztar es a fiok. */
+const KIVETELEK = ["checkout/", "account/"]
 
 const fajlok = (mappa: string): string[] =>
   readdirSync(mappa).flatMap((nev) => {

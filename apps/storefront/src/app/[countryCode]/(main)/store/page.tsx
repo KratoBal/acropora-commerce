@@ -1,82 +1,32 @@
 import { Metadata } from "next"
 
-import { storeCanonical } from "@lib/util/lap-canonical"
-import { keresesSzovege } from "@lib/util/kereses"
-import { GYOKER_PARAM } from "@lib/util/kereses-talalatok"
-import { MARKA_PARAM, markaAzonositok } from "@lib/util/marka-szuro"
-import { parseOptionValueIds } from "@lib/util/product-option-filters"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import StoreTemplate from "@modules/store/templates"
+import {
+  storeLapTorzs,
+  storeMetaadat,
+} from "@modules/store/templates/store-lap-torzs"
 
 /*
- * A STATIKUS `metadata` HELYETT `generateMetadata`, ES CSAK EZERT: a kanonikus
- * cim tartalmazza az orszagkodot, azt pedig egy statikus objektum nem lathatja.
+ * FE-7 3. resz: az alaplap nem olvas `searchParams`-t, tehat ISR. A `?page`,
+ * a kereses es a szurok belso utra mennek (`belso-utvonalak.js`); a torzs es
+ * a metaadat kozos (`store-lap-torzs.tsx`).
  *
- * A CIM ES A LEIRAS VALTOZATLAN MARAD, angolul. Az a starter szovege, es a
- * magyar bolton tenyleg furcsan all -- de a lecserelese TARTALMI dontes
- * (marketing), nem az enyem, es egy kitalalt mondat ugyanugy tovabbutazna, mint
- * a starter sajatja. Ugyanaz az indok, amiert a fooldal leirasa ma ures.
- * Kulon kartyan all.
+ * A `generateStaticParams` az `[countryCode]` szegmens miatt kell: nelkule a
+ * Next 15 a lapot minden keresre ujrarenderelne (`private, no-store`, merve
+ * 2026-10-07); az ures lista igeny szerinti ISR.
  */
-export async function generateMetadata(props: {
-  params: Promise<{ countryCode: string }>
-  searchParams: Promise<StorePageSearchParams>
-}): Promise<Metadata> {
-  const params = await props.params
-  const searchParams = await props.searchParams
-  const oldal = Number.parseInt(String(searchParams.page ?? ""), 10)
+type Props = { params: Promise<{ countryCode: string }> }
 
-  return {
-    title: "Store",
-    description: "Explore all of our products.",
-    alternates: {
-      canonical: storeCanonical(
-        params.countryCode,
-        Number.isFinite(oldal) ? oldal : null,
-      ),
-    },
-  }
+export const revalidate = 300
+
+export async function generateStaticParams() {
+  return []
 }
 
-type StorePageSearchParams = Record<string, string | string[] | undefined> & {
-  sortBy?: SortOptions
-  page?: string
-  optionValueIds?: string | string[]
-  /**
-   * A KERESES SZOVEGE. Egyetlen ertek, nem tomb: ket `q` parameter eseten a
-   * masodikat eldobjuk ahelyett, hogy osszefuznenk oket -- egy osszefuzott
-   * kereses NEM hibazna, csak mast keresne.
-   */
-  q?: string | string[]
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { countryCode } = await props.params
+  return storeMetaadat(countryCode, {})
 }
 
-type Params = {
-  searchParams: Promise<StorePageSearchParams>
-  params: Promise<{
-    countryCode: string
-  }>
-}
-
-export default async function StorePage(props: Params) {
-  const params = await props.params
-  const searchParams = await props.searchParams
-  const { sortBy, page } = searchParams
-  const optionValueIds = parseOptionValueIds(searchParams)
-  const kereses = keresesSzovege(searchParams.q)
-  const gyokerErtek = searchParams[GYOKER_PARAM]
-  const gyoker =
-    (Array.isArray(gyokerErtek) ? gyokerErtek[0] : gyokerErtek)?.trim() ||
-    undefined
-
-  return (
-    <StoreTemplate
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
-      kereses={kereses}
-      gyoker={gyoker}
-      markak={markaAzonositok(searchParams[MARKA_PARAM])}
-    />
-  )
+export default async function StorePage(props: Props) {
+  return storeLapTorzs(await props.params, {})
 }

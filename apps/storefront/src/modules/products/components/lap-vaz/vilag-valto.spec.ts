@@ -260,19 +260,8 @@ function hivasObjektuma(forras: string, fuggveny: string): string {
  */
 describe("a katalógus, amiből a gyökér feloldódik", () => {
   const lapForras = readFileSync(
-    join(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "..",
-      "app",
-      "[countryCode]",
-      "(main)",
-      "products",
-      "[handle]",
-      "page.tsx",
-    ),
+    // FE-7 3. resz: a lap torzse a kozos modulban (alaplap es `_v` ut)
+    join(__dirname, "..", "..", "templates", "termek-lap-torzs.tsx"),
     "utf-8",
   )
 

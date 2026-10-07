@@ -75,17 +75,8 @@ describe("a keresés eljut a hívóktól a lekérdezésig", () => {
   const sablon = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
   const utvonal = kodSzoveg(
     readFileSync(
-      join(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        "app",
-        "[countryCode]",
-        "(main)",
-        "store",
-        "page.tsx",
-      ),
+      // FE-7 3. resz: a route torzse a kozos modulban (alaplap, `_p`, `_szurt`)
+      join(__dirname, "store-lap-torzs.tsx"),
       "utf-8",
     ),
   )
@@ -93,7 +84,7 @@ describe("a keresés eljut a hívóktól a lekérdezésig", () => {
   /** ISMERT POZITIV KONTROLL: mind a ket fajlt beolvastuk, es ezek azok. */
   it("mindkét hívó forrása olvasható", () => {
     expect(sablon).toContain("StoreTemplate")
-    expect(utvonal).toContain("StorePage")
+    expect(utvonal).toContain("storeLapTorzs")
   })
 
   /**

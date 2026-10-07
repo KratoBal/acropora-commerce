@@ -38,19 +38,8 @@ describe("a kategória-sablon ágai", () => {
 
   it("a márka a címből a route-on és a sablonon át a lapig ér", () => {
     const route = readFileSync(
-      join(
-        __dirname,
-        "..",
-        "..",
-        "..",
-        "..",
-        "app",
-        "[countryCode]",
-        "(main)",
-        "categories",
-        "[...category]",
-        "page.tsx",
-      ),
+      // FE-7 3. resz: a route torzse a kozos modulban (alaplap, `_p`, `_szurt`)
+      join(__dirname, "..", "kategoria-lap-torzs.tsx"),
       "utf8",
     )
     expect(route).toContain(

@@ -80,10 +80,8 @@ describe("a termeklap mezoi", () => {
  */
 describe("a termeklap a közös mezőlistát adja át", () => {
   const forras = readFileSync(
-    join(
-      process.cwd(),
-      "src/app/[countryCode]/(main)/products/[handle]/page.tsx",
-    ),
+    // FE-7 3. resz: a lap torzse a kozos modulban all (alaplap es `_v` ut)
+    join(process.cwd(), "src/modules/products/templates/termek-lap-torzs.tsx"),
     "utf-8",
   )
 

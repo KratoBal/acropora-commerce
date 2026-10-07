@@ -2,32 +2,16 @@ import { Metadata } from "next"
 import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
 import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
+import { kategoriaLapTorzs } from "@modules/categories/templates/kategoria-lap-torzs"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
 import { listRegions } from "@lib/data/regions"
 import { HttpTypes, StoreRegion } from "@medusajs/types"
-import CategoryTemplate from "@modules/categories/templates"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { parseOptionValueIds } from "@lib/util/product-option-filters"
-import { markaAzonositok } from "@lib/util/marka-szuro"
 import { decodeHandleParams } from "@lib/util/decode-handle-param"
 import { kategoriaCanonical } from "@lib/util/kategoria-canonical"
-import {
-  kategoriaFelmenoi,
-  megjelenitendoNevek,
-  teljesLanc,
-} from "@lib/util/kategoria-fa"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
-  searchParams: Promise<
-    Record<string, string | string[] | undefined> & {
-      sortBy?: SortOptions
-      page?: string
-      optionValueIds?: string | string[]
-      marka?: string | string[]
-    }
-  >
 }
 
 /**
@@ -119,59 +103,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 }
 
+/*
+ * FE-7 3. resz: az alaplap nem olvas `searchParams`-t, tehat ISR. A `?page`
+ * es a szurok belso utra mennek (`belso-utvonalak.js`); a torzs kozos
+ * (`kategoria-lap-torzs.tsx`).
+ */
+export const revalidate = 300
+
 export default async function CategoryPage(props: Props) {
-  const searchParams = await props.searchParams
-  const params = await props.params
-  const { sortBy, page } = searchParams
-  const optionValueIds = parseOptionValueIds(searchParams)
-  const markak = markaAzonositok(searchParams.marka)
-
-  const productCategory = await getCategoryByHandle(
-    decodeHandleParams(params.category),
-  )
-
-  if (!productCategory) {
-    notFound()
-  }
-
-  /*
-    A TELJES KATEGORIA-LISTA A NEVEK MIATT KELL, ES EZ EGY UJ LEKERDEZES.
-
-    A lap eddig CSAK a sajat kategoriajat kerte le (a felmenoivel es a
-    gyerekeivel). A roviditesrol viszont nem lehet a lancbol dontenni: az, hogy
-    egy rovid nev EGYEDI-e, a teljes katalogus tulajdonsaga.
-
-    A mezolista szandekosan szuk (`id,name,handle,parent_category_id`): a
-    nevekhez es a felmeno-lanchoz ennel tobb nem kell, es egy szeles lekerdezes
-    minden kategoria-lapon fizetne a tobbletet. A `handle` a lanc linkjeihez
-    kell (2026-09-29).
-
-    MIERT NEM HAGYJUK KI: enelkul a lap feltetel nelkul vagna, a termeklap
-    morzsamenuje es a fejlec-menu viszont mar nem -- vagyis UGYANAZ a kategoria
-    KET kulonbozo nevvel jelenne meg ket lapon. Egy felig alkalmazott szabaly
-    rosszabb, mint ha egyaltalan nem lenne.
-  */
-  const mindenKategoria = await listCategories({
-    fields: "id,name,handle,parent_category_id",
-  })
-
-  return (
-    <CategoryTemplate
-      /*
-        A TELJES FELMENO-LANC a listabol: a bolt API csak egy szulo-szintet ad
-        (`kategoriaFelmenoi`). Enelkul a morzsamenu csonka, es egy mely korall
-        kategoria Commerce lapot kap.
-      */
-      category={teljesLanc(
-        productCategory,
-        kategoriaFelmenoi(productCategory.id, mindenKategoria),
-      )}
-      nevek={megjelenitendoNevek(mindenKategoria)}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-      optionValueIds={optionValueIds}
-      markak={markak}
-    />
-  )
+  return kategoriaLapTorzs(await props.params, {})
 }
