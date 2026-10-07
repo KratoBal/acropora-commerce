@@ -143,6 +143,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/product-knowledge",
     },
+    // the shop's 301 list, projected from the OS (SEO P0 PR 7a)
+    {
+      resolve: "./src/modules/url-redirect",
+    },
     {
       resolve: "@medusajs/medusa/caching",
       options: {

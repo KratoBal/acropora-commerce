@@ -19,7 +19,7 @@ export const PRICE_CHANGE_EVENTS = [
   "pricing.price.created",
   "pricing.price.updated",
   "pricing.price.deleted",
-] as const
+] as const;
 
 /**
  * A stock change (FE-7 part 3, Balázs 2026-10-07 07:44 UTC: the public pages
@@ -35,25 +35,31 @@ export const INVENTORY_CHANGE_EVENTS = [
   "inventory.inventory-level.created",
   "inventory.inventory-level.updated",
   "inventory.inventory-level.deleted",
-] as const
+] as const;
 
-export type StorefrontRevalidateConfig = { url: string; secret: string }
+export type StorefrontRevalidateConfig = { url: string; secret: string };
 
 /** Off (null) without both: the storefront's address and the shared secret. */
 export const storefrontRevalidateConfig = (
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv,
 ): StorefrontRevalidateConfig | null => {
-  const base = env.ACROPORA_STOREFRONT_URL?.trim().replace(/\/+$/, "") ?? ""
-  const secret = env.STOREFRONT_REVALIDATE_SECRET?.trim() ?? ""
-  return base && secret ? { url: `${base}/api/revalidate`, secret } : null
-}
+  const base = env.ACROPORA_STOREFRONT_URL?.trim().replace(/\/+$/, "") ?? "";
+  const secret = env.STOREFRONT_REVALIDATE_SECRET?.trim() ?? "";
+  return base && secret ? { url: `${base}/api/revalidate`, secret } : null;
+};
 
-type Logger = { info(message: string): void; warn(message: string): void }
+type Logger = { info(message: string): void; warn(message: string): void };
 
+/**
+ * `tags`: what to empty. `products` by default (prices, stock); the redirect
+ * list's route sends `redirects` (SEO P0 PR 7a), which the storefront accepts
+ * from PR 7c on (until then it answers 400, and the call is only logged).
+ */
 export async function sendStorefrontRevalidate(
   config: StorefrontRevalidateConfig,
   logger: Logger,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  tags: readonly string[] = ["products"],
 ): Promise<boolean> {
   try {
     const response = await fetchImpl(config.url, {
@@ -62,24 +68,24 @@ export async function sendStorefrontRevalidate(
         "content-type": "application/json",
         "x-revalidate-secret": config.secret,
       },
-      body: JSON.stringify({ tags: ["products"] }),
+      body: JSON.stringify({ tags }),
       signal: AbortSignal.timeout(10_000),
-    })
+    });
     if (!response.ok) {
       logger.warn(
-        `Storefront revalidate after a price change failed: HTTP ${response.status}.`
-      )
-      return false
+        `Storefront revalidate (${tags.join(", ")}) failed: HTTP ${response.status}.`,
+      );
+      return false;
     }
-    logger.info("Storefront product cache emptied after a price change.")
-    return true
+    logger.info(`Storefront cache emptied (${tags.join(", ")}).`);
+    return true;
   } catch (error) {
     logger.warn(
-      `Storefront revalidate after a price change failed: ${
+      `Storefront revalidate (${tags.join(", ")}) failed: ${
         error instanceof Error ? error.message : String(error)
-      }.`
-    )
-    return false
+      }.`,
+    );
+    return false;
   }
 }
 
@@ -91,17 +97,17 @@ export function revalidateCoalescer(
   send: () => Promise<unknown>,
   windowMs: number,
   timer: (run: () => void, ms: number) => unknown = (run, ms) =>
-    setTimeout(run, ms)
+    setTimeout(run, ms),
 ) {
-  let pending = false
+  let pending = false;
   return {
     request(): void {
-      if (pending) return
-      pending = true
+      if (pending) return;
+      pending = true;
       timer(() => {
-        pending = false
-        void send()
-      }, windowMs)
+        pending = false;
+        void send();
+      }, windowMs);
     },
-  }
+  };
 }

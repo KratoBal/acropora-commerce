@@ -47,6 +47,15 @@ describe("sending the revalidate", () => {
     expect(JSON.parse(String(init.body))).toEqual({ tags: ["products"] })
   })
 
+  it("posts the given tags (the redirect list, SEO P0 PR 7a)", async () => {
+    const fetchImpl = jest.fn(async () => ({ ok: true, status: 200 }))
+    expect(
+      await sendStorefrontRevalidate(cfg, logger(), fetchImpl as never, ["redirects"])
+    ).toBe(true)
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(String(init.body))).toEqual({ tags: ["redirects"] })
+  })
+
   it("a refusal or a network error is logged, never thrown", async () => {
     const log = logger()
     expect(
