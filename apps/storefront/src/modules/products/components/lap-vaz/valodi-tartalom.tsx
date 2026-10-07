@@ -206,10 +206,14 @@ export function legmelyebbKategoria(termek: Termek): string | null {
 export const Cimsor = ({
   termek,
   kategoriak,
+  tartalek,
 }: {
   termek: Termek
   kategoriak?: BesorolasKategoria[]
+  /** a Suspense tartaleka: a nev ugyanugy latszik, de nem H1 (`vazTartalom`) */
+  tartalek?: boolean
 }) => {
+  const CimElem = tartalek ? "p" : "h1"
   const lanc = besorolasLanc(termek, kategoriak)
   const sku = cikkszam(termek)
   const vilagosVilag = vilagaTermeknek(termek, kategoriak) === "vilagos"
@@ -286,12 +290,12 @@ export const Cimsor = ({
         A `text-2xl` sajat sorkoze 32 pixel (1.333), ezert kell a `leading`
         kulon: a meret onmagaban nem allitja be a terv sorkozet.
       */}
-      <h1
+      <CimElem
         className="text-2xl font-semibold leading-[1.15] lg:text-[36px] lg:leading-[1.1] lg:tracking-[-0.02em]"
         data-testid="vaz-termek-nev"
       >
         {termek.title}
-      </h1>
+      </CimElem>
       {/*
         A CIKKSZAM KIKERULT A CIM ALOL, ES EZ NEM ELVESZETT ADAT.
 
@@ -536,9 +540,23 @@ export function vazTartalom(
    * megvolt -- csak en valtoztattam meg az egyik felet, es a masikat nem.
    */
   tartalekKategoriaId?: string | null,
+  /**
+   * A KILENCEDIK, ES UGYANAZERT A VEGERE: a szignatura POZICIONALIS.
+   *
+   * IGAZ, HA EZ A LAP A SUSPENSE TARTALEKA (a sablon `fallback`-je). A tartalek
+   * es a vegleges lap UGYANAZT a vazat rajzolja, es a streamelt elso HTML-ben
+   * MINDKETTO benne van (a tartalek lathatoan, a vegleges egy rejtett
+   * szegmensben, amit a kliens csereli be). Ezert allt a terméklapon KET
+   * egyforma H1 (merve a teszt kirakaton 2026-10-07, SEO frontend FE-1). A
+   * tartalek a cimet ugyanugy rajzolja, csak nem cimsorkent: a lapon pontosan
+   * egy H1 marad, a vegleges laponak.
+   */
+  tartalek?: boolean,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
-    cimsor: <Cimsor termek={termek} kategoriak={kategoriak} />,
+    cimsor: (
+      <Cimsor termek={termek} kategoriak={kategoriak} tartalek={tartalek} />
+    ),
     /**
      * AZ EGYETLEN SLOT, AMI NEM TERMEK-ADATON ALL, tehat feltetel nelkul all a
      * helyen: a bolt telefonszama minden termeknel ugyanaz.

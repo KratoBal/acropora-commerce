@@ -10,9 +10,12 @@ import UniquePieceBadge, {
 } from "@modules/products/components/unique-piece-badge"
 
 import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
+import { galeriaAlt } from "./kep-alt"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
+  /** a termek neve: ebbol lesz a kepek alt-ja (Balazs 2026-10-07, 5. pont) */
+  nev?: string | null
   /**
    * EGY DARAB, EZ A KONKRÉT PÉLDÁNY -- A KÉPEN.
    *
@@ -62,7 +65,11 @@ type ImageGalleryProps = {
  * kep-megjelenitese megvaltozik, es azt NEM ez a kor donti el. Kulon tetel,
  * es addig a technikai lapokon a sor nem kattinthato.
  */
-const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
+const ImageGallery = ({
+  images,
+  uniquePiece = false,
+  nev,
+}: ImageGalleryProps) => {
   const [kivalasztott, setKivalasztott] = useState(0)
   const nagy = images[kivalasztott] ?? images[0]
 
@@ -121,12 +128,10 @@ const ImageGallery = ({ images, uniquePiece = false }: ImageGalleryProps) => {
                 src={nagy.url}
                 priority
                 className="absolute inset-0 rounded-rounded"
-                /* MAGYARUL, ES EZ NEM KOZMETIKA. A regi alak
-                   `alt={`Product image ${index + 1}`}` volt: ugyanugy ANGOL
-                   szoveg ment ki a vevonek, csak a magyar-felirat orzo nem
-                   latta, mert a szoveg egy sablon-kifejezesben allt. Ahogy
-                   allando szoveg lett belole, azonnal pirosra fordult. */
-                alt="Termékfotó"
+                /* A TERMEK NEVE (`kep-alt.ts`). A regi alakok: `Product image
+                   ${index + 1}` (angol), majd `Termékfotó` (magyar, de
+                   generikus, Balazs 2026-10-07-i dontese szerint tiltott). */
+                alt={galeriaAlt(nev, kivalasztott, images.length)}
                 fill
                 sizes="(max-width: 576px) 100vw, (max-width: 992px) 100vw, 856px"
                 /*

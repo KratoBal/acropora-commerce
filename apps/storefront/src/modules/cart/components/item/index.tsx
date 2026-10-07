@@ -158,6 +158,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           })}
         >
           <Thumbnail
+            alt={item.product_title ?? item.title ?? ""}
             thumbnail={item.thumbnail}
             images={item.variant?.product?.images}
             size="square"

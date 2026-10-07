@@ -67,6 +67,7 @@ export default async function ProductPreview({
       <div data-testid="product-wrapper">
         <div className="relative">
           <Thumbnail
+            alt={product.title ?? ""}
             thumbnail={product.thumbnail}
             images={product.images}
             size="full"

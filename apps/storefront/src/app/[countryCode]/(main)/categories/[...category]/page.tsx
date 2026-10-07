@@ -1,6 +1,11 @@
 import { Metadata } from "next"
+import {
+  indexelhetoRobots,
+  kategoriaLeiras,
+  lapCim,
+  openGraph,
+} from "@lib/seo/oldal-metaadat"
 import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
-import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
@@ -103,16 +108,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       adja -- es a 77 utkozo megtartja a megkulonbozteto szulot. Nem kell
       visszaterni ide.
     */
-    const title = `${productCategory.name} | ${STORE_NAME}`
-
-    const description = productCategory.description ?? `${title} category.`
+    const title = lapCim(productCategory.name)
+    const description = kategoriaLeiras(
+      productCategory.name,
+      productCategory.description,
+    )
+    const canonical = kategoriaCanonical(params.countryCode, params.category)
 
     return {
       title,
       description,
-      alternates: {
-        canonical: kategoriaCanonical(params.countryCode, params.category),
-      },
+      robots: indexelhetoRobots(),
+      alternates: { canonical },
+      openGraph: openGraph({ cim: title, leiras: description, url: canonical }),
     }
   } catch {
     notFound()
