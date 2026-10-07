@@ -1,5 +1,11 @@
+import { InventoryEvents } from "@medusajs/framework/utils"
+
+import inventoryChangedRevalidate, {
+  config as inventoryConfig,
+} from "../../../subscribers/inventory-changed-revalidate"
 import priceChangedRevalidate, { config } from "../../../subscribers/price-changed-revalidate"
 import {
+  INVENTORY_CHANGE_EVENTS,
   PRICE_CHANGE_EVENTS,
   revalidateCoalescer,
   sendStorefrontRevalidate,
@@ -83,6 +89,36 @@ describe("the subscriber", () => {
     delete process.env.STOREFRONT_REVALIDATE_SECRET
     try {
       await priceChangedRevalidate({ container: { resolve }, event: { data: { id: "p" } } } as never)
+      expect(resolve).not.toHaveBeenCalled()
+    } finally {
+      process.env = saved
+    }
+  })
+})
+
+/*
+  THE STOREFRONT CACHE ON A STOCK CHANGE (FE-7 part 3). WHAT TURNS THIS RED:
+  the subscriber listens to anything but the inventory module's level events
+  (a reservation or a stock projection would leave a cached page "in stock"),
+  the names drift from Medusa's own builder, or it calls without the settings.
+*/
+describe("the inventory subscriber", () => {
+  it("listens to the inventory module's level events, named as Medusa builds them", async () => {
+    expect(inventoryConfig.event).toEqual([...INVENTORY_CHANGE_EVENTS])
+    expect(INVENTORY_CHANGE_EVENTS).toEqual([
+      InventoryEvents.INVENTORY_LEVEL_CREATED,
+      InventoryEvents.INVENTORY_LEVEL_UPDATED,
+      InventoryEvents.INVENTORY_LEVEL_DELETED,
+    ])
+  })
+
+  it("does nothing without the settings", async () => {
+    const resolve = jest.fn()
+    const saved = { ...process.env }
+    delete process.env.ACROPORA_STOREFRONT_URL
+    delete process.env.STOREFRONT_REVALIDATE_SECRET
+    try {
+      await inventoryChangedRevalidate({ container: { resolve }, event: { data: { id: "il" } } } as never)
       expect(resolve).not.toHaveBeenCalled()
     } finally {
       process.env = saved

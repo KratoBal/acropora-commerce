@@ -21,6 +21,22 @@ export const PRICE_CHANGE_EVENTS = [
   "pricing.price.deleted",
 ] as const
 
+/**
+ * A stock change (FE-7 part 3, Balázs 2026-10-07 07:44 UTC: the public pages
+ * are cached, so a sold-out product must not stay "in stock" on a cached
+ * page). The storefront's availability comes from the inventory levels:
+ * `stocked_quantity` from the OS stock projection, `reserved_quantity` from
+ * every reservation (the inventory module adjusts it through the same level
+ * service, 2.20.1 `inventory-module.js`). Every ORM change of a level emits
+ * `inventory.inventory-level.created|updated|deleted` (`InventoryEvents`,
+ * built from `inventoryLevel` and `Modules.INVENTORY`).
+ */
+export const INVENTORY_CHANGE_EVENTS = [
+  "inventory.inventory-level.created",
+  "inventory.inventory-level.updated",
+  "inventory.inventory-level.deleted",
+] as const
+
 export type StorefrontRevalidateConfig = { url: string; secret: string }
 
 /** Off (null) without both: the storefront's address and the shared secret. */
