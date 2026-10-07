@@ -24,6 +24,7 @@ import {
   orderQuantityStep,
 } from "@modules/products/components/product-actions/minimum-order-quantity"
 import { kosarMennyisegOpciok } from "./mennyiseg-opciok"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -64,6 +65,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
     } catch {
       setError(KOSAR_MOST_NEM_SIKERULT)
     } finally {
+      kosarValtozott()
       setUpdating(false)
     }
   }

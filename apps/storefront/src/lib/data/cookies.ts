@@ -56,6 +56,22 @@ export const getCacheOptions = async (
   return { tags: cacheTag ? [cacheTag, tag] : [tag] }
 }
 
+/**
+ * A PUBLIKUS KATALOGUS CIMKEI, SUTI NELKUL (FE-7, Balazs 2026-10-07: a
+ * publikus lapok gyorsitotarazhatok legyenek).
+ *
+ * A `getCacheOptions` a latogatonkenti `_medusa_cache_id` sutit olvassa, es a
+ * Next.js-ben egy suti olvasasa az EGESZ utvonalat dinamikussa teszi: minden
+ * termek-, kategoria- es marka-lap `private, no-store` valaszt adott, mert a
+ * lekeresuk sutit olvasott. A katalogus adata nem latogatofuggo (vasarlo-fuggo
+ * ar, vevocsoport nincs a boltban), tehat a publikus lekeres CSAK a kozos
+ * cimket viszi; az arvaltozasra az `/api/revalidate` ezt uriti (#514).
+ * A kosar, a fiok es a penztar tovabbra is a `getCacheOptions`-t hasznalja.
+ */
+export const getPublicCacheOptions = async (
+  tag: string,
+): Promise<{ tags: string[] }> => ({ tags: [tag] })
+
 // `sameSite: "lax"` rather than `"strict"`: the customer returns from a
 // redirect-based payment method (iDEAL, Bancontact, ...) via a cross-site
 // top-level navigation. A "strict" cookie is withheld on that navigation, so

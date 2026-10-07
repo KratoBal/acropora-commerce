@@ -21,8 +21,14 @@ import { Fragment, useEffect, useRef, useState } from "react"
 
 const CartDropdown = ({
   cart: cartState,
+  betoltve = true,
 }: {
   cart?: HttpTypes.StoreCart | null
+  /**
+   * Megjott-e mar a kosar (FE-7: kliensoldalon jon, a lap utan). Amig nem,
+   * a 0 darab nem "ures kosar", es az elso megerkezes nem kosar-valtozas.
+   */
+  betoltve?: boolean
 }) => {
   const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(
     undefined,
@@ -39,6 +45,7 @@ const CartDropdown = ({
 
   const subtotal = cartState?.subtotal ?? 0
   const itemRef = useRef<number>(totalItems || 0)
+  const elsoBetoltesreVar = useRef(!betoltve)
 
   const timedOpen = () => {
     open()
@@ -69,11 +76,19 @@ const CartDropdown = ({
 
   // open cart dropdown when modifying the cart items, but only if we're not on the cart page
   useEffect(() => {
+    if (!betoltve) return
+    // Az elso megerkezes (0 -> N) nem valtozas: csak rogzitjuk, nem nyitunk.
+    if (elsoBetoltesreVar.current) {
+      elsoBetoltesreVar.current = false
+      itemRef.current = totalItems
+      return
+    }
     if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
       timedOpen()
     }
+    itemRef.current = totalItems
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalItems, itemRef.current])
+  }, [totalItems, betoltve])
 
   return (
     <div

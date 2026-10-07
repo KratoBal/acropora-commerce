@@ -25,6 +25,7 @@ import {
   similarItemsHref,
   uniquePieceOf,
 } from "../stock-state/availability"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 /**
  * A VASARLASI ALLAPOT EGY HELYEN, MERT A TERV NEGY DOBOZBA TESZI SZET.
@@ -313,6 +314,7 @@ export function VasarlasProvider({
       countryCode,
       rendelesiMaximum: orderMaximum,
     })
+    kosarValtozott()
 
     setKosarVisszajelzes(
       eredmeny.ok

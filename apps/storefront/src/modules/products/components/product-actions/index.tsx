@@ -26,6 +26,7 @@ import {
 } from "./minimum-order-quantity"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -219,6 +220,7 @@ export default function ProductActions({
       countryCode,
       rendelesiMaximum: orderMaximum,
     })
+    kosarValtozott()
 
     setIsAdding(false)
   }

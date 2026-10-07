@@ -4,6 +4,7 @@ import { useParams } from "next/navigation"
 import { useState } from "react"
 
 import { addToCart } from "@lib/data/cart"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 type Allapot = "kesz" | "folyamatban" | "sikerult" | "hiba"
 
@@ -47,6 +48,7 @@ export default function KosarbaGomb({
         countryCode,
         rendelesiMaximum,
       })
+      kosarValtozott()
       if (eredmeny.ok) {
         setAllapot("sikerult")
         setMondat(eredmeny.megjegyzes ?? null)
