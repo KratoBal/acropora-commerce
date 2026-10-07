@@ -248,3 +248,40 @@ describe("POST resend-notification", () => {
     expect(notifyStatusChange).not.toHaveBeenCalled()
   })
 })
+
+/**
+ * A REFUSAL FROM INSIDE THE TRANSITION (stage trial 2026-10-07). The capture's
+ * "A rendelés szerkesztése épp most fut ..." is a CONFLICT thrown in a workflow
+ * step, and it leaves `run()` SERIALIZED, not as a MedusaError instance. What
+ * must fail: the route letting it reach the error handler (the English line),
+ * or matching only `instanceof` and so missing the serialized shape.
+ */
+describe("POST /admin/order-business-status/:order_id, a refused capture", () => {
+  it("is a 409 with the step's own sentence, from the serialized error", async () => {
+    const { serializeError } = jest.requireActual("@medusajs/framework/utils")
+    const sentence = "A rendelés szerkesztése épp most fut. Próbáld újra néhány másodperc múlva."
+    ;(transitionOrderBusinessStatusWorkflow as jest.Mock).mockReturnValueOnce({
+      run: async () => {
+        throw serializeError(new MedusaError(MedusaError.Types.CONFLICT, sentence))
+      },
+    })
+    const sent: unknown[] = []
+    const statuses: number[] = []
+    const res = {
+      json: (body: unknown) => void sent.push(body),
+      status: (code: number) => {
+        statuses.push(code)
+        return res
+      },
+    }
+    await POST(
+      { params: { order_id: "order_1" }, scope: { resolve: () => ({}) }, validatedBody: { status: "out_for_delivery" } } as never,
+      res as never
+    )
+    expect({ status: statuses[0], body: sent[0] }).toEqual({
+      status: 409,
+      body: { type: "conflict", code: "refused", message: sentence },
+    })
+    expect(notifyStatusChange).not.toHaveBeenCalled()
+  })
+})

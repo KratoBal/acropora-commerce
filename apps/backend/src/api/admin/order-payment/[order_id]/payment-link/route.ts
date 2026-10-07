@@ -4,6 +4,7 @@ import { requirePaymentLinkConfig } from "../../../../../workflows/utils/order-p
 import { paymentLinkOperations } from "../../../../../workflows/utils/order-payment/operations"
 import { sendPaymentLink } from "../../../../../workflows/utils/order-payment/payment-link"
 import { notifyPaymentLink, type PaymentNotification } from "../../../../../workflows/utils/webshop-mail/payment-notify"
+import { answerRefusal } from "../../../../refusal"
 import type { AdminSendOrderPaymentLinkType } from "../../validators"
 
 /**
@@ -18,7 +19,13 @@ export const POST = async (req: MedusaRequest<AdminSendOrderPaymentLinkType>, re
   const { notify_customer } = req.validatedBody
   const config = requirePaymentLinkConfig()
 
-  const sent = await sendPaymentLink(order_id, paymentLinkOperations(req.scope), config)
+  let sent: Awaited<ReturnType<typeof sendPaymentLink>>
+  try {
+    sent = await sendPaymentLink(order_id, paymentLinkOperations(req.scope), config)
+  } catch (error) {
+    if (answerRefusal(res, error)) return
+    throw error
+  }
 
   const [shipped, pickup] = sent.orders
   let notification: PaymentNotification = { sent: false, reason: "not_requested" }

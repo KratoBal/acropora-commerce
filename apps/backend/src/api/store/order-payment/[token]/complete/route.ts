@@ -3,6 +3,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { requirePaymentLinkConfig } from "../../../../../workflows/utils/order-payment/link-config"
 import { payByLinkOperations } from "../../../../../workflows/utils/order-payment/operations"
 import { completeLinkPayment } from "../../../../../workflows/utils/order-payment/pay-by-link"
+import { answerRefusal } from "../../../../refusal"
 
 /**
  * After the card was confirmed on the page: authorized, captured, paid.
@@ -10,5 +11,10 @@ import { completeLinkPayment } from "../../../../../workflows/utils/order-paymen
  */
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const { secret } = requirePaymentLinkConfig()
-  res.json(await completeLinkPayment(req.params.token, payByLinkOperations(req.scope), secret))
+  try {
+    res.json(await completeLinkPayment(req.params.token, payByLinkOperations(req.scope), secret))
+  } catch (error) {
+    if (answerRefusal(res, error)) return
+    throw error
+  }
 }
