@@ -18,6 +18,7 @@ type Props = {
  * Ugyanaz az ok, mint a gyujtemeny-lapnal, es ugyanaz a kezeles: a bukas marad,
  * de az uzenet megmondja, hogy a bolt nem valaszol es nem a kod a hibas.
  */
+
 export async function generateStaticParams() {
   try {
     const product_categories = await listCategories()

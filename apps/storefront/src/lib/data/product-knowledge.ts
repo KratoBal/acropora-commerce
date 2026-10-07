@@ -1,7 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { getCacheOptions } from "./cookies"
+import { getPublicCacheOptions } from "./cookies"
 
 /**
  * A TERMEK-TUDAS, AHOGY AZ ACROPORA OS VETITI (KZ Amino szelet, PD-014).
@@ -50,7 +50,7 @@ export async function termekTudas(
     }>(`/store/product-knowledge/${encodeURIComponent(productId)}`, {
       method: "GET",
       next: {
-        ...(await getCacheOptions("products")),
+        ...(await getPublicCacheOptions("products")),
         revalidate: TUDAS_FRISSITES_MP,
       },
     })

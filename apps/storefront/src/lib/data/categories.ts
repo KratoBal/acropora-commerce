@@ -1,7 +1,7 @@
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 import { gyokerekKetSzintel, megjelenitendoNevek } from "@lib/util/kategoria-fa"
-import { getCacheOptions } from "./cookies"
+import { getPublicCacheOptions } from "./cookies"
 import { listProducts } from "./products"
 import { leszarmazottAzonositok } from "@lib/util/kategoria-leszarmazottak"
 
@@ -51,7 +51,7 @@ const CATEGORY_FIELDS =
 
 const fetchCategoryPage = async (query: Record<string, unknown>) => {
   const next = {
-    ...(await getCacheOptions("categories")),
+    ...(await getPublicCacheOptions("categories")),
   }
 
   return sdk.client.fetch<{
@@ -160,7 +160,7 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
   const handle = `${categoryHandle.join("/")}`
 
   const next = {
-    ...(await getCacheOptions("categories")),
+    ...(await getPublicCacheOptions("categories")),
   }
 
   return sdk.client
