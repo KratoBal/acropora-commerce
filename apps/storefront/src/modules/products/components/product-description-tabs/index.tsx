@@ -146,7 +146,6 @@ const ProductDescriptionTabs = ({
     )
   }
 
-  const activeTab = tabs[activeIndex] ?? tabs[0]
   return (
     <div data-testid="product-description-tabs">
       <div
@@ -199,13 +198,26 @@ const ProductDescriptionTabs = ({
           )
         })}
       </div>
-      <div
-        id={`${baseId}-panel-${activeIndex}`}
-        role="tabpanel"
-        aria-labelledby={`${baseId}-tab-${activeIndex}`}
-        className={`leiras-tartalom ${egyB ? "pt-[18px]" : "pt-4"} text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]`}
-        dangerouslySetInnerHTML={{ __html: activeTab.html }}
-      />
+      {/*
+        MINDEN PANEL A DOM-BAN, A NEM AKTIV `hidden`-NEL (SEO frontend FE-1).
+
+        Eddig csak az aktiv ful HTML-je kerult a lapra; a masik csak az
+        RSC-payloadban utazott, tehat a kereso az elso HTML-ben nem latta (a
+        „Műszaki adatok” vagy a „Leírás” egyike mindig hianyzott). A `hidden`
+        attributum a tartalmat a lapon tartja, a szemnek es a felolvasonak
+        viszont csak az aktiv panel latszik, ahogy eddig.
+      */}
+      {tabs.map((tab, index) => (
+        <div
+          key={tab.label}
+          id={`${baseId}-panel-${index}`}
+          role="tabpanel"
+          aria-labelledby={`${baseId}-tab-${index}`}
+          hidden={index !== activeIndex}
+          className={`leiras-tartalom ${egyB ? "pt-[18px]" : "pt-4"} text-medium prose prose-sm max-w-none text-[var(--terv-szoveg-halvany)]`}
+          dangerouslySetInnerHTML={{ __html: tab.html }}
+        />
+      ))}
     </div>
   )
 }

@@ -179,6 +179,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <Suspense
           fallback={
             <MuszakiLap
+              tartalek
               product={product}
               kategoriak={categories}
               tudas={tudas}
@@ -189,6 +190,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 galeriatAdunkAt(product, categories) ? (
                   <ImageGallery
                     images={images}
+                    nev={product.title}
                     uniquePiece={uniquePieceOf(product.metadata)}
                   />
                 ) : undefined
@@ -270,6 +272,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 galeriatAdunkAt(product, categories) ? (
                   <ImageGallery
                     images={images}
+                    nev={product.title}
                     uniquePiece={uniquePieceOf(product.metadata)}
                   />
                 ) : undefined
@@ -452,6 +455,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <div className="block w-full relative">
           <ImageGallery
             images={images}
+            nev={product.title}
             uniquePiece={uniquePieceOf(product.metadata)}
           />
         </div>

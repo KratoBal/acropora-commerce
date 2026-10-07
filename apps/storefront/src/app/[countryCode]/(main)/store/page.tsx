@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { keresesMetaadat } from "@lib/seo/oldal-metaadat"
 
 import { storeCanonical } from "@lib/util/lap-canonical"
 import { keresesSzovege } from "@lib/util/kereses"
@@ -26,9 +27,13 @@ export async function generateMetadata(props: {
   const searchParams = await props.searchParams
   const oldal = Number.parseInt(String(searchParams.page ?? ""), 10)
 
+  // a kereses noindexe a roadmap FE-4-e; itt a magyar cim es leiras
+  const { cim, leiras } = keresesMetaadat(
+    typeof searchParams.q === "string" ? searchParams.q : null,
+  )
   return {
-    title: "Store",
-    description: "Explore all of our products.",
+    title: cim,
+    description: leiras,
     alternates: {
       canonical: storeCanonical(
         params.countryCode,
