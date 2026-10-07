@@ -36,8 +36,9 @@ export const PRODUCT_LIMIT = 12
  */
 export async function generateStaticParams() {
   try {
+    // a lap-listahoz csak a handle kell, a termekek nem (kartya 62811c0f)
     const { collections } = await listCollections({
-      fields: "*products",
+      fields: "id,handle",
     })
 
     if (!collections) {
