@@ -17,6 +17,15 @@ export const PRODUCT_KNOWLEDGE_STATUSES = [
  */
 export const PUBLIC_PRODUCT_KNOWLEDGE_STATUSES: readonly string[] = ["VERIFIED"]
 
+/**
+ * MAY THE BUYER SEE THIS FACT: VERIFIED (D5) AND public (SEO P0 PR 2c, the
+ * OS definition's flag). The OS already sends only such facts; this is the
+ * second gate, so a row written by hand or before the gate does not leak.
+ */
+export const forBuyer = (fact: { status: string; public: boolean }) =>
+  PUBLIC_PRODUCT_KNOWLEDGE_STATUSES.includes(fact.status) &&
+  fact.public === true
+
 export const PRODUCT_KNOWLEDGE_BLOCKS = ["lead", "body"] as const
 
 const Fact = z
@@ -27,6 +36,9 @@ const Fact = z
     status: z.enum(PRODUCT_KNOWLEDGE_STATUSES),
     source_type: z.string().nullable(),
     revision: z.number().int().min(0),
+    // REQUIRED (SEO P0 PR 2c): an OS without the flag is refused loudly,
+    // rather than its facts stored as hidden without a word
+    public: z.boolean(),
   })
   .strict()
   // the conflict rule (PD-014): a conflict carries no value; both values and
