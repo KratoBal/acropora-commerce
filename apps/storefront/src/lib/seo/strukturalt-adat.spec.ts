@@ -161,7 +161,7 @@ describe("GTIN", () => {
       expect(ervenyesGtin(kod), kod).toBe(false)
   })
 
-  it("a változat GTIN-je: ean, utána upc, utána barcode, az első érvényes", () => {
+  it("a változat GTIN-je: ean, utána upc, az első érvényes; a barcode NEM forrás", () => {
     expect(valtozatGtin({ ean: "5060139356268", upc: "852464008968" })).toBe(
       "5060139356268",
     )
@@ -169,8 +169,12 @@ describe("GTIN", () => {
       "852464008968",
     )
     expect(valtozatGtin({ ean: " 5060139356268 " })).toBe("5060139356268")
-    expect(valtozatGtin({ barcode: "96385074" })).toBe("96385074")
-    expect(valtozatGtin({ ean: null, upc: "", barcode: "abc" })).toBeNull()
+    // egy regi importbol jott bolti belso kod: formailag ervenyes, megsem GTIN-forras
+    expect(ervenyesGtin("2000000000008")).toBe(true)
+    expect(
+      valtozatGtin({ barcode: "2000000000008" } as { ean?: null }),
+    ).toBeNull()
+    expect(valtozatGtin({ ean: null, upc: "" })).toBeNull()
   })
 })
 

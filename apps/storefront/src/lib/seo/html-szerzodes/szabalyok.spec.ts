@@ -583,18 +583,22 @@ describe("termékképek: méretezés és rang (FE-3)", () => {
 describe("ProductGroup és GTIN (FE-2b)", () => {
   const ld = (x: unknown) =>
     `<script type="application/ld+json">${JSON.stringify(x)}</script>`
-  const csoport = (arak: number[], penznem = "HUF") => ({
+  const csoport = (
+    arak: number[],
+    penznem = "HUF",
+    elerhetoseg = (_i: number) => "https://schema.org/InStock",
+  ) => ({
     "@type": "ProductGroup",
     name: "Só",
     hasVariant: arak.map((price, i) => ({
       "@type": "Product",
       name: `Só (${i + 1})`,
       ...(i === 0 ? { gtin13: "5060139356268" } : {}),
-      offers: { price, priceCurrency: penznem },
+      offers: { price, priceCurrency: penznem, availability: elerhetoseg(i) },
     })),
   })
-  const lap = (ar: string) =>
-    `<h1>Só</h1><span data-testid="product-price" data-value="${ar}">x</span>`
+  const lap = (ar: string, el = "KAPHATO") =>
+    `<h1>Só</h1><span data-testid="product-price" data-value="${ar}">x</span><button data-elerhetoseg="${el}">x</button>`
 
   it("a lap ára az egyik változaté", () => {
     expect(
@@ -618,6 +622,26 @@ describe("ProductGroup és GTIN (FE-2b)", () => {
     expect(
       fut("json-ld-product", oldal(JO_FEJ, lap("1990") + ld(csoport([])))),
     ).toContain("üres hasVariant")
+  })
+
+  it("a látott árú változat elérhetősége a gombé", () => {
+    // a 2. valtozat (3990) elfogyott
+    const ld2 = ld(
+      csoport([1990, 3990], "HUF", (i) =>
+        i === 1
+          ? "https://schema.org/OutOfStock"
+          : "https://schema.org/InStock",
+      ),
+    )
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, lap("3990", "ELFOGYOTT") + ld2)),
+    ).toEqual([])
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, lap("3990", "KAPHATO") + ld2)),
+    ).toHaveLength(1)
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, lap("1990", "ELFOGYOTT") + ld2)),
+    ).toHaveLength(1)
   })
 
   it("gtinHibak: a várt kód pontosan áll, GTIN nélkül egy sem", () => {

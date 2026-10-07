@@ -176,7 +176,7 @@ export const SZABALYOK = {
       Record<string, unknown>[] | undefined
     if (Array.isArray(valtozatok)) {
       if (!valtozatok.length) hibak.push("üres hasVariant")
-      const arak: number[] = []
+      const ajanlatok: { ar: number; elerhetoseg: string }[] = []
       valtozatok.forEach((v, i) => {
         const o = v.offers as Record<string, unknown> | undefined
         if (!o || Array.isArray(o)) {
@@ -187,13 +187,36 @@ export const SZABALYOK = {
           hibak.push(
             `a(z) ${i + 1}. változat pénzneme ${o.priceCurrency}, nem HUF`,
           )
-        arak.push(Number(o.price))
+        ajanlatok.push({
+          ar: Number(o.price),
+          elerhetoseg: String(o.availability),
+        })
       })
+      const arak = ajanlatok.map((a) => a.ar)
       if (!k.latottArak.length) hibak.push("nincs látható ár a lapon")
       else if (!k.latottArak.some((ar) => arak.includes(ar)))
         hibak.push(
           `a lap ára (${k.latottArak.join(", ")}) egyik változaté sem (${arak.join(", ")})`,
         )
+      else {
+        /*
+          AZ ELERHETOSEG IS A LATOTT VALTOZATE (barracuda atvetele, #531): a
+          lap araval egyezo valtozatok kozul legalabb egynek ugyanaz az
+          elerhetosege, mint a gombnak. Kulonben egy elfogyott valtozat lapja
+          "InStock"-ot allithatna a csoportban.
+        */
+        const latott = k.latottElerhetosegek[0]
+        const vart =
+          latott === "KAPHATO"
+            ? ["https://schema.org/InStock", "https://schema.org/BackOrder"]
+            : ["https://schema.org/OutOfStock"]
+        const azAron = ajanlatok.filter((a) => k.latottArak.includes(a.ar))
+        if (!latott) hibak.push("nincs látható elérhetőség (data-elerhetoseg)")
+        else if (!azAron.some((a) => vart.includes(a.elerhetoseg)))
+          hibak.push(
+            `a látott árú változat elérhetősége (${azAron.map((a) => a.elerhetoseg).join(", ")}) nem a lapé (${latott})`,
+          )
+      }
     }
     return hibak
   },

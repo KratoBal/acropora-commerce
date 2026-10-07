@@ -12,8 +12,8 @@ import { STORE_NAME } from "@lib/store"
  * MOST: Organization es WebSite minden lapon (SearchAction NELKUL, mert a
  * kereses noindex); BreadcrumbList a termek- es a kategorialapon; Product az
  * EGYVALTOZATOS termeken; ProductGroup + hasVariant a TOBBVALTOZATOSON
- * (FE-2b); gtin8/12/13/14 a valtozat `ean`, `upc` vagy `barcode` mezojebol,
- * ha ervenyes GTIN all benne (FE-2b, a P0 PR 4 tolti).
+ * (FE-2b); gtin8/12/13/14 a valtozat `ean` vagy `upc` mezojebol, ha
+ * ervenyes GTIN all benne (FE-2b, a P0 PR 4 tolti; a `barcode` nem forras).
  *
  * NEM MOST, es ezert nem talalunk ki erteket ra: mpn (a Medusa valtozaton
  * nincs gyartoi cikkszam mezo, es a P0 PR 4 sem hoz ilyet), shippingDetails es
@@ -288,17 +288,20 @@ export function ervenyesGtin(kod: string): boolean {
 }
 
 /**
- * A VALTOZAT GTIN-JE: az `ean`, utana az `upc`, vegul a `barcode` mezo elso
- * ervenyes kodja (a P0 PR 4 a 13 jegyut az `ean`-ba, a 12 jegyut az `upc`-be
- * irja). Nincs ervenyes kod: `null`, es a JSON-LD-bol a mezo KIMARAD (nem
- * ures).
+ * A VALTOZAT GTIN-JE: az `ean`, utana az `upc` mezo elso ervenyes kodja (a P0
+ * PR 4 a 13 jegyut az `ean`-ba, a 12 jegyut az `upc`-be irja). Nincs ervenyes
+ * kod: `null`, es a JSON-LD-bol a mezo KIMARAD (nem ures).
+ *
+ * A `barcode` mezo NEM forras (barracuda atvetele, #531): azt az OS nem irja,
+ * egy regi importbol pedig bolti belso kod (2-vel kezdodo, a GS1 szerint bolti
+ * hasznalatra szant tartomany) all benne, ami formailag ervenyes 13 jegyu kod,
+ * es gtin13-kent kimenne.
  */
 export function valtozatGtin(v: {
   ean?: string | null
   upc?: string | null
-  barcode?: string | null
 }): string | null {
-  for (const nyers of [v.ean, v.upc, v.barcode]) {
+  for (const nyers of [v.ean, v.upc]) {
     const kod = nyers?.trim()
     if (kod && ervenyesGtin(kod)) return kod
   }

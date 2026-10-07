@@ -33,7 +33,7 @@ const TERMEKEK = [
     title: "Aquaforest Amino",
     // a teszt boltban a GTIN-es termek is elfogyott (merve 2026-10-07): a valasztas
     // ne adja ugyanazt a lapot ket mintanak
-    variants: [v("v1", { barcode: "5902026731010", inventory_quantity: 0 })],
+    variants: [v("v1", { ean: "5902026731010", inventory_quantity: 0 })],
     categories: [{ id: "k-level" }],
   },
   {

@@ -101,6 +101,16 @@ describe("a terméklap strukturált adata", () => {
       PARAMS,
     ).termek as Record<string, unknown>
     expect(vele.gtin13).toBe("5060139356268")
+    // a barcode mezoben allo (bolti) kod sem forras
+    const csakBarcode = strukturaltAdat(
+      termek({ variants: [valtozat({ ean: null, barcode: "2000000000008" })] }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+    ).termek as Record<string, unknown>
+    expect(
+      Object.keys(csakBarcode).filter((k) => k.startsWith("gtin")),
+    ).toEqual([])
     for (const ean of [null, "", "5060139356269"]) {
       const nelkule = strukturaltAdat(
         termek({ variants: [valtozat({ ean })] }),
