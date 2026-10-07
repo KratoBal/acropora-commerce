@@ -35,6 +35,12 @@ export type OldalKivonat = {
   termekLinkek: string[]
   /** a kategoriara mutato `<a href>` linkek (`/categories/` az utban) */
   kategoriaLinkek: string[]
+  /** a `page` parameteru `<a href>` linkek (a lapozo) */
+  lapLinkek: string[]
+  /** a fulek (`role="tab"`) szama */
+  fulDb: number
+  /** a ful-panelek (`role="tabpanel"`): a szoveguk hossza, es rejtett-e */
+  panelek: { hossz: number; rejtett: boolean }[]
 }
 
 /**
@@ -98,5 +104,13 @@ export function kivonat(html: string): OldalKivonat {
     kategoriaLinkek: Array.from(
       doc.querySelectorAll('a[href*="/categories/"]'),
     ).map((a) => a.getAttribute("href") ?? ""),
+    lapLinkek: Array.from(doc.querySelectorAll('a[href*="page="]')).map(
+      (a) => a.getAttribute("href") ?? "",
+    ),
+    fulDb: doc.querySelectorAll('[role="tab"]').length,
+    panelek: Array.from(doc.querySelectorAll('[role="tabpanel"]')).map((p) => ({
+      hossz: szoveg(p).length,
+      rejtett: p.hasAttribute("hidden"),
+    })),
   }
 }

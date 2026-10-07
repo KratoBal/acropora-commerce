@@ -54,6 +54,7 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "json-ld-breadcrumb",
     "alt",
     "fo-kep-nem-lusta",
+    "rejtett-ful",
   ]
   const kategoria: SzabalyKulcs[] = [
     "statusz-200",
@@ -76,7 +77,7 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "termek-elfogyott": termek,
     "termek-valtozatos": ["statusz-200", "egy-h1"],
     "kategoria-felso": felso,
-    "kategoria-level": kategoria,
+    "kategoria-level": [...kategoria, "lapozo-linkek"],
     "kategoria-lap2": ["statusz-200", "egy-main", "lapozas-canonical"],
     marka: [
       "statusz-200",
@@ -192,6 +193,12 @@ for (const tipus of Object.keys(TERV) as MintaTipus[]) {
             `${tipus} / ${szabaly}: nincs minta (${minta.hianyzik})`,
           )
           return ctx.skip(`NINCS MINTA: ${minta.hianyzik}`)
+        }
+        // a lapozo csak tobb lapos kategorian all: ugyanaz a feltetel, mint a 2. lap mintaja
+        const lap2 = mintaja("kategoria-lap2")
+        if (szabaly === "lapozo-linkek" && !lap2.ut) {
+          kihagyottak.push(`${tipus} / ${szabaly}: ${lap2.hianyzik}`)
+          return ctx.skip(`NINCS TÖBB LAP: ${lap2.hianyzik}`)
         }
         const { k, valasz } = await lap(minta.ut)
         await ellenoriz(ctx, minta, szabaly, SZABALYOK[szabaly](k, valasz))

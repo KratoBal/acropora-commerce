@@ -1,3 +1,4 @@
+import { generikusAlt } from "@lib/seo/generikus-alt"
 import { ANGOL_HELYKITOLTOK } from "@lib/seo/oldal-metaadat"
 
 import type { KepAdat, OldalKivonat } from "./kivonat"
@@ -38,26 +39,10 @@ function utvonal(cim: string): { ut: string; query: string } | null {
   }
 }
 
-/**
- * A GENERIKUS ALT-SZOVEGEK (Balazs 5. pontja): a `Thumbnail` es a `Termékfotó`
- * nev szerint, plusz ami ugyanigy semmit nem mond a keprol. A szabaly NEM az,
- * hogy minden `alt` legyen nem ures: a dekorativ kep `alt=""`-t kaphat.
- */
-export const GENERIKUS_ALT: readonly RegExp[] = [
-  /^thumbnail$/i,
-  /^term[eé]kfot[oó]$/i,
-  /^term[eé]kk[eé]p$/i,
-  /^(k[eé]p|fot[oó]|image|photo|picture|img)( \d+)?$/i,
-  /^product image( \d+)?$/i,
-  /^placeholder$/i,
-  /\.(jpe?g|png|webp|gif|avif|svg)$/i,
-]
-
 export function altHiba(kep: KepAdat): string | null {
   if (kep.alt === null) return `hiányzó alt attribútum: ${kep.src}`
   const alt = kep.alt.trim()
-  if (GENERIKUS_ALT.some((m) => m.test(alt)))
-    return `generikus alt "${alt}": ${kep.src}`
+  if (generikusAlt(alt)) return `generikus alt "${alt}": ${kep.src}`
   if (kep.tartalmi && alt === "") return `termékkép üres alttal: ${kep.src}`
   return null
 }
@@ -166,6 +151,38 @@ export const SZABALYOK = {
     const fo = k.kepek.filter((x) => x.foKep)
     if (!fo.length) return ["nincs fő termékkép jelölve (lásd FO_KEP)"]
     return fo.some((x) => x.lusta) ? ["a fő termékkép loading=lazy"] : []
+  },
+
+  /**
+   * A LAPOZO VALODI LINKKENT AZ ELSO HTML-BEN (FE-1; barracuda atvetele, #519).
+   * A kereso csak `<a href>`-et kovet. MURENA MERESE (2026-10-07): ISR lapon a
+   * `useSearchParams`-os komponens helyett a Suspense-tartaleka kerul a HTML-be,
+   * tehat a linkek eltunnenek. Ma a lap dinamikus, a linkek ott vannak; az FE-7
+   * 3. resze szerveroldali parameterrel tartja meg oket, es ez a sor orzi.
+   */
+  "lapozo-linkek": (k, v) => {
+    const sajat = utvonal(v.ut)?.ut
+    return k.lapLinkek.some((h) => {
+      const u = utvonal(h)
+      return u?.ut === sajat && new URLSearchParams(u.query).get("page") === "2"
+    })
+      ? []
+      : ["nincs <a href> a 2. lapra az első HTML-ben"]
+  },
+
+  /**
+   * A NEM AKTIV FUL TARTALMA IS A DOM-BAN (FE-1): annyi panel, ahany ful, es
+   * egyik sem ures. Ful nelkuli lapon nincs mit merni.
+   */
+  "rejtett-ful": (k) => {
+    if (k.fulDb === 0) return []
+    const hibak: string[] = []
+    if (k.panelek.length !== k.fulDb)
+      hibak.push(
+        `${k.fulDb} fül, de ${k.panelek.length} panel az első HTML-ben`,
+      )
+    if (k.panelek.some((p) => p.hossz === 0)) hibak.push("üres fül-panel")
+    return hibak
   },
 
   "termek-linkek": (k) =>

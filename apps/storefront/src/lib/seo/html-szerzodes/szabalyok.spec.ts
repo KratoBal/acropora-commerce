@@ -248,3 +248,44 @@ describe("linkek és JSON-LD", () => {
     ).toEqual([])
   })
 })
+
+describe("lapozó és fülek (barracuda átvétele, #519)", () => {
+  it("a lapozó: a saját út 2. lapjára mutató <a href> kell", () => {
+    const v = { ...V, ut: "/hu/categories/x" }
+    const jo = oldal(
+      JO_FEJ,
+      '<a href="/hu/categories/x?sortBy=price_asc&page=2">2</a>',
+    )
+    const mas = oldal(JO_FEJ, '<a href="/hu/categories/y?page=2">2</a>')
+    const gomb = oldal(JO_FEJ, "<button>2</button>")
+    expect(fut("lapozo-linkek", jo, v)).toEqual([])
+    expect(fut("lapozo-linkek", mas, v)).toHaveLength(1)
+    expect(fut("lapozo-linkek", gomb, v)).toHaveLength(1)
+    // csak a 3. lapra mutato link: nem a 2. lap
+    const harmadik = oldal(JO_FEJ, '<a href="/hu/categories/x?page=3">3</a>')
+    expect(fut("lapozo-linkek", harmadik, v)).toHaveLength(1)
+  })
+
+  it("a fülek: annyi nem üres panel, ahány fül", () => {
+    const fulek =
+      '<button role="tab">Leírás</button><button role="tab">Műszaki adatok</button>'
+    const ket = oldal(
+      JO_FEJ,
+      `${fulek}<div role="tabpanel">Leírás szövege</div><div role="tabpanel" hidden>Teljesítmény: 30 W</div>`,
+    )
+    const egy = oldal(
+      JO_FEJ,
+      `${fulek}<div role="tabpanel">Leírás szövege</div>`,
+    )
+    const ures = oldal(
+      JO_FEJ,
+      `${fulek}<div role="tabpanel">Leírás</div><div role="tabpanel" hidden></div>`,
+    )
+    expect(fut("rejtett-ful", ket)).toEqual([])
+    expect(fut("rejtett-ful", egy)).toEqual([
+      "2 fül, de 1 panel az első HTML-ben",
+    ])
+    expect(fut("rejtett-ful", ures)).toEqual(["üres fül-panel"])
+    expect(fut("rejtett-ful", oldal(JO_FEJ, "<p>nincs fül</p>"))).toEqual([])
+  })
+})
