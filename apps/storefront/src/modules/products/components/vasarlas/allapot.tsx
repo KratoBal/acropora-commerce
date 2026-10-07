@@ -98,17 +98,31 @@ const optionsAsKeymap = (
  */
 export function kezdoOpciok(
   product: Pick<HttpTypes.StoreProduct, "variants">,
+  /**
+   * A cimbol jovo valtozat (`?v_id=`, FE-7 3. resz: a `_v` belso ut adja at a
+   * szervernek). Balazs 2026-10-07, SEO dontes 2. pont: kozvetlen megnyitaskor
+   * MAR a helyes valtozat jelenjen meg, nem csak kliensoldali allapotkent. Ha a
+   * termeknek nincs ilyen valtozata, a regi szabaly all.
+   */
+  valtozatId?: string,
 ): Record<string, string | undefined> {
+  const kert = valtozatId
+    ? product.variants?.find((v) => v.id === valtozatId)
+    : undefined
+  if (kert) return optionsAsKeymap(kert.options) ?? {}
   if (product.variants?.length !== 1) return {}
   return optionsAsKeymap(product.variants[0].options) ?? {}
 }
 
 export function VasarlasProvider({
   product,
+  valtozatId,
   disabled,
   children,
 }: {
   product: HttpTypes.StoreProduct
+  /** A cimbol jovo valtozat; lasd `kezdoOpciok`. */
+  valtozatId?: string
   disabled?: boolean
   children: React.ReactNode
 }) {
@@ -120,7 +134,7 @@ export function VasarlasProvider({
     az egyetlen valtozat, es a lap elso festese mar a valodi gombot mutatja.
   */
   const [options, setOptions] = useState<Record<string, string | undefined>>(
-    () => kezdoOpciok(product),
+    () => kezdoOpciok(product, valtozatId),
   )
   const [isAdding, setIsAdding] = useState(false)
   const [kosarVisszajelzes, setKosarVisszajelzes] = useState<{
@@ -155,10 +169,10 @@ export function VasarlasProvider({
     keret viselkedesere vonatkozo FELTEVES lenne, es nem mertem le.
   */
   useEffect(() => {
-    const kezdo = kezdoOpciok(product)
+    const kezdo = kezdoOpciok(product, valtozatId)
     if (!Object.keys(kezdo).length) return
     setOptions((elozo) => (isEqual(elozo, kezdo) ? elozo : kezdo))
-  }, [product])
+  }, [product, valtozatId])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
