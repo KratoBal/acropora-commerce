@@ -33,12 +33,6 @@ export const VARHATO: readonly Varhato[] = [
     ok: "strukturált adat még nincs (a P0 PR 1, 3 és 4 után)",
   },
   {
-    szabaly: "noindex",
-    tipusok: ["kereses", "facet"],
-    gazda: "FE-4",
-    ok: "a keresés és a facet noindexe az FE-4-ben jön (robots.txt-tiltás nélkül)",
-  },
-  {
     szabaly: "canonical-onmaga",
     tipusok: ["marka"],
     gazda: "P0 PR 11",
