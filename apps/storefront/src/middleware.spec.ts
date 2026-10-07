@@ -1,6 +1,100 @@
-import { describe, expect, it } from "vitest"
+// @vitest-environment node
+import { NextRequest } from "next/server"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { config } from "./middleware"
+
+/**
+ * A MIDDLEWARE VALODI VALASZA (FE-6, barracuda atvetele, #518).
+ *
+ * A tiszta fuggveny tesztje (`orszag-atiranyitas.spec.ts`) nem latja, mit ad at
+ * a middleware: ha valaki itt visszairna a 307-et, vagy rossz szamot adna at,
+ * az a spec zold maradna. Ez a spec a middleware-t futtatja egy kifigurazott
+ * regio-lekeressel, es a valasz statuszat es `Location`-jet nezi.
+ *
+ * MI PIROSIT: egy orszagnal az ismert lap nem 301 (vagy elveszti a query
+ * stringet); egy rossz orszagkodu ut 301-et kap; a `_next/data` atiranyitodik.
+ */
+const BACKEND = "http://medusa.test"
+
+function regiok(orszagok: string[]) {
+  return {
+    regions: [
+      {
+        id: "reg_1",
+        countries: orszagok.map((iso_2) => ({ iso_2 })),
+      },
+    ],
+  }
+}
+
+async function futtat(ut: string, orszagok: string[] = ["hu"]) {
+  vi.resetModules()
+  vi.stubEnv("NEXT_PUBLIC_MEDUSA_BACKEND_URL", BACKEND)
+  vi.stubEnv("NEXT_PUBLIC_DEFAULT_REGION", "hu")
+  const lekeres = vi.fn(async () => Response.json(regiok(orszagok)))
+  vi.stubGlobal("fetch", lekeres)
+  const { middleware } = await import("./middleware")
+  const valasz = await middleware(new NextRequest(`https://bolt.test${ut}`))
+  return { valasz, lekeres }
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
+})
+
+describe("a middleware átirányítása", () => {
+  it("egy ország, ismert lap: 301 az országos címre, a query stringgel", async () => {
+    const { valasz, lekeres } = await futtat("/products/hanna?v_id=1")
+    expect(lekeres).toHaveBeenCalledOnce()
+    expect(valasz.status).toBe(301)
+    expect(valasz.headers.get("location")).toBe(
+      "https://bolt.test/hu/products/hanna?v_id=1",
+    )
+  })
+
+  it("egy ország, a gyökér: 301 a /hu-ra", async () => {
+    const { valasz } = await futtat("/")
+    expect(valasz.status).toBe(301)
+    expect(valasz.headers.get("location")).toBe("https://bolt.test/hu")
+  })
+
+  it("ismeretlen országkód: nem 301 (307), mert a cél nem létező lap", async () => {
+    const { valasz } = await futtat("/de/termek")
+    expect(valasz.status).toBe(307)
+    expect(valasz.headers.get("location")).toBe(
+      "https://bolt.test/hu/de/termek",
+    )
+  })
+
+  it("több ország: 307 az ismert lapra is", async () => {
+    const { valasz } = await futtat("/products/hanna", ["hu", "at"])
+    expect(valasz.status).toBe(307)
+  })
+
+  it("országkóddal kezdődő út: nincs átirányítás", async () => {
+    const { valasz } = await futtat("/hu/products/hanna")
+    expect(valasz.headers.get("location")).toBeNull()
+    expect(valasz.headers.get("x-middleware-next")).toBe("1")
+  })
+
+  /*
+   * A matcher ezt nem tudja kizarni (a Next minden matcher ele `_next/data`
+   * elotagot tesz, es a `nextUrl.pathname`-bol levagja), tehat a middleware
+   * MEGKAPJA. Itt az all, hogy nem iranyitja at, es a regiokat sem kerdezi.
+   * A `/products/...` alak a legkozelebbi tevesztes: levagva ismert lap, es
+   * 301-et kapna.
+   */
+  it("a _next/data: a middleware nem irányítja át", async () => {
+    const { valasz, lekeres } = await futtat(
+      "/_next/data/b1/products/hanna.json",
+    )
+    expect(valasz.headers.get("location")).toBeNull()
+    expect(valasz.headers.get("x-middleware-next")).toBe("1")
+    expect(lekeres).not.toHaveBeenCalled()
+  })
+})
 
 /**
  * A MIDDLEWARE ATIRANYITASA ES A STATIKUS FAJLOK.
