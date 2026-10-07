@@ -81,7 +81,12 @@ export default function StockState({
   */
   if (availability === "ELADVA") {
     return (
-      <div className="flex flex-col gap-2" data-testid={testId + "-eladva"}>
+      <div
+        className="flex flex-col gap-2"
+        data-testid={testId + "-eladva"}
+        // a lapon latszo allapot a strukturalt adat ellenorzesehez (FE-2a, FE-8)
+        data-elerhetoseg={availability}
+      >
         {/*
           SEMLEGES SZÜRKE, SZÁNDÉKOSAN NEM PIROS (picasso terve, 2026-09-07):
           az "Eladva" ténykozlés, nem hibaüzenet. A délelőtti vörösesbe hajló
@@ -244,6 +249,8 @@ export default function StockState({
       className={FO_GOMB_MERET}
       isLoading={isAdding}
       data-testid={testId}
+      // a lapon latszo allapot a strukturalt adat ellenorzesehez (FE-2a, FE-8)
+      data-elerhetoseg={availability}
       style={
         letiltva
           ? undefined

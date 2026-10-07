@@ -18,8 +18,10 @@ import {
 import { VasarlasKontextus, type VasarlasAllapot } from "./kontextus"
 import {
   availabilityOf,
+  keszletIsmert,
   similarItemsHref,
   uniquePieceOf,
+  valtozatKaphato,
 } from "../stock-state/availability"
 import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
@@ -221,28 +223,11 @@ export function VasarlasProvider({
   }, [selectedVariant, isValidVariant])
 
   // check if the selected variant is in stock
-  const inStock = useMemo(() => {
-    // If we don't manage inventory, we can always add to cart
-    if (selectedVariant && !selectedVariant.manage_inventory) {
-      return true
-    }
-
-    // If we allow back orders on the variant, we can add to cart
-    if (selectedVariant?.allow_backorder) {
-      return true
-    }
-
-    // If there is inventory available, we can add to cart
-    if (
-      selectedVariant?.manage_inventory &&
-      (selectedVariant?.inventory_quantity || 0) > 0
-    ) {
-      return true
-    }
-
-    // Otherwise, we can't add to cart
-    return false
-  }, [selectedVariant])
+  // a dontes kozos a strukturalt adattal (FE-2a): `valtozatKaphato`
+  const inStock = useMemo(
+    () => valtozatKaphato(selectedVariant),
+    [selectedVariant],
+  )
 
   /*
     HÁROM ÁLLAPOT, KETTŐ HELYETT.
@@ -265,9 +250,7 @@ export function VasarlasProvider({
    * es a mert nulla ket kulonbozo allapot, es a kettot a `|| 0` alak mossa
    * ossze. Az ELADVA ag csak a mert nullara szolhat.
    */
-  const inventoryKnown =
-    !selectedVariant?.manage_inventory ||
-    typeof selectedVariant?.inventory_quantity === "number"
+  const inventoryKnown = keszletIsmert(selectedVariant)
 
   const availability = availabilityOf({
     inStock: inStock && !!isValidVariant,
