@@ -155,6 +155,40 @@ export const SZABALYOK = {
 
   alt: (k) => k.kepek.map(altHiba).filter((h): h is string => h !== null),
 
+  /**
+   * A TERMEKKEPEK MERETEZVE ES TOBB MERETBEN (FE-3, a webshop sajat
+   * optimalizaloja): `srcset`, es `width`/`height` vagy `fill` (a doboz aranya),
+   * kulonben a kep eredeti meretben jon, es betolteskor elugrik a lap.
+   */
+  "kep-meretezes": (k) =>
+    k.kepek
+      .filter((x) => x.tartalmi)
+      .flatMap((x) => [
+        ...(x.srcset ? [] : [`srcset nélküli termékkép: ${x.src}`]),
+        ...(x.meretezett
+          ? []
+          : [`width/height (vagy fill) nélküli termékkép: ${x.src}`]),
+      ]),
+
+  /** A FO KEP AZ LCP-ELEM: `fetchpriority="high"` (FE-3). */
+  "fo-kep-kiemelt": (k) => {
+    const fo = k.kepek.filter((x) => x.foKep)
+    if (!fo.length) return ["nincs fő termékkép jelölve (lásd FO_KEP)"]
+    return fo.some((x) => x.kiemelt)
+      ? []
+      : ['a fő termékkép nem fetchpriority="high"']
+  },
+
+  /**
+   * A HAJTAS FELETTI ELSO LISTAKEP NEM LUSTA (FE-3). A tobbi lusta maradhat;
+   * egy kep nelkuli lista hiba, kulonben a szabaly ures listan is zold lenne.
+   */
+  "elso-listakep-nem-lusta": (k) => {
+    const elso = k.kepek.find((x) => x.tartalmi)
+    if (!elso) return ["nincs termékkép a listán"]
+    return elso.lusta ? [`az első listakép loading=lazy: ${elso.src}`] : []
+  },
+
   "fo-kep-nem-lusta": (k) => {
     const fo = k.kepek.filter((x) => x.foKep)
     if (!fo.length) return ["nincs fő termékkép jelölve (lásd FO_KEP)"]

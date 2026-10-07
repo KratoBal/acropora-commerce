@@ -15,6 +15,10 @@ vi.mock("next/image", () => ({
   default: (props: Record<string, unknown>) => (
     <img alt={String(props.alt ?? "")} src={String(props.src ?? "")} />
   ),
+  // FE-3: a belyegsor `getImageProps`-szal epul; ugyanaz az atengedo alak
+  getImageProps: (props: Record<string, unknown>) => ({
+    props: { alt: String(props.alt ?? ""), src: String(props.src ?? "") },
+  }),
 }))
 
 import ImageGallery from "@modules/products/components/image-gallery"

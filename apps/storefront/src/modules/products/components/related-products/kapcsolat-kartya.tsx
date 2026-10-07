@@ -2,6 +2,7 @@ import { HttpTypes } from "@medusajs/types"
 
 import { getProductPrice } from "@lib/util/get-product-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { getImageProps } from "next/image"
 
 /**
  * A KAPCSOLODO TERMEK KARTYAJA A 192:57 SZERINT (P2, 3b, 2026-09-29).
@@ -29,7 +30,14 @@ export default function KapcsolatKartya({
         {/* termekkep, tehat a neve az alt-ja (Balazs 2026-10-07, 5. pont) */}
         {kep ? (
           <img
-            src={kep}
+            // FE-3: a Next optimalizaloja; az arany a doboze (32/30)
+            {...getImageProps({
+              src: kep,
+              alt: product.title ?? "",
+              width: 320,
+              height: 300,
+              sizes: "(min-width: 1024px) 220px, 45vw",
+            }).props}
             alt={product.title ?? ""}
             className="h-full w-full object-contain"
             data-testid="kapcsolat-kartya-kep"
