@@ -10,6 +10,13 @@ export const PRODUCT_KNOWLEDGE_STATUSES = [
   "POSSIBLE_WRONG_VALUE",
 ] as const
 
+/**
+ * What the BUYER may see (D5, Balázs 2026-10-07; card 4622f1ac): only VERIFIED.
+ * The admin route keeps every row, because the OS diffs against it; only the
+ * store route filters.
+ */
+export const PUBLIC_PRODUCT_KNOWLEDGE_STATUSES: readonly string[] = ["VERIFIED"]
+
 export const PRODUCT_KNOWLEDGE_BLOCKS = ["lead", "body"] as const
 
 const Fact = z

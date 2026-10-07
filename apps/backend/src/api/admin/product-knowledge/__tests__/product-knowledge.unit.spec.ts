@@ -73,12 +73,13 @@ describe("AdminPutProductKnowledge", () => {
 
 const row = (o: Record<string, unknown>) => ({ id: "x", product_id: "prod_1", ...o })
 
-function scope(published: boolean) {
+function scope(published: boolean, extraFacts: Record<string, unknown>[] = []) {
   const replaced: unknown[] = []
   const service = {
     listProductKnowledgeFacts: async () => [
       row(fact({ field: "packSize", value: "100 ml", source_type: undefined })),
       row(fact()),
+      ...extraFacts.map(row),
     ],
     listProductKnowledgeCopies: async () => [
       row({ block: "body", body: "B", revision: 2 }),
@@ -147,5 +148,32 @@ describe("the routes", () => {
     expect((await call(storeGet, scope(false).scope)).product_knowledge).toEqual(
       { product_id: "prod_1", facts: [], copy: [] }
     )
+  })
+
+  /*
+    THE SECOND GATE (D5, card 4622f1ac). What turns it red: a SUGGESTED, a
+    conflict or any other non-VERIFIED row reaching the buyer; or the admin
+    route filtering too, which would hide a stale row from the OS diff so the
+    full replace never removes it.
+  */
+  it("store GET hands out VERIFIED facts only; admin GET keeps every row", async () => {
+    const others = [
+      fact({ field: "flowRate", value: "3000", unit: "l/h", status: "SUGGESTED" }),
+      fact({ field: "power", value: null, status: "CONFLICTING_SOURCES", source_type: null }),
+      fact({ field: "voltage", value: "230", unit: "V AC", status: "UNVERIFIED" }),
+      fact({ field: "weight", value: "1", unit: "g", status: "POSSIBLE_WRONG_VALUE" }),
+    ]
+    expect((await call(storeGet, scope(true, others).scope)).product_knowledge).toEqual(SHAPE)
+    const admin = (await call(adminGet, scope(true, others).scope)).product_knowledge as {
+      facts: { field: string }[]
+    }
+    expect(admin.facts.map((f) => f.field)).toEqual([
+      "dosing",
+      "flowRate",
+      "packSize",
+      "power",
+      "voltage",
+      "weight",
+    ])
   })
 })
