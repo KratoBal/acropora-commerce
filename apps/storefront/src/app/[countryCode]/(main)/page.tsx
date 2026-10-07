@@ -1,4 +1,9 @@
 import { Metadata } from "next"
+import {
+  indexelhetoRobots,
+  kezdolapLeiras,
+  openGraph,
+} from "@lib/seo/oldal-metaadat"
 import { STORE_NAME } from "@lib/store"
 
 import AkciosSor from "@modules/kezdolap/components/akcios-sor"
@@ -29,11 +34,17 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const params = await props.params
 
+  const canonical = fooldalCanonical(params.countryCode)
   return {
     title: STORE_NAME,
-    alternates: {
-      canonical: fooldalCanonical(params.countryCode),
-    },
+    description: kezdolapLeiras(),
+    robots: indexelhetoRobots(),
+    alternates: { canonical },
+    openGraph: openGraph({
+      cim: STORE_NAME,
+      leiras: kezdolapLeiras(),
+      url: canonical,
+    }),
   }
 }
 

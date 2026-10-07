@@ -1689,3 +1689,42 @@ describe("a hasonló doboz kapuja a tartalékot is ismeri", () => {
     expect(kapu(VAN_GONDOZOTT, undefined)).toBeTruthy()
   })
 })
+
+/**
+ * PONTOSAN EGY H1 A TERMEKLAPON (SEO frontend FE-1, 2026-10-07). A sablon
+ * Suspense-tartaleka ugyanazt a vazat rajzolja, es a streamelt elso HTML-ben a
+ * tartalek es a vegleges lap is benne van. Merve a teszt kirakaton: ket egyforma
+ * H1. MI PIROSIT: ha a tartalek is H1-et ad, vagy ha a vegleges lap nem.
+ */
+const TERMEK_NEVE = "Amtra TDS/EC digitális TDS mérő"
+
+describe("a terméknév címsora", () => {
+  it("a végleges lapon pontosan egy H1, a terméknévvel", () => {
+    const { container } = render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+    const h1 = container.querySelectorAll("h1")
+    expect(h1).toHaveLength(1)
+    expect(h1[0]?.textContent).toBe(TERMEK_NEVE)
+    cleanup()
+  })
+
+  it("a tartalék ugyanazt a nevet mutatja, de nem H1-ként", () => {
+    const { container } = render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        )}
+      />,
+    )
+    expect(container.querySelectorAll("h1")).toHaveLength(0)
+    expect(screen.getByTestId("vaz-termek-nev").textContent).toBe(TERMEK_NEVE)
+    cleanup()
+  })
+})

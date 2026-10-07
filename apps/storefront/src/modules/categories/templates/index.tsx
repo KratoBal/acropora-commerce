@@ -60,7 +60,12 @@ export default function CategoryTemplate({
   */
   if (kind === "technical") {
     return (
-      <main
+      /*
+        NEM <main>: a gyoker elrendezes (`app/layout.tsx`) mar <main>-be teszi
+        az oldalt, es egy masodik <main> a lapon ket fo tartalmat allitana
+        (merve a teszt kirakaton 2026-10-07, SEO frontend FE-1).
+      */
+      <div
         data-testid="category-container"
         data-acr-mod={categoryPageMode(category)}
       >
@@ -73,7 +78,7 @@ export default function CategoryTemplate({
           optionValueIds={optionValueIds}
           markak={markak}
         />
-      </main>
+      </div>
     )
   }
 
@@ -97,7 +102,7 @@ export default function CategoryTemplate({
   const sajatRovid = nev(category)
 
   return (
-    <main
+    <div
       className="content-container py-8"
       data-testid="category-container"
       /*
@@ -242,6 +247,6 @@ export default function CategoryTemplate({
           </p>
         </section>
       ) : null}
-    </main>
+    </div>
   )
 }

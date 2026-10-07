@@ -133,6 +133,25 @@ describe("a termékleírás fül-sávja", () => {
    * MAS mezobol jon. A tablazat nelkuli termek a gyakoribb; a proza nelkuli
    * ritka, de letezik (csak tablazatot tartalmazo leiras).
    */
+  /*
+    A NEM AKTIV FUL TARTALMA IS A DOM-BAN, CSAK REJTVE (SEO frontend FE-1):
+    eddig csak az aktiv panel kerult a lapra, a masik az elso HTML-bol
+    hianyzott. MI PIROSIT: ha a nem aktiv panel nincs a DOM-ban, vagy ha nem
+    rejtett (ket panel latszana egyszerre).
+  */
+  it("a nem aktív fül tartalma is a DOM-ban, de rejtve", () => {
+    const { container } = render(
+      <ProductDescriptionTabs description={PROZA + TABLAZAT} />,
+    )
+    const panelek = container.querySelectorAll('[role="tabpanel"]')
+    expect(panelek).toHaveLength(2)
+    expect(
+      Array.from(panelek).filter((p) => !p.hasAttribute("hidden")),
+    ).toHaveLength(1)
+    // induláskor az adat-fül aktív, a leírás szövege mégis a lapon van
+    expect(container.textContent).toContain("Aqualight")
+  })
+
   it("csak prózánál nincs fül-sáv, a szöveg magában áll", () => {
     render(<ProductDescriptionTabs description={PROZA} />)
 

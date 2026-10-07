@@ -179,6 +179,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <Suspense
           fallback={
             <MuszakiLap
+              tartalek
               product={product}
               kategoriak={categories}
               tudas={tudas}
