@@ -16,6 +16,7 @@ export type ProductKnowledgeFactInput = {
   status: string
   source_type: string | null
   revision: number
+  public: boolean
 }
 
 export type ProductKnowledgeCopyInput = {

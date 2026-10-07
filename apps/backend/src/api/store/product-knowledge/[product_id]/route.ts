@@ -2,7 +2,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { productKnowledgeOf } from "../../../admin/product-knowledge/helpers"
-import { PUBLIC_PRODUCT_KNOWLEDGE_STATUSES } from "../../../admin/product-knowledge/validators"
+import { forBuyer } from "../../../admin/product-knowledge/validators"
 
 /**
  * The product knowledge for the product page, read only, same shape as the
@@ -33,7 +33,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   res.json({
     product_knowledge: {
       ...knowledge,
-      facts: knowledge.facts.filter((fact) => PUBLIC_PRODUCT_KNOWLEDGE_STATUSES.includes(fact.status)),
+      facts: knowledge.facts.filter(forBuyer),
     },
   })
 }
