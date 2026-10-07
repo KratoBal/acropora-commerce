@@ -116,13 +116,21 @@ const kihagyottak: string[] = []
 
 /**
  * A talalt hibak es az ismert lista ket iranyu osszevetese. A `talalt` a
- * szabaly -> elso hely terkep.
+ * szabaly -> elso hely terkep, a `kritikus` az axe `impact: "critical"`
+ * szabalyai.
+ *
+ * KRITIKUS HIBA NEM LEHET ISMERT (barracuda atvetele, #523; a Launch Audit
+ * feltetele: "axe: 0 kritikus a mintaoldalakon"). Ha a lista egy kritikus
+ * szabalyt kihagyottkent fogadna el, a "0 kritikus" a kimenetbol gepileg nem
+ * lenne eldontheto. Ezert egy kritikus talalat MINDIG piros, akkor is, ha a
+ * listan all.
  */
 function osszevet(
   ctx: TestContext,
   lap: string,
   talalt: Map<string, string>,
   ismertKor: (sz: string) => boolean,
+  kritikus: ReadonlySet<string> = new Set(),
 ) {
   // minden talalt hiba a kimenetbe, laponkent: a CI naplojabol ez a hibalista
   console.log(
@@ -143,6 +151,10 @@ function osszevet(
   const eltunt = A11Y_VARHATO.filter(
     (v) => v.lap === lap && ismertKor(v.szabaly) && !talalt.has(v.szabaly),
   ).map((v) => v.szabaly)
+  expect(
+    Array.from(kritikus).filter((sz) => talalt.has(sz)),
+    `kritikus axe-hiba a(z) ${lap} lapon (az ismert listán sem állhat)`,
+  ).toEqual([])
   expect(uj, `új hiba a(z) ${lap} lapon`).toEqual([])
   expect(
     eltunt,
@@ -177,7 +189,11 @@ describe("axe (WCAG A/AA és best-practice)", () => {
                     d: Document,
                     o: unknown,
                   ) => Promise<{
-                    violations: { id: string; nodes: { target: string[] }[] }[]
+                    violations: {
+                      id: string
+                      impact: string | null
+                      nodes: { target: string[] }[]
+                    }[]
                   }>
                 }
               }
@@ -187,15 +203,18 @@ describe("axe (WCAG A/AA és best-practice)", () => {
             })
           ).violations.map((v) => [
             v.id,
-            `${v.nodes.length}× ${v.nodes[0]?.target.join(" ")}`,
+            `${v.nodes.length}× ${v.nodes[0]?.target.join(" ")} [${v.impact}]`,
+            v.impact,
           ]),
         AXE_CIMKEK,
       )
+      const sorok = eredmeny as [string, string, string | null][]
       osszevet(
         ctx,
         lap,
-        new Map(eredmeny as [string, string][]),
+        new Map(sorok.map(([id, hol]) => [id, hol])),
         (sz) => !sz.startsWith("bill:"),
+        new Set(sorok.filter(([, , i]) => i === "critical").map(([id]) => id)),
       )
     })
   }

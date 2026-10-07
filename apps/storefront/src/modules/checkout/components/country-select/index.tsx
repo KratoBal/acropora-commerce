@@ -34,6 +34,9 @@ const CountrySelect = forwardRef<
       ref={innerRef}
       placeholder={placeholder}
       defaultValue={defaultValue}
+      // a mezo neve a felolvasonak (axe `select-name` kritikus, FE-9): a hivo
+      // adhat sajatot, kulonben a helykitolto, ami a lathato elso sor
+      aria-label={props["aria-label"] ?? placeholder}
       {...props}
     >
       {countryOptions?.map(({ value, label }, index) => (
