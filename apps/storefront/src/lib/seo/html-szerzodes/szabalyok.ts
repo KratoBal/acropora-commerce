@@ -172,7 +172,11 @@ export const SZABALYOK = {
     const sajat = utvonal(v.ut)?.ut
     return k.lapLinkek.some((h) => {
       const u = utvonal(h, v.ut)
-      return u?.ut === sajat && new URLSearchParams(u.query).get("page") === "2"
+      return (
+        !!u &&
+        u.ut === sajat &&
+        new URLSearchParams(u.query).get("page") === "2"
+      )
     })
       ? []
       : ["nincs <a href> a 2. lapra az első HTML-ben"]
