@@ -13,7 +13,8 @@
     "start": "next start -p 8000",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seo:html": "vitest run -c vitest.seo.config.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

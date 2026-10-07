@@ -341,3 +341,27 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+      # A RENDERELT HTML SEO-SZERZODESE (SEO frontend FE-8, Balazs 2026-10-07).
+      #
+      # A frissen epitett kirakatot inditja el (`next start`), es a mintaoldalak
+      # ELSO HTML-jet meri: azt latja a kereso, nem a komponenst. A mintakat a
+      # teszt bolt Store API-jabol valasztja (termek, kategoria, marka, kereses,
+      # facet, lapozas, nem letezo), tehat UGYANUGY fugg a teszt bolt
+      # elerhetosegetol, mint a fenti Build lepes.
+      #
+      # HAROM KIMENET: zold; piros (regresszio, vagy egy varhato-piros mar zold:
+      # akkor a `varhato.ts` sorat kell kivenni); kihagyott (varhato-piros a gazda
+      # PR-rel, vagy nincs minta az adatban). A kihagyottak listaja a kimenet
+      # vegen egy helyen all ("KIHAGYOTT").
+      #
+      # Ha a kirakat nem indul el, a naplo vege kiirodik, es a lepes piros.
+      - name: SEO HTML-szerzodes
+        run: |
+          pnpm --filter @dtc/storefront start > /tmp/kirakat.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:8000/robots.txt && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:8000/robots.txt || { tail -50 /tmp/kirakat.log; exit 1; }
+          SEO_BASE_URL=http://localhost:8000 pnpm --filter @dtc/storefront run seo:html
