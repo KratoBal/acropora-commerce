@@ -16,6 +16,7 @@ const StoreTemplate = ({
   kereses,
   gyoker,
   markak,
+  lapozoKeres,
 }: {
   sortBy?: SortOptions
   page?: string
@@ -27,6 +28,8 @@ const StoreTemplate = ({
   gyoker?: string
   /** A talalati lap marka-szuroje (`?marka=`), csak kereseskor. */
   markak?: string[]
+  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
+  lapozoKeres?: string
 }) => {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
@@ -65,6 +68,7 @@ const StoreTemplate = ({
             page={pageNumber}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
+            lapozoKeres={lapozoKeres}
           />
         </Suspense>
       </div>

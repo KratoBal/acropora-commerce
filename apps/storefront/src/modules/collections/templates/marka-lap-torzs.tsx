@@ -4,6 +4,7 @@ import { getCollectionByHandle } from "@lib/data/collections"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import CollectionTemplate from "@modules/collections/templates"
+import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -39,6 +40,7 @@ export async function markaLapTorzs(
       sortBy={sortBy}
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
+      lapozoKeres={lapozoKeres(searchParams)}
     />
   )
 }

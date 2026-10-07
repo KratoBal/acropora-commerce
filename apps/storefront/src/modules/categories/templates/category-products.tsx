@@ -43,6 +43,7 @@ function ProductCard({
         <div className={sold ? "opacity-55" : ""}>
           <div className="relative">
             <Thumbnail
+              alt={product.title ?? ""}
               thumbnail={product.thumbnail}
               images={product.images}
               size="full"
@@ -159,6 +160,7 @@ export default async function CategoryProducts({
   sortBy,
   optionValueIds,
   kind,
+  lapozoKeres,
 }: {
   categoryId: string
   countryCode: string
@@ -166,6 +168,8 @@ export default async function CategoryProducts({
   sortBy?: SortOptions
   optionValueIds?: OptionValueIds
   kind: CategoryPageKind
+  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
+  lapozoKeres?: string
 }) {
   const {
     response: { products, count },
@@ -208,6 +212,7 @@ export default async function CategoryProducts({
             data-testid="category-product-pagination"
             page={page}
             totalPages={totalPages}
+            keres={lapozoKeres}
           />
         </div>
       ) : null}

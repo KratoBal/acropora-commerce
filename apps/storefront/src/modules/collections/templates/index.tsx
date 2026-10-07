@@ -13,12 +13,15 @@ export default function CollectionTemplate({
   page,
   countryCode,
   optionValueIds,
+  lapozoKeres,
 }: {
   sortBy?: SortOptions
   collection: HttpTypes.StoreCollection
   page?: string
   countryCode: string
   optionValueIds?: OptionValueIds
+  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
+  lapozoKeres?: string
 }) {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
@@ -43,6 +46,7 @@ export default function CollectionTemplate({
             collectionId={collection.id}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
+            lapozoKeres={lapozoKeres}
           />
         </Suspense>
       </div>

@@ -1,51 +1,58 @@
 "use client"
 
-import { clx } from "@modules/common/components/ui"
-import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
-import { aktualisKeres } from "@lib/util/aktualis-keres"
+import { lapHref } from "./lap-href"
 
 export function Pagination({
   page,
   totalPages,
+  keres = "",
   "data-testid": dataTestid,
 }: {
   page: number
   totalPages: number
+  /**
+   * A linkek query-je a `page` nelkul, a SZERVERTOL (`lapozoKeres`). FE-7: a
+   * `useSearchParams` egy statikus lapon a lapozot a HTML-bol kivenne.
+   */
+  keres?: string
   "data-testid"?: string
 }) {
-  const router = useRouter()
   const pathname = usePathname()
 
   // Helper function to generate an array of numbers within a range
   const arrayRange = (start: number, stop: number) =>
     Array.from({ length: stop - start + 1 }, (_, index) => start + index)
 
-  // Function to handle page changes
-  const handlePageChange = (newPage: number) => {
-    // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
-    const params = aktualisKeres()
-    params.set("page", newPage.toString())
-    router.push(`${pathname}?${params.toString()}`)
-  }
-
-  // Function to render a page button
+  /*
+    MINDEN LAP VALODI LINK (SEO frontend FE-1): a kereso csak `<a href>`-et
+    kovet, egy `onClick`-es gombot nem, tehat a 2+. lap eddig csak a sitemapen at
+    volt elerheto. Az aktualis lap nem link, hanem `aria-current` jelolesu szoveg.
+  */
   const renderPageButton = (
     p: number,
     label: string | number,
     isCurrent: boolean,
-  ) => (
-    <button
-      key={p}
-      className={clx("txt-xlarge-plus text-ui-fg-muted", {
-        "text-ui-fg-base hover:text-ui-fg-subtle": isCurrent,
-      })}
-      disabled={isCurrent}
-      onClick={() => handlePageChange(p)}
-    >
-      {label}
-    </button>
-  )
+  ) =>
+    isCurrent ? (
+      <span
+        key={p}
+        aria-current="page"
+        className="txt-xlarge-plus text-ui-fg-base"
+      >
+        {label}
+      </span>
+    ) : (
+      <Link
+        key={p}
+        href={lapHref(pathname, keres, p)}
+        className="txt-xlarge-plus text-ui-fg-muted hover:text-ui-fg-subtle"
+      >
+        {label}
+      </Link>
+    )
 
   // Function to render ellipsis
   const renderEllipsis = (key: string) => (

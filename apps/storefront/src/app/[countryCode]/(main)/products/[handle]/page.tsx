@@ -1,6 +1,11 @@
 import { Metadata } from "next"
+import {
+  indexelhetoRobots,
+  lapCim,
+  openGraph,
+  termekLeiras,
+} from "@lib/seo/oldal-metaadat"
 import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
-import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 import { termekLapTorzs } from "@modules/products/templates/termek-lap-torzs"
 
@@ -68,22 +73,25 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  const cim = lapCim(product.title ?? "")
+  const leiras = termekLeiras(product)
+  const canonical = termeklapCanonical(params.countryCode, params.handle)
   return {
-    title: `${product.title} | ${STORE_NAME}`,
-    description: `${product.title}`,
+    title: cim,
+    description: leiras,
+    robots: indexelhetoRobots(),
     /*
      * A KANONIKUS CIM A NYERS, KODOLT HANDLE-BOL EPUL, nem a `handle`
      * valtozobol -- az `decodeHandleParam`-en ment at, es egy URL-be a KODOLT
      * alak valo. Az indoklas a `lap-canonical.ts` fejleceben all.
      */
-    alternates: {
-      canonical: termeklapCanonical(params.countryCode, params.handle),
-    },
-    openGraph: {
-      title: `${product.title} | ${STORE_NAME}`,
-      description: `${product.title}`,
-      images: product.thumbnail ? [product.thumbnail] : [],
-    },
+    alternates: { canonical },
+    openGraph: openGraph({
+      cim,
+      leiras,
+      url: canonical,
+      kepek: product.thumbnail ? [product.thumbnail] : [],
+    }),
   }
 }
 

@@ -1,6 +1,11 @@
 import { Metadata } from "next"
+import {
+  indexelhetoRobots,
+  lapCim,
+  markaLeiras,
+  openGraph,
+} from "@lib/seo/oldal-metaadat"
 import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
-import { STORE_NAME } from "@lib/store"
 import { notFound } from "next/navigation"
 import { markaLapTorzs } from "@modules/collections/templates/marka-lap-torzs"
 
@@ -76,9 +81,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  // a markalap canonicalja a P0 PR 11 (marka-modul) resze, nem ez a PR
+  const cim = lapCim(collection.title)
+  const leiras = markaLeiras(
+    collection.title,
+    typeof collection.metadata?.description === "string"
+      ? collection.metadata.description
+      : null,
+  )
   const metadata = {
-    title: `${collection.title} | ${STORE_NAME}`,
-    description: `${collection.title} collection`,
+    title: cim,
+    description: leiras,
+    robots: indexelhetoRobots(),
+    openGraph: openGraph({ cim, leiras }),
   } as Metadata
 
   return metadata

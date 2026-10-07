@@ -141,6 +141,11 @@ type Props = {
    * mutatni, kulonben a lap beture a mai.
    */
   tudas?: TermekTudas | null
+  /**
+   * A SUSPENSE TARTALEKA-E ez a lap (a sablon `fallback`-je): a nev ott nem H1,
+   * mert a streamelt elso HTML a vegleges lapot is viszi, es ket H1 lenne.
+   */
+  tartalek?: boolean
 }
 
 const MuszakiLap = ({
@@ -153,6 +158,7 @@ const MuszakiLap = ({
   kiegeszitoResz,
   morzsaResz,
   tudas,
+  tartalek,
 }: Props) => {
   /*
     A JOVAHAGYOTT SZOVEG A TUDASBOL JON, NEM A TERMEK LEIRASABOL, ha van: a
@@ -177,6 +183,7 @@ const MuszakiLap = ({
       sora, hogy a ket olvaso ne vezesse le ketfele ugyanazt.
     */
     besorolasUt(product, kategoriak ?? []).at(-1)?.id,
+    tartalek,
   )
   /*
     A TUDAS-BLOKK A LEIRAS ALA KERUL, A `fulek` SLOTBA, ES NEM UJ SZAKASZKENT:

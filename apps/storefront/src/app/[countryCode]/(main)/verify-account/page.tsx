@@ -4,8 +4,8 @@ import { Suspense } from "react"
 import VerifyAccount from "@modules/account/components/verify-account"
 
 export const metadata: Metadata = {
-  title: "Verify your email",
-  description: "Verify your email address to complete your registration.",
+  title: "E-mail-cím megerősítése",
+  description: "Erősítsd meg az e-mail-címedet a regisztráció befejezéséhez.",
 }
 
 export default function VerifyAccountPage() {

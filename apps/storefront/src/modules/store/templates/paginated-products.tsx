@@ -25,6 +25,7 @@ export default async function PaginatedProducts({
   countryCode,
   optionValueIds,
   includeDescendants = true,
+  lapozoKeres,
 }: {
   sortBy?: SortOptions
   page: number
@@ -34,6 +35,8 @@ export default async function PaginatedProducts({
   countryCode: string
   optionValueIds?: OptionValueIds
   includeDescendants?: boolean
+  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
+  lapozoKeres?: string
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -111,6 +114,7 @@ export default async function PaginatedProducts({
           data-testid="product-pagination"
           page={page}
           totalPages={totalPages}
+          keres={lapozoKeres}
         />
       )}
     </>

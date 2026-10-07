@@ -10,6 +10,7 @@ import {
 import { markaAzonositok } from "@lib/util/marka-szuro"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import CategoryTemplate from "@modules/categories/templates"
+import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -86,6 +87,7 @@ export async function kategoriaLapTorzs(
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
       markak={markak}
+      lapozoKeres={lapozoKeres(searchParams)}
     />
   )
 }

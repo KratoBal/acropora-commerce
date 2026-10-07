@@ -118,6 +118,7 @@ export default function CommerceTermekKartya({
             )}
           >
             <Thumbnail
+              alt={product.title ?? ""}
               thumbnail={product.thumbnail}
               images={product.images}
               size="full"

@@ -25,6 +25,7 @@ export default function CategoryTemplate({
   countryCode,
   optionValueIds,
   markak,
+  lapozoKeres,
 }: {
   category: HttpTypes.StoreProductCategory
   /**
@@ -46,6 +47,8 @@ export default function CategoryTemplate({
   countryCode: string
   optionValueIds?: OptionValueIds
   markak?: string[]
+  /** A lapozo linkjeinek query-je (`lapozoKeres`, FE-7 3. resz). */
+  lapozoKeres?: string
 }) {
   if (!category || !countryCode) notFound()
 
@@ -60,7 +63,12 @@ export default function CategoryTemplate({
   */
   if (kind === "technical") {
     return (
-      <main
+      /*
+        NEM main elem: a gyoker elrendezes (`app/layout.tsx`) mar abba teszi
+        az oldalt, es egy masodik main a lapon ket fo tartalmat allitana
+        (merve a teszt kirakaton 2026-10-07, SEO frontend FE-1).
+      */
+      <div
         data-testid="category-container"
         data-acr-mod={categoryPageMode(category)}
       >
@@ -73,7 +81,7 @@ export default function CategoryTemplate({
           optionValueIds={optionValueIds}
           markak={markak}
         />
-      </main>
+      </div>
     )
   }
 
@@ -97,7 +105,7 @@ export default function CategoryTemplate({
   const sajatRovid = nev(category)
 
   return (
-    <main
+    <div
       className="content-container py-8"
       data-testid="category-container"
       /*
@@ -216,6 +224,7 @@ export default function CategoryTemplate({
             optionValueIds={optionValueIds}
             page={pageNumber}
             sortBy={sortBy}
+            lapozoKeres={lapozoKeres}
           />
         </Suspense>
       </section>
@@ -242,6 +251,6 @@ export default function CategoryTemplate({
           </p>
         </section>
       ) : null}
-    </main>
+    </div>
   )
 }
