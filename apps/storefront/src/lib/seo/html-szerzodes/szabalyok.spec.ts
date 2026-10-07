@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { kivonat } from "./kivonat"
-import { SZABALYOK, type Valasz } from "./szabalyok"
+import { SZABALYOK, valtozatHibak, type Valasz } from "./szabalyok"
 
 /**
  * A SZERZODES SZABALYAI EGY-EGY HTML-EN (FE-8). A kep- es link-reszletek a teszt
@@ -293,5 +293,42 @@ describe("lapozó és fülek (barracuda átvétele, #519)", () => {
     ])
     expect(fut("rejtett-ful", ures)).toEqual(["üres fül-panel"])
     expect(fut("rejtett-ful", oldal(JO_FEJ, "<p>nincs fül</p>"))).toEqual([])
+  })
+})
+
+describe("a ?v_id: a kijelölt opció, kontrollal (barracuda átvétele, #521)", () => {
+  // a valodi `option-select.tsx` jelolese, a magyarazo sorral egyutt
+  const gomb = (ertek: string, kijelolt: boolean) =>
+    `<button type="button" class="text-left" style="padding:12px" aria-pressed="${kijelolt}" data-testid="option-button">${ertek}<div style="margin-top:3px" data-testid="opcio-magyarazat">Nagyobb kiszerelés</div></button>`
+  const lap = (kijelolt: "50 ml" | "100 ml" | null) =>
+    oldal(
+      JO_FEJ,
+      gomb("50 ml", kijelolt === "50 ml") +
+        gomb("100 ml", kijelolt === "100 ml") +
+        // az RSC-adat minden valtozat cikkszamat viszi: a meres ezt NEM nezheti
+        '<script>self.__next_f.push([1,"B-1 B-2 100 ml"])</script>',
+    )
+
+  it("a kivonat a gomb értékét adja, a magyarázó sor nélkül", () => {
+    expect(lap("100 ml").kijeloltOpciok).toEqual(["100 ml"])
+    expect(lap(null).kijeloltOpciok).toEqual([])
+  })
+
+  it("v_id-vel a kért opció, nélküle más: rendben", () => {
+    expect(valtozatHibak(["100 ml"], lap("100 ml"), lap("50 ml"))).toEqual([])
+    expect(valtozatHibak(["100 ml"], lap("100 ml"), lap(null))).toEqual([])
+  })
+
+  it("ha v_id-vel nem a kért opció áll, piros (a nyers szöveg ezt nem látná)", () => {
+    expect(valtozatHibak(["100 ml"], lap("50 ml"), lap("50 ml"))).toHaveLength(
+      1,
+    )
+    expect(valtozatHibak(["100 ml"], lap(null), lap(null))).toHaveLength(1)
+  })
+
+  it("a kontroll: ha v_id nélkül is a kért opció áll, a mérés nem különböztet", () => {
+    expect(valtozatHibak(["100 ml"], lap("100 ml"), lap("100 ml"))).toEqual([
+      "v_id nélkül is a kért opció van kijelölve: a mérés nem különbözteti meg a változatot",
+    ])
   })
 })

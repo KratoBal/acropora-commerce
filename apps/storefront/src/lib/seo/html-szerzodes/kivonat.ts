@@ -41,6 +41,13 @@ export type OldalKivonat = {
   fulDb: number
   /** a ful-panelek (`role="tabpanel"`): a szoveguk hossza, es rejtett-e */
   panelek: { hossz: number; rejtett: boolean }[]
+  /**
+   * A KIJELOLT OPCIOK ERTEKE (`option-button`, `aria-pressed="true"`), a
+   * magyarazo sor nelkul. Ez a valasztashoz kotott jel: a nyers HTML RSC-adata
+   * minden valtozat cikkszamat es arat viszi, tehat abbol a valasztas nem
+   * latszik (barracuda atvetele, #521).
+   */
+  kijeloltOpciok: string[]
 }
 
 /**
@@ -112,5 +119,16 @@ export function kivonat(html: string): OldalKivonat {
       hossz: szoveg(p).length,
       rejtett: p.hasAttribute("hidden"),
     })),
+    kijeloltOpciok: Array.from(
+      doc.querySelectorAll(
+        '[data-testid="option-button"][aria-pressed="true"]',
+      ),
+    ).map((gomb) =>
+      Array.from(gomb.childNodes)
+        .filter((n) => n.nodeType === 3)
+        .map((n) => n.textContent ?? "")
+        .join("")
+        .trim(),
+    ),
   }
 }

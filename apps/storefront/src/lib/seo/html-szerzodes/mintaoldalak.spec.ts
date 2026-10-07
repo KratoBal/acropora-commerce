@@ -41,8 +41,9 @@ const TERMEKEK = [
     handle: "b-sima",
     title: "Boyu szivattyú",
     variants: [
-      v("v2a"),
-      v("v2b", { calculated_price: { calculated_amount: 2000 }, sku: "B-2" }),
+      v("v2a", { options: [{ value: "50 ml" }] }),
+      // azonos aru, mas opcioju valtozat: a valasztas az opcion all, nem az aron
+      v("v2b", { options: [{ value: "100 ml" }], sku: "B-2" }),
     ],
     categories: [{ id: "k-level" }],
   },
@@ -86,10 +87,10 @@ describe("a mintaoldalak választása", () => {
     expect(ut("termek-elfogyott")).toBe("/hu/products/c-elfogyott")
   })
 
-  it("a változat a nem alapértelmezett, eltérő árú", () => {
+  it("a változat a nem alapértelmezett, eltérő opciójú", () => {
     const x = m.find((y) => y.tipus === "termek-valtozatos")!
     expect(x.ut).toBe("/hu/products/b-sima?v_id=v2b")
-    expect(x.valtozat).toEqual({ id: "v2b", ar: 2000, sku: "B-2" })
+    expect(x.valtozat).toEqual({ id: "v2b", opciok: ["100 ml"] })
   })
 
   it("kategória, márka, facet, keresés a termékes elemekből", () => {

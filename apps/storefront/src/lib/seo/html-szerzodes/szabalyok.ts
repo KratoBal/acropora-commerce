@@ -213,3 +213,30 @@ export const SZABALYOK = {
 } satisfies Record<string, Szabaly>
 
 export type SzabalyKulcs = keyof typeof SZABALYOK
+
+/**
+ * A `?v_id` KOZVETLEN MEGNYITASA (Balazs 2. pontja): a kert valtozat opcioi
+ * kijelolve allnak az elso HTML-ben, ES ugyanaz a lap `v_id` nelkul NEM ezeket
+ * mutatja kijelolve. A masodik a meres kontrollja: ha `v_id` nelkul is ugyanaz
+ * all, a meres nem kulonbozteti meg a valtozatot (barracuda atvetele, #521).
+ */
+export function valtozatHibak(
+  opciok: readonly string[],
+  vIddel: OldalKivonat,
+  vIdNelkul: OldalKivonat,
+): string[] {
+  if (opciok.length === 0)
+    return ["a változatnak nincs opció-értéke: nem mérhető"]
+  const benne = (k: OldalKivonat) =>
+    opciok.every((o) => k.kijeloltOpciok.includes(o))
+  const hibak: string[] = []
+  if (!benne(vIddel))
+    hibak.push(
+      `a v_id-vel nyitott lapon nem a kért opció van kijelölve (kért: ${opciok.join(", ")}; kijelölt: ${vIddel.kijeloltOpciok.join(", ") || "semmi"})`,
+    )
+  if (benne(vIdNelkul))
+    hibak.push(
+      "v_id nélkül is a kért opció van kijelölve: a mérés nem különbözteti meg a változatot",
+    )
+  return hibak
+}

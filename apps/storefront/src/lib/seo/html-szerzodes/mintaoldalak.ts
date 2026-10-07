@@ -32,7 +32,7 @@ export type Minta = {
   ut: string | null
   hianyzik?: string
   /** a `termek-valtozatos` mintanal: a nem alapertelmezett valtozat */
-  valtozat?: { id: string; ar: number | null; sku: string | null }
+  valtozat?: { id: string; opciok: string[] }
 }
 
 type Valtozat = {
@@ -44,6 +44,7 @@ type Valtozat = {
   manage_inventory?: boolean | null
   inventory_quantity?: number | null
   calculated_price?: { calculated_amount?: number | null } | null
+  options?: { value?: string | null }[] | null
 }
 type Termek = {
   id: string
@@ -77,7 +78,6 @@ const elfogyott = (t: Termek) =>
   t.variants.every(
     (v) => v.manage_inventory && (v.inventory_quantity ?? 0) <= 0,
   )
-const ar = (v: Valtozat) => v.calculated_price?.calculated_amount ?? null
 const handleSzerint = <T extends { handle: string }>(a: T, b: T) =>
   a.handle.localeCompare(b.handle)
 
@@ -108,7 +108,7 @@ async function mindenTermek(
         offset: String(offset),
         region_id: regioId,
         fields:
-          "id,handle,title,collection_id,*variants,+variants.inventory_quantity,+variants.calculated_price,*categories",
+          "id,handle,title,collection_id,*variants,*variants.options,+variants.inventory_quantity,+variants.calculated_price,*categories",
       },
     )
     termekek.push(...d.products)
@@ -135,9 +135,27 @@ export function mintakAdatbol(
   const elfogy = rendezett.find(
     (t) => elfogyott(t) && t !== gtinos && t !== gtinNelkul,
   )
-  const valtozatos = rendezett.find(
-    (t) => new Set((t.variants ?? []).map(ar)).size > 1,
-  )
+  /*
+    A VALTOZATOT AZ OPCIOI KULONBOZTETIK MEG, NEM AZ ARA: a meres a kijelolt
+    opcio-gombot nezi (`valtozatHibak`), tehat olyan valtozat kell, aminek az
+    opcio-ertekei masok, mint az elso valtozate.
+  */
+  const opciok = (v: Valtozat) =>
+    (v.options ?? [])
+      .map((o) => (o.value ?? "").trim())
+      .filter(Boolean)
+      .sort()
+  const masOpciok = (t: Termek) => {
+    const elso = t.variants?.[0]
+    return elso
+      ? t.variants!.find(
+          (v) =>
+            opciok(v).length > 0 &&
+            opciok(v).join("|") !== opciok(elso).join("|"),
+        )
+      : undefined
+  }
+  const valtozatos = rendezett.find((t) => masOpciok(t) !== undefined)
 
   const termekSzam = new Map<string, number>()
   for (const t of termekek)
@@ -165,9 +183,7 @@ export function mintakAdatbol(
     .split(/\s+/)
     .find((s) => s.length >= 4)
 
-  const valtozat = valtozatos?.variants?.find(
-    (v) => ar(v) !== ar(valtozatos.variants![0]!),
-  )
+  const valtozat = valtozatos ? masOpciok(valtozatos) : undefined
   return [
     { tipus: "kezdolap", ut: p("") },
     termekUt(gtinos, "termek-gtin", "nincs GTIN-es termék a boltban"),
@@ -177,17 +193,13 @@ export function mintakAdatbol(
       ? {
           tipus: "termek-valtozatos",
           ut: p(`/products/${valtozatos.handle}?v_id=${valtozat.id}`),
-          valtozat: {
-            id: valtozat.id,
-            ar: ar(valtozat),
-            sku: valtozat.sku ?? null,
-          },
+          valtozat: { id: valtozat.id, opciok: opciok(valtozat) },
         }
       : {
           tipus: "termek-valtozatos",
           ut: null,
           hianyzik:
-            "nincs eltérő árú változatokkal bíró termék a boltban (a változatok a P0 PR 3-mal jönnek)",
+            "nincs eltérő opciójú változatokkal bíró termék a boltban (a változatok a P0 PR 3-mal jönnek)",
         },
     felso
       ? { tipus: "kategoria-felso", ut: p(`/categories/${felso.handle}`) }

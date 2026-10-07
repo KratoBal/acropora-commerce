@@ -1,13 +1,17 @@
 // @vitest-environment node
 import { beforeAll, describe, expect, it, type TestContext } from "vitest"
 
-import { convertToLocale } from "@lib/util/money"
 import { ELES_HOSZTOK } from "@lib/util/robots-hazirend"
 
 import { kivonat, type OldalKivonat } from "./kivonat"
 import { mintak, type Minta, type MintaTipus } from "./mintaoldalak"
 import { robotsEngedi } from "./robots-txt"
-import { SZABALYOK, type SzabalyKulcs, type Valasz } from "./szabalyok"
+import {
+  SZABALYOK,
+  valtozatHibak,
+  type SzabalyKulcs,
+  type Valasz,
+} from "./szabalyok"
 import { varhato, type Varhato } from "./varhato"
 
 /**
@@ -218,20 +222,19 @@ describe("változat közvetlen URL-je (Balázs 2. pontja)", () => {
       )
       return
     }
-    const { html } = await lap(minta.ut)
-    const { sku, ar } = minta.valtozat
-    const jel =
-      sku ??
-      (ar === null
-        ? null
-        : convertToLocale({ amount: ar, currency_code: "huf" }))
+    /*
+      A VALASZTASHOZ KOTOTT JELBOL MER, NEM A NYERS SZOVEGBOL: az elso HTML
+      RSC-adata minden valtozat cikkszamat es arat viszi, tehat egy
+      `html.includes(cikkszam)` sosem bukna el (barracuda atvetele, #521).
+      A kijelolt opcio-gombot nezi, es kontrollkent ugyanazt a lapot v_id nelkul.
+    */
+    const vIddel = (await lap(minta.ut)).k
+    const vIdNelkul = (await lap(minta.ut.replace(/[?&]v_id=[^&]*/, ""))).k
     await ellenoriz(
       ctx,
       minta,
       "v-id",
-      jel && html.includes(jel)
-        ? []
-        : [`a változat jele (${jel}) nincs az első HTML-ben`],
+      valtozatHibak(minta.valtozat.opciok, vIddel, vIdNelkul),
     )
   })
 })
