@@ -108,7 +108,12 @@ function utja(lap: string): { ut: string } | { ok: string } {
 }
 
 async function megnyit(ut: string) {
-  const valasz = await oldal.goto(`${ALAP}${ut}`, { waitUntil: "networkidle" })
+  // 60 mp: a penztar lepesei a Store API-t tobbszor hivjak, es egy hideg
+  // szerveren a 30 mp-es alapertek egyszer mar elfogyott (merve 2026-10-07)
+  const valasz = await oldal.goto(`${ALAP}${ut}`, {
+    waitUntil: "networkidle",
+    timeout: 60_000,
+  })
   expect(valasz?.status(), ut).toBe(200)
 }
 
