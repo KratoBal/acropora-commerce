@@ -67,20 +67,27 @@ const nextConfig = {
      * valtozatot a sharp egyszer szamol ki, nem percenkent ujra.
      */
     minimumCacheTTL: 2678400,
+    /*
+     * CSAK EZ A KET MINOSEG (barracuda #525 review): a `q` parameter kulonben
+     * szabad, es a 31 napos tarolas mellett minden szelesseg x minoseg egy uj
+     * bejegyzes lenne kivulrol. Az 50 a listakepeke (`Thumbnail`), a 75 a Next
+     * alapertelmezese (a `getImageProps` hivok).
+     */
+    qualities: [50, 75],
+    /*
+     * CSAK A SAJAT KEPHOSZTOK (barracuda #525 review). Az optimalizalo
+     * bekapcsolasaval a starter regi mintai elesedtek volna: barmely S3-bucket
+     * (`*.s3.*.amazonaws.com`, `*.s3.amazonaws.com`) es a port nelkuli
+     * `localhost`. A `/_next/image` igy nyilt kepproxy lett volna a mi
+     * `sharp`-unkkal, a `localhost` fele pedig port-tapogathato felulet.
+     * A `localhost` csak fejlesztesben marad; a Medusa Cloud S3 csak pontos
+     * hoszttal es uttal (env-bol). A lista rogzitve: `next-config-kepek.spec.ts`.
+     */
     remotePatterns: [
       ...(MEDUSA_KEPHOSZT ? [MEDUSA_KEPHOSZT] : []),
-      {
-        protocol: "http",
-        hostname: "localhost",
-      },
-      {
-        protocol: "https",
-        hostname: "*.s3.*.amazonaws.com",
-      },
-      {
-        protocol: "https",
-        hostname: "*.s3.amazonaws.com",
-      },
+      ...(process.env.NODE_ENV === "production"
+        ? []
+        : [{ protocol: "http", hostname: "localhost" }]),
       ...(S3_HOSTNAME && S3_PATHNAME
         ? [
             {
