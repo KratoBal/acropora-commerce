@@ -58,6 +58,8 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "json-ld-breadcrumb",
     "alt",
     "fo-kep-nem-lusta",
+    "fo-kep-kiemelt",
+    "kep-meretezes",
     "rejtett-ful",
   ]
   const kategoria: SzabalyKulcs[] = [
@@ -81,7 +83,12 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "termek-elfogyott": termek,
     "termek-valtozatos": ["statusz-200", "egy-h1"],
     "kategoria-felso": felso,
-    "kategoria-level": [...kategoria, "lapozo-linkek"],
+    "kategoria-level": [
+      ...kategoria,
+      "lapozo-linkek",
+      "kep-meretezes",
+      "elso-listakep-nem-lusta",
+    ],
     // a lapozas indexelheto marad (sajat canonicallal): a noindex csak a szurt lape
     "kategoria-lap2": [
       "statusz-200",
@@ -98,6 +105,8 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
       "indexelheto",
       "termek-linkek",
       "alt",
+      "kep-meretezes",
+      "elso-listakep-nem-lusta",
     ],
     kereses: [
       "statusz-200",
