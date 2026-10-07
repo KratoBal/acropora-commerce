@@ -1,6 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
 import { statikusGyokerUt } from "@lib/util/statikus-utak"
+import { belsoUtKivulrol } from "../belso-utvonalak"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -111,6 +112,13 @@ async function getCountryCode(
 export async function middleware(request: NextRequest) {
   if (statikusGyokerUt(request.nextUrl.pathname)) {
     return NextResponse.next()
+  }
+
+  // FE-7 3. resz: a belso ut (`/_v`, `/_p`, `/_szurt`) csak a `next.config`
+  // atirasan at erheto el. A middleware az EREDETI cimet latja, tehat ez csak
+  // a kozvetlen hivast zarja (`belso-utvonalak.js`).
+  if (belsoUtKivulrol(request.nextUrl.pathname)) {
+    return new NextResponse(null, { status: 404 })
   }
 
   const cacheIdCookie = request.cookies.get("_medusa_cache_id")
