@@ -2,6 +2,7 @@ import { deleteLineItem } from "@lib/data/cart"
 import { Spinner, Trash } from "@medusajs/icons"
 import { clx } from "@modules/common/components/ui"
 import { useState } from "react"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 /**
  * A JELOLO ATVETELE NEM DISZ: NELKULE CSENDBEN NEM LETEZIK.
@@ -36,6 +37,7 @@ const DeleteButton = ({
     await deleteLineItem(id).catch((_err) => {
       setIsDeleting(false)
     })
+    kosarValtozott()
   }
 
   return (

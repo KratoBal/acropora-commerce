@@ -3,12 +3,8 @@
 import { addToCart } from "@lib/data/cart"
 import { HttpTypes } from "@medusajs/types"
 import { isEqual } from "lodash"
-import {
-  useParams,
-  usePathname,
-  useSearchParams,
-  useRouter,
-} from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
+import { aktualisKeres } from "@lib/util/aktualis-keres"
 import { useEffect, useMemo, useState } from "react"
 
 import {
@@ -25,6 +21,7 @@ import {
   similarItemsHref,
   uniquePieceOf,
 } from "../stock-state/availability"
+import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 /**
  * A VASARLASI ALLAPOT EGY HELYEN, MERT A TERV NEGY DOBOZBA TESZI SZET.
@@ -102,30 +99,43 @@ const optionsAsKeymap = (
  */
 export function kezdoOpciok(
   product: Pick<HttpTypes.StoreProduct, "variants">,
+  /**
+   * A cimbol jovo valtozat (`?v_id=`, FE-7 3. resz: a `_v` belso ut adja at a
+   * szervernek). Balazs 2026-10-07, SEO dontes 2. pont: kozvetlen megnyitaskor
+   * MAR a helyes valtozat jelenjen meg, nem csak kliensoldali allapotkent. Ha a
+   * termeknek nincs ilyen valtozata, a regi szabaly all.
+   */
+  valtozatId?: string,
 ): Record<string, string | undefined> {
+  const kert = valtozatId
+    ? product.variants?.find((v) => v.id === valtozatId)
+    : undefined
+  if (kert) return optionsAsKeymap(kert.options) ?? {}
   if (product.variants?.length !== 1) return {}
   return optionsAsKeymap(product.variants[0].options) ?? {}
 }
 
 export function VasarlasProvider({
   product,
+  valtozatId,
   disabled,
   children,
 }: {
   product: HttpTypes.StoreProduct
+  /** A cimbol jovo valtozat; lasd `kezdoOpciok`. */
+  valtozatId?: string
   disabled?: boolean
   children: React.ReactNode
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   /*
     LUSTA KEZDOERTEK, NEM URES OBJEKTUM: igy a KISZOLGALON is ki van valasztva
     az egyetlen valtozat, es a lap elso festese mar a valodi gombot mutatja.
   */
   const [options, setOptions] = useState<Record<string, string | undefined>>(
-    () => kezdoOpciok(product),
+    () => kezdoOpciok(product, valtozatId),
   )
   const [isAdding, setIsAdding] = useState(false)
   const [kosarVisszajelzes, setKosarVisszajelzes] = useState<{
@@ -160,10 +170,10 @@ export function VasarlasProvider({
     keret viselkedesere vonatkozo FELTEVES lenne, es nem mertem le.
   */
   useEffect(() => {
-    const kezdo = kezdoOpciok(product)
+    const kezdo = kezdoOpciok(product, valtozatId)
     if (!Object.keys(kezdo).length) return
     setOptions((elozo) => (isEqual(elozo, kezdo) ? elozo : kezdo))
-  }, [product])
+  }, [product, valtozatId])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -193,7 +203,8 @@ export function VasarlasProvider({
   }, [product.variants, options])
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
+    // FE-7: a cimet itt olvassuk, nem `useSearchParams`-szal (`aktualis-keres.ts`).
+    const params = aktualisKeres()
     const value = isValidVariant ? selectedVariant?.id : null
 
     if (params.get("v_id") === value) {
@@ -313,6 +324,7 @@ export function VasarlasProvider({
       countryCode,
       rendelesiMaximum: orderMaximum,
     })
+    kosarValtozott()
 
     setKosarVisszajelzes(
       eredmeny.ok

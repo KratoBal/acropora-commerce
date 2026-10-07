@@ -39,6 +39,12 @@ type ProductTemplateProps = {
   categories: HttpTypes.StoreProductCategory[]
   /** A termek-tudas az OS vetitesebol (PD-014); a muszaki lap mutatja. */
   tudas?: TermekTudas | null
+  /**
+   * A cimbol jovo valtozat (`?v_id=`; FE-7 3. resz: a `_v` belso ut adja).
+   * Balazs SEO dontes, 2. pont: kozvetlen megnyitaskor mar a kiszolgalt
+   * HTML-ben a helyes valtozat alljon.
+   */
+  valtozatId?: string
 }
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
@@ -48,6 +54,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   images,
   categories,
   tudas,
+  valtozatId,
 }) => {
   if (!product || !product.id) {
     return notFound()
@@ -198,7 +205,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             />
           }
         >
-          <VasarlasKeret id={product.id} region={region}>
+          <VasarlasKeret
+            id={product.id}
+            region={region}
+            valtozatId={valtozatId}
+          >
             <MuszakiLap
               product={product}
               kategoriak={categories}
@@ -466,10 +477,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                 disabled={true}
                 product={product}
                 region={region}
+                valtozatId={valtozatId}
               />
             }
           >
-            <ProductActionsWrapper id={product.id} region={region} />
+            <ProductActionsWrapper
+              id={product.id}
+              region={region}
+              valtozatId={valtozatId}
+            />
           </Suspense>
         </div>
       </div>

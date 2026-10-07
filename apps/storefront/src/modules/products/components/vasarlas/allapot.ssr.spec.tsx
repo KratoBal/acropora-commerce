@@ -99,6 +99,20 @@ describe("a kezdő opciók", () => {
   it("változat nélkül üres", () => {
     expect(kezdoOpciok({ variants: [] } as never)).toEqual({})
   })
+
+  /*
+    A CIMBOL JOVO VALTOZAT (FE-7 3. resz; Balazs SEO dontes, 2. pont: kozvetlen
+    megnyitaskor MAR a helyes valtozat). MI PIROSIT: a `?v_id` valtozatat a
+    szerver nem valasztja ki; egy idegen azonosito onkenyes valasztast ad.
+  */
+  it("a címből jövő változat opcióit adja, két változatnál is", () => {
+    expect(kezdoOpciok(KET_VALTOZAT, "var_2")).toEqual({ opt_1: "Nagy" })
+  })
+
+  it("idegen változat-azonosítóra a régi szabály áll", () => {
+    expect(kezdoOpciok(KET_VALTOZAT, "var_masik")).toEqual({})
+    expect(kezdoOpciok(EGY_VALTOZAT, "var_masik")).toEqual({ opt_1: "Alap" })
+  })
 })
 
 describe("a kiszolgálón renderelt vásárlási doboz", () => {
@@ -125,5 +139,15 @@ describe("a kiszolgálón renderelt vásárlási doboz", () => {
     )
 
     expect(html).toContain("Válassz változatot")
+  })
+
+  it("a címből jövő változattal két változatnál sem kér választást", () => {
+    const html = renderToStaticMarkup(
+      <VasarlasProvider product={KET_VALTOZAT} valtozatId="var_2">
+        <MennyisegDoboz />
+      </VasarlasProvider>,
+    )
+
+    expect(html).not.toContain("Válassz változatot")
   })
 })

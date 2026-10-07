@@ -15,6 +15,20 @@ import { getRegion } from "@lib/data/regions"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
 /*
+ * ISR (FE-7, Balazs 2026-10-07): a lap igeny szerint keszul es gyorsitotarba
+ * kerul. A `generateStaticParams` nelkul a Next 15 a dinamikus szegmenst
+ * (`[countryCode]`) minden keresre ujra renderelne, `private, no-store`
+ * valasszal, akkor is, ha a lap semmi dinamikusat nem olvas (merve
+ * 2026-10-07 egy 15.5.24-es probaepitesen). Az ures lista: nincs elore
+ * epites, az elso keres epit. A `revalidate` a tartalek, ha egy urites elmarad.
+ */
+export const revalidate = 300
+
+export async function generateStaticParams() {
+  return []
+}
+
+/*
  * A STATIKUS `metadata` HELYETT `generateMetadata`, ES CSAK EZERT: a kanonikus
  * cim tartalmazza az orszagkodot, azt pedig egy statikus objektum nem lathatja.
  * Ugyanaz az indok es ugyanaz az alak, mint a store-lapon.

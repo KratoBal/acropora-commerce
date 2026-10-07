@@ -6,7 +6,7 @@ import { OptionValueIds } from "@lib/util/product-option-filters"
 import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { getPublicCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 
 type ProductListQueryParams = (HttpTypes.FindParams &
@@ -16,6 +16,12 @@ type ProductListQueryParams = (HttpTypes.FindParams &
 }
 
 /**
+ * PUBLIKUS LEKERES, HITELESITES NELKUL (FE-7). A katalogus ar ma nem
+ * latogatofuggo: vevocsoport- vagy arlista-ar NINCS a kodban. Ha valaha
+ * partner- vagy B2B-ar jon, az NEM jelenhet meg ezen a lekeresen at, mert a
+ * lap gyorsitotarazott es mindenkinek ugyanaz: annak az arnak kliensoldalon,
+ * a vevo sajat lekeresevel kell jonnie.
+ *
  * FIGYELEM A HIVOKNAK: a `fields` erteket a `...queryParams` UTAN teritjuk szet,
  * tehat egy hivo altal megadott `fields` NEM bovul, hanem FELULIR. Aki egyetlen
  * relaciot akar hozzavenni, csendben elveszi az osszes tobbit -- ez mar
@@ -60,12 +66,15 @@ export const listProducts = async ({
     }
   }
 
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
+  /*
+    FE-7: suti nelkul. A katalogus nem latogatofuggo (vevocsoport-ar nincs),
+    tehat se a hitelesito fejlec, se a latogatonkenti cimke nem kell, es
+    mindketto sutit olvasna, ami a lapot dinamikussa tenne.
+  */
+  const headers = {}
 
   const next = {
-    ...(await getCacheOptions("products")),
+    ...(await getPublicCacheOptions("products")),
   }
 
   return sdk.client

@@ -2,11 +2,11 @@
 
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+import { getPublicCacheOptions } from "./cookies"
 
 export const listRegions = async () => {
   const next = {
-    ...(await getCacheOptions("regions")),
+    ...(await getPublicCacheOptions("regions")),
   }
 
   return await sdk.client
@@ -20,7 +20,7 @@ export const listRegions = async () => {
 
 export const retrieveRegion = async (id: string) => {
   const next = {
-    ...(await getCacheOptions(["regions", id].join("-"))),
+    ...(await getPublicCacheOptions(["regions", id].join("-"))),
   }
 
   return await sdk.client

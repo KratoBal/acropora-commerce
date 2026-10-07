@@ -1,6 +1,11 @@
 import "server-only"
 import { cookies as nextCookies } from "next/headers"
 
+import {
+  CACHE_AZONOSITO_ELETTARTAM_MP,
+  CACHE_AZONOSITO_SUTI,
+} from "@lib/util/cache-azonosito"
+
 export const getAuthHeaders = async (): Promise<
   { authorization: string } | Record<string, never>
 > => {
@@ -56,14 +61,46 @@ export const getCacheOptions = async (
   return { tags: cacheTag ? [cacheTag, tag] : [tag] }
 }
 
+/**
+ * A PUBLIKUS KATALOGUS CIMKEI, SUTI NELKUL (FE-7, Balazs 2026-10-07: a
+ * publikus lapok gyorsitotarazhatok legyenek).
+ *
+ * A `getCacheOptions` a latogatonkenti `_medusa_cache_id` sutit olvassa, es a
+ * Next.js-ben egy suti olvasasa az EGESZ utvonalat dinamikussa teszi: minden
+ * termek-, kategoria- es marka-lap `private, no-store` valaszt adott, mert a
+ * lekeresuk sutit olvasott. A katalogus adata nem latogatofuggo (vasarlo-fuggo
+ * ar, vevocsoport nincs a boltban), tehat a publikus lekeres CSAK a kozos
+ * cimket viszi; az arvaltozasra az `/api/revalidate` ezt uriti (#514).
+ * A kosar, a fiok es a penztar tovabbra is a `getCacheOptions`-t hasznalja.
+ */
+export const getPublicCacheOptions = async (
+  tag: string,
+): Promise<{ tags: string[] }> => ({ tags: [tag] })
+
 // `sameSite: "lax"` rather than `"strict"`: the customer returns from a
 // redirect-based payment method (iDEAL, Bancontact, ...) via a cross-site
 // top-level navigation. A "strict" cookie is withheld on that navigation, so
 // the storefront would see a logged-out, cartless visitor and render a 404 for
 // the checkout page instead of resuming the order. "lax" is sent on top-level
 // GET navigations while still blocking cross-site subrequests.
+/**
+ * FE-7 3. resz: a cache-sutit a middleware mar nem adja minden latogatonak,
+ * csak annak, akinek kosara vagy belepese van. Az uj kosar es az uj belepes
+ * itt kapja meg, hogy a sajat cimkei (`getCacheTag`) mar az elso muveletnel
+ * uritsenek (`lib/util/cache-azonosito.ts`).
+ */
+const biztositsCacheAzonositot = (
+  cookies: Awaited<ReturnType<typeof nextCookies>>,
+) => {
+  if (cookies.get(CACHE_AZONOSITO_SUTI)?.value) return
+  cookies.set(CACHE_AZONOSITO_SUTI, crypto.randomUUID(), {
+    maxAge: CACHE_AZONOSITO_ELETTARTAM_MP,
+  })
+}
+
 export const setAuthToken = async (token: string) => {
   const cookies = await nextCookies()
+  biztositsCacheAzonositot(cookies)
   cookies.set("_medusa_jwt", token, {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: true,
@@ -133,6 +170,7 @@ export const getCartId = async () => {
 // the cross-site return navigation from a redirect-based payment method.
 export const setCartId = async (cartId: string) => {
   const cookies = await nextCookies()
+  biztositsCacheAzonositot(cookies)
   cookies.set("_medusa_cart_id", cartId, {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: true,

@@ -146,6 +146,35 @@ describe("egyetlen lap sem ad angol helykitöltőt", () => {
     expect(lapok).toBeGreaterThan(20)
     expect(talalatok).toEqual([])
   })
+
+  /*
+    A METAADAT A `modules/` ALA IS KOLTOZHET (FE-7 3. resz: a store-lap
+    metaadata a `store-lap-torzs.tsx`-ben all, mert harom ut hasznalja).
+    Barracuda elozetes reviewja szerint a fenti ellenorzes ezt nem latta volna:
+    egy angol "Store" ott csendben visszaterhetett. Minden modul, ami `Metadata`
+    tipust ad, ugyanazt a vizsgalatot kapja.
+  */
+  it("a metaadatot adó modulok szövegei is", () => {
+    const gyoker = join(__dirname, "..", "..", "modules")
+    const talalatok: string[] = []
+    const vizsgalt: string[] = []
+    for (const ut of forrasFajlok(gyoker)) {
+      if (!/\.tsx?$/.test(ut) || /\.spec\./.test(ut)) continue
+      const forras = readFileSync(ut, "utf8")
+      if (!/\bMetadata\b/.test(forras)) continue
+      vizsgalt.push(relative(gyoker, ut))
+      for (const m of Array.from(
+        forras.matchAll(/\b(title|description):\s*["`]([^"`]+)["`]/g),
+      ))
+        if (angol(m[2]!) || angolSzo(m[2]!.replace(/\$\{[^}]*\}/g, " ")))
+          talalatok.push(`${relative(gyoker, ut)}: ${m[1]} = ${m[2]}`)
+    }
+    // pozitiv kontroll: a store-lap metaadata tenyleg a vizsgaltak kozott van
+    expect(vizsgalt).toContain(
+      join("store", "templates", "store-lap-torzs.tsx"),
+    )
+    expect(talalatok).toEqual([])
+  })
 })
 
 describe("angol szó a statikus szövegben", () => {

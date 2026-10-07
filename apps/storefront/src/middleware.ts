@@ -1,6 +1,12 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
 import { statikusGyokerUt } from "@lib/util/statikus-utak"
+import { belsoUtKivulrol } from "../belso-utvonalak"
+import {
+  CACHE_AZONOSITO_ELETTARTAM_MP,
+  CACHE_AZONOSITO_SUTI,
+  cacheAzonositoKell,
+} from "@lib/util/cache-azonosito"
 import { orszagAtiranyitasKod } from "@lib/util/orszag-atiranyitas"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
@@ -124,6 +130,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // FE-7 3. resz: a belso ut (`/_v`, `/_p`, `/_szurt`) csak a `next.config`
+  // atirasan at erheto el. A middleware az EREDETI cimet latja, tehat ez csak
+  // a kozvetlen hivast zarja (`belso-utvonalak.js`).
+  if (belsoUtKivulrol(request.nextUrl.pathname)) {
+    return new NextResponse(null, { status: 404 })
+  }
+
   const cacheIdCookie = request.cookies.get("_medusa_cache_id")
   const cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
@@ -136,11 +149,16 @@ export async function middleware(request: NextRequest) {
   const urlHasCountry = firstPathSegment === country.toLowerCase()
 
   if (urlHasCountry) {
-    if (!cacheIdCookie) {
+    // FE-7 3. resz: csak annak, akinek kosara vagy belepese van; a publikus
+    // lap valasza igy `Set-Cookie` nelkul megy (`cache-azonosito.ts`).
+    if (cacheAzonositoKell(request.cookies)) {
       const response = NextResponse.next()
-      response.cookies.set("_medusa_cache_id", cacheId, {
-        maxAge: 60 * 60 * 24,
+      response.cookies.set(CACHE_AZONOSITO_SUTI, cacheId, {
+        maxAge: CACHE_AZONOSITO_ELETTARTAM_MP,
       })
+      // a `Set-Cookie`-s valaszt kozbulso tar ne tarolja: kulonben ugyanazt a
+      // cache-azonositot adna ki mindenkinek (barracuda elozetes review, 4.)
+      response.headers.set("Cache-Control", "private, no-store")
       return response
     }
     return NextResponse.next()
