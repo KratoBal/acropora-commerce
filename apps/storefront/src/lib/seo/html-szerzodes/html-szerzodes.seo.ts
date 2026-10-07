@@ -8,6 +8,7 @@ import { kivonat, type OldalKivonat } from "./kivonat"
 import { mintak, type Minta, type MintaTipus } from "./mintaoldalak"
 import { robotsEngedi } from "./robots-txt"
 import {
+  gtinHibak,
   SZABALYOK,
   valtozatHibak,
   type SzabalyKulcs,
@@ -85,7 +86,13 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "termek-gtin": termek,
     "termek-gtin-nelkul": termek,
     "termek-elfogyott": termek,
-    "termek-valtozatos": ["statusz-200", "egy-h1"],
+    // FE-2b: a valtozatos lapon ProductGroup all
+    "termek-valtozatos": [
+      "statusz-200",
+      "egy-h1",
+      "json-ld-product",
+      "json-ld-breadcrumb",
+    ],
     "kategoria-felso": felso,
     "kategoria-level": [
       ...kategoria,
@@ -246,6 +253,24 @@ for (const tipus of Object.keys(TERV) as MintaTipus[]) {
     }
   })
 }
+
+/*
+ * A GTIN A JSON-LD-BEN (FE-2b). A GTIN-es mintan a Store API kodja all, a
+ * GTIN-nelkulin egy sem. Kulon blokk, mert a vart kod a mintae, nem a lape.
+ */
+describe("a GTIN a JSON-LD-ben", () => {
+  for (const tipus of ["termek-gtin", "termek-gtin-nelkul"] as const) {
+    it(tipus, async (ctx) => {
+      const minta = mintaja(tipus)
+      if (!minta.ut || minta.gtin === undefined) {
+        kihagyottak.push(`${tipus} / gtin: nincs minta (${minta.hianyzik})`)
+        return ctx.skip(`NINCS MINTA: ${minta.hianyzik}`)
+      }
+      const { k } = await lap(minta.ut)
+      expect(gtinHibak(k, minta.gtin), minta.ut).toEqual([])
+    })
+  }
+})
 
 describe("változat közvetlen URL-je (Balázs 2. pontja)", () => {
   it("a ?v_id az első HTML-ben a kért változatot mutatja", async (ctx) => {

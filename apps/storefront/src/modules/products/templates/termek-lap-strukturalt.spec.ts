@@ -13,7 +13,9 @@ import { strukturaltAdat } from "./termek-lap-torzs"
 /*
   A TERMEKLAP STRUKTURALT ADATA (FE-2a). A valodi `getProductPrice`,
   `besorolasUt`, `cikkszam` es elerhetoseg-fuggvenyek futnak, csak az adat-
-  lekeresek mockoltak. MI PIROSIT: tobbvaltozatos termek Product blokkot kap;
+  lekeresek mockoltak. MI PIROSIT: tobbvaltozatos termek Product blokkot kap
+  ProductGroup helyett, vagy a valtozatai nem a sajat arukat viszik (FE-2b);
+  egy ervenytelen vagy hianyzo GTIN megis a blokkba kerul;
   ar nelkuli ajanlat keletkezik; az egyedi, keszleten nem levo darab
   "elerheto"-nek latszik; a morzsamenu mas lancot ad, mint a lapon latszo.
 */
@@ -91,15 +93,109 @@ describe("a terméklap strukturált adata", () => {
     )
   })
 
-  it("többváltozatos termék: nincs Product, a morzsamenü marad", () => {
+  it("egyváltozatos, érvényes EAN-nel: gtin13; érvénytelennel vagy nélküle a mező kimarad", () => {
+    const vele = strukturaltAdat(
+      termek({ variants: [valtozat({ ean: "5060139356268" })] }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+    ).termek as Record<string, unknown>
+    expect(vele.gtin13).toBe("5060139356268")
+    // a barcode mezoben allo (bolti) kod sem forras
+    const csakBarcode = strukturaltAdat(
+      termek({ variants: [valtozat({ ean: null, barcode: "2000000000008" })] }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+    ).termek as Record<string, unknown>
+    expect(
+      Object.keys(csakBarcode).filter((k) => k.startsWith("gtin")),
+    ).toEqual([])
+    for (const ean of [null, "", "5060139356269"]) {
+      const nelkule = strukturaltAdat(
+        termek({ variants: [valtozat({ ean })] }),
+        KATEGORIAK,
+        KEP,
+        PARAMS,
+      ).termek as Record<string, unknown>
+      expect(Object.keys(nelkule).filter((k) => k.startsWith("gtin"))).toEqual(
+        [],
+      )
+    }
+  })
+
+  it("többváltozatos termék: ProductGroup, a változatok a saját árukkal, cikkszámukkal és GTIN-jükkel", () => {
     const { termek: t, morzsa } = strukturaltAdat(
-      termek({ variants: [valtozat(), valtozat({ id: "variant_2" })] }),
+      termek({
+        options: [{ id: "opt_m", title: "Méret" }],
+        variants: [
+          valtozat({
+            id: "variant_1",
+            sku: "SO-1KG",
+            ean: "5060139356268",
+            options: [{ option_id: "opt_m", value: "1 kg" }],
+          }),
+          valtozat({
+            id: "variant_2",
+            sku: "SO-5KG",
+            upc: "852464008968",
+            inventory_quantity: 0,
+            options: [{ option_id: "opt_m", value: "5 kg" }],
+            calculated_price: {
+              calculated_amount: 39900,
+              original_amount: 39900,
+              currency_code: "huf",
+              calculated_price: { price_list_type: null },
+            },
+          }),
+        ],
+      }),
       KATEGORIAK,
       KEP,
       PARAMS,
     )
-    expect(t).toBeNull()
     expect(morzsa).not.toBeNull()
+    const csoport = t as Record<string, unknown>
+    expect(csoport["@type"]).toBe("ProductGroup")
+    expect(csoport.offers).toBeUndefined()
+    expect(csoport.productGroupID).toBe("prod_1")
+    expect(csoport.variesBy).toEqual(["https://schema.org/size"])
+    const v = csoport.hasVariant as Record<string, unknown>[]
+    expect(v.map((x) => x.name)).toEqual([
+      "Hanna HI780-25 (1 kg)",
+      "Hanna HI780-25 (5 kg)",
+    ])
+    expect(v.map((x) => x.sku)).toEqual(["SO-1KG", "SO-5KG"])
+    expect(v.map((x) => x.size)).toEqual(["1 kg", "5 kg"])
+    expect(v[0]!.gtin13).toBe("5060139356268")
+    expect(v[1]!.gtin12).toBe("852464008968")
+    expect(v.map((x) => (x.offers as { price: number }).price)).toEqual([
+      10500, 39900,
+    ])
+    expect(
+      v.map((x) => (x.offers as { availability: string }).availability),
+    ).toEqual(["https://schema.org/InStock", "https://schema.org/OutOfStock"])
+    expect(String(v[1]!.url)).toMatch(
+      /\/hu\/products\/hanna-hi780-25\?v_id=variant_2$/,
+    )
+  })
+
+  it("a csoportból az ár nélküli változat kimarad; ha egy sem marad, nincs blokk", () => {
+    const ketto = (masodikAr: unknown) =>
+      strukturaltAdat(
+        termek({
+          variants: [
+            valtozat({ calculated_price: null }),
+            valtozat({ id: "variant_2", calculated_price: masodikAr }),
+          ],
+        }),
+        KATEGORIAK,
+        KEP,
+        PARAMS,
+      ).termek as Record<string, unknown> | null
+    const egy = ketto(valtozat().calculated_price)
+    expect((egy!.hasVariant as unknown[]).length).toBe(1)
+    expect(ketto(null)).toBeNull()
   })
 
   it("ár nélkül nincs ajánlat", () => {

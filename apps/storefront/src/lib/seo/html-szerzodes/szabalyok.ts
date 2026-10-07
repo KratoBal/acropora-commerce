@@ -167,6 +167,57 @@ export const SZABALYOK = {
           `a JSON-LD elérhetősége (${ajanlat.availability}) nem a lapé (${latott})`,
         )
     }
+    /*
+      A TOBBVALTOZATOS TERMEK (FE-2b): minden valtozatnak sajat, forintos
+      ajanlata van, es a lapon latszo ar az egyik valtozate. Hogy melyike, azt a
+      `?v_id` donti el; a szerzodes azt meri, hogy a lap ara a csoportbol jon.
+    */
+    const valtozatok = termek.hasVariant as
+      Record<string, unknown>[] | undefined
+    if (Array.isArray(valtozatok)) {
+      if (!valtozatok.length) hibak.push("üres hasVariant")
+      const ajanlatok: { ar: number; elerhetoseg: string }[] = []
+      valtozatok.forEach((v, i) => {
+        const o = v.offers as Record<string, unknown> | undefined
+        if (!o || Array.isArray(o)) {
+          hibak.push(`a(z) ${i + 1}. változatnak nincs ajánlata`)
+          return
+        }
+        if (o.priceCurrency !== "HUF")
+          hibak.push(
+            `a(z) ${i + 1}. változat pénzneme ${o.priceCurrency}, nem HUF`,
+          )
+        ajanlatok.push({
+          ar: Number(o.price),
+          elerhetoseg: String(o.availability),
+        })
+      })
+      const arak = ajanlatok.map((a) => a.ar)
+      if (!k.latottArak.length) hibak.push("nincs látható ár a lapon")
+      else if (!k.latottArak.some((ar) => arak.includes(ar)))
+        hibak.push(
+          `a lap ára (${k.latottArak.join(", ")}) egyik változaté sem (${arak.join(", ")})`,
+        )
+      else {
+        /*
+          AZ ELERHETOSEG IS A LATOTT VALTOZATE (barracuda atvetele, #531): a
+          lap araval egyezo valtozatok kozul legalabb egynek ugyanaz az
+          elerhetosege, mint a gombnak. Kulonben egy elfogyott valtozat lapja
+          "InStock"-ot allithatna a csoportban.
+        */
+        const latott = k.latottElerhetosegek[0]
+        const vart =
+          latott === "KAPHATO"
+            ? ["https://schema.org/InStock", "https://schema.org/BackOrder"]
+            : ["https://schema.org/OutOfStock"]
+        const azAron = ajanlatok.filter((a) => k.latottArak.includes(a.ar))
+        if (!latott) hibak.push("nincs látható elérhetőség (data-elerhetoseg)")
+        else if (!azAron.some((a) => vart.includes(a.elerhetoseg)))
+          hibak.push(
+            `a látott árú változat elérhetősége (${azAron.map((a) => a.elerhetoseg).join(", ")}) nem a lapé (${latott})`,
+          )
+      }
+    }
     return hibak
   },
 
@@ -393,4 +444,41 @@ export function valtozatHibak(
       "v_id nélkül is a kért opció van kijelölve: a mérés nem különbözteti meg a változatot",
     )
   return hibak
+}
+
+/** A JSON-LD minden `gtin*` erteke, a valtozatokon is. */
+function gtinErtekek(jsonLd: unknown[]): string[] {
+  const talalt: string[] = []
+  const bejar = (x: unknown) => {
+    if (!x || typeof x !== "object") return
+    if (Array.isArray(x)) return x.forEach(bejar)
+    for (const [kulcs, ertek] of Object.entries(x as Record<string, unknown>)) {
+      if (/^gtin(8|12|13|14)?$/.test(kulcs)) talalt.push(String(ertek))
+      else bejar(ertek)
+    }
+  }
+  jsonLd.forEach(bejar)
+  return talalt
+}
+
+/**
+ * A GTIN A JSON-LD-BEN (FE-2b). A `vart` a Store API kodja a mintan
+ * (`mintaoldalak`): ha van, PONTOSAN az kell; ha `null`, gtin nem allhat
+ * (kimarad, nem ures). Kulon fuggveny, nem szabaly: a szabalyok a valaszt
+ * kapjak, a vart kod a mintae.
+ */
+export function gtinHibak(k: OldalKivonat, vart: string | null): string[] {
+  if (k.jsonLdHibak.length) return k.jsonLdHibak.map((h) => `JSON-LD: ${h}`)
+  const ertekek = gtinErtekek(k.jsonLd)
+  if (vart === null)
+    return ertekek.length
+      ? [`GTIN-nélküli terméken gtin áll: ${ertekek.join(", ")}`]
+      : []
+  if (!ertekek.includes(vart))
+    return [
+      `a JSON-LD-ben nincs a termék GTIN-je (${vart}); ami áll: ${ertekek.join(", ") || "semmi"}`,
+    ]
+  return ertekek.every((e) => e === vart)
+    ? []
+    : [`idegen GTIN is áll a JSON-LD-ben: ${ertekek.join(", ")}`]
 }
