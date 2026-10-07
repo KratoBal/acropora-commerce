@@ -23,12 +23,6 @@ export type Varhato = {
 
 export const VARHATO: readonly Varhato[] = [
   {
-    szabaly: "noindex",
-    tipusok: ["kereses", "facet"],
-    gazda: "FE-4",
-    ok: "a keresés és a facet noindexe az FE-4-ben jön (robots.txt-tiltás nélkül)",
-  },
-  {
     szabaly: "canonical-onmaga",
     tipusok: ["marka"],
     gazda: "P0 PR 11",

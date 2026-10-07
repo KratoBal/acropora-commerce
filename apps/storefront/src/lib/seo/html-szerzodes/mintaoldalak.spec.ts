@@ -73,6 +73,7 @@ describe("a mintaoldalak választása", () => {
         "kezdolap",
         "marka",
         "nem-letezo",
+        "rendezes",
         "termek-elfogyott",
         "termek-gtin",
         "termek-gtin-nelkul",
@@ -127,8 +128,11 @@ describe("a várható-piros lista", () => {
       ).toBe(true)
   })
 
-  it("a típus-szűkítés köt: a keresés noindexe várható, a 404-é nem", () => {
-    expect(varhato("noindex", "kereses")?.gazda).toBe("FE-4")
+  it("a típus-szűkítés köt: a márka canonicalja várható, a terméké nem", () => {
+    expect(varhato("canonical-onmaga", "marka")?.gazda).toBe("P0 PR 11")
+    expect(varhato("canonical-onmaga", "termek-gtin")).toBeNull()
+    // FE-4 ota a kereses es a facet noindexe nem varhato, hanem kotelezo
+    expect(varhato("noindex", "kereses")).toBeNull()
     expect(varhato("noindex", "nem-letezo")).toBeNull()
     expect(varhato("alt", "termek-gtin")).toBeNull()
   })

@@ -49,6 +49,27 @@ export function indexelhetoRobots(): Metadata["robots"] {
   return { index: true, follow: true }
 }
 
+/**
+ * A SZURT LAP: KERESES, FACET, RENDEZES (SEO frontend FE-4, Balazs 2026-10-07,
+ * 4. pont). `noindex, follow`: a kereso ne vegye fel a talalatai koze (a
+ * kombinaciok szama korlatlan, a tartalom az alaplap masolata), de a linkjeit
+ * kovesse, mert azok a termekekre visznek.
+ *
+ * ES A robots.txt NEM TILTJA EZEKET: egy tiltott URL-t a kereso le sem tolt,
+ * tehat ezt a noindexet sem latna, es a cim a talalatok kozott maradhatna. Ezt
+ * a `robots-kereses.spec.ts` meri az eles robots.txt-n.
+ *
+ * A canonical az alaplapra mutat, valtozatlanul (az alaplap metaadatabol jon).
+ */
+export function szurtLapRobots(): Metadata["robots"] {
+  return { index: false, follow: true }
+}
+
+/** Az alaplap metaadata, szurt lapra: ugyanaz, `noindex, follow`-val. */
+export function szurtMetaadat(alap: Metadata): Metadata {
+  return { ...alap, robots: szurtLapRobots() }
+}
+
 /** A lap OpenGraph-ja: magyar nyelv, a bolt neve, es a kanonikus cim, ha van. */
 export function openGraph(input: {
   cim: string
