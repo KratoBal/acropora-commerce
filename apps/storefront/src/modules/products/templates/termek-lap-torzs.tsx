@@ -8,6 +8,20 @@ import { TERMEKLAP_FIELDS } from "@lib/data/termeklap-fields"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { HttpTypes } from "@medusajs/types"
 import ProductTemplate from "@modules/products/templates"
+import { morzsaLd, termekLd } from "@lib/seo/strukturalt-adat"
+import { getBaseURL } from "@lib/util/env"
+import { getProductPrice } from "@lib/util/get-product-price"
+import { besorolasUt } from "@lib/util/kategoria-fa"
+import { termeklapCanonical } from "@lib/util/lap-canonical"
+import JsonLd from "@modules/common/components/json-ld"
+import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
+import {
+  availabilityOf,
+  csakUtanrendelesre,
+  keszletIsmert,
+  uniquePieceOf,
+  valtozatKaphato,
+} from "@modules/products/components/stock-state/availability"
 
 /**
  * A TERMEKLAP TORZSE, KET UTNAK (FE-7 3. resz).
@@ -96,15 +110,93 @@ export async function termekLapTorzs(
   // a termek-tudas (PD-014): hiba vagy hianyzo tudas eseten null, a lap a mai
   const tudas = await termekTudas(pricedProduct.id)
 
-  return (
-    <ProductTemplate
-      product={pricedProduct}
-      region={region}
-      countryCode={params.countryCode}
-      images={images ?? []}
-      categories={categories ?? []}
-      tudas={tudas}
-      valtozatId={selectedVariantId}
-    />
+  const { morzsa, termek } = strukturaltAdat(
+    pricedProduct,
+    categories ?? [],
+    images ?? [],
+    params,
   )
+
+  return (
+    <>
+      <JsonLd adat={morzsa} />
+      <JsonLd adat={termek} />
+      <ProductTemplate
+        product={pricedProduct}
+        region={region}
+        countryCode={params.countryCode}
+        images={images ?? []}
+        categories={categories ?? []}
+        tudas={tudas}
+        valtozatId={selectedVariantId}
+      />
+    </>
+  )
+}
+
+/**
+ * A TERMEKLAP STRUKTURALT ADATA (FE-2a). Minden ertek ugyanabbol jon, amit a
+ * lap mutat:
+ *
+ *   morzsamenu     `besorolasUt` + a `nev` mezo, mint a `ProductBreadcrumb`
+ *   ar, penznem    `getProductPrice`, mint a `ProductPrice` (`data-value`)
+ *   elerhetoseg    `valtozatKaphato` + `availabilityOf`, mint a vasarlasi doboz
+ *   cikkszam       `cikkszam`, mint a lap cim alatti sora
+ *
+ * TOBBVALTOZATOS TERMEKEN NINCS PRODUCT BLOKK: egy valtozat arat az egesz
+ * termekre allitana. Az a ProductGroup dolga (P0 PR 3 utan). Ar nelkul sincs:
+ * egy ajanlat ar nelkul ervenytelen.
+ */
+export function strukturaltAdat(
+  termek: HttpTypes.StoreProduct,
+  kategoriak: {
+    id: string
+    name?: string | null
+    handle?: string | null
+    parent_category_id?: string | null
+  }[],
+  kepek: HttpTypes.StoreProductImage[],
+  params: { countryCode: string; handle: string },
+) {
+  const alap = getBaseURL()
+  const url = `${alap}${termeklapCanonical(params.countryCode, params.handle)}`
+  const handleAzonositora = new Map(kategoriak.map((k) => [k.id, k.handle]))
+  const ut = besorolasUt(termek, kategoriak)
+  const nev = termek.title ?? ""
+
+  // a handle ekezetet es vesszot is tartalmazhat: a JSON-LD URL-je kodolt alak
+  const morzsa = morzsaLd([
+    ...ut.map((k) => ({
+      nev: k.nev,
+      url: `${alap}/${params.countryCode}/categories/${encodeURIComponent(handleAzonositora.get(k.id) ?? "")}`,
+    })),
+    { nev, url },
+  ])
+
+  const valtozatok = termek.variants ?? []
+  const valtozat = valtozatok.length === 1 ? valtozatok[0] : null
+  const ar = getProductPrice({ product: termek }).cheapestPrice
+  if (!valtozat || !ar || !nev) return { morzsa, termek: null }
+
+  const elerhetoseg = availabilityOf({
+    inStock: valtozatKaphato(valtozat),
+    uniquePiece: uniquePieceOf(termek.metadata),
+    inventoryKnown: keszletIsmert(valtozat),
+  })
+
+  return {
+    morzsa,
+    termek: termekLd({
+      nev,
+      url,
+      cikkszam: cikkszam(termek),
+      marka: termek.collection?.title ?? null,
+      kepek: kepek.flatMap((k) => (k.url ? [k.url] : [])),
+      ar: ar.calculated_price_number,
+      penznem: String(ar.currency_code ?? "").toUpperCase(),
+      elerhetoseg,
+      utanrendeles: elerhetoseg === "KAPHATO" && csakUtanrendelesre(valtozat),
+      kategoriaNevek: ut.map((k) => k.teljesNev),
+    }),
+  }
 }

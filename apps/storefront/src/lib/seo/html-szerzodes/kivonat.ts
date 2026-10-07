@@ -47,6 +47,12 @@ export type OldalKivonat = {
   linkek: string[]
   /** minden `<a href>` link a `rel` ertekevel (a szuro-link szabalyhoz, FE-4b) */
   linkRel: { href: string; rel: string | null }[]
+  /** a lapon latszo ar(ak): `[data-testid="product-price"]` `data-value` (FE-2a) */
+  latottArak: number[]
+  /** a lapon latszo elerhetoseg(ek): `data-elerhetoseg` (KAPHATO, ELFOGYOTT, ELADVA) */
+  latottElerhetosegek: string[]
+  /** a lapon latszo morzsamenu elemei, a `/` jel nelkul (az elso morzsamenu) */
+  morzsaNevek: string[]
   /** a fulek (`role="tab"`) szama */
   fulDb: number
   /** a ful-panelek (`role="tabpanel"`): a szoveguk hossza, es rejtett-e */
@@ -136,6 +142,31 @@ export function kivonat(html: string): OldalKivonat {
       href: a.getAttribute("href") ?? "",
       rel: a.getAttribute("rel"),
     })),
+    latottArak: Array.from(
+      doc.querySelectorAll('[data-testid="product-price"][data-value]'),
+    )
+      .map((e) => Number(e.getAttribute("data-value")))
+      .filter((n) => Number.isFinite(n)),
+    latottElerhetosegek: Array.from(
+      doc.querySelectorAll("[data-elerhetoseg]"),
+    ).map((e) => e.getAttribute("data-elerhetoseg") ?? ""),
+    morzsaNevek: Array.from(
+      doc
+        .querySelector('nav[aria-label="Morzsamenü"]')
+        ?.querySelectorAll("li") ?? [],
+    ).map((li) =>
+      Array.from(li.childNodes)
+        .filter(
+          // a `/` elvalaszto `aria-hidden` span: nem resze a nevnek
+          (n) =>
+            n.nodeType !== 1 ||
+            (n as Element).getAttribute("aria-hidden") !== "true",
+        )
+        .map((n) => n.textContent ?? "")
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim(),
+    ),
     fulDb: doc.querySelectorAll('[role="tab"]').length,
     panelek: Array.from(doc.querySelectorAll('[role="tabpanel"]')).map((p) => ({
       hossz: szoveg(p).length,

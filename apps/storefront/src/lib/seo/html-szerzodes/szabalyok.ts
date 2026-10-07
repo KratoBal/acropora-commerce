@@ -141,6 +141,91 @@ export const SZABALYOK = {
     if (k.h1[0] && termek.name !== k.h1[0])
       hibak.push(`a JSON-LD neve (${termek.name}) nem a H1 (${k.h1[0]})`)
     if (!termek.offers && !termek.hasVariant) hibak.push("nincs offers")
+    /*
+      AZ AJANLAT A LAPON LATSZO ERTEKET ALLITJA (FE-2a; Balazs 3. pontja: a
+      feed es a strukturalt adat ugyanazt az authoritativ adatot hasznalja).
+      Az ar a `product-price` `data-value`-ja, az elerhetoseg a gomb
+      `data-elerhetoseg`-e.
+    */
+    const ajanlat = termek.offers as Record<string, unknown> | undefined
+    if (ajanlat && !Array.isArray(ajanlat)) {
+      if (!k.latottArak.length) hibak.push("nincs látható ár a lapon")
+      else if (!k.latottArak.includes(Number(ajanlat.price)))
+        hibak.push(
+          `a JSON-LD ára (${ajanlat.price}) nem a lapé (${k.latottArak.join(", ")})`,
+        )
+      if (ajanlat.priceCurrency !== "HUF")
+        hibak.push(`a pénznem ${ajanlat.priceCurrency}, nem HUF`)
+      const latott = k.latottElerhetosegek[0]
+      const vart =
+        latott === "KAPHATO"
+          ? ["https://schema.org/InStock", "https://schema.org/BackOrder"]
+          : ["https://schema.org/OutOfStock"]
+      if (!latott) hibak.push("nincs látható elérhetőség (data-elerhetoseg)")
+      else if (!vart.includes(String(ajanlat.availability)))
+        hibak.push(
+          `a JSON-LD elérhetősége (${ajanlat.availability}) nem a lapé (${latott})`,
+        )
+    }
+    return hibak
+  },
+
+  /**
+   * A BOLT ES A WEBHELY MINDEN LAPON (FE-2a), ervenyes JSON-ban. SearchAction
+   * NEM lehet: a kereses noindex (Balazs 4. pontja).
+   */
+  "json-ld-szervezet": (k) => {
+    if (k.jsonLdHibak.length) return k.jsonLdHibak.map((h) => `JSON-LD: ${h}`)
+    const tipus = (t: string) =>
+      k.jsonLd.find(
+        (x): x is Record<string, unknown> =>
+          !!x &&
+          typeof x === "object" &&
+          (x as Record<string, unknown>)["@type"] === t,
+      )
+    const hibak: string[] = []
+    if (!tipus("Organization")) hibak.push("nincs Organization JSON-LD")
+    const webhely = tipus("WebSite")
+    if (!webhely) hibak.push("nincs WebSite JSON-LD")
+    else if (JSON.stringify(webhely).includes("SearchAction"))
+      hibak.push("SearchAction a WebSite-on (a keresés noindex)")
+    return hibak
+  },
+
+  /**
+   * A MORZSAMENU JSON-LD-JE ES A LATHATO MORZSAMENU EGYEZIK (FE-2a). Az utolso
+   * elem a lap maga: a JSON-LD-ben a neve, a lapon a sotet termeklap a
+   * cikkszamot mutatja ott, ezert az utolso nevet a H1-gyel is elfogadjuk.
+   */
+  "json-ld-morzsa-egyezik": (k) => {
+    const lista = k.jsonLd.find(
+      (x): x is Record<string, unknown> =>
+        !!x &&
+        typeof x === "object" &&
+        (x as Record<string, unknown>)["@type"] === "BreadcrumbList",
+    )
+    if (!lista) return ["nincs BreadcrumbList JSON-LD"]
+    const nevek = (
+      (lista.itemListElement as { name?: unknown }[] | undefined) ?? []
+    ).map((e) => String(e.name ?? ""))
+    const latott = k.morzsaNevek
+    if (!latott.length) return ["nincs látható morzsamenü"]
+    const hibak: string[] = []
+    if (nevek.length !== latott.length)
+      hibak.push(
+        `${nevek.length} elem a JSON-LD-ben, ${latott.length} a lapon (${nevek.join(" / ")} | ${latott.join(" / ")})`,
+      )
+    nevek.slice(0, -1).forEach((nev, i) => {
+      if (latott[i] !== undefined && nev !== latott[i])
+        hibak.push(`${i + 1}. elem: JSON-LD "${nev}", lap "${latott[i]}"`)
+    })
+    const utolso = nevek[nevek.length - 1]
+    if (
+      utolso !== undefined &&
+      utolso !== latott[latott.length - 1] &&
+      utolso !== k.h1[0]
+    )
+      hibak.push(`az utolsó elem "${utolso}" se a morzsamenü vége, se a H1`)
     return hibak
   },
 

@@ -1,4 +1,6 @@
 import { getBaseURL } from "@lib/util/env"
+import { szervezetLd, webhelyLd } from "@lib/seo/strukturalt-adat"
+import JsonLd from "@modules/common/components/json-ld"
 import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
 import { Metadata } from "next"
 import localFont from "next/font/local"
@@ -97,6 +99,9 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable} ${hankenGrotesk.variable}`}
     >
       <body>
+        {/* FE-2a: a bolt es a webhely minden lapon, az elso HTML-ben */}
+        <JsonLd adat={szervezetLd(getBaseURL())} />
+        <JsonLd adat={webhelyLd(getBaseURL())} />
         <main className="relative">{props.children}</main>
         {/* a Fogyasztobarat widgetje minden oldalon (Balazs kerese, 2026-10-05) */}
         <FogyasztobaratWidget />

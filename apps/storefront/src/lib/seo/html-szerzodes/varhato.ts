@@ -23,16 +23,6 @@ export type Varhato = {
 
 export const VARHATO: readonly Varhato[] = [
   {
-    szabaly: "json-ld-product",
-    gazda: "FE-2",
-    ok: "strukturált adat még nincs (a P0 PR 1, 3 és 4 után)",
-  },
-  {
-    szabaly: "json-ld-breadcrumb",
-    gazda: "FE-2",
-    ok: "strukturált adat még nincs (a P0 PR 1, 3 és 4 után)",
-  },
-  {
     szabaly: "canonical-onmaga",
     tipusok: ["marka"],
     gazda: "P0 PR 11",
