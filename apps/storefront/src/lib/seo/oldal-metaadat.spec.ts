@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs"
-import { glob } from "node:fs/promises"
-import { join } from "node:path"
+import { readdirSync, readFileSync, statSync } from "node:fs"
+import { join, relative } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
@@ -25,6 +24,16 @@ import {
  * ha angol helykitolto ter vissza (egy uj lapon is: a forras-ellenorzes minden
  * lapot atnez).
  */
+function forrasFajlok(mappa: string): string[] {
+  const talalt: string[] = []
+  for (const nev of readdirSync(mappa)) {
+    const ut = join(mappa, nev)
+    if (statSync(ut).isDirectory()) talalt.push(...forrasFajlok(ut))
+    else talalt.push(ut)
+  }
+  return talalt
+}
+
 const angol = (szoveg: string) => ANGOL_HELYKITOLTOK.some((m) => m.test(szoveg))
 
 describe("rövid leírás HTML-ből", () => {
@@ -117,19 +126,19 @@ describe("a többi oldaltípus", () => {
  * fuggvenyeket meg sem hivja.
  */
 describe("egyetlen lap sem ad angol helykitöltőt", () => {
-  it("a lapok `title` és `description` szövegei", async () => {
+  it("a lapok `title` és `description` szövegei", () => {
     const gyoker = join(__dirname, "..", "..", "app")
     const talalatok: string[] = []
     let lapok = 0
-    for await (const fajl of glob("**/{page,layout,not-found}.tsx", {
-      cwd: gyoker,
-    })) {
+    for (const ut of forrasFajlok(gyoker)) {
+      if (!/(^|\/)(page|layout|not-found)\.tsx$/.test(ut)) continue
       lapok += 1
-      const forras = readFileSync(join(gyoker, fajl), "utf8")
-      for (const m of forras.matchAll(
-        /\b(title|description):\s*["`]([^"`]+)["`]/g,
+      const forras = readFileSync(ut, "utf8")
+      for (const m of Array.from(
+        forras.matchAll(/\b(title|description):\s*["`]([^"`]+)["`]/g),
       ))
-        if (angol(m[2]!)) talalatok.push(`${fajl}: ${m[1]} = ${m[2]}`)
+        if (angol(m[2]!))
+          talalatok.push(`${relative(gyoker, ut)}: ${m[1]} = ${m[2]}`)
     }
     // ismert pozitiv kontroll: a kereso tenyleg lapokat latott
     expect(lapok).toBeGreaterThan(20)

@@ -61,8 +61,8 @@ export default function CategoryTemplate({
   if (kind === "technical") {
     return (
       /*
-        NEM <main>: a gyoker elrendezes (`app/layout.tsx`) mar <main>-be teszi
-        az oldalt, es egy masodik <main> a lapon ket fo tartalmat allitana
+        NEM main elem: a gyoker elrendezes (`app/layout.tsx`) mar abba teszi
+        az oldalt, es egy masodik main a lapon ket fo tartalmat allitana
         (merve a teszt kirakaton 2026-10-07, SEO frontend FE-1).
       */
       <div

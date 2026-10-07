@@ -1,6 +1,5 @@
 "use client"
 
-import { clx } from "@modules/common/components/ui"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 
