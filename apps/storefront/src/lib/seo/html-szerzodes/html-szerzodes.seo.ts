@@ -124,9 +124,10 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
 })()
 
 // a belso-ut szabaly minden mintan fut (FE-7 3. resz): egy lapon sem lehet
-// `/_p/`, `/_v/` vagy `/_szurt/` link, canonical vagy og:url
+// `/_p/`, `/_v/` vagy `/_szurt/` link, canonical vagy og:url. A szuro-link
+// szabaly ugyanigy (FE-4b): szurt lapra mutato link csak `nofollow`-val all.
 for (const tipus of Object.keys(TERV) as MintaTipus[])
-  TERV[tipus] = [...TERV[tipus], "belso-ut-link"]
+  TERV[tipus] = [...TERV[tipus], "belso-ut-link", "szuro-link-nofollow"]
 
 type Lap = { valasz: Valasz; html: string; k: OldalKivonat }
 const tar = new Map<string, Promise<Lap>>()

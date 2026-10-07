@@ -1,5 +1,6 @@
 import { generikusAlt } from "@lib/seo/generikus-alt"
 import { ANGOL_HELYKITOLTOK } from "@lib/seo/oldal-metaadat"
+import { szuroLink } from "@lib/seo/szuro-link"
 
 import type { KepAdat, OldalKivonat } from "./kivonat"
 
@@ -251,6 +252,19 @@ export const SZABALYOK = {
         .map((c) => `belső út a canonicalban vagy az og:url-ben: ${c}`),
     ]
   },
+
+  /**
+   * A SZURT LAPRA MUTATO LINK `nofollow` (FE-4b, barracuda #524-es lelete). A
+   * tobbvalasztos marka-szuro 2^N kombinaciot ad `<a href>`-kent, mind dinamikus
+   * SSR; a `noindex, follow` a bejarast nem allitja meg. Minden link, ami
+   * szuro-parametert visz (`SZURO_KULCSOK`, ugyanaz, ami a `_szurt` atirast
+   * kivaltja), `rel`-jeben `nofollow`-nak kell allnia, barmelyik lapon.
+   */
+  "szuro-link-nofollow": (k) =>
+    k.linkRel
+      .filter((l) => szuroLink(l.href))
+      .filter((l) => !/(^|\s)nofollow(\s|$)/i.test(l.rel ?? ""))
+      .map((l) => `szűrt lapra mutató link nofollow nélkül: ${l.href}`),
 
   "termek-linkek": (k) =>
     k.termekLinkek.length ? [] : ["nincs <a href> termék-link a lapon"],

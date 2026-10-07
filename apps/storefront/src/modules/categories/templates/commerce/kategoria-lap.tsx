@@ -2,6 +2,7 @@ import { HttpTypes } from "@medusajs/types"
 
 import { listCategories } from "@lib/data/categories"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
+import { szuroLinkRel } from "@lib/seo/szuro-link"
 import {
   MarkaSor,
   markaSorok,
@@ -438,6 +439,7 @@ export default async function CommerceKategoriaLap({
                 <a
                   key={id}
                   href={markaLink(id)}
+                  rel={szuroLinkRel(markaLink(id))}
                   className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
                   aria-label={`${markaNev.get(id) ?? "Márka"} szűrő levétele`}
                 >
@@ -480,6 +482,9 @@ export default async function CommerceKategoriaLap({
               {tovabbi ? (
                 <a
                   href={kovetkezoLap(page, sortBy, optionValueIds, markak)}
+                  rel={szuroLinkRel(
+                    kovetkezoLap(page, sortBy, optionValueIds, markak),
+                  )}
                   className="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink"
                   data-testid="category-more-products"
                 >

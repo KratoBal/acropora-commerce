@@ -7,6 +7,7 @@ import {
   talalatMarkai,
   type TalalatTermek,
 } from "@lib/util/kereses-talalatok"
+import { szuroLinkRel } from "@lib/seo/szuro-link"
 import { keresesSzuro } from "@lib/util/kereses-szuro"
 import { markaValtas } from "@lib/util/marka-szuro"
 import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
@@ -134,6 +135,7 @@ export default async function KeresesLap({
         {gyoker || markak.length > 0 ? (
           <a
             href={cim({ gyoker: null, markak: [] })}
+            rel={szuroLinkRel(cim({ gyoker: null, markak: [] }))}
             className="text-[14px] text-acr-ocean"
           >
             Törlés
@@ -231,6 +233,7 @@ export default async function KeresesLap({
             <li className="shrink-0">
               <a
                 href={cim({ gyoker: null, markak: [] })}
+                rel={szuroLinkRel(cim({ gyoker: null, markak: [] }))}
                 aria-current={gyoker ? undefined : "page"}
                 className={
                   FUL +
@@ -246,6 +249,7 @@ export default async function KeresesLap({
               <li key={sor.id} className="shrink-0">
                 <a
                   href={cim({ gyoker: sor.id, markak: [] })}
+                  rel={szuroLinkRel(cim({ gyoker: sor.id, markak: [] }))}
                   aria-current={gyoker === sor.id ? "page" : undefined}
                   className={
                     FUL +
@@ -351,6 +355,7 @@ export default async function KeresesLap({
               {count > page * TALALAT_LAP ? (
                 <a
                   href={cim({ page: page + 1 })}
+                  rel={szuroLinkRel(cim({ page: page + 1 }))}
                   className="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink"
                   data-testid="kereses-tovabb"
                 >

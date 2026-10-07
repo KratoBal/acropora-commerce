@@ -45,6 +45,8 @@ export type OldalKivonat = {
   lapLinkek: string[]
   /** minden `<a href>` link (a belso-ut szabalyhoz, FE-7 3. resz) */
   linkek: string[]
+  /** minden `<a href>` link a `rel` ertekevel (a szuro-link szabalyhoz, FE-4b) */
+  linkRel: { href: string; rel: string | null }[]
   /** a fulek (`role="tab"`) szama */
   fulDb: number
   /** a ful-panelek (`role="tabpanel"`): a szoveguk hossza, es rejtett-e */
@@ -130,6 +132,10 @@ export function kivonat(html: string): OldalKivonat {
     linkek: Array.from(doc.querySelectorAll("a[href]")).map(
       (a) => a.getAttribute("href") ?? "",
     ),
+    linkRel: Array.from(doc.querySelectorAll("a[href]")).map((a) => ({
+      href: a.getAttribute("href") ?? "",
+      rel: a.getAttribute("rel"),
+    })),
     fulDb: doc.querySelectorAll('[role="tab"]').length,
     panelek: Array.from(doc.querySelectorAll('[role="tabpanel"]')).map((p) => ({
       hossz: szoveg(p).length,

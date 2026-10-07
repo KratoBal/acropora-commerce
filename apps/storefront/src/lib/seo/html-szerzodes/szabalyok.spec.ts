@@ -365,6 +365,53 @@ describe("belső útra mutató link (FE-7)", () => {
 })
 
 /*
+  A SZURT LAPRA MUTATO LINK (FE-4b). A linkek a teszt kirakatrol vannak masolva
+  (2026-10-07, `/hu/categories/vízkezelés---termékek` es `/hu/store?q=hanna`,
+  meg `rel` nelkul). MI PIROSIT: egy marka-, kereses- vagy szurt lapozo-link
+  `nofollow` nelkul atmegy; a szuro levetele (`?`), a sima lapozo vagy a
+  termeklink hibat ad; egy `nofollow`-ra csak hasonlito `rel` atmegy.
+*/
+describe("szűrt lapra mutató link (FE-4b)", () => {
+  const MARKA =
+    '<a href="?marka=pcol_01M2KA5H4N02NV49K933QS6ZGT" class="flex items-center justify-between gap-2 text-[14px] leading-[22px] hover:text-acr-ink text-acr-slate">Aquaforest</a>'
+  const KERESES_MARKA =
+    '<a href="?q=hanna&amp;marka=pcol_01M2KA5J1YR3DTP0W9Z5RJ8PPP" class="flex items-center justify-between gap-2 text-[14px] leading-[22px] hover:text-acr-ink text-acr-slate">Hanna</a>'
+  const KERESES_TOVABB =
+    '<a href="?q=hanna&amp;page=2" class="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink" data-testid="kereses-tovabb">További találatok</a>'
+  const LEVETEL =
+    '<a href="?" class="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white" aria-label="Aquaforest szűrő levétele">Aquaforest ×</a>'
+  const nofollow = (a: string, rel = "nofollow") =>
+    a.replace("<a ", `<a rel="${rel}" `)
+
+  it("a kirakat mai linkjei nofollow nélkül: mind a három hiba", () => {
+    const k = oldal(JO_FEJ, MARKA + KERESES_MARKA + KERESES_TOVABB)
+    expect(fut("szuro-link-nofollow", k)).toEqual([
+      "szűrt lapra mutató link nofollow nélkül: ?marka=pcol_01M2KA5H4N02NV49K933QS6ZGT",
+      "szűrt lapra mutató link nofollow nélkül: ?q=hanna&marka=pcol_01M2KA5J1YR3DTP0W9Z5RJ8PPP",
+      "szűrt lapra mutató link nofollow nélkül: ?q=hanna&page=2",
+    ])
+  })
+
+  it("nofollow-val rendben; a levétel, a sima lapozó és a terméklink nem kell", () => {
+    const k = oldal(
+      JO_FEJ,
+      nofollow(MARKA) +
+        nofollow(KERESES_MARKA, "nofollow noopener") +
+        nofollow(KERESES_TOVABB) +
+        LEVETEL +
+        '<a href="?page=2">2</a>' +
+        LISTA_CSEMPE,
+    )
+    expect(fut("szuro-link-nofollow", k)).toEqual([])
+  })
+
+  it("a nofollow-ra csak hasonlító rel nem elég", () => {
+    const k = oldal(JO_FEJ, nofollow(MARKA, "nofollower"))
+    expect(fut("szuro-link-nofollow", k)).toHaveLength(1)
+  })
+})
+
+/*
   A TERMEKKEPEK MERETEZESE ES RANGJA (FE-3). MI PIROSIT: srcset nelkuli vagy
   meret nelkuli termekkep atmegy; a fill-es listakep (a doboz aranya tartja)
   hibanak szamit; a fo kep fetchpriority nelkul atmegy; az elso listakep
