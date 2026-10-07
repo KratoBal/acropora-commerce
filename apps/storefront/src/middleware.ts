@@ -1,6 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
 import { statikusGyokerUt } from "@lib/util/statikus-utak"
+import { orszagAtiranyitasKod } from "@lib/util/orszag-atiranyitas"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -141,7 +142,11 @@ export async function middleware(request: NextRequest) {
   const queryString = request.nextUrl.search || ""
   const redirectUrl = `${request.nextUrl.origin}/${country}${redirectPath}${queryString}`
 
-  return NextResponse.redirect(redirectUrl, 307)
+  // 301, ha a cel mindenkinek ugyanaz (egy orszag); kulonben 307
+  return NextResponse.redirect(
+    redirectUrl,
+    orszagAtiranyitasKod(regionMap.size),
+  )
 }
 
 export const config = {
