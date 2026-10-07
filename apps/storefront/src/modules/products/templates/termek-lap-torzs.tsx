@@ -8,7 +8,13 @@ import { TERMEKLAP_FIELDS } from "@lib/data/termeklap-fields"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { HttpTypes } from "@medusajs/types"
 import ProductTemplate from "@modules/products/templates"
-import { morzsaLd, termekLd } from "@lib/seo/strukturalt-adat"
+import {
+  morzsaLd,
+  termekCsoportLd,
+  termekLd,
+  valtozatGtin,
+  type LatottElerhetoseg,
+} from "@lib/seo/strukturalt-adat"
 import { getBaseURL } from "@lib/util/env"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { besorolasUt } from "@lib/util/kategoria-fa"
@@ -143,9 +149,12 @@ export async function termekLapTorzs(
  *   elerhetoseg    `valtozatKaphato` + `availabilityOf`, mint a vasarlasi doboz
  *   cikkszam       `cikkszam`, mint a lap cim alatti sora
  *
- * TOBBVALTOZATOS TERMEKEN NINCS PRODUCT BLOKK: egy valtozat arat az egesz
- * termekre allitana. Az a ProductGroup dolga (P0 PR 3 utan). Ar nelkul sincs:
- * egy ajanlat ar nelkul ervenytelen.
+ *   gtin           a valtozat `ean`/`upc`/`barcode` ervenyes kodja (FE-2b)
+ *
+ * TOBBVALTOZATOS TERMEKEN ProductGroup (FE-2b): a valtozatok a sajat
+ * araval es keszletevel, ugyanugy, ahogy a lap a `?v_id=` kivalasztasa utan
+ * mutatja (`getProductPrice` a `variantId`-vel). Ar nelkuli valtozat kimarad,
+ * mert egy ajanlat ar nelkul ervenytelen; ha egy sem marad, nincs blokk.
  */
 export function strukturaltAdat(
   termek: HttpTypes.StoreProduct,
@@ -174,15 +183,63 @@ export function strukturaltAdat(
   ])
 
   const valtozatok = termek.variants ?? []
-  const valtozat = valtozatok.length === 1 ? valtozatok[0] : null
-  const ar = getProductPrice({ product: termek }).cheapestPrice
-  if (!valtozat || !ar || !nev) return { morzsa, termek: null }
+  const kepUrlek = kepek.flatMap((k) => (k.url ? [k.url] : []))
+  const elerhetosegE = (v: HttpTypes.StoreProductVariant): LatottElerhetoseg =>
+    availabilityOf({
+      inStock: valtozatKaphato(v),
+      uniquePiece: uniquePieceOf(termek.metadata),
+      inventoryKnown: keszletIsmert(v),
+    })
+  if (!nev) return { morzsa, termek: null }
 
-  const elerhetoseg = availabilityOf({
-    inStock: valtozatKaphato(valtozat),
-    uniquePiece: uniquePieceOf(termek.metadata),
-    inventoryKnown: keszletIsmert(valtozat),
-  })
+  if (valtozatok.length > 1) {
+    const opcioNev = new Map(
+      (termek.options ?? []).map((o) => [o.id, o.title ?? ""]),
+    )
+    const tetelek = valtozatok.flatMap((v) => {
+      const varAr = getProductPrice({
+        product: termek,
+        variantId: v.id,
+      }).variantPrice
+      if (!varAr) return []
+      const elerhetoseg = elerhetosegE(v)
+      return [
+        {
+          url: `${url}?v_id=${encodeURIComponent(v.id)}`,
+          opciok: (v.options ?? []).map((o) => ({
+            nev: opcioNev.get(o.option_id ?? "") ?? "",
+            ertek: o.value ?? "",
+          })),
+          cikkszam: v.sku?.trim() || null,
+          gtin: valtozatGtin(v),
+          kepek: (v.images ?? []).flatMap((k) => (k.url ? [k.url] : [])),
+          ar: varAr.calculated_price_number,
+          penznem: String(varAr.currency_code ?? "").toUpperCase(),
+          elerhetoseg,
+          utanrendeles: elerhetoseg === "KAPHATO" && csakUtanrendelesre(v),
+        },
+      ]
+    })
+    if (!tetelek.length) return { morzsa, termek: null }
+    return {
+      morzsa,
+      termek: termekCsoportLd({
+        nev,
+        url,
+        csoportAzonosito: termek.id,
+        marka: termek.collection?.title ?? null,
+        kepek: kepUrlek,
+        penznem: tetelek[0]!.penznem,
+        kategoriaNevek: ut.map((k) => k.teljesNev),
+        valtozatok: tetelek,
+      }),
+    }
+  }
+
+  const valtozat = valtozatok[0]
+  const ar = getProductPrice({ product: termek }).cheapestPrice
+  if (!valtozat || !ar) return { morzsa, termek: null }
+  const elerhetoseg = elerhetosegE(valtozat)
 
   return {
     morzsa,
@@ -191,7 +248,8 @@ export function strukturaltAdat(
       url,
       cikkszam: cikkszam(termek),
       marka: termek.collection?.title ?? null,
-      kepek: kepek.flatMap((k) => (k.url ? [k.url] : [])),
+      kepek: kepUrlek,
+      gtin: valtozatGtin(valtozat),
       ar: ar.calculated_price_number,
       penznem: String(ar.currency_code ?? "").toUpperCase(),
       elerhetoseg,

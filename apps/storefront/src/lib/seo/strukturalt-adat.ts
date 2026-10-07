@@ -11,12 +11,13 @@ import { STORE_NAME } from "@lib/store"
  *
  * MOST: Organization es WebSite minden lapon (SearchAction NELKUL, mert a
  * kereses noindex); BreadcrumbList a termek- es a kategorialapon; Product az
- * EGYVALTOZATOS termeken.
+ * EGYVALTOZATOS termeken; ProductGroup + hasVariant a TOBBVALTOZATOSON
+ * (FE-2b); gtin8/12/13/14 a valtozat `ean`, `upc` vagy `barcode` mezojebol,
+ * ha ervenyes GTIN all benne (FE-2b, a P0 PR 4 tolti).
  *
- * NEM MOST, es ezert nem talalunk ki ertekot ra: gtin es mpn (P0 PR 4),
- * ProductGroup/hasVariant (P0 PR 3), shippingDetails es hasMerchantReturnPolicy
- * (kesobbi kor). A `termekLd` bemenete es kimenete ugy all, hogy ezek egy-egy
- * mezokent hozzaadhatok legyenek, a hivok modositasa nelkul.
+ * NEM MOST, es ezert nem talalunk ki erteket ra: mpn (a Medusa valtozaton
+ * nincs gyartoi cikkszam mezo, es a P0 PR 4 sem hoz ilyet), shippingDetails es
+ * hasMerchantReturnPolicy (kesobbi kor).
  */
 
 export type JsonLd = Record<string, unknown>
@@ -113,6 +114,30 @@ export type TermekLdBemenet = {
   utanrendeles: boolean
   /** a besorolas kategorianevei (a morzsamenu lanca), a hasznalt allapothoz */
   kategoriaNevek: string[]
+  /** a valtozat ervenyes GTIN-je (`valtozatGtin`), ha van */
+  gtin?: string | null
+}
+
+/** Egy ajanlat: a lapon latszo ar es elerhetoseg. */
+function ajanlatLd(b: {
+  url: string
+  ar: number
+  penznem: string
+  elerhetoseg: LatottElerhetoseg
+  utanrendeles: boolean
+  kategoriaNevek: string[]
+}): JsonLd {
+  return {
+    "@type": "Offer",
+    url: b.url,
+    price: b.ar,
+    priceCurrency: b.penznem,
+    availability: elerhetosegSchema(b.elerhetoseg, b.utanrendeles),
+    itemCondition: hasznaltE(b.kategoriaNevek)
+      ? "https://schema.org/UsedCondition"
+      : "https://schema.org/NewCondition",
+    seller: { "@type": "Organization", name: STORE_NAME },
+  }
 }
 
 /**
@@ -128,19 +153,161 @@ export function termekLd(b: TermekLdBemenet): JsonLd {
     url: b.url,
     ...(b.kepek.length ? { image: b.kepek } : {}),
     ...(b.cikkszam ? { sku: b.cikkszam } : {}),
+    ...gtinMezo(b.gtin),
     ...(b.marka ? { brand: { "@type": "Brand", name: b.marka } } : {}),
-    offers: {
-      "@type": "Offer",
-      url: b.url,
-      price: b.ar,
-      priceCurrency: b.penznem,
-      availability: elerhetosegSchema(b.elerhetoseg, b.utanrendeles),
-      itemCondition: hasznaltE(b.kategoriaNevek)
-        ? "https://schema.org/UsedCondition"
-        : "https://schema.org/NewCondition",
-      seller: { "@type": "Organization", name: STORE_NAME },
-    },
+    offers: ajanlatLd(b),
   }
+}
+
+/**
+ * AZ OPCIO NEVE A SCHEMA.ORG TULAJDONSAGRA (`variesBy`). Csak az ismert nevek:
+ * egy ismeretlen opcio (pl. "Kiszereles") nem kap kitalalt tulajdonsagot, a
+ * valtozat neve viszont az erteket igy is hordozza.
+ */
+const OPCIO_TULAJDONSAG: Record<string, string> = {
+  meret: "size",
+  méret: "size",
+  size: "size",
+  szin: "color",
+  szín: "color",
+  color: "color",
+  anyag: "material",
+  material: "material",
+  minta: "pattern",
+  pattern: "pattern",
+}
+
+export function opcioTulajdonsag(opcioNev: string): string | null {
+  return (
+    OPCIO_TULAJDONSAG[opcioNev.trim().toLowerCase().normalize("NFC")] ?? null
+  )
+}
+
+export type ValtozatLdBemenet = {
+  /** a valtozat sajat cime: a termeklap `?v_id=`-vel */
+  url: string
+  /** az opciok, a lap opcio-gombjainak ertekevel */
+  opciok: { nev: string; ertek: string }[]
+  cikkszam?: string | null
+  gtin?: string | null
+  /** a valtozat kepei, ha vannak; kulonben a termeke */
+  kepek: string[]
+  /** a valtozat ara, ahogy a lap a kivalasztasa utan mutatja */
+  ar: number
+  elerhetoseg: LatottElerhetoseg
+  utanrendeles: boolean
+}
+
+export type TermekCsoportLdBemenet = {
+  nev: string
+  url: string
+  /** a csoport allando azonositoja (a termek Medusa-azonositoja) */
+  csoportAzonosito: string
+  marka?: string | null
+  kepek: string[]
+  penznem: string
+  kategoriaNevek: string[]
+  valtozatok: ValtozatLdBemenet[]
+}
+
+/**
+ * A TOBBVALTOZATOS TERMEK (FE-2b): ProductGroup, a valtozatok `hasVariant`
+ * alatt, mindegyik a SAJAT araval, keszletevel, cikkszamaval es GTIN-jevel,
+ * ugyanugy, ahogy a lap a valtozat kivalasztasa utan mutatja. A csoportnak
+ * nincs sajat ajanlata: egy valtozat arat az egesz termekre allitana.
+ *
+ * A `variesBy` csak az ismert opciokat sorolja (`opcioTulajdonsag`); ha egy sem
+ * ismert, a mezo kimarad.
+ */
+export function termekCsoportLd(b: TermekCsoportLdBemenet): JsonLd {
+  const opcioNevek = Array.from(
+    new Set(b.valtozatok.flatMap((v) => v.opciok.map((o) => o.nev))),
+  )
+  const valtozik = opcioNevek
+    .map(opcioTulajdonsag)
+    .filter((t): t is string => t !== null)
+  return {
+    "@context": "https://schema.org",
+    "@type": "ProductGroup",
+    name: b.nev,
+    url: b.url,
+    productGroupID: b.csoportAzonosito,
+    ...(b.kepek.length ? { image: b.kepek } : {}),
+    ...(b.marka ? { brand: { "@type": "Brand", name: b.marka } } : {}),
+    ...(valtozik.length
+      ? {
+          variesBy: Array.from(new Set(valtozik)).map(
+            (t) => `https://schema.org/${t}`,
+          ),
+        }
+      : {}),
+    hasVariant: b.valtozatok.map((v) => {
+      const ertekek = v.opciok.map((o) => o.ertek).filter(Boolean)
+      const tulajdonsagok = Object.fromEntries(
+        v.opciok.flatMap((o) => {
+          const t = opcioTulajdonsag(o.nev)
+          return t && o.ertek ? [[t, o.ertek]] : []
+        }),
+      )
+      const kepek = v.kepek.length ? v.kepek : b.kepek
+      return {
+        "@type": "Product",
+        name: ertekek.length ? `${b.nev} (${ertekek.join(", ")})` : b.nev,
+        url: v.url,
+        ...(kepek.length ? { image: kepek } : {}),
+        ...(v.cikkszam ? { sku: v.cikkszam } : {}),
+        ...gtinMezo(v.gtin),
+        ...tulajdonsagok,
+        offers: ajanlatLd({
+          url: v.url,
+          ar: v.ar,
+          penznem: b.penznem,
+          elerhetoseg: v.elerhetoseg,
+          utanrendeles: v.utanrendeles,
+          kategoriaNevek: b.kategoriaNevek,
+        }),
+      }
+    }),
+  }
+}
+
+/**
+ * ERVENYES GTIN-E (GS1): 8, 12, 13 vagy 14 szamjegy, es stimmel az ellenorzo
+ * szamjegy. Egy rossz kod a Merchant Centerben hibat ad, tehat inkabb
+ * kimarad, mint hogy hamisat allitsunk.
+ */
+export function ervenyesGtin(kod: string): boolean {
+  if (!/^(\d{8}|\d{12,14})$/.test(kod)) return false
+  const jegyek = Array.from(kod, Number)
+  const ellenorzo = jegyek.pop()!
+  // jobbrol balra: a legutolso adatjegy 3-as sulyu, utana 1, 3, 1, ...
+  const osszeg = jegyek
+    .reverse()
+    .reduce((acc, jegy, i) => acc + jegy * (i % 2 === 0 ? 3 : 1), 0)
+  return (10 - (osszeg % 10)) % 10 === ellenorzo
+}
+
+/**
+ * A VALTOZAT GTIN-JE: az `ean`, utana az `upc`, vegul a `barcode` mezo elso
+ * ervenyes kodja (a P0 PR 4 a 13 jegyut az `ean`-ba, a 12 jegyut az `upc`-be
+ * irja). Nincs ervenyes kod: `null`, es a JSON-LD-bol a mezo KIMARAD (nem
+ * ures).
+ */
+export function valtozatGtin(v: {
+  ean?: string | null
+  upc?: string | null
+  barcode?: string | null
+}): string | null {
+  for (const nyers of [v.ean, v.upc, v.barcode]) {
+    const kod = nyers?.trim()
+    if (kod && ervenyesGtin(kod)) return kod
+  }
+  return null
+}
+
+/** A GTIN a hossza szerinti schema.org mezoben (`gtin13`, `gtin12`, ...). */
+function gtinMezo(kod: string | null | undefined): JsonLd {
+  return kod ? { [`gtin${kod.length}`]: kod } : {}
 }
 
 /**

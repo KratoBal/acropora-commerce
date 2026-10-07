@@ -1,3 +1,5 @@
+import { valtozatGtin } from "@lib/seo/strukturalt-adat"
+
 /**
  * A SZERZODES-TESZT MINTAOLDALAI, A BOLT ADATABOL KIVALASZTVA (SEO frontend FE-8,
  * roadmap 3/B, a fixtura-keszlet).
@@ -32,6 +34,12 @@ export type Minta = {
   /** a kirakat utja, orszagkoddal es query-vel */
   ut: string | null
   hianyzik?: string
+  /**
+   * a GTIN-mintaknal a vart kod (FE-2b): a `termek-gtin` mintan a termek elso
+   * ervenyes kodja, a `termek-gtin-nelkul` mintan `null` (a JSON-LD-ben nem
+   * allhat gtin)
+   */
+  gtin?: string | null
   /** a `termek-valtozatos` mintanal: a nem alapertelmezett valtozat */
   valtozat?: { id: string; opciok: string[] }
 }
@@ -73,7 +81,8 @@ export type BoltKapcsolat = {
 /** a lapozo lapmerete a kategorian (`category-products.tsx`) */
 const LAPMERET = 12
 
-const gtin = (v: Valtozat) => !!(v.barcode || v.ean || v.upc)
+// ugyanaz a dontes, mint a lapon: csak az ervenyes kod szamit (FE-2b)
+const gtin = (v: Valtozat) => valtozatGtin(v) !== null
 const elfogyott = (t: Termek) =>
   !!t.variants?.length &&
   t.variants.every(
@@ -128,7 +137,18 @@ export function mintakAdatbol(
   const rendezett = [...termekek].sort(handleSzerint)
   const termekUt = (t: Termek | undefined, tipus: MintaTipus, ok: string) =>
     t
-      ? { tipus, ut: p(`/products/${t.handle}`) }
+      ? {
+          tipus,
+          ut: p(`/products/${t.handle}`),
+          ...(tipus === "termek-gtin" || tipus === "termek-gtin-nelkul"
+            ? {
+                gtin:
+                  (t.variants ?? [])
+                    .map(valtozatGtin)
+                    .find((kod) => kod !== null) ?? null,
+              }
+            : {}),
+        }
       : { tipus, ut: null, hianyzik: ok }
 
   const gtinos = rendezett.find((t) => t.variants?.some(gtin))

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { kivonat } from "./kivonat"
-import { SZABALYOK, valtozatHibak, type Valasz } from "./szabalyok"
+import { gtinHibak, SZABALYOK, valtozatHibak, type Valasz } from "./szabalyok"
 
 /**
  * A SZERZODES SZABALYAI EGY-EGY HTML-EN (FE-8). A kep- es link-reszletek a teszt
@@ -572,5 +572,61 @@ describe("termékképek: méretezés és rang (FE-3)", () => {
     expect(
       fut("elso-listakep-nem-lusta", oldal(JO_FEJ, "<p>üres</p>")),
     ).toHaveLength(1)
+  })
+})
+
+/*
+  A TOBBVALTOZATOS TERMEK ES A GTIN (FE-2b). MI PIROSIT: egy ProductGroup a lap
+  arat nem a valtozatai kozul allitja; egy valtozat nem forintos; a GTIN-es
+  terméken hianyzik vagy mas a kod; a GTIN nelkulin megis all egy.
+*/
+describe("ProductGroup és GTIN (FE-2b)", () => {
+  const ld = (x: unknown) =>
+    `<script type="application/ld+json">${JSON.stringify(x)}</script>`
+  const csoport = (arak: number[], penznem = "HUF") => ({
+    "@type": "ProductGroup",
+    name: "Só",
+    hasVariant: arak.map((price, i) => ({
+      "@type": "Product",
+      name: `Só (${i + 1})`,
+      ...(i === 0 ? { gtin13: "5060139356268" } : {}),
+      offers: { price, priceCurrency: penznem },
+    })),
+  })
+  const lap = (ar: string) =>
+    `<h1>Só</h1><span data-testid="product-price" data-value="${ar}">x</span>`
+
+  it("a lap ára az egyik változaté", () => {
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("3990") + ld(csoport([1990, 3990]))),
+      ),
+    ).toEqual([])
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("2990") + ld(csoport([1990, 3990]))),
+      ),
+    ).toHaveLength(1)
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap("1990") + ld(csoport([1990, 3990], "EUR"))),
+      ),
+    ).toHaveLength(2)
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, lap("1990") + ld(csoport([])))),
+    ).toContain("üres hasVariant")
+  })
+
+  it("gtinHibak: a várt kód pontosan áll, GTIN nélkül egy sem", () => {
+    const vele = oldal(JO_FEJ, ld(csoport([1990])))
+    const nelkule = oldal(JO_FEJ, ld({ "@type": "Product", name: "Só" }))
+    expect(gtinHibak(vele, "5060139356268")).toEqual([])
+    expect(gtinHibak(vele, "4006381333931")).toHaveLength(1)
+    expect(gtinHibak(nelkule, "5060139356268")).toHaveLength(1)
+    expect(gtinHibak(nelkule, null)).toEqual([])
+    expect(gtinHibak(vele, null)).toHaveLength(1)
   })
 })
