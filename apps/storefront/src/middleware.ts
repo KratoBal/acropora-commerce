@@ -105,12 +105,22 @@ async function getCountryCode(
  * Middleware to handle region selection.
  */
 /*
- * A DONTES KULON FAJLBAN ALL (`lib/util/statikus-utak.ts`), MERT ITT NEM MERHETO:
- * ez a modul a `next/server`-t importalja, tehat egysegteszt nem tudja betolteni.
- * Az indok, a meres es a lista bovitesenek szabalya ott all, a fuggveny mellett.
+ * A statikus gyoker-utak dontese kulon fajlban all (`lib/util/statikus-utak.ts`),
+ * az indokkal, a meressel es a lista bovitesenek szabalyaval. A middleware egeszet
+ * a `middleware.spec.ts` meri (a vitest betolti a `next/server`-t, merve
+ * 2026-10-07): ott a valodi valasz statusza es `Location`-je all.
+ *
+ * A `_next/` alatti utakat (a `_next/data` is) a middleware nem iranyitja at.
+ * A matcherben ezt NEM LEHET kizarni: a Next minden matcher ele egy opcionalis
+ * `_next/data/<build-id>` elotagot tesz, es a `nextUrl.pathname`-bol le is vagja
+ * (merve 2026-10-07, next 15.5, `build/analysis/get-page-static-info.js`). Ezert
+ * a feltetel a NYERS `request.url`-t nezi, nem a `nextUrl`-t.
  */
 export async function middleware(request: NextRequest) {
-  if (statikusGyokerUt(request.nextUrl.pathname)) {
+  if (
+    statikusGyokerUt(request.nextUrl.pathname) ||
+    new URL(request.url).pathname.startsWith("/_next/")
+  ) {
     return NextResponse.next()
   }
 
@@ -142,10 +152,10 @@ export async function middleware(request: NextRequest) {
   const queryString = request.nextUrl.search || ""
   const redirectUrl = `${request.nextUrl.origin}/${country}${redirectPath}${queryString}`
 
-  // 301, ha a cel mindenkinek ugyanaz (egy orszag); kulonben 307
+  // 301, ha a cel mindenkinek ugyanaz (egy orszag) ES letezo lap; kulonben 307
   return NextResponse.redirect(
     redirectUrl,
-    orszagAtiranyitasKod(regionMap.size),
+    orszagAtiranyitasKod(regionMap.size, request.nextUrl.pathname),
   )
 }
 
