@@ -35,6 +35,15 @@ const MEDUSA_KEPHOSZT = (() => {
  */
 const nextConfig = {
   reactStrictMode: true,
+  /*
+    A LAP-GENERALAS IDOKORLATJA 180 MP (kartya 62811c0f, barracuda atvetele).
+    A build kozbeni ujraprobalas (`lib/util/epites-ujraprobalas.ts`) 2+4+8+16+30
+    = 60 mp-et var, plusz a kerések ideje. A Next alapertelmezett korlatja
+    pont 60 mp: hosszu kiesesnel a Next elobb lone le a lapot a sajat
+    timeout-hibajaval, mint ahogy a burkolo megnevezve feladna. A korlat
+    tehat a burkolo kerete FOLE kell; egy valodi kiesesnel a build igy is bukik.
+  */
+  staticPageGenerationTimeout: 180,
   // FE-7 3. resz: a `?v_id` es a `?page` belso utvonalra (ISR), a szurok a
   // dinamikus `_szurt` utra. Az indok es a meres: `belso-utvonalak.js`.
   async rewrites() {

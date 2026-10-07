@@ -13,8 +13,15 @@ import {
 } from "./hivatkozasok"
 
 export default async function Footer() {
+  /*
+    CSAK AZ KELL, AMIT A LABLEC KIIR: id, handle, title (kartya 62811c0f). A
+    `*products` minden gyujtemeny minden termeket hozta (merve a stage-en
+    2026-10-07: 1,7 MB, a szukitett 5,3 KB). 2 MB korul a Next nem tarolja a
+    valaszt, tehat minden lap minden renderelese ujra lekerte: buildenkent
+    kb. 385-szor (nautilus felmerese).
+  */
   const { collections } = await listCollections({
-    fields: "*products",
+    fields: "id,handle,title",
   })
 
   return (
