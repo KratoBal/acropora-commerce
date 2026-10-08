@@ -32,6 +32,9 @@ async function futtat(ut: string, orszagok: string[] = ["hu"]) {
   vi.resetModules()
   vi.stubEnv("NEXT_PUBLIC_MEDUSA_BACKEND_URL", BACKEND)
   vi.stubEnv("NEXT_PUBLIC_DEFAULT_REGION", "hu")
+  // a régi címek listája nélkül (PR 7c): a CI-ben a kulcs be van állítva, és
+  // akkor a lista lekérése is ezt a csonkot hívná (a #534 első CI-pirosa)
+  vi.stubEnv("NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY", "")
   const lekeres = vi.fn(async () => Response.json(regiok(orszagok)))
   vi.stubGlobal("fetch", lekeres)
   const { middleware } = await import("./middleware")
@@ -158,6 +161,13 @@ describe("a régi címek 301-e (SEO P0 PR 7c)", () => {
     expect(valasz.headers.get("location")).toBe(
       "https://bolt.test/hu/termek/sz%C3%A1raz",
     )
+  })
+
+  it("idegen origin-re nem irányít, akkor sem, ha a lista ilyet ad (#534 3.)", async () => {
+    const valasz = await futtatListaval("/Regi", {
+      redirects: [["/regi", "//idegen.hu/x", 301]],
+    })
+    expect(valasz.headers.get("location")).toBe("https://bolt.test/hu/Regi")
   })
 
   it("ismeretlen út: a mai viselkedés (országkód-átirányítás)", async () => {

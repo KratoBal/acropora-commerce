@@ -149,11 +149,13 @@ export async function middleware(request: NextRequest) {
       await atiranyitasLista(BACKEND_URL, PUBLISHABLE_API_KEY),
       request.nextUrl.pathname,
     )
-    if (cel) {
-      const valasz = NextResponse.redirect(
-        new URL(`${cel.cel}${request.nextUrl.search}`, request.nextUrl.origin),
-        cel.statusz,
-      )
+    const celUrl = cel
+      ? new URL(`${cel.cel}${request.nextUrl.search}`, request.nextUrl.origin)
+      : null
+    // védelmi sor: csak a saját origin-re (egy `//idegen.hu` cél más domain
+    // lenne; az OS és a backend már elutasítja, ez a harmadik kapu; #534 3.)
+    if (cel && celUrl && celUrl.origin === request.nextUrl.origin) {
+      const valasz = NextResponse.redirect(celUrl, cel.statusz)
       valasz.headers.set("Cache-Control", ATIRANYITAS_CACHE_CONTROL)
       return valasz
     }

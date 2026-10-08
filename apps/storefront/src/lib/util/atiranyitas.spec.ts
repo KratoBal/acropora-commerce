@@ -52,6 +52,33 @@ describe("atiranyitasLista", () => {
     expect(lekeres).toHaveBeenCalledTimes(2)
   })
 
+  it("a párhuzamos kérések egy lekérést várnak (#534 1.)", async () => {
+    const lekeres = vi.fn(async () => Response.json(lista))
+    vi.stubGlobal("fetch", lekeres)
+    const [a, b] = await Promise.all([
+      atiranyitasLista("http://m.test", "pk", 0),
+      atiranyitasLista("http://m.test", "pk", 0),
+    ])
+    expect(lekeres).toHaveBeenCalledOnce()
+    expect(a).toBe(b)
+  })
+
+  it("egy lógó backend 2 másodperc után üres listát ad, és nem áll (#534 1.)", async () => {
+    const lekeres = vi.fn(
+      (_: unknown, init?: RequestInit) =>
+        new Promise<Response>((_, elutasit) =>
+          init?.signal?.addEventListener("abort", () =>
+            elutasit(new Error("abort")),
+          ),
+        ),
+    )
+    vi.stubGlobal("fetch", lekeres)
+    const kezdet = Date.now()
+    const ures = await atiranyitasLista("http://m.test", "pk", 0)
+    expect(Date.now() - kezdet).toBeLessThan(4_000)
+    expect(atiranyitasCelja(ures, "/pumpa")).toBeNull()
+  })
+
   it("betöltési hiba: üres lista, nincs kivétel, és 30 másodpercig nem próbálja újra", async () => {
     const lekeres = vi.fn(async () => new Response("x", { status: 503 }))
     vi.stubGlobal("fetch", lekeres)
