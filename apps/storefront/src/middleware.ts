@@ -8,6 +8,11 @@ import {
   cacheAzonositoKell,
 } from "@lib/util/cache-azonosito"
 import { orszagAtiranyitasKod } from "@lib/util/orszag-atiranyitas"
+import {
+  ATIRANYITAS_CACHE_CONTROL,
+  atiranyitasCelja,
+  atiranyitasLista,
+} from "@lib/util/atiranyitas"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -135,6 +140,25 @@ export async function middleware(request: NextRequest) {
   // a kozvetlen hivast zarja (`belso-utvonalak.js`).
   if (belsoUtKivulrol(request.nextUrl.pathname)) {
     return new NextResponse(null, { status: 404 })
+  }
+
+  // SEO P0 PR 7c: a régi cím 301-e, az országkód-átirányítás ELŐTT, hogy a régi
+  // UNAS-cím egy lépésben érjen célba. A forrás query-je a célra megy (`utm_…`).
+  if (BACKEND_URL && PUBLISHABLE_API_KEY) {
+    const cel = atiranyitasCelja(
+      await atiranyitasLista(BACKEND_URL, PUBLISHABLE_API_KEY),
+      request.nextUrl.pathname,
+    )
+    const celUrl = cel
+      ? new URL(`${cel.cel}${request.nextUrl.search}`, request.nextUrl.origin)
+      : null
+    // védelmi sor: csak a saját origin-re (egy `//idegen.hu` cél más domain
+    // lenne; az OS és a backend már elutasítja, ez a harmadik kapu; #534 3.)
+    if (cel && celUrl && celUrl.origin === request.nextUrl.origin) {
+      const valasz = NextResponse.redirect(celUrl, cel.statusz)
+      valasz.headers.set("Cache-Control", ATIRANYITAS_CACHE_CONTROL)
+      return valasz
+    }
   }
 
   const cacheIdCookie = request.cookies.get("_medusa_cache_id")

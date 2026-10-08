@@ -21,7 +21,8 @@ import { NextResponse, type NextRequest } from "next/server"
  */
 export const dynamic = "force-dynamic"
 
-export const URITHETO_CIMKEK = ["products"] as const
+// `redirects`: a régi címek listája (SEO P0 PR 7c); a backend a lista írásakor hívja
+export const URITHETO_CIMKEK = ["products", "redirects"] as const
 
 const egyezik = (kapott: string | null, vart: string) => {
   const kodolo = new TextEncoder()

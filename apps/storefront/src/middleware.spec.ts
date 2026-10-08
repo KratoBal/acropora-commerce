@@ -32,6 +32,9 @@ async function futtat(ut: string, orszagok: string[] = ["hu"]) {
   vi.resetModules()
   vi.stubEnv("NEXT_PUBLIC_MEDUSA_BACKEND_URL", BACKEND)
   vi.stubEnv("NEXT_PUBLIC_DEFAULT_REGION", "hu")
+  // a régi címek listája nélkül (PR 7c): a CI-ben a kulcs be van állítva, és
+  // akkor a lista lekérése is ezt a csonkot hívná (a #534 első CI-pirosa)
+  vi.stubEnv("NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY", "")
   const lekeres = vi.fn(async () => Response.json(regiok(orszagok)))
   vi.stubGlobal("fetch", lekeres)
   const { middleware } = await import("./middleware")
@@ -118,5 +121,69 @@ describe("a middleware és a statikus fájlok", () => {
   it("a minta tényleg átirányít egy oldalt és egy előtag nélküli képet (a mérés kontrollja)", () => {
     expect(lefedi("/checkout")).toBe(true)
     expect(lefedi("/kepek/kartyak.png")).toBe(true)
+  })
+})
+
+describe("a régi címek 301-e (SEO P0 PR 7c)", () => {
+  async function futtatListaval(
+    ut: string,
+    redirects: unknown = { redirects: [["/pumpa", "/hu/termek/p", 301]] },
+  ) {
+    vi.resetModules()
+    vi.stubEnv("NEXT_PUBLIC_MEDUSA_BACKEND_URL", BACKEND)
+    vi.stubEnv("NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY", "pk_teszt")
+    vi.stubEnv("NEXT_PUBLIC_DEFAULT_REGION", "hu")
+    const lekeres = vi.fn(async (url: string | URL) =>
+      String(url).endsWith("/store/redirects")
+        ? redirects instanceof Response
+          ? redirects
+          : Response.json(redirects)
+        : Response.json(regiok(["hu"])),
+    )
+    vi.stubGlobal("fetch", lekeres)
+    const { middleware } = await import("./middleware")
+    return middleware(new NextRequest(`https://bolt.test${ut}`))
+  }
+
+  it("a régi cím egyetlen 301-gyel a célra, az országkód előtt, a query-vel", async () => {
+    const valasz = await futtatListaval("/Pumpa/?utm_source=x")
+    expect(valasz.status).toBe(301)
+    expect(valasz.headers.get("location")).toBe(
+      "https://bolt.test/hu/termek/p?utm_source=x",
+    )
+    expect(valasz.headers.get("cache-control")).toBe("public, max-age=86400")
+  })
+
+  it("a nem ASCII cél a Location fejlécben percent-kódolva, egyszer (barracuda, #533)", async () => {
+    const valasz = await futtatListaval("/Regi", {
+      redirects: [["/regi", "/hu/termek/száraz", 301]],
+    })
+    expect(valasz.headers.get("location")).toBe(
+      "https://bolt.test/hu/termek/sz%C3%A1raz",
+    )
+  })
+
+  it("idegen origin-re nem irányít, akkor sem, ha a lista ilyet ad (#534 3.)", async () => {
+    const valasz = await futtatListaval("/Regi", {
+      redirects: [["/regi", "//idegen.hu/x", 301]],
+    })
+    expect(valasz.headers.get("location")).toBe("https://bolt.test/hu/Regi")
+  })
+
+  it("ismeretlen út: a mai viselkedés (országkód-átirányítás)", async () => {
+    const valasz = await futtatListaval("/products/hanna")
+    expect(valasz.headers.get("location")).toBe(
+      "https://bolt.test/hu/products/hanna",
+    )
+  })
+
+  it("ha a lista nem töltődik be, nincs átirányítás a régi címre", async () => {
+    const valasz = await futtatListaval(
+      "/Pumpa",
+      new Response("x", { status: 503 }),
+    )
+    // a régi cím a mai úton megy (országkód, 307), nem a lista célja felé
+    expect(valasz.status).toBe(307)
+    expect(valasz.headers.get("location")).toBe("https://bolt.test/hu/Pumpa")
   })
 })
