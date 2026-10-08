@@ -10,7 +10,7 @@ import UniquePieceBadge, {
 } from "@modules/products/components/unique-piece-badge"
 
 import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
-import { galeriaAlt } from "./kep-alt"
+import { kepAlt } from "./kep-alt"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
@@ -23,6 +23,8 @@ type ImageGalleryProps = {
    * hanem díszítés, és a lefelé görgető vevő ugyanazt olvasná ötször.
    */
   uniquePiece?: boolean
+  /** a kepek sajat alt-ja URL szerint (`kepAltok`, SEO P0 PR 9) */
+  altok?: Record<string, string>
 }
 
 /**
@@ -69,6 +71,7 @@ const ImageGallery = ({
   images,
   uniquePiece = false,
   nev,
+  altok,
 }: ImageGalleryProps) => {
   const [kivalasztott, setKivalasztott] = useState(0)
   const nagy = images[kivalasztott] ?? images[0]
@@ -131,7 +134,7 @@ const ImageGallery = ({
                 /* A TERMEK NEVE (`kep-alt.ts`). A regi alakok: `Product image
                    ${index + 1}` (angol), majd `Termékfotó` (magyar, de
                    generikus, Balazs 2026-10-07-i dontese szerint tiltott). */
-                alt={galeriaAlt(nev, kivalasztott, images.length)}
+                alt={kepAlt(altok, nagy.url, nev, kivalasztott, images.length)}
                 fill
                 sizes="(max-width: 576px) 100vw, (max-width: 992px) 100vw, 856px"
                 /*

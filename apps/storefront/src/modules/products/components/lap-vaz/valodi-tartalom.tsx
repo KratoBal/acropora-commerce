@@ -25,6 +25,7 @@ import {
 } from "../product-actions/minimum-order-quantity"
 import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
 import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
+import { kepAltok } from "../image-gallery/kep-alt"
 import { KepBlokk } from "../image-gallery/kep-blokk"
 import UniquePieceBadge, {
   UniquePiecePromise,
@@ -378,7 +379,11 @@ export const Foto = ({ termek }: { termek: Termek }) => {
     <>
       <div className="relative">
         {egyedi && <UniquePieceBadge />}
-        <KepBlokk kepek={teljes} alt={termek.title ?? ""} />
+        <KepBlokk
+          kepek={teljes}
+          alt={termek.title ?? ""}
+          altok={kepAltok(termek.metadata)}
+        />
       </div>
       {egyedi && <UniquePiecePromise className="mt-1" />}
     </>
