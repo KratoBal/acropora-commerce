@@ -151,6 +151,15 @@ describe("a régi címek 301-e (SEO P0 PR 7c)", () => {
     expect(valasz.headers.get("cache-control")).toBe("public, max-age=86400")
   })
 
+  it("a nem ASCII cél a Location fejlécben percent-kódolva, egyszer (barracuda, #533)", async () => {
+    const valasz = await futtatListaval("/Regi", {
+      redirects: [["/regi", "/hu/termek/száraz", 301]],
+    })
+    expect(valasz.headers.get("location")).toBe(
+      "https://bolt.test/hu/termek/sz%C3%A1raz",
+    )
+  })
+
   it("ismeretlen út: a mai viselkedés (országkód-átirányítás)", async () => {
     const valasz = await futtatListaval("/products/hanna")
     expect(valasz.headers.get("location")).toBe(
