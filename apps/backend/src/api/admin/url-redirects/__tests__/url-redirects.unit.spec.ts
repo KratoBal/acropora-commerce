@@ -59,13 +59,18 @@ describe("AdminPutUrlRedirects", () => {
 
 describe("the fingerprint", () => {
   it("the test vector shared with the OS (medusa-redirect-projection.spec.ts)", () => {
+    // `/á` and `/b`: code-unit order puts `/á` last, localeCompare first, so an
+    // OS side that sorted with localeCompare would give another hash (barracuda, #533 2.)
     expect(
       redirectsHash([
         r("/b", "/hu/termek/b"),
         r("/Pumpa", "/hu/termek/p"),
         r("/spd/1/Á", "/hu/termek/a"),
+        r("/á", "/hu/termek/aa"),
+        r("/a-b", "/hu/termek/ab1"),
+        r("/ab", "/hu/termek/ab2"),
       ]),
-    ).toBe("e940fd01f827505f2388bbb2c28fbaeaf5bc86d8c9f27de68b265b1df7217832");
+    ).toBe("2cef566902591f180ff39c090f476a8560c7bbcacfa62ab2e04b93e8277ae64f");
   });
 
   it("does not depend on the order the rows arrive in", () => {
@@ -88,6 +93,7 @@ describe("the fingerprint", () => {
 describe("replaceUrlRedirects", () => {
   const fake = (existing: string[]) => {
     const calls: string[] = [];
+    const listaTake: unknown[] = [];
     const trx = { name: "trx" };
     const seen = (what: string, context: { transactionManager?: unknown }) =>
       calls.push(
@@ -103,7 +109,12 @@ describe("replaceUrlRedirects", () => {
           return result;
         },
       },
-      listUrlRedirects: async (_: unknown, __: unknown, c: never) => {
+      listUrlRedirects: async (
+        _: unknown,
+        config: { take?: unknown },
+        c: never,
+      ) => {
+        listaTake.push(config?.take);
         seen("list", c);
         return existing.map((id) => ({ id }));
       },
@@ -132,11 +143,11 @@ describe("replaceUrlRedirects", () => {
         self as never,
         input,
       );
-    return { calls, replace };
+    return { calls, replace, listaTake };
   };
 
   it("deletes every old row, then writes the new ones with the lowercase key, in one transaction", async () => {
-    const { calls, replace } = fake(["u1", "u2"]);
+    const { calls, replace, listaTake } = fake(["u1", "u2"]);
     await replace([r("/Pumpa", "/hu/termek/p")]);
     expect(calls).toEqual([
       "begin",
@@ -145,6 +156,8 @@ describe("replaceUrlRedirects", () => {
       "create /Pumpa|/pumpa",
       "commit",
     ]);
+    // every old row, not one page of them (barracuda, #533 1.)
+    expect(listaTake).toEqual([null]);
   });
 
   it("an empty list clears the table and writes nothing", async () => {

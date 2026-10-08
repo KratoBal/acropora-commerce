@@ -34,9 +34,12 @@ class UrlRedirectModuleService extends MedusaService({ UrlRedirect }) {
     input: UrlRedirectInput[],
     @MedusaContext() sharedContext: Context = {},
   ) {
+    // `take: null`: a Medusa lista alapból csak egy lapot ad, és akkor a régi sorok
+    // egy része bent maradna, a második csere pedig az egyedi indexen elhasalna
+    // (barracuda, #533 1.)
     const meglevo = await this.listUrlRedirects(
       {},
-      { select: ["id"] },
+      { select: ["id"], take: null },
       sharedContext,
     );
     if (meglevo.length)
