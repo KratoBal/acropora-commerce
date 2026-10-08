@@ -28,11 +28,16 @@ export type AtiranyitasCel = { cel: string; statusz: number }
 export const ATIRANYITAS_CACHE_CONTROL = "public, max-age=86400"
 
 const ELETTARTAM_MS = 300_000
-/** Egy sikertelen betöltés után ennyi ideig nem próbálja újra (nem terheli a backendet). */
-const HIBA_UTAN_MS = 30_000
+/**
+ * Egy sikertelen betöltés után ennyi ideig nem próbálja újra (nem terheli a
+ * backendet). 5 mp, nem 30: a teszt kirakaton a telepítés utáni első kérések
+ * kimaradtak (egy hideg első betöltés), és 30 mp-ig minden régi cím a mai úton
+ * ment (mérve 2026-10-08, `pr7c-meres-2026-10-08.md`).
+ */
+const HIBA_UTAN_MS = 5_000
 /**
  * A lekérés időkorlátja. Egy lógó (nem dobó) backend nélküle minden oldalkérést
- * megállítana, és a 30 másodperces visszatartás sem állna be (barracuda, #534 1.).
+ * megállítana, és a hiba utáni visszatartás sem állna be (barracuda, #534 1.).
  */
 const IDOKORLAT_MS = 2_000
 

@@ -2,11 +2,11 @@ import { Metadata } from "next"
 
 import { termekLapTorzs } from "@modules/products/templates/termek-lap-torzs"
 
-import { generateMetadata as alapMetaadat } from "../../../../products/[handle]/page"
+import { generateMetadata as alapMetaadat } from "../../../../termek/[handle]/page"
 
 /**
  * A TERMEKLAP EGY VALTOZATA, BELSO UT (FE-7 3. resz). A publikus cim
- * `/products/h?v_id=<valtozat>`; a `next.config` ide irja at, ha az ertek
+ * `/termek/h?v_id=<valtozat>`; a `next.config` ide irja at, ha az ertek
  * Medusa valtozat-azonosito (`belso-utvonalak.js`), kivulrol 404.
  *
  * A metaadat az alaplape, a canonicallal egyutt: Balazs SEO dontese szerint a

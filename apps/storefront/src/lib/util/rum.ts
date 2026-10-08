@@ -62,7 +62,7 @@ export function rumLaptipus(utvonal: string): RumLaptipus {
   switch (reszek[i]) {
     case undefined:
       return reszek.length <= 1 ? "kezdolap" : "egyeb"
-    case "products":
+    case "termek":
       return "termek"
     case "categories":
       return "kategoria"

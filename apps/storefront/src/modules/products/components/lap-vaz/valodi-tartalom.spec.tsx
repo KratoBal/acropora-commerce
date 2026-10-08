@@ -21,7 +21,7 @@ import { LEPTETO_GOMB_MERET, LEPTETO_MEZO_MERET } from "../vasarlas/dobozok"
  */
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
-  usePathname: () => "/hu/products/amtra-tds-ec-digitalis-tds-mero",
+  usePathname: () => "/hu/termek/amtra-tds-ec-digitalis-tds-mero",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace: vi.fn() }),
 }))

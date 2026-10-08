@@ -37,7 +37,7 @@ export type OldalKivonat = {
   /** a nem ervenyes JSON-t tartalmazo `ld+json` blokkok hibauzenete */
   jsonLdHibak: string[]
   kepek: KepAdat[]
-  /** a termekre mutato `<a href>` linkek (`/products/` az utban) */
+  /** a termekre mutato `<a href>` linkek (`/termek/` az utban) */
   termekLinkek: string[]
   /** a kategoriara mutato `<a href>` linkek (`/categories/` az utban) */
   kategoriaLinkek: string[]
@@ -73,7 +73,7 @@ export type OldalKivonat = {
  * a fo kep nem tartalminak szamit, es az ALT-szabaly nem nezi.
  */
 const FO_KEP = 'img.termeklap-nagykep, [data-testid="nagy-kep"] img'
-const TERMEK_LINK = 'a[href*="/products/"]'
+const TERMEK_LINK = 'a[href*="/termek/"]'
 
 const szoveg = (e: Element | null | undefined) =>
   (e?.textContent ?? "").replace(/\s+/g, " ").trim()

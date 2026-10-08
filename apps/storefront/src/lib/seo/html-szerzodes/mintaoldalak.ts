@@ -139,7 +139,7 @@ export function mintakAdatbol(
     t
       ? {
           tipus,
-          ut: p(`/products/${t.handle}`),
+          ut: p(`/termek/${t.handle}`),
           ...(tipus === "termek-gtin" || tipus === "termek-gtin-nelkul"
             ? {
                 gtin:
@@ -213,7 +213,7 @@ export function mintakAdatbol(
     valtozatos && valtozat
       ? {
           tipus: "termek-valtozatos",
-          ut: p(`/products/${valtozatos.handle}?v_id=${valtozat.id}`),
+          ut: p(`/termek/${valtozatos.handle}?v_id=${valtozat.id}`),
           valtozat: { id: valtozat.id, opciok: opciok(valtozat) },
         }
       : {
@@ -271,7 +271,7 @@ export function mintakAdatbol(
         },
     {
       tipus: "nem-letezo",
-      ut: p("/products/nincs-ilyen-termek-seo-szerzodes"),
+      ut: p("/termek/nincs-ilyen-termek-seo-szerzodes"),
     },
   ]
 }

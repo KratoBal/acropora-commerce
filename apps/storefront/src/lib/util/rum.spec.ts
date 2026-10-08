@@ -18,7 +18,7 @@ import {
 describe("rumLaptipus", () => {
   it.each([
     ["/hu", "kezdolap"],
-    ["/hu/products/dupla-marin-so", "termek"],
+    ["/hu/termek/dupla-marin-so", "termek"],
     ["/hu/categories/termekek/eledelek", "kategoria"],
     ["/hu/collections/easyphyt", "gyujtemeny"],
     ["/hu/store", "osszes-termek"],
@@ -52,7 +52,7 @@ describe("ervenyesRumTorzs", () => {
       { ...jo, u: "https://shop.example/hu/rendeles-fizetese/titok" },
       { ...jo, n: "FID" },
       { ...jo, r: "kivalo" },
-      { ...jo, t: "/hu/products/x" },
+      { ...jo, t: "/hu/termek/x" },
       { ...jo, v: Number.NaN },
       { ...jo, v: -1 },
       { ...jo, v: "2140" },

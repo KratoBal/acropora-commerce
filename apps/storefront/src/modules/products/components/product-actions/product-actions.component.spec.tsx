@@ -24,7 +24,7 @@ import ProductActions from "./index"
  */
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
-  usePathname: () => "/hu/products/akropora",
+  usePathname: () => "/hu/termek/akropora",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace: vi.fn() }),
 }))

@@ -66,7 +66,7 @@ export default async function ProductPreview({
   const egyediPeldany = uniquePieceOf(product.metadata)
 
   return (
-    <LocalizedClientLink href={`/products/${product.handle}`} className="group">
+    <LocalizedClientLink href={`/termek/${product.handle}`} className="group">
       <div data-testid="product-wrapper">
         <div className="relative">
           <Thumbnail

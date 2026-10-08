@@ -6,7 +6,7 @@
  * (`private, no-store`). A publikus cimek (`?v_id=`, `?page=`) nem valtoznak,
  * a parameter viszont BELSO utvonal-szegmens lesz, tehat a lap ISR maradhat:
  *
- *   /hu/products/h?v_id=variant_X  -> /hu/_v/variant_X/products/h
+ *   /hu/termek/h?v_id=variant_X  -> /hu/_v/variant_X/termek/h
  *   /hu/categories/a/b?page=3      -> /hu/_p/3/categories/a/b
  *   /hu/categories/a?sortBy=...    -> /hu/_szurt/categories/a   (dinamikus)
  *
@@ -65,11 +65,11 @@ function belsoAtirasok() {
     destination: `/:orszag/_p/:lap/${cel}`,
   }))
   const valtozat = {
-    source: "/:orszag/products/:handle",
+    source: "/:orszag/termek/:handle",
     has: [
       { type: "query", key: "v_id", value: `(?<valtozat>${VALTOZAT_MINTA})` },
     ],
-    destination: "/:orszag/_v/:valtozat/products/:handle",
+    destination: "/:orszag/_v/:valtozat/termek/:handle",
   }
   return [...szurt, ...lapozott, valtozat]
 }
@@ -94,6 +94,30 @@ function belsoUtKivulrol(pathname) {
   return BELSO_ELOTAGOK.includes(dekodolt)
 }
 
+/**
+ * A REGI TERMEKLAP-CIM 301-E (SEO P0 PR 7d, G2: `/hu/termek/{slug}`). A teszt
+ * bolt mai linkjei `/hu/products/<handle>` alakuak; ezek egy 301-gyel jonnek at
+ * (`statusCode: 301`, nem `permanent`: az 308-at adna). A query (`?v_id=`)
+ * megmarad. Az orszag nelkuli alak is egy ugras: a `redirects()` a middleware
+ * ELOTT fut, tehat az orszagkod-atiranyitas nem kerul ele.
+ */
+function termekUtAtiranyitasok(
+  alapOrszag = process.env.NEXT_PUBLIC_DEFAULT_REGION || "hu",
+) {
+  return [
+    {
+      source: "/:orszag([a-z]{2})/products/:handle",
+      destination: "/:orszag/termek/:handle",
+      statusCode: 301,
+    },
+    {
+      source: "/products/:handle",
+      destination: `/${alapOrszag}/termek/:handle`,
+      statusCode: 301,
+    },
+  ]
+}
+
 module.exports = {
   BELSO_ELOTAGOK,
   SZURO_KULCSOK,
@@ -101,4 +125,5 @@ module.exports = {
   LAPSZAM_MINTA,
   belsoAtirasok,
   belsoUtKivulrol,
+  termekUtAtiranyitasok,
 }

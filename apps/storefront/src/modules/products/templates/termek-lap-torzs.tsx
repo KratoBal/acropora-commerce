@@ -32,8 +32,8 @@ import {
 /**
  * A TERMEKLAP TORZSE, KET UTNAK (FE-7 3. resz).
  *
- *   /products/h                     valtozat nelkul      ISR
- *   /_v/<valtozat>/products/h       a `?v_id=` atirasa   ISR, valtozatonkent
+ *   /termek/h                     valtozat nelkul      ISR
+ *   /_v/<valtozat>/termek/h       a `?v_id=` atirasa   ISR, valtozatonkent
  *
  * Eddig a `page.tsx` a `searchParams.v_id`-t olvasta, es ettol minden termeklap
  * dinamikus volt. A valtozat most utvonal-szegmens (`belso-utvonalak.js`), es a

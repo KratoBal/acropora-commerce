@@ -79,12 +79,14 @@ describe("atiranyitasLista", () => {
     expect(atiranyitasCelja(ures, "/pumpa")).toBeNull()
   })
 
-  it("betöltési hiba: üres lista, nincs kivétel, és 30 másodpercig nem próbálja újra", async () => {
+  it("betöltési hiba: üres lista, nincs kivétel, 5 másodpercig nem próbálja újra, utána igen", async () => {
     const lekeres = vi.fn(async () => new Response("x", { status: 503 }))
     vi.stubGlobal("fetch", lekeres)
     const ures = await atiranyitasLista("http://m.test", "pk", 0)
     expect(atiranyitasCelja(ures, "/pumpa")).toBeNull()
-    await atiranyitasLista("http://m.test", "pk", 29_000)
+    await atiranyitasLista("http://m.test", "pk", 4_900)
     expect(lekeres).toHaveBeenCalledOnce()
+    await atiranyitasLista("http://m.test", "pk", 5_000)
+    expect(lekeres).toHaveBeenCalledTimes(2)
   })
 })

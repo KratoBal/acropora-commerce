@@ -38,7 +38,7 @@ describe("a kapcsolódó termék 1b kártyája", () => {
   it("a terméklapra visz, névvel és halvány árral", () => {
     render(<KapcsolatKartya product={termek()} />)
     const kartya = screen.getByTestId("kapcsolat-kartya")
-    expect(kartya.getAttribute("href")).toBe("/hu/products/fuggeszto-szett")
+    expect(kartya.getAttribute("href")).toBe("/hu/termek/fuggeszto-szett")
     expect(kartya.textContent).toContain("Függesztő szett 60 cm")
     expect(screen.getByTestId("kapcsolat-kartya-ar").className).toContain(
       "text-acr-slate",

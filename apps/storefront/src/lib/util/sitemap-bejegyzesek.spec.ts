@@ -39,7 +39,7 @@ describe("sitemap bejegyzesek", () => {
       "https://shop.acropora.hu/hu/store",
       "https://shop.acropora.hu/hu/categories/korallok",
       "https://shop.acropora.hu/hu/categories/korallok/sps",
-      "https://shop.acropora.hu/hu/products/acropora-tenuis",
+      "https://shop.acropora.hu/hu/termek/acropora-tenuis",
     ])
   })
 
@@ -66,14 +66,10 @@ describe("sitemap bejegyzesek", () => {
       ],
     }).map((b) => b.url)
 
-    expect(utak).toContain("https://shop.acropora.hu/hu/products/csak-magyar")
-    expect(utak).toContain("https://shop.acropora.hu/de/products/csak-nemet")
-    expect(utak).not.toContain(
-      "https://shop.acropora.hu/de/products/csak-magyar",
-    )
-    expect(utak).not.toContain(
-      "https://shop.acropora.hu/hu/products/csak-nemet",
-    )
+    expect(utak).toContain("https://shop.acropora.hu/hu/termek/csak-magyar")
+    expect(utak).toContain("https://shop.acropora.hu/de/termek/csak-nemet")
+    expect(utak).not.toContain("https://shop.acropora.hu/de/termek/csak-magyar")
+    expect(utak).not.toContain("https://shop.acropora.hu/hu/termek/csak-nemet")
   })
 
   /**
@@ -107,10 +103,10 @@ describe("sitemap bejegyzesek", () => {
       kategoriak: [],
       orszagok: [{ countryCode: "hu", termekek: [{ handle: kodolt }] }],
     }).map((b) => b.url)
-    expect(utak).toContain(`https://shop.acropora.hu/hu/products/${kodolt}`)
+    expect(utak).toContain(`https://shop.acropora.hu/hu/termek/${kodolt}`)
   })
 
-  /** Handle nelkul nincs cim: egy `/hu/products/undefined` alak rosszabb a hianynal. */
+  /** Handle nelkul nincs cim: egy `/hu/termek/undefined` alak rosszabb a hianynal. */
   it("a handle nelkuli sor kimarad", () => {
     const utak = sitemapBejegyzesek({
       origin: "https://shop.acropora.hu",
@@ -125,7 +121,7 @@ describe("sitemap bejegyzesek", () => {
     expect(utak).toEqual([
       "https://shop.acropora.hu/hu",
       "https://shop.acropora.hu/hu/store",
-      "https://shop.acropora.hu/hu/products/van-handle",
+      "https://shop.acropora.hu/hu/termek/van-handle",
     ])
   })
 
@@ -148,7 +144,7 @@ describe("sitemap bejegyzesek", () => {
           termekek: [{ handle: "x", updated_at: "nem-datum" }],
         },
       ],
-    }).find((b) => b.url.endsWith("/products/x"))
+    }).find((b) => b.url.endsWith("/termek/x"))
     expect(bejegyzes).toBeDefined()
     expect(bejegyzes?.lastModified).toBeUndefined()
   })

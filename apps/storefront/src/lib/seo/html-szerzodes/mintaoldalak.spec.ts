@@ -83,14 +83,14 @@ describe("a mintaoldalak választása", () => {
   })
 
   it("a termékek handle szerint, egymástól különbözve", () => {
-    expect(ut("termek-gtin")).toBe("/hu/products/a-gtin")
-    expect(ut("termek-gtin-nelkul")).toBe("/hu/products/b-sima")
-    expect(ut("termek-elfogyott")).toBe("/hu/products/c-elfogyott")
+    expect(ut("termek-gtin")).toBe("/hu/termek/a-gtin")
+    expect(ut("termek-gtin-nelkul")).toBe("/hu/termek/b-sima")
+    expect(ut("termek-elfogyott")).toBe("/hu/termek/c-elfogyott")
   })
 
   it("a változat a nem alapértelmezett, eltérő opciójú", () => {
     const x = m.find((y) => y.tipus === "termek-valtozatos")!
-    expect(x.ut).toBe("/hu/products/b-sima?v_id=v2b")
+    expect(x.ut).toBe("/hu/termek/b-sima?v_id=v2b")
     expect(x.valtozat).toEqual({ id: "v2b", opciok: ["100 ml"] })
   })
 

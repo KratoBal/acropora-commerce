@@ -26,7 +26,7 @@ describe("szűrt lapra mutató link", () => {
       "?",
       "/hu/categories/a",
       "?page=2",
-      "/hu/products/h?v_id=variant_01M1NKD0MAH36C3YMC0QX64NZB",
+      "/hu/termek/h?v_id=variant_01M1NKD0MAH36C3YMC0QX64NZB",
       "/hu/categories/a#marka=x",
     ])
       expect(szuroLink(href), href).toBe(false)

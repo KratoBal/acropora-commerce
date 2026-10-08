@@ -47,7 +47,7 @@ describe("a terméklap metaadata", () => {
     const m = await generateMetadata(props)
     expect(m.title).toBe("Vitalis LPS Coral Pellets | Acropora")
     expect(m.description).toBe("LPS koralltáp.")
-    expect(m.alternates?.canonical).toMatch(/\/hu\/products\/vitalis-lps$/)
+    expect(m.alternates?.canonical).toMatch(/\/hu\/termek\/vitalis-lps$/)
   })
 
   it("leírás nélkül sem a cím másolata", async () => {

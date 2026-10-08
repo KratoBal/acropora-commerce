@@ -80,7 +80,7 @@ describe("elérhetőség és állapot", () => {
 describe("a termék", () => {
   const bemenet: TermekLdBemenet = {
     nev: "Hanna HI780-25",
-    url: `${ALAP}/hu/products/hanna`,
+    url: `${ALAP}/hu/termek/hanna`,
     cikkszam: "HI780-25",
     marka: "Hanna",
     kepek: [`${ALAP}/static/k.webp`],
@@ -180,7 +180,7 @@ describe("GTIN", () => {
 
 describe("termekCsoportLd", () => {
   const valtozat = (opciok: { nev: string; ertek: string }[], ar = 1990) => ({
-    url: "https://bolt.test/hu/products/so?v_id=v",
+    url: "https://bolt.test/hu/termek/so?v_id=v",
     opciok,
     cikkszam: "SO",
     gtin: null,
@@ -191,7 +191,7 @@ describe("termekCsoportLd", () => {
   })
   const alap = {
     nev: "Só",
-    url: "https://bolt.test/hu/products/so",
+    url: "https://bolt.test/hu/termek/so",
     csoportAzonosito: "prod_so",
     kepek: ["https://bolt.test/k.webp"],
     penznem: "HUF",

@@ -110,12 +110,12 @@ describe("a többi oldaltípus", () => {
 
   it("OpenGraph: magyar nyelv, bolt neve, a kanonikus cím, ha van", () => {
     expect(
-      openGraph({ cim: "C", leiras: "L", url: "/hu/products/x" }),
+      openGraph({ cim: "C", leiras: "L", url: "/hu/termek/x" }),
     ).toMatchObject({
       locale: "hu_HU",
       siteName: expect.any(String),
       type: "website",
-      url: "/hu/products/x",
+      url: "/hu/termek/x",
     })
     expect(openGraph({ cim: "C", leiras: "L" })).not.toHaveProperty("url")
   })

@@ -39,7 +39,7 @@ const CATEGORY_PAGE_SIZE = 100
  *
  *   footer/index.tsx           csak `parent_category` es `category_children`
  *   categories/[...]/page.tsx  csak `handle` (generateStaticParams)
- *   products/[handle]/page.tsx sajat, szukebb mezolistat ad at
+ *   termek/[handle]/page.tsx sajat, szukebb mezolistat ad at
  *   categories.ts:94           sajat, szukebb mezolistat ad at
  *
  * AMI EBBOL A KOVETKEZO OLVASONAK SZOL: ha valaha kell a kategoriahoz tartozo

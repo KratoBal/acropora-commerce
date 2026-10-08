@@ -1,5 +1,5 @@
 const checkEnvVariables = require("./check-env-variables")
-const { belsoAtirasok } = require("./belso-utvonalak")
+const { belsoAtirasok, termekUtAtiranyitasok } = require("./belso-utvonalak")
 
 checkEnvVariables()
 
@@ -48,6 +48,12 @@ const nextConfig = {
   // dinamikus `_szurt` utra. Az indok es a meres: `belso-utvonalak.js`.
   async rewrites() {
     return { beforeFiles: belsoAtirasok() }
+  },
+  // SEO P0 PR 7d (G2): a termeklap cime `/hu/termek/{slug}`. A regi `/products/`
+  // alak (a teszt bolt mai linkjei) egy 301-gyel jon at; a ket szabaly a
+  // middleware ELOTT fut, tehat az orszag nelkuli alak sem lesz ket ugras.
+  async redirects() {
+    return termekUtAtiranyitasok()
   },
   logging: {
     fetches: {
