@@ -37,6 +37,28 @@ export const INVENTORY_CHANGE_EVENTS = [
   "inventory.inventory-level.deleted",
 ] as const;
 
+/**
+ * A product or one of its variants changed (SEO P0 PR 7d stage measurement,
+ * 2026-10-08). The storefront caches the product lookup under the `products`
+ * tag with no expiry, and only price and stock events emptied it. So a new
+ * handle, title or description reached the shop only with the next price or
+ * stock change. Measured on the test shop: after the handle switch, a handle
+ * looked up before the switch kept its empty result, and its page stayed 404
+ * while the product was published under that handle.
+ *
+ * The names are the product workflows' own: the admin product and variant
+ * routes run `updateProductsWorkflow` / `updateProductVariantsWorkflow`, which
+ * emit these (2.20.1, `core-flows/dist/product/workflows`).
+ */
+export const PRODUCT_CHANGE_EVENTS = [
+  "product.created",
+  "product.updated",
+  "product.deleted",
+  "product-variant.created",
+  "product-variant.updated",
+  "product-variant.deleted",
+] as const
+
 export type StorefrontRevalidateConfig = { url: string; secret: string };
 
 /** Off (null) without both: the storefront's address and the shared secret. */

@@ -1,12 +1,20 @@
-import { InventoryEvents } from "@medusajs/framework/utils"
+import {
+  InventoryEvents,
+  ProductVariantWorkflowEvents,
+  ProductWorkflowEvents,
+} from "@medusajs/framework/utils"
 
 import inventoryChangedRevalidate, {
   config as inventoryConfig,
 } from "../../../subscribers/inventory-changed-revalidate"
 import priceChangedRevalidate, { config } from "../../../subscribers/price-changed-revalidate"
+import productChangedRevalidate, {
+  config as productConfig,
+} from "../../../subscribers/product-changed-revalidate"
 import {
   INVENTORY_CHANGE_EVENTS,
   PRICE_CHANGE_EVENTS,
+  PRODUCT_CHANGE_EVENTS,
   revalidateCoalescer,
   sendStorefrontRevalidate,
   storefrontRevalidateConfig,
@@ -128,6 +136,40 @@ describe("the inventory subscriber", () => {
     delete process.env.STOREFRONT_REVALIDATE_SECRET
     try {
       await inventoryChangedRevalidate({ container: { resolve }, event: { data: { id: "il" } } } as never)
+      expect(resolve).not.toHaveBeenCalled()
+    } finally {
+      process.env = saved
+    }
+  })
+})
+
+/*
+  THE STOREFRONT CACHE ON A PRODUCT CHANGE (SEO P0 PR 7d stage measurement).
+  WHAT TURNS THIS RED: the subscriber listens to anything but the product and
+  variant workflows' events (a new handle or title would stay behind a cached
+  empty lookup), the names drift from Medusa's own, or it calls without the
+  settings.
+*/
+describe("the product subscriber", () => {
+  it("listens to the product and variant workflows' events, named as Medusa builds them", () => {
+    expect(productConfig.event).toEqual([...PRODUCT_CHANGE_EVENTS])
+    expect(PRODUCT_CHANGE_EVENTS).toEqual([
+      ProductWorkflowEvents.CREATED,
+      ProductWorkflowEvents.UPDATED,
+      ProductWorkflowEvents.DELETED,
+      ProductVariantWorkflowEvents.CREATED,
+      ProductVariantWorkflowEvents.UPDATED,
+      ProductVariantWorkflowEvents.DELETED,
+    ])
+  })
+
+  it("does nothing without the settings", async () => {
+    const resolve = jest.fn()
+    const saved = { ...process.env }
+    delete process.env.ACROPORA_STOREFRONT_URL
+    delete process.env.STOREFRONT_REVALIDATE_SECRET
+    try {
+      await productChangedRevalidate({ container: { resolve }, event: { data: { id: "p" } } } as never)
       expect(resolve).not.toHaveBeenCalled()
     } finally {
       process.env = saved
