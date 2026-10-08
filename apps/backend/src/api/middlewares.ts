@@ -20,6 +20,7 @@ import {
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
+import { AdminPutUrlRedirects } from "./admin/url-redirects/validators";
 import {
   AdminResendOrderStatusNotification,
   AdminTransitionOrderBusinessStatus,
@@ -77,6 +78,14 @@ export default defineMiddlewares({
       matcher: "/admin/product-knowledge/:product_id",
       method: "PUT",
       middlewares: [validateAndTransformBody(AdminPutProductKnowledge)],
+    },
+    {
+      // the whole list in one body (stage: 1901 rows, about 300 kB); the
+      // default JSON limit is 100 kB
+      matcher: "/admin/url-redirects",
+      method: "PUT",
+      bodyParser: { sizeLimit: "5mb" },
+      middlewares: [validateAndTransformBody(AdminPutUrlRedirects)],
     },
     {
       matcher: "/admin/commerce-settings",
