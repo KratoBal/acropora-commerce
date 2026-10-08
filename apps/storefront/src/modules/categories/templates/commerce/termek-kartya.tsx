@@ -81,7 +81,7 @@ export default function CommerceTermekKartya({
   const akcios = cheapestPrice?.price_type === "sale"
   const keszlet = keszletSor(product)
   const marka = (product.collection?.title ?? "").trim()
-  const href = `/products/${product.handle}`
+  const href = `/termek/${product.handle}`
   const gyors = gyorsKosar(product)
 
   return (

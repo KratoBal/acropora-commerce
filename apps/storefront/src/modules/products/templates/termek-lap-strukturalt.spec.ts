@@ -176,7 +176,7 @@ describe("a terméklap strukturált adata", () => {
       v.map((x) => (x.offers as { availability: string }).availability),
     ).toEqual(["https://schema.org/InStock", "https://schema.org/OutOfStock"])
     expect(String(v[1]!.url)).toMatch(
-      /\/hu\/products\/hanna-hi780-25\?v_id=variant_2$/,
+      /\/hu\/termek\/hanna-hi780-25\?v_id=variant_2$/,
     )
   })
 

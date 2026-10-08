@@ -14,11 +14,11 @@ import { gtinHibak, SZABALYOK, valtozatHibak, type Valasz } from "./szabalyok"
 const FO_KEP =
   '<img src="https://commerce-stage.acropora.hu/static/1788539279383-5060139358699.webp" alt="Vitalis LPS Coral Pellets - LPS koralltáp 60g" class="termeklap-nagykep w-full aspect-square lg:aspect-[16/10]" style="object-fit:contain" data-testid="vaz-foto"/>'
 const KAPCSOLAT_KARTYA =
-  '<a class="group flex flex-col gap-[10px]" data-testid="kapcsolat-kartya" href="/hu/products/vitalis-sps-coral-food-koralleledel-50gr"><div class="aspect-[32/30] w-full overflow-hidden bg-acr-white"><img src="https://commerce-stage.acropora.hu/static/1788803561869-5060139358712.webp" alt="" class="h-full w-full object-contain" data-testid="kapcsolat-kartya-kep"/></div><p>Vitalis SPS</p></a>'
+  '<a class="group flex flex-col gap-[10px]" data-testid="kapcsolat-kartya" href="/hu/termek/vitalis-sps-coral-food-koralleledel-50gr"><div class="aspect-[32/30] w-full overflow-hidden bg-acr-white"><img src="https://commerce-stage.acropora.hu/static/1788803561869-5060139358712.webp" alt="" class="h-full w-full object-contain" data-testid="kapcsolat-kartya-kep"/></div><p>Vitalis SPS</p></a>'
 const ZAROSOR_KEP =
   '<img src="https://commerce-stage.acropora.hu/static/1788539279383-5060139358699.webp" alt="" class="h-full w-full object-cover" data-testid="zarosor-belyeg-kep"/>'
 const LISTA_CSEMPE =
-  '<a class="group flex flex-1 flex-col" href="/hu/products/aquaforest-af-amino-mix-10ml"><div class="h-[242px] overflow-hidden bg-acr-white"><img alt="Thumbnail" draggable="false" loading="lazy" decoding="async" data-nimg="fill" class="absolute inset-0 object-contain object-center bg-white" src="https://commerce-stage.acropora.hu/static/1791052644951-5902026731010.webp"/></div></a>'
+  '<a class="group flex flex-1 flex-col" href="/hu/termek/aquaforest-af-amino-mix-10ml"><div class="h-[242px] overflow-hidden bg-acr-white"><img alt="Thumbnail" draggable="false" loading="lazy" decoding="async" data-nimg="fill" class="absolute inset-0 object-contain object-center bg-white" src="https://commerce-stage.acropora.hu/static/1791052644951-5902026731010.webp"/></div></a>'
 
 function oldal(fej: string, torzs: string): ReturnType<typeof kivonat> {
   return kivonat(
@@ -26,9 +26,9 @@ function oldal(fej: string, torzs: string): ReturnType<typeof kivonat> {
   )
 }
 const JO_FEJ =
-  '<title>Vitalis LPS Coral Pellets | Acropora</title><meta name="description" content="LPS korallok tápja, lassan süllyedő pellet."/><link rel="canonical" href="https://shop-staging.acropora.hu/hu/products/vitalis-lps"/>'
+  '<title>Vitalis LPS Coral Pellets | Acropora</title><meta name="description" content="LPS korallok tápja, lassan süllyedő pellet."/><link rel="canonical" href="https://shop-staging.acropora.hu/hu/termek/vitalis-lps"/>'
 const V: Valasz = {
-  ut: "/hu/products/vitalis-lps",
+  ut: "/hu/termek/vitalis-lps",
   statusz: 200,
   xRobots: null,
 }
@@ -354,7 +354,7 @@ describe("belső útra mutató link (FE-7)", () => {
   it("a nyilvános lapszámos és változatos link rendben", () => {
     const jo = oldal(
       JO_FEJ,
-      '<a href="/hu/categories/x?page=3">3</a><a href="?page=1">1</a><a href="/hu/products/h?v_id=variant_01M1NKD0MAH36C3YMC0QX64NZB">v</a>',
+      '<a href="/hu/categories/x?page=3">3</a><a href="?page=1">1</a><a href="/hu/termek/h?v_id=variant_01M1NKD0MAH36C3YMC0QX64NZB">v</a>',
     )
     expect(fut("belso-ut-link", jo, v)).toEqual([])
   })
@@ -362,7 +362,7 @@ describe("belső útra mutató link (FE-7)", () => {
   it("a belső lapozott, változat- és szűrt út hiba, kódolva is", () => {
     const rossz = oldal(
       JO_FEJ,
-      '<a href="/hu/_p/3/categories/x">3</a><a href="/hu/%5Fv/variant_01M1NKD0MAH36C3YMC0QX64NZB/products/h">v</a><a href="/hu/_szurt/store?q=a">s</a>',
+      '<a href="/hu/_p/3/categories/x">3</a><a href="/hu/%5Fv/variant_01M1NKD0MAH36C3YMC0QX64NZB/termek/h">v</a><a href="/hu/_szurt/store?q=a">s</a>',
     )
     expect(fut("belso-ut-link", rossz, v)).toHaveLength(3)
   })
@@ -537,13 +537,13 @@ describe("strukturált adat a látható laphoz mérve (FE-2a)", () => {
 */
 describe("termékképek: méretezés és rang (FE-3)", () => {
   const LISTA_FILL =
-    '<a href="/hu/products/a"><img alt="A" loading="lazy" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=x&amp;w=384&amp;q=50 384w" src="/_next/image?url=x&amp;w=3840&amp;q=50" style="position:absolute;height:100%;width:100%"/></a>'
+    '<a href="/hu/termek/a"><img alt="A" loading="lazy" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=x&amp;w=384&amp;q=50 384w" src="/_next/image?url=x&amp;w=3840&amp;q=50" style="position:absolute;height:100%;width:100%"/></a>'
   const LISTA_ELSO =
-    '<a href="/hu/products/b"><img alt="B" fetchpriority="high" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=y&amp;w=384&amp;q=50 384w" src="/_next/image?url=y&amp;w=3840&amp;q=50"/></a>'
+    '<a href="/hu/termek/b"><img alt="B" fetchpriority="high" decoding="async" data-nimg="fill" sizes="280px" srcset="/_next/image?url=y&amp;w=384&amp;q=50 384w" src="/_next/image?url=y&amp;w=3840&amp;q=50"/></a>'
   const FO =
     '<img alt="Fő" fetchpriority="high" width="1600" height="1000" decoding="async" sizes="100vw" srcset="/_next/image?url=z&amp;w=640&amp;q=75 640w" src="/_next/image?url=z&amp;w=3840&amp;q=75" class="termeklap-nagykep w-full"/>'
   const NYERS =
-    '<a href="/hu/products/c"><img alt="C" src="https://bolt/static/c.webp"/></a>'
+    '<a href="/hu/termek/c"><img alt="C" src="https://bolt/static/c.webp"/></a>'
 
   it("srcset és méret (width/height vagy fill) kell minden termékképen", () => {
     expect(

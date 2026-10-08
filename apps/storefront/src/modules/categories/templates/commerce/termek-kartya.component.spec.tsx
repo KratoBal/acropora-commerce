@@ -234,7 +234,7 @@ describe("a Commerce termékkártya", () => {
     )
     expect(screen.queryByTestId("kartya-kosarba")).toBeNull()
     expect(screen.getByTestId("kartya-reszletek").getAttribute("href")).toBe(
-      "/hu/products/radion-xr15",
+      "/hu/termek/radion-xr15",
     )
 
     rerender(<CommerceTermekKartya product={termek([raktaron(0)])} />)

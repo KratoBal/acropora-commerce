@@ -40,10 +40,7 @@ function ProductCard({
 
   return (
     <article data-testid={`category-product-card-${kind}`}>
-      <LocalizedClientLink
-        href={`/products/${product.handle}`}
-        className="group"
-      >
+      <LocalizedClientLink href={`/termek/${product.handle}`} className="group">
         <div className={sold ? "opacity-55" : ""}>
           <div className="relative">
             <Thumbnail

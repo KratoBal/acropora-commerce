@@ -19,12 +19,12 @@ import {
 describe("az országkód nélküli út átirányítása", () => {
   it("egy ország, ismert lap vagy a gyökér: 301", () => {
     expect(orszagAtiranyitasKod(1, "/")).toBe(301)
-    expect(orszagAtiranyitasKod(1, "/products/hanna-hi780")).toBe(301)
+    expect(orszagAtiranyitasKod(1, "/termek/hanna-hi780")).toBe(301)
     expect(orszagAtiranyitasKod(1, "/categories/korallok/sps")).toBe(301)
   })
 
   it("több ország, vagy üres régió-térkép: 307", () => {
-    expect(orszagAtiranyitasKod(2, "/products/x")).toBe(307)
+    expect(orszagAtiranyitasKod(2, "/termek/x")).toBe(307)
     expect(orszagAtiranyitasKod(0, "/")).toBe(307)
   })
 

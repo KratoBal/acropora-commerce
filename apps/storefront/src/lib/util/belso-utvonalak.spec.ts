@@ -13,6 +13,11 @@ const belso = require("../../../belso-utvonalak") as {
     destination: string
   }[]
   belsoUtKivulrol: (pathname: string) => boolean
+  termekUtAtiranyitasok: (alap?: string) => {
+    source: string
+    destination: string
+    statusCode: number
+  }[]
   SZURO_KULCSOK: string[]
 }
 
@@ -49,15 +54,13 @@ const V = "variant_01JABCDEFGHJKMNPQRSTVWXYZ0"
 
 describe("a termék változata", () => {
   it("a v_id belső útra kerül", () => {
-    expect(atir(`/hu/products/hanna?v_id=${V}`)).toBe(
-      `/hu/_v/${V}/products/hanna`,
-    )
+    expect(atir(`/hu/termek/hanna?v_id=${V}`)).toBe(`/hu/_v/${V}/termek/hanna`)
   })
 
   it("v_id nélkül, vagy nem változat-azonosítóval nincs átírás", () => {
-    expect(atir("/hu/products/hanna")).toBeNull()
-    expect(atir("/hu/products/hanna?v_id=barmi")).toBeNull()
-    expect(atir(`/hu/products/hanna?v_id=${V}x`)).toBeNull()
+    expect(atir("/hu/termek/hanna")).toBeNull()
+    expect(atir("/hu/termek/hanna?v_id=barmi")).toBeNull()
+    expect(atir(`/hu/termek/hanna?v_id=${V}x`)).toBeNull()
   })
 })
 
@@ -119,7 +122,7 @@ describe("ami nem lista és nem termék, érintetlen", () => {
     "/hu/cart?page=2",
     "/hu/account?sortBy=x",
     "/hu/jogi/aszf?page=2",
-    `/hu/products/hanna/extra?v_id=${V}`,
+    `/hu/termek/hanna/extra?v_id=${V}`,
     "/hu/collections/a/b?page=2",
     "/hu/store/x?page=2",
     "/hu/categories?page=2",
@@ -130,15 +133,53 @@ describe("ami nem lista és nem termék, érintetlen", () => {
 
 describe("a belső út kívülről", () => {
   it("a három előtag zárva, a nyilvános utak nem", () => {
-    expect(belso.belsoUtKivulrol(`/hu/_v/${V}/products/hanna`)).toBe(true)
+    expect(belso.belsoUtKivulrol(`/hu/_v/${V}/termek/hanna`)).toBe(true)
     expect(belso.belsoUtKivulrol("/hu/_p/2/store")).toBe(true)
     expect(belso.belsoUtKivulrol("/hu/_szurt/categories/a")).toBe(true)
     // a kodolt alak is (barracuda elozetes review, 3. pont)
-    expect(belso.belsoUtKivulrol(`/hu/%5Fv/${V}/products/hanna`)).toBe(true)
+    expect(belso.belsoUtKivulrol(`/hu/%5Fv/${V}/termek/hanna`)).toBe(true)
     expect(belso.belsoUtKivulrol("/hu/%5fp/2/store")).toBe(true)
     expect(belso.belsoUtKivulrol("/hu/%E0%A4%A/store")).toBe(false)
-    expect(belso.belsoUtKivulrol("/hu/products/_p")).toBe(false)
+    expect(belso.belsoUtKivulrol("/hu/termek/_p")).toBe(false)
     expect(belso.belsoUtKivulrol("/hu/store")).toBe(false)
     expect(belso.belsoUtKivulrol("/_p")).toBe(false)
+  })
+})
+
+describe("a régi termeklap-cím 301-e (SEO P0 PR 7d)", () => {
+  const iranyit = (cim: string) => {
+    const u = new URL(cim, "https://kirakat.example.test")
+    for (const szabaly of belso.termekUtAtiranyitasok("hu")) {
+      const ut = getPathMatch(szabaly.source)(u.pathname)
+      if (!ut) continue
+      const { parsedDestination } = prepareDestination({
+        appendParamsToQuery: false,
+        destination: szabaly.destination,
+        params: ut,
+        query: {},
+      })
+      return { ut: parsedDestination.pathname, statusz: szabaly.statusCode }
+    }
+    return null
+  }
+
+  it("az országos régi cím egy 301-gyel a /termek/ alakra", () => {
+    expect(iranyit("/hu/products/hanna")).toEqual({
+      ut: "/hu/termek/hanna",
+      statusz: 301,
+    })
+  })
+
+  it("az ország nélküli régi cím is egy lépés, az alapországra", () => {
+    expect(iranyit("/products/hanna")).toEqual({
+      ut: "/hu/termek/hanna",
+      statusz: 301,
+    })
+  })
+
+  it("az új cím és egy idegen út nem irányít", () => {
+    expect(iranyit("/hu/termek/hanna")).toBeNull()
+    expect(iranyit("/hu/products")).toBeNull()
+    expect(iranyit("/hu/products/hanna/extra")).toBeNull()
   })
 })

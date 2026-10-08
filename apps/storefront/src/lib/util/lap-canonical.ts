@@ -12,9 +12,9 @@
  *
  * Vegigmertem, mi eri el ugyanazt a tartalmat tobb cimen:
  *
- *     /products/<handle>            ATIRANYIT a /hu/... alakra
- *     /hu/products/<handle>/        ATIRANYIT
- *     /HU/products/<handle>         404
+ *     /termek/<handle>            ATIRANYIT a /hu/... alakra
+ *     /hu/termek/<handle>/        ATIRANYIT
+ *     /HU/termek/<handle>         404
  *     /                             ATIRANYIT a /hu-ra
  *     ?fbclid= ?gclid= ?utm_source= ?ref=    200, UGYANAZ a tartalom, MAS cim
  *
@@ -39,7 +39,7 @@ export function termeklapCanonical(
   countryCode: string,
   handle: string,
 ): string {
-  return `/${countryCode}/products/${handle}`
+  return `/${countryCode}/termek/${handle}`
 }
 
 /**

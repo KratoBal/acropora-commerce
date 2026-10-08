@@ -49,11 +49,11 @@ afterEach(() => {
 
 describe("a middleware átirányítása", () => {
   it("egy ország, ismert lap: 301 az országos címre, a query stringgel", async () => {
-    const { valasz, lekeres } = await futtat("/products/hanna?v_id=1")
+    const { valasz, lekeres } = await futtat("/termek/hanna?v_id=1")
     expect(lekeres).toHaveBeenCalledOnce()
     expect(valasz.status).toBe(301)
     expect(valasz.headers.get("location")).toBe(
-      "https://bolt.test/hu/products/hanna?v_id=1",
+      "https://bolt.test/hu/termek/hanna?v_id=1",
     )
   })
 
@@ -72,12 +72,12 @@ describe("a middleware átirányítása", () => {
   })
 
   it("több ország: 307 az ismert lapra is", async () => {
-    const { valasz } = await futtat("/products/hanna", ["hu", "at"])
+    const { valasz } = await futtat("/termek/hanna", ["hu", "at"])
     expect(valasz.status).toBe(307)
   })
 
   it("országkóddal kezdődő út: nincs átirányítás", async () => {
-    const { valasz } = await futtat("/hu/products/hanna")
+    const { valasz } = await futtat("/hu/termek/hanna")
     expect(valasz.headers.get("location")).toBeNull()
     expect(valasz.headers.get("x-middleware-next")).toBe("1")
   })
@@ -86,13 +86,11 @@ describe("a middleware átirányítása", () => {
    * A matcher ezt nem tudja kizarni (a Next minden matcher ele `_next/data`
    * elotagot tesz, es a `nextUrl.pathname`-bol levagja), tehat a middleware
    * MEGKAPJA. Itt az all, hogy nem iranyitja at, es a regiokat sem kerdezi.
-   * A `/products/...` alak a legkozelebbi tevesztes: levagva ismert lap, es
+   * A `/termek/...` alak a legkozelebbi tevesztes: levagva ismert lap, es
    * 301-et kapna.
    */
   it("a _next/data: a middleware nem irányítja át", async () => {
-    const { valasz, lekeres } = await futtat(
-      "/_next/data/b1/products/hanna.json",
-    )
+    const { valasz, lekeres } = await futtat("/_next/data/b1/termek/hanna.json")
     expect(valasz.headers.get("location")).toBeNull()
     expect(valasz.headers.get("x-middleware-next")).toBe("1")
     expect(lekeres).not.toHaveBeenCalled()
@@ -171,9 +169,9 @@ describe("a régi címek 301-e (SEO P0 PR 7c)", () => {
   })
 
   it("ismeretlen út: a mai viselkedés (országkód-átirányítás)", async () => {
-    const valasz = await futtatListaval("/products/hanna")
+    const valasz = await futtatListaval("/termek/hanna")
     expect(valasz.headers.get("location")).toBe(
-      "https://bolt.test/hu/products/hanna",
+      "https://bolt.test/hu/termek/hanna",
     )
   })
 

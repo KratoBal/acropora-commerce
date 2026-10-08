@@ -62,10 +62,10 @@ describe("a publikus lapok ISR-beállítása", () => {
         "page.tsx",
         "jogi/[dokumentum]/page.tsx",
         "hamarosan/[tema]/page.tsx",
-        "products/[handle]/page.tsx",
+        "termek/[handle]/page.tsx",
         "categories/[...category]/page.tsx",
         "%5Fp/[lap]/store/page.tsx",
-        "%5Fv/[valtozat]/products/[handle]/page.tsx",
+        "%5Fv/[valtozat]/termek/[handle]/page.tsx",
       ]),
     )
   })

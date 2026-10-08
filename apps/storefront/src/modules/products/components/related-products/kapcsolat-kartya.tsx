@@ -22,7 +22,7 @@ export default function KapcsolatKartya({
 
   return (
     <LocalizedClientLink
-      href={`/products/${product.handle}`}
+      href={`/termek/${product.handle}`}
       className="group flex flex-col gap-[10px]"
       data-testid="kapcsolat-kartya"
     >

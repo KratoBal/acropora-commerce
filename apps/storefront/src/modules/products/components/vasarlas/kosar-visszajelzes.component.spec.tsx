@@ -6,7 +6,7 @@ import { VasarlasProvider } from "./allapot"
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: "hu" }),
-  usePathname: () => "/hu/products/proba",
+  usePathname: () => "/hu/termek/proba",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace: vi.fn() }),
 }))

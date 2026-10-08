@@ -29,9 +29,9 @@ export const ISMERT_LAP_SZAKASZOK = [
   "hamarosan",
   "jogi",
   "order",
-  "products",
   "rendeles-fizetese",
   "store",
+  "termek",
   "verify-account",
 ] as const
 

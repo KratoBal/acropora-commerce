@@ -19,7 +19,7 @@ A táblákban szereplő hivatkozások az alábbi base pathokhoz képest értend�
 Ezért a route-minták a route groupokat is explicit tartalmazzák, például:
 
 ```text
-[countryCode]/(main)/products/**
+[countryCode]/(main)/termek/**
 [countryCode]/(checkout)/checkout/**
 ```
 
@@ -42,7 +42,7 @@ Szándékos design-eltérést a **Megjegyzés** mezőben kell dokumentálni. Ké
 |---|---|---|---|---|---|---|
 | Home & Discovery | [4:63](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=4-63) | `apps/storefront` | `[countryCode]/(main)/page.tsx` | `home/`<br>`kezdolap/` | 2026-10-06 · 14ea991 | A Figma Page a homepage és discovery irányokat fogja össze. |
 | Categories | [92:28](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=92-28) | `apps/storefront` | `[countryCode]/(main)/categories/**` | `categories/` | 2026-10-07 · 7fa0683 | WYSIWYG coral, fish/livestock, equipment, lighting, invertebrates desktop + mobile. A Kosárba gomb alatti rendelési-maximum sor (6994c9a3) terv nélkül készült. FE-1: a sablon `<main>`-je `<div>` (a gyökér layoutban már van `<main>`), a lapozó valódi link; vizuális változás nincs, csak a hover a nem aktuális lapokon. |
-| Product Detail | [87:2](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=87-2) | `apps/storefront` | `[countryCode]/(main)/products/**` | `products/` | 2026-10-07 · 7fa0683 | Fish, lighting, WYSIWYG coral és invertebrate PDP-k. A Kosárba gomb alatti rendelési-maximum sor (6994c9a3) terv nélkül készült. FE-1: a Suspense-tartalék terméknév `<p>` (egy H1 a lapon), a nem aktív fül tartalma rejtve a DOM-ban; vizuális változás nincs. |
+| Product Detail | [87:2](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=87-2) | `apps/storefront` | `[countryCode]/(main)/termek/**` | `products/` | 2026-10-07 · 7fa0683 | Az útvonal 2026-10-08 óta `/hu/termek/{slug}` (SEO P0 PR 7d, G2), a régi `/products/` 301-gyel jön ide; vizuális változás nincs. Fish, lighting, WYSIWYG coral és invertebrate PDP-k. A Kosárba gomb alatti rendelési-maximum sor (6994c9a3) terv nélkül készült. FE-1: a Suspense-tartalék terméknév `<p>` (egy H1 a lapon), a nem aktív fül tartalma rejtve a DOM-ban; vizuális változás nincs. |
 | Compare | [153:2](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=153-2) | `apps/storefront` | `nincs` | `nincs` | 2026-10-06 · 14ea991 | Design létezik, dedikált route/module jelenleg nincs azonosítva. |
 | Cart | [201:2](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=201-2) | `apps/storefront` | `[countryCode]/(main)/cart/**` | `cart/` | 2026-10-07 · 34ad174 | A Checkout Figma Page része. FE-9: a „Kosár” cím H1 (a számolt stílus változatlan, 32/44 px, 600, mérve böngészőben), a kuka-gomb és a mennyiség neve, az üres oszlopfej felolvasó-szövege; vizuális változás nincs. |
 | Checkout | [201:2](https://www.figma.com/design/ji64fTFss0jqm5Uifd0zhE?node-id=201-2) | `apps/storefront` | `[countryCode]/(checkout)/checkout/**` | `checkout/` | 2026-10-07 · 34ad174 | Details, payment és checkout flow. FE-9: a közös `Input` címkéje a mezőhöz kötve (láthatatlan). A pénztár többi akadálymentességi lelete jelentve, átrajzolás nélkül (`a11y-varhato.ts`). |

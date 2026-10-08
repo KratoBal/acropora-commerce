@@ -17,7 +17,7 @@ import {
 describe("termeklap kanonikus cime", () => {
   it("a lap valodi utjat adja, orszagkoddal es a products szegmenssel", () => {
     expect(termeklapCanonical("hu", "nyos-quantum-220-eq-okos-lehabzo")).toBe(
-      "/hu/products/nyos-quantum-220-eq-okos-lehabzo",
+      "/hu/termek/nyos-quantum-220-eq-okos-lehabzo",
     )
   })
 
@@ -32,7 +32,7 @@ describe("termeklap kanonikus cime", () => {
 
     const cim = termeklapCanonical("hu", kodolt)
 
-    expect(cim).toBe(`/hu/products/${kodolt}`)
+    expect(cim).toBe(`/hu/termek/${kodolt}`)
     expect(cim).not.toContain("kétkomponensű")
   })
 })

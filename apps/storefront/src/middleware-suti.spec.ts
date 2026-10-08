@@ -66,6 +66,6 @@ describe("a middleware a cache-sütiről", () => {
 
   it("a belső út kívülről 404, kódolva is", async () => {
     expect((await futtat("/hu/_p/2/store")).status).toBe(404)
-    expect((await futtat("/hu/%5Fv/variant_x/products/h")).status).toBe(404)
+    expect((await futtat("/hu/%5Fv/variant_x/termek/h")).status).toBe(404)
   })
 })
