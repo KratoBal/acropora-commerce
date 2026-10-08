@@ -34,10 +34,13 @@ type Kep = { id?: string | null; url?: string | null }
 export const KepBlokk = ({
   kepek,
   alt,
+  altok,
   jelolo = "vaz-foto",
 }: {
   kepek: Kep[]
   alt: string
+  /** a kepek sajat alt-ja URL szerint (`kepAltok`, SEO P0 PR 9) */
+  altok?: Record<string, string>
   jelolo?: string
 }) => {
   const [kivalasztott, setKivalasztott] = useState(0)
@@ -46,6 +49,8 @@ export const KepBlokk = ({
   if (ervenyes.length === 0) return null
 
   const nagy = ervenyes[kivalasztott] ?? ervenyes[0]
+  // a sajat alt nyer; nelkule a mai alak marad: a termek neve, sorszam nelkul
+  const nagyAlt = (nagy.url && altok?.[nagy.url]) || alt
 
   /*
     A FO KEP A NEXT OPTIMALIZALOJAN AT (FE-3, a webshop sajat optimalizaloja,
@@ -57,7 +62,7 @@ export const KepBlokk = ({
   */
   const { props: nagyKep } = getImageProps({
     src: nagy.url ?? "",
-    alt,
+    alt: nagyAlt,
     width: 1600,
     height: 1000,
     sizes: "(min-width: 1024px) 860px, 100vw",
@@ -71,7 +76,7 @@ export const KepBlokk = ({
     <div className="flex flex-col gap-2" data-testid="vaz-foto-blokk">
       <img
         {...nagyKep}
-        alt={alt}
+        alt={nagyAlt}
         className={`termeklap-nagykep w-full ${KEP_ARANY_OSZTALY}`}
         style={{ objectFit: "contain" }}
         data-testid={jelolo}
