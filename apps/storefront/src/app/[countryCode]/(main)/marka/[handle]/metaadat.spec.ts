@@ -10,11 +10,14 @@ import { describe, expect, it, vi } from "vitest"
  * markarekord nelkuli (kuralt) gyujtemeny canonicalt kap.
  */
 const adat = vi.hoisted(() => ({
-  marka: null as Record<string, unknown> | null,
+  marka: null as Record<string, unknown> | "dob" | null,
 }))
 
 vi.mock("@lib/data/brands", () => ({
-  markaHandleAlapjan: async () => adat.marka,
+  markaHandleAlapjan: async () => {
+    if (adat.marka === "dob") throw new Error("HTTP 500")
+    return adat.marka
+  },
 }))
 vi.mock("@lib/data/collections", () => ({
   getCollectionByHandle: async (handle: string) => ({
@@ -87,6 +90,13 @@ describe("a régi gyűjtemény-lap canonicalja", () => {
     adat.marka = marka()
     const m = await gyujtemenyMetaadat(props)
     expect(m.alternates?.canonical).toBe("/hu/marka/aquaforest")
+  })
+
+  it("a márka-végpont hibája a gyűjtemény-lapot nem viszi el", async () => {
+    adat.marka = "dob"
+    const m = await gyujtemenyMetaadat(props)
+    expect(m.alternates).toBeUndefined()
+    expect(m.title).toBe("Aquaforest | Acropora")
   })
 
   it("márkarekord nélküli gyűjtemény nem kap canonicalt", async () => {

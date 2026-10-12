@@ -97,7 +97,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     ket cim ne versenyezzen ugyanazert a tartalomert. Kurált gyujtemenynek
     (nem marka) nincs ilyen rekordja, az canonical nelkul marad, mint eddig.
   */
-  const marka = await markaHandleAlapjan(collection.handle)
+  // a marka-vegpont hibaja itt nem viheti el a gyujtemeny-lapot: akkor nincs canonical, mint eddig
+  const marka = await markaHandleAlapjan(collection.handle).catch(() => null)
   const metadata = {
     ...(marka
       ? {

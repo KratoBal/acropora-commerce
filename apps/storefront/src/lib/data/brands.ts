@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 import { getPublicCacheOptions } from "./cookies"
 
 const MARKA_FRISSITES_MP = 300
@@ -19,9 +20,11 @@ export type Marka = {
 }
 
 /**
- * A markaoldal rekordja. A `null` azt jelenti, hogy a marka-modulban nincs
- * ilyen handle (404), vagy a vegpont nem valaszolt: a lap mindket esetben
- * nem talalhato, mert enelkul nincs mibol cimet es canonicalt adni.
+ * A markaoldal rekordja. A `null` CSAK azt jelenti, hogy a marka-modulban nincs
+ * ilyen handle (404). Minden mas hiba tovabbmegy (barracuda review, #538 E):
+ * egy atmeneti Medusa-hiba ne adjon 404-et egy elo markaoldalra, amit az ISR
+ * aztan a revalidate idejeig tarolna. Dobott hibanal a Next a regi lapot
+ * szolgalja ki, vagy 500-at ad.
  */
 export async function markaHandleAlapjan(
   handle: string,
@@ -38,8 +41,9 @@ export async function markaHandleAlapjan(
       },
     )
     return brand ?? null
-  } catch {
-    return null
+  } catch (hiba) {
+    if (hibaAllapota(hiba) === 404) return null
+    throw hiba
   }
 }
 
