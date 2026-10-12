@@ -23,6 +23,11 @@ export type MarkaKeres = Record<string, string | string[] | undefined> & {
 export async function markaLapTorzs(
   params: { handle: string; countryCode: string },
   searchParams: MarkaKeres,
+  /**
+   * A lapozo alap-utja. A markaoldal (`/marka/`, SEO P0 PR 11) ugyanezt a
+   * torzset hasznalja; alapertelmezes a regi gyujtemeny-ut.
+   */
+  alapUt = `/${params.countryCode}/collections/${params.handle}`,
 ) {
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
@@ -53,7 +58,7 @@ export async function markaLapTorzs(
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
       lapozo={{
-        alap: `/${params.countryCode}/collections/${params.handle}`,
+        alap: alapUt,
         keres: lapozoKeres(searchParams),
       }}
     />

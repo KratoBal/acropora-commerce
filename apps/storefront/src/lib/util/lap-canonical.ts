@@ -98,3 +98,14 @@ export function storeCanonical(
 export function fooldalCanonical(countryCode: string): string {
   return `/${countryCode}`
 }
+
+/**
+ * A MARKAOLDAL KANONIKUS CIME (SEO P0 PR 11, G2: `/hu/marka/{slug}`).
+ *
+ * A handle a marka-modul `handle` mezoje, ami az OS `Brand.slug`; a regi
+ * gyujtemeny-lap (`/collections/{handle}`) ugyanerre a cimre mutat, amig a
+ * marka gyujtemenykent is kint van. A kodolt alak itt is valtozatlanul marad.
+ */
+export function markaCanonical(countryCode: string, handle: string): string {
+  return `/${countryCode}/marka/${handle}`
+}

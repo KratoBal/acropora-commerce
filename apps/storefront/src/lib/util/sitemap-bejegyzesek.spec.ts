@@ -148,4 +148,22 @@ describe("sitemap bejegyzesek", () => {
     expect(bejegyzes).toBeDefined()
     expect(bejegyzes?.lastModified).toBeUndefined()
   })
+
+  /**
+   * A MARKAOLDALAK (SEO P0 PR 11). MI PIROSITJA: ha a marka nem kerulne be, ha
+   * a regi `/collections/` cimen kerulne be, vagy ha a handle nelkuli sor cimet
+   * kapna.
+   */
+  it("a markak a /marka/ cimukkel kerulnek be, a handle nelkuli sor kimarad", () => {
+    const utak = sitemapBejegyzesek({
+      ...BEMENET,
+      markak: [
+        { handle: "aquaforest", updated_at: "2026-10-01T10:00:00.000Z" },
+        { handle: null },
+      ],
+    }).map((b) => b.url)
+    expect(utak).toContain("https://shop.acropora.hu/hu/marka/aquaforest")
+    expect(utak.filter((u) => u.includes("/marka/"))).toHaveLength(1)
+    expect(utak.some((u) => u.includes("/collections/"))).toBe(false)
+  })
 })

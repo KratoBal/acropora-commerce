@@ -57,8 +57,9 @@ const MAIN = join(__dirname, "..", "..", "app", "[countryCode]", "(main)")
 describe("a szűrt lapok noindexe", () => {
   it("minden _szurt lap a szurtMetaadat-ot adja vissza", () => {
     const szurt = lapok(join(MAIN, "%5Fszurt"))
-    // ismert pozitiv kontroll: a harom lista (kategoria, marka, bolt)
-    expect(szurt.length).toBe(3)
+    // ismert pozitiv kontroll: a negy lista (kategoria, gyujtemeny, bolt, es
+    // a SEO P0 PR 11 markaoldala)
+    expect(szurt.length).toBe(4)
     for (const ut of szurt)
       expect(
         metaadatHivasok(readFileSync(ut, "utf8")),

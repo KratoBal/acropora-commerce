@@ -1,6 +1,7 @@
 import { headers } from "next/headers"
 import type { MetadataRoute } from "next"
 
+import { markaLista } from "@lib/data/brands"
 import { listCategories } from "@lib/data/categories"
 import { listProducts } from "@lib/data/products"
 import { listRegions } from "@lib/data/regions"
@@ -77,6 +78,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (orszagKodok.length === 0) return []
 
   const kategoriak = await listCategories({ fields: "handle,updated_at" })
+  /*
+    A MARKAOLDALAK (SEO P0 PR 11). A marka-modul vegpontjanak hibaja NEM viszi
+    el az egesz sitemapet: a markak nelkuli lista tobbet er a semminel, de a
+    hiany nyomot hagy a naploban.
+  */
+  const markak = await markaLista().catch((hiba) => {
+    console.warn("[sitemap] a markalista nem jott meg:", hiba)
+    return []
+  })
 
   /*
     A TERMEKLISTA ORSZAGKODONKENT KESZUL, NEM EGYSZER. Az elso valtozat az ELSO
@@ -126,5 +136,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     origin: `https://${hoszt}`,
     orszagok,
     kategoriak,
+    markak,
   })
 }

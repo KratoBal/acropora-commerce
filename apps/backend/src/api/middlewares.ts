@@ -20,6 +20,10 @@ import {
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
+import {
+  AdminPutBrand,
+  AdminPutProductBrand,
+} from "./admin/brands/validators";
 import { AdminPutUrlRedirects } from "./admin/url-redirects/validators";
 import {
   AdminResendOrderStatusNotification,
@@ -73,6 +77,16 @@ export default defineMiddlewares({
       matcher: "/admin/shipping-attributes/:id",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminShippingAttributeFlags)],
+    },
+    {
+      matcher: "/admin/brands/:os_brand_id",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutBrand)],
+    },
+    {
+      matcher: "/admin/product-brands/:product_id",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutProductBrand)],
     },
     {
       matcher: "/admin/product-knowledge/:product_id",

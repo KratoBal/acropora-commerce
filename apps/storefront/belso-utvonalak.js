@@ -44,6 +44,7 @@ const LAPSZAM_MINTA = "[2-9]|[1-9][0-9]{1,3}"
 const LISTAK = [
   { forras: "/:orszag/categories/:ut+", cel: "categories/:ut+" },
   { forras: "/:orszag/collections/:handle", cel: "collections/:handle" },
+  { forras: "/:orszag/marka/:handle", cel: "marka/:handle" },
   { forras: "/:orszag/store", cel: "store" },
 ]
 

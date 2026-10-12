@@ -70,6 +70,8 @@ describe("a listák", () => {
     expect(atir("/hu/collections/boyu?page=2")).toBe(
       "/hu/_p/2/collections/boyu",
     )
+    // SEO P0 PR 11: a markaoldal ugyanugy lapoz, mint a gyujtemeny-lap
+    expect(atir("/hu/marka/boyu?page=2")).toBe("/hu/_p/2/marka/boyu")
     expect(atir("/hu/store?page=4")).toBe("/hu/_p/4/store")
     expect(atir("/hu/store?page=9999")).toBe("/hu/_p/9999/store")
   })
@@ -102,7 +104,12 @@ describe("a listák", () => {
 
   it("minden szűrő a dinamikus útra visz, a lapszámmal együtt is", () => {
     for (const kulcs of belso.SZURO_KULCSOK)
-      for (const tipus of ["categories/a", "collections/boyu", "store"]) {
+      for (const tipus of [
+        "categories/a",
+        "collections/boyu",
+        "marka/boyu",
+        "store",
+      ]) {
         expect(atir(`/hu/${tipus}?${kulcs}=x`)).toBe(`/hu/_szurt/${tipus}`)
         expect(atir(`/hu/${tipus}?page=2&${kulcs}=x`)).toBe(
           `/hu/_szurt/${tipus}`,
