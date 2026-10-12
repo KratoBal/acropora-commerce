@@ -236,3 +236,61 @@ describe("termekCsoportLd", () => {
     expect(opcioTulajdonsag("Kiszerelés")).toBeNull()
   })
 })
+
+/*
+  AZ ELO ALLAT (t12). MI PIROSIT: a keszleten levo elo allat InStock-ot vagy
+  BackOrder-t allit, holott a bolt csak az uzletben adja at; egy elfogyott elo
+  allat kaphatonak latszik; a csoport valtozatai elvesztik a jelet.
+*/
+describe("élő állat: InStoreOnly (t12)", () => {
+  it("T12-SEMA: kapható élő állat InStoreOnly, utánrendelésnél is; elfogyottan OutOfStock", () => {
+    expect(elerhetosegSchema("KAPHATO", false, true)).toBe(
+      "https://schema.org/InStoreOnly",
+    )
+    expect(elerhetosegSchema("KAPHATO", true, true)).toBe(
+      "https://schema.org/InStoreOnly",
+    )
+    expect(elerhetosegSchema("ELFOGYOTT", false, true)).toBe(
+      "https://schema.org/OutOfStock",
+    )
+    expect(elerhetosegSchema("KAPHATO", false)).toBe(
+      "https://schema.org/InStock",
+    )
+  })
+
+  it("T12-LD: a termék és a csoport minden változata viszi a jelet", () => {
+    const t = termekLd({
+      nev: "Acropora millepora",
+      url: "https://x/hu/termek/acropora-millepora",
+      kepek: [],
+      ar: 9900,
+      penznem: "HUF",
+      elerhetoseg: "KAPHATO",
+      utanrendeles: false,
+      kategoriaNevek: ["Korallok"],
+      csakBoltban: true,
+    })
+    expect((t.offers as { availability: string }).availability).toBe(
+      "https://schema.org/InStoreOnly",
+    )
+    const cs = termekCsoportLd({
+      nev: "Acropora",
+      url: "https://x/hu/termek/acropora",
+      csoportAzonosito: "prod_1",
+      kepek: [],
+      penznem: "HUF",
+      kategoriaNevek: ["Korallok"],
+      csakBoltban: true,
+      valtozatok: ["S", "M"].map((meret) => ({
+        url: `https://x/hu/termek/acropora?v_id=${meret}`,
+        opciok: [{ nev: "Méret", ertek: meret }],
+        kepek: [],
+        ar: 9900,
+        elerhetoseg: "KAPHATO" as const,
+        utanrendeles: false,
+      })),
+    })
+    for (const v of cs.hasVariant as { offers: { availability: string } }[])
+      expect(v.offers.availability).toBe("https://schema.org/InStoreOnly")
+  })
+})

@@ -22,6 +22,10 @@ import { termeklapCanonical } from "@lib/util/lap-canonical"
 import JsonLd from "@modules/common/components/json-ld"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import {
+  ELO_ALLAT_GYOKEREK,
+  termekGyokerNevei,
+} from "@modules/products/components/lap-vaz/vilag-valto"
+import {
   availabilityOf,
   csakUtanrendelesre,
   keszletIsmert,
@@ -172,6 +176,11 @@ export function strukturaltAdat(
   const handleAzonositora = new Map(kategoriak.map((k) => [k.id, k.handle]))
   const ut = besorolasUt(termek, kategoriak)
   const nev = termek.title ?? ""
+  // elo allat: a lap vilaganak szabalya (ugyanaz a gyoker-feloldas), es a lap
+  // is kiirja, hogy csak az uzletben adjuk at -> `InStoreOnly` (t12)
+  const csakBoltban = termekGyokerNevei(termek, kategoriak).some((n) =>
+    (ELO_ALLAT_GYOKEREK as readonly string[]).includes(n),
+  )
 
   // a handle ekezetet es vesszot is tartalmazhat: a JSON-LD URL-je kodolt alak
   const morzsa = morzsaLd([
@@ -232,6 +241,7 @@ export function strukturaltAdat(
         penznem: tetelek[0]!.penznem,
         kategoriaNevek: ut.map((k) => k.teljesNev),
         valtozatok: tetelek,
+        csakBoltban,
       }),
     }
   }
@@ -255,6 +265,7 @@ export function strukturaltAdat(
       elerhetoseg,
       utanrendeles: elerhetoseg === "KAPHATO" && csakUtanrendelesre(valtozat),
       kategoriaNevek: ut.map((k) => k.teljesNev),
+      csakBoltban,
     }),
   }
 }

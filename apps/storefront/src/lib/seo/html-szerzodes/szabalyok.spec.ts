@@ -654,3 +654,69 @@ describe("ProductGroup és GTIN (FE-2b)", () => {
     expect(gtinHibak(vele, null)).toHaveLength(1)
   })
 })
+
+/*
+  AZ ELO ALLAT ES AZ ELFOGYOTT TERMEK ELERHETOSEGE (t12, FE-2). MI PIROSIT: egy
+  keszleten levo elo allat lapja InStock-ot allit (a bolt csak az uzletben adja
+  at); egy elfogyott lap valamelyik valtozata kaphatonak latszik; a kaphato lap
+  InStoreOnly-ja hibanak szamit a json-ld-product szerint.
+*/
+describe("élő állat és elfogyott termék a JSON-LD-ben (t12)", () => {
+  const ld = (x: unknown) =>
+    `<script type="application/ld+json">${JSON.stringify(x)}</script>`
+  const termek = (availability: string) => ({
+    "@type": "Product",
+    name: "Acropora millepora",
+    offers: { price: 9900, priceCurrency: "HUF", availability },
+  })
+  const csoport = (...elerhetosegek: string[]) => ({
+    "@type": "ProductGroup",
+    name: "Acropora millepora",
+    hasVariant: elerhetosegek.map((availability) => ({
+      "@type": "Product",
+      offers: { price: 9900, priceCurrency: "HUF", availability },
+    })),
+  })
+  const S = "https://schema.org/"
+
+  it("T12-BOLTI: csak az InStoreOnly megy át, egy és több változatnál is", () => {
+    const k = (x: unknown) => oldal(JO_FEJ, ld(x))
+    expect(fut("json-ld-bolti-atvetel", k(termek(`${S}InStoreOnly`)))).toEqual(
+      [],
+    )
+    expect(fut("json-ld-bolti-atvetel", k(termek(`${S}InStock`)))).toHaveLength(
+      1,
+    )
+    expect(
+      fut(
+        "json-ld-bolti-atvetel",
+        k(csoport(`${S}InStoreOnly`, `${S}InStock`)),
+      ),
+    ).toHaveLength(1)
+    expect(fut("json-ld-bolti-atvetel", oldal(JO_FEJ, ""))).toEqual([
+      "nincs ajánlat a JSON-LD-ben",
+    ])
+  })
+
+  it("T12-ELFOGYOTT: minden ajánlat OutOfStock", () => {
+    const k = (x: unknown) => oldal(JO_FEJ, ld(x))
+    expect(fut("json-ld-elfogyott", k(termek(`${S}OutOfStock`)))).toEqual([])
+    expect(fut("json-ld-elfogyott", k(termek(`${S}BackOrder`)))).toHaveLength(1)
+    expect(
+      fut("json-ld-elfogyott", k(csoport(`${S}OutOfStock`, `${S}InStock`))),
+    ).toHaveLength(1)
+  })
+
+  it("T12-KAPHATO: a kapható lapon az InStoreOnly a látott elérhetőség", () => {
+    const lap = `<h1>Acropora millepora</h1><span data-testid="product-price" data-value="9900">x</span><button data-elerhetoseg="KAPHATO">x</button>`
+    expect(
+      fut(
+        "json-ld-product",
+        oldal(JO_FEJ, lap + ld(termek(`${S}InStoreOnly`))),
+      ),
+    ).toEqual([])
+    expect(
+      fut("json-ld-product", oldal(JO_FEJ, lap + ld(termek(`${S}OutOfStock`)))),
+    ).toHaveLength(1)
+  })
+})
