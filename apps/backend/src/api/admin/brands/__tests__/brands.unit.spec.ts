@@ -51,7 +51,10 @@ describe("store brand routes", () => {
     links: { os_brand_id: string }[]
   }) => ({
     resolve: () => ({
-      listProductBrands: async () => data.links,
+      listProductBrands: async (filter?: { os_brand_id?: string }) =>
+        filter?.os_brand_id
+          ? data.links.filter((l) => l.os_brand_id === filter.os_brand_id)
+          : data.links,
       listBrands: async (filter: {
         os_brand_id?: string[]
         handle?: string
@@ -119,6 +122,19 @@ describe("store brand routes", () => {
     expect((res.body as { brands: unknown[] }).brands).toHaveLength(20)
     expect(configs).toHaveLength(2)
     for (const config of configs) expect(config).not.toHaveProperty("take")
+  })
+
+  /*
+    t11 (barracuda #1678 B): a hidden brand's record stays in the module, but
+    with no product behind it the page is a 404, as in the sitemap list.
+  */
+  it("a brand with no product behind it is a 404, like the sitemap list", async () => {
+    await expect(
+      storeOne(
+        { scope: scope(data), params: { handle: "ures" } } as never,
+        response() as never
+      )
+    ).rejects.toThrow(/was not found/)
   })
 
   it("answers one brand by handle, and 404 for an unknown one", async () => {
