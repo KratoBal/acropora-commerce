@@ -1,9 +1,9 @@
 import { Metadata } from "next"
 import {
-  indexelhetoRobots,
   lapCim,
   openGraph,
   termekLeiras,
+  termekRobots,
 } from "@lib/seo/oldal-metaadat"
 import { epitesiHibaMegnevezve } from "@lib/util/build-time-failure"
 import { notFound } from "next/navigation"
@@ -79,7 +79,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title: cim,
     description: leiras,
-    robots: indexelhetoRobots(),
+    robots: termekRobots(product.metadata),
     /*
      * A KANONIKUS CIM A NYERS, KODOLT HANDLE-BOL EPUL, nem a `handle`
      * valtozobol -- az `decodeHandleParam`-en ment at, es egy URL-be a KODOLT

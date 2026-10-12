@@ -81,11 +81,26 @@ const TITLE_MAX = 150
 const DESCRIPTION_MAX = 5000
 const ADDITIONAL_IMAGES_MAX = 10
 
+/**
+ * A product's own robots decision (card cc404355, t13): a hand-written UNAS
+ * Meta block can say `noindex`, and the OS projects it as
+ * `metadata.seo_robots`. A product we tell search engines not to index is
+ * not offered to Google Shopping either; the storefront reads the same field
+ * (`termekRobotsJel`).
+ */
+export function productIsNoindex(product: {
+  metadata?: Record<string, unknown> | null
+}): boolean {
+  const value = product.metadata?.seo_robots
+  return typeof value === "string" && /\bnoindex\b/i.test(value)
+}
+
 export function toMerchantItem(
   product: MerchantFeedProduct,
   variant: MerchantFeedVariant,
   context: MerchantFeedContext
 ): MerchantItem | null {
+  if (productIsNoindex(product)) return null
   const id = variant.sku?.trim()
   if (!id) return null
   const images = imagesOf(product)

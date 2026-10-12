@@ -89,6 +89,8 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     "termek-elfogyott": [...termek, "json-ld-elfogyott"],
     // t12: a keszleten levo elo allat csak az uzletben: InStoreOnly
     "termek-elo-allat": [...termek, "json-ld-bolti-atvetel"],
+    // t13: a sajat robots-tiltasu termek noindex (a sitemapbol is kimarad)
+    "termek-noindex": ["statusz-200", "noindex"],
     // FE-2b: a valtozatos lapon ProductGroup all
     "termek-valtozatos": [
       "statusz-200",

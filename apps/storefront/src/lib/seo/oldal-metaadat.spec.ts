@@ -15,6 +15,8 @@ import {
   markaLeiras,
   openGraph,
   termekLeiras,
+  termekRobots,
+  termekRobotsJel,
 } from "./oldal-metaadat"
 
 /**
@@ -217,5 +219,38 @@ describe("angol szó a statikus szövegben", () => {
       "Pénztár",
     ])
       expect(angolSzo(s), s).toBeNull()
+  })
+})
+
+/**
+ * A TERMÉK SAJÁT ROBOTS-DÖNTÉSE (t13, kártya cc404355). Élesen két termék
+ * hordozza (Blue Life Nitrate FX 250 és 500 ml, mindkettő „noindex, nofollow”).
+ * MI PIROSÍTJA: a jel nem hat; a nofollow akkor is megjelenik, ha a forrás nem
+ * mondja; egy jel nélküli termék noindex lesz.
+ */
+describe("a termék saját robots-döntése", () => {
+  it("a forrás mindkét tokenje számít", () => {
+    expect(termekRobots({ seo_robots: "noindex, nofollow" })).toEqual({
+      index: false,
+      follow: false,
+    })
+    expect(termekRobots({ seo_robots: "NOINDEX" })).toEqual({
+      index: false,
+      follow: true,
+    })
+  })
+
+  it("jel nélkül, vagy noindex nélküli jellel indexelhető", () => {
+    for (const metadata of [
+      null,
+      {},
+      { seo_robots: "index, follow" },
+      { seo_robots: 1 },
+    ])
+      expect(termekRobots(metadata as never)).toEqual({
+        index: true,
+        follow: true,
+      })
+    expect(termekRobotsJel({ seo_robots: "noindexed" }).noindex).toBe(false)
   })
 })

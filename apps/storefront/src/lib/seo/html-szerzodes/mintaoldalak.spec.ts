@@ -100,6 +100,7 @@ describe("a mintaoldalak választása", () => {
         "termek-elo-allat",
         "termek-gtin",
         "termek-gtin-nelkul",
+        "termek-noindex",
         "termek-valtozatos",
       ].sort(),
     )
@@ -158,6 +159,47 @@ describe("a várható-piros lista", () => {
     expect(varhato("noindex", "kereses")).toBeNull()
     expect(varhato("noindex", "nem-letezo")).toBeNull()
     expect(varhato("alt", "termek-gtin")).toBeNull()
+  })
+
+  /**
+   * A SAJÁT ROBOTS-TILTÁSÚ TERMÉK (t13): nem lehet indexelhetőnek várt minta, és
+   * saját mintát kap a noindex szabállyal. MI PIROSÍTJA: a noindex-es termék lesz
+   * a GTIN-es (vagy más indexelhető) minta, és a szerződés hamisan pirosodik.
+   */
+  describe("a noindex-es termék mintája (t13)", () => {
+    const noindexes = {
+      id: "p0",
+      handle: "0-blue-life",
+      title: "Blue Life Nitrate FX",
+      variants: [v("v0", { ean: "5902026731010" })],
+      categories: [{ id: "k-level" }],
+      metadata: { seo_robots: "noindex, nofollow" },
+    }
+    const mintak = mintakAdatbol(
+      "hu",
+      [noindexes, ...TERMEKEK],
+      KATEGORIAK,
+      GYUJTEMENYEK,
+    )
+    const ut = (t: string) => mintak.find((m) => m.tipus === t)?.ut ?? null
+
+    it("a noindex-es termék saját mintát kap, és nem lesz indexelhető minta", () => {
+      expect(ut("termek-noindex")).toBe("/hu/termek/0-blue-life")
+      for (const t of [
+        "termek-gtin",
+        "termek-gtin-nelkul",
+        "termek-elfogyott",
+        "termek-elo-allat",
+      ])
+        expect(ut(t), t).not.toBe("/hu/termek/0-blue-life")
+    })
+
+    it("noindex-es termék nélkül a minta hiányzik, indokkal", () => {
+      const nelkule = mintakAdatbol("hu", TERMEKEK, KATEGORIAK, GYUJTEMENYEK)
+      const m = nelkule.find((x) => x.tipus === "termek-noindex")
+      expect(m?.ut).toBeNull()
+      expect(m?.hianyzik).toMatch(/robots/)
+    })
   })
 })
 

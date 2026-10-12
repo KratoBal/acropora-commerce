@@ -44,6 +44,35 @@ export function leirasSzovegbol(
 /** Az indexelheto oldaltipusok. A tobbi a FE-4-ig a Next alapertelmezeset kapja. */
 export type IndexelhetoOldal = "home" | "category" | "product" | "brand"
 
+/**
+ * A TERMEK SAJAT ROBOTS-DONTESE (kartya cc404355, t13). A UNAS-ban egy termek
+ * kezzel irt Meta blokkja `Robots` erteket hordozhat (ma kettonel all, mindketto
+ * `noindex, nofollow`); az OS ezt `metadata.seo_robots`-kent vetiti ki. Ez egy
+ * meghozott dontes, nem SEO-szoveg: a lap, a sitemap es a Merchant feed is ebbol
+ * dont. A tokeneket kulon nezzuk: a `nofollow` csak akkor all, ha a forras mondja.
+ */
+export function termekRobotsJel(metadata?: Record<string, unknown> | null): {
+  noindex: boolean
+  nofollow: boolean
+} {
+  const ertek = metadata?.seo_robots
+  const szoveg = typeof ertek === "string" ? ertek.toLowerCase() : ""
+  return {
+    noindex: /\bnoindex\b/.test(szoveg),
+    nofollow: /\bnofollow\b/.test(szoveg),
+  }
+}
+
+/** A termeklap robots-szabalya: a sajat dontes, kulonben indexelheto. */
+export function termekRobots(
+  metadata?: Record<string, unknown> | null,
+): Metadata["robots"] {
+  const jel = termekRobotsJel(metadata)
+  return jel.noindex
+    ? { index: false, follow: !jel.nofollow }
+    : indexelhetoRobots()
+}
+
 /** Az indexelheto lap robots-szabalya, kimondva. */
 export function indexelhetoRobots(): Metadata["robots"] {
   return { index: true, follow: true }

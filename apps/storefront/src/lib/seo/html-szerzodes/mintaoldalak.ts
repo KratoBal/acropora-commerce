@@ -1,4 +1,5 @@
 import { valtozatGtin } from "@lib/seo/strukturalt-adat"
+import { termekRobotsJel } from "@lib/seo/oldal-metaadat"
 import { REEF_GYOKEREK } from "@lib/util/acropora-mod"
 import { valtozatKaphato } from "@modules/products/components/stock-state/availability"
 
@@ -23,6 +24,7 @@ export type MintaTipus =
   | "termek-elfogyott"
   | "termek-elo-allat"
   | "termek-valtozatos"
+  | "termek-noindex"
   | "kategoria-felso"
   | "kategoria-level"
   | "kategoria-lap2"
@@ -66,6 +68,7 @@ type Termek = {
   collection_id?: string | null
   variants?: Valtozat[]
   categories?: { id: string }[]
+  metadata?: Record<string, unknown> | null
 }
 type Kategoria = {
   id: string
@@ -129,7 +132,7 @@ async function mindenTermek(
         offset: String(offset),
         region_id: regioId,
         fields:
-          "id,handle,title,collection_id,*variants,*variants.options,+variants.inventory_quantity,+variants.calculated_price,*categories",
+          "id,handle,title,collection_id,metadata,*variants,*variants.options,+variants.inventory_quantity,+variants.calculated_price,*categories",
       },
     )
     termekek.push(...d.products)
@@ -145,7 +148,17 @@ export function mintakAdatbol(
   gyujtemenyek: Gyujtemeny[],
 ): Minta[] {
   const p = (ut: string) => `/${orszag}${ut}`
-  const rendezett = [...termekek].sort(handleSzerint)
+  /*
+    A NOINDEX-ES TERMEK (t13) NEM LEHET INDEXELHETO MINTA: a termek-mintak az
+    `indexelheto` szabalyt kapjak, es egy sajat robots-tiltasu termeken az
+    hamisan pirosodna. Kulon mintat kap (`termek-noindex`).
+  */
+  const noindexes = [...termekek]
+    .sort(handleSzerint)
+    .find((t) => termekRobotsJel(t.metadata).noindex)
+  const rendezett = [...termekek]
+    .filter((t) => !termekRobotsJel(t.metadata).noindex)
+    .sort(handleSzerint)
   const termekUt = (t: Termek | undefined, tipus: MintaTipus, ok: string) =>
     t
       ? {
@@ -248,6 +261,11 @@ export function mintakAdatbol(
       eloAllat,
       "termek-elo-allat",
       "nincs készleten lévő élő állat (korall, hal, gerinctelen) a boltban",
+    ),
+    termekUt(
+      noindexes,
+      "termek-noindex",
+      "nincs saját robots-tiltású (seo_robots noindex) termék a boltban",
     ),
     valtozatos && valtozat
       ? {

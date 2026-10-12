@@ -113,6 +113,28 @@ describe("toMerchantItem", () => {
     ).toBeNull()
   })
 
+  /*
+    t13 (card cc404355): a product with its own robots noindex stays out of
+    the feed. What turns it red: the feed offering a page we tell search
+    engines not to index; or a seo_robots without noindex leaving it out.
+  */
+  it("MF-NOINDEX: a product's own noindex leaves it out, any other robots value does not", () => {
+    expect(
+      toMerchantItem(
+        product({ metadata: { seo_robots: "noindex, nofollow" } }),
+        variant(),
+        context()
+      )
+    ).toBeNull()
+    expect(
+      toMerchantItem(
+        product({ metadata: { seo_robots: "index, follow" } }),
+        variant(),
+        context()
+      )
+    ).not.toBeNull()
+  })
+
   it("MF-GROUP: a multi-variant product groups by handle and names the option", () => {
     const second = variant({ id: "variant_2", sku: "KZ-AMINO-250", options: [{ value: "250 ml" }] })
     const item = toMerchantItem(
