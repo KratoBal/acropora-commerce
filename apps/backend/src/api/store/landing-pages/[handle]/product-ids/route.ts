@@ -89,6 +89,7 @@ export const GET = async (req: MedusaStoreRequest, res: MedusaResponse) => {
   }
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const csatornan = new Set<string>()
+  let vanMezo = false
   for (let i = 0; i < azonositok.length; i += DARAB) {
     const { data } = await query.graph({
       entity: "product",
@@ -98,9 +99,26 @@ export const GET = async (req: MedusaStoreRequest, res: MedusaResponse) => {
     for (const t of data as {
       id: string
       sales_channels?: { id: string }[] | null
-    }[])
+    }[]) {
+      if (Array.isArray(t.sales_channels)) vanMezo = true
       if (t.sales_channels?.some((c) => csatornak.includes(c?.id)))
         csatornan.add(t.id)
+    }
+  }
+  /*
+    AZ ORZO (barracuda #544, acrobot 29038, a #542 mintajara): ha EGYETLEN
+    termeken sem jott meg a `sales_channels` mezo, a valasz nem hordozta az
+    adatot. A szukites ilyenkor minden termeket kiejtene, es minden valogatas
+    ures, noindex lap lenne, hiba nelkul. Ezert nem szur, es nyomot hagy.
+  */
+  if (!vanMezo) {
+    req.scope
+      .resolve(ContainerRegistrationKeys.LOGGER)
+      .warn(
+        "[landing product-ids] the products came without sales_channels; the list is not narrowed to the storefront's channel"
+      )
+    res.json({ product_ids: azonositok })
+    return
   }
   res.json({ product_ids: azonositok.filter((id) => csatornan.has(id)) })
 }

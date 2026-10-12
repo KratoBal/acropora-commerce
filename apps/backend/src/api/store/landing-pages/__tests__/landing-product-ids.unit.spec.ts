@@ -53,11 +53,13 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
   const scope = (data: {
     page?: { handle: string; filter: unknown } | null
     brandLinks?: { product_id: string; os_brand_id: string }[]
-    products?: { id: string; categories: string[]; channels?: string[] }[]
+    products?: { id: string; categories: string[]; channels?: string[] | null }[]
   }) => {
     const productCalls: unknown[] = []
+    const warnings: string[] = []
     return {
       productCalls,
+      warnings,
       scope: {
         resolve: (key: string) => {
           if (key === "landing_page")
@@ -97,12 +99,19 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
               graph: async (q: { filters: { id: string[] } }) => ({
                 data: (data.products ?? [])
                   .filter((p) => q.filters.id.includes(p.id))
-                  .map((p) => ({
-                    id: p.id,
-                    sales_channels: (p.channels ?? ["sc_web"]).map((id) => ({ id })),
-                  })),
+                  .map((p) =>
+                    // null: the field did not come at all
+                    p.channels === null
+                      ? { id: p.id }
+                      : {
+                          id: p.id,
+                          sales_channels: (p.channels ?? ["sc_web"]).map((id) => ({ id })),
+                        }
+                  ),
               }),
             }
+          if (key === "logger")
+            return { warn: (m: string) => warnings.push(m) }
           throw new Error(`unexpected ${key}`)
         },
       },
@@ -171,6 +180,25 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
       ],
     })
     expect(await call(s)).toEqual(["p1", "p4"])
+  })
+
+  /*
+    barracuda #544, acrobot 29038: if no product carries sales_channels, the
+    narrowing would drop everything silently. It must not narrow, and must warn.
+  */
+  it("products without the sales_channels field: not narrowed, and a warning", async () => {
+    const s = scope({
+      page: {
+        handle: "kh-potlas",
+        filter: { category_ids: ["c_kh"], os_brand_ids: [], attribute_filters: [] },
+      },
+      products: [
+        { id: "p1", categories: ["c_kh"], channels: null },
+        { id: "p2", categories: ["c_kh"], channels: null },
+      ],
+    })
+    expect(await call(s)).toEqual(["p1", "p2"])
+    expect(s.warnings).toHaveLength(1)
   })
 
   it("a brand with no products answers empty, without an unfiltered query", async () => {
