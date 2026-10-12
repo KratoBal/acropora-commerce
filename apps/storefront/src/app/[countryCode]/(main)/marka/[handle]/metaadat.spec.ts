@@ -42,6 +42,7 @@ vi.mock("@modules/collections/templates", () => ({ default: () => null }))
 
 import { generateMetadata } from "./page"
 import { generateMetadata as gyujtemenyMetaadat } from "../../collections/[handle]/page"
+import { generateMetadata as gyujtemenyLapozott } from "../../%5Fp/[lap]/collections/[handle]/page"
 
 const props = {
   params: Promise.resolve({ countryCode: "hu", handle: "aquaforest" }),
@@ -97,6 +98,18 @@ describe("a régi gyűjtemény-lap canonicalja", () => {
     const m = await gyujtemenyMetaadat(props)
     expect(m.alternates).toBeUndefined()
     expect(m.title).toBe("Aquaforest | Acropora")
+  })
+
+  it("a lapozott gyűjtemény is a márkaoldal azonos lapjára mutat", async () => {
+    adat.marka = marka()
+    const m = await gyujtemenyLapozott({
+      params: Promise.resolve({
+        countryCode: "hu",
+        handle: "aquaforest",
+        lap: "2",
+      }),
+    })
+    expect(m.alternates?.canonical).toBe("/hu/marka/aquaforest?page=2")
   })
 
   it("márkarekord nélküli gyűjtemény nem kap canonicalt", async () => {

@@ -83,6 +83,44 @@ describe("store brand routes", () => {
     expect(brands[0]).not.toHaveProperty("os_brand_id")
   })
 
+  /*
+    Review #538 A. The module service does not page without `take` in Medusa
+    2.20.1 (build-query.js:13), so the route must pass none: a `take` would cut
+    the sitemap's list silently. Red if either call gets a `take`, or if a
+    brand past the 15th goes missing.
+  */
+  it("returns every brand past 15, and asks without a take", async () => {
+    const configs: unknown[] = []
+    const many = Array.from({ length: 20 }, (_, i) => ({
+      ...record({ handle: `marka-${String(i).padStart(2, "0")}` }),
+      os_brand_id: `os_${i}`,
+    }))
+    const res = response()
+    await storeList(
+      {
+        scope: {
+          resolve: () => ({
+            listProductBrands: async (_: unknown, config: unknown) => {
+              configs.push(config)
+              return many.map((b) => ({ os_brand_id: b.os_brand_id }))
+            },
+            listBrands: async (
+              filter: { os_brand_id: string[] },
+              config: unknown
+            ) => {
+              configs.push(config)
+              return many.filter((b) => filter.os_brand_id.includes(b.os_brand_id))
+            },
+          }),
+        },
+      } as never,
+      res as never
+    )
+    expect((res.body as { brands: unknown[] }).brands).toHaveLength(20)
+    expect(configs).toHaveLength(2)
+    for (const config of configs) expect(config).not.toHaveProperty("take")
+  })
+
   it("answers one brand by handle, and 404 for an unknown one", async () => {
     const res = response()
     await storeOne(
