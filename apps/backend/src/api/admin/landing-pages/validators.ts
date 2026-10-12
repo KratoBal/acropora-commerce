@@ -22,13 +22,23 @@ export const AdminPutLandingPage = z
       .object({
         category_ids: ids,
         os_brand_ids: ids,
+        // NOT YET (barracuda, #541): the storefront cannot apply an attribute
+        // filter, and a page that ignored one would list MORE than its name
+        // promises, silently. This second guard (the OS refuses one too) is
+        // lifted in the PR that teaches the storefront to apply them.
         attribute_filters: z
           .array(
             z.object({ key: text, op: text, value: z.unknown() }).strict()
           )
-          .max(50),
+          .max(0),
       })
-      .strict(),
+      .strict()
+      // an empty filter is the whole catalogue: a duplicate of /hu/store with
+      // its own canonical and sitemap row, the opposite of what a landing is for
+      .refine(
+        (f) => f.category_ids.length > 0 || f.os_brand_ids.length > 0,
+        "A landing page filters on at least one category or brand"
+      ),
     is_published: z.boolean(),
   })
   .strict()

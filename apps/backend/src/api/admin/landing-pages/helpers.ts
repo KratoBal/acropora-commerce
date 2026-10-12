@@ -7,7 +7,12 @@ export const resolveLandingPageService = (
   scope: MedusaContainer
 ): LandingPageModuleService => scope.resolve(LANDING_PAGE_MODULE)
 
-/** The fields a buyer may see: no OS id, no publish flag, `updated_at` kept. */
+/**
+ * The fields a buyer may see: no OS landing id, no publish flag, `updated_at`
+ * kept. The filter's `os_brand_ids` DO go out, on purpose, unlike the brand
+ * route's `forStore`: the shop's product-brand link is keyed by the OS brand
+ * id, so that is what the landing's product list filters on (barracuda, #541).
+ */
 export const forStore = (page: {
   handle: string
   title: string
