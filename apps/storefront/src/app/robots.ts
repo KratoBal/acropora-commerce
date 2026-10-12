@@ -35,7 +35,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     A SITEMAP HIVATKOZAS CSAK AZ ENGEDETT HOSZTON KERUL BE, es ugyanabbol a
     dontesbol, mint a szabaly maga. A tilto agon egy sitemap-hivatkozas
     ellentmondas lenne: azt mondanank, hogy ne jard be a boltot, es kozben
-    atadnank a cimek listajat. (A `sitemap.ts` maga is uresen ter vissza ott --
+    atadnank a cimek listajat. (A `sitemap.xml/route.ts` maga is uresen ter vissza ott --
     ket helyen ugyanaz a dontes, de MINDKETTO a `robotsHazirend`-bol jon, tehat
     nem tudnak elcsuszni egymastol.)
   */

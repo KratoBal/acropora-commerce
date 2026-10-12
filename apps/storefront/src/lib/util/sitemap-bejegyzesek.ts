@@ -3,7 +3,9 @@ import {
   markaCanonical,
   storeCanonical,
   termeklapCanonical,
+  valogatasCanonical,
 } from "./lap-canonical"
+import { leszarmazottAzonositok } from "./kategoria-leszarmazottak"
 import { kategoriaCanonical } from "./kategoria-canonical"
 
 /**
@@ -31,6 +33,22 @@ import { kategoriaCanonical } from "./kategoria-canonical"
  */
 
 type Sor = { handle?: string | null; updated_at?: unknown }
+type KategoriaSor = Sor & { id?: string; parent_category_id?: string | null }
+export type TermekSor = Sor & { categories?: { id?: string }[] | null }
+
+/**
+ * A SITEMAP RESZEI TIPUSONKENT (FE-5, Balazs 6. dontese, 2026-10-07: "tipusonkent
+ * kulon ... sitemap index hasznalhato kezelhetoseg miatt"). Mindegyik a sajat
+ * `/sitemap/<tipus>.xml` cimen all, az index (`/sitemap.xml`) ezeket sorolja.
+ */
+export const SITEMAP_TIPUSOK = [
+  "lapok",
+  "kategoriak",
+  "markak",
+  "termekek",
+  "valogatasok",
+] as const
+export type SitemapTipus = (typeof SITEMAP_TIPUSOK)[number]
 
 export type SitemapBemenet = {
   origin: string
@@ -54,12 +72,22 @@ export type SitemapBemenet = {
    * `listCategories` viszont nem vesz fel ilyet -- a kategoria-fa nem
    * regionkent mas.
    */
-  kategoriak: readonly Sor[]
+  kategoriak: readonly KategoriaSor[]
+  /**
+   * AZ ÜRES KATEGÓRIA KISZŰRÉSE (FE-5): azok a kategória-azonosítók, amelyekben
+   * legalább egy termék áll. Egy kategória akkor kerül be, ha ő maga VAGY egy
+   * leszármazottja benne van (a kategórialap a leszármazottak termékeit is
+   * mutatja). `undefined`: nincs adat, és ilyenkor NEM szűrünk -- egy hiányzó
+   * mező nem ürítheti ki az egész kategória-sitemapet.
+   */
+  termekesKategoriak?: ReadonlySet<string>
   /**
    * A MARKAOLDALAK (SEO P0 PR 11): a marka-modul termekkel rendelkezo markai.
    * Ugyanugy kozosek, mint a kategoriak; hianyuk ures listat jelent.
    */
   markak?: readonly Sor[]
+  /** A válogatások (SEO landing, t9); amíg nincs bekötve, üres. */
+  landingek?: readonly Sor[]
 }
 
 export type SitemapBejegyzes = {
@@ -77,22 +105,44 @@ export function utolsoModositas(ertek: unknown): Date | undefined {
   return Number.isNaN(datum.getTime()) ? undefined : datum
 }
 
-export function sitemapBejegyzesek({
+function nemUres(
+  kategoriak: readonly KategoriaSor[],
+  termekes: ReadonlySet<string> | undefined,
+): (k: KategoriaSor) => boolean {
+  if (!termekes) return () => true
+  const fa = kategoriak.filter(
+    (k): k is KategoriaSor & { id: string } => typeof k.id === "string",
+  )
+  return (k) =>
+    !k.id || leszarmazottAzonositok(fa, k.id).some((id) => termekes.has(id))
+}
+
+/** A bejegyzések típusonként, országonként a saját listájából. */
+export function sitemapReszek({
   origin,
   orszagok,
   kategoriak,
+  termekesKategoriak,
   markak = [],
-}: SitemapBemenet): SitemapBejegyzes[] {
-  const bejegyzesek: SitemapBejegyzes[] = []
+  landingek = [],
+}: SitemapBemenet): Record<SitemapTipus, SitemapBejegyzes[]> {
   const cim = (ut: string) => `${origin}${ut}`
+  const reszek: Record<SitemapTipus, SitemapBejegyzes[]> = {
+    lapok: [],
+    termekek: [],
+    kategoriak: [],
+    markak: [],
+    valogatasok: [],
+  }
+  const vanTermeke = nemUres(kategoriak, termekesKategoriak)
 
   for (const { countryCode, termekek } of orszagok) {
-    bejegyzesek.push({ url: cim(fooldalCanonical(countryCode)) })
-    bejegyzesek.push({ url: cim(storeCanonical(countryCode)) })
+    reszek.lapok.push({ url: cim(fooldalCanonical(countryCode)) })
+    reszek.lapok.push({ url: cim(storeCanonical(countryCode)) })
 
     for (const kategoria of kategoriak) {
-      if (!kategoria.handle) continue
-      bejegyzesek.push({
+      if (!kategoria.handle || !vanTermeke(kategoria)) continue
+      reszek.kategoriak.push({
         url: cim(kategoriaCanonical(countryCode, kategoria.handle.split("/"))),
         lastModified: utolsoModositas(kategoria.updated_at),
       })
@@ -100,7 +150,7 @@ export function sitemapBejegyzesek({
 
     for (const marka of markak) {
       if (!marka.handle) continue
-      bejegyzesek.push({
+      reszek.markak.push({
         url: cim(markaCanonical(countryCode, marka.handle)),
         lastModified: utolsoModositas(marka.updated_at),
       })
@@ -108,12 +158,46 @@ export function sitemapBejegyzesek({
 
     for (const termek of termekek) {
       if (!termek.handle) continue
-      bejegyzesek.push({
+      reszek.termekek.push({
         url: cim(termeklapCanonical(countryCode, termek.handle)),
         lastModified: utolsoModositas(termek.updated_at),
       })
     }
+
+    for (const landing of landingek) {
+      if (!landing.handle) continue
+      reszek.valogatasok.push({
+        url: cim(valogatasCanonical(countryCode, landing.handle)),
+        lastModified: utolsoModositas(landing.updated_at),
+      })
+    }
   }
 
-  return bejegyzesek
+  return reszek
+}
+
+/** Az összes bejegyzés egy listában (a régi, lapos alak; a tesztek ezt is mérik). */
+export function sitemapBejegyzesek(
+  bemenet: SitemapBemenet,
+): SitemapBejegyzes[] {
+  const reszek = sitemapReszek(bemenet)
+  return SITEMAP_TIPUSOK.flatMap((tipus) => reszek[tipus])
+}
+
+/**
+ * A termekes kategoriak halmaza. Ha EGYETLEN termeken sem jott `categories`
+ * mezo, a valasz nem hordozta az adatot: `undefined`, es a kategoriak
+ * szures nelkul mennek ki (egy hianyzo mezo nem uritheti ki a listat).
+ */
+export function termekesKategoriakBol(
+  sorok: readonly TermekSor[],
+): Set<string> | undefined {
+  if (!sorok.some((s) => Array.isArray(s.categories))) return undefined
+  return new Set(
+    sorok.flatMap((s) =>
+      (s.categories ?? [])
+        .map((c) => c.id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  )
 }

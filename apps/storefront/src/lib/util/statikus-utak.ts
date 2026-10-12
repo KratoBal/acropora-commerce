@@ -52,6 +52,12 @@
 export const STATIKUS_GYOKER_UTAK = [
   "/robots.txt",
   "/sitemap.xml",
+  // FE-5: a tipusonkenti sitemapek, egy route-kezelo mogott
+  "/sitemap/lapok.xml",
+  "/sitemap/kategoriak.xml",
+  "/sitemap/markak.xml",
+  "/sitemap/termekek.xml",
+  "/sitemap/valogatasok.xml",
   "/tokenek",
 ] as const
 

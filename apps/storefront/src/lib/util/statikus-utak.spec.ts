@@ -40,7 +40,15 @@ describe("gyoker szintu statikus utak", () => {
     const gyoker = join(__dirname, "..", "..")
     const kiszolgalo: Record<string, string> = {
       "/robots.txt": join(gyoker, "app", "robots.ts"),
-      "/sitemap.xml": join(gyoker, "app", "sitemap.ts"),
+      "/sitemap.xml": join(gyoker, "app", "sitemap.xml", "route.ts"),
+      ...Object.fromEntries(
+        ["lapok", "kategoriak", "markak", "termekek", "valogatasok"].map(
+          (t) => [
+            `/sitemap/${t}.xml`,
+            join(gyoker, "app", "sitemap", "[tipus]", "route.ts"),
+          ],
+        ),
+      ),
       "/tokenek": join(gyoker, "app", "tokenek", "page.tsx"),
     }
 
