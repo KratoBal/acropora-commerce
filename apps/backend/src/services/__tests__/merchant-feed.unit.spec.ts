@@ -11,6 +11,7 @@ import {
   MerchantFeedConfigError,
   loadMerchantItems,
 } from "../merchant-feed-loader"
+import { feedCache } from "../merchant-feed-cache"
 import { escapeXml, merchantFeedXml } from "../merchant-feed-xml"
 
 /*
@@ -61,6 +62,8 @@ const context = (over: Partial<MerchantFeedContext> = {}): MerchantFeedContext =
     cat_root: { name: "Vegyszerek", parentId: null },
     cat_child: { name: "Nyomelemek", parentId: "cat_root" },
     cat_used: { name: "Használt eszközök", parentId: null },
+    cat_used_pumps: { name: "Szivattyúk", parentId: "cat_used" },
+    cat_used_pumps_dc: { name: "DC szivattyúk", parentId: "cat_used_pumps" },
   },
   ...over,
 })
@@ -149,17 +152,33 @@ describe("toMerchantItem", () => {
     expect(item?.condition).toBe("used")
   })
 
-  it("MF-PRIMARY: the primary category's path, when the product is in it", () => {
-    const item = toMerchantItem(
+  it("MF-LONGEST: the storefront's path, the longest chain, not the primary category", () => {
+    // the page's breadcrumb (`besorolasUt`) takes the longest chain, so a
+    // shorter used category does not make the item used here either
+    const shorterUsed = toMerchantItem(
       product({
-        categories: [{ id: "cat_child" }, { id: "cat_used" }],
+        categories: [{ id: "cat_used" }, { id: "cat_child" }],
         metadata: { primary_category_id: "cat_used" },
       }),
       variant(),
       context()
     )
-    expect(item?.product_type).toBe("Használt eszközök")
-    expect(item?.condition).toBe("used")
+    expect(shorterUsed?.product_type).toBe("Vegyszerek > Nyomelemek")
+    expect(shorterUsed?.condition).toBe("new")
+    const longerUsed = toMerchantItem(
+      product({ categories: [{ id: "cat_child" }, { id: "cat_used_pumps_dc" }] }),
+      variant(),
+      context()
+    )
+    expect(longerUsed?.product_type).toBe("Használt eszközök > Szivattyúk > DC szivattyúk")
+    expect(longerUsed?.condition).toBe("used")
+  })
+
+  it("MF-HIDDEN: a category missing from the tree (internal, inactive) is no path", () => {
+    expect(
+      toMerchantItem(product({ categories: [{ id: "cat_internal" }] }), variant(), context())
+        ?.product_type
+    ).toBeUndefined()
   })
 
   it("MF-WEIGHT: a weight in grams is the shipping weight", () => {
@@ -213,10 +232,10 @@ describe("merchantFeedXml", () => {
 
 describe("loadMerchantItems", () => {
   const fakeQuery = (products: unknown[]) => {
-    const calls: { entity: string; filters?: unknown }[] = []
+    const calls: { entity: string; filters?: unknown; pagination?: unknown }[] = []
     const query = {
       graph: async (args: { entity: string; filters?: unknown; pagination?: { skip: number } }) => {
-        calls.push({ entity: args.entity, filters: args.filters })
+        calls.push({ entity: args.entity, filters: args.filters, pagination: args.pagination })
         if (args.entity === "store")
           return { data: [{ default_region_id: "reg_hu", default_sales_channel_id: "sc_shop" }] }
         if (args.entity === "region") return { data: [{ id: "reg_hu", currency_code: "huf" }] }
@@ -250,10 +269,52 @@ describe("loadMerchantItems", () => {
     expect(calls.find((c) => c.entity === "product")?.filters).toEqual({ status: "published" })
   })
 
+  it("MF-ORDER: paging has a total order, the id breaking created_at ties", async () => {
+    const { query, calls } = fakeQuery([])
+    await loadMerchantItems(
+      { query: query as never, brands },
+      { storefrontUrl: "https://teszt.acropora.example" }
+    )
+    expect(calls.find((c) => c.entity === "product")?.pagination).toEqual({
+      skip: 0,
+      take: 200,
+      order: { created_at: "ASC", id: "ASC" },
+    })
+  })
+
+  it("MF-CATEGORIES: only active, public categories, as the Store API gives them", async () => {
+    const { query, calls } = fakeQuery([])
+    await loadMerchantItems(
+      { query: query as never, brands },
+      { storefrontUrl: "https://teszt.acropora.example" }
+    )
+    expect(calls.find((c) => c.entity === "product_category")?.filters).toEqual({
+      is_active: true,
+      is_internal: false,
+    })
+  })
+
   it("MF-NOURL: without a storefront URL the feed refuses instead of relative links", async () => {
     const { query } = fakeQuery([])
     await expect(
       loadMerchantItems({ query: query as never, brands }, { storefrontUrl: "" })
     ).rejects.toBeInstanceOf(MerchantFeedConfigError)
+  })
+})
+
+describe("feedCache", () => {
+  it("MF-CACHE: one build per window, shared while running, a failure not kept", async () => {
+    let clock = 0
+    let builds = 0
+    const cached = feedCache(1000, () => clock)
+    const build = async () => `feed-${++builds}`
+    expect(await Promise.all([cached(build), cached(build)])).toEqual(["feed-1", "feed-1"])
+    clock = 999
+    expect(await cached(build)).toBe("feed-1")
+    clock = 1000
+    expect(await cached(build)).toBe("feed-2")
+    clock = 5000
+    await expect(cached(async () => Promise.reject(new Error("db down")))).rejects.toThrow("db down")
+    expect(await cached(build)).toBe("feed-3")
   })
 })

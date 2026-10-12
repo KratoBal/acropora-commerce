@@ -94,7 +94,10 @@ export async function loadMerchantItems(
       entity: "product",
       fields: PRODUCT_FIELDS,
       filters: { status: "published" },
-      pagination: { skip, take: PAGE, order: { created_at: "ASC" } },
+      // the id breaks created_at ties: a batch import writes one created_at
+      // for a whole batch, and offset paging on equal keys can repeat or
+      // skip a product between pages (barracuda, #539)
+      pagination: { skip, take: PAGE, order: { created_at: "ASC", id: "ASC" } },
       context: {
         variants: {
           calculated_price: QueryContext({
@@ -176,6 +179,9 @@ async function categoryTree(
   const { data } = await query.graph({
     entity: "product_category",
     fields: ["id", "name", "parent_category_id"],
+    // what the Store API hands the storefront: an internal or inactive
+    // category's name is not for buyers (barracuda, #539)
+    filters: { is_active: true, is_internal: false },
   })
   const tree: MerchantFeedContext["categories"] = {}
   for (const row of data as {

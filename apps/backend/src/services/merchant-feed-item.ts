@@ -184,29 +184,33 @@ function imagesOf(product: MerchantFeedProduct): string[] {
 }
 
 /**
- * The primary category's path from the root (`metadata.primary_category_id`
- * when the product is in that category, else its first category).
+ * The storefront's classification path (`besorolasUt`): of the product's
+ * categories, the longest chain up to the root, the first one on a tie. The
+ * breadcrumb and the page's used/new come from this same path, so the feed's
+ * `product_type` and `condition` say what the page says. Only categories in
+ * the context count: the loader gives only active, public ones, as the Store
+ * API does.
  */
 function categoryPath(
   product: MerchantFeedProduct,
   context: MerchantFeedContext
 ): string[] {
-  const ids = (product.categories ?? []).map((c) => c.id)
-  const primary = product.metadata?.primary_category_id
-  const start =
-    typeof primary === "string" && ids.includes(primary) ? primary : ids[0]
-  const path: string[] = []
-  const seen = new Set<string>()
-  let currentId: string | null = start ?? null
-  while (currentId && !seen.has(currentId)) {
-    const current: MerchantFeedContext["categories"][string] | undefined =
-      context.categories[currentId]
-    if (!current) break
-    seen.add(currentId)
-    path.unshift(current.name)
-    currentId = current.parentId
+  let longest: string[] = []
+  for (const { id } of product.categories ?? []) {
+    const path: string[] = []
+    const seen = new Set<string>()
+    let currentId: string | null = id
+    while (currentId && !seen.has(currentId)) {
+      const current: MerchantFeedContext["categories"][string] | undefined =
+        context.categories[currentId]
+      if (!current) break
+      seen.add(currentId)
+      path.unshift(current.name)
+      currentId = current.parentId
+    }
+    if (path.length > longest.length) longest = path
   }
-  return path
+  return longest
 }
 
 function plainText(html: string): string {
