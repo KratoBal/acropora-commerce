@@ -56,6 +56,49 @@ export function altHiba(kep: KepAdat): string | null {
   return null
 }
 
+/**
+ * Amit egy kaphato lap allithat: keszleten, utanrendelesre, vagy (elo allat,
+ * t12) csak az uzletben.
+ */
+const KAPHATO_ALLITASOK = [
+  "https://schema.org/InStock",
+  "https://schema.org/BackOrder",
+  "https://schema.org/InStoreOnly",
+]
+
+/** A lap Product/ProductGroup ajanlatainak elerhetosegei (egy vagy tobb). */
+function ajanlatElerhetosegek(k: OldalKivonat): string[] {
+  const termek = k.jsonLd
+    .flatMap((x) => (Array.isArray(x) ? x : [x]))
+    .find(
+      (x): x is Record<string, unknown> =>
+        !!x &&
+        typeof x === "object" &&
+        ["Product", "ProductGroup"].includes(
+          String((x as Record<string, unknown>)["@type"]),
+        ),
+    )
+  if (!termek) return []
+  const ajanlatok = Array.isArray(termek.hasVariant)
+    ? (termek.hasVariant as Record<string, unknown>[]).map((v) => v.offers)
+    : [termek.offers]
+  return ajanlatok.flatMap((o) =>
+    o && typeof o === "object" && !Array.isArray(o)
+      ? [String((o as Record<string, unknown>).availability)]
+      : [],
+  )
+}
+
+/** Minden ajanlat ugyanazt az elerhetoseget allitja-e. */
+function mindenAjanlat(k: OldalKivonat, vart: string, mi: string): string[] {
+  const allitasok = ajanlatElerhetosegek(k)
+  if (!allitasok.length) return ["nincs ajánlat a JSON-LD-ben"]
+  const mas = allitasok.filter((a) => a !== vart)
+  return mas.length
+    ? [`${mi}: a JSON-LD elérhetősége ${mas.join(", ")}, nem ${vart}`]
+    : []
+}
+
 export const SZABALYOK = {
   "statusz-200": (_k, v) =>
     v.statusz === 200 ? [] : [`a státusz ${v.statusz}, nem 200`],
@@ -159,7 +202,7 @@ export const SZABALYOK = {
       const latott = k.latottElerhetosegek[0]
       const vart =
         latott === "KAPHATO"
-          ? ["https://schema.org/InStock", "https://schema.org/BackOrder"]
+          ? KAPHATO_ALLITASOK
           : ["https://schema.org/OutOfStock"]
       if (!latott) hibak.push("nincs látható elérhetőség (data-elerhetoseg)")
       else if (!vart.includes(String(ajanlat.availability)))
@@ -208,7 +251,7 @@ export const SZABALYOK = {
         const latott = k.latottElerhetosegek[0]
         const vart =
           latott === "KAPHATO"
-            ? ["https://schema.org/InStock", "https://schema.org/BackOrder"]
+            ? KAPHATO_ALLITASOK
             : ["https://schema.org/OutOfStock"]
         const azAron = ajanlatok.filter((a) => k.latottArak.includes(a.ar))
         if (!latott) hibak.push("nincs látható elérhetőség (data-elerhetoseg)")
@@ -279,6 +322,18 @@ export const SZABALYOK = {
       hibak.push(`az utolsó elem "${utolso}" se a morzsamenü vége, se a H1`)
     return hibak
   },
+
+  /**
+   * ELO ALLAT (t12, FE-2): a bolt csak az uzletben adja at, es a lap ki is
+   * irja; a JSON-LD ezt `InStoreOnly`-val mondja. A minta keszleten levo elo
+   * allat, tehat minden ajanlata ilyen.
+   */
+  "json-ld-bolti-atvetel": (k) =>
+    mindenAjanlat(k, "https://schema.org/InStoreOnly", "élő állat"),
+
+  /** ELFOGYOTT TERMEK (FE-2): minden ajanlata `OutOfStock`. */
+  "json-ld-elfogyott": (k) =>
+    mindenAjanlat(k, "https://schema.org/OutOfStock", "elfogyott termék"),
 
   "json-ld-breadcrumb": (k) =>
     k.jsonLd.some(

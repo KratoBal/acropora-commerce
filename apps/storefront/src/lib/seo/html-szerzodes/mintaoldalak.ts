@@ -1,4 +1,6 @@
 import { valtozatGtin } from "@lib/seo/strukturalt-adat"
+import { REEF_GYOKEREK } from "@lib/util/acropora-mod"
+import { valtozatKaphato } from "@modules/products/components/stock-state/availability"
 
 /**
  * A SZERZODES-TESZT MINTAOLDALAI, A BOLT ADATABOL KIVALASZTVA (SEO frontend FE-8,
@@ -19,6 +21,7 @@ export type MintaTipus =
   | "termek-gtin"
   | "termek-gtin-nelkul"
   | "termek-elfogyott"
+  | "termek-elo-allat"
   | "termek-valtozatos"
   | "kategoria-felso"
   | "kategoria-level"
@@ -51,6 +54,7 @@ type Valtozat = {
   ean?: string | null
   upc?: string | null
   manage_inventory?: boolean | null
+  allow_backorder?: boolean | null
   inventory_quantity?: number | null
   calculated_price?: { calculated_amount?: number | null } | null
   options?: { value?: string | null }[] | null
@@ -66,6 +70,8 @@ type Termek = {
 type Kategoria = {
   id: string
   handle: string
+  /** a nev a gyoker felismeresehez (elo allat, t12) */
+  name?: string | null
   parent_category_id: string | null
 }
 type Gyujtemeny = { id: string; handle: string }
@@ -83,11 +89,16 @@ const LAPMERET = 12
 
 // ugyanaz a dontes, mint a lapon: csak az ervenyes kod szamit (FE-2b)
 const gtin = (v: Valtozat) => valtozatGtin(v) !== null
+/*
+  A LAP SAJAT SZABALYA DONTI EL, MI KAPHATO (`valtozatKaphato`): nem kezelt
+  keszlet, utanrendelheto, vagy van keszlet. Itt korabban csak a darabszam allt,
+  es egy nulla keszletu, de utanrendelheto termek (a lapon KAPHATO, a JSON-LD-ben
+  BackOrder) lett az "elfogyott" minta (#546 CI, 2026-10-12).
+*/
 const elfogyott = (t: Termek) =>
-  !!t.variants?.length &&
-  t.variants.every(
-    (v) => v.manage_inventory && (v.inventory_quantity ?? 0) <= 0,
-  )
+  !!t.variants?.length && t.variants.every((v) => !valtozatKaphato(v))
+const mindKaphato = (t: Termek) =>
+  !!t.variants?.length && t.variants.every((v) => valtozatKaphato(v))
 const handleSzerint = <T extends { handle: string }>(a: T, b: T) =>
   a.handle.localeCompare(b.handle)
 
@@ -157,6 +168,29 @@ export function mintakAdatbol(
     (t) => elfogyott(t) && t !== gtinos && t !== gtinNelkul,
   )
   /*
+    ELO ALLAT (t12): a kirakat a termek GYOKER-kategoriajanak nevebol dont
+    (`ELO_ALLAT_GYOKEREK`, itt a vele egyezo `REEF_GYOKEREK`), es keszleten levo
+    kell, hogy a lap kaphatonak mutassa: akkor `InStoreOnly` a JSON-LD-ben.
+  */
+  const katAzonositora = new Map(kategoriak.map((k) => [k.id, k]))
+  const gyokerNev = (id: string) => {
+    let k = katAzonositora.get(id)
+    const latott = new Set<string>()
+    while (k?.parent_category_id && !latott.has(k.id)) {
+      latott.add(k.id)
+      k = katAzonositora.get(k.parent_category_id)
+    }
+    return k?.name ?? null
+  }
+  const eloAllat = rendezett.find(
+    (t) =>
+      // minden valtozata kaphato: a szabaly minden ajanlatra InStoreOnly-t var
+      mindKaphato(t) &&
+      (t.categories ?? []).some((c) =>
+        (REEF_GYOKEREK as readonly string[]).includes(gyokerNev(c.id) ?? ""),
+      ),
+  )
+  /*
     A VALTOZATOT AZ OPCIOI KULONBOZTETIK MEG, NEM AZ ARA: a meres a kijelolt
     opcio-gombot nezi (`valtozatHibak`), tehat olyan valtozat kell, aminek az
     opcio-ertekei masok, mint az elso valtozate.
@@ -210,6 +244,11 @@ export function mintakAdatbol(
     termekUt(gtinos, "termek-gtin", "nincs GTIN-es termék a boltban"),
     termekUt(gtinNelkul, "termek-gtin-nelkul", "minden terméknek van GTIN-je"),
     termekUt(elfogy, "termek-elfogyott", "nincs elfogyott termék"),
+    termekUt(
+      eloAllat,
+      "termek-elo-allat",
+      "nincs készleten lévő élő állat (korall, hal, gerinctelen) a boltban",
+    ),
     valtozatos && valtozat
       ? {
           tipus: "termek-valtozatos",
@@ -290,7 +329,7 @@ export async function mintak(b: BoltKapcsolat): Promise<Minta[]> {
     lekeres<{ product_categories: Kategoria[] }>(
       b,
       "/store/product-categories",
-      { limit: "1000", fields: "id,handle,parent_category_id" },
+      { limit: "1000", fields: "id,handle,name,parent_category_id" },
     ),
     lekeres<{ collections: Gyujtemeny[] }>(b, "/store/collections", {
       limit: "1000",

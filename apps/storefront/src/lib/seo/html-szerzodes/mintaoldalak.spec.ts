@@ -47,8 +47,30 @@ const TERMEKEK = [
     ],
     categories: [{ id: "k-level" }],
   },
+  {
+    id: "p5",
+    handle: "e-korall-elfogyott",
+    title: "Acropora elfogyott",
+    variants: [v("v5", { inventory_quantity: 0 })],
+    categories: [{ id: "k-sps" }],
+  },
+  {
+    id: "p4",
+    handle: "d-korall",
+    title: "Acropora millepora",
+    variants: [v("v4")],
+    // az elo allat a gyoker NEVEROL ismerszik meg (Korallok), a level alatt
+    categories: [{ id: "k-sps" }],
+  },
 ]
 const KATEGORIAK = [
+  {
+    id: "k-korallok",
+    handle: "z-korallok", // a "termekek" utan rendezodik: a felso kategoria mintaja nem valtozik
+    name: "Korallok",
+    parent_category_id: null,
+  },
+  { id: "k-sps", handle: "sps", name: "SPS", parent_category_id: "k-korallok" },
   { id: "k-felso", handle: "termekek", parent_category_id: null },
   { id: "k-level", handle: "amino", parent_category_id: "k-felso" },
   { id: "k-ures", handle: "ures", parent_category_id: "k-felso" },
@@ -75,6 +97,7 @@ describe("a mintaoldalak választása", () => {
         "nem-letezo",
         "rendezes",
         "termek-elfogyott",
+        "termek-elo-allat",
         "termek-gtin",
         "termek-gtin-nelkul",
         "termek-valtozatos",
@@ -135,5 +158,53 @@ describe("a várható-piros lista", () => {
     expect(varhato("noindex", "kereses")).toBeNull()
     expect(varhato("noindex", "nem-letezo")).toBeNull()
     expect(varhato("alt", "termek-gtin")).toBeNull()
+  })
+})
+
+describe("élő állat minta (t12)", () => {
+  it("T12-MINTA: a készleten lévő élő állat, a gyökér neve alapján, az elfogyott nem", () => {
+    const m = mintakAdatbol("hu", TERMEKEK, KATEGORIAK, GYUJTEMENYEK)
+    expect(m.find((x) => x.tipus === "termek-elo-allat")?.ut).toBe(
+      "/hu/termek/d-korall",
+    )
+    const nelkule = mintakAdatbol(
+      "hu",
+      TERMEKEK.filter((t) => t.id !== "p4"),
+      KATEGORIAK,
+      GYUJTEMENYEK,
+    ).find((x) => x.tipus === "termek-elo-allat")
+    expect(nelkule?.ut).toBeNull()
+    expect(nelkule?.hianyzik).toMatch(/élő állat/)
+  })
+})
+
+describe("az elfogyott minta a lap szabályával (#546 CI)", () => {
+  it("T12-ELFOGYOTT-MINTA: a nulla készletű, de utánrendelhető termék nem elfogyott minta", () => {
+    const m = mintakAdatbol(
+      "hu",
+      [
+        {
+          id: "p-bo",
+          handle: "a-utanrendelheto",
+          title: "Szűrőzsák",
+          variants: [
+            v("v-bo", {
+              inventory_quantity: 0,
+              allow_backorder: true,
+              // GTIN-nel, hogy ne a GTIN nelkuli minta legyen, hanem az
+              // elfogyott-valasztas jeloltje (kalibralas nelkul ez zold maradt)
+              ean: "5902026731010",
+            }),
+          ],
+          categories: [{ id: "k-level" }],
+        },
+        ...TERMEKEK,
+      ],
+      KATEGORIAK,
+      GYUJTEMENYEK,
+    )
+    expect(m.find((x) => x.tipus === "termek-elfogyott")?.ut).not.toBe(
+      "/hu/termek/a-utanrendelheto",
+    )
   })
 })

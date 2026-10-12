@@ -15,9 +15,20 @@ import { STORE_NAME } from "@lib/store"
  * (FE-2b); gtin8/12/13/14 a valtozat `ean` vagy `upc` mezojebol, ha
  * ervenyes GTIN all benne (FE-2b, a P0 PR 4 tolti; a `barcode` nem forras).
  *
- * NEM MOST, es ezert nem talalunk ki erteket ra: mpn (a Medusa valtozaton
- * nincs gyartoi cikkszam mezo, es a P0 PR 4 sem hoz ilyet), shippingDetails es
- * hasMerchantReturnPolicy (kesobbi kor).
+ * ELO ALLAT (SEO P1-12, t12): a keszleten levo elo allat `InStoreOnly`, mert a
+ * bolt csak szemelyesen, az uzletben adja at (a lap ugyanezt irja ki); a gyoker
+ * a lap vilaganak szabalya (`ELO_ALLAT_GYOKEREK`).
+ *
+ * NEM MOST, es ezert nem talalunk ki erteket ra:
+ * - mpn: a Medusa valtozaton nincs gyartoi cikkszam mezo, es a P0 PR 4 sem hoz
+ *   ilyet;
+ * - shippingDetails: a szallitasi dijat a bolt CSAK kosarhoz koti (a Store API
+ *   `shipping-options` kosarat ker), es termekenkent mas (sulyosztaly, csak
+ *   bolti atvetel, ingyenes kuszob); a termeklapnak nincs sajat, valodi dija,
+ *   egy "jellemzo" dij kitalalt lenne. Szallitasi idonek sincs forrasa;
+ * - hasMerchantReturnPolicy: az elallasi szoveget a Fogyasztobarat adja kivulrol
+ *   (`fogyasztobarat.ts`), a repoban nincs napszam es elo allat kivetel; Balazs
+ *   donteset varja (hany nap, az elo allat kivetel-e).
  */
 
 export type JsonLd = Record<string, unknown>
@@ -81,8 +92,11 @@ export type LatottElerhetoseg = "KAPHATO" | "ELFOGYOTT" | "ELADVA"
 export function elerhetosegSchema(
   elerhetoseg: LatottElerhetoseg,
   utanrendeles: boolean,
+  /** elo allat: csak az uzletben adjuk at (t12) */
+  csakBoltban = false,
 ): string {
   if (elerhetoseg !== "KAPHATO") return "https://schema.org/OutOfStock"
+  if (csakBoltban) return "https://schema.org/InStoreOnly"
   return utanrendeles
     ? "https://schema.org/BackOrder"
     : "https://schema.org/InStock"
@@ -116,6 +130,8 @@ export type TermekLdBemenet = {
   kategoriaNevek: string[]
   /** a valtozat ervenyes GTIN-je (`valtozatGtin`), ha van */
   gtin?: string | null
+  /** elo allat: csak az uzletben adjuk at (`InStoreOnly`) */
+  csakBoltban?: boolean
 }
 
 /** Egy ajanlat: a lapon latszo ar es elerhetoseg. */
@@ -126,13 +142,18 @@ function ajanlatLd(b: {
   elerhetoseg: LatottElerhetoseg
   utanrendeles: boolean
   kategoriaNevek: string[]
+  csakBoltban?: boolean
 }): JsonLd {
   return {
     "@type": "Offer",
     url: b.url,
     price: b.ar,
     priceCurrency: b.penznem,
-    availability: elerhetosegSchema(b.elerhetoseg, b.utanrendeles),
+    availability: elerhetosegSchema(
+      b.elerhetoseg,
+      b.utanrendeles,
+      b.csakBoltban,
+    ),
     itemCondition: hasznaltE(b.kategoriaNevek)
       ? "https://schema.org/UsedCondition"
       : "https://schema.org/NewCondition",
@@ -208,6 +229,8 @@ export type TermekCsoportLdBemenet = {
   penznem: string
   kategoriaNevek: string[]
   valtozatok: ValtozatLdBemenet[]
+  /** elo allat: csak az uzletben adjuk at (`InStoreOnly`) */
+  csakBoltban?: boolean
 }
 
 /**
@@ -265,6 +288,7 @@ export function termekCsoportLd(b: TermekCsoportLdBemenet): JsonLd {
           elerhetoseg: v.elerhetoseg,
           utanrendeles: v.utanrendeles,
           kategoriaNevek: b.kategoriaNevek,
+          csakBoltban: b.csakBoltban,
         }),
       }
     }),

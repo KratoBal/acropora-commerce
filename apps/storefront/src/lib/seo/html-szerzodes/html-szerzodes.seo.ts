@@ -85,7 +85,10 @@ const TERV: Record<MintaTipus, readonly SzabalyKulcs[]> = (() => {
     kezdolap: ["statusz-200", "egy-main", "cim", "leiras", "indexelheto"],
     "termek-gtin": termek,
     "termek-gtin-nelkul": termek,
-    "termek-elfogyott": termek,
+    // FE-2: az elfogyott lapon minden ajanlat OutOfStock
+    "termek-elfogyott": [...termek, "json-ld-elfogyott"],
+    // t12: a keszleten levo elo allat csak az uzletben: InStoreOnly
+    "termek-elo-allat": [...termek, "json-ld-bolti-atvetel"],
     // FE-2b: a valtozatos lapon ProductGroup all
     "termek-valtozatos": [
       "statusz-200",
@@ -355,8 +358,6 @@ describe("még nincs mit mérni (a gazda PR-rel)", () => {
   it.todo(
     "üres kategória: a döntése (noindex vagy kimarad) a sitemap-típusokkal (FE-5)",
   )
-  it.todo("élő állat: a bolti átvétel a JSON-LD availability-ben (FE-2)")
-  it.todo("elfogyott termék: availability = OutOfStock a JSON-LD-ben (FE-2)")
 })
 
 describe("összegzés", () => {
