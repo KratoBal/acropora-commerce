@@ -22,19 +22,34 @@ const record = (over: Record<string, unknown> = {}) => ({
 describe("AdminPutLandingPage", () => {
   const ok = (body: unknown) => AdminPutLandingPage.safeParse(body).success
 
-  it("LP-PUT: takes the OS projection's record", () => {
+  it("LP-PUT: takes the OS projection's record, a category or a brand alone too", () => {
     expect(ok(record())).toBe(true)
+    expect(
+      ok(record({ filter: { category_ids: ["pcat_led"], os_brand_ids: [], attribute_filters: [] } }))
+    ).toBe(true)
+    expect(
+      ok(record({ filter: { category_ids: [], os_brand_ids: ["brand-1"], attribute_filters: [] } }))
+    ).toBe(true)
+  })
+
+  it("LP-PUT-NOT-YET: an attribute filter is refused until the storefront can apply it", () => {
     expect(
       ok(
         record({
           filter: {
-            category_ids: [],
+            category_ids: ["pcat_led"],
             os_brand_ids: [],
             attribute_filters: [{ key: "flowRate", op: "gte", value: 3000 }],
           },
         })
       )
-    ).toBe(true)
+    ).toBe(false)
+  })
+
+  it("LP-PUT-EMPTY: an empty filter (the whole catalogue) is refused", () => {
+    expect(
+      ok(record({ filter: { category_ids: [], os_brand_ids: [], attribute_filters: [] } }))
+    ).toBe(false)
   })
 
   it("LP-PUT-REFUSE: a missing key, an unknown key, a bad handle, a bad filter", () => {
