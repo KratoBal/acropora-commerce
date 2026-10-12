@@ -96,6 +96,26 @@ describe("a sitemap részei típusonként", () => {
     ])
   })
 
+  it("a commerce noindex-listáján álló termék is kimarad, metadata nélkül is (t13)", () => {
+    const r = sitemapReszek({
+      origin: ORIGIN,
+      kategoriak: [],
+      noindexTermekek: new Set(["blue-life-nitrate-fx"]),
+      orszagok: [
+        {
+          countryCode: "hu",
+          termekek: [
+            { handle: "blue-life-nitrate-fx" },
+            { handle: "acropora-tenuis" },
+          ],
+        },
+      ],
+    })
+    expect(r.termekek.map((b) => b.url)).toEqual([
+      `${ORIGIN}/hu/termek/acropora-tenuis`,
+    ])
+  })
+
   it("a válogatás kanonikus címe /hu/valogatas/{slug}", () => {
     expect(valogatasCanonical("hu", "kh-potlas")).toBe(
       "/hu/valogatas/kh-potlas",
