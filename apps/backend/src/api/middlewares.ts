@@ -25,6 +25,7 @@ import {
   AdminPutProductBrand,
 } from "./admin/brands/validators";
 import { AdminPutUrlRedirects } from "./admin/url-redirects/validators";
+import { AdminPutLandingPage } from "./admin/landing-pages/validators";
 import {
   AdminResendOrderStatusNotification,
   AdminTransitionOrderBusinessStatus,
@@ -87,6 +88,11 @@ export default defineMiddlewares({
       matcher: "/admin/product-brands/:product_id",
       method: "PUT",
       middlewares: [validateAndTransformBody(AdminPutProductBrand)],
+    },
+    {
+      matcher: "/admin/landing-pages/:os_landing_id",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutLandingPage)],
     },
     {
       matcher: "/admin/product-knowledge/:product_id",
