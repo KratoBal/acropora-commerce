@@ -74,6 +74,28 @@ describe("a sitemap részei típusonként", () => {
     ).toEqual(new Set(["c_sps"]))
   })
 
+  it("a saját robots-tiltású termék kimarad a termék-sitemapből (t13)", () => {
+    const r = sitemapReszek({
+      origin: ORIGIN,
+      kategoriak: [],
+      orszagok: [
+        {
+          countryCode: "hu",
+          termekek: [
+            {
+              handle: "blue-life-nitrate-fx",
+              metadata: { seo_robots: "noindex, nofollow" },
+            },
+            { handle: "acropora-tenuis", metadata: null },
+          ],
+        },
+      ],
+    })
+    expect(r.termekek.map((b) => b.url)).toEqual([
+      `${ORIGIN}/hu/termek/acropora-tenuis`,
+    ])
+  })
+
   it("a válogatás kanonikus címe /hu/valogatas/{slug}", () => {
     expect(valogatasCanonical("hu", "kh-potlas")).toBe(
       "/hu/valogatas/kh-potlas",

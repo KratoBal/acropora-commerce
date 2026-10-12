@@ -50,6 +50,19 @@ describe("a terméklap metaadata", () => {
     expect(m.alternates?.canonical).toMatch(/\/hu\/termek\/vitalis-lps$/)
   })
 
+  it("a saját robots-tiltású termék noindex (t13)", async () => {
+    adat.termek = {
+      title: "Blue Life Nitrate FX 500ml",
+      metadata: { seo_robots: "noindex, nofollow" },
+    }
+    const m = await generateMetadata(props)
+    expect(m.robots).toEqual({ index: false, follow: false })
+    adat.termek = { title: "Vitalis LPS Coral Pellets", metadata: null }
+    expect((await generateMetadata(props)).robots).toMatchObject({
+      index: true,
+    })
+  })
+
   it("leírás nélkül sem a cím másolata", async () => {
     adat.termek = { title: "Vitalis LPS Coral Pellets", metadata: null }
     const m = await generateMetadata(props)

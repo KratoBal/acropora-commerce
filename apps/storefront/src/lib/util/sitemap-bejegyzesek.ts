@@ -6,6 +6,7 @@ import {
   valogatasCanonical,
 } from "./lap-canonical"
 import { leszarmazottAzonositok } from "./kategoria-leszarmazottak"
+import { termekRobotsJel } from "@lib/seo/oldal-metaadat"
 import { kategoriaCanonical } from "./kategoria-canonical"
 
 /**
@@ -32,7 +33,11 @@ import { kategoriaCanonical } from "./kategoria-canonical"
  * ugyanaz a hiba kisebben, mint amibol ez a fajl szuletett.
  */
 
-type Sor = { handle?: string | null; updated_at?: unknown }
+type Sor = {
+  handle?: string | null
+  updated_at?: unknown
+  metadata?: Record<string, unknown> | null
+}
 type KategoriaSor = Sor & { id?: string; parent_category_id?: string | null }
 export type TermekSor = Sor & { categories?: { id?: string }[] | null }
 
@@ -157,7 +162,8 @@ export function sitemapReszek({
     }
 
     for (const termek of termekek) {
-      if (!termek.handle) continue
+      // a noindex-es termek (sajat robots-dontes, t13) nem kerul a sitemapbe
+      if (!termek.handle || termekRobotsJel(termek.metadata).noindex) continue
       reszek.termekek.push({
         url: cim(termeklapCanonical(countryCode, termek.handle)),
         lastModified: utolsoModositas(termek.updated_at),

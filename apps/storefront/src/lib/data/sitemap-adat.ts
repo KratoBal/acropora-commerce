@@ -54,7 +54,7 @@ async function termekek(countryCode: string): Promise<TermekSor[]> {
       countryCode,
       queryParams: {
         limit: LAP_MERET,
-        fields: "handle,updated_at,categories.id",
+        fields: "handle,updated_at,categories.id,metadata",
       },
     })
     mind.push(...(response.products as TermekSor[]))
