@@ -134,6 +134,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/brand",
     },
+    // SEO P1-14: the landing page read model, written by the Acropora OS
+    {
+      resolve: "./src/modules/landing-page",
+    },
     {
       resolve: "./src/modules/commerce-settings",
     },
