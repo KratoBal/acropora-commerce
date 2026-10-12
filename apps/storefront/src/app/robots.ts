@@ -1,7 +1,8 @@
 import { headers } from "next/headers"
 import type { MetadataRoute } from "next"
 
-import { ELES_TILTOTT_UTAK, robotsHazirend } from "@lib/util/robots-hazirend"
+import { listRegions } from "@lib/data/regions"
+import { elesTiltottUtak, robotsHazirend } from "@lib/util/robots-hazirend"
 
 /**
  * A `/robots.txt` KISZOLGALASA -- ES AMIERT NEM A STARTER KONFIGJAT KOTOTTUK BE.
@@ -42,8 +43,33 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 
   return {
     rules: engedett
-      ? { userAgent: "*", allow: "/", disallow: [...ELES_TILTOTT_UTAK] }
+      ? {
+          userAgent: "*",
+          allow: "/",
+          disallow: elesTiltottUtak(await elesOrszagKodok()),
+        }
       : { userAgent: "*", disallow: "/" },
     ...(engedett && hoszt ? { sitemap: `https://${hoszt}/sitemap.xml` } : {}),
   }
+}
+
+/**
+ * A tiltott utak orszagkodjai a regiokbol. Ha a lekeres elhasal, az
+ * alapertelmezett regio marad: egy tiltas nelkuli eles robots rosszabb, mint
+ * egy, ami csak a fo piac utjait tiltja.
+ */
+async function elesOrszagKodok(): Promise<string[]> {
+  try {
+    const regiok = await listRegions()
+    const kodok = regiok.flatMap(
+      (r) =>
+        r.countries
+          ?.map((c) => c.iso_2)
+          .filter((k): k is string => Boolean(k)) ?? [],
+    )
+    if (kodok.length) return Array.from(new Set(kodok))
+  } catch (hiba) {
+    console.warn("[robots] a regiok nem jottek meg:", hiba)
+  }
+  return [process.env.NEXT_PUBLIC_DEFAULT_REGION || "hu"]
 }

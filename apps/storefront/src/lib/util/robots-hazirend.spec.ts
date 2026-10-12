@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   ELES_HOSZTOK,
-  ELES_TILTOTT_UTAK,
+  elesTiltottUtak,
   robotsHazirend,
 } from "./robots-hazirend"
 
@@ -61,36 +61,57 @@ describe("robots hazirend hosztnev szerint", () => {
 })
 
 /**
- * AZ ELES TILTOTT UTAK (FE-4). MI PIROSÍTJA: ha a kosár, a pénztár, a fiók vagy
- * az API kimarad; vagy ha a keresés (vagy a teljes lista) tiltott lenne, mert
- * akkor a kereső a noindexét nem látná (Balázs döntése, 4. pont).
+ * AZ ELES TILTOTT UTAK (FE-4). AZ ILLESZTO A GOOGLE SZABALYAT KOVETI (barracuda
+ * #540 review): a `*` barmilyen karaktersor, a `/`-t is beleertve, a `$` a vege,
+ * es a szabaly prefix. Egy szegmensre forditott `*` a sajat ertelmezesunket
+ * igazolna, nem a keresoet.
+ *
+ * MI PIROSITJA: ha a kosar, a penztar, a fiok, a rendeles vagy az API kimarad;
+ * ha a kereses tiltott lenne (akkor a noindexet a kereso nem latna); vagy ha egy
+ * "cart" kezdetu termek (cartridge) is tiltott lenne -- ezt a regi,
+ * csillagos-szegmenses cart-minta tette.
  */
 describe("az éles hoszt tiltott útjai", () => {
-  const illeszt = (minta: string, ut: string) =>
+  const googleIlleszt = (minta: string, ut: string) =>
     new RegExp(
-      `^${minta.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*")}`,
+      "^" +
+        minta
+          .replace(/[.+?^{}()|[\]\\]/g, "\\$&")
+          .replace(/\*/g, ".*")
+          .replace(/\$$/, "$"),
     ).test(ut)
-  const tiltott = (ut: string) => ELES_TILTOTT_UTAK.some((m) => illeszt(m, ut))
+  const utak = elesTiltottUtak(["hu"])
+  const tiltott = (ut: string) => utak.some((m) => googleIlleszt(m, ut))
 
-  it("a privát utak tiltottak, országkóddal is", () => {
+  it("a privát utak tiltottak, a régió országkódjával", () => {
     for (const ut of [
       "/hu/cart",
       "/hu/checkout?step=address",
       "/hu/account/orders",
+      "/hu/order/order_01/confirmed",
+      "/hu/rendeles-fizetese/token123",
       "/api/rum",
     ])
       expect(tiltott(ut), ut).toBe(true)
   })
 
-  it("a keresés, a szűrő és a nyilvános lapok nem tiltottak", () => {
+  it("a keresés, a szűrő, a nyilvános lapok és a cart-kezdetű termék nem tiltott", () => {
     for (const ut of [
       "/hu/store?q=hanna",
       "/hu/store?marka=boyu",
       "/hu/termek/hanna-hi780",
+      "/hu/termek/cartridge-szurobetet",
+      "/hu/termek/accountable-pumpa",
       "/hu/categories/korallok",
       "/hu/marka/aquaforest",
       "/hu",
     ])
       expect(tiltott(ut), ut).toBe(false)
+  })
+
+  it("két régió két sort ad, csillag nélkül", () => {
+    const ket = elesTiltottUtak(["hu", "at"])
+    expect(ket).toContain("/at/cart")
+    expect(ket.some((m) => m.includes("*"))).toBe(false)
   })
 })
