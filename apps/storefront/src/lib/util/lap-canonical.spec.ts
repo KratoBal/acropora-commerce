@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   fooldalCanonical,
+  markaCanonical,
   storeCanonical,
   termeklapCanonical,
 } from "./lap-canonical"
@@ -110,5 +111,16 @@ describe("fooldal kanonikus cime", () => {
    */
   it("soha nem visz query-parametert", () => {
     expect(fooldalCanonical("hu")).not.toContain("?")
+  })
+})
+
+/**
+ * A MARKAOLDAL KANONIKUS CIME (SEO P0 PR 11, G2). MI PIROSITJA: ha a cim a
+ * regi `/collections/` utra mutatna, vagy dekodolna a handle-t.
+ */
+describe("markaoldal kanonikus cime", () => {
+  it("a /marka/ alatt all, orszagkoddal, a kodolt handle valtozatlan", () => {
+    expect(markaCanonical("hu", "aquaforest")).toBe("/hu/marka/aquaforest")
+    expect(markaCanonical("hu", "r%C3%B6vid")).toBe("/hu/marka/r%C3%B6vid")
   })
 })

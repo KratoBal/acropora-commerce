@@ -1,5 +1,6 @@
 import {
   fooldalCanonical,
+  markaCanonical,
   storeCanonical,
   termeklapCanonical,
 } from "./lap-canonical"
@@ -54,6 +55,11 @@ export type SitemapBemenet = {
    * regionkent mas.
    */
   kategoriak: readonly Sor[]
+  /**
+   * A MARKAOLDALAK (SEO P0 PR 11): a marka-modul termekkel rendelkezo markai.
+   * Ugyanugy kozosek, mint a kategoriak; hianyuk ures listat jelent.
+   */
+  markak?: readonly Sor[]
 }
 
 export type SitemapBejegyzes = {
@@ -75,6 +81,7 @@ export function sitemapBejegyzesek({
   origin,
   orszagok,
   kategoriak,
+  markak = [],
 }: SitemapBemenet): SitemapBejegyzes[] {
   const bejegyzesek: SitemapBejegyzes[] = []
   const cim = (ut: string) => `${origin}${ut}`
@@ -88,6 +95,14 @@ export function sitemapBejegyzesek({
       bejegyzesek.push({
         url: cim(kategoriaCanonical(countryCode, kategoria.handle.split("/"))),
         lastModified: utolsoModositas(kategoria.updated_at),
+      })
+    }
+
+    for (const marka of markak) {
+      if (!marka.handle) continue
+      bejegyzesek.push({
+        url: cim(markaCanonical(countryCode, marka.handle)),
+        lastModified: utolsoModositas(marka.updated_at),
       })
     }
 

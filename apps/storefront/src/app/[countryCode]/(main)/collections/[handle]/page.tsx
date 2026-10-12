@@ -13,6 +13,8 @@ import { getCollectionByHandle, listCollections } from "@lib/data/collections"
 import { listRegions } from "@lib/data/regions"
 import { StoreCollection, StoreRegion } from "@medusajs/types"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
+import { markaHandleAlapjan } from "@lib/data/brands"
+import { markaCanonical } from "@lib/util/lap-canonical"
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
@@ -82,7 +84,6 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
-  // a markalap canonicalja a P0 PR 11 (marka-modul) resze, nem ez a PR
   const cim = lapCim(collection.title)
   const leiras = markaLeiras(
     collection.title,
@@ -90,7 +91,22 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       ? collection.metadata.description
       : null,
   )
+  /*
+    SEO P0 PR 11: ha a marka-modulban van azonos handle-u marka, a regi
+    gyujtemeny-lap canonicalja a markaoldalra mutat (`/hu/marka/{handle}`), hogy
+    ket cim ne versenyezzen ugyanazert a tartalomert. Kurált gyujtemenynek
+    (nem marka) nincs ilyen rekordja, az canonical nelkul marad, mint eddig.
+  */
+  // a marka-vegpont hibaja itt nem viheti el a gyujtemeny-lapot: akkor nincs canonical, mint eddig
+  const marka = await markaHandleAlapjan(collection.handle).catch(() => null)
   const metadata = {
+    ...(marka
+      ? {
+          alternates: {
+            canonical: markaCanonical(params.countryCode, params.handle),
+          },
+        }
+      : {}),
     title: cim,
     description: leiras,
     robots: indexelhetoRobots(),

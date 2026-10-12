@@ -130,6 +130,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/shipping-attributes",
     },
+    // SEO P0 PR 11: the brand read model, written by the Acropora OS
+    {
+      resolve: "./src/modules/brand",
+    },
     {
       resolve: "./src/modules/commerce-settings",
     },
