@@ -109,3 +109,15 @@ export function fooldalCanonical(countryCode: string): string {
 export function markaCanonical(countryCode: string, handle: string): string {
   return `/${countryCode}/marka/${handle}`
 }
+
+/**
+ * A VALOGATAS (SEO LANDING) KANONIKUS CIME (Balazs dontese a t9-hez:
+ * `/hu/valogatas/{slug}`). A lap maga a t9 resze (nautilus); a sitemap mar
+ * ebbol a fuggvenybol epiti a landing-sort, hogy a ket hely ne csuszhasson el.
+ */
+export function valogatasCanonical(
+  countryCode: string,
+  handle: string,
+): string {
+  return `/${countryCode}/valogatas/${handle}`
+}
