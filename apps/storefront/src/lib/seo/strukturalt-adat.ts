@@ -26,10 +26,34 @@ import { STORE_NAME } from "@lib/store"
  *   `shipping-options` kosarat ker), es termekenkent mas (sulyosztaly, csak
  *   bolti atvetel, ingyenes kuszob); a termeklapnak nincs sajat, valodi dija,
  *   egy "jellemzo" dij kitalalt lenne. Szallitasi idonek sincs forrasa;
- * - hasMerchantReturnPolicy: az elallasi szoveget a Fogyasztobarat adja kivulrol
- *   (`fogyasztobarat.ts`), a repoban nincs napszam es elo allat kivetel; Balazs
- *   donteset varja (hany nap, az elo allat kivetel-e).
+ * - a visszakuldesi szabaly ELO ALLATRA (`VISSZAKULDESI_SZABALY` lent): Balazs
+ *   dontese a Merchant-bekuldes elotti elo allat kerdesben.
  */
+
+/**
+ * A VISSZAKULDESI SZABALY (SEO P1-12, t12b), a nem elo allat ajanlatain.
+ *
+ * FORRAS: a Merchant Centerben 2026-10-05-en beallitott szabaly (acrobot
+ * emleke, id 2089, Google szal): Magyarorszag, 14 nap, nincs visszaveteli dij,
+ * 14 napos visszautalas, visszakuldes uzletben, postan vagy Foxposttal. A
+ * Google ezt mar ismeri a boltrol, tehat a lap ugyanezt mondja.
+ *
+ * KIMARAD, MERT NINCS ELDONTVE (acrobot 29063): a `returnFees`. A Merchant
+ * Center "nincs dij"-a a VISSZAVETELI dijra (restocking fee) szol, nem arra, hogy
+ * a visszakuldes szallitasat ki fizeti; az Balazs dontese. A 14 napos
+ * visszautalasnak nincs schema.org mezoje, ezert az sem all itt.
+ */
+export const VISSZAKULDESI_SZABALY: JsonLd = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "HU",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: 14,
+  restockingFee: { "@type": "MonetaryAmount", value: 0, currency: "HUF" },
+  returnMethod: [
+    "https://schema.org/ReturnInStore",
+    "https://schema.org/ReturnByMail",
+  ],
+}
 
 export type JsonLd = Record<string, unknown>
 
@@ -158,6 +182,10 @@ function ajanlatLd(b: {
       ? "https://schema.org/UsedCondition"
       : "https://schema.org/NewCondition",
     seller: { "@type": "Organization", name: STORE_NAME },
+    // elo allatra nincs: Balazs dontese (t12b)
+    ...(b.csakBoltban
+      ? {}
+      : { hasMerchantReturnPolicy: VISSZAKULDESI_SZABALY }),
   }
 }
 

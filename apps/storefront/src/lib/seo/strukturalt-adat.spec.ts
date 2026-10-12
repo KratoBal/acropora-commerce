@@ -294,3 +294,68 @@ describe("élő állat: InStoreOnly (t12)", () => {
       expect(v.offers.availability).toBe("https://schema.org/InStoreOnly")
   })
 })
+
+/*
+  A VISSZAKULDESI SZABALY (t12b). MI PIROSIT: a Merchant Centerben beallitott
+  szabalytol eltero ertek (napszam, orszag, mod, visszaveteli dij); egy nem
+  eldontott mezo (`returnFees`) megjelenik; az elo allat szabalyt kap, mielott
+  Balazs dont; a csoport valtozatai elvesztik.
+*/
+describe("visszaküldési szabály (t12b)", () => {
+  const lap = {
+    nev: "Hanna HI780",
+    url: "https://x/hu/termek/hanna",
+    kepek: [],
+    ar: 10500,
+    penznem: "HUF",
+    elerhetoseg: "KAPHATO" as const,
+    utanrendeles: false,
+    kategoriaNevek: ["Termékek"],
+  }
+  const ajanlat = (t: Record<string, unknown>) =>
+    t.offers as Record<string, unknown>
+
+  it("T12B-SZABALY: a Merchant Center szabálya, betűre, visszaszállítási díj nélkül", () => {
+    expect(ajanlat(termekLd(lap)).hasMerchantReturnPolicy).toEqual({
+      "@type": "MerchantReturnPolicy",
+      applicableCountry: "HU",
+      returnPolicyCategory:
+        "https://schema.org/MerchantReturnFiniteReturnWindow",
+      merchantReturnDays: 14,
+      restockingFee: { "@type": "MonetaryAmount", value: 0, currency: "HUF" },
+      returnMethod: [
+        "https://schema.org/ReturnInStore",
+        "https://schema.org/ReturnByMail",
+      ],
+    })
+    expect(JSON.stringify(termekLd(lap))).not.toContain("returnFees")
+  })
+
+  it("T12B-ELO-ALLAT: élő állatnál nincs szabály, egy terméknél és a csoportban sem", () => {
+    expect(ajanlat(termekLd({ ...lap, csakBoltban: true }))).not.toHaveProperty(
+      "hasMerchantReturnPolicy",
+    )
+    const csoport = (csakBoltban: boolean) =>
+      termekCsoportLd({
+        nev: "X",
+        url: "https://x/hu/termek/x",
+        csoportAzonosito: "prod_1",
+        kepek: [],
+        penznem: "HUF",
+        kategoriaNevek: [],
+        csakBoltban,
+        valtozatok: ["S", "M"].map((m) => ({
+          url: `https://x/hu/termek/x?v_id=${m}`,
+          opciok: [{ nev: "Méret", ertek: m }],
+          kepek: [],
+          ar: 100,
+          elerhetoseg: "KAPHATO" as const,
+          utanrendeles: false,
+        })),
+      }).hasVariant as { offers: Record<string, unknown> }[]
+    for (const v of csoport(true))
+      expect(v.offers).not.toHaveProperty("hasMerchantReturnPolicy")
+    for (const v of csoport(false))
+      expect(v.offers).toHaveProperty("hasMerchantReturnPolicy")
+  })
+})
