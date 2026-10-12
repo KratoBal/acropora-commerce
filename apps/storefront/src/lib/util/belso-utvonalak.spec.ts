@@ -72,6 +72,10 @@ describe("a listák", () => {
     )
     // SEO P0 PR 11: a markaoldal ugyanugy lapoz, mint a gyujtemeny-lap
     expect(atir("/hu/marka/boyu?page=2")).toBe("/hu/_p/2/marka/boyu")
+    // t10: a válogatás is
+    expect(atir("/hu/valogatas/kh-potlas?page=2")).toBe(
+      "/hu/_p/2/valogatas/kh-potlas",
+    )
     expect(atir("/hu/store?page=4")).toBe("/hu/_p/4/store")
     expect(atir("/hu/store?page=9999")).toBe("/hu/_p/9999/store")
   })
@@ -108,6 +112,7 @@ describe("a listák", () => {
         "categories/a",
         "collections/boyu",
         "marka/boyu",
+        "valogatas/kh-potlas",
         "store",
       ]) {
         expect(atir(`/hu/${tipus}?${kulcs}=x`)).toBe(`/hu/_szurt/${tipus}`)

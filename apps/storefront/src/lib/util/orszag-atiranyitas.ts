@@ -33,6 +33,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "rendeles-fizetese",
   "store",
   "termek",
+  "valogatas",
   "verify-account",
 ] as const
 

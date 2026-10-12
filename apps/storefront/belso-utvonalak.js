@@ -45,6 +45,7 @@ const LISTAK = [
   { forras: "/:orszag/categories/:ut+", cel: "categories/:ut+" },
   { forras: "/:orszag/collections/:handle", cel: "collections/:handle" },
   { forras: "/:orszag/marka/:handle", cel: "marka/:handle" },
+  { forras: "/:orszag/valogatas/:handle", cel: "valogatas/:handle" },
   { forras: "/:orszag/store", cel: "store" },
 ]
 
