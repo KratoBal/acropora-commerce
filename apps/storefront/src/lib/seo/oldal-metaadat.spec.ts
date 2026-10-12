@@ -240,6 +240,14 @@ describe("a termék saját robots-döntése", () => {
     })
   })
 
+  it("a „none” a noindex és a nofollow együtt (barracuda #548)", () => {
+    expect(termekRobots({ seo_robots: "none" })).toEqual({
+      index: false,
+      follow: false,
+    })
+    expect(termekRobotsJel({ seo_robots: "nonexistent" }).noindex).toBe(false)
+  })
+
   it("jel nélkül, vagy noindex nélküli jellel indexelhető", () => {
     for (const metadata of [
       null,

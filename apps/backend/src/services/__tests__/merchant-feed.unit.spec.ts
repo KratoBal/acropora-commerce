@@ -126,6 +126,10 @@ describe("toMerchantItem", () => {
         context()
       )
     ).toBeNull()
+    // `none` is noindex + nofollow in the robots standard (barracuda #548)
+    expect(
+      toMerchantItem(product({ metadata: { seo_robots: "None" } }), variant(), context())
+    ).toBeNull()
     expect(
       toMerchantItem(
         product({ metadata: { seo_robots: "index, follow" } }),
