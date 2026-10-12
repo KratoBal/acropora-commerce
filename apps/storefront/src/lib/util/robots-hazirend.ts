@@ -42,6 +42,40 @@
  */
 export const ELES_HOSZTOK = ["shop.acropora.hu"] as const
 
+/**
+ * AZ ELES HOSZTON TILTOTT UTAK (SEO frontend roadmap FE-4, Balazs elfogadta
+ * 2026-10-07 07:44 UTC; a rendeles-oldalakkal bovitve, acrobot dontese
+ * 2026-10-12 20:46, msg 28998).
+ *
+ * ORSZAGKODONKENT KIIRVA, `*` NELKUL (barracuda #540 review). A robots.txt-ben a
+ * `*` BARMILYEN karaktersort jelent, a `/`-t is, es a szabaly prefix: a
+ * csillagos-szegmenses cart-minta egy `/hu/termek/cartridge-...` termeket is
+ * tiltana. A lista
+ * ezert a regiok orszagkodjaibol keszul, es ket regional ket sort ad.
+ *
+ * AMI SZANDEKOSAN NINCS BENNE: a kereses (`/hu/store?q=`) es a szurok. Azok
+ * `noindex, follow`-t kapnak, es egy tiltott URL noindexet a kereso nem latja
+ * (Balazs dontese, 4. pont: "noindex, de robots.txt Disallow-val NE blokkoljuk").
+ * A tiltott privat lapokon a noindex is marad: egy mar felfedezett URL-t a
+ * Disallow nem vesz ki az indexbol.
+ */
+export const TILTOTT_SZAKASZOK = [
+  "cart",
+  "checkout",
+  "account",
+  "order",
+  "rendeles-fizetese",
+] as const
+
+export function elesTiltottUtak(orszagKodok: readonly string[]): string[] {
+  return [
+    ...orszagKodok.flatMap((kod) =>
+      TILTOTT_SZAKASZOK.map((szakasz) => `/${kod}/${szakasz}`),
+    ),
+    "/api/",
+  ]
+}
+
 export type RobotsHazirend = {
   /** `true` -> indexelheto; `false` -> teljes tiltas. */
   engedett: boolean

@@ -21,6 +21,11 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers({ host: fejlecek.host }),
 }))
 
+// a tiltott utak a regiok orszagkodjaibol jonnek (barracuda #540 review)
+vi.mock("@lib/data/regions", () => ({
+  listRegions: async () => [{ countries: [{ iso_2: "hu" }] }],
+}))
+
 import robots from "../../../app/robots"
 
 const KERESO_ES_FACET = [
@@ -36,6 +41,32 @@ describe("az éles robots.txt nem tiltja a noindex-elt URL-eket", () => {
     fejlecek.host = "shop.acropora.hu"
     const txt = resolveRobots(await robots())
     for (const ut of KERESO_ES_FACET)
+      expect(robotsEngedi(txt, ut), `${ut}\n${txt}`).toBe(true)
+  })
+
+  /*
+    A PRIVAT UTAK TILTASA A KISZOLGALT SZOVEGEN, a Google szabalya szerint
+    (FE-4 + a rendeles-lapok, acrobot 28998). MI PIROSITJA: egy kimarado privat
+    ut, vagy egy csillagos minta, ami a cart-kezdetu termeket is tiltja.
+  */
+  it("a privát utak tiltottak, a cart-kezdetű termék nem", async () => {
+    fejlecek.host = "shop.acropora.hu"
+    const txt = resolveRobots(await robots())
+    for (const ut of [
+      "/hu/cart",
+      "/hu/checkout?step=address",
+      "/hu/account/orders",
+      "/hu/order/order_01/confirmed",
+      "/hu/rendeles-fizetese/token123",
+      "/api/rum",
+    ])
+      expect(robotsEngedi(txt, ut), `${ut}\n${txt}`).toBe(false)
+    for (const ut of [
+      "/hu/termek/cartridge-szurobetet",
+      "/hu/termek/accountable-pumpa",
+      "/hu/termek/hanna-hi780",
+      "/hu/marka/aquaforest",
+    ])
       expect(robotsEngedi(txt, ut), `${ut}\n${txt}`).toBe(true)
   })
 

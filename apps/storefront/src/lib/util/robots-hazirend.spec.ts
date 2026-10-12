@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { ELES_HOSZTOK, robotsHazirend } from "./robots-hazirend"
+import {
+  ELES_HOSZTOK,
+  elesTiltottUtak,
+  robotsHazirend,
+} from "./robots-hazirend"
 
 /**
  * A HAROM IRANY, ES A HARMADIK A LENYEG.
@@ -53,5 +57,26 @@ describe("robots hazirend hosztnev szerint", () => {
    */
   it("az eles lista ma egy elemu", () => {
     expect(ELES_HOSZTOK).toEqual(["shop.acropora.hu"])
+  })
+})
+
+/**
+ * AZ ELES TILTOTT UTAK LISTAJA (FE-4). A kiszolgalt robots.txt illeszteset a
+ * `lib/seo/html-szerzodes/robots-kereses.spec.ts` meri, a Google szabalya
+ * szerint (`robotsEngedi`); itt csak a lista alakja all: orszagkodonkent, csillag
+ * nelkul (barracuda #540 review), a rendeles-lapokkal (acrobot 28998).
+ */
+describe("az éles hoszt tiltott útjai", () => {
+  it("két régió két sort ad, csillag nélkül, a rendelés-lapokkal", () => {
+    const ket = elesTiltottUtak(["hu", "at"])
+    for (const ut of [
+      "/hu/cart",
+      "/at/cart",
+      "/hu/order",
+      "/hu/rendeles-fizetese",
+      "/api/",
+    ])
+      expect(ket).toContain(ut)
+    expect(ket.some((m) => m.includes("*"))).toBe(false)
   })
 })
