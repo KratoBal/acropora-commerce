@@ -3,7 +3,7 @@ import { MedusaError, Modules } from "@medusajs/framework/utils"
 
 import { resolveBrandService } from "../../../../admin/brands/helpers"
 import { resolveLandingPageService } from "../../../../admin/landing-pages/helpers"
-import { landingSzuro } from "../../szuro"
+import { landingSzuro, leszarmazottakkal } from "../../szuro"
 
 /**
  * A LANDING TERMEKEI, AZONOSITOKKENT (SEO P1-14, t10). A kirakat ebbol lapoz,
@@ -41,13 +41,23 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     }
   }
 
-  const termekek = await req.scope.resolve(Modules.PRODUCT).listProducts(
+  const termekModul = req.scope.resolve(Modules.PRODUCT)
+  // a kivalasztott kategoria az alkategoriaival egyutt (nautilus, 29016)
+  const kategoriak = szuro.category_ids.length
+    ? leszarmazottakkal(
+        await termekModul.listProductCategories(
+          {},
+          { select: ["id", "parent_category_id"] }
+        ),
+        szuro.category_ids
+      )
+    : []
+
+  const termekek = await termekModul.listProducts(
     {
       status: "published",
       ...(markasTermekek ? { id: markasTermekek } : {}),
-      ...(szuro.category_ids.length
-        ? { categories: { id: szuro.category_ids } }
-        : {}),
+      ...(kategoriak.length ? { categories: { id: kategoriak } } : {}),
     },
     { select: ["id"], order: { created_at: "DESC" } }
   )

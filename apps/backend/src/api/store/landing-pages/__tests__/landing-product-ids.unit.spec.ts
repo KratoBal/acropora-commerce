@@ -1,5 +1,5 @@
 import { GET } from "../[handle]/product-ids/route"
-import { landingSzuro } from "../szuro"
+import { landingSzuro, leszarmazottakkal } from "../szuro"
 
 /*
   THE LANDING'S PRODUCTS (SEO P1-14, t10). What turns these red: an empty
@@ -34,6 +34,21 @@ describe("landingSzuro", () => {
   })
 })
 
+describe("leszarmazottakkal", () => {
+  it("the whole subtree, once each, and a loop does not hang", () => {
+    const fa = [
+      { id: "a", parent_category_id: null },
+      { id: "b", parent_category_id: "a" },
+      { id: "c", parent_category_id: "b" },
+      { id: "x", parent_category_id: "y" },
+      { id: "y", parent_category_id: "x" },
+    ]
+    expect(leszarmazottakkal(fa, ["a"]).sort()).toEqual(["a", "b", "c"])
+    expect(leszarmazottakkal(fa, ["x"]).sort()).toEqual(["x", "y"])
+    expect(leszarmazottakkal(fa, ["nincs"])).toEqual(["nincs"])
+  })
+})
+
 describe("GET /store/landing-pages/:handle/product-ids", () => {
   const scope = (data: {
     page?: { handle: string; filter: unknown } | null
@@ -59,6 +74,11 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
             }
           if (key === "product")
             return {
+              listProductCategories: async () => [
+                { id: "c_tap", parent_category_id: null },
+                { id: "c_kh", parent_category_id: "c_tap" },
+                { id: "c_so", parent_category_id: null },
+              ],
               listProducts: async (f: {
                 id?: string[]
                 categories?: { id: string[] }
@@ -99,6 +119,17 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
     })
     expect(await call(s)).toEqual(["p2"])
     expect(s.productCalls[0]).toMatchObject({ status: "published" })
+  })
+
+  it("a chosen category counts with its subcategories (nautilus, 29016)", async () => {
+    const s = scope({
+      page: {
+        handle: "kh-potlas",
+        filter: { category_ids: ["c_tap"], os_brand_ids: [], attribute_filters: [] },
+      },
+      products,
+    })
+    expect(await call(s)).toEqual(["p1", "p2"])
   })
 
   it("a brand with no products answers empty, without an unfiltered query", async () => {
