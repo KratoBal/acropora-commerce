@@ -1,7 +1,7 @@
 import { headers } from "next/headers"
 import type { MetadataRoute } from "next"
 
-import { robotsHazirend } from "@lib/util/robots-hazirend"
+import { ELES_TILTOTT_UTAK, robotsHazirend } from "@lib/util/robots-hazirend"
 
 /**
  * A `/robots.txt` KISZOLGALASA -- ES AMIERT NEM A STARTER KONFIGJAT KOTOTTUK BE.
@@ -42,7 +42,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 
   return {
     rules: engedett
-      ? { userAgent: "*", allow: "/" }
+      ? { userAgent: "*", allow: "/", disallow: [...ELES_TILTOTT_UTAK] }
       : { userAgent: "*", disallow: "/" },
     ...(engedett && hoszt ? { sitemap: `https://${hoszt}/sitemap.xml` } : {}),
   }

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { ELES_HOSZTOK, robotsHazirend } from "./robots-hazirend"
+import {
+  ELES_HOSZTOK,
+  ELES_TILTOTT_UTAK,
+  robotsHazirend,
+} from "./robots-hazirend"
 
 /**
  * A HAROM IRANY, ES A HARMADIK A LENYEG.
@@ -53,5 +57,40 @@ describe("robots hazirend hosztnev szerint", () => {
    */
   it("az eles lista ma egy elemu", () => {
     expect(ELES_HOSZTOK).toEqual(["shop.acropora.hu"])
+  })
+})
+
+/**
+ * AZ ELES TILTOTT UTAK (FE-4). MI PIROSÍTJA: ha a kosár, a pénztár, a fiók vagy
+ * az API kimarad; vagy ha a keresés (vagy a teljes lista) tiltott lenne, mert
+ * akkor a kereső a noindexét nem látná (Balázs döntése, 4. pont).
+ */
+describe("az éles hoszt tiltott útjai", () => {
+  const illeszt = (minta: string, ut: string) =>
+    new RegExp(
+      `^${minta.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*")}`,
+    ).test(ut)
+  const tiltott = (ut: string) => ELES_TILTOTT_UTAK.some((m) => illeszt(m, ut))
+
+  it("a privát utak tiltottak, országkóddal is", () => {
+    for (const ut of [
+      "/hu/cart",
+      "/hu/checkout?step=address",
+      "/hu/account/orders",
+      "/api/rum",
+    ])
+      expect(tiltott(ut), ut).toBe(true)
+  })
+
+  it("a keresés, a szűrő és a nyilvános lapok nem tiltottak", () => {
+    for (const ut of [
+      "/hu/store?q=hanna",
+      "/hu/store?marka=boyu",
+      "/hu/termek/hanna-hi780",
+      "/hu/categories/korallok",
+      "/hu/marka/aquaforest",
+      "/hu",
+    ])
+      expect(tiltott(ut), ut).toBe(false)
   })
 })

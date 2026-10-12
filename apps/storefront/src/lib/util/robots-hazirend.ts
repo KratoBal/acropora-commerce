@@ -42,6 +42,22 @@
  */
 export const ELES_HOSZTOK = ["shop.acropora.hu"] as const
 
+/**
+ * AZ ELES HOSZTON TILTOTT UTAK (SEO frontend roadmap FE-4, Balazs elfogadta
+ * 2026-10-07 07:44 UTC). A bolt utjai orszagkoddal kezdodnek (`/hu/cart`), ezert
+ * a `*` szegmens: a Google es a Bing a robots.txt-ben ismeri.
+ *
+ * AMI SZANDEKOSAN NINCS BENNE: a kereses (`/hu/store?q=`) es a szurok. Azok
+ * `noindex, follow`-t kapnak, es egy tiltott URL noindexet a kereso nem latja
+ * (Balazs dontese, 4. pont: "noindex, de robots.txt Disallow-val NE blokkoljuk").
+ */
+export const ELES_TILTOTT_UTAK = [
+  "/*/cart",
+  "/*/checkout",
+  "/*/account",
+  "/api/",
+] as const
+
 export type RobotsHazirend = {
   /** `true` -> indexelheto; `false` -> teljes tiltas. */
   engedett: boolean

@@ -115,24 +115,34 @@ export function markaLeiras(nev: string, leiras?: string | null): string {
 }
 
 /**
- * A termeklap leirasa: a rovid leiras (az UNAS-bol jott `unas_short_description`),
- * ha nincs, a leiras eleje, ha az sincs, egy magyar mondat a nevvel. Soha nem a
- * cim masolata.
+ * A termeklap leirasa, sorrendben (SEO P0 terv, P1 12. pont):
+ * 1. a SEO-leiras (`seo_description`): az OS vetiti a metaadatba, a jovahagyott
+ *    termek-tudas szovegebol vagy a UNAS SEO-mezojebol
+ *    (`medusa-product-projection.service.ts`, a `seoMetadata`);
+ * 2. a rovid leiras (az UNAS-bol jott `unas_short_description`);
+ * 3. a leiras eleje;
+ * 4. egy magyar mondat a nevvel. Soha nem a cim masolata.
  */
 export function termekLeiras(termek: {
   title?: string | null
   description?: string | null
   metadata?: Record<string, unknown> | null
 }): string {
+  const seo = termek.metadata?.seo_description
   const rovid = termek.metadata?.unas_short_description
   return (
+    leirasSzovegbol(typeof seo === "string" ? seo : null) ??
     leirasSzovegbol(typeof rovid === "string" ? rovid : null) ??
     leirasSzovegbol(termek.description) ??
     `${termek.title ?? ""}: rendelés az ${STORE_NAME} webáruházban.`.trim()
   )
 }
 
-/** A kereses es az osszes termek lapja (a noindex a FE-4-ben jon). */
+/**
+ * A kereses es az osszes termek lapja. A keresesi talalat (`?q=`) a `_szurt`
+ * belso utra megy (`belso-utvonalak.js`), es ott `szurtMetaadat` adja a
+ * `noindex, follow`-t; az osszes termek alaplapja indexelheto.
+ */
 export function keresesMetaadat(kifejezes?: string | null): {
   cim: string
   leiras: string

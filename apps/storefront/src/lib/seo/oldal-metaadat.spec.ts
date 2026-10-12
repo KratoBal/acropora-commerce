@@ -65,6 +65,27 @@ describe("a terméklap leírása", () => {
     metadata: { unas_short_description: "<p>Rövid leírás a listából.</p>" },
   }
 
+  /*
+    SEO P0 P1 12. pont. MI PIROSÍTJA: ha a kirakat a SEO-leírást nem olvasná,
+    és a rövid leírás nyerne; vagy ha egy üres SEO-leírás kiütné a rövidet.
+  */
+  it("a SEO-leírás nyer, ha van; üresen a rövid leírás jön", () => {
+    const seo = {
+      ...termek,
+      metadata: {
+        ...termek.metadata,
+        seo_description: "<p>A jóváhagyott SEO-leírás.</p>",
+      },
+    }
+    expect(termekLeiras(seo)).toBe("A jóváhagyott SEO-leírás.")
+    expect(
+      termekLeiras({
+        ...termek,
+        metadata: { ...termek.metadata, seo_description: "  " },
+      }),
+    ).toBe("Rövid leírás a listából.")
+  })
+
   it("a rövid leírásból jön, ha van", () => {
     expect(termekLeiras(termek)).toBe("Rövid leírás a listából.")
   })
