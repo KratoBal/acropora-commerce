@@ -1,5 +1,6 @@
 import { valtozatGtin } from "@lib/seo/strukturalt-adat"
 import { REEF_GYOKEREK } from "@lib/util/acropora-mod"
+import { valtozatKaphato } from "@modules/products/components/stock-state/availability"
 
 /**
  * A SZERZODES-TESZT MINTAOLDALAI, A BOLT ADATABOL KIVALASZTVA (SEO frontend FE-8,
@@ -53,6 +54,7 @@ type Valtozat = {
   ean?: string | null
   upc?: string | null
   manage_inventory?: boolean | null
+  allow_backorder?: boolean | null
   inventory_quantity?: number | null
   calculated_price?: { calculated_amount?: number | null } | null
   options?: { value?: string | null }[] | null
@@ -87,11 +89,16 @@ const LAPMERET = 12
 
 // ugyanaz a dontes, mint a lapon: csak az ervenyes kod szamit (FE-2b)
 const gtin = (v: Valtozat) => valtozatGtin(v) !== null
+/*
+  A LAP SAJAT SZABALYA DONTI EL, MI KAPHATO (`valtozatKaphato`): nem kezelt
+  keszlet, utanrendelheto, vagy van keszlet. Itt korabban csak a darabszam allt,
+  es egy nulla keszletu, de utanrendelheto termek (a lapon KAPHATO, a JSON-LD-ben
+  BackOrder) lett az "elfogyott" minta (#546 CI, 2026-10-12).
+*/
 const elfogyott = (t: Termek) =>
-  !!t.variants?.length &&
-  t.variants.every(
-    (v) => v.manage_inventory && (v.inventory_quantity ?? 0) <= 0,
-  )
+  !!t.variants?.length && t.variants.every((v) => !valtozatKaphato(v))
+const mindKaphato = (t: Termek) =>
+  !!t.variants?.length && t.variants.every((v) => valtozatKaphato(v))
 const handleSzerint = <T extends { handle: string }>(a: T, b: T) =>
   a.handle.localeCompare(b.handle)
 
@@ -177,7 +184,8 @@ export function mintakAdatbol(
   }
   const eloAllat = rendezett.find(
     (t) =>
-      !elfogyott(t) &&
+      // minden valtozata kaphato: a szabaly minden ajanlatra InStoreOnly-t var
+      mindKaphato(t) &&
       (t.categories ?? []).some((c) =>
         (REEF_GYOKEREK as readonly string[]).includes(gyokerNev(c.id) ?? ""),
       ),

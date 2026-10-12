@@ -177,3 +177,34 @@ describe("élő állat minta (t12)", () => {
     expect(nelkule?.hianyzik).toMatch(/élő állat/)
   })
 })
+
+describe("az elfogyott minta a lap szabályával (#546 CI)", () => {
+  it("T12-ELFOGYOTT-MINTA: a nulla készletű, de utánrendelhető termék nem elfogyott minta", () => {
+    const m = mintakAdatbol(
+      "hu",
+      [
+        {
+          id: "p-bo",
+          handle: "a-utanrendelheto",
+          title: "Szűrőzsák",
+          variants: [
+            v("v-bo", {
+              inventory_quantity: 0,
+              allow_backorder: true,
+              // GTIN-nel, hogy ne a GTIN nelkuli minta legyen, hanem az
+              // elfogyott-valasztas jeloltje (kalibralas nelkul ez zold maradt)
+              ean: "5902026731010",
+            }),
+          ],
+          categories: [{ id: "k-level" }],
+        },
+        ...TERMEKEK,
+      ],
+      KATEGORIAK,
+      GYUJTEMENYEK,
+    )
+    expect(m.find((x) => x.tipus === "termek-elfogyott")?.ut).not.toBe(
+      "/hu/termek/a-utanrendelheto",
+    )
+  })
+})

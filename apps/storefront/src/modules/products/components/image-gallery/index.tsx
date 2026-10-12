@@ -130,6 +130,10 @@ const ImageGallery = ({
               <Image
                 src={nagy.url}
                 priority
+                // a `priority`-bol a Next nem tesz `fetchpriority`-t (ugyanez
+                // a `kep-blokk.tsx`-ben): ez a lap LCP-eleme, az elo allat
+                // lapjan is (a #546 CI fogta meg, az elso elo allat mintan)
+                fetchPriority="high"
                 className="absolute inset-0 rounded-rounded"
                 /* A TERMEK NEVE (`kep-alt.ts`). A regi alakok: `Product image
                    ${index + 1}` (angol), majd `Termékfotó` (magyar, de
