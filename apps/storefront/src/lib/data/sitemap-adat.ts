@@ -2,6 +2,7 @@ import { markaLista } from "@lib/data/brands"
 import { listCategories } from "@lib/data/categories"
 import { listProducts } from "@lib/data/products"
 import { listRegions } from "@lib/data/regions"
+import { valogatasLista } from "@lib/data/valogatas"
 import {
   termekesKategoriakBol,
   type SitemapBemenet,
@@ -29,7 +30,7 @@ type Sor = { handle?: string | null; updated_at?: unknown }
  * A VALOGATASOK (SEO LANDING, t9) FORRASA. Amig `null`, a valogatas-sitemap az
  * indexbe sem kerul. A t9 (nautilus) ide koti be a landing-lista lekereset.
  */
-export const LANDING_FORRAS: (() => Promise<Sor[]>) | null = null
+export const LANDING_FORRAS: (() => Promise<Sor[]>) | null = valogatasLista
 
 export async function orszagKodok(): Promise<string[]> {
   const regiok = await listRegions()
@@ -71,6 +72,22 @@ async function termekek(countryCode: string): Promise<TermekSor[]> {
   return mind
 }
 
+/**
+ * A szűrés nyomot hagy, ha nem futhat (barracuda #542 review): ha a termékek
+ * nem hozták a kategóriájukat, a kategória-sitemap szűretlen, és ezt a napló
+ * kimondja, ugyanúgy, mint a lapozási korlát betelését.
+ */
+function termekesKategoriak(
+  orszagok: readonly { termekek: TermekSor[] }[],
+): Set<string> | undefined {
+  const halmaz = termekesKategoriakBol(orszagok.flatMap((o) => o.termekek))
+  if (!halmaz)
+    console.warn(
+      "[sitemap] a termékek nem hozták a kategóriájukat, a kategória-sitemap szűretlen",
+    )
+  return halmaz
+}
+
 export async function sitemapBemenet(
   origin: string,
   tipus: SitemapTipus,
@@ -96,9 +113,7 @@ export async function sitemapBemenet(
           })
         : [],
     termekesKategoriak:
-      tipus === "kategoriak"
-        ? termekesKategoriakBol(orszagok.flatMap((o) => o.termekek))
-        : undefined,
+      tipus === "kategoriak" ? termekesKategoriak(orszagok) : undefined,
     markak:
       tipus === "markak"
         ? await markaLista().catch((hiba) => {

@@ -68,6 +68,7 @@ export function rumLaptipus(utvonal: string): RumLaptipus {
       return "kategoria"
     case "collections":
     case "marka":
+    case "valogatas":
       return "gyujtemeny"
     case "store":
       return "osszes-termek"
