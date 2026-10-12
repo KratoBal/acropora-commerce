@@ -57,9 +57,12 @@ export function termekRobotsJel(metadata?: Record<string, unknown> | null): {
 } {
   const ertek = metadata?.seo_robots
   const szoveg = typeof ertek === "string" ? ertek.toLowerCase() : ""
+  // a `none` a robots-szabványban egyenlő a `noindex, nofollow`-val
+  // (barracuda #548, acrobot 29093)
+  const none = /\bnone\b/.test(szoveg)
   return {
-    noindex: /\bnoindex\b/.test(szoveg),
-    nofollow: /\bnofollow\b/.test(szoveg),
+    noindex: none || /\bnoindex\b/.test(szoveg),
+    nofollow: none || /\bnofollow\b/.test(szoveg),
   }
 }
 
