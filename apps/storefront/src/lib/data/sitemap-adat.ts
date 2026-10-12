@@ -1,4 +1,6 @@
+import { sdk } from "@lib/config"
 import { markaLista } from "@lib/data/brands"
+import { getPublicCacheOptions } from "@lib/data/cookies"
 import { listCategories } from "@lib/data/categories"
 import { listProducts } from "@lib/data/products"
 import { listRegions } from "@lib/data/regions"
@@ -55,7 +57,7 @@ async function termekek(countryCode: string): Promise<TermekSor[]> {
       countryCode,
       queryParams: {
         limit: LAP_MERET,
-        fields: "handle,updated_at,categories.id,metadata",
+        fields: "handle,updated_at,categories.id",
       },
     })
     mind.push(...(response.products as TermekSor[]))
@@ -88,6 +90,32 @@ function termekesKategoriak(
   return halmaz
 }
 
+/**
+ * A SAJAT ROBOTS-TILTASU TERMEKEK HANDLE-JEI (t13). Nem a termeklista hozza a
+ * `metadata`-t: az 10,6-szor nagyobb valaszt adott (acrobot stage-merese,
+ * 2026-10-12, ~4,3 MB sitemap-epitesenkent), ezert a commerce a metaadatot az
+ * adatbazis mellett olvassa, es csak a handle-ket kuldi. Ha a vegpont hibazik,
+ * a sitemap nem dol el: szures nelkul megy ki, es a hiany nyomot hagy.
+ */
+async function noindexTermekek(): Promise<Set<string>> {
+  try {
+    const { handles } = await sdk.client.fetch<{ handles: string[] }>(
+      `/store/noindex-products`,
+      {
+        method: "GET",
+        next: {
+          ...(await getPublicCacheOptions("products")),
+          revalidate: 300,
+        },
+      },
+    )
+    return new Set(handles ?? [])
+  } catch (hiba) {
+    console.warn("[sitemap] a noindex-es termekek listaja nem jott meg:", hiba)
+    return new Set()
+  }
+}
+
 export async function sitemapBemenet(
   origin: string,
   tipus: SitemapTipus,
@@ -112,6 +140,7 @@ export async function sitemapBemenet(
             fields: "id,handle,updated_at,parent_category_id",
           })
         : [],
+    noindexTermekek: tipus === "termekek" ? await noindexTermekek() : undefined,
     termekesKategoriak:
       tipus === "kategoriak" ? termekesKategoriak(orszagok) : undefined,
     markak:
