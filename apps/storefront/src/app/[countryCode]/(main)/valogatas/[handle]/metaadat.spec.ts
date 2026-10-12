@@ -5,11 +5,14 @@ import { describe, expect, it, vi } from "vitest"
  * MI PIROSÍTJA: a canonical nem a /hu/valogatas/{slug}; a SEO-cím vagy -leírás
  * nem a landingből jön; az ismeretlen vagy érvénytelen szűrőjű válogatás nem 404.
  */
-const adat = vi.hoisted(() => ({ v: null as Record<string, unknown> | null }))
+const adat = vi.hoisted(() => ({
+  v: null as Record<string, unknown> | null,
+  ids: ["p1"] as string[],
+}))
 
 vi.mock("@lib/data/valogatas", () => ({
   valogatasHandleAlapjan: async () => adat.v,
-  valogatasTermekAzonositok: async () => [],
+  valogatasTermekAzonositok: async () => adat.ids,
 }))
 vi.mock("@lib/data/products", () => ({
   listProducts: async () => ({ response: { products: [], count: 0 } }),
@@ -61,6 +64,20 @@ describe("a válogatás metaadata", () => {
     const m = await generateMetadata(props)
     expect(m.title).toBe("KH-pótlók | Acropora")
     expect(m.description).toBe("A karbonátkeménység emelésére.")
+  })
+
+  it("termékkel indexelhető, termék nélkül noindex (barracuda #544)", async () => {
+    adat.v = valogatas()
+    adat.ids = ["p1"]
+    expect((await generateMetadata(props)).robots).toMatchObject({
+      index: true,
+    })
+    adat.ids = []
+    expect((await generateMetadata(props)).robots).toEqual({
+      index: false,
+      follow: true,
+    })
+    adat.ids = ["p1"]
   })
 
   it("ismeretlen, üres szűrőjű vagy attribútum-szűrős válogatás: 404", async () => {

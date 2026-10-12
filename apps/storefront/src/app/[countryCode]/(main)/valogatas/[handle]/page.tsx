@@ -1,7 +1,10 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { valogatasHandleAlapjan } from "@lib/data/valogatas"
+import {
+  valogatasHandleAlapjan,
+  valogatasTermekAzonositok,
+} from "@lib/data/valogatas"
 import {
   indexelhetoRobots,
   lapCim,
@@ -34,10 +37,20 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     leirasSzovegbol(valogatasLeirasForrasa(valogatas)) ??
     `${valogatas.title}: válogatás az Acropora webáruházban.`
   const canonical = valogatasCanonical(params.countryCode, params.handle)
+  /*
+    A 0 TERMEKES VALOGATAS NEM INDEXELHETO (barracuda #544 review): egy "nincs
+    termek" lap vekony tartalom. Ha a valogatas megtelik, a kovetkezo
+    ujraervenyesitesnel (300 mp) magatol indexelhetove valik.
+  */
+  const azonositok = await valogatasTermekAzonositok(
+    decodeHandleParam(params.handle),
+  )
   return {
     title: cim,
     description: leiras,
-    robots: indexelhetoRobots(),
+    robots: azonositok?.length
+      ? indexelhetoRobots()
+      : { index: false, follow: true },
     alternates: { canonical },
     openGraph: openGraph({ cim, leiras, url: canonical }),
   }

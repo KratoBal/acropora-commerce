@@ -53,7 +53,7 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
   const scope = (data: {
     page?: { handle: string; filter: unknown } | null
     brandLinks?: { product_id: string; os_brand_id: string }[]
-    products?: { id: string; categories: string[] }[]
+    products?: { id: string; categories: string[]; channels?: string[] }[]
   }) => {
     const productCalls: unknown[] = []
     return {
@@ -92,14 +92,36 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
                 )
               }
             }
+          if (key === "query")
+            return {
+              graph: async (q: { filters: { id: string[] } }) => ({
+                data: (data.products ?? [])
+                  .filter((p) => q.filters.id.includes(p.id))
+                  .map((p) => ({
+                    id: p.id,
+                    sales_channels: (p.channels ?? ["sc_web"]).map((id) => ({ id })),
+                  })),
+              }),
+            }
           throw new Error(`unexpected ${key}`)
         },
       },
     }
   }
-  const call = async (s: ReturnType<typeof scope>, handle = "kh-potlas") => {
+  const call = async (
+    s: ReturnType<typeof scope>,
+    handle = "kh-potlas",
+    csatornak: string[] = ["sc_web"]
+  ) => {
     const res = { body: undefined as unknown, json: (b: unknown) => (res.body = b) }
-    await GET({ scope: s.scope, params: { handle } } as never, res as never)
+    await GET(
+      {
+        scope: s.scope,
+        params: { handle },
+        publishable_key_context: { key: "pk", sales_channel_ids: csatornak },
+      } as never,
+      res as never
+    )
     return (res.body as { product_ids: string[] }).product_ids
   }
   const products = [
@@ -130,6 +152,25 @@ describe("GET /store/landing-pages/:handle/product-ids", () => {
       products,
     })
     expect(await call(s)).toEqual(["p1", "p2"])
+  })
+
+  /*
+    barracuda #544: a csak pultos termek nem szamit bele (kulonben a lapszam
+    tobbet igerne, es ures lapok lennenek), es a sorrend megmarad.
+  */
+  it("only the products of the storefront's sales channel, in order", async () => {
+    const s = scope({
+      page: {
+        handle: "kh-potlas",
+        filter: { category_ids: ["c_kh"], os_brand_ids: [], attribute_filters: [] },
+      },
+      products: [
+        { id: "p1", categories: ["c_kh"], channels: ["sc_web"] },
+        { id: "p2", categories: ["c_kh"], channels: ["sc_pos"] },
+        { id: "p4", categories: ["c_kh"], channels: ["sc_pos", "sc_web"] },
+      ],
+    })
+    expect(await call(s)).toEqual(["p1", "p4"])
   })
 
   it("a brand with no products answers empty, without an unfiltered query", async () => {
