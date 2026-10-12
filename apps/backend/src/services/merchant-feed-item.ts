@@ -92,7 +92,8 @@ export function productIsNoindex(product: {
   metadata?: Record<string, unknown> | null
 }): boolean {
   const value = product.metadata?.seo_robots
-  return typeof value === "string" && /\bnoindex\b/i.test(value)
+  // `none` is `noindex, nofollow` in the robots standard (barracuda #548)
+  return typeof value === "string" && /\b(noindex|none)\b/i.test(value)
 }
 
 export function toMerchantItem(

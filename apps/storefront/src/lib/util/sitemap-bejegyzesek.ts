@@ -91,6 +91,11 @@ export type SitemapBemenet = {
    * Ugyanugy kozosek, mint a kategoriak; hianyuk ures listat jelent.
    */
   markak?: readonly Sor[]
+  /**
+   * A saját robots-tiltású termékek handle-jei (t13): ezek kimaradnak a
+   * termék-sitemapből. A commerce `/store/noindex-products` adja.
+   */
+  noindexTermekek?: ReadonlySet<string>
   /** A válogatások (SEO landing, t9); amíg nincs bekötve, üres. */
   landingek?: readonly Sor[]
 }
@@ -130,6 +135,7 @@ export function sitemapReszek({
   termekesKategoriak,
   markak = [],
   landingek = [],
+  noindexTermekek,
 }: SitemapBemenet): Record<SitemapTipus, SitemapBejegyzes[]> {
   const cim = (ut: string) => `${origin}${ut}`
   const reszek: Record<SitemapTipus, SitemapBejegyzes[]> = {
@@ -163,7 +169,12 @@ export function sitemapReszek({
 
     for (const termek of termekek) {
       // a noindex-es termek (sajat robots-dontes, t13) nem kerul a sitemapbe
-      if (!termek.handle || termekRobotsJel(termek.metadata).noindex) continue
+      if (
+        !termek.handle ||
+        noindexTermekek?.has(termek.handle) ||
+        termekRobotsJel(termek.metadata).noindex
+      )
+        continue
       reszek.termekek.push({
         url: cim(termeklapCanonical(countryCode, termek.handle)),
         lastModified: utolsoModositas(termek.updated_at),
