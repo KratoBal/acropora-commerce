@@ -31,6 +31,7 @@ vi.mock("@lib/config", () => ({ sdk }))
 
 import { getCollectionByHandle, listCollections } from "./collections"
 import { getCategoryByHandle, listCategories } from "./categories"
+import { kezdolapTartalom } from "./kezdolap-tartalom"
 import { termekTudas } from "./product-knowledge"
 import { listProducts } from "./products"
 import { listRegions, retrieveRegion } from "./regions"
@@ -46,6 +47,7 @@ beforeEach(() => {
     if (ut === "/store/product-categories")
       return { product_categories: [], count: 0 }
     if (ut === "/store/collections") return { collections: [], count: 0 }
+    if (ut === "/store/homepage-content") return { homepage_content: null }
     if (ut.startsWith("/store/product-knowledge/"))
       return { product_knowledge: { facts: [], copy: [] } }
     throw new Error(`nem vart ut: ${ut}`)
@@ -72,6 +74,7 @@ describe("a publikus lekérés sütit nem olvas", () => {
     ["listCollections", () => listCollections()],
     ["getCollectionByHandle", () => getCollectionByHandle("kitalalt")],
     ["termekTudas", () => termekTudas("prod_kitalalt")],
+    ["kezdolapTartalom", () => kezdolapTartalom()],
   ])("%s", async (_nev, hivas) => {
     await hivas()
 
