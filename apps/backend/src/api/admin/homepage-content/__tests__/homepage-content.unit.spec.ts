@@ -58,6 +58,12 @@ describe("AdminPutHomepageContent", () => {
   it("HPC-PUT-LEAVE: a link or an image that leaves the shop or runs script is refused", () => {
     for (const cta_href of ["//evil.example/x", "https://evil.example", "javascript:alert(1)", "hu/store"])
       expect(ok(record({ slides: [slide({ cta_href })] }))).toBe(false)
+    for (const cta_href of ["/\\evil.example/x", "/\\/evil.example", "/a\\b", "/\t/evil.example"]) {
+      expect(ok(record({ slides: [slide({ cta_href })] }))).toBe(false)
+      expect(ok(record({ slides: [slide({ cta2_href: cta_href })] }))).toBe(false)
+      expect(ok(record({ slides: [slide({ image_url: cta_href })] }))).toBe(false)
+    }
+    expect(ok(record({ slides: [slide({ cta_href: "/", image_url: "/static/a.jpg" })] }))).toBe(true)
     for (const image_url of ["javascript:alert(1)", "data:image/png;base64,AAAA", "//evil.example/a.jpg", "ftp://x/y.jpg"])
       expect(ok(record({ slides: [slide({ image_url })] }))).toBe(false)
   })

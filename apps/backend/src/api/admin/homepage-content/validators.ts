@@ -1,21 +1,29 @@
 import { z } from "@medusajs/framework/zod"
 
 /**
+ * One slash, then neither `/` nor `\`, and no backslash anywhere: a browser
+ * reads `\` as `/` in an http(s) address, so `/\evil.example` would be
+ * `//evil.example`, a protocol-relative address that leaves the shop
+ * (barracuda, #551). No whitespace either: the URL parser strips tabs and
+ * newlines, which could hide a second slash.
+ */
+const SHOP_PATH = /^\/(?![/\\])[^\s\\]*$/
+
+/**
  * A link target on the shop itself: one path, no scheme, and not `//host`
  * (a protocol-relative address leaves the shop).
  */
 const shopPath = z
   .string()
   .max(300)
-  .regex(/^\/[^\s]*$/, "A shop path starts with one slash")
-  .refine((v) => !v.startsWith("//"), "A protocol-relative address leaves the shop")
+  .regex(SHOP_PATH, "A shop path starts with one slash")
 
 /** An image address: http(s) or a shop path. Never `javascript:` or `data:`. */
 const imageAddress = z
   .string()
   .max(1000)
   .refine(
-    (v) => /^https?:\/\/[^\s]+$/.test(v) || (/^\/[^\s]*$/.test(v) && !v.startsWith("//")),
+    (v) => /^https?:\/\/[^\s]+$/.test(v) || SHOP_PATH.test(v),
     "An image address is http(s) or a shop path"
   )
 
