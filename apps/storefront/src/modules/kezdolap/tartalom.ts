@@ -1,4 +1,4 @@
-import { KEZDOLAP_SZOVEGEK, szovegKereso, szovegMintaKereso } from "./szovegek"
+import { KEZDOLAP_SZOVEGEK, szovegek } from "./szovegek"
 
 /**
  * Egy dia a hero-csuszkan, ahogy a bolt `GET /store/homepage-content` adja
@@ -16,12 +16,6 @@ export type HeroDia = {
   caption2: string
   image_url: string | null
   image_alt: string
-  /**
-   * CSAK A KEZDOERTEK DIAIN (`ALAP_DIAK`), SOHA AZ OS REKORDJABAN: a diak
-   * kepalairasaban ar es cikkszam, a szovegeiben tenyallitas all, amit a lap a
-   * `MintaJelzo` cimkevel jelol, amig az OS nem ir sajat diakat.
-   */
-  minta?: boolean
 }
 
 /** A bolt valasza: `null`, amig az OS nem irt semmit. */
@@ -51,7 +45,6 @@ export const ALAP_DIAK: readonly HeroDia[] = [
     caption2: "Egyedi példány · 21 900 Ft",
     image_url: null,
     image_alt: "Zátonyakvárium közelről, korallokkal",
-    minta: true,
   },
   {
     eyebrow: "Friss érkezés · minden pénteken",
@@ -65,7 +58,6 @@ export const ALAP_DIAK: readonly HeroDia[] = [
     caption2: "Egyedi példány · 24 500 Ft",
     image_url: null,
     image_alt: "Friss korallok a bolti medencében",
-    minta: true,
   },
   {
     eyebrow: "Tervezés és telepítés",
@@ -79,14 +71,12 @@ export const ALAP_DIAK: readonly HeroDia[] = [
     caption2: "Tervezés, telepítés, havi karbantartás",
     image_url: null,
     image_alt: "Általunk telepített akvárium egy otthonban",
-    minta: true,
   },
 ]
 
-/** A bolt valaszabol a lapnak szolo alak: szoveg-kereso es diak. */
+/** A bolt valaszabol a lapnak szolo alak: a keresok (szoveg, link, kep) es a diak. */
 export const kezdolapAdat = (tartalom: KezdolapTartalom | null) => ({
-  szoveg: szovegKereso(tartalom?.texts ?? null),
-  minta: szovegMintaKereso(tartalom?.texts ?? null),
+  ...szovegek(tartalom?.texts ?? null),
   diak: tartalom ? tartalom.slides : [...ALAP_DIAK],
 })
 
