@@ -146,8 +146,12 @@ const sendDifferenceLink = async (
   config: PaymentLinkConfig,
   now: () => Date
 ): Promise<SentPaymentLink> => {
-  // a mixed cart's shared hold is not split this way (its edit over the hold is refused)
-  if (pair.pickup) refuse("Vegyes kosárnál a különbözetre még nem küldhető fizetési link.")
+  /*
+    A MIXED CART'S SHIPPED ORDER (card c46502c8): the difference is the shipped
+    order's alone (its total less its part of the shared hold), paid through
+    its own new collection by a plain Stripe payment. The pickup order's
+    collection, state and part of the hold are not touched.
+  */
   const order = pair.primary
   const collection = await ops.openCollection(order.order_id, amount)
 

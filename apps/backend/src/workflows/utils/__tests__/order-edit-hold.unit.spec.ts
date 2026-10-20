@@ -96,11 +96,13 @@ describe("orderEditHoldDecision", () => {
   /**
    * AN ITEM ADDED OVER THE HOLD (Balázs 2026-10-05 18:01 UTC, plan section 5):
    * the edit goes through keeping the hold, the difference goes through a
-   * link. A mixed cart's shared hold is still refused. What must fail: a plain
-   * order's edit over the hold refused, or let through without keeping the
-   * hold (Medusa would cancel it); a mixed cart's let through.
+   * link. A mixed cart's SHIPPED order does the same (card c46502c8: the
+   * difference is its own); the PICKUP order over its part is still refused.
+   * What must fail: a plain or shipped order's edit over the hold refused, or
+   * let through without keeping the hold (Medusa would cancel it); a pickup
+   * order's let through.
    */
-  it("over the hold: a plain order keeps the hold, a mixed cart's share is refused", async () => {
+  it("over the hold: a plain and a mixed cart's shipped order keep the hold, the pickup order is refused", async () => {
     expect(await orderEditHoldDecision("order_1", opsFor(single(), 30000).ops)).toEqual({
       action: "keep_hold",
       collectionId: "pay_col_1",
@@ -108,8 +110,22 @@ describe("orderEditHoldDecision", () => {
     })
     const shared = single({ data: { id: "pi_joint", stripe_share: { transactionId: "pi_joint", total: 21950, own: 14000 } } })
     expect(await orderEditHoldDecision("order_1", opsFor(shared, 30000).ops)).toEqual({
+      action: "keep_hold",
+      collectionId: "pay_col_1",
+      newTotal: 30000,
+    })
+    const joined = single({
+      data: { id: "pi_joint", stripe_share: { transactionId: "pi_joint", total: 21950, own: 14000, joined: true } },
+    })
+    expect(await orderEditHoldDecision("order_1", opsFor(joined, 30000).ops)).toEqual({
       action: "refuse",
-      message: expect.stringMatching(/Vegyes kosárnál a különbözetre/),
+      message: expect.stringMatching(/átvételi rendelésénél a különbözetre/),
+    })
+    // under the pickup's own part the edit still passes through the hold
+    expect(await orderEditHoldDecision("order_1", opsFor(joined, 20000).ops)).toEqual({
+      action: "keep_hold",
+      collectionId: "pay_col_1",
+      newTotal: 20000,
     })
   })
 

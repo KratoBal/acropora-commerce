@@ -36,8 +36,8 @@ import { STRIPE_PROVIDER_ID } from "./stripe-config"
  * What is refused, as before: more than was already captured, nothing left to
  * pay (that is a cancel, not an edit), and another card provider's uncaptured
  * hold (only Stripe's is ours to keep). More than the hold is refused only on
- * a mixed cart's shared hold; a plain order's difference goes through a
- * payment link (plan section 5).
+ * a mixed cart's pickup order; a plain or shipped order's difference goes
+ * through a payment link (plan section 5).
  */
 export type EditHoldOperations = Pick<SharedCaptureOperations, "loadPair"> & {
   /** The order's total with its REQUESTED edit applied; null if none is requested. */
@@ -111,12 +111,19 @@ export const orderEditHoldDecision = async (
     OVER THE HOLD (Balázs, 2026-10-05 18:01 UTC; plan section 5): an item
     added after the order. The edit goes through and the hold stays; the
     difference is paid through a payment link, and Kiszállítás waits for it
-    (`plainStripeCapture`). A mixed cart's shared hold is not split this way
-    yet: there the edit is still refused.
+    (`plainStripeCapture`, and for a mixed cart's shipped order
+    `captureSharedStripePayment`: its part of the shared hold is what the
+    order owes less the paid difference, the pickup part is untouched).
+
+    A MIXED CART'S SHIPPED ORDER takes this path too (card c46502c8): the
+    difference is its own, paid through its own collection, so the shared
+    intent and the pickup order's part are not touched. The PICKUP order
+    (`joined`) over its part is still refused: its difference has no payer
+    of its own, the link belongs to the shipped order.
   */
-  if (newTotal > payment.amount && stripeShareFactsOf(payment.data)) {
+  if (newTotal > payment.amount && stripeShareFactsOf(payment.data)?.joined === true) {
     return refuse(
-      `A szerkesztés után a rendelés többe kerül (${newTotal} Ft), mint amennyit a kártyán zároltunk (${payment.amount} Ft). Vegyes kosárnál a különbözetre még nem küldhető fizetési link: a többletet külön fizetéssel kell rendezni.`
+      `A szerkesztés után a rendelés többe kerül (${newTotal} Ft), mint amennyit a kártyán zároltunk (${payment.amount} Ft). Vegyes kosár átvételi rendelésénél a különbözetre nem küldhető fizetési link: a többletet külön fizetéssel kell rendezni.`
     )
   }
 
