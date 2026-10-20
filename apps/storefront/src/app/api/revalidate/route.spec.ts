@@ -41,7 +41,7 @@ describe("POST /api/revalidate", () => {
     expect(cache.revalidateTag).not.toHaveBeenCalled()
   })
 
-  it("csak a products és a redirects címke üríthető", async () => {
+  it("csak a products, a redirects és a homepage-content címke üríthető", async () => {
     vi.stubEnv("STOREFRONT_REVALIDATE_SECRET", "a-helyes-titok")
     for (const torzs of [
       { tags: ["carts"] },
@@ -66,5 +66,14 @@ describe("POST /api/revalidate", () => {
     const valasz = await POST(keres("a-helyes-titok", { tags: ["redirects"] }))
     expect(valasz.status).toBe(200)
     expect(cache.revalidateTag.mock.calls).toEqual([["redirects"]])
+  })
+
+  it("a kezdőlap tartalma (a backend az OS mentésekor hívja) a homepage-content címkét üríti", async () => {
+    vi.stubEnv("STOREFRONT_REVALIDATE_SECRET", "a-helyes-titok")
+    const valasz = await POST(
+      keres("a-helyes-titok", { tags: ["homepage-content"] }),
+    )
+    expect(valasz.status).toBe(200)
+    expect(cache.revalidateTag.mock.calls).toEqual([["homepage-content"]])
   })
 })
