@@ -15,16 +15,31 @@ import type { MenuPont } from "./menu-adat"
  *
  * Egerrel a pontra allva nyilik, a fejlecbol kimozdulva csukodik; billentyuzettel
  * (es erintessel) a pont GOMB: Enter/szokoz nyitja-zarja, az Escape csukja es a
- * fokuszt visszaadja a gombnak. A panel linkjei zart allapotban `invisible`-ek
+ * fokuszt visszaadja a gombnak. Erintesre (hover: none) a lebeges nem nyit, csak a koppintas; hybrid
+ * eszkozon a koppintas emulalt mouseenter-je es click-je nem csukja vissza
+ * egymast (600 ms vedelem). A panel linkjei zart allapotban `invisible`-ek
  * (nincs fokuszuk, nem olvassa fel a kepernyoolvaso), nyitva szabadon
  * bejarhatok. A mozgas-csokkentest kero latogato nem kap atmenetet.
  *
  * A panel tartalma a szerverrol jon (a valodi kategoriak); ez az elem csak azt
  * dönti el, melyik latszik.
  */
+/** Ennyi ideig a lebegessel nyitott panelt a click nem csukja be. */
+const LEBEGES_VEDELEM_MS = 600
+
+/** Erintoeszkoz: nincs lebeges (a bongeszo `hover: none`-t jelent). */
+const lebegesNincs = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(hover: none)").matches
+
 export function KezdolapMenu({ pontok }: { pontok: MenuPont[] }) {
   const [nyitott, setNyitott] = useState<number | null>(null)
   const gyoker = useRef<HTMLDivElement>(null)
+  // mikor nyitotta ki a LEBEGES a panelt: az erintes a koppintaskor egy
+  // emulalt mouseenter-t es azonnal utana egy click-et kuld, es a click nem
+  // csukhatja be, amit a koppintas maga nyitott (barracuda, #556)
+  const lebegesre = useRef(0)
   const gombok = useRef<(HTMLButtonElement | null)[]>([])
 
   useEffect(() => {
@@ -60,7 +75,13 @@ export function KezdolapMenu({ pontok }: { pontok: MenuPont[] }) {
             <li
               key={i}
               className="flex"
-              onMouseEnter={() => setNyitott(nyilik ? i : null)}
+              onMouseEnter={() => {
+                // erintoeszkozon (hover: none) a lebegesnek nincs ertelme: ott
+                // csak a koppintas (click) nyit
+                if (lebegesNincs()) return
+                if (nyilik && nyitott !== i) lebegesre.current = Date.now()
+                setNyitott(nyilik ? i : null)
+              }}
             >
               {nyilik ? (
                 <button
@@ -70,7 +91,16 @@ export function KezdolapMenu({ pontok }: { pontok: MenuPont[] }) {
                   }}
                   aria-expanded={aktiv}
                   aria-controls={`kl-panel-${i}`}
-                  onClick={() => setNyitott(aktiv ? null : i)}
+                  onClick={() => {
+                    // a lebegessel NEMRÉG nyitott panelt a koppintas (emulalt
+                    // mouseenter + click) nem csukja be
+                    if (
+                      aktiv &&
+                      Date.now() - lebegesre.current < LEBEGES_VEDELEM_MS
+                    )
+                      return
+                    setNyitott(aktiv ? null : i)
+                  }}
                   className={kozos}
                   style={{
                     color: "var(--kl-szoveg)",

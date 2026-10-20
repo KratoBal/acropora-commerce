@@ -80,6 +80,44 @@ describe("a kezdőlap lenyíló menüje", () => {
     expect(nyitva()).toBe(false)
   })
 
+  it("erintesre a koppintas (emulalt mouseenter, utana click) nyitva hagyja a panelt (barracuda, #556)", () => {
+    render(<KezdolapMenu pontok={PONTOK} />)
+    const gomb = screen.getByTestId("kl-menu-gomb-0")
+    fireEvent.mouseEnter(gomb.closest("li")!)
+    fireEvent.click(gomb)
+    expect(nyitva()).toBe(true)
+    expect(gomb.getAttribute("aria-expanded")).toBe("true")
+    // egy KESOBBI kattintas (a vedelmi ido utan) csuk
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(Date.now() + 5000)
+      fireEvent.click(gomb)
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(nyitva()).toBe(false)
+  })
+
+  it("a hover: none eszkozon a lebeges nem nyit, a koppintas igen", () => {
+    const eredeti = window.matchMedia
+    window.matchMedia = ((q: string) => ({
+      matches: q === "(hover: none)",
+      media: q,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as never
+    try {
+      render(<KezdolapMenu pontok={PONTOK} />)
+      const gomb = screen.getByTestId("kl-menu-gomb-0")
+      fireEvent.mouseEnter(gomb.closest("li")!)
+      expect(nyitva()).toBe(false)
+      fireEvent.click(gomb)
+      expect(nyitva()).toBe(true)
+    } finally {
+      window.matchMedia = eredeti
+    }
+  })
+
   it("az Escape csuk és a fókuszt a gombra adja", () => {
     render(<KezdolapMenu pontok={PONTOK} />)
     const gomb = screen.getByTestId("kl-menu-gomb-0")
