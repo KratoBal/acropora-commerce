@@ -76,7 +76,10 @@ describe("a hero diái", () => {
     expect(kezdolapAdat({ texts: {}, slides: [] }).diak).toEqual([])
     // null (barracuda, #553): az OS csak szoveget szerkesztett, a diak a
     // kezdodiak maradnak, jelolve; az ures lista viszont "nincs hero"
-    const nullDiak = kezdolapAdat({ texts: { "hero.tenyek.1.cim": "x" }, slides: null }).diak
+    const nullDiak = kezdolapAdat({
+      texts: { "hero.tenyek.1.cim": "x" },
+      slides: null,
+    }).diak
     expect(nullDiak).toHaveLength(3)
     for (const dia of nullDiak) expect(dia.minta).toBe(true)
     expect(
