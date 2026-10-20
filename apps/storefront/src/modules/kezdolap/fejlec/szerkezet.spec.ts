@@ -19,11 +19,13 @@ const forras = readFileSync(join(__dirname, "index.tsx"), "utf-8")
 describe("a fejléc érintési céljai", () => {
   it("a kosár-link a 44 pixeles tablettában áll", () => {
     const burkolo = forras.match(
-      /data-testid="kl-kosar"[\s\S]{0,400}?<CartButton/,
+      /data-testid="kl-kosar"[\s\S]{0,900}?<CartButton/,
     )
     expect(burkolo, "a CartButton a kl-kosar burkoloban all").not.toBeNull()
-    expect(burkolo?.[0]).toContain("[&_a]:h-11")
-    expect(burkolo?.[0]).toContain("[&_a]:min-w-11")
+    expect(burkolo?.[0]).toContain("[&_[data-testid=nav-cart-link]]:h-11")
+    expect(burkolo?.[0]).toContain("[&_[data-testid=nav-cart-link]]:min-w-11")
+    // CSAK a kosar-link lesz tabletta: a lenyilo panel tetel-linkjei nem (barracuda, #556)
+    expect(burkolo?.[0]).not.toMatch(/\[&_a\]/)
   })
 
   it("a Fiókom link legalább 24 pixel magas", () => {

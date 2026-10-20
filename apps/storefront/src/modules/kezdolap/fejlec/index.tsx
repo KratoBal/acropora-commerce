@@ -172,7 +172,7 @@ export default async function KezdolapFejlec({
               */}
               <div
                 data-testid="kl-kosar"
-                className="[&_a]:flex [&_a]:h-11 [&_a]:min-w-11 [&_a]:items-center [&_a]:justify-center [&_a]:rounded-full [&_a]:bg-[color:var(--kl-navy)] [&_a]:px-[18px] [&_a]:text-[color:var(--kl-lap)]"
+                className="[&_[data-testid=nav-cart-link]]:flex [&_[data-testid=nav-cart-link]]:h-11 [&_[data-testid=nav-cart-link]]:min-w-11 [&_[data-testid=nav-cart-link]]:items-center [&_[data-testid=nav-cart-link]]:justify-center [&_[data-testid=nav-cart-link]]:rounded-full [&_[data-testid=nav-cart-link]]:bg-[color:var(--kl-navy)] [&_[data-testid=nav-cart-link]]:px-[18px] [&_[data-testid=nav-cart-link]]:text-[color:var(--kl-lap)]"
               >
                 <Suspense fallback={<KosarLink darab={0} />}>
                   <CartButton />
