@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import Konteiner from "@modules/kezdolap/components/konteiner"
 import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { HeroDia } from "@modules/kezdolap/tartalom"
 
@@ -114,8 +115,8 @@ const HeroCsuszka = ({
       className="relative"
       style={{ background: "var(--kl-lap)", color: "var(--kl-szoveg)" }}
     >
-      <div className="grid small:grid-cols-[600px_minmax(0,1fr)]">
-        <div className="flex flex-col gap-12 px-4 py-10 small:pl-16 small:pr-14">
+      <Konteiner className="grid small:grid-cols-[600px_minmax(0,1fr)]">
+        <div className="flex flex-col gap-12 py-10 small:pr-14">
           <div>
             <div
               className="text-[13px] font-semibold uppercase tracking-[0.14em]"
@@ -191,8 +192,8 @@ const HeroCsuszka = ({
           </div>
         </div>
 
-        <div className="relative min-h-[320px] px-4 pb-10 small:min-h-0 small:p-0">
-          <div className="absolute bottom-10 left-4 right-4 top-0 small:bottom-10 small:left-0 small:right-16 small:top-10">
+        <div className="relative min-h-[320px] pb-10 small:min-h-0 small:p-0">
+          <div className="absolute bottom-10 left-0 right-0 top-0 small:bottom-10 small:left-0 small:right-0 small:top-10">
             {dia.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -216,7 +217,7 @@ const HeroCsuszka = ({
             )}
           </div>
           {dia.minta ? (
-            <div className="absolute right-6 top-14 z-10 small:right-20">
+            <div className="absolute right-6 top-14 z-10 small:right-4">
               <MintaJelzo mit="képaláírás, ár, ígéretek" />
             </div>
           ) : null}
@@ -237,10 +238,10 @@ const HeroCsuszka = ({
             </div>
           ) : null}
         </div>
-      </div>
+      </Konteiner>
 
       {darab > 1 ? (
-        <div className="flex flex-col items-center gap-[14px] px-4 pb-6 small:px-16">
+        <Konteiner className="flex flex-col items-center gap-[14px] pb-6">
           <div
             className="flex items-center gap-[6px]"
             role="tablist"
@@ -319,7 +320,7 @@ const HeroCsuszka = ({
               </svg>
             </button>
           </div>
-        </div>
+        </Konteiner>
       ) : null}
     </section>
   )
