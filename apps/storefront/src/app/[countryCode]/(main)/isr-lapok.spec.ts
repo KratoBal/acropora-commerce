@@ -36,6 +36,15 @@ const SZANDEKOSAN_DINAMIKUS = [
 
 const gyoker = __dirname
 
+/*
+  A KEZDOLAP SAJAT ELRENDEZESI CSOPORTBAN ALL (`(kezdolap)`, a Claude Design
+  fejleccel, Balazs 2026-10-20), NEM A `(main)` ALATT. A bejaras ezert a ket
+  csoportot egyutt jarja: ha csak a `(main)`-t nezne, a kezdolap ISR-beallitasa
+  (a legforgalmasabb lap) ellenorzes nelkul maradna, es egy elmaradt
+  `generateStaticParams` ugyanugy `no-store` valaszt adna rola.
+*/
+const kezdolapGyoker = join(gyoker, "..", "(kezdolap)")
+
 const lapok = (mappa: string): string[] =>
   readdirSync(mappa).flatMap((nev) => {
     const ut = join(mappa, nev)
@@ -51,7 +60,10 @@ const kod = (ut: string) =>
 const relativ = (ut: string) => relative(gyoker, ut).split("\\").join("/")
 
 describe("a publikus lapok ISR-beállítása", () => {
-  const mind = lapok(gyoker).map(relativ)
+  const mind = [
+    ...lapok(gyoker).map(relativ),
+    ...lapok(kezdolapGyoker).map(relativ),
+  ]
   const publikus = mind.filter(
     (ut) => !SZANDEKOSAN_DINAMIKUS.some((e) => ut.startsWith(e)),
   )
@@ -59,7 +71,7 @@ describe("a publikus lapok ISR-beállítása", () => {
   it("a bejárás megtalálja a lapokat (pozitív kontroll)", () => {
     expect(publikus).toEqual(
       expect.arrayContaining([
-        "page.tsx",
+        "../(kezdolap)/page.tsx",
         "jogi/[dokumentum]/page.tsx",
         "hamarosan/[tema]/page.tsx",
         "termek/[handle]/page.tsx",

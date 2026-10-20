@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react"
+import type { ReactElement } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("next/navigation", () => ({
@@ -30,7 +31,7 @@ import { ALAP_DIAK } from "./tartalom"
  * `px-16`-ot (a tartalom megint kifutna); a konteneren a max-width eltunik.
  */
 const S = szovegek(null)
-const SAVOK: [string, () => JSX.Element][] = [
+const SAVOK: [string, () => ReactElement][] = [
   [
     "hero-csuszka",
     () => (
@@ -51,7 +52,7 @@ describe("a kezdőlap szélessége", () => {
     const { container } = render(sav())
     const konteners = container.querySelectorAll('[data-testid="kl-konteiner"]')
     expect(konteners.length).toBeGreaterThan(0)
-    for (const k of konteners) {
+    for (const k of Array.from(konteners)) {
       expect(k.className).toContain("max-w-[1440px]")
       expect(k.className).toContain("mx-auto")
     }
@@ -64,7 +65,7 @@ describe("a kezdőlap szélessége", () => {
   it("a két panel háttere teljes szélességű, a belső kitöltés a 1440-es kerethez igazodik", () => {
     render(<KezdoEsHalado s={S} />)
     const sav = screen.getByTestId("kezdo-es-halado")
-    const panelek = [...sav.children] as HTMLElement[]
+    const panelek = Array.from(sav.children) as HTMLElement[]
     expect(panelek).toHaveLength(2)
     expect(panelek[0]?.className).toContain("calc((100vw_-_1440px)/2_+_4rem)")
     expect(panelek[1]?.className).toContain("calc((100vw_-_1440px)/2_+_4rem)")
