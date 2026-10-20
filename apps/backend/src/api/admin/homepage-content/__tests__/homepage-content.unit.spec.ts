@@ -40,6 +40,12 @@ describe("AdminPutHomepageContent", () => {
     expect(ok(record({ slides: [slide({ image_url: "/static/hero.jpg" })] }))).toBe(true)
   })
 
+  it("HPC-PUT-NULL: null slides is 'not set' and accepted; the key itself stays required", () => {
+    expect(ok(record({ slides: null }))).toBe(true)
+    expect(ok({ texts: {} })).toBe(false)
+    expect(ok(record({ slides: "[]" }))).toBe(false)
+  })
+
   it("HPC-PUT-FIVE: a sixth slide is refused", () => {
     expect(ok(record({ slides: Array.from({ length: 6 }, () => slide()) }))).toBe(false)
   })
@@ -88,6 +94,17 @@ describe("store homepage content route", () => {
     )
     const content = (res.body as { homepage_content: Record<string, unknown> }).homepage_content
     expect(Object.keys(content).sort()).toEqual(["slides", "texts", "updated_at"])
+  })
+
+  it("HPC-STORE-NULL-SLIDES: not-set slides reach the storefront as null, not as an empty list", async () => {
+    const res = response()
+    await storeGet(
+      { scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null }) } as never,
+      res as never
+    )
+    expect(
+      (res.body as { homepage_content: { slides: unknown } }).homepage_content.slides
+    ).toBeNull()
   })
 
   it("HPC-STORE-EMPTY: nothing written yet is null, not an error", async () => {

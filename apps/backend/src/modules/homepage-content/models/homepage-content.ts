@@ -13,14 +13,15 @@ import { model } from "@medusajs/framework/utils"
  * `texts` is a flat `{ key: text }` map. The storefront owns the list of keys
  * and their starting values; a key the OS has not sent falls back to the
  * starting value, so the page never renders a hole. `slides` is the hero
- * carousel, at most five (Balázs, 2026-10-20).
+ * carousel, at most five (Balázs, 2026-10-20); `null` means not set (the
+ * storefront shows its starting slides), `[]` means no hero.
  */
 export const HomepageContent = model
   .define("homepage_content", {
     id: model.id({ prefix: "hpc" }).primaryKey(),
     key: model.text(),
     texts: model.json(),
-    slides: model.json(),
+    slides: model.json().nullable(),
   })
   .indexes([
     {
