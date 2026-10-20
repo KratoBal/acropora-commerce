@@ -254,13 +254,26 @@ const HeroCsuszka = ({
                 aria-selected={i === allas}
                 aria-label={`${i + 1}. dia`}
                 onClick={() => setAllas(i)}
-                className="h-1 rounded-sm transition-[width]"
-                style={{
-                  width: i === allas ? 28 : 8,
-                  background:
-                    i === allas ? "var(--kl-navy)" : "var(--kl-keret)",
-                }}
-              />
+                data-testid="hero-pont"
+                className="flex h-6 min-w-6 items-center justify-center"
+                style={{ width: i === allas ? 36 : 24 }}
+              >
+                {/*
+                  A KATTINTHATO TERULET 24 PIXEL MAGAS (WCAG 2.2, 2.5.8 Target
+                  Size): a gomb nagy, a lathato pont benne kicsi marad. A CI
+                  akadalymentesseg-ellenorzese (`target-size`, serious) a 4
+                  pixeles gombot elbuktatta (acrobot 33376).
+                */}
+                <span
+                  aria-hidden="true"
+                  className="block h-1 rounded-sm transition-[width]"
+                  style={{
+                    width: i === allas ? 28 : 8,
+                    background:
+                      i === allas ? "var(--kl-navy)" : "var(--kl-keret)",
+                  }}
+                />
+              </button>
             ))}
           </div>
           <div className="flex gap-[6px]">

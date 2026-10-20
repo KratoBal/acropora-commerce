@@ -135,6 +135,23 @@ describe("a hero-csúszka", () => {
     expect(cim()).toBe("Cím 1")
   })
 
+  it("a lapozó pontjai és nyilai legalább 24 pixel kattintható területet adnak (WCAG 2.5.8)", () => {
+    render(<HeroCsuszka diak={[dia(1), dia(2), dia(3)]} tenyek={TENYEK} />)
+    const pontok = screen.getAllByTestId("hero-pont")
+    expect(pontok).toHaveLength(3)
+    for (const pont of pontok) {
+      // a gomb magassága és legkisebb szélessége 24 pixel (h-6, min-w-6), a
+      // szélesség inline stílusból jön, és sosem kisebb 24-nél
+      expect(pont.className).toContain("h-6")
+      expect(pont.className).toContain("min-w-6")
+      expect(parseInt(pont.style.width, 10)).toBeGreaterThanOrEqual(24)
+    }
+    for (const nev of ["Előző dia", "Következő dia"])
+      expect(screen.getByLabelText(nev).className).toMatch(
+        /h-\[30px\].*w-\[30px\]/,
+      )
+  })
+
   it("rejtett lapon (másik fülön) nem lép", () => {
     Object.defineProperty(document, "hidden", {
       configurable: true,
