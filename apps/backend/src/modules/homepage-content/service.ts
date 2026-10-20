@@ -31,7 +31,13 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
       { key: MAIN_HOMEPAGE_KEY },
       { take: 1 }
     )
-    const body = { texts: { ...input.texts }, slides: [...input.slides] }
+    // `model.json()` is typed as an object, and `slides` is an array. The
+    // column is jsonb and stores an array as is; the validator guarantees the
+    // shape, so the cast sits here, once, rather than in the model.
+    const body = {
+      texts: { ...input.texts },
+      slides: [...input.slides] as unknown as Record<string, unknown>,
+    }
     if (!existing) {
       const [created] = await this.createHomepageContents([
         { key: MAIN_HOMEPAGE_KEY, ...body },
