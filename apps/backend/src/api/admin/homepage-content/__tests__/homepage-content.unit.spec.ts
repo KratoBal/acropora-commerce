@@ -1,3 +1,4 @@
+import { PUT as adminPut } from "../route"
 import { GET as storeGet } from "../../../store/homepage-content/route"
 import { AdminPutHomepageContent } from "../validators"
 
@@ -87,5 +88,66 @@ describe("store homepage content route", () => {
     const res = response()
     await storeGet({ scope: scope(null) } as never, res as never)
     expect(res.body).toEqual({ homepage_content: null })
+  })
+})
+
+describe("admin homepage content PUT route", () => {
+  const body = record()
+  const run = async (env: Record<string, string | undefined>, fetchImpl: typeof fetch) => {
+    const saved = { ...process.env }
+    Object.assign(process.env, env)
+    for (const k of Object.keys(env)) if (env[k] === undefined) delete process.env[k]
+    const original = global.fetch
+    global.fetch = fetchImpl
+    try {
+      const res = { body: undefined as unknown, json: (b: unknown) => (res.body = b) }
+      const logger = { info: jest.fn(), warn: jest.fn() }
+      const scope = {
+        resolve: (name: string) =>
+          name === "logger"
+            ? logger
+            : { upsertMainHomepageContent: async (b: unknown) => ({ id: "hpc_1", ...(b as object) }) },
+      }
+      await adminPut({ scope, validatedBody: body } as never, res as never)
+      return { res, logger }
+    } finally {
+      global.fetch = original
+      process.env = saved
+    }
+  }
+
+  it("HPC-REVALIDATE: a save empties the storefront's homepage-content tag", async () => {
+    const calls: { url: string; tags: string[] }[] = []
+    const fetchImpl = (async (url: string, init: { body: string }) => {
+      calls.push({ url, tags: JSON.parse(init.body).tags })
+      return { ok: true, status: 200 }
+    }) as unknown as typeof fetch
+    const { res } = await run(
+      { ACROPORA_STOREFRONT_URL: "https://shop.example", STOREFRONT_REVALIDATE_SECRET: "s" },
+      fetchImpl
+    )
+    expect(calls).toEqual([{ url: "https://shop.example/api/revalidate", tags: ["homepage-content"] }])
+    expect((res.body as { homepage_content: { id: string } }).homepage_content.id).toBe("hpc_1")
+  })
+
+  it("HPC-REVALIDATE-OFF: without the storefront address the save still answers and nothing is called", async () => {
+    const fetchImpl = jest.fn() as unknown as typeof fetch
+    const { res } = await run(
+      { ACROPORA_STOREFRONT_URL: undefined, STOREFRONT_REVALIDATE_SECRET: undefined },
+      fetchImpl
+    )
+    expect(fetchImpl).not.toHaveBeenCalled()
+    expect((res.body as { homepage_content: unknown }).homepage_content).toBeTruthy()
+  })
+
+  it("HPC-REVALIDATE-FAIL: a failing purge is logged, the save still answers", async () => {
+    const fetchImpl = (async () => {
+      throw new Error("connection refused")
+    }) as unknown as typeof fetch
+    const { res } = await run(
+      { ACROPORA_STOREFRONT_URL: "https://shop.example", STOREFRONT_REVALIDATE_SECRET: "s" },
+      fetchImpl
+    )
+    expect((res.body as { homepage_content: unknown }).homepage_content).toBeTruthy()
   })
 })
