@@ -1,0 +1,19 @@
+import { MedusaContainer } from "@medusajs/framework"
+
+import { HOMEPAGE_CONTENT_MODULE } from "../../../modules/homepage-content"
+import HomepageContentModuleService from "../../../modules/homepage-content/service"
+
+export const resolveHomepageContentService = (
+  scope: MedusaContainer
+): HomepageContentModuleService => scope.resolve(HOMEPAGE_CONTENT_MODULE)
+
+/** What a buyer may see: the texts and slides, no id, no key. */
+export const forStore = (content: {
+  texts: unknown
+  slides: unknown
+  updated_at?: Date | string | null
+}) => ({
+  texts: content.texts,
+  slides: content.slides,
+  updated_at: content.updated_at ?? null,
+})
