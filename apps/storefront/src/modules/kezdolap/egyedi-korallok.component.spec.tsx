@@ -130,6 +130,16 @@ describe("az Egyedi korallok sav", () => {
     expect(screen.getByText("Egy napra félretesszük")).toBeTruthy()
   })
 
+  it("a sáv tartalma a 1440 pixeles konténerben áll, a hátterű section nem kap vízszintes kitöltést", async () => {
+    data.listProducts.mockResolvedValue(valasz([termek("x")]))
+    const { container } = await renderel(["x"])
+    const konteiner = container.querySelector('[data-testid="kl-konteiner"]')
+    expect(konteiner?.className).toContain("max-w-[1440px]")
+    expect(container.querySelector("section")?.className ?? "").not.toMatch(
+      /(^|\s)(small:)?px-/,
+    )
+  })
+
   it("a handle-lista elfogy: a sorrend-segéd csak a kért handle-öket adja", async () => {
     data.listProducts.mockResolvedValue(valasz([termek("a"), termek("zzz")]))
     const out = await termekekHandleSzerint(["a"], "hu")
