@@ -24,7 +24,10 @@ const MitKeresel = ({ s }: { s: Szovegek }) => (
       >
         {s.szoveg("mit.cim")}
       </h2>
-      <p className="max-w-[420px] text-base" style={{ color: "var(--kl-halvany)" }}>
+      <p
+        className="max-w-[420px] text-base"
+        style={{ color: "var(--kl-halvany)" }}
+      >
         {s.szoveg("mit.alcim")}
       </p>
     </div>
@@ -44,7 +47,10 @@ const MitKeresel = ({ s }: { s: Szovegek }) => (
             >
               {s.szoveg(`mit.${n}.cim`)}
             </h3>
-            <span className="text-[13px]" style={{ color: "var(--kl-halvany)" }}>
+            <span
+              className="text-[13px]"
+              style={{ color: "var(--kl-halvany)" }}
+            >
               {String(n).padStart(2, "0")}
             </span>
           </div>
@@ -57,11 +63,7 @@ const MitKeresel = ({ s }: { s: Szovegek }) => (
               const cim = s.link(`mit.${n}.l${l}.link`)
               if (!felirat || !cim) return null
               return (
-                <CimLink
-                  key={l}
-                  cim={cim}
-                  style={{ color: "var(--kl-kek)" }}
-                >
+                <CimLink key={l} cim={cim} style={{ color: "var(--kl-kek)" }}>
                   {felirat}
                 </CimLink>
               )
