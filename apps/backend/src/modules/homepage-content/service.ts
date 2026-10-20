@@ -21,7 +21,8 @@ export type HomepageSlide = {
 
 export type HomepageContentInput = {
   texts: Record<string, string>
-  slides: HomepageSlide[]
+  /** `null`: not set, the storefront shows its starting slides. `[]`: no hero. */
+  slides: HomepageSlide[] | null
 }
 
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
@@ -36,7 +37,9 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
     // shape, so the cast sits here, once, rather than in the model.
     const body = {
       texts: { ...input.texts },
-      slides: [...input.slides] as unknown as Record<string, unknown>,
+      slides: (input.slides === null
+        ? null
+        : [...input.slides]) as unknown as Record<string, unknown>,
     }
     if (!existing) {
       const [created] = await this.createHomepageContents([

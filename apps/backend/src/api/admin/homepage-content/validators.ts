@@ -59,7 +59,10 @@ export const AdminPutHomepageContent = z
       )
       .refine((t) => Object.keys(t).length <= 400, "At most 400 texts"),
     // Balázs, 2026-10-20: the hero carousel holds at most five slides.
-    slides: z.array(slide).max(5),
+    // `null` is "not set": the storefront shows its own starting slides, so
+    // an OS that edited only texts does not blank the hero. An empty array is
+    // a decision (no hero), and is NOT the same as null.
+    slides: z.array(slide).max(5).nullable(),
   })
   .strict()
 
