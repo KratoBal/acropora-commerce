@@ -68,7 +68,7 @@ const Boltunk = ({ s }: { s: Szovegek }) => {
               className="self-start rounded-[28px] px-6 py-[15px] text-[15px] font-semibold"
               style={{
                 background: "var(--kl-narancs)",
-                color: "var(--kl-feher)",
+                color: "var(--kl-navy)",
               }}
             >
               {gombFelirat}

@@ -43,7 +43,7 @@ const Velemenyek = ({ s }: { s: Szovegek }) => (
         <span
           aria-hidden="true"
           className="tracking-[2px]"
-          style={{ color: "var(--kl-narancs)" }}
+          style={{ color: "var(--kl-narancs-tinta)" }}
         >
           ★★★★★
         </span>

@@ -21,6 +21,8 @@ export const KL_TOKENEK = {
   "--kl-navy-mely": "#0A1726",
   "--kl-kek": "#1D5B87",
   "--kl-narancs": "#D5782F",
+  // narancs SZOVEGHEZ: a #D5782F 3,09:1 a lapon, a #A8561A 5,05:1 (WCAG AA 4,5:1)
+  "--kl-narancs-tinta": "#A8561A",
   "--kl-keret": "#E3E1DC",
   "--kl-feher": "#FFFFFF",
 } as CSSProperties

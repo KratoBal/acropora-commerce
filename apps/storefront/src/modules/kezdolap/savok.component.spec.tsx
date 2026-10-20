@@ -1,4 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import type { ReactElement } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -13,6 +15,7 @@ import Markak from "./components/markak"
 import MitKeresel from "./components/mit-keresel"
 import Szolgaltatasok from "./components/szolgaltatasok"
 import Velemenyek from "./components/velemenyek"
+import { KL_TOKENEK } from "./kl-tokenek"
 import { szovegek } from "./szovegek"
 
 /**
@@ -156,5 +159,49 @@ describe("a kezdőlap sávjai", () => {
     expect(screen.queryByText("Friss érkezések")).toBeNull()
     expect(screen.queryByText("Kezdő útmutató")).toBeNull()
     expect(screen.getByText("Időpont tanácsadásra").closest("a")).toBeTruthy()
+  })
+})
+
+/**
+ * A SZIN-KONTRASZT A CI AKADALYMENTESSEGI ELLENORZESENEK MERCEJE (axe, AA 4,5:1).
+ * A jsdom nem szamol kontrasztot, ezert a tokenekbol szamolunk: a narancs
+ * hattere NEM kap feher szoveget (3,2:1), a narancs SZOVEG a sotetebb tinta.
+ */
+describe("a kezdőlap színpárjai", () => {
+  const fenyero = (hex: string) => {
+    const csat = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * csat[0] + 0.7152 * csat[1] + 0.0722 * csat[2]
+  }
+  const kontraszt = (a: string, b: string) => {
+    const [x, y] = [fenyero(a), fenyero(b)].sort((p, q) => q - p)
+    return (x + 0.05) / (y + 0.05)
+  }
+  const T = KL_TOKENEK as Record<string, string>
+
+  it("a szöveg-színek legalább 4,5:1 a hátterükön", () => {
+    const parok: [string, string][] = [
+      ["--kl-halvany", "--kl-lap"],
+      ["--kl-kek", "--kl-lap"],
+      ["--kl-narancs-tinta", "--kl-lap"],
+      ["--kl-navy", "--kl-narancs"],
+      ["--kl-halvany", "--kl-lap-halvany"],
+    ]
+    for (const [elol, hatter] of parok)
+      expect(
+        kontraszt(T[elol], T[hatter]),
+        `${elol} / ${hatter}`,
+      ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it("a narancs háttérre nem kerül fehér szöveg (3,2:1)", () => {
+    expect(kontraszt(T["--kl-feher"], T["--kl-narancs"])).toBeLessThan(4.5)
+    const forras = readFileSync(
+      join(__dirname, "components", "boltunk", "index.tsx"),
+      "utf-8",
+    )
+    expect(forras).not.toMatch(/var\(--kl-narancs\)[^}]*var\(--kl-feher\)/)
   })
 })

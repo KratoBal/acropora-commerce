@@ -27,7 +27,8 @@ export type HeroDia = {
 /** A bolt valasza: `null`, amig az OS nem irt semmit. */
 export type KezdolapTartalom = {
   texts: Record<string, string>
-  slides: HeroDia[]
+  /** `null`: az OS nem allitott be diakat, a kezdodiak allnak; `[]`: nincs hero. */
+  slides: HeroDia[] | null
 }
 
 /**
@@ -86,7 +87,7 @@ export const ALAP_DIAK: readonly HeroDia[] = [
 /** A bolt valaszabol a lapnak szolo alak: a keresok (szoveg, link, kep) es a diak. */
 export const kezdolapAdat = (tartalom: KezdolapTartalom | null) => ({
   ...szovegek(tartalom?.texts ?? null),
-  diak: tartalom ? tartalom.slides : [...ALAP_DIAK],
+  diak: tartalom?.slides ?? [...ALAP_DIAK],
 })
 
 export { KEZDOLAP_SZOVEGEK }
