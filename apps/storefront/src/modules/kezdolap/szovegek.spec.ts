@@ -56,8 +56,13 @@ describe("a kitalált tények jelölése", () => {
       "bolt.nyitva_ertek",
       "halado.1.szoveg",
       "halado.3.szoveg",
+      "korall.szoveg",
+      "korall.1.cim",
+      "korall.1.szoveg",
       "korall.2.cim",
       "korall.2.szoveg",
+      "korall.3.cim",
+      "korall.3.szoveg",
       "korall.gomb.felirat",
     ])
       expect(minta(kulcs), kulcs).toBe(true)

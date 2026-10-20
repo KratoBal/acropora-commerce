@@ -600,7 +600,7 @@ const NYERS: readonly KezdolapSzoveg[] = [
  * kap jelzot, es a teszt ugyanezt a listat veti ossze a lappal.
  */
 const MINTA_MINTA =
-  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.sav\.[1-4]$|fejlec\.1\.kartya\.szoveg$|korall\.2\.|korall\.gomb\.felirat$)/
+  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.sav\.[1-4]$|fejlec\.1\.kartya\.szoveg$|korall\.szoveg$|korall\.[123]\.|korall\.gomb\.felirat$)/
 
 export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = NYERS.map((sor) =>
   MINTA_MINTA.test(sor.kulcs) ? { ...sor, minta: true } : sor,

@@ -116,14 +116,49 @@ describe("az Egyedi korallok sav", () => {
     expect(screen.getByText("<img src=x onerror=alert(1)>")).toBeTruthy()
   })
 
+  it("minden üzemi állítás jelölt: a bevezető (saját fotózás, kód a talpon), az első lépés (minden lapon), a harmadik (útmutató) is", async () => {
+    data.listProducts.mockResolvedValue(valasz([termek("x")]))
+    for (const kulcs of [
+      "korall.szoveg",
+      "korall.1.szoveg",
+      "korall.3.szoveg",
+      "korall.2.cim",
+      "korall.gomb.felirat",
+    ]) {
+      cleanup()
+      // minden más kulcs az OS sajátja: csak ez az egy marad kezdőérték
+      const sajat = Object.fromEntries(
+        [
+          "korall.szoveg",
+          "korall.1.cim",
+          "korall.1.szoveg",
+          "korall.2.cim",
+          "korall.2.szoveg",
+          "korall.3.cim",
+          "korall.3.szoveg",
+          "korall.gomb.felirat",
+        ]
+          .filter((k) => k !== kulcs)
+          .map((k) => [k, "Saját."]),
+      )
+      await renderel(["x"], sajat)
+      expect(screen.getAllByTestId("minta-jelzo"), kulcs).toHaveLength(1)
+    }
+  })
+
   it("a kitalált ígéret és darabszám jelölt, az OS saját értékénél már nem", async () => {
     data.listProducts.mockResolvedValue(valasz([termek("x")]))
     await renderel(["x"])
     expect(screen.getAllByTestId("minta-jelzo")).toHaveLength(1)
     cleanup()
     await renderel(["x"], {
+      "korall.szoveg": "Saját bevezető.",
+      "korall.1.cim": "Egy",
+      "korall.1.szoveg": "Egy szöveg.",
       "korall.2.cim": "Egy napra félretesszük",
       "korall.2.szoveg": "Addig senki nem veheti meg.",
+      "korall.3.cim": "Három",
+      "korall.3.szoveg": "Három szöveg.",
       "korall.gomb.felirat": "Minden egyedi korall",
     })
     expect(screen.queryByTestId("minta-jelzo")).toBeNull()

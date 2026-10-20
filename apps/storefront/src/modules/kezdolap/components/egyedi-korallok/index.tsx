@@ -10,7 +10,16 @@ import PreviewPrice from "@modules/products/components/product-preview/price"
 import Thumbnail from "@modules/products/components/thumbnail"
 
 const LEPESEK = [1, 2, 3]
-const MINTA_KULCSOK = ["korall.2.cim", "korall.2.szoveg", "korall.gomb.felirat"]
+const MINTA_KULCSOK = [
+  "korall.szoveg",
+  "korall.1.cim",
+  "korall.1.szoveg",
+  "korall.2.cim",
+  "korall.2.szoveg",
+  "korall.3.cim",
+  "korall.3.szoveg",
+  "korall.gomb.felirat",
+]
 
 /**
  * AZ "EGYEDI KORALLOK" SAV: az OS-ben jelolt termekek (handle-jeik a bolt
@@ -125,7 +134,7 @@ const EgyediKorallok = async ({
             </div>
             {MINTA_KULCSOK.some((k) => s.minta(k)) ? (
               <div>
-                <MintaJelzo mit="ígéret és darabszám" />
+                <MintaJelzo mit="üzemi állítások és darabszám" />
               </div>
             ) : null}
           </div>
