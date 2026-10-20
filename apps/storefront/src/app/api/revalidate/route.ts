@@ -22,7 +22,12 @@ import { NextResponse, type NextRequest } from "next/server"
 export const dynamic = "force-dynamic"
 
 // `redirects`: a régi címek listája (SEO P0 PR 7c); a backend a lista írásakor hívja
-export const URITHETO_CIMKEK = ["products", "redirects"] as const
+// `homepage-content`: a kezdolap szerkesztheto tartalma; a backend az OS mentesekor hivja
+export const URITHETO_CIMKEK = [
+  "products",
+  "redirects",
+  "homepage-content",
+] as const
 
 const egyezik = (kapott: string | null, vart: string) => {
   const kodolo = new TextEncoder()

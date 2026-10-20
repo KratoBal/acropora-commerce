@@ -12,7 +12,7 @@
  *                  regioban, es EGYETLEN EGYEN SINCS kedvezmenyes ar
  *                  (original_amount != calculated_amount sehol). A tervbeli
  *                  -20 es -30 szazalek MA nem szarmaztathato adatbol.
- *   hero-csuszka   nincs forras: kep es szoveg kell hozza (tartalmi dontes).
+ *   hero-csuszka   MAR NEM ITT: az OS szerkeszti (modules/kezdolap/szovegek.ts).
  *   Reef Club      nincs mogotte pontgyujtes es nincs feliratkozo lista.
  *   magazin        nincs cikkforras a boltban.
  *   video          nincs kivalasztott video.
@@ -40,50 +40,6 @@
  * sav elo adatot olvas, es a `MintaJelzo` lekerul rola. A fajl akkor szunik
  * meg, amikor az utolso konstans is elfogy.
  */
-
-/** Egy dia a hero-csuszkan. */
-export interface MintaDia {
-  eyebrow: string
-  cim: string
-  szoveg: string
-  elsoGomb: string
-  masodikGomb: string
-}
-
-/**
- * A HERO-CSUSZKA DIAI.
- *
- * A terv EGY diat mutat kidolgozva, es a lapozo alatta "01 / 03" allast ir.
- * A masik ket dia szovege ezert nem szerepel a terven: azokat a cimeket a
- * tervlap sajat kategoria-csempeirol vettem at (Vilagitastechnika, Vizkezeles),
- * hogy a csuszka mozgasa megnezheto legyen. Tartalmi ertekuk NINCS.
- */
-export const MINTA_DIAK: MintaDia[] = [
-  {
-    eyebrow: "Új szállítmány · SPS",
-    cim: "Friss indonéz korallok a telepen",
-    szoveg:
-      "Minden példány egyedi, fotóval és mérettel. Karanténból kikerült, telepített darabok.",
-    elsoGomb: "Korallok megtekintése",
-    masodikGomb: "Hogyan vásárolj élő állatot",
-  },
-  {
-    eyebrow: "Világítástechnika",
-    cim: "Lámpák minden medenceméretre",
-    szoveg:
-      "LED, T5 és hibrid megoldások, a nano medencétől a bemutató akváriumig.",
-    elsoGomb: "Lámpák megtekintése",
-    masodikGomb: "Mennyi fény kell az SPS-nek",
-  },
-  {
-    eyebrow: "Vízkezelés",
-    cim: "A víz a kiindulás, nem a következmény",
-    szoveg:
-      "Foszfátmegkötők, baktériumkultúrák, adalékok és a hozzájuk tartozó tesztek.",
-    elsoGomb: "Vízkezelés megtekintése",
-    masodikGomb: "ICP vízanalízis",
-  },
-]
 
 /** Egy kedvezmenyes termek az akcios soron. */
 export interface MintaAkcio {

@@ -6,11 +6,14 @@ import {
 } from "@lib/seo/oldal-metaadat"
 import { STORE_NAME } from "@lib/store"
 
+import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import AkciosSor from "@modules/kezdolap/components/akcios-sor"
 import HeroCsuszka from "@modules/kezdolap/components/hero-csuszka"
 import KategoriaSav from "@modules/kezdolap/components/kategoria-sav"
 import MagazinEsVideo from "@modules/kezdolap/components/magazin-es-video"
 import ReefClub from "@modules/kezdolap/components/reef-club"
+import { KL_TOKENEK } from "@modules/kezdolap/kl-tokenek"
+import { kezdolapAdat } from "@modules/kezdolap/tartalom"
 import { getRegion } from "@lib/data/regions"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
@@ -77,7 +80,7 @@ export async function generateMetadata(props: {
  *
  * === A SAVOK SORRENDJE A TERVROL JON ===
  *
- *   hero-csuszka      MINTA (kep es szoveg)
+ *   hero-csuszka      SZERKESZTHETO (az OS-bol; kezdoertek a terv szovege)
  *   kategoriasav      ELO adat
  *   akcios sor        MINTA (a boltban ma nincs kedvezmenyes ar)
  *   Reef Club         MINTA (a klub meg nem indult)
@@ -101,15 +104,24 @@ export default async function Home(props: {
 
   const { countryCode } = params
 
-  const region = await getRegion(countryCode)
+  const [region, tartalom] = await Promise.all([
+    getRegion(countryCode),
+    kezdolapTartalom(),
+  ])
+  const { szoveg, minta, diak } = kezdolapAdat(tartalom)
+  const tenyek = [1, 2, 3].map((n) => ({
+    cim: szoveg(`hero.tenyek.${n}.cim`),
+    szoveg: szoveg(`hero.tenyek.${n}.szoveg`),
+    minta: minta(`hero.tenyek.${n}.cim`) || minta(`hero.tenyek.${n}.szoveg`),
+  }))
 
   return (
-    <>
-      <HeroCsuszka />
+    <div style={KL_TOKENEK}>
+      <HeroCsuszka diak={diak} tenyek={tenyek} />
       {region ? <KategoriaSav regionId={region.id} /> : null}
       <AkciosSor />
       <ReefClub />
       <MagazinEsVideo />
-    </>
+    </div>
   )
 }
