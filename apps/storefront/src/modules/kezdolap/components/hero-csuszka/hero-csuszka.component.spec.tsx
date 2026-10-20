@@ -73,25 +73,25 @@ describe("a hero-csúszka", () => {
     render(<HeroCsuszka diak={[dia(1), dia(2), dia(3)]} tenyek={TENYEK} />)
     fireEvent.pointerDown(screen.getByTestId("hero-csuszka"))
     expect(screen.getByTestId("hero-csuszka").dataset.automata).toBe("all")
-    telik(30000)
+    telik(6100)
     expect(cim()).toBe("Cím 1")
     fireEvent.click(screen.getByLabelText("Következő dia"))
     expect(cim()).toBe("Cím 2")
-    telik(30000)
+    telik(6100)
     expect(cim()).toBe("Cím 2")
   })
 
   it("egy billentyű a csúszkán is megállítja", () => {
     render(<HeroCsuszka diak={[dia(1), dia(2)]} tenyek={TENYEK} />)
     fireEvent.keyDown(screen.getByTestId("hero-csuszka"), { key: "Tab" })
-    telik(30000)
+    telik(6100)
     expect(cim()).toBe("Cím 1")
   })
 
   it("mozgás-csökkentésnél az elejétől nem lép", () => {
     mozgasCsokkentes(true)
     render(<HeroCsuszka diak={[dia(1), dia(2)]} tenyek={TENYEK} />)
-    telik(30000)
+    telik(6100)
     expect(cim()).toBe("Cím 1")
   })
 
@@ -99,14 +99,14 @@ describe("a hero-csúszka", () => {
     const figyelok = mozgasCsokkentes(false)
     render(<HeroCsuszka diak={[dia(1), dia(2)]} tenyek={TENYEK} />)
     act(() => figyelok.forEach((f) => f({ matches: true })))
-    telik(30000)
+    telik(6100)
     expect(cim()).toBe("Cím 1")
   })
 
   it("egy diánál nincs lapozó és nincs léptetés; nulla diánál nincs csúszka", () => {
     const { container, rerender } = render(<HeroCsuszka diak={[dia(1)]} tenyek={TENYEK} />)
     expect(screen.queryByLabelText("Következő dia")).toBeNull()
-    telik(30000)
+    telik(6100)
     expect(cim()).toBe("Cím 1")
     rerender(<HeroCsuszka diak={[]} tenyek={TENYEK} />)
     expect(container.firstChild).toBeNull()
