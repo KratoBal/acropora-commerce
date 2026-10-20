@@ -145,7 +145,7 @@ export default async function KezdolapFejlec({
               </form>
               <LocalizedClientLink
                 href="/account"
-                className="hidden items-center gap-2 text-[14px] font-medium small:flex"
+                className="hidden min-h-6 items-center gap-2 text-[14px] font-medium small:flex"
                 style={{ color: "var(--kl-szoveg)" }}
                 data-testid="kl-fiok"
               >
@@ -163,9 +163,21 @@ export default async function KezdolapFejlec({
                 </svg>
                 Fiókom
               </LocalizedClientLink>
-              <Suspense fallback={<KosarLink darab={0} />}>
-                <CartButton />
-              </Suspense>
+              {/*
+                A KOSAR A TERV "KOSAR" GOMBJA (sotet tabletta), A MEGLEVO,
+                VALODI KOSAR-LINKBOL. A link maga 13 pixeles szoveg 17 pixeles
+                sormagassaggal, vagyis 17 pixel magas celpont: a CI akadaly-
+                mentesseg-ellenorzese (`target-size`, WCAG 2.5.8) a kezdolapon
+                ezt buktatta. A tabletta 44 pixel magas, tehat a celpont is.
+              */}
+              <div
+                data-testid="kl-kosar"
+                className="[&_a]:flex [&_a]:h-11 [&_a]:min-w-11 [&_a]:items-center [&_a]:justify-center [&_a]:rounded-full [&_a]:bg-[color:var(--kl-navy)] [&_a]:px-[18px] [&_a]:text-[color:var(--kl-lap)]"
+              >
+                <Suspense fallback={<KosarLink darab={0} />}>
+                  <CartButton />
+                </Suspense>
+              </div>
             </div>
           </div>
         </div>
