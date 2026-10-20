@@ -46,6 +46,22 @@ describe("AdminPutHomepageContent", () => {
     expect(ok(record({ slides: "[]" }))).toBe(false)
   })
 
+  it("HPC-PUT-FEATURED: the featured band's handles are optional, one URL segment each, at most twelve", () => {
+    expect(ok(record())).toBe(true) // an OS that predates the field
+    expect(ok(record({ featured_handles: null }))).toBe(true)
+    expect(ok(record({ featured_handles: [] }))).toBe(true)
+    expect(ok(record({ featured_handles: ["acropora-millepora-k-2417"] }))).toBe(true)
+    expect(
+      ok(record({ featured_handles: Array.from({ length: 12 }, (_, i) => `k-${i}`) }))
+    ).toBe(true)
+    expect(
+      ok(record({ featured_handles: Array.from({ length: 13 }, (_, i) => `k-${i}`) }))
+    ).toBe(false)
+    for (const bad of ["", "a/b", "a b", "a?b", "a#b", "a\\b", 5])
+      expect(ok(record({ featured_handles: [bad] }))).toBe(false)
+    expect(ok(record({ featured_handles: "k-1" }))).toBe(false)
+  })
+
   it("HPC-PUT-FIVE: a sixth slide is refused", () => {
     expect(ok(record({ slides: Array.from({ length: 6 }, () => slide()) }))).toBe(false)
   })
@@ -93,7 +109,12 @@ describe("store homepage content route", () => {
       res as never
     )
     const content = (res.body as { homepage_content: Record<string, unknown> }).homepage_content
-    expect(Object.keys(content).sort()).toEqual(["slides", "texts", "updated_at"])
+    expect(Object.keys(content).sort()).toEqual([
+      "featured_handles",
+      "slides",
+      "texts",
+      "updated_at",
+    ])
   })
 
   it("HPC-STORE-NULL-SLIDES: not-set slides reach the storefront as null, not as an empty list", async () => {
@@ -104,6 +125,29 @@ describe("store homepage content route", () => {
     )
     expect(
       (res.body as { homepage_content: { slides: unknown } }).homepage_content.slides
+    ).toBeNull()
+  })
+
+  it("HPC-STORE-FEATURED: the featured handles reach the storefront, null when the OS never sent any", async () => {
+    const withHandles = response()
+    await storeGet(
+      {
+        scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null, featured_handles: ["k-1", "k-2"] }),
+      } as never,
+      withHandles as never
+    )
+    expect(
+      (withHandles.body as { homepage_content: { featured_handles: unknown } }).homepage_content
+        .featured_handles
+    ).toEqual(["k-1", "k-2"])
+    const without = response()
+    await storeGet(
+      { scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null }) } as never,
+      without as never
+    )
+    expect(
+      (without.body as { homepage_content: { featured_handles: unknown } }).homepage_content
+        .featured_handles
     ).toBeNull()
   })
 

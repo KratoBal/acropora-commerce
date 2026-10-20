@@ -23,6 +23,8 @@ export type HomepageContentInput = {
   texts: Record<string, string>
   /** `null`: not set, the storefront shows its starting slides. `[]`: no hero. */
   slides: HomepageSlide[] | null
+  /** Product handles of the featured band, in order; absent or null: none. */
+  featured_handles?: string[] | null
 }
 
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
@@ -36,6 +38,9 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
     // column is jsonb and stores an array as is; the validator guarantees the
     // shape, so the cast sits here, once, rather than in the model.
     const body = {
+      featured_handles: (input.featured_handles
+        ? [...input.featured_handles]
+        : null) as unknown as Record<string, unknown>,
       texts: { ...input.texts },
       slides: (input.slides === null
         ? null

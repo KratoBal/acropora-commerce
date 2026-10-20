@@ -63,6 +63,19 @@ export const AdminPutHomepageContent = z
     // an OS that edited only texts does not blank the hero. An empty array is
     // a decision (no hero), and is NOT the same as null.
     slides: z.array(slide).max(5).nullable(),
+    // The product handles of the "Egyedi korallok" band, in order. Optional:
+    // an OS that predates the field keeps working (absent is the same as none).
+    featured_handles: z
+      .array(
+        z
+          .string()
+          .min(1)
+          .max(200)
+          .regex(/^[^\s/?#\\]+$/, "A handle is one URL segment")
+      )
+      .max(12)
+      .nullable()
+      .optional(),
   })
   .strict()
 
