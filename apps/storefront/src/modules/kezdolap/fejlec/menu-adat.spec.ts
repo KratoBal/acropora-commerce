@@ -253,6 +253,23 @@ describe("a menü a valódi stage-fán", () => {
     expect(kategoriaKeres(STAGE, nevek, "nincs")).toBeUndefined()
   })
 
+  it("a handle-előtag (---szülő) a névtérkép nélkül is talál, és a név a handle nélkül is (egymástól függetlenül)", () => {
+    // a teljes nevek ("Technika - Termékek") nem egyeznek: csak az előtag talál
+    expect(kategoriaKeres(STAGE, new Map(), "technika")?.handle).toBe(
+      "technika---termekek",
+    )
+    // a handle nem egyezik, de a megjelenített név igen
+    const nevesitett: MenuKategoria[] = [kat("valami-mas", "Akvárium technika")]
+    expect(
+      kategoriaKeres(
+        nevesitett,
+        new Map([["pcat_valami-mas", "Technika"]]),
+        "technika",
+      )?.handle,
+    ).toBe("valami-mas")
+    expect(kategoriaKeres(nevesitett, new Map(), "technika")).toBeUndefined()
+  })
+
   it("az alapértékekkel mind a négy főpont megvan, a Technika a valódi gyerekeivel", () => {
     const pontok = menuPontok(szovegek(null), STAGE, nevek)
     expect(pontok.map((p) => p.felirat)).toEqual([
