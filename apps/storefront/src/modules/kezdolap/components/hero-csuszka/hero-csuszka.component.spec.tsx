@@ -31,7 +31,8 @@ const mozgasCsokkentes = (be: boolean) => {
   const figyelok: ((e: { matches: boolean }) => void)[] = []
   window.matchMedia = vi.fn().mockImplementation(() => ({
     matches: be,
-    addEventListener: (_: string, f: (e: { matches: boolean }) => void) => figyelok.push(f),
+    addEventListener: (_: string, f: (e: { matches: boolean }) => void) =>
+      figyelok.push(f),
     removeEventListener: vi.fn(),
   })) as never
   return figyelok
@@ -103,8 +104,29 @@ describe("a hero-csúszka", () => {
     expect(cim()).toBe("Cím 1")
   })
 
+  it("rejtett lapon (másik fülön) nem lép", () => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: true,
+    })
+    try {
+      render(<HeroCsuszka diak={[dia(1), dia(2)]} tenyek={TENYEK} />)
+      telik(6100)
+      expect(cim()).toBe("Cím 1")
+    } finally {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: false,
+      })
+    }
+    telik(6100)
+    expect(cim()).toBe("Cím 2")
+  })
+
   it("egy diánál nincs lapozó és nincs léptetés; nulla diánál nincs csúszka", () => {
-    const { container, rerender } = render(<HeroCsuszka diak={[dia(1)]} tenyek={TENYEK} />)
+    const { container, rerender } = render(
+      <HeroCsuszka diak={[dia(1)]} tenyek={TENYEK} />,
+    )
     expect(screen.queryByLabelText("Következő dia")).toBeNull()
     telik(6100)
     expect(cim()).toBe("Cím 1")
@@ -115,7 +137,10 @@ describe("a hero-csúszka", () => {
   it("a gomb csak akkor jelenik meg, ha van felirata ÉS célja", () => {
     render(
       <HeroCsuszka
-        diak={[dia(1, { cta2: "Cél nélkül", cta2_href: null }), dia(2, { cta: "" })]}
+        diak={[
+          dia(1, { cta2: "Cél nélkül", cta2_href: null }),
+          dia(2, { cta: "" }),
+        ]}
         tenyek={TENYEK}
       />,
     )
@@ -139,7 +164,10 @@ describe("a hero-csúszka", () => {
   it("a kép van, vagy az alt szövegű hely áll helyette", () => {
     render(
       <HeroCsuszka
-        diak={[dia(1, { image_url: "https://shop.example/static/a.jpg" }), dia(2)]}
+        diak={[
+          dia(1, { image_url: "https://shop.example/static/a.jpg" }),
+          dia(2),
+        ]}
         tenyek={TENYEK}
       />,
     )

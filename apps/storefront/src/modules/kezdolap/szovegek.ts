@@ -78,7 +78,10 @@ const ALAPOK: ReadonlyMap<string, string> = new Map(
  */
 export const szovegKereso = (texts: Record<string, string> | null) => {
   return (kulcs: string): string => {
-    const kuldott = texts && Object.prototype.hasOwnProperty.call(texts, kulcs) ? texts[kulcs] : null
+    const kuldott =
+      texts && Object.prototype.hasOwnProperty.call(texts, kulcs)
+        ? texts[kulcs]
+        : null
     if (typeof kuldott === "string") return kuldott
     const alap = ALAPOK.get(kulcs)
     if (alap === undefined) {

@@ -121,9 +121,8 @@ const HeroCsuszka = ({
               {dia.eyebrow}
             </div>
             <h1
-              className="mt-7 text-5xl font-normal leading-[1.02] tracking-[-0.02em] small:min-h-[302px] small:text-[74px]"
+              className="mt-7 font-kiemelt text-5xl font-normal leading-[1.02] tracking-[-0.02em] small:min-h-[302px] small:text-[74px]"
               style={{
-                fontFamily: "var(--terv-betu-kiemelt-lanc)",
                 color: "var(--kl-navy)",
                 textWrap: "pretty",
               }}
@@ -141,7 +140,10 @@ const HeroCsuszka = ({
                 <LocalizedClientLink
                   href={dia.cta_href}
                   className="rounded-[28px] px-[26px] py-4 text-[15px] font-semibold"
-                  style={{ background: "var(--kl-navy)", color: "var(--kl-lap)" }}
+                  style={{
+                    background: "var(--kl-navy)",
+                    color: "var(--kl-lap)",
+                  }}
                 >
                   {dia.cta}
                 </LocalizedClientLink>
@@ -162,7 +164,10 @@ const HeroCsuszka = ({
           </div>
           <div
             className="flex flex-wrap gap-8 border-t pt-[22px] text-[14px]"
-            style={{ borderColor: "var(--kl-keret)", color: "var(--kl-halvany)" }}
+            style={{
+              borderColor: "var(--kl-keret)",
+              color: "var(--kl-halvany)",
+            }}
           >
             {tenyek.map((teny, i) => (
               <div key={i}>
@@ -223,7 +228,11 @@ const HeroCsuszka = ({
 
       {darab > 1 ? (
         <div className="flex flex-col items-center gap-[14px] px-4 pb-6 small:px-16">
-          <div className="flex items-center gap-[6px]" role="tablist" aria-label="Diák">
+          <div
+            className="flex items-center gap-[6px]"
+            role="tablist"
+            aria-label="Diák"
+          >
             {diak.map((_, i) => (
               <button
                 key={i}
@@ -247,9 +256,20 @@ const HeroCsuszka = ({
               onClick={() => lep(-1)}
               aria-label="Előző dia"
               className="flex h-[30px] w-[30px] items-center justify-center rounded-full border"
-              style={{ borderColor: "var(--kl-keret)", background: "var(--kl-feher)" }}
+              style={{
+                borderColor: "var(--kl-keret)",
+                background: "var(--kl-feher)",
+              }}
             >
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="var(--kl-navy)" strokeWidth="1.6" aria-hidden="true">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="var(--kl-navy)"
+                strokeWidth="1.6"
+                aria-hidden="true"
+              >
                 <path d="M8.5 3L4.5 7l4 4" />
               </svg>
             </button>
@@ -260,7 +280,15 @@ const HeroCsuszka = ({
               className="flex h-[30px] w-[30px] items-center justify-center rounded-full"
               style={{ background: "var(--kl-navy)" }}
             >
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="var(--kl-lap)" strokeWidth="1.6" aria-hidden="true">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="var(--kl-lap)"
+                strokeWidth="1.6"
+                aria-hidden="true"
+              >
                 <path d="M5.5 3l4 4-4 4" />
               </svg>
             </button>

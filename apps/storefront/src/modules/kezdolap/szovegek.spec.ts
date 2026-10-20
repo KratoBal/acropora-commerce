@@ -22,11 +22,15 @@ describe("a kezdőlap szövegkatalógusa", () => {
       expect(kulcs, kulcs).toMatch(/^[a-z0-9][a-z0-9_.-]{0,79}$/)
     // a backend legfeljebb 400 kulcsot fogad, 2000 karakteres szovegekkel
     expect(kulcsok.length).toBeLessThanOrEqual(400)
-    for (const s of KEZDOLAP_SZOVEGEK) expect(s.alap.length).toBeLessThanOrEqual(2000)
+    for (const s of KEZDOLAP_SZOVEGEK)
+      expect(s.alap.length).toBeLessThanOrEqual(2000)
   })
 
   it("az OS szövege nyer, az üres is; ami hiányzik, annak a kezdőérték áll", () => {
-    const sz = szovegKereso({ "hero.tenyek.1.cim": "Más cím", "hero.tenyek.2.cim": "" })
+    const sz = szovegKereso({
+      "hero.tenyek.1.cim": "Más cím",
+      "hero.tenyek.2.cim": "",
+    })
     expect(sz("hero.tenyek.1.cim")).toBe("Más cím")
     expect(sz("hero.tenyek.2.cim")).toBe("")
     expect(sz("hero.tenyek.3.cim")).toBe("4,9 / 5")
@@ -44,7 +48,9 @@ describe("a hero diái", () => {
   it("amíg az OS nem írt semmit, a terv három diája áll, utána az OS diái, akár üresen is", () => {
     expect(kezdolapAdat(null).diak).toHaveLength(3)
     expect(kezdolapAdat({ texts: {}, slides: [] }).diak).toEqual([])
-    expect(kezdolapAdat({ texts: {}, slides: [ALAP_DIAK[0]] }).diak).toHaveLength(1)
+    expect(
+      kezdolapAdat({ texts: {}, slides: [ALAP_DIAK[0]] }).diak,
+    ).toHaveLength(1)
   })
 
   it("a kezdődiák betartják a backend határait: legfeljebb öt, link csak bolti út", () => {
