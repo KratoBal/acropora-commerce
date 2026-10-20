@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { HeroDia } from "@modules/kezdolap/tartalom"
 
-export type HeroTeny = { cim: string; szoveg: string }
+export type HeroTeny = { cim: string; szoveg: string; minta?: boolean }
 
 /** Az automatikus leptetes ritmusa (a terv: 6 masodperc). */
 const LEPTETES_MS = 6000
@@ -106,7 +107,9 @@ const HeroCsuszka = ({
       aria-label="Kiemelt ajánlatok"
       data-testid="hero-csuszka"
       data-automata={megallitva ? "all" : "lep"}
+      aria-live="off"
       onPointerDown={() => setMegallitva(true)}
+      onFocus={() => setMegallitva(true)}
       onKeyDown={billentyu}
       className="relative"
       style={{ background: "var(--kl-lap)", color: "var(--kl-szoveg)" }}
@@ -178,6 +181,11 @@ const HeroCsuszka = ({
                   {teny.cim}
                 </div>
                 <div>{teny.szoveg}</div>
+                {teny.minta ? (
+                  <div className="mt-1">
+                    <MintaJelzo mit="értékelés" />
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -207,6 +215,11 @@ const HeroCsuszka = ({
               </div>
             )}
           </div>
+          {dia.minta ? (
+            <div className="absolute right-6 top-14 z-10 small:right-20">
+              <MintaJelzo mit="képaláírás, ár, ígéretek" />
+            </div>
+          ) : null}
           {dia.caption || dia.caption2 ? (
             <div
               className="pointer-events-none absolute bottom-16 left-6 flex items-center gap-[18px] rounded px-[18px] py-[14px] text-[14px]"

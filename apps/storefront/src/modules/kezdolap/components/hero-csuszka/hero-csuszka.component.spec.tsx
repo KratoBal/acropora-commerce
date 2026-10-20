@@ -9,6 +9,7 @@ vi.mock("next/navigation", () => ({
 }))
 
 import type { HeroDia } from "@modules/kezdolap/tartalom"
+import { ALAP_DIAK } from "@modules/kezdolap/tartalom"
 import HeroCsuszka from "./index"
 
 const dia = (n: number, felul: Partial<HeroDia> = {}): HeroDia => ({
@@ -80,6 +81,36 @@ describe("a hero-csúszka", () => {
     expect(cim()).toBe("Cím 2")
     telik(6100)
     expect(cim()).toBe("Cím 2")
+  })
+
+  it("a fókusz (Tab-bal érkezés) is megállítja, és a régió nem élő", () => {
+    render(<HeroCsuszka diak={[dia(1), dia(2)]} tenyek={TENYEK} />)
+    const szekcio = screen.getByTestId("hero-csuszka")
+    expect(szekcio.getAttribute("aria-live")).toBe("off")
+    fireEvent.focus(szekcio)
+    telik(6100)
+    expect(cim()).toBe("Cím 1")
+  })
+
+  it("a kitalált tények jelölve vannak, amíg az OS nem írt sajátot (barracuda #552, acrobot 33366)", () => {
+    const { rerender } = render(
+      <HeroCsuszka
+        diak={[...ALAP_DIAK]}
+        tenyek={[
+          { cim: "4,9 / 5", szoveg: "312 vásárlói értékelés", minta: true },
+        ]}
+      />,
+    )
+    // a kezdődia képaláírása (ár, cikkszám) és az értékelés is jelzőt visel
+    expect(screen.getAllByTestId("minta-jelzo")).toHaveLength(2)
+    expect(document.body.textContent).toContain("Ft")
+    rerender(
+      <HeroCsuszka
+        diak={[dia(1)]}
+        tenyek={[{ cim: "4,8 / 5", szoveg: "100 értékelés" }]}
+      />,
+    )
+    expect(screen.queryByTestId("minta-jelzo")).toBeNull()
   })
 
   it("egy billentyű a csúszkán is megállítja", () => {

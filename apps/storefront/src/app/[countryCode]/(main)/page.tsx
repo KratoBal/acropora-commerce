@@ -108,10 +108,11 @@ export default async function Home(props: {
     getRegion(countryCode),
     kezdolapTartalom(),
   ])
-  const { szoveg, diak } = kezdolapAdat(tartalom)
+  const { szoveg, minta, diak } = kezdolapAdat(tartalom)
   const tenyek = [1, 2, 3].map((n) => ({
     cim: szoveg(`hero.tenyek.${n}.cim`),
     szoveg: szoveg(`hero.tenyek.${n}.szoveg`),
+    minta: minta(`hero.tenyek.${n}.cim`) || minta(`hero.tenyek.${n}.szoveg`),
   }))
 
   return (

@@ -25,6 +25,13 @@ export type KezdolapSzoveg = {
   csoport: string
   cimke: string
   alap: string
+  /**
+   * `true`: a kezdoertek egy KITALALT TENY (ertekeles, szam, ar, cim, vevoi
+   * velemeny), nem csak szoveg. Amig az OS nem irt sajat erteket, a lapon a
+   * `MintaJelzo` cimke jelzi (acrobot 33366 a barracuda #552 kerese utan): a
+   * szoveges cimek, alcimek es gombok jeloles nelkul allnak, a tenyek nem.
+   */
+  minta?: true
 }
 
 export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = [
@@ -57,18 +64,34 @@ export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = [
     csoport: "Hero",
     cimke: "Harmadik tény: címsor (értékelés)",
     alap: "4,9 / 5",
+    minta: true,
   },
   {
     kulcs: "hero.tenyek.3.szoveg",
     csoport: "Hero",
     cimke: "Harmadik tény: szöveg",
     alap: "312 vásárlói értékelés",
+    minta: true,
   },
 ]
 
 const ALAPOK: ReadonlyMap<string, string> = new Map(
   KEZDOLAP_SZOVEGEK.map((sor) => [sor.kulcs, sor.alap]),
 )
+const MINTA_KULCSOK: ReadonlySet<string> = new Set(
+  KEZDOLAP_SZOVEGEK.filter((sor) => sor.minta).map((sor) => sor.kulcs),
+)
+
+/**
+ * IGAZ, HA A KULCS MA EGY KITALALT TENY KEZDOERTEKET MUTATJA: a sor `minta`
+ * jeloltu, es az OS nem kuldott hozza sajat erteket. Az OS erteke (akar ures
+ * is) mar nem minta: azt a szerkeszto mondta.
+ */
+export const szovegMintaKereso = (texts: Record<string, string> | null) => {
+  return (kulcs: string): boolean =>
+    MINTA_KULCSOK.has(kulcs) &&
+    !(texts && Object.prototype.hasOwnProperty.call(texts, kulcs))
+}
 
 /**
  * A szoveg-kereso egy tartalomhoz. Az OS-tol kapott `texts` elsobbseget elvez,

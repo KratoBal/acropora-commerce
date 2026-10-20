@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { KEZDOLAP_SZOVEGEK, szovegKereso } from "./szovegek"
+import { KEZDOLAP_SZOVEGEK, szovegKereso, szovegMintaKereso } from "./szovegek"
 import { ALAP_DIAK, kezdolapAdat } from "./tartalom"
 
 /**
@@ -41,6 +41,32 @@ describe("a kezdőlap szövegkatalógusa", () => {
     expect(() => szovegKereso(null)("hero.nincs.ilyen")).toThrow(/ismeretlen/)
     // az objektum-prototipus kulcsai nem szamitanak kuldott szovegnek
     expect(() => szovegKereso({})("constructor")).toThrow(/ismeretlen/)
+  })
+})
+
+describe("a kitalált tények jelölése", () => {
+  it("a minta-kulcsok a kezdőértéknél minta, az OS saját értékénél (akár üresnél) már nem", () => {
+    const minta = szovegMintaKereso(null)
+    expect(minta("hero.tenyek.3.cim")).toBe(true)
+    expect(minta("hero.tenyek.3.szoveg")).toBe(true)
+    // a szöveges címek és gombok jelölés nélkül állnak
+    expect(minta("hero.tenyek.1.cim")).toBe(false)
+    expect(
+      szovegMintaKereso({ "hero.tenyek.3.cim": "4,8 / 5" })(
+        "hero.tenyek.3.cim",
+      ),
+    ).toBe(false)
+    expect(
+      szovegMintaKereso({ "hero.tenyek.3.cim": "" })("hero.tenyek.3.cim"),
+    ).toBe(false)
+  })
+
+  it("minden kezdődia minta-jelölt, és az OS diái soha nem", () => {
+    for (const dia of ALAP_DIAK) expect(dia.minta).toBe(true)
+    const osDia = { ...ALAP_DIAK[0], minta: undefined }
+    expect(
+      kezdolapAdat({ texts: {}, slides: [osDia] }).diak[0].minta,
+    ).toBeUndefined()
   })
 })
 
