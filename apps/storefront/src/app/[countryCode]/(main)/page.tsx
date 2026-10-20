@@ -95,13 +95,7 @@ export async function generateMetadata(props: {
  * sajat erteket (acrobot 33366, barracuda #552). A szoveges cimek, alcimek es
  * gombok jeloles nelkul allnak.
  */
-export default async function Home(props: {
-  params: Promise<{ countryCode: string }>
-}) {
-  const params = await props.params
-
-  const { countryCode } = params
-
+export default async function Home() {
   const tartalom = await kezdolapTartalom()
   const adat = kezdolapAdat(tartalom)
   const { szoveg, minta, diak } = adat
