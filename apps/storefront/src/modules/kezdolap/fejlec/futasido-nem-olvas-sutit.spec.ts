@@ -30,6 +30,8 @@ const FAJLOK = [
     .filter((n) => /\.(ts|tsx)$/.test(n) && !n.includes(".spec."))
     .map((n) => join(__dirname, n)),
   join(SRC, "lib", "data", "kezdolap-tartalom.ts"),
+  // a sav a kezdolap szerver-komponense: a termekeket publikus lekeressel kerdezi
+  join(__dirname, "..", "components", "egyedi-korallok", "index.tsx"),
 ]
 
 const TILTOTT =
@@ -37,7 +39,7 @@ const TILTOTT =
 
 describe("a kezdőlap elrendezése és fejléce nem olvas sütit", () => {
   it("van vizsgált fájl", () => {
-    expect(FAJLOK.length).toBeGreaterThanOrEqual(6)
+    expect(FAJLOK.length).toBeGreaterThanOrEqual(7)
   })
 
   it.each(FAJLOK)("%s", (ut) => {
