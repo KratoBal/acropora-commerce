@@ -376,6 +376,50 @@ const HALADOK: KezdolapSzoveg[] = [
   sor("Tapasztaltaknak", "halado.gomb.link", "Gomb: cél", "/store", "link"),
 ]
 
+const EGYEDI_KORALLOK: KezdolapSzoveg[] = [
+  sor("Egyedi korallok", "korall.felirat", "Felirat", "Egyedi korallok"),
+  sor("Egyedi korallok", "korall.cim", "Címsor", "Ezt a darabot kapod."),
+  sor(
+    "Egyedi korallok",
+    "korall.szoveg",
+    "Bevezető",
+    "Minden egyedi korallt a saját rendszerünkben fotózunk, azonos fény mellett. A kódot a tartó talpán is megtalálod, így az átvételkor pontosan a kiválasztott példányt adjuk át.",
+  ),
+  ...(
+    [
+      [
+        "Kiválasztod a fotón látható darabot",
+        "Méret, eredet és tartási igény minden lapon.",
+      ],
+      ["48 órára félretesszük neked", "Addig senki más nem veheti meg."],
+      [
+        "Átveszed a budapesti boltban",
+        "Szállítási tudnivalók, akklimatizálási útmutató.",
+      ],
+    ] as const
+  ).flatMap(([cim, szoveg], i) => [
+    sor(
+      "Egyedi korallok",
+      `korall.${i + 1}.cim`,
+      `${i + 1}. lépés: címsor`,
+      cim,
+    ),
+    sor(
+      "Egyedi korallok",
+      `korall.${i + 1}.szoveg`,
+      `${i + 1}. lépés: szöveg`,
+      szoveg,
+    ),
+  ]),
+  sor(
+    "Egyedi korallok",
+    "korall.gomb.felirat",
+    "Gomb: felirat",
+    "Mind a 146 egyedi korall",
+  ),
+  sor("Egyedi korallok", "korall.gomb.link", "Gomb: cél", "/store", "link"),
+]
+
 const SZOLGALTATASOK: KezdolapSzoveg[] = [
   sor("Szolgáltatások", "szolg.kep", "Kép", "", "kep"),
   sor("Szolgáltatások", "szolg.felirat", "Felirat", "Szolgáltatások"),
@@ -544,6 +588,7 @@ const NYERS: readonly KezdolapSzoveg[] = [
   ...MIT_KERESEL,
   ...KEZDOK,
   ...HALADOK,
+  ...EGYEDI_KORALLOK,
   ...SZOLGALTATASOK,
   ...MARKAK,
   ...VELEMENYEK,
@@ -555,7 +600,7 @@ const NYERS: readonly KezdolapSzoveg[] = [
  * kap jelzot, es a teszt ugyanezt a listat veti ossze a lappal.
  */
 const MINTA_MINTA =
-  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.sav\.[1-4]$|fejlec\.1\.kartya\.szoveg$)/
+  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.sav\.[1-4]$|fejlec\.1\.kartya\.szoveg$|korall\.2\.|korall\.gomb\.felirat$)/
 
 export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = NYERS.map((sor) =>
   MINTA_MINTA.test(sor.kulcs) ? { ...sor, minta: true } : sor,
