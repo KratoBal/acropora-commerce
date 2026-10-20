@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import { szovegek } from "../szovegek"
 import {
   MAX_OSZLOP,
+  feloldatlanKategoriak,
+  kategoriaKeres,
   MAX_OSZLOP_LINK,
   handleLista,
   menuOszlopok,
@@ -156,10 +158,20 @@ describe("menuPontok", () => {
     expect(pontok[3]?.oszlopok).toEqual([])
   })
 
-  it("kategória nélküli boltban csak a linkes pont marad, nem találunk ki menüt", () => {
-    expect(menuPontok(szovegek(null), [], NEVEK).map((p) => p.felirat)).toEqual(
-      ["Szolgáltatások"],
-    )
+  it("kategória nélküli boltban nincs kitalált oszlop: a pont a teljes katalógusra mutat, nem tűnik el csendben", () => {
+    const pontok = menuPontok(szovegek(null), [], NEVEK)
+    expect(pontok.map((p) => p.felirat)).toEqual([
+      "Élőállat",
+      "Technika",
+      "Vegyszer és fogyóanyag",
+      "Szolgáltatások",
+    ])
+    expect(
+      pontok
+        .slice(0, 3)
+        .every((p) => p.oszlopok.length === 0 && p.href === "/store"),
+    ).toBe(true)
+    expect(pontok[3]?.href).toBe("/hamarosan/szolgaltatasok")
   })
 
   it("a felirat nélküli pont kimarad, a szerkesztett felirat és kategória érvényesül", () => {
@@ -196,5 +208,89 @@ describe("menuPontok", () => {
     )
     expect(celNelkul[0]?.kartya?.href).toBeNull()
     expect(celNelkul[0]?.kartya?.felirat).toBe("")
+  })
+})
+
+/*
+  A STAGE FAJA (acrobot, 2026-10-20): gyoker csak a termekek, a gerinctelenek es
+  a halak; a Technika es a Vegyszer a Termekek ALATT all, `<nev>---termekek`
+  handle-lel, a nevukben a szulo-utotaggal. A menu ezeket is megtalalja.
+*/
+describe("a menü a valódi stage-fán", () => {
+  const STAGE: MenuKategoria[] = [
+    kat("termekek", "Termékek", [
+      kat("technika---termekek", "Technika - Termékek", [
+        kat("vilagitas---technika", "Világítás - Technika", [
+          kat("led", "LED"),
+        ]),
+        kat("aramoltatok---technika", "Áramoltatók - Technika"),
+      ]),
+      kat("vizkezeles---termekek", "Vízkezelés - Termékek", [
+        kat("viztesztek", "Víztesztek"),
+        kat("tengeri-sok", "Tengeri sók"),
+      ]),
+    ]),
+    kat("halak", "Halak", [kat("bohochalak", "Bohóchalak")]),
+    kat("gerinctelenek", "Gerinctelenek", [kat("garnelak", "Garnélák")]),
+  ]
+  const nevek = new Map([
+    ["pcat_technika---termekek", "Technika"],
+    ["pcat_vizkezeles---termekek", "Vízkezelés"],
+    ["pcat_vilagitas---technika", "Világítás"],
+  ])
+
+  it("a gyökér alatti Technika és Vízkezelés megvan: a handle előtagja (---szülő) és a név is talál", () => {
+    expect(kategoriaKeres(STAGE, nevek, "technika")?.handle).toBe(
+      "technika---termekek",
+    )
+    expect(kategoriaKeres(STAGE, nevek, "vizkezeles")?.handle).toBe(
+      "vizkezeles---termekek",
+    )
+    expect(kategoriaKeres(STAGE, nevek, "Vízkezelés")?.handle).toBe(
+      "vizkezeles---termekek",
+    )
+    expect(kategoriaKeres(STAGE, nevek, "halak")?.handle).toBe("halak")
+    expect(kategoriaKeres(STAGE, nevek, "nincs")).toBeUndefined()
+  })
+
+  it("az alapértékekkel mind a négy főpont megvan, a Technika a valódi gyerekeivel", () => {
+    const pontok = menuPontok(szovegek(null), STAGE, nevek)
+    expect(pontok.map((p) => p.felirat)).toEqual([
+      "Élőállat",
+      "Technika",
+      "Vegyszer és fogyóanyag",
+      "Szolgáltatások",
+    ])
+    // Élőállat: a korallok nincs a fában, a halak és a gerinctelenek megvan
+    expect(pontok[0]?.oszlopok.map((c) => c.cim)).toEqual([
+      "Halak",
+      "Gerinctelenek",
+    ])
+    // Technika: a gyerekei az oszlopok
+    expect(pontok[1]?.oszlopok.length).toBeGreaterThan(0)
+    expect(pontok[1]?.oszlopok[0]?.cim).toBe("Világítás")
+    expect(pontok[1]?.oszlopok[0]?.href).toBe(
+      "/categories/vilagitas---technika",
+    )
+    // Vegyszer: a Vízkezelés egy oszlop a gyerekeivel
+    expect(pontok[2]?.oszlopok[0]?.cim).toBe("Vízkezelés")
+    expect(pontok[2]?.oszlopok[0]?.linkek.map((l) => l.nev)).toEqual([
+      "Víztesztek",
+      "Tengeri sók",
+    ])
+  })
+
+  it("a megadott, de nem talált kategória nevesítve van, és a pont nem tűnik el", () => {
+    const hianyzo = feloldatlanKategoriak(szovegek(null), STAGE, nevek)
+    expect(hianyzo).toEqual([{ pont: 1, handlek: ["korallok"] }])
+    const csonka = szovegek({ "fejlec.2.kategoriak": "elgepelt-handle" })
+    expect(
+      menuPontok(csonka, STAGE, nevek).find((p) => p.felirat === "Technika")
+        ?.href,
+    ).toBe("/store")
+    expect(feloldatlanKategoriak(csonka, STAGE, nevek)).toContainEqual({
+      pont: 2,
+      handlek: ["elgepelt-handle"],
+    })
   })
 })
