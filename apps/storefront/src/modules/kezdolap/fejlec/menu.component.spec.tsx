@@ -23,6 +23,7 @@ const PONTOK: MenuPont[] = [
   {
     felirat: "Élőállat",
     href: null,
+    osszes: { nev: "Összes kategória →", href: "/store" },
     oszlopok: [
       {
         cim: "Korallok",
@@ -41,6 +42,7 @@ const PONTOK: MenuPont[] = [
   {
     felirat: "Szolgáltatások",
     href: "/hamarosan/szolgaltatasok",
+    osszes: null,
     oszlopok: [],
     kartya: null,
   },
@@ -159,5 +161,13 @@ describe("a kezdőlap lenyíló menüje", () => {
     const kartya = screen.getByTestId("kl-kartya-0")
     expect(kartya.querySelector("a")).toBeNull()
     expect(screen.getByTestId("minta-jelzo")).toBeTruthy()
+  })
+
+  it("az Összes hivatkozás a panelben áll, a valódi címre mutat", () => {
+    render(<KezdolapMenu pontok={PONTOK} />)
+    const link = screen.getByTestId("kl-osszes-0")
+    expect(link.textContent).toBe("Összes kategória →")
+    expect(link.getAttribute("href")).toBe("/hu/store")
+    expect(screen.queryByTestId("kl-osszes-1")).toBeNull()
   })
 })

@@ -63,7 +63,7 @@ describe("handleLista", () => {
       "gerinctelenek",
     ])
     expect(handleLista("a/b, ../x, <b>, a%2Fb, b-c, ok")).toEqual(["b-c", "ok"])
-    expect(handleLista("a,b,c,d,e,f,g,h")).toHaveLength(6)
+    expect(handleLista("a,b,c,d,e,f,g,h,i,j")).toHaveLength(8)
     expect(handleLista("")).toEqual([])
   })
 })
@@ -135,8 +135,8 @@ describe("menuOszlopok", () => {
         NEVEK,
         handleLista(sokGyoker.map((g) => g.handle).join(",")),
       ),
-    ).toHaveLength(6)
-    expect(MAX_OSZLOP).toBe(8)
+    ).toHaveLength(8)
+    expect(MAX_OSZLOP).toBe(5)
   })
 })
 
@@ -212,65 +212,230 @@ describe("menuPontok", () => {
 })
 
 /*
-  A STAGE FAJA (acrobot, 2026-10-20): gyoker csak a termekek, a gerinctelenek es
-  a halak; a Technika es a Vegyszer a Termekek ALATT all, `<nev>---termekek`
-  handle-lel, a nevukben a szulo-utotaggal. A menu ezeket is megtalalja.
+  A STAGE VALODI FAJA (acrobot, 2026-10-20, a 219 kategoria): NINCS "technika"
+  es nincs "vegyszer" kategoria: a Design "Technika" foopontja a Termekek tobb
+  gyerekenek csoportja, es a handle-ek ekezetesek, vesszosek, zarojelesek
+  ("vilagitastechnika-(lampak)---termekek", "tesztek,-meres,-vezerles---termekek",
+  "futes/hutes---termekek"). A menu kifejezese a handle ELEJE.
 */
 describe("a menü a valódi stage-fán", () => {
+  // A STAGE VALODI FAJA (exchange/stage-kategoriak-2026-10-20.json): a gyoker a
+  // "termékek", alatta a valodi, ekezetes, vesszos handle-ek ("Technika" gyoker nincs)
   const STAGE: MenuKategoria[] = [
-    kat("termekek", "Termékek", [
-      kat("technika---termekek", "Technika - Termékek", [
-        kat("vilagitas---technika", "Világítás - Technika", [
-          kat("led", "LED"),
-        ]),
-        kat("aramoltatok---technika", "Áramoltatók - Technika"),
+    kat("termékek", "Termékek", [
+      kat("eledelek---termékek", "Eledelek - Termékek", [
+        kat("koralltápok---eledelek", "Koralltápok - Eledelek"),
+        kat("haleledelek---eledelek", "Haleledelek - Eledelek"),
       ]),
-      kat("vizkezeles---termekek", "Vízkezelés - Termékek", [
-        kat("viztesztek", "Víztesztek"),
-        kat("tengeri-sok", "Tengeri sók"),
+      kat(
+        "aminosavak-és-vitaminok---termékek",
+        "Aminosavak és vitaminok - Termékek",
+        [
+          kat(
+            "aquaforest---aminosavak-és-vitaminok",
+            "Aquaforest - Aminosavak és vitaminok",
+          ),
+          kat(
+            "red-sea---aminosavak-és-vitaminok",
+            "Red Sea - Aminosavak és vitaminok",
+          ),
+        ],
+      ),
+      kat(
+        "akvárium-építési-eszközök---termékek",
+        "Akvárium építési eszközök - Termékek",
+        [
+          kat(
+            "kő-szirtépítéshez-(mesterséges,-szárazkő)---akvárium-építési-eszközök",
+            "Kő szirtépítéshez (mesterséges, szárazkő) - Akvárium építési eszközök",
+          ),
+          kat(
+            "aljzat---akvárium-építési-eszközök",
+            "Aljzat - Akvárium építési eszközök",
+          ),
+        ],
+      ),
+      kat(
+        "akváriumkarbantartás,-eszközök---termékek",
+        "Akváriumkarbantartás, eszközök - Termékek",
+        [
+          kat(
+            "etetés---akváriumkarbantartás,-eszközök",
+            "Etetés - Akváriumkarbantartás, eszközök",
+          ),
+          kat(
+            "algakaparó---akváriumkarbantartás,-eszközök",
+            "Algakaparó - Akváriumkarbantartás, eszközök",
+          ),
+        ],
+      ),
+      kat(
+        "szűrők,-szűrőzsákok,-papírszűrők---termékek",
+        "Szűrők, szűrőzsákok, papírszűrők - Termékek",
+        [
+          kat(
+            "előszűrők,-papírszűrők---szűrők,-szűrőzsákok,-papírszűrők",
+            "Előszűrők, papírszűrők - Szűrők, szűrőzsákok, papírszűrők",
+          ),
+          kat(
+            "szűrőanyagok---szűrők,-szűrőzsákok,-papírszűrők",
+            "Szűrőanyagok - Szűrők, szűrőzsákok, papírszűrők",
+          ),
+        ],
+      ),
+      kat(
+        "világítástechnika-(lámpák)---termékek",
+        "Világítástechnika (Lámpák) - Termékek",
+        [
+          kat(
+            "led-világítások---világítástechnika-(lámpák)",
+            "LED világítások - Világítástechnika (Lámpák)",
+          ),
+          kat(
+            "t5-fénycsövek---világítástechnika-(lámpák)",
+            "T5 fénycsövek - Világítástechnika (Lámpák)",
+          ),
+        ],
+      ),
+      kat("áramoltatók---termékek", "Áramoltatók - Termékek", [
+        kat("aqua-light---áramoltatók", "AquaLight - Áramoltatók"),
+        kat(
+          "aqua-illumination---áramoltatók",
+          "Aqua Illumination - Áramoltatók",
+        ),
+      ]),
+      kat("vízkezelés---termékek", "Vízkezelés - Termékek", [
+        kat("szűrőanyagok---vízkezelés", "Szűrőanyagok - Vízkezelés"),
+        kat("foszfátmegkötők---vízkezelés", "Foszfátmegkötők - Vízkezelés"),
+      ]),
+      kat(
+        "tesztek,-mérés,-vezérlés---termékek",
+        "Tesztek, mérés, vezérlés - Termékek",
+        [
+          kat(
+            "víztesztek---tesztek,-mérés,-vezérlés",
+            "Víztesztek - Tesztek, mérés, vezérlés",
+          ),
+          kat(
+            "refraktométerek,-sósűrűségmérők---tesztek,-mérés,-vezérlés",
+            "Refraktométerek, sósűrűségmérők - Tesztek, mérés, vezérlés",
+          ),
+        ],
+      ),
+      kat("lehabzók---termékek", "Lehabzók - Termékek", [
+        kat("atb---lehabzók", "ATB - Lehabzók"),
+        kat("nyos---lehabzók", "Nyos - Lehabzók"),
+      ]),
+      kat("problémamegoldás---termékek", "Problémamegoldás - Termékek", [
+        kat("gyógyszerek---problémamegoldás", "Gyógyszerek - Problémamegoldás"),
+        kat(
+          "parazita-írtók,-fürdetők---problémamegoldás",
+          "Parazita írtók, fürdetők - Problémamegoldás",
+        ),
+      ]),
+      kat("nyomelemek---termékek", "Nyomelemek - Termékek", [
+        kat("coral-essential---nyomelemek", "Coral Essential - Nyomelemek"),
+        kat("triton---nyomelemek", "Triton - Nyomelemek"),
+      ]),
+      kat("ro-vízlágyítás---termékek", "RO-vízlágyítás - Termékek", [
+        kat("autoaqua---ro-vízlágyítás", "Autoaqua - RO-vízlágyítás"),
+        kat(
+          "előszűrők,-kiegészítők---ro-vízlágyítás",
+          "Előszűrők, kiegészítők - RO-vízlágyítás",
+        ),
+      ]),
+      kat("tengeri-só---termékek", "Tengeri só - Termékek", [
+        kat("aquaforest---tengeri-só", "Aquaforest - Tengeri só"),
+        kat("red-sea---tengeri-só", "Red Sea - Tengeri só"),
+      ]),
+      kat("fűtés/hűtés---termékek", "Fűtés/Hűtés - Termékek"),
+      kat(
+        "nyomelemadagolók,-tartozékok---termékek",
+        "Nyomelemadagolók, tartozékok - Termékek",
+        [
+          kat(
+            "grotech---nyomelemadagolók,-tartozékok",
+            "Grotech - Nyomelemadagolók, tartozékok",
+          ),
+          kat(
+            "reef-factory---nyomelemadagolók,-tartozékok",
+            "Reef Factory - Nyomelemadagolók, tartozékok",
+          ),
+        ],
+      ),
+      kat("bi-orb---termékek", "biOrb - Termékek", [
+        kat(
+          "bi-orb-akváriumok/terráriumok---bi-orb",
+          "biOrb akváriumok/terráriumok - biOrb",
+        ),
+        kat(
+          "bi-orb-kiegészítők,-dekorációk---bi-orb",
+          "biOrb kiegészítők, dekorációk - biOrb",
+        ),
+      ]),
+      kat("akvárium-szettek---termékek", "Akvárium szettek - Termékek"),
+      kat("légpumpák---termékek", "Légpumpák - Termékek"),
+      kat("szivattyúk---termékek", "Szivattyúk - Termékek", [
+        kat(
+          "felnyomó-szivattyúk---szivattyúk",
+          "Felnyomó szivattyúk - Szivattyúk",
+        ),
+        kat(
+          "lehabzó-szivattyúk---szivattyúk",
+          "Lehabzó szivattyúk - Szivattyúk",
+        ),
+      ]),
+      kat("vízutántöltő---termékek", "Vízutántöltő - Termékek"),
+      kat("ajándéktárgyak---termékek", "Ajándéktárgyak - Termékek"),
+      kat(
+        "használt-termékek-outlet-áron!---termékek",
+        "Használt termékek OUTLET áron! - Termékek",
+      ),
+    ]),
+    kat("halak", "Halak", [kat("bohóchalak", "Bohóchalak")]),
+    kat("gerinctelenek", "Gerinctelenek", [kat("garnélák", "Garnélák")]),
+    kat("korallok", "Korallok", [
+      kat("wysiwyg---korallok", "WYSIWYG - Korallok", [
+        kat("sps---wysiwyg", "SPS - WYSIWYG"),
       ]),
     ]),
-    kat("halak", "Halak", [kat("bohochalak", "Bohóchalak")]),
-    kat("gerinctelenek", "Gerinctelenek", [kat("garnelak", "Garnélák")]),
   ]
-  const nevek = new Map([
-    ["pcat_technika---termekek", "Technika"],
-    ["pcat_vizkezeles---termekek", "Vízkezelés"],
-    ["pcat_vilagitas---technika", "Világítás"],
-  ])
+  const nevek = new Map<string, string>()
 
-  it("a gyökér alatti Technika és Vízkezelés megvan: a handle előtagja (---szülő) és a név is talál", () => {
-    expect(kategoriaKeres(STAGE, nevek, "technika")?.handle).toBe(
-      "technika---termekek",
-    )
-    expect(kategoriaKeres(STAGE, nevek, "vizkezeles")?.handle).toBe(
-      "vizkezeles---termekek",
-    )
-    expect(kategoriaKeres(STAGE, nevek, "Vízkezelés")?.handle).toBe(
-      "vizkezeles---termekek",
-    )
-    expect(kategoriaKeres(STAGE, nevek, "halak")?.handle).toBe("halak")
-    expect(kategoriaKeres(STAGE, nevek, "nincs")).toBeUndefined()
+  const TECHNIKA = [
+    "vilagitastechnika",
+    "aramoltatok",
+    "szivattyuk",
+    "lehabzok",
+    "szurok",
+    "futes",
+    "tesztek",
+    "ro-vizlagyitas",
+  ]
+
+  it("a Technika nyolc kifejezése a Termékek nyolc valódi gyerekét találja, mindegyiket másikat", () => {
+    const talalt = TECHNIKA.map((h) => kategoriaKeres(STAGE, nevek, h)?.name)
+    expect(talalt).toEqual([
+      "Világítástechnika (Lámpák) - Termékek",
+      "Áramoltatók - Termékek",
+      "Szivattyúk - Termékek",
+      "Lehabzók - Termékek",
+      "Szűrők, szűrőzsákok, papírszűrők - Termékek",
+      "Fűtés/Hűtés - Termékek",
+      "Tesztek, mérés, vezérlés - Termékek",
+      "RO-vízlágyítás - Termékek",
+    ])
   })
 
-  it("a handle-előtag (---szülő) a névtérkép nélkül is talál, és a név a handle nélkül is (egymástól függetlenül)", () => {
-    // a teljes nevek ("Technika - Termékek") nem egyeznek: csak az előtag talál
-    expect(kategoriaKeres(STAGE, new Map(), "technika")?.handle).toBe(
-      "technika---termekek",
+  it("a kifejezés a handle ELEJE, utána nem betű és nem szám: a nyomelemek nem találja a nyomelemadagolókat", () => {
+    expect(kategoriaKeres(STAGE, nevek, "nyomelemek")?.name).toBe(
+      "Nyomelemek - Termékek",
     )
-    // a handle nem egyezik, de a megjelenített név igen
-    const nevesitett: MenuKategoria[] = [kat("valami-mas", "Akvárium technika")]
-    expect(
-      kategoriaKeres(
-        nevesitett,
-        new Map([["pcat_valami-mas", "Technika"]]),
-        "technika",
-      )?.handle,
-    ).toBe("valami-mas")
-    expect(kategoriaKeres(nevesitett, new Map(), "technika")).toBeUndefined()
+    expect(kategoriaKeres(STAGE, nevek, "nyomelem")).toBeUndefined()
+    expect(kategoriaKeres(STAGE, nevek, "technika")).toBeUndefined()
   })
 
-  it("az alapértékekkel mind a négy főpont megvan, a Technika a valódi gyerekeivel", () => {
+  it("az alapértékekkel a Technika öt oszlopot és az Összes linket kapja, a Vegyszer is, az Élőállat három oszlopot", () => {
     const pontok = menuPontok(szovegek(null), STAGE, nevek)
     expect(pontok.map((p) => p.felirat)).toEqual([
       "Élőállat",
@@ -278,28 +443,50 @@ describe("a menü a valódi stage-fán", () => {
       "Vegyszer és fogyóanyag",
       "Szolgáltatások",
     ])
-    // Élőállat: a korallok nincs a fában, a halak és a gerinctelenek megvan
-    expect(pontok[0]?.oszlopok.map((c) => c.cim)).toEqual([
+    const [elo, technika, vegyszer] = pontok
+    expect(elo?.oszlopok.map((c) => c.cim)).toEqual([
       "Halak",
+      "Korallok",
       "Gerinctelenek",
     ])
-    // Technika: a gyerekei az oszlopok
-    expect(pontok[1]?.oszlopok.length).toBeGreaterThan(0)
-    expect(pontok[1]?.oszlopok[0]?.cim).toBe("Világítás")
-    expect(pontok[1]?.oszlopok[0]?.href).toBe(
-      "/categories/vilagitas---technika",
+    expect(elo?.osszes).toBeNull()
+    expect(technika?.oszlopok).toHaveLength(MAX_OSZLOP)
+    expect(technika?.oszlopok[0]?.cim).toContain("Világítástechnika")
+    expect(technika?.oszlopok[0]?.href).toBe(
+      "/categories/vil%C3%A1g%C3%ADt%C3%A1stechnika-(l%C3%A1mp%C3%A1k)---term%C3%A9kek",
     )
-    // Vegyszer: a Vízkezelés egy oszlop a gyerekeivel
-    expect(pontok[2]?.oszlopok[0]?.cim).toBe("Vízkezelés")
-    expect(pontok[2]?.oszlopok[0]?.linkek.map((l) => l.nev)).toEqual([
-      "Víztesztek",
-      "Tengeri sók",
-    ])
+    expect(technika?.osszes).toEqual({
+      nev: "Összes kategória →",
+      href: "/store",
+    })
+    expect(vegyszer?.oszlopok).toHaveLength(MAX_OSZLOP)
+    expect(vegyszer?.oszlopok[0]?.cim).toContain("Vízkezelés")
+    expect(vegyszer?.osszes).not.toBeNull()
   })
 
-  it("a megadott, de nem talált kategória nevesítve van, és a pont nem tűnik el", () => {
-    const hianyzo = feloldatlanKategoriak(szovegek(null), STAGE, nevek)
-    expect(hianyzo).toEqual([{ pont: 1, handlek: ["korallok"] }])
+  it("az Összes hivatkozás felirat vagy cél nélkül nem jelenik meg, és öt vagy kevesebb oszlopnál sosem", () => {
+    const celNelkul = menuPontok(
+      szovegek({ "fejlec.2.osszes.link": "" }),
+      STAGE,
+      nevek,
+    )
+    expect(celNelkul.find((p) => p.felirat === "Technika")?.osszes).toBeNull()
+    const kevesebb = menuPontok(
+      szovegek({ "fejlec.2.kategoriak": "aramoltatok,szivattyuk" }),
+      STAGE,
+      nevek,
+    )
+    expect(
+      kevesebb.find((p) => p.felirat === "Technika")?.oszlopok,
+    ).toHaveLength(2)
+    expect(kevesebb.find((p) => p.felirat === "Technika")?.osszes).toBeNull()
+  })
+
+  it("az alapértékek mindegyik kifejezése megvan a stage fában, nincs feloldatlan", () => {
+    expect(feloldatlanKategoriak(szovegek(null), STAGE, nevek)).toEqual([])
+  })
+
+  it("a nem talált kifejezés nevesített, és a főpont nem tűnik el", () => {
     const csonka = szovegek({ "fejlec.2.kategoriak": "elgepelt-handle" })
     expect(
       menuPontok(csonka, STAGE, nevek).find((p) => p.felirat === "Technika")
@@ -309,5 +496,17 @@ describe("a menü a valódi stage-fán", () => {
       pont: 2,
       handlek: ["elgepelt-handle"],
     })
+  })
+
+  it("a handle-előtag névtérkép nélkül is talál, és a név a handle nélkül is (egymástól függetlenül)", () => {
+    const nevesitett: MenuKategoria[] = [kat("valami-mas", "Akvárium technika")]
+    expect(
+      kategoriaKeres(
+        nevesitett,
+        new Map([["pcat_valami-mas", "Technika"]]),
+        "technika",
+      )?.handle,
+    ).toBe("valami-mas")
+    expect(kategoriaKeres(nevesitett, new Map(), "technika")).toBeUndefined()
   })
 })
