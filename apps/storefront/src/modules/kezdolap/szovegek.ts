@@ -58,6 +58,107 @@ const sor = (
 
 const sorszamok = (db: number) => Array.from({ length: db }, (_, i) => i + 1)
 
+const FEJLEC: KezdolapSzoveg[] = [
+  sor(
+    "Fejléc: info-sáv",
+    "fejlec.sav.1",
+    "Bal oldal, első",
+    "Élőállat kizárólag személyes átvétellel, a budapesti boltban",
+  ),
+  sor(
+    "Fejléc: info-sáv",
+    "fejlec.sav.2",
+    "Bal oldal, második",
+    "Technika és vegyszer: házhozszállítás 2–3 munkanap alatt",
+  ),
+  sor(
+    "Fejléc: info-sáv",
+    "fejlec.sav.3",
+    "Jobb oldal, első",
+    "Nyitva ma 10–19 óráig",
+  ),
+  sor(
+    "Fejléc: info-sáv",
+    "fejlec.sav.4",
+    "Jobb oldal, második",
+    "Tanácsadás: +36 1 234 5678",
+  ),
+  sor(
+    "Fejléc",
+    "fejlec.kereso",
+    "Kereső helykitöltő szövege",
+    "Keresés: korall, tengeri só, LED-lámpa…",
+  ),
+  ...(
+    [
+      [
+        "Élőállat",
+        "halak,korallok,gerinctelenek",
+        "",
+        "Jó tudni",
+        "Az élőállatot csak személyesen, a budapesti boltban adjuk át.",
+        "",
+      ],
+      [
+        "Technika",
+        "technika",
+        "",
+        "Nem tudod, melyik lámpa kell?",
+        "Medencemérethez és korallokhoz ajánlunk.",
+        "Kérj tanácsot →",
+      ],
+      [
+        "Vegyszer és fogyóanyag",
+        "vizkezeles",
+        "",
+        "Laboratóriumi vízmérés",
+        "Hozd be a mintát a boltba.",
+        "Részletek →",
+      ],
+      ["Szolgáltatások", "", "/hamarosan/szolgaltatasok", "", "", ""],
+      ["A boltunk", "", "", "", "", ""],
+    ] as const
+  ).flatMap(([felirat, kategoriak, link, kcim, kszoveg, kfelirat], i) => {
+    const n = i + 1
+    const csoport = `Fejléc: ${n}. menüpont`
+    return [
+      sor(
+        csoport,
+        `fejlec.${n}.felirat`,
+        "Felirat (üresen a menüpont nem jelenik meg)",
+        felirat,
+      ),
+      sor(
+        csoport,
+        `fejlec.${n}.kategoriak`,
+        "Webshop-kategóriák (handle-ök vesszővel; ezekből épül a lenyíló)",
+        kategoriak,
+      ),
+      sor(csoport, `fejlec.${n}.link`, "Cél, ha nincs lenyíló", link, "link"),
+      sor(csoport, `fejlec.${n}.kartya.cim`, "Kiemelt kártya: címsor", kcim),
+      sor(
+        csoport,
+        `fejlec.${n}.kartya.szoveg`,
+        "Kiemelt kártya: szöveg",
+        kszoveg,
+      ),
+      sor(
+        csoport,
+        `fejlec.${n}.kartya.felirat`,
+        "Kiemelt kártya: hivatkozás felirata",
+        kfelirat,
+      ),
+      sor(
+        csoport,
+        `fejlec.${n}.kartya.link`,
+        "Kiemelt kártya: hivatkozás célja",
+        "",
+        "link",
+      ),
+    ]
+  }),
+]
+
 const HERO: KezdolapSzoveg[] = [
   sor("Hero", "hero.tenyek.1.cim", "Első tény: címsor", "Személyes átvétel"),
   sor(
@@ -438,6 +539,7 @@ const BOLT: KezdolapSzoveg[] = [
 ]
 
 const NYERS: readonly KezdolapSzoveg[] = [
+  ...FEJLEC,
   ...HERO,
   ...MIT_KERESEL,
   ...KEZDOK,
@@ -453,7 +555,7 @@ const NYERS: readonly KezdolapSzoveg[] = [
  * kap jelzot, es a teszt ugyanezt a listat veti ossze a lappal.
  */
 const MINTA_MINTA =
-  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$)/
+  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.sav\.[1-4]$|fejlec\.1\.kartya\.szoveg$)/
 
 export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = NYERS.map((sor) =>
   MINTA_MINTA.test(sor.kulcs) ? { ...sor, minta: true } : sor,

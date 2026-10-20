@@ -17,7 +17,7 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
   return (
     <section data-testid="kezdo-es-halado" className="grid small:grid-cols-2">
       <div
-        className="flex flex-col gap-7 px-4 py-10 small:px-16"
+        className="flex flex-col gap-7 px-4 py-10 small:pl-[max(4rem,calc((100vw_-_1440px)/2_+_4rem))] small:pr-16"
         style={{ background: "#DCE7EF", color: "var(--kl-szoveg)" }}
       >
         <div
@@ -86,7 +86,7 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
       </div>
 
       <div
-        className="flex flex-col gap-7 px-4 py-10 small:px-16"
+        className="flex flex-col gap-7 px-4 py-10 small:pl-16 small:pr-[max(4rem,calc((100vw_-_1440px)/2_+_4rem))]"
         style={{ background: "var(--kl-navy)", color: "var(--kl-lap)" }}
       >
         <div

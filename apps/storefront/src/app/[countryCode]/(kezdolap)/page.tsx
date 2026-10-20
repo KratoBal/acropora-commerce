@@ -14,7 +14,6 @@ import Markak from "@modules/kezdolap/components/markak"
 import MitKeresel from "@modules/kezdolap/components/mit-keresel"
 import Szolgaltatasok from "@modules/kezdolap/components/szolgaltatasok"
 import Velemenyek from "@modules/kezdolap/components/velemenyek"
-import { KL_TOKENEK } from "@modules/kezdolap/kl-tokenek"
 import { kezdolapAdat } from "@modules/kezdolap/tartalom"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
@@ -106,7 +105,7 @@ export default async function Home() {
   }))
 
   return (
-    <div style={KL_TOKENEK}>
+    <>
       <HeroCsuszka diak={diak} tenyek={tenyek} />
       <MitKeresel s={adat} />
       <KezdoEsHalado s={adat} />
@@ -114,6 +113,6 @@ export default async function Home() {
       <Markak s={adat} />
       <Velemenyek s={adat} />
       <Boltunk s={adat} />
-    </div>
+    </>
   )
 }
