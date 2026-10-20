@@ -1,4 +1,5 @@
 import CimLink from "@modules/kezdolap/components/cim-link"
+import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { Szovegek } from "@modules/kezdolap/szovegek"
 
 const MARKAK = [1, 2, 3, 4]
@@ -15,6 +16,11 @@ const Markak = ({ s }: { s: Szovegek }) => {
     >
       <span className="text-[14px]" style={{ color: "var(--kl-halvany)" }}>
         {s.szoveg("markak.felirat")}
+        {MARKAK.some((n) => s.minta(`markak.${n}`)) ? (
+          <span className="ml-3 inline-block">
+            <MintaJelzo mit="márkák" />
+          </span>
+        ) : null}
       </span>
       <div
         className="flex flex-wrap gap-x-[72px] gap-y-3 text-[22px] font-semibold tracking-[0.02em]"

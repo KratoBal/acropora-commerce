@@ -43,7 +43,10 @@ const Szolgaltatasok = ({ s }: { s: Szovegek }) => (
               className="grid grid-cols-[48px_1fr] items-baseline gap-4 border-b py-4 small:grid-cols-[48px_1fr_auto]"
               style={{ borderColor: "var(--kl-keret)" }}
             >
-              <span className="text-[14px]" style={{ color: "var(--kl-halvany)" }}>
+              <span
+                className="text-[14px]"
+                style={{ color: "var(--kl-halvany)" }}
+              >
                 {String(n).padStart(2, "0")}
               </span>
               <div>

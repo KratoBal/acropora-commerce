@@ -38,6 +38,14 @@ export type KezdolapSzoveg = {
   cimke: string
   tipus: KezdolapTipus
   alap: string
+  /**
+   * `true`: a kezdoertek egy KITALALT TENY (ertekeles, vevoi velemeny, cim,
+   * nyitvatartas, marka-kapcsolat, eredet-allitas), nem csak szoveg. Amig az OS
+   * nem irt hozza sajat erteket, a lapon a `MintaJelzo` cimke jelzi (acrobot
+   * 33366, a barracuda #552 kerese utan): a szoveges cimek, alcimek es gombok
+   * jeloles nelkul allnak, a tenyek nem. A jeloltek listaja a `MINTA_MINTA`.
+   */
+  minta?: true
 }
 
 const sor = (
@@ -52,11 +60,36 @@ const sorszamok = (db: number) => Array.from({ length: db }, (_, i) => i + 1)
 
 const HERO: KezdolapSzoveg[] = [
   sor("Hero", "hero.tenyek.1.cim", "Első tény: címsor", "Személyes átvétel"),
-  sor("Hero", "hero.tenyek.1.szoveg", "Első tény: szöveg", "a budapesti boltban"),
-  sor("Hero", "hero.tenyek.2.cim", "Második tény: címsor", "Szakmai tanácsadás"),
-  sor("Hero", "hero.tenyek.2.szoveg", "Második tény: szöveg", "vásárlás előtt és után"),
-  sor("Hero", "hero.tenyek.3.cim", "Harmadik tény: címsor (értékelés)", "4,9 / 5"),
-  sor("Hero", "hero.tenyek.3.szoveg", "Harmadik tény: szöveg", "312 vásárlói értékelés"),
+  sor(
+    "Hero",
+    "hero.tenyek.1.szoveg",
+    "Első tény: szöveg",
+    "a budapesti boltban",
+  ),
+  sor(
+    "Hero",
+    "hero.tenyek.2.cim",
+    "Második tény: címsor",
+    "Szakmai tanácsadás",
+  ),
+  sor(
+    "Hero",
+    "hero.tenyek.2.szoveg",
+    "Második tény: szöveg",
+    "vásárlás előtt és után",
+  ),
+  sor(
+    "Hero",
+    "hero.tenyek.3.cim",
+    "Harmadik tény: címsor (értékelés)",
+    "4,9 / 5",
+  ),
+  sor(
+    "Hero",
+    "hero.tenyek.3.szoveg",
+    "Harmadik tény: szöveg",
+    "312 vásárlói értékelés",
+  ),
 ]
 
 /** A "Mit keresel ma?" sav negy terulete, soronkent legfeljebb ot hivatkozassal. */
@@ -120,8 +153,19 @@ const MIT_KERESEL: KezdolapSzoveg[] = [
       ...sorszamok(5).flatMap((l) => {
         const [felirat, link] = terulet.linkek[l - 1] ?? ["", ""]
         return [
-          sor(csoport, `mit.${n}.l${l}.felirat`, `${l}. hivatkozás: felirat`, felirat),
-          sor(csoport, `mit.${n}.l${l}.link`, `${l}. hivatkozás: cél`, link, "link"),
+          sor(
+            csoport,
+            `mit.${n}.l${l}.felirat`,
+            `${l}. hivatkozás: felirat`,
+            felirat,
+          ),
+          sor(
+            csoport,
+            `mit.${n}.l${l}.link`,
+            `${l}. hivatkozás: cél`,
+            link,
+            "link",
+          ),
         ]
       }),
     ]
@@ -130,7 +174,12 @@ const MIT_KERESEL: KezdolapSzoveg[] = [
 
 const KEZDOK: KezdolapSzoveg[] = [
   sor("Kezdőknek", "kezdo.felirat", "Felirat", "Kezdőknek"),
-  sor("Kezdőknek", "kezdo.cim", "Címsor", "Most rakod össze az első tengeri akváriumodat?"),
+  sor(
+    "Kezdőknek",
+    "kezdo.cim",
+    "Címsor",
+    "Most rakod össze az első tengeri akváriumodat?",
+  ),
   sor(
     "Kezdőknek",
     "kezdo.szoveg",
@@ -146,75 +195,216 @@ const KEZDOK: KezdolapSzoveg[] = [
   ).flatMap(([lepes, cim, szoveg], i) => [
     sor("Kezdőknek", `kezdo.${i + 1}.lepes`, `${i + 1}. lépés: sorszám`, lepes),
     sor("Kezdőknek", `kezdo.${i + 1}.cim`, `${i + 1}. lépés: címsor`, cim),
-    sor("Kezdőknek", `kezdo.${i + 1}.szoveg`, `${i + 1}. lépés: szöveg`, szoveg),
+    sor(
+      "Kezdőknek",
+      `kezdo.${i + 1}.szoveg`,
+      `${i + 1}. lépés: szöveg`,
+      szoveg,
+    ),
   ]),
-  sor("Kezdőknek", "kezdo.gomb1.felirat", "Első gomb: felirat", "Kezdő útmutató"),
+  sor(
+    "Kezdőknek",
+    "kezdo.gomb1.felirat",
+    "Első gomb: felirat",
+    "Kezdő útmutató",
+  ),
   sor("Kezdőknek", "kezdo.gomb1.link", "Első gomb: cél", "", "link"),
-  sor("Kezdőknek", "kezdo.gomb2.felirat", "Második gomb: felirat", "Időpont tanácsadásra"),
+  sor(
+    "Kezdőknek",
+    "kezdo.gomb2.felirat",
+    "Második gomb: felirat",
+    "Időpont tanácsadásra",
+  ),
   sor("Kezdőknek", "kezdo.gomb2.link", "Második gomb: cél", "", "link"),
 ]
 
 const HALADOK: KezdolapSzoveg[] = [
   sor("Tapasztaltaknak", "halado.felirat", "Felirat", "Tapasztaltaknak"),
-  sor("Tapasztaltaknak", "halado.cim", "Címsor", "Tudod, mit keresel. Itt megtalálod."),
+  sor(
+    "Tapasztaltaknak",
+    "halado.cim",
+    "Címsor",
+    "Tudod, mit keresel. Itt megtalálod.",
+  ),
   ...(
     [
-      ["SPS frag-ok, eredet szerint", "Ausztrália, Indonézia, saját szaporítás", "/categories/korallok"],
-      ["Laboratóriumi vízmérés", "Mintaleadás a boltban", "/hamarosan/szolgaltatasok"],
-      ["Adalékanyagok és nyomelemek", "Fauna Marin, Tropic Marin, Red Sea", "/categories/vizkezeles"],
-      ["Vezérlés és dózispumpák", "Alkatrész és szerviz is", "/categories/technika"],
+      [
+        "SPS frag-ok, eredet szerint",
+        "Ausztrália, Indonézia, saját szaporítás",
+        "/categories/korallok",
+      ],
+      [
+        "Laboratóriumi vízmérés",
+        "Mintaleadás a boltban",
+        "/hamarosan/szolgaltatasok",
+      ],
+      [
+        "Adalékanyagok és nyomelemek",
+        "Fauna Marin, Tropic Marin, Red Sea",
+        "/categories/vizkezeles",
+      ],
+      [
+        "Vezérlés és dózispumpák",
+        "Alkatrész és szerviz is",
+        "/categories/technika",
+      ],
     ] as const
   ).flatMap(([cim, szoveg, link], i) => [
-    sor("Tapasztaltaknak", `halado.${i + 1}.cim`, `${i + 1}. sor: felirat`, cim),
-    sor("Tapasztaltaknak", `halado.${i + 1}.szoveg`, `${i + 1}. sor: jobb oldali szöveg`, szoveg),
-    sor("Tapasztaltaknak", `halado.${i + 1}.link`, `${i + 1}. sor: cél`, link, "link"),
+    sor(
+      "Tapasztaltaknak",
+      `halado.${i + 1}.cim`,
+      `${i + 1}. sor: felirat`,
+      cim,
+    ),
+    sor(
+      "Tapasztaltaknak",
+      `halado.${i + 1}.szoveg`,
+      `${i + 1}. sor: jobb oldali szöveg`,
+      szoveg,
+    ),
+    sor(
+      "Tapasztaltaknak",
+      `halado.${i + 1}.link`,
+      `${i + 1}. sor: cél`,
+      link,
+      "link",
+    ),
   ]),
-  sor("Tapasztaltaknak", "halado.gomb.felirat", "Gomb: felirat", "Friss érkezések"),
+  sor(
+    "Tapasztaltaknak",
+    "halado.gomb.felirat",
+    "Gomb: felirat",
+    "Friss érkezések",
+  ),
   sor("Tapasztaltaknak", "halado.gomb.link", "Gomb: cél", "/store", "link"),
 ]
 
 const SZOLGALTATASOK: KezdolapSzoveg[] = [
   sor("Szolgáltatások", "szolg.kep", "Kép", "", "kep"),
   sor("Szolgáltatások", "szolg.felirat", "Felirat", "Szolgáltatások"),
-  sor("Szolgáltatások", "szolg.cim", "Címsor", "Az akváriumod első napjától évekig."),
+  sor(
+    "Szolgáltatások",
+    "szolg.cim",
+    "Címsor",
+    "Az akváriumod első napjától évekig.",
+  ),
   ...(
     [
-      ["Tervezés és telepítés", "Helyszíni felmérés, technikai terv, összeszerelés és beüzemelés.", "Ajánlatot kérek →"],
-      ["Rendszeres karbantartás", "Vízcsere, tisztítás, paraméterek ellenőrzése, heti vagy havi rendben.", "Részletek →"],
-      ["Szerviz", "Szivattyúk, lámpák, fölözők és vezérlők javítása.", "Részletek →"],
-      ["Vízmérés", "Hozd be a mintát, és elmondjuk, mit jelentenek a számok.", "Részletek →"],
+      [
+        "Tervezés és telepítés",
+        "Helyszíni felmérés, technikai terv, összeszerelés és beüzemelés.",
+        "Ajánlatot kérek →",
+      ],
+      [
+        "Rendszeres karbantartás",
+        "Vízcsere, tisztítás, paraméterek ellenőrzése, heti vagy havi rendben.",
+        "Részletek →",
+      ],
+      [
+        "Szerviz",
+        "Szivattyúk, lámpák, fölözők és vezérlők javítása.",
+        "Részletek →",
+      ],
+      [
+        "Vízmérés",
+        "Hozd be a mintát, és elmondjuk, mit jelentenek a számok.",
+        "Részletek →",
+      ],
     ] as const
   ).flatMap(([cim, szoveg, felirat], i) => [
-    sor("Szolgáltatások", `szolg.${i + 1}.cim`, `${i + 1}. szolgáltatás: név`, cim),
-    sor("Szolgáltatások", `szolg.${i + 1}.szoveg`, `${i + 1}. szolgáltatás: leírás`, szoveg),
-    sor("Szolgáltatások", `szolg.${i + 1}.felirat`, `${i + 1}. szolgáltatás: hivatkozás felirata`, felirat),
-    sor("Szolgáltatások", `szolg.${i + 1}.link`, `${i + 1}. szolgáltatás: cél`, "/hamarosan/szolgaltatasok", "link"),
+    sor(
+      "Szolgáltatások",
+      `szolg.${i + 1}.cim`,
+      `${i + 1}. szolgáltatás: név`,
+      cim,
+    ),
+    sor(
+      "Szolgáltatások",
+      `szolg.${i + 1}.szoveg`,
+      `${i + 1}. szolgáltatás: leírás`,
+      szoveg,
+    ),
+    sor(
+      "Szolgáltatások",
+      `szolg.${i + 1}.felirat`,
+      `${i + 1}. szolgáltatás: hivatkozás felirata`,
+      felirat,
+    ),
+    sor(
+      "Szolgáltatások",
+      `szolg.${i + 1}.link`,
+      `${i + 1}. szolgáltatás: cél`,
+      "/hamarosan/szolgaltatasok",
+      "link",
+    ),
   ]),
 ]
 
 const MARKAK: KezdolapSzoveg[] = [
-  sor("Márkák", "markak.felirat", "Felirat", "Márkák, amelyekkel mi is dolgozunk"),
+  sor(
+    "Márkák",
+    "markak.felirat",
+    "Felirat",
+    "Márkák, amelyekkel mi is dolgozunk",
+  ),
   ...["Red Sea", "Tropic Marin", "Fauna Marin", "Microbe-Lift"].map((nev, i) =>
     sor("Márkák", `markak.${i + 1}`, `${i + 1}. márka neve`, nev),
   ),
-  sor("Márkák", "markak.osszes.felirat", "Összes márka: felirat", "Összes márka →"),
+  sor(
+    "Márkák",
+    "markak.osszes.felirat",
+    "Összes márka: felirat",
+    "Összes márka →",
+  ),
   sor("Márkák", "markak.osszes.link", "Összes márka: cél", "", "link"),
 ]
 
 const VELEMENYEK: KezdolapSzoveg[] = [
   sor("Vélemények", "velemenyek.cim", "Címsor", "Akik már nálunk vásároltak"),
   sor("Vélemények", "velemenyek.pont", "Értékelés: pontszám", "4,9 / 5"),
-  sor("Vélemények", "velemenyek.szoveg", "Értékelés: szöveg", "312 Google-értékelés"),
+  sor(
+    "Vélemények",
+    "velemenyek.szoveg",
+    "Értékelés: szöveg",
+    "312 Google-értékelés",
+  ),
   ...(
     [
-      ["„A millepora pontosan olyan színű, mint a fotón. Az átvételnél még tíz percet beszélgettünk az akklimatizálásról.”", "Kovács Gergely", "egyedi korall vásárlása"],
-      ["„Kezdőként jöttem be egy listával, és egy jóval rövidebbel mentem haza. Fél év után sem bántam meg semmit.”", "Szabó Anna", "első tengeri akvárium"],
-      ["„Két éve ők tartják karban a 600 literes rendszerünket. A vízértékekről havonta kapok összefoglalót.”", "Tóth Péter", "karbantartási szerződés"],
+      [
+        "„A millepora pontosan olyan színű, mint a fotón. Az átvételnél még tíz percet beszélgettünk az akklimatizálásról.”",
+        "Kovács Gergely",
+        "egyedi korall vásárlása",
+      ],
+      [
+        "„Kezdőként jöttem be egy listával, és egy jóval rövidebbel mentem haza. Fél év után sem bántam meg semmit.”",
+        "Szabó Anna",
+        "első tengeri akvárium",
+      ],
+      [
+        "„Két éve ők tartják karban a 600 literes rendszerünket. A vízértékekről havonta kapok összefoglalót.”",
+        "Tóth Péter",
+        "karbantartási szerződés",
+      ],
     ] as const
   ).flatMap(([idezet, nev, megjegyzes], i) => [
-    sor("Vélemények", `velemenyek.${i + 1}.idezet`, `${i + 1}. vélemény: idézet`, idezet),
-    sor("Vélemények", `velemenyek.${i + 1}.nev`, `${i + 1}. vélemény: név`, nev),
-    sor("Vélemények", `velemenyek.${i + 1}.megjegyzes`, `${i + 1}. vélemény: megjegyzés`, megjegyzes),
+    sor(
+      "Vélemények",
+      `velemenyek.${i + 1}.idezet`,
+      `${i + 1}. vélemény: idézet`,
+      idezet,
+    ),
+    sor(
+      "Vélemények",
+      `velemenyek.${i + 1}.nev`,
+      `${i + 1}. vélemény: név`,
+      nev,
+    ),
+    sor(
+      "Vélemények",
+      `velemenyek.${i + 1}.megjegyzes`,
+      `${i + 1}. vélemény: megjegyzés`,
+      megjegyzes,
+    ),
   ]),
 ]
 
@@ -228,15 +418,30 @@ const BOLT: KezdolapSzoveg[] = [
     "Az élőállatot csak személyesen adjuk át, így biztosan egészségesen és jól csomagolva viszed haza.",
   ),
   sor("A boltunk", "bolt.cim_felirat", "Cím: felirat", "Cím"),
-  sor("A boltunk", "bolt.cim_ertek", "Cím: érték (sortöréssel)", "1117 Budapest,\nPélda utca 12."),
-  sor("A boltunk", "bolt.nyitva_felirat", "Nyitvatartás: felirat", "Nyitvatartás"),
-  sor("A boltunk", "bolt.nyitva_ertek", "Nyitvatartás: érték (sortöréssel)", "Hétfő–péntek 10–19\nSzombat 9–14"),
+  sor(
+    "A boltunk",
+    "bolt.cim_ertek",
+    "Cím: érték (sortöréssel)",
+    "1117 Budapest,\nPélda utca 12.",
+  ),
+  sor(
+    "A boltunk",
+    "bolt.nyitva_felirat",
+    "Nyitvatartás: felirat",
+    "Nyitvatartás",
+  ),
+  sor(
+    "A boltunk",
+    "bolt.nyitva_ertek",
+    "Nyitvatartás: érték (sortöréssel)",
+    "Hétfő–péntek 10–19\nSzombat 9–14",
+  ),
   sor("A boltunk", "bolt.gomb.felirat", "Gomb: felirat", "Útvonaltervezés"),
   sor("A boltunk", "bolt.gomb.link", "Gomb: cél (térkép)", "", "link"),
   sor("A boltunk", "bolt.kep", "Kép", "", "kep"),
 ]
 
-export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = [
+const NYERS: readonly KezdolapSzoveg[] = [
   ...HERO,
   ...MIT_KERESEL,
   ...KEZDOK,
@@ -246,6 +451,17 @@ export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = [
   ...VELEMENYEK,
   ...BOLT,
 ]
+
+/**
+ * A KITALALT TENYEK KULCSAI. Egy helyen all, mert ez a lista dont arrol, mi
+ * kap jelzot, es a teszt ugyanezt a listat veti ossze a lappal.
+ */
+const MINTA_MINTA =
+  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.1\.szoveg$)/
+
+export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = NYERS.map((sor) =>
+  MINTA_MINTA.test(sor.kulcs) ? { ...sor, minta: true } : sor,
+)
 
 const SOROK: ReadonlyMap<string, KezdolapSzoveg> = new Map(
   KEZDOLAP_SZOVEGEK.map((sor) => [sor.kulcs, sor]),
@@ -308,15 +524,30 @@ export const kepKereso = (texts: Record<string, string> | null) => {
     biztonsagosCim(ertek(texts, kulcs, "kep"))?.href ?? null
 }
 
-/** A lap komponenseinek egy csomagban atadott kereso-hármasa. */
+/**
+ * IGAZ, HA A KULCS MA EGY KITALALT TENY KEZDOERTEKET MUTATJA: a sor `minta`
+ * jeloltu, es az OS nem kuldott hozza sajat erteket. Az OS erteke (akar ures
+ * is) mar nem minta: azt a szerkeszto mondta.
+ */
+export const mintaKereso = (texts: Record<string, string> | null) => {
+  return (kulcs: string): boolean => {
+    const sor = SOROK.get(kulcs)
+    if (!sor) throw new Error(`ismeretlen kezdolap-szoveg kulcs: ${kulcs}`)
+    return sor.minta === true && kuldott(texts, kulcs) === null
+  }
+}
+
+/** A lap komponenseinek egy csomagban atadott kereso-negyese. */
 export type Szovegek = {
   szoveg: ReturnType<typeof szovegKereso>
   link: ReturnType<typeof linkKereso>
   kep: ReturnType<typeof kepKereso>
+  minta: ReturnType<typeof mintaKereso>
 }
 
 export const szovegek = (texts: Record<string, string> | null): Szovegek => ({
   szoveg: szovegKereso(texts),
   link: linkKereso(texts),
   kep: kepKereso(texts),
+  minta: mintaKereso(texts),
 })

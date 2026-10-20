@@ -1,4 +1,5 @@
 import CimLink from "@modules/kezdolap/components/cim-link"
+import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { Szovegek } from "@modules/kezdolap/szovegek"
 
 const LEPESEK = [1, 2, 3]
@@ -50,8 +51,13 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
               >
                 {s.szoveg(`kezdo.${n}.lepes`)}
               </div>
-              <div className="mt-1 font-semibold">{s.szoveg(`kezdo.${n}.cim`)}</div>
-              <div className="text-[14px]" style={{ color: "var(--kl-halvany)" }}>
+              <div className="mt-1 font-semibold">
+                {s.szoveg(`kezdo.${n}.cim`)}
+              </div>
+              <div
+                className="text-[14px]"
+                style={{ color: "var(--kl-halvany)" }}
+              >
                 {s.szoveg(`kezdo.${n}.szoveg`)}
               </div>
             </div>
@@ -92,7 +98,10 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
         <h2 className="font-kiemelt text-4xl font-normal leading-[1.08] small:text-[44px]">
           {s.szoveg("halado.cim")}
         </h2>
-        <div className="flex flex-col border-t" style={{ borderColor: "#29425C" }}>
+        <div
+          className="flex flex-col border-t"
+          style={{ borderColor: "#29425C" }}
+        >
           {SOROK.map((n) => {
             const cim = s.link(`halado.${n}.link`)
             const felirat = s.szoveg(`halado.${n}.cim`)
@@ -107,6 +116,11 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
                 <span className="font-semibold">{felirat}</span>
                 <span style={{ color: "#DCE7EF" }}>
                   {s.szoveg(`halado.${n}.szoveg`)}
+                  {s.minta(`halado.${n}.szoveg`) ? (
+                    <span className="ml-2 inline-block">
+                      <MintaJelzo mit="eredet" />
+                    </span>
+                  ) : null}
                 </span>
               </CimLink>
             )

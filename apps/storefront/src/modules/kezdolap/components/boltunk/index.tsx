@@ -1,5 +1,6 @@
 import CimLink from "@modules/kezdolap/components/cim-link"
 import KepHely from "@modules/kezdolap/components/kep-hely"
+import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { Szovegek } from "@modules/kezdolap/szovegek"
 
 /**
@@ -10,6 +11,7 @@ import type { Szovegek } from "@modules/kezdolap/szovegek"
 const Boltunk = ({ s }: { s: Szovegek }) => {
   const gomb = s.link("bolt.gomb.link")
   const gombFelirat = s.szoveg("bolt.gomb.felirat")
+  const mintaCimAdat = s.minta("bolt.cim_ertek") || s.minta("bolt.nyitva_ertek")
   return (
     <section data-testid="boltunk" className="px-4 pb-20 pt-10 small:px-16">
       <div
@@ -27,10 +29,18 @@ const Boltunk = ({ s }: { s: Szovegek }) => {
             <h2 className="mt-5 font-kiemelt text-4xl font-normal leading-[1.06] small:text-[52px]">
               {s.szoveg("bolt.cim")}
             </h2>
-            <p className="mt-5 max-w-[460px] text-[17px]" style={{ color: "#DCE7EF" }}>
+            <p
+              className="mt-5 max-w-[460px] text-[17px]"
+              style={{ color: "#DCE7EF" }}
+            >
               {s.szoveg("bolt.szoveg")}
             </p>
           </div>
+          {mintaCimAdat ? (
+            <div>
+              <MintaJelzo mit="cím és nyitvatartás" />
+            </div>
+          ) : null}
           <div
             className="grid gap-8 border-t pt-7 text-[15px] small:grid-cols-2"
             style={{ borderColor: "#29425C" }}
@@ -56,7 +66,10 @@ const Boltunk = ({ s }: { s: Szovegek }) => {
             <CimLink
               cim={gomb}
               className="self-start rounded-[28px] px-6 py-[15px] text-[15px] font-semibold"
-              style={{ background: "var(--kl-narancs)", color: "var(--kl-feher)" }}
+              style={{
+                background: "var(--kl-narancs)",
+                color: "var(--kl-feher)",
+              }}
             >
               {gombFelirat}
             </CimLink>

@@ -89,9 +89,11 @@ export async function generateMetadata(props: {
  *   lablec              a kozos lablec
  *
  * A regi savok (kategoria-sav, akcios sor, Reef Club, magazin es video) es a
- * `minta-adat.ts` kikerultek: a terv egyiket sem tartalmazza, es a `MintaJelzo`
- * cimke veluk egyutt megszunt, mert nincs tobb minta-adatbol allo sav, amit
- * jelolni kellene (az ertekek szerkeszthetok, nem beegetettek).
+ * `minta-adat.ts` kikerultek: a terv egyiket sem tartalmazza. A `MintaJelzo`
+ * cimke marad: a KITALALT TENYEK (ertekeles, velemenyek, cim, nyitvatartas,
+ * marka-kapcsolat, a diak kepalairasa) addig viselik, amig az OS nem ir hozajuk
+ * sajat erteket (acrobot 33366, barracuda #552). A szoveges cimek, alcimek es
+ * gombok jeloles nelkul allnak.
  */
 export default async function Home(props: {
   params: Promise<{ countryCode: string }>
@@ -102,10 +104,11 @@ export default async function Home(props: {
 
   const tartalom = await kezdolapTartalom()
   const adat = kezdolapAdat(tartalom)
-  const { szoveg, diak } = adat
+  const { szoveg, minta, diak } = adat
   const tenyek = [1, 2, 3].map((n) => ({
     cim: szoveg(`hero.tenyek.${n}.cim`),
     szoveg: szoveg(`hero.tenyek.${n}.szoveg`),
+    minta: minta(`hero.tenyek.${n}.cim`) || minta(`hero.tenyek.${n}.szoveg`),
   }))
 
   return (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { KEZDOLAP_SZOVEGEK, szovegKereso, szovegMintaKereso } from "./szovegek"
+import { KEZDOLAP_SZOVEGEK, szovegKereso, szovegek } from "./szovegek"
 import { ALAP_DIAK, kezdolapAdat } from "./tartalom"
 
 /**
@@ -45,20 +45,32 @@ describe("a kezdőlap szövegkatalógusa", () => {
 })
 
 describe("a kitalált tények jelölése", () => {
-  it("a minta-kulcsok a kezdőértéknél minta, az OS saját értékénél (akár üresnél) már nem", () => {
-    const minta = szovegMintaKereso(null)
-    expect(minta("hero.tenyek.3.cim")).toBe(true)
-    expect(minta("hero.tenyek.3.szoveg")).toBe(true)
+  it("a tények a kezdőértéknél minta, az OS saját értékénél (akár üresnél) már nem", () => {
+    const { minta } = szovegek(null)
+    for (const kulcs of [
+      "hero.tenyek.3.cim",
+      "velemenyek.pont",
+      "velemenyek.2.idezet",
+      "markak.1",
+      "bolt.cim_ertek",
+      "bolt.nyitva_ertek",
+      "halado.1.szoveg",
+    ])
+      expect(minta(kulcs), kulcs).toBe(true)
     // a szöveges címek és gombok jelölés nélkül állnak
-    expect(minta("hero.tenyek.1.cim")).toBe(false)
+    for (const kulcs of [
+      "hero.tenyek.1.cim",
+      "mit.cim",
+      "kezdo.cim",
+      "bolt.gomb.felirat",
+    ])
+      expect(minta(kulcs), kulcs).toBe(false)
     expect(
-      szovegMintaKereso({ "hero.tenyek.3.cim": "4,8 / 5" })(
-        "hero.tenyek.3.cim",
-      ),
+      szovegek({ "hero.tenyek.3.cim": "4,8 / 5" }).minta("hero.tenyek.3.cim"),
     ).toBe(false)
-    expect(
-      szovegMintaKereso({ "hero.tenyek.3.cim": "" })("hero.tenyek.3.cim"),
-    ).toBe(false)
+    expect(szovegek({ "velemenyek.1.nev": "" }).minta("velemenyek.1.nev")).toBe(
+      false,
+    )
   })
 
   it("minden kezdődia minta-jelölt, és az OS diái soha nem", () => {
@@ -67,6 +79,57 @@ describe("a kitalált tények jelölése", () => {
     expect(
       kezdolapAdat({ texts: {}, slides: [osDia] }).diak[0].minta,
     ).toBeUndefined()
+  })
+})
+
+describe("a mezők típusa", () => {
+  it("egy kulcsot csak a saját típusával lehet olvasni", () => {
+    const k = szovegek(null)
+    expect(() => k.szoveg("mit.1.kep")).toThrow(/tipusa/)
+    expect(() => k.link("mit.cim")).toThrow(/tipusa/)
+    expect(() => k.kep("mit.cim")).toThrow(/tipusa/)
+  })
+
+  it("a link és a kép csak biztonságos címet ad: bolti út vagy http(s)", () => {
+    const rossz = [
+      "javascript:alert(1)",
+      "data:image/png;base64,AAAA",
+      "//evil.example/x",
+      "/\\evil.example",
+      "ftp://x/y",
+      "hu/store",
+      "/a b",
+    ]
+    for (const r of rossz) {
+      const k = szovegek({ "mit.1.l1.link": r, "mit.1.kep": r })
+      expect(k.link("mit.1.l1.link"), r).toBeNull()
+      expect(k.kep("mit.1.kep"), r).toBeNull()
+    }
+    const jo = szovegek({
+      "mit.1.l1.link": "https://maps.example/x",
+      "mit.1.l2.link": "/categories/korallok",
+      "mit.1.kep": "https://shop.example/static/a.jpg",
+    })
+    expect(jo.link("mit.1.l1.link")).toEqual({
+      href: "https://maps.example/x",
+      kulso: true,
+    })
+    expect(jo.link("mit.1.l2.link")).toEqual({
+      href: "/categories/korallok",
+      kulso: false,
+    })
+    expect(jo.kep("mit.1.kep")).toBe("https://shop.example/static/a.jpg")
+  })
+
+  it("a katalógus minden típusa ismert, és a kezdő link-értékek biztonságosak", () => {
+    const k = szovegek(null)
+    for (const sor of KEZDOLAP_SZOVEGEK) {
+      expect(["szoveg", "link", "kep"]).toContain(sor.tipus)
+      if (sor.tipus === "link")
+        expect(() => k.link(sor.kulcs), sor.kulcs).not.toThrow()
+      if (sor.tipus === "link" && sor.alap !== "")
+        expect(k.link(sor.kulcs), sor.kulcs).not.toBeNull()
+    }
   })
 })
 
