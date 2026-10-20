@@ -107,6 +107,12 @@ describe("captureSharedStripePayment", () => {
     expect(log[1]).toBe("capture pay_ship 4450")
   })
 
+  it("more paid as a difference than the order costs: a refund is named, nothing is captured", async () => {
+    const { ops, log } = opsFor({ shipped: { ...shipped(900), other_captured: 1050 }, pickup: pickup() })
+    await expect(captureSharedStripePayment("order_ship", ops)).rejects.toThrow(/1050 Ft.*900 Ft.*150 Ft.*vissza kell téríteni/)
+    expect(log).toEqual([])
+  })
+
   it("only part of the difference is paid: refused, nothing is captured", async () => {
     const { ops, log } = opsFor({ shipped: { ...shipped(6000), other_captured: 500 }, pickup: pickup() })
     await expect(captureSharedStripePayment("order_ship", ops)).rejects.toThrow(DIFFERENCE_UNPAID)

@@ -2,6 +2,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 
 import { stripeShareFactsOf } from "../../modules/stripe-capture/share"
 import type { SharedCaptureOperations } from "./shared-stripe-capture"
+import { differenceOverpaid } from "./order-payment/state"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 
 /**
@@ -73,7 +74,8 @@ export const orderEditHoldDecision = async (
     return { action: "pass", reason: "no_requested_edit" }
   }
 
-  const payment = (await ops.loadPair(orderId))?.shipped?.payment
+  const side = (await ops.loadPair(orderId))?.shipped
+  const payment = side?.payment
 
   if (!payment) {
     return { action: "pass", reason: "no_card_hold" }
@@ -105,6 +107,17 @@ export const orderEditHoldDecision = async (
 
   if (!(newTotal > 0)) {
     return refuse("A szerkesztés után a rendelésben nem marad fizetendő összeg: a rendelést törölni kell, nem szerkeszteni.")
+  }
+
+  /*
+    A DIFFERENCE ALREADY PAID (card 04b6010e): an edit that takes the order
+    below it would leave the customer with more paid than the order costs, and
+    nothing here returns money. Refused with the amount named, as for a captured
+    payment; the surplus is a refund first.
+  */
+  const paidDifference = side?.other_captured ?? 0
+  if (paidDifference > newTotal) {
+    return refuse(differenceOverpaid(paidDifference, newTotal))
   }
 
   /*

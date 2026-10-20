@@ -85,6 +85,45 @@ const opsFor = (
   return { ops, log, metadata }
 }
 
+/*
+  THE RELEASE AFTER A DIFFERENCE (card 04b6010e, barracuda #560 point b): "Csúszik
+  a szállítás" on a mixed cart whose shipped order has a difference link or a
+  paid difference. The worry was a new hold for the whole total, the difference
+  paid twice. MEASURED: it cannot happen, the release is refused. What must
+  fail: a release that cancels the hold, or writes a state, while a difference
+  is paid (a captured second payment) or its link is out (the stored kind).
+*/
+describe("releaseHold after a difference", () => {
+  it("a mixed pair with a PAID difference: refused, nothing canceled, nothing written", async () => {
+    const shipped = order("order_ship", 45, [
+      payment({ id: "pay_ship", amount: 4950, data: { id: "pi_joint", stripe_share: SHARE }, collection_id: "col_ship" }),
+      payment({
+        id: "pay_diff",
+        amount: 1050,
+        created_at: "2026-10-06T10:00:00.000Z",
+        captured: 1050,
+        captured_at: "2026-10-06T11:00:00.000Z",
+        data: null,
+        collection_id: "col_diff",
+      }),
+    ], { [ORDER_PAYMENT_METADATA_KEY]: { kind: "difference", state: "paid", paid_at: "2026-10-06T11:00:00.000Z" } })
+    const { ops, log, metadata } = opsFor({ primary: shipped, pickup: pickupHalf() })
+    await expect(releaseHold("order_ship", ops, () => NOW)).rejects.toThrow(MedusaError)
+    expect(log).toEqual([])
+    expect(metadata.size).toBe(0)
+  })
+
+  it("a mixed pair with the difference LINK out: refused on the stored kind, nothing canceled", async () => {
+    const shipped = order("order_ship", 45, [
+      payment({ id: "pay_ship", amount: 4950, data: { id: "pi_joint", stripe_share: SHARE }, collection_id: "col_ship" }),
+    ], { [ORDER_PAYMENT_METADATA_KEY]: { kind: "difference", state: "link_sent", link: { collection_id: "col_diff", amount: 1050 } } })
+    const { ops, log, metadata } = opsFor({ primary: shipped, pickup: pickupHalf() })
+    await expect(releaseHold("order_ship", ops, () => NOW)).rejects.toThrow(/másik úton halad/)
+    expect(log).toEqual([])
+    expect(metadata.size).toBe(0)
+  })
+})
+
 describe("releaseHold", () => {
   it("a plain card order: state first, the Stripe cancel, the collection, then released", async () => {
     const { ops, log, metadata } = opsFor({ primary: order("order_1", 44, [payment()]), pickup: null })

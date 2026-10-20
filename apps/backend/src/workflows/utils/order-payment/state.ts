@@ -236,6 +236,15 @@ export const holdExpiresAt = (input: {
 export const DIFFERENCE_UNPAID =
   "Fizetésre vár: a rendelés többe kerül, mint a kártyán zárolt összeg, és a különbözet még nincs kifizetve. Küldd ki a fizetési linket a különbözetre, és várd meg a fizetést."
 
+/**
+ * A paid difference is more than the order costs now (card 04b6010e, barracuda
+ * #560). The surplus is not money this code returns: it names the amount, and
+ * says it is a refund. The edit that would cause it is refused
+ * (`orderEditHoldDecision`); this is the same words where it still arises.
+ */
+export const differenceOverpaid = (paid: number, total: number): string =>
+  `A különbözetként már kifizetett összeg (${paid} Ft) több, mint a rendelés végösszege (${total} Ft). A többletet (${paid - total} Ft) vissza kell téríteni a vevőnek; ezt a rendszer nem végzi el magától.`
+
 /** Kiszállítás refused while a split-off card order is not paid (C/3). */
 export const SPLIT_UNPAID =
   "Fizetésre vár: ez a rendelés egy szétbontásból született, és a saját összegét a vevő fizetési linkkel fizeti. Küldd ki a fizetési linket, és várd meg a fizetést."

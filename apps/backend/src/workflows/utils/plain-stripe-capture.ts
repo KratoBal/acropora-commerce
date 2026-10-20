@@ -3,7 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { stripeShareFactsOf } from "../../modules/stripe-capture/share"
 import { refuseWhileEditing } from "./order-edit-hold"
 import { guardAdminCapture } from "./admin-capture-guard"
-import { DIFFERENCE_UNPAID } from "./order-payment/state"
+import { DIFFERENCE_UNPAID, differenceOverpaid } from "./order-payment/state"
 import type { SharedCaptureOperations } from "./shared-stripe-capture"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 
@@ -52,6 +52,14 @@ export const capturePlainStripePayment = async (
     hold). Without such a payment it is the total, as before.
   */
   const owed = order.total - (order.other_captured ?? 0)
+
+  // more paid as a difference than the order costs: a refund, named (card 04b6010e)
+  if (owed < 0) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      differenceOverpaid(order.other_captured ?? 0, order.total)
+    )
+  }
 
   if (!(owed > 0)) {
     throw new MedusaError(
