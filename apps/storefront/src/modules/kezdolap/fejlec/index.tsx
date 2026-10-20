@@ -9,7 +9,7 @@ import { KosarLink } from "@modules/layout/components/cart-dropdown/kosar-link"
 import { MobilMenu } from "@modules/layout/templates/nav/mobil-menu"
 import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { Szovegek } from "@modules/kezdolap/szovegek"
-import { menuPontok } from "./menu-adat"
+import { feloldatlanKategoriak, menuPontok } from "./menu-adat"
 import { KezdolapMenu } from "./menu"
 
 const SAV_KULCSOK = [
@@ -45,6 +45,14 @@ export default async function KezdolapFejlec({
     ? await listNonEmptyRootCategories(region.id)
     : { gyokerek: [], nevek: new Map<string, string>() }
   const pontok = menuPontok(s, menuAdat.gyokerek, menuAdat.nevek)
+  for (const hiany of feloldatlanKategoriak(
+    s,
+    menuAdat.gyokerek,
+    menuAdat.nevek,
+  ))
+    console.warn(
+      `[kezdolap-fejlec] a(z) ${hiany.pont}. menupont kategoriaja nincs a boltban: ${hiany.handlek.join(", ")}`,
+    )
   const mobilPontok = fejlecMenuPontok(menuAdat.gyokerek)
   const mintaSav = SAV_KULCSOK.some((k) => s.minta(k))
   const kereso = s.szoveg("fejlec.kereso")
@@ -97,7 +105,7 @@ export default async function KezdolapFejlec({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/acropora-logo.svg"
+                src="/images/acropora-logo.svg"
                 alt="Acropora"
                 className="block h-[58px] w-auto"
               />
