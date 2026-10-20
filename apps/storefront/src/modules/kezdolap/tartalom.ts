@@ -29,6 +29,8 @@ export type KezdolapTartalom = {
   texts: Record<string, string>
   /** `null`: az OS nem allitott be diakat, a kezdodiak allnak; `[]`: nincs hero. */
   slides: HeroDia[] | null
+  /** Az Egyedi korallok sav termek-handle-jei sorrendben; `null` vagy ures: a sav rejtett. */
+  featured_handles?: string[] | null
 }
 
 /**

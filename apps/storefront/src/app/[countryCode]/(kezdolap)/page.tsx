@@ -9,6 +9,7 @@ import { STORE_NAME } from "@lib/store"
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import Boltunk from "@modules/kezdolap/components/boltunk"
 import HeroCsuszka from "@modules/kezdolap/components/hero-csuszka"
+import EgyediKorallok from "@modules/kezdolap/components/egyedi-korallok"
 import KezdoEsHalado from "@modules/kezdolap/components/kezdo-es-halado"
 import Markak from "@modules/kezdolap/components/markak"
 import MitKeresel from "@modules/kezdolap/components/mit-keresel"
@@ -80,7 +81,7 @@ export async function generateMetadata(props: {
  *   mit keresel ma      negy terulet
  *   kezdoknek /
  *   tapasztaltaknak     ket panel
- *   (egyedi korallok    KOVETKEZO PR: a termekenkenti jelolobol epul)
+ *   egyedi korallok     az OS-ben jelolt termekek (handle-ek a rekordban)
  *   szolgaltatasok
  *   markak
  *   velemenyek
@@ -94,7 +95,10 @@ export async function generateMetadata(props: {
  * sajat erteket (acrobot 33366, barracuda #552). A szoveges cimek, alcimek es
  * gombok jeloles nelkul allnak.
  */
-export default async function Home() {
+export default async function Home(props: {
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
   const tartalom = await kezdolapTartalom()
   const adat = kezdolapAdat(tartalom)
   const { szoveg, minta, diak } = adat
@@ -109,6 +113,11 @@ export default async function Home() {
       <HeroCsuszka diak={diak} tenyek={tenyek} />
       <MitKeresel s={adat} />
       <KezdoEsHalado s={adat} />
+      <EgyediKorallok
+        s={adat}
+        handles={tartalom?.featured_handles ?? []}
+        countryCode={countryCode}
+      />
       <Szolgaltatasok s={adat} />
       <Markak s={adat} />
       <Velemenyek s={adat} />
