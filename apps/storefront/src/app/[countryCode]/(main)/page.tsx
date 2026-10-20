@@ -7,14 +7,15 @@ import {
 import { STORE_NAME } from "@lib/store"
 
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
-import AkciosSor from "@modules/kezdolap/components/akcios-sor"
+import Boltunk from "@modules/kezdolap/components/boltunk"
 import HeroCsuszka from "@modules/kezdolap/components/hero-csuszka"
-import KategoriaSav from "@modules/kezdolap/components/kategoria-sav"
-import MagazinEsVideo from "@modules/kezdolap/components/magazin-es-video"
-import ReefClub from "@modules/kezdolap/components/reef-club"
+import KezdoEsHalado from "@modules/kezdolap/components/kezdo-es-halado"
+import Markak from "@modules/kezdolap/components/markak"
+import MitKeresel from "@modules/kezdolap/components/mit-keresel"
+import Szolgaltatasok from "@modules/kezdolap/components/szolgaltatasok"
+import Velemenyek from "@modules/kezdolap/components/velemenyek"
 import { KL_TOKENEK } from "@modules/kezdolap/kl-tokenek"
 import { kezdolapAdat } from "@modules/kezdolap/tartalom"
-import { getRegion } from "@lib/data/regions"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
 /*
@@ -66,49 +67,38 @@ export async function generateMetadata(props: {
 }
 
 /**
- * A KEZDOLAP.
+ * A KEZDOLAP, A CLAUDE DESIGN TERV SZERINT (2026-10-20, Balazs).
  *
- * === MI VALTOZOTT, ES MIERT ===
- *
- * Eddig a starter ket eleme allt itt: egy ures hero a bolt nevevel, es egy
- * `FeaturedProducts` lista, ami GYUJTEMENYEKBOL epult. Merve 2026-09-14 az elo
- * lapon: a kiszolgalt kezdolap 75 kilobajt, EGY `h1` ("Acropora"), NULLA
- * termek-hivatkozas es NULLA kategoria-hivatkozas -- mert a teszt boltban
- * nulla gyujtemeny van, tehat a lista sosem kapott mit mutatni.
- *
- * A helyere Balazs 2026-09-14-i kezdolap-terve kerul, savonkent.
+ * Minden sav szovege, cime, gombja, kepe es hivatkozasa SZERKESZTHETO: az
+ * Acropora OS irja (`GET /store/homepage-content`), a terv szovege csak
+ * kezdoertek (`modules/kezdolap/szovegek.ts`). A kitalalt szovegek es adatok
+ * (ertekeles, velemenyek, cim, nyitvatartas) a probahoz a terv szerint allnak,
+ * es az OS-bol atirhatok.
  *
  * === A SAVOK SORRENDJE A TERVROL JON ===
  *
- *   hero-csuszka      SZERKESZTHETO (az OS-bol; kezdoertek a terv szovege)
- *   kategoriasav      ELO adat
- *   akcios sor        MINTA (a boltban ma nincs kedvezmenyes ar)
- *   Reef Club         MINTA (a klub meg nem indult)
- *   magazin es video  MINTA (nincs cikkforras, nincs kivalasztott video)
- *   lablec            ELO, mar korabban megepult
+ *   hero-csuszka        diak max. 5, automata leptetes
+ *   mit keresel ma      negy terulet
+ *   kezdoknek /
+ *   tapasztaltaknak     ket panel
+ *   (egyedi korallok    KOVETKEZO PR: a termekenkenti jelolobol epul)
+ *   szolgaltatasok
+ *   markak
+ *   velemenyek
+ *   a boltunk
+ *   lablec              a kozos lablec
  *
- * Amelyik sav minta-adatbol dolgozik, az a lapon is megmondja magarol. A
- * reszletes indoklas a `modules/kezdolap/minta-adat.ts` fejleceben all.
- *
- * === AMIERT A REGIO HIANYA NEM URES LAPOT AD ===
- *
- * A regio csak a kategoriasav termekszamaihoz kell. A starter itt `null`-t
- * adott vissza, ha a regio vagy a gyujtemeny hianyzott -- vagyis EGY hianyzo
- * adat az EGESZ kezdolapot eltuntette. A tobbi sav nem fugg a regiotol, tehat
- * azok attol meg megjelenhetnek.
+ * A regi savok (kategoria-sav, akcios sor, Reef Club, magazin es video) es a
+ * `minta-adat.ts` kikerultek: a terv egyiket sem tartalmazza. A `MintaJelzo`
+ * cimke marad: a KITALALT TENYEK (ertekeles, velemenyek, cim, nyitvatartas,
+ * marka-kapcsolat, a diak kepalairasa) addig viselik, amig az OS nem ir hozajuk
+ * sajat erteket (acrobot 33366, barracuda #552). A szoveges cimek, alcimek es
+ * gombok jeloles nelkul allnak.
  */
-export default async function Home(props: {
-  params: Promise<{ countryCode: string }>
-}) {
-  const params = await props.params
-
-  const { countryCode } = params
-
-  const [region, tartalom] = await Promise.all([
-    getRegion(countryCode),
-    kezdolapTartalom(),
-  ])
-  const { szoveg, minta, diak } = kezdolapAdat(tartalom)
+export default async function Home() {
+  const tartalom = await kezdolapTartalom()
+  const adat = kezdolapAdat(tartalom)
+  const { szoveg, minta, diak } = adat
   const tenyek = [1, 2, 3].map((n) => ({
     cim: szoveg(`hero.tenyek.${n}.cim`),
     szoveg: szoveg(`hero.tenyek.${n}.szoveg`),
@@ -118,10 +108,12 @@ export default async function Home(props: {
   return (
     <div style={KL_TOKENEK}>
       <HeroCsuszka diak={diak} tenyek={tenyek} />
-      {region ? <KategoriaSav regionId={region.id} /> : null}
-      <AkciosSor />
-      <ReefClub />
-      <MagazinEsVideo />
+      <MitKeresel s={adat} />
+      <KezdoEsHalado s={adat} />
+      <Szolgaltatasok s={adat} />
+      <Markak s={adat} />
+      <Velemenyek s={adat} />
+      <Boltunk s={adat} />
     </div>
   )
 }

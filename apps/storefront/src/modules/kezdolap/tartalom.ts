@@ -1,4 +1,4 @@
-import { KEZDOLAP_SZOVEGEK, szovegKereso, szovegMintaKereso } from "./szovegek"
+import { KEZDOLAP_SZOVEGEK, szovegek } from "./szovegek"
 
 /**
  * Egy dia a hero-csuszkan, ahogy a bolt `GET /store/homepage-content` adja
@@ -84,10 +84,9 @@ export const ALAP_DIAK: readonly HeroDia[] = [
   },
 ]
 
-/** A bolt valaszabol a lapnak szolo alak: szoveg-kereso es diak. */
+/** A bolt valaszabol a lapnak szolo alak: a keresok (szoveg, link, kep) es a diak. */
 export const kezdolapAdat = (tartalom: KezdolapTartalom | null) => ({
-  szoveg: szovegKereso(tartalom?.texts ?? null),
-  minta: szovegMintaKereso(tartalom?.texts ?? null),
+  ...szovegek(tartalom?.texts ?? null),
   diak: tartalom?.slides ?? [...ALAP_DIAK],
 })
 
