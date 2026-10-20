@@ -138,6 +138,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/landing-page",
     },
+    // The home page's editable content, written by the Acropora OS
+    {
+      resolve: "./src/modules/homepage-content",
+    },
     {
       resolve: "./src/modules/commerce-settings",
     },
