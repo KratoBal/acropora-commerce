@@ -100,29 +100,29 @@ const TERULETEK: {
   {
     cim: "Élőállat",
     linkek: [
-      ["Tengeri halak", "/categories/halak"],
-      ["SPS korallok", "/categories/korallok"],
-      ["LPS korallok", "/categories/korallok"],
-      ["Lágykorallok", "/categories/korallok"],
-      ["Gerinctelenek", "/categories/gerinctelenek"],
+      ["Tengeri halak", "/store"],
+      ["SPS korallok", "/store"],
+      ["LPS korallok", "/store"],
+      ["Lágykorallok", "/store"],
+      ["Gerinctelenek", "/store"],
     ],
   },
   {
     cim: "Technika",
     linkek: [
-      ["Világítás", "/categories/technika"],
-      ["Áramoltatók", "/categories/technika"],
-      ["Szűréstechnika", "/categories/technika"],
-      ["Mérés- és vezérléstechnika", "/categories/technika"],
+      ["Világítás", "/store"],
+      ["Áramoltatók", "/store"],
+      ["Szűréstechnika", "/store"],
+      ["Mérés- és vezérléstechnika", "/store"],
     ],
   },
   {
     cim: "Vegyszer és fogyóanyag",
     linkek: [
-      ["Víztesztek", "/categories/vizkezeles"],
-      ["Tengeri sók", "/categories/vizkezeles"],
-      ["Adalékanyagok", "/categories/vizkezeles"],
-      ["Táp", "/categories/vizkezeles"],
+      ["Víztesztek", "/store"],
+      ["Tengeri sók", "/store"],
+      ["Adalékanyagok", "/store"],
+      ["Táp", "/store"],
     ],
   },
   {
@@ -231,7 +231,7 @@ const HALADOK: KezdolapSzoveg[] = [
       [
         "SPS frag-ok, eredet szerint",
         "Ausztrália, Indonézia, saját szaporítás",
-        "/categories/korallok",
+        "/store",
       ],
       [
         "Laboratóriumi vízmérés",
@@ -241,13 +241,9 @@ const HALADOK: KezdolapSzoveg[] = [
       [
         "Adalékanyagok és nyomelemek",
         "Fauna Marin, Tropic Marin, Red Sea",
-        "/categories/vizkezeles",
+        "/store",
       ],
-      [
-        "Vezérlés és dózispumpák",
-        "Alkatrész és szerviz is",
-        "/categories/technika",
-      ],
+      ["Vezérlés és dózispumpák", "Alkatrész és szerviz is", "/store"],
     ] as const
   ).flatMap(([cim, szoveg, link], i) => [
     sor(
@@ -457,7 +453,7 @@ const NYERS: readonly KezdolapSzoveg[] = [
  * kap jelzot, es a teszt ugyanezt a listat veti ossze a lappal.
  */
 const MINTA_MINTA =
-  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.1\.szoveg$)/
+  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$)/
 
 export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = NYERS.map((sor) =>
   MINTA_MINTA.test(sor.kulcs) ? { ...sor, minta: true } : sor,

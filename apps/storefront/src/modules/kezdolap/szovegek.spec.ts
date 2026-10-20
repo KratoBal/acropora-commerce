@@ -55,6 +55,7 @@ describe("a kitalált tények jelölése", () => {
       "bolt.cim_ertek",
       "bolt.nyitva_ertek",
       "halado.1.szoveg",
+      "halado.3.szoveg",
     ])
       expect(minta(kulcs), kulcs).toBe(true)
     // a szöveges címek és gombok jelölés nélkül állnak
@@ -119,6 +120,15 @@ describe("a mezők típusa", () => {
       kulso: false,
     })
     expect(jo.kep("mit.1.kep")).toBe("https://shop.example/static/a.jpg")
+  })
+
+  it("a kezdő link-célok csak olyan útra mutatnak, ami a kirakaton biztosan van (barracuda, #554)", () => {
+    // a /store és a /hamarosan/szolgaltatasok a főágon létezik; egy kategória-
+    // handle-t nem találgatunk, az OS-ből jön, ha Balázs a valódi handle-t adja
+    const letezo = new Set(["", "/store", "/hamarosan/szolgaltatasok"])
+    for (const sor of KEZDOLAP_SZOVEGEK)
+      if (sor.tipus === "link")
+        expect(letezo.has(sor.alap), `${sor.kulcs}: ${sor.alap}`).toBe(true)
   })
 
   it("a katalógus minden típusa ismert, és a kezdő link-értékek biztonságosak", () => {
