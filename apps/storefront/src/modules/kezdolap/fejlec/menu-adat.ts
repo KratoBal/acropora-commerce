@@ -21,7 +21,7 @@ import type { Szovegek } from "@modules/kezdolap/szovegek"
  *
  * A handle-t ekezet- es kisbetu-fuggetlenul keresi (`kulcs`), mint a regi
  * fejlec, es amit nem talal (nincs ilyen gyoker, vagy ures a boltban), azt
- * kihagyja. Az oszlopok szama 8, az oszlop linkjeie 8-ra korlatozottak, a
+ * kihagyja. A panelben legfeljebb 5 oszlop latszik (a tobbi az "Osszes" hivatkozasra marad), az oszlop linkjei 8-ra korlatozottak, a
  * kiirt nev a `nevek` terkep szerint (a szulo-elotag nelkul).
  */
 export type MenuKategoria = {
@@ -43,15 +43,19 @@ export type MenuKartya = {
 }
 export type MenuPont = {
   felirat: string
+  /** Az "Osszes" hivatkozas, csak ha tobb kategoria van, mint amennyi oszlop latszik. */
+  osszes: MenuLink | null
   /** A menupont sajat cime, ha NINCS lenyiloja (vagy a fejlec-felirat linkje). */
   href: string | null
   oszlopok: MenuOszlop[]
   kartya: MenuKartya | null
 }
 
-export const MAX_OSZLOP = 8
+/** A panelben legfeljebb ennyi oszlop latszik, a tobbi az "Osszes" hivatkozasra marad. */
+export const MAX_OSZLOP = 5
 export const MAX_OSZLOP_LINK = 8
-export const MAX_GYOKER = 6
+/** Egy menupont legfeljebb ennyi kategoria-kifejezest kaphat. */
+export const MAX_GYOKER = 8
 
 /** A szerkesztheto handle-lista: vesszo vagy szokoz valasztja el, csak biztonsagos alak. */
 export function handleLista(szoveg: string): string[] {
@@ -93,7 +97,14 @@ export function kategoriaKeres(
   const mind = szintek.flat().filter(hasznalhato)
   const probak: ((c: MenuKategoria) => boolean)[] = [
     (c) => kulcs(c.handle) === k,
-    (c) => kulcs(c.handle).startsWith(`${k}---`),
+    // a megadott kifejezes a handle ELEJE, utana nem betu es nem szam kovetkezik
+    // (`technika---termekek`, `vilagitastechnika-(lampak)---termekek`,
+    // `tesztek,-meres,-vezerles---termekek`, `futes/hutes---termekek`), tehat a
+    // `nyomelemek` nem talalja a `nyomelemadagolok...` kategoriat
+    (c) => {
+      const h = kulcs(c.handle)
+      return h.startsWith(k) && !/^[a-z0-9]/.test(h.slice(k.length))
+    },
     (c) => kulcs(nevenek(c, nevek)) === k,
   ]
   for (const proba of probak) {
@@ -130,9 +141,7 @@ export function menuOszlopok(
   const melyFa = gyerekek.some((g) =>
     (g.category_children ?? []).some(hasznalhato),
   )
-  const oszlopok =
-    egyetlen && melyFa ? gyerekek.map(oszlop) : forrasok.map(oszlop)
-  return oszlopok.slice(0, MAX_OSZLOP)
+  return egyetlen && melyFa ? gyerekek.map(oszlop) : forrasok.map(oszlop)
 }
 
 /**
@@ -171,11 +180,19 @@ export function menuPontok(
   return MENUPONTOK.flatMap((n) => {
     const felirat = s.szoveg(`fejlec.${n}.felirat`)
     if (!felirat) return []
-    const oszlopok = menuOszlopok(
+    const osszesOszlop = menuOszlopok(
       gyokerek,
       nevek,
       handleLista(s.szoveg(`fejlec.${n}.kategoriak`)),
     )
+    // legfeljebb MAX_OSZLOP oszlop latszik; a tobbi az "Osszes" hivatkozasra marad
+    const oszlopok = osszesOszlop.slice(0, MAX_OSZLOP)
+    const osszesFelirat = s.szoveg(`fejlec.${n}.osszes.felirat`)
+    const osszesCim = s.link(`fejlec.${n}.osszes.link`)
+    const osszes: MenuLink | null =
+      osszesOszlop.length > MAX_OSZLOP && osszesFelirat && osszesCim
+        ? { nev: osszesFelirat, href: osszesCim.href }
+        : null
     const handlek = handleLista(s.szoveg(`fejlec.${n}.kategoriak`))
     // egy megadott, de a boltban nem talalt kategoria NEM viszi el a fopontot:
     // a teljes katalogusra mutat (es a fejlec naploz, `feloldatlanKategoriak`)
@@ -199,6 +216,6 @@ export function menuPontok(
             minta: s.minta(`fejlec.${n}.kartya.szoveg`),
           }
         : null
-    return [{ felirat, href: cim ? cim.href : null, oszlopok, kartya }]
+    return [{ felirat, href: cim ? cim.href : null, osszes, oszlopok, kartya }]
   })
 }

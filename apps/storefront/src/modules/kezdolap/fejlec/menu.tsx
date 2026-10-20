@@ -164,28 +164,43 @@ export function KezdolapMenu({ pontok }: { pontok: MenuPont[] }) {
             }}
           >
             <div className="mx-auto grid w-full max-w-[1440px] gap-10 px-4 py-9 small:px-16 small:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="grid grid-cols-2 gap-x-10 gap-y-8 small:grid-cols-4">
-                {pont.oszlopok.map((oszlop, j) => (
-                  <div key={j} className="flex flex-col gap-[10px] text-[15px]">
-                    <LocalizedClientLink
-                      href={oszlop.href}
-                      className="mb-[6px] text-[12px] font-semibold uppercase tracking-[0.12em]"
-                      style={{ color: "var(--kl-halvany)" }}
+              <div>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-8 small:grid-cols-5">
+                  {pont.oszlopok.map((oszlop, j) => (
+                    <div
+                      key={j}
+                      className="flex flex-col gap-[10px] text-[15px]"
                     >
-                      {oszlop.cim}
-                    </LocalizedClientLink>
-                    {oszlop.linkek.map((link, k) => (
                       <LocalizedClientLink
-                        key={k}
-                        href={link.href}
-                        className="inline-block transition-[color,transform] hover:translate-x-1 hover:text-[color:var(--kl-kek)] motion-reduce:transition-none motion-reduce:hover:translate-x-0"
-                        style={{ color: "var(--kl-szoveg)" }}
+                        href={oszlop.href}
+                        className="mb-[6px] text-[12px] font-semibold uppercase tracking-[0.12em]"
+                        style={{ color: "var(--kl-halvany)" }}
                       >
-                        {link.nev}
+                        {oszlop.cim}
                       </LocalizedClientLink>
-                    ))}
-                  </div>
-                ))}
+                      {oszlop.linkek.map((link, k) => (
+                        <LocalizedClientLink
+                          key={k}
+                          href={link.href}
+                          className="inline-block transition-[color,transform] hover:translate-x-1 hover:text-[color:var(--kl-kek)] motion-reduce:transition-none motion-reduce:hover:translate-x-0"
+                          style={{ color: "var(--kl-szoveg)" }}
+                        >
+                          {link.nev}
+                        </LocalizedClientLink>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                {pont.osszes ? (
+                  <LocalizedClientLink
+                    href={pont.osszes.href}
+                    className="mt-8 inline-block text-[15px] font-semibold"
+                    style={{ color: "var(--kl-kek)" }}
+                    data-testid={`kl-osszes-${i}`}
+                  >
+                    {pont.osszes.nev}
+                  </LocalizedClientLink>
+                ) : null}
               </div>
               {pont.kartya ? (
                 <aside

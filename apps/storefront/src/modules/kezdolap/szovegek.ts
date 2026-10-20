@@ -101,7 +101,7 @@ const FEJLEC: KezdolapSzoveg[] = [
       ],
       [
         "Technika",
-        "technika",
+        "vilagitastechnika,aramoltatok,szivattyuk,lehabzok,szurok,futes,tesztek,ro-vizlagyitas",
         "",
         "Nem tudod, melyik lámpa kell?",
         "Medencemérethez és korallokhoz ajánlunk.",
@@ -109,7 +109,7 @@ const FEJLEC: KezdolapSzoveg[] = [
       ],
       [
         "Vegyszer és fogyóanyag",
-        "vizkezeles",
+        "vizkezeles,nyomelemek,tengeri-so,aminosavak,eledelek,problemamegoldas",
         "",
         "Laboratóriumi vízmérés",
         "Hozd be a mintát a boltba.",
@@ -131,10 +131,23 @@ const FEJLEC: KezdolapSzoveg[] = [
       sor(
         csoport,
         `fejlec.${n}.kategoriak`,
-        "Webshop-kategóriák (handle-ök vesszővel; ezekből épül a lenyíló)",
+        "Webshop-kategóriák (a handle eleje vesszővel, ékezet nélkül; mindegyik egy oszlop, legfeljebb 5 látszik)",
         kategoriak,
       ),
       sor(csoport, `fejlec.${n}.link`, "Cél, ha nincs lenyíló", link, "link"),
+      sor(
+        csoport,
+        `fejlec.${n}.osszes.felirat`,
+        '"Összes" hivatkozás felirata (akkor látszik, ha több kategória van, mint oszlop)',
+        "Összes kategória →",
+      ),
+      sor(
+        csoport,
+        `fejlec.${n}.osszes.link`,
+        '"Összes" hivatkozás célja',
+        "/store",
+        "link",
+      ),
       sor(csoport, `fejlec.${n}.kartya.cim`, "Kiemelt kártya: címsor", kcim),
       sor(
         csoport,
