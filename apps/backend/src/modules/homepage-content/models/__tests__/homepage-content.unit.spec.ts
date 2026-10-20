@@ -7,6 +7,7 @@ describe("homepage content model", () => {
     expect(Object.keys(parsed.schema).sort()).toEqual([
       "created_at",
       "deleted_at",
+      "featured_handles",
       "id",
       "key",
       "slides",

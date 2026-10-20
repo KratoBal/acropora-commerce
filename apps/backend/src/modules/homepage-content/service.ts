@@ -23,6 +23,8 @@ export type HomepageContentInput = {
   texts: Record<string, string>
   /** `null`: not set, the storefront shows its starting slides. `[]`: no hero. */
   slides: HomepageSlide[] | null
+  /** Product handles of the featured band, in order; absent or null: none. */
+  featured_handles?: string[] | null
 }
 
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
@@ -35,11 +37,25 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
     // `model.json()` is typed as an object, and `slides` is an array. The
     // column is jsonb and stores an array as is; the validator guarantees the
     // shape, so the cast sits here, once, rather than in the model.
+    // `featured_handles` is written only when the sender SENT it: an absent key
+    // leaves the stored list alone (a text-only save from an editor that does
+    // not carry the list must not blank the band, barracuda #555), `null` or
+    // `[]` empties it.
     const body = {
       texts: { ...input.texts },
+      // `model.json()` is typed as an object, and `slides` is an array. The
+      // column is jsonb and stores an array as is; the validator guarantees the
+      // shape, so the cast sits here, once, rather than in the model.
       slides: (input.slides === null
         ? null
         : [...input.slides]) as unknown as Record<string, unknown>,
+      ...(input.featured_handles === undefined
+        ? {}
+        : {
+            featured_handles: (input.featured_handles
+              ? [...input.featured_handles]
+              : null) as unknown as Record<string, unknown>,
+          }),
     }
     if (!existing) {
       const [created] = await this.createHomepageContents([

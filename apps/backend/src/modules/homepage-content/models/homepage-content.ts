@@ -15,6 +15,10 @@ import { model } from "@medusajs/framework/utils"
  * starting value, so the page never renders a hole. `slides` is the hero
  * carousel, at most five (Balázs, 2026-10-20); `null` means not set (the
  * storefront shows its starting slides), `[]` means no hero.
+ *
+ * `featured_handles` are the product handles the home page's "Egyedi korallok"
+ * band shows, in order (the OS marks the products; at most 12). `null` and `[]`
+ * both mean "none": the band is hidden.
  */
 export const HomepageContent = model
   .define("homepage_content", {
@@ -22,6 +26,7 @@ export const HomepageContent = model
     key: model.text(),
     texts: model.json(),
     slides: model.json().nullable(),
+    featured_handles: model.json().nullable(),
   })
   .indexes([
     {

@@ -63,6 +63,28 @@ export const AdminPutHomepageContent = z
     // an OS that edited only texts does not blank the hero. An empty array is
     // a decision (no hero), and is NOT the same as null.
     slides: z.array(slide).max(5).nullable(),
+    // The product handles of the "Egyedi korallok" band, in order. Optional:
+    // an OS that predates the field keeps working (absent is the same as none).
+    featured_handles: z
+      .array(
+        z
+          .string()
+          .min(1)
+          .max(200)
+          // a product handle: lowercase, digits, dot, underscore, hyphen; no
+          // `..` (a path segment), no `%` (an encoded slash), no markup
+          .regex(/^[a-z0-9][a-z0-9._-]*$/, "A handle is a plain product handle")
+          .refine((h) => !h.includes(".."), "A handle has no ..")
+      )
+      .max(12)
+      // each product once: the band would show the same coral twice
+      .refine(
+        (list) => new Set(list).size === list.length,
+        "A handle is listed once"
+      )
+      .nullable()
+      // absent keeps the stored list, null or [] empties it
+      .optional(),
   })
   .strict()
 

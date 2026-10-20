@@ -11,9 +11,11 @@ export const resolveHomepageContentService = (
 export const forStore = (content: {
   texts: unknown
   slides: unknown
+  featured_handles?: unknown
   updated_at?: Date | string | null
 }) => ({
   texts: content.texts,
   slides: content.slides,
+  featured_handles: content.featured_handles ?? null,
   updated_at: content.updated_at ?? null,
 })

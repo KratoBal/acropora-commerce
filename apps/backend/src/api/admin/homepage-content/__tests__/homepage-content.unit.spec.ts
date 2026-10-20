@@ -1,4 +1,5 @@
 import { PUT as adminPut } from "../route"
+import HomepageContentModuleService from "../../../../modules/homepage-content/service"
 import { GET as storeGet } from "../../../store/homepage-content/route"
 import { AdminPutHomepageContent } from "../validators"
 
@@ -44,6 +45,25 @@ describe("AdminPutHomepageContent", () => {
     expect(ok(record({ slides: null }))).toBe(true)
     expect(ok({ texts: {} })).toBe(false)
     expect(ok(record({ slides: "[]" }))).toBe(false)
+  })
+
+  it("HPC-PUT-FEATURED: the featured band's handles are optional, one URL segment each, at most twelve", () => {
+    expect(ok(record())).toBe(true) // an OS that predates the field
+    expect(ok(record({ featured_handles: null }))).toBe(true)
+    expect(ok(record({ featured_handles: [] }))).toBe(true)
+    expect(ok(record({ featured_handles: ["acropora-millepora-k-2417"] }))).toBe(true)
+    expect(
+      ok(record({ featured_handles: Array.from({ length: 12 }, (_, i) => `k-${i}`) }))
+    ).toBe(true)
+    expect(
+      ok(record({ featured_handles: Array.from({ length: 13 }, (_, i) => `k-${i}`) }))
+    ).toBe(false)
+    for (const bad of ["", "a/b", "a b", "a?b", "a#b", "a\\b", 5, "..", "a..b", "a%2Fb", "<b>", 'a"b', "Nagy-Betu", "-a"])
+      expect(ok(record({ featured_handles: [bad] }))).toBe(false)
+    // each product once
+    expect(ok(record({ featured_handles: ["k-1", "k-1"] }))).toBe(false)
+    expect(ok(record({ featured_handles: ["k-1", "k-2"] }))).toBe(true)
+    expect(ok(record({ featured_handles: "k-1" }))).toBe(false)
   })
 
   it("HPC-PUT-FIVE: a sixth slide is refused", () => {
@@ -93,7 +113,12 @@ describe("store homepage content route", () => {
       res as never
     )
     const content = (res.body as { homepage_content: Record<string, unknown> }).homepage_content
-    expect(Object.keys(content).sort()).toEqual(["slides", "texts", "updated_at"])
+    expect(Object.keys(content).sort()).toEqual([
+      "featured_handles",
+      "slides",
+      "texts",
+      "updated_at",
+    ])
   })
 
   it("HPC-STORE-NULL-SLIDES: not-set slides reach the storefront as null, not as an empty list", async () => {
@@ -104,6 +129,29 @@ describe("store homepage content route", () => {
     )
     expect(
       (res.body as { homepage_content: { slides: unknown } }).homepage_content.slides
+    ).toBeNull()
+  })
+
+  it("HPC-STORE-FEATURED: the featured handles reach the storefront, null when the OS never sent any", async () => {
+    const withHandles = response()
+    await storeGet(
+      {
+        scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null, featured_handles: ["k-1", "k-2"] }),
+      } as never,
+      withHandles as never
+    )
+    expect(
+      (withHandles.body as { homepage_content: { featured_handles: unknown } }).homepage_content
+        .featured_handles
+    ).toEqual(["k-1", "k-2"])
+    const without = response()
+    await storeGet(
+      { scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null }) } as never,
+      without as never
+    )
+    expect(
+      (without.body as { homepage_content: { featured_handles: unknown } }).homepage_content
+        .featured_handles
     ).toBeNull()
   })
 
@@ -172,5 +220,61 @@ describe("admin homepage content PUT route", () => {
       fetchImpl
     )
     expect((res.body as { homepage_content: unknown }).homepage_content).toBeTruthy()
+  })
+})
+
+/*
+  THE STORED LIST SURVIVES A SAVE THAT DOES NOT CARRY IT (barracuda, #555). An
+  OS that saves only the texts must not blank the band; null or an empty list
+  is the explicit "none". A small fake of the generated CRUD methods keeps the
+  partial-update semantics of the real ones (a key not in the data stays).
+*/
+describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
+  const fake = () => {
+    let row: Record<string, unknown> | null = null
+    const methods = {
+      listHomepageContents: async () => (row ? [row] : []),
+      createHomepageContents: async ([data]: Record<string, unknown>[]) => {
+        row = { id: "hpc_1", ...data }
+        return [row]
+      },
+      updateHomepageContents: async ([data]: Record<string, unknown>[]) => {
+        row = { ...row, ...data }
+        return [row]
+      },
+    }
+    const save = (input: Record<string, unknown>) =>
+      HomepageContentModuleService.prototype.upsertMainHomepageContent.call(
+        methods as never,
+        input as never
+      )
+    return { save, stored: () => row }
+  }
+  const base = { texts: {}, slides: null }
+
+  it("HPC-SVC-KEEP: a save without featured_handles keeps the stored list", async () => {
+    const { save, stored } = fake()
+    await save({ ...base, featured_handles: ["k-1"] })
+    await save({ ...base, texts: { "mit.cim": "Új" } })
+    expect(stored()?.featured_handles).toEqual(["k-1"])
+    expect((stored()?.texts as Record<string, string>)["mit.cim"]).toBe("Új")
+  })
+
+  it("HPC-SVC-CLEAR: null and an empty list empty the band, a new list replaces it", async () => {
+    const { save, stored } = fake()
+    await save({ ...base, featured_handles: ["k-1", "k-2"] })
+    await save({ ...base, featured_handles: ["k-3"] })
+    expect(stored()?.featured_handles).toEqual(["k-3"])
+    await save({ ...base, featured_handles: [] })
+    expect(stored()?.featured_handles).toEqual([])
+    await save({ ...base, featured_handles: ["k-4"] })
+    await save({ ...base, featured_handles: null })
+    expect(stored()?.featured_handles).toBeNull()
+  })
+
+  it("HPC-SVC-FIRST: a first save without the field stores nothing for it", async () => {
+    const { save, stored } = fake()
+    await save(base)
+    expect(stored()?.featured_handles).toBeUndefined()
   })
 })
