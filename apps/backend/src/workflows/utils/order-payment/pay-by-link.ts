@@ -203,7 +203,16 @@ export const completeLinkPayment = async (
   else await ops.capture(resolved.pair.primary.order_id)
 
   const paidAt = now().toISOString()
-  for (const side of [resolved.pair.primary, ...(resolved.pair.pickup ? [resolved.pair.pickup] : [])]) {
+  /*
+    A difference link belongs to the primary order alone: a mixed cart's
+    pickup order did not owe it, and must not be written "paid" from the
+    primary's stored state (it would read as a paid difference of its own).
+  */
+  const paidSides =
+    resolved.stored!.kind === "difference"
+      ? [resolved.pair.primary]
+      : [resolved.pair.primary, ...(resolved.pair.pickup ? [resolved.pair.pickup] : [])]
+  for (const side of paidSides) {
     const own = storedOrderPaymentOf(side.metadata) ?? resolved.stored!
     await ops.setMetadata(side.order_id, {
       ...(side.metadata ?? {}),

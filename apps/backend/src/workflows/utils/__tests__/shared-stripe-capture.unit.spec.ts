@@ -4,6 +4,7 @@ import {
   captureOnTransition,
   captureSharedStripePayment,
 } from "../shared-stripe-capture"
+import { DIFFERENCE_UNPAID } from "../order-payment/state"
 
 /**
  * THE SHARED STRIPE PAYMENT AT "KISZÁLLÍTÁS" (Balázs 2026-10-01, variant 1;
@@ -72,10 +73,44 @@ describe("captureSharedStripePayment", () => {
     expect(log.slice(1)).toEqual(["capture pay_ship 4950", "capture pay_pick 8500"])
   })
 
-  it("never more than a part of the hold, even if an order's total grew", async () => {
+  /*
+    AN ITEM ADDED TO THE SHIPPED ORDER OVER ITS PART (card c46502c8): the part
+    of the hold takes the total less the difference paid through a link, never
+    more than the part; an unpaid difference holds Kiszállítás back, as for a
+    plain order. What must fail: the old silent cap (4950 taken, the customer
+    short-paid by 1050); the paid difference taken twice; a partly paid one
+    let through; the pickup part touched.
+  */
+  it("an order's total grew and the difference is NOT paid: refused, nothing is captured", async () => {
     const { ops, log } = opsFor({ shipped: shipped(6000), pickup: pickup() })
+    await expect(captureSharedStripePayment("order_ship", ops)).rejects.toThrow(DIFFERENCE_UNPAID)
+    expect(log).toEqual([])
+  })
+
+  it("the difference is paid: the hold takes the total less the difference, the pickup part is unchanged", async () => {
+    const { ops, log } = opsFor({ shipped: { ...shipped(6000), other_captured: 1050 }, pickup: pickup() })
+    expect(await captureSharedStripePayment("order_ship", ops)).toEqual({
+      captured: true,
+      shipped: 4950,
+      pickup: 17000,
+    })
+    expect(log).toEqual([
+      'data pay_ship {"total":2195000,"parts":{"pay_ship":495000,"pay_pick":1700000}}',
+      "capture pay_ship 4950",
+      "capture pay_pick 17000",
+    ])
+  })
+
+  it("the difference is paid and the total fell since: only what the order still owes is taken", async () => {
+    const { ops, log } = opsFor({ shipped: { ...shipped(5500), other_captured: 1050 }, pickup: pickup() })
     await captureSharedStripePayment("order_ship", ops)
-    expect(log[1]).toBe("capture pay_ship 4950")
+    expect(log[1]).toBe("capture pay_ship 4450")
+  })
+
+  it("only part of the difference is paid: refused, nothing is captured", async () => {
+    const { ops, log } = opsFor({ shipped: { ...shipped(6000), other_captured: 500 }, pickup: pickup() })
+    await expect(captureSharedStripePayment("order_ship", ops)).rejects.toThrow(DIFFERENCE_UNPAID)
+    expect(log).toEqual([])
   })
 
   it("every animal dropped: only the shipped part is captured", async () => {

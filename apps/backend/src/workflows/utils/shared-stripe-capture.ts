@@ -7,7 +7,7 @@ import {
 } from "../../modules/stripe-capture/share"
 import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
 import { refuseWhileEditing } from "./order-edit-hold"
-import { refuseWhileAwaitingPayment } from "./order-payment/state"
+import { DIFFERENCE_UNPAID, refuseWhileAwaitingPayment } from "./order-payment/state"
 import {
   capturePlainStripePayment,
   type PlainCaptureResult,
@@ -106,8 +106,19 @@ export const captureSharedStripePayment = async (
   // an order edit's confirm is moving one of the two collections: retry, take nothing
   refuseWhileEditing([shipped, pickup])
 
-  // Each order's current amount, never more than its part of the hold.
-  const shippedAmount = Math.min(shipped.total, shipped.payment.amount)
+  /*
+    WHAT THE SHIPPED PART OF THE HOLD OWES: the order's total, less a
+    difference already paid through a link (plan section 5; an item added to
+    the shipped order after the order, card c46502c8). More than its part of
+    the hold is an UNPAID difference: Kiszállítás waits, as for a plain order.
+    The pickup order's part is its total, never more than its part of the hold
+    (an edit over it is refused).
+  */
+  const shippedOwed = shipped.total - (shipped.other_captured ?? 0)
+  if (shippedOwed > shipped.payment.amount) {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DIFFERENCE_UNPAID)
+  }
+  const shippedAmount = shippedOwed
   const pickupAmount = pickupPayment ? Math.min(pickup.total, pickupPayment.amount) : 0
 
   if (!(shippedAmount > 0)) {

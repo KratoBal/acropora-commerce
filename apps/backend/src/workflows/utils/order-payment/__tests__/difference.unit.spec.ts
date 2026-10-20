@@ -163,6 +163,29 @@ describe("sendPaymentLink for a difference", () => {
     })
   })
 
+  /*
+    A MIXED CART'S SHIPPED ORDER (card c46502c8): the difference is the shipped
+    order's own; the pickup order is neither in the link nor written. What must
+    fail: the refusal that used to stand here; the link naming the pickup's
+    collection or amount; the pickup's state written.
+  */
+  it("a mixed cart: the shipped order's difference only, the pickup order untouched", async () => {
+    const pickupSide: ReleaseSide = {
+      order_id: "order_pick",
+      display_id: 51,
+      total: 17000,
+      metadata: { kept: "pickup" },
+      payments: [{ ...hold({ id: "pay_pick", amount: 17000 }), data: null, collection_id: "col_pick", collection_status: "authorized" }],
+    }
+    const { ops, log, written } = opsFor({ primary: side(), pickup: pickupSide })
+    const sent = await sendPaymentLink("order_1", ops, CONFIG, () => NOW)
+    expect(log).toEqual(["open order_1 2500"])
+    expect(sent.link.amount).toBe(2500)
+    expect(sent.orders).toEqual([{ order_id: "order_1", display_id: 50, amount: 2500 }])
+    expect([...written.keys()]).toEqual(["order_1"])
+    expect((written.get("order_1")?.[ORDER_PAYMENT_METADATA_KEY] as any).link.pickup_collection_id).toBeNull()
+  })
+
   it("a held order without a difference gets no link", async () => {
     const { ops, log } = opsFor({ primary: side({}, [hold()], 14000), pickup: null })
     await expect(sendPaymentLink("order_1", ops, CONFIG, () => NOW)).rejects.toThrow(/még zárolva/)
@@ -171,6 +194,41 @@ describe("sendPaymentLink for a difference", () => {
 })
 
 describe("paying a difference link", () => {
+  it("a mixed cart: only the shipped order is written paid, the pickup order's state is not", async () => {
+    const sent = { kind: "difference", state: "link_sent", link: link(2500) }
+    const log: string[] = []
+    const written = new Map<string, Record<string, unknown>>()
+    const pickupSide: ReleaseSide = {
+      order_id: "order_pick",
+      display_id: 51,
+      total: 17000,
+      metadata: { kept: "pickup" },
+      payments: [{ ...hold({ id: "pay_pick", amount: 17000 }), data: null, collection_id: "col_pick", collection_status: "authorized" }],
+    }
+    const ops: PayByLinkOperations = {
+      loadPair: async () => ({ primary: side(stored(sent)), pickup: pickupSide }),
+      collection: async (id) => ({
+        id,
+        amount: 2500,
+        status: "not_paid",
+        sessions: [{ id: "ps_1", provider_id: STRIPE_PROVIDER_ID, status: "pending", data: null, created_at: null }],
+      }),
+      startSession: async () => null,
+      authorizeSession: async () => true,
+      capture: async (id) => void log.push(`capture order ${id}`),
+      captureCollection: async (id) => void log.push(`capture collection ${id}`),
+      setMetadata: async (id, metadata) => void written.set(id, metadata),
+    }
+    const token = signPaymentLink(
+      { order_id: "order_1", collection_id: "col_diff", amount: 2500, expires_at: Date.parse("2026-10-12T10:00:00.000Z") },
+      SECRET
+    )
+    await completeLinkPayment(token, ops, SECRET, () => new Date("2026-10-07T10:00:00.000Z"))
+    expect(log).toEqual(["capture collection col_diff"])
+    expect([...written.keys()]).toEqual(["order_1"])
+  })
+
+
   it("captures the link's own collection, not the hold, and the order is back to hold", async () => {
     const sent = { kind: "difference", state: "link_sent", link: link(2500) }
     const log: string[] = []
