@@ -88,6 +88,12 @@ describe("capturePlainStripePayment", () => {
     expect(short.log).toEqual([])
   })
 
+  it("more paid as a difference than the order costs: a refund is named, nothing is captured", async () => {
+    const { ops, log } = opsFor({ ...order(900), other_captured: 1050 })
+    await expect(capturePlainStripePayment("order_plain", ops)).rejects.toThrow(/1050 Ft.*900 Ft.*150 Ft.*vissza kell téríteni/)
+    expect(log).toEqual([])
+  })
+
   it("leaves cash on delivery, an already captured payment and a mixed cart's share alone", async () => {
     const cases: [CapturePaymentSide, string][] = [
       [order(14000, { provider_id: "pp_acropora_cod" }), "not_card"],

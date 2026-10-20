@@ -129,6 +129,25 @@ describe("orderEditHoldDecision", () => {
     })
   })
 
+  /*
+    A DIFFERENCE ALREADY PAID (card 04b6010e): the edit may not take the order
+    below it. What must fail: an edit under the paid difference let through
+    (the customer would have paid more than the order costs); an edit above it
+    refused.
+  */
+  it("an edit below the difference already paid is refused with the amount; above it passes", async () => {
+    const paid = { ...single(), other_captured: 1050 }
+    expect(await orderEditHoldDecision("order_1", opsFor(paid, 900).ops)).toEqual({
+      action: "refuse",
+      message: expect.stringMatching(/1050 Ft.*900 Ft.*150 Ft.*vissza kell téríteni/),
+    })
+    expect(await orderEditHoldDecision("order_1", opsFor(paid, 5000).ops)).toEqual({
+      action: "keep_hold",
+      collectionId: "pay_col_1",
+      newTotal: 5000,
+    })
+  })
+
   it("nothing left to pay, or no collection: refused", async () => {
     for (const [side, total, words] of [
       [single(), 0, /törölni kell/],

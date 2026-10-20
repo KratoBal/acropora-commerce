@@ -7,7 +7,7 @@ import {
 } from "../../modules/stripe-capture/share"
 import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
 import { refuseWhileEditing } from "./order-edit-hold"
-import { DIFFERENCE_UNPAID, refuseWhileAwaitingPayment } from "./order-payment/state"
+import { DIFFERENCE_UNPAID, differenceOverpaid, refuseWhileAwaitingPayment } from "./order-payment/state"
 import {
   capturePlainStripePayment,
   type PlainCaptureResult,
@@ -115,6 +115,13 @@ export const captureSharedStripePayment = async (
     (an edit over it is refused).
   */
   const shippedOwed = shipped.total - (shipped.other_captured ?? 0)
+  // more paid as a difference than the order costs: a refund, named (card 04b6010e)
+  if (shippedOwed < 0) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      differenceOverpaid(shipped.other_captured ?? 0, shipped.total)
+    )
+  }
   if (shippedOwed > shipped.payment.amount) {
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, DIFFERENCE_UNPAID)
   }
