@@ -1,4 +1,5 @@
 import { PUT as adminPut } from "../route"
+import HomepageContentModuleService from "../../../../modules/homepage-content/service"
 import { GET as storeGet } from "../../../store/homepage-content/route"
 import { AdminPutHomepageContent } from "../validators"
 
@@ -57,8 +58,11 @@ describe("AdminPutHomepageContent", () => {
     expect(
       ok(record({ featured_handles: Array.from({ length: 13 }, (_, i) => `k-${i}`) }))
     ).toBe(false)
-    for (const bad of ["", "a/b", "a b", "a?b", "a#b", "a\\b", 5])
+    for (const bad of ["", "a/b", "a b", "a?b", "a#b", "a\\b", 5, "..", "a..b", "a%2Fb", "<b>", 'a"b', "Nagy-Betu", "-a"])
       expect(ok(record({ featured_handles: [bad] }))).toBe(false)
+    // each product once
+    expect(ok(record({ featured_handles: ["k-1", "k-1"] }))).toBe(false)
+    expect(ok(record({ featured_handles: ["k-1", "k-2"] }))).toBe(true)
     expect(ok(record({ featured_handles: "k-1" }))).toBe(false)
   })
 
@@ -216,5 +220,61 @@ describe("admin homepage content PUT route", () => {
       fetchImpl
     )
     expect((res.body as { homepage_content: unknown }).homepage_content).toBeTruthy()
+  })
+})
+
+/*
+  THE STORED LIST SURVIVES A SAVE THAT DOES NOT CARRY IT (barracuda, #555). An
+  OS that saves only the texts must not blank the band; null or an empty list
+  is the explicit "none". A small fake of the generated CRUD methods keeps the
+  partial-update semantics of the real ones (a key not in the data stays).
+*/
+describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
+  const fake = () => {
+    let row: Record<string, unknown> | null = null
+    const methods = {
+      listHomepageContents: async () => (row ? [row] : []),
+      createHomepageContents: async ([data]: Record<string, unknown>[]) => {
+        row = { id: "hpc_1", ...data }
+        return [row]
+      },
+      updateHomepageContents: async ([data]: Record<string, unknown>[]) => {
+        row = { ...row, ...data }
+        return [row]
+      },
+    }
+    const save = (input: Record<string, unknown>) =>
+      HomepageContentModuleService.prototype.upsertMainHomepageContent.call(
+        methods as never,
+        input as never
+      )
+    return { save, stored: () => row }
+  }
+  const base = { texts: {}, slides: null }
+
+  it("HPC-SVC-KEEP: a save without featured_handles keeps the stored list", async () => {
+    const { save, stored } = fake()
+    await save({ ...base, featured_handles: ["k-1"] })
+    await save({ ...base, texts: { "mit.cim": "Új" } })
+    expect(stored()?.featured_handles).toEqual(["k-1"])
+    expect((stored()?.texts as Record<string, string>)["mit.cim"]).toBe("Új")
+  })
+
+  it("HPC-SVC-CLEAR: null and an empty list empty the band, a new list replaces it", async () => {
+    const { save, stored } = fake()
+    await save({ ...base, featured_handles: ["k-1", "k-2"] })
+    await save({ ...base, featured_handles: ["k-3"] })
+    expect(stored()?.featured_handles).toEqual(["k-3"])
+    await save({ ...base, featured_handles: [] })
+    expect(stored()?.featured_handles).toEqual([])
+    await save({ ...base, featured_handles: ["k-4"] })
+    await save({ ...base, featured_handles: null })
+    expect(stored()?.featured_handles).toBeNull()
+  })
+
+  it("HPC-SVC-FIRST: a first save without the field stores nothing for it", async () => {
+    const { save, stored } = fake()
+    await save(base)
+    expect(stored()?.featured_handles).toBeUndefined()
   })
 })

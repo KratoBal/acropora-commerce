@@ -71,10 +71,19 @@ export const AdminPutHomepageContent = z
           .string()
           .min(1)
           .max(200)
-          .regex(/^[^\s/?#\\]+$/, "A handle is one URL segment")
+          // a product handle: lowercase, digits, dot, underscore, hyphen; no
+          // `..` (a path segment), no `%` (an encoded slash), no markup
+          .regex(/^[a-z0-9][a-z0-9._-]*$/, "A handle is a plain product handle")
+          .refine((h) => !h.includes(".."), "A handle has no ..")
       )
       .max(12)
+      // each product once: the band would show the same coral twice
+      .refine(
+        (list) => new Set(list).size === list.length,
+        "A handle is listed once"
+      )
       .nullable()
+      // absent keeps the stored list, null or [] empties it
       .optional(),
   })
   .strict()
