@@ -69,15 +69,51 @@ const nevenek = (k: MenuKategoria, nevek: ReadonlyMap<string, string>) =>
 
 const hasznalhato = (k: MenuKategoria) => Boolean(k.handle)
 
+/**
+ * A KATEGORIA KERESESE A FA HARMADIK SZINTJEIG (barracuda es acrobot, 2026-10-20:
+ * a stage-en a Technika es a Vegyszer NEM gyoker, hanem a Termekek alatt all).
+ * A fa, amit a fejlec kap, gyokerekbol, azok gyerekeibol es azok gyerekeibol all
+ * (`gyokerekKetSzintel`); a kereses a laposabb talalatot elonyben reszesiti.
+ *
+ * Egy jelolt akkor talal, ha (a fenti sorrendben probalva):
+ *   1. a handle-je egyezik (ekezet- es kisbetu-fuggetlenul),
+ *   2. a handle-je a megadott handle-lel kezdodik, `---` utan a szulo neve
+ *      (a boltban az alkategoria handle-je "<nev>---<szulo>": `technika---termekek`),
+ *   3. a megjelenitett neve egyezik.
+ */
+export function kategoriaKeres(
+  gyokerek: readonly MenuKategoria[],
+  nevek: ReadonlyMap<string, string>,
+  handle: string,
+): MenuKategoria | undefined {
+  const k = kulcs(handle)
+  const szintek: MenuKategoria[][] = [[...gyokerek]]
+  szintek.push(szintek[0]!.flatMap((c) => [...(c.category_children ?? [])]))
+  szintek.push(szintek[1]!.flatMap((c) => [...(c.category_children ?? [])]))
+  const mind = szintek.flat().filter(hasznalhato)
+  const probak: ((c: MenuKategoria) => boolean)[] = [
+    (c) => kulcs(c.handle) === k,
+    (c) => kulcs(c.handle).startsWith(`${k}---`),
+    (c) => kulcs(nevenek(c, nevek)) === k,
+  ]
+  for (const proba of probak) {
+    const talalt = mind.find(proba)
+    if (talalt) return talalt
+  }
+  return undefined
+}
+
 export function menuOszlopok(
   gyokerek: readonly MenuKategoria[],
   nevek: ReadonlyMap<string, string>,
   handlek: readonly string[],
 ): MenuOszlop[] {
-  const forrasok = handlek.flatMap((h) => {
-    const gyoker = gyokerek.find((g) => kulcs(g.handle) === kulcs(h))
-    return gyoker && hasznalhato(gyoker) ? [gyoker] : []
-  })
+  const forrasok: MenuKategoria[] = []
+  for (const h of handlek) {
+    const talalt = kategoriaKeres(gyokerek, nevek, h)
+    if (talalt && !forrasok.some((f) => f.id === talalt.id))
+      forrasok.push(talalt)
+  }
   if (!forrasok.length) return []
 
   const oszlop = (k: MenuKategoria): MenuOszlop => ({
@@ -97,6 +133,25 @@ export function menuOszlopok(
   const oszlopok =
     egyetlen && melyFa ? gyerekek.map(oszlop) : forrasok.map(oszlop)
   return oszlopok.slice(0, MAX_OSZLOP)
+}
+
+/**
+ * A MEGADOTT, DE A BOLTBAN NEM TALALT KATEGORIAK (menupontonkent), hogy egy
+ * elgepelt vagy atnevezett handle NE TUNJON EL CSENDBEN: a fejlec ezeket
+ * figyelmeztetesben naplozza, a pont pedig a teljes katalogusra (`/store`) mutat.
+ */
+export function feloldatlanKategoriak(
+  s: Szovegek,
+  gyokerek: readonly MenuKategoria[],
+  nevek: ReadonlyMap<string, string>,
+): { pont: number; handlek: string[] }[] {
+  return MENUPONTOK.flatMap((n) => {
+    if (!s.szoveg(`fejlec.${n}.felirat`)) return []
+    const hianyzo = handleLista(s.szoveg(`fejlec.${n}.kategoriak`)).filter(
+      (h) => !kategoriaKeres(gyokerek, nevek, h),
+    )
+    return hianyzo.length ? [{ pont: n, handlek: hianyzo }] : []
+  })
 }
 
 export const MENUPONTOK = [1, 2, 3, 4, 5]
@@ -121,7 +176,14 @@ export function menuPontok(
       nevek,
       handleLista(s.szoveg(`fejlec.${n}.kategoriak`)),
     )
-    const cim = s.link(`fejlec.${n}.link`)
+    const handlek = handleLista(s.szoveg(`fejlec.${n}.kategoriak`))
+    // egy megadott, de a boltban nem talalt kategoria NEM viszi el a fopontot:
+    // a teljes katalogusra mutat (es a fejlec naploz, `feloldatlanKategoriak`)
+    const cim =
+      s.link(`fejlec.${n}.link`) ??
+      (!oszlopok.length && handlek.length
+        ? { href: "/store", kulso: false }
+        : null)
     if (!oszlopok.length && !cim) return []
     const kcim = s.szoveg(`fejlec.${n}.kartya.cim`)
     const kszoveg = s.szoveg(`fejlec.${n}.kartya.szoveg`)

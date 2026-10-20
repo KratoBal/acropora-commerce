@@ -35,4 +35,26 @@ describe("a fejléc érintési céljai", () => {
     )
     expect(fiok?.[0]).toContain("min-h-6")
   })
+
+  it("a logó a middleware által kihagyott /images alól jön, és a fájl megvan (a gyökér .svg-t a stage 307-tel átirányítaná)", () => {
+    const src = forras.match(/<img[\s\S]*?src="([^"]+)"/)?.[1]
+    expect(src).toBe("/images/acropora-logo.svg")
+    const fajl = join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "..",
+      "public",
+      src!.slice(1),
+    )
+    expect(() => readFileSync(fajl, "utf-8")).not.toThrow()
+    const middleware = readFileSync(
+      join(__dirname, "..", "..", "..", "middleware.ts"),
+      "utf-8",
+    )
+    expect(middleware).toMatch(
+      /\?!api\|_next\/static\|_next\/image\|favicon\.ico\|images\|/,
+    )
+  })
 })
