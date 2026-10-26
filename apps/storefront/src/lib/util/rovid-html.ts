@@ -17,17 +17,30 @@ import sanitizeHtml from "sanitize-html"
  */
 const BOLTI_UT = /^\/(?![/\\])[^\s\\]*$/
 
+/**
+ * Az e-mail cim (nautilus 36118: az OS rovid profilja is engedi, hogy a ket
+ * oldal ugyanazt tartsa meg): `mailto:` es utana NEM URES cim (a `?subject=`
+ * rovat opcionalis), szokoz nelkul. Mas sema (`javascript:`, `data:`, `tel:`,
+ * `ftp:`) tovabbra sem.
+ */
+const MAILTO = /^mailto:[^\s?#]+(\?[^\s#]*)?$/i
+
 export function rovidHtml(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: ["p", "br", "strong", "b", "em", "i", "ul", "ol", "li", "a"],
     allowedAttributes: { a: ["href", "rel"] },
-    allowedSchemes: ["http", "https"],
+    allowedSchemes: ["http", "https", "mailto"],
     allowedSchemesAppliedToAttributes: ["href"],
     allowProtocolRelative: false,
     transformTags: {
       a: (tagName, attribs) => {
         const href = attribs.href ?? ""
-        if (href && !/^https?:\/\//i.test(href) && !BOLTI_UT.test(href))
+        if (
+          href &&
+          !/^https?:\/\//i.test(href) &&
+          !BOLTI_UT.test(href) &&
+          !MAILTO.test(href)
+        )
           return { tagName: "span", attribs: {} }
         return {
           tagName,

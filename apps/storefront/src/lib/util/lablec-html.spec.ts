@@ -38,7 +38,9 @@ describe("a lábléc bemutatkozása", () => {
       '<a href="data:text/html,x">x</a>',
       '<a href="//evil.example">x</a>',
       '<a href="/\\evil.example">x</a>',
-      '<a href="mailto:a@b.hu">x</a>',
+      '<a href="mailto:">x</a>',
+      '<a href="mailto:?subject=x">x</a>',
+      '<a href="tel:+3612345678">x</a>',
     ]) {
       const ki = lablecHtml(rossz)
       expect({ rossz, href: ki.includes("href") }).toEqual({
@@ -54,6 +56,15 @@ describe("a lábléc bemutatkozása", () => {
       '<div data-x="1">a</div>',
     ])
       expect(lablecHtml(elem)).not.toMatch(/<(img|iframe|table|div)/)
+  })
+
+  it("az e-mail cím (mailto: nem üres címmel) link marad, rel nélkül", () => {
+    const ki = lablecHtml('<a href="mailto:info@acropora.hu">írj</a>')
+    expect(ki).toContain('href="mailto:info@acropora.hu"')
+    expect(ki).not.toContain("rel=")
+    expect(lablecHtml('<a href="mailto:a@b.hu?subject=Szia">x</a>')).toContain(
+      "mailto:a@b.hu?subject=Szia",
+    )
   })
 
   it("üres bemenetre üres szöveg", () => {

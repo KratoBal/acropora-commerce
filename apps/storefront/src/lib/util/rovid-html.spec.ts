@@ -43,13 +43,21 @@ describe("a rövid formázott szöveg tisztítása", () => {
       )
   })
 
+  it("az e-mail cím (mailto: nem üres címmel) link marad, rel nélkül", () => {
+    const ki = rovidHtml('<p><a href="mailto:info@acropora.hu">írj</a></p>')
+    expect(ki).toContain('href="mailto:info@acropora.hu"')
+    expect(ki).not.toContain("rel=")
+  })
+
   it("a veszélyes link nem marad link, a szöveg igen", () => {
     for (const rossz of [
       '<a href="javascript:alert(1)">x</a>',
       '<a href="data:text/html,x">x</a>',
       '<a href="//evil.example">x</a>',
       '<a href="/\\evil.example">x</a>',
-      '<a href="mailto:a@b.hu">x</a>',
+      '<a href="mailto:">x</a>',
+      '<a href="mailto:?subject=x">x</a>',
+      '<a href="tel:+3612345678">x</a>',
     ]) {
       const ki = rovidHtml(rossz)
       expect({ rossz, href: ki.includes("href") }).toEqual({
