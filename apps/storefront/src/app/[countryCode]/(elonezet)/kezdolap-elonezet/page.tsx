@@ -6,6 +6,7 @@ import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import { elonezetBekapcsolva, osOrigin } from "@lib/util/kezdolap-elonezet"
 import KezdolapFejlec from "@modules/kezdolap/fejlec"
 import { kezdolapAdat } from "@modules/kezdolap/tartalom"
+import { tisztitottTartalom } from "@modules/kezdolap/tisztitas"
 import { lablecAdat } from "@modules/layout/templates/footer/lablec-adat"
 import ElonezetKliens from "./elonezet-kliens"
 
@@ -37,7 +38,7 @@ export default async function KezdolapElonezet(props: {
 }) {
   if (!elonezetBekapcsolva(process.env)) notFound()
   const { countryCode } = await props.params
-  const tartalom = await kezdolapTartalom()
+  const tartalom = tisztitottTartalom(await kezdolapTartalom())
   const { collections } = await listCollections({ fields: "id,handle,title" })
 
   return (

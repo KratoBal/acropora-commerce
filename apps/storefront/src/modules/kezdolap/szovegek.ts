@@ -1,3 +1,4 @@
+import { ROVID_KULCSOK, rovidErtek, type RovidErtek } from "./rovid"
 /**
  * A KEZDOLAP SZERKESZTHETO SZOVEGEI: A KATALOGUS.
  *
@@ -693,15 +694,36 @@ export const mintaKereso = (texts: Record<string, string> | null) => {
   }
 }
 
+/**
+ * A FORMAZOTT SZOVEG (Balazs 2b megbizas, 4. pont): csak a `ROVID_KULCSOK`
+ * kulcsai. HTML-kent csak akkor jon vissza, ha a rekord a szerveren a
+ * tisztitason atment (`tisztitott`), egyebkent sima szoveg (`rovidErtek`).
+ */
+export const rovidKereso = (
+  texts: Record<string, string> | null,
+  tisztitott: boolean,
+) => {
+  return (kulcs: string): RovidErtek => {
+    if (!ROVID_KULCSOK.has(kulcs))
+      throw new Error(`a(z) ${kulcs} kulcs nem formazott szoveg`)
+    return rovidErtek(ertek(texts, kulcs, "szoveg"), tisztitott)
+  }
+}
+
 /** A lap komponenseinek egy csomagban atadott kereso-negyese. */
 export type Szovegek = {
+  rovid: ReturnType<typeof rovidKereso>
   szoveg: ReturnType<typeof szovegKereso>
   link: ReturnType<typeof linkKereso>
   kep: ReturnType<typeof kepKereso>
   minta: ReturnType<typeof mintaKereso>
 }
 
-export const szovegek = (texts: Record<string, string> | null): Szovegek => ({
+export const szovegek = (
+  texts: Record<string, string> | null,
+  tisztitott = false,
+): Szovegek => ({
+  rovid: rovidKereso(texts, tisztitott),
   szoveg: szovegKereso(texts),
   link: linkKereso(texts),
   kep: kepKereso(texts),

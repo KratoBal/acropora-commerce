@@ -30,7 +30,9 @@ export function savokElemei(
   }))
 
   const savok: Record<BlokkKulcs, ReactNode> = {
-    hero: <HeroCsuszka diak={diak} tenyek={tenyek} />,
+    hero: (
+      <HeroCsuszka diak={diak} tenyek={tenyek} tisztitott={adat.tisztitott} />
+    ),
     "mit-keresel": <MitKeresel s={adat} />,
     "kezdo-es-halado": <KezdoEsHalado s={adat} />,
     "egyedi-korallok": egyedi,

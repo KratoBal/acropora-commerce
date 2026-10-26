@@ -14,7 +14,7 @@ import { kezdolapAdat, type KezdolapTartalom } from "@modules/kezdolap/tartalom"
 import type { LablecAdat } from "@modules/layout/templates/footer/lablec-adat"
 import { LablecKeret } from "@modules/layout/templates/footer/lablec-keret"
 import type { HttpTypes } from "@medusajs/types"
-import { lablecAdatElonezethez } from "./akciok"
+import { elonezetiAdat } from "./akciok"
 
 const VERZIO = 1
 const TIPUS = {
@@ -85,12 +85,16 @@ export default function ElonezetKliens({
           return
         }
         const ez = ++sorszam.current
-        setRekord(eredmeny.rekord)
-        void lablecAdatElonezethez(eredmeny.rekord).then((valasz) => {
+        // A REKORDOT CSAK A SZERVER TISZTITOTT VALTOZATA RAJZOLODIK KI (a
+        // formazott szovegek es a lablec bemutatkozasa a szerveren megy at a
+        // tisztitason, `tisztitas.ts`); a kliens a nyers rekordot nem mutatja.
+        void elonezetiAdat(eredmeny.rekord).then((valasz) => {
           // egy lassabb, regebbi valasz ne irja felul az ujabbat
           if (ez !== sorszam.current) return
-          if (valasz.ok) setLablec(valasz.adat)
-          else uzen({ type: TIPUS.hiba, message: valasz.hiba })
+          if (valasz.ok) {
+            setRekord(valasz.rekord)
+            setLablec(valasz.adat)
+          } else uzen({ type: TIPUS.hiba, message: valasz.hiba })
         })
       } else if (adat.type === TIPUS.kijelol) {
         const blokk = adat.block

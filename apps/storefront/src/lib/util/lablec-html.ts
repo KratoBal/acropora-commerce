@@ -14,6 +14,14 @@ import sanitizeHtml from "sanitize-html"
  */
 const BOLTI_UT = /^\/(?![/\\])[^\s\\]*$/
 
+/**
+ * Az e-mail cim (nautilus 36118: az OS rovid profilja is engedi, hogy a ket
+ * oldal ugyanazt tartsa meg): `mailto:` es utana NEM URES cim (a `?subject=`
+ * rovat opcionalis), szokoz nelkul. Mas sema (`javascript:`, `data:`, `tel:`,
+ * `ftp:`) tovabbra sem.
+ */
+const MAILTO = /^mailto:[^\s?#]+(\?[^\s#]*)?$/i
+
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
     "p",
@@ -30,7 +38,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
     "a",
   ],
   allowedAttributes: { a: ["href", "rel"] },
-  allowedSchemes: ["http", "https"],
+  allowedSchemes: ["http", "https", "mailto"],
   allowedSchemesAppliedToAttributes: ["href"],
   allowProtocolRelative: false,
   // nem engedett elem TARTALMA marad (a szoveg), a szkript/stilus elem tartalma is elesik
@@ -41,7 +49,12 @@ const OPTIONS: sanitizeHtml.IOptions = {
       const href = attribs.href ?? ""
       // bolti ut (nincs seme) a sanitize-html szerint relativ cim: marad; a
       // `//host` es a `\\` alak itt kiesik
-      if (href && !/^https?:\/\//i.test(href) && !BOLTI_UT.test(href))
+      if (
+        href &&
+        !/^https?:\/\//i.test(href) &&
+        !BOLTI_UT.test(href) &&
+        !MAILTO.test(href)
+      )
         return { tagName: "span", attribs: {} }
       return {
         tagName,
