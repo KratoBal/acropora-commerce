@@ -111,7 +111,7 @@ const ZaroSor = ({ kepUrl, nev, cimke, ar, cselekves }: ZaroSorProps) => {
   return (
     <div
       data-testid="zarosor"
-      className="termeklap-zarosor hidden items-center gap-5 border-t bg-[var(--terv-hatter-halvany)] px-11 py-5 lg:flex"
+      className="termeklap-zarosor hidden items-center gap-5 border-t bg-[var(--terv-hatter-halvany)] px-16 py-5 lg:flex"
       style={{ borderColor: "var(--terv-keret)" }}
     >
       {/*
