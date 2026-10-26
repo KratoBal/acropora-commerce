@@ -1,10 +1,7 @@
 import { Metadata } from "next"
 
 import { getBaseURL } from "@lib/util/env"
-import { KosarAllapotProvider } from "@modules/layout/components/kosar-allapot"
-import KosarSziget from "@modules/layout/components/kosar-allapot/kosar-sziget"
-import Footer from "@modules/layout/templates/footer"
-import Nav from "@modules/layout/templates/nav"
+import AruhazKeret from "@modules/layout/templates/aruhaz-keret"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -23,6 +20,9 @@ export const metadata: Metadata = {
  * Next.js-ben minden alatta levo lapot dinamikussa tesz: a teszt kirakaton
  * mind a tiz laptipus `private, no-store` valaszt adott. A kosar es a vevo
  * most kliensoldalon jon (`KosarAllapotProvider`), a lap gyorsitotarazhato.
+ *
+ * A FEJLEC ES A LABLEC A KEZDOLAPEVAL KOZOS KERETBOL JON (2026-10-26, Balazs):
+ * lasd `aruhaz-keret`.
  */
 export default async function PageLayout(props: {
   children: React.ReactNode
@@ -30,12 +30,5 @@ export default async function PageLayout(props: {
 }) {
   const { countryCode } = await props.params
 
-  return (
-    <KosarAllapotProvider>
-      <Nav countryCode={countryCode} />
-      <KosarSziget />
-      {props.children}
-      <Footer />
-    </KosarAllapotProvider>
-  )
+  return <AruhazKeret countryCode={countryCode}>{props.children}</AruhazKeret>
 }
