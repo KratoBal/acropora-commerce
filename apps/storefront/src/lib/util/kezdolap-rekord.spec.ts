@@ -99,7 +99,11 @@ describe("a kezdőlap-rekord ellenőrzése", () => {
         rossz,
         ok: false,
       })
-    expect(ok(modosit((r) => (r.footer.columns[0].title = "")))).toBe(false)
+    // az üres oszlopcím az OS szabálya szerint érvényes, a túl hosszú nem
+    expect(ok(modosit((r) => (r.footer.columns[0].title = "")))).toBe(true)
+    expect(
+      ok(modosit((r) => (r.footer.columns[0].title = "x".repeat(101)))),
+    ).toBe(false)
   })
 
   it("a többi kulcs: ismeretlen kulcs, slides kötelező, szöveg-kulcs és -hossz, handle-ek", () => {

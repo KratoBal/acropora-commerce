@@ -118,7 +118,8 @@ function lablecHiba(footer: unknown): string | null {
   for (const oszlop of columns) {
     if (!objektum(oszlop) || !pontosan(oszlop, ["title", "links"]))
       return "footer.columns: oszlop alakja"
-    if (!szoveg(oszlop.title, 100, 1)) return "footer.columns: title"
+    // az oszlop cime lehet ures (az OS szabalya is: csak a hossz korlatos)
+    if (!szoveg(oszlop.title, 100)) return "footer.columns: title"
     if (!Array.isArray(oszlop.links) || oszlop.links.length > 12)
       return "footer.columns: links"
     for (const link of oszlop.links) {
