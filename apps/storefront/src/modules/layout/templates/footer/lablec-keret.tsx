@@ -171,10 +171,19 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
                 >
                   Kollekciók
                 </span>
+                {/*
+                  A KOLLEKCIOK LISTAJA IS A TERV SZOVEGSZINET KAPJA (2026-10-26,
+                  acrobot a sotet 1440-es kepen merte): a tobbi oszlop listaja
+                  `--terv-szoveg-halvany`-t visel, ez a lista nem, ezert a
+                  linkek a bongeszo alapszinen, sotet szurkeben alltak a sotet
+                  hatteren, alig lathatoan.
+                */}
                 <ul
                   className={clx("grid grid-cols-1 gap-2 txt-small", {
                     "grid-cols-2": (collections?.length || 0) > 3,
                   })}
+                  style={{ color: "var(--terv-szoveg-halvany)" }}
+                  data-testid="footer-kollekciok"
                 >
                   {collections?.slice(0, 6).map((c) => (
                     <li key={c.id}>
