@@ -103,7 +103,11 @@ const socialAddress = z
  */
 const footer = z
   .object({
-    intro: z.string().max(4000),
+    // The OS measures 4000 characters BEFORE it cleans the HTML; this checks the
+    // cleaned value it sends. Cleaning can lengthen a text (escaping, rewritten
+    // attributes), so the shop's cap is looser than the OS's: the OS stays the
+    // strict side and a text it accepted is never refused here (barracuda, #564).
+    intro: z.string().max(8000),
     columns: z
       .array(
         z
