@@ -8,6 +8,7 @@ import { STORE_NAME } from "@lib/store"
 
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import { KezdolapSavok } from "@modules/kezdolap/savok"
+import { tisztitottTartalom } from "@modules/kezdolap/tisztitas"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
 /*
@@ -91,7 +92,8 @@ export default async function Home(props: {
   params: Promise<{ countryCode: string }>
 }) {
   const { countryCode } = await props.params
-  const tartalom = await kezdolapTartalom()
+  // a formazott szovegek a szerveren tisztitva mennek a lapra (`tisztitas.ts`)
+  const tartalom = tisztitottTartalom(await kezdolapTartalom())
 
   return <KezdolapSavok tartalom={tartalom} countryCode={countryCode} />
 }

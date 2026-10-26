@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 
+import RovidSzoveg from "@modules/kezdolap/components/rovid-szoveg"
+import { rovidErtek } from "@modules/kezdolap/rovid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Konteiner from "@modules/kezdolap/components/konteiner"
 import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
@@ -34,18 +36,25 @@ const LEPTETES_MS = 6000
  * Ez a mai komponens korabbi dontesevel (nincs automata mozgas) utkozott, es
  * a tervbeli viselkedes nyert (acrobot 33330).
  *
- * === A SZOVEG SIMA SZOVEG ===
+ * === A SZOVEG SIMA SZOVEG, EGY KIVETELLEL ===
  *
  * Minden szoveg React szovegcsomopontkent jelenik meg, soha nem HTML-kent: az
  * OS a gazdaja, de egy `dangerouslySetInnerHTML` ezt a vegpontot XSS-uttva
- * tenne (barracuda, #551).
+ * tenne (barracuda, #551). A KIVETEL a dia SZOVEGE (`text`), Balazs 2b
+ * megbizasa miatt (4. pont, formazott szovegek): az HTML lehet, de CSAK ha a
+ * rekord a szerveren a "short" profilon atment (`tisztitott`, lasd
+ * `modules/kezdolap/tisztitas.ts`); tisztitatlanul a cimkek lekerulnek, a
+ * szoveg sima szoveg marad (`rovidErtek`).
  */
 const HeroCsuszka = ({
   diak,
   tenyek,
+  tisztitott = false,
 }: {
   diak: HeroDia[]
   tenyek: HeroTeny[]
+  /** A rekord a szerveren tisztitott-e: csak akkor rajzolhat a dia szovege HTML-t. */
+  tisztitott?: boolean
 }) => {
   const [allas, setAllas] = useState(0)
   const [megallitva, setMegallitva] = useState(false)
@@ -133,12 +142,11 @@ const HeroCsuszka = ({
             >
               {dia.title}
             </h1>
-            <p
+            <RovidSzoveg
               className="mt-7 max-w-[470px] text-[19px] leading-[1.6] small:min-h-[91px]"
               style={{ color: "var(--kl-halvany)", textWrap: "pretty" }}
-            >
-              {dia.text}
-            </p>
+              ertek={rovidErtek(dia.text, tisztitott)}
+            />
             <div className="mt-10 flex flex-wrap gap-[14px]">
               {dia.cta && dia.cta_href ? (
                 <LocalizedClientLink

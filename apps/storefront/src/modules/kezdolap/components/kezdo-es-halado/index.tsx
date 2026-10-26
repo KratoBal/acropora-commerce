@@ -1,3 +1,4 @@
+import RovidSzoveg from "@modules/kezdolap/components/rovid-szoveg"
 import CimLink from "@modules/kezdolap/components/cim-link"
 import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
 import type { Szovegek } from "@modules/kezdolap/szovegek"
@@ -32,12 +33,11 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
         >
           {s.szoveg("kezdo.cim")}
         </h2>
-        <p
+        <RovidSzoveg
           className="max-w-[520px] text-[17px]"
           style={{ color: "var(--kl-halvany)" }}
-        >
-          {s.szoveg("kezdo.szoveg")}
-        </p>
+          ertek={s.rovid("kezdo.szoveg")}
+        />
         <div className="grid gap-4 small:grid-cols-3">
           {LEPESEK.map((n) => (
             <div
@@ -54,12 +54,11 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
               <div className="mt-1 font-semibold">
                 {s.szoveg(`kezdo.${n}.cim`)}
               </div>
-              <div
+              <RovidSzoveg
                 className="text-[14px]"
                 style={{ color: "var(--kl-halvany)" }}
-              >
-                {s.szoveg(`kezdo.${n}.szoveg`)}
-              </div>
+                ertek={s.rovid(`kezdo.${n}.szoveg`)}
+              />
             </div>
           ))}
         </div>
