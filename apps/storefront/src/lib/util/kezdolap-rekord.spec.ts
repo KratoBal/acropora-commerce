@@ -53,7 +53,10 @@ describe("a kezdőlap-rekord ellenőrzése", () => {
       false,
     )
     expect(ok(modosit((r) => delete r.footer.social))).toBe(false)
-    expect(ok(modosit((r) => (r.footer.intro = "x".repeat(4001))))).toBe(false)
+    // ugyanaz a határ, mint a backend specjében (#567): 4001 és 8000 még jó, 8001 nem
+    expect(ok(modosit((r) => (r.footer.intro = "x".repeat(4001))))).toBe(true)
+    expect(ok(modosit((r) => (r.footer.intro = "x".repeat(8000))))).toBe(true)
+    expect(ok(modosit((r) => (r.footer.intro = "x".repeat(8001))))).toBe(false)
     expect(ok(modosit((r) => (r.footer.bottom_text = "x".repeat(301))))).toBe(
       false,
     )
