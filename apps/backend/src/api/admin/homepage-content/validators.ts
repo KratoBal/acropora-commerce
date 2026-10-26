@@ -108,7 +108,11 @@ const footer = z
       .array(
         z
           .object({
-            title: z.string().min(1).max(100),
+            // the OS accepts an empty column title (only the length is capped);
+            // the two sides must agree, or one empty title would refuse the
+            // WHOLE record (texts and slides too). The storefront drops a
+            // column that has neither a title nor a link.
+            title: z.string().max(100),
             links: z
               .array(
                 z
