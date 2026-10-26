@@ -12,10 +12,14 @@ export const forStore = (content: {
   texts: unknown
   slides: unknown
   featured_handles?: unknown
+  blocks?: unknown
+  footer?: unknown
   updated_at?: Date | string | null
 }) => ({
   texts: content.texts,
   slides: content.slides,
   featured_handles: content.featured_handles ?? null,
+  blocks: content.blocks ?? null,
+  footer: content.footer ?? null,
   updated_at: content.updated_at ?? null,
 })

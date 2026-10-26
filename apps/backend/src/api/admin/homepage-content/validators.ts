@@ -43,6 +43,97 @@ const slide = z
   })
   .strict()
 
+/** The eight fixed home page blocks, by the key the storefront and the OS share. */
+export const HOMEPAGE_BLOCK_KEYS = [
+  "hero",
+  "mit-keresel",
+  "kezdo-es-halado",
+  "egyedi-korallok",
+  "szolgaltatasok",
+  "markak",
+  "velemenyek",
+  "boltunk",
+] as const
+
+/**
+ * The home page's blocks in display order, each shown or hidden. A list holds
+ * ALL eight fixed blocks exactly once: a missing block would be a hole whose
+ * meaning (hidden? forgotten?) nobody can read, and a repeated one would be
+ * drawn twice. `null` (or absent) is "not set": the storefront shows its own
+ * order with everything visible. Free-form blocks are not part of this contract
+ * (Balázs has not asked for them, acrobot 2026-10-26).
+ */
+const blocks = z
+  .array(
+    z
+      .object({
+        key: z.enum(HOMEPAGE_BLOCK_KEYS),
+        visible: z.boolean(),
+      })
+      .strict()
+  )
+  .length(HOMEPAGE_BLOCK_KEYS.length)
+  .refine(
+    (list) => new Set(list.map((b) => b.key)).size === HOMEPAGE_BLOCK_KEYS.length,
+    "Each fixed block is listed exactly once"
+  )
+
+/** A footer link target: a path on the shop, or an http(s) address. Never `javascript:`. */
+const linkTarget = z
+  .string()
+  .max(500)
+  .refine(
+    (v) => /^https?:\/\/[^\s]+$/.test(v) || SHOP_PATH.test(v),
+    "A link is a shop path or an http(s) address"
+  )
+
+const socialAddress = z
+  .string()
+  .max(500)
+  .regex(/^https?:\/\/[^\s]+$/, "A social address is http(s)")
+  .nullable()
+
+/**
+ * The footer as the OS edits it. `intro` is HTML the OS already cleaned with
+ * its shared profile; the storefront cleans it again and does not take it as
+ * given. The shop's contact details are NOT here: they come from the "A
+ * boltunk" block texts, so there is one address on the page, not two. The
+ * legal documents (ASZF, privacy) are not editable: the storefront always adds
+ * them from its own list.
+ */
+const footer = z
+  .object({
+    intro: z.string().max(4000),
+    columns: z
+      .array(
+        z
+          .object({
+            title: z.string().min(1).max(100),
+            links: z
+              .array(
+                z
+                  .object({
+                    label: z.string().min(1).max(100),
+                    href: linkTarget,
+                  })
+                  .strict()
+              )
+              .max(12),
+          })
+          .strict()
+      )
+      .max(4),
+    social: z
+      .object({
+        facebook: socialAddress,
+        instagram: socialAddress,
+        youtube: socialAddress,
+      })
+      .strict(),
+    bottom_text: z.string().max(300),
+  })
+  .strict()
+
 /**
  * The whole home page content, as the Acropora OS sends it. Every key is
  * required, so an OS that forgets one is refused rather than leaving an old
@@ -85,6 +176,11 @@ export const AdminPutHomepageContent = z
       .nullable()
       // absent keeps the stored list, null or [] empties it
       .optional(),
+    // Optional like `featured_handles`: an OS that predates the fields keeps
+    // working. Absent keeps what is stored, `null` clears it ("not set": the
+    // storefront shows its own order and its own footer).
+    blocks: blocks.nullable().optional(),
+    footer: footer.nullable().optional(),
   })
   .strict()
 

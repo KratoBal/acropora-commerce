@@ -31,6 +31,36 @@ const record = (over: Record<string, unknown> = {}) => ({
 })
 const ok = (body: unknown) => AdminPutHomepageContent.safeParse(body).success
 
+const BLOCK_KEYS = [
+  "hero",
+  "mit-keresel",
+  "kezdo-es-halado",
+  "egyedi-korallok",
+  "szolgaltatasok",
+  "markak",
+  "velemenyek",
+  "boltunk",
+]
+const blocks = (over: (b: { key: string; visible: boolean }[]) => unknown[] = (b) => b) =>
+  over(BLOCK_KEYS.map((key) => ({ key, visible: true })))
+
+const footer = (over: Record<string, unknown> = {}) => ({
+  intro: "<p>Tengeri akvarisztika <strong>2004</strong> óta.</p>",
+  columns: [
+    {
+      title: "Oldaltérkép",
+      links: [
+        { label: "Nyitóoldal", href: "/" },
+        { label: "Blog", href: "https://acropora.hu/blog" },
+      ],
+    },
+  ],
+  social: { facebook: "https://www.facebook.com/acropora", instagram: null, youtube: null },
+  bottom_text: "© Acropora Kft.",
+  ...over,
+})
+
+
 describe("AdminPutHomepageContent", () => {
   it("HPC-PUT: takes the OS record, none or five slides, a cleared text", () => {
     expect(ok(record())).toBe(true)
@@ -64,6 +94,81 @@ describe("AdminPutHomepageContent", () => {
     expect(ok(record({ featured_handles: ["k-1", "k-1"] }))).toBe(false)
     expect(ok(record({ featured_handles: ["k-1", "k-2"] }))).toBe(true)
     expect(ok(record({ featured_handles: "k-1" }))).toBe(false)
+  })
+
+  it("HPC-PUT-BLOCKS: the order and visibility of the eight fixed blocks, each exactly once; optional and nullable", () => {
+    expect(ok(record())).toBe(true) // an OS that predates the field
+    expect(ok(record({ blocks: null }))).toBe(true)
+    expect(ok(record({ blocks: blocks() }))).toBe(true)
+    expect(ok(record({ blocks: blocks((b) => [...b].reverse()) }))).toBe(true)
+    expect(
+      ok(record({ blocks: blocks((b) => b.map((x) => ({ ...x, visible: x.key !== "hero" }))) }))
+    ).toBe(true)
+    // a missing block, a repeated block, a ninth block, an unknown key
+    expect(ok(record({ blocks: blocks((b) => b.slice(1)) }))).toBe(false)
+    expect(ok(record({ blocks: blocks((b) => [b[0], ...b.slice(0, 7)]) }))).toBe(false)
+    expect(
+      ok(record({ blocks: blocks((b) => [...b, { key: "hero", visible: true }]) }))
+    ).toBe(false)
+    expect(ok(record({ blocks: blocks((b) => [...b.slice(1), { key: "sajat-x", visible: true }]) }))).toBe(false)
+    // visible must be a boolean; no extra fields (a free block's body is not part of this contract)
+    expect(
+      ok(record({ blocks: blocks((b) => b.map((x) => ({ ...x, visible: "true" }))) }))
+    ).toBe(false)
+    expect(
+      ok(record({ blocks: blocks((b) => b.map((x) => ({ ...x, body: "<p>x</p>" }))) }))
+    ).toBe(false)
+  })
+
+  it("HPC-PUT-FOOTER: intro, up to four columns of up to twelve links, social addresses, a bottom line; optional and nullable", () => {
+    expect(ok(record({ footer: null }))).toBe(true)
+    expect(ok(record({ footer: footer() }))).toBe(true)
+    expect(ok(record({ footer: footer({ columns: [] }) }))).toBe(true)
+    const column = (n: number) => ({
+      title: `Oszlop ${n}`,
+      links: Array.from({ length: 12 }, (_, i) => ({ label: `L${i}`, href: `/l${i}` })),
+    })
+    expect(ok(record({ footer: footer({ columns: [1, 2, 3, 4].map(column) }) }))).toBe(true)
+    expect(ok(record({ footer: footer({ columns: [1, 2, 3, 4, 5].map(column) }) }))).toBe(false)
+    expect(
+      ok(
+        record({
+          footer: footer({
+            columns: [
+              { title: "T", links: Array.from({ length: 13 }, (_, i) => ({ label: `L${i}`, href: `/l${i}` })) },
+            ],
+          }),
+        })
+      )
+    ).toBe(false)
+    expect(ok(record({ footer: footer({ intro: "x".repeat(4001) }) }))).toBe(false)
+    expect(ok(record({ footer: footer({ bottom_text: "x".repeat(301) }) }))).toBe(false)
+    // an unknown key (the shop's contact details come from the "A boltunk" texts, not from here)
+    expect(
+      ok(record({ footer: footer({ contact: { address: "Budapest", phone: "1", email: "a@b.hu", opening_hours: [] } }) }))
+    ).toBe(false)
+    expect(ok(record({ footer: { ...footer(), social: undefined } }))).toBe(false)
+  })
+
+  it("HPC-PUT-FOOTER-LEAVE: a footer link or social address that leaves the shop or runs script is refused", () => {
+    const link = (href: string) =>
+      ok(record({ footer: footer({ columns: [{ title: "T", links: [{ label: "L", href }] }] }) }))
+    expect(link("/store")).toBe(true)
+    expect(link("https://acropora.hu/blog")).toBe(true)
+    expect(link("http://acropora.hu/blog")).toBe(true)
+    for (const bad of ["javascript:alert(1)", "data:text/html,x", "//evil.example", "/\\evil.example", "mailto:a@b.hu", "ftp://x.hu/a", "https://a b.hu"])
+      expect({ bad, accepted: link(bad) }).toEqual({ bad, accepted: false })
+    const social = (facebook: string | null) =>
+      ok(record({ footer: footer({ social: { facebook, instagram: null, youtube: null } }) }))
+    expect(social("https://www.facebook.com/acropora")).toBe(true)
+    expect(social(null)).toBe(true)
+    // a social address is a full address, not a shop path
+    for (const bad of ["/facebook", "javascript:alert(1)", "facebook.com/acropora"])
+      expect({ bad, accepted: social(bad) }).toEqual({ bad, accepted: false })
+    expect(ok(record({ footer: footer({ columns: [{ title: "", links: [] }] }) }))).toBe(false)
+    expect(
+      ok(record({ footer: footer({ columns: [{ title: "T", links: [{ label: "", href: "/x" }] }] }) }))
+    ).toBe(false)
   })
 
   it("HPC-PUT-FIVE: a sixth slide is refused", () => {
@@ -114,7 +219,9 @@ describe("store homepage content route", () => {
     )
     const content = (res.body as { homepage_content: Record<string, unknown> }).homepage_content
     expect(Object.keys(content).sort()).toEqual([
+      "blocks",
       "featured_handles",
+      "footer",
       "slides",
       "texts",
       "updated_at",
@@ -153,6 +260,26 @@ describe("store homepage content route", () => {
       (without.body as { homepage_content: { featured_handles: unknown } }).homepage_content
         .featured_handles
     ).toBeNull()
+  })
+
+  it("HPC-STORE-BLOCKS-FOOTER: the blocks and the footer reach the storefront, null when the OS never sent any", async () => {
+    const list = BLOCK_KEYS.map((key) => ({ key, visible: true }))
+    const withBoth = response()
+    await storeGet(
+      { scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null, blocks: list, footer: footer() }) } as never,
+      withBoth as never
+    )
+    const sent = (withBoth.body as { homepage_content: { blocks: unknown; footer: unknown } }).homepage_content
+    expect(sent.blocks).toEqual(list)
+    expect(sent.footer).toEqual(footer())
+    const without = response()
+    await storeGet(
+      { scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null }) } as never,
+      without as never
+    )
+    const none = (without.body as { homepage_content: { blocks: unknown; footer: unknown } }).homepage_content
+    expect(none.blocks).toBeNull()
+    expect(none.footer).toBeNull()
   })
 
   it("HPC-STORE-EMPTY: nothing written yet is null, not an error", async () => {
@@ -270,6 +397,30 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     await save({ ...base, featured_handles: ["k-4"] })
     await save({ ...base, featured_handles: null })
     expect(stored()?.featured_handles).toBeNull()
+  })
+
+  it("HPC-SVC-BLOCKS-FOOTER: absent keeps the stored blocks and footer, null clears them, a new value replaces them", async () => {
+    const { save, stored } = fake()
+    const list = BLOCK_KEYS.map((key) => ({ key, visible: true }))
+    await save({ ...base, blocks: list, footer: footer() })
+    await save({ ...base, texts: { "mit.cim": "Új" } })
+    expect(stored()?.blocks).toEqual(list)
+    expect(stored()?.footer).toEqual(footer())
+    const reordered = [...list].reverse()
+    await save({ ...base, blocks: reordered, footer: footer({ bottom_text: "Új" }) })
+    expect(stored()?.blocks).toEqual(reordered)
+    expect((stored()?.footer as { bottom_text: string }).bottom_text).toBe("Új")
+    await save({ ...base, blocks: null, footer: null })
+    expect(stored()?.blocks).toBeNull()
+    expect(stored()?.footer).toBeNull()
+  })
+
+  it("HPC-SVC-BLOCKS-COPY: the stored footer is a copy, not the caller's object", async () => {
+    const { save, stored } = fake()
+    const input = footer()
+    await save({ ...base, footer: input })
+    input.columns[0]!.title = "Átírva"
+    expect((stored()?.footer as { columns: { title: string }[] }).columns[0]!.title).toBe("Oldaltérkép")
   })
 
   it("HPC-SVC-FIRST: a first save without the field stores nothing for it", async () => {
