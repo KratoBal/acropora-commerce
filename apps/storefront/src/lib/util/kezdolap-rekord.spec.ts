@@ -14,8 +14,11 @@ import { ervenyesRekord } from "./kezdolap-rekord"
 */
 const jo = () => structuredClone(fixtura) as Record<string, unknown>
 const ok = (x: unknown) => ervenyesRekord(x).ok
-const modosit = (f: (r: Record<string, any>) => void) => {
-  const r = jo() as Record<string, any>
+/* a rontasok szabadon irnak a rekordba (hianyzo, extra, rossz tipusu mezo): ezert laza tipus */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Laza = Record<string, any>
+const modosit = (f: (r: Laza) => void) => {
+  const r = jo() as Laza
   f(r)
   return r
 }
