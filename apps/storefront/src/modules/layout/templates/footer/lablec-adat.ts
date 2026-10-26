@@ -116,7 +116,19 @@ function szerkesztettOszlopok(l: KezdolapLablec): LablecOszlopAdat[] {
         : []
     }),
   }))
-  const info = oszlopok.find((o) => kulcs(o.cim) === INFORMACIOK)
+  // A bolt es az OS ugyanazt a szabalyt tartja: az oszlop cime lehet ures
+  // (csak a hossz korlatos). Cim es hivatkozas nelkuli oszlopot nem rajzolunk:
+  // ures fejlec ures lista folott nem tartalom.
+  //
+  // A JOGI LINK MINDIG A SAJAT, HIVATALOS FELIRATAVAL all (barracuda, #565):
+  // az OS oszlopaibol kiesik minden link, ami ugyanarra a jogi cimre mutat
+  // (mas felirattal is), mert egy "Blog" felirattal kitett ASZF-link nem ASZF-nek
+  // latszana, egy "ASZF masolat" pedig elfedne a hivatalos feliratot.
+  const jogiCimek = new Set(JOGI_LINKEK.map((l) => l.href))
+  for (const oszlop of oszlopok)
+    oszlop.linkek = oszlop.linkek.filter((l) => !jogiCimek.has(l.href))
+  const lathato = oszlopok.filter((o) => o.cim.trim() !== "" || o.linkek.length)
+  const info = lathato.find((o) => kulcs(o.cim) === INFORMACIOK)
   const cel =
     info ??
     ({
@@ -124,9 +136,8 @@ function szerkesztettOszlopok(l: KezdolapLablec): LablecOszlopAdat[] {
       cim: OSZLOP_CIMEK.informaciok,
       linkek: [],
     } satisfies LablecOszlopAdat)
-  for (const jogi of JOGI_LINKEK)
-    if (!cel.linkek.some((x) => x.href === jogi.href)) cel.linkek.push(jogi)
-  return info ? oszlopok : [...oszlopok, cel]
+  cel.linkek.push(...JOGI_LINKEK)
+  return info ? lathato : [...lathato, cel]
 }
 
 const OS_KULDOTT = (

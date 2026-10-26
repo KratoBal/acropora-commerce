@@ -32,15 +32,12 @@ vi.mock("@lib/data/cart", () => ({ retrieveCart: adat.retrieveCart }))
 vi.mock("@lib/data/customer", () => ({
   retrieveCustomer: adat.retrieveCustomer,
 }))
-vi.mock("@modules/layout/templates/nav", () => ({ default: () => null }))
-vi.mock("@modules/layout/templates/footer", () => ({ default: () => null }))
-vi.mock("@modules/layout/components/kosar-allapot", () => ({
-  KosarAllapotProvider: () => null,
-}))
-vi.mock("@modules/layout/components/kosar-allapot/kosar-sziget", () => ({
+vi.mock("@modules/layout/templates/aruhaz-keret", () => ({
   default: () => null,
 }))
 
+import AruhazKeret from "@modules/layout/templates/aruhaz-keret"
+import KezdolapElrendezes from "../(kezdolap)/layout"
 import PageLayout from "./layout"
 
 describe("a publikus elrendezés", () => {
@@ -53,5 +50,23 @@ describe("a publikus elrendezés", () => {
     expect(adat.retrieveCart).not.toHaveBeenCalled()
     expect(adat.retrieveCustomer).not.toHaveBeenCalled()
     expect(suti.olvasasok).toBe(0)
+  })
+
+  /*
+    A KEZDOLAP ES A TOBBI LAP UGYANAZT A KERETET KAPJA (Balazs, 2026-10-26:
+    "minden aloldalon a kezdolap fejlece es lablece"). MI PIROSIT: ha valamelyik
+    elrendezes ujra sajat vazat epit (a regi fejleccel), mert akkor a ketto
+    megint szetcsuszik; vagy ha az orszagkod nem jut el a keretig.
+  */
+  it("a kezdőlap és a többi lap ugyanazt a keretet hívja, az országkóddal", async () => {
+    for (const Elrendezes of [PageLayout, KezdolapElrendezes]) {
+      const elem = (await Elrendezes({
+        children: "tartalom",
+        params: Promise.resolve({ countryCode: "hu" }),
+      })) as { type: unknown; props: Record<string, unknown> }
+      expect(elem.type).toBe(AruhazKeret)
+      expect(elem.props.countryCode).toBe("hu")
+      expect(elem.props.children).toBe("tartalom")
+    }
   })
 })

@@ -72,7 +72,7 @@ describe("a lábléc adata", () => {
     for (const j of JOGI) expect(hrefek(a)).toContain(j)
   })
 
-  it("az OS Információk oszlopa megkapja a jogi linkeket, egyszer", () => {
+  it("az OS Információk oszlopa megkapja a jogi linkeket, egyszer, a hivatalos felirattal", () => {
     for (const cim of ["Információk", "informaciok", "INFORMÁCIÓK"]) {
       const a = lablecAdat(
         rekord(
@@ -82,7 +82,9 @@ describe("a lábléc adata", () => {
                 title: cim,
                 links: [
                   { label: "Szállítás", href: "/shipping" },
+                  // ugyanarra a jogi cimre mutat mas felirattal: kiesik, nem fedi el a hivatalosat
                   { label: "ASZF másolat", href: jogiOldal("aszf") },
+                  { label: "Blog", href: jogiOldal("adatkezeles") },
                 ],
               },
             ],
@@ -93,7 +95,30 @@ describe("a lábléc adata", () => {
       const h = hrefek(a)
       for (const j of JOGI) expect(h.filter((x) => x === j)).toHaveLength(1)
       expect(h).toContain("/shipping")
+      const cimkek = a.oszlopok[0]!.linkek.map((l) => l.cimke)
+      for (const d of JOGI_DOKUMENTUMOK) expect(cimkek).toContain(d.cim)
+      expect(cimkek).not.toContain("ASZF másolat")
+      expect(cimkek).not.toContain("Blog")
     }
+  })
+
+  it("a cím és hivatkozás nélküli oszlop nem látszik, a cím nélküli, de linkes igen (az OS ezt engedi)", () => {
+    const a = lablecAdat(
+      rekord(
+        lablec({
+          columns: [
+            { title: "", links: [] },
+            { title: "", links: [{ label: "Blog", href: "/blog" }] },
+            { title: "Üres", links: [] },
+          ],
+        }),
+      ),
+    )
+    expect(a.oszlopok.map((o) => [o.cim, o.linkek.length > 0])).toEqual([
+      ["", true],
+      ["Üres", false],
+      ["Információk", true],
+    ])
   })
 
   it("oszlop nélküli rekordnál is ott a jogi oszlop", () => {
