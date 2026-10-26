@@ -5,9 +5,11 @@ describe("homepage content model", () => {
   it("HPC-MODEL: a key, the texts and the slides, unique by key among the live rows", () => {
     const parsed = HomepageContent.parse()
     expect(Object.keys(parsed.schema).sort()).toEqual([
+      "blocks",
       "created_at",
       "deleted_at",
       "featured_handles",
+      "footer",
       "id",
       "key",
       "slides",

@@ -19,6 +19,11 @@ import { model } from "@medusajs/framework/utils"
  * `featured_handles` are the product handles the home page's "Egyedi korallok"
  * band shows, in order (the OS marks the products; at most 12). `null` and `[]`
  * both mean "none": the band is hidden.
+ *
+ * `blocks` is the display order and visibility of the eight fixed home page
+ * blocks; `null` means not set (the storefront's own order, all visible).
+ * `footer` is the editable part of the footer (intro, link columns, social
+ * addresses, bottom line); `null` means not set (the storefront's own footer).
  */
 export const HomepageContent = model
   .define("homepage_content", {
@@ -27,6 +32,8 @@ export const HomepageContent = model
     texts: model.json(),
     slides: model.json().nullable(),
     featured_handles: model.json().nullable(),
+    blocks: model.json().nullable(),
+    footer: model.json().nullable(),
   })
   .indexes([
     {
