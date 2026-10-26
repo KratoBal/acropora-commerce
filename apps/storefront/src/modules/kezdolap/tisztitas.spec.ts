@@ -14,7 +14,8 @@ const rekord = (): KezdolapTartalom => ({
     "kezdo.szoveg":
       '<p onclick="x()">Jó <strong>szöveg</strong></p><script>alert(1)</script>',
     "kezdo.1.szoveg": "Sima szöveg, nem HTML.",
-    "kezdo.cim": "<p>Ez NEM kötött hely</p>",
+    // a tisztító ezt MEGVÁLTOZTATNÁ (onclick), tehát az érintetlenség mérhető
+    "kezdo.cim": '<p onclick="x()">Ez NEM kötött hely</p>',
   },
   slides: [
     {
@@ -30,7 +31,9 @@ describe("a rekord tisztítása", () => {
     expect(ki.tisztitott).toBe(true)
     expect(ki.texts["kezdo.szoveg"]).toBe("<p>Jó <strong>szöveg</strong></p>")
     expect(ki.texts["kezdo.1.szoveg"]).toBe("Sima szöveg, nem HTML.")
-    expect(ki.texts["kezdo.cim"]).toBe("<p>Ez NEM kötött hely</p>")
+    expect(ki.texts["kezdo.cim"]).toBe(
+      '<p onclick="x()">Ez NEM kötött hely</p>',
+    )
   })
 
   it("a hero-dia szövege is tisztul", () => {
