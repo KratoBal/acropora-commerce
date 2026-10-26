@@ -72,6 +72,18 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
       data-testid="lablec-sik"
     >
       {/*
+        A TARTALOM A KEZDOLAP FEJLECENEK ES A TERMEKLAP VAZANAK ELEHEZ IGAZODIK
+        (2026-10-26, commerce-lablec-igazitas): 1440 pixeles keret, 64 pixeles
+        oldalmargo asztalon, 16 mobilon. A SIK (a `<footer>` hattere) tovabbra is
+        szeltol szelig er.
+
+        ES KET ELRENDEZESI HIBA, amit a 1440 pixeles kep mutatott meg: a bal
+        oszlop (a bolt neve) a rugalmas sorban ossze tudott zsugorodni, es a
+        felirata ranyult a Kollekciok oszlopra; a racs 64 pixeles oszlopkozei
+        pedig keskennyel szorultak a hatramaradt helyre. Most a bal oszlop
+        rogzitett szeles (`w-64`, nem zsugorodik), a racs `min-w-0 flex-1`.
+
+        A KOVETKEZO SZOVEG A KORABBI DONTES TORTENETE, nem a mai allapot:
         A LABLEC TELJES SZELESSEGBEN ALL, NEM KOZEPRE ZART SAVBAN.
 
         Balazs kerese (2026-09-09 07:43): "a lablec a teljes szelessegben
@@ -84,7 +96,10 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
         A vizszintes belso margo MEGMARAD (`px-6`), kulonben a szoveg a
         kepernyo szelehez tapadna. Csak a felso korlat kerul le.
       */}
-      <div className="flex w-full flex-col px-6">
+      <div
+        className="mx-auto flex w-full max-w-[1440px] flex-col px-4 lg:px-16"
+        data-testid="lablec-konteiner"
+      >
         {/*
           A KATEGORIA-RACS KIKERULT, ES EZ NEM EGYSZERUSITES, HANEM DONTES.
 
@@ -106,8 +121,11 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
           ceg-adatok. A kategoriak a FEJLEC menujeben allnak, ahol Balazs
           kerte, hogy nyiljanak.
         */}
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
-          <div className="flex max-w-sm flex-col gap-y-3">
+        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between gap-x-12 py-40">
+          <div
+            className="flex w-full shrink-0 flex-col gap-y-3 xsmall:w-64"
+            data-testid="lablec-bemutatkozo-oszlop"
+          >
             <LocalizedClientLink
               href="/"
               className="txt-compact-xlarge-plus hover:text-terv-szoveg uppercase"
@@ -144,7 +162,7 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
               </ul>
             ) : null}
           </div>
-          <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="text-small-regular gap-10 md:gap-x-10 grid min-w-0 w-full xsmall:flex-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {collections && collections.length > 0 && (
               <div className="flex flex-col gap-y-2">
                 <span

@@ -52,13 +52,13 @@ describe("az asztali zárósor", () => {
 
   /**
    * A TERVBELI MERETEK, MERVE (2026-09-10, a tervfajl 1440 pixeles kereteiben):
-   * belso margo 20px 44px, koz 20px, a gomb 50 magas.
+   * belso margo 20px 44px, koz 20px, a gomb 50 magas. A vizszintes margo 2026-10-26 ota 64 (px-16): a sotet lapon a sav tartalma a tobbi tartalom elehez, a fejlec es a lablec elehez igazodik.
    */
   it("a tervbeli belső margót és közt viseli", () => {
     render(teljes)
 
     const kod = screen.getByTestId("zarosor").className
-    expect(kod).toMatch(/px-11(?![-\w])/)
+    expect(kod).toMatch(/px-16(?![-\w])/)
     expect(kod).toMatch(/py-5(?![-\w])/)
     expect(kod).toMatch(/gap-5(?![-\w])/)
   })
