@@ -15,6 +15,10 @@ const listCollections = vi.hoisted(() =>
 vi.mock("server-only", () => ({}))
 vi.mock("@lib/data/collections", () => ({ listCollections }))
 vi.mock("@lib/data/regions", () => ({ listRegions: vi.fn(async () => []) }))
+/* a lablec a kezdolap rekordjat is kerdezi (szerkesztheto lablec); itt nincs rekord */
+vi.mock("@lib/data/kezdolap-tartalom", () => ({
+  kezdolapTartalom: vi.fn(async () => null),
+}))
 
 describe("a gyűjtemény-lista mezői", () => {
   it("a lábléc csak id, handle és title mezőt kér", async () => {

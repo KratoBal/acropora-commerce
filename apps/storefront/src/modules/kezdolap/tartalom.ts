@@ -24,6 +24,30 @@ export type HeroDia = {
   minta?: boolean
 }
 
+/** Egy fix blokk a kezdolapon: a kulcs es hogy latszik-e (a sorrend a lista sorrendje). */
+export type KezdolapBlokk = { key: string; visible: boolean }
+
+/**
+ * A SZERKESZTHETO LABLEC, ahogy a bolt adja (`GET /store/homepage-content`).
+ * Az `intro` HTML: a lap NEM veszi adottnak, a sajat tisztitasan at rajzolja.
+ * Elerhetoseg (cim, nyitvatartas) nincs benne: az "A boltunk" blokk szovegeibol
+ * jon, hogy egy cim legyen a lapon, ne ketto. A jogi dokumentumokat a lap mindig
+ * maga teszi hozza.
+ */
+export type KezdolapLablec = {
+  intro: string
+  columns: Array<{
+    title: string
+    links: Array<{ label: string; href: string }>
+  }>
+  social: {
+    facebook: string | null
+    instagram: string | null
+    youtube: string | null
+  }
+  bottom_text: string
+}
+
 /** A bolt valasza: `null`, amig az OS nem irt semmit. */
 export type KezdolapTartalom = {
   texts: Record<string, string>
@@ -31,6 +55,10 @@ export type KezdolapTartalom = {
   slides: HeroDia[] | null
   /** Az Egyedi korallok sav termek-handle-jei sorrendben; `null` vagy ures: a sav rejtett. */
   featured_handles?: string[] | null
+  /** A fix blokkok sorrendje es lathatosaga; `null` vagy hiany: a lap sorrendje, minden latszik. */
+  blocks?: KezdolapBlokk[] | null
+  /** A szerkesztheto lablec; `null` vagy hiany: a lap sajat lablece. */
+  footer?: KezdolapLablec | null
 }
 
 /**

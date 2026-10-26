@@ -7,15 +7,7 @@ import {
 import { STORE_NAME } from "@lib/store"
 
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
-import Boltunk from "@modules/kezdolap/components/boltunk"
-import HeroCsuszka from "@modules/kezdolap/components/hero-csuszka"
-import EgyediKorallok from "@modules/kezdolap/components/egyedi-korallok"
-import KezdoEsHalado from "@modules/kezdolap/components/kezdo-es-halado"
-import Markak from "@modules/kezdolap/components/markak"
-import MitKeresel from "@modules/kezdolap/components/mit-keresel"
-import Szolgaltatasok from "@modules/kezdolap/components/szolgaltatasok"
-import Velemenyek from "@modules/kezdolap/components/velemenyek"
-import { kezdolapAdat } from "@modules/kezdolap/tartalom"
+import { KezdolapSavok } from "@modules/kezdolap/savok"
 import { fooldalCanonical } from "@lib/util/lap-canonical"
 
 /*
@@ -100,28 +92,6 @@ export default async function Home(props: {
 }) {
   const { countryCode } = await props.params
   const tartalom = await kezdolapTartalom()
-  const adat = kezdolapAdat(tartalom)
-  const { szoveg, minta, diak } = adat
-  const tenyek = [1, 2, 3].map((n) => ({
-    cim: szoveg(`hero.tenyek.${n}.cim`),
-    szoveg: szoveg(`hero.tenyek.${n}.szoveg`),
-    minta: minta(`hero.tenyek.${n}.cim`) || minta(`hero.tenyek.${n}.szoveg`),
-  }))
 
-  return (
-    <>
-      <HeroCsuszka diak={diak} tenyek={tenyek} />
-      <MitKeresel s={adat} />
-      <KezdoEsHalado s={adat} />
-      <EgyediKorallok
-        s={adat}
-        handles={tartalom?.featured_handles ?? []}
-        countryCode={countryCode}
-      />
-      <Szolgaltatasok s={adat} />
-      <Markak s={adat} />
-      <Velemenyek s={adat} />
-      <Boltunk s={adat} />
-    </>
-  )
+  return <KezdolapSavok tartalom={tartalom} countryCode={countryCode} />
 }
