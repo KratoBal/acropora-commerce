@@ -7,6 +7,11 @@ import {
   CACHE_AZONOSITO_SUTI,
   cacheAzonositoKell,
 } from "@lib/util/cache-azonosito"
+import {
+  elonezetBekapcsolva,
+  elonezetFejlecek,
+  elonezetiUt,
+} from "@lib/util/kezdolap-elonezet"
 import { orszagAtiranyitasKod } from "@lib/util/orszag-atiranyitas"
 import {
   ATIRANYITAS_CACHE_CONTROL,
@@ -128,6 +133,19 @@ async function getCountryCode(
  * a feltetel a NYERS `request.url`-t nezi, nem a `nextUrl`-t.
  */
 export async function middleware(request: NextRequest) {
+  const valasz = await regioKozep(request)
+  // A KEZDOLAP ELO ELONEZETE (protokoll v1): a fejlecet a futasidejui
+  // kornyezetbol kapja (`lib/util/kezdolap-elonezet.ts`), bekapcsolas nelkul 404
+  if (elonezetiUt(request.nextUrl.pathname)) {
+    if (!elonezetBekapcsolva(process.env))
+      return new NextResponse(null, { status: 404 })
+    for (const [kulcs, ertek] of Object.entries(elonezetFejlecek(process.env)))
+      valasz.headers.set(kulcs, ertek)
+  }
+  return valasz
+}
+
+async function regioKozep(request: NextRequest): Promise<NextResponse> {
   if (
     statikusGyokerUt(request.nextUrl.pathname) ||
     new URL(request.url).pathname.startsWith("/_next/")
