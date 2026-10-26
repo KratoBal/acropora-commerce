@@ -165,7 +165,9 @@ describe("AdminPutHomepageContent", () => {
     // a social address is a full address, not a shop path
     for (const bad of ["/facebook", "javascript:alert(1)", "facebook.com/acropora"])
       expect({ bad, accepted: social(bad) }).toEqual({ bad, accepted: false })
-    expect(ok(record({ footer: footer({ columns: [{ title: "", links: [] }] }) }))).toBe(false)
+    // an empty column title is the OS's own rule too (length cap only), so it must pass here
+    expect(ok(record({ footer: footer({ columns: [{ title: "", links: [] }] }) }))).toBe(true)
+    expect(ok(record({ footer: footer({ columns: [{ title: "x".repeat(101), links: [] }] }) }))).toBe(false)
     expect(
       ok(record({ footer: footer({ columns: [{ title: "T", links: [{ label: "", href: "/x" }] }] }) }))
     ).toBe(false)
