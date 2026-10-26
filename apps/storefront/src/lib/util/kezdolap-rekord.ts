@@ -111,7 +111,10 @@ function lablecHiba(footer: unknown): string | null {
     !pontosan(footer, ["intro", "columns", "social", "bottom_text"])
   )
     return "footer: alak"
-  if (!szoveg(footer.intro, 4000)) return "footer.intro"
+  // A bolt validatoraval azonos (8000, #567): az OS a tisztitott erteket is
+  // 4000-re korlatozza, a 8000 tartalek egy regebbi OS-nek; a kulonbseg nem
+  // lehet, hogy az elonezet olyat dobjon vissza, amit a bolt elfogadna.
+  if (!szoveg(footer.intro, 8000)) return "footer.intro"
   if (!szoveg(footer.bottom_text, 300)) return "footer.bottom_text"
   const { columns, social } = footer
   if (!Array.isArray(columns) || columns.length > 4) return "footer.columns"
