@@ -92,4 +92,28 @@ describe("a lábléc elrendezése", () => {
     expect(osztalyok).toContain("min-w-0")
     expect(osztalyok).toContain("lg:grid-cols-6")
   })
+
+  /**
+   * A KOLLEKCIOK LINKJEI A TERV SZOVEGSZINET VISELIK, mint a tobbi oszlop. A
+   * jsdom nem szamol szint a stiluslapbol, ezert a beagyazott stilust meri: a
+   * hiany (a bongeszo alapszine) a sotet lapon alig lathato szoveget adott.
+   * A kontroll: a masik oszlop listaja ugyanezt az erteket viseli, tehat az
+   * allitas nem egy ures vilagot elegit ki.
+   */
+  it("a kollekciók listája ugyanazt a színt viseli, mint a többi oszlop", () => {
+    render(
+      <LablecKeret
+        lablec={LABLEC}
+        collections={[
+          { id: "c1", handle: "easyphyt", title: "Easyphyt" },
+          { id: "c2", handle: "coralbox", title: "CoralBox" },
+        ]}
+      />,
+    )
+
+    const kollekciok = screen.getByTestId("footer-kollekciok")
+    const masik = screen.getByTestId("footer-oszlop-informaciok")
+    expect(masik.style.color).toBe("var(--terv-szoveg-halvany)")
+    expect(kollekciok.style.color).toBe("var(--terv-szoveg-halvany)")
+  })
 })
