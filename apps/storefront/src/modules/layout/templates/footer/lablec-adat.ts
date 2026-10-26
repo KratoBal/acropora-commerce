@@ -116,7 +116,11 @@ function szerkesztettOszlopok(l: KezdolapLablec): LablecOszlopAdat[] {
         : []
     }),
   }))
-  const info = oszlopok.find((o) => kulcs(o.cim) === INFORMACIOK)
+  // A bolt es az OS ugyanazt a szabalyt tartja: az oszlop cime lehet ures
+  // (csak a hossz korlatos). Cim es hivatkozas nelkuli oszlopot nem rajzolunk:
+  // ures fejlec ures lista folott nem tartalom.
+  const lathato = oszlopok.filter((o) => o.cim.trim() !== "" || o.linkek.length)
+  const info = lathato.find((o) => kulcs(o.cim) === INFORMACIOK)
   const cel =
     info ??
     ({
@@ -126,7 +130,7 @@ function szerkesztettOszlopok(l: KezdolapLablec): LablecOszlopAdat[] {
     } satisfies LablecOszlopAdat)
   for (const jogi of JOGI_LINKEK)
     if (!cel.linkek.some((x) => x.href === jogi.href)) cel.linkek.push(jogi)
-  return info ? oszlopok : [...oszlopok, cel]
+  return info ? lathato : [...lathato, cel]
 }
 
 const OS_KULDOTT = (
