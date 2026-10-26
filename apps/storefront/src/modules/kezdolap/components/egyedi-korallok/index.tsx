@@ -59,16 +59,18 @@ export async function termekekHandleSzerint(
   })
 }
 
-const EgyediKorallok = async ({
+/**
+ * A SAV MAGA, A TERMEKEKKEL. Kulon all, hogy az OS elo elonezete (kliensoldalon,
+ * a handle-ekbol maga kerdezi le a termekeket) UGYANAZT rajzolja, mint a valodi
+ * kezdolap; a valodi kezdolap az aszinkron burkolon at hivja.
+ */
+export const EgyediKorallokSav = ({
   s,
-  handles,
-  countryCode,
+  termekek,
 }: {
   s: Szovegek
-  handles: readonly string[]
-  countryCode: string
+  termekek: readonly HttpTypes.StoreProduct[]
 }) => {
-  const termekek = await termekekHandleSzerint(handles, countryCode)
   if (!termekek.length) return null
   const gomb = s.link("korall.gomb.link")
   const gombFelirat = s.szoveg("korall.gomb.felirat")
@@ -206,5 +208,20 @@ const EgyediKorallok = async ({
     </section>
   )
 }
+
+const EgyediKorallok = async ({
+  s,
+  handles,
+  countryCode,
+}: {
+  s: Szovegek
+  handles: readonly string[]
+  countryCode: string
+}) => (
+  <EgyediKorallokSav
+    s={s}
+    termekek={await termekekHandleSzerint(handles, countryCode)}
+  />
+)
 
 export default EgyediKorallok

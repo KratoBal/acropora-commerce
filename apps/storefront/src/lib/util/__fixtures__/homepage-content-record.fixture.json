@@ -1,0 +1,37 @@
+{
+  "texts": { "mit.cim": "Mit keresel ma?" },
+  "slides": null,
+  "featured_handles": ["acropora-millepora-k-2417"],
+  "blocks": [
+    { "key": "hero", "visible": true },
+    { "key": "mit-keresel", "visible": true },
+    { "key": "egyedi-korallok", "visible": true },
+    { "key": "kezdo-es-halado", "visible": false },
+    { "key": "szolgaltatasok", "visible": true },
+    { "key": "markak", "visible": true },
+    { "key": "velemenyek", "visible": false },
+    { "key": "boltunk", "visible": true }
+  ],
+  "footer": {
+    "intro": "<p>Tengeri akvarisztika <strong>2004</strong> óta, Budapesten.</p><ul><li><p>Élő korallok</p></li><li><p>Technika és szerviz</p></li></ul>",
+    "columns": [
+      {
+        "title": "Oldaltérkép",
+        "links": [
+          { "label": "Nyitóoldal", "href": "/" },
+          { "label": "Termékek", "href": "/store" }
+        ]
+      },
+      {
+        "title": "Információk",
+        "links": [{ "label": "Blog", "href": "https://acropora.hu/blog" }]
+      }
+    ],
+    "social": {
+      "facebook": "https://www.facebook.com/acropora",
+      "instagram": null,
+      "youtube": "https://www.youtube.com/@acropora"
+    },
+    "bottom_text": "© Acropora Kft. Minden jog fenntartva."
+  }
+}

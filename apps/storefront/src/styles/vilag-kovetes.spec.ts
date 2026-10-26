@@ -142,7 +142,7 @@ describe("a lap földjét viselő felületek hatóköre", () => {
    */
   const VART = [
     /* a vazon KIVUL, tehat a sotet valasztoban is szerepelnie kell */
-    "modules/layout/templates/footer/index.tsx",
+    "modules/layout/templates/footer/lablec-keret.tsx",
     /*
       A FEJLEC (`nav/index.tsx`) 2026-09-29 OTA NINCS ITT: a P1b a Figma
       `acr` mod-tokenjeire allitotta (`bg-acr-mode-bg`), es a sotet modot a

@@ -109,7 +109,7 @@ describe("a cég adatai a lábléc negyedik oszlopában", () => {
    */
   it("a nyitvatartás szó helyesen áll, nem a bolt elgépelésével", () => {
     const forras = kodSzoveg(
-      readFileSync(join(__dirname, "index.tsx"), "utf-8"),
+      readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
     )
 
     expect(forras).not.toContain("Nyitvatarás")
@@ -121,7 +121,7 @@ describe("a cég adatai a lábléc negyedik oszlopában", () => {
    */
   it("a helyes alak viszont ott van, ugyanazzal a kereséssel", () => {
     const forras = kodSzoveg(
-      readFileSync(join(__dirname, "index.tsx"), "utf-8"),
+      readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
     )
 
     expect(forras).toContain("Nyitvatartás")
@@ -159,11 +159,13 @@ describe("a cég adatai a lábléc negyedik oszlopában", () => {
  * dontotte el, melyik a helyes: a vevo azt latja, amit a kep mutat.
  */
 describe("a lábléc oszlopcímei", () => {
-  const lablec = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+  const lablec = kodSzoveg(
+    readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
+  )
 
   /** ISMERT POZITIV KONTROLL: a fajlt beolvastuk, es ez a lablec. */
   it("a forrás olvasható, és tényleg a lábléc", () => {
-    expect(lablec).toContain("export default async function Footer")
+    expect(lablec).toContain("export function LablecKeret")
   })
 
   /**
@@ -178,14 +180,16 @@ describe("a lábléc oszlopcímei", () => {
 })
 
 describe("a külső címek egyetlen helyen állnak", () => {
-  const lablec = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+  const lablec = kodSzoveg(
+    readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
+  )
   const lista = kodSzoveg(
     readFileSync(join(__dirname, "hivatkozasok.ts"), "utf-8"),
   )
 
   /** ISMERT POZITIV KONTROLL: a ket fajlt tenyleg beolvastuk, es ezek azok. */
   it("mindkét fájl olvasható, és tényleg a lábléc kettőse", () => {
-    expect(lablec).toContain("export default async function Footer")
+    expect(lablec).toContain("export function LablecKeret")
     expect(lista).toContain("REGI_BOLT_HIVATKOZASOK")
   })
 
@@ -215,7 +219,9 @@ describe("a külső címek egyetlen helyen állnak", () => {
  * VILAGTOL fuggjon, nem azt, hogy melyik vilagban allunk.
  */
 describe("a lábléc síkja", () => {
-  const kod = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+  const kod = kodSzoveg(
+    readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
+  )
 
   /** ISMERT POZITIV KONTROLL: tenyleg a lablecet olvastuk be. */
   it("a forrás olvasható, és tényleg a lábléc", () => {
@@ -342,7 +348,9 @@ describe("a lábléc síkja", () => {
  * ha a fajlt egyaltalan nem olvastuk be, vagy ha ures.
  */
 describe("a lábléc kategória-rácsa kikerült", () => {
-  const kod = kodSzoveg(readFileSync(join(__dirname, "index.tsx"), "utf-8"))
+  const kod = kodSzoveg(
+    readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
+  )
 
   /** ISMERT POZITIV KONTROLL: tenyleg a lablecet olvastuk. */
   it("a forrás olvasható, és tényleg a lábléc", () => {
