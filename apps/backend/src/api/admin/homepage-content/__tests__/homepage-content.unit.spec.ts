@@ -141,7 +141,10 @@ describe("AdminPutHomepageContent", () => {
         })
       )
     ).toBe(false)
-    expect(ok(record({ footer: footer({ intro: "x".repeat(4001) }) }))).toBe(false)
+    // the OS caps 4000 before cleaning; the cleaned value may be longer and must still pass
+    expect(ok(record({ footer: footer({ intro: "x".repeat(4001) }) }))).toBe(true)
+    expect(ok(record({ footer: footer({ intro: "x".repeat(8000) }) }))).toBe(true)
+    expect(ok(record({ footer: footer({ intro: "x".repeat(8001) }) }))).toBe(false)
     expect(ok(record({ footer: footer({ bottom_text: "x".repeat(301) }) }))).toBe(false)
     // an unknown key (the shop's contact details come from the "A boltunk" texts, not from here)
     expect(
@@ -165,7 +168,9 @@ describe("AdminPutHomepageContent", () => {
     // a social address is a full address, not a shop path
     for (const bad of ["/facebook", "javascript:alert(1)", "facebook.com/acropora"])
       expect({ bad, accepted: social(bad) }).toEqual({ bad, accepted: false })
-    expect(ok(record({ footer: footer({ columns: [{ title: "", links: [] }] }) }))).toBe(false)
+    // the shop is the more tolerant side (the OS forbids an empty title): it must pass here
+    expect(ok(record({ footer: footer({ columns: [{ title: "", links: [] }] }) }))).toBe(true)
+    expect(ok(record({ footer: footer({ columns: [{ title: "x".repeat(101), links: [] }] }) }))).toBe(false)
     expect(
       ok(record({ footer: footer({ columns: [{ title: "T", links: [{ label: "", href: "/x" }] }] }) }))
     ).toBe(false)

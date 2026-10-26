@@ -103,12 +103,22 @@ const socialAddress = z
  */
 const footer = z
   .object({
-    intro: z.string().max(4000),
+    // The OS measures 4000 characters BEFORE it cleans the HTML; this checks the
+    // cleaned value it sends. Cleaning can lengthen a text (escaping, rewritten
+    // attributes), so the shop's cap is looser than the OS's: the OS stays the
+    // strict side and a text it accepted is never refused here (barracuda, #564).
+    intro: z.string().max(8000),
     columns: z
       .array(
         z
           .object({
-            title: z.string().min(1).max(100),
+            // An empty column title is accepted here. The OS (#1878) now forbids
+            // it, so the OS is the stricter side and the shop the more tolerant
+            // one: compatible in both directions, and a record with an empty
+            // title (an older OS build, or a hand-made one) does not take the
+            // WHOLE record (texts and slides too) down. The storefront drops a
+            // column that has neither a title nor a link.
+            title: z.string().max(100),
             links: z
               .array(
                 z
