@@ -1,16 +1,12 @@
 import { STORE_NAME } from "@lib/store"
 import { listCollections } from "@lib/data/collections"
+import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import { Text, clx } from "@modules/common/components/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import {
-  CEG,
-  OSZLOP_CIMEK,
-  OSZLOP_SORREND,
-  REGI_BOLT_HIVATKOZASOK,
-  SAJAT_HIVATKOZASOK,
-} from "./hivatkozasok"
+import { CEG } from "./hivatkozasok"
+import { lablecAdat } from "./lablec-adat"
 
 export default async function Footer() {
   /*
@@ -23,6 +19,13 @@ export default async function Footer() {
   const { collections } = await listCollections({
     fields: "id,handle,title",
   })
+  /*
+    A SZERKESZTHETO LABLEC (nautilus 36013): a bemutatkozas, az oszlopok, a
+    kozossegi cimek es az also sor az OS-bol jon, a kezdolap gyorsitotarazott
+    rekordjabol (ugyanaz a lekeres es cimke, mint a fejlece). Szerkesztes
+    nelkul a lablec PONTOSAN a mai.
+  */
+  const lablec = lablecAdat(await kezdolapTartalom())
 
   return (
     /*
@@ -110,7 +113,7 @@ export default async function Footer() {
           kerte, hogy nyiljanak.
         */}
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
-          <div>
+          <div className="flex max-w-sm flex-col gap-y-3">
             <LocalizedClientLink
               href="/"
               className="txt-compact-xlarge-plus hover:text-terv-szoveg uppercase"
@@ -118,6 +121,34 @@ export default async function Footer() {
             >
               {STORE_NAME}
             </LocalizedClientLink>
+            {lablec.bemutatkozo ? (
+              <div
+                className="txt-small flex flex-col gap-y-2 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                style={{ color: "var(--terv-szoveg-halvany)" }}
+                data-testid="footer-bemutatkozo"
+                dangerouslySetInnerHTML={{ __html: lablec.bemutatkozo }}
+              />
+            ) : null}
+            {lablec.kozossegi.length > 0 ? (
+              <ul
+                className="txt-small flex flex-wrap gap-x-4 gap-y-1"
+                style={{ color: "var(--terv-szoveg-halvany)" }}
+                data-testid="footer-kozossegi"
+              >
+                {lablec.kozossegi.map((k) => (
+                  <li key={k.nev}>
+                    <a
+                      className="hover:text-terv-szoveg"
+                      href={k.href}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {k.nev}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {collections && collections.length > 0 && (
@@ -161,77 +192,62 @@ export default async function Footer() {
               es itt NEM latszik: a het kulso cim feltetele, vagyis hogy az
               elesites elott mindnek sajat lapra kell mutatnia.
             */}
-            {OSZLOP_SORREND.map((oszlop) => {
-              const tetelek = [
-                ...SAJAT_HIVATKOZASOK.filter((h) => h.oszlop === oszlop).map(
-                  (h) => ({ ...h, sajat: true }),
-                ),
-                ...REGI_BOLT_HIVATKOZASOK.filter(
-                  (h) => h.oszlop === oszlop,
-                ).map((h) => ({ ...h, sajat: false })),
-              ]
+            {lablec.oszlopok.map((oszlop) => (
+              <div className="flex flex-col gap-y-2" key={oszlop.azonosito}>
+                {/*
+                  AZ OSZLOPCIMEK NAGYBETUSEK, ES EZT CSAK A KEP MUTATTA MEG.
 
-              if (tetelek.length === 0) {
-                return null
-              }
+                  A lablec szerkezetet es tartalmat a bolt HTML-jebol fejtettem
+                  ki -- ott a cimek VEGYES kisbetusek ("Oldaltérkép"). A
+                  kepernyokepen viszont NAGYBETUVEL allnak, tehat a bolt
+                  stiluslapja alakitja at oket, es a vevo azt latja.
 
-              return (
-                <div className="flex flex-col gap-y-2" key={oszlop}>
-                  {/*
-                    AZ OSZLOPCIMEK NAGYBETUSEK, ES EZT CSAK A KEP MUTATTA MEG.
-
-                    A lablec szerkezetet es tartalmat a bolt HTML-jebol fejtettem
-                    ki -- ott a cimek VEGYES kisbetusek ("Oldaltérkép"). A
-                    kepernyokepen viszont NAGYBETUVEL allnak, tehat a bolt
-                    stiluslapja alakitja at oket, es a vevo azt latja.
-
-                    KET KIOLVASAS UGYANARROL A FORRASROL, KET KULONBOZO
-                    VALASZ: a HTML a szoveget mondja meg, a kep azt, ami
-                    megjelenik. Egy CSS-transzformaciot a forras-szoveg
-                    szerkezetileg nem tud elarulni.
-                  */}
-                  <span
-                    className="txt-small-plus uppercase tracking-wide"
-                    style={{ color: "var(--terv-szoveg)" }}
-                  >
-                    {OSZLOP_CIMEK[oszlop]}
-                  </span>
-                  <ul
-                    className="grid grid-cols-1 gap-2 txt-small"
-                    style={{ color: "var(--terv-szoveg-halvany)" }}
-                    data-testid={`footer-oszlop-${oszlop}`}
-                  >
-                    {tetelek.map((t) => (
-                      <li key={`${oszlop}-${t.cimke}`}>
-                        {/*
-                          A SAJAT UTVONAL `LocalizedClientLink`-et kap, mert az
-                          teszi ele az orszagkodot. A REGI BOLT cime TELJES, es
-                          egy sima horgony viszi -- egy lokalizalt link ele
-                          orszagkodot tenne, es a cim ertelmetlenne valna.
-                        */}
-                        {t.sajat ? (
-                          <LocalizedClientLink
-                            className="hover:text-terv-szoveg"
-                            href={t.cim}
-                            data-testid="footer-sajat-link"
-                          >
-                            {t.cimke}
-                          </LocalizedClientLink>
-                        ) : (
-                          <a
-                            className="hover:text-terv-szoveg"
-                            href={t.cim}
-                            data-testid="footer-regi-bolt-link"
-                          >
-                            {t.cimke}
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            })}
+                  KET KIOLVASAS UGYANARROL A FORRASROL, KET KULONBOZO VALASZ: a
+                  HTML a szoveget mondja meg, a kep azt, ami megjelenik. Egy
+                  CSS-transzformaciot a forras-szoveg szerkezetileg nem tud
+                  elarulni.
+                */}
+                <span
+                  className="txt-small-plus uppercase tracking-wide"
+                  style={{ color: "var(--terv-szoveg)" }}
+                >
+                  {oszlop.cim}
+                </span>
+                <ul
+                  className="grid grid-cols-1 gap-2 txt-small"
+                  style={{ color: "var(--terv-szoveg-halvany)" }}
+                  data-testid={`footer-oszlop-${oszlop.azonosito}`}
+                >
+                  {oszlop.linkek.map((t) => (
+                    <li key={`${oszlop.azonosito}-${t.cimke}-${t.href}`}>
+                      {/*
+                        A SAJAT UTVONAL `LocalizedClientLink`-et kap, mert az
+                        teszi ele az orszagkodot. A KULSO cim TELJES, es egy
+                        sima horgony viszi -- egy lokalizalt link ele
+                        orszagkodot tenne, es a cim ertelmetlenne valna.
+                      */}
+                      {t.sajat ? (
+                        <LocalizedClientLink
+                          className="hover:text-terv-szoveg"
+                          href={t.href}
+                          data-testid="footer-sajat-link"
+                        >
+                          {t.cimke}
+                        </LocalizedClientLink>
+                      ) : (
+                        <a
+                          className="hover:text-terv-szoveg"
+                          href={t.href}
+                          data-testid="footer-regi-bolt-link"
+                        >
+                          {t.cimke}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
             {/*
               A NEGYEDIK OSZLOP: a ceg adatai. Ez az egyetlen, amiben nincs
               hivatkozas-lista, ezert szelesebb helyet kap nagy kepernyon.
@@ -251,7 +267,7 @@ export default async function Footer() {
                 className="not-italic txt-small flex flex-col gap-y-1"
                 style={{ color: "var(--terv-szoveg-halvany)" }}
               >
-                <span>{CEG.cim}</span>
+                <span>{lablec.cim}</span>
                 <a
                   className="hover:text-terv-szoveg"
                   href={`tel:${CEG.telefon.replace(/[^+\d]/g, "")}`}
@@ -271,7 +287,7 @@ export default async function Footer() {
                 data-testid="footer-nyitvatartas"
               >
                 <span>Nyitvatartás:</span>
-                {CEG.nyitvatartas.map((sor) => (
+                {lablec.nyitvatartas.map((sor) => (
                   <span key={sor}>{sor}</span>
                 ))}
               </div>
@@ -282,8 +298,9 @@ export default async function Footer() {
           className="flex w-full mb-16 justify-between"
           style={{ color: "var(--terv-szoveg-halvany)" }}
         >
-          <Text className="txt-compact-small">
-            © {new Date().getFullYear()} {STORE_NAME}. Minden jog fenntartva.
+          <Text className="txt-compact-small" data-testid="footer-also-sor">
+            {lablec.alsoSor ??
+              `© ${new Date().getFullYear()} ${STORE_NAME}. Minden jog fenntartva.`}
           </Text>
         </div>
       </div>
