@@ -96,6 +96,25 @@ describe("a lábléc adata", () => {
     }
   })
 
+  it("a cím és hivatkozás nélküli oszlop nem látszik, a cím nélküli, de linkes igen (az OS ezt engedi)", () => {
+    const a = lablecAdat(
+      rekord(
+        lablec({
+          columns: [
+            { title: "", links: [] },
+            { title: "", links: [{ label: "Blog", href: "/blog" }] },
+            { title: "Üres", links: [] },
+          ],
+        }),
+      ),
+    )
+    expect(a.oszlopok.map((o) => [o.cim, o.linkek.length > 0])).toEqual([
+      ["", true],
+      ["Üres", false],
+      ["Információk", true],
+    ])
+  })
+
   it("oszlop nélküli rekordnál is ott a jogi oszlop", () => {
     const a = lablecAdat(rekord(lablec({ columns: [] })))
     expect(a.oszlopok).toHaveLength(1)
