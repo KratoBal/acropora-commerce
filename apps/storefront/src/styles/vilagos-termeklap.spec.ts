@@ -111,7 +111,7 @@ describe("a világos terméklap tokenjei", () => {
       blokk(alja, '[data-vilag="vilagos"] .termeklap-zarosor .termeklap-ar {'),
     ).toContain("font-size: 20px")
     const sav = blokk(alja, '[data-vilag="vilagos"] .termeklap-zarosor {')
-    expect(sav).toContain("max-width: 1352px")
+    expect(sav).toContain("max-width: 1312px")
     expect(sav).toContain("border: 1px solid var(--terv-keret)")
     expect(sav).toContain("background: var(--terv-hatter-lap)")
   })
@@ -142,5 +142,24 @@ describe("a világos terméklap tokenjei", () => {
     expect(
       blokk(resz, '[data-vilag="vilagos"] .termeklap-ragados-cselekves > * {'),
     ).toContain("min-width: 126px")
+  })
+
+  /*
+    A kezdolap stilusa (2026-10-26): a termek neve es a ket szakaszcim a
+    kezdolap sav-cimeinek szerifes betujet viseli, normal sulyban, a vilagos
+    lapon. A beagyazott `fontFamily` megelozne a szabalyt, ezert `!important`.
+  */
+  it("a cím és a szakaszcímek a kezdőlap szerifes betűjével állnak, csak világosban", () => {
+    const fej = '[data-vilag="vilagos"] [data-testid="vaz-termek-nev"],'
+    const kezd = GLOBALS.indexOf(fej)
+    expect(kezd).toBeGreaterThan(-1)
+    const szabaly = GLOBALS.slice(kezd, GLOBALS.indexOf("}", kezd))
+    expect(szabaly).toContain('[data-vilag="vilagos"] #vaz-kiegeszitok > h2')
+    expect(szabaly).toContain('[data-vilag="vilagos"] #vaz-hasonlo > h2')
+    expect(szabaly).toContain(
+      "font-family: var(--terv-betu-kiemelt-lanc) !important",
+    )
+    expect(szabaly).toContain("font-weight: 400")
+    expect(szabaly).toContain("letter-spacing: -0.01em")
   })
 })

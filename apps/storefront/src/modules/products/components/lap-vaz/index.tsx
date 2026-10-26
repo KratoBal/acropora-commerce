@@ -1542,7 +1542,7 @@ const LapVaz = ({
         = 44 pixel bal oldalt), keskenyebb nezeten pedig a 16 pixeles margo
         ugyanugy megmarad, mint eddig.
       */
-      className="w-full px-4"
+      className="w-full px-4 lg:px-16"
       style={{ background: "var(--terv-hatter)" }}
     >
       {/*
@@ -1564,7 +1564,7 @@ const LapVaz = ({
       {morzsa ? (
         <div
           className="mx-auto w-full pt-4"
-          style={{ maxWidth: "1352px" }}
+          style={{ maxWidth: "1312px" }}
           data-testid="lap-morzsa-sav"
         >
           {morzsa}
@@ -1573,7 +1573,7 @@ const LapVaz = ({
       <div
         className="mx-auto flex w-full flex-col gap-4 py-4"
         style={{
-          maxWidth: "1352px",
+          maxWidth: "1312px",
           background: "var(--terv-hatter)",
           fontFamily: "var(--terv-betu-fo-lanc)",
         }}
@@ -1933,8 +1933,8 @@ const LapVaz = ({
           */
           className={
             tartalom[savSzakasz.kulcs]
-              ? "-mx-4 mt-[24px] max-lg:sticky max-lg:bottom-0 lg:mt-14"
-              : "-mx-4 mt-[24px] lg:mt-14"
+              ? "-mx-4 mt-[24px] max-lg:sticky max-lg:bottom-0 lg:-mx-16 lg:mt-14"
+              : "-mx-4 mt-[24px] lg:-mx-16 lg:mt-14"
           }
           data-vaz-oszlop={savSzakasz.oszlop}
           data-testid="vaz-ragados-sav-burok"

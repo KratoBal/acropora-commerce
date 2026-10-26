@@ -1068,7 +1068,7 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   vonallal elvalasztott szakasz, 600/22 cimmel, 18 pixelre a racstol. A
   "Hasonló termékek" a kereten nincs, de van adata, tehat ugyanigy all.
 
-  Az also osszegzo sav (193:202): a tartalom szelessegeben (1352), feher,
+  Az also osszegzo sav (193:202): a tartalom szelessegeben (1312), feher,
   korben keretes, 20 pixeles belso margoval. Csak asztalon latszik, mint
   eddig. A sotet (2a) lap a P3-ig valtozatlan.
 */
@@ -1084,6 +1084,23 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   font-weight: 600;
   margin-bottom: 18px;
 }
+/*
+  A VILAGOS TERMEKLAP CIMEI A KEZDOLAP BETUJEVEL (2026-10-26, Balazs: a
+  termeklap a kezdolap Claude Design stilusat kapja). A kezdolap sav-cimei
+  (`font-kiemelt`, normal suly, -0.01em) szerifesek; a termek neve es a ket
+  szakaszcim ugyanazt a betut viseli. A lanc a `--terv-betu-kiemelt-lanc`
+  token, tehat nincs uj betu es nincs beagyazott `fontFamily`. A meret, a
+  sorkoz es az elrendezes valtozatlan; a sotet (2a) lap nem valtozik.
+*/
+[data-vilag="vilagos"] [data-testid="vaz-termek-nev"],
+[data-vilag="vilagos"] #vaz-kiegeszitok > h2,
+[data-vilag="vilagos"] #vaz-hasonlo > h2 {
+  /* `!important`: a szakaszcim beagyazott stilusa (`fontFamily` a vaz-dobozon)
+     egyebkent megelozne ezt a szabalyt. */
+  font-family: var(--terv-betu-kiemelt-lanc) !important;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
 /* Az osszegzo sav ara 700/20 (193:207), nem a vasarlasi kartya 36-a. */
 [data-vilag="vilagos"] .termeklap-zarosor .termeklap-ar {
   font-size: 20px;
@@ -1091,7 +1108,7 @@ body:has([data-fejlec-gyoker~="vizkezeles"]) [data-fejlec-pont="vizkezeles"] {
   font-weight: 700;
 }
 [data-vilag="vilagos"] .termeklap-zarosor {
-  max-width: 1352px;
+  max-width: 1312px;
   margin-inline: auto;
   border: 1px solid var(--terv-keret);
   background: var(--terv-hatter-lap);
