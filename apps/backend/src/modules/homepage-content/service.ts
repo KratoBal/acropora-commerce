@@ -19,12 +19,29 @@ export type HomepageSlide = {
   image_alt: string
 }
 
+export type HomepageBlock = { key: string; visible: boolean }
+
+export type HomepageFooter = {
+  intro: string
+  columns: Array<{ title: string; links: Array<{ label: string; href: string }> }>
+  social: {
+    facebook: string | null
+    instagram: string | null
+    youtube: string | null
+  }
+  bottom_text: string
+}
+
 export type HomepageContentInput = {
   texts: Record<string, string>
   /** `null`: not set, the storefront shows its starting slides. `[]`: no hero. */
   slides: HomepageSlide[] | null
   /** Product handles of the featured band, in order; absent or null: none. */
   featured_handles?: string[] | null
+  /** Display order and visibility of the fixed blocks; absent keeps, null clears. */
+  blocks?: HomepageBlock[] | null
+  /** The editable footer; absent keeps, null clears. */
+  footer?: HomepageFooter | null
 }
 
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
@@ -54,6 +71,21 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
         : {
             featured_handles: (input.featured_handles
               ? [...input.featured_handles]
+              : null) as unknown as Record<string, unknown>,
+          }),
+      // `blocks` and `footer` follow the same rule: written only when sent
+      ...(input.blocks === undefined
+        ? {}
+        : {
+            blocks: (input.blocks
+              ? input.blocks.map((b) => ({ ...b }))
+              : null) as unknown as Record<string, unknown>,
+          }),
+      ...(input.footer === undefined
+        ? {}
+        : {
+            footer: (input.footer
+              ? structuredClone(input.footer)
               : null) as unknown as Record<string, unknown>,
           }),
     }
