@@ -245,12 +245,21 @@ describe("a kezdőlap forrása", () => {
           : [],
     )
 
-  it("sehol nem állít be HTML-t (a megjegyzés említése nem számít, a használat igen)", () => {
+  /*
+    EGYETLEN KIVETEL (Balazs 2b megbizas, 4. pont: formazott szovegek): a
+    `components/rovid-szoveg/index.tsx`, ami CSAK a szerveren tisztitott
+    ("short" profil, `tisztitas.ts`) erteket rajzolja HTML-kent. Minden mas
+    fajl tovabbra is tiltott; egy MASODIK hely, vagy a kivetel eltunese is
+    piros: a lista pontos.
+  */
+  it("HTML-t csak az egyetlen, tisztított értéket váró komponens állít be", () => {
     const fajlok = bejar(join(__dirname, "..", ".."))
     expect(fajlok.length).toBeGreaterThan(5)
-    for (const ut of fajlok)
-      expect(readFileSync(ut, "utf-8"), ut).not.toMatch(
-        /dangerouslySetInnerHTML\s*=|__html\s*:|\.innerHTML\s*=/,
-      )
+    const HTML_BEALLITAS =
+      /dangerouslySetInnerHTML\s*=|__html\s*:|\.innerHTML\s*=/
+    const trefik = fajlok
+      .filter((ut) => HTML_BEALLITAS.test(readFileSync(ut, "utf-8")))
+      .map((ut) => ut.slice(join(__dirname, "..", "..").length + 1))
+    expect(trefik).toEqual([join("components", "rovid-szoveg", "index.tsx")])
   })
 })
