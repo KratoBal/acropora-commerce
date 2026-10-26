@@ -1124,6 +1124,8 @@ describe("a lap teljes szélességű sötét felülete", () => {
     const osztalyok = (e: Element) => e.className.split(/\s+/)
 
     expect(osztalyok(teljes())).toContain("px-4")
+    // a kezdolap fejlecevel es lablecevel azonos 64 pixeles oldalmargo asztalon
+    expect(osztalyok(teljes())).toContain("lg:px-16")
     expect(osztalyok(belso)).toContain("py-4")
     expect(osztalyok(belso)).not.toContain("px-4")
     expect(osztalyok(belso)).not.toContain("p-4")
@@ -1145,7 +1147,7 @@ describe("a lap teljes szélességű sötét felülete", () => {
     render(<LapVaz vilag="sotet" />)
 
     expect(teljes().style.maxWidth).toBe("")
-    expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1352px")
+    expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1312px")
   })
 })
 
@@ -1296,11 +1298,11 @@ describe("a morzsamenü helye a sötét felületen", () => {
    * a burok szelere futna ki, a lap teteje mas margoval indulna, mint a
    * tartalom alatta.
    */
-  it("a sáv ugyanazt az 1352 pixeles mértéket tartja, mint a rács", () => {
+  it("a sáv ugyanazt az 1312 pixeles mértéket tartja, mint a rács", () => {
     render(<LapVaz vilag="sotet" morzsa={<span>x</span>} />)
 
-    expect(screen.getByTestId("lap-morzsa-sav").style.maxWidth).toBe("1352px")
-    expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1352px")
+    expect(screen.getByTestId("lap-morzsa-sav").style.maxWidth).toBe("1312px")
+    expect(screen.getByTestId("muszaki-lap-vaz").style.maxWidth).toBe("1312px")
   })
 })
 
@@ -1444,6 +1446,8 @@ describe("a címblokk nem dobozban áll", () => {
      * állítás készült.
      */
     expect(burok.className).toMatch(/-mx-4(?![-\w])/)
+    // asztalon a 64 pixeles oldalmargot adja vissza
+    expect(burok.className).toMatch(/lg:-mx-16(?![-\w])/)
     expect(burok.contains(doboz("ragados-sav"))).toBe(true)
   })
 
