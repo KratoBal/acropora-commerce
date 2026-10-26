@@ -28,6 +28,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "collections",
   "hamarosan",
   "jogi",
+  "kezdolap-elonezet",
   "marka",
   "order",
   "rendeles-fizetese",

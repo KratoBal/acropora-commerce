@@ -185,3 +185,47 @@ describe("a régi címek 301-e (SEO P0 PR 7c)", () => {
     expect(valasz.headers.get("location")).toBe("https://bolt.test/hu/Pumpa")
   })
 })
+
+/*
+  A KEZDOLAP ELO ELONEZETE (protokoll v1). MI PIROSIT: ha az utvonal
+  bekapcsolas nelkul elerheto (404 kell); ha bekapcsolva nem kap
+  `frame-ancestors`-t az OS cimere, `noindex`-et es gyorsitotar-tilalmat; ha a
+  fejlec joker marad hibas cimnel; ha MAS utvonal (a kezdolap maga) megkapja a
+  fejleceket.
+*/
+describe("a kezdőlap-előnézet útja", () => {
+  it("bekapcsolás nélkül 404, kérés nélkül sem kerül a fejléc máshova", async () => {
+    vi.stubEnv("HOMEPAGE_PREVIEW_ENABLED", "")
+    const { valasz } = await futtat("/hu/kezdolap-elonezet")
+    expect(valasz.status).toBe(404)
+  })
+
+  it("bekapcsolva: egyetlen OS-cím a frame-ancestors-ban, noindex, nincs gyorsítótár", async () => {
+    vi.stubEnv("HOMEPAGE_PREVIEW_ENABLED", "true")
+    vi.stubEnv("ACROPORA_OS_ORIGIN", "https://os-teszt.acropora.hu")
+    const { valasz } = await futtat("/hu/kezdolap-elonezet")
+    expect(valasz.status).toBe(200)
+    expect(valasz.headers.get("content-security-policy")).toBe(
+      "frame-ancestors https://os-teszt.acropora.hu",
+    )
+    expect(valasz.headers.get("x-robots-tag")).toContain("noindex")
+    expect(valasz.headers.get("cache-control")).toBe("private, no-store")
+  })
+
+  it("hibás OS-cím: senki nem keretezheti", async () => {
+    vi.stubEnv("HOMEPAGE_PREVIEW_ENABLED", "true")
+    vi.stubEnv("ACROPORA_OS_ORIGIN", "*")
+    const { valasz } = await futtat("/hu/kezdolap-elonezet")
+    expect(valasz.headers.get("content-security-policy")).toBe(
+      "frame-ancestors 'none'",
+    )
+  })
+
+  it("a kezdőlap maga nem kap előnézeti fejlécet", async () => {
+    vi.stubEnv("HOMEPAGE_PREVIEW_ENABLED", "true")
+    vi.stubEnv("ACROPORA_OS_ORIGIN", "https://os-teszt.acropora.hu")
+    const { valasz } = await futtat("/hu")
+    expect(valasz.headers.get("content-security-policy")).toBeNull()
+    expect(valasz.headers.get("x-robots-tag")).toBeNull()
+  })
+})
