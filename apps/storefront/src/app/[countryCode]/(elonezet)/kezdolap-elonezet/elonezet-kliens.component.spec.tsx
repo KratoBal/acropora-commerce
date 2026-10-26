@@ -27,7 +27,7 @@ vi.mock("@modules/layout/templates/footer/lablec-keret", () => ({
     <footer data-testid="lablec">{lablec.alsoSor}</footer>
   ),
 }))
-vi.mock("./akciok", () => ({ lablecAdatElonezethez: akcio }))
+vi.mock("./akciok", () => ({ elonezetiAdat: akcio }))
 
 import fixtura from "@lib/util/__fixtures__/homepage-content-record.fixture.json"
 import { BLOKK_KULCSOK } from "@modules/kezdolap/blokkok"
@@ -84,7 +84,12 @@ const sorrend = (c: HTMLElement) =>
 beforeEach(() => {
   szulo = { postMessage: vi.fn() }
   Object.defineProperty(window, "parent", { value: szulo, configurable: true })
-  akcio.mockReset().mockResolvedValue({ ok: true, adat: lablec("ELO LABLEC") })
+  // a szerver valasza: a tisztitott rekord (a kliens csak ezt rajzolja) es a lablec
+  akcio.mockReset().mockImplementation(async (rekord: KezdolapTartalom) => ({
+    ok: true,
+    adat: lablec("ELO LABLEC"),
+    rekord: { ...rekord, tisztitott: true },
+  }))
   termekek.mockClear()
 })
 afterEach(() => {

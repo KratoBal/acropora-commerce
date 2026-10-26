@@ -59,6 +59,12 @@ export type KezdolapTartalom = {
   blocks?: KezdolapBlokk[] | null
   /** A szerkesztheto lablec; `null` vagy hiany: a lap sajat lablece. */
   footer?: KezdolapLablec | null
+  /**
+   * CSAK A SZERVER ALLITJA (`tisztitas.ts`), SOHA nem jon az OS-bol (a rekord
+   * validatora ismeretlen kulcskent elutasitja): jelzi, hogy a formazott
+   * szovegek a "short" profilon atmentek. Enelkul a lap sima szovegnek veszi oket.
+   */
+  tisztitott?: boolean
 }
 
 /**
@@ -116,8 +122,9 @@ export const ALAP_DIAK: readonly HeroDia[] = [
 
 /** A bolt valaszabol a lapnak szolo alak: a keresok (szoveg, link, kep) es a diak. */
 export const kezdolapAdat = (tartalom: KezdolapTartalom | null) => ({
-  ...szovegek(tartalom?.texts ?? null),
+  ...szovegek(tartalom?.texts ?? null, tartalom?.tisztitott === true),
   diak: tartalom?.slides ?? [...ALAP_DIAK],
+  tisztitott: tartalom?.tisztitott === true,
 })
 
 export { KEZDOLAP_SZOVEGEK }

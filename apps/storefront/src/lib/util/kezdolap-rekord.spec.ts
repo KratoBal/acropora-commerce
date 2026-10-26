@@ -126,6 +126,10 @@ describe("a kezdőlap-rekord ellenőrzése", () => {
       expect(ok(nem)).toBe(false)
   })
 
+  it("a szerver-jelölő (tisztitott) az OS rekordjában ismeretlen kulcs: elutasítva", () => {
+    expect(ok(modosit((r) => (r.tisztitott = true)))).toBe(false)
+  })
+
   it("az első hibát megnevezi", () => {
     const eredmeny = ervenyesRekord(modosit((r) => (r.footer.contact = {})))
     expect(eredmeny.ok).toBe(false)
