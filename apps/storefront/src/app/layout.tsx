@@ -30,6 +30,15 @@ const spaceGrotesk = localFont({
   weight: "300 700",
   display: "swap",
   variable: "--terv-betu-fo",
+  /*
+    NEM TOLTODIK ELO (commerce-audit-p1, T2, 2026-10-27). A vilagos vilagban
+    (`[data-vilag="vilagos"]`, a bolt kerete) a `--terv-betu-fo-lanc` a Hankenre
+    mutat (`acropora-tokens.css`), tehat a Space Groteszet csak a SOTET terméklap
+    es a kosar sorai viselik. Minden lapon elotoltve versenyzett a hero H1
+    betujevel (a mobil LCP-elemmel). A betu ott is betoltodik, ahol kell
+    (`display: swap`): az elso festes nem varja meg.
+  */
+  preload: false,
 })
 
 const jetBrainsMono = localFont({
@@ -37,6 +46,8 @@ const jetBrainsMono = localFont({
   weight: "100 800",
   display: "swap",
   variable: "--terv-betu-mono",
+  // ugyanaz, mint a Space Groteszet: csak a sotet terméklap es a kosar viseli
+  preload: false,
   // monospace betunek nincs illo Arial- vagy Times-tartaleka
   adjustFontFallback: false,
 })

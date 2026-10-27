@@ -60,8 +60,20 @@ describe("a kirakat betűinek előtöltése", () => {
     )
   })
 
-  it("a fő betűket (törzs és fejléc) előtölti", () => {
-    for (const fo of ["--terv-betu-fo", "--acr-font-hanken"])
-      expect(betuHivas(fo), fo).not.toMatch(/preload:\s*false/)
+  it("a bolt keretének fő betűjét (Hanken Grotesk) előtölti", () => {
+    expect(betuHivas("--acr-font-hanken")).not.toMatch(/preload:\s*false/)
+  })
+
+  it("a Space Groteszet és a JetBrains Mono-t NEM tölti elő: csak a sötét terméklap és a kosár viseli (audit T2)", () => {
+    // a vilagos vilagban a lancok a Hankenre mutatnak (acropora-tokens.css),
+    // tehat e ket betu elotoltese minden lapon az LCP-erőforrással versenyez
+    for (const betu of ["--terv-betu-fo", "--terv-betu-mono"])
+      expect(betuHivas(betu), betu).toMatch(/preload:\s*false/)
+    const tokenek = readFileSync(
+      join(__dirname, "..", "styles", "acropora-tokens.css"),
+      "utf8",
+    )
+    expect(tokenek).toMatch(/--terv-betu-fo-lanc:\s*var\(--acr-font-hanken\)/)
+    expect(tokenek).toMatch(/--terv-betu-mono-lanc:\s*var\(--acr-font-hanken\)/)
   })
 })
