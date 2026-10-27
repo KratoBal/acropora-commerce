@@ -52,6 +52,8 @@ import { StoreChangePassword } from "./store/customers/me/password/validators";
 import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points/validators";
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
 import { refuseClientSessionData } from "./refuse-client-session-data";
+import { refuseClientCartMetadata } from "./refuse-client-cart-metadata";
+import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
@@ -145,6 +147,23 @@ export default defineMiddlewares({
       method: "POST",
       middlewares: [orderEditConfirmKeepsHold],
     },
+    {
+      // The ÁSZF record is the server's (aszf-record.ts); the stock cart and line writes
+      // carry no metadata from the client (audit A4).
+      matcher: "/store/carts/:id/aszf-elfogadas",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    ...[
+      "/store/carts",
+      "/store/carts/:id",
+      "/store/carts/:id/line-items",
+      "/store/carts/:id/line-items/:line_id",
+    ].map((matcher) => ({
+      matcher,
+      method: "POST" as const,
+      middlewares: [refuseClientCartMetadata],
+    })),
     {
       // No ÁSZF acceptance on the cart: no shared PaymentIntent (aszf-guard.ts).
       matcher: "/store/carts/:id/stripe-start",

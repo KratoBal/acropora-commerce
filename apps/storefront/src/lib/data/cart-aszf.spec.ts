@@ -1,8 +1,7 @@
-import type { AszfDokumentumAllapot } from "@lib/util/aszf"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const sdk = vi.hoisted(() => ({
-  client: { fetch: vi.fn() },
+  client: { fetch: vi.fn(async (..._args: unknown[]) => ({})) },
   store: { cart: { update: vi.fn(async () => ({ cart: {} })) } },
 }))
 vi.mock("@lib/config", () => ({ sdk }))
@@ -17,76 +16,60 @@ vi.mock("./cookies", () => ({
 vi.mock("./regions", () => ({ getRegion: vi.fn() }))
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
-const dokumentum = vi.hoisted(() => ({
-  aszfDokumentumMost: vi.fn(async (): Promise<AszfDokumentumAllapot> => ({
-    tipus: "fogyasztobarat",
-    hatalyos: "2026-10-05",
-    lenyomat: null,
-  })),
-}))
-vi.mock("./aszf-dokumentum", () => dokumentum)
-
-import {
-  ASZF_FORRAS,
-  ASZF_FORRAS_MAI_BOLT,
-  ASZF_VERZIO,
-  ASZF_VERZIO_MAI_BOLT,
-} from "@lib/util/aszf"
 
 import { rogzitsAszfElfogadast } from "./cart"
 
 afterEach(() => vi.clearAllMocks())
 
 /**
- * AZ ASZF-REKORD A KOSARON (kartya 4a2b252d). MI PIROSIT: ha a rekord nem a
- * regisztracioeval azonos alaku (idopont, verzio, dokumentum); ha a kosar mas
- * metaadat-kulcsai elvesznek (a vegyes kosar szulo-azonositoja is ott el); ha
- * a hiba dobaskent szokne ki a fizetesi gombhoz.
+ * AZ ASZF-ELFOGADAS A SZERVER VEGPONTJAN KERESZTUL MEGY (audit A4). MI PIROSIT:
+ * ha a kirakat ujra maga allitana ossze a rekordot (idopont, verzio, dokumentum)
+ * vagy a gyari `cart.update` hivassal irna a kosar metaadatat; ha a vegpont nem
+ * a path-beli kosarra mutat; ha a hiba (a 501 is) dobaskent szokne ki a
+ * fizetesi gombhoz. A rekord tartalmat a hatter tesztjei fedik
+ * (`aszf-record.unit.spec.ts`): a mai-bolt es a Fogyasztobarat ag szerinti
+ * szetvalasztas ott el.
  */
 describe("az ÁSZF elfogadásának rögzítése", () => {
-  it("a regisztrációéval azonos rekordot írja, a többi kulcs marad", async () => {
-    sdk.client.fetch.mockResolvedValueOnce({
-      cart: { id: "cart_1", metadata: { acropora_pickup_cart_id: "cart_2" } },
-    })
+  it("a szerver végpontját hívja, csak a vevő szavával, és nem ír kosár-metaadatot", async () => {
     expect(await rogzitsAszfElfogadast("cart_1")).toEqual({ ok: true })
-    const [id, torzs] = sdk.store.cart.update.mock.calls[0] as unknown as [
+    expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
+    const [url, opciok] = sdk.client.fetch.mock.calls[0] as unknown as [
       string,
-      { metadata: Record<string, unknown> },
+      { method: string; body: unknown; headers: Record<string, string> },
     ]
-    expect(id).toBe("cart_1")
-    expect(torzs.metadata.acropora_pickup_cart_id).toBe("cart_2")
-    // a lekeres nem adott lenyomatot: a rekord kimondja, hogy nincs
-    expect(torzs.metadata.aszf_elfogadas).toEqual({
-      idopont: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-      verzio: ASZF_VERZIO,
-      dokumentum: ASZF_FORRAS,
-      hatalyos: "2026-10-05",
-      lenyomat: "nincs",
-    })
+    expect(url).toBe("/store/carts/cart_1/aszf-elfogadas")
+    expect(opciok.method).toBe("POST")
+    // se időpont, se verzió, se dokumentum: azt a szerver adja
+    expect(opciok.body).toEqual({ elfogadom: true })
+    expect(opciok.headers.authorization).toBe("Bearer x")
+    expect(sdk.store.cart.update).not.toHaveBeenCalled()
   })
 
-  it("kikapcsolt Fogyasztóbarátnál a mai bolt ÁSZF-je kerül a kosárra (4a2b252d)", async () => {
-    dokumentum.aszfDokumentumMost.mockResolvedValueOnce({ tipus: "mai-bolt" })
-    sdk.client.fetch.mockResolvedValueOnce({
-      cart: { id: "cart_1", metadata: null },
-    })
-    expect(await rogzitsAszfElfogadast("cart_1")).toEqual({ ok: true })
-    const [, torzs] = sdk.store.cart.update.mock.calls[0] as unknown as [
-      string,
-      { metadata: Record<string, unknown> },
-    ]
-    expect(torzs.metadata.aszf_elfogadas).toEqual({
-      idopont: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-      verzio: ASZF_VERZIO_MAI_BOLT,
-      dokumentum: ASZF_FORRAS_MAI_BOLT,
-    })
+  it("kosár-azonosító nélkül a süti kosarát használja", async () => {
+    expect(await rogzitsAszfElfogadast()).toEqual({ ok: true })
+    expect(sdk.client.fetch.mock.calls[0]![0]).toBe(
+      "/store/carts/cart_1/aszf-elfogadas",
+    )
   })
 
-  it("hibánál visszaadott üzenet, nem dobás", async () => {
-    sdk.client.fetch.mockResolvedValueOnce({
-      cart: { id: "cart_1", metadata: null },
-    })
-    sdk.store.cart.update.mockRejectedValueOnce(new Error("hálózat"))
+  it("bekapcsolt kirakat-kapcsolónál nincs hívás, a pipa hibával áll meg (a másik irány)", async () => {
+    const mentett = process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
+    process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
+    try {
+      const eredmeny = await rogzitsAszfElfogadast("cart_1")
+      expect(eredmeny.ok).toBe(false)
+      expect(sdk.client.fetch).not.toHaveBeenCalled()
+      expect(sdk.store.cart.update).not.toHaveBeenCalled()
+    } finally {
+      if (mentett === undefined)
+        delete process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
+      else process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = mentett
+    }
+  })
+
+  it("hibánál (a szerver 501-e is) visszaadott üzenet, nem dobás", async () => {
+    sdk.client.fetch.mockRejectedValueOnce(new Error("501"))
     const eredmeny = await rogzitsAszfElfogadast("cart_1")
     expect(eredmeny.ok).toBe(false)
   })

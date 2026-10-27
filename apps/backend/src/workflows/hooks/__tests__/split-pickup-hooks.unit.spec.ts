@@ -40,6 +40,7 @@ beforeAll(() => {
   require("../split-shipping-pricing-context")
   require("../complete-cart-cod-fee")
 })
+const AszfRekord = { idopont: "2026-10-27T12:00:00.000Z", verzio: "v", dokumentum: "d" }
 import { MIXED_CART_MESSAGE } from "../../utils/assert-cart-not-mixed"
 import { SPLIT_LINE_IDS_CONTEXT_KEY } from "../../utils/split-pricing-context"
 
@@ -111,6 +112,7 @@ describe("completing a cart", () => {
       handlers.completeValidate!(
         {
           cart: {
+            metadata: { aszf_elfogadas: AszfRekord },
             items: [
               { id: "l1", variant_id: "v1", requires_shipping: true },
               { id: "l2", variant_id: "v2", requires_shipping: true },
@@ -130,7 +132,7 @@ describe("completing a cart", () => {
             {
               id: "cart_1",
               total: 4950,
-              metadata: {},
+              metadata: { aszf_elfogadas: AszfRekord },
               items: [{ id: "l1", variant_id: "v1", requires_shipping: true }],
               payment_collection: {
                 payment_sessions: [{ data: { id: "pi_1", stripe_share: { transactionId: "pi_1", total: 5000, own: 5000 } } }],
@@ -145,9 +147,70 @@ describe("completing a cart", () => {
 
     await expect(
       handlers.completeValidate!(
-        { cart: { id: "cart_1", items: [{ id: "l1", variant_id: "v1", requires_shipping: true }] } },
+        {
+          cart: {
+            id: "cart_1",
+            metadata: { aszf_elfogadas: AszfRekord },
+            items: [{ id: "l1", variant_id: "v1", requires_shipping: true }],
+          },
+        },
         { container: { resolve: () => ({ graph }) } }
       )
     ).rejects.toThrow("the cart's total is 4950")
+  })
+
+  /**
+   * THE ÁSZF NET UNDER EVERY WAY OF PLACING AN ORDER (audit A4). What must
+   * fail: a cart without the server-written record completing through the
+   * stock `/complete` route or either half of `complete-split`; the card path
+   * (its record was required when the session was made) stopped here.
+   */
+  describe("the ÁSZF record", () => {
+    const kosar = (metadata: unknown, sessions: unknown[] = []) => ({
+      id: "cart_1",
+      metadata,
+      items: [{ id: "l1", variant_id: "v1", requires_shipping: true }],
+      payment_collection: { payment_sessions: sessions },
+    })
+    const container = {
+      resolve: () => ({
+        graph: async ({ entity, filters }: any) =>
+          entity === "variant"
+            ? { data: [{ id: "v1", product: { id: "p1" } }].filter((v) => filters.id.includes(v.id)) }
+            : { data: [] },
+      }),
+    }
+
+    it("a cart without the record is not turned into an order, with a Hungarian message", async () => {
+      for (const metadata of [null, {}, { aszf_elfogadas: "igen" }]) {
+        await expect(
+          handlers.completeValidate!({ cart: kosar(metadata) }, { container })
+        ).rejects.toThrow("Az ÁSZF elfogadása nélkül a rendelés nem adható le.")
+      }
+    })
+
+    it("the same on a cash on delivery or pay-at-store session", async () => {
+      await expect(
+        handlers.completeValidate!(
+          { cart: kosar({}, [{ provider_id: "pp_acropora_cod", status: "pending" }]) },
+          { container }
+        )
+      ).rejects.toThrow("Az ÁSZF elfogadása nélkül")
+    })
+
+    it("a card session passes this check: its record was required when the session was made", async () => {
+      await expect(
+        handlers.completeValidate!(
+          { cart: kosar({}, [{ provider_id: "pp_stripe_stripe", status: "pending" }]) },
+          { container }
+        )
+      ).resolves.not.toThrow()
+    })
+
+    it("with the record it passes", async () => {
+      await expect(
+        handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: AszfRekord }) }, { container })
+      ).resolves.not.toThrow()
+    })
   })
 })
