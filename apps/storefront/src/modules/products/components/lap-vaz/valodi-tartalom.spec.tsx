@@ -937,6 +937,53 @@ describe("a váz valódi tartalma", () => {
   })
 
   /**
+   * AZ EGYSEGAR-SOR AZ AR REKESZEBEN ALL (audit P1/3). MI PIROSIT: ha a sor
+   * nincs bekotve a vazba (a tiszta fuggveny es a sor kulon-kulon zold, a lapon
+   * mégsem latszik); ha kitalalt nevu termeken is megjelenik; ha nem az ar
+   * rekeszeben, hanem masutt all.
+   */
+  it("az egységár az ár rekeszében áll, ha a névben egyértelmű a kiszerelés", () => {
+    const arral = (cim: string) =>
+      ({
+        ...(TERMEK as object),
+        title: cim,
+        variants: [
+          {
+            id: "v1",
+            sku: "SO-20",
+            options: [],
+            calculated_price: {
+              calculated_amount: 20000,
+              original_amount: 20000,
+              currency_code: "huf",
+              calculated_price: { price_list_type: "default" },
+            },
+          },
+        ],
+      }) as never
+
+    const so = arral("Tengeri só 20 kg")
+    render(
+      <VasarlasProvider product={so}>
+        <LapVaz tartalom={vazTartalom(so, true)} />
+      </VasarlasProvider>,
+    )
+    const arDoboz = document.querySelector('[data-vaz-szakasz="ar"]')
+    expect(
+      arDoboz?.querySelector('[data-testid="vaz-egysegar"]')?.textContent,
+    ).toMatch(/Ft\/kg$/)
+    cleanup()
+
+    const szorzos = arral("Eledel 4x25g")
+    render(
+      <VasarlasProvider product={szorzos}>
+        <LapVaz tartalom={vazTartalom(szorzos, true)} />
+      </VasarlasProvider>,
+    )
+    expect(document.querySelector('[data-testid="vaz-egysegar"]')).toBeNull()
+  })
+
+  /**
    * A KISZERELES SORANAK HELYE KET REKESZ KOZOTT DOL EL, ES EZT KET ALLITAS
    * MERI -- KULON-KULON.
    *
