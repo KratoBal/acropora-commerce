@@ -32,8 +32,9 @@ describe("a lábléc hivatkozásai", () => {
   // 2026-10-05: 6 + a het Fogyasztobarat-dokumentum (`/jogi/<slug>`);
   // 2026-10-27: + Forgalmazott márkák (`/marka`, kirakat-lablec-kep)
   // 2026-10-27: + Elérhetőségek (`/elerhetosegek`, commerce-audit-p1 P1/11)
-  it("tizenot tetelnek van sajat utvonala, es mind relativ", () => {
-    expect(SAJAT_HIVATKOZASOK).toHaveLength(15)
+  // 2026-10-27: + Fizetés, Szállítás, Képes vásárlói tájékoztató (saját oldalak, lablec)
+  it("tizennyolc tetelnek van sajat utvonala, es mind relativ", () => {
+    expect(SAJAT_HIVATKOZASOK).toHaveLength(18)
 
     for (const h of SAJAT_HIVATKOZASOK) {
       expect(h.cim.startsWith("/")).toBe(true)
@@ -42,12 +43,26 @@ describe("a lábléc hivatkozásai", () => {
 
   // 2026-10-05: az ASZF es az adatkezelesi tajekoztato kikerult (kartya a3e48575)
   // 2026-10-27: az Elérhetőségek kikerült (saját oldal, P1/11)
-  it("negy tetel a regi boltba visz, mind teljes cimmel", () => {
-    expect(REGI_BOLT_HIVATKOZASOK).toHaveLength(4)
+  // 2026-10-27: a Fizetés, a Szállítás és a Képes vásárlói tájékoztató kikerült (saját oldal)
+  it("egy tetel a regi boltba visz, teljes cimmel", () => {
+    expect(REGI_BOLT_HIVATKOZASOK).toHaveLength(1)
 
     for (const h of REGI_BOLT_HIVATKOZASOK) {
       expect(h.cim.startsWith("https://shop.acropora.hu/")).toBe(true)
     }
+  })
+
+  it("a Fizetés, a Szállítás és a Képes tájékoztató saját oldalra visz, nem a régi boltba", () => {
+    const cim = (felirat: string) =>
+      SAJAT_HIVATKOZASOK.find((h) => h.cimke === felirat)?.cim
+    expect(cim("Fizetés")).toBe("/fizetes")
+    expect(cim("Szállítás")).toBe("/szallitas")
+    expect(cim("Képes vásárlói tájékoztató")).toBe("/jogi/kepes-tajekoztato")
+    expect(
+      REGI_BOLT_HIVATKOZASOK.map((h) => h.cimke).filter((c) =>
+        ["Fizetés", "Szállítás", "Képes vásárlói tájékoztató"].includes(c),
+      ),
+    ).toEqual([])
   })
 
   it("a tizenkilenc felirat mind kulonbozik", () => {
@@ -203,8 +218,8 @@ describe("a külső címek egyetlen helyen állnak", () => {
     expect(lablec.match(/shop\.acropora\.hu/g)).toBeNull()
   })
 
-  it("a négy cím mind a listában áll", () => {
-    expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toHaveLength(4)
+  it("az egy cím a listában áll", () => {
+    expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toHaveLength(1)
   })
 })
 

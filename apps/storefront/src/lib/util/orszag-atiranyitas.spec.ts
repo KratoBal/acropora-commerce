@@ -39,6 +39,11 @@ describe("az országkód nélküli út átirányítása", () => {
     expect(ISMERT_LAP_SZAKASZOK).toContain("elerhetosegek")
   })
 
+  it("a Fizetés és a Szállítás országkód nélkül is a magyar oldalra megy (lábléc)", () => {
+    expect(ISMERT_LAP_SZAKASZOK).toContain("fizetes")
+    expect(ISMERT_LAP_SZAKASZOK).toContain("szallitas")
+  })
+
   it("a lap-szakaszok listája a kirakat mappáiból áll", () => {
     const gyoker = join(__dirname, "..", "..", "app", "[countryCode]")
     const mappak = readdirSync(gyoker, { withFileTypes: true })

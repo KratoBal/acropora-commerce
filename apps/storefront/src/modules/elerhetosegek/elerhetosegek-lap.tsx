@@ -5,8 +5,8 @@ import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
  * linkje eddig a regi UNAS boltra mutatott, ami a domainvaltas utan a sajat bolt
  * lenne. Az oldal CSAK a kodban mar allo ceg-adatokat mutatja (`CEG`, a lablec
  * forrasa): nev, cim, telefon, e-mail, nyitvatartas. Nem talal ki uj tartalmat
- * (szallitasi, fizetesi vagy atveteli szoveget nem tartalmaz; azok kulon
- * tartalmi dontesek, a Fizetes es Szallitas lapok sorsa nyitott).
+ * (szallitasi, fizetesi vagy atveteli szoveget nem tartalmaz; azoknak sajat
+ * oldaluk van: `/szallitas` es `/fizetes`, `modules/lablec-oldalak`).
  *
  * A telefon kattinthato (`tel:`, csak a szamjegyek es a `+`), az e-mail `mailto:`.
  * Ha a lablec adata valtozik, ez az oldal vele valtozik: egy forras.

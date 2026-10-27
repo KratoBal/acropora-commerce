@@ -103,6 +103,20 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
     oszlop: "informaciok" as const,
     cim: jogiOldal(d.slug),
   })),
+  /*
+    A HARMADIK HARMAD SAJAT OLDALRA KERULT (commerce-audit-p1, lablec, Balazs
+    2026-10-27 18:04 UTC es acrobot 19:26 UTC): a Fizetes es a Szallitas oldal
+    a regi bolt szovegevel (`regi-bolt-szovegek.ts`), a Kepes vasarloi
+    tajekoztato a Fogyasztobarat widgetjevel. Eddig mind a harom a regi UNAS
+    boltra mutatott. A sorrend a regi lableceé (Fizetés, Szállítás, Képes).
+  */
+  { cimke: "Fizetés", oszlop: "informaciok", cim: "/fizetes" },
+  { cimke: "Szállítás", oszlop: "informaciok", cim: "/szallitas" },
+  {
+    cimke: "Képes vásárlói tájékoztató",
+    oszlop: "informaciok",
+    cim: "/jogi/kepes-tajekoztato",
+  },
 ] as const
 
 /**
@@ -116,21 +130,6 @@ export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
     cimke: "Kedvenceim",
     oszlop: "fiok",
     cim: "https://shop.acropora.hu/shop_order_track.php?tab=favourite",
-  },
-  {
-    cimke: "Fizetés",
-    oszlop: "informaciok",
-    cim: "https://shop.acropora.hu/shop_contact.php?tab=payment",
-  },
-  {
-    cimke: "Szállítás",
-    oszlop: "informaciok",
-    cim: "https://shop.acropora.hu/shop_contact.php?tab=shipping",
-  },
-  {
-    cimke: "Képes vásárlói tájékoztató",
-    oszlop: "informaciok",
-    cim: "https://shop.acropora.hu/fogyaszto-barat",
   },
 ] as const
 
