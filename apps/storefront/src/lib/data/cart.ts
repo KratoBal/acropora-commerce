@@ -16,8 +16,6 @@ import {
   rendelesUzenet,
   szallitasUzenet,
 } from "@lib/util/penztar-uzenet"
-import { ASZF_METADATA_KULCS, aszfElfogadas } from "@lib/util/aszf"
-import { aszfDokumentumMost } from "./aszf-dokumentum"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -623,42 +621,40 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
  */
 /**
  * AZ ASZF ELFOGADASA A KOSARRA KERUL, A FIZETES INDITASA ELOTT (kartya
- * 4a2b252d; barracuda merese, 5370/5371).
+ * 4a2b252d; barracuda merese, 5370/5371), DE A REKORDOT A SZERVER IRJA (audit
+ * A4, barracuda specifikacioja).
  *
- * Ugyanaz a rekord, ugyanazzal a fuggvennyel, mint a regisztracional
- * (`aszfElfogadas`: idopont, verzio, dokumentum), a kosar metaadatanak
- * `aszf_elfogadas` kulcsan. A rendelesre a Medusa viszi at (`completeCartWorkflow`,
- * core-flows 2.20.1 complete-cart.js:454: `metadata: cart.metadata`), a vegyes
- * kosar bolti felere a hatter bontasa (`split-completion-operations.ts`).
+ * Eddig a kirakat allitotta ossze a rekordot es a Medusa gyari `cart.update`
+ * hivasaval tette a kosar metaadatara, tehat a kosar azonositojanak birtokaban
+ * barki tetszoleges idopontot es verziot irhatott oda. Mostantol a kirakat csak
+ * annyit mond, hogy a vevo elfogadja (`POST /store/carts/:id/aszf-elfogadas`):
+ * az idopont a szerver ora, a verzio es a dokumentum a szerver beallitasa, a
+ * kosar tobbi metaadata erintetlen marad. A gyari kosar-iras metaadatot mar
+ * nem fogad el.
+ *
+ * A rekordot a Medusa viszi at a rendelesre (`completeCartWorkflow`, core-flows
+ * 2.20.1 complete-cart.js:454: `metadata: cart.metadata`), a vegyes kosar bolti
+ * felere a hatter bontasa (`split-completion-operations.ts`).
  *
  * AZERT A FIZETES ELOTT, ES NEM A LEADASKOR: vegyes kosarnal a bontas mar a
  * kozos fizetes inditasakor (`stripe-start`) megtortenik, es a bolti kosar
  * abbol orokli, ami akkor a fo kosaron all.
  *
- * A tobbi metaadat-kulcs marad: a kosar mostani metaadatara irunk ra.
+ * Ha a Fogyasztobarat-kapcsolo be van kapcsolva, a hatter egyelore nem tudja
+ * rogziteni az o dokumentumat (501), es a pipa hibaval all meg: hangosan, nem
+ * egy olyan rekorddal, ami mast allit, mint amit a vevo kapott.
  */
 export async function rogzitsAszfElfogadast(
   cartId?: string,
 ): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
   if (!id) return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
-  // az elfogadas pillanata a kattintase, nem a dokumentum lekeresenek vege
-  const most = new Date()
   try {
-    const dokumentum = await aszfDokumentumMost()
-    const kosar = await retrieveCart(id, "id,metadata")
-    const headers = { ...(await getAuthHeaders()) }
-    await sdk.store.cart.update(
-      id,
-      {
-        metadata: {
-          ...((kosar?.metadata as Record<string, unknown> | null) ?? {}),
-          [ASZF_METADATA_KULCS]: aszfElfogadas(most, dokumentum),
-        },
-      },
-      {},
-      headers,
-    )
+    await sdk.client.fetch(`/store/carts/${id}/aszf-elfogadas`, {
+      method: "POST",
+      body: { elfogadom: true },
+      headers: { ...(await getAuthHeaders()) },
+    })
     revalidateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
