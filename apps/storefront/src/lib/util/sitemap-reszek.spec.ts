@@ -41,6 +41,9 @@ describe("a sitemap részei típusonként", () => {
     expect(r.lapok.map((b) => b.url)).toEqual([
       `${ORIGIN}/hu`,
       `${ORIGIN}/hu/store`,
+      `${ORIGIN}/hu/elerhetosegek`,
+      `${ORIGIN}/hu/szallitas`,
+      `${ORIGIN}/hu/fizetes`,
     ])
     expect(r.termekek.map((b) => b.url)).toEqual([
       `${ORIGIN}/hu/termek/acropora-tenuis`,
@@ -148,5 +151,43 @@ describe("a sitemap XML-je", () => {
       `<sitemap><loc>${ORIGIN}/sitemap/termekek.xml</loc></sitemap>`,
     )
     expect(sitemapIndexXml([])).toContain("<sitemapindex")
+  })
+})
+
+/**
+ * A LABLEC SAJAT OLDALAI A SITEMAPBEN (commerce-audit-p1). MI PIROSIT: ha egy
+ * lablec-oldal kimarad; ha a Kepes vasarloi tajekoztato kikapcsolt
+ * Fogyasztobaratnal is benne van (egy mondatnyi oldal), vagy bekapcsoltnal
+ * hianyzik; ha a jogi dokumentumok bekerulnek.
+ */
+describe("a lábléc saját oldalai a sitemapben", () => {
+  const lapok = (fogyasztobarat: boolean) =>
+    sitemapReszek({
+      origin: ORIGIN,
+      kategoriak: [],
+      orszagok: [{ countryCode: "hu", termekek: [] }],
+      fogyasztobarat,
+    }).lapok.map((b) => b.url)
+
+  it("az Elérhetőségek, a Szállítás és a Fizetés mindig benne van", () => {
+    for (const bekapcsolva of [false, true])
+      expect(lapok(bekapcsolva)).toEqual(
+        expect.arrayContaining([
+          `${ORIGIN}/hu/elerhetosegek`,
+          `${ORIGIN}/hu/szallitas`,
+          `${ORIGIN}/hu/fizetes`,
+        ]),
+      )
+  })
+
+  it("a Képes vásárlói tájékoztató csak bekapcsolt Fogyasztóbaráttal van benne", () => {
+    expect(lapok(false)).not.toContain(`${ORIGIN}/hu/jogi/kepes-tajekoztato`)
+    expect(lapok(true)).toContain(`${ORIGIN}/hu/jogi/kepes-tajekoztato`)
+  })
+
+  it("a jogi dokumentumok nincsenek benne", () => {
+    expect(lapok(true).filter((u) => u.includes("/jogi/"))).toEqual([
+      `${ORIGIN}/hu/jogi/kepes-tajekoztato`,
+    ])
   })
 })
