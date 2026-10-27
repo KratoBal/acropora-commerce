@@ -84,6 +84,16 @@ node ./src/scripts/verify-file-backend-url.js
 echo "docker-entrypoint: verifying the signing secrets..."
 node ./src/scripts/verify-auth-secrets.js
 
+# A CARD KEY WITHOUT THE WEBHOOK SECRET DOES NOT START (audit B7 / F1, P0).
+#
+# With STRIPE_API_KEY set and STRIPE_WEBHOOK_SECRET empty the card provider
+# registers and the package only warns: with 3-D Secure or an asynchronous
+# payment the money can be taken while the order is never updated. No key at all
+# is fine (cash on delivery and advance transfer run without Stripe). Same shape
+# as the checks above: plain `node`, no database, the value never printed.
+echo "docker-entrypoint: verifying the Stripe webhook secret..."
+node ./src/scripts/verify-stripe-webhook-secret.js
+
 # ONLY ONE CONTAINER MIGRATES. The server and the worker run the same image
 # and the same entrypoint, so until 2026-09-28 BOTH applied the migrations, to
 # the same database, at the same time: after the 2.20.1 upgrade two containers

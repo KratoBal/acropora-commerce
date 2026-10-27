@@ -23,6 +23,8 @@ type StepExitCodes = {
   fileUrl?: number
   /** `node ./src/scripts/verify-auth-secrets.js` */
   authSecrets?: number
+  /** `node ./src/scripts/verify-stripe-webhook-secret.js` */
+  stripeWebhook?: number
   /** `npx medusa db:migrate --execute-safe-links` */
   migrate?: number
   /** `npx medusa exec ./src/scripts/verify-links-in-sync.js` */
@@ -67,6 +69,7 @@ type RunOptions = StepExitCodes & {
 function runEntrypoint({
   fileUrl = 0,
   authSecrets = 0,
+  stripeWebhook = 0,
   migrate = 0,
   links = 0,
   shippingIds = 0,
@@ -108,6 +111,7 @@ function runEntrypoint({
       "#!/bin/sh",
       'case "$1" in',
       `  *verify-auth-secrets*) exit ${authSecrets} ;;`,
+      `  *verify-stripe-webhook-secret*) exit ${stripeWebhook} ;;`,
       `  *) exit ${fileUrl} ;;`,
       "esac",
       "",
@@ -185,6 +189,19 @@ describe("docker-entrypoint.sh", () => {
   */
   it("does not start the server when the signing secrets check fails", () => {
     const { status, serverStarted } = runEntrypoint({ authSecrets: 1 })
+
+    expect(status).not.toBe(0)
+    expect(serverStarted).toBe(false)
+  })
+
+  /*
+    A STRIPE VISSZAJELZES TITKA (audit B7 / F1, P0). Kulcs titok nelkul a
+    kartyas fizetes regisztralodik, a csomag csak figyelmeztet, es 3-D Secure
+    mellett a penz levonodhat anelkul, hogy a rendeles frissulne. Az allitas a
+    hianyt nezi: a szerver NEM indult el.
+  */
+  it("does not start the server when the Stripe webhook secret check fails", () => {
+    const { status, serverStarted } = runEntrypoint({ stripeWebhook: 1 })
 
     expect(status).not.toBe(0)
     expect(serverStarted).toBe(false)
