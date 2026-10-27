@@ -14,7 +14,8 @@
     "test": "turbo test",
     "backend:seed": "turbo seed --filter=@dtc/backend",
     "backend:dev": "turbo dev --filter=@dtc/backend",
-    "storefront:dev": "turbo dev --filter=@dtc/storefront"
+    "storefront:dev": "turbo dev --filter=@dtc/storefront",
+    "audit:deps": "pnpm audit --prod --audit-level high"
   },
   "pnpm": {
     "overrides": {
