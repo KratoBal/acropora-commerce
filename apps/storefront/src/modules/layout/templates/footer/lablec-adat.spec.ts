@@ -5,7 +5,7 @@ import type {
   KezdolapLablec,
   KezdolapTartalom,
 } from "@modules/kezdolap/tartalom"
-import { CEG, OSZLOP_SORREND } from "./hivatkozasok"
+import { OSZLOP_SORREND } from "./hivatkozasok"
 import { lablecAdat } from "./lablec-adat"
 
 /*
@@ -15,7 +15,8 @@ import { lablecAdat } from "./lablec-adat"
   "Informaciok" oszlop nevenek barmilyen irasmodjaval; ha egy veszelyes cim
   (javascript:, //host) link marad; ha a bemutatkozas nyers HTML; ha a kitalalt
   kezdoertek-cim kiszorit egy valodi ceg-cimet; ha egy serult rekord reszben
-  ervenyesul.
+  ervenyesul; ha az A boltunk szovegei ujra a lablec adataba kerulnek (a ceges
+  oszlop 2026-10-27 ota fix, kirakat-lablec-kep).
 */
 const lablec = (felulir: Partial<KezdolapLablec> = {}): KezdolapLablec => ({
   intro: "<p>Tengeri <strong>akvarisztika</strong></p>",
@@ -55,8 +56,6 @@ describe("a lábléc adata", () => {
       expect(a.bemutatkozo).toBeNull()
       expect(a.alsoSor).toBeNull()
       expect(a.kozossegi).toEqual([])
-      expect(a.cim).toBe(CEG.cim)
-      expect(a.nyitvatartas).toEqual([...CEG.nyitvatartas])
       for (const j of JOGI) expect(hrefek(a)).toContain(j)
     }
   })
@@ -172,24 +171,17 @@ describe("a lábléc adata", () => {
     expect(lablecAdat(rekord(lablec({ bottom_text: "  " }))).alsoSor).toBeNull()
   })
 
-  it("a cím és a nyitvatartás az A boltunk szövegeiből jön, de csak az OS tényleges értéke számít", () => {
+  it("az A boltunk szövegei nem kerülnek a lábléc adatába: a céges oszlop fix", () => {
     const a = lablecAdat(
       rekord(lablec(), {
-        "bolt.cim_ertek": "1106 Budapest,\nPesti Gábor utca 35",
-        "bolt.nyitva_ertek": "Hétfő–péntek 10–18\nSzombat 10–14",
+        "bolt.cim_ertek": "9999 Kitalált, Példa utca 1",
+        "bolt.nyitva_ertek": "Mindig nyitva",
       }),
     )
-    expect(a.cim).toBe("1106 Budapest, Pesti Gábor utca 35")
-    expect(a.nyitvatartas).toEqual(["Hétfő–péntek 10–18", "Szombat 10–14"])
-    // az OS nem küldött értéket (vagy üreset): a valódi cég-adat áll, nem a kitalált kezdőérték
-    for (const texts of [
-      {},
-      { "bolt.cim_ertek": "", "bolt.nyitva_ertek": " " },
-    ] as Record<string, string>[]) {
-      const b = lablecAdat(rekord(lablec(), texts))
-      expect(b.cim).toBe(CEG.cim)
-      expect(b.nyitvatartas).toEqual([...CEG.nyitvatartas])
-    }
+    expect(JSON.stringify(a)).not.toContain("Kitalált")
+    expect(JSON.stringify(a)).not.toContain("Mindig nyitva")
+    // pozitív kontroll: ugyanaz a rekord a szerkesztett oszlopokat hozza
+    expect(a.oszlopok.map((o) => o.cim)).toContain("Oldaltérkép")
   })
 
   it("serült rekord (hiányzó mező, rossz típus) a mai lábléc, nem félig érvényes", () => {

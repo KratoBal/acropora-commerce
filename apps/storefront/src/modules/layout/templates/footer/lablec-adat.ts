@@ -6,7 +6,6 @@ import type {
   KezdolapTartalom,
 } from "@modules/kezdolap/tartalom"
 import {
-  CEG,
   OSZLOP_CIMEK,
   OSZLOP_SORREND,
   REGI_BOLT_HIVATKOZASOK,
@@ -30,8 +29,6 @@ export type LablecAdat = {
   /** Az OS bemutatkozasa, MAR tisztitva; `null`: nincs. */
   bemutatkozo: string | null
   oszlopok: LablecOszlopAdat[]
-  cim: string
-  nyitvatartas: string[]
   kozossegi: Array<{ nev: string; href: string }>
   /** Az also sor szovege; `null`: a lap alapja ("(c) ev bolt. Minden jog fenntartva."). */
   alsoSor: string | null
@@ -140,14 +137,6 @@ function szerkesztettOszlopok(l: KezdolapLablec): LablecOszlopAdat[] {
   return info ? lathato : [...lathato, cel]
 }
 
-const OS_KULDOTT = (
-  texts: Record<string, string> | undefined,
-  kulcs: string,
-) =>
-  texts && Object.prototype.hasOwnProperty.call(texts, kulcs)
-    ? texts[kulcs]!.trim()
-    : ""
-
 const KOZOSSEGI = [
   ["facebook", "Facebook"],
   ["instagram", "Instagram"],
@@ -159,10 +148,10 @@ const KOZOSSEGI = [
  * serult) PONTOSAN a mai lablec. Szerkesztve: a bemutatkozas (tisztitva), az OS
  * oszlopai a jogi dokumentumokkal, a kozossegi cimek, az also sor.
  *
- * AZ ELERHETOSEG (cim, nyitvatartas) az "A boltunk" blokk szovegeibol jon, hogy
- * egy cim legyen a lapon, ne ketto. A kezdoertekuk KITALALT (peldacim), ezert
- * csak az OS tenylegesen kuldott erteke szamit; ha az nincs, a ceg valodi
- * adata all (`CEG`). A telefon es az e-mail nem szerkesztheto itt.
+ * A CEGES OSZLOP NINCS AZ ADATBAN: FIX (Balazs, 2026-10-27, kirakat-lablec-kep:
+ * "ha valtozik, mi irjuk at"). A keret a `CEG`-et rajzolja, az OS semmilyen
+ * szovege nem irja felul. Korabban a cim es a nyitvatartas az "A boltunk"
+ * szovegeibol jott; az a dontes ezzel megszunt.
  */
 export function lablecAdat(tartalom: KezdolapTartalom | null): LablecAdat {
   const l = ervenyesLablec(tartalom?.footer)
@@ -170,27 +159,16 @@ export function lablecAdat(tartalom: KezdolapTartalom | null): LablecAdat {
     return {
       bemutatkozo: null,
       oszlopok: alapOszlopok(),
-      cim: CEG.cim,
-      nyitvatartas: [...CEG.nyitvatartas],
       kozossegi: [],
       alsoSor: null,
     }
 
-  const cim = OS_KULDOTT(tartalom?.texts, "bolt.cim_ertek")
-    .split(/\s*\n\s*/)
-    .filter(Boolean)
-    .join(" ")
-  const nyitva = OS_KULDOTT(tartalom?.texts, "bolt.nyitva_ertek")
-    .split(/\s*\n\s*/)
-    .filter(Boolean)
   const bemutatkozo = lablecHtml(l.intro)
   const alsoSor = l.bottom_text.trim()
 
   return {
     bemutatkozo: bemutatkozo === "" ? null : bemutatkozo,
     oszlopok: szerkesztettOszlopok(l),
-    cim: cim === "" ? CEG.cim : cim,
-    nyitvatartas: nyitva.length > 0 ? nyitva : [...CEG.nyitvatartas],
     kozossegi: KOZOSSEGI.flatMap(([mezo, nev]) => {
       const ertek = l.social[mezo]
       const biztonsagos =

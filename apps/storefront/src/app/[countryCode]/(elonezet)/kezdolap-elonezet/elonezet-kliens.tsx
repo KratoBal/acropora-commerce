@@ -33,7 +33,6 @@ type Props = {
   /** A mentett rekord: ez latszik, amig az OS az elso tartalmat el nem kuldi. */
   kezdoRekord: KezdolapTartalom | null
   kezdoLablec: LablecAdat
-  kollekciok: Array<{ id: string; handle: string; title: string }>
   /** A bolt termekkel rendelkezo markai; a sav ezekbol valaszt a rekord listaja szerint. */
   markak: readonly SavMarka[]
   /** Szerveroldalon renderelt fejlec (a menu a valodi kategoriakbol all). */
@@ -61,7 +60,6 @@ export default function ElonezetKliens({
   countryCode,
   kezdoRekord,
   kezdoLablec,
-  kollekciok,
   markak,
   fejlec,
 }: Props) {
@@ -161,7 +159,7 @@ export default function ElonezetKliens({
         {fejlec}
         {savok}
       </div>
-      <LablecKeret lablec={lablec} collections={kollekciok} />
+      <LablecKeret lablec={lablec} />
     </>
   )
 }
