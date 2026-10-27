@@ -88,8 +88,8 @@ export function describeAuthSecretProblems(
     "szándékosan nem indul el (" +
     lines.join("; ") +
     "). Állíts be minden érintett változóra egy véletlen, legalább " +
-    `${MIN_SECRET_LENGTH} karakteres értéket, és a kettő különbözzön ` +
-    "egymástól. ÉS MIND A KETTŐBEN: a szerverben ÉS a feldolgozóban is, mert " +
+    `${MIN_SECRET_LENGTH} karakteres értéket. ÉS MIND A KETTŐBEN: a ` +
+    "szerverben ÉS a feldolgozóban is, mert " +
     "ugyanabból a képből indulnak, és ez az ellenőrzés mind a kettőben " +
     "lefut. Az érték itt szándékosan nincs kiírva."
   );

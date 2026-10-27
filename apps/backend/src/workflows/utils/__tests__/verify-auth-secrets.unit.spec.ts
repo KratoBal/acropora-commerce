@@ -30,6 +30,15 @@ describe("verifyAuthSecrets", () => {
     expect(verifyAuthSecrets({ JWT_SECRET: GOOD_A, COOKIE_SECRET: short }).ok).toBe(false)
   })
 
+  it("does not require the two secrets to differ (the message must not promise that rule)", () => {
+    // the audit asked for presence, length and no placeholder; a rule on
+    // difference would refuse an environment that reuses one value
+    expect(verifyAuthSecrets({ JWT_SECRET: GOOD_A, COOKIE_SECRET: GOOD_A }).ok).toBe(true)
+    const bad = verifyAuthSecrets({ JWT_SECRET: "x", COOKIE_SECRET: GOOD_B })
+    expect(bad.ok).toBe(false)
+    if (!bad.ok) expect(bad.message).not.toMatch(/különbözz/)
+  })
+
   it("refuses the template value, in any letter case", () => {
     for (const value of ["supersecret", "SuperSecret", "  supersecret  "]) {
       const result = verifyAuthSecrets({ JWT_SECRET: value, COOKIE_SECRET: GOOD_B })
