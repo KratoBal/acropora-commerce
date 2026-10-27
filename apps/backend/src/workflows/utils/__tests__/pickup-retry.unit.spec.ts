@@ -1,6 +1,8 @@
 import {
   ALERT_AFTER_MINUTES,
+  ALERT_REPEAT_MINUTES,
   RETRY_AFTER_MINUTES,
+  type AlertMemory,
   type PickupRetryOperations,
   type StuckPickup,
   runPickupRetry,
@@ -94,5 +96,65 @@ describe("the pickup retry", () => {
     expect(w.calls).toEqual([])
     expect(w.infos).toEqual([])
     expect(w.errors).toEqual([])
+  })
+})
+
+/**
+ * barracuda's note on #592: a cart that can never be finished must not write an
+ * ERROR line every ten minutes for seven days. What must fail: a second line
+ * ten minutes after the first for the same cart; no second line an hour later
+ * (the cart would go quiet while still stuck); one cart's line silencing
+ * another's; the memory growing with carts that are long gone.
+ */
+describe("the repeated ERROR line", () => {
+  const later = (minutes: number) => new Date(NOW.getTime() + minutes * 60 * 1000)
+  const pendingWorld = (ids: string[]) =>
+    world(
+      ids.map((id) => stuck(id, ALERT_AFTER_MINUTES + 5)),
+      Object.fromEntries(ids.map((id) => [id, { order_ids: ["order_1"] }]))
+    )
+
+  it("writes the line once, stays quiet for the repeat interval, then writes it again", async () => {
+    const memory: AlertMemory = new Map()
+    const w = pendingWorld(["cart_1"])
+    await runPickupRetry(w.ops, NOW, memory)
+    expect(w.errors).toHaveLength(1)
+    await runPickupRetry(w.ops, later(10), memory)
+    await runPickupRetry(w.ops, later(ALERT_REPEAT_MINUTES - 1), memory)
+    expect(w.errors).toHaveLength(1)
+    await runPickupRetry(w.ops, later(ALERT_REPEAT_MINUTES), memory)
+    expect(w.errors).toHaveLength(2)
+  })
+
+  it("still retries every run: only the line is throttled, not the work", async () => {
+    const memory: AlertMemory = new Map()
+    const w = pendingWorld(["cart_1"])
+    await runPickupRetry(w.ops, NOW, memory)
+    await runPickupRetry(w.ops, later(10), memory)
+    expect(w.calls).toEqual(["cart_1", "cart_1"])
+  })
+
+  it("keeps a separate clock per cart", async () => {
+    const memory: AlertMemory = new Map()
+    const first = pendingWorld(["cart_1"])
+    await runPickupRetry(first.ops, NOW, memory)
+    const both = pendingWorld(["cart_1", "cart_2"])
+    await runPickupRetry(both.ops, later(10), memory)
+    expect(both.errors).toHaveLength(1)
+    expect(both.errors[0]).toContain("cart_2")
+  })
+
+  it("forgets a cart that is no longer stuck, so the memory stays as small as the list", async () => {
+    const memory: AlertMemory = new Map()
+    await runPickupRetry(pendingWorld(["cart_1", "cart_2"]).ops, NOW, memory)
+    expect(Array.from(memory.keys()).sort()).toEqual(["cart_1", "cart_2"])
+    await runPickupRetry(pendingWorld(["cart_2"]).ops, later(10), memory)
+    expect(Array.from(memory.keys())).toEqual(["cart_2"])
+  })
+
+  it("the alert tells how to leave the cart alone when the shop does not fulfil it", async () => {
+    const w = pendingWorld(["cart_1"])
+    await runPickupRetry(w.ops, NOW, new Map())
+    expect(w.errors[0]).toContain("/admin/order-attention/pickup-skip")
   })
 })

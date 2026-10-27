@@ -5,6 +5,7 @@ import {
   validateAndTransformQuery,
 } from "@medusajs/framework/http";
 
+import { AdminPostPickupSkip } from "./admin/order-attention/pickup-skip/validators";
 import {
   AdminGetCommerceSettingsParams,
   AdminUpdateCommerceSetting,
@@ -160,6 +161,12 @@ export default defineMiddlewares({
         authenticate("customer", ["session", "bearer"], { allowUnauthenticated: true }),
         guardOrderRead,
       ],
+    },
+    {
+      // "Do not retry this pickup order" (audit P1/6; pickup-retry-skip.ts).
+      matcher: "/admin/order-attention/pickup-skip",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostPickupSkip)],
     },
     {
       // The ÁSZF record is the server's (aszf-record.ts); the stock cart and line writes

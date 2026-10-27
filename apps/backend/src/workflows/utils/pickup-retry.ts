@@ -24,11 +24,30 @@ import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "./split-comp
  *
  * SAID ALOUD: a retry that still leaves the pickup order missing after
  * `ALERT_AFTER_MINUTES` writes an ERROR line naming both carts and the shipped
- * order, once per run, until it is fixed. That line is the alert today; where
- * the shop's alert should land (mail, the OS) is a decision still open.
+ * order, and repeats it for the same cart at most once per
+ * `ALERT_REPEAT_MINUTES` (barracuda's note on #592: a cart that can never be
+ * finished would write one every ten minutes for seven days). The list the OS
+ * shows (`order-attention.ts`) is the lasting alert; this line stays beside it.
+ *
+ * LEFT ALONE ON PURPOSE: a person can mark a shipped cart "do not retry"
+ * (`PICKUP_RETRY_SKIP_METADATA_KEY`, set through `POST /admin/order-attention/
+ * pickup-skip`). Without it the job would finish a pickup order the shop
+ * deliberately does not fulfil (the customer cancelled the live animal) within
+ * the seven days. A marked cart is neither retried, nor alerted on, nor listed.
+ *
+ * THE CANDIDATE QUERY starts from the COMPLETED carts of the last seven days
+ * (an order each), not from every open cart: open carts are mostly abandoned
+ * ones and grow without bound (barracuda: "first thing to narrow on
+ * production").
  */
 export const RETRY_AFTER_MINUTES = 3
 export const ALERT_AFTER_MINUTES = 30
+/** The same cart's ERROR line repeats at most this often. */
+export const ALERT_REPEAT_MINUTES = 60
+/** Set on the SHIPPED (parent) cart by a person: do not retry, alert on or list its pickup order. */
+export const PICKUP_RETRY_SKIP_METADATA_KEY = "acropora_pickup_retry_skip"
+export const isPickupRetrySkipped = (metadata?: Record<string, unknown> | null): boolean =>
+  !!metadata?.[PICKUP_RETRY_SKIP_METADATA_KEY]
 /** How far back the job looks: a stuck pickup older than this needs a person. */
 export const LOOK_BACK_DAYS = 7
 const MINUTE_MS = 60 * 1000
@@ -42,7 +61,10 @@ export type StuckPickup = {
 }
 
 export type PickupRetryOperations = {
-  /** Unfinished pickup carts created since `since` whose parent is completed and names them back. */
+  /**
+   * Unfinished pickup carts whose parent cart was completed since `since`, names
+   * them back and is not marked "do not retry".
+   */
   stuck(since: Date): Promise<StuckPickup[]>
   /** The split's idempotent completion for the parent cart. */
   completeSplit(parentCartId: string): Promise<{ order_ids: string[] }>
@@ -52,12 +74,25 @@ export type PickupRetryOperations = {
 
 export type PickupRetryReport = { finished: string[]; pending: string[]; failed: string[] }
 
+/**
+ * WHEN EACH CART LAST GOT ITS ERROR LINE. In memory: a restart forgets it and
+ * the next run writes one line per stuck cart at once, which is the point of a
+ * restart anyway. The job runs in one process, so one map is the whole truth.
+ */
+export type AlertMemory = Map<string, number>
+const processAlertMemory: AlertMemory = new Map()
+
 export const runPickupRetry = async (
   ops: PickupRetryOperations,
-  now: Date = new Date()
+  now: Date = new Date(),
+  memory: AlertMemory = processAlertMemory
 ): Promise<PickupRetryReport> => {
   const report: PickupRetryReport = { finished: [], pending: [], failed: [] }
   const found = await ops.stuck(new Date(now.getTime() - LOOK_BACK_DAYS * DAY_MS))
+  // a cart that finished, was marked or aged out is forgotten, so the map stays as small as the list
+  for (const cartId of Array.from(memory.keys())) {
+    if (!found.some((item) => item.parent_cart_id === cartId)) memory.delete(cartId)
+  }
 
   for (const item of found) {
     const ageMinutes = (now.getTime() - item.parent_completed_at.getTime()) / MINUTE_MS
@@ -75,10 +110,10 @@ export const runPickupRetry = async (
         continue
       }
       report.pending.push(item.parent_cart_id)
-      if (ageMinutes >= ALERT_AFTER_MINUTES) alert(ops, item, ageMinutes)
+      if (ageMinutes >= ALERT_AFTER_MINUTES) alert(ops, memory, now, item, ageMinutes)
     } catch (error) {
       report.failed.push(item.parent_cart_id)
-      if (ageMinutes >= ALERT_AFTER_MINUTES) alert(ops, item, ageMinutes, error)
+      if (ageMinutes >= ALERT_AFTER_MINUTES) alert(ops, memory, now, item, ageMinutes, error)
       else {
         ops.info(
           `Pickup retry: cart ${item.parent_cart_id} failed: ${error instanceof Error ? error.message : String(error)}`
@@ -89,48 +124,60 @@ export const runPickupRetry = async (
   return report
 }
 
-const alert = (ops: PickupRetryOperations, item: StuckPickup, ageMinutes: number, error?: unknown) =>
+const alert = (
+  ops: PickupRetryOperations,
+  memory: AlertMemory,
+  now: Date,
+  item: StuckPickup,
+  ageMinutes: number,
+  error?: unknown
+) => {
+  const last = memory.get(item.parent_cart_id)
+  if (last !== undefined && now.getTime() - last < ALERT_REPEAT_MINUTES * MINUTE_MS) return
+  memory.set(item.parent_cart_id, now.getTime())
   ops.error(
     `ALERT pickup order missing: the shipped cart ${item.parent_cart_id} was completed ${Math.round(ageMinutes)} minutes ago, its pickup cart ${item.pickup_cart_id} still has no order${
       error ? ` (${error instanceof Error ? error.message : String(error)})` : ""
-    }. The customer's card may be held for it. Finish it with POST /store/carts/${item.parent_cart_id}/complete-split.`
+    }. The customer's card may be held for it. Finish it with POST /store/carts/${item.parent_cart_id}/complete-split, or mark it "do not retry" with POST /admin/order-attention/pickup-skip if the shop does not fulfil it.`
   )
+}
 
 export const pickupRetryOperations = (container: MedusaContainer): PickupRetryOperations => {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   return {
     stuck: async (since) => {
-      const { data: carts } = await query.graph({
+      type CartRow = { id: string; metadata?: Record<string, unknown> | null; completed_at?: string | Date | null }
+      // the shipped carts: completed (an order each) in the window, naming a pickup cart, not marked
+      const { data: completed } = await query.graph({
         entity: "cart",
-        filters: { completed_at: null, created_at: { $gte: since } },
-        fields: ["id", "metadata"],
-      })
-      const pickups = (carts as { id: string; metadata?: Record<string, unknown> | null }[])
-        .map((cart) => ({ id: cart.id, parent: cart.metadata?.[PARENT_CART_METADATA_KEY] }))
-        .filter((cart): cart is { id: string; parent: string } => typeof cart.parent === "string" && !!cart.parent)
-      if (!pickups.length) return []
-
-      const { data: parents } = await query.graph({
-        entity: "cart",
-        filters: { id: pickups.map((pickup) => pickup.parent) },
+        filters: { completed_at: { $gte: since } },
         fields: ["id", "metadata", "completed_at"],
       })
-      const parentOf = new Map(
-        (parents as { id: string; metadata?: Record<string, unknown> | null; completed_at?: string | Date | null }[]).map(
-          (parent) => [parent.id, parent]
-        )
-      )
+      const parents = (completed as CartRow[]).flatMap((cart) => {
+        const pickupId = cart.metadata?.[PICKUP_CART_METADATA_KEY]
+        if (typeof pickupId !== "string" || !pickupId || !cart.completed_at) return []
+        if (isPickupRetrySkipped(cart.metadata)) return []
+        return [{ cart, pickupId }]
+      })
+      if (!parents.length) return []
+
+      const { data: open } = await query.graph({
+        entity: "cart",
+        filters: { id: parents.map((parent) => parent.pickupId), completed_at: null },
+        fields: ["id", "metadata"],
+      })
+      const pickupOf = new Map((open as CartRow[]).map((pickup) => [pickup.id, pickup]))
       const stuck: StuckPickup[] = []
-      for (const pickup of pickups) {
-        const parent = parentOf.get(pickup.parent)
-        if (!parent?.completed_at) continue
+      for (const { cart, pickupId } of parents) {
+        const pickup = pickupOf.get(pickupId)
+        if (!pickup) continue
         // the link from both sides
-        if (parent.metadata?.[PICKUP_CART_METADATA_KEY] !== pickup.id) continue
+        if (pickup.metadata?.[PARENT_CART_METADATA_KEY] !== cart.id) continue
         stuck.push({
           pickup_cart_id: pickup.id,
-          parent_cart_id: parent.id,
-          parent_completed_at: new Date(parent.completed_at),
+          parent_cart_id: cart.id,
+          parent_completed_at: new Date(cart.completed_at as string | Date),
         })
       }
       return stuck
