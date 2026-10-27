@@ -55,6 +55,11 @@ export type KezdolapTartalom = {
   slides: HeroDia[] | null
   /** Az Egyedi korallok sav termek-handle-jei sorrendben; `null` vagy ures: a sav rejtett. */
   featured_handles?: string[] | null
+  /**
+   * A markak logosavjanak marka-handle-jei sorrendben (Balazs, 2026-10-27:
+   * tetszoleges szamu marka); `null` vagy ures: a sav a nevek sorat mutatja.
+   */
+  featured_brand_handles?: string[] | null
   /** A fix blokkok sorrendje es lathatosaga; `null` vagy hiany: a lap sorrendje, minden latszik. */
   blocks?: KezdolapBlokk[] | null
   /** A szerkesztheto lablec; `null` vagy hiany: a lap sajat lablece. */

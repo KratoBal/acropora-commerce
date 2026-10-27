@@ -96,6 +96,24 @@ describe("AdminPutHomepageContent", () => {
     expect(ok(record({ featured_handles: "k-1" }))).toBe(false)
   })
 
+  it("HPC-PUT-BRANDS: the logo strip's brand handles are optional, one URL segment each, each brand once, no design cap", () => {
+    expect(ok(record())).toBe(true) // an OS that predates the field
+    expect(ok(record({ featured_brand_handles: null }))).toBe(true)
+    expect(ok(record({ featured_brand_handles: [] }))).toBe(true)
+    expect(ok(record({ featured_brand_handles: ["fauna-marin", "d-d", "aqua-medic"] }))).toBe(true)
+    // more than the product band's twelve: the strip has no fixed count
+    expect(
+      ok(record({ featured_brand_handles: Array.from({ length: 60 }, (_, i) => `m-${i}`) }))
+    ).toBe(true)
+    expect(
+      ok(record({ featured_brand_handles: Array.from({ length: 501 }, (_, i) => `m-${i}`) }))
+    ).toBe(false)
+    for (const bad of ["", "a/b", "a b", "a?b", "..", "a..b", "a%2Fb", "<b>", "Nagy", "-a", 5])
+      expect(ok(record({ featured_brand_handles: [bad] }))).toBe(false)
+    expect(ok(record({ featured_brand_handles: ["d-d", "d-d"] }))).toBe(false)
+    expect(ok(record({ featured_brand_handles: "d-d" }))).toBe(false)
+  })
+
   it("HPC-PUT-BLOCKS: the order and visibility of the eight fixed blocks, each exactly once; optional and nullable", () => {
     expect(ok(record())).toBe(true) // an OS that predates the field
     expect(ok(record({ blocks: null }))).toBe(true)
@@ -225,6 +243,7 @@ describe("store homepage content route", () => {
     const content = (res.body as { homepage_content: Record<string, unknown> }).homepage_content
     expect(Object.keys(content).sort()).toEqual([
       "blocks",
+      "featured_brand_handles",
       "featured_handles",
       "footer",
       "slides",
@@ -264,6 +283,29 @@ describe("store homepage content route", () => {
     expect(
       (without.body as { homepage_content: { featured_handles: unknown } }).homepage_content
         .featured_handles
+    ).toBeNull()
+  })
+
+  it("HPC-STORE-BRANDS: the strip's brand handles reach the storefront, null when the OS never sent any", async () => {
+    const withHandles = response()
+    await storeGet(
+      {
+        scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null, featured_brand_handles: ["triton", "d-d"] }),
+      } as never,
+      withHandles as never
+    )
+    expect(
+      (withHandles.body as { homepage_content: { featured_brand_handles: unknown } }).homepage_content
+        .featured_brand_handles
+    ).toEqual(["triton", "d-d"])
+    const without = response()
+    await storeGet(
+      { scope: scope({ id: "hpc_1", key: "main", texts: {}, slides: null }) } as never,
+      without as never
+    )
+    expect(
+      (without.body as { homepage_content: { featured_brand_handles: unknown } }).homepage_content
+        .featured_brand_handles
     ).toBeNull()
   })
 
@@ -402,6 +444,23 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     await save({ ...base, featured_handles: ["k-4"] })
     await save({ ...base, featured_handles: null })
     expect(stored()?.featured_handles).toBeNull()
+  })
+
+  it("HPC-SVC-BRANDS: absent keeps the stored brand list, a new list replaces it, null clears it", async () => {
+    const { save, stored } = fake()
+    await save({ ...base, featured_brand_handles: ["triton", "d-d"] })
+    await save({ ...base, texts: { "mit.cim": "Új" } })
+    expect(stored()?.featured_brand_handles).toEqual(["triton", "d-d"])
+    // the product band's list and the brand list do not touch each other
+    await save({ ...base, featured_handles: ["k-1"] })
+    expect(stored()?.featured_brand_handles).toEqual(["triton", "d-d"])
+    await save({ ...base, featured_brand_handles: ["d-d"] })
+    expect(stored()?.featured_brand_handles).toEqual(["d-d"])
+    expect(stored()?.featured_handles).toEqual(["k-1"])
+    await save({ ...base, featured_brand_handles: [] })
+    expect(stored()?.featured_brand_handles).toEqual([])
+    await save({ ...base, featured_brand_handles: null })
+    expect(stored()?.featured_brand_handles).toBeNull()
   })
 
   it("HPC-SVC-BLOCKS-FOOTER: absent keeps the stored blocks and footer, null clears them, a new value replaces them", async () => {

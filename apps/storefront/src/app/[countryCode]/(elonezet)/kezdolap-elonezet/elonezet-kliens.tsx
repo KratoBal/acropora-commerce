@@ -8,6 +8,7 @@ import {
   EgyediKorallokSav,
   termekekHandleSzerint,
 } from "@modules/kezdolap/components/egyedi-korallok"
+import type { SavMarka } from "@modules/kezdolap/components/markak"
 import { KL_TOKENEK } from "@modules/kezdolap/kl-tokenek"
 import { savokElemei } from "@modules/kezdolap/savok"
 import { kezdolapAdat, type KezdolapTartalom } from "@modules/kezdolap/tartalom"
@@ -32,6 +33,8 @@ type Props = {
   /** A mentett rekord: ez latszik, amig az OS az elso tartalmat el nem kuldi. */
   kezdoRekord: KezdolapTartalom | null
   kezdoLablec: LablecAdat
+  /** A bolt termekkel rendelkezo markai; a sav ezekbol valaszt a rekord listaja szerint. */
+  markak: readonly SavMarka[]
   /** Szerveroldalon renderelt fejlec (a menu a valodi kategoriakbol all). */
   fejlec: ReactNode
 }
@@ -57,6 +60,7 @@ export default function ElonezetKliens({
   countryCode,
   kezdoRekord,
   kezdoLablec,
+  markak,
   fejlec,
 }: Props) {
   const [rekord, setRekord] = useState<KezdolapTartalom | null>(kezdoRekord)
@@ -133,6 +137,7 @@ export default function ElonezetKliens({
   const savok = savokElemei(
     rekord,
     <EgyediKorallokSav s={adat} termekek={termekek} />,
+    markak,
   )
 
   return (

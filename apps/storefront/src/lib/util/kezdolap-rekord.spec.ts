@@ -133,6 +133,45 @@ describe("a kezdőlap-rekord ellenőrzése", () => {
       expect(ok(nem)).toBe(false)
   })
 
+  it("a logósáv márka-handle-jei: opcionálisak, egyszer, egy útszakasz, nincs tizenkettes korlát", () => {
+    expect(ok(modosit((r) => delete r.featured_brand_handles))).toBe(true)
+    expect(ok(modosit((r) => (r.featured_brand_handles = null)))).toBe(true)
+    expect(ok(modosit((r) => (r.featured_brand_handles = [])))).toBe(true)
+    expect(
+      ok(modosit((r) => (r.featured_brand_handles = ["fauna-marin", "d-d"]))),
+    ).toBe(true)
+    expect(
+      ok(
+        modosit(
+          (r) =>
+            (r.featured_brand_handles = Array.from(
+              { length: 60 },
+              (_, i) => `m-${i}`,
+            )),
+        ),
+      ),
+    ).toBe(true)
+    expect(
+      ok(
+        modosit(
+          (r) =>
+            (r.featured_brand_handles = Array.from(
+              { length: 501 },
+              (_, i) => `m-${i}`,
+            )),
+        ),
+      ),
+    ).toBe(false)
+    for (const rossz of ["", "../x", "a/b", "Nagy", "-a", 5])
+      expect(ok(modosit((r) => (r.featured_brand_handles = [rossz])))).toBe(
+        false,
+      )
+    expect(
+      ok(modosit((r) => (r.featured_brand_handles = ["d-d", "d-d"]))),
+    ).toBe(false)
+    expect(ok(modosit((r) => (r.featured_brand_handles = "d-d")))).toBe(false)
+  })
+
   it("a szerver-jelölő (tisztitott) az OS rekordjában ismeretlen kulcs: elutasítva", () => {
     expect(ok(modosit((r) => (r.tisztitott = true)))).toBe(false)
   })

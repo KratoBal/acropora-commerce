@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import { elonezetBekapcsolva, osOrigin } from "@lib/util/kezdolap-elonezet"
 import KezdolapFejlec from "@modules/kezdolap/fejlec"
+import { markaLista } from "@lib/data/brands"
 import { kezdolapAdat } from "@modules/kezdolap/tartalom"
 import { tisztitottTartalom } from "@modules/kezdolap/tisztitas"
 import { lablecAdat } from "@modules/layout/templates/footer/lablec-adat"
@@ -38,6 +39,12 @@ export default async function KezdolapElonezet(props: {
   if (!elonezetBekapcsolva(process.env)) notFound()
   const { countryCode } = await props.params
   const tartalom = tisztitottTartalom(await kezdolapTartalom())
+  // a teljes kinalat, nem csak a mentett kijeloles: az OS a mentetlen listat
+  // kuldi, es abban barmelyik marka szerepelhet
+  const markak = await markaLista().catch((hiba) => {
+    console.warn("[elonezet] a markalista nem jott meg:", hiba)
+    return []
+  })
 
   return (
     <ElonezetKliens
@@ -45,6 +52,11 @@ export default async function KezdolapElonezet(props: {
       countryCode={countryCode}
       kezdoRekord={tartalom}
       kezdoLablec={lablecAdat(tartalom)}
+      markak={markak.map((m) => ({
+        name: m.name,
+        handle: m.handle,
+        logo_url: m.logo_url,
+      }))}
       fejlec={
         <KezdolapFejlec s={kezdolapAdat(tartalom)} countryCode={countryCode} />
       }

@@ -8,6 +8,7 @@ describe("homepage content model", () => {
       "blocks",
       "created_at",
       "deleted_at",
+      "featured_brand_handles",
       "featured_handles",
       "footer",
       "id",
