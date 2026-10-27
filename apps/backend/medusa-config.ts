@@ -142,6 +142,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/homepage-content",
     },
+    // The footer's newsletter sign-ups (test storefront; nothing is mailed)
+    {
+      resolve: "./src/modules/newsletter",
+    },
     {
       resolve: "./src/modules/commerce-settings",
     },

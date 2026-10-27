@@ -145,6 +145,21 @@ const footer = z
   .strict()
 
 /**
+ * The footer's newsletter row (kirakat-lablec-kep, 2026-10-27): on or off, and
+ * its texts. The consent text is what a sign-up records as given, so it cannot
+ * be empty; the storefront puts the privacy notice's link next to it.
+ */
+const newsletter = z
+  .object({
+    enabled: z.boolean(),
+    title: z.string().max(100),
+    text: z.string().max(500),
+    consent_text: z.string().trim().min(1).max(500),
+    button: z.string().trim().min(1).max(40),
+  })
+  .strict()
+
+/**
  * The whole home page content, as the Acropora OS sends it. Every key is
  * required, so an OS that forgets one is refused rather than leaving an old
  * value in place. An empty string is how a text is cleared: the storefront
@@ -214,6 +229,8 @@ export const AdminPutHomepageContent = z
     // storefront shows its own order and its own footer).
     blocks: blocks.nullable().optional(),
     footer: footer.nullable().optional(),
+    // absent keeps, null clears ("not set": the storefront's own row)
+    newsletter: newsletter.nullable().optional(),
   })
   .strict()
 

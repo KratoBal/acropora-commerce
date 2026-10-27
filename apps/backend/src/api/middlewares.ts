@@ -34,6 +34,7 @@ import {
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
 import { AdminPostOrderSplit } from "./admin/order-split/validators";
 import { StorePostCartNotes } from "./store/cart-notes/validators";
+import { StorePostNewsletterSubscription } from "./store/newsletter-subscriptions/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import {
   AdminGetOrderPickupPointsParams,
@@ -218,6 +219,11 @@ export default defineMiddlewares({
       matcher: "/store/cart-notes/:cart_id",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostCartNotes)],
+    },
+    {
+      matcher: "/store/newsletter-subscriptions",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostNewsletterSubscription)],
     },
     {
       // the order page's two note pencils (card d3b54954)

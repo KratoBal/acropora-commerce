@@ -32,6 +32,15 @@ export type HomepageFooter = {
   bottom_text: string
 }
 
+/** The footer's newsletter row; the consent text is what a sign-up records. */
+export type HomepageNewsletter = {
+  enabled: boolean
+  title: string
+  text: string
+  consent_text: string
+  button: string
+}
+
 export type HomepageContentInput = {
   texts: Record<string, string>
   /** `null`: not set, the storefront shows its starting slides. `[]`: no hero. */
@@ -44,6 +53,8 @@ export type HomepageContentInput = {
   blocks?: HomepageBlock[] | null
   /** The editable footer; absent keeps, null clears. */
   footer?: HomepageFooter | null
+  /** The footer's newsletter row; absent keeps, null clears. */
+  newsletter?: HomepageNewsletter | null
 }
 
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
@@ -96,6 +107,13 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
         : {
             footer: (input.footer
               ? structuredClone(input.footer)
+              : null) as unknown as Record<string, unknown>,
+          }),
+      ...(input.newsletter === undefined
+        ? {}
+        : {
+            newsletter: (input.newsletter
+              ? { ...input.newsletter }
               : null) as unknown as Record<string, unknown>,
           }),
     }
