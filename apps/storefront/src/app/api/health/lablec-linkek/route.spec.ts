@@ -21,17 +21,14 @@ afterEach(() => {
  * regi-boltnak szamolna.
  */
 describe("GET /api/health/lablec-linkek", () => {
-  it("az átállás előtt megkérdezhető: a regi bolt hosztjára a négy lábléc-link és a két jogi dokumentum mutat", async () => {
+  it("az átállás előtt megkérdezhető: a regi bolt hosztjára a Kedvenceim és a két jogi dokumentum mutat", async () => {
     const torzs = await (await kerek("?host=shop.acropora.hu")).json()
     expect(torzs.status).toBe("old_shop_links_remain")
     const cimkek = torzs.links.map((l: { cimke: string }) => l.cimke)
-    for (const kell of [
-      "Fizetés",
-      "Szállítás",
-      "Képes vásárlói tájékoztató",
-      "Kedvenceim",
-    ])
-      expect(cimkek).toContain(kell)
+    expect(cimkek).toContain("Kedvenceim")
+    // a Fizetés, a Szállítás és a Képes tájékoztató már saját oldal (lábléc)
+    for (const mar of ["Fizetés", "Szállítás", "Képes vásárlói tájékoztató"])
+      expect(cimkek).not.toContain(mar)
     expect(cimkek).toContain("Általános szerződési feltételek")
     expect(cimkek).toContain("Adatkezelési tájékoztató")
     // az Elerhetosegek mar sajat oldal
@@ -45,7 +42,7 @@ describe("GET /api/health/lablec-linkek", () => {
       await (await kerek("?host=shop.acropora.hu")).json()
     ).links.map((l: { cimke: string }) => l.cimke)
     expect(cimkek).not.toContain("Általános szerződési feltételek")
-    expect(cimkek).toContain("Fizetés")
+    expect(cimkek).toContain("Kedvenceim")
   })
 
   it("a teszt kirakat hosztjára nincs link: ok és nulla", async () => {

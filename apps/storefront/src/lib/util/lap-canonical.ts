@@ -115,6 +115,21 @@ export function elerhetosegekCanonical(countryCode: string): string {
   return `/${countryCode}/elerhetosegek`
 }
 
+/** A SZALLITAS OLDALANAK KANONIKUS CIME (`/hu/szallitas`, commerce-audit-p1, lablec). */
+export function szallitasCanonical(countryCode: string): string {
+  return `/${countryCode}/szallitas`
+}
+
+/** A FIZETES OLDALANAK KANONIKUS CIME (`/hu/fizetes`, commerce-audit-p1, lablec). */
+export function fizetesCanonical(countryCode: string): string {
+  return `/${countryCode}/fizetes`
+}
+
+/** A KEPES VASARLOI TAJEKOZTATO KANONIKUS CIME (`/hu/jogi/kepes-tajekoztato`, commerce-audit-p1, lablec). */
+export function kepesTajekoztatoCanonical(countryCode: string): string {
+  return `/${countryCode}/jogi/kepes-tajekoztato`
+}
+
 /** A FORGALMAZOTT MARKAK LISTAJANAK KANONIKUS CIME (`/hu/marka`, kirakat-lablec-kep). */
 export function markaListaCanonical(countryCode: string): string {
   return `/${countryCode}/marka`

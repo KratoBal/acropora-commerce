@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  fizetesCanonical,
   fooldalCanonical,
+  kepesTajekoztatoCanonical,
   markaCanonical,
   storeCanonical,
+  szallitasCanonical,
   termeklapCanonical,
 } from "./lap-canonical"
 
@@ -122,5 +125,14 @@ describe("markaoldal kanonikus cime", () => {
   it("a /marka/ alatt all, orszagkoddal, a kodolt handle valtozatlan", () => {
     expect(markaCanonical("hu", "aquaforest")).toBe("/hu/marka/aquaforest")
     expect(markaCanonical("hu", "r%C3%B6vid")).toBe("/hu/marka/r%C3%B6vid")
+  })
+})
+
+/** A lábléc három saját oldala (commerce-audit-p1): országkóddal, kódolás nélkül. */
+describe("a lábléc saját oldalainak kanonikus címe", () => {
+  it("országkóddal és a saját szegmenssel áll", () => {
+    expect(szallitasCanonical("hu")).toBe("/hu/szallitas")
+    expect(fizetesCanonical("hu")).toBe("/hu/fizetes")
+    expect(kepesTajekoztatoCanonical("hu")).toBe("/hu/jogi/kepes-tajekoztato")
   })
 })
