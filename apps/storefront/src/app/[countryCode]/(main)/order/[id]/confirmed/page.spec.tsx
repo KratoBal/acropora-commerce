@@ -6,8 +6,12 @@ const adat = vi.hoisted(() => ({
   vevo: null as { id: string } | null,
   rendelesek: {} as Record<string, unknown>,
 }))
-vi.mock("@lib/data/cookies", () => ({ getRendelesMegtekintes: async () => adat.suti }))
-vi.mock("@lib/data/customer", () => ({ retrieveCustomer: async () => adat.vevo }))
+vi.mock("@lib/data/cookies", () => ({
+  getRendelesMegtekintes: async () => adat.suti,
+}))
+vi.mock("@lib/data/customer", () => ({
+  retrieveCustomer: async () => adat.vevo,
+}))
 vi.mock("@lib/data/orders", () => ({
   retrieveOrder: async (id: string) => {
     if (!adat.rendelesek[id]) throw new Error("nincs")
@@ -20,10 +24,22 @@ vi.mock("next/navigation", () => ({
   },
 }))
 vi.mock("@modules/common/components/localized-client-link", () => ({
-  default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+  default: ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode
+    href: string
+  }) => <a href={href}>{children}</a>,
 }))
 vi.mock("@modules/order/templates/order-completed-template", () => ({
-  default: ({ order, par }: { order: { email: string }; par: { id: string } | null }) => (
+  default: ({
+    order,
+    par,
+  }: {
+    order: { email: string }
+    par: { id: string } | null
+  }) => (
     <div data-testid="reszletes" data-par={par?.id ?? ""}>
       {order.email}
     </div>
@@ -74,7 +90,9 @@ describe("a rendelés-visszaigazoló lap", () => {
     adat.suti = alairtMegtekintesSuti(["order_A"])!
     adat.rendelesek = { order_A: rendeles("order_A") }
     await lap("order_A")
-    expect(screen.getByTestId("reszletes").textContent).toBe("vevo@example.test")
+    expect(screen.getByTestId("reszletes").textContent).toBe(
+      "vevo@example.test",
+    )
   })
 
   it("egy másik rendelésre szóló süti nem nyitja meg ezt", async () => {
@@ -106,7 +124,9 @@ describe("a rendelés-visszaigazoló lap", () => {
     }
     adat.suti = alairtMegtekintesSuti(["order_A", "order_P"])!
     await lap("order_A")
-    expect(screen.getByTestId("reszletes").getAttribute("data-par")).toBe("order_P")
+    expect(screen.getByTestId("reszletes").getAttribute("data-par")).toBe(
+      "order_P",
+    )
     cleanup()
     adat.suti = alairtMegtekintesSuti(["order_A"])!
     await lap("order_A")

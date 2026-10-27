@@ -29,7 +29,10 @@ const titok = (): string | null =>
   null
 
 const alairas = (kulcs: string, szoveg: string) =>
-  createHmac("sha256", createHmac("sha256", kulcs).update(TITOK_NEV).digest("hex"))
+  createHmac(
+    "sha256",
+    createHmac("sha256", kulcs).update(TITOK_NEV).digest("hex"),
+  )
     .update(szoveg)
     .digest("hex")
 
@@ -37,7 +40,8 @@ const alairas = (kulcs: string, szoveg: string) =>
 const egyezik = (a: string, b: string) => {
   if (a.length !== b.length) return false
   let kulonbseg = 0
-  for (let i = 0; i < a.length; i++) kulonbseg |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  for (let i = 0; i < a.length; i++)
+    kulonbseg |= a.charCodeAt(i) ^ b.charCodeAt(i)
   return kulonbseg === 0
 }
 

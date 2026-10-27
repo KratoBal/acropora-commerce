@@ -195,7 +195,9 @@ export const removeCartId = async () => {
  * A most leadott rendelesek megtekintesi sutije (rendeles-megtekintes.ts):
  * alairt, egy oras, csak a szerver olvassa. Titok nelkul nem ad sutit.
  */
-export const setRendelesMegtekintes = async (rendelesIdk: readonly string[]) => {
+export const setRendelesMegtekintes = async (
+  rendelesIdk: readonly string[],
+) => {
   const ertek = alairtMegtekintesSuti(rendelesIdk)
   if (!ertek) return
   const cookies = await nextCookies()

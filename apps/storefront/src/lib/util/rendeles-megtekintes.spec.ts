@@ -26,27 +26,69 @@ describe("a megtekintési süti", () => {
 
   it("lejár az élettartam után, előtte nem", () => {
     const suti = alairtMegtekintesSuti(["order_A"], MOST, KULCS)!
-    expect(megtekintesEngedelyezett(suti, "order_A", KESOBB(MEGTEKINTES_ELETTARTAM_MP - 1), KULCS)).toBe(true)
-    expect(megtekintesEngedelyezett(suti, "order_A", KESOBB(MEGTEKINTES_ELETTARTAM_MP + 1), KULCS)).toBe(false)
+    expect(
+      megtekintesEngedelyezett(
+        suti,
+        "order_A",
+        KESOBB(MEGTEKINTES_ELETTARTAM_MP - 1),
+        KULCS,
+      ),
+    ).toBe(true)
+    expect(
+      megtekintesEngedelyezett(
+        suti,
+        "order_A",
+        KESOBB(MEGTEKINTES_ELETTARTAM_MP + 1),
+        KULCS,
+      ),
+    ).toBe(false)
   })
 
   it("az átírt azonosító-lista és az átírt lejárat nem megy át", () => {
-    const [lejarat, idk, alairas] = alairtMegtekintesSuti(["order_A"], MOST, KULCS)!.split(".")
-    expect(megtekintesEngedelyezett(`${lejarat}.order_A,order_X.${alairas}`, "order_X", MOST, KULCS)).toBe(false)
-    expect(megtekintesEngedelyezett(`${Number(lejarat) + 99999}.${idk}.${alairas}`, "order_A", MOST, KULCS)).toBe(false)
+    const [lejarat, idk, alairas] = alairtMegtekintesSuti(
+      ["order_A"],
+      MOST,
+      KULCS,
+    )!.split(".")
+    expect(
+      megtekintesEngedelyezett(
+        `${lejarat}.order_A,order_X.${alairas}`,
+        "order_X",
+        MOST,
+        KULCS,
+      ),
+    ).toBe(false)
+    expect(
+      megtekintesEngedelyezett(
+        `${Number(lejarat) + 99999}.${idk}.${alairas}`,
+        "order_A",
+        MOST,
+        KULCS,
+      ),
+    ).toBe(false)
   })
 
   it("másik kulccsal aláírt, aláírás nélküli és rossz alakú süti nem megy át", () => {
     const masik = alairtMegtekintesSuti(["order_A"], MOST, "masik-titok")!
     expect(megtekintesEngedelyezett(masik, "order_A", MOST, KULCS)).toBe(false)
     const expiry = Math.floor(MOST.getTime() / 1000) + 600
-    for (const suti of [`${expiry}.order_A.`, `${expiry}.order_A`, "order_A", "", undefined, null, "a.b.c.d"]) {
+    for (const suti of [
+      `${expiry}.order_A.`,
+      `${expiry}.order_A`,
+      "order_A",
+      "",
+      undefined,
+      null,
+      "a.b.c.d",
+    ]) {
       expect(megtekintesEngedelyezett(suti, "order_A", MOST, KULCS)).toBe(false)
     }
   })
 
   it("a puszta azonosító nem suti: az URL ismerete nem elég", () => {
-    expect(megtekintesEngedelyezett("order_A", "order_A", MOST, KULCS)).toBe(false)
+    expect(megtekintesEngedelyezett("order_A", "order_A", MOST, KULCS)).toBe(
+      false,
+    )
   })
 
   it("titok nélkül nincs suti, és nincs engedély sem", () => {
