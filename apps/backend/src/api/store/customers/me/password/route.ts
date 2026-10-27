@@ -1,6 +1,7 @@
 import { MedusaResponse, MedusaStoreRequest } from "@medusajs/framework/http"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 
+import { TOO_MANY_ATTEMPTS, passwordChangeAttempts } from "../../../../attempt-limits"
 import { StoreChangePasswordType } from "./validators"
 
 const PROVIDER = "emailpass"
@@ -18,9 +19,9 @@ const PROVIDER = "emailpass"
  * provider identity is looked up from the session's auth identity, not from a
  * submitted email, so a customer can only change their own password.
  *
- * Known limits (see the PR): existing sessions stay valid after the change
- * (JWTs are not revoked), and there is no rate limit here, as there is none on
- * the sign-in route.
+ * Known limit (see the PR): existing sessions stay valid after the change
+ * (JWTs are not revoked). The attempts are limited (attempt-limits.ts) and the
+ * new password needs ten characters (password-rules.ts).
  */
 export const POST = async (
   req: MedusaStoreRequest<StoreChangePasswordType>,
@@ -29,6 +30,13 @@ export const POST = async (
   const authIdentityId = req.auth_context?.auth_identity_id
   if (!authIdentityId) {
     throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Unauthorized")
+  }
+
+  // Five tries per account in fifteen minutes: this route answers whether the
+  // current password is right, so it is a password-guessing door (audit P1/8).
+  if (!passwordChangeAttempts.allow(authIdentityId)) {
+    res.status(429).json(TOO_MANY_ATTEMPTS)
+    return
   }
 
   const { current_password, new_password } = req.validatedBody

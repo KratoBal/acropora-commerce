@@ -1,3 +1,5 @@
+import { JELSZO_ROVID_UZENET } from "./jelszo"
+
 /**
  * A BELEPES ES A REGISZTRACIO HIBAI MAGYARUL (P5). A szerver angol, nyers
  * uzenete ("Error: Invalid email or password") eddig valtozatlanul a vevo ele
@@ -6,6 +8,11 @@
  */
 const ISMERT: readonly [RegExp, string][] = [
   [/invalid email or password/i, "Hibás e-mail-cím vagy jelszó."],
+  [
+    /too many attempts|too_many_requests/i,
+    "Túl sok próbálkozás. Próbáld újra pár perc múlva.",
+  ],
+  [/password must be at least/i, JELSZO_ROVID_UZENET],
   [
     /(identity|customer) with email already exists|email already exists/i,
     "Ezzel az e-mail-címmel már van fiók. Jelentkezz be.",
