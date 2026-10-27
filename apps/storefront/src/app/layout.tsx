@@ -52,24 +52,35 @@ const jetBrainsMono = localFont({
  * betuje, nem a torzsszovege.
  */
 const newsreader = localFont({
-  src: [
-    { path: "./betuk/newsreader.woff2", weight: "200 800", style: "normal" },
-    {
-      path: "./betuk/newsreader-italic.woff2",
-      weight: "200 800",
-      style: "italic",
-    },
-  ],
+  src: "./betuk/newsreader.woff2",
+  weight: "200 800",
+  style: "normal",
   display: "swap",
   variable: "--terv-betu-kiemelt",
   /*
-    NINCS ELOTOLTES (FE-7). A ket fajl 416 KB (196 + 220), es a `font-kiemelt`
-    ma csak a kosar komponenseiben all (pickup-notice, split-notice,
-    line-state, empty-cart-message); a publikus lapokon egyszer sem (merve a
-    stage-en 2026-10-07: kezdolap es termeklap, 0 elofordulas). Az elotoltes
-    minden lapon az LCP-kep elol vette el a savszelesseget. A betu a kosarban
-    a `swap` miatt a tartalekkal azonnal latszik, es betoltodik, amikor kell.
+    ELOTOLTVE (commerce-audit-p0, T1, 2026-10-27). A 10-07-i mereskor a
+    `font-kiemelt` csak a kosarban allt, ezert volt `preload: false`. A 10-20-i
+    kezdolap ota a hero H1 es minden savcim ezt a betut viseli, es a Lighthouse
+    szerint a mobil kezdolap LCP-eleme maga a H1: 5,6 s LCP, ebbol 2160 ms a
+    kirajzolas kesese, mert a szoveg a beture var (audit 02-teljesitmeny, T1).
+    CSAK A NORMAL fajl (196 KB) toltodik elo; a dolt kulon hivas, alabb.
   */
+  adjustFontFallback: "Times New Roman",
+})
+
+/**
+ * A DOLT NEWSREADER KULON HIVAS, MERT A `preload` HIVASONKENT ALL, NEM FAJLONKENT.
+ * A `next/font/local` egy `src`-tombbol MINDEN fajlt elotolt, ha a hivas elotolt,
+ * a dolt (220 KB) pedig csak a velemenyek idezetein all, a kezdolap aljan. A
+ * `.font-kiemelt.italic` szabaly (`globals.css`) ide kapcsolja azt az egy
+ * helyet; kulon csalad, mert ket hivas ket nevet kap.
+ */
+const newsreaderItalic = localFont({
+  src: "./betuk/newsreader-italic.woff2",
+  weight: "200 800",
+  style: "italic",
+  display: "swap",
+  variable: "--terv-betu-kiemelt-dolt",
   preload: false,
   adjustFontFallback: "Times New Roman",
 })
@@ -106,7 +117,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <html
       lang="hu"
       data-mode="light"
-      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable} ${hankenGrotesk.variable}`}
+      className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable} ${newsreaderItalic.variable} ${hankenGrotesk.variable}`}
     >
       <body>
         {/* FE-2a: a bolt es a webhely minden lapon, az elso HTML-ben */}

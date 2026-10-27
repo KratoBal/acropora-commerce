@@ -588,6 +588,17 @@
 }
 
 /*
+  A DOLT NEWSREADER (commerce-audit-p0, T1): a normal es a dolt fajl KET
+  `next/font` hivas, hogy csak a normal toltodjon elo (lasd a layoutot). Egy
+  csaladnev ket hivasbol nem jon ossze, ezert a dolt szoveg a sajat valtozojat
+  kapja. A lanc szandekosan NEM `-lanc` vegu token: a `betu-lancok.spec.ts`
+  harom lanc-tokent var, es ez nem uj hivohely, hanem ugyanazon betu dolt arca.
+*/
+.font-kiemelt.italic {
+  font-family: var(--terv-betu-kiemelt-dolt), Georgia, serif;
+}
+
+/*
  * A LAP FOLDJE, ES AMIERT EZ NEM A VAZ DOLGA (2026-09-08).
  *
  * A vaz sajat, teljes szelessegu feluletet fest (a #203 ota), de az CSAK a
