@@ -29,9 +29,10 @@ const kodSzoveg = (szoveg: string) =>
  * ugyis meg fognak szunni, amikor sajat lapokat kapnak.
  */
 describe("a lábléc hivatkozásai", () => {
-  // 2026-10-05: 6 + a het Fogyasztobarat-dokumentum (`/jogi/<slug>`)
-  it("tizenharom tetelnek van sajat utvonala, es mind relativ", () => {
-    expect(SAJAT_HIVATKOZASOK).toHaveLength(13)
+  // 2026-10-05: 6 + a het Fogyasztobarat-dokumentum (`/jogi/<slug>`);
+  // 2026-10-27: + Forgalmazott márkák (`/marka`, kirakat-lablec-kep)
+  it("tizennegy tetelnek van sajat utvonala, es mind relativ", () => {
+    expect(SAJAT_HIVATKOZASOK).toHaveLength(14)
 
     for (const h of SAJAT_HIVATKOZASOK) {
       expect(h.cim.startsWith("/")).toBe(true)
@@ -47,13 +48,13 @@ describe("a lábléc hivatkozásai", () => {
     }
   })
 
-  it("a tizennyolc felirat mind kulonbozik", () => {
+  it("a tizenkilenc felirat mind kulonbozik", () => {
     const cimkek = [...SAJAT_HIVATKOZASOK, ...REGI_BOLT_HIVATKOZASOK].map(
       (h) => h.cimke,
     )
 
-    expect(cimkek).toHaveLength(18)
-    expect(new Set(cimkek).size).toBe(18)
+    expect(cimkek).toHaveLength(19)
+    expect(new Set(cimkek).size).toBe(19)
   })
 
   /**
@@ -66,7 +67,8 @@ describe("a lábléc hivatkozásai", () => {
     const mind = [...SAJAT_HIVATKOZASOK, ...REGI_BOLT_HIVATKOZASOK]
     const db = (o: string) => mind.filter((h) => h.oszlop === o).length
 
-    expect(db("oldalterkep")).toBe(2)
+    // Nyitóoldal, Termékek, és 2026-10-27 óta a Forgalmazott márkák
+    expect(db("oldalterkep")).toBe(3)
     expect(db("fiok")).toBe(5)
     // a negy megmaradt regi-bolti tetel es a het jogi dokumentum
     expect(db("informaciok")).toBe(11)
@@ -175,7 +177,9 @@ describe("a lábléc oszlopcímei", () => {
    * nem hibazna, csak masként nezne ki.
    */
   it("a címek nagybetűvel állnak, mind a négy oszlopban", () => {
-    expect(lablec.match(/uppercase tracking-wide/g)).toHaveLength(2)
+    expect(
+      lablec.match(/txt-small-plus uppercase tracking-wide/g),
+    ).toHaveLength(2)
   })
 })
 
@@ -379,6 +383,6 @@ describe("a lábléc kategória-rácsa kikerült", () => {
    * kiuritette volna.
    */
   it("az info-oszlopok rácsa a helyén maradt", () => {
-    expect(kod).toContain("lg:grid-cols-6")
+    expect(kod).toContain("lablec-oszlopok")
   })
 })

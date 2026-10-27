@@ -1,26 +1,53 @@
+import Image from "next/image"
+
 import { STORE_NAME } from "@lib/store"
-import { Text, clx } from "@modules/common/components/ui"
+import { GLS_LOGO } from "@lib/util/gls"
+import { FOXPOST_LOGO_UT } from "@modules/checkout/components/foxpost-logo"
+import { STRIPE_LOGO_UT } from "@modules/checkout/components/stripe-logo"
+import { Text } from "@modules/common/components/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { CEG } from "./hivatkozasok"
+import { CEG, FIZETESI_OPCIOK_KEP } from "./hivatkozasok"
 import type { LablecAdat } from "./lablec-adat"
 
 export type LablecKeretProps = {
   lablec: LablecAdat
-  collections: ReadonlyArray<{
-    id: string
-    handle: string
-    title: string
-  }> | null
 }
 
 /**
- * A LABLEC MAGA, ADATBOL. Szerveroldalon a `Footer` hivja (lekeri a kollekciokat
- * es a kezdolap rekordjat), az OS elo elonezete kliensoldalon, a KAPOTT
- * (mentetlen) rekordbol: ugyanaz a komponens, nincs masolat.
+ * A FIX ALSO SOR (Balazs, 2026-10-27, kirakat-lablec-kep): a szallitok, a
+ * fizetesi szolgaltato es a kartyak. NEM szerkesztheto, az OS nem kuldi. Az
+ * Arukereso, az Olcsobbat es a SimplePay a regi boltban itt allt, de ide nem
+ * kerul (a SimplePay kikerult, csak Stripe van).
+ *
+ * A meret a magassagot rogziti, a szelesseg a logo sajat aranyabol jon.
  */
-export function LablecKeret({ lablec, collections }: LablecKeretProps) {
+const ALSO_LOGOK = [
+  {
+    src: FOXPOST_LOGO_UT,
+    alt: "FOXPOST – Packeta Group",
+    w: 889,
+    h: 335,
+    mag: "h-12",
+  },
+  { src: GLS_LOGO.altalanos, alt: "GLS", w: 260, h: 88, mag: "h-6" },
+  { src: STRIPE_LOGO_UT, alt: "Stripe", w: 360, h: 150, mag: "h-10" },
+  { ...FIZETESI_OPCIOK_KEP, mag: "h-12" },
+] as const
+
+/**
+ * A LABLEC MAGA, ADATBOL. Szerveroldalon a `Footer` hivja (lekeri a kezdolap
+ * rekordjat), az OS elo elonezete kliensoldalon, a KAPOTT (mentetlen)
+ * rekordbol: ugyanaz a komponens, nincs masolat.
+ *
+ * A SZERKEZET A REGI BOLT LABLECE (exchange/marka-sav-2026-10-27/
+ * referencia-lablec.png): harom link-oszlop es a ceges oszlop egy sorban,
+ * alattuk a fix logosor. A Kollekciok oszlop es a bolt nevevel nyito bal oszlop
+ * ezzel kikerult; a bemutatkozas es a kozossegi linkek csak akkor kapnak sort,
+ * ha az OS-ben ki vannak toltve.
+ */
+export function LablecKeret({ lablec }: LablecKeretProps) {
   return (
     /*
       A LABLEC SIKJA A TERV TOKENJEN ALL, NEM A STARTER OSZTALYAN.
@@ -71,72 +98,19 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
       }}
       data-testid="lablec-sik"
     >
-      {/*
-        A TARTALOM A KEZDOLAP FEJLECENEK ES A TERMEKLAP VAZANAK ELEHEZ IGAZODIK
-        (2026-10-26, commerce-lablec-igazitas): 1440 pixeles keret, 64 pixeles
-        oldalmargo asztalon, 16 mobilon. A SIK (a `<footer>` hattere) tovabbra is
-        szeltol szelig er.
-
-        ES KET ELRENDEZESI HIBA, amit a 1440 pixeles kep mutatott meg: a bal
-        oszlop (a bolt neve) a rugalmas sorban ossze tudott zsugorodni, es a
-        felirata ranyult a Kollekciok oszlopra; a racs 64 pixeles oszlopkozei
-        pedig keskennyel szorultak a hatramaradt helyre. Most a bal oszlop
-        rogzitett szeles (`w-64`, nem zsugorodik), a racs `min-w-0 flex-1`.
-
-        A KOVETKEZO SZOVEG A KORABBI DONTES TORTENETE, nem a mai allapot:
-        A LABLEC TELJES SZELESSEGBEN ALL, NEM KOZEPRE ZART SAVBAN.
-
-        Balazs kerese (2026-09-09 07:43): "a lablec a teljes szelessegben
-        latszodjon". A `content-container` osztaly `max-w-[1440px] mx-auto
-        px-6` -- vagyis szeles kepernyon a lablec TARTALMA egy kozepre zart
-        savban allt, mikozben a SIKJA (a `<footer>` hattere) mar eddig is
-        szeltol szelig ert. A kettot konnyu osszekeverni: a hatter teljes
-        szelessegu volt, a tartalom nem.
-
-        A vizszintes belso margo MEGMARAD (`px-6`), kulonben a szoveg a
-        kepernyo szelehez tapadna. Csak a felso korlat kerul le.
-      */}
       <div
         className="mx-auto flex w-full max-w-[1440px] flex-col px-4 lg:px-16"
         data-testid="lablec-konteiner"
       >
-        {/*
-          A KATEGORIA-RACS KIKERULT, ES EZ NEM EGYSZERUSITES, HANEM DONTES.
-
-          2026-09-08 este epult meg: negy oszlop, gyokerenkent egy, alattuk
-          negyvenhat alkategoria-link. 2026-09-09-en Balazs kepernyokepet
-          kuldott rola, es azt mondta ra: "ez nem legordul ez ott van. nem
-          kell". A racsot harom kitelepitett lapon merve azonositottuk (50
-          link, 917 pixel, a fooldalon a 581. pixelen, tehat gorgetes nelkul
-          lathato) -- egyetlen elem felelt meg a leirasnak. A dontes ezutan:
-          "az a utat kerem", vagyis a racs TELJESEN eltunik.
-
-          AMI VELE MENT, ES AMIERT TOBB EGY TORLESNEL: a lablecnek ezzel nem
-          kell tobbe sem a regio, sem a kategoria-fa. Harom halozati hivas
-          szunt meg MINDEN lapbetolteskor (`listCategories`, `getRegion`,
-          `listNonEmptyRootCategories`), es a komponens `countryCode` propja
-          feleslegesse valt -- a hivo (`(main)/layout.tsx`) sem adja at.
-
-          AMI MARAD: a kollekciok, a sajat es a bolti hivatkozasok, es a
-          ceg-adatok. A kategoriak a FEJLEC menujeben allnak, ahol Balazs
-          kerte, hogy nyiljanak.
-        */}
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between gap-x-12 py-40">
+        {lablec.bemutatkozo || lablec.kozossegi.length > 0 ? (
           <div
-            className="flex w-full shrink-0 flex-col gap-y-3 xsmall:w-64"
-            data-testid="lablec-bemutatkozo-oszlop"
+            className="flex flex-col gap-y-3 pt-16"
+            style={{ color: "var(--terv-szoveg-halvany)" }}
+            data-testid="lablec-bemutatkozo-sor"
           >
-            <LocalizedClientLink
-              href="/"
-              className="txt-compact-xlarge-plus hover:text-terv-szoveg uppercase"
-              style={{ color: "var(--terv-szoveg-halvany)" }}
-            >
-              {STORE_NAME}
-            </LocalizedClientLink>
             {lablec.bemutatkozo ? (
               <div
-                className="txt-small flex flex-col gap-y-2 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
-                style={{ color: "var(--terv-szoveg-halvany)" }}
+                className="txt-small flex max-w-3xl flex-col gap-y-2 [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
                 data-testid="footer-bemutatkozo"
                 dangerouslySetInnerHTML={{ __html: lablec.bemutatkozo }}
               />
@@ -144,7 +118,6 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
             {lablec.kozossegi.length > 0 ? (
               <ul
                 className="txt-small flex flex-wrap gap-x-4 gap-y-1"
-                style={{ color: "var(--terv-szoveg-halvany)" }}
                 data-testid="footer-kozossegi"
               >
                 {lablec.kozossegi.map((k) => (
@@ -162,164 +135,132 @@ export function LablecKeret({ lablec, collections }: LablecKeretProps) {
               </ul>
             ) : null}
           </div>
-          <div className="text-small-regular gap-10 md:gap-x-10 grid min-w-0 w-full xsmall:flex-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-            {collections && collections.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span
-                  className="txt-small-plus"
-                  style={{ color: "var(--terv-szoveg)" }}
-                >
-                  Kollekciók
-                </span>
-                {/*
-                  A KOLLEKCIOK LISTAJA IS A TERV SZOVEGSZINET KAPJA (2026-10-26,
-                  acrobot a sotet 1440-es kepen merte): a tobbi oszlop listaja
-                  `--terv-szoveg-halvany`-t visel, ez a lista nem, ezert a
-                  linkek a bongeszo alapszinen, sotet szurkeben alltak a sotet
-                  hatteren, alig lathatoan.
-                */}
-                <ul
-                  className={clx("grid grid-cols-1 gap-2 txt-small", {
-                    "grid-cols-2": (collections?.length || 0) > 3,
-                  })}
-                  style={{ color: "var(--terv-szoveg-halvany)" }}
-                  data-testid="footer-kollekciok"
-                >
-                  {collections?.slice(0, 6).map((c) => (
-                    <li key={c.id}>
-                      <LocalizedClientLink
-                        className="hover:text-terv-szoveg"
-                        href={`/collections/${c.handle}`}
-                      >
-                        {c.title}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {/*
-              A starter itt sajat linkeket tartott (GitHub, Documentation,
-              Source code). Azok a MEDUSA projektjere mutattak, es a mi
-              vevonknek jelentek volna meg -- ezert kikerultek.
-
-              EZ A BEKEZDES KORABBAN AZT IGERTE, hogy a helyukre a bolti
-              tajekoztatok kerulnek. AZ MOST MEGTORTENT, ezert at van irva es
-              nem kiegeszitve: egy megjegyzes, ami egy mar elvegzett munkat
-              igér, ugyanolyan felrevezeto, mint egy elavult korlat.
-
-              A harom oszlop a MAI ELO BOLT lablecebol jon (a szerkezet es a
-              feliratok is), a cimek forrasa a `hivatkozasok.ts`. Ami odakerult
-              es itt NEM latszik: a het kulso cim feltetele, vagyis hogy az
-              elesites elott mindnek sajat lapra kell mutatnia.
-            */}
-            {lablec.oszlopok.map((oszlop) => (
-              <div className="flex flex-col gap-y-2" key={oszlop.azonosito}>
-                {/*
-                  AZ OSZLOPCIMEK NAGYBETUSEK, ES EZT CSAK A KEP MUTATTA MEG.
-
-                  A lablec szerkezetet es tartalmat a bolt HTML-jebol fejtettem
-                  ki -- ott a cimek VEGYES kisbetusek ("Oldaltérkép"). A
-                  kepernyokepen viszont NAGYBETUVEL allnak, tehat a bolt
-                  stiluslapja alakitja at oket, es a vevo azt latja.
-
-                  KET KIOLVASAS UGYANARROL A FORRASROL, KET KULONBOZO VALASZ: a
-                  HTML a szoveget mondja meg, a kep azt, ami megjelenik. Egy
-                  CSS-transzformaciot a forras-szoveg szerkezetileg nem tud
-                  elarulni.
-                */}
-                <span
-                  className="txt-small-plus uppercase tracking-wide"
-                  style={{ color: "var(--terv-szoveg)" }}
-                >
-                  {oszlop.cim}
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2 txt-small"
-                  style={{ color: "var(--terv-szoveg-halvany)" }}
-                  data-testid={`footer-oszlop-${oszlop.azonosito}`}
-                >
-                  {oszlop.linkek.map((t) => (
-                    <li key={`${oszlop.azonosito}-${t.cimke}-${t.href}`}>
-                      {/*
-                        A SAJAT UTVONAL `LocalizedClientLink`-et kap, mert az
-                        teszi ele az orszagkodot. A KULSO cim TELJES, es egy
-                        sima horgony viszi -- egy lokalizalt link ele
-                        orszagkodot tenne, es a cim ertelmetlenne valna.
-                      */}
-                      {t.sajat ? (
-                        <LocalizedClientLink
-                          className="hover:text-terv-szoveg"
-                          href={t.href}
-                          data-testid="footer-sajat-link"
-                        >
-                          {t.cimke}
-                        </LocalizedClientLink>
-                      ) : (
-                        <a
-                          className="hover:text-terv-szoveg"
-                          href={t.href}
-                          data-testid="footer-regi-bolt-link"
-                        >
-                          {t.cimke}
-                        </a>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            {/*
-              A NEGYEDIK OSZLOP: a ceg adatai. Ez az egyetlen, amiben nincs
-              hivatkozas-lista, ezert szelesebb helyet kap nagy kepernyon.
-            */}
-            <div
-              className="flex flex-col gap-y-2 lg:col-span-2"
-              data-testid="footer-ceg"
-            >
-              {/* A negyedik oszlop cime ugyanugy nagybetus a mintan. */}
+        ) : null}
+        {/*
+          A KATEGORIA-RACS 2026-09-09 OTA NINCS A LABLECBEN (Balazs: "ez nem
+          legordul ez ott van. nem kell"): a kategoriak a fejlec menujeben
+          allnak. A lablec ezert sem a regiot, sem a kategoria-fat nem kerdezi.
+        */}
+        <div
+          className="grid w-full min-w-0 grid-cols-1 gap-10 py-16 text-small-regular xsmall:grid-cols-2 lg:grid-cols-4"
+          data-testid="lablec-oszlopok"
+        >
+          {lablec.oszlopok.map((oszlop) => (
+            <div className="flex flex-col gap-y-3" key={oszlop.azonosito}>
+              {/*
+                AZ OSZLOPCIMEK NAGYBETUSEK, ES EZT CSAK A KEP MUTATTA MEG: a bolt
+                HTML-jeben vegyes kisbetusek, a stiluslapja alakitja at oket.
+                A referencia-kepen a linkek is nagybetusek.
+              */}
               <span
                 className="txt-small-plus uppercase tracking-wide"
                 style={{ color: "var(--terv-szoveg)" }}
               >
-                {CEG.nev}
+                {oszlop.cim}
               </span>
-              <address
-                className="not-italic txt-small flex flex-col gap-y-1"
+              <ul
+                className="grid grid-cols-1 gap-2 txt-small uppercase tracking-wide"
                 style={{ color: "var(--terv-szoveg-halvany)" }}
+                data-testid={`footer-oszlop-${oszlop.azonosito}`}
               >
-                <span>{lablec.cim}</span>
-                <a
-                  className="hover:text-terv-szoveg"
-                  href={`tel:${CEG.telefon.replace(/[^+\d]/g, "")}`}
-                >
-                  {CEG.telefon}
-                </a>
-                <a
-                  className="hover:text-terv-szoveg"
-                  href={`mailto:${CEG.email}`}
-                >
-                  {CEG.email}
-                </a>
-              </address>
-              <div
-                className="txt-small flex flex-col gap-y-1"
-                style={{ color: "var(--terv-szoveg-halvany)" }}
-                data-testid="footer-nyitvatartas"
-              >
-                <span>Nyitvatartás:</span>
-                {lablec.nyitvatartas.map((sor) => (
-                  <span key={sor}>{sor}</span>
+                {oszlop.linkek.map((t) => (
+                  <li key={`${oszlop.azonosito}-${t.cimke}-${t.href}`}>
+                    {/*
+                      A SAJAT UTVONAL `LocalizedClientLink`-et kap, mert az
+                      teszi ele az orszagkodot. A KULSO cim TELJES, es egy
+                      sima horgony viszi.
+                    */}
+                    {t.sajat ? (
+                      <LocalizedClientLink
+                        className="hover:text-terv-szoveg"
+                        href={t.href}
+                        data-testid="footer-sajat-link"
+                      >
+                        {t.cimke}
+                      </LocalizedClientLink>
+                    ) : (
+                      <a
+                        className="hover:text-terv-szoveg"
+                        href={t.href}
+                        data-testid="footer-regi-bolt-link"
+                      >
+                        {t.cimke}
+                      </a>
+                    )}
+                  </li>
                 ))}
-              </div>
+              </ul>
+            </div>
+          ))}
+          {/*
+            A CEGES OSZLOP FIX (Balazs, 2026-10-27: "ha valtozik, mi irjuk at"):
+            a `CEG`-bol, az OS nem irja felul.
+          */}
+          <div className="flex flex-col gap-y-3" data-testid="footer-ceg">
+            <span
+              className="txt-small-plus uppercase tracking-wide"
+              style={{ color: "var(--terv-szoveg)" }}
+            >
+              {CEG.nev}
+            </span>
+            <address
+              className="not-italic txt-small flex flex-col gap-y-1"
+              style={{ color: "var(--terv-szoveg-halvany)" }}
+            >
+              <span>{CEG.cim}</span>
+              <a
+                className="hover:text-terv-szoveg"
+                href={`tel:${CEG.telefon.replace(/[^+\d]/g, "")}`}
+              >
+                {CEG.telefon}
+              </a>
+              <a
+                className="hover:text-terv-szoveg"
+                href={`mailto:${CEG.email}`}
+              >
+                {CEG.email}
+              </a>
+            </address>
+            <div
+              className="txt-small flex flex-col gap-y-1"
+              style={{ color: "var(--terv-szoveg-halvany)" }}
+              data-testid="footer-nyitvatartas"
+            >
+              <span>Nyitvatartás: {CEG.nyitvatartas[0]}</span>
+              {CEG.nyitvatartas.slice(1).map((sor) => (
+                <span key={sor}>{sor}</span>
+              ))}
             </div>
           </div>
         </div>
-        <div
-          className="flex w-full mb-16 justify-between"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
-        >
-          <Text className="txt-compact-small" data-testid="footer-also-sor">
+      </div>
+      <div
+        className="w-full border-t"
+        style={{ borderColor: "var(--terv-keret)" }}
+        data-testid="lablec-also-sav"
+      >
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-y-4 px-4 py-6 lg:px-16">
+          <ul
+            className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4"
+            data-testid="lablec-logosor"
+          >
+            {ALSO_LOGOK.map((logo) => (
+              <li key={logo.src}>
+                <Image
+                  src={logo.src}
+                  alt={logo.alt}
+                  width={logo.w}
+                  height={logo.h}
+                  className={`${logo.mag} w-auto`}
+                />
+              </li>
+            ))}
+          </ul>
+          <Text
+            className="txt-compact-small"
+            style={{ color: "var(--terv-szoveg-halvany)" }}
+            data-testid="footer-also-sor"
+          >
             {lablec.alsoSor ??
               `© ${new Date().getFullYear()} ${STORE_NAME}. Minden jog fenntartva.`}
           </Text>

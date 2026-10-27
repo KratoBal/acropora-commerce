@@ -1,7 +1,6 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { listCollections } from "@lib/data/collections"
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import { elonezetBekapcsolva, osOrigin } from "@lib/util/kezdolap-elonezet"
 import KezdolapFejlec from "@modules/kezdolap/fejlec"
@@ -39,7 +38,6 @@ export default async function KezdolapElonezet(props: {
   if (!elonezetBekapcsolva(process.env)) notFound()
   const { countryCode } = await props.params
   const tartalom = tisztitottTartalom(await kezdolapTartalom())
-  const { collections } = await listCollections({ fields: "id,handle,title" })
 
   return (
     <ElonezetKliens
@@ -47,11 +45,6 @@ export default async function KezdolapElonezet(props: {
       countryCode={countryCode}
       kezdoRekord={tartalom}
       kezdoLablec={lablecAdat(tartalom)}
-      kollekciok={(collections ?? []).map((c) => ({
-        id: c.id,
-        handle: c.handle,
-        title: c.title,
-      }))}
       fejlec={
         <KezdolapFejlec s={kezdolapAdat(tartalom)} countryCode={countryCode} />
       }

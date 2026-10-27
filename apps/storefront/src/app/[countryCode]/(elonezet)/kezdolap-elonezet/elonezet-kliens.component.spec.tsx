@@ -48,8 +48,6 @@ const OS = "https://os-teszt.acropora.hu"
 const lablec = (alsoSor: string | null): LablecAdat => ({
   bemutatkozo: null,
   oszlopok: [],
-  cim: "",
-  nyitvatartas: [],
   kozossegi: [],
   alsoSor,
 })
@@ -64,7 +62,6 @@ function megjelenit(osOrigin: string | null = OS) {
       countryCode="hu"
       kezdoRekord={KEZDO}
       kezdoLablec={lablec("MENTETT")}
-      kollekciok={[]}
       fejlec={<header data-testid="fejlec" />}
     />,
   )

@@ -110,6 +110,11 @@ export function markaCanonical(countryCode: string, handle: string): string {
   return `/${countryCode}/marka/${handle}`
 }
 
+/** A FORGALMAZOTT MARKAK LISTAJANAK KANONIKUS CIME (`/hu/marka`, kirakat-lablec-kep). */
+export function markaListaCanonical(countryCode: string): string {
+  return `/${countryCode}/marka`
+}
+
 /**
  * A VALOGATAS (SEO LANDING) KANONIKUS CIME (Balazs dontese a t9-hez:
  * `/hu/valogatas/{slug}`). A lap maga a t9 resze (nautilus); a sitemap mar

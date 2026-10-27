@@ -73,6 +73,11 @@ export type LablecHivatkozas = {
 export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
   { cimke: "Nyitóoldal", oszlop: "oldalterkep", cim: "/" },
   { cimke: "Termékek", oszlop: "oldalterkep", cim: "/store" },
+  /*
+    UJ TETEL A BOLT LABLECEHEZ KEPEST (Balazs, 2026-10-27, kirakat-lablec-kep):
+    a markak listaja, a `/marka` lapon. A regi boltban nincs ilyen.
+  */
+  { cimke: "Forgalmazott márkák", oszlop: "oldalterkep", cim: "/marka" },
   { cimke: "Belépés", oszlop: "fiok", cim: "/account" },
   { cimke: "Regisztráció", oszlop: "fiok", cim: "/account" },
   { cimke: "Profilom", oszlop: "fiok", cim: "/account" },
@@ -135,6 +140,9 @@ export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
  * A TELEFONSZAM ALAKJA A BOLTE (`+36-20/267-6801`). A tervfajl ugyanezt a
  * szamot `+36 20 267 6801` alakban irja, a "Kerdezd a boltot" dobozban. Ugyanaz
  * a szam, ket irasmod -- a lablec forrasa a bolt, tehat a bolte all itt.
+ *
+ * A LABLECBEN FIX (Balazs, 2026-10-27, kirakat-lablec-kep): az OS nem irja
+ * felul; "ha valtozik, mi irjuk at" -- itt, ebben a fajlban.
  */
 export const CEG = {
   nev: "Acropora Kft.",
@@ -142,4 +150,21 @@ export const CEG = {
   telefon: "+36-20/267-6801",
   email: "webshop@acropora.hu",
   nyitvatartas: ["Kedd-Péntek 10-18", "Szombat 10-14", "Vasárnap-Hétfő Zárva"],
+} as const
+
+/**
+ * A "FIZETESI OPCIOK:" KEP AZ ALSO SORBAN (Balazs, 2026-10-27,
+ * kirakat-lablec-kep): Google Pay, Apple Pay, Mastercard, Maestro, Visa.
+ *
+ * IDEIGLENES, CSAK A TESZT KIRAKATRA: a regi bolt lablecenek
+ * kepernyokepebol kivagva (exchange/marka-sav-2026-10-27/referencia-lablec.png,
+ * 472x96 pixel, retina-kepbol), nem a kartyatarsasagok fajljai. ELESITES ELOTT
+ * a hivatalos jelvenyekre kell cserelni (Visa, Mastercard, Maestro, Apple Pay,
+ * Google Pay; acrobot 36614). Ezert all a neveben, hogy ideiglenes.
+ */
+export const FIZETESI_OPCIOK_KEP = {
+  src: "/images/fizetesi-opciok-ideiglenes.png",
+  alt: "Fizetési opciók: Google Pay, Apple Pay, Mastercard, Maestro, Visa",
+  w: 472,
+  h: 96,
 } as const

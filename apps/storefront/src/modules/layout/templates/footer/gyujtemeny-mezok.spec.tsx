@@ -21,10 +21,12 @@ vi.mock("@lib/data/kezdolap-tartalom", () => ({
 }))
 
 describe("a gyűjtemény-lista mezői", () => {
-  it("a lábléc csak id, handle és title mezőt kér", async () => {
+  // 2026-10-27 (kirakat-lablec-kep): a Kollekciók oszlop kikerült, a lábléc
+  // egyáltalán nem kérdezi le a gyűjteményeket
+  it("a lábléc nem kéri le a gyűjteményeket", async () => {
     const { default: Footer } = await import("./index")
     await Footer()
-    expect(listCollections).toHaveBeenCalledWith({ fields: "id,handle,title" })
+    expect(listCollections).not.toHaveBeenCalled()
   })
 
   it("a gyűjtemény-lapok listája csak id és handle mezőt kér", async () => {

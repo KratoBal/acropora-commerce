@@ -32,7 +32,6 @@ type Props = {
   /** A mentett rekord: ez latszik, amig az OS az elso tartalmat el nem kuldi. */
   kezdoRekord: KezdolapTartalom | null
   kezdoLablec: LablecAdat
-  kollekciok: Array<{ id: string; handle: string; title: string }>
   /** Szerveroldalon renderelt fejlec (a menu a valodi kategoriakbol all). */
   fejlec: ReactNode
 }
@@ -58,7 +57,6 @@ export default function ElonezetKliens({
   countryCode,
   kezdoRekord,
   kezdoLablec,
-  kollekciok,
   fejlec,
 }: Props) {
   const [rekord, setRekord] = useState<KezdolapTartalom | null>(kezdoRekord)
@@ -156,7 +154,7 @@ export default function ElonezetKliens({
         {fejlec}
         {savok}
       </div>
-      <LablecKeret lablec={lablec} collections={kollekciok} />
+      <LablecKeret lablec={lablec} />
     </>
   )
 }

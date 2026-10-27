@@ -16,6 +16,7 @@ vi.mock("@modules/common/components/localized-client-link", () => ({
   ),
 }))
 
+import { CEG } from "./hivatkozasok"
 import { LablecKeret } from "./lablec-keret"
 import type { LablecAdat } from "./lablec-adat"
 
@@ -28,8 +29,6 @@ const LABLEC: LablecAdat = {
       linkek: [{ cimke: "Szállítás", href: "/szallitas", sajat: true }],
     },
   ],
-  cim: "1106 Budapest",
-  nyitvatartas: ["Kedd-Péntek 10-18"],
   kozossegi: [],
   alsoSor: null,
 }
@@ -52,7 +51,7 @@ describe("a lábléc elrendezése", () => {
   afterEach(cleanup)
 
   it("a tartalom az 1440 pixeles keretben áll, 64 pixeles asztali margóval", () => {
-    render(<LablecKeret lablec={LABLEC} collections={null} />)
+    render(<LablecKeret lablec={LABLEC} />)
 
     const osztalyok = screen
       .getByTestId("lablec-konteiner")
@@ -66,54 +65,73 @@ describe("a lábléc elrendezése", () => {
   })
 
   it("a sík (a footer) nem kap szélességkorlátot", () => {
-    render(<LablecKeret lablec={LABLEC} collections={null} />)
+    render(<LablecKeret lablec={LABLEC} />)
 
     const sik = screen.getByTestId("lablec-sik").className.split(/\s+/)
     expect(sik).toContain("w-full")
     expect(sik).not.toContain("max-w-[1440px]")
   })
 
-  it("a bal oszlop rögzített szélességű és nem zsugorodik", () => {
-    render(<LablecKeret lablec={LABLEC} collections={null} />)
+  it("a bemutatkozó sor csak kitöltött bemutatkozással vagy közösségi linkkel áll", () => {
+    render(<LablecKeret lablec={LABLEC} />)
+    expect(screen.queryByTestId("lablec-bemutatkozo-sor")).toBeNull()
+    cleanup()
 
-    const osztalyok = screen
-      .getByTestId("lablec-bemutatkozo-oszlop")
-      .className.split(/\s+/)
-    expect(osztalyok).toContain("shrink-0")
-    expect(osztalyok).toContain("xsmall:w-64")
-    expect(osztalyok).not.toContain("max-w-sm")
-  })
-
-  it("az info-oszlopok rácsa összezsugorodhat a bal oszlop mellett", () => {
-    render(<LablecKeret lablec={LABLEC} collections={null} />)
-
-    const racs = screen.getByTestId("footer-ceg").parentElement as HTMLElement
-    const osztalyok = racs.className.split(/\s+/)
-    expect(osztalyok).toContain("min-w-0")
-    expect(osztalyok).toContain("lg:grid-cols-6")
+    render(
+      <LablecKeret
+        lablec={{ ...LABLEC, bemutatkozo: "<p>Tengeri akvarisztika</p>" }}
+      />,
+    )
+    expect(screen.getByTestId("footer-bemutatkozo").textContent).toBe(
+      "Tengeri akvarisztika",
+    )
   })
 
   /**
-   * A KOLLEKCIOK LINKJEI A TERV SZOVEGSZINET VISELIK, mint a tobbi oszlop. A
-   * jsdom nem szamol szint a stiluslapbol, ezert a beagyazott stilust meri: a
-   * hiany (a bongeszo alapszine) a sotet lapon alig lathato szoveget adott.
-   * A kontroll: a masik oszlop listaja ugyanezt az erteket viseli, tehat az
-   * allitas nem egy ures vilagot elegit ki.
+   * A REFERENCIA SZERKEZETE (kirakat-lablec-kep, 2026-10-27): a link-oszlopok
+   * es a ceges oszlop EGY racsban, nagy kepernyon negy oszlopban.
    */
-  it("a kollekciók listája ugyanazt a színt viseli, mint a többi oszlop", () => {
-    render(
-      <LablecKeret
-        lablec={LABLEC}
-        collections={[
-          { id: "c1", handle: "easyphyt", title: "Easyphyt" },
-          { id: "c2", handle: "coralbox", title: "CoralBox" },
-        ]}
-      />,
-    )
+  it("a link-oszlopok és a céges oszlop egy rácsban állnak", () => {
+    render(<LablecKeret lablec={LABLEC} />)
 
-    const kollekciok = screen.getByTestId("footer-kollekciok")
-    const masik = screen.getByTestId("footer-oszlop-informaciok")
-    expect(masik.style.color).toBe("var(--terv-szoveg-halvany)")
-    expect(kollekciok.style.color).toBe("var(--terv-szoveg-halvany)")
+    const racs = screen.getByTestId("lablec-oszlopok")
+    expect(racs.className.split(/\s+/)).toContain("lg:grid-cols-4")
+    expect(screen.getByTestId("footer-ceg").parentElement).toBe(racs)
+    expect(
+      screen.getByTestId("footer-oszlop-informaciok").parentElement
+        ?.parentElement,
+    ).toBe(racs)
+  })
+
+  it("a céges oszlop a fix cégadatot mutatja", () => {
+    render(<LablecKeret lablec={LABLEC} />)
+
+    const ceg = screen.getByTestId("footer-ceg").textContent ?? ""
+    for (const resz of [CEG.nev, CEG.cim, CEG.telefon, CEG.email])
+      expect(ceg).toContain(resz)
+    expect(screen.getByTestId("footer-nyitvatartas").textContent).toBe(
+      `Nyitvatartás: ${CEG.nyitvatartas.join("")}`,
+    )
+  })
+
+  /**
+   * A FIX ALSO SOR: Foxpost, GLS, Stripe es a kartyak kepe, ebben a sorrendben.
+   * A regi bolt harom eleme (Arukereso, Olcsobbat, SimplePay) NEM kerul ide.
+   */
+  it("az alsó sor a négy fix logó, a régi bolt három eleme nélkül", () => {
+    render(<LablecKeret lablec={LABLEC} />)
+
+    const kepek = Array.from(
+      screen.getByTestId("lablec-logosor").querySelectorAll("img"),
+    )
+    expect(kepek.map((k) => k.getAttribute("alt"))).toEqual([
+      "FOXPOST – Packeta Group",
+      "GLS",
+      "Stripe",
+      "Fizetési opciók: Google Pay, Apple Pay, Mastercard, Maestro, Visa",
+    ])
+    const sav = screen.getByTestId("lablec-also-sav").innerHTML.toLowerCase()
+    for (const tilos of ["simplepay", "árukereső", "arukereso", "olcsobbat"])
+      expect(sav).not.toContain(tilos)
   })
 })
