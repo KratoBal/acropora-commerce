@@ -1,6 +1,12 @@
 import { renderOrderPlacedMail, type MailOrder } from "../order-placed-mail"
 import { cardLast4Of, renderRefundMail } from "../refund-mail"
-import { type LoadedOrder, type LoadedPayment, prepareOrderPlacedMail, prepareRefundMail } from "../prepare"
+import {
+  type LoadedOrder,
+  type LoadedPayment,
+  legalVersionOf,
+  prepareOrderPlacedMail,
+  prepareRefundMail,
+} from "../prepare"
 import { operationsOrSkip, sendShopMail } from "../send"
 import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../../split-completion"
 
@@ -183,6 +189,29 @@ describe("when the order confirmation goes", () => {
       action: "send",
       mail: { template: "order-placed", idempotency_key: "order-placed:order_1:resend:1759680000000" },
     })
+  })
+
+  /*
+    P0 #2 (acrobot 36693): a level jogi szoveget az OS adja, a kosar ASZF-
+    elfogadasanak VERZIOJA szerint. MI PIROSIT: ha a kosar rekordjanak verzioja
+    nem jutna el a renderelesi keresig; ha rekord nelkuli kosarra kitalalt
+    verzio kerulne; ha a bolti alrendeles kosara masik verziot adhatna.
+  */
+  it("the render request carries the legal version the cart accepted", async () => {
+    const record = { idopont: "2026-10-27T08:00:00.000Z", verzio: "unas-shop-2026-09-29", dokumentum: "x" }
+    const { deps: d } = deps({ aszf_elfogadas: record })
+    const result = await prepareOrderPlacedMail("order_1", d)
+    const facts = (result as { mail: { render: { facts: { legal_version: unknown } } } }).mail.render.facts
+    expect(facts.legal_version).toBe("unas-shop-2026-09-29")
+  })
+
+  it("a cart without a usable record sends null, never a guessed version", async () => {
+    for (const metadata of [null, {}, { aszf_elfogadas: {} }, { aszf_elfogadas: { verzio: "  " } }, { aszf_elfogadas: { verzio: 7 } }]) {
+      const result = await prepareOrderPlacedMail("order_1", deps(metadata as never).deps)
+      const facts = (result as { mail: { render: { facts: { legal_version: unknown } } } }).mail.render.facts
+      expect([JSON.stringify(metadata), facts.legal_version]).toEqual([JSON.stringify(metadata), null])
+    }
+    expect(legalVersionOf(undefined)).toBeNull()
   })
 
   it("no address, or a missing order: nothing is sent", async () => {

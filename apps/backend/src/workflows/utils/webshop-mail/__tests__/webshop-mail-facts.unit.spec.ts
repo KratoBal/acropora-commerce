@@ -33,6 +33,7 @@ const samples: { [T in keyof WebshopMailFactsOf]: WebshopMailFactsOf[T] } = {
   "order-placed": {
     ...common,
     orders: [{ display_id: 45, items: order.items, shipping: order.shipping, total: 4950, payment: "COD", pickup: false }],
+    legal_version: "unas-shop-2026-09-29",
   },
   "order-status-confirmed": { ...common, order },
   "order-status-out_for_delivery": { ...common, order },
@@ -65,7 +66,7 @@ const keysOf = (value: unknown): string[] =>
 
 // THE CONTRACT: the top-level keys of each template's facts, and the inner objects' keys
 const CONTRACT: Record<string, Record<string, string[]>> = {
-  "order-placed": { "": ["customer_name", "order_created_at", "orders"], "orders[0]": ["display_id", "items", "payment", "pickup", "shipping", "total"] },
+  "order-placed": { "": ["customer_name", "legal_version", "order_created_at", "orders"], "orders[0]": ["display_id", "items", "payment", "pickup", "shipping", "total"] },
   "order-status-confirmed": { "": ["customer_name", "order", "order_created_at"] },
   "order-status-out_for_delivery": { "": ["customer_name", "order", "order_created_at"] },
   "order-status-ready_for_pickup": { "": ["customer_name", "order", "order_created_at"] },

@@ -59,7 +59,18 @@ type PaymentLinkFacts = CommonFacts & {
 }
 
 export type WebshopMailFactsOf = {
-  "order-placed": CommonFacts & { orders: MailOrder[] }
+  /**
+   * `legal_version` (commerce-audit-p0, P0 #2, acrobot 36693): the version of
+   * the legal documents the customer accepted at checkout, from the cart's
+   * `aszf_elfogadas.verzio`; null when the cart carries no record. The OS picks
+   * the legal blocks of that version for the confirmation (ASZF, withdrawal
+   * information and form, privacy, the company's data), and answers 422 for a
+   * version it does not know, so a mail is held rather than sent with another
+   * text. ADDED WITHOUT RAISING THE VERSION, as G3 added its optional keys: the
+   * OS reads the facts key by key and ignores one it does not know, so an older
+   * OS renders the mail as before, without the legal part.
+   */
+  "order-placed": CommonFacts & { orders: MailOrder[]; legal_version: string | null }
   "order-status-confirmed": CommonFacts & { order: LoadedOrder }
   "order-status-out_for_delivery": CommonFacts & { order: LoadedOrder }
   "order-status-ready_for_pickup": CommonFacts & { order: LoadedOrder }
