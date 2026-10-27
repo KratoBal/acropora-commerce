@@ -24,6 +24,10 @@ import { model } from "@medusajs/framework/utils"
  * blocks; `null` means not set (the storefront's own order, all visible).
  * `footer` is the editable part of the footer (intro, link columns, social
  * addresses, bottom line); `null` means not set (the storefront's own footer).
+ *
+ * `newsletter` is the footer's newsletter row (kirakat-lablec-kep, 2026-10-27):
+ * on or off, its title, text, consent text and button. `null` means not set:
+ * the storefront shows its own row (on, with its own texts).
  */
 export const HomepageContent = model
   .define("homepage_content", {
@@ -34,6 +38,7 @@ export const HomepageContent = model
     featured_handles: model.json().nullable(),
     blocks: model.json().nullable(),
     footer: model.json().nullable(),
+    newsletter: model.json().nullable(),
   })
   .indexes([
     {

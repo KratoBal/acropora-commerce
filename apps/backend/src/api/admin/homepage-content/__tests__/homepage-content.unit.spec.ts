@@ -227,6 +227,7 @@ describe("store homepage content route", () => {
       "blocks",
       "featured_handles",
       "footer",
+      "newsletter",
       "slides",
       "texts",
       "updated_at",
@@ -418,6 +419,24 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     await save({ ...base, blocks: null, footer: null })
     expect(stored()?.blocks).toBeNull()
     expect(stored()?.footer).toBeNull()
+  })
+
+  it("HPC-SVC-NEWSLETTER: absent keeps the stored newsletter row, null clears it, a new row replaces it", async () => {
+    const { save, stored } = fake()
+    const row = {
+      enabled: true,
+      title: "Hírlevél",
+      text: "Iratkozz fel!",
+      consent_text: "Hozzájárulok.",
+      button: "Feliratkozás",
+    }
+    await save({ ...base, newsletter: row })
+    await save({ ...base, texts: { "mit.cim": "Új" } })
+    expect(stored()?.newsletter).toEqual(row)
+    await save({ ...base, newsletter: { ...row, enabled: false } })
+    expect((stored()?.newsletter as { enabled: boolean }).enabled).toBe(false)
+    await save({ ...base, newsletter: null })
+    expect(stored()?.newsletter).toBeNull()
   })
 
   it("HPC-SVC-BLOCKS-COPY: the stored footer is a copy, not the caller's object", async () => {

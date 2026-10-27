@@ -12,6 +12,7 @@ describe("homepage content model", () => {
       "footer",
       "id",
       "key",
+      "newsletter",
       "slides",
       "texts",
       "updated_at",

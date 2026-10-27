@@ -14,6 +14,7 @@ export const forStore = (content: {
   featured_handles?: unknown
   blocks?: unknown
   footer?: unknown
+  newsletter?: unknown
   updated_at?: Date | string | null
 }) => ({
   texts: content.texts,
@@ -21,5 +22,6 @@ export const forStore = (content: {
   featured_handles: content.featured_handles ?? null,
   blocks: content.blocks ?? null,
   footer: content.footer ?? null,
+  newsletter: content.newsletter ?? null,
   updated_at: content.updated_at ?? null,
 })
