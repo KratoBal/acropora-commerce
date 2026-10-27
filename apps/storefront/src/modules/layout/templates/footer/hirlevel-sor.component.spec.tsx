@@ -19,6 +19,7 @@ vi.mock("@modules/common/components/localized-client-link", () => ({
   ),
 }))
 
+import { HIRLEVEL_ALAP } from "./hirlevel-adat"
 import { HirlevelSor } from "./hirlevel-sor"
 import { LablecKeret } from "./lablec-keret"
 import type { LablecAdat } from "./lablec-adat"
@@ -50,6 +51,32 @@ describe("a hírlevél-sor", () => {
       screen.getByTestId("hirlevel-adatkezeles").getAttribute("href"),
     ).toBe("/jogi/adatkezeles")
     expect(screen.getByRole("button", { name: "Feliratkozás" })).toBeTruthy()
+  })
+
+  /*
+    A KIFEJEZES MAGA A LINK (barracuda, #580): a bolt alapszovegeben az
+    „Adatkezelési tájékoztatót” all; ha utana kulon link is allna, a kifejezes
+    ketszer latszana, es a latott szoveg egy szoval hosszabb lenne, mint a
+    rogzitett hozzajarulas.
+  */
+  it("a hozzájárulás szövegében a tájékoztató kifejezése a link, egyszer, és a látott szöveg a rögzített", () => {
+    const { container } = render(
+      <HirlevelSor
+        hirlevel={{ ...HIRLEVEL, hozzajarulas: HIRLEVEL_ALAP.consent_text }}
+      />,
+    )
+    const linkek = screen.getAllByTestId("hirlevel-adatkezeles")
+    expect(linkek).toHaveLength(1)
+    expect(linkek[0]!.textContent).toBe("Adatkezelési tájékoztatót")
+    const sor = container.querySelector("label span")!
+    expect(sor.textContent).toBe(HIRLEVEL_ALAP.consent_text)
+  })
+
+  it("ha a szöveg nem nevezi meg a tájékoztatót, a link utána áll", () => {
+    render(<HirlevelSor hirlevel={HIRLEVEL} />)
+    expect(screen.getByTestId("hirlevel-adatkezeles").textContent).toBe(
+      "Adatkezelési tájékoztató",
+    )
   })
 
   it("a lábléc a sort csak bekapcsolva rajzolja", () => {

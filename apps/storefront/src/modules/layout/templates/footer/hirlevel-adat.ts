@@ -57,3 +57,23 @@ export function hirlevelAdat(
     gomb: sor.button.trim(),
   }
 }
+
+/**
+ * A HOZZAJARULAS SZOVEGE, A TAJEKOZTATO KIFEJEZESE MENTEN KETTEVAGVA
+ * (barracuda, #580): ha a szoveg maga nevezi meg az adatkezelesi tajekoztatot
+ * (ragozva is, pl. „tájékoztatót”), az a kifejezes lesz a link, ahogy a
+ * penztari pipa teszi; ha nem nevezi meg, `null`, es a lap a szoveg utan teszi
+ * ki a linket. Igy a kifejezes nem all ketszer, es a latott szoveg pontosan az,
+ * amit a bolt rogzit.
+ */
+export function hozzajarulasLinkkel(
+  szoveg: string,
+): { elotte: string; link: string; utana: string } | null {
+  const talalat = /adatkezelési tájékoztató[a-záéíóöőúüű]*/i.exec(szoveg)
+  if (!talalat) return null
+  return {
+    elotte: szoveg.slice(0, talalat.index),
+    link: talalat[0],
+    utana: szoveg.slice(talalat.index + talalat[0].length),
+  }
+}
