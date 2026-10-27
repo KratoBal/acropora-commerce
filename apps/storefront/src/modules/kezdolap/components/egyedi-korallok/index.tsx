@@ -157,7 +157,12 @@ export const EgyediKorallokSav = ({
                       thumbnail={termek.thumbnail}
                       images={termek.images}
                       size="full"
-                      prioritas={i === 0}
+                      /*
+                        NEM prioritas, az elsonek sem (commerce-audit-p1, T3):
+                        a sav a kezdolap hajtasa ALATT all, tehat az elso
+                        belyegkep elotoltese es fetchpriority=high-ja sávszélességet
+                        vett el a hero H1-jetol, az LCP-elemtol.
+                      */
                     />
                   </div>
                   {kod ? (

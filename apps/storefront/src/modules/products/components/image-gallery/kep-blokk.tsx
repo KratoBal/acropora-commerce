@@ -1,6 +1,7 @@
 "use client"
 
 import { getImageProps } from "next/image"
+import { preload } from "react-dom"
 import { useState } from "react"
 
 import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
@@ -71,6 +72,24 @@ export const KepBlokk = ({
     // helyi epitesen, 15.5.24), ezert kulon all
     fetchPriority: kivalasztott === 0 ? "high" : undefined,
   })
+
+  /*
+    AZ ELOTOLTO LINK (commerce-audit-p1, T4). A `<Image priority>` a fejbe
+    `<link rel="preload" as="image">`-et tesz; a `getImageProps` + sima `<img>`
+    ezt NEM, csak a `fetchpriority`-t az elemen -- vagyis a bongeszo a kepet
+    csak az elem elolvasasakor kezdte kerni, az elo allatos lap `<Image>`-enel
+    kesobb. Merve: 4,2 s a nem elo allatos terméklap LCP-je, 3,2 s az elo
+    allatosé. Ugyanazt a hivast tesszuk, amit a Next tesz (`srcSet`, `sizes`,
+    `fetchPriority`), a kijelolt elso kepre.
+  */
+  if (kivalasztott === 0 && nagyKep.src) {
+    preload(nagyKep.src, {
+      as: "image",
+      imageSrcSet: nagyKep.srcSet,
+      imageSizes: nagyKep.sizes,
+      fetchPriority: "high",
+    })
+  }
 
   return (
     <div className="flex flex-col gap-2" data-testid="vaz-foto-blokk">

@@ -98,6 +98,23 @@ describe("az Egyedi korallok sav", () => {
     expect(hivas.queryParams.handle).toEqual(["a", "nincs", "b", "c"])
   })
 
+  it("egyik bélyegkép sem kap előtöltést vagy magas prioritást: a sáv a kezdőlap hajtása alatt áll (audit T3)", async () => {
+    data.listProducts.mockResolvedValue(
+      valasz([
+        termek("a", { thumbnail: "https://shop.example.test/static/a.jpg" }),
+        termek("b", { thumbnail: "https://shop.example.test/static/b.jpg" }),
+      ]),
+    )
+    await renderel(["a", "b"])
+    const kepek = Array.from(document.querySelectorAll("img"))
+    expect(kepek.length).toBeGreaterThan(0)
+    for (const kep of kepek) {
+      expect(kep.getAttribute("fetchpriority")).not.toBe("high")
+      // `priority` elvenne a lusta betoltest: az elso sem lehet kivetel
+      expect(kep.getAttribute("loading")).toBe("lazy")
+    }
+  })
+
   it("a kártya a termék oldalára visz, az ár és a kód látszik", async () => {
     data.listProducts.mockResolvedValue(valasz([termek("acropora-x")]))
     await renderel(["acropora-x"])
