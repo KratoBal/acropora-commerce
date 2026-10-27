@@ -39,8 +39,9 @@ describe("the record", () => {
     })
   })
 
-  it("the Fogyasztóbarát switch is read as exactly 'true'", () => {
+  it("the Fogyasztóbarát switch is read as exactly 'true', trimmed like the storefront's", () => {
     expect(fogyasztobaratEnabled("true")).toBe(true)
+    expect(fogyasztobaratEnabled(" true ")).toBe(true)
     for (const value of [undefined, "", "TRUE", "1", "false"]) expect(fogyasztobaratEnabled(value)).toBe(false)
   })
 })

@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
+import { fogyasztobaratBekapcsolva } from "@lib/util/fogyasztobarat"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
@@ -641,14 +642,22 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
  * abbol orokli, ami akkor a fo kosaron all.
  *
  * Ha a Fogyasztobarat-kapcsolo be van kapcsolva, a hatter egyelore nem tudja
- * rogziteni az o dokumentumat (501), es a pipa hibaval all meg: hangosan, nem
- * egy olyan rekorddal, ami mast allit, mint amit a vevo kapott.
+ * rogziteni az o dokumentumat. Mindket iranyban hangosan all meg a pipa, nem
+ * egy olyan rekorddal, ami mast allit, mint amit a vevo kapott: a hatter
+ * kapcsoloja bekapcsolva 501-et ad, a kirakat sajat kapcsoloja bekapcsolva pedig
+ * a vegpontot sem hivja.
  */
 export async function rogzitsAszfElfogadast(
   cartId?: string,
 ): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
   if (!id) return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
+  // A MASIK IRANY IS HANGOSAN ALL MEG (barracuda, #587 review): ha a kirakat
+  // Fogyasztobarat-kapcsoloja be van kapcsolva, a vevo a Fogyasztobarat
+  // dokumentumat latja, a hatter viszont (egyelore) a mai bolt ASZF-jet irna
+  // a rekordba -- a 2026-10-06-i elteres. Ilyenkor nem hivjuk a vegpontot.
+  if (fogyasztobaratBekapcsolva())
+    return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
   try {
     await sdk.client.fetch(`/store/carts/${id}/aszf-elfogadas`, {
       method: "POST",

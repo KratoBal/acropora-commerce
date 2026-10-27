@@ -37,7 +37,7 @@ export type AszfRecord = {
 
 export const fogyasztobaratEnabled = (
   value: string | undefined = process.env.FOGYASZTOBARAT_ENABLED
-) => value === "true"
+) => value?.trim() === "true"
 
 /** The record for this moment; the clock is the caller's, so a test can hold it still. */
 export const buildAszfRecord = (now: Date): AszfRecord => ({

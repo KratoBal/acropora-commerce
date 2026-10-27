@@ -53,6 +53,21 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     )
   })
 
+  it("bekapcsolt kirakat-kapcsolónál nincs hívás, a pipa hibával áll meg (a másik irány)", async () => {
+    const mentett = process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
+    process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
+    try {
+      const eredmeny = await rogzitsAszfElfogadast("cart_1")
+      expect(eredmeny.ok).toBe(false)
+      expect(sdk.client.fetch).not.toHaveBeenCalled()
+      expect(sdk.store.cart.update).not.toHaveBeenCalled()
+    } finally {
+      if (mentett === undefined)
+        delete process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
+      else process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = mentett
+    }
+  })
+
   it("hibánál (a szerver 501-e is) visszaadott üzenet, nem dobás", async () => {
     sdk.client.fetch.mockRejectedValueOnce(new Error("501"))
     const eredmeny = await rogzitsAszfElfogadast("cart_1")
