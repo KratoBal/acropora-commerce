@@ -7,6 +7,10 @@ import {
 
 import { AdminPostPickupSkip } from "./admin/order-attention/pickup-skip/validators";
 import {
+  refuseCustomerAszfRecord,
+  refuseCustomerMetadataUpdate,
+} from "./refuse-client-customer-metadata";
+import {
   AdminGetCommerceSettingsParams,
   AdminUpdateCommerceSetting,
   AdminUpsertCommerceSetting,
@@ -174,6 +178,22 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/aszf-elfogadas",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    {
+      // The registration's ÁSZF record is the server's (customer-aszf-record.ts; audit A4, customer twin).
+      matcher: "/store/customers/me/aszf-elfogadas",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    {
+      matcher: "/store/customers",
+      method: "POST",
+      middlewares: [refuseCustomerAszfRecord],
+    },
+    {
+      matcher: "/store/customers/me",
+      method: "POST",
+      middlewares: [refuseCustomerMetadataUpdate],
     },
     ...[
       "/store/carts",

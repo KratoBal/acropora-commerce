@@ -1,12 +1,8 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import {
-  ASZF_METADATA_KULCS,
-  aszfElfogadas,
-  regisztracioHiba,
-} from "@lib/util/aszf"
-import { aszfDokumentumMost } from "./aszf-dokumentum"
+import { ASZF_METADATA_KULCS, regisztracioHiba } from "@lib/util/aszf"
+import { fogyasztobaratBekapcsolva } from "@lib/util/fogyasztobarat"
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
 import {
   alapertelmezettUrlapbol,
@@ -35,6 +31,7 @@ import {
   getCacheTag,
   getCartId,
   getPendingCustomer,
+  type PendingCustomer,
   removeAuthToken,
   removeCartId,
   removePendingCustomer,
@@ -325,17 +322,16 @@ async function regisztral(formData: FormData): Promise<CustomerAuthState> {
   })
   if (hiba) return { state: "error", error: hiba }
 
-  // az elfogadas pillanata, es amit a vevo akkor kapott (kartya 4a2b252d)
-  const elfogadva = new Date()
-  const dokumentum = await aszfDokumentumMost()
-  const customerForm = {
+  const customerForm: PendingCustomer = {
     email: formData.get("email") as string,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
     phone: (formData.get("phone") as string | null) ?? undefined,
-    // The acceptance is recorded at submit time and survives email
-    // verification in the pending-customer cookie.
-    metadata: { [ASZF_METADATA_KULCS]: aszfElfogadas(elfogadva, dokumentum) },
+    // THE ACCEPTANCE RECORD IS THE SERVER'S (audit A4, customer twin): the
+    // form only remembers that the box was ticked (it survives email
+    // verification in the pending-customer cookie); the server writes the
+    // record once the customer record exists (`rogzitsRegisztraciosAszfet`).
+    aszf: true,
   }
 
   try {
@@ -379,6 +375,35 @@ export async function login(
   return eredmeny?.state === "error"
     ? { ...eredmeny, ertekek: { email: String(email ?? "") } }
     : eredmeny
+}
+
+const REGISZTRACIOS_ASZF_HIBA =
+  "A fiók elkészült, de az ÁSZF elfogadását most nem sikerült rögzíteni. Jelentkezz be újra, és megismételjük."
+
+// A cookie written before the server took over the record carried the
+// customer's `metadata` with it: that counts as "the box was ticked", the
+// record itself is the server's now.
+const elfogadasVarJa = (fuggo: PendingCustomer) =>
+  fuggo.aszf === true || !!fuggo.metadata?.[ASZF_METADATA_KULCS]
+
+// The customer says they accepted the ÁSZF; the time, the version and the
+// document are the server's (`POST /store/customers/me/aszf-elfogadas`). Like
+// the cart's record: with the Fogyasztóbarát switch on the backend cannot yet
+// record that document, so the call is not made and the stop is loud.
+async function rogzitsRegisztraciosAszfet(
+  token: string,
+): Promise<string | null> {
+  if (fogyasztobaratBekapcsolva()) return REGISZTRACIOS_ASZF_HIBA
+  try {
+    await sdk.client.fetch("/store/customers/me/aszf-elfogadas", {
+      method: "POST",
+      body: { elfogadom: true },
+      headers: { authorization: `Bearer ${token}` },
+    })
+    return null
+  } catch {
+    return REGISZTRACIOS_ASZF_HIBA
+  }
 }
 
 // Logs the customer in and reconciles the customer record. The behavior is
@@ -443,13 +468,13 @@ async function completeLogin(
     const pending = await getPendingCustomer()
 
     try {
+      // No metadata: the server refuses the ÁSZF key from a client.
       await sdk.store.customer.create(
         {
           email,
           first_name: pending?.first_name,
           last_name: pending?.last_name,
           phone: pending?.phone,
-          metadata: pending?.metadata,
         },
         {},
         { authorization: `Bearer ${token}` },
@@ -462,9 +487,23 @@ async function completeLogin(
     } catch (error) {
       return { state: "error", error: authHibaSzoveg(error) }
     }
-
-    await removePendingCustomer()
   }
+
+  // The acceptance is recorded with the customer-bound token. The pending
+  // cookie goes only after it succeeded: a failure leaves the cookie, and the
+  // next login (the customer now exists) records it again.
+  // Only the cookie of THIS e-mail address: a leftover cookie from another
+  // sign-up in the same browser must not put its tick on someone else's account.
+  const fuggoSuti = await getPendingCustomer()
+  const fuggo =
+    fuggoSuti && fuggoSuti.email?.toLowerCase() === email.trim().toLowerCase()
+      ? fuggoSuti
+      : null
+  if (fuggo && elfogadasVarJa(fuggo)) {
+    const hiba = await rogzitsRegisztraciosAszfet(token)
+    if (hiba) return { state: "error", error: hiba }
+  }
+  if (fuggo) await removePendingCustomer()
 
   await setAuthToken(token)
 

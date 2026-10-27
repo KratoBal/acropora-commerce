@@ -1,9 +1,9 @@
-import type { AszfDokumentumAllapot } from "@lib/util/aszf"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const sdk = vi.hoisted(() => ({
   auth: { register: vi.fn(), login: vi.fn() },
   store: { customer: { retrieve: vi.fn(), create: vi.fn() } },
+  client: { fetch: vi.fn() },
 }))
 vi.mock("@lib/config", () => ({ sdk }))
 const suti = vi.hoisted(() => {
@@ -28,24 +28,6 @@ const suti = vi.hoisted(() => {
 vi.mock("./cookies", () => suti)
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
-// amit a vevo a regisztraciokor kapott (kartya 4a2b252d): a teszt allitja be
-const dokumentum = vi.hoisted(() => ({
-  aszfDokumentumMost: vi.fn(async (): Promise<AszfDokumentumAllapot> => ({
-    tipus: "fogyasztobarat",
-    hatalyos: "2026-10-05",
-    lenyomat: "sha256:abc",
-  })),
-}))
-vi.mock("./aszf-dokumentum", () => dokumentum)
-
-import {
-  ASZF_FORRAS,
-  ASZF_FORRAS_MAI_BOLT,
-  ASZF_METADATA_KULCS,
-  ASZF_VERZIO,
-  ASZF_VERZIO_MAI_BOLT,
-} from "@lib/util/aszf"
-
 import { login, signup } from "./customer"
 
 const urlap = (mezok: Record<string, string>) => {
@@ -63,6 +45,7 @@ const JO = {
 }
 
 beforeEach(() => {
+  sdk.client.fetch.mockResolvedValue({ aszf_elfogadas: {} })
   sdk.auth.register.mockResolvedValue("reg-token")
   sdk.auth.login.mockResolvedValue("login-token")
   // Uj vevo: a token meg nincs vevohoz kotve.
@@ -71,12 +54,15 @@ beforeEach(() => {
 })
 afterEach(() => {
   vi.clearAllMocks()
+  delete process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
 })
 
 /**
- * A REGISZTRACIO ES AZ ASZF-ELFOGADAS (P5). MI PIROSIT: ha pipa nelkul vagy
- * eltero jelszavakkal fiok jon letre; ha az elfogadas nem jut el a vevo
- * metadata mezojeig, vagy nem az idopontot, a verziot es a dokumentumot viszi.
+ * A REGISZTRACIO ES AZ ASZF-ELFOGADAS (P5; audit A4, vevo-iker). MI PIROSIT: ha
+ * pipa nelkul vagy eltero jelszavakkal fiok jon letre; ha a kirakat ismet maga
+ * allitja ossze a rekordot (metadata a vevo letrehozasaban, a sutiben), vagy ha
+ * a rekordot nem a szerver vegpontja irja a vevohoz kotott tokennel; ha a hiba
+ * elnyelodik; ha egy masik e-mail sutije masik fiokra irna a pipat.
  */
 describe("a regisztráció az ÁSZF-elfogadással", () => {
   it("pipa nélkül nem hoz létre fiókot", async () => {
@@ -126,53 +112,119 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     expect(valasz).toEqual({ state: "success" })
   })
 
-  it("az elfogadás időbélyeggel és verzióval a vevő metadata mezőjébe kerül", async () => {
-    const elotte = Date.now()
+  it("a vevő létrehozása nem visz metaadatot, és a rekordot a szerver írja a vevőhöz kötött tokennel", async () => {
     await signup(null, urlap(JO))
 
     expect(sdk.store.customer.create).toHaveBeenCalledTimes(1)
     const [adat] = sdk.store.customer.create.mock.calls[0]
-    const elfogadas = adat.metadata[ASZF_METADATA_KULCS]
-    expect(elfogadas.verzio).toBe(ASZF_VERZIO)
-    expect(elfogadas.dokumentum).toBe(ASZF_FORRAS)
-    expect(elfogadas.hatalyos).toBe("2026-10-05")
-    expect(elfogadas.lenyomat).toBe("sha256:abc")
-    const ido = Date.parse(elfogadas.idopont)
-    expect(ido).toBeGreaterThanOrEqual(elotte - 1000)
-    expect(ido).toBeLessThanOrEqual(Date.now())
-    expect(adat).toMatchObject({
+    expect(adat).toEqual({
       email: "vevo@example.hu",
       first_name: "Anna",
       last_name: "Minta",
+      phone: undefined,
     })
+    expect(adat).not.toHaveProperty("metadata")
+
+    // a rekordot a szerver irja, a masodik (vevohoz kotott) bejelentkezes tokenjevel
+    expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
+    expect(sdk.client.fetch).toHaveBeenCalledWith(
+      "/store/customers/me/aszf-elfogadas",
+      {
+        method: "POST",
+        body: { elfogadom: true },
+        headers: { authorization: "Bearer login-token" },
+      },
+    )
+    // a kliens sehova nem kuld idopontot, verziot vagy dokumentumot
+    expect(JSON.stringify(sdk.client.fetch.mock.calls)).not.toMatch(
+      /idopont|verzio|dokumentum|lenyomat/,
+    )
+    expect(suti.removePendingCustomer).toHaveBeenCalled()
+    expect(suti.setAuthToken).toHaveBeenCalledWith("login-token")
   })
 
   /*
    * AZ E-MAIL-ELLENORZES KITEROJE: ilyenkor a vevo KESOBB jon letre, a sutibol.
-   * Az elfogadasnak a sutiben is ott kell lennie, kulonben az ellenorzes utan
-   * letrejott vevonek nincs rekordja.
+   * A sutibe csak a pipa megy (nem rekord), kulonben az ellenorzes utan letrejott
+   * vevonek nem lenne mit rogzitenie.
    */
-  it("az elfogadás a függő vevő sütijébe is bekerül", async () => {
+  it("a függő vevő sütijébe csak a pipa kerül, rekord nem", async () => {
     await signup(null, urlap(JO))
     const [fuggo] = suti.setPendingCustomer.mock.calls[0] as [
-      { metadata: Record<string, { verzio: string }> },
+      Record<string, unknown>,
     ]
-    expect(fuggo.metadata[ASZF_METADATA_KULCS].verzio).toBe(ASZF_VERZIO)
+    expect(fuggo.aszf).toBe(true)
+    expect(fuggo).not.toHaveProperty("metadata")
+    expect(JSON.stringify(fuggo)).not.toMatch(/verzio|idopont/)
+  })
+
+  it("ha a szerver nem tudja rögzíteni, a hiba hangos, a süti marad, a token nem lép érvénybe", async () => {
+    sdk.client.fetch.mockRejectedValue(new Error("boom"))
+    const valasz = await signup(null, urlap(JO))
+    expect(valasz).toMatchObject({ state: "error" })
+    expect((valasz as { error: string }).error).toContain("ÁSZF")
+    expect(suti.removePendingCustomer).not.toHaveBeenCalled()
+    expect(suti.setAuthToken).not.toHaveBeenCalled()
+  })
+
+  it("a következő belépés megismétli a rögzítést (a vevő már létezik, a süti megvan)", async () => {
+    sdk.client.fetch.mockRejectedValueOnce(new Error("boom"))
+    await signup(null, urlap(JO))
+    // most a vevo mar letezik
+    sdk.store.customer.retrieve.mockResolvedValue({ customer: { id: "cus_1" } })
+    sdk.client.fetch.mockClear()
+    const valasz = await login(
+      null,
+      urlap({ email: "vevo@example.hu", password: "titok12345" }),
+    )
+    expect(valasz).toEqual({ state: "success" })
+    expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
+    expect(suti.removePendingCustomer).toHaveBeenCalled()
+  })
+
+  it("másik e-mail-címhez tartozó süti pipája nem kerül másik fiókra", async () => {
+    await signup(null, urlap({ ...JO, email: "mas@example.hu" }))
+    // a fuggo suti mas@-hoz tartozik; most egy MASIK vevo lep be, aki mar letezik
+    sdk.client.fetch.mockClear()
+    suti.removePendingCustomer.mockClear()
+    sdk.store.customer.retrieve.mockResolvedValue({ customer: { id: "cus_2" } })
+    suti.getPendingCustomer.mockResolvedValueOnce({
+      email: "mas@example.hu",
+      aszf: true,
+    })
+    await login(
+      null,
+      urlap({ email: "masik@example.hu", password: "titok12345" }),
+    )
+    expect(sdk.client.fetch).not.toHaveBeenCalled()
+    expect(suti.removePendingCustomer).not.toHaveBeenCalled()
+  })
+
+  it("a régi süti (metaadattal) pipának számít, de a rekordot a szerver írja, a metaadat nem megy tovább", async () => {
+    suti.getPendingCustomer.mockResolvedValue({
+      email: "vevo@example.hu",
+      first_name: "Anna",
+      metadata: { aszf_elfogadas: { verzio: "hamis" } },
+    })
+    await login(
+      null,
+      urlap({ email: "vevo@example.hu", password: "titok12345" }),
+    )
+    const [adat] = sdk.store.customer.create.mock.calls[0]
+    expect(adat).not.toHaveProperty("metadata")
+    expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
   })
 
   /*
-   * KIKAPCSOLT FOGYASZTOBARATNAL A VEVO A MAI BOLT ASZF-JET KAPTA (kartya
-   * 4a2b252d): a rekord azt allitja, nem a Fogyasztobarat verziojat.
+   * BEKAPCSOLT FOGYASZTOBARATNAL A HATTER MEG NEM TUDJA A DOKUMENTUMOT
+   * ROGZITENI (a kosar rekordjaval azonos szabaly): a vegpontot nem hivjuk, a
+   * megallas hangos.
    */
-  it("kikapcsolt Fogyasztóbarátnál a mai bolt ÁSZF-jét rögzíti", async () => {
-    dokumentum.aszfDokumentumMost.mockResolvedValueOnce({ tipus: "mai-bolt" })
-    await signup(null, urlap(JO))
-    const [adat] = sdk.store.customer.create.mock.calls[0]
-    expect(adat.metadata[ASZF_METADATA_KULCS]).toEqual({
-      idopont: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-      verzio: ASZF_VERZIO_MAI_BOLT,
-      dokumentum: ASZF_FORRAS_MAI_BOLT,
-    })
+  it("bekapcsolt Fogyasztóbaráttal nem hívja a végpontot, és hangosan megáll", async () => {
+    process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
+    const valasz = await signup(null, urlap(JO))
+    expect(valasz).toMatchObject({ state: "error" })
+    expect(sdk.client.fetch).not.toHaveBeenCalled()
   })
 })
 
