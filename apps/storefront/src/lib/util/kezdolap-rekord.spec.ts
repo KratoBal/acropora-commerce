@@ -182,3 +182,33 @@ describe("a kezdőlap-rekord ellenőrzése", () => {
     if (!eredmeny.ok) expect(eredmeny.hiba).toContain("footer")
   })
 })
+
+/*
+  A HIRLEVEL-SOR AZ ELONEZETBEN (kirakat-lablec-kep): a bolt validatoraval
+  azonos szabaly (#577). MI PIROSIT: a beallitott sor elutasitva (az OS
+  elonezete akkor hibat kapna); egy ures hozzajarulas vagy gomb, egy extra
+  vagy hianyzo mezo atmegy.
+*/
+describe("a kezdőlap-rekord: a hírlevél-sor", () => {
+  const sor = {
+    enabled: false,
+    title: "",
+    text: "Iratkozz fel!",
+    consent_text: "Hozzájárulok.",
+    button: "Feliratkozás",
+  }
+  it("a beállított és a null sor érvényes, a sérült nem", () => {
+    expect(ok(modosit((r) => (r.newsletter = sor)))).toBe(true)
+    expect(ok(modosit((r) => (r.newsletter = null)))).toBe(true)
+    for (const rossz of [
+      { ...sor, consent_text: "  " },
+      { ...sor, button: "" },
+      { ...sor, enabled: "igen" },
+      { ...sor, extra: 1 },
+      { ...sor, text: "x".repeat(501) },
+    ])
+      expect(ok(modosit((r) => (r.newsletter = rossz)))).toBe(false)
+    const { title: _t, ...cimNelkul } = sor
+    expect(ok(modosit((r) => (r.newsletter = cimNelkul)))).toBe(false)
+  })
+})

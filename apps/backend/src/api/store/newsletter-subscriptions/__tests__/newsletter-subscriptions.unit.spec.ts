@@ -1,3 +1,5 @@
+import { MedusaError } from "@medusajs/framework/utils"
+
 import { HOMEPAGE_CONTENT_MODULE } from "../../../../modules/homepage-content"
 import { NEWSLETTER_MODULE } from "../../../../modules/newsletter"
 import {
@@ -121,7 +123,7 @@ const harness = (newsletter: unknown) => {
 }
 
 const loose = () => ({
-  perClient: createRateLimiter({ max: 100, windowMs: 60_000 }),
+  perAddress: createRateLimiter({ max: 100, windowMs: 60_000 }),
   overall: createRateLimiter({ max: 100, windowMs: 60_000 }),
 })
 
@@ -159,25 +161,38 @@ describe("POST /store/newsletter-subscriptions", () => {
     )
   })
 
-  it("NL-POST-OFF: a row the OS turned off takes no sign-up", async () => {
+  it("NL-POST-OFF: a row the OS turned off takes no sign-up, as a 403 (FORBIDDEN, not NOT_ALLOWED's 400)", async () => {
     const h = harness({ ...DEFAULT_NEWSLETTER, enabled: false })
-    await expect(h.call(createNewsletterPost(loose()))).rejects.toThrow(
-      "The newsletter sign-up is off"
-    )
+    await expect(h.call(createNewsletterPost(loose()))).rejects.toMatchObject({
+      type: MedusaError.Types.FORBIDDEN,
+      message: "The newsletter sign-up is off",
+    })
     expect(h.subscribers.upsertSubscriberByEmail).not.toHaveBeenCalled()
   })
 
-  it("NL-POST-429: the limit refuses before anything is read or written", async () => {
+  it("NL-POST-429: the per-address limit refuses before anything is read or written; another address is not affected, whatever the caller's IP", async () => {
     const h = harness(undefined)
     const post = createNewsletterPost({
-      perClient: createRateLimiter({ max: 1, windowMs: 60_000 }),
+      perAddress: createRateLimiter({ max: 1, windowMs: 60_000 }),
       overall: createRateLimiter({ max: 100, windowMs: 60_000 }),
     })
     expect((await h.call(post)).statusCode).toBe(200)
-    const refused = await h.call(post, { email: "masik@pelda.hu" })
+    // the same address from another IP: still the same address
+    const refused = await h.call(post, {}, "198.51.100.7")
     expect(refused.statusCode).toBe(429)
     expect(h.subscribers.upsertSubscriberByEmail).toHaveBeenCalledTimes(1)
-    // another caller is not affected
-    expect((await h.call(post, {}, "198.51.100.7")).statusCode).toBe(200)
+    // the storefront's one IP for every visitor: another address passes
+    expect((await h.call(post, { email: "masik@pelda.hu" })).statusCode).toBe(200)
+  })
+
+  it("NL-POST-ALL: the overall cap refuses every address once it is reached", async () => {
+    const h = harness(undefined)
+    const post = createNewsletterPost({
+      perAddress: createRateLimiter({ max: 100, windowMs: 60_000 }),
+      overall: createRateLimiter({ max: 2, windowMs: 60_000 }),
+    })
+    await h.call(post, { email: "a@pelda.hu" })
+    await h.call(post, { email: "b@pelda.hu" })
+    expect((await h.call(post, { email: "c@pelda.hu" })).statusCode).toBe(429)
   })
 })

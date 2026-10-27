@@ -37,5 +37,14 @@ export async function generateStaticParams() {
 }
 
 export default async function MarkaListaOldal() {
-  return <MarkaListaLap cim={CIM} markak={await markaLista()} />
+  /*
+    EGY ATMENETI BOLTI HIBA NE ADJON HIBALAPOT (barracuda, #576): ures lista
+    es naplosor; a lap ures listanal kimondja, hogy nincs mit mutatni, es a
+    kovetkezo revalidalas ujra probalja. A kezdolap markasavja ugyanigy tesz.
+  */
+  const markak = await markaLista().catch((hiba) => {
+    console.warn("[marka] a markalista nem jott meg:", hiba)
+    return []
+  })
+  return <MarkaListaLap cim={CIM} markak={markak} />
 }
