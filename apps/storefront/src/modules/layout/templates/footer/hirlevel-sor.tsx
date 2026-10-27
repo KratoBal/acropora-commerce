@@ -6,7 +6,7 @@ import { hirlevelFeliratkozasAkcio } from "@lib/data/hirlevel"
 import { jogiOldal } from "@lib/util/fogyasztobarat"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import type { HirlevelAdat } from "./hirlevel-adat"
+import { hozzajarulasLinkkel, type HirlevelAdat } from "./hirlevel-adat"
 
 const MEZO =
   "h-11 w-full min-w-0 border px-4 txt-small outline-none focus-visible:ring-2"
@@ -111,16 +111,7 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
                 required
                 className="mt-0.5 h-4 w-4 shrink-0"
               />
-              <span>
-                {hirlevel.hozzajarulas}{" "}
-                <LocalizedClientLink
-                  href={jogiOldal("adatkezeles")}
-                  className="underline"
-                  data-testid="hirlevel-adatkezeles"
-                >
-                  Adatkezelési tájékoztató
-                </LocalizedClientLink>
-              </span>
+              <Hozzajarulas szoveg={hirlevel.hozzajarulas} />
             </label>
             {allapot?.allapot === "hiba" ? (
               <p role="alert" className="txt-small" data-testid="hirlevel-hiba">
@@ -131,5 +122,30 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
         )}
       </div>
     </section>
+  )
+}
+
+/** A hozzajarulas szovege, a tajekoztato kifejezese mint link (`hozzajarulasLinkkel`). */
+function Hozzajarulas({ szoveg }: { szoveg: string }) {
+  const link = (felirat: string) => (
+    <LocalizedClientLink
+      href={jogiOldal("adatkezeles")}
+      className="underline"
+      data-testid="hirlevel-adatkezeles"
+    >
+      {felirat}
+    </LocalizedClientLink>
+  )
+  const reszek = hozzajarulasLinkkel(szoveg)
+  return reszek ? (
+    <span>
+      {reszek.elotte}
+      {link(reszek.link)}
+      {reszek.utana}
+    </span>
+  ) : (
+    <span>
+      {szoveg} {link("Adatkezelési tájékoztató")}
+    </span>
   )
 }
