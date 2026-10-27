@@ -48,6 +48,13 @@ describe("the unit price from the name", () => {
     ["a thousands separator with a dot", "Tápoldat 19.000 ml"],
     ["a thousands separator, 1.000 g", "Só 1.000 g"],
     ["a thousands separator with a space", "Medence víz 19 000 l"],
+    ["a size suffix on a filter", "FLUVAL FX6, 1500L-es külső szűrő"],
+    ["a size suffix on a holder", "Vertex Előszűrőzsák tartó 100ml-s - titán csavarokkal 11cm"],
+    ["a model code", "CUH-18L - 18W-os UVC pótizzó"],
+    ["a bag", "Arka szűrőanyagtartó zsák 1000ml"],
+    ["a pipette", "Arka - 30cm-es, nagy méretű pipetta - 50ml"],
+    ["a reactor vessel", "Fauna Marin Skim Breeze reactor - 2,5 L - lehabzóhoz CO2 előszűrő tartály"],
+    ["a multi-part pack", "Blue Life Red Cyano Rx 4g - Phosphate RX ComboPack"],
     ["an empty name", ""],
   ])("%s => no unit price", (_why, name) => {
     expect(unitPriceFromName(name, 1000)).toBeNull()
@@ -90,6 +97,13 @@ describe("the backend and the storefront agree", () => {
     "Tápoldat 19.000 ml",
     "Só 1.000 g",
     "Medence víz 19 000 l",
+    "FLUVAL FX6, 1500L-es külső szűrő",
+    "Vertex Előszűrőzsák tartó 100ml-s - titán csavarokkal 11cm",
+    "CUH-18L - 18W-os UVC pótizzó",
+    "Arka szűrőanyagtartó zsák 1000ml",
+    "Arka - 30cm-es, nagy méretű pipetta - 50ml",
+    "Fauna Marin Skim Breeze reactor - 2,5 L - lehabzóhoz CO2 előszűrő tartály",
+    "Blue Life Red Cyano Rx 4g - Phosphate RX ComboPack",
   ])("%s", (name) => {
     const backend = unitPriceFromName(name, 4321)
     const storefront = egysegarNevbol(name, 4321)

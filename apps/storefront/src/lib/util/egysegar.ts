@@ -73,6 +73,29 @@ const TARTOMANY =
  */
 const EZRES = /\d{1,3}[.\s]\d{3}\s*(kg|gr|g|ml|l)(?![A-Za-z\u00C0-\u017F\d])/i
 
+/**
+ * MODELLKOD ("CUH-18L", "FX-1500L"): a betu es kotojel utan allo szam+egyseg a
+ * termek AZONOSITOJA, nem a tartalma ("CUH-18L - 18W-os UVC potizzo" 183 Ft/l
+ * egysegarat kapott volna).
+ */
+const KOD =
+  /[A-Za-z\u00C0-\u017F]-\d+(?:[.,]\d+)?\s*(kg|gr|g|ml|l)(?![A-Za-z\u00C0-\u017F\d])/i
+/**
+ * KEPZO ("1500L-es kulso szuro", "100ml-s tarto"): az egyseg utan kotojellel allo
+ * toldalek a termek MERETET mondja, nem a tartalmat.
+ */
+const KEPZO = /\d\s*(kg|gr|g|ml|l)-[A-Za-z\u00C0-\u017F]/i
+/**
+ * EDENY, ESZKOZ, KESZLET: a nev egy edenyt vagy eszkozt ad el, amelynek a
+ * mennyisege a KAPACITASA ("szurőanyagtarto zsak 1000ml", "pipetta 50ml", "reactor
+ * - 2,5 L - tartaly", "UVC potizzo"), vagy tobb osszetevos csomagot ("ComboPack",
+ * "szett"), amelyben a nevben allo mennyiseg egy resze. Heurisztika a TELJES teszt-
+ * katalogus atnezesebol (1447 termek), nem teljes lista: ami igy is atcsuszik, azt
+ * az ellenorzo lista fogja meg.
+ */
+const EDENY =
+  /zs[aá]k|pipett|tart[aá]ly|reaktor|reactor|tart[oó](?![A-Za-z\u00C0-\u017F])|sz[uű]r[oő](?![A-Za-z\u00C0-\u017F])|izz[oó]|combo|szett|(^|[^A-Za-z\u00C0-\u017F])(set|kit)([^A-Za-z\u00C0-\u017F]|$)|csomag|pack(?![A-Za-z\u00C0-\u017F])/i
+
 const szam = (szoveg: string) => Number(szoveg.replace(",", "."))
 
 export function egysegarNevbol(
@@ -85,6 +108,8 @@ export function egysegarNevbol(
   if (SZORZO_ELOTT.test(nev) || SZORZO_UTAN.test(nev)) return null
   // SEBESSEG, TARTOMANY, EZRES-ELVALASZTO: a #595 review (barracuda) mert esetei
   if (SEBESSEG.test(nev) || TARTOMANY.test(nev) || EZRES.test(nev)) return null
+  // MODELLKOD, -es/-s KEPZO, EDENY/KESZLET szo: a teljes teszt-katalogus atnezese talalta
+  if (KOD.test(nev) || KEPZO.test(nev) || EDENY.test(nev)) return null
 
   const talalatok = Array.from(nev.matchAll(MENNYISEG))
   if (talalatok.length !== 1) return null

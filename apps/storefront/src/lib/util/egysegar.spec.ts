@@ -48,6 +48,13 @@ describe("az egységár a névből", () => {
     "Tápoldat 19.000 ml",
     "Só 1.000 g",
     "Medence víz 19 000 l",
+    "FLUVAL FX6, 1500L-es külső szűrő",
+    "Vertex Előszűrőzsák tartó 100ml-s - titán csavarokkal 11cm",
+    "CUH-18L - 18W-os UVC pótizzó",
+    "Arka szűrőanyagtartó zsák 1000ml",
+    "Arka - 30cm-es, nagy méretű pipetta - 50ml",
+    "Fauna Marin Skim Breeze reactor - 2,5 L - lehabzóhoz CO2 előszűrő tartály",
+    "Blue Life Red Cyano Rx 4g - Phosphate RX ComboPack",
   ])("bizonytalan név, nincs egységár: %s", (nev) => {
     expect(egysegarNevbol(nev, 1000)).toBeNull()
   })

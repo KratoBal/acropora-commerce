@@ -20,6 +20,9 @@
  *   - dimensions ("180x90cm") are not g/ml/l, so they do not count;
  *   - a flow rate ("16000 l/h"), a range ("300-900l") and a thousands separator
  *     ("19.000 l") are unclear (measured on the test catalogue, #595 review);
+ *   - a model code ("CUH-18L"), a size suffix ("1500L-es") and a vessel, tool or
+ *     kit word ("zsák", "pipetta", "tartály", "szűrő", "combo", "szett") are
+ *     unclear (found reading the whole test catalogue);
  *   - a zero or negative quantity is unclear.
  *
  * The base is the kilogram and the litre; the price is rounded to whole forints.
@@ -61,6 +64,24 @@ const RANGE = /\d\s*[-–—]\s*\d+(?:[.,]\d+)?\s*(kg|gr|g|ml|l)(?![A-Za-zÀ-ſ\
  */
 const THOUSANDS = /\d{1,3}[.\s]\d{3}\s*(kg|gr|g|ml|l)(?![A-Za-zÀ-ſ\d])/i
 
+/**
+ * A model code ("CUH-18L"): a letter, a hyphen and a number+unit is the product's
+ * identifier, not its content ("CUH-18L - 18W-os UVC pótizzó" would have got
+ * 183 Ft/l).
+ */
+const CODE = /[A-Za-z\u00C0-\u017F]-\d+(?:[.,]\d+)?\s*(kg|gr|g|ml|l)(?![A-Za-z\u00C0-\u017F\d])/i
+/** A suffix after the unit ("1500L-es külső szűrő", "100ml-s tartó"): a size, not content. */
+const SUFFIX = /\d\s*(kg|gr|g|ml|l)-[A-Za-z\u00C0-\u017F]/i
+/**
+ * A vessel, a tool or a kit: the name sells a container whose quantity is its
+ * CAPACITY ("zsák 1000ml", "pipetta 50ml", "reactor - 2,5 L - tartály", "UVC
+ * pótizzó") or a multi-part pack ("ComboPack", "szett") where the quantity in the
+ * name is one part. A heuristic from reading the whole test catalogue (1447
+ * products), not a complete list: what slips through, the check list catches.
+ */
+const VESSEL =
+  /zs[aá]k|pipett|tart[aá]ly|reaktor|reactor|tart[oó](?![A-Za-z\u00C0-\u017F])|sz[uű]r[oő](?![A-Za-z\u00C0-\u017F])|izz[oó]|combo|szett|(^|[^A-Za-z\u00C0-\u017F])(set|kit)([^A-Za-z\u00C0-\u017F]|$)|csomag|pack(?![A-Za-z\u00C0-\u017F])/i
+
 const toNumber = (text: string) => Number(text.replace(",", "."))
 
 export function unitPriceFromName(
@@ -72,6 +93,8 @@ export function unitPriceFromName(
   if (MULTIPLIER_BEFORE.test(name) || MULTIPLIER_AFTER.test(name)) return null
   // flow rate, range, thousands separator: the cases #595's review measured
   if (RATE.test(name) || RANGE.test(name) || THOUSANDS.test(name)) return null
+  // model code, '-es' suffix, vessel/kit word: found reviewing the whole test catalogue
+  if (CODE.test(name) || SUFFIX.test(name) || VESSEL.test(name)) return null
 
   const matches = Array.from(name.matchAll(QUANTITY))
   if (matches.length !== 1) return null
