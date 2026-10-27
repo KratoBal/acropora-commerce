@@ -14,7 +14,7 @@ import {
 } from "./merchant-feed-item"
 
 type Query = Parameters<typeof getVariantAvailability>[0]
-type BrandReader = {
+export type BrandReader = {
   listProductBrands(
     filters: { product_id: string[] },
     config: { take: number | null }
@@ -150,7 +150,7 @@ export function merchantFeedDeps(scope: MedusaContainer) {
   }
 }
 
-async function brandNames(
+export async function brandNames(
   brands: BrandReader,
   productIds: string[]
 ): Promise<Record<string, string>> {
