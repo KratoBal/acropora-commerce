@@ -35,6 +35,10 @@ describe("az országkód nélküli út átirányítása", () => {
     expect(orszagAtiranyitasKod(1, "/_next/data/x/hu.json")).toBe(307)
   })
 
+  it("az Elérhetőségek országkód nélkül 301-gyel a magyar oldalra megy (P1/11)", () => {
+    expect(ISMERT_LAP_SZAKASZOK).toContain("elerhetosegek")
+  })
+
   it("a lap-szakaszok listája a kirakat mappáiból áll", () => {
     const gyoker = join(__dirname, "..", "..", "app", "[countryCode]")
     const mappak = readdirSync(gyoker, { withFileTypes: true })
