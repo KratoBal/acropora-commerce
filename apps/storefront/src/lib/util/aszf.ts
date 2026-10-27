@@ -31,6 +31,7 @@
  * egyutt mondja meg, MELYIK szoveget fogadta el a vevo, akkor is, ha a
  * Fogyasztobarat a regi allapotot nem adja vissza.
  */
+import { JELSZO_ROVID_UZENET, jelszoHosszuEleg } from "@lib/util/jelszo"
 import {
   FOGYASZTOBARAT_ID,
   dokumentumForras,
@@ -129,5 +130,6 @@ export function regisztracioHiba(urlap: {
   if (!urlap.jelszo || urlap.jelszo !== urlap.jelszoUjra) {
     return "A két jelszó nem egyezik."
   }
+  if (!jelszoHosszuEleg(urlap.jelszo)) return JELSZO_ROVID_UZENET
   return null
 }

@@ -184,18 +184,35 @@ describe("POST /store/customers/me/password", () => {
   })
 })
 
+describe("the attempt limit on the password change", () => {
+  it("the sixth try in the window for one account is refused with 429, before the password is checked", async () => {
+    const results: boolean[] = []
+    for (let i = 0; i < 6; i++) {
+      const call = request("authid_throttle", { current_password: "x", new_password: "uj-jelszo-1" })
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() }
+      await POST({ ...call.req, } as never, res as never).catch(() => undefined)
+      results.push(res.status.mock.calls.some(([code]) => code === 429))
+    }
+    expect(results).toEqual([false, false, false, false, false, true])
+  })
+})
+
 describe("the body of the password change", () => {
-  it("needs both passwords, non-empty", () => {
+  it("needs both passwords, non-empty, the new one at least ten characters (audit P1/8)", () => {
     expect(
-      StoreChangePassword.safeParse({ current_password: "a", new_password: "b" })
+      StoreChangePassword.safeParse({ current_password: "a", new_password: "uj-jelszo-1" })
         .success,
     ).toBe(true)
     expect(
-      StoreChangePassword.safeParse({ current_password: "", new_password: "b" })
+      StoreChangePassword.safeParse({ current_password: "", new_password: "uj-jelszo-1" })
         .success,
     ).toBe(false)
     expect(
       StoreChangePassword.safeParse({ current_password: "a", new_password: "" })
+        .success,
+    ).toBe(false)
+    expect(
+      StoreChangePassword.safeParse({ current_password: "a", new_password: "kilenc123" })
         .success,
     ).toBe(false)
   })
@@ -204,7 +221,7 @@ describe("the body of the password change", () => {
     expect(
       StoreChangePassword.safeParse({
         current_password: "a",
-        new_password: "b",
+        new_password: "uj-jelszo-1",
         email: "b@example.hu",
       }).success,
     ).toBe(false)

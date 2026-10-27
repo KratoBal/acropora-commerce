@@ -88,7 +88,7 @@ describe("az ÁSZF hatálydátuma", () => {
  * atmegy; ha kulonbozo jelszavakkal atmegy; ha egy helyes urlapot elutasit.
  */
 describe("a regisztráció szerveroldali ellenőrzése", () => {
-  const jo = { aszf: "on", jelszo: "titok123", jelszoUjra: "titok123" }
+  const jo = { aszf: "on", jelszo: "titok12345", jelszoUjra: "titok12345" }
 
   it("helyes űrlapnál nincs hiba", () => {
     expect(regisztracioHiba(jo)).toBeNull()
@@ -99,9 +99,23 @@ describe("a regisztráció szerveroldali ellenőrzése", () => {
   })
 
   it("két különböző jelszóval megáll", () => {
-    expect(regisztracioHiba({ ...jo, jelszoUjra: "titok124" })).toBe(
+    expect(regisztracioHiba({ ...jo, jelszoUjra: "titok12346" })).toBe(
       "A két jelszó nem egyezik.",
     )
+  })
+
+  it("rövid jelszóval megáll, tíz karakter még átmegy (audit P1/8)", () => {
+    const rovid = { ...jo, jelszo: "kilenc123", jelszoUjra: "kilenc123" }
+    expect(regisztracioHiba(rovid)).toBe(
+      "A jelszó legalább 10 karakter legyen.",
+    )
+    expect(
+      regisztracioHiba({
+        ...jo,
+        jelszo: "tiz1234567",
+        jelszoUjra: "tiz1234567",
+      }),
+    ).toBeNull()
   })
 
   it("üres jelszóval is megáll, akkor is, ha a kettő egyforma", () => {
