@@ -19,8 +19,8 @@ const urlap = (mezok: Record<string, string>) => {
 }
 const JO = {
   current_password: "regi-jelszo",
-  new_password: "uj-jelszo",
-  new_password_again: "uj-jelszo",
+  new_password: "uj-jelszo-12",
+  new_password_again: "uj-jelszo-12",
 }
 
 beforeEach(() => {
@@ -43,7 +43,7 @@ describe("a jelszó módosítása", () => {
     expect(opciok).toMatchObject({
       method: "POST",
       headers: { authorization: "Bearer x" },
-      body: { current_password: "regi-jelszo", new_password: "uj-jelszo" },
+      body: { current_password: "regi-jelszo", new_password: "uj-jelszo-12" },
     })
   })
 
@@ -81,7 +81,7 @@ describe("a jelszó módosítása", () => {
       error: "A jelenlegi jelszó nem helyes.",
     })
     expect(JSON.stringify(valasz)).not.toContain("regi-jelszo")
-    expect(JSON.stringify(valasz)).not.toContain("uj-jelszo")
+    expect(JSON.stringify(valasz)).not.toContain("uj-jelszo-12")
   })
 
   it("más szerverhiba az általános mondatot kapja, nem a nyers szöveget", async () => {

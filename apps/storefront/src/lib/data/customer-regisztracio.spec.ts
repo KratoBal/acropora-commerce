@@ -57,8 +57,8 @@ const JO = {
   email: "vevo@example.hu",
   first_name: "Anna",
   last_name: "Minta",
-  password: "titok123",
-  password_again: "titok123",
+  password: "titok12345",
+  password_again: "titok12345",
   aszf: "on",
 }
 
@@ -118,7 +118,7 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
         aszf: "on",
       },
     })
-    expect(JSON.stringify(valasz)).not.toContain("titok123")
+    expect(JSON.stringify(valasz)).not.toContain("titok12345")
   })
 
   it("sikeres regisztrációnál nincs visszatöltés", async () => {

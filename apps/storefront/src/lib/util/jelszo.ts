@@ -14,7 +14,7 @@ export const JELSZO_MIN_HOSSZ = 10
 export const JELSZO_ROVID_UZENET = `A jelszó legalább ${JELSZO_MIN_HOSSZ} karakter legyen.`
 
 export const jelszoHosszuEleg = (jelszo: unknown): boolean =>
-  typeof jelszo === "string" && [...jelszo].length >= JELSZO_MIN_HOSSZ
+  typeof jelszo === "string" && Array.from(jelszo).length >= JELSZO_MIN_HOSSZ
 
 /**
  * A JELSZOCSERE ELLENORZESE (P5, 257:191), a szerveren is: az ures mezo, az
