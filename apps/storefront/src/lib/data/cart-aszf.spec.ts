@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const sdk = vi.hoisted(() => ({
-  client: { fetch: vi.fn(async () => ({})) },
+  client: { fetch: vi.fn(async (..._args: unknown[]) => ({})) },
   store: { cart: { update: vi.fn(async () => ({ cart: {} })) } },
 }))
 vi.mock("@lib/config", () => ({ sdk }))
@@ -48,7 +48,9 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
 
   it("kosár-azonosító nélkül a süti kosarát használja", async () => {
     expect(await rogzitsAszfElfogadast()).toEqual({ ok: true })
-    expect(sdk.client.fetch.mock.calls[0]![0]).toBe("/store/carts/cart_1/aszf-elfogadas")
+    expect(sdk.client.fetch.mock.calls[0]![0]).toBe(
+      "/store/carts/cart_1/aszf-elfogadas",
+    )
   })
 
   it("hibánál (a szerver 501-e is) visszaadott üzenet, nem dobás", async () => {
