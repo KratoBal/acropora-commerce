@@ -32,6 +32,8 @@ const konfig = (env: Record<string, string | undefined>) => {
 const ALAP = {
   NEXT_PUBLIC_MEDUSA_BACKEND_URL: "https://commerce-stage.example.test",
   NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: "pk_helyi_proba_nem_valodi",
+  // production modban a next.config a kirakat cimet is ellenorzi (S1)
+  NEXT_PUBLIC_BASE_URL: "https://shop-staging.example-bolt.hu",
   MEDUSA_CLOUD_S3_HOSTNAME: "",
   MEDUSA_CLOUD_S3_PATHNAME: "",
 }
