@@ -48,6 +48,18 @@ describe("a kirakat betűinek előtöltése", () => {
     expect(betuHivas("--terv-betu-kiemelt")).not.toContain("italic")
   })
 
+  it("a dőlt szöveget a stíluslap a dőlt családra köti", () => {
+    // a ket hivas ket csaladnevet ad: e nelkul a velemenyek idezete a normal
+    // betubol SZINTETIZALT doltet kapna, es semmi nem szolna
+    const css = readFileSync(
+      join(__dirname, "..", "styles", "globals.css"),
+      "utf8",
+    )
+    expect(css).toMatch(
+      /\.font-kiemelt\.italic\s*\{[^}]*var\(--terv-betu-kiemelt-dolt\)/,
+    )
+  })
+
   it("a fő betűket (törzs és fejléc) előtölti", () => {
     for (const fo of ["--terv-betu-fo", "--acr-font-hanken"])
       expect(betuHivas(fo), fo).not.toMatch(/preload:\s*false/)
