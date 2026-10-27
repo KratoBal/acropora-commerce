@@ -1,10 +1,15 @@
 import {
+  elerhetosegekCanonical,
+  fizetesCanonical,
   fooldalCanonical,
+  kepesTajekoztatoCanonical,
   markaCanonical,
   storeCanonical,
+  szallitasCanonical,
   termeklapCanonical,
   valogatasCanonical,
 } from "./lap-canonical"
+import { fogyasztobaratBekapcsolva } from "./fogyasztobarat"
 import { leszarmazottAzonositok } from "./kategoria-leszarmazottak"
 import { termekRobotsJel } from "@lib/seo/oldal-metaadat"
 import { kategoriaCanonical } from "./kategoria-canonical"
@@ -23,6 +28,13 @@ import { kategoriaCanonical } from "./kategoria-canonical"
  * A lapok `alternates.canonical` erteke ugyanezekbol keszul. Ha itt kezzel
  * raknam ossze ugyanazt az utat, ket helyen allna ugyanaz a szabaly, es a
  * sitemap egyszer olyan cimet ajanlana, amit a lap maga nem tart kanonikusnak.
+ *
+ * === A LABLEC SAJAT OLDALAI (commerce-audit-p1) ===
+ *
+ * Az Elerhetosegek, a Szallitas es a Fizetes mindig benne van; a Kepes vasarloi
+ * tajekoztato csak bekapcsolt Fogyasztobaratnal (kulonben egy mondatnyi oldal).
+ * A jogi dokumentumok (`/jogi/<slug>`) szandekosan NINCSENEK benne: ma a
+ * Fogyasztobarat-kapcsolo kikapcsolt, es a lap csak a mai bolt cimet mutatja.
  *
  * === AMI SZANDEKOSAN NINCS BENNE ===
  *
@@ -57,6 +69,13 @@ export type SitemapTipus = (typeof SITEMAP_TIPUSOK)[number]
 
 export type SitemapBemenet = {
   origin: string
+  /**
+   * A FOGYASZTOBARAT-KAPCSOLO ALLASA. A Kepes vasarloi tajekoztato tartalmat a
+   * Fogyasztobarat adja; kikapcsolva az oldal csak egy mondatot mutat, es egy
+   * sitemap nem ajanl olyan oldalt, ami nem kinal tartalmat. Alapbol a
+   * kornyezet kapcsoloja.
+   */
+  fogyasztobarat?: boolean
   /**
    * ORSZAGONKENT SAJAT TERMEKLISTA -- ES EZ NEM TULBONYOLITAS.
    *
@@ -136,6 +155,7 @@ export function sitemapReszek({
   markak = [],
   landingek = [],
   noindexTermekek,
+  fogyasztobarat = fogyasztobaratBekapcsolva(),
 }: SitemapBemenet): Record<SitemapTipus, SitemapBejegyzes[]> {
   const cim = (ut: string) => `${origin}${ut}`
   const reszek: Record<SitemapTipus, SitemapBejegyzes[]> = {
@@ -150,6 +170,13 @@ export function sitemapReszek({
   for (const { countryCode, termekek } of orszagok) {
     reszek.lapok.push({ url: cim(fooldalCanonical(countryCode)) })
     reszek.lapok.push({ url: cim(storeCanonical(countryCode)) })
+    // a lablec sajat oldalai (commerce-audit-p1): ezek a lablec linkjei, es
+    // mind indexelheto (a robots-jelolesuk `indexelhetoRobots`)
+    reszek.lapok.push({ url: cim(elerhetosegekCanonical(countryCode)) })
+    reszek.lapok.push({ url: cim(szallitasCanonical(countryCode)) })
+    reszek.lapok.push({ url: cim(fizetesCanonical(countryCode)) })
+    if (fogyasztobarat)
+      reszek.lapok.push({ url: cim(kepesTajekoztatoCanonical(countryCode)) })
 
     for (const kategoria of kategoriak) {
       if (!kategoria.handle || !vanTermeke(kategoria)) continue

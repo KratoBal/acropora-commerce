@@ -32,11 +32,14 @@ describe("sitemap bejegyzesek", () => {
     )
   })
 
-  it("a fooldal, a store-lap, a kategoriak es a termekek mind bekerulnek", () => {
+  it("a fooldal, a store-lap, a lablec oldalai, a kategoriak es a termekek mind bekerulnek", () => {
     const utak = sitemapBejegyzesek(BEMENET).map((b) => b.url)
     expect(utak).toEqual([
       "https://shop.acropora.hu/hu",
       "https://shop.acropora.hu/hu/store",
+      "https://shop.acropora.hu/hu/elerhetosegek",
+      "https://shop.acropora.hu/hu/szallitas",
+      "https://shop.acropora.hu/hu/fizetes",
       "https://shop.acropora.hu/hu/categories/korallok",
       "https://shop.acropora.hu/hu/categories/korallok/sps",
       "https://shop.acropora.hu/hu/termek/acropora-tenuis",
@@ -121,6 +124,9 @@ describe("sitemap bejegyzesek", () => {
     expect(utak).toEqual([
       "https://shop.acropora.hu/hu",
       "https://shop.acropora.hu/hu/store",
+      "https://shop.acropora.hu/hu/elerhetosegek",
+      "https://shop.acropora.hu/hu/szallitas",
+      "https://shop.acropora.hu/hu/fizetes",
       "https://shop.acropora.hu/hu/termek/van-handle",
     ])
   })
