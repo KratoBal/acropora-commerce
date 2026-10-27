@@ -23,10 +23,12 @@ export const dynamic = "force-dynamic"
 
 // `redirects`: a régi címek listája (SEO P0 PR 7c); a backend a lista írásakor hívja
 // `homepage-content`: a kezdolap szerkesztheto tartalma; a backend az OS mentesekor hivja
+// `brands`: a markalista es a markaoldalak; a backend a marka- es a termek-marka irasakor hivja
 export const URITHETO_CIMKEK = [
   "products",
   "redirects",
   "homepage-content",
+  "brands",
 ] as const
 
 const egyezik = (kapott: string | null, vart: string) => {

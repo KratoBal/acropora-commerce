@@ -1,6 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
-import { resolveBrandService } from "../helpers"
+import { requestBrandsRevalidate, resolveBrandService } from "../helpers"
 import { AdminPutBrandType } from "../validators"
 
 /**
@@ -23,5 +23,6 @@ export const PUT = async (
     req.params.os_brand_id,
     req.validatedBody
   )
+  requestBrandsRevalidate(req.scope)
   res.json({ brand })
 }
