@@ -27,6 +27,7 @@ import {
   getCartId,
   removeCartId,
   setCartId,
+  setRendelesMegtekintes,
 } from "./cookies"
 import { getRegion } from "./regions"
 
@@ -755,6 +756,18 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
 
     const orderCacheTag = await getCacheTag("orders")
     revalidateTag(orderCacheTag)
+
+    // A visszaigazolo lap reszleteit csak ez a bongeszo lathatja (audit P1/5):
+    // alairt, egy oras suti a most leadott rendelesekrol. Ha nem sikerul, a
+    // rendeles ettol meg leadott, a lap a minimalis alakot mutatja.
+    try {
+      await setRendelesMegtekintes(valasz.orders.map((rendeles) => rendeles.id))
+    } catch (hiba) {
+      console.error(
+        "A rendelés megtekintési sütije nem állítható be:",
+        hiba instanceof Error ? hiba.message : String(hiba),
+      )
+    }
 
     removeCartId()
     redirect(`/${orszag ?? "hu"}/order/${elso.id}/confirmed`)

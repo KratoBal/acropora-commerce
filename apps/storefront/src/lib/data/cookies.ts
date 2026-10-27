@@ -2,6 +2,11 @@ import "server-only"
 import { cookies as nextCookies } from "next/headers"
 
 import {
+  MEGTEKINTES_ELETTARTAM_MP,
+  MEGTEKINTES_SUTI,
+  alairtMegtekintesSuti,
+} from "@lib/util/rendeles-megtekintes"
+import {
   CACHE_AZONOSITO_ELETTARTAM_MP,
   CACHE_AZONOSITO_SUTI,
 } from "@lib/util/cache-azonosito"
@@ -184,4 +189,27 @@ export const removeCartId = async () => {
   cookies.set("_medusa_cart_id", "", {
     maxAge: -1,
   })
+}
+
+/**
+ * A most leadott rendelesek megtekintesi sutije (rendeles-megtekintes.ts):
+ * alairt, egy oras, csak a szerver olvassa. Titok nelkul nem ad sutit.
+ */
+export const setRendelesMegtekintes = async (
+  rendelesIdk: readonly string[],
+) => {
+  const ertek = alairtMegtekintesSuti(rendelesIdk)
+  if (!ertek) return
+  const cookies = await nextCookies()
+  cookies.set(MEGTEKINTES_SUTI, ertek, {
+    maxAge: MEGTEKINTES_ELETTARTAM_MP,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  })
+}
+
+export const getRendelesMegtekintes = async (): Promise<string | undefined> => {
+  const cookies = await nextCookies()
+  return cookies.get(MEGTEKINTES_SUTI)?.value
 }
