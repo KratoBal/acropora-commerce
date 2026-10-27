@@ -52,6 +52,7 @@ import { initiatePaymentSession } from "@lib/data/cart"
 import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { StripeContext } from "../payment-wrapper/stripe-wrapper"
 import Payment from "./index"
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 
 afterEach(() => {
   cleanup()
@@ -99,7 +100,7 @@ describe("a fizetési lépés vegyes kosárnál", () => {
     expect(initiatePaymentSession).not.toHaveBeenCalled()
 
     expect(screen.getByTestId("submit-order-button")).toHaveTextContent(
-      "Rendelés leadása",
+      MEGRENDEL_GOMB_FELIRAT,
     )
     expect(screen.queryByTestId("submit-payment-button")).toBeNull()
     expect(screen.getByTestId("egy-fizetes").textContent).toMatch(

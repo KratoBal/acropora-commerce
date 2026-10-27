@@ -12,6 +12,7 @@ import {
   RENDELES_MOST_NEM_SIKERULT,
 } from "@lib/util/penztar-uzenet"
 import { HttpTypes } from "@medusajs/types"
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 import { Button } from "@modules/common/components/ui"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import { unstable_rethrow, useParams } from "next/navigation"
@@ -534,7 +535,7 @@ const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
         size="large"
         data-testid="submit-order-button"
       >
-        Rendelés leadása
+        {MEGRENDEL_GOMB_FELIRAT}
       </Button>
       <ErrorMessage
         error={errorMessage}

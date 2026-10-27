@@ -48,6 +48,7 @@ vi.mock("@lib/util/stripe-kulcs", () => ({
 import { initiatePaymentSession } from "@lib/data/cart"
 
 import Payment from "./index"
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 
 afterEach(() => {
   cleanup()
@@ -102,9 +103,9 @@ describe("a kártyás mód a fizetési lépésben", () => {
         { provider_id: STRIPE },
       ),
     )
-    // a keretek szerint: "Rendelés leadása" a mezo mellett, nem "Tovább"
+    // a keretek szerint: a megrendel gomb a mezo mellett, nem "Tovább"
     expect(await screen.findByTestId("submit-order-button")).toHaveTextContent(
-      "Rendelés leadása",
+      MEGRENDEL_GOMB_FELIRAT,
     )
     expect(screen.queryByTestId("submit-payment-button")).toBeNull()
     expect(screen.getByTestId("stripe-cta-sav")).toBeInTheDocument()

@@ -17,6 +17,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
 }))
 
 import PaymentButton from "./index"
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 
 afterEach(cleanup)
 
@@ -48,7 +49,7 @@ describe("a rendelés leadása előre utalással", () => {
       />,
     )
     const gomb = screen.getByTestId("submit-order-button") as HTMLButtonElement
-    expect(gomb.textContent).toContain("Rendelés leadása")
+    expect(gomb.textContent).toContain(MEGRENDEL_GOMB_FELIRAT)
     expect(gomb.disabled).toBe(false)
   })
 

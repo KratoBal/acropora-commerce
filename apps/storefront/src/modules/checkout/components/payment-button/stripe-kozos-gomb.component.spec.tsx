@@ -46,6 +46,7 @@ import {
 } from "@lib/data/stripe"
 import { placeOrder } from "@lib/data/cart"
 import PaymentButton from "./index"
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 
 afterEach(() => {
   cleanup()
@@ -173,7 +174,7 @@ describe("StripeKozosGomb", () => {
     lead()
     await waitFor(() =>
       expect(screen.getByTestId("submit")).toHaveTextContent(
-        "Rendelés leadása",
+        MEGRENDEL_GOMB_FELIRAT,
       ),
     )
     expect(screen.queryByText("Hibás kártyaszám.")).toBeNull()

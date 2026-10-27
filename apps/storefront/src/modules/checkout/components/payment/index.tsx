@@ -579,7 +579,7 @@ const Payment = ({
 
           {/*
             A BANKKARTYA LEADO GOMBJA A FIZETESI LEPESBEN ALL (a keretek
-            szerint: a mezo, a bizalmi mondat es a "Rendelés leadása" egy
+            szerint: a mezo, a bizalmi mondat es a megrendel gomb egy
             nezetben). Mobilon a kepernyo aljara ragad, a fizetendo osszeggel;
             a helyfoglalo alatta azert van, hogy a ragado sav ne takarja el az
             oldal aljat. A tobbi mod utja (Tovább az ellenőrzéshez) valtozatlan.

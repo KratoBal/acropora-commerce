@@ -20,6 +20,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
 }))
 
 import Review from "./index"
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 
 afterEach(() => {
   cleanup()
@@ -45,7 +46,7 @@ describe("az ellenőrzés lépése", () => {
     for (const ertek of ["step=review&fizetes=kartya", "step=review"]) {
       lepes.ertek = ertek
       render(<Review cart={kosar} fizetesiSzerep={null} />)
-      expect(screen.queryByText("Rendelés leadása")).toBeNull()
+      expect(screen.queryByText(MEGRENDEL_GOMB_FELIRAT)).toBeNull()
       expect(screen.getByText("Válassz fizetési módot")).toBeInTheDocument()
       cleanup()
     }
@@ -60,7 +61,7 @@ describe("az ellenőrzés lépése", () => {
     lepes.ertek = "step=review&fizetes=stripe"
     render(<Review cart={kosar} fizetesiSzerep={null} />)
     expect(screen.getByTestId("submit-order-button")).toHaveTextContent(
-      "Rendelés leadása",
+      MEGRENDEL_GOMB_FELIRAT,
     )
   })
 })

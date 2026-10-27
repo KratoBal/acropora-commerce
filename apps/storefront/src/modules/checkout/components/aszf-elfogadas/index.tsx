@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useState } from "react"
 
+import { ADATKEZELES_CIM, ASZF_CIM } from "@lib/util/aszf"
+import { ASZF_PIPA_RESZEK, ASZF_PIPA_SZOVEG } from "@lib/util/megrendeles"
+
 /**
  * AZ ASZF ELFOGADASA A FIZETESI OLDALON (Figma 209:3 / 209:133, "Rendelés
  * véglegesítése"): kotelezo pipa, a leado gomb es a gyors fizetes addig
@@ -34,8 +37,14 @@ export function AszfProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export const ASZF_SZOVEG =
-  "Elolvastam és elfogadom az ÁSZF-et és az adatkezelési tájékoztatót."
+/**
+ * A PIPA SZOVEGE SZO SZERINT AZ UNAS-E (commerce-audit-p0, P0-1; lasd
+ * `lib/util/megrendeles.ts`): a ket kifejezes hivatkozas, a masodik mondat a
+ * fizetesi kotelezettseget mondja ki, mert a gomb felirata „Megrendel”.
+ */
+export const ASZF_SZOVEG = ASZF_PIPA_SZOVEG
+
+const HIVATKOZAS = "underline underline-offset-2 hover:text-acr-heritage"
 
 export default function AszfNegyzet() {
   const { elfogadva, beallit } = useAszf()
@@ -52,7 +61,27 @@ export default function AszfNegyzet() {
         data-testid="aszf-pipa"
         required
       />
-      <span>{ASZF_SZOVEG}</span>
+      <span>
+        {ASZF_PIPA_RESZEK.elso}
+        <a
+          href={ASZF_CIM}
+          target="_blank"
+          rel="noreferrer"
+          className={HIVATKOZAS}
+        >
+          {ASZF_PIPA_RESZEK.aszf}
+        </a>
+        {ASZF_PIPA_RESZEK.koztes}
+        <a
+          href={ADATKEZELES_CIM}
+          target="_blank"
+          rel="noreferrer"
+          className={HIVATKOZAS}
+        >
+          {ASZF_PIPA_RESZEK.adatkezeles}
+        </a>
+        {ASZF_PIPA_RESZEK.vege}
+      </span>
     </label>
   )
 }
