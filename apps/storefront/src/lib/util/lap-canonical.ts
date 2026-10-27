@@ -110,6 +110,11 @@ export function markaCanonical(countryCode: string, handle: string): string {
   return `/${countryCode}/marka/${handle}`
 }
 
+/** AZ ELERHETOSEGEK OLDALANAK KANONIKUS CIME (`/hu/elerhetosegek`, commerce-audit-p1, P1/11). */
+export function elerhetosegekCanonical(countryCode: string): string {
+  return `/${countryCode}/elerhetosegek`
+}
+
 /** A FORGALMAZOTT MARKAK LISTAJANAK KANONIKUS CIME (`/hu/marka`, kirakat-lablec-kep). */
 export function markaListaCanonical(countryCode: string): string {
   return `/${countryCode}/marka`

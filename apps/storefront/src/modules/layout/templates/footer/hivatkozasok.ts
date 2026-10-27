@@ -1,4 +1,8 @@
-import { JOGI_DOKUMENTUMOK, jogiOldal } from "@lib/util/fogyasztobarat"
+import {
+  JOGI_DOKUMENTUMOK,
+  fogyasztobaratBekapcsolva,
+  jogiOldal,
+} from "@lib/util/fogyasztobarat"
 
 /**
  * A LABLEC HIVATKOZASAI, EGY HELYEN.
@@ -83,6 +87,12 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
   { cimke: "Profilom", oszlop: "fiok", cim: "/account" },
   { cimke: "Kosár", oszlop: "fiok", cim: "/cart" },
   /*
+    SAJAT OLDALA VAN (commerce-audit-p1, P1/11): az "Elérhetőségek" eddig a regi
+    UNAS boltra mutatott, ami a domainvaltas utan onmagara mutatna. A ceg-adatokat
+    mutatja (`CEG`, lent), ugyanabbol a forrasbol, mint ez a lablec.
+  */
+  { cimke: "Elérhetőségek", oszlop: "informaciok", cim: "/elerhetosegek" },
+  /*
     A FOGYASZTOBARAT DOKUMENTUMAI (2026-10-05): a jogi szovegek mostantol a
     kirakat SAJAT oldalain allnak (`/jogi/<slug>`), a tartalmat a Fogyasztobarat
     adja. Az ASZF es az adatkezelesi tajekoztato ezzel kikerult a regi boltra
@@ -116,11 +126,6 @@ export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
     cimke: "Szállítás",
     oszlop: "informaciok",
     cim: "https://shop.acropora.hu/shop_contact.php?tab=shipping",
-  },
-  {
-    cimke: "Elérhetőségek",
-    oszlop: "informaciok",
-    cim: "https://shop.acropora.hu/shop_contact.php",
   },
   {
     cimke: "Képes vásárlói tájékoztató",
@@ -168,3 +173,37 @@ export const FIZETESI_OPCIOK_KEP = {
   w: 472,
   h: 96,
 } as const
+
+/**
+ * A LABLEC (ES A JOGI LAPOK) AZON LINKJEI, AMIK EGY ADOTT HOSZTRA MUTATNAK
+ * (commerce-audit-p1, P1/11): az elesitesi kapu. A lablec ma a regi UNAS boltra
+ * (`shop.acropora.hu`) mutat negy-ot, es a Fogyasztobarat-kapcsolo kikapcsolt
+ * allasaban az ASZF es az adatkezelesi tajekoztato is oda visz (`maiBoltCim`).
+ * A domainvaltas utan ez a host a SAJAT bolt: egy ilyen link onmagara mutatna, a
+ * vevo a sajat boltjaban kapna a regi bolt tartalma helyett semmit.
+ *
+ * A KAPU: `GET /api/health/lablec-linkek?host=shop.acropora.hu` (az atallas ELOTT
+ * is megkerdezheto) vagy parameter nelkul a szerver sajat hosztjara. Az elesitesi
+ * lista kerdese: a szam nulla-e.
+ */
+export function lablecLinkekHoszton(
+  host: string,
+  fogyasztobarat: boolean = fogyasztobaratBekapcsolva(),
+): { cimke: string; cim: string }[] {
+  const mind: { cimke: string; cim: string }[] = [
+    ...REGI_BOLT_HIVATKOZASOK.map((h) => ({ cimke: h.cimke, cim: h.cim })),
+    // bekapcsolt Fogyasztobaratnal az ASZF es az adatkezeles a sajat oldalon all
+    ...(fogyasztobarat
+      ? []
+      : JOGI_DOKUMENTUMOK.flatMap((d) =>
+          d.maiBoltCim ? [{ cimke: d.cim, cim: d.maiBoltCim }] : [],
+        )),
+  ]
+  return mind.filter((h) => {
+    try {
+      return new URL(h.cim).host.toLowerCase() === host.toLowerCase()
+    } catch {
+      return false
+    }
+  })
+}
