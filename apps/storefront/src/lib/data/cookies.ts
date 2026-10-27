@@ -126,7 +126,12 @@ export type PendingCustomer = {
   first_name?: string
   last_name?: string
   phone?: string
-  /** A regisztraciokor rogzitett adatok (peldaul az ASZF-elfogadas). */
+  /** A pipa be volt jelolve: az elfogadas rekordjat a szerver irja (audit A4, vevo-iker). */
+  aszf?: boolean
+  /**
+   * LEGACY: a szerver atvetele elott irt suti ide tette a kliens-rekordot. Mar
+   * nem kuldjuk el sehova; csak annyit jelent, hogy a pipa be volt jelolve.
+   */
   metadata?: Record<string, unknown>
 }
 
