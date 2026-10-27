@@ -21,7 +21,10 @@
  *
  * The webhook is Medusa's built-in `POST /hooks/payment/stripe_stripe`; without
  * STRIPE_WEBHOOK_SECRET the package only warns, and 3-D Secure or async
- * payments would not update the order.
+ * payments would not update the order. That is why the container does not
+ * START with a key and no secret (`docker-entrypoint.sh`,
+ * `verify-stripe-webhook-secret.ts`); this function cannot refuse, because the
+ * config is also loaded by the image build, which has no runtime environment.
  */
 export const STRIPE_PROVIDER_ID = "pp_stripe_stripe" as const
 
