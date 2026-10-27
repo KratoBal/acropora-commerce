@@ -10,8 +10,11 @@ import { PICKUP_CART_METADATA_KEY } from "./split-completion"
  * The retry job finishes a mixed cart's missing pickup order. When the shop
  * deliberately does not fulfil it (the customer cancelled the live animal), the
  * job would still make the order within seven days. A person marks the SHIPPED
- * cart; from then on the job does not retry it, does not write its ERROR line
- * and the OS list does not show it (all three read the same candidate query).
+ * cart; from then on the job does not retry it and does not write its ERROR
+ * line. THE OS LIST STILL SHOWS IT, with the mark (acrobot, 2026-10-27 20:51
+ * UTC): the customer's card may still be held for the missing order, and
+ * releasing or refunding it is a person's decision, so the reminder stays for as
+ * long as the cart is a candidate. The mark stops the retry and nothing else.
  *
  * WHAT IT WRITES: one metadata key on the shipped cart, `{ at, reason, by }`,
  * and nothing else (the other keys stay). Clearing writes `null`, so the

@@ -4,6 +4,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import {
   ALERT_AFTER_MINUTES,
   pickupRetryOperations,
+  type RetryStopped,
   type StuckPickup,
 } from "./pickup-retry"
 
@@ -41,6 +42,12 @@ export type AttentionItem = {
   pickup_cart_id: string
   since: string
   minutes: number
+  /**
+   * A person stopped the retry for this cart (`POST /admin/order-attention/
+   * pickup-skip`). The entry stays: the card may still be held for the missing
+   * order, and releasing or refunding it is a person's decision.
+   */
+  retry_stopped: RetryStopped | null
 }
 
 export type AttentionOperations = {
@@ -71,6 +78,7 @@ export const computeAttention = async (
       pickup_cart_id: item.pickup_cart_id,
       since: item.parent_completed_at.toISOString(),
       minutes: Math.floor(minutes),
+      retry_stopped: item.retry_stopped ?? null,
     })
   }
 

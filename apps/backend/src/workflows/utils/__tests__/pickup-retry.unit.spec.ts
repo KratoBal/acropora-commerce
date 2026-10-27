@@ -158,3 +158,37 @@ describe("the repeated ERROR line", () => {
     expect(w.errors[0]).toContain("/admin/order-attention/pickup-skip")
   })
 })
+
+/**
+ * "DO NOT RETRY" STOPS ONLY THE RETRY (acrobot, 2026-10-27 20:51 UTC). What must
+ * fail: a stopped cart still sent to the completion; a stopped cart still
+ * writing its ERROR line; a stopped cart silencing the others; its memory entry
+ * kept after it was stopped.
+ */
+describe("a cart whose retry a person stopped", () => {
+  const stopped = (parent: string, ageMinutes: number): StuckPickup => ({
+    ...stuck(parent, ageMinutes),
+    retry_stopped: { at: "2026-10-27T13:00:00.000Z", reason: "customer cancelled", by: "user_1" },
+  })
+
+  it("is not retried and writes no line, while the others carry on", async () => {
+    const w = world([stopped("cart_s", ALERT_AFTER_MINUTES + 5), stuck("cart_ok", 10)], {
+      cart_s: { order_ids: ["a", "b"] },
+      cart_ok: { order_ids: ["a", "b"] },
+    })
+    const report = await runPickupRetry(w.ops, NOW, new Map())
+    expect(w.calls).toEqual(["cart_ok"])
+    expect(report).toEqual({ finished: ["cart_ok"], pending: [], failed: [] })
+    expect(w.errors).toEqual([])
+  })
+
+  it("is forgotten by the alert memory once stopped", async () => {
+    const memory: AlertMemory = new Map()
+    const before = world([stuck("cart_s", ALERT_AFTER_MINUTES + 5)], { cart_s: { order_ids: ["a"] } })
+    await runPickupRetry(before.ops, NOW, memory)
+    expect(Array.from(memory.keys())).toEqual(["cart_s"])
+    const after = world([stopped("cart_s", ALERT_AFTER_MINUTES + 15)], { cart_s: { order_ids: ["a"] } })
+    await runPickupRetry(after.ops, new Date(NOW.getTime() + 10 * 60 * 1000), memory)
+    expect(Array.from(memory.keys())).toEqual([])
+  })
+})

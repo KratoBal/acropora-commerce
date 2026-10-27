@@ -29,11 +29,16 @@ import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "./split-comp
  * finished would write one every ten minutes for seven days). The list the OS
  * shows (`order-attention.ts`) is the lasting alert; this line stays beside it.
  *
- * LEFT ALONE ON PURPOSE: a person can mark a shipped cart "do not retry"
+ * RETRY STOPPED ON PURPOSE: a person can mark a shipped cart "do not retry"
  * (`PICKUP_RETRY_SKIP_METADATA_KEY`, set through `POST /admin/order-attention/
  * pickup-skip`). Without it the job would finish a pickup order the shop
  * deliberately does not fulfil (the customer cancelled the live animal) within
- * the seven days. A marked cart is neither retried, nor alerted on, nor listed.
+ * the seven days. The mark stops ONLY the retry (acrobot, 2026-10-27 20:51 UTC):
+ * the customer's card may still be held for the missing order, and releasing or
+ * refunding it is a person's decision, so the cart stays on the OS list
+ * (`order-attention.ts`, with the mark shown) for as long as it is a candidate.
+ * The job neither retries nor writes its ERROR line for it; the OS list is its
+ * reminder.
  *
  * THE CANDIDATE QUERY starts from the COMPLETED carts of the last seven days
  * (an order each), not from every open cart: open carts are mostly abandoned
@@ -46,8 +51,19 @@ export const ALERT_AFTER_MINUTES = 30
 export const ALERT_REPEAT_MINUTES = 60
 /** Set on the SHIPPED (parent) cart by a person: do not retry, alert on or list its pickup order. */
 export const PICKUP_RETRY_SKIP_METADATA_KEY = "acropora_pickup_retry_skip"
-export const isPickupRetrySkipped = (metadata?: Record<string, unknown> | null): boolean =>
-  !!metadata?.[PICKUP_RETRY_SKIP_METADATA_KEY]
+
+/** Who stopped the retry, when and why (what `POST /admin/order-attention/pickup-skip` wrote). */
+export type RetryStopped = { at: string; reason: string; by: string | null }
+export const retryStoppedOf = (metadata?: Record<string, unknown> | null): RetryStopped | null => {
+  const mark = metadata?.[PICKUP_RETRY_SKIP_METADATA_KEY]
+  if (!mark || typeof mark !== "object") return mark ? { at: "", reason: "", by: null } : null
+  const { at, reason, by } = mark as Record<string, unknown>
+  return {
+    at: typeof at === "string" ? at : "",
+    reason: typeof reason === "string" ? reason : "",
+    by: typeof by === "string" ? by : null,
+  }
+}
 /** How far back the job looks: a stuck pickup older than this needs a person. */
 export const LOOK_BACK_DAYS = 7
 const MINUTE_MS = 60 * 1000
@@ -58,12 +74,15 @@ export type StuckPickup = {
   parent_cart_id: string
   /** When the shipped cart was completed (its order exists since then). */
   parent_completed_at: Date
+  /** Set when a person stopped the retry: the job leaves the cart alone, the OS list still shows it. */
+  retry_stopped?: RetryStopped | null
 }
 
 export type PickupRetryOperations = {
   /**
-   * Unfinished pickup carts whose parent cart was completed since `since`, names
-   * them back and is not marked "do not retry".
+   * Unfinished pickup carts whose parent cart was completed since `since` and
+   * names them back. Carts a person marked "do not retry" are INCLUDED, with
+   * `retry_stopped`: the job skips them, the OS list keeps them.
    */
   stuck(since: Date): Promise<StuckPickup[]>
   /** The split's idempotent completion for the parent cart. */
@@ -88,7 +107,10 @@ export const runPickupRetry = async (
   memory: AlertMemory = processAlertMemory
 ): Promise<PickupRetryReport> => {
   const report: PickupRetryReport = { finished: [], pending: [], failed: [] }
-  const found = await ops.stuck(new Date(now.getTime() - LOOK_BACK_DAYS * DAY_MS))
+  // a cart whose retry a person stopped is not touched, and writes no line
+  const found = (await ops.stuck(new Date(now.getTime() - LOOK_BACK_DAYS * DAY_MS))).filter(
+    (item) => !item.retry_stopped
+  )
   // a cart that finished, was marked or aged out is forgotten, so the map stays as small as the list
   for (const cartId of Array.from(memory.keys())) {
     if (!found.some((item) => item.parent_cart_id === cartId)) memory.delete(cartId)
@@ -138,7 +160,7 @@ const alert = (
   ops.error(
     `ALERT pickup order missing: the shipped cart ${item.parent_cart_id} was completed ${Math.round(ageMinutes)} minutes ago, its pickup cart ${item.pickup_cart_id} still has no order${
       error ? ` (${error instanceof Error ? error.message : String(error)})` : ""
-    }. The customer's card may be held for it. Finish it with POST /store/carts/${item.parent_cart_id}/complete-split, or mark it "do not retry" with POST /admin/order-attention/pickup-skip if the shop does not fulfil it.`
+    }. The customer's card may be held for it. Finish it with POST /store/carts/${item.parent_cart_id}/complete-split, or, if the shop does not fulfil it, stop the retry with POST /admin/order-attention/pickup-skip (that stops only the retry: the card hold still has to be released or refunded by a person).`
   )
 }
 
@@ -148,7 +170,7 @@ export const pickupRetryOperations = (container: MedusaContainer): PickupRetryOp
   return {
     stuck: async (since) => {
       type CartRow = { id: string; metadata?: Record<string, unknown> | null; completed_at?: string | Date | null }
-      // the shipped carts: completed (an order each) in the window, naming a pickup cart, not marked
+      // the shipped carts: completed (an order each) in the window, naming a pickup cart
       const { data: completed } = await query.graph({
         entity: "cart",
         filters: { completed_at: { $gte: since } },
@@ -157,7 +179,6 @@ export const pickupRetryOperations = (container: MedusaContainer): PickupRetryOp
       const parents = (completed as CartRow[]).flatMap((cart) => {
         const pickupId = cart.metadata?.[PICKUP_CART_METADATA_KEY]
         if (typeof pickupId !== "string" || !pickupId || !cart.completed_at) return []
-        if (isPickupRetrySkipped(cart.metadata)) return []
         return [{ cart, pickupId }]
       })
       if (!parents.length) return []
@@ -178,6 +199,7 @@ export const pickupRetryOperations = (container: MedusaContainer): PickupRetryOp
           pickup_cart_id: pickup.id,
           parent_cart_id: cart.id,
           parent_completed_at: new Date(cart.completed_at as string | Date),
+          retry_stopped: retryStoppedOf(cart.metadata),
         })
       }
       return stuck

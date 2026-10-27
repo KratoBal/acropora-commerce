@@ -7,7 +7,8 @@ import { ALERT_AFTER_MINUTES } from "../pickup-retry"
  * it); one missing for longer not listed; the list not oldest first; a report
  * that closes, cancels or changes anything (the operations have no writing
  * method at all); the shipped order's number lost; a cart whose order cannot
- * be found dropped instead of listed.
+ * be found dropped instead of listed; a cart whose retry a person stopped
+ * dropped from the list (the card may still be held for it).
  */
 const NOW = new Date("2026-10-27T16:00:00.000Z")
 const minutesAgo = (m: number) => new Date(NOW.getTime() - m * 60 * 1000)
@@ -38,8 +39,29 @@ describe("the attention list", () => {
         pickup_cart_id: "cart_p",
         since: minutesAgo(ALERT_AFTER_MINUTES + 5).toISOString(),
         minutes: ALERT_AFTER_MINUTES + 5,
+        retry_stopped: null,
       },
     ])
+  })
+
+  // acrobot, 2026-10-27 20:51 UTC: the mark stops only the retry, the card may still be held
+  it("still lists a cart whose retry a person stopped, with the mark", async () => {
+    const mark = { at: "2026-10-27T13:00:00.000Z", reason: "customer cancelled", by: "user_1" }
+    const items = await computeAttention(
+      ops({
+        stuckPickups: async () => [
+          {
+            pickup_cart_id: "cart_p",
+            parent_cart_id: "cart_s",
+            parent_completed_at: minutesAgo(ALERT_AFTER_MINUTES + 5),
+            retry_stopped: mark,
+          },
+        ],
+      }),
+      NOW
+    )
+    expect(items).toHaveLength(1)
+    expect(items[0].retry_stopped).toEqual(mark)
   })
 
   it("does not list a pickup order the retry job is still working on", async () => {

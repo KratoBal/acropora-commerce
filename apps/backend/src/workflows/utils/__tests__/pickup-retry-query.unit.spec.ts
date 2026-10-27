@@ -4,7 +4,7 @@ import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-com
 /**
  * THE CANDIDATE QUERY (barracuda's notes on #592). What must fail: the query
  * starting from every open cart again (it must start from the COMPLETED carts of
- * the window); a cart marked "do not retry" still listed; a one-sided link
+ * the window); a one-sided link
  * listed; a pickup cart that already has its order listed; a completed cart
  * that names no pickup cart listed; the second query asking for more than the
  * pickup carts the first one named.
@@ -42,18 +42,25 @@ describe("the pickup retry's candidate query", () => {
     expect(asked[0]).toMatchObject({ entity: "cart", filters: { completed_at: { $gte: SINCE } } })
     expect(asked[1]).toMatchObject({ entity: "cart", filters: { id: ["k1", "k2"], completed_at: null } })
     expect(found).toEqual([
-      { pickup_cart_id: "k1", parent_cart_id: "p1", parent_completed_at: new Date(DONE) },
+      { pickup_cart_id: "k1", parent_cart_id: "p1", parent_completed_at: new Date(DONE), retry_stopped: null },
     ])
   })
 
-  it("leaves out a shipped cart marked 'do not retry', and lists a cleared mark again", async () => {
-    const marked = parent("p1", "k1", {
-      [PICKUP_RETRY_SKIP_METADATA_KEY]: { at: DONE, reason: "customer cancelled", by: "user_1" },
-    })
+  it("keeps a shipped cart marked 'do not retry' in the list, with the mark; a cleared mark is not a mark", async () => {
+    const mark = { at: DONE, reason: "customer cancelled", by: "user_1" }
+    const marked = parent("p1", "k1", { [PICKUP_RETRY_SKIP_METADATA_KEY]: mark })
     const cleared = parent("p2", "k2", { [PICKUP_RETRY_SKIP_METADATA_KEY]: null })
-    // both pickup carts are open and linked back: only the mark can tell them apart
-    const { ops } = fake([marked, cleared], [pickupCart("k1", "p1"), pickupCart("k2", "p2")])
-    expect((await ops.stuck(SINCE)).map((item) => item.parent_cart_id)).toEqual(["p2"])
+    const plain = parent("p3", "k3")
+    const { ops } = fake(
+      [marked, cleared, plain],
+      [pickupCart("k1", "p1"), pickupCart("k2", "p2"), pickupCart("k3", "p3")]
+    )
+    const found = await ops.stuck(SINCE)
+    expect(found.map((item) => [item.parent_cart_id, item.retry_stopped])).toEqual([
+      ["p1", mark],
+      ["p2", null],
+      ["p3", null],
+    ])
   })
 
   it("leaves out a one-sided link, a finished pickup cart and a cart that names no pickup cart", async () => {
