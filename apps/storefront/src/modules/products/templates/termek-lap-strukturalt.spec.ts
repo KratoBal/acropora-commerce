@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 vi.mock("server-only", () => ({}))
+vi.mock("@lib/data/brands", () => ({ termekMarka: vi.fn() }))
 vi.mock("@lib/data/categories", () => ({ listCategories: vi.fn() }))
 vi.mock("@lib/data/product-knowledge", () => ({ termekTudas: vi.fn() }))
 vi.mock("@lib/data/products", () => ({ listProducts: vi.fn() }))
@@ -229,5 +230,63 @@ describe("a terméklap strukturált adata", () => {
       PARAMS,
     ).termek as { offers: { availability: string } }
     expect(utan.offers.availability).toBe("https://schema.org/BackOrder")
+  })
+})
+
+/*
+  A MARKA UGYANAZ A LAPON ES A FEEDBEN (audit S4). MI PIROSIT: ha a JSON-LD
+  marka a gyujtemeny cimet viszi, amikor a marka-modul mast mond (a feed a
+  modult mondja); ha a modul hianya eseten nem a gyujtemeny cimere (szokozok
+  nelkul) esik vissza; ha marka nelkuli termeknek is lesz `brand` mezoje; ha a
+  tobbvaltozatos ProductGroup a gyujtemenybol veszi a markat.
+*/
+describe("a terméklap JSON-LD márkája", () => {
+  const marka = (t: Record<string, unknown> | null) =>
+    (t as { brand?: { name: string } } | null)?.brand?.name
+
+  it("a marka-modul neve nyer a gyűjtemény címe fölött", () => {
+    const { termek: t } = strukturaltAdat(
+      termek(),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+      "Aquaforest",
+    )
+    expect(marka(t)).toBe("Aquaforest")
+  })
+
+  it("a modul hiányában a gyűjtemény címe áll, szóközök nélkül, mint a feedben", () => {
+    const { termek: t } = strukturaltAdat(
+      termek({ collection: { title: "  Hanna " } }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+      null,
+    )
+    expect(marka(t)).toBe("Hanna")
+  })
+
+  it("márka nélküli terméknek nincs brand mezője", () => {
+    const { termek: t } = strukturaltAdat(
+      termek({ collection: null }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+      "   ",
+    )
+    expect(t).not.toHaveProperty("brand")
+  })
+
+  it("a többváltozatos termék csoportja is a modul nevét viszi", () => {
+    const { termek: t } = strukturaltAdat(
+      termek({
+        variants: [valtozat(), valtozat({ id: "variant_2", sku: "HI780-50" })],
+      }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+      "Aquaforest",
+    )
+    expect(marka(t)).toBe("Aquaforest")
   })
 })

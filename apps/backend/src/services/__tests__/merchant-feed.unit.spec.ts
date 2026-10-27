@@ -161,6 +161,16 @@ describe("toMerchantItem", () => {
     ).toBeUndefined()
   })
 
+  // the page's JSON-LD takes the same order (storefront `markaNev`, audit S4): the same cases stand there
+  it("MF-BRAND-TRIM: without the module the collection title is the brand, trimmed; a blank one is no brand", () => {
+    const padded = toMerchantItem(product({ collection: { title: "  Korallen-Zucht " } }), variant(), context())
+    expect(padded?.brand).toBe("Korallen-Zucht")
+    const blank = toMerchantItem(product({ collection: { title: "   " } }), variant(), context())
+    expect(blank?.brand).toBeUndefined()
+    const none = toMerchantItem(product({ collection: { title: null } }), variant(), context())
+    expect(none?.brand).toBeUndefined()
+  })
+
   it("MF-GTIN: a valid ean or upc is the gtin; a bad one is no identifier", () => {
     const withEan = toMerchantItem(product(), variant({ ean: "4006381333931" }), context())
     expect(withEan?.gtin).toBe("4006381333931")

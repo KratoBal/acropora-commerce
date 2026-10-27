@@ -61,3 +61,31 @@ export async function markaLista(): Promise<Marka[]> {
   )
   return brands ?? []
 }
+
+/**
+ * A TERMEK MARKAJA A MARKA-MODULBOL (audit S4). A Merchant feed `brand` mezoje
+ * is ebbol a modulbol jon (`brandNames` a hatterben); a terméklap JSON-LD-je
+ * eddig a gyujtemeny cimet olvasta. Egy teny, egy olvasas: a lap ugyanazt a
+ * hatter-vegpontot kerdezi, amit a feed a sajat fuggvenyen at.
+ *
+ * `null`: a terméknek nincs markaja a modulban, VAGY a vegpont nem valaszolt.
+ * A hiba nem tori el a lapot (a marka a JSON-LD kiegeszitese), a lap ilyenkor
+ * a gyujtemeny cimere esik vissza, mint a feed (`markaNev`).
+ */
+export async function termekMarka(productId: string): Promise<string | null> {
+  try {
+    const { product_brand } = await sdk.client.fetch<{
+      product_brand: { name: string | null }
+    }>(`/store/product-brands/${encodeURIComponent(productId)}`, {
+      method: "GET",
+      next: {
+        ...(await getPublicCacheOptions("brands")),
+        revalidate: MARKA_FRISSITES_MP,
+      },
+    })
+    return product_brand?.name ?? null
+  } catch (hiba) {
+    console.error("A termek-marka vegpont nem valaszolt:", hiba)
+    return null
+  }
+}

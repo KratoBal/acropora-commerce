@@ -25,6 +25,7 @@ vi.mock("@lib/data/products", () => ({
   }),
 }))
 vi.mock("@lib/data/categories", () => ({ listCategories: async () => [] }))
+vi.mock("@lib/data/brands", () => ({ termekMarka: async () => null }))
 vi.mock("@lib/data/product-knowledge", () => ({
   termekTudas: async () => null,
 }))

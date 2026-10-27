@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { termekMarka } from "@lib/data/brands"
 import { listCategories } from "@lib/data/categories"
 import { termekTudas } from "@lib/data/product-knowledge"
 import { listProducts } from "@lib/data/products"
@@ -16,6 +17,7 @@ import {
   type LatottElerhetoseg,
 } from "@lib/seo/strukturalt-adat"
 import { getBaseURL } from "@lib/util/env"
+import { markaNev } from "@lib/util/marka-nev"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import { termeklapCanonical } from "@lib/util/lap-canonical"
@@ -119,12 +121,15 @@ export async function termekLapTorzs(
   })
   // a termek-tudas (PD-014): hiba vagy hianyzo tudas eseten null, a lap a mai
   const tudas = await termekTudas(pricedProduct.id)
+  // a JSON-LD marka a marka-modulbol, mint a feed (audit S4)
+  const modulMarka = await termekMarka(pricedProduct.id)
 
   const { morzsa, termek } = strukturaltAdat(
     pricedProduct,
     categories ?? [],
     images ?? [],
     params,
+    modulMarka,
   )
 
   return (
@@ -170,7 +175,10 @@ export function strukturaltAdat(
   }[],
   kepek: HttpTypes.StoreProductImage[],
   params: { countryCode: string; handle: string },
+  /** A marka-modul neve a termekhez (`termekMarka`); nelkule a gyujtemeny cime, mint a feedben. */
+  modulMarka?: string | null,
 ) {
+  const marka = markaNev(modulMarka, termek.collection?.title)
   const alap = getBaseURL()
   const url = `${alap}${termeklapCanonical(params.countryCode, params.handle)}`
   const handleAzonositora = new Map(kategoriak.map((k) => [k.id, k.handle]))
@@ -236,7 +244,7 @@ export function strukturaltAdat(
         nev,
         url,
         csoportAzonosito: termek.id,
-        marka: termek.collection?.title ?? null,
+        marka,
         kepek: kepUrlek,
         penznem: tetelek[0]!.penznem,
         kategoriaNevek: ut.map((k) => k.teljesNev),
@@ -257,7 +265,7 @@ export function strukturaltAdat(
       nev,
       url,
       cikkszam: cikkszam(termek),
-      marka: termek.collection?.title ?? null,
+      marka,
       kepek: kepUrlek,
       gtin: valtozatGtin(valtozat),
       ar: ar.calculated_price_number,
