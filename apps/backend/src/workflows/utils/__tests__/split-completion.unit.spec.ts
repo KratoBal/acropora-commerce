@@ -426,6 +426,55 @@ describe("when a step fails", () => {
   })
 })
 
+/**
+ * THE PICKUP LINK IS CHECKED FROM BOTH SIDES (audit A4). What must fail: a
+ * shipped cart whose metadata names a cart that does not name it back being
+ * used (lines moved into or out of a stranger's cart, a stranger's cart
+ * completed), on any of the four paths that read the link.
+ */
+describe("a pickup cart that does not name the shipped cart back", () => {
+  const strangerShop = () => {
+    const shop = makeShop(
+      [
+        cart("cart_1", [line("l1", "v_eszkoz"), line("l2", "v_korall", 2)], {
+          metadata: { [PICKUP_CART_METADATA_KEY]: "cart_idegen" },
+        }),
+        cart("cart_idegen", [line("l9", "v_korall")], { metadata: { [PARENT_CART_METADATA_KEY]: "cart_masik" } }),
+      ],
+      { cart_1: ["l2"] }
+    )
+    const lines = () => [...shop.carts.values()].map((c) => c.items.map((l) => l.id))
+    return { shop, before: lines(), lines }
+  }
+  const refused = /does not name it back/
+
+  it("completing refuses and moves nothing", async () => {
+    const { shop, before, lines } = strangerShop()
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow(refused)
+    expect(lines()).toEqual(before)
+    expect(shop.log.filter((l) => /^(addLines|deleteLines|complete|ensurePayment)/.test(l))).toEqual([])
+  })
+
+  it("starting the card payment refuses and moves nothing", async () => {
+    const { shop, before, lines } = strangerShop()
+    await expect(startCardPayment("cart_1", shop.ops, CARD)).rejects.toThrow(refused)
+    expect(lines()).toEqual(before)
+  })
+
+  it("rejoining refuses and moves nothing", async () => {
+    const { shop, before, lines } = strangerShop()
+    shop.carts.get("cart_1")!.shared_payment = true
+    await expect(rejoinAndClearSharedSplit("cart_1", shop.ops)).rejects.toThrow(refused)
+    expect(lines()).toEqual(before)
+  })
+
+  it("a pickup cart with no parent key at all is the same", async () => {
+    const { shop } = strangerShop()
+    shop.carts.get("cart_idegen")!.metadata = {}
+    await expect(completeSplitCart("cart_1", shop.ops, config)).rejects.toThrow(refused)
+  })
+})
+
 describe("a cart that is not mixed", () => {
   it("is completed as one order, with no pickup cart", async () => {
     const shop = makeShop([cart("cart_1", [line("l1", "v_eszkoz")])], {})

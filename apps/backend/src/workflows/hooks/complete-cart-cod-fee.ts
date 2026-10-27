@@ -1,5 +1,7 @@
+import { MedusaError } from "@medusajs/framework/utils"
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
+import { guardAszf } from "../utils/aszf-guard"
 import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
 import { assertCardShare } from "../utils/assert-card-share"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
@@ -22,6 +24,26 @@ import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context
  * customer approved.
  */
 completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
+  // The ÁSZF net under EVERY way of placing an order (audit A4): the stock
+  // `/complete` route, both halves of `complete-split`, anything later. The
+  // card path keeps its exception (aszf-guard.ts): its record was required
+  // when the session was made.
+  const aszf = guardAszf(
+    {
+      metadata: (cart?.metadata as Record<string, unknown> | null | undefined) ?? null,
+      sessions: (cart?.payment_collection?.payment_sessions ?? [])
+        .filter(Boolean)
+        .map((session) => ({
+          provider_id: session?.provider_id ?? null,
+          status: session?.status ?? null,
+        })),
+    },
+    "place_order"
+  )
+  if (aszf.action === "refuse") {
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, aszf.message)
+  }
+
   // A workflow hook takes one handler, so the P4-2 check lives here too: a
   // mixed cart is completed as two orders, never as one.
   await assertCartNotMixed(cart, container)

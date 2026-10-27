@@ -193,6 +193,27 @@ const mustLoad = async (ops: SplitOperations, cartId: string) => {
 }
 
 /**
+ * THE PICKUP CART THE SHIPPED CART NAMES, CHECKED FROM BOTH SIDES (audit A4).
+ * The id on the shipped cart's metadata decides which OTHER cart lines move
+ * into and out of, and which cart is completed next; the client could once
+ * write it (refuse-client-cart-metadata.ts closes that). The net under it:
+ * the named cart must name this one back as its parent, as `createPickupCart`
+ * wrote it. Otherwise nothing moves.
+ */
+const linkedPickupCartId = async (ops: SplitOperations, cart: SplitCart): Promise<string | null> => {
+  const id = pickupCartIdOf(cart)
+  if (!id) return null
+  const pickup = await mustLoad(ops, id)
+  if (pickup.metadata?.[PARENT_CART_METADATA_KEY] !== cart.id) {
+    throw new MedusaError(
+      MedusaError.Types.UNEXPECTED_STATE,
+      `Cart ${id} is named as the pickup cart of ${cart.id}, but does not name it back`
+    )
+  }
+  return id
+}
+
+/**
  * The pickup cart's payment: the shared PaymentIntent when the split was
  * paid together (P4-3c), otherwise payment in the shop.
  */
@@ -246,7 +267,7 @@ const completeSplitCartLocked = async (
   config: SplitCompletionConfig
 ): Promise<SplitResult> => {
   const cart = await mustLoad(ops, cartId)
-  const pickupCartId = pickupCartIdOf(cart)
+  const pickupCartId = await linkedPickupCartId(ops, cart)
 
   // A REPEATED CALL after the shipped order was made: only the pickup part is
   // left, if anything.
@@ -575,7 +596,7 @@ const startCardPaymentLocked = async (
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, `Cart ${cartId} is already completed`)
   }
 
-  const pickupCartId = pickupCartIdOf(cart)
+  const pickupCartId = await linkedPickupCartId(ops, cart)
   const splitIds = new Set(await ops.splitLineIds(cartId))
   const pickupLines = cart.items.filter((line) => splitIds.has(line.id))
 
@@ -646,7 +667,7 @@ export const rejoinAndClearSharedSplit = (
 ): Promise<{ rejoined: boolean }> =>
   ops.withLock(cartId, async () => {
     const cart = await mustLoad(ops, cartId)
-    const pickupCartId = pickupCartIdOf(cart)
+    const pickupCartId = await linkedPickupCartId(ops, cart)
     const { rejoined } = await rejoinSharedSplitLocked(cartId, ops)
 
     if (rejoined) {
@@ -664,7 +685,7 @@ const rejoinSharedSplitLocked = async (
   ops: SplitOperations
 ): Promise<{ rejoined: boolean }> => {
   const cart = await mustLoad(ops, cartId)
-  const pickupCartId = pickupCartIdOf(cart)
+  const pickupCartId = await linkedPickupCartId(ops, cart)
 
   if (cart.completed_at || !pickupCartId || !cart.shared_payment) {
     return { rejoined: false }
