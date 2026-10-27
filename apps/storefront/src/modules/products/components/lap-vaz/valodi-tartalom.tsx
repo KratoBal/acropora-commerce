@@ -13,6 +13,7 @@ import {
   MennyisegDoboz,
   ValasztoDoboz,
 } from "../vasarlas/dobozok"
+import { EgysegarSor } from "../vasarlas/egysegar-sor"
 import {
   kapcsolatForras,
   kiegeszitoAzonositok,
@@ -646,6 +647,7 @@ export function vazTartalom(
           cikkszam={cikkszam(termek)}
           egyediPeldany={egyediPeldany}
         />
+        <EgysegarSor />
         {egyediPeldany && <KiszerelesSor kiszereles={egyseg} />}
       </>
     )

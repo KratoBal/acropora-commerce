@@ -74,6 +74,8 @@ describe("toMerchantItem", () => {
     expect(item).toEqual({
       id: "KZ-AMINO-100",
       title: "KZ Amino Acid High Concentrate 100 ml",
+      // the name carries exactly one clear quantity (audit P1/3, unit-price.ts)
+      unit_pricing_measure: "100ml",
       description: "Aminosav & vitamin",
       link: "https://teszt.acropora.example/hu/termek/kz-amino-acid-high-concentrate-100-ml",
       image_link: "https://cdn.example/kz-1.jpg",

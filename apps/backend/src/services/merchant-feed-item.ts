@@ -18,6 +18,8 @@
  * shipping and tax (account settings, not feed fields).
  */
 
+import { unitPriceFromName } from "./unit-price"
+
 export type MerchantFeedVariant = {
   id: string
   sku?: string | null
@@ -75,6 +77,14 @@ export type MerchantItem = {
   identifier_exists?: "no"
   product_type?: string
   shipping_weight?: string
+  /**
+   * The pack size read from the name ("25g", "3785ml"), for Google's unit
+   * price (`unit-price.ts`). Only where the name carries exactly one clear
+   * quantity; Google computes the unit price from this and the price. The base
+   * measure is not sent: its list of allowed values was not verified, and the
+   * attribute is optional.
+   */
+  unit_pricing_measure?: string
 }
 
 const TITLE_MAX = 150
@@ -116,11 +126,13 @@ export function toMerchantItem(
   const path = categoryPath(product, context)
   const gtin = variantGtin(variant)
   const brand = context.brands[product.id] ?? product.collection?.title?.trim()
+  const fullTitle = titleOf(product, variant, multi)
+  const measure = unitPriceFromName(fullTitle, amount)?.feedMeasure
 
   return {
     id,
     ...(multi ? { item_group_id: product.handle } : {}),
-    title: cut(titleOf(product, variant, multi), TITLE_MAX),
+    title: cut(fullTitle, TITLE_MAX),
     description: cut(
       plainText(product.description ?? "") || product.title,
       DESCRIPTION_MAX
@@ -138,6 +150,7 @@ export function toMerchantItem(
     ...(typeof variant.weight === "number" && variant.weight > 0
       ? { shipping_weight: `${variant.weight} g` }
       : {}),
+    ...(measure ? { unit_pricing_measure: measure } : {}),
   }
 }
 
