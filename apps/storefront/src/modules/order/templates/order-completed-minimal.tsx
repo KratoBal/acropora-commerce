@@ -27,9 +27,11 @@ export default function OrderCompletedMinimal({
         <h1 className="text-[30px] font-normal leading-[36px] text-acr-ink small:text-[38px] small:leading-[46px]">
           Köszönjük a rendelésed!
         </h1>
-        <p className="text-[15px] text-acr-ink" data-testid="order-id">
-          {rendelesSzam(displayId)}
-        </p>
+        {displayId === null || displayId === undefined ? null : (
+          <p className="text-[15px] text-acr-ink" data-testid="order-id">
+            {rendelesSzam(displayId)}
+          </p>
+        )}
         <p className="text-[13px] text-acr-slate">
           A rendelésed részleteit a visszaigazoló e-mailben találod. Ha van
           fiókod, a rendeléseidet bejelentkezés után a Rendeléseim oldalon is

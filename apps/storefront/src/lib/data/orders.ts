@@ -3,12 +3,21 @@
 import { sdk } from "@lib/config"
 import type { UzletiAllapot } from "@lib/util/rendelesek"
 import medusaError from "@lib/util/medusa-error"
-import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { RENDELES_MEGTEKINTES_FEJLEC } from "@lib/util/rendeles-megtekintes"
+import {
+  getAuthHeaders,
+  getCacheOptions,
+  getRendelesMegtekintes,
+} from "./cookies"
 import { HttpTypes } from "@medusajs/types"
 
 export const retrieveOrder = async (id: string) => {
+  // A hatter a rendelest csak a tulajdonosnak vagy a leadaskor kapott alairt
+  // megtekintesi sutivel adja ki (audit A6b): a sutit a kirakat szervere tovabbitja.
+  const megtekintes = await getRendelesMegtekintes()
   const headers = {
     ...(await getAuthHeaders()),
+    ...(megtekintes ? { [RENDELES_MEGTEKINTES_FEJLEC]: megtekintes } : {}),
   }
 
   const next = {

@@ -133,7 +133,10 @@ describe("a rendelés-visszaigazoló lap", () => {
     expect(screen.getByTestId("reszletes").getAttribute("data-par")).toBe("")
   })
 
-  it("ismeretlen rendelés: nem található", async () => {
-    await expect(lap("order_nincs")).rejects.toThrow("NEXT_NOT_FOUND")
+  it("a háttér 404-e (idegen vagy nem létező rendelés) ugyanazt a számtalan minimális oldalt adja", async () => {
+    await lap("order_nincs")
+    expect(screen.getByTestId("order-complete-minimal")).toBeTruthy()
+    expect(screen.queryByTestId("order-id")).toBeNull()
+    expect(screen.queryByTestId("reszletes")).toBeNull()
   })
 })

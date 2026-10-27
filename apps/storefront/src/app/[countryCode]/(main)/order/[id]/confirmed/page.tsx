@@ -6,7 +6,6 @@ import { kapcsoltRendeles } from "@lib/util/rendelesek"
 import OrderCompletedMinimal from "@modules/order/templates/order-completed-minimal"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
 
 type Props = {
   params: Promise<{ id: string }>
@@ -20,17 +19,20 @@ export default async function OrderConfirmedPage(props: Props) {
   const params = await props.params
   const order = await retrieveOrder(params.id).catch(() => null)
 
+  // A hatter 404-et ad annak, aki nem tulajdonos es nincs alairt sutije (audit
+  // A6b), es ugyanazt egy nem letezo rendelesre is: mindkettonek ugyanaz a
+  // minimalis oldal jar, szam nelkul, hogy az oldal se arulja el, melyik
+  // azonosito letezik.
   if (!order) {
-    return notFound()
+    return <OrderCompletedMinimal displayId={null} />
   }
 
   // A LAP NEM MUTATJA A SZEMELYES ADATOKAT (nev, cim, telefon, e-mail) CSAK
   // AZ AZONOSITO BIRTOKABAN (audit P1/5): a leadaskor kapott alairt suti
   // nevezi meg a rendelest, vagy a bejelentkezett vevo a rendeles tulajdonosa.
-  // EZ CSAK A LAP UTJA: a Medusa gyari `GET /store/orders/:id` vegpontja
-  // hitelesites nelkul is kiadja a rendelest a nyilvanos publikalhato
-  // kulccsal, tehat aki az azonositot ismeri, a lap nelkul, kozvetlenul a
-  // hatterbol is elkeri (audit A6b, kulon tetel).
+  // A hatter ugyanezt ellenorzi (audit A6b, order-read-guard.ts): a rendelest
+  // csak a tulajdonosnak vagy ennek a sutinek az ertekevel adja ki. Ez a lap
+  // masodik vedovonal, es a hatter 404-et nem kulonbozteti meg itt.
   const suti = await getRendelesMegtekintes()
   const vevo = await retrieveCustomer().catch(() => null)
   const sajat = (rendeles: { id: string; customer_id?: string | null }) =>

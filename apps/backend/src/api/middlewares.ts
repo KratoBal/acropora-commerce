@@ -1,4 +1,5 @@
 import {
+  authenticate,
   defineMiddlewares,
   validateAndTransformBody,
   validateAndTransformQuery,
@@ -53,6 +54,7 @@ import { StoreGetFoxpostPickupPointsParams } from "./store/foxpost/pickup-points
 import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validators";
 import { refuseClientSessionData } from "./refuse-client-session-data";
 import { refuseClientCartMetadata } from "./refuse-client-cart-metadata";
+import { guardOrderRead } from "./order-read-guard";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
@@ -146,6 +148,16 @@ export default defineMiddlewares({
       matcher: "/admin/order-edits/:id/confirm",
       method: "POST",
       middlewares: [orderEditConfirmKeepsHold],
+    },
+    {
+      // Medusa's order read has no authentication: only the order's customer, or the
+      // storefront's view signature for this order, reads it (audit A6b, order-read-guard.ts).
+      matcher: "/store/orders/:id",
+      method: "GET",
+      middlewares: [
+        authenticate("customer", ["session", "bearer"], { allowUnauthenticated: true }),
+        guardOrderRead,
+      ],
     },
     {
       // The ÁSZF record is the server's (aszf-record.ts); the stock cart and line writes
