@@ -61,8 +61,8 @@ afterEach(() => {
  * A REGISZTRACIO ES AZ ASZF-ELFOGADAS (P5; audit A4, vevo-iker). MI PIROSIT: ha
  * pipa nelkul vagy eltero jelszavakkal fiok jon letre; ha a kirakat ismet maga
  * allitja ossze a rekordot (metadata a vevo letrehozasaban, a sutiben), vagy ha
- * a rekordot nem a szerver vegpontja irja a vevohoz kotott tokennel; ha a hiba
- * elnyelodik; ha egy masik e-mail sutije masik fiokra irna a pipat.
+ * a rekordot nem a szerver vegpontja irja a vevohoz kotott tokennel; ha a rekord
+ * hibaja kizarja a vevot a belepesbol (vagy ha a sutit eldobja); ha egy masik e-mail sutije masik fiokra irna a pipat.
  */
 describe("a regisztráció az ÁSZF-elfogadással", () => {
   it("pipa nélkül nem hoz létre fiókot", async () => {
@@ -158,13 +158,16 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     expect(JSON.stringify(fuggo)).not.toMatch(/verzio|idopont/)
   })
 
-  it("ha a szerver nem tudja rögzíteni, a hiba hangos, a süti marad, a token nem lép érvénybe", async () => {
+  /*
+   * A BELEPES NEM FUGG A REKORD IRASATOL (barracuda, #608 review): ez a fiokhoz
+   * valo hozzaferes, nem rendeles. A kosarnal a megallas helyes, itt kizarna.
+   */
+  it("ha a szerver nem tudja rögzíteni, a belépés sikerül, a token be van állítva, a süti megmarad", async () => {
     sdk.client.fetch.mockRejectedValue(new Error("boom"))
     const valasz = await signup(null, urlap(JO))
-    expect(valasz).toMatchObject({ state: "error" })
-    expect((valasz as { error: string }).error).toContain("ÁSZF")
+    expect(valasz).toEqual({ state: "success", aszfRogzitesHianyzik: true })
+    expect(suti.setAuthToken).toHaveBeenCalledWith("login-token")
     expect(suti.removePendingCustomer).not.toHaveBeenCalled()
-    expect(suti.setAuthToken).not.toHaveBeenCalled()
   })
 
   it("a következő belépés megismétli a rögzítést (a vevő már létezik, a süti megvan)", async () => {
@@ -173,6 +176,7 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     // most a vevo mar letezik
     sdk.store.customer.retrieve.mockResolvedValue({ customer: { id: "cus_1" } })
     sdk.client.fetch.mockClear()
+    suti.removePendingCustomer.mockClear()
     const valasz = await login(
       null,
       urlap({ email: "vevo@example.hu", password: "titok12345" }),
@@ -220,11 +224,13 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
    * ROGZITENI (a kosar rekordjaval azonos szabaly): a vegpontot nem hivjuk, a
    * megallas hangos.
    */
-  it("bekapcsolt Fogyasztóbaráttal nem hívja a végpontot, és hangosan megáll", async () => {
+  it("bekapcsolt Fogyasztóbaráttal nem hívja a végpontot, de a belépés sikerül és a süti marad", async () => {
     process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
     const valasz = await signup(null, urlap(JO))
-    expect(valasz).toMatchObject({ state: "error" })
+    expect(valasz).toEqual({ state: "success", aszfRogzitesHianyzik: true })
     expect(sdk.client.fetch).not.toHaveBeenCalled()
+    expect(suti.setAuthToken).toHaveBeenCalledWith("login-token")
+    expect(suti.removePendingCustomer).not.toHaveBeenCalled()
   })
 })
 

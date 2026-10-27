@@ -44,7 +44,10 @@ export type CustomerAuthState =
   // refill after React 19 resets it following the action.
   | { state: "error"; error: string; ertekek?: Record<string, string> }
   | { state: "verification_required"; email: string }
-  | { state: "success" }
+  // `aszfRogzitesHianyzik`: the sign-in went through, but the server could not
+  // record the ÁSZF acceptance yet; the pending cookie stays and the next
+  // sign-in records it again.
+  | { state: "success"; aszfRogzitesHianyzik?: boolean }
   | null
 
 // Requests a verification email for the given customer. The request must be
@@ -377,9 +380,6 @@ export async function login(
     : eredmeny
 }
 
-const REGISZTRACIOS_ASZF_HIBA =
-  "A fiók elkészült, de az ÁSZF elfogadását most nem sikerült rögzíteni. Jelentkezz be újra, és megismételjük."
-
 // A cookie written before the server took over the record carried the
 // customer's `metadata` with it: that counts as "the box was ticked", the
 // record itself is the server's now.
@@ -389,20 +389,18 @@ const elfogadasVarJa = (fuggo: PendingCustomer) =>
 // The customer says they accepted the ÁSZF; the time, the version and the
 // document are the server's (`POST /store/customers/me/aszf-elfogadas`). Like
 // the cart's record: with the Fogyasztóbarát switch on the backend cannot yet
-// record that document, so the call is not made and the stop is loud.
-async function rogzitsRegisztraciosAszfet(
-  token: string,
-): Promise<string | null> {
-  if (fogyasztobaratBekapcsolva()) return REGISZTRACIOS_ASZF_HIBA
+// record that document, so the call is not made. True: it was recorded.
+async function rogzitsRegisztraciosAszfet(token: string): Promise<boolean> {
+  if (fogyasztobaratBekapcsolva()) return false
   try {
     await sdk.client.fetch("/store/customers/me/aszf-elfogadas", {
       method: "POST",
       body: { elfogadom: true },
       headers: { authorization: `Bearer ${token}` },
     })
-    return null
+    return true
   } catch {
-    return REGISZTRACIOS_ASZF_HIBA
+    return false
   }
 }
 
@@ -489,9 +487,13 @@ async function completeLogin(
     }
   }
 
-  // The acceptance is recorded with the customer-bound token. The pending
-  // cookie goes only after it succeeded: a failure leaves the cookie, and the
-  // next login (the customer now exists) records it again.
+  // The acceptance is recorded with the customer-bound token. THE SIGN-IN DOES
+  // NOT DEPEND ON IT (barracuda, #608 review): this is access to the account,
+  // not an order (the order's ÁSZF is settled on the cart, #587), and with the
+  // Fogyasztóbarát switch on the record cannot be written at all, which would
+  // lock every new customer out of their own browser. The pending cookie goes
+  // only after the record succeeded: a failure leaves the cookie, and the next
+  // sign-in (the customer now exists) records it again.
   // Only the cookie of THIS e-mail address: a leftover cookie from another
   // sign-up in the same browser must not put its tick on someone else's account.
   const fuggoSuti = await getPendingCustomer()
@@ -499,11 +501,17 @@ async function completeLogin(
     fuggoSuti && fuggoSuti.email?.toLowerCase() === email.trim().toLowerCase()
       ? fuggoSuti
       : null
+  let aszfRogzitesHianyzik = false
   if (fuggo && elfogadasVarJa(fuggo)) {
-    const hiba = await rogzitsRegisztraciosAszfet(token)
-    if (hiba) return { state: "error", error: hiba }
+    aszfRogzitesHianyzik = !(await rogzitsRegisztraciosAszfet(token))
+    if (aszfRogzitesHianyzik) {
+      // no personal data in the line
+      console.warn(
+        "A regisztráció ÁSZF-elfogadását most nem sikerült rögzíteni; a következő belépés újrapróbálja.",
+      )
+    }
   }
-  if (fuggo) await removePendingCustomer()
+  if (fuggo && !aszfRogzitesHianyzik) await removePendingCustomer()
 
   await setAuthToken(token)
 
@@ -516,7 +524,9 @@ async function completeLogin(
     return { state: "error", error: authHibaSzoveg(error) }
   }
 
-  return { state: "success" }
+  return aszfRogzitesHianyzik
+    ? { state: "success", aszfRogzitesHianyzik: true }
+    : { state: "success" }
 }
 
 // Confirms a customer's email using the token from the verification link.
