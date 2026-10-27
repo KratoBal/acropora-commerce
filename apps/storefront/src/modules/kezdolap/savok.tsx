@@ -4,7 +4,10 @@ import EgyediKorallok from "@modules/kezdolap/components/egyedi-korallok"
 import Boltunk from "@modules/kezdolap/components/boltunk"
 import HeroCsuszka from "@modules/kezdolap/components/hero-csuszka"
 import KezdoEsHalado from "@modules/kezdolap/components/kezdo-es-halado"
-import Markak from "@modules/kezdolap/components/markak"
+import Markak, {
+  savMarkai,
+  type SavMarka,
+} from "@modules/kezdolap/components/markak"
 import MitKeresel from "@modules/kezdolap/components/mit-keresel"
 import Szolgaltatasok from "@modules/kezdolap/components/szolgaltatasok"
 import Velemenyek from "@modules/kezdolap/components/velemenyek"
@@ -15,11 +18,14 @@ import { kezdolapAdat, type KezdolapTartalom } from "./tartalom"
  * A SAVOK SORRENDBEN, A KOZOS ALAKBAN. A valodi kezdolap es az OS elo elonezete
  * UGYANEZT a listat hasznalja; egyetlen kulonbseg az "Egyedi korallok" sav
  * csomopontja (`egyedi`): a valodi lap szerveroldalon kerdezi le a termekeket,
- * az elonezet kliensoldalon.
+ * az elonezet kliensoldalon. A markak kinalata (`markaKinalat`, a bolt
+ * termekkel rendelkezo markai) mindkettonel szerveroldalon jon; a sorrendet es
+ * a valasztast a rekord `featured_brand_handles` listaja adja.
  */
 export function savokElemei(
   tartalom: KezdolapTartalom | null,
   egyedi: ReactNode,
+  markaKinalat: readonly SavMarka[] = [],
 ): ReactNode[] {
   const adat = kezdolapAdat(tartalom)
   const { szoveg, minta, diak } = adat
@@ -37,7 +43,12 @@ export function savokElemei(
     "kezdo-es-halado": <KezdoEsHalado s={adat} />,
     "egyedi-korallok": egyedi,
     szolgaltatasok: <Szolgaltatasok s={adat} />,
-    markak: <Markak s={adat} />,
+    markak: (
+      <Markak
+        s={adat}
+        markak={savMarkai(tartalom?.featured_brand_handles, markaKinalat)}
+      />
+    ),
     velemenyek: <Velemenyek s={adat} />,
     boltunk: <Boltunk s={adat} />,
   }
@@ -56,13 +67,17 @@ export function savokElemei(
  * sorrendje, minden latszik. Minden blokk sajat gyokerelemen viszi a
  * `data-homepage-block` jelolot, amire az elo elonezet kattintasa es a
  * kijeloles epul. Az elo elonezet (kliensoldal) a `savokElemei`-t hasznalja.
+ * A markak kinalatat a lap adja (`markaKinalat`): ez a fajl a kliens
+ * elonezetbe is bekerul, adat-lekerdezest ezert nem importal.
  */
 export async function KezdolapSavok({
   tartalom,
   countryCode,
+  markak = [],
 }: {
   tartalom: KezdolapTartalom | null
   countryCode: string
+  markak?: readonly SavMarka[]
 }) {
   const adat = kezdolapAdat(tartalom)
   return (
@@ -74,6 +89,7 @@ export async function KezdolapSavok({
           handles={tartalom?.featured_handles ?? []}
           countryCode={countryCode}
         />,
+        markak,
       )}
     </>
   )

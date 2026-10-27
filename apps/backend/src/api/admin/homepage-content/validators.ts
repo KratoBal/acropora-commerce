@@ -186,6 +186,29 @@ export const AdminPutHomepageContent = z
       .nullable()
       // absent keeps the stored list, null or [] empties it
       .optional(),
+    // The brand handles of the logo strip, in order (Balázs, 2026-10-27: any
+    // number of brands). The cap is a sanity bound, not a design limit: the
+    // OS has about 200 brands. Optional like `featured_handles`.
+    featured_brand_handles: z
+      .array(
+        z
+          .string()
+          .min(1)
+          .max(200)
+          // the brand page's handle (`/hu/marka/{handle}`), the same plain
+          // shape as a product handle
+          .regex(/^[a-z0-9][a-z0-9._-]*$/, "A handle is a plain brand handle")
+          .refine((h) => !h.includes(".."), "A handle has no ..")
+      )
+      .max(500)
+      // each brand once: the strip would show the same logo twice
+      .refine(
+        (list) => new Set(list).size === list.length,
+        "A handle is listed once"
+      )
+      .nullable()
+      // absent keeps the stored list, null or [] empties it
+      .optional(),
     // Optional like `featured_handles`: an OS that predates the fields keeps
     // working. Absent keeps what is stored, `null` clears it ("not set": the
     // storefront shows its own order and its own footer).

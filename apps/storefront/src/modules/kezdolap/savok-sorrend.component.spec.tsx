@@ -18,7 +18,10 @@ vi.mock("@modules/kezdolap/components/egyedi-korallok", () =>
 vi.mock("@modules/kezdolap/components/szolgaltatasok", () =>
   jelolo("szolgaltatasok"),
 )
-vi.mock("@modules/kezdolap/components/markak", () => jelolo("markak"))
+vi.mock("@modules/kezdolap/components/markak", () => ({
+  ...jelolo("markak"),
+  savMarkai: () => [],
+}))
 vi.mock("@modules/kezdolap/components/velemenyek", () => jelolo("velemenyek"))
 vi.mock("@modules/kezdolap/components/boltunk", () => jelolo("boltunk"))
 

@@ -38,6 +38,8 @@ export type HomepageContentInput = {
   slides: HomepageSlide[] | null
   /** Product handles of the featured band, in order; absent or null: none. */
   featured_handles?: string[] | null
+  /** Brand handles of the logo strip, in order; absent keeps, null clears. */
+  featured_brand_handles?: string[] | null
   /** Display order and visibility of the fixed blocks; absent keeps, null clears. */
   blocks?: HomepageBlock[] | null
   /** The editable footer; absent keeps, null clears. */
@@ -73,7 +75,15 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
               ? [...input.featured_handles]
               : null) as unknown as Record<string, unknown>,
           }),
-      // `blocks` and `footer` follow the same rule: written only when sent
+      // `featured_brand_handles`, `blocks` and `footer` follow the same rule:
+      // written only when sent
+      ...(input.featured_brand_handles === undefined
+        ? {}
+        : {
+            featured_brand_handles: (input.featured_brand_handles
+              ? [...input.featured_brand_handles]
+              : null) as unknown as Record<string, unknown>,
+          }),
       ...(input.blocks === undefined
         ? {}
         : {

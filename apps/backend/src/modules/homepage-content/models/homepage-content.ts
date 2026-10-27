@@ -20,6 +20,11 @@ import { model } from "@medusajs/framework/utils"
  * band shows, in order (the OS marks the products; at most 12). `null` and `[]`
  * both mean "none": the band is hidden.
  *
+ * `featured_brand_handles` are the brand handles of the home page's logo strip,
+ * in order (Balázs, 2026-10-27: any number of brands, set and ordered in the
+ * OS). `null` and `[]` both mean "none": the block keeps its row of brand
+ * names from the texts (hiding the block is the `blocks` list's job).
+ *
  * `blocks` is the display order and visibility of the eight fixed home page
  * blocks; `null` means not set (the storefront's own order, all visible).
  * `footer` is the editable part of the footer (intro, link columns, social
@@ -32,6 +37,7 @@ export const HomepageContent = model
     texts: model.json(),
     slides: model.json().nullable(),
     featured_handles: model.json().nullable(),
+    featured_brand_handles: model.json().nullable(),
     blocks: model.json().nullable(),
     footer: model.json().nullable(),
   })
