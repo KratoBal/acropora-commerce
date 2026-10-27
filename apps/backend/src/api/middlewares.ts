@@ -55,6 +55,8 @@ import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validat
 import { refuseClientSessionData } from "./refuse-client-session-data";
 import { refuseClientCartMetadata } from "./refuse-client-cart-metadata";
 import { guardOrderRead } from "./order-read-guard";
+import { promotionAttempts, signInAttempts, signUpAttempts } from "./attempt-limits";
+import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
@@ -176,6 +178,28 @@ export default defineMiddlewares({
       method: "POST" as const,
       middlewares: [refuseClientCartMetadata],
     })),
+    {
+      // Attempt limits and the password length (audit P1/8; attempt-limits.ts,
+      // password-rules.ts). The sign-in is the stock route; the limit counts per address.
+      matcher: "/auth/customer/emailpass",
+      method: "POST",
+      middlewares: [signInAttempts],
+    },
+    {
+      matcher: "/auth/customer/emailpass/register",
+      method: "POST",
+      middlewares: [signUpAttempts, requireLongPassword],
+    },
+    {
+      matcher: "/auth/customer/emailpass/update",
+      method: "POST",
+      middlewares: [requireLongPassword],
+    },
+    {
+      matcher: "/store/carts/:id/promotions",
+      method: "POST",
+      middlewares: [promotionAttempts],
+    },
     {
       // No ÁSZF acceptance on the cart: no shared PaymentIntent (aszf-guard.ts).
       matcher: "/store/carts/:id/stripe-start",
