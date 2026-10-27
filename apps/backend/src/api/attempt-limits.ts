@@ -4,6 +4,8 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+
 import { createRateLimiter, type RateLimiter } from "./store/newsletter-subscriptions/rate-limit"
 
 /**
@@ -25,6 +27,21 @@ import { createRateLimiter, type RateLimiter } from "./store/newsletter-subscrip
  * The window is short, the limit counts every try (the route's answer is not
  * known yet), and the alternative is unlimited guessing.
  *
+ * THE ALL-ADDRESSES CEILING ONLY WARNS, IT NEVER REFUSES (barracuda, #591
+ * review). A shared refusal is a shared lockout: a script sending three hundred
+ * wrong sign-ins to invented addresses would stop EVERY customer from signing
+ * in for the window, and could keep it up for almost nothing. So crossing the
+ * ceiling writes one warning line per window and lets the request through;
+ * the per-address limit still holds, and spraying across many addresses is
+ * the proxy's job (an IP-based limit at Traefik, outside this repo).
+ *
+ * THE CART LIMIT catches an accidental repeat, not targeted guessing: anyone
+ * can open a new cart, and each new cart brings ten new tries.
+ *
+ * A SUCCESSFUL sign-in counts as a try too (the count is taken before the
+ * route answers), so a customer signing in from many devices in quick
+ * succession can reach ten. Rare; if complaints come, this is the reason.
+ *
  * IN MEMORY, like the newsletter's: enough for one backend process; a second
  * instance keeps its own count, which only loosens the limit.
  */
@@ -33,7 +50,7 @@ const MINUTES = 60 * 1000
 export const ATTEMPT_LIMITS = {
   /** Sign-in: ten tries per address in fifteen minutes. */
   signInPerAddress: { max: 10, windowMs: 15 * MINUTES },
-  /** Sign-in across all addresses: a direct caller spraying passwords. */
+  /** Sign-in across all addresses: a warning only (see above). */
   signInOverall: { max: 300, windowMs: 10 * MINUTES },
   /** Sign-up: five per address in fifteen minutes. */
   signUpPerAddress: { max: 5, windowMs: 15 * MINUTES },
@@ -57,11 +74,28 @@ export const addressKeyOf = (body: unknown): string | null => {
   return key && key.length <= 254 ? key : null
 }
 
+const warned = new Map<string, number>()
+
+/** One warning line per ceiling per ten minutes, however many tries cross it. */
+const warnOncePerWindow = (req: MedusaRequest, what: string, now: number = Date.now()) => {
+  const last = warned.get(what)
+  if (last !== undefined && now - last < 10 * MINUTES) return
+  warned.set(what, now)
+  try {
+    req.scope.resolve(ContainerRegistrationKeys.LOGGER).warn(
+      `Attempt ceiling crossed: ${what}. Not refused (a shared refusal would lock every customer out); the per-address limit still holds. A spray across many addresses is the proxy's to limit.`
+    )
+  } catch {
+    // no logger: nothing to write, the request still goes through
+  }
+}
+
 /** A middleware that counts a try against `keyOf(req)` and, above the limit, answers 429. */
 export const limitAttempts =
   (opts: {
     perKey: RateLimiter
-    overall?: RateLimiter
+    /** Counts every try; crossing it logs a warning, it never refuses. */
+    overallWarn?: { limiter: RateLimiter; what: string }
     keyOf: (req: MedusaRequest) => string | null
   }) =>
   (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
@@ -72,11 +106,11 @@ export const limitAttempts =
       next()
       return
     }
-    // The overall cap first, so a refused caller does not use up an address's tries
-    if (
-      (opts.overall && !opts.overall.allow("all")) ||
-      !opts.perKey.allow(key)
-    ) {
+    // The all-addresses ceiling warns once per window and lets the try through
+    if (opts.overallWarn && !opts.overallWarn.limiter.allow("all")) {
+      warnOncePerWindow(req, opts.overallWarn.what)
+    }
+    if (!opts.perKey.allow(key)) {
       res.status(429).json(TOO_MANY_ATTEMPTS)
       return
     }
@@ -87,13 +121,13 @@ const limiter = (limit: { max: number; windowMs: number }) => createRateLimiter(
 
 export const signInAttempts = limitAttempts({
   perKey: limiter(ATTEMPT_LIMITS.signInPerAddress),
-  overall: limiter(ATTEMPT_LIMITS.signInOverall),
+  overallWarn: { limiter: limiter(ATTEMPT_LIMITS.signInOverall), what: "sign-in across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const signUpAttempts = limitAttempts({
   perKey: limiter(ATTEMPT_LIMITS.signUpPerAddress),
-  overall: limiter(ATTEMPT_LIMITS.signUpOverall),
+  overallWarn: { limiter: limiter(ATTEMPT_LIMITS.signUpOverall), what: "sign-up across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
 })
 

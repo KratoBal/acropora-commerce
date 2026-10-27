@@ -82,18 +82,53 @@ describe("the sign-in limit", () => {
     }
   })
 
-  it("the overall cap refuses across addresses, and a refused caller does not eat an address's allowance", () => {
+  it("the all-addresses ceiling NEVER refuses: past it, another address still gets through and one warning line is written", () => {
+    const warn = jest.fn()
+    const scope = { resolve: () => ({ warn }) }
     const perKey = createRateLimiter({ max: 5, windowMs: 60_000 })
     const mw = limitAttempts({
       perKey,
-      overall: createRateLimiter({ max: 2, windowMs: 60_000 }),
+      overallWarn: { limiter: createRateLimiter({ max: 2, windowMs: 60_000 }), what: "proba-plafon" },
       keyOf: (req) => addressKeyOf(req.body),
     })
-    call(mw, body("a@b.hu"))
-    call(mw, body("c@d.hu"))
-    expect(call(mw, body("e@f.hu")).res.statusCode).toBe(429)
-    // e@f.hu was refused by the overall cap: its own allowance is untouched
-    expect(perKey.allow("e@f.hu")).toBe(true)
+    const withScope = (email: string) => ({ ...body(email), scope })
+    call(mw, withScope("a@b.hu"))
+    call(mw, withScope("c@d.hu"))
+    // the ceiling is crossed from the third try on: each one goes through
+    for (const email of ["e@f.hu", "g@h.hu", "i@j.hu", "k@l.hu"]) {
+      const { res, next } = call(mw, withScope(email))
+      expect(res.statusCode).toBe(0)
+      expect(next).toHaveBeenCalledTimes(1)
+    }
+    // one warning for the window, not one per try
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0]![0])).toContain("proba-plafon")
+  })
+
+  it("the per-address limit still holds above the ceiling", () => {
+    const mw = limitAttempts({
+      perKey: createRateLimiter({ max: 1, windowMs: 60_000 }),
+      overallWarn: { limiter: createRateLimiter({ max: 1, windowMs: 60_000 }), what: "x" },
+      keyOf: (req) => addressKeyOf(req.body),
+    })
+    const scope = { resolve: () => ({ warn: jest.fn() }) }
+    call(mw, { ...body("a@b.hu"), scope })
+    expect(call(mw, { ...body("a@b.hu"), scope }).res.statusCode).toBe(429)
+  })
+
+  it("a missing logger does not stop the try", () => {
+    const mw = limitAttempts({
+      perKey: createRateLimiter({ max: 5, windowMs: 60_000 }),
+      overallWarn: { limiter: createRateLimiter({ max: 1, windowMs: 60_000 }), what: "nincs-naplo" },
+      keyOf: (req) => addressKeyOf(req.body),
+    })
+    const scope = {
+      resolve: () => {
+        throw new Error("no logger")
+      },
+    }
+    call(mw, { ...body("a@b.hu"), scope })
+    expect(call(mw, { ...body("c@d.hu"), scope }).next).toHaveBeenCalledTimes(1)
   })
 })
 

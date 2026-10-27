@@ -16,9 +16,17 @@ export function createRateLimiter(opts: {
   windowMs: number
   /** Above this many keys the expired ones are swept (a flood of addresses). */
   sweepAbove?: number
+  /**
+   * A hard cap on the keys held. Sweeping drops only EXPIRED keys, so a flood
+   * of invented keys inside one window would still grow the map; above this
+   * count the oldest-inserted keys go (their callers start a fresh allowance,
+   * which loosens the limit for them and keeps the memory bounded).
+   */
+  maxKeys?: number
 }): RateLimiter {
   const hits = new Map<string, number[]>()
   const sweepAbove = opts.sweepAbove ?? 10_000
+  const maxKeys = opts.maxKeys ?? 50_000
 
   return {
     allow(key, now = Date.now()) {
@@ -26,12 +34,20 @@ export function createRateLimiter(opts: {
       if (hits.size > sweepAbove)
         for (const [k, list] of hits)
           if (list[list.length - 1]! <= since) hits.delete(k)
+      if (hits.size > maxKeys) {
+        let excess = hits.size - maxKeys
+        for (const k of hits.keys()) {
+          if (excess-- <= 0) break
+          hits.delete(k)
+        }
+      }
       const recent = (hits.get(key) ?? []).filter((t) => t > since)
       if (recent.length >= opts.max) {
         hits.set(key, recent)
         return false
       }
       recent.push(now)
+      hits.delete(key)
       hits.set(key, recent)
       return true
     },

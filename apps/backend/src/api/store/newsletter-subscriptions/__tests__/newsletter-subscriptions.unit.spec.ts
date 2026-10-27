@@ -72,6 +72,15 @@ describe("createRateLimiter", () => {
     // the first hit (t=0) left the window; the refused ones were never counted
     expect(limit.allow("a", 1001)).toBe(true)
   })
+
+  it("NL-LIMIT-KEYS: a flood of invented keys inside one window stays under the key cap (the oldest go first)", () => {
+    const limit = createRateLimiter({ max: 1, windowMs: 1_000_000, sweepAbove: 5, maxKeys: 10 })
+    for (let i = 0; i < 200; i++) limit.allow(`k${i}`, i)
+    // the newest keys are still counted: a second try on the latest is refused
+    expect(limit.allow("k199", 300)).toBe(false)
+    // the oldest were dropped to bound the memory: they start a fresh allowance
+    expect(limit.allow("k0", 301)).toBe(true)
+  })
 })
 
 type Row = Record<string, unknown> & { email: string }
