@@ -695,6 +695,21 @@ export const mintaKereso = (texts: Record<string, string> | null) => {
 }
 
 /**
+ * A KITALALT TENYEK, AMELYEK MEG A LAPON ALLNAK: azok a `minta` jeloltu kulcsok,
+ * amelyekhez az OS nem kuldott sajat erteket (commerce-audit-p1, S7). Az audit
+ * szerint indulas elott valodi ertekre kell cserelni oket az OS-bol, vagy ki kell
+ * venni; a `MintaJelzo` ezt a lapon mutatja, ez a lista pedig lekerdezheto
+ * (`/api/health/kezdolap-minta`), hogy az elesitesi lista ne a kepernyorol
+ * fusson at, hanem szamot adjon. Az OS erteke (akar ures is) nem minta.
+ */
+export const maradtMinta = (texts: Record<string, string> | null): string[] => {
+  const minta = mintaKereso(texts)
+  return KEZDOLAP_SZOVEGEK.filter(
+    (sor) => sor.minta === true && minta(sor.kulcs),
+  ).map((sor) => sor.kulcs)
+}
+
+/**
  * A FORMAZOTT SZOVEG (Balazs 2b megbizas, 4. pont): csak a `ROVID_KULCSOK`
  * kulcsai. HTML-kent csak akkor jon vissza, ha a rekord a szerveren a
  * tisztitason atment (`tisztitott`), egyebkent sima szoveg (`rovidErtek`).
