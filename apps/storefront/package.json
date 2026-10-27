@@ -37,7 +37,7 @@
     "tailwindcss-radix": "^2.8.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.17.5",
+    "@babel/core": "^8.0.9",
     "@medusajs/types": "2.20.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
