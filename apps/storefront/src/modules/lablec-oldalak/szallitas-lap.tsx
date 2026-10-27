@@ -1,3 +1,6 @@
+import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
+
+import { lablecMinta } from "./minta-allapot"
 import {
   MEGRENDELES_VEGOSSZEG_FELIRAT,
   SZALLITASI_KOLTSEG_FELIRAT,
@@ -44,6 +47,11 @@ export function SzallitasLap({ cim }: { cim: string }) {
         <h1 className="text-[30px] font-normal leading-[36px] text-acr-ink small:text-[38px] small:leading-[46px]">
           {cim}
         </h1>
+        {lablecMinta("szallitas") ? (
+          <div>
+            <MintaJelzo mit={lablecMinta("szallitas")!.mit} />
+          </div>
+        ) : null}
         <h2 className="text-[22px] font-normal text-acr-ink">
           {SZALLITASI_MODOK_CIM}
         </h2>

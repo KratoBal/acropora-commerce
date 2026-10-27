@@ -1,3 +1,6 @@
+import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
+
+import { lablecMinta } from "./minta-allapot"
 import { FIZETESI_MODOK, FIZETESI_MODOK_CIM } from "./regi-bolt-szovegek"
 
 /**
@@ -16,6 +19,11 @@ export function FizetesLap({ cim }: { cim: string }) {
         <h1 className="text-[30px] font-normal leading-[36px] text-acr-ink small:text-[38px] small:leading-[46px]">
           {cim}
         </h1>
+        {lablecMinta("fizetes") ? (
+          <div>
+            <MintaJelzo mit={lablecMinta("fizetes")!.mit} />
+          </div>
+        ) : null}
         <h2 className="text-[22px] font-normal text-acr-ink">
           {FIZETESI_MODOK_CIM}
         </h2>
@@ -27,18 +35,6 @@ export function FizetesLap({ cim }: { cim: string }) {
               data-testid="fizetesi-mod"
             >
               <p className="font-semibold">{mod.nev}</p>
-              {mod.tajekoztato ? (
-                <p className="mt-2">
-                  <a
-                    href={mod.tajekoztato.href}
-                    className="underline"
-                    target="_blank"
-                    rel="nofollow noopener noreferrer"
-                  >
-                    {mod.tajekoztato.szoveg}
-                  </a>
-                </p>
-              ) : null}
             </li>
           ))}
         </ul>

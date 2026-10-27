@@ -8,7 +8,15 @@
  * (`exchange/bolti-statikus-lapok-2026-09-02/shop_contact.php_tab_shipping.html`
  * es `..._tab_payment.html`). A szoveget a HTML-bol programmal vettem ki, nem
  * gepeltem. A MAI BOLT ELTERHET A PILLANATKEPTOL; az ismert eltereseket (arak,
- * szolgaltatok, SimplePay) a PR leirasa listazza, a szoveget itt nem javitottam.
+ * szolgaltatok) a PR leirasa listazza, a szoveget itt nem javitottam.
+ *
+ * AZ EGYETLEN ELTERES A SZO SZERINTI ATVETELTOL (acrobot 2026-10-27 19:57 UTC,
+ * Balazs: "CSAK Stripe, a SimplePay kikerul", msg 1556600276499308556): a
+ * "Kedvezményes SIMPLEPAY Bankkártyás fizetés (-2% kedvezmény)" sor es a hozza
+ * tartozo "Vásárló tájékoztató" link NINCS itt, mert az uj bolt nem kinal
+ * SimplePay-t es 2% kedvezmenyt: a sor a vevot felrevezetne. Minden mas a regi
+ * oldal szovege. A tobbi tartalmi eltereshez (arak, kuszobok, nehez aru) lasd
+ * `minta-allapot.ts`.
  *
  * NEM VETTEM ATT: a szallito- es fizetesi logok (azok a regi bolt hosztjara
  * mutatnak, amit az elesitesi kapu tilt). A tabla-fejlecek es a feliratok a
@@ -37,8 +45,6 @@ export type SzallitasiMod = {
 
 export type FizetesiMod = {
   nev: string
-  /** A regi oldal "Vasarlo tajekoztato" linkje, ha a modnak van. */
-  tajekoztato?: { szoveg: string; href: string }
 }
 
 export const SZALLITASI_MODOK_CIM = "Szállítási módok"
@@ -91,13 +97,6 @@ export const SZALLITASI_MODOK: readonly SzallitasiMod[] = [
 
 export const FIZETESI_MODOK: readonly FizetesiMod[] = [
   { nev: "Készpénzzel vagy bankkártyával üzletünkben" },
-  {
-    nev: "Kedvezményes SIMPLEPAY Bankkártyás fizetés (-2% kedvezmény)",
-    tajekoztato: {
-      szoveg: "Vásárló tájékoztató",
-      href: "https://simplepartner.hu/PaymentService/Fizetesi_tajekoztato.pdf",
-    },
-  },
   { nev: "Fizetés a GLS futárnál bankkártyával vagy készpénzzel (+450 Ft.)" },
   { nev: "Fizetés utánvéttel a GLS Csomagponton (+450 Ft.)" },
   { nev: "Fizetés a Foxpost csomagautomatánál bankkártyával (+450 Ft.)" },

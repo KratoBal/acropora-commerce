@@ -6,6 +6,7 @@ import KepesTajekoztatoBeagyazas, {
   KEPES_TAJEKOZTATO_SZKRIPT,
 } from "./kepes-tajekoztato-beagyazas"
 import { KepesTajekoztatoLap } from "./kepes-tajekoztato-lap"
+import { LABLEC_MINTA_SZOVEGEK, lablecMinta } from "./minta-allapot"
 import { FIZETESI_MODOK, SZALLITASI_MODOK } from "./regi-bolt-szovegek"
 import { SzallitasLap } from "./szallitas-lap"
 
@@ -15,7 +16,7 @@ afterEach(cleanup)
  * A LABLEC HARMADIK HARMADA SAJAT OLDALRA KERULT (commerce-audit-p1). MI
  * PIROSIT: ha a Szallitas oldal elveszti egy mod savjat vagy koltseget; ha a
  * Foxpost-leiras linkje (a regi oldal "itt" linkje) elesik; ha a Fizetes oldalrol
- * kiesik egy mod vagy a SimplePay-tajekoztato linkje; ha az oldalak a regi bolt
+ * kiesik egy mod, vagy a SimplePay-sor visszakerul; ha az oldalak a regi bolt
  * hosztjara mutatnak; ha a Kepes tajekoztato beagyazasa mas attributumokkal ul a
  * lapra, mint a regi oldalon (`id`, `data-id`, `data-type`), vagy kikapcsolva
  * mégis hivast tesz a Fogyasztobarat fele.
@@ -90,7 +91,7 @@ describe("a Szállítás oldal", () => {
 })
 
 describe("a Fizetés oldal", () => {
-  it("mind az öt fizetési módot mutatja a regi oldal nevevel", () => {
+  it("mind a négy fizetési módot mutatja a regi oldal nevevel", () => {
     render(<FizetesLap cim="Fizetés" />)
     expect(
       screen
@@ -98,21 +99,19 @@ describe("a Fizetés oldal", () => {
         .map((li) => li.querySelector("p")?.textContent),
     ).toEqual([
       "Készpénzzel vagy bankkártyával üzletünkben",
-      "Kedvezményes SIMPLEPAY Bankkártyás fizetés (-2% kedvezmény)",
       "Fizetés a GLS futárnál bankkártyával vagy készpénzzel (+450 Ft.)",
       "Fizetés utánvéttel a GLS Csomagponton (+450 Ft.)",
       "Fizetés a Foxpost csomagautomatánál bankkártyával (+450 Ft.)",
     ])
   })
 
-  it("a SimplePay-módnak a regi oldal 'Vásárló tájékoztató' linkje van", () => {
-    render(<FizetesLap cim="Fizetés" />)
-    const link = screen
-      .getAllByTestId("fizetesi-mod")[1]
-      .querySelector("a") as HTMLAnchorElement
-    expect(link.textContent).toBe("Vásárló tájékoztató")
-    expect(link.getAttribute("href")).toBe(
-      "https://simplepartner.hu/PaymentService/Fizetesi_tajekoztato.pdf",
+  it("a SimplePay kikerült: Balázs döntése szerint csak Stripe (msg 1556600276499308556)", () => {
+    const { container } = render(<FizetesLap cim="Fizetés" />)
+    expect(container.textContent?.toLowerCase()).not.toContain("simplepay")
+    expect(container.textContent).not.toContain("Vásárló tájékoztató")
+    expect(container.querySelector("a")).toBeNull()
+    expect(JSON.stringify(FIZETESI_MODOK).toLowerCase()).not.toContain(
+      "simplepay",
     )
   })
 
@@ -120,6 +119,38 @@ describe("a Fizetés oldal", () => {
     const { container } = render(<FizetesLap cim="Fizetés" />)
     expect(container.innerHTML).not.toContain("shop.acropora.hu")
     expect(JSON.stringify(FIZETESI_MODOK)).not.toContain("shop.acropora.hu")
+  })
+})
+
+describe("a nem egyeztetett szövegek jelzője", () => {
+  it("a Szállítás és a Fizetés oldal mintajelzőt visel, amíg a kapu listáján áll", () => {
+    for (const [lap, kulcs] of [
+      [<SzallitasLap key="s" cim="Szállítás" />, "szallitas"],
+      [<FizetesLap key="f" cim="Fizetés" />, "fizetes"],
+    ] as const) {
+      const { unmount } = render(lap)
+      const jelzo = screen.getByTestId("minta-jelzo")
+      expect(jelzo.textContent).toContain("Minta adat")
+      expect(jelzo.textContent).toContain(lablecMinta(kulcs)!.mit)
+      unmount()
+    }
+  })
+
+  it("a jelzők száma a kapu számával egyezik: nincs jelző a kapu nélkül, sem kapu jelző nélkül", () => {
+    const { container } = render(
+      <>
+        <SzallitasLap cim="Szállítás" />
+        <FizetesLap cim="Fizetés" />
+      </>,
+    )
+    expect(
+      container.querySelectorAll('[data-testid="minta-jelzo"]'),
+    ).toHaveLength(LABLEC_MINTA_SZOVEGEK.length)
+  })
+
+  it("a Képes tájékoztató nem visel jelzőt: a tartalmat a Fogyasztóbarát adja", () => {
+    const { container } = render(<KepesTajekoztatoLap cim="Képes" />)
+    expect(container.querySelector('[data-testid="minta-jelzo"]')).toBeNull()
   })
 })
 
