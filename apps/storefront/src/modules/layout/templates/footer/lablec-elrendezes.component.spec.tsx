@@ -31,6 +31,7 @@ const LABLEC: LablecAdat = {
   ],
   kozossegi: [],
   alsoSor: null,
+  hirlevel: null,
 }
 
 /**

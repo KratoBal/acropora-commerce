@@ -53,6 +53,7 @@ const lablec = (alsoSor: string | null): LablecAdat => ({
   oszlopok: [],
   kozossegi: [],
   alsoSor,
+  hirlevel: null,
 })
 const KEZDO: KezdolapTartalom = { texts: {}, slides: null }
 

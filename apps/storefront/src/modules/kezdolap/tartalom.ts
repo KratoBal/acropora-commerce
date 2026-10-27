@@ -49,6 +49,20 @@ export type KezdolapLablec = {
 }
 
 /** A bolt valasza: `null`, amig az OS nem irt semmit. */
+/**
+ * A LABLEC FOLOTTI HIRLEVEL-SOR (Balazs, 2026-10-27, kirakat-lablec-kep), a
+ * bolt `homepage_content.newsletter` alakja (#577). A hozzajarulas szovege az,
+ * amit a feliratkozas rogzit; mellette a lap az Adatkezelesi tajekoztato
+ * linkjet teszi ki.
+ */
+export type KezdolapHirlevel = {
+  enabled: boolean
+  title: string
+  text: string
+  consent_text: string
+  button: string
+}
+
 export type KezdolapTartalom = {
   texts: Record<string, string>
   /** `null`: az OS nem allitott be diakat, a kezdodiak allnak; `[]`: nincs hero. */
@@ -64,6 +78,8 @@ export type KezdolapTartalom = {
   blocks?: KezdolapBlokk[] | null
   /** A szerkesztheto lablec; `null` vagy hiany: a lap sajat lablece. */
   footer?: KezdolapLablec | null
+  /** A hirlevel-sor; `null` vagy hiany: a lap sajat sora (bekapcsolva, a regi bolt szovegeivel). */
+  newsletter?: KezdolapHirlevel | null
   /**
    * CSAK A SZERVER ALLITJA (`tisztitas.ts`), SOHA nem jon az OS-bol (a rekord
    * validatora ismeretlen kulcskent elutasitja): jelzi, hogy a formazott

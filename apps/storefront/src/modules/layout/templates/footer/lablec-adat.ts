@@ -5,6 +5,7 @@ import type {
   KezdolapLablec,
   KezdolapTartalom,
 } from "@modules/kezdolap/tartalom"
+import { hirlevelAdat, type HirlevelAdat } from "./hirlevel-adat"
 import {
   OSZLOP_CIMEK,
   OSZLOP_SORREND,
@@ -32,6 +33,8 @@ export type LablecAdat = {
   kozossegi: Array<{ nev: string; href: string }>
   /** Az also sor szovege; `null`: a lap alapja ("(c) ev bolt. Minden jog fenntartva."). */
   alsoSor: string | null
+  /** A lablec folotti hirlevel-sor; `null`: az OS kikapcsolta. */
+  hirlevel: HirlevelAdat | null
 }
 
 const INFORMACIOK = "informaciok"
@@ -161,6 +164,7 @@ export function lablecAdat(tartalom: KezdolapTartalom | null): LablecAdat {
       oszlopok: alapOszlopok(),
       kozossegi: [],
       alsoSor: null,
+      hirlevel: hirlevelAdat(tartalom),
     }
 
   const bemutatkozo = lablecHtml(l.intro)
@@ -176,5 +180,6 @@ export function lablecAdat(tartalom: KezdolapTartalom | null): LablecAdat {
       return biztonsagos?.kulso ? [{ nev, href: biztonsagos.href }] : []
     }),
     alsoSor: alsoSor === "" ? null : alsoSor,
+    hirlevel: hirlevelAdat(tartalom),
   }
 }

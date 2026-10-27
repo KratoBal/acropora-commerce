@@ -8,6 +8,7 @@ import { Text } from "@modules/common/components/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+import { HirlevelSor } from "./hirlevel-sor"
 import { CEG, FIZETESI_OPCIOK_KEP } from "./hivatkozasok"
 import type { LablecAdat } from "./lablec-adat"
 
@@ -98,6 +99,8 @@ export function LablecKeret({ lablec }: LablecKeretProps) {
       }}
       data-testid="lablec-sik"
     >
+      {/* A HIRLEVEL-SOR a lablec tetejen, ahogy a regi boltban; az OS kikapcsolhatja. */}
+      {lablec.hirlevel ? <HirlevelSor hirlevel={lablec.hirlevel} /> : null}
       <div
         className="mx-auto flex w-full max-w-[1440px] flex-col px-4 lg:px-16"
         data-testid="lablec-konteiner"

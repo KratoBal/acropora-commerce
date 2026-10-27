@@ -144,6 +144,23 @@ function lablecHiba(footer: unknown): string | null {
   return null
 }
 
+/** A bolt validatoraval azonos (#577): a hozzajarulas es a gomb trimmelve sem ures. */
+function hirlevelHiba(sor: unknown): string | null {
+  if (
+    !objektum(sor) ||
+    !pontosan(sor, ["enabled", "title", "text", "consent_text", "button"])
+  )
+    return "newsletter: alak"
+  if (typeof sor.enabled !== "boolean") return "newsletter.enabled"
+  if (!szoveg(sor.title, 100)) return "newsletter.title"
+  if (!szoveg(sor.text, 500)) return "newsletter.text"
+  const nemUres = (x: unknown, max: number) =>
+    typeof x === "string" && x.trim().length >= 1 && x.trim().length <= max
+  if (!nemUres(sor.consent_text, 500)) return "newsletter.consent_text"
+  if (!nemUres(sor.button, 40)) return "newsletter.button"
+  return null
+}
+
 /** A teljes rekord ellenorzese; az OS ezt kuldi az elonezetnek (`content`). */
 export function ervenyesRekord(x: unknown): RekordEredmeny {
   const nem = (hiba: string): RekordEredmeny => ({ ok: false, hiba })
@@ -155,6 +172,7 @@ export function ervenyesRekord(x: unknown): RekordEredmeny {
     "featured_brand_handles",
     "blocks",
     "footer",
+    "newsletter",
   ]
   for (const k of Object.keys(x))
     if (!megengedett.includes(k)) return nem(`ismeretlen kulcs: ${k}`)
@@ -223,6 +241,10 @@ export function ervenyesRekord(x: unknown): RekordEredmeny {
   }
   if (footer !== undefined && footer !== null) {
     const hiba = lablecHiba(footer)
+    if (hiba) return nem(hiba)
+  }
+  if (x.newsletter !== undefined && x.newsletter !== null) {
+    const hiba = hirlevelHiba(x.newsletter)
     if (hiba) return nem(hiba)
   }
   return { ok: true, rekord: x as unknown as KezdolapTartalom }
