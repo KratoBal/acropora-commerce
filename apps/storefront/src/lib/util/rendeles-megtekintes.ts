@@ -13,11 +13,13 @@ import { createHmac } from "node:crypto"
  * maga ezutan a lapon nem eleg. A suti alairasa kell, mert alairas nelkul a
  * suti az azonositobol barkinek elo allithato lenne, es ugyanott tartanank.
  *
- * AMIT EZ NEM ZAR LE: a Medusa gyari `GET /store/orders/:id` vegpontja
- * hitelesites nelkul kiszolgalja a rendelest a nyilvanos publikalhato
- * kulccsal, tehat az azonosito ismeretereben a hatter kozvetlenul is ugyanazt
- * az adatot adja, a lap megkerulesevel. Ez a lap utjanak vedelme; a hatter
- * utja kulon tetel (audit A6b).
+ * A HATTER UGYANEZT ELLENORZI (audit A6b): a Medusa gyari
+ * `GET /store/orders/:id` vegpontja hitelesites nelkul kiadta a rendelest a
+ * nyilvanos publikalhato kulccsal. Most a hatter csak a rendeles tulajdonosanak,
+ * vagy ennek a sutinek az ertekevel adja ki (a kirakat szervere a
+ * `x-acropora-order-view` fejlecben tovabbitja), kulonben 404. Az ellenorzes
+ * a hatter `order-read-guard.ts` fajljaban all, es egy szerzodes-teszt
+ * rogziti, hogy a kettő ugyanazt fogadja el.
  *
  * Titok nelkul (nincs beallitva) nincs alairas, tehat nincs suti sem: a lap
  * a minimalis alakot mutatja (rendelesszam es koszonet), nem a reszleteket.
@@ -25,6 +27,9 @@ import { createHmac } from "node:crypto"
  * visszaigazolo levelben es a fiokjaban talalja.
  */
 export const MEGTEKINTES_SUTI = "_acropora_order_view"
+
+/** A fejlec, amiben a kirakat szervere a sutit a hatternek tovabbitja (audit A6b). */
+export const RENDELES_MEGTEKINTES_FEJLEC = "x-acropora-order-view"
 export const MEGTEKINTES_ELETTARTAM_MP = 60 * 60
 
 const TITOK_NEV = "domain:acropora-order-view:v1"
