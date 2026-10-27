@@ -14,7 +14,10 @@ vi.mock("@modules/kezdolap/components/kezdo-es-halado", () =>
 vi.mock("@modules/kezdolap/components/szolgaltatasok", () =>
   jelolo("szolgaltatasok"),
 )
-vi.mock("@modules/kezdolap/components/markak", () => jelolo("markak"))
+vi.mock("@modules/kezdolap/components/markak", () => ({
+  ...jelolo("markak"),
+  savMarkai: () => [],
+}))
 vi.mock("@modules/kezdolap/components/velemenyek", () => jelolo("velemenyek"))
 vi.mock("@modules/kezdolap/components/boltunk", () => jelolo("boltunk"))
 vi.mock("@modules/kezdolap/components/egyedi-korallok", () => ({
@@ -65,6 +68,7 @@ function megjelenit(osOrigin: string | null = OS) {
       kezdoRekord={KEZDO}
       kezdoLablec={lablec("MENTETT")}
       kollekciok={[]}
+      markak={[]}
       fejlec={<header data-testid="fejlec" />}
     />,
   )

@@ -152,13 +152,21 @@ export function ervenyesRekord(x: unknown): RekordEredmeny {
     "texts",
     "slides",
     "featured_handles",
+    "featured_brand_handles",
     "blocks",
     "footer",
   ]
   for (const k of Object.keys(x))
     if (!megengedett.includes(k)) return nem(`ismeretlen kulcs: ${k}`)
 
-  const { texts, slides, featured_handles: handles, blocks, footer } = x
+  const {
+    texts,
+    slides,
+    featured_handles: handles,
+    featured_brand_handles: markaHandles,
+    blocks,
+    footer,
+  } = x
   if (!objektum(texts)) return nem("texts: objektum kell")
   const kulcsok = Object.keys(texts)
   if (kulcsok.length > 400) return nem("texts: legfeljebb 400")
@@ -191,6 +199,22 @@ export function ervenyesRekord(x: unknown): RekordEredmeny {
         return nem("featured_handles: handle")
     if (new Set(handles).size !== handles.length)
       return nem("featured_handles: egyszer")
+  }
+
+  if (markaHandles !== undefined && markaHandles !== null) {
+    if (!Array.isArray(markaHandles) || markaHandles.length > 500)
+      return nem("featured_brand_handles: legfeljebb 500")
+    for (const h of markaHandles)
+      if (
+        typeof h !== "string" ||
+        h.length < 1 ||
+        h.length > 200 ||
+        !HANDLE.test(h) ||
+        h.includes("..")
+      )
+        return nem("featured_brand_handles: handle")
+    if (new Set(markaHandles).size !== markaHandles.length)
+      return nem("featured_brand_handles: egyszer")
   }
 
   if (blocks !== undefined && blocks !== null) {
