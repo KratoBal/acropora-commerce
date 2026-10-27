@@ -1,5 +1,6 @@
 const checkEnvVariables = require("./check-env-variables")
 const { belsoAtirasok, termekUtAtiranyitasok } = require("./belso-utvonalak")
+const { biztonsagiFejlecek } = require("./biztonsagi-fejlecek")
 
 checkEnvVariables()
 
@@ -35,6 +36,12 @@ const MEDUSA_KEPHOSZT = (() => {
  */
 const nextConfig = {
   reactStrictMode: true,
+  // B1/B2 (commerce-audit-p0): nincs `X-Powered-By: Next.js`, es a biztonsagi
+  // fejlecek egy helyen allnak (`biztonsagi-fejlecek.js`, az indoklassal).
+  poweredByHeader: false,
+  async headers() {
+    return biztonsagiFejlecek(process.env)
+  },
   /*
     A LAP-GENERALAS IDOKORLATJA 180 MP (kartya 62811c0f, barracuda atvetele).
     A build kozbeni ujraprobalas (`lib/util/epites-ujraprobalas.ts`) 2+4+8+16+30
