@@ -73,6 +73,17 @@ run_step() {
 echo "docker-entrypoint: verifying the public image prefix..."
 node ./src/scripts/verify-file-backend-url.js
 
+# THE SIGNING SECRETS ARE REAL, OR THE SHOP DOES NOT START (audit B5, P0).
+#
+# `.env.template` ships JWT_SECRET and COOKIE_SECRET as `supersecret`, and
+# nothing checked them: a deploy that kept the template value would let anybody
+# who knows it sign a customer or admin session, while the shop looked healthy.
+# Same shape and same reasons as the check above (plain `node`, no database, not
+# in `medusa-config.ts` because the image build loads that without environment).
+# The values are never printed, only the variable names and the reason.
+echo "docker-entrypoint: verifying the signing secrets..."
+node ./src/scripts/verify-auth-secrets.js
+
 # ONLY ONE CONTAINER MIGRATES. The server and the worker run the same image
 # and the same entrypoint, so until 2026-09-28 BOTH applied the migrations, to
 # the same database, at the same time: after the 2.20.1 upgrade two containers

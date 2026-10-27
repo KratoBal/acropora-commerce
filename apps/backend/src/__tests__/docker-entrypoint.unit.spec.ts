@@ -21,6 +21,8 @@ const ENTRYPOINT = join(__dirname, "..", "..", "docker-entrypoint.sh")
 type StepExitCodes = {
   /** `node ./src/scripts/verify-file-backend-url.js` */
   fileUrl?: number
+  /** `node ./src/scripts/verify-auth-secrets.js` */
+  authSecrets?: number
   /** `npx medusa db:migrate --execute-safe-links` */
   migrate?: number
   /** `npx medusa exec ./src/scripts/verify-links-in-sync.js` */
@@ -64,6 +66,7 @@ type RunOptions = StepExitCodes & {
 /// never finishes, and no exit code would ever show it.
 function runEntrypoint({
   fileUrl = 0,
+  authSecrets = 0,
   migrate = 0,
   links = 0,
   shippingIds = 0,
@@ -101,7 +104,14 @@ function runEntrypoint({
 
   writeFileSync(
     join(dir, "node"),
-    ["#!/bin/sh", `exit ${fileUrl}`, ""].join("\n")
+    [
+      "#!/bin/sh",
+      'case "$1" in',
+      `  *verify-auth-secrets*) exit ${authSecrets} ;;`,
+      `  *) exit ${fileUrl} ;;`,
+      "esac",
+      "",
+    ].join("\n")
   )
   chmodSync(join(dir, "node"), 0o755)
 
@@ -163,6 +173,18 @@ describe("docker-entrypoint.sh", () => {
   */
   it("does not start the server when the public image prefix is missing", () => {
     const { status, serverStarted } = runEntrypoint({ fileUrl: 1 })
+
+    expect(status).not.toBe(0)
+    expect(serverStarted).toBe(false)
+  })
+
+  /*
+    A BELEPESEK ALAIRO TITKAI (audit B5, P0). A `supersecret` sablon-ertekkel a
+    bolt ELINDUL, es barki, aki az alapertelmezest ismeri, alairhat vevoi vagy
+    admin munkamenetet. Az allitas itt is a hianyt nezi: a szerver NEM indult el.
+  */
+  it("does not start the server when the signing secrets check fails", () => {
+    const { status, serverStarted } = runEntrypoint({ authSecrets: 1 })
 
     expect(status).not.toBe(0)
     expect(serverStarted).toBe(false)
