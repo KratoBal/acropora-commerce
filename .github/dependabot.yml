@@ -1,0 +1,59 @@
+# FUGGOSEG-FIGYELES (commerce-audit-p1, P1/12, 04-biztonsag.md B13): a kodban
+# eddig semmi nem jelzett, ha a Next, a Medusa vagy egy masik fuggoseg biztonsagi
+# javitast kap. Ez a fajl a verzio-frissitesi PR-okat kezeli; a biztonsagi
+# FIGYELMEZTETESEK (Dependabot alerts) es a biztonsagi frissito PR-ok a tarolo
+# BEALLITASAIBAN kapcsolhatok be (Settings > Advanced Security), azt ez a fajl
+# nem tudja bekapcsolni -- az admin dolga, es a PR leirasa kimondja.
+#
+# EGY MUNKATERULET, EGY ZAROLT FAJL: a pnpm-workspace gyokere a `pnpm-lock.yaml`,
+# ezert EGY bejegyzes a gyokerre; az `apps/*` csomagok ugyanabbol a lockfile-bol
+# frissulnek.
+#
+# A MEDUSA-CSOMAGOK EGYSZERRE MOZOGNAK: a hatter es a kirakat is a `@medusajs/*`
+# csomagokat egy pontos verzioban (2.20.1) tartja, a keretrendszer reszei csak
+# egymashoz illo verzioban mukodnek. Kulon-kulon frissito PR-ok kevert verziot
+# hoznanak, ezert egy csoport. A Next es a React is egy-egy csoport (a ketto
+# egyuttes lepese a bolt rendereleset erinti).
+#
+# A MAJOR FRISSITES NEM AUTOMATA: a csoportok minor/patch frissitest kapnak; egy
+# major verzio kulon PR marad, amit ember dont el. A biztonsagi frissito PR-ok a
+# csoportoktol fuggetlenul, a sajat szabalyuk szerint jonnek.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Budapest"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    groups:
+      medusa:
+        patterns:
+          - "@medusajs/*"
+        update-types:
+          - "minor"
+          - "patch"
+      next-react:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "@medusajs/*"
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
