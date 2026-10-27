@@ -1,6 +1,6 @@
 import type { MailRenderFacts } from "./outbox-delivery"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
-import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-completion"
+import { ASZF_METADATA_KEY, PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-completion"
 import { type MailContent, type MailOrder, renderOrderPlacedMail } from "./order-placed-mail"
 import { cardLast4Of, renderRefundMail } from "./refund-mail"
 
@@ -59,6 +59,18 @@ export type OrderMailDeps = {
  * finds both orders and only reads them. So the mail names both orders even
  * when the customer closed the tab after paying.
  */
+/**
+ * THE LEGAL VERSION THE CUSTOMER ACCEPTED (P0 #2): the `verzio` of the ASZF
+ * acceptance record on the cart (`aszf_elfogadas`, written before the payment
+ * starts). A mixed cart's pickup half inherits the record, so the main cart's
+ * is the same one. Null when there is no usable record.
+ */
+export const legalVersionOf = (metadata: Record<string, unknown> | null | undefined): string | null => {
+  const record = metadata?.[ASZF_METADATA_KEY] as { verzio?: unknown } | null | undefined
+  const version = typeof record?.verzio === "string" ? record.verzio.trim() : ""
+  return version || null
+}
+
 export const prepareOrderPlacedMail = async (
   orderId: string,
   deps: OrderMailDeps,
@@ -93,7 +105,7 @@ export const prepareOrderPlacedMail = async (
       idempotency_key: orderPlacedKey(orderId, resendAt),
       resource_id: orderId,
       content: renderOrderPlacedMail(mailOrders),
-      render: { template: "order-placed", facts: { orders: mailOrders } },
+      render: { template: "order-placed", facts: { orders: mailOrders, legal_version: legalVersionOf(cart?.metadata) } },
     },
   }
 }
