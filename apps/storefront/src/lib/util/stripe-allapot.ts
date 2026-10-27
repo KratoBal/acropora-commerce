@@ -1,8 +1,10 @@
+import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
+
 /**
  * A STRIPE-FIZETES ALLAPOTA A FIZETESI LEPESBEN (a keretek 477:*), egy helyen:
  * a gomb ebbol irja a feliratat, a panel ebbol dont, mit mutat.
  *
- *   alap         "Rendelés leadása"
+ *   alap         a megrendel gomb felirata (`MEGRENDEL_GOMB_FELIRAT`)
  *   feldolgozas  "Feldolgozás…", a mezo zarolva, "Fizetés feldolgozása…"
  *   elutasitva   "Próbáld újra", a rogzitett hibamondat
  *   ellenorzes   "Ellenőrzés…", a 3DS utani visszaterites alatt
@@ -20,7 +22,7 @@ export const stripeGombFelirat = (allapot: StripeAllapot): string =>
       ? "Ellenőrzés…"
       : allapot === "elutasitva"
         ? "Próbáld újra"
-        : "Rendelés leadása"
+        : MEGRENDEL_GOMB_FELIRAT
 
 /**
  * A HIBA FAJTAJA DONTI EL, MI LATSZIK:

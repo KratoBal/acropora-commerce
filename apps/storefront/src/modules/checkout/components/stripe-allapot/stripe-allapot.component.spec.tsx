@@ -15,7 +15,7 @@ afterEach(cleanup)
  */
 describe("a Stripe-fizetés állapotai", () => {
   it("a gomb felirata állapotonként a keret szerint", () => {
-    expect(stripeGombFelirat("alap")).toBe("Rendelés leadása")
+    expect(stripeGombFelirat("alap")).toBe("Megrendel")
     expect(stripeGombFelirat("feldolgozas")).toBe("Feldolgozás…")
     expect(stripeGombFelirat("elutasitva")).toBe("Próbáld újra")
     expect(stripeGombFelirat("ellenorzes")).toBe("Ellenőrzés…")
