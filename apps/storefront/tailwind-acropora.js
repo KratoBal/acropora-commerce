@@ -63,8 +63,19 @@ const borderRadius = Object.fromEntries(
 
 const boxShadow = { "acr-subtle": "var(--acr-shadow-subtle)" }
 
+/*
+ * A NARANCS KET SZEREPE (Balázs, 2026-10-27, "D"): a `bg-acr-heritage` a
+ * fehér betus felulet-narancs, a `text-acr-heritage` a narancs szoveg. A
+ * `heritage` szin-kulcs (a Figma primitiv) a keretekre es a dekoraciora marad.
+ * A ket ertek a `acropora-tokens.css`-ben all, mod szerint.
+ */
+const backgroundColor = { acr: { heritage: "var(--acr-cta-bg)" } }
+const textColor = { acr: { heritage: "var(--acr-heritage-text)" } }
+
 module.exports = {
   colors: { acr: colors },
+  backgroundColor,
+  textColor,
   fontFamily,
   fontSize,
   spacing,

@@ -46,8 +46,15 @@ describe("a világos terméklap tokenjei", () => {
     ).toEqual(SOTET.map(([n]) => n).sort())
   })
 
-  it("minden szín Foundations-primitív", () => {
+  it("minden szín Foundations-primitív, egyetlen kimondott kivétellel", () => {
+    // KIVETEL: a Kosarba felulete (`--terv-kiemel`) a fehér betus narancs
+    // (Balázs, 2026-10-27, "D"): a Figma `heritage` fehéren 3,09:1. A kivétel
+    // neve és értéke rögzített, tehát egy másik token nem csúszhat be vele.
     for (const [nev, ertek] of VILAGOS.filter(([n]) => !n.includes("betu"))) {
+      if (nev === "--terv-kiemel") {
+        expect(ertek).toBe("var(--acr-cta-bg)")
+        continue
+      }
       expect(`${nev}: ${ertek}`).toMatch(/: var\(--acr-color-[a-z-]+\)$/)
     }
   })
