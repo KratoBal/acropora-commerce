@@ -36,6 +36,18 @@ describe("the unit price from the name", () => {
     ["a length", "Red Sea átlátszó háló 90cm*4m"],
     ["a quantity inside a word", "A100g termék kód"],
     ["a zero quantity", "Valami 0 ml"],
+    ["a flow rate", "Jebao DW-16 áramoltató 16000 l/h"],
+    ["a flow rate without a space", "Resun Wave Maker HWM2000 600l/h"],
+    ["a flow rate before a code", "Octo Pulse4 17000 l/h áramoltató OP-4"],
+    ["a flow rate with a tilde", "AI - Nero 7 Submersible Pump áramoltató ~ 15142 l/h"],
+    ["a flow rate in parentheses", "Ecotech Marine Vortech MP10QD prémium áramoltató (9500l/h)"],
+    ["a thousands separator and a rate", "Ecotech Marine Vortech MP40QD prémium áramoltató (19.000 l/h)"],
+    ["a range", "Ultra Reef Skimmer 190 lehabzó (300-900l)"],
+    ["a range with spaces", "Ultra Reef Skimmer 190 lehabzó (100 - 400 l)"],
+    ["a range with an en dash", "Ultra Reef Skimmer lehabzó (200–500l)"],
+    ["a thousands separator with a dot", "Tápoldat 19.000 ml"],
+    ["a thousands separator, 1.000 g", "Só 1.000 g"],
+    ["a thousands separator with a space", "Medence víz 19 000 l"],
     ["an empty name", ""],
   ])("%s => no unit price", (_why, name) => {
     expect(unitPriceFromName(name, 1000)).toBeNull()
@@ -66,6 +78,18 @@ describe("the backend and the storefront agree", () => {
     "D-D Jumpguard Pro kiugrásgátló 180x90cm",
     "Tápoldat 0,125 l",
     "Jebao PP-4 keringető",
+    "Jebao DW-16 áramoltató 16000 l/h",
+    "Resun Wave Maker HWM2000 600l/h",
+    "Octo Pulse4 17000 l/h áramoltató OP-4",
+    "AI - Nero 7 Submersible Pump áramoltató ~ 15142 l/h",
+    "Ecotech Marine Vortech MP10QD prémium áramoltató (9500l/h)",
+    "Ecotech Marine Vortech MP40QD prémium áramoltató (19.000 l/h)",
+    "Ultra Reef Skimmer 190 lehabzó (300-900l)",
+    "Ultra Reef Skimmer 190 lehabzó (100 - 400 l)",
+    "Ultra Reef Skimmer lehabzó (200–500l)",
+    "Tápoldat 19.000 ml",
+    "Só 1.000 g",
+    "Medence víz 19 000 l",
   ])("%s", (name) => {
     const backend = unitPriceFromName(name, 4321)
     const storefront = egysegarNevbol(name, 4321)

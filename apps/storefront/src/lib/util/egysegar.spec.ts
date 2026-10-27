@@ -36,6 +36,18 @@ describe("az egységár a névből", () => {
     "D-D Jumpguard Pro kiugrásgátló 180x90cm",
     "Red Sea átlátszó háló 90cm*4m",
     "Valami 0 ml",
+    "Jebao DW-16 áramoltató 16000 l/h",
+    "Resun Wave Maker HWM2000 600l/h",
+    "Octo Pulse4 17000 l/h áramoltató OP-4",
+    "AI - Nero 7 Submersible Pump áramoltató ~ 15142 l/h",
+    "Ecotech Marine Vortech MP10QD prémium áramoltató (9500l/h)",
+    "Ecotech Marine Vortech MP40QD prémium áramoltató (19.000 l/h)",
+    "Ultra Reef Skimmer 190 lehabzó (300-900l)",
+    "Ultra Reef Skimmer 190 lehabzó (100 - 400 l)",
+    "Ultra Reef Skimmer lehabzó (200–500l)",
+    "Tápoldat 19.000 ml",
+    "Só 1.000 g",
+    "Medence víz 19 000 l",
   ])("bizonytalan név, nincs egységár: %s", (nev) => {
     expect(egysegarNevbol(nev, 1000)).toBeNull()
   })

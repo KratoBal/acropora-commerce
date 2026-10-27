@@ -54,6 +54,25 @@ const SZORZO_ELOTT =
 const SZORZO_UTAN =
   /(^|[^A-Za-z\u00C0-\u017F\d.,])\d+(?:[.,]\d+)?\s*(kg|gr|g|ml|l)\s*[x×*]\s*\d/i
 
+/**
+ * SEBESSEG ("16000 l/h", "600l/h", "(9500l/h)", "~ 15142 l/h"): a mennyiseg utan
+ * allo `/` es betu mas nagysag (aramlas), nem a csomag tartalma. Egy aramoltato
+ * nem kaphat Ft/l egysegarat (a #595 review mert nevei).
+ */
+const SEBESSEG = /\d\s*(kg|gr|g|ml|l)\s*\/\s*[A-Za-z\u00C0-\u017F]/i
+/**
+ * TARTOMANY ("300-900l", "100-400l", "200 - 500 l"): a `-`, `–`, `—` elott allo
+ * szam masik vegpontot jelent, a "900l" nem egy csomag tartalma.
+ */
+const TARTOMANY =
+  /\d\s*[-–—]\s*\d+(?:[.,]\d+)?\s*(kg|gr|g|ml|l)(?![A-Za-z\u00C0-\u017F\d])/i
+/**
+ * EZRES-ELVALASZTO ("19.000 l", "1.000 g", "19 000 ml"): a magyar szoveg tizedes
+ * vesszot hasznal, a pont es a szokoz itt az ezreseket valasztja el -- a "19.000"
+ * tehat 19000, nem 19. Bizonytalan, nincs egysegar.
+ */
+const EZRES = /\d{1,3}[.\s]\d{3}\s*(kg|gr|g|ml|l)(?![A-Za-z\u00C0-\u017F\d])/i
+
 const szam = (szoveg: string) => Number(szoveg.replace(",", "."))
 
 export function egysegarNevbol(
@@ -64,6 +83,8 @@ export function egysegarNevbol(
   if (!nev || typeof ar !== "number" || !Number.isFinite(ar) || ar <= 0)
     return null
   if (SZORZO_ELOTT.test(nev) || SZORZO_UTAN.test(nev)) return null
+  // SEBESSEG, TARTOMANY, EZRES-ELVALASZTO: a #595 review (barracuda) mert esetei
+  if (SEBESSEG.test(nev) || TARTOMANY.test(nev) || EZRES.test(nev)) return null
 
   const talalatok = Array.from(nev.matchAll(MENNYISEG))
   if (talalatok.length !== 1) return null
