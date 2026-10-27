@@ -78,6 +78,21 @@
   --acr-mode-border: var(--acr-color-line);
   --acr-mode-action-bg: var(--acr-color-navy);
   --acr-mode-action-text: var(--acr-color-white);
+  /*
+    A NARANCS KET SZEREPE, EGY HELYEN (Balázs, 2026-10-27, commerce-audit-p1,
+    "D" valtozat). A Figma `heritage` (#d5782f) fehéren 3,09:1, vilagos hatteren
+    szovegkent ugyanennyi: egyik sem eri el a 4,5:1-et. Ezert ket szerep, nem
+    ket szin a hivohelyeken:
+      cta-bg         a fehér betus narancs FELULET (Kosarba, jelolok): #b05a1b,
+                     fehéren 4,86:1
+      heritage-text  a narancs SZOVEG vilagos hatteren: #a8561a, a #fbfbf9 lapon
+                     5,05:1
+    A Tailwind `bg-acr-heritage` es `text-acr-heritage` ezekre mutat
+    (tailwind-acropora.js), tehat a hivohelyek valtozatlanok. A Figma primitiv
+    (`--acr-color-heritage`) ugyanaz marad: a Foundations-teszt azt meri.
+  */
+  --acr-cta-bg: #b05a1b;
+  --acr-heritage-text: #a8561a;
 }
 
 /* Reef: sotet, a Mode Card / Reef (9:10) szerint */
@@ -102,6 +117,10 @@ body:has([data-acr-mod="reef"]) [data-fejlec] {
   --acr-mode-border: var(--acr-color-navy);
   --acr-mode-action-bg: var(--acr-color-heritage);
   --acr-mode-action-text: var(--acr-color-abyss);
+  /* A sotet vilagban a narancs szoveg a Figma-szin (abyss hatteren jo kontraszt);
+     a fehér betus felulet ugyanaz, mint a vilagosban. */
+  --acr-cta-bg: #b05a1b;
+  --acr-heritage-text: var(--acr-color-heritage);
 }
 
 /*
@@ -131,7 +150,7 @@ body:has([data-acr-mod="reef"]) [data-fejlec] {
 
   A szinek a Foundations primitivjei (`--acr-color-*`), a keret merve:
     hatter #fbfbf9 shell (193:57)   kartya #ffffff (193:123)   keret #e3e1dc line
-    szoveg #0d1a28 ink              halvany #4a5866 slate      Kosárba #d5782f heritage
+    szoveg #0d1a28 ink              halvany #4a5866 slate      Kosárba #b05a1b cta-bg (Balázs 2026-10-27, a Figma #d5782f helyett)
     felulcim #0f2338 navy (193:68)
 */
 [data-vilag="vilagos"] {
@@ -139,7 +158,7 @@ body:has([data-acr-mod="reef"]) [data-fejlec] {
   --terv-hatter-lap: var(--acr-color-white);
   --terv-hatter-halvany: var(--acr-color-shell);
   --terv-doboz-hatter: var(--acr-color-white);
-  --terv-kiemel: var(--acr-color-heritage);
+  --terv-kiemel: var(--acr-cta-bg);
   --terv-kiemel-szoveg: var(--acr-color-white);
   --terv-kiemel-tinta: var(--acr-color-navy);
   --terv-szoveg: var(--acr-color-ink);

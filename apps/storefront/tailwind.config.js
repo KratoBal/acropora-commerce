@@ -64,7 +64,9 @@ module.exports = {
         ...acr.fontSize,
         "3xl": "2rem",
       },
+      backgroundColor: acr.backgroundColor,
       textColor: {
+        ...acr.textColor,
         /*
           A TERV SZOVEG-TOKENJE UTILITY-KENT -- ES AZERT ITT, MERT EGY
           LEBEGTETETT ALLAPOTOT NEM LEHET BEAGYAZOTT `style`-ban leirni.
