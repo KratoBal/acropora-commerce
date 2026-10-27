@@ -24,10 +24,13 @@ export default async function OrderConfirmedPage(props: Props) {
     return notFound()
   }
 
-  // A SZEMELYES ADATOK (nev, cim, telefon, e-mail) CSAK ANNAK, AKI LEADTA
-  // (audit P1/5): a leadaskor kapott alairt suti nevezi meg a rendelest, vagy
-  // a bejelentkezett vevo a rendeles tulajdonosa. Az azonosito egyedul nem
-  // elég: abból, hogy valaki ismeri az URL-t, nem következik, hogy övé.
+  // A LAP NEM MUTATJA A SZEMELYES ADATOKAT (nev, cim, telefon, e-mail) CSAK
+  // AZ AZONOSITO BIRTOKABAN (audit P1/5): a leadaskor kapott alairt suti
+  // nevezi meg a rendelest, vagy a bejelentkezett vevo a rendeles tulajdonosa.
+  // EZ CSAK A LAP UTJA: a Medusa gyari `GET /store/orders/:id` vegpontja
+  // hitelesites nelkul is kiadja a rendelest a nyilvanos publikalhato
+  // kulccsal, tehat aki az azonositot ismeri, a lap nelkul, kozvetlenul a
+  // hatterbol is elkeri (audit A6b, kulon tetel).
   const suti = await getRendelesMegtekintes()
   const vevo = await retrieveCustomer().catch(() => null)
   const sajat = (rendeles: { id: string; customer_id?: string | null }) =>

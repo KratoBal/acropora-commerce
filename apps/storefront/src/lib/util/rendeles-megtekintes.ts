@@ -8,10 +8,16 @@ import { createHmac } from "node:crypto"
  * (bongeszo-elozmeny, megosztott gep), latja a szemelyes adatokat.
  *
  * A leadas utan a kirakat egy ALAIRT, rovid eletu sutit ad a bongeszonek,
- * ami a most leadott rendelesek azonositoit nevezi meg. A lap a reszleteket
+ * ami a most leadott rendelesek azonositoit nevezi meg. A LAP a reszleteket
  * csak ennek, vagy a bejelentkezett tulajdonosnak mutatja; az azonosito
- * maga ezutan nem eleg. A suti alairasa kell, mert alairas nelkul a suti az
- * azonositobol barkinek elo allithato lenne, es ugyanott tartanank.
+ * maga ezutan a lapon nem eleg. A suti alairasa kell, mert alairas nelkul a
+ * suti az azonositobol barkinek elo allithato lenne, es ugyanott tartanank.
+ *
+ * AMIT EZ NEM ZAR LE: a Medusa gyari `GET /store/orders/:id` vegpontja
+ * hitelesites nelkul kiszolgalja a rendelest a nyilvanos publikalhato
+ * kulccsal, tehat az azonosito ismeretereben a hatter kozvetlenul is ugyanazt
+ * az adatot adja, a lap megkerulesevel. Ez a lap utjanak vedelme; a hatter
+ * utja kulon tetel (audit A6b).
  *
  * Titok nelkul (nincs beallitva) nincs alairas, tehat nincs suti sem: a lap
  * a minimalis alakot mutatja (rendelesszam es koszonet), nem a reszleteket.
