@@ -17,13 +17,14 @@ Before changing any shipping option, confirm all of these commerce-setting rows
 exist and pass the Admin API validation. The currently approved configuration
 is:
 
-| Key                           | Value |
-| ----------------------------- | ----: |
-| `shipping_gls_normal_huf`     |  3500 |
-| `shipping_gls_heavy_huf`      |  4500 |
-| `shipping_foxpost_huf`        |  1150 |
-| `free_shipping_threshold_huf` | 50000 |
-| `cash_on_delivery_fee_huf`    |   450 |
+| Key                                   | Value |
+| ------------------------------------- | ----: |
+| `shipping_gls_normal_huf`             |  3500 |
+| `shipping_gls_heavy_huf`              |  4500 |
+| `shipping_foxpost_huf`                |  1150 |
+| `free_shipping_threshold_gls_huf`     | 50000 |
+| `free_shipping_threshold_foxpost_huf` | 30000 |
+| `cash_on_delivery_fee_huf`            |   450 |
 
 These are environment configuration values, not application fallbacks. Missing
 or invalid carrier rows intentionally block carrier-price calculation. Pickup

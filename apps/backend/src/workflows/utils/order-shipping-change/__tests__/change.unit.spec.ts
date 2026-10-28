@@ -10,7 +10,7 @@ const GLS_HEAVY_HOME = so("ACROPORA_SO_GLS_HEAVY_HOME")
 const GLS_HEAVY_POINT = so("ACROPORA_SO_GLS_HEAVY_POINT")
 const FOXPOST = so("ACROPORA_SO_FOXPOST")
 
-const settings = { shipping_gls_normal_huf: 1990, shipping_gls_heavy_huf: 4990, shipping_foxpost_huf: 1290, free_shipping_threshold_huf: 30000 }
+const settings = { shipping_gls_normal_huf: 1990, shipping_gls_heavy_huf: 4990, shipping_foxpost_huf: 1290, free_shipping_threshold_gls_huf: 30000, free_shipping_threshold_foxpost_huf: 30000 }
 const names = {
   [PICKUP]: "Bolti átvétel",
   [GLS_HOME]: "GLS házhozszállítás",

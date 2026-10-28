@@ -6,13 +6,18 @@ provider connects these components to Medusa's calculated shipping runtime.
 
 ## Commerce settings
 
-| Key                           | Default | Meaning                                        |
-| ----------------------------- | ------: | ---------------------------------------------- |
-| `cash_on_delivery_fee_huf`    |     450 | Per-order cash-on-delivery handling fee        |
-| `shipping_gls_normal_huf`     |    none | Normal GLS delivery price                      |
-| `shipping_gls_heavy_huf`      |    none | Heavy GLS delivery price                       |
-| `shipping_foxpost_huf`        |    none | Foxpost parcel-point delivery price            |
-| `free_shipping_threshold_huf` |   50000 | Merchandise threshold for free normal delivery |
+| Key                                   | Default | Meaning                                   |
+| ------------------------------------- | ------: | ----------------------------------------- |
+| `cash_on_delivery_fee_huf`            |     450 | Per-order cash-on-delivery handling fee   |
+| `shipping_gls_normal_huf`             |    none | Normal GLS delivery price                 |
+| `shipping_gls_heavy_huf`              |    none | Heavy GLS delivery price                  |
+| `shipping_foxpost_huf`                |    none | Foxpost parcel-point delivery price       |
+| `free_shipping_threshold_gls_huf`     |   50000 | Merchandise threshold for free normal GLS |
+| `free_shipping_threshold_foxpost_huf` |   30000 | Merchandise threshold for free Foxpost    |
+
+The free-shipping threshold is per carrier (Balázs, 2026-10-28): it used to be
+one `free_shipping_threshold_huf` for both. A row stored under that old key is
+ignored by the code and can be deleted.
 
 The repository contains no approved canonical carrier prices. Carrier accessors
 therefore fail when their row is absent instead of silently inventing a charge.
@@ -40,8 +45,10 @@ Promotions, loyalty, tax totals, shipping and fees do not alter `goods_total`.
 - `GLS_HEAVY` reads `shipping_gls_heavy_huf` and is not waived by the normal
   free-shipping threshold.
 - `FOXPOST` reads `shipping_foxpost_huf`.
-- `GLS_NORMAL` and `FOXPOST` become 0 HUF when
-  `goods_total >= free_shipping_threshold_huf`.
+- `GLS_NORMAL` becomes 0 HUF when
+  `goods_total >= free_shipping_threshold_gls_huf`; `FOXPOST` when
+  `goods_total >= free_shipping_threshold_foxpost_huf`. Heavy GLS and pickup
+  have no threshold.
 
 ## Checkout runtime
 

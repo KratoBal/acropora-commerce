@@ -3,7 +3,8 @@ import { MedusaError } from "@medusajs/framework/utils"
 import {
   COMMERCE_SETTING_DEFINITIONS,
   CommerceSettingKey,
-  FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   SHIPPING_FOXPOST_SETTING_KEY,
   SHIPPING_GLS_HEAVY_SETTING_KEY,
   SHIPPING_GLS_NORMAL_SETTING_KEY,
@@ -50,25 +51,31 @@ export type ShippingPricingSettings = {
   shipping_gls_normal_huf: number
   shipping_gls_heavy_huf: number
   shipping_foxpost_huf: number
-  free_shipping_threshold_huf: number
+  free_shipping_threshold_gls_huf: number
+  free_shipping_threshold_foxpost_huf: number
 }
 
 /** Reads all values required by the future calculated-price provider. */
 export const getShippingPricingSettings = async (
   service: CommerceSettingsService
 ): Promise<ShippingPricingSettings> => {
-  const [glsNormal, glsHeavy, foxpost, freeShippingThreshold] =
+  const [glsNormal, glsHeavy, foxpost, freeGls, freeFoxpost] =
     await Promise.all([
       getCommerceSettingValue(service, SHIPPING_GLS_NORMAL_SETTING_KEY),
       getCommerceSettingValue(service, SHIPPING_GLS_HEAVY_SETTING_KEY),
       getCommerceSettingValue(service, SHIPPING_FOXPOST_SETTING_KEY),
-      getCommerceSettingValue(service, FREE_SHIPPING_THRESHOLD_SETTING_KEY),
+      getCommerceSettingValue(service, FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY),
+      getCommerceSettingValue(
+        service,
+        FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY
+      ),
     ])
 
   return {
     shipping_gls_normal_huf: glsNormal,
     shipping_gls_heavy_huf: glsHeavy,
     shipping_foxpost_huf: foxpost,
-    free_shipping_threshold_huf: freeShippingThreshold,
+    free_shipping_threshold_gls_huf: freeGls,
+    free_shipping_threshold_foxpost_huf: freeFoxpost,
   }
 }

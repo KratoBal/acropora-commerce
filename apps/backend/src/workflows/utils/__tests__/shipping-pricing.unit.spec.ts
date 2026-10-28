@@ -9,7 +9,8 @@ const settings: ShippingPricingSettings = {
   shipping_gls_normal_huf: 1_990,
   shipping_gls_heavy_huf: 5_990,
   shipping_foxpost_huf: 1_490,
-  free_shipping_threshold_huf: 50_000,
+  free_shipping_threshold_gls_huf: 50_000,
+  free_shipping_threshold_foxpost_huf: 30_000,
 }
 
 const price = (
@@ -18,21 +19,51 @@ const price = (
 ) => calculateShippingPrice({ role, goodsTotalHuf, settings })
 
 describe("shipping pricing policy", () => {
+  // the threshold is per carrier (Balázs, 2026-10-28): Foxpost 30 000, GLS 50 000
   it.each([49_599, 49_600, 49_999])(
-    "keeps normal carrier prices below the threshold at %i HUF",
+    "keeps normal GLS paid below its 50 000 HUF threshold at %i HUF",
     (goodsTotalHuf) => {
       expect(price("GLS_NORMAL", goodsTotalHuf)).toBe(1_990)
-      expect(price("FOXPOST", goodsTotalHuf)).toBe(1_490)
     }
   )
 
   it.each([50_000, 50_001])(
-    "makes normal GLS and Foxpost free at %i HUF",
+    "makes normal GLS free at %i HUF",
     (goodsTotalHuf) => {
       expect(price("GLS_NORMAL", goodsTotalHuf)).toBe(0)
+    }
+  )
+
+  it.each([0, 29_599, 29_999])(
+    "keeps Foxpost paid below its 30 000 HUF threshold at %i HUF",
+    (goodsTotalHuf) => {
+      expect(price("FOXPOST", goodsTotalHuf)).toBe(1_490)
+    }
+  )
+
+  it.each([30_000, 30_001, 49_999, 50_000])(
+    "makes Foxpost free from 30 000 HUF, at %i HUF",
+    (goodsTotalHuf) => {
       expect(price("FOXPOST", goodsTotalHuf)).toBe(0)
     }
   )
+
+  it("between the two thresholds Foxpost is free and GLS is not: 40 000 HUF", () => {
+    expect(price("FOXPOST", 40_000)).toBe(0)
+    expect(price("GLS_NORMAL", 40_000)).toBe(1_990)
+  })
+
+  it("each carrier reads its own setting, not the other's", () => {
+    const swapped = {
+      ...settings,
+      free_shipping_threshold_gls_huf: 10_000,
+      free_shipping_threshold_foxpost_huf: 90_000,
+    }
+    const at = (role: "GLS_NORMAL" | "FOXPOST") =>
+      calculateShippingPrice({ role, goodsTotalHuf: 20_000, settings: swapped })
+    expect(at("GLS_NORMAL")).toBe(0)
+    expect(at("FOXPOST")).toBe(1_490)
+  })
 
   it("does not let a 450 HUF COD fee push 49,600 HUF of goods over the threshold", () => {
     const goodsTotalHuf = calculateGoodsTotal([
@@ -53,7 +84,8 @@ describe("shipping pricing policy", () => {
     expect(price("PICKUP", 50_001)).toBe(0)
   })
 
-  it("does not waive heavy GLS at the normal free-shipping threshold", () => {
+  it("does not waive heavy GLS at any free-shipping threshold (the old page lists one fixed price)", () => {
+    expect(price("GLS_HEAVY", 30_000)).toBe(5_990)
     expect(price("GLS_HEAVY", 50_000)).toBe(5_990)
     expect(price("GLS_HEAVY", 100_000)).toBe(5_990)
   })

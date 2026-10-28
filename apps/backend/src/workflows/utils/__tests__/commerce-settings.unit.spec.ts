@@ -5,7 +5,8 @@ import {
 import {
   CASH_ON_DELIVERY_FEE_SETTING_KEY,
   COMMERCE_SETTING_DEFINITIONS,
-  FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   normalizeCommerceSettingValue,
   SHIPPING_FOXPOST_SETTING_KEY,
   SHIPPING_GLS_HEAVY_SETTING_KEY,
@@ -30,7 +31,8 @@ describe("commerce setting definitions", () => {
         SHIPPING_GLS_NORMAL_SETTING_KEY,
         SHIPPING_GLS_HEAVY_SETTING_KEY,
         SHIPPING_FOXPOST_SETTING_KEY,
-        FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+        FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
+        FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
       ].sort(),
     )
   })
@@ -92,8 +94,15 @@ describe("commerce setting definitions", () => {
       is_default: true,
       is_configured: false,
     })
-    expect(defaultSetting(FREE_SHIPPING_THRESHOLD_SETTING_KEY)).toMatchObject({
+    expect(defaultSetting(FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY)).toMatchObject({
       value: 50_000,
+      is_default: true,
+      is_configured: false,
+    })
+    expect(
+      defaultSetting(FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY)
+    ).toMatchObject({
+      value: 30_000,
       is_default: true,
       is_configured: false,
     })
@@ -110,9 +119,15 @@ describe("typed commerce setting access", () => {
     await expect(
       getCommerceSettingValue(
         serviceWith([]),
-        FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+        FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
       ),
     ).resolves.toBe(50_000)
+    await expect(
+      getCommerceSettingValue(
+        serviceWith([]),
+        FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+      ),
+    ).resolves.toBe(30_000)
   })
 
   it("requires explicit carrier prices instead of inventing defaults", async () => {
@@ -143,7 +158,8 @@ describe("typed commerce setting access", () => {
       shipping_gls_normal_huf: 1_990,
       shipping_gls_heavy_huf: 5_990,
       shipping_foxpost_huf: 1_490,
-      free_shipping_threshold_huf: 50_000,
+      free_shipping_threshold_gls_huf: 50_000,
+      free_shipping_threshold_foxpost_huf: 30_000,
     })
   })
 })
