@@ -17,7 +17,8 @@ provider connects these components to Medusa's calculated shipping runtime.
 
 The free-shipping threshold is per carrier (Balázs, 2026-10-28): it used to be
 one `free_shipping_threshold_huf` for both. A row stored under that old key is
-ignored by the code and can be deleted.
+ignored by the code; the data migration `Migration20261028180000` deletes it
+(legacy keys are listed in `LEGACY_COMMERCE_SETTING_KEYS`).
 
 The repository contains no approved canonical carrier prices. Carrier accessors
 therefore fail when their row is absent instead of silently inventing a charge.

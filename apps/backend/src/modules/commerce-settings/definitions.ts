@@ -11,12 +11,25 @@ export const SHIPPING_FOXPOST_SETTING_KEY = "shipping_foxpost_huf" as const
  * message 1564940831658348567): Foxpost from 30 000 Ft, GLS from 50 000 Ft, as on
  * the old shop's Szállítás page. It used to be one `free_shipping_threshold_huf`
  * (default 50 000) for both. That key is gone from the code: a row stored under
- * it is ignored and can be deleted (the settings list shows it as unknown).
+ * it is ignored, and the migration `Migration20261028180000` deletes it
+ * (LEGACY_COMMERCE_SETTING_KEYS below).
  */
 export const FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY =
   "free_shipping_threshold_gls_huf" as const
 export const FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY =
   "free_shipping_threshold_foxpost_huf" as const
+
+/**
+ * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
+ * the accessor and cannot be removed from the Admin (the settings list shows it
+ * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
+ * (with its own literal key): a migration that has run never runs again, so
+ * adding a key to this list does not delete anything by itself. NEVER put a
+ * live key here (a unit test keeps this list apart from the live keys).
+ */
+export const LEGACY_COMMERCE_SETTING_KEYS = [
+  "free_shipping_threshold_huf",
+] as const
 
 export const COMMERCE_SETTING_KEYS = [
   CASH_ON_DELIVERY_FEE_SETTING_KEY,
