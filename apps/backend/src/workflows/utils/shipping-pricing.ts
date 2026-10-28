@@ -1,6 +1,7 @@
 import { ShippingPricingSettings } from "../../modules/commerce-settings/accessor"
 import {
-  FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   normalizeNonNegativeWholeHuf,
   SHIPPING_FOXPOST_SETTING_KEY,
   SHIPPING_GLS_HEAVY_SETTING_KEY,
@@ -14,9 +15,30 @@ export type CalculateShippingPriceInput = {
   settings: ShippingPricingSettings
 }
 
-export const isFreeShippingThresholdRole = (
-  role: ShippingOptionRole
-): boolean => role === "GLS_NORMAL" || role === "FOXPOST"
+/**
+ * The free-shipping threshold of a role, per carrier (Balázs, 2026-10-28): GLS
+ * normal and Foxpost each have their own; heavy GLS and pickup have none (heavy
+ * goods are not waived, as on the old shop's page, which lists one fixed price).
+ */
+export const freeShippingThresholdOf = (
+  role: ShippingOptionRole,
+  settings: ShippingPricingSettings
+): number | null => {
+  switch (role) {
+    case "GLS_NORMAL":
+      return normalizeNonNegativeWholeHuf(
+        settings.free_shipping_threshold_gls_huf,
+        FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY
+      )
+    case "FOXPOST":
+      return normalizeNonNegativeWholeHuf(
+        settings.free_shipping_threshold_foxpost_huf,
+        FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY
+      )
+    default:
+      return null
+  }
+}
 
 /** Pure pricing policy for the future calculated-price provider. */
 export const calculateShippingPrice = ({
@@ -32,12 +54,9 @@ export const calculateShippingPrice = ({
     goodsTotalHuf,
     "goods_total_huf"
   )
-  const threshold = normalizeNonNegativeWholeHuf(
-    settings.free_shipping_threshold_huf,
-    FREE_SHIPPING_THRESHOLD_SETTING_KEY
-  )
+  const threshold = freeShippingThresholdOf(role, settings)
 
-  if (isFreeShippingThresholdRole(role) && goodsTotal >= threshold) {
+  if (threshold !== null && goodsTotal >= threshold) {
     return 0
   }
 

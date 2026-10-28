@@ -193,7 +193,8 @@ describe("checkout arithmetic", () => {
     shipping_gls_normal_huf: 3_500,
     shipping_gls_heavy_huf: 6_900,
     shipping_foxpost_huf: 1_590,
-    free_shipping_threshold_huf: 50_000,
+    free_shipping_threshold_gls_huf: 50_000,
+    free_shipping_threshold_foxpost_huf: 30_000,
   }
 
   const FEE_HUF = 450

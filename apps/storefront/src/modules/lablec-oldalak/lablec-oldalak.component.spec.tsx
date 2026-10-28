@@ -123,17 +123,18 @@ describe("a Fizetés oldal", () => {
 })
 
 describe("a nem egyeztetett szövegek jelzője", () => {
-  it("a Szállítás és a Fizetés oldal mintajelzőt visel, amíg a kapu listáján áll", () => {
-    for (const [lap, kulcs] of [
-      [<SzallitasLap key="s" cim="Szállítás" />, "szallitas"],
-      [<FizetesLap key="f" cim="Fizetés" />, "fizetes"],
-    ] as const) {
-      const { unmount } = render(lap)
-      const jelzo = screen.getByTestId("minta-jelzo")
-      expect(jelzo.textContent).toContain("Minta adat")
-      expect(jelzo.textContent).toContain(lablecMinta(kulcs)!.mit)
-      unmount()
-    }
+  it("a Fizetés oldal mintajelzőt visel, amíg a kapu listáján áll", () => {
+    render(<FizetesLap cim="Fizetés" />)
+    const jelzo = screen.getByTestId("minta-jelzo")
+    expect(jelzo.textContent).toContain("Minta adat")
+    expect(jelzo.textContent).toContain(lablecMinta("fizetes")!.mit)
+  })
+
+  // Balázs, 2026-10-28: a küszöbök szolgáltatónként, az árak egyeznek a lappal
+  it("a Szállítás oldal egyeztetve van: nincs jelzője, és nincs a kapu listáján", () => {
+    const { container } = render(<SzallitasLap cim="Szállítás" />)
+    expect(container.querySelector('[data-testid="minta-jelzo"]')).toBeNull()
+    expect(lablecMinta("szallitas")).toBeUndefined()
   })
 
   it("a jelzők száma a kapu számával egyezik: nincs jelző a kapu nélkül, sem kapu jelző nélkül", () => {

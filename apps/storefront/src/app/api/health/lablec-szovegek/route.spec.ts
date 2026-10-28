@@ -11,12 +11,12 @@ import { GET } from "./route"
  * cimke; ha a valasz szoveget (nem csak kulcsot) adna.
  */
 describe("GET /api/health/lablec-szovegek", () => {
-  it("a két oldal nincs egyeztetve: sample_texts_remain, a kulcsokkal", async () => {
+  it("a Fizetés még nincs egyeztetve (a Szállítás igen): sample_texts_remain, a kulcsokkal", async () => {
     const torzs = await (await GET()).json()
     expect(torzs).toEqual({
       status: "sample_texts_remain",
-      count: 2,
-      keys: ["szallitas", "fizetes"],
+      count: 1,
+      keys: ["fizetes"],
     })
   })
 

@@ -6,21 +6,32 @@ export const SHIPPING_GLS_NORMAL_SETTING_KEY =
   "shipping_gls_normal_huf" as const
 export const SHIPPING_GLS_HEAVY_SETTING_KEY = "shipping_gls_heavy_huf" as const
 export const SHIPPING_FOXPOST_SETTING_KEY = "shipping_foxpost_huf" as const
-export const FREE_SHIPPING_THRESHOLD_SETTING_KEY =
-  "free_shipping_threshold_huf" as const
+/**
+ * THE FREE-SHIPPING THRESHOLD IS PER CARRIER (Balázs, 2026-10-28 09:56 UTC,
+ * message 1564940831658348567): Foxpost from 30 000 Ft, GLS from 50 000 Ft, as on
+ * the old shop's Szállítás page. It used to be one `free_shipping_threshold_huf`
+ * (default 50 000) for both. That key is gone from the code: a row stored under
+ * it is ignored and can be deleted (the settings list shows it as unknown).
+ */
+export const FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY =
+  "free_shipping_threshold_gls_huf" as const
+export const FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY =
+  "free_shipping_threshold_foxpost_huf" as const
 
 export const COMMERCE_SETTING_KEYS = [
   CASH_ON_DELIVERY_FEE_SETTING_KEY,
   SHIPPING_GLS_NORMAL_SETTING_KEY,
   SHIPPING_GLS_HEAVY_SETTING_KEY,
   SHIPPING_FOXPOST_SETTING_KEY,
-  FREE_SHIPPING_THRESHOLD_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
+  FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
 ] as const
 
 export type CommerceSettingKey = (typeof COMMERCE_SETTING_KEYS)[number]
 
 export const DEFAULT_CASH_ON_DELIVERY_FEE_HUF = 450
-export const DEFAULT_FREE_SHIPPING_THRESHOLD_HUF = 50_000
+export const DEFAULT_FREE_SHIPPING_THRESHOLD_GLS_HUF = 50_000
+export const DEFAULT_FREE_SHIPPING_THRESHOLD_FOXPOST_HUF = 30_000
 
 export type CommerceSettingDefinition = Readonly<{
   key: CommerceSettingKey
@@ -97,10 +108,15 @@ export const COMMERCE_SETTING_DEFINITIONS: Record<
     SHIPPING_FOXPOST_SETTING_KEY,
     "Foxpost csomagponti szállítási díj, forintban."
   ),
-  [FREE_SHIPPING_THRESHOLD_SETTING_KEY]: hufDefinition(
-    FREE_SHIPPING_THRESHOLD_SETTING_KEY,
-    "Az ingyenes normál szállítás díjak nélküli áruérték-küszöbe, forintban.",
-    DEFAULT_FREE_SHIPPING_THRESHOLD_HUF
+  [FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY]: hufDefinition(
+    FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
+    "Az ingyenes normál GLS szállítás áruérték-küszöbe, forintban. A nehézáru nem ingyenes.",
+    DEFAULT_FREE_SHIPPING_THRESHOLD_GLS_HUF
+  ),
+  [FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY]: hufDefinition(
+    FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+    "Az ingyenes Foxpost szállítás áruérték-küszöbe, forintban.",
+    DEFAULT_FREE_SHIPPING_THRESHOLD_FOXPOST_HUF
   ),
 }
 

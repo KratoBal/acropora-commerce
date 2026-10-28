@@ -19,7 +19,8 @@ const configuredSettings: Record<string, unknown> = {
   shipping_gls_normal_huf: 3_500,
   shipping_gls_heavy_huf: 4_500,
   shipping_foxpost_huf: 1_150,
-  free_shipping_threshold_huf: 50_000,
+  free_shipping_threshold_gls_huf: 50_000,
+  free_shipping_threshold_foxpost_huf: 30_000,
 }
 
 const idFor = (role: ShippingOptionRole) =>
@@ -375,8 +376,11 @@ describe("Acropora calculated fulfillment provider", () => {
     },
   )
 
+  // Foxpost is free from 30 000 HUF, GLS from 50 000 (Balázs, 2026-10-28)
   it.each([
-    [49_999, 1_150],
+    [29_999, 1_150],
+    [30_000, 0],
+    [49_999, 0],
     [50_000, 0],
   ])("prices Foxpost at %i HUF goods total", async (goodsTotal, expected) => {
     await expect(calculate("FOXPOST", goodsTotal)).resolves.toMatchObject({
@@ -475,7 +479,8 @@ describe("Acropora calculated fulfillment provider", () => {
       {
         shipping_gls_heavy_huf: 4_500,
         shipping_foxpost_huf: 1_150,
-        free_shipping_threshold_huf: 50_000,
+        free_shipping_threshold_gls_huf: 50_000,
+        free_shipping_threshold_foxpost_huf: 30_000,
       },
       /shipping_gls_normal_huf must be configured/,
     ],
