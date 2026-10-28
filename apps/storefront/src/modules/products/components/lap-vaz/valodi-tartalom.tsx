@@ -386,7 +386,7 @@ export const Foto = ({ termek }: { termek: Termek }) => {
           altok={kepAltok(termek.metadata)}
         />
       </div>
-      {egyedi && <UniquePiecePromise className="mt-1" />}
+      {egyedi && <UniquePiecePromise className="mt-1 max-lg:px-4" />}
     </>
   )
 }
