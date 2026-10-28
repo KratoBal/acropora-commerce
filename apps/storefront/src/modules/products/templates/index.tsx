@@ -201,6 +201,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                     nev={product.title}
                     uniquePiece={uniquePieceOf(product.metadata)}
                     altok={kepAltok(product.metadata)}
+                    igeretOsztaly="max-lg:px-4"
                   />
                 ) : undefined
               }
@@ -288,6 +289,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                     nev={product.title}
                     uniquePiece={uniquePieceOf(product.metadata)}
                     altok={kepAltok(product.metadata)}
+                    igeretOsztaly="max-lg:px-4"
                   />
                 ) : undefined
               }

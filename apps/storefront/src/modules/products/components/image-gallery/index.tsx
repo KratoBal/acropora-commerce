@@ -25,6 +25,14 @@ type ImageGalleryProps = {
   uniquePiece?: boolean
   /** a kepek sajat alt-ja URL szerint (`kepAltok`, SEO P0 PR 9) */
   altok?: Record<string, string>
+  /**
+   * A KEP ALATTI IGERET-MONDAT TOVABBI OSZTALYAI (P1, 2026-10-28). Az `fotoResz`
+   * slotban a galeria MOBILON teljes szelessegu (`mobilTeljesSzelesseg`: a
+   * termekfoto a lap szelen szelig er, a tervben 390 x 390), es a mondat ezt
+   * orokli: a kepernyo szelen, 16 pixeles oldalmargo nelkul allt. A hivo, aki a
+   * teljes szelessegu slotba teszi, a margot adja; a tobbi hely valtozatlan.
+   */
+  igeretOsztaly?: string
 }
 
 /**
@@ -72,6 +80,7 @@ const ImageGallery = ({
   uniquePiece = false,
   nev,
   altok,
+  igeretOsztaly = "",
 }: ImageGalleryProps) => {
   const [kivalasztott, setKivalasztott] = useState(0)
   const nagy = images[kivalasztott] ?? images[0]
@@ -190,7 +199,9 @@ const ImageGallery = ({
           A jelvény a kép sarkában, ez a galéria alatt: a kettő külön helyen, mert
           a jelvény jelöl, ez pedig magyaráz.
         */}
-        {uniquePiece && <UniquePiecePromise className="mt-1" />}
+        {uniquePiece && (
+          <UniquePiecePromise className={`mt-1 ${igeretOsztaly}`.trim()} />
+        )}
       </div>
     </div>
   )
