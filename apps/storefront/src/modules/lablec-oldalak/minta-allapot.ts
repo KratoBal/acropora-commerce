@@ -20,11 +20,15 @@ export type LablecMinta = {
   mit: string
 }
 
+/*
+ * A SZALLITAS OLDAL KIKERULT (Balázs, 2026-10-28 09:56 UTC, message
+ * 1564940831658348567; acrobot 11:10): a kuszobok szolgaltatonkent a
+ * beallitasokban (GLS 50 000, Foxpost 30 000, #611), az arak a teszt Medusa
+ * beallitasi soraiban egyeznek a lappal (acrobot merte 2026-10-28 11:1x:
+ * GLS 3 500, nehez 4 500, Foxpost 1 150), a nehez aru sora marad. A Fizetes
+ * oldal marad, amig a fizetesi modok es a felarak nincsenek egyeztetve.
+ */
 export const LABLEC_MINTA_SZOVEGEK: readonly LablecMinta[] = [
-  {
-    kulcs: "szallitas",
-    mit: "a régi bolt szövege: az árak, az ingyenes szállítás küszöbe és a nehéz áru egyeztetésre vár",
-  },
   {
     kulcs: "fizetes",
     mit: "a régi bolt szövege: a fizetési módok és a felárak egyeztetésre várnak",
