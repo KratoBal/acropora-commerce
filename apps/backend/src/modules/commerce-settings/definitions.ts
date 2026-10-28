@@ -22,8 +22,10 @@ export const FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY =
 /**
  * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
  * the accessor and cannot be removed from the Admin (the settings list shows it
- * as unknown), so a data migration deletes it. NEVER put a live key here: the
- * migration would delete a real setting (a unit test keeps the two lists apart).
+ * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
+ * (with its own literal key): a migration that has run never runs again, so
+ * adding a key to this list does not delete anything by itself. NEVER put a
+ * live key here (a unit test keeps this list apart from the live keys).
  */
 export const LEGACY_COMMERCE_SETTING_KEYS = [
   "free_shipping_threshold_huf",

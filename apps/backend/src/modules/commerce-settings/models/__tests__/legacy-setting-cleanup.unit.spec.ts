@@ -43,6 +43,14 @@ describe("legacy commerce setting cleanup", () => {
     expect(sql[0]).not.toMatch(/like/i)
   })
 
+  it("every key the migration deletes is on the legacy list", async () => {
+    const [statement] = await statements("up")
+    const deleted = [...statement!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1])
+    expect(deleted.length).toBeGreaterThan(0)
+    for (const key of deleted)
+      expect(LEGACY_COMMERCE_SETTING_KEYS as readonly string[]).toContain(key)
+  })
+
   it("does nothing on the way down", async () => {
     expect(await statements("down")).toEqual([])
   })

@@ -1,7 +1,13 @@
 import { Migration } from "@medusajs/framework/mikro-orm/migrations"
 import { MedusaError } from "@medusajs/framework/utils"
 
-import { LEGACY_COMMERCE_SETTING_KEYS } from "../definitions"
+/**
+ * THIS MIGRATION CARRIES ITS OWN KEY LIST ON PURPOSE. A migration that has run
+ * never runs again, so it must not import `LEGACY_COMMERCE_SETTING_KEYS`: a key
+ * added to that list later would silently NOT be deleted on a database that
+ * already ran this file. A new legacy key gets its own new migration.
+ */
+const KEYS_DELETED_HERE = ["free_shipping_threshold_huf"] as const
 
 /**
  * Deletes the rows stored under keys the code no longer knows (today only
@@ -15,7 +21,7 @@ import { LEGACY_COMMERCE_SETTING_KEYS } from "../definitions"
  */
 export class Migration20261028180000 extends Migration {
   override async up(): Promise<void> {
-    const keys = LEGACY_COMMERCE_SETTING_KEYS.map((key) => {
+    const keys = KEYS_DELETED_HERE.map((key) => {
       if (!/^[a-z0-9_]+$/.test(key))
         throw new MedusaError(
           MedusaError.Types.INVALID_DATA,
