@@ -51,6 +51,42 @@ describe("loadSide", () => {
     }
   })
 
+  /**
+   * A paid difference handed back by hand must not count as paid (barracuda,
+   * commerce #561). What must fail: `other_captured` ignoring the refunds (the
+   * hold's capture would drop by money the customer got back); a refund larger
+   * than the capture pushing it negative; the refunds read for the HOLD's own
+   * payment changing how it is picked; the query not asking for the refunds.
+   */
+  it("other_captured is the captures minus the refunds booked on the paid difference", async () => {
+    const holdPayment = payment("pay_hold", "2026-10-05T08:00:00.000Z", [])
+    const refundedDifference = (refunds: number[]) =>
+      payment("pay_diff", "2026-10-06T10:00:00.000Z", [2500], {
+        refunds: refunds.map((amount) => ({ amount: big(amount) })),
+      })
+
+    expect((await sideWith([[holdPayment], [refundedDifference([])]]))?.other_captured).toBe(2500)
+    expect((await sideWith([[holdPayment], [refundedDifference([1000])]]))?.other_captured).toBe(1500)
+    expect((await sideWith([[holdPayment], [refundedDifference([1000, 1500])]]))?.other_captured).toBe(0)
+    expect((await sideWith([[holdPayment], [refundedDifference([9999])]]))?.other_captured).toBe(0)
+  })
+
+  it("a refund on the hold's own payment does not change which payment is the hold", async () => {
+    const holdPayment = payment("pay_hold", "2026-10-05T08:00:00.000Z", [], {
+      refunds: [{ amount: big(500) }],
+    })
+    const side = await sideWith([[payment("pay_diff", "2026-10-06T10:00:00.000Z", [2500])], [holdPayment]])
+    expect(side?.payment).toMatchObject({ id: "pay_hold", captured: 0 })
+    expect(side?.other_captured).toBe(2500)
+  })
+
+  it("asks Medusa for the refunds' amounts", async () => {
+    const graph = jest.fn(async () => ({ data: [{ id: "order_1", total: 0, currency_code: "huf", payment_collections: [] }] }))
+    await loadSide({ resolve: () => ({ graph }) } as never, "order_1")
+    const [{ fields }] = graph.mock.calls[0] as unknown as [{ fields: string[] }]
+    expect(fields).toContain("payment_collections.payments.refunds.amount")
+  })
+
   it("of two uncaptured payments the earlier (the hold, while a link's is being paid)", async () => {
     const side = await sideWith([
       [payment("pay_diff", "2026-10-06T10:00:00.000Z", [])],
