@@ -24,6 +24,7 @@ const ORDER_FIELDS = [
   "payment_collections.payments.canceled_at",
   "payment_collections.payments.created_at",
   "payment_collections.payments.captures.amount",
+  "payment_collections.payments.refunds.amount",
 ]
 
 export const loadSide = async (
@@ -44,6 +45,21 @@ export const loadSide = async (
 
   const captured = (candidate: any) =>
     (candidate.captures ?? []).reduce((sum: number, capture: any) => sum + Number(capture?.amount ?? 0), 0)
+  /*
+    REFUNDS ARE MEDUSA'S RECORDS ONLY (the same rule as order-cancel-guard-operations,
+    acrobot 26265): never Stripe's refund list or a charge's `amount_refunded`, which
+    also carries the unused rest of a hold released after a smaller capture.
+  */
+  const refunded = (candidate: any) =>
+    (candidate.refunds ?? []).reduce((sum: number, refund: any) => sum + Number(refund?.amount ?? 0), 0)
+  /*
+    WHAT A PAYMENT STILL COVERS OF THE ORDER: its captures minus the refunds booked
+    on it. A difference paid through a link and then handed back by hand (Stripe or
+    Medusa) no longer pays that part of the order, and counting the full capture lets
+    the hold's capture drop by the refunded amount: the customer pays less than the
+    order's total (barracuda, commerce #561). Never below zero.
+  */
+  const covered = (candidate: any) => Math.max(0, captured(candidate) - refunded(candidate))
   const payments = (order.payment_collections ?? []).flatMap((collection: any) =>
     (collection?.payments ?? [])
       .filter(Boolean)
@@ -87,7 +103,7 @@ export const loadSide = async (
     // a difference paid through a link, on the order's other live payments
     other_captured: live
       .filter((candidate: any) => candidate !== payment)
-      .reduce((sum: number, candidate: any) => sum + captured(candidate), 0),
+      .reduce((sum: number, candidate: any) => sum + covered(candidate), 0),
   }
 }
 
