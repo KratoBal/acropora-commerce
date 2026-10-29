@@ -21,6 +21,7 @@ import { markaNev } from "@lib/util/marka-nev"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import { termeklapCanonical } from "@lib/util/lap-canonical"
+import { termekSajatLeiras } from "@lib/seo/oldal-metaadat"
 import JsonLd from "@modules/common/components/json-ld"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import {
@@ -64,6 +65,9 @@ function getImagesForVariant(
   const imageIdsMap = new Map(variant.images!.map((i) => [i.id, true]))
   return product.images?.filter((i) => imageIdsMap.has(i.id)) ?? null
 }
+
+/** A strukturalt adat leirasa hosszabb lehet, mint a meta leiras (155): a Google nem vagja. */
+const LD_LEIRAS_MAX = 500
 
 export async function termekLapTorzs(
   params: { countryCode: string; handle: string },
@@ -245,6 +249,7 @@ export function strukturaltAdat(
         url,
         csoportAzonosito: termek.id,
         marka,
+        leiras: termekSajatLeiras(termek, LD_LEIRAS_MAX),
         kepek: kepUrlek,
         penznem: tetelek[0]!.penznem,
         kategoriaNevek: ut.map((k) => k.teljesNev),
@@ -266,6 +271,7 @@ export function strukturaltAdat(
       url,
       cikkszam: cikkszam(termek),
       marka,
+      leiras: termekSajatLeiras(termek, LD_LEIRAS_MAX),
       kepek: kepUrlek,
       gtin: valtozatGtin(valtozat),
       ar: ar.calculated_price_number,

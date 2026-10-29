@@ -154,6 +154,8 @@ export type TermekLdBemenet = {
   kategoriaNevek: string[]
   /** a valtozat ervenyes GTIN-je (`valtozatGtin`), ha van */
   gtin?: string | null
+  /** a termek sajat, sima szoveges leirasa (`termekSajatLeiras`), ha van */
+  leiras?: string | null
   /** elo allat: csak az uzletben adjuk at (`InStoreOnly`) */
   csakBoltban?: boolean
 }
@@ -200,6 +202,7 @@ export function termekLd(b: TermekLdBemenet): JsonLd {
     "@type": "Product",
     name: b.nev,
     url: b.url,
+    ...(b.leiras ? { description: b.leiras } : {}),
     ...(b.kepek.length ? { image: b.kepek } : {}),
     ...(b.cikkszam ? { sku: b.cikkszam } : {}),
     ...gtinMezo(b.gtin),
@@ -253,6 +256,8 @@ export type TermekCsoportLdBemenet = {
   /** a csoport allando azonositoja (a termek Medusa-azonositoja) */
   csoportAzonosito: string
   marka?: string | null
+  /** a termek sajat, sima szoveges leirasa (`termekSajatLeiras`), ha van */
+  leiras?: string | null
   kepek: string[]
   penznem: string
   kategoriaNevek: string[]
@@ -283,6 +288,7 @@ export function termekCsoportLd(b: TermekCsoportLdBemenet): JsonLd {
     name: b.nev,
     url: b.url,
     productGroupID: b.csoportAzonosito,
+    ...(b.leiras ? { description: b.leiras } : {}),
     ...(b.kepek.length ? { image: b.kepek } : {}),
     ...(b.marka ? { brand: { "@type": "Brand", name: b.marka } } : {}),
     ...(valtozik.length

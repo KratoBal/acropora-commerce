@@ -116,6 +116,20 @@ describe("a termék", () => {
       expect(JSON.stringify(t)).not.toContain(`"${tilos}"`)
   })
 
+  /*
+    S5 (commerce-audit-p1). MI PIROSÍTJA: ha a leírás nem kerülne a Product
+    blokkba; ha leírás nélkül egy üres vagy kitalált `description` állna ott.
+  */
+  it("a termék saját leírása `description`, leírás nélkül a mező kimarad", () => {
+    expect(
+      termekLd({ ...bemenet, leiras: "Pontos pH reagens." }),
+    ).toMatchObject({ description: "Pontos pH reagens." })
+    expect(termekLd({ ...bemenet, leiras: null })).not.toHaveProperty(
+      "description",
+    )
+    expect(termekLd(bemenet)).not.toHaveProperty("description")
+  })
+
   it("cikkszám és márka nélkül a mező kimarad, nem üres", () => {
     const t = termekLd({ ...bemenet, cikkszam: null, marka: null })
     expect(t).not.toHaveProperty("sku")
@@ -179,6 +193,33 @@ describe("GTIN", () => {
 })
 
 describe("termekCsoportLd", () => {
+  it("a csoport a termék leírását viszi, a változatok nem ismétlik", () => {
+    const csoport = termekCsoportLd({
+      nev: "Só",
+      url: "https://bolt.test/hu/termek/so",
+      csoportAzonosito: "prod_so",
+      leiras: "Tengeri só akváriumhoz.",
+      kepek: [],
+      penznem: "HUF",
+      kategoriaNevek: ["Termékek"],
+      valtozatok: [
+        {
+          url: "https://bolt.test/hu/termek/so?v_id=v",
+          opciok: [{ nev: "Méret", ertek: "5 kg" }],
+          cikkszam: "SO",
+          gtin: null,
+          kepek: [],
+          ar: 1990,
+          elerhetoseg: "KAPHATO" as const,
+          utanrendeles: false,
+        },
+      ],
+    })
+    expect(csoport).toMatchObject({ description: "Tengeri só akváriumhoz." })
+    const valtozatok = (csoport as { hasVariant: object[] }).hasVariant
+    expect(valtozatok[0]).not.toHaveProperty("description")
+  })
+
   const valtozat = (opciok: { nev: string; ertek: string }[], ar = 1990) => ({
     url: "https://bolt.test/hu/termek/so?v_id=v",
     opciok,

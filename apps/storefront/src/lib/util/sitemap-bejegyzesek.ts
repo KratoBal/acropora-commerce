@@ -147,6 +147,27 @@ function nemUres(
 }
 
 /** A bejegyzések típusonként, országonként a saját listájából. */
+/**
+ * EGY UTVONAL-SZEGMENS KODOLT ALAKJA (commerce-audit-p1, S3). A sitemap
+ * protokoll URL-kodolt cimeket var, es a lap kanonikus cime is az (a Next a
+ * `params`-t kodolva adja). A Medusa viszont a handle-t ekezetesen is adhatja
+ * (`kétkomponensű`), ezt nyersen kiirva a sitemap mas cimet ajanlana, mint
+ * amit a lap sajat canonicaljanak vall. A fuggveny mindket bemenetet UGYANARRA
+ * az alakra hozza: elobb dekodol (ha ervenyes `%XX`), aztan kodol, tehat egy
+ * mar kodolt handle nem kodolodik ketszer (`lap-canonical.ts` fejlece: a
+ * ketszeres kodolas hibaja mar elofordult). Hibas `%` sorozatnal a nyers
+ * szoveget kodolja.
+ */
+export function utSzegmensKodolt(szegmens: string): string {
+  let dekodolt = szegmens
+  try {
+    dekodolt = decodeURIComponent(szegmens)
+  } catch {
+    // nem ervenyes %XX sorozat: a nyers szoveg a szegmens
+  }
+  return encodeURIComponent(dekodolt)
+}
+
 export function sitemapReszek({
   origin,
   orszagok,
@@ -181,7 +202,12 @@ export function sitemapReszek({
     for (const kategoria of kategoriak) {
       if (!kategoria.handle || !vanTermeke(kategoria)) continue
       reszek.kategoriak.push({
-        url: cim(kategoriaCanonical(countryCode, kategoria.handle.split("/"))),
+        url: cim(
+          kategoriaCanonical(
+            countryCode,
+            kategoria.handle.split("/").map(utSzegmensKodolt),
+          ),
+        ),
         lastModified: utolsoModositas(kategoria.updated_at),
       })
     }
@@ -189,7 +215,7 @@ export function sitemapReszek({
     for (const marka of markak) {
       if (!marka.handle) continue
       reszek.markak.push({
-        url: cim(markaCanonical(countryCode, marka.handle)),
+        url: cim(markaCanonical(countryCode, utSzegmensKodolt(marka.handle))),
         lastModified: utolsoModositas(marka.updated_at),
       })
     }
@@ -203,7 +229,9 @@ export function sitemapReszek({
       )
         continue
       reszek.termekek.push({
-        url: cim(termeklapCanonical(countryCode, termek.handle)),
+        url: cim(
+          termeklapCanonical(countryCode, utSzegmensKodolt(termek.handle)),
+        ),
         lastModified: utolsoModositas(termek.updated_at),
       })
     }
@@ -211,7 +239,9 @@ export function sitemapReszek({
     for (const landing of landingek) {
       if (!landing.handle) continue
       reszek.valogatasok.push({
-        url: cim(valogatasCanonical(countryCode, landing.handle)),
+        url: cim(
+          valogatasCanonical(countryCode, utSzegmensKodolt(landing.handle)),
+        ),
         lastModified: utolsoModositas(landing.updated_at),
       })
     }

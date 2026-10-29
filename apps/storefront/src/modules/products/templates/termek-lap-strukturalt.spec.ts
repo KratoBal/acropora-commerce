@@ -290,3 +290,57 @@ describe("a terméklap JSON-LD márkája", () => {
     expect(marka(t)).toBe("Aquaforest")
   })
 })
+
+/*
+  S5 (commerce-audit-p1): a lap strukturalt adata viszi a termek SAJAT
+  leirasat, HTML nelkul, a meta leirasnal hosszabb keretben. MI PIROSIT: ha a
+  hivo nem adna at leirast (egy- es tobbvaltozatosnal is); ha a leiras nyers
+  HTML-lel allna; ha leiras nelkul egy kitalalt mondat kerulne a blokkba.
+*/
+describe("a terméklap strukturált adatának leírása", () => {
+  const ketValtozat = [
+    valtozat(),
+    valtozat({ id: "variant_2", sku: "HI780-50" }),
+  ]
+
+  it("egyváltozatosnál és csoportnál is a termék leírása, HTML nélkül", () => {
+    for (const variants of [[valtozat()], ketValtozat]) {
+      const { termek: t } = strukturaltAdat(
+        termek({
+          variants,
+          description: "<p>Pontos <b>pH</b> reagens.</p>",
+        }),
+        KATEGORIAK,
+        KEP,
+        PARAMS,
+      )
+      expect(t).toMatchObject({ description: "Pontos pH reagens." })
+    }
+  })
+
+  it("leírás nélkül nincs description, és sablonmondat sem áll a helyén", () => {
+    for (const variants of [[valtozat()], ketValtozat]) {
+      const { termek: t } = strukturaltAdat(
+        termek({ variants }),
+        KATEGORIAK,
+        KEP,
+        PARAMS,
+      )
+      expect(t).not.toHaveProperty("description")
+      expect(JSON.stringify(t)).not.toContain("webáruházban")
+    }
+  })
+
+  it("a meta leírásnál hosszabb leírás nem vágódik 155 karakterre", () => {
+    const hosszu = `Hosszú leírás ${"szó ".repeat(80)}vége.`
+    const { termek: t } = strukturaltAdat(
+      termek({ description: `<p>${hosszu}</p>` }),
+      KATEGORIAK,
+      KEP,
+      PARAMS,
+    )
+    const leiras = (t as unknown as { description: string }).description
+    expect(leiras.length).toBeGreaterThan(155)
+    expect(leiras.length).toBeLessThanOrEqual(500)
+  })
+})

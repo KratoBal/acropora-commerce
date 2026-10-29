@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { sitemapBejegyzesek, utolsoModositas } from "./sitemap-bejegyzesek"
+import {
+  sitemapBejegyzesek,
+  utSzegmensKodolt,
+  utolsoModositas,
+} from "./sitemap-bejegyzesek"
 
 const BEMENET = {
   origin: "https://shop.acropora.hu",
@@ -107,6 +111,42 @@ describe("sitemap bejegyzesek", () => {
       orszagok: [{ countryCode: "hu", termekek: [{ handle: kodolt }] }],
     }).map((b) => b.url)
     expect(utak).toContain(`https://shop.acropora.hu/hu/termek/${kodolt}`)
+  })
+
+  /**
+   * S3 (commerce-audit-p1). A Medusa a handle-t DEKODOLT, ekezetes alakban is
+   * adhatja; a sitemap protokoll kodolt cimet var, es a lap canonicalja is az.
+   * MI PIROSIT: ha a nyers ekezetes handle kodolatlanul kerulne a cimbe; ha a
+   * mar kodolt handle ketszer kodolodna (`%25C3`); ha a ket bemenet-alak nem
+   * UGYANAZT a cimet adna.
+   */
+  it("az ekezetes handle KODOLVA kerul a cimbe, a mar kodolt nem kodolodik ketszer", () => {
+    const nyers = "nyos-reef-putty-200g-kétkomponensű"
+    const kodolt = "nyos-reef-putty-200g-k%C3%A9tkomponens%C5%B1"
+    const cimek = (handle: string) =>
+      sitemapBejegyzesek({
+        origin: "https://shop.acropora.hu",
+        kategoriak: [{ handle: `termékek/${handle}` }],
+        markak: [{ handle }],
+        landingek: [{ handle }],
+        orszagok: [{ countryCode: "hu", termekek: [{ handle }] }],
+      })
+        .map((b) => b.url)
+        .filter((url) => url.includes("nyos-reef"))
+    expect(cimek(nyers)).toEqual(cimek(kodolt))
+    expect(cimek(nyers)).toEqual([
+      `https://shop.acropora.hu/hu/categories/term%C3%A9kek/${kodolt}`,
+      `https://shop.acropora.hu/hu/marka/${kodolt}`,
+      `https://shop.acropora.hu/hu/termek/${kodolt}`,
+      `https://shop.acropora.hu/hu/valogatas/${kodolt}`,
+    ])
+    for (const url of cimek(nyers)) expect(url).not.toContain("%25")
+  })
+
+  it("az utSzegmensKodolt hibas % sorozatnal a nyers szoveget kodolja", () => {
+    expect(utSzegmensKodolt("50%-os")).toBe("50%25-os")
+    expect(utSzegmensKodolt("korallok")).toBe("korallok")
+    expect(utSzegmensKodolt("korallt%C3%A1pok")).toBe("korallt%C3%A1pok")
   })
 
   /** Handle nelkul nincs cim: egy `/hu/termek/undefined` alak rosszabb a hianynal. */
