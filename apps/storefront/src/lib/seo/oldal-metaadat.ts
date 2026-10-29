@@ -160,13 +160,33 @@ export function termekLeiras(termek: {
   description?: string | null
   metadata?: Record<string, unknown> | null
 }): string {
+  return (
+    termekSajatLeiras(termek) ??
+    `${termek.title ?? ""}: rendelés az ${STORE_NAME} webáruházban.`.trim()
+  )
+}
+
+/**
+ * A TERMEK SAJAT LEIRASA, a fenti lanc elso harom lepese, a negyedik (a
+ * kitalalt mondat) NELKUL: `null`, ha a termeknek nincs leirasa. A termek
+ * strukturalt adata (JSON-LD `description`, commerce-audit-p1, S5) ezt hasznalja:
+ * a meta leirasnak kell valami, a Product blokkba viszont egy sablonmondat
+ * semmit nem ad, inkabb maradjon el a mezo. A `max` a meta leirasnal 155, a
+ * strukturalt adatnal hosszabb.
+ */
+export function termekSajatLeiras(
+  termek: {
+    description?: string | null
+    metadata?: Record<string, unknown> | null
+  },
+  max: number = LEIRAS_MAX,
+): string | null {
   const seo = termek.metadata?.seo_description
   const rovid = termek.metadata?.unas_short_description
   return (
-    leirasSzovegbol(typeof seo === "string" ? seo : null) ??
-    leirasSzovegbol(typeof rovid === "string" ? rovid : null) ??
-    leirasSzovegbol(termek.description) ??
-    `${termek.title ?? ""}: rendelés az ${STORE_NAME} webáruházban.`.trim()
+    leirasSzovegbol(typeof seo === "string" ? seo : null, max) ??
+    leirasSzovegbol(typeof rovid === "string" ? rovid : null, max) ??
+    leirasSzovegbol(termek.description, max)
   )
 }
 

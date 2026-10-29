@@ -15,6 +15,7 @@ import {
   markaLeiras,
   openGraph,
   termekLeiras,
+  termekSajatLeiras,
   termekRobots,
   termekRobotsJel,
 } from "./oldal-metaadat"
@@ -96,6 +97,21 @@ describe("a terméklap leírása", () => {
     expect(termekLeiras({ ...termek, metadata: {} })).toBe(
       "A teljes leírás első mondata.",
     )
+  })
+
+  /*
+    S5: a strukturális adat leírása a lánc első három lépése. MI PIROSÍTJA: ha
+    a negyedik lépés (a sablonmondat) bekerülne a Product blokkba; ha a hosszabb
+    keret nem érvényesülne.
+  */
+  it("a saját leírás a sablonmondat nélkül: semmi esetén null, és a keret állítható", () => {
+    expect(termekSajatLeiras({ metadata: null })).toBeNull()
+    expect(termekSajatLeiras({ description: "  <p> </p> " })).toBeNull()
+    expect(termekSajatLeiras(termek)).toBe("Rövid leírás a listából.")
+    const hosszu = { description: `<p>${"szó ".repeat(200)}</p>` }
+    expect(termekSajatLeiras(hosszu)?.length).toBeLessThanOrEqual(155)
+    expect(termekSajatLeiras(hosszu, 500)?.length).toBeGreaterThan(155)
+    expect(termekSajatLeiras(hosszu, 500)?.length).toBeLessThanOrEqual(500)
   })
 
   it("semmi nélkül egy magyar mondat, és sosem a cím másolata", () => {
