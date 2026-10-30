@@ -1,3 +1,5 @@
+import { Modules } from "@medusajs/framework/utils"
+
 import { GET as storeList } from "../../../store/brands/route"
 import { GET as storeOne } from "../../../store/brands/[handle]/route"
 import { AdminPutBrand, AdminPutProductBrand } from "../validators"
@@ -49,8 +51,22 @@ describe("store brand routes", () => {
   const scope = (data: {
     brands: (ReturnType<typeof record> & { os_brand_id: string })[]
     links: { os_brand_id: string }[]
+    collections?: { handle: string; external_id: string }[]
   }) => ({
-    resolve: () => ({
+    resolve: (key: string) =>
+      key === Modules.PRODUCT
+        ? {
+            listProductCollections: async (filter: { external_id: string }) =>
+              (data.collections ?? []).filter(
+                (c) => c.external_id === filter.external_id
+              ),
+          }
+        : brandService(data),
+  })
+  const brandService = (data: {
+    brands: (ReturnType<typeof record> & { os_brand_id: string })[]
+    links: { os_brand_id: string }[]
+  }) => ({
       listProductBrands: async (filter?: { os_brand_id?: string }) =>
         filter?.os_brand_id
           ? data.links.filter((l) => l.os_brand_id === filter.os_brand_id)
@@ -64,7 +80,6 @@ describe("store brand routes", () => {
             ? b.handle === filter.handle
             : (filter.os_brand_id ?? []).includes(b.os_brand_id)
         ),
-    }),
   })
   const response = () => {
     const res = { body: undefined as unknown, json: (b: unknown) => (res.body = b) }
@@ -152,5 +167,44 @@ describe("store brand routes", () => {
         response() as never
       )
     ).rejects.toThrow(/was not found/)
+  })
+
+  /*
+    t12 (kirakat, 2026-10-30): the brand page lists its products from the
+    collection, and the collection is paired by the OS id. A collection made
+    before a slug change keeps its old handle (`aqua-medic` for the brand
+    `aquamedic`), so the page cannot take the brand's handle for it.
+  */
+  it("names the brand's collection by the OS id, whatever its handle is", async () => {
+    const res = response()
+    await storeOne(
+      {
+        scope: scope({
+          ...data,
+          collections: [
+            { handle: "mas", external_id: "os_2" },
+            { handle: "aquaforest-regi", external_id: "os_1" },
+          ],
+        }),
+        params: { handle: "aquaforest" },
+      } as never,
+      res as never
+    )
+    expect(
+      (res.body as { brand: { collection_handle: string | null } }).brand
+        .collection_handle
+    ).toBe("aquaforest-regi")
+  })
+
+  it("says null when no collection carries the OS id", async () => {
+    const res = response()
+    await storeOne(
+      { scope: scope(data), params: { handle: "aquaforest" } } as never,
+      res as never
+    )
+    expect(
+      (res.body as { brand: { collection_handle: string | null } }).brand
+        .collection_handle
+    ).toBeNull()
   })
 })

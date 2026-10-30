@@ -30,5 +30,6 @@ export default async function MarkaLapozott(props: Props) {
     params,
     { page: lap },
     `/${params.countryCode}/marka/${params.handle}`,
+    true,
   )
 }
