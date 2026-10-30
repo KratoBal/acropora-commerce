@@ -17,6 +17,12 @@ export type Marka = {
   logo_url: string | null
   website_url: string | null
   updated_at: string | null
+  /**
+   * A marka gyujtemenyenek handle-je, ha a hatter megtalalja (az OS-azonosito
+   * parjan). Nem mindig egyezik a marka handle-jevel: egy slug-csere utan a
+   * gyujtemeny a regi handle-jet viseli. Az egyszeru markalista nem adja.
+   */
+  collection_handle?: string | null
 }
 
 /**

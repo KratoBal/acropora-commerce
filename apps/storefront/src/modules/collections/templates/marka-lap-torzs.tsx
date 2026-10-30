@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { markaHandleAlapjan } from "@lib/data/brands"
 import { getCollectionByHandle } from "@lib/data/collections"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
@@ -28,13 +29,27 @@ export async function markaLapTorzs(
    * torzset hasznalja; alapertelmezes a regi gyujtemeny-ut.
    */
   alapUt = `/${params.countryCode}/collections/${params.handle}`,
+  /**
+   * Igaz a markaoldalaknal (`/marka/{handle}`): a handle a MARKA handle-je, a
+   * gyujtemenyt a marka-modul parositasa adja meg. A regi gyujtemeny-utnal
+   * (`/collections/{handle}`) a handle maga a gyujtemenye.
+   */
+  markaHandle = false,
 ) {
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
 
-  const collection = await getCollectionByHandle(
-    decodeHandleParam(params.handle),
-  ).then((collection) => collection)
+  const handle = decodeHandleParam(params.handle)
+  /*
+    A MARKAOLDAL A GYUJTEMENYT AZ OS-AZONOSITON KERESI, NEM A HANDLE-EN (merve
+    2026-10-30, teszt kirakat): az `aquamedic` marka gyujtemenye `aqua-medic`
+    handle-t visel, mert a gyujtemeny a slug-csere elott jott letre. A
+    kapcsolat hianyaban (regi hatter, nincs parositas) marad a handle.
+  */
+  const gyujtemenyHandle = markaHandle
+    ? ((await markaHandleAlapjan(handle))?.collection_handle ?? handle)
+    : handle
+  const collection = await getCollectionByHandle(gyujtemenyHandle)
 
   if (!collection) {
     notFound()

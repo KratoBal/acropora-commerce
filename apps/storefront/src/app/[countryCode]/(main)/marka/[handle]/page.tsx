@@ -60,5 +60,6 @@ export default async function MarkaPage(props: Props) {
     params,
     {},
     `/${params.countryCode}/marka/${params.handle}`,
+    true,
   )
 }

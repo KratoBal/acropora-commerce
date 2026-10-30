@@ -1,5 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError } from "@medusajs/framework/utils"
+import { MedusaError, Modules } from "@medusajs/framework/utils"
 
 import { forStore, resolveBrandService } from "../../../admin/brands/helpers"
 
@@ -29,5 +29,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       MedusaError.Types.NOT_FOUND,
       `Brand with handle ${req.params.handle} was not found`
     )
-  res.json({ brand: forStore(brand) })
+  // The page lists its products from the brand's collection. The collection
+  // is paired by the OS id (`collection.external_id`), not by handle: a
+  // collection created before a slug change keeps its old handle (measured on
+  // the test shop, 2026-10-30: `aqua-medic` against the brand `aquamedic`).
+  const [collection] = await req.scope
+    .resolve(Modules.PRODUCT)
+    .listProductCollections(
+      { external_id: brand.os_brand_id } as never,
+      { select: ["handle"], take: 1 }
+    )
+  res.json({
+    brand: { ...forStore(brand), collection_handle: collection?.handle ?? null },
+  })
 }

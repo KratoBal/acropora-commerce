@@ -27,5 +27,6 @@ export default async function MarkaSzurt(props: Props) {
     params,
     await props.searchParams,
     `/${params.countryCode}/marka/${params.handle}`,
+    true,
   )
 }
