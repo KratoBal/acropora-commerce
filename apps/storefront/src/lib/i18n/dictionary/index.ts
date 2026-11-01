@@ -55,3 +55,23 @@ export const translator = (locale: Locale): Translate => {
       params,
     )
 }
+
+/** The groups of the dictionary that hold the Hungarian text exactly as another system (the OS) stores it, so it can be looked up by that text. */
+export type KnownGroup = "headerText" | "footerText" | "newsletter"
+
+/**
+ * The English (or other non-default) text for a Hungarian text that a system outside the code stores and shows: the OS editor writes
+ * its Hungarian defaults back, so the shop recognises them by their exact words. `undefined` when the language is the default one or
+ * the text is not one of the known defaults: such a text was written by a person and is shown as written.
+ */
+export const knownText = (
+  locale: Locale,
+  group: KnownGroup,
+  text: string,
+): string | undefined => {
+  if (locale === DEFAULT_LOCALE) return undefined
+  const source = dictionaries[DEFAULT_LOCALE][group] as Record<string, string>
+  const target = getDictionary(locale)[group] as Record<string, string>
+  const name = Object.keys(source).find((k) => source[k] === text)
+  return name === undefined ? undefined : target[name]
+}

@@ -114,6 +114,13 @@ describe("a jogi dokumentumok a kirakat saját oldalán", () => {
   })
 })
 
+const SZOTAR_HU = kodSzoveg(
+  readFileSync(
+    join(__dirname, "../../../../lib/i18n/dictionary/hu.ts"),
+    "utf-8",
+  ),
+)
+
 describe("a cég adatai a lábléc negyedik oszlopában", () => {
   /**
    * A TUDATOS ELTERES A FORRASTOL. A boltban "Nyitvatarás" all, egy hianyzo
@@ -132,6 +139,7 @@ describe("a cég adatai a lábléc negyedik oszlopában", () => {
     )
 
     expect(forras).not.toContain("Nyitvatarás")
+    expect(SZOTAR_HU).not.toContain("Nyitvatarás")
   })
 
   /**
@@ -143,7 +151,9 @@ describe("a cég adatai a lábléc negyedik oszlopában", () => {
       readFileSync(join(__dirname, "lablec-keret.tsx"), "utf-8"),
     )
 
-    expect(forras).toContain("Nyitvatartás")
+    // 2026-11-01 ota a felirat a szotarban all (`footer.openingHours`), a keret a kulcsot hivja
+    expect(forras).toContain("footer.openingHours")
+    expect(SZOTAR_HU).toContain("Nyitvatartás")
   })
 
   it("a négy adat mind ki van töltve", () => {

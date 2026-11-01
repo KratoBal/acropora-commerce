@@ -1,3 +1,5 @@
+import { knownText } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import type {
   KezdolapHirlevel,
   KezdolapTartalom,
@@ -47,14 +49,18 @@ function ervenyesSor(x: unknown): KezdolapHirlevel | null {
  */
 export function hirlevelAdat(
   tartalom: KezdolapTartalom | null,
+  locale: Locale = DEFAULT_LOCALE,
 ): HirlevelAdat | null {
   const sor = ervenyesSor(tartalom?.newsletter) ?? HIRLEVEL_ALAP
   if (!sor.enabled) return null
+  // Az angol kirakat a pontosan egyezo magyar kezdoerteket fordítja; amit valaki irt, azt ugy hagyja.
+  const fordit = (szoveg: string) =>
+    knownText(locale, "newsletter", szoveg) ?? szoveg
   return {
-    cim: sor.title,
-    szoveg: sor.text,
-    hozzajarulas: sor.consent_text.trim(),
-    gomb: sor.button.trim(),
+    cim: fordit(sor.title),
+    szoveg: fordit(sor.text),
+    hozzajarulas: fordit(sor.consent_text.trim()),
+    gomb: fordit(sor.button.trim()),
   }
 }
 
@@ -68,8 +74,9 @@ export function hirlevelAdat(
  */
 export function hozzajarulasLinkkel(
   szoveg: string,
+  kifejezes: RegExp = /adatkezelési tájékoztató[a-záéíóöőúüű]*/i,
 ): { elotte: string; link: string; utana: string } | null {
-  const talalat = /adatkezelési tájékoztató[a-záéíóöőúüű]*/i.exec(szoveg)
+  const talalat = kifejezes.exec(szoveg)
   if (!talalat) return null
   return {
     elotte: szoveg.slice(0, talalat.index),

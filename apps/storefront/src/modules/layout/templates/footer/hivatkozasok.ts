@@ -1,3 +1,4 @@
+import type { Key } from "@lib/i18n/dictionary"
 import {
   JOGI_DOKUMENTUMOK,
   fogyasztobaratBekapcsolva,
@@ -52,6 +53,24 @@ export const OSZLOP_CIMEK: Record<LablecOszlop, string> = {
   informaciok: "Információk",
 }
 
+/** Az oszlopcimek szotar-kulcsai. */
+export const OSZLOP_KULCSOK: Record<LablecOszlop, Key> = {
+  oldalterkep: "footerText.colSitemap",
+  fiok: "footerText.colAccount",
+  informaciok: "footerText.colInfo",
+}
+
+/** A jogi dokumentumok feliratainak szotar-kulcsai, azonosito (`slug`) szerint; egy uj dokumentum kulcs nelkul a magyar cimet kapja. */
+export const JOGI_KULCS: Readonly<Record<string, Key | undefined>> = {
+  aszf: "footerText.legalTerms",
+  adatkezeles: "footerText.legalPrivacy",
+  impresszum: "footerText.legalImprint",
+  "elallasi-jog": "footerText.legalWithdrawal",
+  "elallasi-nyilatkozat": "footerText.legalWithdrawalForm",
+  szavatossag: "footerText.legalWarranty",
+  suti: "footerText.legalCookies",
+}
+
 /** A megjelenesi sorrend, a bolt lableceenek megfeleloen. */
 export const OSZLOP_SORREND: readonly LablecOszlop[] = [
   "oldalterkep",
@@ -61,6 +80,8 @@ export const OSZLOP_SORREND: readonly LablecOszlop[] = [
 
 export type LablecHivatkozas = {
   cimke: string
+  /** A felirat szotar-kulcsa (az angol kirakat ezt fordítja); a jogi dokumentumoknak a `JOGI_KULCS` adja. */
+  kulcs?: Key
   cim: string
   oszlop: LablecOszlop
 }
@@ -75,23 +96,58 @@ export type LablecHivatkozas = {
  * tud kulonbozni. Kulon `/account/register` utvonal nem letezik.
  */
 export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
-  { cimke: "Nyitóoldal", oszlop: "oldalterkep", cim: "/" },
-  { cimke: "Termékek", oszlop: "oldalterkep", cim: "/store" },
+  {
+    cimke: "Nyitóoldal",
+    kulcs: "footerText.home",
+    oszlop: "oldalterkep",
+    cim: "/",
+  },
+  {
+    cimke: "Termékek",
+    kulcs: "footerText.products",
+    oszlop: "oldalterkep",
+    cim: "/store",
+  },
   /*
     UJ TETEL A BOLT LABLECEHEZ KEPEST (Balazs, 2026-10-27, kirakat-lablec-kep):
     a markak listaja, a `/marka` lapon. A regi boltban nincs ilyen.
   */
-  { cimke: "Forgalmazott márkák", oszlop: "oldalterkep", cim: "/marka" },
-  { cimke: "Belépés", oszlop: "fiok", cim: "/account" },
-  { cimke: "Regisztráció", oszlop: "fiok", cim: "/account" },
-  { cimke: "Profilom", oszlop: "fiok", cim: "/account" },
-  { cimke: "Kosár", oszlop: "fiok", cim: "/cart" },
+  {
+    cimke: "Forgalmazott márkák",
+    kulcs: "footerText.brands",
+    oszlop: "oldalterkep",
+    cim: "/marka",
+  },
+  {
+    cimke: "Belépés",
+    kulcs: "footerText.login",
+    oszlop: "fiok",
+    cim: "/account",
+  },
+  {
+    cimke: "Regisztráció",
+    kulcs: "footerText.register",
+    oszlop: "fiok",
+    cim: "/account",
+  },
+  {
+    cimke: "Profilom",
+    kulcs: "footerText.profile",
+    oszlop: "fiok",
+    cim: "/account",
+  },
+  { cimke: "Kosár", kulcs: "footerText.cart", oszlop: "fiok", cim: "/cart" },
   /*
     SAJAT OLDALA VAN (commerce-audit-p1, P1/11): az "Elérhetőségek" eddig a regi
     UNAS boltra mutatott, ami a domainvaltas utan onmagara mutatna. A ceg-adatokat
     mutatja (`CEG`, lent), ugyanabbol a forrasbol, mint ez a lablec.
   */
-  { cimke: "Elérhetőségek", oszlop: "informaciok", cim: "/elerhetosegek" },
+  {
+    cimke: "Elérhetőségek",
+    kulcs: "footerText.contact",
+    oszlop: "informaciok",
+    cim: "/elerhetosegek",
+  },
   /*
     A FOGYASZTOBARAT DOKUMENTUMAI (2026-10-05): a jogi szovegek mostantol a
     kirakat SAJAT oldalain allnak (`/jogi/<slug>`), a tartalmat a Fogyasztobarat
@@ -100,6 +156,7 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
   */
   ...JOGI_DOKUMENTUMOK.map((d) => ({
     cimke: d.cim,
+    kulcs: JOGI_KULCS[d.slug],
     oszlop: "informaciok" as const,
     cim: jogiOldal(d.slug),
   })),
@@ -110,10 +167,21 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
     tajekoztato a Fogyasztobarat widgetjevel. Eddig mind a harom a regi UNAS
     boltra mutatott. A sorrend a regi lableceé (Fizetés, Szállítás, Képes).
   */
-  { cimke: "Fizetés", oszlop: "informaciok", cim: "/fizetes" },
-  { cimke: "Szállítás", oszlop: "informaciok", cim: "/szallitas" },
+  {
+    cimke: "Fizetés",
+    kulcs: "footerText.payment",
+    oszlop: "informaciok",
+    cim: "/fizetes",
+  },
+  {
+    cimke: "Szállítás",
+    kulcs: "footerText.shipping",
+    oszlop: "informaciok",
+    cim: "/szallitas",
+  },
   {
     cimke: "Képes vásárlói tájékoztató",
+    kulcs: "footerText.illustratedInfo",
     oszlop: "informaciok",
     cim: "/jogi/kepes-tajekoztato",
   },
@@ -128,6 +196,7 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
 export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
   {
     cimke: "Kedvenceim",
+    kulcs: "footerText.favourites",
     oszlop: "fiok",
     cim: "https://shop.acropora.hu/shop_order_track.php?tab=favourite",
   },

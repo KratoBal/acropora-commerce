@@ -25,7 +25,7 @@ describe("a gyűjtemény-lista mezői", () => {
   // egyáltalán nem kérdezi le a gyűjteményeket
   it("a lábléc nem kéri le a gyűjteményeket", async () => {
     const { default: Footer } = await import("./index")
-    await Footer()
+    await Footer({ countryCode: "hu" })
     expect(listCollections).not.toHaveBeenCalled()
   })
 

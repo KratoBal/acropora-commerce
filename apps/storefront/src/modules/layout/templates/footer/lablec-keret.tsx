@@ -1,5 +1,7 @@
 import Image from "next/image"
 
+import { translator } from "@lib/i18n/dictionary"
+import type { Locale } from "@lib/i18n/locale"
 import { STORE_NAME } from "@lib/store"
 import { GLS_LOGO } from "@lib/util/gls"
 import { FOXPOST_LOGO_UT } from "@modules/checkout/components/foxpost-logo"
@@ -14,6 +16,8 @@ import type { LablecAdat } from "./lablec-adat"
 
 export type LablecKeretProps = {
   lablec: LablecAdat
+  /** A lap nyelve; alapertek magyar (az OS elonezete magyar). */
+  locale?: Locale
 }
 
 /**
@@ -24,6 +28,11 @@ export type LablecKeretProps = {
  *
  * A meret a magassagot rogziti, a szelesseg a logo sajat aranyabol jon.
  */
+/*
+  A NEVEK MARKANEVEK, NEM FORDITANDO SZOVEGEK; a fizetesi opciok kepe az
+  egyetlen, aminek a leirasa nyelvfuggo (`FIZETESI_OPCIOK_KEP.alt`, lent a
+  `footer.paymentAlt` kulcs).
+*/
 const ALSO_LOGOK = [
   {
     src: FOXPOST_LOGO_UT,
@@ -48,7 +57,8 @@ const ALSO_LOGOK = [
  * ezzel kikerult; a bemutatkozas es a kozossegi linkek csak akkor kapnak sort,
  * ha az OS-ben ki vannak toltve.
  */
-export function LablecKeret({ lablec }: LablecKeretProps) {
+export function LablecKeret({ lablec, locale = "hu" }: LablecKeretProps) {
+  const t = translator(locale)
   return (
     /*
       A LABLEC SIKJA A TERV TOKENJEN ALL, NEM A STARTER OSZTALYAN.
@@ -100,7 +110,9 @@ export function LablecKeret({ lablec }: LablecKeretProps) {
       data-testid="lablec-sik"
     >
       {/* A HIRLEVEL-SOR a lablec tetejen, ahogy a regi boltban; az OS kikapcsolhatja. */}
-      {lablec.hirlevel ? <HirlevelSor hirlevel={lablec.hirlevel} /> : null}
+      {lablec.hirlevel ? (
+        <HirlevelSor hirlevel={lablec.hirlevel} locale={locale} />
+      ) : null}
       <div
         className="mx-auto flex w-full max-w-[1440px] flex-col px-4 lg:px-16"
         data-testid="lablec-konteiner"
@@ -229,7 +241,9 @@ export function LablecKeret({ lablec }: LablecKeretProps) {
               style={{ color: "var(--terv-szoveg-halvany)" }}
               data-testid="footer-nyitvatartas"
             >
-              <span>Nyitvatartás: {CEG.nyitvatartas[0]}</span>
+              <span>
+                {t("footer.openingHours")} {CEG.nyitvatartas[0]}
+              </span>
               {CEG.nyitvatartas.slice(1).map((sor) => (
                 <span key={sor}>{sor}</span>
               ))}
@@ -251,7 +265,11 @@ export function LablecKeret({ lablec }: LablecKeretProps) {
               <li key={logo.src}>
                 <Image
                   src={logo.src}
-                  alt={logo.alt}
+                  alt={
+                    logo.src === FIZETESI_OPCIOK_KEP.src
+                      ? t("footer.paymentAlt")
+                      : logo.alt
+                  }
                   width={logo.w}
                   height={logo.h}
                   className={`${logo.mag} w-auto`}
@@ -265,7 +283,10 @@ export function LablecKeret({ lablec }: LablecKeretProps) {
             data-testid="footer-also-sor"
           >
             {lablec.alsoSor ??
-              `© ${new Date().getFullYear()} ${STORE_NAME}. Minden jog fenntartva.`}
+              t("footer.rights", {
+                year: new Date().getFullYear(),
+                name: STORE_NAME,
+              })}
           </Text>
         </div>
       </div>

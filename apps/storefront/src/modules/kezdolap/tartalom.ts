@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+
 import { KEZDOLAP_SZOVEGEK, szovegek } from "./szovegek"
 
 /**
@@ -142,8 +144,11 @@ export const ALAP_DIAK: readonly HeroDia[] = [
 ]
 
 /** A bolt valaszabol a lapnak szolo alak: a keresok (szoveg, link, kep) es a diak. */
-export const kezdolapAdat = (tartalom: KezdolapTartalom | null) => ({
-  ...szovegek(tartalom?.texts ?? null, tartalom?.tisztitott === true),
+export const kezdolapAdat = (
+  tartalom: KezdolapTartalom | null,
+  locale: Locale = DEFAULT_LOCALE,
+) => ({
+  ...szovegek(tartalom?.texts ?? null, tartalom?.tisztitott === true, locale),
   diak: tartalom?.slides ?? [...ALAP_DIAK],
   tisztitott: tartalom?.tisztitott === true,
 })

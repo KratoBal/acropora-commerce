@@ -3,6 +3,7 @@
 import { headers } from "next/headers"
 
 import { sdk } from "@lib/config"
+import { LOCALES } from "@lib/i18n/locale"
 import {
   hirlevelFeliratkozas,
   sebessegKorlat,
@@ -29,6 +30,7 @@ export async function hirlevelFeliratkozasAkcio(
       email: String(formData.get("email") ?? ""),
       hozzajarul: formData.get("consent") === "on",
       ip,
+      nyelv: LOCALES.find((l) => l === formData.get("locale")),
     },
     {
       korlat,

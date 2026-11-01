@@ -1,5 +1,8 @@
 import { Suspense } from "react"
 
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+
 import { listNonEmptyRootCategories } from "@lib/data/categories"
 import { getRegion } from "@lib/data/regions"
 import { fejlecMenuPontok } from "@lib/util/fejlec-menu-pontok"
@@ -53,7 +56,9 @@ export default async function KezdolapFejlec({
     console.warn(
       `[kezdolap-fejlec] a(z) ${hiany.pont}. menupont kategoriaja nincs a boltban: ${hiany.handlek.join(", ")}`,
     )
-  const mobilPontok = fejlecMenuPontok(menuAdat.gyokerek)
+  const locale = localeOf(countryCode)
+  const t = translator(locale)
+  const mobilPontok = fejlecMenuPontok(menuAdat.gyokerek, t)
   const mintaSav = SAV_KULCSOK.some((k) => s.minta(k))
   const kereso = s.szoveg("fejlec.kereso")
 
@@ -110,7 +115,10 @@ export default async function KezdolapFejlec({
                 className="block h-[58px] w-auto"
               />
             </LocalizedClientLink>
-            <nav className="hidden small:flex" aria-label="Fő menü">
+            <nav
+              className="hidden small:flex"
+              aria-label={t("header.mainMenu")}
+            >
               <KezdolapMenu pontok={pontok} />
             </nav>
             <div className="ml-auto flex items-center gap-4 small:gap-[22px]">
@@ -169,7 +177,7 @@ export default async function KezdolapFejlec({
                   <circle cx="10" cy="7" r="3.6" />
                   <path d="M3.5 17.5c1-3.4 3.6-5 6.5-5s5.5 1.6 6.5 5" />
                 </svg>
-                Fiókom
+                {t("header.account")}
               </LocalizedClientLink>
               {/*
                 A KOSAR A TERV "KOSAR" GOMBJA (sotet tabletta), A MEGLEVO,
@@ -182,7 +190,7 @@ export default async function KezdolapFejlec({
                 data-testid="kl-kosar"
                 className="[&_[data-testid=nav-cart-link]]:flex [&_[data-testid=nav-cart-link]]:h-11 [&_[data-testid=nav-cart-link]]:min-w-11 [&_[data-testid=nav-cart-link]]:items-center [&_[data-testid=nav-cart-link]]:justify-center [&_[data-testid=nav-cart-link]]:rounded-full [&_[data-testid=nav-cart-link]]:bg-[color:var(--kl-navy)] [&_[data-testid=nav-cart-link]]:px-[18px] [&_[data-testid=nav-cart-link]]:text-[color:var(--kl-lap)]"
               >
-                <Suspense fallback={<KosarLink darab={0} />}>
+                <Suspense fallback={<KosarLink darab={0} locale={locale} />}>
                   <CartButton />
                 </Suspense>
               </div>

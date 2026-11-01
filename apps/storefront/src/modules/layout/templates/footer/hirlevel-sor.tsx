@@ -3,6 +3,8 @@
 import { useActionState } from "react"
 
 import { hirlevelFeliratkozasAkcio } from "@lib/data/hirlevel"
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import type { Locale } from "@lib/i18n/locale"
 import { jogiOldal } from "@lib/util/fogyasztobarat"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -19,7 +21,15 @@ const MEZO =
  *
  * A feliratkozas a teszt bolt sajat listajaba megy, level nem megy ki (#577).
  */
-export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
+export function HirlevelSor({
+  hirlevel,
+  locale = "hu",
+}: {
+  hirlevel: HirlevelAdat
+  /** A lap nyelve; a szerveroldali akcio ugyanezen a nyelven ad hibauzenetet. */
+  locale?: Locale
+}) {
+  const t = translator(locale)
   const [allapot, kuld, folyamatban] = useActionState(
     hirlevelFeliratkozasAkcio,
     null,
@@ -47,7 +57,7 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
             </h2>
           ) : (
             <h2 id="hirlevel-cim" className="sr-only">
-              Hírlevél
+              {t("newsletter.title")}
             </h2>
           )}
           {hirlevel.szoveg ? (
@@ -56,15 +66,16 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
         </div>
         {allapot?.allapot === "kesz" ? (
           <p role="status" className="txt-medium" data-testid="hirlevel-kesz">
-            Köszönjük, feliratkoztál a hírlevelünkre.
+            {t("newsletter.done")}
           </p>
         ) : (
           <form action={kuld} className="flex flex-col gap-3" noValidate>
+            <input type="hidden" name="locale" value={locale} />
             <div className="flex flex-col gap-3 small:flex-row">
               <input
                 name="name"
-                aria-label="Név"
-                placeholder="Név"
+                aria-label={t("newsletter.name")}
+                placeholder={t("newsletter.name")}
                 autoComplete="name"
                 required
                 maxLength={100}
@@ -79,8 +90,8 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
               <input
                 name="email"
                 type="email"
-                aria-label="E-mail"
-                placeholder="E-mail"
+                aria-label={t("newsletter.email")}
+                placeholder={t("newsletter.email")}
                 autoComplete="email"
                 required
                 maxLength={254}
@@ -111,7 +122,7 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
                 required
                 className="mt-0.5 h-4 w-4 shrink-0"
               />
-              <Hozzajarulas szoveg={hirlevel.hozzajarulas} />
+              <Hozzajarulas szoveg={hirlevel.hozzajarulas} t={t} />
             </label>
             {allapot?.allapot === "hiba" ? (
               <p role="alert" className="txt-small" data-testid="hirlevel-hiba">
@@ -126,7 +137,7 @@ export function HirlevelSor({ hirlevel }: { hirlevel: HirlevelAdat }) {
 }
 
 /** A hozzajarulas szovege, a tajekoztato kifejezese mint link (`hozzajarulasLinkkel`). */
-function Hozzajarulas({ szoveg }: { szoveg: string }) {
+function Hozzajarulas({ szoveg, t }: { szoveg: string; t: Translate }) {
   const link = (felirat: string) => (
     <LocalizedClientLink
       href={jogiOldal("adatkezeles")}
@@ -136,7 +147,10 @@ function Hozzajarulas({ szoveg }: { szoveg: string }) {
       {felirat}
     </LocalizedClientLink>
   )
-  const reszek = hozzajarulasLinkkel(szoveg)
+  const reszek = hozzajarulasLinkkel(
+    szoveg,
+    new RegExp(t("newsletter.consentLinkPattern"), "i"),
+  )
   return reszek ? (
     <span>
       {reszek.elotte}
@@ -145,7 +159,7 @@ function Hozzajarulas({ szoveg }: { szoveg: string }) {
     </span>
   ) : (
     <span>
-      {szoveg} {link("Adatkezelési tájékoztató")}
+      {szoveg} {link(t("newsletter.policyLink"))}
     </span>
   )
 }
