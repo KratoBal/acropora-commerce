@@ -3,6 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { HOMEPAGE_CONTENT_MODULE } from "../../../../modules/homepage-content"
 import { NEWSLETTER_MODULE } from "../../../../modules/newsletter"
 import {
+  DEFAULT_CONSENT_TEXT_EN,
   DEFAULT_NEWSLETTER,
   consentVersion,
 } from "../../../../modules/newsletter/defaults"
@@ -38,6 +39,14 @@ describe("StorePostNewsletterSubscription", () => {
     expect(valid(body({ name: "  " })).success).toBe(false)
     // the consent text is the shop's to record, not the caller's to send
     expect(valid(body({ consent_text: "Saját szöveg" })).success).toBe(false)
+  })
+
+  it("NL-BODY-LANG: the form's language is hu or en, optional; anything else is refused", () => {
+    expect(valid(body()).success).toBe(true)
+    expect(valid(body({ locale: "hu" })).success).toBe(true)
+    expect(valid(body({ locale: "en" })).success).toBe(true)
+    expect(valid(body({ locale: "de" })).success).toBe(false)
+    expect(valid(body({ locale: "en-hu" })).success).toBe(false)
   })
 })
 
@@ -168,6 +177,41 @@ describe("POST /store/newsletter-subscriptions", () => {
     expect(consentVersion("Elfogadom a feltételeket.")).not.toBe(
       consentVersion(DEFAULT_NEWSLETTER.consent_text)
     )
+  })
+
+  it("NL-POST-LANG: the English form records the English consent sentence under its own version and language; no language is Hungarian", async () => {
+    const h = harness(undefined)
+    const post = createNewsletterPost(loose())
+    await h.call(post, { email: "angol@pelda.hu", locale: "en" })
+    await h.call(post, { email: "regi@pelda.hu" })
+    const [angol, regi] = h.rows
+    expect(angol).toMatchObject({
+      consent_text: DEFAULT_CONSENT_TEXT_EN,
+      consent_version: consentVersion(DEFAULT_CONSENT_TEXT_EN),
+      consent_language: "en",
+    })
+    expect(regi).toMatchObject({
+      consent_text: DEFAULT_NEWSLETTER.consent_text,
+      consent_version: consentVersion(DEFAULT_NEWSLETTER.consent_text),
+      consent_language: "hu",
+    })
+    expect(angol!.consent_version).not.toBe(regi!.consent_version)
+  })
+
+  it("NL-POST-LANG-OS: a consent text written in the OS is recorded as written, whatever the form's language", async () => {
+    const os = { ...DEFAULT_NEWSLETTER, consent_text: "Elfogadom a feltételeket." }
+    const h = harness(os)
+    await h.call(createNewsletterPost(loose()), { locale: "en" })
+    expect(h.rows[0]).toMatchObject({
+      consent_text: "Elfogadom a feltételeket.",
+      consent_language: "en",
+    })
+  })
+
+  it("NL-POST-LANG-ROW: an OS row that still holds the Hungarian default gets the English sentence on the English form", async () => {
+    const h = harness({ ...DEFAULT_NEWSLETTER })
+    await h.call(createNewsletterPost(loose()), { locale: "en" })
+    expect(h.rows[0]).toMatchObject({ consent_text: DEFAULT_CONSENT_TEXT_EN })
   })
 
   it("NL-POST-OFF: a row the OS turned off takes no sign-up, as a 403 (FORBIDDEN, not NOT_ALLOWED's 400)", async () => {
