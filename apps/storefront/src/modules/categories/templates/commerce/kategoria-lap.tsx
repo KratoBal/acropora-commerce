@@ -504,7 +504,11 @@ export default async function CommerceKategoriaLap({
             </p>
           ) : (
             <ul
-              className="grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
+              className={
+                eloAllat
+                  ? "grid grid-cols-2 gap-x-3 gap-y-5 small:gap-x-5 small:gap-y-[26px] medium:grid-cols-3"
+                  : "grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
+              }
               data-testid="category-products-list"
             >
               {products.map((product, i) => (

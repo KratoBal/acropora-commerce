@@ -26,7 +26,10 @@ import {
  *     pickup promise and the unique-piece sentence are, so the button is
  *     "Details", or "Find a similar one" for a sold piece.
  *
- * A sold piece stays on the list, dimmed, with its price struck through: the
+ * On a phone (below `small`) the list is two columns with a compact card, as the
+ * old live-animal list was: eight square cards in one column are about 5000 px.
+ *
+ * A sold piece stays on the list, its photo dimmed and its price struck through: the
  * visitor sees what the shop had, and the card still leads to the product page.
  */
 export default function EloAllatKartya({
@@ -66,8 +69,9 @@ export default function EloAllatKartya({
       data-testid="category-product-card-livestock"
     >
       <LocalizedClientLink href={href} className="group flex flex-1 flex-col">
-        <div className={eladva ? "opacity-55" : ""}>
-          <div className="relative aspect-square overflow-hidden bg-acr-white">
+        <div className="relative aspect-square overflow-hidden bg-acr-white">
+          {/* only the photo dims on a sold piece: the badge stays legible */}
+          <div className={"h-full " + (eladva ? "opacity-55" : "")}>
             <Thumbnail
               alt={product.title ?? ""}
               thumbnail={product.thumbnail}
@@ -76,27 +80,27 @@ export default function EloAllatKartya({
               className="h-full rounded-none p-0 shadow-none"
               prioritas={elso}
             />
-            {jelveny ? (
-              <span
-                className={
-                  "absolute left-3 top-3 z-10 inline-flex h-[28px] items-center px-3 text-[10px] font-medium uppercase tracking-[1.8px] " +
-                  (eladva
-                    ? "bg-acr-white text-acr-ink"
-                    : "bg-acr-heritage text-acr-white")
-                }
-                data-testid="kartya-jelveny"
-              >
-                {jelveny}
-              </span>
-            ) : null}
           </div>
+          {jelveny ? (
+            <span
+              className={
+                "absolute left-2 top-2 z-10 inline-flex h-[22px] items-center px-2 text-[9.5px] font-medium uppercase tracking-[1px] small:left-3 small:top-3 small:h-[28px] small:px-3 small:text-[10px] small:tracking-[1.8px] " +
+                (eladva
+                  ? "bg-acr-white text-acr-ink"
+                  : "bg-acr-heritage text-acr-white")
+              }
+              data-testid="kartya-jelveny"
+            >
+              {jelveny}
+            </span>
+          ) : null}
         </div>
-        <div className="flex flex-1 flex-col px-[14px] pt-[14px]">
-          <h2 className="text-[18px] font-bold leading-[22px] tracking-[-0.2px] text-acr-ink">
+        <div className="flex flex-1 flex-col px-[10px] pt-[10px] small:px-[14px] small:pt-[14px]">
+          <h2 className="text-[14px] font-semibold leading-[18px] text-acr-ink small:text-[18px] small:font-bold small:leading-[22px] small:tracking-[-0.2px]">
             {product.title}
           </h2>
           {product.subtitle ? (
-            <p className="mt-[6px] text-[14px] italic leading-[20px] text-acr-slate">
+            <p className="mt-1 text-[12px] italic leading-[16px] text-acr-slate small:mt-[6px] small:text-[14px] small:leading-[20px]">
               {product.subtitle}
             </p>
           ) : null}
@@ -104,7 +108,7 @@ export default function EloAllatKartya({
           {cheapestPrice ? (
             <p
               className={
-                "text-[24px] leading-[30px] tracking-[-0.3px] text-acr-ink " +
+                "text-[16px] leading-[22px] text-acr-ink small:text-[24px] small:leading-[30px] small:tracking-[-0.3px] " +
                 (eladva ? "font-normal line-through" : "font-bold")
               }
               data-testid="kartya-ar"
@@ -114,11 +118,11 @@ export default function EloAllatKartya({
           ) : null}
         </div>
       </LocalizedClientLink>
-      <div className="px-[14px] pb-[14px] pt-3">
+      <div className="px-[10px] pb-[10px] pt-2 small:px-[14px] small:pb-[14px] small:pt-3">
         <LocalizedClientLink
           href={href}
           className={
-            "flex h-[44px] items-center justify-center text-[14px] font-medium " +
+            "flex h-[38px] items-center justify-center text-[13px] font-medium small:h-[44px] small:text-[14px] " +
             (eladva
               ? "border border-acr-line bg-acr-white text-acr-ink"
               : "bg-acr-heritage text-acr-white")
