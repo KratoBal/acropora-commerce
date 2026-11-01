@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_LOCALE, LOCALES, countryOf, localeOf, otherSegment, parseSegment, segmentFor } from "./locale"
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  countryOf,
+  localeOf,
+  otherSegment,
+  parseSegment,
+  segmentFor,
+} from "./locale"
 
 /**
  * The first path segment carries the language. What must fail: a Hungarian segment read as anything but Hungarian (the existing URLs
@@ -19,7 +27,18 @@ describe("parseSegment", () => {
   })
 
   it("does not read an unknown language prefix, the default language's own prefix, or any other shape as a language", () => {
-    for (const s of ["de-hu", "hu-hu", "en", "en-hun", "en-h", "en-hu-x", "e-hu", "", "-hu", "en_hu"]) {
+    for (const s of [
+      "de-hu",
+      "hu-hu",
+      "en",
+      "en-hun",
+      "en-h",
+      "en-hu-x",
+      "e-hu",
+      "",
+      "-hu",
+      "en_hu",
+    ]) {
       expect(parseSegment(s).locale).toBe("hu")
       expect(parseSegment(s).country).toBe(s.toLowerCase())
     }
@@ -27,7 +46,10 @@ describe("parseSegment", () => {
 
   it("segmentFor is the inverse of parseSegment for every language", () => {
     for (const locale of LOCALES) {
-      expect(parseSegment(segmentFor("hu", locale))).toEqual({ country: "hu", locale })
+      expect(parseSegment(segmentFor("hu", locale))).toEqual({
+        country: "hu",
+        locale,
+      })
     }
     expect(segmentFor("HU", "en")).toBe("en-hu")
     expect(segmentFor("hu", DEFAULT_LOCALE)).toBe("hu")

@@ -6,9 +6,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
  * countries, not languages. MI PIROSIT: `getRegion("en-hu")` finds no region (the English shop would 404 every page), or `getRegion("hu")`
  * changes; an unknown country in English (`en-de`) is treated as a known one.
  */
-const fetchMock = vi.fn(async () => ({ regions: [{ id: "reg_hu", name: "HU", countries: [{ iso_2: "hu" }] }] }))
+const fetchMock = vi.fn(async () => ({
+  regions: [{ id: "reg_hu", name: "HU", countries: [{ iso_2: "hu" }] }],
+}))
 
-vi.mock("@lib/config", () => ({ sdk: { client: { fetch: (...a: unknown[]) => (fetchMock as unknown as (...b: unknown[]) => unknown)(...a) } } }))
+vi.mock("@lib/config", () => ({
+  sdk: {
+    client: {
+      fetch: (...a: unknown[]) =>
+        (fetchMock as unknown as (...b: unknown[]) => unknown)(...a),
+    },
+  },
+}))
 vi.mock("./cookies", () => ({ getPublicCacheOptions: async () => ({}) }))
 
 beforeEach(() => {

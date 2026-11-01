@@ -90,7 +90,12 @@ describe("a middleware átirányítása", () => {
    * (`en-de`) nem az alap orszagra iranyit.
    */
   it("az en-hu út nyelv-ország szegmens: nincs átirányítás, a régió a hu", async () => {
-    for (const ut of ["/en-hu", "/en-hu/", "/en-hu/termek/hanna", "/EN-HU/categories/korallok"]) {
+    for (const ut of [
+      "/en-hu",
+      "/en-hu/",
+      "/en-hu/termek/hanna",
+      "/EN-HU/categories/korallok",
+    ]) {
       const { valasz } = await futtat(ut)
       expect(valasz.headers.get("location"), ut).toBeNull()
       expect(valasz.headers.get("x-middleware-next"), ut).toBe("1")
@@ -98,7 +103,11 @@ describe("a middleware átirányítása", () => {
   })
 
   it("az angol út noindex fejlécet kap, a magyar nem (a bolt fele lefordult angol lapja nem kerülhet az indexbe)", async () => {
-    for (const ut of ["/en-hu", "/en-hu/termek/hanna", "/en-hu/categories/korallok?page=2"]) {
+    for (const ut of [
+      "/en-hu",
+      "/en-hu/termek/hanna",
+      "/en-hu/categories/korallok?page=2",
+    ]) {
       const { valasz } = await futtat(ut)
       expect(valasz.headers.get("x-robots-tag"), ut).toBe("noindex")
     }
@@ -112,7 +121,9 @@ describe("a middleware átirányítása", () => {
     for (const ut of ["/en-de/termek", "/de-hu/termek", "/hu-hu/termek"]) {
       const { valasz } = await futtat(ut)
       expect(valasz.status, ut).toBe(307)
-      expect(valasz.headers.get("location"), ut).toBe(`https://bolt.test/hu${ut}`)
+      expect(valasz.headers.get("location"), ut).toBe(
+        `https://bolt.test/hu${ut}`,
+      )
     }
   })
 

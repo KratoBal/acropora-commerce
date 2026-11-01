@@ -198,7 +198,8 @@ async function regioKozep(request: NextRequest): Promise<NextResponse> {
   // if the country code is available, use it, otherwise use the default region
   const country = countryCode || DEFAULT_REGION
   const firstPathSegment = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
-  const urlHasCountry = countryOf(firstPathSegment ?? "") === country.toLowerCase()
+  const urlHasCountry =
+    countryOf(firstPathSegment ?? "") === country.toLowerCase()
 
   if (urlHasCountry) {
     // FE-7 3. resz: csak annak, akinek kosara vagy belepese van; a publikus

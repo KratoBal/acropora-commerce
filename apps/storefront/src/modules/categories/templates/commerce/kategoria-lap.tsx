@@ -331,7 +331,12 @@ export default async function CommerceKategoriaLap({
               className="text-[14px] leading-[22px] text-acr-slate"
               data-testid="kategoria-termekszam"
             >
-              {t(count === 1 ? "category.productCountOne" : "category.productCount", { count })}
+              {t(
+                count === 1
+                  ? "category.productCountOne"
+                  : "category.productCount",
+                { count },
+              )}
             </span>
             <CommerceRendezes sortBy={rendezes} />
           </div>
@@ -423,7 +428,12 @@ export default async function CommerceKategoriaLap({
               <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
                 {t("category.brandHeading")}
               </h3>
-              <MarkaLista sorok={markaLista} aktiv={markak} link={markaLink} t={t} />
+              <MarkaLista
+                sorok={markaLista}
+                aktiv={markak}
+                link={markaLink}
+                t={t}
+              />
             </section>
           ) : null}
         </aside>
@@ -445,7 +455,9 @@ export default async function CommerceKategoriaLap({
                   href={markaLink(id)}
                   rel={szuroLinkRel(markaLink(id))}
                   className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                  aria-label={t("category.removeBrandFilter", { name: markaNev.get(id) ?? t("category.brandFallback") })}
+                  aria-label={t("category.removeBrandFilter", {
+                    name: markaNev.get(id) ?? t("category.brandFallback"),
+                  })}
                 >
                   {markaNev.get(id) ?? t("category.unknownBrand")} ×
                 </a>
@@ -466,7 +478,11 @@ export default async function CommerceKategoriaLap({
             >
               {products.map((product, i) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya product={product} elso={i === 0} t={t} />
+                  <CommerceTermekKartya
+                    product={product}
+                    elso={i === 0}
+                    t={t}
+                  />
                 </li>
               ))}
             </ul>

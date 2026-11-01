@@ -438,7 +438,8 @@ export function keszletSor(
     uniquePiece: false,
     inventoryKnown: inventoryKnownOf(product),
   })
-  if (allapot !== "KAPHATO") return { szoveg: t("stock.outOfStock"), kaphato: false }
+  if (allapot !== "KAPHATO")
+    return { szoveg: t("stock.outOfStock"), kaphato: false }
   const db =
     (product.variants?.length ?? 0) === 1
       ? scarcityCountOf(product.variants?.[0])

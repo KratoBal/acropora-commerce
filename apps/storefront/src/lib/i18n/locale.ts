@@ -28,20 +28,26 @@ export const parseSegment = (segment: string): SegmentParts => {
   const m = PREFIXED.exec(lower)
   if (m) {
     const locale = m[1] as Locale
-    if (LOCALES.includes(locale) && locale !== DEFAULT_LOCALE) return { country: m[2]!, locale }
+    if (LOCALES.includes(locale) && locale !== DEFAULT_LOCALE)
+      return { country: m[2]!, locale }
   }
   return { country: lower, locale: DEFAULT_LOCALE }
 }
 
 /** The segment for a country in a language: the inverse of `parseSegment`. */
 export const segmentFor = (country: string, locale: Locale): string =>
-  locale === DEFAULT_LOCALE ? country.toLowerCase() : `${locale}-${country.toLowerCase()}`
+  locale === DEFAULT_LOCALE
+    ? country.toLowerCase()
+    : `${locale}-${country.toLowerCase()}`
 
 /** The same page in another language: `hu` <-> `en-hu` (the path after the segment is the caller's). */
-export const otherSegment = (segment: string, locale: Locale): string => segmentFor(parseSegment(segment).country, locale)
+export const otherSegment = (segment: string, locale: Locale): string =>
+  segmentFor(parseSegment(segment).country, locale)
 
 /** The language of a path segment (the page's own). */
-export const localeOf = (segment: string): Locale => parseSegment(segment).locale
+export const localeOf = (segment: string): Locale =>
+  parseSegment(segment).locale
 
 /** The country (region) part of a path segment. */
-export const countryOf = (segment: string): string => parseSegment(segment).country
+export const countryOf = (segment: string): string =>
+  parseSegment(segment).country
