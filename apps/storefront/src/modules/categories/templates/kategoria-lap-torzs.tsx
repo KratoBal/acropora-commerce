@@ -14,12 +14,9 @@ import CategoryTemplate from "@modules/categories/templates"
 import { morzsaLd } from "@lib/seo/strukturalt-adat"
 import { getBaseURL } from "@lib/util/env"
 import JsonLd from "@modules/common/components/json-ld"
-import { categoryPageKind } from "@modules/categories/templates/category-page-data"
 import { LAP_MERET as COMMERCE_LAP_MERET } from "@modules/categories/templates/commerce/kategoria-lap"
 import { listProducts } from "@lib/data/products"
 import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
-import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
-import { kategoriaCanonical } from "@lib/util/kategoria-canonical"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -85,8 +82,8 @@ export async function kategoriaLapTorzs(
 
   /*
     A NEM LETEZO LAPSZAM 404 (`lapszam.ts`). A darabszam ugyanazzal a
-    kategoria-szurovel jon, mint a listae; a lapmeret a sablon agaé (a muszaki
-    lap 18-at mutat, az elo allate 12-t).
+    kategoria-szurovel jon, mint a listae; a lapmeret a kozos lape (18, a
+    muszaki es az elo allat agon egyarant: 2026-11-01 ota egy a sablon).
   */
   const lap = csakLapszam(searchParams)
   if (lap !== null) {
@@ -94,9 +91,7 @@ export async function kategoriaLapTorzs(
       countryCode: params.countryCode,
       queryParams: { category_id: [productCategory.id], limit: 1 },
     }).then(({ response }) => response.count)
-    const meret =
-      categoryPageKind(lanc) === "technical" ? COMMERCE_LAP_MERET : 12
-    if (!lapszamLetezik(lap, darab, meret)) notFound()
+    if (!lapszamLetezik(lap, darab, COMMERCE_LAP_MERET)) notFound()
   }
 
   /*
@@ -134,10 +129,6 @@ export async function kategoriaLapTorzs(
         countryCode={params.countryCode}
         optionValueIds={optionValueIds}
         markak={markak}
-        lapozo={{
-          alap: kategoriaCanonical(params.countryCode, params.category),
-          keres: lapozoKeres(searchParams),
-        }}
       />
     </>
   )

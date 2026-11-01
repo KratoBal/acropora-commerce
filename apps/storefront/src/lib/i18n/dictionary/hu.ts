@@ -28,6 +28,13 @@ export const hu = {
     positionOne: "{from} / {count} termék",
     loadMore: "További termékek betöltése",
     details: "Részletek",
+    pickupEyebrow: "ÉLŐ ÁLLAT",
+    pickupTitle: "Személyes átvétel",
+    pickupText: "Élő állatot csak személyesen, üzletünkben adunk át neked.",
+    sold: "Elkelt",
+    piecesLeft: "{count} db",
+    uniquePiece: "1 db · Egyedi példány",
+    findSimilar: "Hasonlót keresek",
   },
   sort: {
     title: "Rendezés",

@@ -370,3 +370,65 @@ describe("a kategorialap angolul", () => {
     expect(angolHivas.countryCode).toBe("en-hu")
   })
 })
+
+/**
+ * AZ ELO ALLAT AGA UGYANEZT AZ OLDALT KAPJA (2026-11-01). MI PIROSIT: ha a
+ * `kind` nem valtana kartyat (az elo allat a muszaki kartyat kapna); ha az
+ * atvetel sor a muszaki oldalon is megjelenne, vagy az elo allaton elmaradna;
+ * ha az angol oldalon a sor magyar maradna.
+ */
+describe("az élőállat-ág ugyanazon az oldalon", () => {
+  const KORALL = kat("korallok", "Korallok", { category_children: [] })
+  const elo = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `k${i}`,
+      handle: `k${i}`,
+      title: `Korall ${i}`,
+      metadata: { unique_piece: true },
+      variants: [
+        {
+          id: `kv${i}`,
+          manage_inventory: true,
+          inventory_quantity: 1,
+        },
+      ],
+    }))
+
+  it("a kind=livestock élőállat-kártyát és átvétel sort kap", async () => {
+    adat.listProductsWithSort.mockResolvedValue({
+      response: { products: elo(3), count: 3 },
+      nextPage: null,
+    })
+    await lap({ category: KORALL, kind: "livestock" })
+    expect(
+      screen.getAllByTestId("category-product-card-livestock"),
+    ).toHaveLength(3)
+    expect(screen.queryByTestId("commerce-termek-kartya")).toBeNull()
+    expect(
+      screen.getByTestId("category-helper-livestock").textContent,
+    ).toContain("Személyes átvétel")
+  })
+
+  it("a műszaki oldalon nincs átvétel sor, és a műszaki kártya áll", async () => {
+    await lap()
+    expect(screen.queryByTestId("category-helper-livestock")).toBeNull()
+    expect(screen.getAllByTestId("commerce-termek-kartya")).toHaveLength(
+      LAP_MERET,
+    )
+  })
+
+  it("az angol oldalon az átvétel sor és a jelvény angol", async () => {
+    nav.countryCode = "en-hu"
+    adat.listProductsWithSort.mockResolvedValue({
+      response: { products: elo(1), count: 1 },
+      nextPage: null,
+    })
+    await lap({ category: KORALL, kind: "livestock", countryCode: "en-hu" })
+    expect(
+      screen.getByTestId("category-helper-livestock").textContent,
+    ).toContain("Collection in person")
+    expect(screen.getByTestId("kartya-jelveny").textContent).toBe(
+      "1 pc · Unique piece",
+    )
+  })
+})

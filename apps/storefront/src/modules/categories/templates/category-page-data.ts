@@ -46,17 +46,3 @@ export function categoryPageMode(category: CategoryPathItem): AcroporaMod {
   }
   return modKategoriaUtvonalhoz(nevek)
 }
-
-export const helperCopyFor = (kind: CategoryPageKind) =>
-  kind === "technical"
-    ? {
-        eyebrow: "SEGÍTSÉG A VÁLASZTÁSHOZ",
-        title: "Méretezés-segéd",
-        description: "Találd meg az akváriumodhoz illő felszerelést.",
-      }
-    : {
-        eyebrow: "ÉLŐ ÁLLAT",
-        title: "Személyes átvétel",
-        description:
-          "Élő állatot csak személyesen, üzletünkben adunk át neked.",
-      }
