@@ -1,6 +1,8 @@
 import { HttpTypes } from "@medusajs/types"
 
 import { listCategories } from "@lib/data/categories"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
 import { szuroLinkRel } from "@lib/seo/szuro-link"
 import {
@@ -184,6 +186,8 @@ export default async function CommerceKategoriaLap({
   optionValueIds,
   markak = [],
 }: Props) {
+  // the page's language is its path segment's (`hu`, `en-hu`)
+  const t = translator(localeOf(countryCode))
   const nev = (elem: { id?: string | null; name?: string | null }) =>
     (elem.id ? nevek?.get(elem.id) : undefined) ?? (elem.name ?? "").trim()
 
@@ -248,7 +252,7 @@ export default async function CommerceKategoriaLap({
     >
       {/* MORZSAMENU (117:42): nagybetus, 14 px, a szovegszinben. */}
       <nav
-        aria-label="Morzsamenü"
+        aria-label={t("category.breadcrumbLabel")}
         className="mx-auto flex min-h-[58px] max-w-[1440px] items-center px-4 small:px-[80px]"
       >
         <ol className="flex flex-wrap items-center gap-x-2 text-[14px] uppercase leading-[22px] text-acr-slate">
@@ -289,7 +293,7 @@ export default async function CommerceKategoriaLap({
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between small:px-[56px]">
           <ul
             className="flex min-w-0 gap-2 overflow-x-auto"
-            aria-label="Alkategóriák"
+            aria-label={t("category.subcategories")}
             data-testid="gyors-kategoriak"
           >
             {sav.mod === "gyerekek" ? (
@@ -298,7 +302,7 @@ export default async function CommerceKategoriaLap({
                   className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
                   aria-current="page"
                 >
-                  Összes
+                  {t("category.all")}
                 </span>
               </li>
             ) : null}
@@ -327,7 +331,12 @@ export default async function CommerceKategoriaLap({
               className="text-[14px] leading-[22px] text-acr-slate"
               data-testid="kategoria-termekszam"
             >
-              {count} termék
+              {t(
+                count === 1
+                  ? "category.productCountOne"
+                  : "category.productCount",
+                { count },
+              )}
             </span>
             <CommerceRendezes sortBy={rendezes} />
           </div>
@@ -338,12 +347,12 @@ export default async function CommerceKategoriaLap({
       <div className="mx-auto grid max-w-[1440px] gap-7 px-4 pb-16 pt-8 small:grid-cols-[250px_minmax(0,1fr)] small:px-[56px]">
         <aside
           className="flex flex-col gap-[18px] self-start border border-acr-line bg-acr-white p-[18px]"
-          aria-label="Szűrés"
+          aria-label={t("category.filter")}
           data-testid="kategoria-szurok"
         >
           <div className="flex items-center justify-between">
             <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
-              Szűrés
+              {t("category.filter")}
             </h2>
             {sortBy ||
             (optionValueIds?.length ?? 0) > 0 ||
@@ -352,7 +361,7 @@ export default async function CommerceKategoriaLap({
                 href={`/categories/${category.handle}`}
                 className="text-[14px] text-acr-ocean"
               >
-                Törlés
+                {t("category.clearFilter")}
               </LocalizedClientLink>
             ) : null}
           </div>
@@ -364,13 +373,13 @@ export default async function CommerceKategoriaLap({
             className="border border-acr-line bg-acr-mist p-3"
           >
             <label className="sr-only" htmlFor="kategoria-kereso">
-              Keresés termék vagy márka alapján
+              {t("category.searchLabel")}
             </label>
             <input
               id="kategoria-kereso"
               type="search"
               name="q"
-              placeholder="Keresés termék vagy márka alapján…"
+              placeholder={t("category.searchPlaceholder")}
               className="w-full bg-transparent text-[14px] leading-[22px] text-acr-ink outline-none placeholder:text-acr-slate"
             />
           </form>
@@ -383,7 +392,7 @@ export default async function CommerceKategoriaLap({
             */
             <section className="hidden flex-col gap-2 border-t border-acr-line pt-[13px] small:flex">
               <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                Kategória
+                {t("category.categoryHeading")}
               </h3>
               <ul
                 className="flex flex-col gap-2"
@@ -417,14 +426,19 @@ export default async function CommerceKategoriaLap({
               data-testid="szuro-markak"
             >
               <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                Márka
+                {t("category.brandHeading")}
               </h3>
-              <MarkaLista sorok={markaLista} aktiv={markak} link={markaLink} />
+              <MarkaLista
+                sorok={markaLista}
+                aktiv={markak}
+                link={markaLink}
+                t={t}
+              />
             </section>
           ) : null}
         </aside>
 
-        <section aria-label="Termékek" id="category-products">
+        <section aria-label={t("category.products")} id="category-products">
           {/* AKTIV SZUROK (117:197): a kivalasztott markak, egy-egy
               kattintassal levehetok. */}
           {markak.length > 0 ? (
@@ -433,7 +447,7 @@ export default async function CommerceKategoriaLap({
               data-testid="aktiv-szurok"
             >
               <span className="text-[14px] leading-[22px] text-acr-slate">
-                Aktív szűrők:
+                {t("category.activeFilters")}
               </span>
               {markak.map((id) => (
                 <a
@@ -441,9 +455,11 @@ export default async function CommerceKategoriaLap({
                   href={markaLink(id)}
                   rel={szuroLinkRel(markaLink(id))}
                   className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                  aria-label={`${markaNev.get(id) ?? "Márka"} szűrő levétele`}
+                  aria-label={t("category.removeBrandFilter", {
+                    name: markaNev.get(id) ?? t("category.brandFallback"),
+                  })}
                 >
-                  {markaNev.get(id) ?? "Ismeretlen márka"} ×
+                  {markaNev.get(id) ?? t("category.unknownBrand")} ×
                 </a>
               ))}
             </div>
@@ -453,7 +469,7 @@ export default async function CommerceKategoriaLap({
               className="text-[14px] text-acr-slate"
               data-testid="category-products-empty"
             >
-              Ebben a kategóriában még nincs megjeleníthető termék.
+              {t("category.empty")}
             </p>
           ) : (
             <ul
@@ -462,7 +478,11 @@ export default async function CommerceKategoriaLap({
             >
               {products.map((product, i) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya product={product} elso={i === 0} />
+                  <CommerceTermekKartya
+                    product={product}
+                    elso={i === 0}
+                    t={t}
+                  />
                 </li>
               ))}
             </ul>
@@ -477,7 +497,10 @@ export default async function CommerceKategoriaLap({
                 className="text-[14px] leading-[22px] text-acr-slate"
                 data-testid="kategoria-hol-tartunk"
               >
-                {page === 1 ? eddig : `${elso}–${eddig}`} / {count} termék
+                {t(count === 1 ? "category.positionOne" : "category.position", {
+                  from: page === 1 ? eddig : `${elso}–${eddig}`,
+                  count,
+                })}
               </p>
               {tovabbi ? (
                 <a
@@ -488,7 +511,7 @@ export default async function CommerceKategoriaLap({
                   className="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink"
                   data-testid="category-more-products"
                 >
-                  További termékek betöltése
+                  {t("category.loadMore")}
                 </a>
               ) : null}
             </div>

@@ -1,3 +1,4 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import type { MarkaSor } from "@lib/util/marka-szuro"
 import { szuroLinkRel } from "@lib/seo/szuro-link"
 
@@ -12,10 +13,13 @@ export default function MarkaLista({
   sorok,
   aktiv,
   link,
+  t = translator("hu"),
 }: {
   sorok: MarkaSor[]
   aktiv: string[]
   link: (id: string) => string
+  /** The page's translator (Hungarian when the caller has none). */
+  t?: Translate
 }) {
   const sor = (marka: MarkaSor) => {
     const be = aktiv.includes(marka.id)
@@ -56,7 +60,7 @@ export default function MarkaLista({
       {tobbi.length > 0 ? (
         <details>
           <summary className="cursor-pointer text-[14px] leading-[22px] text-acr-ocean">
-            További {tobbi.length} márka
+            {t("category.moreBrands", { count: tobbi.length })}
           </summary>
           <ul className="mt-2 flex flex-col gap-2">{tobbi.map(sor)}</ul>
         </details>

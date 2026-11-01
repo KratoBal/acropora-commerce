@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import { getProductPrice } from "@lib/util/get-product-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
@@ -62,6 +63,7 @@ export default function CommerceTermekKartya({
   product,
   tomor = false,
   elso = false,
+  t = translator("hu"),
 }: {
   product: HttpTypes.StoreProduct
   /** A lista elso kartyaja: a kepe a hajtas felett all, nem lusta (FE-3). */
@@ -73,13 +75,15 @@ export default function CommerceTermekKartya({
    * mobilon egy oszlop all.
    */
   tomor?: boolean
+  /** The page's translator (Hungarian when the caller has none). */
+  t?: Translate
 }) {
   /** Tomor kartyanal a mobil osztaly, kulonben a rendes. */
   const m = (tomorOsztaly: string, rendes: string) =>
     tomor ? tomorOsztaly : rendes
   const { cheapestPrice } = getProductPrice({ product })
   const akcios = cheapestPrice?.price_type === "sale"
-  const keszlet = keszletSor(product)
+  const keszlet = keszletSor(product, t)
   const marka = (product.collection?.title ?? "").trim()
   const href = `/termek/${product.handle}`
   const gyors = gyorsKosar(product)
@@ -220,7 +224,7 @@ export default function CommerceTermekKartya({
               className="flex h-[44px] items-center justify-center bg-acr-heritage text-[14px] font-medium text-acr-white"
               data-testid="kartya-reszletek"
             >
-              Részletek
+              {t("category.details")}
             </LocalizedClientLink>
           )}
         </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import FilterRadioGroup from "@modules/common/components/filter-radio-group"
 
 export type SortOptions = "price_asc" | "price_desc" | "created_at"
@@ -43,6 +44,13 @@ type SortProductsProps = {
  */
 /** A vezerlo cime. Konstans, hogy allitas mutathasson ra. */
 export const RENDEZES_CIM = "Rendezés"
+
+/** The same options in a language: the values are the URL's, the labels the dictionary's (`sort.*`). */
+export const sortOptionsFor = (t: Translate = translator("hu")) => [
+  { value: "created_at", label: t("sort.newest") },
+  { value: "price_asc", label: t("sort.priceAsc") },
+  { value: "price_desc", label: t("sort.priceDesc") },
+]
 
 export const sortOptions = [
   {
