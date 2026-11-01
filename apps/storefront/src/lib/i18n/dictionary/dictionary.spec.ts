@@ -43,15 +43,15 @@ describe("the dictionaries", () => {
 
 describe("translator", () => {
   it("answers in the language asked, Hungarian by default", () => {
-    expect(translator("hu")("category.addToCart")).toBe("Kosárba")
-    expect(translator("en")("category.addToCart")).toBe("Add to cart")
+    expect(translator("hu")("cart.add")).toBe("Kosárba")
+    expect(translator("en")("cart.add")).toBe("Add to cart")
     expect(getDictionary("en")).toBe(en)
   })
 
   it("fills the placeholders, and leaves an unfilled one visible", () => {
-    expect(translator("hu")("category.moreItems", { count: 7 })).toBe("További 7 tétel")
-    expect(translator("en")("category.moreItems", { count: 7 })).toBe("7 more items")
-    expect(translator("en")("category.moreItems")).toBe("{count} more items")
+    expect(translator("hu")("category.productCount", { count: 7 })).toBe("7 termék")
+    expect(translator("en")("category.productCount", { count: 7 })).toBe("7 products")
+    expect(translator("en")("category.productCount")).toBe("{count} products")
     expect(fill("a {x} b {y}", { x: 1 })).toBe("a 1 b {y}")
   })
 

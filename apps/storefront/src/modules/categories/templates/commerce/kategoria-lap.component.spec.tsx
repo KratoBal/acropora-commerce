@@ -1,8 +1,10 @@
 import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+// the language of the page is its path segment: `hu` (Hungarian) or `en-hu` (English)
+const nav = vi.hoisted(() => ({ countryCode: "hu" }))
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
+  useParams: () => ({ countryCode: nav.countryCode }),
   usePathname: () => "/hu/categories/termekek",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
@@ -101,6 +103,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  nav.countryCode = "hu"
 })
 
 /**
@@ -288,5 +291,50 @@ describe("a Commerce kategórialap", () => {
       expect(screen.queryByTestId("szuro-markak")).toBeNull()
       expect(screen.getByTestId("category-page-title")).toBeTruthy()
     })
+  })
+})
+
+/**
+ * A KATEGORIALAP ANGOLUL (`/en-hu/...`, Balazs 2026-11-01: a bolt ketnyelvu). MI PIROSIT: egy magyar felirat marad az angol
+ * lapon (a szotarbol kimaradt kulcs vagy egy beegetett szoveg); az angol szoveg a magyar lapon jelenik meg; az angol lap
+ * mas szamot vagy mas sorrendet mutat, mint a magyar (a felirat cserelodik, a lap nem).
+ */
+describe("a kategorialap angolul", () => {
+  const MAGYAR = ["Morzsamenü", "Alkategóriák", "Összes", "Rendezés", "Részletek", "További termékek betöltése", " termék", "Keresés termék", "Legújabbak"]
+
+  it("minden felirata angol, es egy magyar sem marad", async () => {
+    nav.countryCode = "en-hu"
+    const { container } = await lap({ countryCode: "en-hu" })
+    const szoveg = `${container.textContent} ${Array.from(container.querySelectorAll("[aria-label],[placeholder]"))
+      .map((e) => `${e.getAttribute("aria-label") ?? ""} ${e.getAttribute("placeholder") ?? ""}`)
+      .join(" ")}`
+    for (const hu of MAGYAR) expect(szoveg, hu).not.toContain(hu)
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeTruthy()
+    expect(screen.getByRole("list", { name: "Subcategories" })).toBeTruthy()
+    expect(screen.getByText("All")).toBeTruthy()
+    expect(screen.getByTestId("kategoria-termekszam").textContent).toBe("40 products")
+    expect(screen.getByTestId("kategoria-hol-tartunk").textContent).toBe("18 of 40 products")
+    expect(screen.getByTestId("category-more-products").textContent).toBe("Load more products")
+    // a kategoria NEVE adat (a fixture egyik gyereke "Szűrés"), a fejlec felirata nem
+    expect(screen.getByRole("heading", { name: "Filter" })).toBeTruthy()
+    expect(screen.queryByRole("heading", { name: "Szűrés" })).toBeNull()
+    expect(screen.getByPlaceholderText("Search by product or brand…")).toBeTruthy()
+    const rendezes = screen.getByTestId("commerce-rendezes")
+    expect(Array.from(rendezes.querySelectorAll("option")).map((o) => o.textContent)).toEqual(["Newest", "Price: low to high", "Price: high to low"])
+    expect(screen.getAllByTestId("kartya-reszletek")[0]!.textContent).toBe("Details")
+  })
+
+  it("a magyar lap valtozatlan, es az angol lap ugyanazt a listat kerdezi (a nyelv a regio utjan nem valtoztat adatot)", async () => {
+    await lap({ countryCode: "hu" })
+    const magyarHivas = adat.listProductsWithSort.mock.calls[0]![0]
+    expect(screen.getByTestId("kategoria-termekszam").textContent).toBe("40 termék")
+    cleanup()
+    adat.listProductsWithSort.mockClear()
+    nav.countryCode = "en-hu"
+    await lap({ countryCode: "en-hu" })
+    const angolHivas = adat.listProductsWithSort.mock.calls[0]![0]
+    expect({ ...angolHivas, countryCode: "x" }).toEqual({ ...magyarHivas, countryCode: "x" })
+    // a regio-kereso a szegmenst kapja, ahogy az uton all (a `getRegion` szedi szet)
+    expect(angolHivas.countryCode).toBe("en-hu")
   })
 })

@@ -1,3 +1,5 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+
 /**
  * HÁROM ÁLLAPOT, MERT KETTŐ HAZUDIK AZ EGYEDI PÉLDÁNYNÁL.
  *
@@ -423,22 +425,26 @@ export type KeszletSor = { szoveg: string; kaphato: boolean }
  * all, ahol a `scarcityCountOf` is kiirna (a leltarig a nulla keszlet nem
  * jelenti, hogy elfogyott, ezert nem minden kaphato termeknek van szama).
  */
-export function keszletSor(product: {
-  variants?: Parameters<typeof anyVariantPurchasable>[0]["variants"] &
-    Parameters<typeof inventoryKnownOf>[0]["variants"]
-}): KeszletSor {
+export function keszletSor(
+  product: {
+    variants?: Parameters<typeof anyVariantPurchasable>[0]["variants"] &
+      Parameters<typeof inventoryKnownOf>[0]["variants"]
+  },
+  /** The page's translator; Hungarian when the caller has none. */
+  t: Translate = translator("hu"),
+): KeszletSor {
   const allapot = availabilityOf({
     inStock: anyVariantPurchasable(product),
     uniquePiece: false,
     inventoryKnown: inventoryKnownOf(product),
   })
-  if (allapot !== "KAPHATO") return { szoveg: "Nincs raktáron", kaphato: false }
+  if (allapot !== "KAPHATO") return { szoveg: t("stock.outOfStock"), kaphato: false }
   const db =
     (product.variants?.length ?? 0) === 1
       ? scarcityCountOf(product.variants?.[0])
       : null
   return {
-    szoveg: db ? `Raktáron – ${db} db` : "Rendelhető",
+    szoveg: db ? t("stock.inStockCount", { count: db }) : t("stock.orderable"),
     kaphato: true,
   }
 }
