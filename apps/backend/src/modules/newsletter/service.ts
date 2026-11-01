@@ -8,6 +8,8 @@ export type NewsletterSignUp = {
   name: string
   consent_text: string
   consent_version: string
+  /** The form's language: `hu` or `en`. */
+  consent_language: string
   consented_at: Date
   source: string
 }

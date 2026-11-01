@@ -87,6 +87,8 @@ export async function hirlevelFeliratkozas(
       name: string
       email: string
       consent: true
+      /** Az urlap nyelve: a bolt azt a hozzajarulast rogzíti, amit a vevo ezen a nyelven latott. */
+      locale: Locale
     }) => Promise<unknown>
     korlat: SebessegKorlat
   },
@@ -105,7 +107,12 @@ export async function hirlevelFeliratkozas(
   if (!urlap.hozzajarul) return hiba(uz.hozzajarulas)
   if (!fuggosegek.korlat.allow(urlap.ip)) return hiba(uz.korlat)
   try {
-    await fuggosegek.kuld({ name: nev, email, consent: true })
+    await fuggosegek.kuld({
+      name: nev,
+      email,
+      consent: true,
+      locale: urlap.nyelv ?? DEFAULT_LOCALE,
+    })
     return { allapot: "kesz" }
   } catch (e) {
     const kod = hibaAllapota(e)

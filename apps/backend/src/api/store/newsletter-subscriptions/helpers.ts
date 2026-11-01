@@ -4,7 +4,9 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { NEWSLETTER_MODULE } from "../../../modules/newsletter"
 import {
   DEFAULT_NEWSLETTER,
+  DEFAULT_NEWSLETTER_LANGUAGE,
   consentVersion,
+  shownConsentText,
 } from "../../../modules/newsletter/defaults"
 import type NewsletterModuleService from "../../../modules/newsletter/service"
 import type { HomepageNewsletter } from "../../../modules/homepage-content/service"
@@ -44,6 +46,7 @@ export const createNewsletterPost =
     res: MedusaResponse
   ) => {
     const { name, email } = req.validatedBody
+    const language = req.validatedBody.locale ?? DEFAULT_NEWSLETTER_LANGUAGE
     if (!limiters.perAddress.allow(email) || !limiters.overall.allow("all")) {
       res.status(429).json({ message: "Too many sign-ups, try again later" })
       return
@@ -61,12 +64,14 @@ export const createNewsletterPost =
         "The newsletter sign-up is off"
       )
 
+    const consentText = shownConsentText(row, language)
     const service: NewsletterModuleService = req.scope.resolve(NEWSLETTER_MODULE)
     await service.upsertSubscriberByEmail({
       email,
       name,
-      consent_text: row.consent_text,
-      consent_version: consentVersion(row.consent_text),
+      consent_text: consentText,
+      consent_version: consentVersion(consentText),
+      consent_language: language,
       consented_at: new Date(),
       source: "footer",
     })

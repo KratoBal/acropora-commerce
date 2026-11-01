@@ -34,7 +34,19 @@ describe("hirlevelFeliratkozas", () => {
       name: "Teszt Elek",
       email: "teszt@pelda.hu",
       consent: true,
+      locale: "hu",
     })
+  })
+
+  it("az űrlap nyelvét is küldi, hogy a bolt a látott hozzájárulást rögzítse", async () => {
+    const kuld = vi.fn(async () => ({ subscribed: true }))
+    await hirlevelFeliratkozas(urlap({ nyelv: "en" }), {
+      kuld,
+      korlat: laza(),
+    })
+    expect(kuld).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "en", consent: true }),
+    )
   })
 
   it("hozzájárulás vagy érvényes cím nélkül nem küld, és megtartja a beírtat", async () => {

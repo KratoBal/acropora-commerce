@@ -7,7 +7,8 @@ import { model } from "@medusajs/framework/utils"
  * mailing service later.
  *
  * The consent is kept as it was given: the exact text the buyer saw, its
- * version (a hash of that text) and the time. Signing up again with the same
+ * version (a hash of that text), the language of the form (`hu` or `en`; the
+ * rows before the English shop are all `hu`) and the time. Signing up again with the same
  * address updates the row (name, consent), it does not add a second one.
  * `email` is stored trimmed and lowercased, so the unique index is the real
  * guard against a duplicate.
@@ -19,6 +20,7 @@ export const NewsletterSubscriber = model
     name: model.text(),
     consent_text: model.text(),
     consent_version: model.text(),
+    consent_language: model.text().default("hu"),
     consented_at: model.dateTime(),
     /** Where the sign-up came from; today always `footer`. */
     source: model.text(),
