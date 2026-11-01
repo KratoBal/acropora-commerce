@@ -97,6 +97,17 @@ describe("a middleware átirányítása", () => {
     }
   })
 
+  it("az angol út noindex fejlécet kap, a magyar nem (a bolt fele lefordult angol lapja nem kerülhet az indexbe)", async () => {
+    for (const ut of ["/en-hu", "/en-hu/termek/hanna", "/en-hu/categories/korallok?page=2"]) {
+      const { valasz } = await futtat(ut)
+      expect(valasz.headers.get("x-robots-tag"), ut).toBe("noindex")
+    }
+    for (const ut of ["/hu", "/hu/termek/hanna", "/hu/categories/korallok"]) {
+      const { valasz } = await futtat(ut)
+      expect(valasz.headers.get("x-robots-tag"), ut).toBeNull()
+    }
+  })
+
   it("az en-<ismeretlen ország> és az ismeretlen nyelv nem szegmens: ugyanaz, mint az ismeretlen országkód", async () => {
     for (const ut of ["/en-de/termek", "/de-hu/termek", "/hu-hu/termek"]) {
       const { valasz } = await futtat(ut)

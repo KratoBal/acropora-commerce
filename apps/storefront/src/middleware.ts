@@ -1,6 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
-import { countryOf } from "@lib/i18n/locale"
+import { DEFAULT_LOCALE, countryOf, localeOf } from "@lib/i18n/locale"
 import { statikusGyokerUt } from "@lib/util/statikus-utak"
 import { belsoUtKivulrol } from "../belso-utvonalak"
 import {
@@ -136,6 +136,14 @@ async function getCountryCode(
  */
 export async function middleware(request: NextRequest) {
   const valasz = await regioKozep(request)
+  /*
+   * AZ ANGOL OLDALAK NOINDEX-ELNEK, AMIG A BOLT EGESZEN LE NEM FORDULT (Balazs 2026-11-01; acrobot
+   * 39622): egy fele lefordult angol lap a magyar tartalom masolata lenne a kereso szemeben. Egy
+   * szabaly, egy helyen: a nyelv-orszag szegmens (`en-hu`) minden valaszat jeloli, a lapok sajat
+   * metaadatatol fuggetlenul (az ISR-lapok fejlecei is ezen a middleware-en mennek at).
+   */
+  if (localeOf(request.nextUrl.pathname.split("/")[1] ?? "") !== DEFAULT_LOCALE)
+    valasz.headers.set("X-Robots-Tag", "noindex")
   // A KEZDOLAP ELO ELONEZETE (protokoll v1): a fejlecet a futasidejui
   // kornyezetbol kapja (`lib/util/kezdolap-elonezet.ts`), bekapcsolas nelkul 404
   if (elonezetiUt(request.nextUrl.pathname)) {
