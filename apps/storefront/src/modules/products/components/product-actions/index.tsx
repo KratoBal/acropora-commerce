@@ -2,6 +2,8 @@
 
 import { addToCart } from "@lib/data/cart"
 import { useIntersection } from "@lib/hooks/use-in-view"
+import { translator } from "@lib/i18n/dictionary"
+import { useLocale } from "@lib/i18n/use-translate"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
 import Divider from "@modules/common/components/divider"
@@ -54,6 +56,8 @@ export default function ProductActions({
 }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const locale = useLocale()
+  const t = translator(locale)
 
   const [options, setOptions] = useState<Record<string, string | undefined>>(
     () => (valtozatId ? kezdoOpciok(product, valtozatId) : {}),
@@ -204,11 +208,14 @@ export default function ProductActions({
       stockMaximum: maximumQuantity,
     })
 
-  const rendelesiMondat = orderQuantityHint({
-    minimum: minimumQuantity,
-    step: quantityStep,
-    orderMaximum,
-  })
+  const rendelesiMondat = orderQuantityHint(
+    {
+      minimum: minimumQuantity,
+      step: quantityStep,
+      orderMaximum,
+    },
+    t,
+  )
 
   const actionsRef = useRef<HTMLDivElement>(null)
 
@@ -358,7 +365,11 @@ export default function ProductActions({
           )}
         </div>
 
-        <ProductPrice product={product} variant={selectedVariant} />
+        <ProductPrice
+          product={product}
+          variant={selectedVariant}
+          locale={locale}
+        />
 
         {!selectedVariant ? (
           <Button
@@ -367,7 +378,7 @@ export default function ProductActions({
             className="w-full h-10"
             data-testid="add-product-button"
           >
-            Válassz változatot
+            {t("product.chooseVariant")}
           </Button>
         ) : (
           <div className="flex gap-2">
@@ -375,7 +386,7 @@ export default function ProductActions({
               <div className="flex items-center rounded-md border border-ui-border-base">
                 <button
                   type="button"
-                  aria-label="Mennyiség csökkentése"
+                  aria-label={t("product.qtyDecrease")}
                   className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
                   onClick={() =>
                     setQuantity(normaliseQuantity(quantity - quantityStep))
@@ -384,7 +395,7 @@ export default function ProductActions({
                   −
                 </button>
                 <input
-                  aria-label="Mennyiség"
+                  aria-label={t("product.qty")}
                   className="h-10 w-12 bg-transparent text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
                   inputMode="numeric"
                   value={quantity}
@@ -395,7 +406,7 @@ export default function ProductActions({
                 />
                 <button
                   type="button"
-                  aria-label="Mennyiség növelése"
+                  aria-label={t("product.qtyIncrease")}
                   className="h-10 w-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive"
                   onClick={() =>
                     setQuantity(normaliseQuantity(quantity + quantityStep))
@@ -420,6 +431,7 @@ export default function ProductActions({
               onAddToCart={handleAddToCart}
               isAdding={isAdding}
               disabled={!!disabled || isAdding}
+              locale={locale}
             />
           </div>
         )}

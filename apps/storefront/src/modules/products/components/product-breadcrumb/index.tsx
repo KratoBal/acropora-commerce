@@ -1,4 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
@@ -12,10 +14,14 @@ type Category = Pick<
 export default function ProductBreadcrumb({
   product,
   categories,
+  locale = DEFAULT_LOCALE,
 }: {
   product: HttpTypes.StoreProduct
   categories: Category[]
+  /** A lap nyelve; alapertek magyar. */
+  locale?: Locale
 }) {
+  const t = translator(locale)
   /*
     A LEVEZETES KOZOS A BESOROLAS SORAVAL, ES EZ NEM TAKARITAS.
 
@@ -37,7 +43,10 @@ export default function ProductBreadcrumb({
   const path = besorolasUt(product, categories)
 
   return (
-    <nav aria-label="Morzsamenü" className="overflow-x-auto whitespace-nowrap">
+    <nav
+      aria-label={t("category.breadcrumbLabel")}
+      className="overflow-x-auto whitespace-nowrap"
+    >
       {/*
         A MORZSAMENU SZINEI TOKENBOL JONNEK -- ES MA EZ MEG NEM LATSZIK.
 

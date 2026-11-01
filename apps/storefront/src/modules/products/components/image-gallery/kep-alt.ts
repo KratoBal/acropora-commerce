@@ -1,3 +1,4 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import { generikusAlt } from "@lib/seo/generikus-alt"
 
 /**
@@ -13,10 +14,13 @@ export function galeriaAlt(
   nev: string | null | undefined,
   index: number,
   darab: number,
+  t: Translate = translator("hu"),
 ): string {
   const tiszta = (nev ?? "").trim()
   if (!tiszta) return ""
-  return darab > 1 && index > 0 ? `${tiszta} (${index + 1}. kép)` : tiszta
+  return darab > 1 && index > 0
+    ? t("product.imageAlt", { title: tiszta, n: index + 1 })
+    : tiszta
 }
 
 /**
@@ -65,7 +69,8 @@ export function kepAlt(
   nev: string | null | undefined,
   index: number,
   darab: number,
+  t: Translate = translator("hu"),
 ): string {
   const sajat = url ? altok?.[url] : undefined
-  return sajat ?? galeriaAlt(nev, index, darab)
+  return sajat ?? galeriaAlt(nev, index, darab, t)
 }

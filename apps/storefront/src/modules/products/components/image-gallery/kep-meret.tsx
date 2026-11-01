@@ -3,6 +3,8 @@
 import { HttpTypes } from "@medusajs/types"
 import { getImageProps } from "next/image"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+
 /**
  * A KEP-BLOKK MERETEZESE, ES A SZAMOK A TERVLAPROL JONNEK.
  *
@@ -163,6 +165,7 @@ export const TovabbiKepek = ({
    */
   onValaszt?: (index: number) => void
 }) => {
+  const t = useTranslate()
   if (kepek.length === 0) return null
 
   return (
@@ -196,7 +199,7 @@ export const TovabbiKepek = ({
             key={kep.id ?? i}
             type="button"
             onClick={() => onValaszt(i)}
-            aria-label={`${i + 1}. fotó megjelenítése`}
+            aria-label={t("product.showPhoto", { n: i + 1 })}
             aria-current={kivalasztva ? "true" : undefined}
             className="block w-full"
             style={{ border: kivalasztva ? KIVALASZTOTT_KERET : KERET }}

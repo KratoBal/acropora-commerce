@@ -72,7 +72,7 @@ describe("a kezdőlap angolul", () => {
       (sor) => !ADAT.has(sor.kulcs) && MAGYAR_BETU.test(s.szoveg(sor.kulcs)),
     ).map((sor) => sor.kulcs)
     expect(magyarul).toEqual([])
-    for (const kulcs of ADAT) {
+    for (const kulcs of Array.from(ADAT)) {
       const sor = SZOVEGEK.find((x) => x.kulcs === kulcs)!
       expect(s.szoveg(kulcs), kulcs).toBe(sor.alap)
     }
@@ -82,7 +82,7 @@ describe("a kezdőlap angolul", () => {
   it("az alap-diák angolul angolok, a hivatkozásuk és a jelölőjük változatlan", () => {
     const diak = kezdolapAdat(null, "en").diak
     expect(diak).toHaveLength(ALAP_DIAK.length)
-    for (const [i, d] of diak.entries()) {
+    for (const [i, d] of Array.from(diak.entries())) {
       for (const mezo of ["eyebrow", "title", "text", "cta", "cta2"] as const)
         expect(d[mezo], `${i} ${mezo}`).not.toMatch(MAGYAR_BETU)
       expect(d.cta_href).toBe(ALAP_DIAK[i]!.cta_href)

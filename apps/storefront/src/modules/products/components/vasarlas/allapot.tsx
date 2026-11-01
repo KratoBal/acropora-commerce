@@ -1,6 +1,8 @@
 "use client"
 
 import { addToCart } from "@lib/data/cart"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 import { isEqual } from "lodash"
 import { useParams, usePathname, useRouter } from "next/navigation"
@@ -288,11 +290,14 @@ export function VasarlasProvider({
     stockMaximum: maximumQuantity,
   })
 
-  const rendelesiMondat = orderQuantityHint({
-    minimum: minimumQuantity,
-    step: quantityStep,
-    orderMaximum,
-  })
+  const rendelesiMondat = orderQuantityHint(
+    {
+      minimum: minimumQuantity,
+      step: quantityStep,
+      orderMaximum,
+    },
+    translator(localeOf(countryCode)),
+  )
 
   // add the selected variant to the cart
   const handleAddToCart = async () => {

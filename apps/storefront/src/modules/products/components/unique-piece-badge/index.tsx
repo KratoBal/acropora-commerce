@@ -1,4 +1,5 @@
-import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 
 /**
  * "1 DB · EGYEDI PÉLDÁNY" -- A WYSIWYG-ÍGÉRET, KIMONDVA.
@@ -106,9 +107,13 @@ import { UNIQUE_PIECE_PROMISE } from "../stock-state/availability"
  */
 export default function UniquePieceBadge({
   className = "",
+  locale = DEFAULT_LOCALE,
 }: {
   className?: string
+  /** A lap nyelve; alapertek magyar. */
+  locale?: Locale
 }) {
+  const t = translator(locale)
   return (
     <span
       data-testid="unique-piece-badge"
@@ -137,8 +142,8 @@ export default function UniquePieceBadge({
         két jelvény esetén a színek, a pozíció és a méret KÉTSZER állna itt, és
         külön romolhatna el.
       */}
-      1 db · Egyedi
-      <span className="hidden lg:inline"> példány</span>
+      {t("product.badgeHead")}
+      <span className="hidden lg:inline"> {t("product.badgeTail")}</span>
     </span>
   )
 }
@@ -151,14 +156,21 @@ export default function UniquePieceBadge({
  *
  * "Ha ez az egy mondat lemarad, a jelvény önmagában félreérthető marad."
  */
-export function UniquePiecePromise({ className = "" }: { className?: string }) {
+export function UniquePiecePromise({
+  className = "",
+  locale = DEFAULT_LOCALE,
+}: {
+  className?: string
+  locale?: Locale
+}) {
+  const t = translator(locale)
   return (
     <p
       data-testid="unique-piece-promise"
       className={"text-xs leading-relaxed " + className}
       style={{ color: "var(--terv-szoveg-halvany)" }}
     >
-      {UNIQUE_PIECE_PROMISE}
+      {t("product.promise")}
     </p>
   )
 }

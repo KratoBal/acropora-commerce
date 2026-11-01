@@ -1,12 +1,17 @@
 import { Button } from "@modules/common/components/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import {
-  availabilityLabel,
-  SIMILAR_ITEMS_LABEL,
-  SOLD_OUT_EXPLANATION,
-  type Availability,
-} from "./availability"
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+
+import { type Availability } from "./availability"
+
+/** A harom allapot felirata a lap nyelven (`availabilityLabel` a magyar, az `ismert-szovegek.spec.ts` merni). */
+const allapotFelirat = (t: Translate): Record<Availability, string> => ({
+  KAPHATO: t("cart.add"),
+  ELFOGYOTT: t("stock.outOfStock"),
+  ELADVA: t("product.unavailable"),
+})
 
 /**
  * A FO CSELEKVES MERETE A PANELBEN -- A TERVBOL MERVE, EGY HELYEN.
@@ -36,6 +41,7 @@ export default function StockState({
   isAdding = false,
   disabled = false,
   testId = "add-product-button",
+  locale = DEFAULT_LOCALE,
 }: {
   availability: Availability
   /** Hová visz az "Eladva" állapot továbbvivő gombja. */
@@ -72,7 +78,11 @@ export default function StockState({
    * biztonság.
    */
   testId?: string
+  /** A lap nyelve; alapertek magyar. */
+  locale?: Locale
 }) {
+  const t = translator(locale)
+  const felirat = allapotFelirat(t)
   /*
     AZ ELADVA NEM LETILTOTT GOMB, HANEM MÁSIK GOMB.
 
@@ -123,18 +133,18 @@ export default function StockState({
           style={{ color: "var(--terv-szoveg)" }}
           data-testid={testId + "-eladva-cimke"}
         >
-          {availabilityLabel.ELADVA}
+          {felirat.ELADVA}
         </span>
         <span
           className="text-xs leading-relaxed"
           style={{ color: "var(--terv-szoveg-halvany)" }}
           data-testid={testId + "-eladva-magyarazat"}
         >
-          {SOLD_OUT_EXPLANATION}
+          {t("product.soldOutExplanation")}
         </span>
         <LocalizedClientLink href={similarHref}>
           <Button variant="secondary" className="h-10 w-full">
-            {SIMILAR_ITEMS_LABEL}
+            {t("product.similarItems")}
           </Button>
         </LocalizedClientLink>
       </div>
@@ -260,7 +270,7 @@ export default function StockState({
             }
       }
     >
-      {availabilityLabel[availability]}
+      {felirat[availability]}
     </Button>
   )
 }

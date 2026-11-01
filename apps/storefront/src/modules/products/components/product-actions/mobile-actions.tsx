@@ -1,4 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react"
+import { translator } from "@lib/i18n/dictionary"
+import { useLocale } from "@lib/i18n/use-translate"
 import { Button, clx } from "@modules/common/components/ui"
 import React, { Fragment, useMemo } from "react"
 
@@ -44,6 +46,8 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   show,
   optionsDisabled,
 }) => {
+  const locale = useLocale()
+  const t = translator(locale)
   const { state, open, close } = useToggleState()
 
   const price = getProductPrice({
@@ -136,7 +140,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   className="w-full"
                   data-testid="mobile-cart-button"
                 >
-                  Válassz változatot
+                  {t("product.chooseVariant")}
                 </Button>
               ) : (
                 <StockState
@@ -145,6 +149,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   onAddToCart={handleAddToCart}
                   isAdding={isAdding}
                   testId="mobile-cart-button"
+                  locale={locale}
                 />
               )}
             </div>

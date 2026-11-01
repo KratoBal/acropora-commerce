@@ -1,4 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import { sanitizeDescription } from "@lib/util/sanitize-description"
 import ProductDescriptionTabs from "@modules/products/components/product-description-tabs"
@@ -335,7 +337,13 @@ export const Cimsor = ({
  * atrendezes, hanem egy nem lathato adat megjelenitese. A szam es a mobil
  * viselkedes indoklasa a `kep-meret.tsx` fajlban all, kozosen a galeriaval.
  */
-export const Foto = ({ termek }: { termek: Termek }) => {
+export const Foto = ({
+  termek,
+  locale = DEFAULT_LOCALE,
+}: {
+  termek: Termek
+  locale?: Locale
+}) => {
   const kepek = termek.images ?? []
 
   /*
@@ -379,14 +387,16 @@ export const Foto = ({ termek }: { termek: Termek }) => {
   return (
     <>
       <div className="relative">
-        {egyedi && <UniquePieceBadge />}
+        {egyedi && <UniquePieceBadge locale={locale} />}
         <KepBlokk
           kepek={teljes}
           alt={termek.title ?? ""}
           altok={kepAltok(termek.metadata)}
         />
       </div>
-      {egyedi && <UniquePiecePromise className="mt-1 max-lg:px-4" />}
+      {egyedi && (
+        <UniquePiecePromise className="mt-1 max-lg:px-4" locale={locale} />
+      )}
     </>
   )
 }
@@ -558,6 +568,11 @@ export function vazTartalom(
    * egy H1 marad, a vegleges laponak.
    */
   tartalek?: boolean,
+  /**
+   * A TIZEDIK, ES A VEGERE KERULT (a szignatura pozicionalis, lasd fent): a lap nyelve. A szerveroldali dobozok szovegei (jelveny, igeret, a
+   * rendelesi mondat) ebbol fordulnak; alapertek magyar.
+   */
+  locale: Locale = DEFAULT_LOCALE,
 ): Record<string, React.ReactNode> {
   const tartalom: Record<string, React.ReactNode> = {
     cimsor: (
@@ -743,7 +758,7 @@ export function vazTartalom(
   if (fotoResz) {
     tartalom.foto = fotoResz
   } else if (termek.thumbnail || termek.images?.[0]?.url) {
-    tartalom.foto = <Foto termek={termek} />
+    tartalom.foto = <Foto termek={termek} locale={locale} />
   }
 
   /**
@@ -786,11 +801,14 @@ export function vazTartalom(
    */
   const rendelesiMondat = egyediPeldany
     ? null
-    : orderQuantityHint({
-        minimum: minimumOrderQuantity(termek),
-        step: orderQuantityStep(termek),
-        orderMaximum: maximumOrderQuantity(termek),
-      })
+    : orderQuantityHint(
+        {
+          minimum: minimumOrderQuantity(termek),
+          step: orderQuantityStep(termek),
+          orderMaximum: maximumOrderQuantity(termek),
+        },
+        translator(locale),
+      )
   /**
    * A SZUKOSSEG-SOR A BOLT BEALLITASABOL JON, nem a WYSIWYG jelzobol -- a
    * dontes es az indoka a `scarcityCountOf` fejlecben all.

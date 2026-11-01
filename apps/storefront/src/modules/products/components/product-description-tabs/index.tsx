@@ -2,6 +2,8 @@
 
 import { useId, useState } from "react"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+
 type ProductDescriptionTabsProps = {
   description: string | null
   /**
@@ -83,6 +85,7 @@ const ProductDescriptionTabs = ({
   description,
   valtozat,
 }: ProductDescriptionTabsProps) => {
+  const t = useTranslate()
   const egyB = valtozat === "1b"
   const baseId = useId()
   const tables = description?.match(TABLE_PATTERN) ?? []
@@ -111,10 +114,16 @@ const ProductDescriptionTabs = ({
     (Forras: exchange/design-balazs/termeklap-1b-es-2a-2026-09-07.html)
   */
   const adatFul: Tab[] = tables.length
-    ? [{ label: "Műszaki adatok", rovidCimke: "Adatok", html: tables.join("") }]
+    ? [
+        {
+          label: t("product.tabTechnical"),
+          rovidCimke: t("product.tabTechnicalShort"),
+          html: tables.join(""),
+        },
+      ]
     : []
   const leirasFul: Tab[] = hasVisibleContent(prose)
-    ? [{ label: "Leírás", html: prose }]
+    ? [{ label: t("product.tabDescription"), html: prose }]
     : []
   const tabs: Tab[] = egyB
     ? [...leirasFul, ...adatFul]
@@ -155,7 +164,7 @@ const ProductDescriptionTabs = ({
             : "flex border-b border-[var(--terv-keret)]"
         }
         role="tablist"
-        aria-label="Termékadatok"
+        aria-label={t("product.tabsLabel")}
       >
         {tabs.map((tab, index) => {
           const selected = index === activeIndex

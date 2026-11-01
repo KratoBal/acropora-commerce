@@ -1,3 +1,5 @@
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { clx } from "@modules/common/components/ui"
 
 import { getProductPrice } from "@lib/util/get-product-price"
@@ -6,10 +8,17 @@ import { HttpTypes } from "@medusajs/types"
 export default function ProductPrice({
   product,
   variant,
+  locale = DEFAULT_LOCALE,
 }: {
   product: HttpTypes.StoreProduct
   variant?: HttpTypes.StoreProductVariant
+  /** A lap nyelve; alapertek magyar. */
+  locale?: Locale
 }) {
+  const t = translator(locale)
+  // "{price}-tól" magyarul (utotag), "from {price}" angolul (elotag): a szotar sablonja dönti el, melyik oldalra kerul a szo
+  const [tolElotte = "", tolUtana = ""] =
+    t("product.priceFrom").split("{price}")
   const { cheapestPrice, variantPrice } = getProductPrice({
     product,
     variantId: variant?.id,
@@ -131,13 +140,18 @@ export default function ProductPrice({
           "font-bold": selectedPrice.price_type === "sale",
         })}
       >
+        {tolAlak && tolElotte ? (
+          <span data-testid="product-price-tol">{tolElotte}</span>
+        ) : null}
         <span
           data-testid="product-price"
           data-value={selectedPrice.calculated_price_number}
         >
           {selectedPrice.calculated_price}
         </span>
-        {tolAlak ? <span data-testid="product-price-tol">-tól</span> : null}
+        {tolAlak && tolUtana ? (
+          <span data-testid="product-price-tol">{tolUtana}</span>
+        ) : null}
       </span>
       {selectedPrice.price_type === "sale" && (
         <>
@@ -150,7 +164,7 @@ export default function ProductPrice({
               csak szukebb hatokoron, mint amit a szovege igert.
             */}
             <span style={{ color: "var(--terv-szoveg-halvany)" }}>
-              Eredeti ár:{" "}
+              {t("product.originalPrice")}{" "}
             </span>
             <span
               className="line-through"

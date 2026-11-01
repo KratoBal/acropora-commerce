@@ -25,6 +25,7 @@ import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
 import type { TermekTudas } from "@lib/data/product-knowledge"
 import VasarlasKeret from "./vasarlas-keret"
+import { localeOf } from "@lib/i18n/locale"
 import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
@@ -60,6 +61,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   if (!product || !product.id) {
     return notFound()
   }
+
+  const locale = localeOf(countryCode)
 
   /**
    * A SAV CSELEKVESE UGYANAZT AZ ALLAPOTOT KAPJA, MINT A FO OSZLOP.
@@ -188,11 +191,16 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           fallback={
             <MuszakiLap
               tartalek
+              locale={locale}
               product={product}
               kategoriak={categories}
               tudas={tudas}
               morzsaResz={
-                <ProductBreadcrumb product={product} categories={categories} />
+                <ProductBreadcrumb
+                  product={product}
+                  categories={categories}
+                  locale={locale}
+                />
               }
               fotoResz={
                 galeriatAdunkAt(product, categories) ? (
@@ -215,10 +223,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           >
             <MuszakiLap
               product={product}
+              locale={locale}
               kategoriak={categories}
               tudas={tudas}
               morzsaResz={
-                <ProductBreadcrumb product={product} categories={categories} />
+                <ProductBreadcrumb
+                  product={product}
+                  categories={categories}
+                  locale={locale}
+                />
               }
               vasarlasAktiv
               hasonloResz={
@@ -331,7 +344,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               ragadosResz={
                 <>
                   <RagadosSav
-                    ar={<ProductPrice product={product} />}
+                    ar={<ProductPrice product={product} locale={locale} />}
                     cselekves={alsoCselekves("ragados-sav")}
                   />
                   {/*
@@ -364,7 +377,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       P3-ig cimke nelkul marad.
                     */
                     cimke={vilagosLap ? keszletSor(product).szoveg : undefined}
-                    ar={<ProductPrice product={product} />}
+                    ar={<ProductPrice product={product} locale={locale} />}
                     cselekves={alsoCselekves("zarosor")}
                   />
                 </>
@@ -438,7 +451,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   return (
     <>
       <div className="content-container pt-6">
-        <ProductBreadcrumb product={product} categories={categories} />
+        <ProductBreadcrumb
+          product={product}
+          categories={categories}
+          locale={locale}
+        />
       </div>
       <div
         className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"

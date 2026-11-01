@@ -1,4 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import LapVaz from "@modules/products/components/lap-vaz"
 import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 import { vazTartalom } from "@modules/products/components/lap-vaz/valodi-tartalom"
@@ -146,6 +147,8 @@ type Props = {
    * mert a streamelt elso HTML a vegleges lapot is viszi, es ket H1 lenne.
    */
   tartalek?: boolean
+  /** A lap nyelve; alapertek magyar. */
+  locale?: Locale
 }
 
 const MuszakiLap = ({
@@ -159,6 +162,7 @@ const MuszakiLap = ({
   morzsaResz,
   tudas,
   tartalek,
+  locale = DEFAULT_LOCALE,
 }: Props) => {
   /*
     A JOVAHAGYOTT SZOVEG A TUDASBOL JON, NEM A TERMEK LEIRASABOL, ha van: a
@@ -184,6 +188,7 @@ const MuszakiLap = ({
     */
     besorolasUt(product, kategoriak ?? []).at(-1)?.id,
     tartalek,
+    locale,
   )
   /*
     A TUDAS-BLOKK A LEIRAS ALA KERUL, A `fulek` SLOTBA, ES NEM UJ SZAKASZKENT:
@@ -195,11 +200,12 @@ const MuszakiLap = ({
     tartalom.fulek = (
       <>
         {tartalom.fulek}
-        <TermekTudasBlokk tudas={tudas!} />
+        <TermekTudasBlokk tudas={tudas!} locale={locale} />
       </>
     )
   return (
     <LapVaz
+      locale={locale}
       vilag={vilagaTermeknek(product, kategoriak)}
       fejlecGyokerek={Array.from(
         new Set(termekGyokerNevei(product, kategoriak).map(kulcs)),

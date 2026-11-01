@@ -1,4 +1,6 @@
 import type { TermekTudas } from "@lib/data/product-knowledge"
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import React from "react"
 
 /**
@@ -20,7 +22,6 @@ import React from "react"
  * A gyarto allitasai kulon cimke alatt allnak ("A gyártó szerint"): azok a
  * gyarto mondatai, nem a mi tenyeink.
  */
-const ELTERES = "A források eltérnek"
 
 type Megjelenes = { ertek: string } | { elteres: true } | null
 
@@ -33,32 +34,34 @@ export function megjelenes(tudas: TermekTudas, mezo: string): Megjelenes {
   return null
 }
 
-const Ertek = ({ m }: { m: Exclude<Megjelenes, null> }) =>
+const Ertek = ({ m, t }: { m: Exclude<Megjelenes, null>; t: Translate }) =>
   "elteres" in m ? (
     <span data-testid="tudas-elteres" className="italic">
-      {ELTERES}
+      {t("product.knowledgeDiffer")}
     </span>
   ) : (
     <span className="whitespace-pre-line">{m.ertek}</span>
   )
 
-const KULCS_TENYEK: [string, string][] = [
-  ["packSize", "Kiszerelés"],
-  ["dosing", "Adagolás"],
-  ["application", "Felhasználás"],
+const KULCS_TENYEK: [string, Key][] = [
+  ["packSize", "product.packSize"],
+  ["dosing", "product.knowledgeDosing"],
+  ["application", "product.knowledgeUse"],
 ]
 
-const SZAKASZOK: [string, string][] = [
-  ["dosing", "Adagolás"],
-  ["packageContents", "A csomag tartalma"],
-  ["manufacturerClaims", "A gyártó szerint"],
-  ["manufacturerInfo", "Gyártói adatok"],
+const SZAKASZOK: [string, Key][] = [
+  ["dosing", "product.knowledgeDosing"],
+  ["packageContents", "product.knowledgePackage"],
+  ["manufacturerClaims", "product.knowledgeClaims"],
+  ["manufacturerInfo", "product.knowledgeInfo"],
 ]
 
-function reszek(tudas: TermekTudas) {
-  const lathato = (lista: [string, string][]) =>
+function reszek(tudas: TermekTudas, t: Translate = translator("hu")) {
+  const lathato = (lista: [string, Key][]) =>
     lista
-      .map(([mezo, cimke]) => [mezo, cimke, megjelenes(tudas, mezo)] as const)
+      .map(
+        ([mezo, kulcs]) => [mezo, t(kulcs), megjelenes(tudas, mezo)] as const,
+      )
       .filter(([, , m]) => m)
   return {
     kulcs: lathato(KULCS_TENYEK),
@@ -117,9 +120,17 @@ export function vanTudas(tudas: TermekTudas | null | undefined): boolean {
   return kulcs.length > 0 || szakaszok.length > 0
 }
 
-export function TermekTudasBlokk({ tudas }: { tudas: TermekTudas | null }) {
+export function TermekTudasBlokk({
+  tudas,
+  locale = DEFAULT_LOCALE,
+}: {
+  tudas: TermekTudas | null
+  /** A lap nyelve; alapertek magyar. */
+  locale?: Locale
+}) {
   if (!tudas || !vanTudas(tudas)) return null
-  const { kulcs, szakaszok } = reszek(tudas)
+  const t = translator(locale)
+  const { kulcs, szakaszok } = reszek(tudas, t)
 
   return (
     <section
@@ -132,7 +143,7 @@ export function TermekTudasBlokk({ tudas }: { tudas: TermekTudas | null }) {
             <div key={mezo} data-testid={`tudas-kulcs-${mezo}`}>
               <dt className="text-xsmall-regular uppercase">{cimke}</dt>
               <dd>
-                <Ertek m={m!} />
+                <Ertek m={m!} t={t} />
               </dd>
             </div>
           ))}
@@ -141,7 +152,7 @@ export function TermekTudasBlokk({ tudas }: { tudas: TermekTudas | null }) {
       {szakaszok.map(([mezo, cimke, m]) => (
         <div key={mezo} data-testid={`tudas-${mezo}`}>
           <h3 className="text-base-semi">{cimke}</h3>
-          <Ertek m={m!} />
+          <Ertek m={m!} t={t} />
         </div>
       ))}
     </section>
