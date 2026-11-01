@@ -10,7 +10,7 @@ import { PICKUP_ORDER_METADATA_KEY } from "./split-completion"
 
 type Container = MedusaContainer
 
-const ORDER_FIELDS = [
+export const ORDER_FIELDS = [
   "id",
   "total",
   "currency_code",
