@@ -79,6 +79,29 @@ describe("a kirakat kerete", () => {
     expect(adat.tartalom).toHaveBeenCalledTimes(1)
   })
 
+  /*
+    A NYELV AZ ELSO UTVONAL-SZEGMENSBOL JON, ES A KERET VISZI A FEJLECNEK ES A
+    LABLECNEK. MI PIROSIT: ha a keret nem adja tovabb a szegmenst a lablecnek
+    (az angol lap magyar lablecet kap), vagy a fejlec szovegeit nem a lap
+    nyelvén kerdezi le.
+  */
+  it("az angol szegmens angol fejléc-szövegeket és a szegmenst a láblécnek adja, a magyar magyart", async () => {
+    for (const [szegmens, savSzoveg] of [
+      ["en-hu", "Open today 10:00–19:00"],
+      ["hu", "Nyitva ma 10–19 óráig"],
+    ] as const) {
+      const fa = bejar(
+        await AruhazKeret({ children: "x", countryCode: szegmens }),
+      )
+      const fejlec = fa.find((e) => e.type === KezdolapFejlec)
+      const s = fejlec?.props.s as { szoveg: (kulcs: string) => string }
+      expect(s.szoveg("fejlec.sav.3")).toBe(savSzoveg)
+      expect(fa.find((e) => e.type === Footer)?.props.countryCode).toBe(
+        szegmens,
+      )
+    }
+  })
+
   it("sütit nem olvas", async () => {
     await AruhazKeret({ children: null, countryCode: "hu" })
     expect(suti.olvasasok).toBe(0)
