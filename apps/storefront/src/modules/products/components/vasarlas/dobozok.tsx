@@ -1,5 +1,7 @@
 "use client"
 
+import { useLocale } from "@lib/i18n/use-translate"
+import { translator } from "@lib/i18n/dictionary"
 import { Button } from "@modules/common/components/ui"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
@@ -23,9 +25,16 @@ import { useVasarlas } from "./kontextus"
 
 /** 6. doboz: AR. */
 export function ArDoboz() {
+  const locale = useLocale()
   const a = useVasarlas()
   if (!a) return null
-  return <ProductPrice product={a.product} variant={a.selectedVariant} />
+  return (
+    <ProductPrice
+      product={a.product}
+      variant={a.selectedVariant}
+      locale={locale}
+    />
+  )
 }
 
 /**
@@ -58,6 +67,7 @@ export function ElerhetosegDoboz({
    */
   keszlet?: number | null
 }) {
+  const t = translator(useLocale())
   /**
    * A MONDAT KESZEN ERKEZIK, ES EZ A VALTOZAS LENYEGE.
    *
@@ -197,8 +207,14 @@ export function ElerhetosegDoboz({
           className="flex items-baseline justify-between gap-4 text-[13.5px]"
           data-testid="vaz-keszlet"
         >
-          <span style={{ color: "var(--terv-szoveg-halvany)" }}>Készlet</span>
-          <span>{keszlet === 1 ? "1 db · utolsó" : `${keszlet} db`}</span>
+          <span style={{ color: "var(--terv-szoveg-halvany)" }}>
+            {t("product.stockLabel")}
+          </span>
+          <span>
+            {keszlet === 1
+              ? t("product.lastOne")
+              : t("product.pieces", { count: keszlet })}
+          </span>
         </div>
       ) : null}
       {minimumSor}
@@ -266,6 +282,8 @@ export const LEPTETO_GOMB_MERET = "h-[54px] w-[42px] text-lg"
 export const LEPTETO_MEZO_MERET = "h-[54px] w-[34px] text-[15px]"
 
 export function MennyisegDoboz() {
+  const locale = useLocale()
+  const t = translator(locale)
   const a = useVasarlas()
   if (!a) return null
 
@@ -278,7 +296,7 @@ export function MennyisegDoboz() {
           className="w-full h-10"
           data-testid="add-product-button"
         >
-          Válassz változatot
+          {t("product.chooseVariant")}
         </Button>
       </div>
     )
@@ -329,7 +347,7 @@ export function MennyisegDoboz() {
         <div className="flex items-center rounded-md border border-ui-border-base">
           <button
             type="button"
-            aria-label="Mennyiség csökkentése"
+            aria-label={t("product.qtyDecrease")}
             className={`${LEPTETO_GOMB_MERET} focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive`}
             onClick={() =>
               a.setQuantity(a.normaliseQuantity(a.quantity - a.quantityStep))
@@ -338,7 +356,7 @@ export function MennyisegDoboz() {
             −
           </button>
           <input
-            aria-label="Mennyiség"
+            aria-label={t("product.qty")}
             className={`${LEPTETO_MEZO_MERET} bg-transparent text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive`}
             style={{ fontFamily: "var(--terv-betu-mono-lanc)" }}
             inputMode="numeric"
@@ -350,7 +368,7 @@ export function MennyisegDoboz() {
           />
           <button
             type="button"
-            aria-label="Mennyiség növelése"
+            aria-label={t("product.qtyIncrease")}
             className={`${LEPTETO_GOMB_MERET} focus-visible:outline focus-visible:outline-2 focus-visible:outline-ui-fg-interactive`}
             onClick={() =>
               a.setQuantity(a.normaliseQuantity(a.quantity + a.quantityStep))
@@ -367,6 +385,7 @@ export function MennyisegDoboz() {
         onAddToCart={a.handleAddToCart}
         isAdding={a.isAdding}
         disabled={a.disabled || a.isAdding}
+        locale={locale}
       />
       {a.kosarVisszajelzes ? (
         <p
@@ -472,6 +491,7 @@ export const DOA_MONDAT =
  * ugyanaz all masutt.
  */
 export function KiszerelesSor({ kiszereles }: { kiszereles?: string | null }) {
+  const t = translator(useLocale())
   if (!kiszereles) return null
 
   return (
@@ -479,7 +499,9 @@ export function KiszerelesSor({ kiszereles }: { kiszereles?: string | null }) {
       className="flex items-baseline justify-between gap-4 text-[13.5px]"
       data-testid="vaz-egyseg"
     >
-      <span style={{ color: "var(--terv-szoveg-halvany)" }}>Kiszerelés</span>
+      <span style={{ color: "var(--terv-szoveg-halvany)" }}>
+        {t("product.packSize")}
+      </span>
       <span className="font-semibold">{kiszereles}</span>
     </div>
   )
@@ -527,6 +549,7 @@ export function ArAlattiSor({
   cikkszam?: string | null
   egyediPeldany?: boolean
 }) {
+  const t = translator(useLocale())
   /*
    * A "Brutto ar" MINDIG all, a masik ketto adattol fugg. Ezert nem tomb-
    * osszefuzes hatarertekekkel: a kozepso pont ott jelenik meg, ahol tenylegesen
@@ -534,9 +557,9 @@ export function ArAlattiSor({
    * "Brutto ar ·" alakban vegzodne.
    */
   const reszek = [
-    "Bruttó ár",
-    cikkszam ? `Cikkszám ${cikkszam}` : null,
-    egyediPeldany ? "Egyedi példány, nem pótolható" : null,
+    t("product.grossPrice"),
+    cikkszam ? t("product.sku", { sku: cikkszam }) : null,
+    egyediPeldany ? t("product.uniqueNote") : null,
   ].filter((x): x is string => Boolean(x))
 
   return (
@@ -555,6 +578,7 @@ export function ArAlattiSor({
 }
 
 export function DoaGarancia() {
+  const t = translator(useLocale())
   return (
     <div
       className="flex gap-3 text-[13px]"
@@ -577,7 +601,7 @@ export function DoaGarancia() {
       >
         {DOA_JELOLES}
       </span>
-      <span>{DOA_MONDAT}</span>
+      <span>{t("product.doaSentence")}</span>
     </div>
   )
 }

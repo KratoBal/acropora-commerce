@@ -10,6 +10,8 @@ import UniquePieceBadge, {
 } from "@modules/products/components/unique-piece-badge"
 
 import { KEP_ARANY_OSZTALY, TovabbiKepek } from "./kep-meret"
+import { useLocale } from "@lib/i18n/use-translate"
+import { translator } from "@lib/i18n/dictionary"
 import { kepAlt } from "./kep-alt"
 
 type ImageGalleryProps = {
@@ -82,6 +84,8 @@ const ImageGallery = ({
   altok,
   igeretOsztaly = "",
 }: ImageGalleryProps) => {
+  const locale = useLocale()
+  const t = translator(locale)
   const [kivalasztott, setKivalasztott] = useState(0)
   const nagy = images[kivalasztott] ?? images[0]
 
@@ -134,7 +138,7 @@ const ImageGallery = ({
             id={nagy.id}
             data-testid="nagy-kep"
           >
-            {uniquePiece && <UniquePieceBadge />}
+            {uniquePiece && <UniquePieceBadge locale={locale} />}
             {!!nagy.url && (
               <Image
                 src={nagy.url}
@@ -147,7 +151,14 @@ const ImageGallery = ({
                 /* A TERMEK NEVE (`kep-alt.ts`). A regi alakok: `Product image
                    ${index + 1}` (angol), majd `Termékfotó` (magyar, de
                    generikus, Balazs 2026-10-07-i dontese szerint tiltott). */
-                alt={kepAlt(altok, nagy.url, nev, kivalasztott, images.length)}
+                alt={kepAlt(
+                  altok,
+                  nagy.url,
+                  nev,
+                  kivalasztott,
+                  images.length,
+                  t,
+                )}
                 fill
                 sizes="(max-width: 576px) 100vw, (max-width: 992px) 100vw, 856px"
                 /*
@@ -200,7 +211,10 @@ const ImageGallery = ({
           a jelvény jelöl, ez pedig magyaráz.
         */}
         {uniquePiece && (
-          <UniquePiecePromise className={`mt-1 ${igeretOsztaly}`.trim()} />
+          <UniquePiecePromise
+            className={`mt-1 ${igeretOsztaly}`.trim()}
+            locale={locale}
+          />
         )}
       </div>
     </div>

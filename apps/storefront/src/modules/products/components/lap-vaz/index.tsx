@@ -1,5 +1,8 @@
 import React from "react"
 
+import { knownText } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+
 /**
  * A MUSZAKI TERMEKLAP VAZA -- A DOBOZOK A HELYUKON, TARTALOM NELKUL.
  *
@@ -564,6 +567,8 @@ type VazDobozProps = {
    * at a sajat erteket.
    */
   jelzesek?: boolean
+  /** A lap nyelve: a doboz cime es varakozo szovege angolul a `frameText` csoportbol jon (alapertek magyar). */
+  locale?: Locale
 }
 
 /**
@@ -578,7 +583,10 @@ export const VazDoboz = ({
   children,
   keretNelkul = false,
   jelzesek = true,
+  locale = DEFAULT_LOCALE,
 }: VazDobozProps) => {
+  const fordit = (szoveg: string) =>
+    knownText(locale, "frameText", szoveg) ?? szoveg
   const uresE = uresTartalom(children)
 
   /**
@@ -733,7 +741,7 @@ export const VazDoboz = ({
           className="mb-2 text-base font-semibold"
           style={{ fontFamily: "var(--terv-betu-fo-lanc)" }}
         >
-          {szakasz.cim}
+          {fordit(szakasz.cim)}
         </h2>
       )}
       {uresE ? (
@@ -742,7 +750,7 @@ export const VazDoboz = ({
           style={{ color: "var(--terv-szoveg-halvany)" }}
           data-testid="vaz-varakozo"
         >
-          {szakasz.varakozo}
+          {fordit(szakasz.varakozo)}
         </p>
       ) : (
         children
@@ -1215,6 +1223,8 @@ type LapVazProps = {
    * `test`, tehat a jelzeses ag allna, es a tagadas soha nem sulne el.
    */
   jelzesek?: boolean
+  /** A lap nyelve: a doboz cime es varakozo szovege angolul a `frameText` csoportbol jon (alapertek magyar). */
+  locale?: Locale
 }
 
 /**
@@ -1474,6 +1484,7 @@ const LapVaz = ({
   fejlecGyokerek = [],
   morzsa,
   jelzesek = process.env.NODE_ENV !== "production",
+  locale = DEFAULT_LOCALE,
 }: LapVazProps) => {
   const osszesSzakasz = szakaszokVilagra(vilag, egyediPeldany)
   const savSzakasz = osszesSzakasz.find(
@@ -1645,6 +1656,7 @@ const LapVaz = ({
                       key={szakasz.kulcs}
                       szakasz={szakasz}
                       jelzesek={false}
+                      locale={locale}
                     />
                   ))}
                 </React.Fragment>
@@ -1747,6 +1759,7 @@ const LapVaz = ({
                         Boolean(szakasz.vilagosbanKeretNelkul))
                     }
                     jelzesek={jelzesek}
+                    locale={locale}
                   >
                     {tartalom[szakasz.kulcs]}
                   </VazDoboz>
@@ -1949,6 +1962,7 @@ const LapVaz = ({
             */
             keretNelkul={Boolean(tartalom[savSzakasz.kulcs])}
             jelzesek={jelzesek}
+            locale={locale}
           >
             {tartalom[savSzakasz.kulcs]}
           </VazDoboz>

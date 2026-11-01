@@ -1,6 +1,8 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
 import { fogyasztobaratBekapcsolva } from "@lib/util/fogyasztobarat"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
@@ -162,17 +164,22 @@ export async function addToCart({
     throw new Error("Error retrieving or creating cart")
   }
 
+  // A kosar-visszajelzesek az oldal nyelven (az elso utvonal-szegmens a countryCode-ban).
+  const t = translator(localeOf(countryCode))
   let tetel: KosarbaTetel = { kind: "teljes", mennyiseg: quantity }
   if (rendelesiMaximum !== null) {
     const sorok = await retrieveCart(cart.id, "id,*items")
     const kosarban = (sorok?.items ?? [])
       .filter((sor) => sor.variant_id === variantId)
       .reduce((osszeg, sor) => osszeg + Number(sor.quantity), 0)
-    tetel = kosarbaTehetoMennyiseg({
-      kert: quantity,
-      rendelesiMaximum,
-      kosarban,
-    })
+    tetel = kosarbaTehetoMennyiseg(
+      {
+        kert: quantity,
+        rendelesiMaximum,
+        kosarban,
+      },
+      t,
+    )
     if (tetel.kind === "tele") return { ok: false, uzenet: tetel.uzenet }
   }
 
@@ -197,7 +204,7 @@ export async function addToCart({
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: kosarUzenet(allapot) }
+    return { ok: false, uzenet: kosarUzenet(allapot, t) }
   }
 
   const cartCacheTag = await getCacheTag("carts")

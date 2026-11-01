@@ -1,5 +1,7 @@
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 import Product from "../product-preview"
 import KapcsolatKartya from "./kapcsolat-kartya"
@@ -146,19 +148,21 @@ export default async function RelatedProducts({
     return null
   }
 
+  const t = translator(localeOf(countryCode))
+
   return (
     <div className="product-page-constraint">
       {fejlecNelkul ? null : (
         <div className="flex flex-col items-center text-center mb-16">
           <span className="text-base-regular text-gray-600 mb-6">
             {kapcsolat === "kiegeszito"
-              ? "Ami még kellhet hozzá"
-              : "Hasonló termékek"}
+              ? t("product.accessoriesTitle")
+              : t("product.similarTitle")}
           </span>
           <p className="text-2xl-regular text-ui-fg-base max-w-lg">
             {kapcsolat === "kiegeszito"
-              ? "Ezekkel egészítik ki."
-              : "Ezek is érdekelhetnek."}
+              ? t("product.accessoriesSub")
+              : t("product.similarSub")}
           </p>
         </div>
       )}
@@ -178,7 +182,11 @@ export default async function RelatedProducts({
         <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
           {products.map((product) => (
             <li key={product.id}>
-              <Product region={region} product={product} />
+              <Product
+                region={region}
+                product={product}
+                locale={localeOf(countryCode)}
+              />
             </li>
           ))}
         </ul>

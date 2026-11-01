@@ -69,7 +69,7 @@ describe("az egyedi darab mondata a teljes szélességű fotó alatt", () => {
       "utf-8",
     )
     expect(tartalom).toContain(
-      '<UniquePiecePromise className="mt-1 max-lg:px-4" />',
+      '<UniquePiecePromise className="mt-1 max-lg:px-4" locale={locale} />',
     )
   })
 })

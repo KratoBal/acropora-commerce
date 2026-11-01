@@ -1,3 +1,4 @@
+import { knownText } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 
 import { KEZDOLAP_SZOVEGEK, szovegek } from "./szovegek"
@@ -143,13 +144,43 @@ export const ALAP_DIAK: readonly HeroDia[] = [
   },
 ]
 
+const DIA_SZOVEGEK = [
+  "eyebrow",
+  "title",
+  "text",
+  "cta",
+  "cta2",
+  "caption",
+  "caption2",
+  "image_alt",
+] as const
+
+/**
+ * AZ ANGOL KIRAKAT A DIA SZOVEGEIT CSAK AKKOR FORDITJA, HA PONTOSAN A MAGYAR KEZDOERTEK (a `slideText` csoport): amit az OS-ben
+ * valaki irt, azt ugy mutatja, ahogy irta. A hivatkozasok, a kep cime es a `minta` jelolo valtozatlan.
+ */
+const diaFordit = (dia: HeroDia, locale: Locale): HeroDia =>
+  locale === DEFAULT_LOCALE
+    ? dia
+    : {
+        ...dia,
+        ...Object.fromEntries(
+          DIA_SZOVEGEK.map((mezo) => [
+            mezo,
+            knownText(locale, "slideText", dia[mezo]) ?? dia[mezo],
+          ]),
+        ),
+      }
+
 /** A bolt valaszabol a lapnak szolo alak: a keresok (szoveg, link, kep) es a diak. */
 export const kezdolapAdat = (
   tartalom: KezdolapTartalom | null,
   locale: Locale = DEFAULT_LOCALE,
 ) => ({
   ...szovegek(tartalom?.texts ?? null, tartalom?.tisztitott === true, locale),
-  diak: tartalom?.slides ?? [...ALAP_DIAK],
+  diak: (tartalom?.slides ?? [...ALAP_DIAK]).map((dia) =>
+    diaFordit(dia, locale),
+  ),
   tisztitott: tartalom?.tisztitott === true,
 })
 

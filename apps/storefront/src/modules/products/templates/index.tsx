@@ -12,11 +12,9 @@ import { HttpTypes } from "@medusajs/types"
 
 import {
   anyVariantPurchasable,
-  availabilityLabel,
   availabilityOf,
   inventoryKnownOf,
   keszletSor,
-  SIMILAR_ITEMS_LABEL,
   similarItemsHref,
   uniquePieceOf,
 } from "@modules/products/components/stock-state/availability"
@@ -25,6 +23,8 @@ import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
 import type { TermekTudas } from "@lib/data/product-knowledge"
 import VasarlasKeret from "./vasarlas-keret"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
@@ -61,6 +61,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     return notFound()
   }
 
+  const locale = localeOf(countryCode)
+  const t = translator(locale)
+
   /**
    * A SAV CSELEKVESE UGYANAZT AZ ALLAPOTOT KAPJA, MINT A FO OSZLOP.
    *
@@ -96,7 +99,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           color: "var(--terv-kiemel-szoveg)",
         }}
       >
-        {availabilityLabel.KAPHATO}
+        {t("cart.add")}
       </a>
     ) : ragadosSavAllapota === "ELADVA" ? (
       <a
@@ -108,7 +111,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           color: "var(--terv-szoveg)",
         }}
       >
-        {SIMILAR_ITEMS_LABEL}
+        {t("product.similarItems")}
       </a>
     ) : (
       <span
@@ -116,7 +119,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         className="flex h-[50px] items-center px-6 text-[15px] font-semibold lg:px-[26px]"
         style={{ color: "var(--terv-szoveg-halvany)" }}
       >
-        {availabilityLabel.ELFOGYOTT}
+        {t("stock.outOfStock")}
       </span>
     )
 
@@ -188,11 +191,16 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           fallback={
             <MuszakiLap
               tartalek
+              locale={locale}
               product={product}
               kategoriak={categories}
               tudas={tudas}
               morzsaResz={
-                <ProductBreadcrumb product={product} categories={categories} />
+                <ProductBreadcrumb
+                  product={product}
+                  categories={categories}
+                  locale={locale}
+                />
               }
               fotoResz={
                 galeriatAdunkAt(product, categories) ? (
@@ -215,10 +223,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           >
             <MuszakiLap
               product={product}
+              locale={locale}
               kategoriak={categories}
               tudas={tudas}
               morzsaResz={
-                <ProductBreadcrumb product={product} categories={categories} />
+                <ProductBreadcrumb
+                  product={product}
+                  categories={categories}
+                  locale={locale}
+                />
               }
               vasarlasAktiv
               hasonloResz={
@@ -331,7 +344,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               ragadosResz={
                 <>
                   <RagadosSav
-                    ar={<ProductPrice product={product} />}
+                    ar={<ProductPrice product={product} locale={locale} />}
                     cselekves={alsoCselekves("ragados-sav")}
                   />
                   {/*
@@ -363,8 +376,10 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       (`keszletSor`). A sotet lap mobil savja es zarosora a
                       P3-ig cimke nelkul marad.
                     */
-                    cimke={vilagosLap ? keszletSor(product).szoveg : undefined}
-                    ar={<ProductPrice product={product} />}
+                    cimke={
+                      vilagosLap ? keszletSor(product, t).szoveg : undefined
+                    }
+                    ar={<ProductPrice product={product} locale={locale} />}
                     cselekves={alsoCselekves("zarosor")}
                   />
                 </>
@@ -438,7 +453,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   return (
     <>
       <div className="content-container pt-6">
-        <ProductBreadcrumb product={product} categories={categories} />
+        <ProductBreadcrumb
+          product={product}
+          categories={categories}
+          locale={locale}
+        />
       </div>
       <div
         className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"

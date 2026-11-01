@@ -136,7 +136,7 @@ export const EgyediKorallokSav = ({
             </div>
             {MINTA_KULCSOK.some((k) => s.minta(k)) ? (
               <div>
-                <MintaJelzo mit="üzemi állítások és darabszám" />
+                <MintaJelzo mit="claims" />
               </div>
             ) : null}
           </div>

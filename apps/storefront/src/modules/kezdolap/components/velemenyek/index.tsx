@@ -28,7 +28,7 @@ const Velemenyek = ({ s }: { s: Szovegek }) => (
     <Konteiner>
       {MINTA_KULCSOK.some((k) => s.minta(k)) ? (
         <div className="mb-6">
-          <MintaJelzo mit="vélemények és értékelés" />
+          <MintaJelzo mit="reviews" />
         </div>
       ) : null}
       <div className="mb-14 flex flex-col gap-4 small:flex-row small:items-end small:justify-between">

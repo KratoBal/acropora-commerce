@@ -16,6 +16,22 @@ import {
   hirlevelUzenet,
 } from "@lib/util/hirlevel-feliratkozas"
 
+import {
+  ELO_ALLAT_LAP_SZAKASZAI,
+  MUSZAKI_LAP_SZAKASZAI,
+} from "@modules/products/components/lap-vaz"
+import { DOA_MONDAT } from "@modules/products/components/vasarlas/dobozok"
+import {
+  SIMILAR_ITEMS_LABEL,
+  SOLD_OUT_EXPLANATION,
+  UNIQUE_PIECE_PROMISE,
+  availabilityLabel,
+} from "@modules/products/components/stock-state/availability"
+import {
+  KOSAR_MOST_NEM_SIKERULT,
+  MENNYISEG_ELUTASITVA,
+} from "@lib/util/kosar-uzenet"
+
 import { knownText, translator, type KnownGroup } from "./index"
 import { hu } from "./hu"
 
@@ -91,9 +107,38 @@ describe("a hírlevél szövegei (newsletter)", () => {
   })
 })
 
+describe("a termékoldal váza és szövegei", () => {
+  it("a frameText pontosan a váz szakaszainak címe és várakozó szövege", () => {
+    const vaz = [...MUSZAKI_LAP_SZAKASZAI, ...ELO_ALLAT_LAP_SZAKASZAI].flatMap(
+      (szakasz) => [szakasz.cim, szakasz.varakozo].filter(Boolean),
+    )
+    expect(new Set(huErtekek("frameText"))).toEqual(new Set(vaz))
+    expect(vaz.length).toBeGreaterThan(20)
+  })
+
+  it("a még exportált magyar konstansok betűre a szótár magyar szövegei", () => {
+    expect(t("product.promise")).toBe(UNIQUE_PIECE_PROMISE)
+    expect(t("product.soldOutExplanation")).toBe(SOLD_OUT_EXPLANATION)
+    expect(t("product.similarItems")).toBe(SIMILAR_ITEMS_LABEL)
+    expect(t("product.doaSentence")).toBe(DOA_MONDAT)
+    expect(t("product.cartRejected")).toBe(MENNYISEG_ELUTASITVA)
+    expect(t("product.cartFailed")).toBe(KOSAR_MOST_NEM_SIKERULT)
+    expect(t("cart.add")).toBe(availabilityLabel.KAPHATO)
+    expect(t("stock.outOfStock")).toBe(availabilityLabel.ELFOGYOTT)
+    expect(t("product.unavailable")).toBe(availabilityLabel.ELADVA)
+  })
+})
+
 describe("az ismert szöveg keresése", () => {
   it("egy csoporton belül nincs két azonos magyar szöveg (a fordított keresés egyértelmű)", () => {
-    for (const csoport of ["headerText", "footerText", "newsletter"] as const) {
+    for (const csoport of [
+      "headerText",
+      "footerText",
+      "newsletter",
+      "homeText",
+      "slideText",
+      "frameText",
+    ] as const) {
       const ertekek = huErtekek(csoport)
       expect(new Set(ertekek).size, csoport).toBe(ertekek.length)
     }

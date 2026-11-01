@@ -117,7 +117,7 @@ const KezdoEsHalado = ({ s }: { s: Szovegek }) => {
                   {s.szoveg(`halado.${n}.szoveg`)}
                   {s.minta(`halado.${n}.szoveg`) ? (
                     <span className="ml-2 inline-block">
-                      <MintaJelzo mit="eredet" />
+                      <MintaJelzo mit="origin" />
                     </span>
                   ) : null}
                 </span>

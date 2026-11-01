@@ -57,7 +57,13 @@ export const translator = (locale: Locale): Translate => {
 }
 
 /** The groups of the dictionary that hold the Hungarian text exactly as another system (the OS) stores it, so it can be looked up by that text. */
-export type KnownGroup = "headerText" | "footerText" | "newsletter"
+export type KnownGroup =
+  | "headerText"
+  | "footerText"
+  | "newsletter"
+  | "homeText"
+  | "slideText"
+  | "frameText"
 
 /**
  * The English (or other non-default) text for a Hungarian text that a system outside the code stores and shows: the OS editor writes

@@ -2,6 +2,7 @@
 
 import { HttpTypes } from "@medusajs/types"
 
+import { useTranslate } from "@lib/i18n/use-translate"
 import { egysegarNevbol, type Egysegar } from "@lib/util/egysegar"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
@@ -42,6 +43,7 @@ export function egysegarVaz(
 }
 
 export function EgysegarSor() {
+  const t = useTranslate()
   const a = useVasarlas()
   if (!a) return null
   const egysegar = egysegarVaz(a.product, a.selectedVariant)
@@ -61,7 +63,7 @@ export function EgysegarSor() {
       data-testid="vaz-egysegar"
       data-kiszereles={egysegar.kiszereles}
     >
-      Egységár: {penz}/{egysegar.alap}
+      {t("product.unitPrice", { price: penz, unit: egysegar.alap })}
     </p>
   )
 }

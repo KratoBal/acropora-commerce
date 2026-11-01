@@ -11,6 +11,8 @@ import Markak, {
 import MitKeresel from "@modules/kezdolap/components/mit-keresel"
 import Szolgaltatasok from "@modules/kezdolap/components/szolgaltatasok"
 import Velemenyek from "@modules/kezdolap/components/velemenyek"
+import { DEFAULT_LOCALE, localeOf, type Locale } from "@lib/i18n/locale"
+
 import { megjeleno, type BlokkKulcs } from "./blokkok"
 import { kezdolapAdat, type KezdolapTartalom } from "./tartalom"
 
@@ -26,8 +28,9 @@ export function savokElemei(
   tartalom: KezdolapTartalom | null,
   egyedi: ReactNode,
   markaKinalat: readonly SavMarka[] = [],
+  locale: Locale = DEFAULT_LOCALE,
 ): ReactNode[] {
-  const adat = kezdolapAdat(tartalom)
+  const adat = kezdolapAdat(tartalom, locale)
   const { szoveg, minta, diak } = adat
   const tenyek = [1, 2, 3].map((n) => ({
     cim: szoveg(`hero.tenyek.${n}.cim`),
@@ -79,7 +82,8 @@ export async function KezdolapSavok({
   countryCode: string
   markak?: readonly SavMarka[]
 }) {
-  const adat = kezdolapAdat(tartalom)
+  const locale = localeOf(countryCode)
+  const adat = kezdolapAdat(tartalom, locale)
   return (
     <>
       {savokElemei(
@@ -90,6 +94,7 @@ export async function KezdolapSavok({
           countryCode={countryCode}
         />,
         markak,
+        locale,
       )}
     </>
   )

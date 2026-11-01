@@ -90,7 +90,7 @@ export default async function KezdolapFejlec({
               >
                 {s.szoveg("fejlec.sav.4")}
               </span>
-              {mintaSav ? <MintaJelzo mit="info-sáv" /> : null}
+              {mintaSav ? <MintaJelzo mit="infoBar" /> : null}
             </div>
           </div>
         </div>

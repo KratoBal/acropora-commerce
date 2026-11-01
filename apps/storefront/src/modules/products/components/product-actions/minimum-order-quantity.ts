@@ -1,3 +1,5 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+
 import { HttpTypes } from "@medusajs/types"
 
 /**
@@ -194,11 +196,14 @@ export function normaliseOrderQuantity(input: {
  * csúszni -- pontosan az a hiba, amit a `normaliseOrderQuantity` kiemelése
  * zárt le.
  */
-export function orderQuantityHint(input: {
-  minimum: number
-  step: number
-  orderMaximum: number | null
-}): string | null {
+export function orderQuantityHint(
+  input: {
+    minimum: number
+    step: number
+    orderMaximum: number | null
+  },
+  t: Translate = translator("hu"),
+): string | null {
   const { minimum, step, orderMaximum } = input
 
   /**
@@ -212,23 +217,23 @@ export function orderQuantityHint(input: {
    */
   const also =
     minimum > 1 && step > 1
-      ? `legalább ${minimum} darab rendelhető, és ${step} darabonként növelhető`
+      ? t("product.hintMinStep", { minimum, step })
       : minimum > 1
-        ? `legalább ${minimum} darab rendelhető`
+        ? t("product.hintMin", { minimum })
         : step > 1
-          ? `${step} darabonként rendelhető`
+          ? t("product.hintStep", { step })
           : null
 
   const felso =
     typeof orderMaximum === "number"
-      ? `legfeljebb ${orderMaximum} darab rendelhető`
+      ? t("product.hintMax", { max: orderMaximum })
       : null
 
   if (!also && !felso) return null
 
-  if (also && felso) return `Ebből a termékből ${also}, de ${felso}.`
+  if (also && felso) return t("product.hintBoth", { low: also, high: felso })
 
-  return `Ebből a termékből ${also ?? felso}.`
+  return t("product.hintOne", { part: (also ?? felso)! })
 }
 
 /**
@@ -272,25 +277,28 @@ export type KosarbaTetel =
   | { kind: "vagott"; mennyiseg: number; megjegyzes: string }
   | { kind: "tele"; uzenet: string }
 
-export function kosarbaTehetoMennyiseg(input: {
-  kert: number
-  rendelesiMaximum: number | null
-  kosarban: number
-}): KosarbaTetel {
+export function kosarbaTehetoMennyiseg(
+  input: {
+    kert: number
+    rendelesiMaximum: number | null
+    kosarban: number
+  },
+  t: Translate = translator("hu"),
+): KosarbaTetel {
   const { kert, rendelesiMaximum: maximum, kosarban } = input
   if (maximum === null) return { kind: "teljes", mennyiseg: kert }
   const maradek = maximum - kosarban
   if (maradek <= 0)
     return {
       kind: "tele",
-      uzenet: `Ebből a termékből egy rendelésbe legfeljebb ${maximum} darab tehető, és ${kosarban} darab már a kosaradban van.`,
+      uzenet: t("product.cartFull", { max: maximum, inCart: kosarban }),
     }
   if (kert <= maradek) return { kind: "teljes", mennyiseg: kert }
   return {
     kind: "vagott",
     mennyiseg: maradek,
     megjegyzes:
-      `Ebből a termékből egy rendelésbe legfeljebb ${maximum} darab tehető, ezért ${maradek} darabot tettünk a kosárba` +
-      (kosarban > 0 ? ` (${kosarban} darab már benne volt).` : "."),
+      t("product.cartClipped", { max: maximum, rest: maradek }) +
+      (kosarban > 0 ? t("product.cartClippedWas", { inCart: kosarban }) : "."),
   }
 }

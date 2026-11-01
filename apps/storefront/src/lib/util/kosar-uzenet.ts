@@ -1,3 +1,5 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+
 import { hibaAllapota } from "./kedvezmeny-uzenet"
 
 /**
@@ -44,10 +46,13 @@ export const KOSAR_MOST_NEM_SIKERULT =
   "A kosár frissítése most nem sikerült. Próbáld meg újra."
 
 /** A vevonek szant mondat, a hiba allapotkodjabol. */
-export function kosarUzenet(allapot: number | undefined): string {
+export function kosarUzenet(
+  allapot: number | undefined,
+  t: Translate = translator("hu"),
+): string {
   return allapot !== undefined && allapot >= 400 && allapot < 500
-    ? MENNYISEG_ELUTASITVA
-    : KOSAR_MOST_NEM_SIKERULT
+    ? t("product.cartRejected")
+    : t("product.cartFailed")
 }
 
 export { hibaAllapota }
