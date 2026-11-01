@@ -86,7 +86,13 @@ const Logo = ({ marka, rejtett }: { marka: SavMarka; rejtett: boolean }) => {
  * MOZGAS-CSOKKENTESNEL (`prefers-reduced-motion`) a sav ALL: nincs animacio,
  * a masodik fel eltunik, a logok tordelt sorban, kozepre igazitva allnak.
  */
-const LogoSav = ({ markak }: { markak: readonly SavMarka[] }) => {
+const LogoSav = ({
+  markak,
+  felirat,
+}: {
+  markak: readonly SavMarka[]
+  felirat: string
+}) => {
   const ismetles = Math.max(1, Math.ceil(FEL_LEGALABB / markak.length))
   const fel = Array.from({ length: ismetles }, () => markak).flat()
   const sor = [...fel, ...fel]
@@ -100,7 +106,7 @@ const LogoSav = ({ markak }: { markak: readonly SavMarka[] }) => {
       }}
     >
       <ul
-        aria-label="Márkák"
+        aria-label={felirat}
         className="flex w-max animate-marka-sav group-hover/sav:[animation-play-state:paused] group-focus-within/sav:[animation-play-state:paused] motion-reduce:w-auto motion-reduce:animate-none motion-reduce:flex-wrap motion-reduce:justify-center"
         style={{ animationDuration: `${fel.length * MP_LOGONKENT}s` }}
       >
@@ -166,7 +172,7 @@ const Markak = ({
             </span>
             {osszesLink}
           </Konteiner>
-          <LogoSav markak={markak} />
+          <LogoSav markak={markak} felirat={s.t("home.brands")} />
         </>
       ) : (
         <Konteiner className="flex flex-col gap-6 small:flex-row small:items-center small:justify-between">
@@ -174,7 +180,7 @@ const Markak = ({
             {s.szoveg("markak.felirat")}
             {MARKAK.some((n) => s.minta(`markak.${n}`)) ? (
               <span className="ml-3 inline-block">
-                <MintaJelzo mit="márkák" />
+                <MintaJelzo mit="brands" />
               </span>
             ) : null}
           </span>

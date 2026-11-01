@@ -40,7 +40,7 @@ const Boltunk = ({ s }: { s: Szovegek }) => {
             </div>
             {mintaCimAdat ? (
               <div>
-                <MintaJelzo mit="cím és nyitvatartás" />
+                <MintaJelzo mit="address" />
               </div>
             ) : null}
             <div

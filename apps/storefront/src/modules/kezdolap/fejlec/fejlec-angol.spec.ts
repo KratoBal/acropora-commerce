@@ -8,7 +8,7 @@ import { fejlecMenuPontok } from "@lib/util/fejlec-menu-pontok"
 /**
  * A FEJLEC SZOVEGEI ANGOLUL. MI PIROSIT: ha az angol fejlec info-savja, kereso-szovege, menupont-feliratai vagy kartyai magyarul
  * maradnak; ha egy KEZZEL atirt (az OS-ben mentett, a kezdoertektol elterő) szoveg is fordul; ha a magyar fejlec barmi mast ad, mint a
- * katalogus kezdoerteke; ha a kezdolap TOBBI szovege (nem fejlec) angolra valtozik (ez a PR nem forditja).
+ * katalogus kezdoerteke; ha a fejlec torzse (a kezdolap szovegei) kimarad az angolbol.
  */
 const MAGYAR_BETU = /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/
 const FEJLEC_SZOVEGEK = KEZDOLAP_SZOVEGEK.filter(
@@ -57,15 +57,6 @@ describe("a fejléc szövegei", () => {
     )
     expect(s.szoveg("fejlec.sav.2")).toBe("Ingyenes szállítás 50 000 Ft felett")
     expect(s.szoveg("fejlec.1.kategoriak")).toBe("halak,korallok")
-  })
-
-  it("a nem fejléc-szövegek angolul sem változnak (a kezdőlap törzse nem része ennek a körnek)", () => {
-    const hu = kezdolapAdat(null, "hu")
-    const en = kezdolapAdat(null, "en")
-    for (const sor of KEZDOLAP_SZOVEGEK.filter(
-      (sor) => !sor.kulcs.startsWith("fejlec.") && sor.tipus === "szoveg",
-    ))
-      expect(en.szoveg(sor.kulcs), sor.kulcs).toBe(hu.szoveg(sor.kulcs))
   })
 })
 

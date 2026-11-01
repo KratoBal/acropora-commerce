@@ -229,7 +229,7 @@ export function KezdolapMenu({ pontok }: { pontok: MenuPont[] }) {
                       {pont.kartya.felirat}
                     </LocalizedClientLink>
                   ) : null}
-                  {pont.kartya.minta ? <MintaJelzo mit="szöveg" /> : null}
+                  {pont.kartya.minta ? <MintaJelzo mit="text" /> : null}
                 </aside>
               ) : null}
             </div>

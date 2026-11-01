@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+
 import RovidSzoveg from "@modules/kezdolap/components/rovid-szoveg"
 import { rovidErtek } from "@modules/kezdolap/rovid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -56,6 +58,7 @@ const HeroCsuszka = ({
   /** A rekord a szerveren tisztitott-e: csak akkor rajzolhat a dia szovege HTML-t. */
   tisztitott?: boolean
 }) => {
+  const t = useTranslate()
   const [allas, setAllas] = useState(0)
   const [megallitva, setMegallitva] = useState(false)
   const darab = diak.length
@@ -114,7 +117,7 @@ const HeroCsuszka = ({
       id="hero-csuszka"
       tabIndex={0}
       aria-roledescription="carousel"
-      aria-label="Kiemelt ajánlatok"
+      aria-label={t("home.featured")}
       data-testid="hero-csuszka"
       data-automata={megallitva ? "all" : "lep"}
       aria-live="off"
@@ -192,7 +195,7 @@ const HeroCsuszka = ({
                 <div>{teny.szoveg}</div>
                 {teny.minta ? (
                   <div className="mt-1">
-                    <MintaJelzo mit="értékelés" />
+                    <MintaJelzo mit="rating" />
                   </div>
                 ) : null}
               </div>
@@ -226,7 +229,7 @@ const HeroCsuszka = ({
           </div>
           {dia.minta ? (
             <div className="absolute right-6 top-14 z-10 small:right-4">
-              <MintaJelzo mit="képaláírás, ár, ígéretek" />
+              <MintaJelzo mit="caption" />
             </div>
           ) : null}
           {dia.caption || dia.caption2 ? (
@@ -253,7 +256,7 @@ const HeroCsuszka = ({
           <div
             className="flex items-center gap-[6px]"
             role="tablist"
-            aria-label="Diák"
+            aria-label={t("home.slides")}
           >
             {diak.map((_, i) => (
               <button
@@ -289,7 +292,7 @@ const HeroCsuszka = ({
             <button
               type="button"
               onClick={() => lep(-1)}
-              aria-label="Előző dia"
+              aria-label={t("home.prevSlide")}
               className="flex h-[30px] w-[30px] items-center justify-center rounded-full border"
               style={{
                 borderColor: "var(--kl-keret)",
@@ -311,7 +314,7 @@ const HeroCsuszka = ({
             <button
               type="button"
               onClick={() => lep(1)}
-              aria-label="Következő dia"
+              aria-label={t("home.nextSlide")}
               className="flex h-[30px] w-[30px] items-center justify-center rounded-full"
               style={{ background: "var(--kl-navy)" }}
             >

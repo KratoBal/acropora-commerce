@@ -1,4 +1,4 @@
-import { knownText } from "@lib/i18n/dictionary"
+import { knownText, translator, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 
 import { ROVID_KULCSOK, rovidErtek, type RovidErtek } from "./rovid"
@@ -664,6 +664,18 @@ const ertek = (
 }
 
 /**
+ * AZ ANGOL KIRAKAT EGY KATALOGUS-SZOVEGE: a fejlec szovegei a `headerText`, a kezdolap tobbi szovege a `homeText` csoportbol, de
+ * csak a pontosan egyezo magyar kezdoertek (az OS szerkeszto visszamenti oket). A velemenyek, a markanevek, a cim es a nyitvatartas
+ * nincsenek a csoportban, tehat valtozatlanok maradnak.
+ */
+const forditott = (locale: Locale, kulcs: string, szoveg: string): string =>
+  knownText(
+    locale,
+    kulcs.startsWith("fejlec.") ? "headerText" : "homeText",
+    szoveg,
+  ) ?? szoveg
+
+/**
  * A szoveg-kereso egy tartalomhoz. Az OS-tol kapott `texts` elsobbseget elvez,
  * akkor is, ha ures; ami nincs benne, annak a katalogus `alap` erteke all. Egy
  * ISMERETLEN kulcs hiba (nem ures szoveg): egy elgepelt kulcs ne tunjon el
@@ -682,9 +694,7 @@ export const szovegKereso = (
       valaki atirt, azt a lap ugy mutatja, ahogy irta: az OS-nek meg nincs
       nyelvenkenti mezoje.
     */
-    return kulcs.startsWith("fejlec.")
-      ? (knownText(locale, "headerText", szoveg) ?? szoveg)
-      : szoveg
+    return forditott(locale, kulcs, szoveg)
   }
 }
 
@@ -735,11 +745,15 @@ export const maradtMinta = (texts: Record<string, string> | null): string[] => {
 export const rovidKereso = (
   texts: Record<string, string> | null,
   tisztitott: boolean,
+  locale: Locale = DEFAULT_LOCALE,
 ) => {
   return (kulcs: string): RovidErtek => {
     if (!ROVID_KULCSOK.has(kulcs))
       throw new Error(`a(z) ${kulcs} kulcs nem formazott szoveg`)
-    return rovidErtek(ertek(texts, kulcs, "szoveg"), tisztitott)
+    return rovidErtek(
+      forditott(locale, kulcs, ertek(texts, kulcs, "szoveg")),
+      tisztitott,
+    )
   }
 }
 
@@ -750,6 +764,8 @@ export type Szovegek = {
   link: ReturnType<typeof linkKereso>
   kep: ReturnType<typeof kepKereso>
   minta: ReturnType<typeof mintaKereso>
+  /** A lap nyelvén fordító: a komponensek saját (nem OS-szerkesztett) feliratai. */
+  t: Translate
 }
 
 export const szovegek = (
@@ -757,9 +773,10 @@ export const szovegek = (
   tisztitott = false,
   locale: Locale = DEFAULT_LOCALE,
 ): Szovegek => ({
-  rovid: rovidKereso(texts, tisztitott),
+  rovid: rovidKereso(texts, tisztitott, locale),
   szoveg: szovegKereso(texts, locale),
   link: linkKereso(texts),
   kep: kepKereso(texts),
   minta: mintaKereso(texts),
+  t: translator(locale),
 })
