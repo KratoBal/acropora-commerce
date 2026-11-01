@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
+import { countryOf } from "@lib/i18n/locale"
 import { statikusGyokerUt } from "@lib/util/statikus-utak"
 import { belsoUtKivulrol } from "../belso-utvonalak"
 import {
@@ -90,7 +91,8 @@ async function getCountryCode(
 ) {
   let countryCode
 
-  const urlCountryCode = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
+  // `hu` or `en-hu` (language-country): the region is the country part
+  const urlCountryCode = countryOf(request.nextUrl.pathname.split("/")[1] ?? "")
 
   // Cloudflare Workers provides country via request.cf.country
   const cloudflareCountryCode = (
@@ -188,7 +190,7 @@ async function regioKozep(request: NextRequest): Promise<NextResponse> {
   // if the country code is available, use it, otherwise use the default region
   const country = countryCode || DEFAULT_REGION
   const firstPathSegment = request.nextUrl.pathname.split("/")[1]?.toLowerCase()
-  const urlHasCountry = firstPathSegment === country.toLowerCase()
+  const urlHasCountry = countryOf(firstPathSegment ?? "") === country.toLowerCase()
 
   if (urlHasCountry) {
     // FE-7 3. resz: csak annak, akinek kosara vagy belepese van; a publikus

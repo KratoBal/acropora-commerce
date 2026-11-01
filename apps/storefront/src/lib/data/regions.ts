@@ -1,5 +1,6 @@
 "use server"
 
+import { countryOf } from "@lib/i18n/locale"
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 import { getPublicCacheOptions } from "./cookies"
@@ -34,7 +35,9 @@ export const retrieveRegion = async (id: string) => {
 
 const regionMap = new Map<string, HttpTypes.StoreRegion>()
 
-export const getRegion = async (countryCode: string) => {
+export const getRegion = async (segment: string) => {
+  // the first path segment is `hu` or `en-hu` (language and country); the REGION is the country part
+  const countryCode = countryOf(segment)
   if (regionMap.has(countryCode)) {
     return regionMap.get(countryCode)
   }

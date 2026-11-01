@@ -83,6 +83,35 @@ describe("a middleware átirányítása", () => {
   })
 
   /*
+   * AZ ANGOL NYELV AZ ELSO SZEGMENSBEN (`en-hu`, Balazs 2026-11-01): a nyelv-orszag szegmens
+   * ugyanaz az orszag, tehat NEM iranyitodik at, es a regio-terkep `hu`-t keres, nem `en-hu`-t.
+   * MI PIROSIT: az `en-hu` utat a middleware `/hu/en-hu/...`-ra iranyitja (a regio-terkep nem
+   * ismeri az `en-hu`-t); egy ismeretlen nyelv (`de-hu`) atmegy; az ismeretlen orszag angolul
+   * (`en-de`) nem az alap orszagra iranyit.
+   */
+  it("az en-hu út nyelv-ország szegmens: nincs átirányítás, a régió a hu", async () => {
+    for (const ut of ["/en-hu", "/en-hu/", "/en-hu/termek/hanna", "/EN-HU/categories/korallok"]) {
+      const { valasz } = await futtat(ut)
+      expect(valasz.headers.get("location"), ut).toBeNull()
+      expect(valasz.headers.get("x-middleware-next"), ut).toBe("1")
+    }
+  })
+
+  it("az en-<ismeretlen ország> és az ismeretlen nyelv nem szegmens: ugyanaz, mint az ismeretlen országkód", async () => {
+    for (const ut of ["/en-de/termek", "/de-hu/termek", "/hu-hu/termek"]) {
+      const { valasz } = await futtat(ut)
+      expect(valasz.status, ut).toBe(307)
+      expect(valasz.headers.get("location"), ut).toBe(`https://bolt.test/hu${ut}`)
+    }
+  })
+
+  it("több országnál az en-at is az at országa (nincs átirányítás)", async () => {
+    const { valasz } = await futtat("/en-at/termek/hanna", ["hu", "at"])
+    expect(valasz.headers.get("location")).toBeNull()
+    expect(valasz.headers.get("x-middleware-next")).toBe("1")
+  })
+
+  /*
    * A matcher ezt nem tudja kizarni (a Next minden matcher ele `_next/data`
    * elotagot tesz, es a `nextUrl.pathname`-bol levagja), tehat a middleware
    * MEGKAPJA. Itt az all, hogy nem iranyitja at, es a regiokat sem kerdezi.
