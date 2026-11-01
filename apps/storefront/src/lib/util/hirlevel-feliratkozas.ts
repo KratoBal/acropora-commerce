@@ -1,3 +1,5 @@
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 
 /**
@@ -56,8 +58,30 @@ export const HIRLEVEL_UZENET = {
   hiba: "A feliratkozás most nem sikerült. Próbáld újra később.",
 } as const
 
+/** A hibauzenetek egy nyelven; a magyar a `HIRLEVEL_UZENET` (a szotar azonos szovegu, a `dictionary.spec.ts` merni). */
+export const hirlevelUzenet = (
+  nyelv: Locale,
+): Record<keyof typeof HIRLEVEL_UZENET, string> => {
+  const t = translator(nyelv)
+  return {
+    hianyzik: t("newsletter.errorMissing"),
+    email: t("newsletter.errorEmail"),
+    hozzajarulas: t("newsletter.errorConsent"),
+    korlat: t("newsletter.errorLimit"),
+    kikapcsolva: t("newsletter.errorOff"),
+    hiba: t("newsletter.errorFailed"),
+  }
+}
+
 export async function hirlevelFeliratkozas(
-  urlap: { nev: string; email: string; hozzajarul: boolean; ip: string },
+  urlap: {
+    nev: string
+    email: string
+    hozzajarul: boolean
+    ip: string
+    /** Az urlap nyelve (rejtett mezo); hianyaban magyar. */
+    nyelv?: Locale
+  },
   fuggosegek: {
     kuld: (torzs: {
       name: string
@@ -67,6 +91,7 @@ export async function hirlevelFeliratkozas(
     korlat: SebessegKorlat
   },
 ): Promise<HirlevelAllapot> {
+  const uz = hirlevelUzenet(urlap.nyelv ?? DEFAULT_LOCALE)
   const nev = urlap.nev.trim()
   const email = urlap.email.trim()
   const hiba = (uzenet: string): HirlevelAllapot => ({
@@ -74,20 +99,20 @@ export async function hirlevelFeliratkozas(
     uzenet,
     ertekek: { nev, email },
   })
-  if (!nev || !email) return hiba(HIRLEVEL_UZENET.hianyzik)
+  if (!nev || !email) return hiba(uz.hianyzik)
   if (nev.length > 100 || email.length > 254 || !EMAIL.test(email))
-    return hiba(HIRLEVEL_UZENET.email)
-  if (!urlap.hozzajarul) return hiba(HIRLEVEL_UZENET.hozzajarulas)
-  if (!fuggosegek.korlat.allow(urlap.ip)) return hiba(HIRLEVEL_UZENET.korlat)
+    return hiba(uz.email)
+  if (!urlap.hozzajarul) return hiba(uz.hozzajarulas)
+  if (!fuggosegek.korlat.allow(urlap.ip)) return hiba(uz.korlat)
   try {
     await fuggosegek.kuld({ name: nev, email, consent: true })
     return { allapot: "kesz" }
   } catch (e) {
     const kod = hibaAllapota(e)
-    if (kod === 429) return hiba(HIRLEVEL_UZENET.korlat)
-    if (kod === 403) return hiba(HIRLEVEL_UZENET.kikapcsolva)
-    if (kod === 400) return hiba(HIRLEVEL_UZENET.email)
+    if (kod === 429) return hiba(uz.korlat)
+    if (kod === 403) return hiba(uz.kikapcsolva)
+    if (kod === 400) return hiba(uz.email)
     console.warn("[hirlevel] a feliratkozas nem ment at:", kod ?? e)
-    return hiba(HIRLEVEL_UZENET.hiba)
+    return hiba(uz.hiba)
   }
 }

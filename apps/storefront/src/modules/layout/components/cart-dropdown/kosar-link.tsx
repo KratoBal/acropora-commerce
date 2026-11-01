@@ -1,3 +1,5 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import type { Locale } from "@lib/i18n/locale"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
@@ -30,10 +32,20 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * mobilon csak a szamot latja. Enelkul a mobil alak egy magaban allo szam
  * lenne, aminek semmi nem mondja meg a jelenteset.
  */
-export const kosarFelirat = (darab: number) => `Kosár · ${darab}`
+export const kosarFelirat = (darab: number, t: Translate = translator("hu")) =>
+  t("header.cart.aria", { count: darab })
 
-export const KosarLink = ({ darab }: { darab: number }) => (
-  /*
+export const KosarLink = ({
+  darab,
+  locale = "hu",
+}: {
+  darab: number
+  /** A lap nyelve (az elso utvonal-szegmensbol); alapertek magyar. */
+  locale?: Locale
+}) => {
+  const t = translator(locale)
+  return (
+    /*
     P1b (2026-09-29): A FIGMA FEJLEC-FRAME-JEI SZERINT egy felirat, nem doboz:
     "Kosár 0", 13 pixel, 600-as suly, a mod cimszineben (234:38, 201:7). Mobilon
     csak a darabszam all (196:10, 226:129). A felolvaso tovabbra is a teljes
@@ -43,20 +55,21 @@ export const KosarLink = ({ darab }: { darab: number }) => (
     a "0" a mod szovegszineben all (220:10), mig a 226:129 "1"-e a cimszinben.
     Asztalon a "Kosár 0" is cimszinu (217:61), tehat a kulonbseg csak mobilon el.
   */
-  <LocalizedClientLink
-    className={
-      "flex items-center text-[13px] font-medium leading-[17px] small:font-semibold " +
-      (darab === 0
-        ? "text-acr-mode-text small:text-acr-mode-heading"
-        : "text-acr-mode-heading")
-    }
-    href="/cart"
-    aria-label={kosarFelirat(darab)}
-    data-testid="nav-cart-link"
-  >
-    <span aria-hidden="true" className="hidden small:inline">
-      Kosár&nbsp;
-    </span>
-    <span aria-hidden="true">{darab}</span>
-  </LocalizedClientLink>
-)
+    <LocalizedClientLink
+      className={
+        "flex items-center text-[13px] font-medium leading-[17px] small:font-semibold " +
+        (darab === 0
+          ? "text-acr-mode-text small:text-acr-mode-heading"
+          : "text-acr-mode-heading")
+      }
+      href="/cart"
+      aria-label={kosarFelirat(darab, t)}
+      data-testid="nav-cart-link"
+    >
+      <span aria-hidden="true" className="hidden small:inline">
+        {t("header.cart.label")}&nbsp;
+      </span>
+      <span aria-hidden="true">{darab}</span>
+    </LocalizedClientLink>
+  )
+}

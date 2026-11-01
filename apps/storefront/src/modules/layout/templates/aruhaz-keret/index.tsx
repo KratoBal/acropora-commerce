@@ -1,4 +1,5 @@
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
+import { localeOf } from "@lib/i18n/locale"
 import KezdolapFejlec from "@modules/kezdolap/fejlec"
 import { KL_TOKENEK } from "@modules/kezdolap/kl-tokenek"
 import { kezdolapAdat } from "@modules/kezdolap/tartalom"
@@ -24,7 +25,10 @@ export default async function AruhazKeret(props: {
   children: React.ReactNode
   countryCode: string
 }) {
-  const adat = kezdolapAdat(await kezdolapTartalom())
+  const adat = kezdolapAdat(
+    await kezdolapTartalom(),
+    localeOf(props.countryCode),
+  )
 
   return (
     <KosarAllapotProvider>
@@ -33,7 +37,7 @@ export default async function AruhazKeret(props: {
         <KosarSziget />
         {props.children}
       </div>
-      <Footer />
+      <Footer countryCode={props.countryCode} />
     </KosarAllapotProvider>
   )
 }

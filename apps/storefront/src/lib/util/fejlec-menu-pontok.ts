@@ -1,3 +1,5 @@
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+
 /**
  * A FEJLEC MENUPONTJAI A FIGMA KERETBOL (2026-09-29).
  *
@@ -20,6 +22,12 @@
  */
 export type FejlecMenuTerv = {
   felirat: string
+  /**
+   * A felirat szotar-kulcsa, ha a pont NEM kategoria-nev (Tudastar, Szolgaltatasok,
+   * Akvariumaim): azt az angol kirakat fordítja. A kategoria-nevek (Korallok,
+   * Halak, ...) a bolt adatai, azokat nem fordítjuk.
+   */
+  kulcs?: Key
   /** A Hamarosan lap cime is ez: `/hamarosan/<tema>`. */
   tema: string
   /** A katalogus-gyoker handle-je, ekezet es kis-nagybetu nelkul. */
@@ -39,9 +47,13 @@ export const FEJLEC_MENU_TERV: readonly FejlecMenuTerv[] = [
     gyoker: "vizkezeles",
     alkategoria: "vizkezeles---termekek",
   },
-  { felirat: "Tudástár", tema: "tudastar" },
-  { felirat: "Szolgáltatások", tema: "szolgaltatasok" },
-  { felirat: "Akváriumaim", tema: "akvariumaim" },
+  { felirat: "Tudástár", tema: "tudastar", kulcs: "nav.knowledge" },
+  {
+    felirat: "Szolgáltatások",
+    tema: "szolgaltatasok",
+    kulcs: "nav.services",
+  },
+  { felirat: "Akváriumaim", tema: "akvariumaim", kulcs: "nav.myAquariums" },
 ]
 
 /**
@@ -72,16 +84,18 @@ export const kulcs = (handle: string | null | undefined) =>
 
 export function fejlecMenuPontok<T extends Kategoria>(
   gyokerek: readonly T[],
+  t: Translate = translator("hu"),
 ): FejlecMenuPont<T>[] {
   const alkategoriak = gyokerek.flatMap((gyoker) => [
     ...(gyoker.category_children ?? []),
   ])
   return FEJLEC_MENU_TERV.map((terv): FejlecMenuPont<T> => {
+    const felirat = terv.kulcs ? t(terv.kulcs) : terv.felirat
     const gyoker = terv.gyoker
       ? gyokerek.find((g) => kulcs(g.handle) === terv.gyoker)
       : undefined
     if (gyoker) {
-      return { tipus: "gyoker", felirat: terv.felirat, kategoria: gyoker }
+      return { tipus: "gyoker", felirat, kategoria: gyoker }
     }
     const alkategoria = terv.alkategoria
       ? alkategoriak.find((k) => kulcs(k.handle) === terv.alkategoria)
@@ -89,10 +103,10 @@ export function fejlecMenuPontok<T extends Kategoria>(
     if (alkategoria?.handle) {
       return {
         tipus: "oldal",
-        felirat: terv.felirat,
+        felirat,
         handle: alkategoria.handle,
       }
     }
-    return { tipus: "hamarosan", felirat: terv.felirat, tema: terv.tema }
+    return { tipus: "hamarosan", felirat, tema: terv.tema }
   })
 }

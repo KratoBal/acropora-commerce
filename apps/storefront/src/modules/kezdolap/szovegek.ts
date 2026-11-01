@@ -1,3 +1,6 @@
+import { knownText } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+
 import { ROVID_KULCSOK, rovidErtek, type RovidErtek } from "./rovid"
 /**
  * A KEZDOLAP SZERKESZTHETO SZOVEGEI: A KATALOGUS.
@@ -666,8 +669,23 @@ const ertek = (
  * ISMERETLEN kulcs hiba (nem ures szoveg): egy elgepelt kulcs ne tunjon el
  * csendben a lapon. Egy kulcsot csak a SAJAT tipusaval lehet olvasni.
  */
-export const szovegKereso = (texts: Record<string, string> | null) => {
-  return (kulcs: string): string => ertek(texts, kulcs, "szoveg")
+export const szovegKereso = (
+  texts: Record<string, string> | null,
+  locale: Locale = DEFAULT_LOCALE,
+) => {
+  return (kulcs: string): string => {
+    const szoveg = ertek(texts, kulcs, "szoveg")
+    /*
+      AZ ANGOL KIRAKAT A FEJLEC SZOVEGEIT CSAK AKKOR FORDITJA, HA AZ OS MEG A
+      MAGYAR KEZDOERTEKET TARTJA (az OS szerkesztoje a kezdoerteket vissza is
+      menti, ezert nem a "nem kuldott" jel dont, hanem a pontos egyezes). Amit
+      valaki atirt, azt a lap ugy mutatja, ahogy irta: az OS-nek meg nincs
+      nyelvenkenti mezoje.
+    */
+    return kulcs.startsWith("fejlec.")
+      ? (knownText(locale, "headerText", szoveg) ?? szoveg)
+      : szoveg
+  }
 }
 
 export const linkKereso = (texts: Record<string, string> | null) => {
@@ -737,9 +755,10 @@ export type Szovegek = {
 export const szovegek = (
   texts: Record<string, string> | null,
   tisztitott = false,
+  locale: Locale = DEFAULT_LOCALE,
 ): Szovegek => ({
   rovid: rovidKereso(texts, tisztitott),
-  szoveg: szovegKereso(texts),
+  szoveg: szovegKereso(texts, locale),
   link: linkKereso(texts),
   kep: kepKereso(texts),
   minta: mintaKereso(texts),

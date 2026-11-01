@@ -1,6 +1,7 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
+import { useTranslate } from "@lib/i18n/use-translate"
 import { FejlecMenuPont } from "@lib/util/fejlec-menu-pontok"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useEffect, useId, useState } from "react"
@@ -29,6 +30,7 @@ export const MobilMenu = ({
   pontok: FejlecMenuPont<Category>[]
   keresoCel: string
 }) => {
+  const t = useTranslate()
   const [nyitva, setNyitva] = useState(false)
   const panelId = useId()
   const cel = (pont: FejlecMenuPont<Category>) =>
@@ -54,7 +56,9 @@ export const MobilMenu = ({
         className="flex h-[32px] w-[20px] flex-col items-start justify-center gap-[4px]"
         aria-expanded={nyitva}
         aria-controls={panelId}
-        aria-label={nyitva ? "Menü bezárása" : "Menü megnyitása"}
+        aria-label={
+          nyitva ? t("header.mobile.closeMenu") : t("header.mobile.openMenu")
+        }
         onClick={() => setNyitva((most) => !most)}
         data-testid="mobil-menu-gomb"
       >
@@ -73,13 +77,13 @@ export const MobilMenu = ({
           className="mb-4 border-b border-acr-mode-border"
         >
           <label className="sr-only" htmlFor="mobil-kereso-mezo">
-            Keresés
+            {t("header.mobile.search")}
           </label>
           <input
             id="mobil-kereso-mezo"
             type="search"
             name="q"
-            placeholder="Keresés"
+            placeholder={t("header.mobile.search")}
             className="h-[40px] w-full bg-transparent text-[15px] text-acr-mode-heading outline-none placeholder:text-acr-mode-text"
           />
         </form>
@@ -102,7 +106,7 @@ export const MobilMenu = ({
               className="block py-[10px] text-[15px] text-acr-mode-text"
               onClick={() => setNyitva(false)}
             >
-              Fiók
+              {t("header.mobile.account")}
             </LocalizedClientLink>
           </li>
         </ul>
