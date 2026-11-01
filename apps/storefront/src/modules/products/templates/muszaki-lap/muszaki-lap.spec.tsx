@@ -451,7 +451,7 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
    */
   it("nincs feltétel nélküli kosár-felirat a sablonban", () => {
     expect(forras).not.toContain(">Kosárba<")
-    expect(forras).toContain("availabilityLabel.KAPHATO")
+    expect(forras).toContain('t("cart.add")')
   })
 
   /**
@@ -513,8 +513,9 @@ describe("a ragadós sáv cselekvése követi-e az állapotot", () => {
     const elem = forras.slice(kezdet, veg)
     expect(elem).toContain("nev={zarosorNeve(product)}")
     expect(elem).not.toContain("availabilityLabel")
-    expect(elem).toContain(
-      "cimke={vilagosLap ? keszletSor(product).szoveg : undefined}",
+    // a formazo tobb sorba tori a kifejezest: a szoveg-egyezes a szokozoktol fuggetlen
+    expect(elem.replace(/\s+/g, " ")).toContain(
+      "cimke={ vilagosLap ? keszletSor(product, t).szoveg : undefined }",
     )
   })
 })

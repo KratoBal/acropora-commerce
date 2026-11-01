@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { Text } from "@modules/common/components/ui"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
@@ -12,12 +13,15 @@ export default async function ProductPreview({
   isFeatured,
   region: _region,
   elso = false,
+  locale = DEFAULT_LOCALE,
 }: {
   product: HttpTypes.StoreProduct
   isFeatured?: boolean
   /** A lista elso kartyaja: a kepe nem lusta (FE-3). */
   elso?: boolean
   region: HttpTypes.StoreRegion
+  /** A lap nyelve (a jelvenyhez); alapertek magyar. */
+  locale?: Locale
 }) {
   // const pricedProduct = await listProducts({
   //   regionId: region.id,
@@ -77,7 +81,7 @@ export default async function ProductPreview({
             isFeatured={isFeatured}
             prioritas={elso}
           />
-          {egyediPeldany && <UniquePieceBadge />}
+          {egyediPeldany && <UniquePieceBadge locale={locale} />}
         </div>
         {/*
           A CIM ES AZ AR EGYMAS ALATT ALL, NEM EGY SORBAN.
