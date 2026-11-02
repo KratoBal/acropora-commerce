@@ -13,10 +13,12 @@ import {
   glsSzallitasiAdat,
   type GlsPontMod,
 } from "@lib/util/csomagpont"
-import { GLS_LOGO, SZALLITASI_SOR } from "@lib/util/gls"
+import type { Locale } from "@lib/i18n/locale"
+import { useLocale, useTranslate } from "@lib/i18n/use-translate"
+import { GLS_LOGO, szallitasiSor } from "@lib/util/gls"
 import { megjegyzesekKosarbol, megjegyzesValtozas } from "@lib/util/megjegyzes"
 import { convertToLocale } from "@lib/util/money"
-import { SZALLITAS_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
+import { orszagNev, varosSor } from "@lib/util/penztar-cim"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import CsomagpontValaszto from "@modules/checkout/components/csomagpont-valaszto"
@@ -29,14 +31,23 @@ import GlsValaszto, {
   type GlsKivalasztott,
 } from "@modules/checkout/components/gls-valaszto"
 import RendelesMegjegyzes from "@modules/checkout/components/rendeles-megjegyzes"
-import Divider from "@modules/common/components/divider"
-import MedusaRadio from "@modules/common/components/radio"
-import { Button, clx, Heading, Text } from "@modules/common/components/ui"
+import {
+  PenztarGomb,
+  PenztarRadioJelolo,
+} from "@modules/checkout/components/penztar-mezo"
+import { clx } from "@modules/common/components/ui"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
 const PICKUP_OPTION_ON = "__PICKUP_ON"
 const PICKUP_OPTION_OFF = "__PICKUP_OFF"
+
+/** A választó kártyák: közös alak, kijelöléskor a narancs keret. */
+const MOD_KARTYA =
+  "mb-2 flex cursor-pointer items-center justify-between gap-3 border px-4 py-4 small:px-6"
+const KARTYA_KERET = "border-acr-line hover:border-acr-ink"
+const KIJELOLT_KARTYA =
+  "border-acr-heritage shadow-[inset_0_0_0_1px_var(--acr-color-heritage)]"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -66,30 +77,21 @@ type PontMod = {
   adatKulcs: "foxpost_pickup_point" | "gls_pickup_point"
 }
 
-function formatAddress(address: HttpTypes.StoreCartAddress) {
+function formatAddress(
+  address: HttpTypes.StoreCartAddress | undefined,
+  locale: Locale,
+) {
   if (!address) {
     return ""
   }
 
-  let ret = ""
-
-  if (address.address_1) {
-    ret += ` ${address.address_1}`
-  }
-
-  if (address.address_2) {
-    ret += `, ${address.address_2}`
-  }
-
-  if (address.postal_code) {
-    ret += `, ${address.postal_code} ${address.city}`
-  }
-
-  if (address.country_code) {
-    ret += `, ${address.country_code.toUpperCase()}`
-  }
-
-  return ret
+  return [
+    [address.address_1, address.address_2].filter(Boolean).join(", "),
+    varosSor(address.postal_code, address.city),
+    orszagNev(address.country_code, locale),
+  ]
+    .filter(Boolean)
+    .join(", ")
 }
 
 const Shipping: React.FC<ShippingProps> = ({
@@ -100,6 +102,8 @@ const Shipping: React.FC<ShippingProps> = ({
   glsHomeOptions = [],
   foxpostTiltottTetel = null,
 }) => {
+  const t = useTranslate()
+  const locale = useLocale()
   // CSOMAGPONTOS MODOK, EGY HELYEN: a Foxpost es a GLS ugyanigy viselkedik
   // (Balazs, 2026-09-29: a ket valaszto amennyire lehet, egyforma legyen).
   const pontModok = new Map<string, PontMod>()
@@ -114,7 +118,7 @@ const Shipping: React.FC<ShippingProps> = ({
   for (const gls of glsOptions) {
     pontModok.set(gls.option_id, {
       szolgaltato: "GLS",
-      kereso: (q) => searchGlsPickupPoints(q, gls.option_id),
+      kereso: (q) => searchGlsPickupPoints(q, gls.option_id, 20, locale),
       adat: glsSzallitasiAdat,
       adatKulcs: "gls_pickup_point",
     })
@@ -170,6 +174,11 @@ const Shipping: React.FC<ShippingProps> = ({
   )
 
   const hasPickupOptions = !!_pickupMethods?.length
+  // az üzleti átvétel sora a legolcsóbb üzlet árát mutatja (ha egyiknek sincs ára, semmit)
+  const raktarArak = (_pickupMethods ?? [])
+    .map((m) => m.amount)
+    .filter((a): a is number => typeof a === "number")
+  const raktarAr = raktarArak.length ? Math.min(...raktarArak) : null
 
   useEffect(() => {
     setIsLoadingPrices(true)
@@ -222,7 +231,7 @@ const Shipping: React.FC<ShippingProps> = ({
       const eredmeny = await mentsMegjegyzeseket(cart.id, valtozas)
       setIsLoading(false)
       if (!eredmeny.ok) {
-        setError(eredmeny.uzenet)
+        setError(eredmeny.kod ? t(eredmeny.kod) : eredmeny.uzenet)
         return
       }
     }
@@ -276,11 +285,11 @@ const Shipping: React.FC<ShippingProps> = ({
 
       if (!eredmeny.ok) {
         setShippingMethodId(currentId)
-        setError(eredmeny.uzenet)
+        setError(eredmeny.kod ? t(eredmeny.kod) : eredmeny.uzenet)
       }
     } catch {
       setShippingMethodId(currentId)
-      setError(SZALLITAS_MOST_NEM_SIKERULT)
+      setError(t("checkoutShipping.errorFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -306,9 +315,10 @@ const Shipping: React.FC<ShippingProps> = ({
             ? glsSzallitasiAdat(pont.id, forras ?? "fallback")
             : foxpostSzallitasiAdat(pont.id, forras ?? "fallback"),
       })
-      if (!eredmeny.ok) setError(eredmeny.uzenet)
+      if (!eredmeny.ok)
+        setError(eredmeny.kod ? t(eredmeny.kod) : eredmeny.uzenet)
     } catch {
-      setError(SZALLITAS_MOST_NEM_SIKERULT)
+      setError(t("checkoutShipping.errorFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -332,17 +342,17 @@ const Shipping: React.FC<ShippingProps> = ({
    */
   const sorOf = (optionId: string) => {
     if (optionId === foxpostOptionId)
-      return { ...SZALLITASI_SOR.foxpost, logo: "foxpost" as const }
+      return { ...szallitasiSor("foxpost", t), logo: "foxpost" as const }
     const pont = glsOptions.find((o) => o.option_id === optionId)
     if (pont)
       return {
-        ...(pont.heavy ? SZALLITASI_SOR.glsPontNehez : SZALLITASI_SOR.glsPont),
+        ...szallitasiSor(pont.heavy ? "glsPontNehez" : "glsPont", t),
         logo: GLS_LOGO.csomagpont,
       }
     const haz = glsHomeOptions.find((o) => o.option_id === optionId)
     if (haz)
       return {
-        ...(haz.heavy ? SZALLITASI_SOR.glsHazNehez : SZALLITASI_SOR.glsHaz),
+        ...szallitasiSor(haz.heavy ? "glsHazNehez" : "glsHaz", t),
         logo: GLS_LOGO.altalanos,
       }
     return null
@@ -352,52 +362,54 @@ const Shipping: React.FC<ShippingProps> = ({
     setError(null)
   }, [isOpen])
 
+  const lezart = !isOpen && (cart.shipping_methods?.length ?? 0) === 0
+  /** A 0 összeg nem "0 Ft", hanem "Ingyenes": a vevő nem olvas ki árat egy nullából. */
+  const arSzoveg = (amount: number) =>
+    amount === 0
+      ? t("checkoutShipping.free")
+      : convertToLocale({ amount, currency_code: cart?.currency_code })
+  const tiltott = !!foxpostTiltottTetel
+
   return (
-    <div className="bg-white">
-      <div className="flex flex-row items-center justify-between mb-6">
-        <Heading
-          level="h2"
+    <section className="border border-acr-line bg-acr-white px-4 py-5 small:px-6 small:py-6">
+      <div className="mb-4 flex flex-row items-center justify-between">
+        <h2
           className={clx(
-            "flex flex-row text-3xl-regular gap-x-2 items-baseline",
-            {
-              "opacity-50 pointer-events-none select-none":
-                !isOpen && cart.shipping_methods?.length === 0,
-            },
+            "flex flex-row items-center gap-x-2 text-[22px] font-normal leading-[28px] text-acr-ink small:text-[26px] small:leading-[32px]",
+            { "pointer-events-none select-none opacity-50": lezart },
           )}
         >
-          Szállítás
+          {t("checkoutShipping.heading")}
           {!isOpen && (cart.shipping_methods?.length ?? 0) > 0 && (
             <CheckCircleSolid />
           )}
-        </Heading>
+        </h2>
         {!isOpen &&
           cart?.shipping_address &&
           cart?.billing_address &&
           cart?.email && (
-            <Text>
-              <button
-                onClick={handleEdit}
-                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
-                data-testid="edit-delivery-button"
-              >
-                Szerkesztés
-              </button>
-            </Text>
+            <button
+              onClick={handleEdit}
+              className="text-[14px] font-medium leading-[22px] text-acr-ocean underline"
+              data-testid="edit-delivery-button"
+            >
+              {t("checkoutPage.edit")}
+            </button>
           )}
       </div>
       {isOpen ? (
         <>
           <div className="grid">
             <div className="flex flex-col">
-              <span className="font-medium txt-medium text-ui-fg-base">
-                Szállítási mód
+              <span className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                {t("checkoutShipping.modeHeading")}
               </span>
-              <span className="mb-4 text-ui-fg-muted txt-medium">
-                Hogyan szeretnéd átvenni a rendelésedet?
+              <span className="mb-4 text-[14px] leading-[22px] text-acr-slate">
+                {t("checkoutShipping.modeLead")}
               </span>
             </div>
             <div data-testid="delivery-options-container">
-              <div className="pb-8 md:pt-0 pt-2">
+              <div className="pb-8 pt-2 small:pt-0">
                 {hasPickupOptions && (
                   <RadioGroup
                     value={showPickupOptions}
@@ -415,23 +427,22 @@ const Shipping: React.FC<ShippingProps> = ({
                       value={PICKUP_OPTION_ON}
                       data-testid="delivery-option-radio"
                       className={clx(
-                        "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
-                        {
-                          "border-ui-border-interactive":
-                            showPickupOptions === PICKUP_OPTION_ON,
-                        },
+                        MOD_KARTYA,
+                        showPickupOptions === PICKUP_OPTION_ON
+                          ? KIJELOLT_KARTYA
+                          : KARTYA_KERET,
                       )}
                     >
                       <div className="flex items-center gap-x-4">
-                        <MedusaRadio
-                          checked={showPickupOptions === PICKUP_OPTION_ON}
+                        <PenztarRadioJelolo
+                          kijelolt={showPickupOptions === PICKUP_OPTION_ON}
                         />
-                        <span className="text-base-regular">
-                          Átvétel üzletben
+                        <span className="text-[14px] leading-[22px] text-acr-ink">
+                          {t("checkoutShipping.storePickup")}
                         </span>
                       </div>
-                      <span className="justify-self-end text-ui-fg-base">
-                        -
+                      <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
+                        {raktarAr === null ? "" : arSzoveg(raktarAr)}
                       </span>
                     </Radio>
                   </RadioGroup>
@@ -444,111 +455,123 @@ const Shipping: React.FC<ShippingProps> = ({
                     }
                   }}
                 >
-                  {_shippingMethods?.map((option) => {
-                    const isDisabled =
-                      option.price_type === "calculated" &&
-                      !isLoadingPrices &&
-                      typeof calculatedPricesMap[option.id] !== "number"
-
-                    return (
-                      <Radio
-                        key={option.id}
-                        value={option.id}
-                        data-testid="delivery-option-radio"
-                        disabled={isDisabled}
-                        className={clx(
-                          "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
-                          {
-                            // az Acropora narancs kijeloles (a GLS-prompt 8. pontja)
-                            "border-acr-heritage shadow-[inset_0_0_0_1px_var(--acr-color-heritage)]":
-                              option.id === shippingMethodId,
-                            "hover:shadow-brders-none cursor-not-allowed":
-                              isDisabled,
-                          },
-                        )}
-                      >
-                        <div className="flex min-w-0 items-center gap-x-4">
-                          <MedusaRadio
-                            checked={option.id === shippingMethodId}
-                          />
-                          {sorOf(option.id) ? (
-                            // A szolgaltato sajat megnevezese es logoja (a
-                            // GLS-prompt 2. pontja); a mod neve az
-                            // adatbazisban marad, ahogy van.
-                            <span className="flex min-w-0 flex-col">
-                              <span
-                                className="text-base-regular"
-                                data-testid={
-                                  option.id === foxpostOptionId
-                                    ? "foxpost-mod-nev"
-                                    : "szallitasi-sor-nev"
-                                }
-                              >
-                                {sorOf(option.id)!.nev}
-                              </span>
-                              <span
-                                className="text-[12px] text-ui-fg-subtle"
-                                data-testid="szallitasi-sor-leiras"
-                              >
-                                {sorOf(option.id)!.leiras}
-                              </span>
-                            </span>
-                          ) : (
-                            <span className="text-base-regular">
-                              {option.name}
-                            </span>
-                          )}
-                        </div>
-                        {sorOf(option.id)?.logo === "foxpost" ? (
-                          <FoxpostLogo className="ml-auto mr-6 hidden h-[30px] w-auto shrink-0 small:block" />
-                        ) : sorOf(option.id)?.logo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={sorOf(option.id)!.logo}
-                            alt=""
-                            className={clx(
-                              "ml-auto mr-4 w-auto shrink-0",
-                              sorOf(option.id)!.logo === GLS_LOGO.altalanos
-                                ? "h-[22px]"
-                                : "h-[28px]",
-                            )}
-                            data-testid="szallitasi-sor-logo"
-                          />
-                        ) : null}
-                        <span className="justify-self-end text-ui-fg-base">
-                          {option.price_type === "flat" ? (
-                            convertToLocale({
-                              amount: option.amount!,
-                              currency_code: cart?.currency_code,
-                            })
-                          ) : calculatedPricesMap[option.id] ? (
-                            convertToLocale({
-                              amount: calculatedPricesMap[option.id],
-                              currency_code: cart?.currency_code,
-                            })
-                          ) : isLoadingPrices ? (
-                            <Loader />
-                          ) : (
-                            "-"
-                          )}
-                        </span>
-                      </Radio>
+                  {_shippingMethods
+                    ?.filter(
+                      (option) => !(tiltott && option.id === foxpostOptionId),
                     )
-                  })}
+                    .map((option) => {
+                      const isDisabled =
+                        option.price_type === "calculated" &&
+                        !isLoadingPrices &&
+                        typeof calculatedPricesMap[option.id] !== "number"
+                      const sor = sorOf(option.id)
+
+                      return (
+                        <Radio
+                          key={option.id}
+                          value={option.id}
+                          data-testid="delivery-option-radio"
+                          disabled={isDisabled}
+                          className={clx(
+                            MOD_KARTYA,
+                            // az Acropora narancs kijeloles (a GLS-prompt 8. pontja)
+                            option.id === shippingMethodId
+                              ? KIJELOLT_KARTYA
+                              : KARTYA_KERET,
+                            { "cursor-not-allowed opacity-60": isDisabled },
+                          )}
+                        >
+                          <div className="flex min-w-0 items-center gap-x-4">
+                            <PenztarRadioJelolo
+                              kijelolt={option.id === shippingMethodId}
+                            />
+                            {sor ? (
+                              // A szolgaltato sajat megnevezese es logoja (a
+                              // GLS-prompt 2. pontja); a mod neve az
+                              // adatbazisban marad, ahogy van.
+                              <span className="flex min-w-0 flex-col">
+                                <span
+                                  className="text-[14px] leading-[22px] text-acr-ink"
+                                  data-testid={
+                                    option.id === foxpostOptionId
+                                      ? "foxpost-mod-nev"
+                                      : "szallitasi-sor-nev"
+                                  }
+                                >
+                                  {sor.nev}
+                                </span>
+                                <span
+                                  className="text-[12px] leading-[18px] text-acr-slate"
+                                  data-testid="szallitasi-sor-leiras"
+                                >
+                                  {sor.leiras}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-[14px] leading-[22px] text-acr-ink">
+                                {option.name}
+                              </span>
+                            )}
+                          </div>
+                          {sor?.logo === "foxpost" ? (
+                            <FoxpostLogo className="ml-auto mr-6 hidden h-[30px] w-auto shrink-0 small:block" />
+                          ) : sor?.logo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={sor.logo}
+                              alt=""
+                              className={clx(
+                                "ml-auto mr-4 hidden w-auto shrink-0 small:block",
+                                sor.logo === GLS_LOGO.altalanos
+                                  ? "h-[22px]"
+                                  : "h-[28px]",
+                              )}
+                              data-testid="szallitasi-sor-logo"
+                            />
+                          ) : null}
+                          <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
+                            {option.price_type === "flat" ? (
+                              arSzoveg(option.amount!)
+                            ) : calculatedPricesMap[option.id] ? (
+                              arSzoveg(calculatedPricesMap[option.id])
+                            ) : isLoadingPrices ? (
+                              <Loader />
+                            ) : (
+                              "-"
+                            )}
+                          </span>
+                        </Radio>
+                      )
+                    })}
                 </RadioGroup>
                 {foxpostTiltottTetel ? (
-                  // a FOXPOST nem csak eltunik: a vevo latja, melyik tetel miatt (Figma 486:346)
-                  <p
-                    className="mt-3 border px-4 py-3 text-[13px]"
-                    style={{
-                      borderColor: "var(--terv-keret-meleg)",
-                      background: "var(--terv-hatter-lap)",
-                      color: "var(--terv-kiemel-tinta)",
-                    }}
-                    data-testid="foxpost-tiltva"
+                  // a FOXPOST nem csak eltunik: a kartyaja ott all halvanyan, nem
+                  // valaszthatoan, es az ok a SAJAT kartyajaban olvashato (Figma
+                  // 486:346; acrobot, 2026-11-02)
+                  <div
+                    aria-disabled="true"
+                    className="mb-2 flex cursor-not-allowed items-start justify-between gap-3 border border-acr-line px-4 py-4 opacity-60 small:px-6"
+                    data-testid="foxpost-kartya-tiltva"
                   >
-                    {foxpostTiltvaSzoveg(foxpostTiltottTetel)}
-                  </p>
+                    <div className="flex min-w-0 items-start gap-x-4">
+                      <PenztarRadioJelolo kijelolt={false} />
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-[14px] leading-[22px] text-acr-ink">
+                          {szallitasiSor("foxpost", t).nev}
+                        </span>
+                        <span className="text-[12px] leading-[18px] text-acr-slate">
+                          {szallitasiSor("foxpost", t).leiras}
+                        </span>
+                        <span
+                          className="mt-1 text-[13px] leading-[18px] text-acr-ink"
+                          data-testid="foxpost-tiltva"
+                        >
+                          {foxpostTiltvaSzoveg(foxpostTiltottTetel, t)}
+                        </span>
+                      </span>
+                    </div>
+                    <FoxpostLogo className="ml-auto hidden h-[30px] w-auto shrink-0 small:block" />
+                  </div>
                 ) : null}
                 {foxpostAktiv ? (
                   <FoxpostValaszto
@@ -580,15 +603,15 @@ const Shipping: React.FC<ShippingProps> = ({
           {showPickupOptions === PICKUP_OPTION_ON && (
             <div className="grid">
               <div className="flex flex-col">
-                <span className="font-medium txt-medium text-ui-fg-base">
-                  Üzlet
+                <span className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                  {t("checkoutShipping.storeHeading")}
                 </span>
-                <span className="mb-4 text-ui-fg-muted txt-medium">
-                  Válassz egy közeli üzletet
+                <span className="mb-4 text-[14px] leading-[22px] text-acr-slate">
+                  {t("checkoutShipping.storeLead")}
                 </span>
               </div>
               <div data-testid="delivery-options-container">
-                <div className="pb-8 md:pt-0 pt-2">
+                <div className="pb-8 pt-2 small:pt-0">
                   <RadioGroup
                     value={shippingMethodId}
                     onChange={(v) => {
@@ -605,24 +628,25 @@ const Shipping: React.FC<ShippingProps> = ({
                           disabled={option.insufficient_inventory}
                           data-testid="delivery-option-radio"
                           className={clx(
-                            "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
+                            MOD_KARTYA,
+                            option.id === shippingMethodId
+                              ? KIJELOLT_KARTYA
+                              : KARTYA_KERET,
                             {
-                              "border-ui-border-interactive":
-                                option.id === shippingMethodId,
-                              "hover:shadow-brders-none cursor-not-allowed":
+                              "cursor-not-allowed opacity-60":
                                 option.insufficient_inventory,
                             },
                           )}
                         >
                           <div className="flex items-start gap-x-4">
-                            <MedusaRadio
-                              checked={option.id === shippingMethodId}
+                            <PenztarRadioJelolo
+                              kijelolt={option.id === shippingMethodId}
                             />
                             <div className="flex flex-col">
-                              <span className="text-base-regular">
+                              <span className="text-[14px] leading-[22px] text-acr-ink">
                                 {option.name}
                               </span>
-                              <span className="text-base-regular text-ui-fg-muted">
+                              <span className="text-[12px] leading-[18px] text-acr-slate">
                                 {formatAddress(
                                   (
                                     option as unknown as {
@@ -635,16 +659,14 @@ const Shipping: React.FC<ShippingProps> = ({
                                       }
                                     }
                                   ).service_zone?.fulfillment_set?.location
-                                    ?.address as HttpTypes.StoreCartAddress,
+                                    ?.address,
+                                  locale,
                                 )}
                               </span>
                             </div>
                           </div>
-                          <span className="justify-self-end text-ui-fg-base">
-                            {convertToLocale({
-                              amount: option.amount!,
-                              currency_code: cart?.currency_code,
-                            })}
+                          <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
+                            {arSzoveg(option.amount!)}
                           </span>
                         </Radio>
                       )
@@ -666,52 +688,46 @@ const Shipping: React.FC<ShippingProps> = ({
               error={error}
               data-testid="delivery-option-error-message"
             />
-            <Button
-              size="large"
-              className="mt"
+            <PenztarGomb
+              type="button"
+              className="mt-2"
               onClick={handleSubmit}
-              isLoading={isLoading}
+              loading={isLoading}
               disabled={
                 !cart.shipping_methods?.[0] ||
                 kosarMod?.shipping_option_id !== shippingMethodId
               }
               data-testid="submit-delivery-option-button"
             >
-              Tovább a fizetéshez
-            </Button>
+              {t("checkoutShipping.toPayment")}
+            </PenztarGomb>
           </div>
         </>
       ) : (
         <div>
-          <div className="text-small-regular">
-            {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
-              <div className="flex flex-col w-1/3">
-                <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Mód
-                </Text>
-                <Text className="txt-medium text-ui-fg-subtle">
-                  {cart.shipping_methods!.at(-1)!.name}{" "}
-                  {convertToLocale({
-                    amount: cart.shipping_methods!.at(-1)!.amount!,
-                    currency_code: cart?.currency_code,
-                  })}
-                </Text>
-                {kosarPont?.name ? (
-                  // a valasztott pont a lezart lepesben is latszik (Foxpost-prompt 4. pont)
-                  <Text
-                    className="txt-medium text-ui-fg-subtle break-words"
-                    data-testid="delivery-summary-point"
-                  >
-                    {kosarPont.name}
-                  </Text>
-                ) : null}
-              </div>
-            )}
-          </div>
+          {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
+            <div className="flex flex-col">
+              <p className="mb-1 text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate">
+                {t("checkoutShipping.summaryMode")}
+              </p>
+              <p className="text-[14px] leading-[22px] text-acr-ink">
+                {cart.shipping_methods!.at(-1)!.name}{" "}
+                {arSzoveg(cart.shipping_methods!.at(-1)!.amount!)}
+              </p>
+              {kosarPont?.name ? (
+                // a valasztott pont a lezart lepesben is latszik (Foxpost-prompt 4. pont)
+                <p
+                  className="break-words text-[14px] leading-[22px] text-acr-ink"
+                  data-testid="delivery-summary-point"
+                >
+                  {kosarPont.name}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
       )}
-      <Divider className="mt-8" />
-    </div>
+    </section>
   )
 }
 

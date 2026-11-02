@@ -1,3 +1,5 @@
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+
 /**
  * A GLS A PENZTARBAN: tiszta szabalyok (Balazs GLS-promptja, 2-9. pont; Figma
  * 508:3, 508:231, 508:426). A kepernyon csak a bekotes marad.
@@ -37,7 +39,17 @@ export function glsTipusLogo(tipus: string | null | undefined): string {
   return tipus === "parcel-locker" ? GLS_LOGO.automata : GLS_LOGO.csomagpont
 }
 
-const NAPOK = ["", "H", "K", "Sze", "Cs", "P", "Szo", "V"]
+/** A hét napjai a GLS számozása szerint (1 = hétfő); a rövidítés a nyelvé. */
+const NAP_KULCS: readonly (Key | "")[] = [
+  "",
+  "checkoutShipping.dayMon",
+  "checkoutShipping.dayTue",
+  "checkoutShipping.dayWed",
+  "checkoutShipping.dayThu",
+  "checkoutShipping.dayFri",
+  "checkoutShipping.daySat",
+  "checkoutShipping.daySun",
+]
 
 /** "08:00" -> "8", "17:30" -> "17:30": a Figma rovid alakja ("H–P 7–20"). */
 const ora = (ido: string) => {
@@ -52,6 +64,7 @@ const ora = (ido: string) => {
  */
 export function glsNyitvatartas(
   hours: GlsPont["hours"] | undefined,
+  t: Translate = translator("hu"),
 ): string | null {
   const sorok = [...(hours ?? [])]
     .filter((sor) => sor.day >= 1 && sor.day <= 7)
@@ -61,6 +74,7 @@ export function glsNyitvatartas(
     sor.from === "00:00" && sor.to === "24:00"
   if (sorok.length === 7 && sorok.every(egeszNap)) return "0–24"
 
+  const nap = (szam: number) => t(NAP_KULCS[szam] as Key)
   const csoportok: { elso: number; utolso: number; ido: string }[] = []
   for (const sor of sorok) {
     const ido = egeszNap(sor) ? "0–24" : `${ora(sor.from)}–${ora(sor.to)}`
@@ -74,39 +88,43 @@ export function glsNyitvatartas(
   return csoportok
     .map(({ elso, utolso, ido }) =>
       elso === utolso
-        ? `${NAPOK[elso]} ${ido}`
-        : `${NAPOK[elso]}–${NAPOK[utolso]} ${ido}`,
+        ? `${nap(elso)} ${ido}`
+        : `${nap(elso)}–${nap(utolso)} ${ido}`,
     )
     .join(", ")
 }
 
 /** A pont jellemzoi a vevo szavaival; csak az, amit a GLS adat allit. */
-export function glsJellemzok(pont: {
-  features?: string[]
-  has_wheelchair_access?: boolean
-}): string[] {
+export function glsJellemzok(
+  pont: {
+    features?: string[]
+    has_wheelchair_access?: boolean
+  },
+  t: Translate = translator("hu"),
+): string[] {
   const f = pont.features ?? []
   return [
-    ...(f.includes("acceptsCard") ? ["bankkártya"] : []),
-    ...(f.includes("acceptsCash") ? ["készpénz"] : []),
-    ...(pont.has_wheelchair_access ? ["akadálymentes"] : []),
+    ...(f.includes("acceptsCard") ? [t("checkoutShipping.featureCard")] : []),
+    ...(f.includes("acceptsCash") ? [t("checkoutShipping.featureCash")] : []),
+    ...(pont.has_wheelchair_access
+      ? [t("checkoutShipping.featureAccessible")]
+      : []),
   ]
 }
 
 /** "GLS Automata · 0–24 · bankkártya · akadálymentes" (Figma 508:114). */
-export function glsInfoSor(pont: Partial<GlsPont>): string {
+export function glsInfoSor(
+  pont: Partial<GlsPont>,
+  t: Translate = translator("hu"),
+): string {
   return [
     glsTipusFelirat(pont.type),
-    glsNyitvatartas(pont.hours),
-    ...glsJellemzok(pont),
+    glsNyitvatartas(pont.hours, t),
+    ...glsJellemzok(pont, t),
   ]
     .filter(Boolean)
     .join(" · ")
 }
-
-export const GLS_NEM_VALASZTHATO = "Jelenleg nem választható."
-export const GLS_MAGAS_TELITETTSEG =
-  "Magas kihasználtság: a kézbesítés hosszabb lehet."
 
 /**
  * A TELITETTSEG (a prompt 6. pontja): `outOfOrder` nem valaszthato, a
@@ -115,11 +133,18 @@ export const GLS_MAGAS_TELITETTSEG =
  */
 export function glsTelitettsegAllapot(
   telitettseg: GlsTelitettseg | null | undefined,
+  t: Translate = translator("hu"),
 ): { valaszthato: boolean; figyelmeztetes: string | null } {
   if (telitettseg === "outOfOrder")
-    return { valaszthato: false, figyelmeztetes: GLS_NEM_VALASZTHATO }
+    return {
+      valaszthato: false,
+      figyelmeztetes: t("checkoutShipping.glsNotSelectable"),
+    }
   if (telitettseg === "highVolume")
-    return { valaszthato: true, figyelmeztetes: GLS_MAGAS_TELITETTSEG }
+    return {
+      valaszthato: true,
+      figyelmeztetes: t("checkoutShipping.glsHighLoad"),
+    }
   return { valaszthato: true, figyelmeztetes: null }
 }
 
@@ -134,27 +159,40 @@ export function glsPontWidgetbol(detail: unknown): { id: string } | null {
   return typeof id === "string" && id.trim() ? { id: id.trim() } : null
 }
 
-/** A szallitasi sorok szovegei (a prompt 2. pontja, szo szerint). */
-export const SZALLITASI_SOR = {
-  foxpost: {
-    nev: "FOXPOST",
-    leiras: "FOXPOST automata vagy átvételi pont · 1–2 munkanap",
-  },
+/** A szállítási sor fajtái; a szöveg a szótárból jön, a FOXPOST név márkanév. */
+export type SzallitasiSorFajta =
+  "foxpost" | "glsPont" | "glsPontNehez" | "glsHaz" | "glsHazNehez"
+
+const SZALLITASI_SOR_KULCS: Record<
+  Exclude<SzallitasiSorFajta, "foxpost">,
+  { nev: Key; leiras: Key }
+> = {
   glsPont: {
-    nev: "GLS csomagpont",
-    leiras: "GLS ParcelShop vagy automata · 1–2 munkanap",
+    nev: "checkoutShipping.modeGlsPoint",
+    leiras: "checkoutShipping.modeGlsPointText",
   },
   // a nehezaru csak ParcelShopba mehet (a hatter szabalya)
   glsPontNehez: {
-    nev: "GLS nehézáru csomagpont",
-    leiras: "GLS ParcelShop · 1–2 munkanap",
+    nev: "checkoutShipping.modeGlsPointHeavy",
+    leiras: "checkoutShipping.modeGlsPointHeavyText",
   },
   glsHaz: {
-    nev: "GLS házhozszállítás",
-    leiras: "Kézbesítés a megadott címre · 1–2 munkanap",
+    nev: "checkoutShipping.modeGlsHome",
+    leiras: "checkoutShipping.modeGlsHomeText",
   },
   glsHazNehez: {
-    nev: "GLS nehézáru házhozszállítás",
-    leiras: "Kézbesítés a megadott címre · 1–2 munkanap",
+    nev: "checkoutShipping.modeGlsHomeHeavy",
+    leiras: "checkoutShipping.modeGlsHomeHeavyText",
   },
-} as const
+}
+
+/** A szallitasi sorok szovegei (a prompt 2. pontja) a lap nyelvén. */
+export function szallitasiSor(
+  fajta: SzallitasiSorFajta,
+  t: Translate = translator("hu"),
+): { nev: string; leiras: string } {
+  if (fajta === "foxpost")
+    return { nev: "FOXPOST", leiras: t("checkoutShipping.modeFoxpostText") }
+  const kulcs = SZALLITASI_SOR_KULCS[fajta]
+  return { nev: t(kulcs.nev), leiras: t(kulcs.leiras) }
+}

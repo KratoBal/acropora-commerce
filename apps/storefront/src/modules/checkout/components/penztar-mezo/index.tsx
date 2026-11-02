@@ -118,22 +118,36 @@ export function PenztarOrszag({
   )
 }
 
-/** A pénztár lépésének tovább-gombja: a beküldés alatt `disabled`, mint a közös gomb. */
+/**
+ * A pénztár lépésének tovább-gombja: a beküldés alatt `disabled`, mint a közös
+ * gomb. Űrlapon kívül (`type="button"`) a hívó adja a `loading` és a `disabled`
+ * állapotot, és az `onClick`-et.
+ */
 export function PenztarGomb({
   children,
   className,
+  type = "submit",
+  onClick,
+  loading = false,
+  disabled = false,
   "data-testid": testId,
 }: {
   children: React.ReactNode
   className?: string
+  type?: "submit" | "button"
+  onClick?: () => void
+  loading?: boolean
+  disabled?: boolean
   "data-testid"?: string
 }) {
   const { pending } = useFormStatus()
+  const foglalt = pending || loading
   return (
     <button
-      type="submit"
-      disabled={pending}
-      aria-busy={pending}
+      type={type}
+      onClick={onClick}
+      disabled={foglalt || disabled}
+      aria-busy={foglalt}
       className={clx(
         "flex h-12 items-center justify-center bg-acr-navy px-8 text-[14px] font-medium text-acr-white disabled:opacity-60",
         className,
@@ -142,5 +156,21 @@ export function PenztarGomb({
     >
       {children}
     </button>
+  )
+}
+
+/** A választó kártyák jelölője (rádió): kitöltött kör a kijelölt soron. */
+export function PenztarRadioJelolo({ kijelolt }: { kijelolt: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={clx(
+        "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+        kijelolt ? "border-acr-navy" : "border-acr-slate",
+      )}
+      data-checked={kijelolt}
+    >
+      {kijelolt && <span className="h-2 w-2 rounded-full bg-acr-navy" />}
+    </span>
   )
 }

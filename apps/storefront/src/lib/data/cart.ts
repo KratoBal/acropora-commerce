@@ -1,7 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { translator } from "@lib/i18n/dictionary"
+import { translator, type Key } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
@@ -14,9 +14,11 @@ import {
   ASZF_ROGZITES_HIBA,
   fizetesHibaUzenet,
   MEGJEGYZES_MENTES_HIBA,
+  MEGJEGYZES_MENTES_HIBA_KOD,
   rendelesHibaUzenet,
   rendelesUzenet,
   szallitasUzenet,
+  szallitasUzenetKod,
 } from "@lib/util/penztar-uzenet"
 import { aszfElfogadasTorzs } from "@lib/util/aszf"
 import { HttpTypes } from "@medusajs/types"
@@ -322,7 +324,15 @@ export async function deleteLineItem(lineId: string) {
  * valtozatlanul atmegy rajta. A reszletes indoklas a `penztar-uzenet.ts`
  * fejlecben all.
  */
-export type PenztarEredmeny = { ok: true } | { ok: false; uzenet: string }
+export type PenztarEredmeny =
+  | { ok: true }
+  | {
+      ok: false
+      /** a magyar mondat (a naplónak és a régi hívóknak) */
+      uzenet: string
+      /** a mondat szótár-kulcsa: a böngésző ezt írja ki a lap nyelvén, ha van */
+      kod?: Key
+    }
 
 export async function setShippingMethod({
   cartId,
@@ -357,7 +367,11 @@ export async function setShippingMethod({
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: szallitasUzenet(allapot) }
+    return {
+      ok: false,
+      uzenet: szallitasUzenet(allapot),
+      kod: szallitasUzenetKod(allapot),
+    }
   }
 
   const cartCacheTag = await getCacheTag("carts")
@@ -693,7 +707,11 @@ export async function mentsMegjegyzeseket(
     revalidateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
-    return { ok: false, uzenet: MEGJEGYZES_MENTES_HIBA }
+    return {
+      ok: false,
+      uzenet: MEGJEGYZES_MENTES_HIBA,
+      kod: MEGJEGYZES_MENTES_HIBA_KOD,
+    }
   }
 }
 

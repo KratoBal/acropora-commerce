@@ -3,7 +3,13 @@ import { resolve } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { hu } from "@lib/i18n/dictionary/hu"
+import { translator } from "@lib/i18n/dictionary"
 import {
+  MEGJEGYZES_MENTES_HIBA,
+  MEGJEGYZES_MENTES_HIBA_KOD,
+  SZALLITAS_KULCSOK,
+  szallitasUzenetKod,
   FIZETES_ELUTASITVA,
   FIZETES_MOST_NEM_SIKERULT,
   RENDELES_ELUTASITVA,
@@ -195,5 +201,27 @@ describe("a jogi kapu mondata", () => {
     expect(hatter).toContain(
       `LEGAL_NOT_READY_CODE = "${JOGI_DOKUMENTUM_HIANY_KOD}"`,
     )
+  })
+})
+
+/**
+ * A SZÁLLÍTÁS HIBAMONDATAI KÉT HELYEN ÁLLNAK: a konstansban (a szerver-művelet
+ * naplójának és a régi hívóknak) és a szótárban (a böngésző ezt írja ki). A
+ * kettő nem csúszhat el: a magyar szótár betű szerint a konstans.
+ */
+describe("a szállítási hiba szótár-kulcsa", () => {
+  it("a magyar szótár betű szerint a konstans mondata", () => {
+    const hu_ = translator("hu")
+    for (const [kulcs, mondat] of SZALLITAS_KULCSOK) {
+      expect(hu_(kulcs), kulcs).toBe(mondat)
+    }
+    expect(hu_(MEGJEGYZES_MENTES_HIBA_KOD)).toBe(MEGJEGYZES_MENTES_HIBA)
+    expect(hu.checkoutShipping.errorRejected).toBe(SZALLITAS_ELUTASITVA)
+  })
+
+  it("a vágás a mondatéval egyezik: 4xx az elutasítás, minden más a most-nem-sikerült", () => {
+    expect(szallitasUzenetKod(422)).toBe("checkoutShipping.errorRejected")
+    expect(szallitasUzenetKod(500)).toBe("checkoutShipping.errorFailed")
+    expect(szallitasUzenetKod(undefined)).toBe("checkoutShipping.errorFailed")
   })
 })

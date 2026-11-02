@@ -2,6 +2,9 @@
 
 import { useState } from "react"
 
+import type { Translate } from "@lib/i18n/dictionary"
+import { useTranslate } from "@lib/i18n/use-translate"
+
 import { searchFoxpostPickupPoints } from "@lib/data/csomagpont"
 import {
   type CsomagpontKereses,
@@ -10,6 +13,13 @@ import {
   foxpostPontTipus,
 } from "@lib/util/csomagpont"
 import { Button } from "@modules/common/components/ui"
+
+/** A tartalék lista állapot-szövegei (kezdő segítség, nincs találat, betöltési hiba), a lap nyelvén. */
+export const listaSzovegek = (t: Translate, szolgaltato: string) => ({
+  ures: t("checkoutShipping.listEmpty"),
+  nincs: t("checkoutShipping.listNone"),
+  hiba: t("checkoutShipping.listFailed", { provider: szolgaltato }),
+})
 
 /**
  * A FOXPOST-CSOMAGPONT VALASZTO (P4, a mai penztar-lepesben, atrajzolas nelkul).
@@ -25,7 +35,7 @@ export default function CsomagpontValaszto({
   szolgaltato = "Foxpost",
   kereso = (kereses: string) => searchFoxpostPickupPoints(kereses),
   szovegek,
-  keresoCimke = "Irányítószám vagy város",
+  keresoCimke,
 }: {
   /**
    * Sajat allapot-szovegek (a FOXPOST tartalek listaja, Figma 486:346): a
@@ -43,6 +53,7 @@ export default function CsomagpontValaszto({
   kivalasztott?: { name?: string; address?: string } | null
   onValaszt: (pont: FoxpostCsomagpont) => void | Promise<void>
 }) {
+  const t = useTranslate()
   const [kereses, setKereses] = useState("")
   const [eredmeny, setEredmeny] = useState<CsomagpontKereses | null>(null)
   const [betolt, setBetolt] = useState(false)
@@ -65,18 +76,18 @@ export default function CsomagpontValaszto({
           className="txt-medium text-ui-fg-base"
           data-testid="csomagpont-kivalasztott"
         >
-          Kiválasztott csomagpont: {kivalasztott.name}
+          {t("checkoutShipping.pickedPoint", { name: kivalasztott.name })}
           {kivalasztott.address ? `, ${kivalasztott.address}` : ""}
         </p>
       ) : (
         <p className="txt-medium text-ui-fg-muted">
           {szovegek?.ures ??
-            `Válaszd ki, melyik ${szolgaltato} csomagpontba kéred a csomagot.`}
+            t("checkoutShipping.chooseHint", { provider: szolgaltato })}
         </p>
       )}
       <form onSubmit={keres} className="flex gap-2" role="search">
         <label className="flex flex-1 flex-col gap-1 txt-small text-ui-fg-subtle">
-          {keresoCimke}
+          {keresoCimke ?? t("checkoutShipping.searchLabel")}
           <input
             name="csomagpont_kereses"
             value={kereses}
@@ -92,7 +103,7 @@ export default function CsomagpontValaszto({
           isLoading={betolt}
           data-testid="csomagpont-kereses-gomb"
         >
-          Keresés
+          {t("checkoutShipping.search")}
         </Button>
       </form>
       {eredmeny && !eredmeny.elerheto ? (
@@ -101,7 +112,7 @@ export default function CsomagpontValaszto({
           data-testid="csomagpont-nem-elerheto"
         >
           {szovegek?.hiba ??
-            `A ${szolgaltato} csomagpontjai most nem érhetők el. Válassz másik szállítási módot.`}
+            t("checkoutShipping.unavailable", { provider: szolgaltato })}
           {szovegek ? (
             <button
               type="button"
@@ -109,7 +120,7 @@ export default function CsomagpontValaszto({
               className="ml-2 text-acr-heritage underline underline-offset-2"
               data-testid="csomagpont-ujra"
             >
-              Újra
+              {t("checkoutShipping.retry")}
             </button>
           ) : null}
         </p>
@@ -119,7 +130,7 @@ export default function CsomagpontValaszto({
           className="txt-medium text-ui-fg-base"
           data-testid="csomagpont-nincs"
         >
-          {szovegek?.nincs ?? "Nincs találat erre a keresésre."}
+          {szovegek?.nincs ?? t("checkoutShipping.noResult")}
         </p>
       ) : null}
       {eredmeny?.elerheto && eredmeny.pontok.length > 0 ? (
@@ -170,7 +181,7 @@ export default function CsomagpontValaszto({
                         data-testid="csomagpont-tipus"
                       >
                         {szolgaltato === "FOXPOST"
-                          ? foxpostPontTipus(pont.variant)
+                          ? foxpostPontTipus(pont.variant, t)
                           : pont.variant}
                       </span>
                     ) : null}
@@ -180,12 +191,12 @@ export default function CsomagpontValaszto({
                     <span className="block txt-small text-ui-fg-subtle">
                       {pont.address}
                     </span>
-                    {(pont.reszletek ?? foxpostPontReszletek(pont)) ? (
+                    {(pont.reszletek ?? foxpostPontReszletek(pont, t)) ? (
                       <span
                         className="block txt-small text-ui-fg-subtle"
                         data-testid="csomagpont-reszletek"
                       >
-                        {pont.reszletek ?? foxpostPontReszletek(pont)}
+                        {pont.reszletek ?? foxpostPontReszletek(pont, t)}
                       </span>
                     ) : null}
                     {pont.figyelmeztetes ? (
@@ -205,7 +216,9 @@ export default function CsomagpontValaszto({
               </button>
               {pont.findme ? (
                 <details className="px-4 pb-2 txt-small text-ui-fg-subtle">
-                  <summary className="cursor-pointer">Hol találom?</summary>
+                  <summary className="cursor-pointer">
+                    {t("checkoutShipping.whereToFind")}
+                  </summary>
                   <p
                     className="whitespace-pre-line"
                     data-testid="csomagpont-findme"
@@ -220,8 +233,10 @@ export default function CsomagpontValaszto({
       ) : null}
       {eredmeny?.elerheto && eredmeny.talalat > eredmeny.pontok.length ? (
         <p className="txt-small text-ui-fg-muted" data-testid="csomagpont-tobb">
-          {eredmeny.talalat} találatból az első {eredmeny.pontok.length}{" "}
-          látszik; pontosíts a keresésen.
+          {t("checkoutShipping.moreResults", {
+            count: eredmeny.talalat,
+            shown: eredmeny.pontok.length,
+          })}
         </p>
       ) : null}
     </div>
