@@ -174,7 +174,9 @@ export function teljesites(
     A SZÁLLÍTÁSI DÍJ AZ ÖSSZES MÓD ÖSSZEGE, nem az utolsó módé: a rendelés
     végösszege az összes szállítási módot tartalmazza, és ha mellé kerül egy 0
     Ft-os mód, az utolsó alapján „Ingyenes” látszott 13 500 Ft végösszeg mellett
-    (Balázs 390-es előnézeti képe, acrobot 40313). Egy módnál változatlan.
+    (murena saját előnézete, fixtúra: elonezet/visszaigazolo-2026-11-02, acrobot
+    40313/40515; a két módú eset valódi rendelésen nem mért, elméleti).
+    Egy módnál változatlan.
   */
   const dij = (rendeles.shipping_methods ?? []).reduce(
     (osszeg, m) => osszeg + Number(m.total ?? m.amount ?? 0),

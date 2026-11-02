@@ -243,8 +243,8 @@ describe("a visszaigazoló oldal szövegei nyelvenként", () => {
 })
 
 /**
- * A SZÁLLÍTÁSI DÍJ AZ ÖSSZES SZÁLLÍTÁSI MÓDBÓL (Balázs 390-es előnézeti képe
- * alapján, acrobot 40313/40461). MI PIROSÍT: ha egy rendelésnél, ahol a GLS
+ * A SZÁLLÍTÁSI DÍJ AZ ÖSSZES SZÁLLÍTÁSI MÓDBÓL (murena saját előnézete,
+ * fixtúra, acrobot 40313/40515; a két módú eset valódi rendelésen nem mért). MI PIROSÍT: ha egy rendelésnél, ahol a GLS
  * 4 500 Ft-os módja mellett van egy 0 Ft-os is, a lap „Ingyenes”-t (0) mutatna,
  * miközben a végösszeg a 4 500-at tartalmazza; ha az összeg több módnál nem az
  * összes mód összege; ha az egy módú rendelés díja változna.
