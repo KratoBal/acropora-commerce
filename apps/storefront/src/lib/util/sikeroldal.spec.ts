@@ -241,3 +241,136 @@ describe("a visszaigazoló oldal szövegei nyelvenként", () => {
     expect(lap.teljesitesek[0].cimke).toBe("1. Order to be delivered")
   })
 })
+
+/**
+ * A SZÁLLÍTÁSI DÍJ AZ ÖSSZES SZÁLLÍTÁSI MÓDBÓL (murena saját előnézete,
+ * fixtúra, acrobot 40313/40515; a két módú eset valódi rendelésen nem mért). MI PIROSÍT: ha egy rendelésnél, ahol a GLS
+ * 4 500 Ft-os módja mellett van egy 0 Ft-os is, a lap „Ingyenes”-t (0) mutatna,
+ * miközben a végösszeg a 4 500-at tartalmazza; ha az összeg több módnál nem az
+ * összes mód összege; ha az egy módú rendelés díja változna.
+ */
+describe("a szállítási díj az összes szállítási módból áll", () => {
+  const rendeles = (modok: { name: string; total: number }[]) => ({
+    id: "order_90",
+    display_id: 90,
+    email: "vevo@example.test",
+    total: 13500,
+    items: [{ id: "i1", product_title: "Aqua Medic Reef Salt", quantity: 2 }],
+    shipping_address: {
+      postal_code: "1111",
+      city: "Budapest",
+      address_1: "Minta utca 12.",
+    },
+    shipping_methods: modok,
+    payment_collections: [{ payments: [{ provider_id: "pp_stripe_stripe" }] }],
+  })
+
+  it("GLS 4 500 Ft és egy 0 Ft-os mód: a díj 4 500, nem a 0 Ft-os utolsó mód", () => {
+    const lap = sikeroldal(
+      rendeles([
+        { name: "GLS házhozszállítás", total: 4500 },
+        { name: "Kezelés", total: 0 },
+      ]),
+      null,
+      false,
+    )
+    expect(lap.teljesitesek[0]!.szallitasiDij).toBe(4500)
+  })
+
+  it("a mód összege a `total`, ennek hiányában az `amount`; több mód összege összeadódik", () => {
+    const lap = sikeroldal(
+      {
+        ...rendeles([]),
+        shipping_methods: [
+          { name: "GLS házhozszállítás", amount: 3000 },
+          { name: "Felár", total: 1500 },
+        ],
+      },
+      null,
+      false,
+    )
+    expect(lap.teljesitesek[0]!.szallitasiDij).toBe(4500)
+  })
+
+  it("egy módnál a díj változatlan, szállítási mód nélkül 0", () => {
+    expect(
+      sikeroldal(
+        rendeles([{ name: "GLS házhozszállítás", total: 3500 }]),
+        null,
+        false,
+      ).teljesitesek[0]!.szallitasiDij,
+    ).toBe(3500)
+    expect(
+      sikeroldal(rendeles([]), null, false).teljesitesek[0]!.szallitasiDij,
+    ).toBe(0)
+  })
+})
+
+describe("a szállítás típusa és helye a díjat hordozó módból jön", () => {
+  const rendeles = (modok: object[]) => ({
+    id: "order_91",
+    display_id: 91,
+    email: "vevo@example.test",
+    total: 5650,
+    items: [{ id: "i1", product_title: "Aqua Medic Reef Salt", quantity: 1 }],
+    shipping_address: {
+      postal_code: "1111",
+      city: "Budapest",
+      address_1: "Minta utca 12.",
+    },
+    shipping_methods: modok,
+    payment_collections: [{ payments: [{ provider_id: "pp_stripe_stripe" }] }],
+  })
+
+  it("GLS házhozszállítás 4 500 Ft és egy mögé került 0 Ft-os mód: GLS marad a típus", () => {
+    const t = sikeroldal(
+      rendeles([
+        { name: "GLS házhozszállítás", total: 4500 },
+        { name: "Másik mód", total: 0 },
+      ]),
+      null,
+      false,
+    ).teljesitesek[0]!
+    expect(t.szallito).toBe("gls")
+    expect(t.hely).toBe("GLS házhozszállítás")
+    expect(t.szallitasiDij).toBe(4500)
+  })
+
+  it("a 0 Ft-os, korábban választott Foxpost-pont nem írja felül a fizetős GLS módot", () => {
+    const t = sikeroldal(
+      rendeles([
+        {
+          name: "Foxpost csomagautomata",
+          total: 0,
+          data: {
+            foxpost_pickup_point: { name: "Régi automata", variant: "apm" },
+          },
+        },
+        { name: "GLS házhozszállítás", total: 4500 },
+      ]),
+      null,
+      false,
+    ).teljesitesek[0]!
+    expect(t.szallito).toBe("gls")
+    expect(t.hely).toBe("GLS házhozszállítás")
+  })
+
+  it("a díjas pontos mód mellett a mögé kerülő 0 Ft-os mód nem viszi el a pontot", () => {
+    const t = sikeroldal(
+      rendeles([
+        {
+          name: "Foxpost csomagautomata",
+          total: 1150,
+          data: {
+            foxpost_pickup_point: { name: "Minta automata", variant: "apm" },
+          },
+        },
+        { name: "Másik mód", total: 0 },
+      ]),
+      null,
+      false,
+    ).teljesitesek[0]!
+    expect(t.szallito).toBe("foxpost")
+    expect(t.hely).toBe("Minta automata")
+  })
+})

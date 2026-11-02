@@ -119,13 +119,35 @@ export function fizetesCimke(
   return t("orderConfirmed.payAtStore")
 }
 
+/**
+ * MELYIK MÓD ADJA A SZÁLLÍTÁS TÍPUSÁT ÉS HELYÉT: az, amelyik a díjat hordozza,
+ * és ha több ilyen van, amelyik átvételi pontot is hordoz. Az utolsó mód csak
+ * döntetlennél számít (barracuda, commerce #630 review): egy mögé kerülő 0 Ft-os
+ * mód neve nem lehet a szállítás helye a díj mellett.
+ */
+function szallitasiMod<
+  M extends { total?: number | null; amount?: number | null; data?: unknown },
+>(modok: readonly M[]): M | undefined {
+  const dijas = (m: M) => Number(m.total ?? m.amount ?? 0) > 0
+  const pontos = (m: M) => {
+    const adat = (m.data ?? {}) as Record<string, unknown>
+    return Boolean(adat.foxpost_pickup_point || adat.gls_pickup_point)
+  }
+  const rang = (m: M) =>
+    dijas(m) && pontos(m) ? 3 : dijas(m) ? 2 : pontos(m) ? 1 : 0
+  return modok.reduce<M | undefined>(
+    (legjobb, m) => (!legjobb || rang(m) >= rang(legjobb) ? m : legjobb),
+    undefined,
+  )
+}
+
 export function teljesites(
   rendeles: Rendeles,
   bolti: boolean,
   sorszam: number,
   t: Translate = translator("hu"),
 ): Teljesites {
-  const mod = rendeles.shipping_methods?.at(-1)
+  const mod = szallitasiMod(rendeles.shipping_methods ?? [])
   const fox = mod?.data?.foxpost_pickup_point as Pont | undefined
   const gls = mod?.data?.gls_pickup_point as Pont | undefined
   const sorok = rendeles.items ?? []
@@ -148,7 +170,18 @@ export function teljesites(
         0,
       )
     : null
-  const dij = Number(mod?.total ?? mod?.amount ?? 0)
+  /*
+    A SZÁLLÍTÁSI DÍJ AZ ÖSSZES MÓD ÖSSZEGE, nem az utolsó módé: a rendelés
+    végösszege az összes szállítási módot tartalmazza, és ha mellé kerül egy 0
+    Ft-os mód, az utolsó alapján „Ingyenes” látszott 13 500 Ft végösszeg mellett
+    (murena saját előnézete, fixtúra: elonezet/visszaigazolo-2026-11-02, acrobot
+    40313/40515; a két módú eset valódi rendelésen nem mért, elméleti).
+    Egy módnál változatlan.
+  */
+  const dij = (rendeles.shipping_methods ?? []).reduce(
+    (osszeg, m) => osszeg + Number(m.total ?? m.amount ?? 0),
+    0,
+  )
   const utanvet =
     szolgaltato(rendeles) === UTANVET ? Number(rendeles.total ?? 0) : null
   const alap = {
