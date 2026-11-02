@@ -3,6 +3,9 @@ import { join } from "path"
 
 import { describe, expect, it } from "vitest"
 
+import { en } from "@lib/i18n/dictionary/en"
+import { hu } from "@lib/i18n/dictionary/hu"
+
 /**
  * AZ ÜRES KOSÁRRAL HÍVOTT PÉNZTÁR.
  *
@@ -87,8 +90,15 @@ describe("az üres kosárral hívott pénztár", () => {
     expect(kod).not.toMatch(/redirect\(`\/hu\//)
   })
 
-  /** A böngésző fülén a vevő olvassa, tehát magyar. */
-  it("a lap címe magyar", () => {
-    expect(kod).toContain('title: "Pénztár"')
+  /**
+   * A böngésző fülén a vevő olvassa: a cím szótár-kulcs (nyelvenként), a magyar
+   * szó a szótárban áll, nem a lapban. Két állítás kell hozzá: a lap a kulcsot
+   * kéri, és a magyar szótár a "Pénztár" szót adja rá.
+   */
+  it("a lap címe a szótár kulcsa, és magyarul Pénztár", () => {
+    expect(kod).toContain('"checkoutPage.title"')
+    expect(kod).not.toMatch(/title:\s*"/)
+    expect(hu.checkoutPage.title).toBe("Pénztár")
+    expect(en.checkoutPage.title).toBe("Checkout")
   })
 })

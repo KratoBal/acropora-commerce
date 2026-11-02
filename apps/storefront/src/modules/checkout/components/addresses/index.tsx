@@ -1,19 +1,26 @@
 "use client"
 import { setAddresses } from "@lib/data/cart"
 import useToggleState from "@lib/hooks/use-toggle-state"
+import { useLocale, useTranslate } from "@lib/i18n/use-translate"
 import compareAddresses from "@lib/util/compare-addresses"
+import { orszagNev, teljesNev, varosSor } from "@lib/util/penztar-cim"
 import { CheckCircleSolid } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import Divider from "@modules/common/components/divider"
-import { Heading, Text } from "@modules/common/components/ui"
 import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useActionState } from "react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
+import { PenztarGomb } from "../penztar-mezo"
 import ShippingAddress from "../shipping-address"
-import { SubmitButton } from "../submit-button"
 
+const CIM_CIM =
+  "flex flex-row items-center gap-x-2 text-[22px] font-normal leading-[28px] text-acr-ink small:text-[26px] small:leading-[32px]"
+const KICSI_CIM =
+  "mb-1 text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate"
+const SOR = "text-[14px] leading-[22px] text-acr-ink"
+
+/** A cím lépés: nyitva az űrlap (`?step=address`), zárva az összefoglaló. A beküldés és a mezők nevei változatlanok. */
 const Addresses = ({
   cart,
   customer,
@@ -21,6 +28,8 @@ const Addresses = ({
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
 }) => {
+  const t = useTranslate()
+  const locale = useLocale()
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -40,144 +49,113 @@ const Addresses = ({
   const [message, formAction] = useActionState(setAddresses, null)
 
   return (
-    <div className="bg-white">
-      <div className="flex flex-row items-center justify-between mb-6">
-        <Heading
-          level="h2"
-          className="flex flex-row text-3xl-regular gap-x-2 items-baseline"
-        >
-          Szállítási cím
+    <section className="border border-acr-line bg-acr-white px-4 py-5 small:px-6 small:py-6">
+      <div className="mb-4 flex flex-row items-center justify-between">
+        <h2 className={CIM_CIM}>
+          {t("checkoutPage.shippingAddress")}
           {!isOpen && <CheckCircleSolid />}
-        </Heading>
+        </h2>
         {!isOpen && cart?.shipping_address && (
-          <Text>
-            <button
-              onClick={handleEdit}
-              className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
-              data-testid="edit-address-button"
-            >
-              Szerkesztés
-            </button>
-          </Text>
+          <button
+            onClick={handleEdit}
+            className="text-[14px] font-medium leading-[22px] text-acr-ocean underline"
+            data-testid="edit-address-button"
+          >
+            {t("checkoutPage.edit")}
+          </button>
         )}
       </div>
       {isOpen ? (
         <form action={formAction}>
-          <div className="pb-8">
-            <ShippingAddress
-              customer={customer}
-              checked={sameAsBilling}
-              onChange={toggleSameAsBilling}
-              cart={cart}
-            />
+          <ShippingAddress
+            customer={customer}
+            checked={sameAsBilling}
+            onChange={toggleSameAsBilling}
+            cart={cart}
+          />
 
-            {!sameAsBilling && (
-              <div>
-                <Heading
-                  level="h2"
-                  className="text-3xl-regular gap-x-4 pb-6 pt-8"
-                >
-                  Számlázási cím
-                </Heading>
+          {!sameAsBilling && (
+            <div>
+              <h2 className={CIM_CIM + " pb-4 pt-6"}>
+                {t("checkoutPage.billingAddress")}
+              </h2>
 
-                <BillingAddress cart={cart} />
-              </div>
-            )}
-            <SubmitButton className="mt-6" data-testid="submit-address-button">
-              Tovább a szállításhoz
-            </SubmitButton>
-            <ErrorMessage error={message} data-testid="address-error-message" />
-          </div>
+              <BillingAddress cart={cart} />
+            </div>
+          )}
+          <PenztarGomb className="mt-6" data-testid="submit-address-button">
+            {t("checkoutPage.toShipping")}
+          </PenztarGomb>
+          <ErrorMessage error={message} data-testid="address-error-message" />
         </form>
-      ) : (
-        <div>
-          <div className="text-small-regular">
-            {cart && cart.shipping_address ? (
-              <div className="flex items-start gap-x-8">
-                <div className="flex items-start gap-x-1 w-full">
-                  <div
-                    className="flex flex-col w-1/3"
-                    data-testid="shipping-address-summary"
-                  >
-                    <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                      Szállítási cím
-                    </Text>
-                    <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.shipping_address.first_name}{" "}
-                      {cart.shipping_address.last_name}
-                    </Text>
-                    <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.shipping_address.address_1}{" "}
-                      {cart.shipping_address.address_2}
-                    </Text>
-                    <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.shipping_address.postal_code},{" "}
-                      {cart.shipping_address.city}
-                    </Text>
-                    <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.shipping_address.country_code?.toUpperCase()}
-                    </Text>
-                  </div>
+      ) : cart && cart.shipping_address ? (
+        <div className="grid grid-cols-1 gap-6 small:grid-cols-3">
+          <div data-testid="shipping-address-summary">
+            <p className={KICSI_CIM}>{t("checkoutPage.shippingAddress")}</p>
+            <p className={SOR}>
+              {teljesNev(
+                cart.shipping_address.first_name,
+                cart.shipping_address.last_name,
+                locale,
+              )}
+            </p>
+            <p className={SOR}>
+              {cart.shipping_address.address_1}{" "}
+              {cart.shipping_address.address_2}
+            </p>
+            <p className={SOR}>
+              {varosSor(
+                cart.shipping_address.postal_code,
+                cart.shipping_address.city,
+              )}
+            </p>
+            <p className={SOR}>
+              {orszagNev(cart.shipping_address.country_code, locale)}
+            </p>
+          </div>
 
-                  <div
-                    className="flex flex-col w-1/3 "
-                    data-testid="shipping-contact-summary"
-                  >
-                    <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                      Kapcsolat
-                    </Text>
-                    <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.shipping_address.phone}
-                    </Text>
-                    <Text className="txt-medium text-ui-fg-subtle">
-                      {cart.email}
-                    </Text>
-                  </div>
+          <div data-testid="shipping-contact-summary">
+            <p className={KICSI_CIM}>{t("checkoutPage.contact")}</p>
+            <p className={SOR}>{cart.shipping_address.phone}</p>
+            <p className={SOR}>{cart.email}</p>
+          </div>
 
-                  <div
-                    className="flex flex-col w-1/3"
-                    data-testid="billing-address-summary"
-                  >
-                    <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                      Számlázási cím
-                    </Text>
-
-                    {sameAsBilling ? (
-                      <Text className="txt-medium text-ui-fg-subtle">
-                        A számlázási és a szállítási cím megegyezik.
-                      </Text>
-                    ) : (
-                      <>
-                        <Text className="txt-medium text-ui-fg-subtle">
-                          {cart.billing_address?.first_name}{" "}
-                          {cart.billing_address?.last_name}
-                        </Text>
-                        <Text className="txt-medium text-ui-fg-subtle">
-                          {cart.billing_address?.address_1}{" "}
-                          {cart.billing_address?.address_2}
-                        </Text>
-                        <Text className="txt-medium text-ui-fg-subtle">
-                          {cart.billing_address?.postal_code},{" "}
-                          {cart.billing_address?.city}
-                        </Text>
-                        <Text className="txt-medium text-ui-fg-subtle">
-                          {cart.billing_address?.country_code?.toUpperCase()}
-                        </Text>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+          <div data-testid="billing-address-summary">
+            <p className={KICSI_CIM}>{t("checkoutPage.billingAddress")}</p>
+            {sameAsBilling ? (
+              <p className={SOR}>{t("checkoutPage.sameAddress")}</p>
             ) : (
-              <div>
-                <Spinner />
-              </div>
+              <>
+                <p className={SOR}>
+                  {teljesNev(
+                    cart.billing_address?.first_name,
+                    cart.billing_address?.last_name,
+                    locale,
+                  )}
+                </p>
+                <p className={SOR}>
+                  {cart.billing_address?.address_1}{" "}
+                  {cart.billing_address?.address_2}
+                </p>
+                <p className={SOR}>
+                  {varosSor(
+                    cart.billing_address?.postal_code,
+                    cart.billing_address?.city,
+                  )}
+                </p>
+                <p className={SOR}>
+                  {orszagNev(cart.billing_address?.country_code, locale)}
+                </p>
+              </>
             )}
           </div>
         </div>
+      ) : (
+        <div>
+          <Spinner />
+        </div>
       )}
-      <Divider className="mt-8" />
-    </div>
+    </section>
   )
 }
 

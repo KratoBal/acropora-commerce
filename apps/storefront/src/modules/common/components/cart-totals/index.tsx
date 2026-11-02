@@ -1,145 +1,82 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+import {
+  kosarOsszegek,
+  type KosarOsszegekBemenet,
+} from "@lib/util/kosar-osszegek"
 import { convertToLocale } from "@lib/util/money"
 import React from "react"
 
 type CartTotalsProps = {
-  totals: {
-    total?: number | null
-    subtotal?: number | null
-    tax_total?: number | null
-    currency_code: string
-    item_subtotal?: number | null
-    /**
-     * A TETELEK ADOJA. Ez teszi a netto reszosszeget bruttova -- lasd a lenti
-     * indoklast. Ha hianyzik, a reszosszeg a NETTO ertek marad, es az a lapon
-     * kevesebbet mutat: ezert all mellette a `?? 0` helyett kimondott kezeles.
-     */
-    item_tax_total?: number | null
-    shipping_subtotal?: number | null
-    /** A SZALLITAS ADOJA: ugyanugy bruttositja a szallitas sorat, mint a tetelekét. */
-    shipping_tax_total?: number | null
-    discount_subtotal?: number | null
-  }
+  totals: KosarOsszegekBemenet
 }
 
+/**
+ * A PÉNZTÁR OLDALSÁVJÁNAK ÖSSZEGZÉSE. A számolás a közös `kosarOsszegek`-é (a
+ * kosár oldal összegzése is azt használja), itt a kirajzolás és a szövegek
+ * vannak; a szövegek a kosár oldal kulcsai (`cartPage.*`), mert a két oldal
+ * ugyanazokat a sorokat nevezi meg.
+ *
+ * A RÉSZÖSSZEG BRUTTÓ (mérve egy valódi kosáron a teszt bolton, 2026-09-07:
+ * nettó 944,88 + adó 255,12 = 1200, és a termékoldalon 1200 áll), a szállítás is
+ * (2026-09-29, GLS csomagpont: nettó 2755,91 + adó 744,09 = 3500). Az áfa sora
+ * INFORMÁCIÓS ("ebből"), nem összeadandó. A `Fizetendő` mindig a `total`.
+ * Az áfa kulcsa szándékosan nem áll ki: vegyes kosárban két kulcs keveredhet,
+ * és egy kiírt százalék átlagot állítana. Az összeg mindig igaz, a kulcs nem.
+ */
 const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
-  const {
-    currency_code,
-    total,
-    tax_total,
-    item_subtotal,
-    item_tax_total,
-    shipping_subtotal,
-    shipping_tax_total,
-    discount_subtotal,
-  } = totals
-
-  /**
-   * A RÉSZÖSSZEG BRUTTÓ, ÉS EZT EGY MÉRÉS DÖNTÖTTE EL.
-   *
-   * Mérve egy valódi kosáron a teszt bolton (acrobot, 2026-09-07), egy 1200 Ft-os
-   * terméken:
-   *
-   *     item_subtotal    944,88     (NETTO)
-   *     item_tax_total   255,12
-   *     total          1200,00      (BRUTTO)
-   *     944,88 + 255,12 = 1200      pontosan, es 255,12 / 944,88 = 27 szazalek
-   *
-   * A TERMÉKLAPON bruttó ár áll (1200 Ft). Ha a kosár részösszege 944,88-at
-   * mutatna, a vevő KÉT KÜLÖNBÖZŐ számot látna ugyanarra a termékre, és egy
-   * vegyes kosárban ez halmozódna.
-   *
-   * Ezért a részösszeg a tételek BRUTTÓ összege, az áfa pedig alatta,
-   * INFORMÁCIÓS sorként áll („Ebből áfa"), nem összeadandó tételként.
-   *
-   * A HIÁNYZÓ ADÓ-ÉRTÉK ITT NEM NULLA: ha a mező nem jön, a részösszeg a nettó
-   * érték marad, tehát KEVESEBBET mutat a valósnál. Ezt nem tudjuk elrejteni,
-   * de nem is állítjuk másnak: a `Fizetendő` sor mindig a `total`, és az a
-   * mérvadó szám.
-   */
-  const item_gross = (item_subtotal ?? 0) + (item_tax_total ?? 0)
-
-  /**
-   * A SZALLITAS IS BRUTTO, UGYANEZERT (merve 2026-09-29, a teszt bolton, GLS
-   * csomagpont 3500 Ft): `shipping_subtotal` 2755,91 (NETTO), `shipping_tax_total`
-   * 744,09, a ketto egyutt pontosan 3500. A sor eddig a nettot mutatta, tehat a
-   * vevo 1000 + 2756 = 4500-at latott, ami nem ad ki osszeget.
-   */
-  const shipping_gross = (shipping_subtotal ?? 0) + (shipping_tax_total ?? 0)
+  const t = useTranslate()
+  const o = kosarOsszegek(totals)
+  const penz = (amount: number) =>
+    convertToLocale({ amount, currency_code: o.currencyCode })
 
   return (
     <div>
-      <div className="flex flex-col gap-y-2 txt-medium text-ui-fg-subtle ">
+      <div className="flex flex-col gap-y-2 text-[14px] leading-[22px] text-acr-slate">
         <div className="flex items-center justify-between">
-          {/*
-            A FELIRAT NEM MOND TOBBET, MINT AMIT MERTUNK.
-
-            Az eredeti szoveg ("excl. shipping and taxes") ALLITAST tett az ado
-            kezelesérol. A bolt hattéroldala viszont BRUTTO arakkal dolgozik
-            (`is_tax_inclusive: true` a dij-tetelen es a szallitasi aron), es a
-            terv is azt mondja, hogy "az arak brutto arak, 27% afaval".
-
-            Hogy az `item_subtotal` ezen belul pontosan mit tartalmaz, azt EGY
-            valodi kosaron kell megmerni -- addig a felirat a sor NEVET mondja,
-            nem a tartalmat magyarazza. Egy rossz magyarazat rosszabb, mint egy
-            szuk felirat: a vevo szamol vele.
-          */}
-          <span>Részösszeg</span>
-          <span data-testid="cart-subtotal" data-value={item_gross}>
-            {convertToLocale({ amount: item_gross, currency_code })}
+          <span>{t("cartPage.subtotal")}</span>
+          <span data-testid="cart-subtotal" data-value={o.itemGross}>
+            {penz(o.itemGross)}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span>Szállítás</span>
-          <span data-testid="cart-shipping" data-value={shipping_gross}>
-            {convertToLocale({ amount: shipping_gross, currency_code })}
+          <span>{t("cartPage.shipping")}</span>
+          <span data-testid="cart-shipping" data-value={o.shippingGross}>
+            {penz(o.shippingGross)}
           </span>
         </div>
-        {!!discount_subtotal && (
+        {!!o.discount && (
           <div className="flex items-center justify-between">
-            <span>Kedvezmény</span>
+            <span>{t("cartPage.discount")}</span>
             <span
-              className="text-ui-fg-interactive"
+              className="text-acr-ocean"
               data-testid="cart-discount"
-              data-value={discount_subtotal || 0}
+              data-value={o.discount}
             >
-              -{" "}
-              {convertToLocale({
-                amount: discount_subtotal ?? 0,
-                currency_code,
-              })}
+              - {penz(o.discount)}
             </span>
           </div>
         )}
-        <div className="flex justify-between">
-          {/*
-            AZ "EBBOL" SZO A LENYEG: e nelkul a vevo HOZZAADJA a fejeben. A sor
-            nem az osszegzes resze, hanem alatta allo magyarazat -- a tervben
-            nincs kulon ado-sor, es ez a megoldas azt tiszteletben tartja.
-
-            ES SZANDEKOSAN NEM ALL ITT KULCS (27 szazalek): egy vegyes kosarban
-            ket kulonbozo kulcs is keveredhet, es akkor egy kiirt szazalek egy
-            ATLAGOT allitana. Az OSSZEG mindig igaz, a kulcs nem.
-          */}
-          <span className="flex gap-x-1 items-center ">Ebből áfa</span>
-          <span data-testid="cart-taxes" data-value={tax_total || 0}>
-            {convertToLocale({ amount: tax_total ?? 0, currency_code })}
+        <div className="flex items-center justify-between">
+          <span>{t("cartPage.vat")}</span>
+          <span data-testid="cart-taxes" data-value={o.tax}>
+            {penz(o.tax)}
           </span>
         </div>
       </div>
-      <div className="h-px w-full border-b border-gray-200 my-4" />
-      <div className="flex items-center justify-between text-ui-fg-base mb-2 txt-medium ">
-        <span>Fizetendő</span>
+      <div className="mt-4 flex items-center justify-between border-t border-acr-line pt-4 text-acr-ink">
+        <span className="text-[16px] font-medium leading-[26px]">
+          {t("cartPage.payable")}
+        </span>
         <span
-          className="txt-xlarge-plus"
+          className="text-[24px] leading-[30px]"
           data-testid="cart-total"
-          data-value={total || 0}
+          data-value={o.total}
         >
-          {convertToLocale({ amount: total ?? 0, currency_code })}
+          {penz(o.total)}
         </span>
       </div>
-      <div className="h-px w-full border-b border-gray-200 mt-4" />
     </div>
   )
 }

@@ -1,31 +1,76 @@
-import { Heading } from "@modules/common/components/ui"
-
+import { retrieveCartShippingClass } from "@lib/data/cart"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+import { HttpTypes } from "@medusajs/types"
+import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
+import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import CartTotals from "@modules/common/components/cart-totals"
-import Divider from "@modules/common/components/divider"
-import { HttpTypes } from "@medusajs/types"
 
-const CheckoutSummary = ({ cart }: { cart: HttpTypes.StoreCart }) => {
+/**
+ * A PÉNZTÁR OLDALSÁVJA: a tételek, a kedvezménykód, az összegek, és UTÁNUK a
+ * két rendelés tájékoztatója (acrobot 40169, a kosár sorrendje: előbb a vevő
+ * a saját tételét látja, aztán a magyarázatot). A sáv eddig a bal oszlop
+ * tetején állt; a szövege, a feltétele és a fizetési módhoz kötött mondata
+ * változatlan.
+ */
+type SzallitasiOsztaly = Parameters<typeof splitNoticeProps>[1]
+
+/** A kirajzolás: a szállítási osztályt a hívó adja (az oldal a háttértől kéri, a próba fix adatot ad). */
+export function CheckoutSummaryView({
+  cart,
+  countryCode,
+  szallitasiOsztaly,
+}: {
+  cart: HttpTypes.StoreCart
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
+  szallitasiOsztaly: SzallitasiOsztaly
+}) {
+  const t = translator(localeOf(countryCode))
+
   return (
-    <div className="sticky top-0 flex flex-col-reverse small:flex-col gap-y-8 py-8 small:py-0 ">
-      <div className="w-full bg-white flex flex-col">
-        <Divider className="my-6 small:hidden" />
-        <Heading
-          level="h2"
-          className="flex flex-row text-3xl-regular items-baseline"
-        >
-          A kosaradban
-        </Heading>
-        <Divider className="my-6" />
-        <CartTotals totals={cart} />
+    <div className="flex flex-col gap-y-6 small:sticky small:top-4 small:self-start">
+      <div
+        className="flex flex-col gap-y-4 border border-acr-line bg-acr-white p-[22px]"
+        data-testid="checkout-summary"
+      >
+        <h2 className="text-[28px] font-light leading-[34px] tracking-[-0.5px] text-acr-ink">
+          {t("checkoutPage.summaryHeading")}
+        </h2>
         <ItemsPreviewTemplate cart={cart} />
-        <div className="my-6">
-          <DiscountCode cart={cart} />
-        </div>
+        <DiscountCode cart={cart} />
+        <CartTotals totals={cart} />
       </div>
+      <SplitNotice
+        {...splitNoticeProps(
+          cart.items ?? [],
+          szallitasiOsztaly,
+          cart.payment_collection?.payment_sessions?.find(
+            (session) => session.status === "pending",
+          )?.provider_id,
+        )}
+        countryCode={countryCode}
+      />
     </div>
   )
 }
 
-export default CheckoutSummary
+export default async function CheckoutSummary({
+  cart,
+  countryCode,
+}: {
+  cart: HttpTypes.StoreCart
+  countryCode: string
+}) {
+  // P4-2: a két rendelés sávja a leadásnál is látszik (Balázs, 2026-09-29).
+  const szallitasiOsztaly = await retrieveCartShippingClass()
+  return (
+    <CheckoutSummaryView
+      cart={cart}
+      countryCode={countryCode}
+      szallitasiOsztaly={szallitasiOsztaly}
+    />
+  )
+}

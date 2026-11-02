@@ -11,18 +11,13 @@ import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import Shipping from "@modules/checkout/components/shipping"
-import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
-import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
 
 export default async function CheckoutForm({
   cart,
   customer,
-  countryCode,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
-  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
-  countryCode: string
 }) {
   if (!cart) {
     return null
@@ -42,7 +37,6 @@ export default async function CheckoutForm({
    * ag viszont nehezebben olvashato lenne.
    */
   const fizetesiLehetosegek = await getCartPaymentOptions(cart.id)
-  // P4-2: a két rendelés sávja a leadásnál is látszik (Balázs, 2026-09-29).
   const szallitasiOsztaly = await retrieveCartShippingClass()
   // P4: melyik mod a Foxpost; annal a mod csomagpont-valasztot nyit.
   const foxpost = await retrieveFoxpostOption()
@@ -54,17 +48,6 @@ export default async function CheckoutForm({
 
   return (
     <div className="w-full grid grid-cols-1 gap-y-8">
-      <SplitNotice
-        {...splitNoticeProps(
-          cart.items ?? [],
-          szallitasiOsztaly,
-          cart.payment_collection?.payment_sessions?.find(
-            (session) => session.status === "pending",
-          )?.provider_id,
-        )}
-        countryCode={countryCode}
-      />
-
       <Addresses cart={cart} customer={customer} />
 
       <Shipping
