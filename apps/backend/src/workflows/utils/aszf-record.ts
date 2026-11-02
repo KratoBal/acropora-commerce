@@ -2,7 +2,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { updateCartWorkflow } from "@medusajs/medusa/core-flows"
 
-import { LEGAL_DOCUMENT_KEYS, legalSource, readLegalConfig } from "./legal-documents"
+import { LEGAL_DOCUMENT_KEYS, LEGAL_TEST_MODE_VERSION, legalSource, readLegalConfig } from "./legal-documents"
 import { ASZF_METADATA_KEY } from "./split-completion"
 import { createHash } from "node:crypto"
 
@@ -45,6 +45,8 @@ export type AszfRecord = {
   idopont: string
   verzio: string
   dokumentum: string
+  /** Test mode only: the order went through without Fogyasztóbarát (legal-documents.ts). */
+  teszt_mod?: true
   /** The language of the document the customer was shown. */
   nyelv?: "hu" | "en"
   /** Fogyasztóbarát only: the effective date the document's text states (ÉÉÉÉ-HH-NN), or null. */
@@ -56,6 +58,15 @@ export type AszfRecord = {
 export type AszfClaim = { verzio: string; nyelv: "hu" | "en" }
 
 export const LENYOMAT_NINCS = "nincs"
+
+/** The record of a test-mode acceptance: it names no document, because there was none to show. */
+export const buildTestModeRecord = (now: Date): AszfRecord => ({
+  idopont: now.toISOString(),
+  verzio: LEGAL_TEST_MODE_VERSION,
+  dokumentum: "nincs (teszt kirakat: a jogi dokumentumok az átálláskor a Fogyasztóbarátból jönnek)",
+  nyelv: "hu",
+  teszt_mod: true,
+})
 /** Waits this long for Fogyasztóbarát, then the record goes without a hash. */
 export const FOGYASZTOBARAT_FETCH_MS = 4000
 
@@ -108,6 +119,7 @@ export const buildFogyasztobaratRecord = async (
  */
 export const currentAszfRecord = async (now: Date, fetcher: typeof fetch = fetch): Promise<AszfRecord | null> => {
   const config = readLegalConfig()
+  if (config.mode === "test") return buildTestModeRecord(now)
   if (!config.enabled) return buildAszfRecord(now)
   return config.hu ? buildFogyasztobaratRecord(now, config.hu, fetcher) : null
 }
@@ -115,6 +127,7 @@ export const currentAszfRecord = async (now: Date, fetcher: typeof fetch = fetch
 /** The version the server would record now; `null`: no document to name. */
 export const currentAszfVersion = (): string | null => {
   const config = readLegalConfig()
+  if (config.mode === "test") return LEGAL_TEST_MODE_VERSION
   if (!config.enabled) return ASZF_VERZIO_MAI_BOLT
   return config.hu ? `fogyasztobarat-${config.hu}` : null
 }

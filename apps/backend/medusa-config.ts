@@ -4,8 +4,13 @@ import { COMMERCE_SETTINGS_MODULE } from "./src/modules/commerce-settings"
 import { stripeProviders } from "./src/workflows/utils/stripe-config"
 import { webshopMailModules } from "./src/workflows/utils/webshop-mail-config"
 import { STORE_RELATIONS_LIMIT } from "./src/api/store-relations-limit"
+import { logLegalGateMode } from "./src/workflows/utils/legal-documents"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
+
+// Says which legal gate mode is in force, and loudly why "test" was refused. It only logs: this file
+// is loaded by `medusa build` too, and a throw here would break the image build.
+logLegalGateMode()
 
 module.exports = defineConfig({
   projectConfig: {

@@ -28,10 +28,37 @@
  *   setting: `currentAszfRecord` and `checkAszfClaim` in aszf-record.ts, and the
  *   storefront's `ASZF_ELFOGADAS_NYELV` (aszf.ts), which today is a constant and
  *   must then come from the document actually shown.
- * - `FOGYASZTOBARAT_REQUIRE_EN`: TEST BACKEND ONLY, never on the live one. Exactly
- *   "false" stops the gate from requiring the English source (acrobot 2026-11-02),
- *   so the Hungarian checkout can run while the English documents do not exist.
+ * === THE TEST MODE (Balázs 2026-11-02 10:05 UTC, via acrobot) ===
+ *
+ * Fogyasztóbarát answers only the registered domain (shop.acropora.hu), and he
+ * will not pay for a second domain to try it on. So the test shop must take
+ * orders without it, and the live shop must not.
+ *
+ * - `LEGAL_GATE_MODE`: "enforce" (the default; anything unset, empty, mistyped or
+ *   not exactly "test" is enforce, so the gate fails closed) or "test".
+ * - In test mode the orders pass without Fogyasztóbarát. The checkout shows a
+ *   plain "test shop" line where the ÁSZF and the privacy notice would be (no
+ *   text of ours), and the record on the cart, which the order carries, is
+ *   marked: `verzio: "teszt-mod"`, `teszt_mod: true`.
+ * - TEST MODE IS REFUSED ON THE LIVE SHOP. It needs `ACROPORA_STOREFRONT_URL`
+ *   (the address the backend already uses for payment links) to be set and NOT
+ *   a live host (`LIVE_STOREFRONT_HOSTS`). Unset or unreadable counts as "cannot
+ *   show it is not live", so it is enforce. The refusal is logged
+ *   (`logLegalGateMode`, at startup and on every resolution that is refused).
+ *   It falls back to enforce rather than stopping the server: a misconfigured
+ *   live shop stays up and takes no order.
+ * - To go live: delete `LEGAL_GATE_MODE` (or set "enforce") and switch
+ *   Fogyasztóbarát on (`FOGYASZTOBARAT_ENABLED`, `_ID_HU`, `_ID_EN`, and the
+ *   storefront's `NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED`, `_ID`).
  */
+export const LEGAL_GATE_MODES = ["enforce", "test"] as const
+export type LegalGateMode = (typeof LEGAL_GATE_MODES)[number]
+
+/** The version a test-mode acceptance names: the OS must know it (webshop-legal.ts). */
+export const LEGAL_TEST_MODE_VERSION = "teszt-mod"
+
+/** The addresses of the live shop; test mode is never allowed behind one. */
+export const LIVE_STOREFRONT_HOSTS = ["shop.acropora.hu", "www.shop.acropora.hu", "acropora.hu", "www.acropora.hu"] as const
 export const FOGYASZTOBARAT_DEFAULT_ID_HU = "JPNFMVH0"
 
 /** `api.php` keys of the two required documents (storefront JOGI_DOKUMENTUMOK). */
@@ -43,8 +70,8 @@ export type LegalConfig = {
   enabled: boolean
   hu: string | null
   en: string | null
-  /** False only for the exact value "false": the English source is then not required. */
-  requireEn: boolean
+  /** The mode in force: "test" only when it was asked for AND the shop is provably not live. */
+  mode: LegalGateMode
 }
 
 export type LegalEnv = Record<string, string | undefined>
@@ -54,22 +81,58 @@ const shopId = (value: string | undefined): string | null => {
   return trimmed && SHOP_ID.test(trimmed) ? trimmed : null
 }
 
+export type LegalModeResolution = { mode: LegalGateMode; problem: string | null }
+
+/** What `LEGAL_GATE_MODE` asks for and what is allowed; `problem` says why test was not granted. */
+export const resolveLegalGateMode = (env: LegalEnv = process.env): LegalModeResolution => {
+  const asked = env.LEGAL_GATE_MODE?.trim()
+  if (!asked || asked === "enforce") return { mode: "enforce", problem: null }
+  if (asked !== "test")
+    return { mode: "enforce", problem: `LEGAL_GATE_MODE=${JSON.stringify(asked)} is not "enforce" or "test": enforce is in force.` }
+  const url = env.ACROPORA_STOREFRONT_URL?.trim()
+  let host: string | null = null
+  try {
+    host = url ? new URL(url).hostname.toLowerCase() : null
+  } catch {
+    host = null
+  }
+  if (!host)
+    return {
+      mode: "enforce",
+      problem:
+        "LEGAL_GATE_MODE=test needs ACROPORA_STOREFRONT_URL to show that this is not the live shop; it is unset or unreadable, so enforce is in force.",
+    }
+  if ((LIVE_STOREFRONT_HOSTS as readonly string[]).includes(host))
+    return { mode: "enforce", problem: `LEGAL_GATE_MODE=test is refused: ${host} is the live shop, so enforce is in force.` }
+  return { mode: "test", problem: null }
+}
+
+/** One line for the log: the mode in force, and loudly why test was not granted. */
+export const logLegalGateMode = (env: LegalEnv = process.env, log: Pick<Console, "warn" | "error"> = console): LegalGateMode => {
+  const { mode, problem } = resolveLegalGateMode(env)
+  if (problem) log.error(`HIBA (jogi kapu): ${problem}`)
+  else if (mode === "test") log.warn("jogi kapu: TESZT MOD, a rendelések Fogyasztóbarát nélkül átmennek (csak teszt kirakaton).")
+  return mode
+}
+
 /** The configuration as it stands in the environment; a malformed id counts as not set. */
 export const readLegalConfig = (env: LegalEnv = process.env): LegalConfig => ({
   enabled: env.FOGYASZTOBARAT_ENABLED?.trim() === "true",
   hu: env.FOGYASZTOBARAT_ID_HU === undefined ? FOGYASZTOBARAT_DEFAULT_ID_HU : shopId(env.FOGYASZTOBARAT_ID_HU),
   en: shopId(env.FOGYASZTOBARAT_ID_EN),
-  requireEn: env.FOGYASZTOBARAT_REQUIRE_EN?.trim() !== "false",
+  mode: resolveLegalGateMode(env).mode,
 })
 
 export type LegalReadiness = { complete: true } | { complete: false; missing: string[] }
 
 /** What is missing, by name, so a refusal in the log says which setting to look at. */
 export const legalReadiness = (config: LegalConfig = readLegalConfig()): LegalReadiness => {
+  // test mode (only ever granted off the live shop: resolveLegalGateMode) takes orders without Fogyasztóbarát
+  if (config.mode === "test") return { complete: true }
   const missing: string[] = []
   if (!config.enabled) missing.push("FOGYASZTOBARAT_ENABLED")
   if (!config.hu) missing.push("FOGYASZTOBARAT_ID_HU")
-  if (config.requireEn && !config.en) missing.push("FOGYASZTOBARAT_ID_EN")
+  if (!config.en) missing.push("FOGYASZTOBARAT_ID_EN")
   return missing.length === 0 ? { complete: true } : { complete: false, missing }
 }
 

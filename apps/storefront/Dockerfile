@@ -72,6 +72,11 @@ ARG NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED=false
 ARG NEXT_PUBLIC_FOGYASZTOBARAT_ID=JPNFMVH0
 ENV NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED=$NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
 ENV NEXT_PUBLIC_FOGYASZTOBARAT_ID=$NEXT_PUBLIC_FOGYASZTOBARAT_ID
+# A jogi kapu teszt-modja (2026-11-02): ALAPBOL URES (= enforce). Csak a teszt
+# kirakat allitja `test`-re; az eles cimen a kod maga is enforce-ra esik. Az eles
+# atallaskor a valtozot TOROLNI kell. A buildbe eg: a valtas uj buildet ker.
+ARG NEXT_PUBLIC_LEGAL_GATE_MODE=
+ENV NEXT_PUBLIC_LEGAL_GATE_MODE=$NEXT_PUBLIC_LEGAL_GATE_MODE
 
 RUN pnpm --filter @dtc/storefront build
 

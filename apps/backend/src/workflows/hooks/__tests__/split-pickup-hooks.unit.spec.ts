@@ -224,6 +224,22 @@ describe("completing a cart", () => {
       ).resolves.not.toThrow()
     })
 
+    it("test mode on a test shop: the order passes without Fogyasztóbarát, with the test-mode record; on the live shop it does not", async () => {
+      delete process.env.FOGYASZTOBARAT_ENABLED
+      delete process.env.FOGYASZTOBARAT_ID_EN
+      process.env.LEGAL_GATE_MODE = "test"
+      process.env.ACROPORA_STOREFRONT_URL = "https://shop-staging.acropora.hu"
+      const testRecord = { ...AszfRekord, verzio: "teszt-mod", teszt_mod: true }
+      await expect(
+        handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: testRecord }) }, { container })
+      ).resolves.not.toThrow()
+      await expect(handlers.completeValidate!({ cart: kosar({}) }, { container })).rejects.toThrow("Az ÁSZF elfogadása nélkül")
+      process.env.ACROPORA_STOREFRONT_URL = "https://shop.acropora.hu"
+      await expect(
+        handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: testRecord }) }, { container })
+      ).rejects.toThrow("nincs közzétéve")
+    })
+
     it("the legal documents gate: no English source, no order, even with the record and on the card path", async () => {
       process.env.FOGYASZTOBARAT_ID_EN = ""
       for (const sessions of [[], [{ provider_id: "pp_stripe_stripe", status: "pending" }]]) {

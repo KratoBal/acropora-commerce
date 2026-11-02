@@ -33,6 +33,8 @@ afterEach(() => {
   updateCart.mockReset()
   delete process.env.FOGYASZTOBARAT_ENABLED
   delete process.env.FOGYASZTOBARAT_ID_HU
+  delete process.env.LEGAL_GATE_MODE
+  delete process.env.ACROPORA_STOREFRONT_URL
 })
 
 describe("the record", () => {
@@ -178,6 +180,46 @@ describe("saveAszfAcceptance", () => {
   it("the record carries the language it names", async () => {
     expect(buildAszfRecord(NOW).nyelv).toBe("hu")
     expect((await buildFogyasztobaratRecord(NOW, "JPNFMVH0", answering(DOC))).nyelv).toBe("hu")
+  })
+})
+
+describe("the test mode record (Balázs 2026-11-02)", () => {
+  const TEST_CLAIM = { verzio: "teszt-mod", nyelv: "hu" as const }
+  const testMode = () => {
+    process.env.LEGAL_GATE_MODE = "test"
+    process.env.ACROPORA_STOREFRONT_URL = "https://shop-staging.acropora.hu"
+  }
+
+  it("is marked as a test-mode acceptance and names no document; no Fogyasztóbarát request is made", async () => {
+    testMode()
+    const fetcher = answering(DOC)
+    const result = await saveAszfAcceptance(scopeWith({ id: "cart_1", metadata: {} }), "cart_1", TEST_CLAIM, NOW, fetcher)
+    expect(result).toMatchObject({
+      status: "saved",
+      record: { verzio: "teszt-mod", teszt_mod: true, nyelv: "hu", idopont: NOW.toISOString() },
+    })
+    expect((result as { record: { dokumentum: string } }).record.dokumentum).toContain("nincs")
+    expect(fetcher).not.toHaveBeenCalled()
+    const written = (updateCart.mock.calls[0][0] as { input: { metadata: { aszf_elfogadas: unknown } } }).input.metadata
+    expect(written.aszf_elfogadas).toEqual((result as { record: unknown }).record)
+  })
+
+  it("a storefront that showed the old shop's ÁSZF, or the Fogyasztóbarát one, is refused (the two modes cannot drift)", async () => {
+    testMode()
+    for (const claim of [CLAIM, FB_CLAIM])
+      expect(await saveAszfAcceptance(scopeWith({ id: "cart_1", metadata: {} }), "cart_1", claim, NOW)).toEqual({
+        status: "version_mismatch",
+      })
+    expect(updateCart).not.toHaveBeenCalled()
+  })
+
+  it("on the live shop test mode is not granted: the test claim is refused, nothing is written", async () => {
+    testMode()
+    process.env.ACROPORA_STOREFRONT_URL = "https://shop.acropora.hu"
+    expect(await saveAszfAcceptance(scopeWith({ id: "cart_1", metadata: {} }), "cart_1", TEST_CLAIM, NOW)).toEqual({
+      status: "version_mismatch",
+    })
+    expect(updateCart).not.toHaveBeenCalled()
   })
 })
 

@@ -31,6 +31,7 @@
  * egyutt mondja meg, MELYIK szoveget fogadta el a vevo, akkor is, ha a
  * Fogyasztobarat a regi allapotot nem adja vissza.
  */
+import { ASZF_VERZIO_TESZT_MOD, jogiKapuTesztMod } from "@lib/util/jogi-kapu"
 import { JELSZO_ROVID_UZENET, jelszoHosszuEleg } from "@lib/util/jelszo"
 import {
   FOGYASZTOBARAT_ID,
@@ -80,7 +81,12 @@ export type AszfDokumentumAllapot =
  */
 export const aszfMegjelenitettVerzio = (
   bekapcsolva: boolean = fogyasztobaratBekapcsolva(),
-): string => (bekapcsolva ? ASZF_VERZIO : ASZF_VERZIO_MAI_BOLT)
+): string =>
+  jogiKapuTesztMod()
+    ? ASZF_VERZIO_TESZT_MOD
+    : bekapcsolva
+      ? ASZF_VERZIO
+      : ASZF_VERZIO_MAI_BOLT
 
 export const ASZF_ELFOGADAS_NYELV = "hu"
 

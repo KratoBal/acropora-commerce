@@ -67,15 +67,17 @@ describe("the ÁSZF guard", () => {
       expect(guardAszf(null, "place_order", notReady)).toEqual({ action: "pass" })
     })
 
-    it("the test-only relaxation: with REQUIRE_EN false and no English source the guard reads the record again", () => {
+    it("test mode on a test shop: the guard reads the record again; on the live shop it stays shut", () => {
       const before = { ...process.env }
       try {
-        process.env.FOGYASZTOBARAT_ENABLED = "true"
-        process.env.FOGYASZTOBARAT_ID_HU = "JPNFMVH0"
+        delete process.env.FOGYASZTOBARAT_ENABLED
         delete process.env.FOGYASZTOBARAT_ID_EN
-        process.env.FOGYASZTOBARAT_REQUIRE_EN = "false"
+        process.env.LEGAL_GATE_MODE = "test"
+        process.env.ACROPORA_STOREFRONT_URL = "https://shop-staging.acropora.hu"
         expect(guardAszf(kosar({ aszf_elfogadas: rekord }), "place_order")).toEqual({ action: "pass" })
         expect(guardAszf(kosar(null), "place_order").action).toBe("refuse")
+        process.env.ACROPORA_STOREFRONT_URL = "https://shop.acropora.hu"
+        expect(guardAszf(kosar({ aszf_elfogadas: rekord }), "place_order")).toEqual(refused)
       } finally {
         process.env = before
       }

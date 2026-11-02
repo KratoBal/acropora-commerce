@@ -2,6 +2,8 @@ import {
   FOGYASZTOBARAT_DEFAULT_ID_HU,
   legalReadiness,
   legalSource,
+  logLegalGateMode,
+  resolveLegalGateMode,
   readLegalConfig,
 } from "../legal-documents"
 
@@ -57,25 +59,93 @@ describe("legalReadiness", () => {
   })
 })
 
-describe("the test-only English relaxation (FOGYASZTOBARAT_REQUIRE_EN)", () => {
-  it("only the exact value 'false' stops requiring the English source; the Hungarian half and the switch stay required", () => {
-    const relaxed = { ...full, FOGYASZTOBARAT_ID_EN: "", FOGYASZTOBARAT_REQUIRE_EN: "false" }
-    expect(legalReadiness(readLegalConfig(relaxed))).toEqual({ complete: true })
-    expect(legalReadiness(readLegalConfig({ ...relaxed, FOGYASZTOBARAT_ID_HU: "" }))).toEqual({
-      complete: false,
-      missing: ["FOGYASZTOBARAT_ID_HU"],
-    })
-    expect(legalReadiness(readLegalConfig({ ...relaxed, FOGYASZTOBARAT_ENABLED: "" }))).toEqual({
-      complete: false,
-      missing: ["FOGYASZTOBARAT_ENABLED"],
+/**
+ * THE TEST MODE (Balázs 2026-11-02 10:05 UTC). What must fail: a missing or
+ * mistyped variable that opens the gate; test mode granted on the live shop or
+ * where the shop cannot prove it is not live; a refusal that is not logged.
+ */
+const TEST_SHOP = "https://shop-staging.acropora.hu"
+
+describe("resolveLegalGateMode", () => {
+  it("a missing, empty or enforce variable is enforce, with no complaint", () => {
+    for (const value of [undefined, "", "  ", "enforce"])
+      expect(resolveLegalGateMode({ LEGAL_GATE_MODE: value, ACROPORA_STOREFRONT_URL: TEST_SHOP })).toEqual({
+        mode: "enforce",
+        problem: null,
+      })
+  })
+
+  it("test on a test address is test", () => {
+    expect(resolveLegalGateMode({ LEGAL_GATE_MODE: " test ", ACROPORA_STOREFRONT_URL: TEST_SHOP })).toEqual({
+      mode: "test",
+      problem: null,
     })
   })
 
-  it("any other value, or none, keeps the English source required", () => {
-    for (const value of [undefined, "", "true", "FALSE", "0", "no"])
-      expect(
-        legalReadiness(readLegalConfig({ ...full, FOGYASZTOBARAT_ID_EN: "", FOGYASZTOBARAT_REQUIRE_EN: value }))
-      ).toEqual({ complete: false, missing: ["FOGYASZTOBARAT_ID_EN"] })
+  it("a typo is enforce, and says so", () => {
+    for (const value of ["Test", "TEST", "off", "false", "teszt"]) {
+      const result = resolveLegalGateMode({ LEGAL_GATE_MODE: value, ACROPORA_STOREFRONT_URL: TEST_SHOP })
+      expect(result.mode).toBe("enforce")
+      expect(result.problem).toContain("LEGAL_GATE_MODE")
+    }
+  })
+
+  it("test is refused on the live shop, in every spelling of its address", () => {
+    for (const url of [
+      "https://shop.acropora.hu",
+      "https://shop.acropora.hu/",
+      "https://SHOP.acropora.hu:443/hu",
+      "https://www.shop.acropora.hu",
+      "https://acropora.hu",
+      "http://www.acropora.hu/",
+    ]) {
+      const result = resolveLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: url })
+      expect(result.mode).toBe("enforce")
+      expect(result.problem).toContain("live shop")
+    }
+  })
+
+  it("test cannot show it is not live when the address is unset or unreadable: enforce", () => {
+    for (const url of [undefined, "", "   ", "not a url", "shop.acropora.hu"]) {
+      const result = resolveLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: url })
+      expect(result.mode).toBe("enforce")
+      expect(result.problem).toContain("ACROPORA_STOREFRONT_URL")
+    }
+  })
+
+  it("a refused test and a granted test are both logged; plain enforce is silent", () => {
+    const log = { warn: jest.fn(), error: jest.fn() }
+    expect(logLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: "https://shop.acropora.hu" }, log)).toBe("enforce")
+    expect(log.error).toHaveBeenCalledTimes(1)
+    expect(logLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: TEST_SHOP }, log)).toBe("test")
+    expect(log.warn).toHaveBeenCalledTimes(1)
+    log.warn.mockClear()
+    log.error.mockClear()
+    logLegalGateMode({}, log)
+    expect(log.warn).not.toHaveBeenCalled()
+    expect(log.error).not.toHaveBeenCalled()
+  })
+})
+
+describe("legalReadiness in test mode", () => {
+  const bare = { LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: TEST_SHOP }
+
+  it("test on a test shop is complete with nothing else set", () => {
+    expect(legalReadiness(readLegalConfig(bare))).toEqual({ complete: true })
+  })
+
+  it("test on the live shop is not: the Fogyasztóbarát settings are required again", () => {
+    expect(legalReadiness(readLegalConfig({ ...bare, ACROPORA_STOREFRONT_URL: "https://shop.acropora.hu" }))).toEqual({
+      complete: false,
+      missing: ["FOGYASZTOBARAT_ENABLED", "FOGYASZTOBARAT_ID_EN"],
+    })
+  })
+
+  it("the variable missing is enforce, exactly as before", () => {
+    expect(legalReadiness(readLegalConfig({ ACROPORA_STOREFRONT_URL: TEST_SHOP }))).toEqual({
+      complete: false,
+      missing: ["FOGYASZTOBARAT_ENABLED", "FOGYASZTOBARAT_ID_EN"],
+    })
   })
 })
 
