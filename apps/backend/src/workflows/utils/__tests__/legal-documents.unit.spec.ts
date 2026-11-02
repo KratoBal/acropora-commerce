@@ -57,6 +57,28 @@ describe("legalReadiness", () => {
   })
 })
 
+describe("the test-only English relaxation (FOGYASZTOBARAT_REQUIRE_EN)", () => {
+  it("only the exact value 'false' stops requiring the English source; the Hungarian half and the switch stay required", () => {
+    const relaxed = { ...full, FOGYASZTOBARAT_ID_EN: "", FOGYASZTOBARAT_REQUIRE_EN: "false" }
+    expect(legalReadiness(readLegalConfig(relaxed))).toEqual({ complete: true })
+    expect(legalReadiness(readLegalConfig({ ...relaxed, FOGYASZTOBARAT_ID_HU: "" }))).toEqual({
+      complete: false,
+      missing: ["FOGYASZTOBARAT_ID_HU"],
+    })
+    expect(legalReadiness(readLegalConfig({ ...relaxed, FOGYASZTOBARAT_ENABLED: "" }))).toEqual({
+      complete: false,
+      missing: ["FOGYASZTOBARAT_ENABLED"],
+    })
+  })
+
+  it("any other value, or none, keeps the English source required", () => {
+    for (const value of [undefined, "", "true", "FALSE", "0", "no"])
+      expect(
+        legalReadiness(readLegalConfig({ ...full, FOGYASZTOBARAT_ID_EN: "", FOGYASZTOBARAT_REQUIRE_EN: value }))
+      ).toEqual({ complete: false, missing: ["FOGYASZTOBARAT_ID_EN"] })
+  })
+})
+
 describe("legalSource", () => {
   it("is the api.php address of the key and the shop id, encoded", () => {
     expect(legalSource("aszf", "JPNFMVH0")).toBe("https://admin.fogyasztobarat.hu/api.php?aszf=JPNFMVH0")

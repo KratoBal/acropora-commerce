@@ -67,6 +67,20 @@ describe("the ÁSZF guard", () => {
       expect(guardAszf(null, "place_order", notReady)).toEqual({ action: "pass" })
     })
 
+    it("the test-only relaxation: with REQUIRE_EN false and no English source the guard reads the record again", () => {
+      const before = { ...process.env }
+      try {
+        process.env.FOGYASZTOBARAT_ENABLED = "true"
+        process.env.FOGYASZTOBARAT_ID_HU = "JPNFMVH0"
+        delete process.env.FOGYASZTOBARAT_ID_EN
+        process.env.FOGYASZTOBARAT_REQUIRE_EN = "false"
+        expect(guardAszf(kosar({ aszf_elfogadas: rekord }), "place_order")).toEqual({ action: "pass" })
+        expect(guardAszf(kosar(null), "place_order").action).toBe("refuse")
+      } finally {
+        process.env = before
+      }
+    })
+
     it("by default it reads the environment: the English source empty means refused", () => {
       const before = { ...process.env }
       try {

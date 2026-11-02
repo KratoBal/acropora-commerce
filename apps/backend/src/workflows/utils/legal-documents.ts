@@ -35,6 +35,8 @@ export type LegalConfig = {
   enabled: boolean
   hu: string | null
   en: string | null
+  /** False only for the exact value "false": the English source is then not required. */
+  requireEn: boolean
 }
 
 export type LegalEnv = Record<string, string | undefined>
@@ -49,6 +51,7 @@ export const readLegalConfig = (env: LegalEnv = process.env): LegalConfig => ({
   enabled: env.FOGYASZTOBARAT_ENABLED?.trim() === "true",
   hu: env.FOGYASZTOBARAT_ID_HU === undefined ? FOGYASZTOBARAT_DEFAULT_ID_HU : shopId(env.FOGYASZTOBARAT_ID_HU),
   en: shopId(env.FOGYASZTOBARAT_ID_EN),
+  requireEn: env.FOGYASZTOBARAT_REQUIRE_EN?.trim() !== "false",
 })
 
 export type LegalReadiness = { complete: true } | { complete: false; missing: string[] }
@@ -58,7 +61,7 @@ export const legalReadiness = (config: LegalConfig = readLegalConfig()): LegalRe
   const missing: string[] = []
   if (!config.enabled) missing.push("FOGYASZTOBARAT_ENABLED")
   if (!config.hu) missing.push("FOGYASZTOBARAT_ID_HU")
-  if (!config.en) missing.push("FOGYASZTOBARAT_ID_EN")
+  if (config.requireEn && !config.en) missing.push("FOGYASZTOBARAT_ID_EN")
   return missing.length === 0 ? { complete: true } : { complete: false, missing }
 }
 
