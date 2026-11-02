@@ -30,6 +30,7 @@ const fake = (customer: unknown) => {
 
 afterEach(() => {
   delete process.env.FOGYASZTOBARAT_ENABLED
+  delete process.env.FOGYASZTOBARAT_ID_HU
 })
 
 describe("saveCustomerAszfAcceptance", () => {
@@ -60,10 +61,23 @@ describe("saveCustomerAszfAcceptance", () => {
     expect(updates).toEqual([])
   })
 
-  it("with the Fogyasztóbarát switch on it refuses to record a document the backend cannot describe", async () => {
+  it("with the Fogyasztóbarát switch on it records that document, with its date and hash", async () => {
     process.env.FOGYASZTOBARAT_ENABLED = "true"
     const { container, updates } = fake({ id: "cus_1", metadata: {} })
-    expect(await saveCustomerAszfAcceptance(container, "cus_1", NOW)).toEqual({ status: "unsupported_document" })
+    const fetcher = (async () =>
+      new Response("<p>hatályos ettől a naptól: <span>2026-10-05</span></p>")) as unknown as typeof fetch
+    const result = await saveCustomerAszfAcceptance(container, "cus_1", NOW, fetcher)
+    expect(result.status).toBe("saved")
+    const record = (updates[0][1] as { metadata: { aszf_elfogadas: Record<string, unknown> } }).metadata.aszf_elfogadas
+    expect(record).toMatchObject({ verzio: "fogyasztobarat-JPNFMVH0", hatalyos: "2026-10-05" })
+    expect(String(record.lenyomat)).toMatch(/^sha256:[0-9a-f]{64}$/)
+  })
+
+  it("with the switch on and no Hungarian shop id there is no document to name: nothing written", async () => {
+    process.env.FOGYASZTOBARAT_ENABLED = "true"
+    process.env.FOGYASZTOBARAT_ID_HU = ""
+    const { container, updates } = fake({ id: "cus_1", metadata: {} })
+    expect(await saveCustomerAszfAcceptance(container, "cus_1", NOW)).toEqual({ status: "not_configured" })
     expect(updates).toEqual([])
   })
 })
@@ -86,10 +100,11 @@ describe("POST /store/customers/me/aszf-elfogadas", () => {
     expect(body.aszf_elfogadas.verzio).toBe(ASZF_VERZIO_MAI_BOLT)
   })
 
-  it("404 for a customer that does not exist, 501 with the switch on", async () => {
+  it("404 for a customer that does not exist, 503 with the switch on and no Hungarian shop id", async () => {
     expect((await call("cus_x", null)).status).toHaveBeenCalledWith(404)
     process.env.FOGYASZTOBARAT_ENABLED = "true"
-    expect((await call("cus_1", { id: "cus_1", metadata: {} })).status).toHaveBeenCalledWith(501)
+    process.env.FOGYASZTOBARAT_ID_HU = ""
+    expect((await call("cus_1", { id: "cus_1", metadata: {} })).status).toHaveBeenCalledWith(503)
   })
 
   it("takes the customer's word and nothing else: the body is strict and the route has its validator", () => {

@@ -10,7 +10,7 @@ import type { StorePostAszfElfogadasType } from "../../../carts/[id]/aszf-elfoga
  * server writes the record on the customer (its clock, its version:
  * customer-aszf-record.ts). Written once: a repeat answers the stored record.
  * 401: the token is not bound to a customer record yet; 404: no such customer;
- * 501: the document the shop shows is not one the backend can record yet.
+ * 503: the Fogyasztóbarát switch is on but the Hungarian shop id is not set.
  * The session comes from Medusa's `/store/customers/me*` middleware.
  */
 export const POST = async (
@@ -27,8 +27,8 @@ export const POST = async (
     res.status(404).json({ message: "Nincs ilyen vevő." })
     return
   }
-  if (result.status === "unsupported_document") {
-    res.status(501).json({ message: "Az ÁSZF-elfogadás rögzítése ezzel a dokumentummal még nincs bekötve." })
+  if (result.status === "not_configured") {
+    res.status(503).json({ message: "Az ÁSZF dokumentuma még nincs beállítva, az elfogadás nem rögzíthető." })
     return
   }
   res.json({ aszf_elfogadas: result.record })

@@ -1,7 +1,7 @@
 import type { ICustomerModuleService, MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
-import { buildAszfRecord, fogyasztobaratEnabled, type AszfRecord } from "./aszf-record"
+import { currentAszfRecord, type AszfRecord } from "./aszf-record"
 import { ASZF_METADATA_KEY } from "./split-completion"
 
 /**
@@ -25,22 +25,21 @@ import { ASZF_METADATA_KEY } from "./split-completion"
  * evidence of the first acceptance is not moved to a later time by a retry.
  * The other metadata keys stay as they are.
  *
- * The same refusal as the cart record while the Fogyasztóbarát switch is on:
- * the backend cannot yet take that document's effective date and hash.
+ * The same document as the cart record (`currentAszfRecord`): the Fogyasztóbarát
+ * one, with its effective date and hash, while the switch is on.
  */
 export type SaveCustomerAszfResult =
   | { status: "saved"; record: AszfRecord }
   | { status: "already"; record: unknown }
   | { status: "not_found" }
-  | { status: "unsupported_document" }
+  | { status: "not_configured" }
 
 export const saveCustomerAszfAcceptance = async (
   container: MedusaContainer,
   customerId: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  fetcher: typeof fetch = fetch
 ): Promise<SaveCustomerAszfResult> => {
-  if (fogyasztobaratEnabled()) return { status: "unsupported_document" }
-
   const customers = container.resolve<ICustomerModuleService>(Modules.CUSTOMER)
   const customer = await customers
     .retrieveCustomer(customerId, { select: ["id", "metadata"] })
@@ -50,7 +49,8 @@ export const saveCustomerAszfAcceptance = async (
   const existing = customer.metadata?.[ASZF_METADATA_KEY]
   if (existing) return { status: "already", record: existing }
 
-  const record = buildAszfRecord(now)
+  const record = await currentAszfRecord(now, fetcher)
+  if (!record) return { status: "not_configured" }
   await customers.updateCustomers(customerId, {
     metadata: { ...(customer.metadata ?? {}), [ASZF_METADATA_KEY]: record },
   })

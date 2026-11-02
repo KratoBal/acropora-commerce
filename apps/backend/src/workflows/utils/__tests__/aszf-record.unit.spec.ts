@@ -9,8 +9,9 @@ import middlewares from "../../../api/middlewares"
 import {
   ASZF_FORRAS_MAI_BOLT,
   ASZF_VERZIO_MAI_BOLT,
+  aszfEffectiveDate,
   buildAszfRecord,
-  fogyasztobaratEnabled,
+  buildFogyasztobaratRecord,
   saveAszfAcceptance,
 } from "../aszf-record"
 
@@ -28,6 +29,7 @@ const NOW = new Date("2026-10-27T12:00:00.000Z")
 afterEach(() => {
   updateCart.mockReset()
   delete process.env.FOGYASZTOBARAT_ENABLED
+  delete process.env.FOGYASZTOBARAT_ID_HU
 })
 
 describe("the record", () => {
@@ -39,10 +41,46 @@ describe("the record", () => {
     })
   })
 
-  it("the Fogyasztóbarát switch is read as exactly 'true', trimmed like the storefront's", () => {
-    expect(fogyasztobaratEnabled("true")).toBe(true)
-    expect(fogyasztobaratEnabled(" true ")).toBe(true)
-    for (const value of [undefined, "", "TRUE", "1", "false"]) expect(fogyasztobaratEnabled(value)).toBe(false)
+})
+
+const DOC = '<h1>Acropora - hatályos ettől a naptól: <span class="d">2026-10-05</span></h1><p>szöveg</p>'
+const answering = (body: string, status = 200) =>
+  jest.fn(async () => new Response(body, { status })) as unknown as typeof fetch & jest.Mock
+
+describe("the Fogyasztóbarát record", () => {
+  it("names the document, the effective date its text states and the hash of the bytes", async () => {
+    const fetcher = answering(DOC)
+    const record = await buildFogyasztobaratRecord(NOW, "JPNFMVH0", fetcher)
+    expect(record).toMatchObject({
+      idopont: NOW.toISOString(),
+      verzio: "fogyasztobarat-JPNFMVH0",
+      dokumentum: "https://admin.fogyasztobarat.hu/api.php?aszf=JPNFMVH0",
+      hatalyos: "2026-10-05",
+    })
+    expect(record.lenyomat).toBe(
+      `sha256:${require("node:crypto").createHash("sha256").update(Buffer.from(DOC)).digest("hex")}`
+    )
+    expect((fetcher as jest.Mock).mock.calls[0][1].headers.Referer).toBe("https://shop.acropora.hu/")
+  })
+
+  it("an error code in a 200 body, an error status or a thrown request: the order goes on, the record says what is missing", async () => {
+    for (const fetcher of [
+      answering("Hibakód: 1002"),
+      answering("x", 500),
+      jest.fn(async () => {
+        throw new Error("timeout")
+      }) as unknown as typeof fetch,
+    ])
+      expect(await buildFogyasztobaratRecord(NOW, "JPNFMVH0", fetcher)).toMatchObject({
+        verzio: "fogyasztobarat-JPNFMVH0",
+        hatalyos: null,
+        lenyomat: "nincs",
+      })
+  })
+
+  it("the date is read from the header sentence only; no sentence, no date", () => {
+    expect(aszfEffectiveDate(DOC)).toBe("2026-10-05")
+    expect(aszfEffectiveDate("<p>2026-10-05</p>")).toBeNull()
   })
 })
 
@@ -84,10 +122,19 @@ describe("saveAszfAcceptance", () => {
     expect(updateCart).not.toHaveBeenCalled()
   })
 
-  it("with the Fogyasztóbarát switch on it records nothing: the document is not one the backend can name yet", async () => {
+  it("with the Fogyasztóbarát switch on it records that document instead of stopping", async () => {
     process.env.FOGYASZTOBARAT_ENABLED = "true"
+    const result = await saveAszfAcceptance(scopeWith({ id: "cart_1", metadata: {} }), "cart_1", NOW, answering(DOC))
+    expect(result).toMatchObject({ status: "saved", record: { verzio: "fogyasztobarat-JPNFMVH0", hatalyos: "2026-10-05" } })
+    const written = (updateCart.mock.calls[0][0] as { input: { metadata: { aszf_elfogadas: unknown } } }).input.metadata
+    expect(written.aszf_elfogadas).toEqual((result as { record: unknown }).record)
+  })
+
+  it("with the switch on and no Hungarian shop id it records nothing", async () => {
+    process.env.FOGYASZTOBARAT_ENABLED = "true"
+    process.env.FOGYASZTOBARAT_ID_HU = ""
     expect(await saveAszfAcceptance(scopeWith({ id: "cart_1", metadata: {} }), "cart_1", NOW)).toEqual({
-      status: "unsupported_document",
+      status: "not_configured",
     })
     expect(updateCart).not.toHaveBeenCalled()
   })
@@ -106,11 +153,12 @@ describe("the route", () => {
     expect((res.sent as { aszf_elfogadas: { verzio: string } }).aszf_elfogadas.verzio).toBe(ASZF_VERZIO_MAI_BOLT)
   })
 
-  it("404 for no cart, 409 for an ordered one, 501 for a document it cannot record", async () => {
+  it("404 for no cart, 409 for an ordered one, 503 with the switch on and no Hungarian shop id", async () => {
     expect((await call("cart_9", null)).statusCode).toBe(404)
     expect((await call("cart_1", { id: "cart_1", completed_at: new Date() })).statusCode).toBe(409)
     process.env.FOGYASZTOBARAT_ENABLED = "true"
-    expect((await call("cart_1", { id: "cart_1", metadata: {} })).statusCode).toBe(501)
+    process.env.FOGYASZTOBARAT_ID_HU = ""
+    expect((await call("cart_1", { id: "cart_1", metadata: {} })).statusCode).toBe(503)
   })
 })
 

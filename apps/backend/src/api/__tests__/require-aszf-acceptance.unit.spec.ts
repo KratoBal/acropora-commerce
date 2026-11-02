@@ -29,6 +29,17 @@ const call = async (mw: typeof aszfBeforeCardStart, cart: unknown) => {
  * mégis lefutna.
  */
 describe("the ÁSZF net on the store routes", () => {
+  // the record logic is tested with the legal documents ready; the gate has its own describe
+  const envBefore = { ...process.env }
+  beforeEach(() => {
+    process.env.FOGYASZTOBARAT_ENABLED = "true"
+    process.env.FOGYASZTOBARAT_ID_HU = "JPNFMVH0"
+    process.env.FOGYASZTOBARAT_ID_EN = "ENSHOP01"
+  })
+  afterEach(() => {
+    process.env = { ...envBefore }
+  })
+
   it("a cart without the record: 400, the route does not run", async () => {
     for (const mw of [aszfBeforeCardStart, aszfBeforePlaceOrder]) {
       const { res, next } = await call(mw, { id: "cart_1", metadata: null, payment_collection: null })
@@ -107,6 +118,47 @@ describe("the ÁSZF net on the store routes", () => {
         (r) => r.matcher === "/store/payment-collections/:id/payment-sessions"
       )
       expect(route?.middlewares).toContain(aszfBeforeCardSession)
+    })
+  })
+
+  /**
+   * THE LEGAL DOCUMENTS GATE (card f6cb0a51). MI PIROSÍT: ha a rekordos kosár is
+   * tovább menne, miközben az angol forrás nincs beállítva; ha bármelyik a három
+   * belépő közül (PaymentIntent, leadás, közvetlen Stripe-munkamenet) kimaradna.
+   */
+  describe("the legal documents gate", () => {
+    const withRecord = { id: "cart_1", metadata: { aszf_elfogadas: { idopont: "2026-10-05T13:30:00.000Z" } } }
+
+    it("English source empty: a cart WITH the record is refused at stripe-start and at placing", async () => {
+      process.env.FOGYASZTOBARAT_ID_EN = ""
+      for (const mw of [aszfBeforeCardStart, aszfBeforePlaceOrder]) {
+        const { res, next } = await call(mw, withRecord)
+        expect(res.statusCode).toBe(400)
+        expect((res.sent as { message: string }).message).toContain("nincs közzétéve")
+        expect(next).not.toHaveBeenCalled()
+      }
+    })
+
+    it("the switch off: refused the same way", async () => {
+      process.env.FOGYASZTOBARAT_ENABLED = "false"
+      expect((await call(aszfBeforePlaceOrder, withRecord)).res.statusCode).toBe(400)
+    })
+
+    it("a Stripe session on the payment collection is refused too; a cash-on-delivery one is the placing's to refuse", async () => {
+      process.env.FOGYASZTOBARAT_ID_EN = ""
+      const res = { statusCode: 0, status(c: number) { this.statusCode = c; return this }, json() {} }
+      const next = jest.fn()
+      const graph = async ({ entity }: { entity: string }) =>
+        entity === "payment_collection"
+          ? { data: [{ id: "pay_col_1", cart: { id: "cart_1" } }] }
+          : { data: [{ ...withRecord, payment_collection: null }] }
+      await aszfBeforeCardSession(
+        { params: { id: "pay_col_1" }, body: { provider_id: "pp_stripe_stripe" }, scope: { resolve: () => ({ graph }) } } as never,
+        res as never,
+        next
+      )
+      expect(res.statusCode).toBe(400)
+      expect(next).not.toHaveBeenCalled()
     })
   })
 })
