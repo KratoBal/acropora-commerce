@@ -1,9 +1,11 @@
+import { useLocale, useTranslate } from "@lib/i18n/use-translate"
 import { HttpTypes } from "@medusajs/types"
-import Input from "@modules/common/components/input"
 import React, { useState } from "react"
-import CountrySelect from "../country-select"
+import { PenztarMezo, PenztarOrszag } from "../penztar-mezo"
 
 const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
+  const t = useTranslate()
+  const locale = useLocale()
   const [formData, setFormData] = useState<Record<string, string>>({
     "billing_address.first_name": cart?.billing_address?.first_name || "",
     "billing_address.last_name": cart?.billing_address?.last_name || "",
@@ -29,27 +31,53 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
-        <Input
-          label="Keresztnév"
-          name="billing_address.first_name"
-          autoComplete="given-name"
-          value={formData["billing_address.first_name"]}
-          onChange={handleChange}
-          required
-          data-testid="billing-first-name-input"
-        />
-        <Input
-          label="Vezetéknév"
-          name="billing_address.last_name"
-          autoComplete="family-name"
-          value={formData["billing_address.last_name"]}
-          onChange={handleChange}
-          required
-          data-testid="billing-last-name-input"
-        />
-        <Input
-          label="Cím"
+      <div className="grid grid-cols-1 gap-4 small:grid-cols-2">
+        {/* a nevek sorrendje a nyelvé: magyarul előbb a vezetéknév (a mezők nevei és a beküldés ugyanazok) */}
+        {locale === "hu" ? (
+          <>
+            <PenztarMezo
+              label={t("checkoutPage.lastName")}
+              name="billing_address.last_name"
+              autoComplete="family-name"
+              value={formData["billing_address.last_name"]}
+              onChange={handleChange}
+              required
+              data-testid="billing-last-name-input"
+            />
+            <PenztarMezo
+              label={t("checkoutPage.firstName")}
+              name="billing_address.first_name"
+              autoComplete="given-name"
+              value={formData["billing_address.first_name"]}
+              onChange={handleChange}
+              required
+              data-testid="billing-first-name-input"
+            />
+          </>
+        ) : (
+          <>
+            <PenztarMezo
+              label={t("checkoutPage.firstName")}
+              name="billing_address.first_name"
+              autoComplete="given-name"
+              value={formData["billing_address.first_name"]}
+              onChange={handleChange}
+              required
+              data-testid="billing-first-name-input"
+            />
+            <PenztarMezo
+              label={t("checkoutPage.lastName")}
+              name="billing_address.last_name"
+              autoComplete="family-name"
+              value={formData["billing_address.last_name"]}
+              onChange={handleChange}
+              required
+              data-testid="billing-last-name-input"
+            />
+          </>
+        )}
+        <PenztarMezo
+          label={t("checkoutPage.address")}
           name="billing_address.address_1"
           autoComplete="address-line1"
           value={formData["billing_address.address_1"]}
@@ -57,16 +85,16 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-address-input"
         />
-        <Input
-          label="Cégnév"
+        <PenztarMezo
+          label={t("checkoutPage.company")}
           name="billing_address.company"
           value={formData["billing_address.company"]}
           onChange={handleChange}
           autoComplete="organization"
           data-testid="billing-company-input"
         />
-        <Input
-          label="Irányítószám"
+        <PenztarMezo
+          label={t("checkoutPage.postalCode")}
           name="billing_address.postal_code"
           autoComplete="postal-code"
           value={formData["billing_address.postal_code"]}
@@ -74,14 +102,14 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-postal-input"
         />
-        <Input
-          label="Város"
+        <PenztarMezo
+          label={t("checkoutPage.city")}
           name="billing_address.city"
           autoComplete="address-level2"
           value={formData["billing_address.city"]}
           onChange={handleChange}
         />
-        <CountrySelect
+        <PenztarOrszag
           name="billing_address.country_code"
           autoComplete="country"
           region={cart?.region}
@@ -90,16 +118,16 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           required
           data-testid="billing-country-select"
         />
-        <Input
-          label="Megye / állam"
+        <PenztarMezo
+          label={t("checkoutPage.province")}
           name="billing_address.province"
           autoComplete="address-level1"
           value={formData["billing_address.province"]}
           onChange={handleChange}
           data-testid="billing-province-input"
         />
-        <Input
-          label="Telefonszám"
+        <PenztarMezo
+          label={t("checkoutPage.phone")}
           name="billing_address.phone"
           autoComplete="tel"
           value={formData["billing_address.phone"]}

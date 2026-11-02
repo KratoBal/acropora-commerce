@@ -2,6 +2,9 @@ import { retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getCartPaymentOptions } from "@lib/data/payment"
 import { isStripeLike } from "@lib/constants"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+import StepIndicator from "@modules/cart/components/step-indicator"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
@@ -9,11 +12,12 @@ import FizetesiOldal from "@modules/checkout/templates/fizetesi-oldal"
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 
-export const metadata: Metadata = {
-  // A cim a bongeszo fulen latszik, tehat a vevo olvassa. Az eredeti starter
-  // angol szava (`Checkout`) ugyanabban a fajlban allt, mint a most javitott
-  // 404-es valasz.
-  title: "Pénztár",
+export async function generateMetadata(props: {
+  params: Promise<{ countryCode: string }>
+}): Promise<Metadata> {
+  const { countryCode } = await props.params
+  // A cim a bongeszo fulen latszik, tehat a vevo olvassa: szotar-kulcs, nyelvenkent.
+  return { title: translator(localeOf(countryCode))("checkoutPage.title") }
 }
 
 /**
@@ -91,16 +95,22 @@ export default async function Checkout(props: {
     )
   }
 
+  const t = translator(localeOf(countryCode))
+
   return (
-    <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
-      <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
-        <CheckoutForm
-          cart={cart}
-          customer={customer}
-          countryCode={countryCode}
-        />
-      </PaymentWrapper>
-      <CheckoutSummary cart={cart} />
+    <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
+      <div className="pb-4">
+        <StepIndicator active={1} countryCode={countryCode} />
+      </div>
+      <h1 className="pb-8 text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
+        {t("checkoutPage.title")}
+      </h1>
+      <div className="grid grid-cols-1 gap-y-8 small:grid-cols-[minmax(0,1fr)_452px] small:items-start small:gap-x-[44px]">
+        <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
+          <CheckoutForm cart={cart} customer={customer} />
+        </PaymentWrapper>
+        <CheckoutSummary cart={cart} countryCode={countryCode} />
+      </div>
     </div>
   )
 }

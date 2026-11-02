@@ -1,11 +1,9 @@
+import { useLocale, useTranslate } from "@lib/i18n/use-translate"
 import { HttpTypes } from "@medusajs/types"
-import { Container } from "@modules/common/components/ui"
-import Checkbox from "@modules/common/components/checkbox"
-import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useId, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import CountrySelect from "../country-select"
+import { PenztarMezo, PenztarOrszag } from "../penztar-mezo"
 
 const ShippingAddress = ({
   customer,
@@ -18,6 +16,9 @@ const ShippingAddress = ({
   checked: boolean
   onChange: () => void
 }) => {
+  const t = useTranslate()
+  const locale = useLocale()
+  const pipaId = useId()
   const [formData, setFormData] = useState<Record<string, string>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -97,9 +98,13 @@ const ShippingAddress = ({
   return (
     <>
       {customer && (addressesInRegion?.length || 0) > 0 && (
-        <Container className="mb-6 flex flex-col gap-y-4 p-5">
-          <p className="text-small-regular">
-            {`Hi ${customer.first_name}, do you want to use one of your saved addresses?`}
+        <div className="mb-6 flex flex-col gap-y-4 border border-acr-line bg-acr-mist p-5">
+          <p className="text-[14px] leading-[22px] text-acr-ink">
+            {customer.first_name
+              ? t("checkoutPage.savedAddressNamed", {
+                  name: customer.first_name,
+                })
+              : t("checkoutPage.savedAddress")}
           </p>
           <AddressSelect
             addresses={customer.addresses}
@@ -110,29 +115,55 @@ const ShippingAddress = ({
             }
             onSelect={setFormAddress}
           />
-        </Container>
+        </div>
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <Input
-          label="Keresztnév"
-          name="shipping_address.first_name"
-          autoComplete="given-name"
-          value={formData["shipping_address.first_name"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-first-name-input"
-        />
-        <Input
-          label="Vezetéknév"
-          name="shipping_address.last_name"
-          autoComplete="family-name"
-          value={formData["shipping_address.last_name"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-last-name-input"
-        />
-        <Input
-          label="Cím"
+      <div className="grid grid-cols-1 gap-4 small:grid-cols-2">
+        {/* a nevek sorrendje a nyelvé: magyarul előbb a vezetéknév (a mezők nevei és a beküldés ugyanazok) */}
+        {locale === "hu" ? (
+          <>
+            <PenztarMezo
+              label={t("checkoutPage.lastName")}
+              name="shipping_address.last_name"
+              autoComplete="family-name"
+              value={formData["shipping_address.last_name"]}
+              onChange={handleChange}
+              required
+              data-testid="shipping-last-name-input"
+            />
+            <PenztarMezo
+              label={t("checkoutPage.firstName")}
+              name="shipping_address.first_name"
+              autoComplete="given-name"
+              value={formData["shipping_address.first_name"]}
+              onChange={handleChange}
+              required
+              data-testid="shipping-first-name-input"
+            />
+          </>
+        ) : (
+          <>
+            <PenztarMezo
+              label={t("checkoutPage.firstName")}
+              name="shipping_address.first_name"
+              autoComplete="given-name"
+              value={formData["shipping_address.first_name"]}
+              onChange={handleChange}
+              required
+              data-testid="shipping-first-name-input"
+            />
+            <PenztarMezo
+              label={t("checkoutPage.lastName")}
+              name="shipping_address.last_name"
+              autoComplete="family-name"
+              value={formData["shipping_address.last_name"]}
+              onChange={handleChange}
+              required
+              data-testid="shipping-last-name-input"
+            />
+          </>
+        )}
+        <PenztarMezo
+          label={t("checkoutPage.address")}
           name="shipping_address.address_1"
           autoComplete="address-line1"
           value={formData["shipping_address.address_1"]}
@@ -140,16 +171,16 @@ const ShippingAddress = ({
           required
           data-testid="shipping-address-input"
         />
-        <Input
-          label="Cégnév"
+        <PenztarMezo
+          label={t("checkoutPage.company")}
           name="shipping_address.company"
           value={formData["shipping_address.company"]}
           onChange={handleChange}
           autoComplete="organization"
           data-testid="shipping-company-input"
         />
-        <Input
-          label="Irányítószám"
+        <PenztarMezo
+          label={t("checkoutPage.postalCode")}
           name="shipping_address.postal_code"
           autoComplete="postal-code"
           value={formData["shipping_address.postal_code"]}
@@ -157,8 +188,8 @@ const ShippingAddress = ({
           required
           data-testid="shipping-postal-code-input"
         />
-        <Input
-          label="Város"
+        <PenztarMezo
+          label={t("checkoutPage.city")}
           name="shipping_address.city"
           autoComplete="address-level2"
           value={formData["shipping_address.city"]}
@@ -166,7 +197,7 @@ const ShippingAddress = ({
           required
           data-testid="shipping-city-input"
         />
-        <CountrySelect
+        <PenztarOrszag
           name="shipping_address.country_code"
           autoComplete="country"
           region={cart?.region}
@@ -175,8 +206,8 @@ const ShippingAddress = ({
           required
           data-testid="shipping-country-select"
         />
-        <Input
-          label="Megye / állam"
+        <PenztarMezo
+          label={t("checkoutPage.province")}
           name="shipping_address.province"
           autoComplete="address-level1"
           value={formData["shipping_address.province"]}
@@ -184,29 +215,37 @@ const ShippingAddress = ({
           data-testid="shipping-province-input"
         />
       </div>
-      <div className="my-8">
-        <Checkbox
-          label="A számlázási cím megegyezik a szállítási címmel"
-          name="same_as_billing"
-          checked={checked}
-          onChange={onChange}
-          data-testid="billing-address-checkbox"
-        />
+      <div className="my-6">
+        <label
+          htmlFor={pipaId}
+          className="flex items-center gap-3 text-[14px] leading-[22px] text-acr-ink"
+        >
+          <input
+            id={pipaId}
+            type="checkbox"
+            name="same_as_billing"
+            checked={checked}
+            onChange={onChange}
+            className="h-[18px] w-[18px] accent-[var(--acr-color-navy)]"
+            data-testid="billing-address-checkbox"
+          />
+          {t("checkoutPage.sameAsBilling")}
+        </label>
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <Input
-          label="E-mail-cím"
+      <div className="mb-4 grid grid-cols-1 gap-4 small:grid-cols-2">
+        <PenztarMezo
+          label={t("checkoutPage.email")}
           name="email"
           type="email"
-          title="Adj meg érvényes e-mail-címet."
+          title={t("checkoutPage.emailInvalid")}
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
           required
           data-testid="shipping-email-input"
         />
-        <Input
-          label="Telefonszám"
+        <PenztarMezo
+          label={t("checkoutPage.phone")}
           name="shipping_address.phone"
           autoComplete="tel"
           value={formData["shipping_address.phone"]}
