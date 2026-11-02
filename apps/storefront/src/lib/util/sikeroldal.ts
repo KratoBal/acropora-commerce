@@ -1,3 +1,4 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import { foxpostPontTipus } from "./csomagpont"
 import { GLS_LOGO, glsNyitvatartas, glsTipusFelirat, glsTipusLogo } from "./gls"
 import { isStripeLike } from "@lib/constants"
@@ -108,17 +109,21 @@ const szolgaltato = (rendeles: Rendeles): string | null => {
 
 const UTANVET = "pp_acropora_cod"
 
-export function fizetesCimke(rendeles: Rendeles): string {
+export function fizetesCimke(
+  rendeles: Rendeles,
+  t: Translate = translator("hu"),
+): string {
   const p = szolgaltato(rendeles) ?? ""
-  if (isStripeLike(p)) return "Bankkártya"
-  if (p === UTANVET) return "Utánvét"
-  return "Fizetés átvételkor"
+  if (isStripeLike(p)) return t("orderConfirmed.payCard")
+  if (p === UTANVET) return t("orderConfirmed.payCod")
+  return t("orderConfirmed.payAtStore")
 }
 
 export function teljesites(
   rendeles: Rendeles,
   bolti: boolean,
   sorszam: number,
+  t: Translate = translator("hu"),
 ): Teljesites {
   const mod = rendeles.shipping_methods?.at(-1)
   const fox = mod?.data?.foxpost_pickup_point as Pont | undefined
@@ -126,7 +131,12 @@ export function teljesites(
   const sorok = rendeles.items ?? []
   const tetelek = sorok
     .filter((t) => !utanvetDijSor(t))
-    .map((t) => `${t.product_title ?? t.title ?? ""} · ${t.quantity ?? 1} db`)
+    .map((sor) =>
+      t("orderConfirmed.itemLine", {
+        title: sor.product_title ?? sor.title ?? "",
+        quantity: sor.quantity ?? 1,
+      }),
+    )
   const dijSorok = sorok.filter(utanvetDijSor)
   const kezelesiDij = dijSorok.length
     ? dijSorok.reduce(
@@ -157,33 +167,35 @@ export function teljesites(
   if (bolti || (!fox?.name && !gls?.name && /átvétel/i.test(mod?.name ?? ""))) {
     return {
       ...alap,
-      cimke: `${sorszam}. Személyes átvétel`,
+      cimke: t("orderConfirmed.labelStore", { n: sorszam }),
       szallito: "bolt",
       tipus: "",
-      hely: "Acropora üzlet",
+      hely: t("orderConfirmed.shopName"),
       cim: SHOP_ADDRESS,
     }
   }
-  const cimke = `${sorszam}. Kiszállítandó rendelés`
+  const cimke = t("orderConfirmed.labelDelivery", { n: sorszam })
   if (fox?.name) {
     return {
       ...alap,
       cimke,
       szallito: "foxpost",
       // a vevo szavaival: egy Z-BOX vagy Z-Pont sem FOXPOST automata (Foxpost-prompt 5.)
-      tipus: foxpostPontTipus(fox.variant),
+      tipus: foxpostPontTipus(fox.variant, t),
       hely: fox.name,
       cim: fox.address ?? "",
     }
   }
   if (gls?.name) {
     // a pont fajtaja (ParcelShop vagy Automata) es a sajat logoja (GLS-prompt 10)
-    const nyitva = glsNyitvatartas(gls.hours)
+    const nyitva = glsNyitvatartas(gls.hours, t)
     return {
       ...alap,
       cimke,
       szallito: "gls",
-      tipus: gls.type ? glsTipusFelirat(gls.type) : "GLS csomagpont",
+      tipus: gls.type
+        ? glsTipusFelirat(gls.type)
+        : t("checkoutShipping.modeGlsPoint"),
       hely: gls.name,
       cim: [gls.address, nyitva].filter(Boolean).join(" · "),
       logo: glsTipusLogo(gls.type),
@@ -217,6 +229,7 @@ export function sikeroldal(
   rendeles: Rendeles,
   par: Rendeles | null,
   parBolti: boolean,
+  t: Translate = translator("hu"),
 ) {
   const sorrend: { r: Rendeles; bolti: boolean }[] = par
     ? parBolti
@@ -233,8 +246,10 @@ export function sikeroldal(
   return {
     rendelesszam: sorrend.map(({ r }) => rendelesSzam(r.display_id)).join(", "),
     email: rendeles.email ?? fo.email ?? "",
-    teljesitesek: sorrend.map(({ r, bolti }, i) => teljesites(r, bolti, i + 1)),
-    fizetes: fizetesCimke(fo),
+    teljesitesek: sorrend.map(({ r, bolti }, i) =>
+      teljesites(r, bolti, i + 1, t),
+    ),
+    fizetes: fizetesCimke(fo, t),
     vegosszeg: sorrend.reduce((s, { r }) => s + Number(r.total ?? 0), 0),
     rendelesekSzama: sorrend.length,
   }

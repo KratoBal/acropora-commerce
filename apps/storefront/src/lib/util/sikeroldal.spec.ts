@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { GLS_KOVETKEZO_LEPES, KOVETKEZO_LEPES, sikeroldal } from "./sikeroldal"
+import { translator } from "@lib/i18n/dictionary"
+import {
+  GLS_KOVETKEZO_LEPES,
+  KOVETKEZO_LEPES,
+  fizetesCimke,
+  sikeroldal,
+} from "./sikeroldal"
 
 /**
  * A VISSZAIGAZOLO LAP (Figma 488:2 / 488:55 / 488:94). MI PIROSIT: ha a
@@ -198,5 +204,37 @@ describe("a visszaigazoló lap", () => {
       tipus: "GLS csomagpont",
       logo: "/images/gls-csomagpont.png",
     })
+  })
+})
+
+/**
+ * A KÉT HELYEN ÁLLÓ MONDATOK: a konstans (a régi hívóknak) és a szótár (az oldal
+ * ezt írja ki) betű szerint egyezik; a fizetés felirata és a teljesítés címkéje
+ * a lap nyelvén áll.
+ */
+describe("a visszaigazoló oldal szövegei nyelvenként", () => {
+  it("a magyar szótár betű szerint a konstans mondata", () => {
+    const hu = translator("hu")
+    expect(hu("orderConfirmed.nextStep")).toBe(KOVETKEZO_LEPES)
+    expect(hu("orderConfirmed.nextStepGls")).toBe(GLS_KOVETKEZO_LEPES)
+  })
+
+  it("a fizetés felirata és a teljesítés címkéje angolul", () => {
+    const en = translator("en")
+    const stripe = {
+      id: "o",
+      payment_collections: [
+        { payments: [{ provider_id: "pp_stripe_stripe" }] },
+      ],
+    }
+    expect(fizetesCimke(stripe, en)).toBe("Card")
+    expect(fizetesCimke(stripe)).toBe("Bankkártya")
+    const lap = sikeroldal(
+      { id: "o", display_id: 5, shipping_methods: [{ name: "GLS házhoz" }] },
+      null,
+      false,
+      en,
+    )
+    expect(lap.teljesitesek[0].cimke).toBe("1. Order to be delivered")
   })
 })

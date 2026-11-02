@@ -1,3 +1,5 @@
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { rendelesSzam } from "@lib/util/rendelesek"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -9,9 +11,13 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  */
 export default function OrderCompletedMinimal({
   displayId,
+  countryCode,
 }: {
   displayId: number | string | null | undefined
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
 }) {
+  const t = translator(localeOf(countryCode))
   return (
     <div className="min-h-[calc(100vh-64px)] bg-acr-mist py-10 small:py-14">
       <div
@@ -25,7 +31,7 @@ export default function OrderCompletedMinimal({
           ✓
         </span>
         <h1 className="text-[30px] font-normal leading-[36px] text-acr-ink small:text-[38px] small:leading-[46px]">
-          Köszönjük a rendelésed!
+          {t("orderConfirmed.thanksLong")}
         </h1>
         {displayId === null || displayId === undefined ? null : (
           <p className="text-[15px] text-acr-ink" data-testid="order-id">
@@ -33,22 +39,20 @@ export default function OrderCompletedMinimal({
           </p>
         )}
         <p className="text-[13px] text-acr-slate">
-          A rendelésed részleteit a visszaigazoló e-mailben találod. Ha van
-          fiókod, a rendeléseidet bejelentkezés után a Rendeléseim oldalon is
-          megnézheted.
+          {t("orderConfirmed.minimalText")}
         </p>
         <LocalizedClientLink
           href="/account/orders"
           className="mt-2 flex h-12 items-center justify-center bg-acr-heritage px-6 text-[15px] font-semibold text-acr-white hover:opacity-90"
           data-testid="rendeleseim"
         >
-          Rendeléseim megnyitása
+          {t("orderConfirmed.openOrders")}
         </LocalizedClientLink>
         <LocalizedClientLink
           href="/"
           className="flex h-11 items-center justify-center border border-acr-line px-6 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
         >
-          Vissza a webshophoz
+          {t("orderConfirmed.backToShop")}
         </LocalizedClientLink>
       </div>
     </div>

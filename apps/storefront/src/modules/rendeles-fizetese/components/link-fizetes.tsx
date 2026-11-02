@@ -10,11 +10,7 @@ import {
   LINK_FIZETES_MOST_NEM_SIKERULT,
   stripeVisszateresSikeres,
 } from "@lib/util/rendeles-fizetese"
-import {
-  type StripeAllapot,
-  STRIPE_BIZALMI_SZOVEG,
-  stripeHibaFajta,
-} from "@lib/util/stripe-allapot"
+import { type StripeAllapot, stripeHibaFajta } from "@lib/util/stripe-allapot"
 import { stripeEgyseg } from "@lib/util/stripe-egyseg"
 import { STRIPE_FIZETESI_MEZO } from "@lib/util/stripe-megjelenes"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -23,6 +19,8 @@ import { StripeHalasztott } from "@modules/checkout/components/payment-wrapper/s
 import StripeAllapotPanel from "@modules/checkout/components/stripe-allapot"
 import { Button } from "@modules/common/components/ui"
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
@@ -82,6 +80,7 @@ function LinkFizetesMezo({ token, osszeg, countryCode }: Props) {
   const stripe = useStripe()
   const elements = useElements()
   const router = useRouter()
+  const t = translator(localeOf(countryCode))
   const [allapot, setAllapot] = useState<StripeAllapot>("alap")
   const [hiba, setHiba] = useState<string | null>(null)
   const [mezoKesz, setMezoKesz] = useState(false)
@@ -186,7 +185,7 @@ function LinkFizetesMezo({ token, osszeg, countryCode }: Props) {
         />
       </div>
       <p className="text-[12px] leading-[17px] text-acr-slate">
-        {STRIPE_BIZALMI_SZOVEG}
+        {t("checkoutPayment.trust")}
       </p>
       {allapot === "elutasitva" && (
         <p

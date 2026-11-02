@@ -47,7 +47,12 @@ const rendeles = (shipping: Record<string, unknown>) =>
   }) as never
 
 const lap = async (shipping: Record<string, unknown>) =>
-  render(await OrderCompletedTemplate({ order: rendeles(shipping) }))
+  render(
+    await OrderCompletedTemplate({
+      order: rendeles(shipping),
+      countryCode: "hu",
+    }),
+  )
 
 describe("a sikeroldal GLS-rendelésnél", () => {
   it("a GLS Automata logója, a nyitvatartás és a GLS következő lépése", async () => {

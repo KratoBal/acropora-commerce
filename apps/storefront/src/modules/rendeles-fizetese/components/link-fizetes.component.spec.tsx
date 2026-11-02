@@ -210,4 +210,18 @@ describe("LinkFizetes", () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(gomb().hasAttribute("disabled")).toBe(true)
   })
+
+  it("a Stripe bizalmi mondata a lap nyelvén áll", () => {
+    const { unmount } = render(
+      <LinkFizetes token="t.s" osszeg={9800} countryCode="hu" />,
+    )
+    expect(document.body.textContent).toContain(
+      "A kártyaadatokat a Stripe biztonságos fizetési rendszere kezeli",
+    )
+    unmount()
+    render(<LinkFizetes token="t.s" osszeg={9800} countryCode="en-hu" />)
+    expect(document.body.textContent).toContain(
+      "Card details are handled by Stripe's secure payment system",
+    )
+  })
 })

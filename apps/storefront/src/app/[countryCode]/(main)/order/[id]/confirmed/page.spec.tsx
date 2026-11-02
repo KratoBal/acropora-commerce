@@ -48,7 +48,7 @@ vi.mock("@modules/order/templates/order-completed-template", () => ({
 
 import { alairtMegtekintesSuti } from "@lib/util/rendeles-megtekintes"
 
-import OrderConfirmedPage from "./page"
+import OrderConfirmedPage, { generateMetadata } from "./page"
 
 afterEach(() => {
   cleanup()
@@ -73,7 +73,11 @@ const rendeles = (id: string, extra: Record<string, unknown> = {}) => ({
 })
 
 const lap = async (id: string) =>
-  render(await OrderConfirmedPage({ params: Promise.resolve({ id }) } as never))
+  render(
+    await OrderConfirmedPage({
+      params: Promise.resolve({ id, countryCode: "hu" }),
+    } as never),
+  )
 
 describe("a rendelés-visszaigazoló lap", () => {
   it("az azonosító egyedül csak a rendelésszámot és a köszönetet mutatja, az e-mail-címet nem", async () => {
@@ -138,5 +142,22 @@ describe("a rendelés-visszaigazoló lap", () => {
     expect(screen.getByTestId("order-complete-minimal")).toBeTruthy()
     expect(screen.queryByTestId("order-id")).toBeNull()
     expect(screen.queryByTestId("reszletes")).toBeNull()
+  })
+
+  it("a lap címe és az idegen rendelés minimális oldala a lap nyelvén áll", async () => {
+    const params = (countryCode: string) =>
+      ({ params: Promise.resolve({ id: "order_A", countryCode }) }) as never
+    expect((await generateMetadata(params("hu"))).title).toBe(
+      "Rendelés visszaigazolása",
+    )
+    expect((await generateMetadata(params("en-hu"))).title).toBe(
+      "Order confirmation",
+    )
+    adat.rendelesek = { order_A: rendeles("order_A") }
+    render(await OrderConfirmedPage(params("en-hu")))
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "Thank you for your order!",
+    )
+    expect(document.body.textContent).not.toContain("vevo@example.test")
   })
 })

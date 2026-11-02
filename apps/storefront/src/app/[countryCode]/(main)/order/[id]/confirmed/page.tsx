@@ -5,18 +5,27 @@ import { megtekintesEngedelyezett } from "@lib/util/rendeles-megtekintes"
 import { kapcsoltRendeles } from "@lib/util/rendelesek"
 import OrderCompletedMinimal from "@modules/order/templates/order-completed-minimal"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { Metadata } from "next"
 
 type Props = {
-  params: Promise<{ id: string }>
+  params: Promise<{ countryCode: string; id: string }>
 }
-export const metadata: Metadata = {
-  title: "Rendelés visszaigazolása",
-  description: "A rendelésedet sikeresen leadtad.",
+
+/** A lap címe és leírása a lap nyelvén (szótár-kulcsok). */
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { countryCode } = await props.params
+  const t = translator(localeOf(countryCode))
+  return {
+    title: t("orderConfirmed.metaTitle"),
+    description: t("orderConfirmed.metaDescription"),
+  }
 }
 
 export default async function OrderConfirmedPage(props: Props) {
   const params = await props.params
+  const { countryCode } = params
   const order = await retrieveOrder(params.id).catch(() => null)
 
   // A hatter 404-et ad annak, aki nem tulajdonos es nincs alairt sutije (audit
@@ -24,7 +33,7 @@ export default async function OrderConfirmedPage(props: Props) {
   // minimalis oldal jar, szam nelkul, hogy az oldal se arulja el, melyik
   // azonosito letezik.
   if (!order) {
-    return <OrderCompletedMinimal displayId={null} />
+    return <OrderCompletedMinimal displayId={null} countryCode={countryCode} />
   }
 
   // A LAP NEM MUTATJA A SZEMELYES ADATOKAT (nev, cim, telefon, e-mail) CSAK
@@ -40,7 +49,12 @@ export default async function OrderConfirmedPage(props: Props) {
     (!!vevo?.id && rendeles.customer_id === vevo.id)
 
   if (!sajat(order)) {
-    return <OrderCompletedMinimal displayId={order.display_id} />
+    return (
+      <OrderCompletedMinimal
+        displayId={order.display_id}
+        countryCode={countryCode}
+      />
+    )
   }
 
   // P4-2: egy vegyes kosár két rendelés lett; a visszaigazolás megnevezi a párt.
@@ -54,6 +68,7 @@ export default async function OrderConfirmedPage(props: Props) {
       order={order}
       par={parRendeles}
       parBolti={par?.bolti ?? false}
+      countryCode={countryCode}
     />
   )
 }
