@@ -4,6 +4,7 @@ import { getCartPaymentOptions } from "@lib/data/payment"
 import { isStripeLike } from "@lib/constants"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
+import { lepesjelzoAllas } from "@lib/util/penztar-lepes"
 import StepIndicator from "@modules/cart/components/step-indicator"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
@@ -100,7 +101,10 @@ export default async function Checkout(props: {
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
       <div className="pb-4">
-        <StepIndicator active={1} countryCode={countryCode} />
+        <StepIndicator
+          active={lepesjelzoAllas(step)}
+          countryCode={countryCode}
+        />
       </div>
       <h1 className="pb-8 text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
         {t("checkoutPage.title")}
