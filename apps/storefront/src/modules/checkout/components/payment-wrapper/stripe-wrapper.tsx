@@ -8,6 +8,7 @@ import {
   stripeElementsBeallitas,
   stripeVilagDokumentumbol,
 } from "@lib/util/stripe-megjelenes"
+import { useLocale } from "@lib/i18n/use-translate"
 import { createContext, useEffect, useState } from "react"
 
 type StripeWrapperProps = {
@@ -37,9 +38,10 @@ const StripeWrapper: React.FC<StripeWrapperProps> = ({
   children,
 }) => {
   const vilag = useStripeVilag()
+  const locale = useLocale()
   const options: StripeElementsOptions = {
     clientSecret: paymentSession!.data?.client_secret as string | undefined,
-    ...stripeElementsBeallitas(vilag),
+    ...stripeElementsBeallitas(vilag, locale),
   }
 
   if (!stripeKey) {
@@ -84,6 +86,7 @@ export const StripeHalasztott: React.FC<{
   children: React.ReactNode
 }> = ({ osszeg, penznem, stripePromise, children }) => {
   const vilag = useStripeVilag()
+  const locale = useLocale()
   return (
     <StripeContext.Provider value={true}>
       <Elements
@@ -95,7 +98,7 @@ export const StripeHalasztott: React.FC<{
           captureMethod: "manual",
           // a kartya: az Apple Pay es a Google Pay is ezen a tipuson fut
           paymentMethodTypes: ["card"],
-          ...stripeElementsBeallitas(vilag),
+          ...stripeElementsBeallitas(vilag, locale),
         }}
       >
         {children}

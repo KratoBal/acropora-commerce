@@ -46,7 +46,11 @@ vi.mock("@modules/checkout/components/payment-wrapper/stripe-wrapper", () => ({
     </div>
   ),
 }))
-vi.mock("next/navigation", () => ({ useRouter: () => router }))
+// a StripeAllapotPanel a lap nyelvén ír (useParams); a link-fizetés lapja is országkódos útvonalon áll
+vi.mock("next/navigation", () => ({
+  useRouter: () => router,
+  useParams: () => ({ countryCode: "hu" }),
+}))
 vi.mock("@lib/data/rendeles-fizetese", () => ({
   inditsLinkFizetest: vi.fn(async () => {
     sorrend.log.push("session")

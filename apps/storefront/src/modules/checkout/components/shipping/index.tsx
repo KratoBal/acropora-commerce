@@ -17,7 +17,7 @@ import type { Locale } from "@lib/i18n/locale"
 import { useLocale, useTranslate } from "@lib/i18n/use-translate"
 import { GLS_LOGO, szallitasiSor } from "@lib/util/gls"
 import { megjegyzesekKosarbol, megjegyzesValtozas } from "@lib/util/megjegyzes"
-import { convertToLocale } from "@lib/util/money"
+import { arSzoveg } from "@lib/util/ar-szoveg"
 import { orszagNev, varosSor } from "@lib/util/penztar-cim"
 import { CheckCircleSolid, Loader } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
@@ -363,11 +363,8 @@ const Shipping: React.FC<ShippingProps> = ({
   }, [isOpen])
 
   const lezart = !isOpen && (cart.shipping_methods?.length ?? 0) === 0
-  /** A 0 összeg nem "0 Ft", hanem "Ingyenes": a vevő nem olvas ki árat egy nullából. */
-  const arSzoveg = (amount: number) =>
-    amount === 0
-      ? t("checkoutShipping.free")
-      : convertToLocale({ amount, currency_code: cart?.currency_code })
+  const arSzovegIde = (amount: number) =>
+    arSzoveg(amount, cart?.currency_code, t)
   const tiltott = !!foxpostTiltottTetel
 
   return (
@@ -442,7 +439,7 @@ const Shipping: React.FC<ShippingProps> = ({
                         </span>
                       </div>
                       <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
-                        {raktarAr === null ? "" : arSzoveg(raktarAr)}
+                        {raktarAr === null ? "" : arSzovegIde(raktarAr)}
                       </span>
                     </Radio>
                   </RadioGroup>
@@ -531,9 +528,9 @@ const Shipping: React.FC<ShippingProps> = ({
                           ) : null}
                           <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
                             {option.price_type === "flat" ? (
-                              arSzoveg(option.amount!)
+                              arSzovegIde(option.amount!)
                             ) : calculatedPricesMap[option.id] ? (
-                              arSzoveg(calculatedPricesMap[option.id])
+                              arSzovegIde(calculatedPricesMap[option.id])
                             ) : isLoadingPrices ? (
                               <Loader />
                             ) : (
@@ -666,7 +663,7 @@ const Shipping: React.FC<ShippingProps> = ({
                             </div>
                           </div>
                           <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
-                            {arSzoveg(option.amount!)}
+                            {arSzovegIde(option.amount!)}
                           </span>
                         </Radio>
                       )
@@ -712,7 +709,7 @@ const Shipping: React.FC<ShippingProps> = ({
               </p>
               <p className="text-[14px] leading-[22px] text-acr-ink">
                 {cart.shipping_methods!.at(-1)!.name}{" "}
-                {arSzoveg(cart.shipping_methods!.at(-1)!.amount!)}
+                {arSzovegIde(cart.shipping_methods!.at(-1)!.amount!)}
               </p>
               {kosarPont?.name ? (
                 // a valasztott pont a lezart lepesben is latszik (Foxpost-prompt 4. pont)

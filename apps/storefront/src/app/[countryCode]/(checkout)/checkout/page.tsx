@@ -90,7 +90,7 @@ export default async function Checkout(props: {
         vegyesStripe={vegyesStripe}
         mindigHalasztott={stripeKinalva}
       >
-        <FizetesiOldal cart={cart} />
+        <FizetesiOldal cart={cart} countryCode={countryCode} />
       </PaymentWrapper>
     )
   }

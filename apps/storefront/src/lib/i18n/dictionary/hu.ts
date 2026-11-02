@@ -574,4 +574,94 @@ export const hu = {
     typeFoxpost: "FOXPOST automata",
     typeZpoint: "Packeta Z-Pont / átvevőhely",
   },
+  checkoutPayment: {
+    stepsLabel: "Pénztár lépései",
+    lead: "Válaszd ki a fizetési módot. A rendelési, számlázási és szállítási adataid már rögzítve vannak.",
+    cardMode: "Fizetési mód",
+    cardOrderData: "Rendelési adatok",
+    cardContact: "Kapcsolattartás",
+    cardBilling: "Számlázás",
+    cardFinalize: "Rendelés véglegesítése",
+    cardGroups: "Szállítási csoportok",
+    groupsLead: "A szállítási módok ezen a lépésen már nem módosíthatók.",
+    groupDelivery: "Kiszállítás",
+    groupLive: "Élőállat",
+    groupStore: "Személyes átvétel",
+    yourOrder: "Rendelésed",
+    summaryShort: "Összesítés",
+    products: "Termékek",
+    shipping: "Szállítás",
+    discount: "Kedvezmény",
+    payable: "Fizetendő",
+    backToDetails: "Vissza az adatokhoz",
+    totalFixed:
+      "A rendelés végösszege a fizetési mód kiválasztásakor nem változik.",
+    modeCard: "Bankkártyás fizetés",
+    modeCod: "Utánvét",
+    modePayAtStore: "Fizetés átvételkor",
+    modeTransfer: "Előre utalás",
+    modeTransferText: "Díjbekérő emailben, 8 napos fizetési határidővel",
+    cardWallets: "Kártya · Apple Pay · Google Pay",
+    selected: "Kiválasztva",
+    loadError: "Nem sikerült betölteni a fizetési módokat.",
+    trust:
+      "A kártyaadatokat a Stripe biztonságos fizetési rendszere kezeli; az Acropora nem fér hozzá a kártyaadataidhoz.",
+    onePayment: "Egy fizetés · {amount}",
+    onePaymentBoth: "Egy fizetés · a két rendelés együtt · {amount}",
+    noMode:
+      "A választott szállítási módhoz jelenleg nincs elérhető fizetési mód. Válassz másik szállítási módot, vagy vedd fel velünk a kapcsolatot.",
+    giftCard: "Ajándékkártya",
+    codFee:
+      "Utánvét kezelési díj: {amount}. A rendelés végösszege ezt tartalmazza.",
+    paymentLabel: "Fizetés",
+    cardShort: "Bankkártya",
+    toReview: "Tovább az ellenőrzéshez",
+    chooseMode: "Válassz fizetési módot",
+    aszfMissing:
+      "A rendelés leadásához fogadd el az ÁSZF-et és az adatkezelési tájékoztatót.",
+    summaryMode: "Fizetési mód",
+    summaryDetails: "Fizetés részletei",
+    summaryNext: "Megjelenik a következő lépés",
+    edit: "Szerkesztés",
+    reviewHeading: "Ellenőrzés",
+    reviewConfirm:
+      "A rendelés leadásával megerősíted, hogy elolvastad és elfogadod az általános szerződési feltételeket, az értékesítési és visszaküldési szabályzatot, valamint az adatkezelési tájékoztatót.",
+    placeOrder: "Megrendel",
+    processing: "Feldolgozás…",
+    checking: "Ellenőrzés…",
+    tryAgain: "Próbáld újra",
+    paymentProcessing: "Fizetés feldolgozása…",
+    paymentChecking: "Fizetés ellenőrzése…",
+    dontClose: "Ne zárd be az oldalt.",
+    bankChecking: "A banki hitelesítés eredményét ellenőrizzük.",
+    threeDs:
+      "Ha a bankod további hitelesítést kér, a Stripe biztonságos ablaka most megnyílik. A fizetés addig nincs befejezve.",
+    cardDeclined:
+      "A kártyás fizetés nem sikerült. Próbáld újra vagy válassz másik fizetési módot.",
+    express: "Gyors fizetés",
+    expressLocked: "A gyors fizetéshez előbb fogadd el az ÁSZF-et (lent).",
+    expressOr: "vagy bankkártya",
+    aszfFirst: "Elfogadom az ",
+    aszfDoc: "Általános szerződési feltételeket",
+    aszfMiddle: " és az ",
+    aszfPrivacy: "Adatkezelési tájékoztatót",
+    aszfLast:
+      ". Tudomásul veszem, hogy a megrendelés elküldése fizetési kötelezettséggel jár.",
+    legalTest:
+      "Teszt kirakat: a jogi dokumentumok az átálláskor a Fogyasztóbarátból jönnek.",
+    errPaymentRejected:
+      "Ezt a fizetési módot nem tudtuk elindítani. Válassz másikat.",
+    errPaymentFailed:
+      "A fizetés előkészítése most nem sikerült. Próbáld meg újra.",
+    errOrderRejected:
+      "A rendelést nem tudtuk leadni. Nézd át a kosarat és a megadott adatokat.",
+    errOrderFailed:
+      "A rendelés leadása most nem sikerült. Mielőtt újra próbálod, nézd meg a rendeléseid között, hogy megérkezett-e.",
+    errSplitDiscount:
+      "Az élő állat miatt a kosarad két rendelésre bomlik, és így a kedvezmény nem érvényesíthető ugyanúgy. Add le az élő állatot külön kosárban, vagy távolítsd el a kupont, és próbáld újra.",
+    errLegalMissing:
+      "A rendelést most nem tudjuk fogadni: az ÁSZF és az adatkezelési tájékoztató még nincs közzétéve.",
+    errAszfSave:
+      "Az ÁSZF elfogadását most nem sikerült rögzíteni, ezért a fizetés nem indult el. Próbáld újra.",
+  },
 } as const

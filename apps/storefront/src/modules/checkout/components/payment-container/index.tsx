@@ -8,6 +8,7 @@ import { isManual } from "@lib/constants"
 import SkeletonCardDetails from "@modules/skeletons/components/skeleton-card-details"
 import { STRIPE_FIZETESI_MEZO } from "@lib/util/stripe-megjelenes"
 import { STRIPE_BIZALMI_SZOVEG } from "@lib/util/stripe-allapot"
+import { useTranslate } from "@lib/i18n/use-translate"
 import { PaymentElement } from "@stripe/react-stripe-js"
 import PaymentTest from "../payment-test"
 import { StripeContext } from "../payment-wrapper/stripe-wrapper"
@@ -39,6 +40,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
   jel,
   children,
 }) => {
+  const t = useTranslate()
   const isDevelopment = process.env.NODE_ENV === "development"
   const kivalasztva = selectedPaymentOptionId === paymentProviderId
 
@@ -79,7 +81,7 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
               className="hidden bg-acr-heritage px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.08em] text-acr-white small:inline-block"
               data-testid="kivalasztva-cimke"
             >
-              Kiválasztva
+              {t("checkoutPayment.selected")}
             </span>
           )}
           <span className="text-acr-ink">
@@ -128,6 +130,7 @@ export const StripePaymentContainer = ({
   /** A mezo alatti allapot-panel (feldolgozas, elutasitas). */
   allapot?: React.ReactNode
 }) => {
+  const t = useTranslate()
   const stripeReady = useContext(StripeContext)
   const kivalasztva = selectedPaymentOptionId === paymentProviderId
 
@@ -138,7 +141,7 @@ export const StripePaymentContainer = ({
         selectedPaymentOptionId={selectedPaymentOptionId}
         paymentInfoMap={paymentInfoMap}
         disabled={disabled}
-        alcim="Kártya · Apple Pay · Google Pay"
+        alcim={t("checkoutPayment.cardWallets")}
         jel={<StripeLogo className="h-[22px] w-auto small:h-[24px]" />}
       />
       {kivalasztva && (
@@ -160,10 +163,7 @@ export const StripePaymentContainer = ({
               // error slot instead.
               onLoadError={(e) => {
                 setPaymentComplete(false)
-                setError(
-                  e.error?.message ??
-                    "Nem sikerült betölteni a fizetési módokat.",
-                )
+                setError(e.error?.message ?? t("checkoutPayment.loadError"))
               }}
             />
           ) : (
@@ -173,7 +173,7 @@ export const StripePaymentContainer = ({
             className="mt-3 text-[12px] leading-[17px] text-acr-slate"
             data-testid="stripe-bizalmi-szoveg"
           >
-            {STRIPE_BIZALMI_SZOVEG}
+            {t("checkoutPayment.trust")}
           </p>
           {egyFizetes && (
             <p

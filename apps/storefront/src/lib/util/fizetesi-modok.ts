@@ -1,3 +1,5 @@
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+
 /**
  * WHICH PAYMENT METHODS THE CHECKOUT MAY SHOW.
  *
@@ -36,28 +38,48 @@ export type EngedelyezettFizetesiMod = { id: string; role: FizetesiSzerep }
  * The role travels in the response next to the id, and it is the thing that
  * actually names what the customer is choosing.
  */
-export const FIZETESI_SZEREP_CIMKE: Record<FizetesiSzerep, string> = {
-  ONLINE_CARD: "Bankkártyás fizetés",
-  COD: "Utánvét",
+const FIZETESI_SZEREP_KULCS: Record<FizetesiSzerep, Key> = {
+  ONLINE_CARD: "checkoutPayment.modeCard",
+  COD: "checkoutPayment.modeCod",
   // PD-002 (Balázs, 2026-09-28): a bolti fizetés CSAK személyes átvételnél
   // áll, ezért a felirat az átvételt nevezi meg, nem a helyet.
-  PAY_AT_STORE: "Fizetés átvételkor",
+  PAY_AT_STORE: "checkoutPayment.modePayAtStore",
   // bb3a6bd5 (Balázs, 2026-10-06): a díjbekérőt az OS-ből gombbal küldjük
-  BANK_TRANSFER: "Előre utalás",
+  BANK_TRANSFER: "checkoutPayment.modeTransfer",
 }
+
+/** A magyar feliratok (a szótárból): a régi hívóknak és a spec-nek; a lap nyelvén a `fizetesiModCimke(mod, t)` ad feliratot. */
+export const FIZETESI_SZEREP_CIMKE = Object.fromEntries(
+  Object.entries(FIZETESI_SZEREP_KULCS).map(([szerep, kulcs]) => [
+    szerep,
+    translator("hu")(kulcs),
+  ]),
+) as Record<FizetesiSzerep, string>
 
 /**
  * A MOD KARTYAJANAK ALCIME, ha a cim magaban nem mondja meg, mi tortenik. Az
  * elore utalasnal a vevo nem fizet a penztarban: a dijbekerot emailben kapja,
  * es a hatarido (8 nap) Balazs dontese (2026-10-06 16:32 UTC).
  */
-export const FIZETESI_SZEREP_ALCIM: Partial<Record<FizetesiSzerep, string>> = {
-  BANK_TRANSFER: "Díjbekérő emailben, 8 napos fizetési határidővel",
+const FIZETESI_SZEREP_ALCIM_KULCS: Partial<Record<FizetesiSzerep, Key>> = {
+  BANK_TRANSFER: "checkoutPayment.modeTransferText",
 }
+
+export const FIZETESI_SZEREP_ALCIM: Partial<Record<FizetesiSzerep, string>> =
+  Object.fromEntries(
+    Object.entries(FIZETESI_SZEREP_ALCIM_KULCS).map(([szerep, kulcs]) => [
+      szerep,
+      translator("hu")(kulcs),
+    ]),
+  )
 
 export const fizetesiModAlcim = (
   mod: EngedelyezettFizetesiMod,
-): string | undefined => FIZETESI_SZEREP_ALCIM[mod.role]
+  t: Translate = translator("hu"),
+): string | undefined => {
+  const kulcs = FIZETESI_SZEREP_ALCIM_KULCS[mod.role]
+  return kulcs ? t(kulcs) : undefined
+}
 
 /**
  * The region's providers, narrowed to what this cart may use, each carrying
@@ -83,5 +105,7 @@ export const engedelyezettFizetesiModok = <T extends { id: string }>(
  * nem kell megkulonbozteto kiegeszites; az Apple Pay es a Google Pay a
  * kartyamezoben jelenik meg, ha a vevo eszkoze tudja.
  */
-export const fizetesiModCimke = (mod: EngedelyezettFizetesiMod): string =>
-  FIZETESI_SZEREP_CIMKE[mod.role]
+export const fizetesiModCimke = (
+  mod: EngedelyezettFizetesiMod,
+  t: Translate = translator("hu"),
+): string => t(FIZETESI_SZEREP_KULCS[mod.role])

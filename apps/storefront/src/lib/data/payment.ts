@@ -3,7 +3,11 @@
 import { sdk } from "@lib/config"
 import { getAuthHeaders, getCacheOptions, getCacheTag } from "./cookies"
 import { revalidateTag } from "next/cache"
-import { FIZETES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
+import type { Key } from "@lib/i18n/dictionary"
+import {
+  FIZETES_MOST_NEM_SIKERULT,
+  fizetesUzenetKod,
+} from "@lib/util/penztar-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import type { EngedelyezettFizetesiMod } from "@lib/util/fizetesi-modok"
 
@@ -88,7 +92,7 @@ export const getCartPaymentOptions = async (
 
 export type UtanvetEgyeztetes =
   | { ok: true; dij: number; valasztottSzerep: FizetesiSzerepValasz }
-  | { ok: false; uzenet: string }
+  | { ok: false; uzenet: string; kod?: Key }
 
 /**
  * BRINGS THE CART'S CASH-ON-DELIVERY FEE IN LINE WITH THE METHOD JUST CHOSEN.
@@ -140,6 +144,10 @@ export const egyeztesdAzUtanvetDijat = async (
       hiba instanceof Error ? hiba.message : String(hiba),
     )
 
-    return { ok: false, uzenet: FIZETES_MOST_NEM_SIKERULT }
+    return {
+      ok: false,
+      uzenet: FIZETES_MOST_NEM_SIKERULT,
+      kod: fizetesUzenetKod(undefined),
+    }
   }
 }

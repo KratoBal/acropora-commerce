@@ -81,7 +81,12 @@ describe("a rendelés leadása", () => {
       ),
     )
     const eredmeny = await placeOrder("cart_1")
-    expect(eredmeny).toEqual({ ok: false, uzenet: RENDELES_KEDVEZMENY_BONTAS })
+    expect(eredmeny).toEqual({
+      ok: false,
+      uzenet: RENDELES_KEDVEZMENY_BONTAS,
+      // a szótár-kulcs ugyanerre a mondatra: a böngésző a lap nyelvén írja ki
+      kod: "checkoutPayment.errSplitDiscount",
+    })
     expect(RENDELES_KEDVEZMENY_BONTAS).toContain("külön kosárban")
     expect(RENDELES_KEDVEZMENY_BONTAS).toContain("kupon")
     expect(nav.redirect).not.toHaveBeenCalled()

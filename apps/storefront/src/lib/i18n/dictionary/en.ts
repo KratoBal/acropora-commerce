@@ -549,4 +549,94 @@ export const en: Dictionary = {
     typeFoxpost: "FOXPOST locker",
     typeZpoint: "Packeta Z-Pont / pickup place",
   },
+  checkoutPayment: {
+    stepsLabel: "Checkout steps",
+    lead: "Choose how you pay. Your order, billing and shipping details are already saved.",
+    cardMode: "Payment method",
+    cardOrderData: "Order details",
+    cardContact: "Contact",
+    cardBilling: "Billing",
+    cardFinalize: "Place your order",
+    cardGroups: "Shipping groups",
+    groupsLead: "The shipping methods can no longer be changed at this step.",
+    groupDelivery: "Delivery",
+    groupLive: "Live animals",
+    groupStore: "Pickup in the store",
+    yourOrder: "Your order",
+    summaryShort: "Summary",
+    products: "Products",
+    shipping: "Shipping",
+    discount: "Discount",
+    payable: "Total to pay",
+    backToDetails: "Back to the details",
+    totalFixed:
+      "The total of the order does not change when you choose a payment method.",
+    modeCard: "Card payment",
+    modeCod: "Cash on delivery",
+    modePayAtStore: "Pay on pickup",
+    modeTransfer: "Bank transfer in advance",
+    modeTransferText: "Proforma invoice by email, payable within 8 days",
+    cardWallets: "Card · Apple Pay · Google Pay",
+    selected: "Selected",
+    loadError: "Could not load the payment methods.",
+    trust:
+      "Card details are handled by Stripe's secure payment system; Acropora has no access to your card details.",
+    onePayment: "One payment · {amount}",
+    onePaymentBoth: "One payment · both orders together · {amount}",
+    noMode:
+      "There is no payment method available for the chosen shipping method right now. Choose another shipping method, or contact us.",
+    giftCard: "Gift card",
+    codFee:
+      "Cash on delivery fee: {amount}. The total of the order includes it.",
+    paymentLabel: "Payment",
+    cardShort: "Card",
+    toReview: "Continue to review",
+    chooseMode: "Choose a payment method",
+    aszfMissing:
+      "To place the order, accept the Terms and Conditions and the Privacy Notice.",
+    summaryMode: "Payment method",
+    summaryDetails: "Payment details",
+    summaryNext: "Shown in the next step",
+    edit: "Edit",
+    reviewHeading: "Review",
+    reviewConfirm:
+      "By placing the order you confirm that you have read and accept the general terms and conditions, the sales and returns policy, and the privacy notice.",
+    placeOrder: "Place order",
+    processing: "Processing…",
+    checking: "Checking…",
+    tryAgain: "Try again",
+    paymentProcessing: "Processing the payment…",
+    paymentChecking: "Checking the payment…",
+    dontClose: "Do not close the page.",
+    bankChecking: "We are checking the result of the bank authentication.",
+    threeDs:
+      "If your bank asks for further authentication, Stripe's secure window opens now. The payment is not finished until then.",
+    cardDeclined:
+      "The card payment did not go through. Try again or choose another payment method.",
+    express: "Express payment",
+    expressLocked:
+      "To use express payment, first accept the Terms and Conditions (below).",
+    expressOr: "or card",
+    aszfFirst: "I accept the ",
+    aszfDoc: "Terms and Conditions",
+    aszfMiddle: " and the ",
+    aszfPrivacy: "Privacy Notice",
+    aszfLast:
+      ". I acknowledge that placing the order creates an obligation to pay.",
+    legalTest:
+      "Test shop: the legal documents come from Fogyasztóbarát at the switchover.",
+    errPaymentRejected:
+      "We could not start this payment method. Choose another one.",
+    errPaymentFailed: "Preparing the payment failed just now. Try again.",
+    errOrderRejected:
+      "We could not place the order. Check your cart and the details you gave.",
+    errOrderFailed:
+      "Placing the order failed just now. Before you try again, check your orders to see whether it arrived.",
+    errSplitDiscount:
+      "Because of the live animal your cart splits into two orders, and the discount cannot apply the same way. Order the live animal in a separate cart, or remove the coupon, and try again.",
+    errLegalMissing:
+      "We cannot take the order right now: the Terms and Conditions and the Privacy Notice are not published yet.",
+    errAszfSave:
+      "We could not record your acceptance of the Terms and Conditions, so the payment did not start. Try again.",
+  },
 }

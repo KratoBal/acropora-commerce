@@ -1,9 +1,12 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import type { Key } from "@lib/i18n/dictionary"
 import {
   fizetesUzenet,
+  fizetesUzenetKod,
   hibaAllapota,
+  rendelesHibaKod,
   rendelesHibaUzenet,
 } from "@lib/util/penztar-uzenet"
 import { revalidateTag } from "next/cache"
@@ -19,7 +22,7 @@ import { getAuthHeaders, getCacheTag } from "./cookies"
  */
 export async function valasszKartyatVegyesKosarra(
   cartId: string,
-): Promise<{ ok: true } | { ok: false; uzenet: string }> {
+): Promise<{ ok: true } | { ok: false; uzenet: string; kod?: Key }> {
   try {
     await sdk.client.fetch(`/store/carts/${cartId}/card-choose`, {
       method: "POST",
@@ -30,7 +33,11 @@ export async function valasszKartyatVegyesKosarra(
       "A bankkártyás fizetés választása nem sikerült:",
       hibaAllapota(hiba) ?? "(nincs állapotkód)",
     )
-    return { ok: false, uzenet: fizetesUzenet(hibaAllapota(hiba)) }
+    return {
+      ok: false,
+      uzenet: fizetesUzenet(hibaAllapota(hiba)),
+      kod: fizetesUzenetKod(hibaAllapota(hiba)),
+    }
   }
 
   revalidateTag(await getCacheTag("carts"))
@@ -49,7 +56,9 @@ export async function valasszKartyatVegyesKosarra(
  */
 export async function inditsStripeKozosFizetest(
   cartId: string,
-): Promise<{ ok: true; titok: string } | { ok: false; uzenet: string }> {
+): Promise<
+  { ok: true; titok: string } | { ok: false; uzenet: string; kod?: Key }
+> {
   try {
     const valasz = await sdk.client.fetch<{ client_secret?: string | null }>(
       `/store/carts/${cartId}/stripe-start`,
@@ -57,7 +66,11 @@ export async function inditsStripeKozosFizetest(
     )
 
     if (!valasz?.client_secret) {
-      return { ok: false, uzenet: rendelesHibaUzenet(undefined) }
+      return {
+        ok: false,
+        uzenet: rendelesHibaUzenet(undefined),
+        kod: rendelesHibaKod(undefined),
+      }
     }
 
     return { ok: true, titok: valasz.client_secret }
@@ -67,7 +80,11 @@ export async function inditsStripeKozosFizetest(
       hibaAllapota(hiba) ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: rendelesHibaUzenet(hiba) }
+    return {
+      ok: false,
+      uzenet: rendelesHibaUzenet(hiba),
+      kod: rendelesHibaKod(hiba),
+    }
   }
 }
 

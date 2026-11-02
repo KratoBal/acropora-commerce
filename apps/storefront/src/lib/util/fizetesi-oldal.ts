@@ -1,3 +1,6 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import type { Locale } from "@lib/i18n/locale"
+import { teljesNev } from "@lib/util/penztar-cim"
 import { SHOP_ADDRESS } from "@modules/cart/components/pickup-notice/pickup-notice"
 
 /**
@@ -45,8 +48,8 @@ type Kosar = {
 }
 
 // a Figma es a mai cim-osszegzo sorrendje: "Balázs Kratochwill"
-const nev = (cim: Cim) =>
-  [cim?.first_name, cim?.last_name].filter(Boolean).join(" ").trim()
+const nev = (cim: Cim, locale: Locale) =>
+  teljesNev(cim?.first_name, cim?.last_name, locale)
 
 export const cimSor = (cim: Cim) =>
   [
@@ -57,16 +60,16 @@ export const cimSor = (cim: Cim) =>
     .join(", ")
 
 /** "Rendelési adatok": kapcsolattartas es szamlazas. */
-export function rendelesiAdatok(kosar: Kosar) {
+export function rendelesiAdatok(kosar: Kosar, locale: Locale = "hu") {
   const szallitas = kosar.shipping_address
   const szamlazas = kosar.billing_address ?? szallitas
   return {
     kapcsolat: {
-      nev: nev(szallitas),
+      nev: nev(szallitas, locale),
       elerhetoseg: [kosar.email, szallitas?.phone].filter(Boolean).join(" · "),
     },
     szamlazas: {
-      nev: szamlazas?.company?.trim() || nev(szamlazas),
+      nev: szamlazas?.company?.trim() || nev(szamlazas, locale),
       cim: cimSor(szamlazas),
     },
   }
@@ -93,6 +96,7 @@ export type SzallitasiCsoport = {
 export function szallitasiCsoportok(
   kosar: Kosar,
   boltiTetelek: ReadonlySet<string>,
+  t: Translate = translator("hu"),
 ): SzallitasiCsoport[] {
   const mod = kosar.shipping_methods?.at(-1)
   const tetelek = kosar.items ?? []
@@ -105,7 +109,7 @@ export function szallitasiCsoportok(
   const szallitott = tetelek.filter((t) => !boltiTetelek.has(t.id))
   if (mod && szallitott.length) {
     csoportok.push({
-      cimke: "Kiszállítás",
+      cimke: t("checkoutPayment.groupDelivery"),
       mod: mod.name ?? "",
       osszeg: Number(mod.total ?? mod.amount ?? 0),
       tetelek: szallitott.map(tetelSor),
@@ -118,8 +122,8 @@ export function szallitasiCsoportok(
   const bolti = tetelek.filter((t) => boltiTetelek.has(t.id))
   if (bolti.length) {
     csoportok.push({
-      cimke: "Élőállat",
-      mod: "Személyes átvétel",
+      cimke: t("checkoutPayment.groupLive"),
+      mod: t("checkoutPayment.groupStore"),
       osszeg: 0,
       tetelek: bolti.map(tetelSor),
       hova: SHOP_ADDRESS,

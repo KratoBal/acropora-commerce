@@ -1,6 +1,7 @@
 "use client"
 
-import { Heading, Text, clx } from "@modules/common/components/ui"
+import { useTranslate } from "@lib/i18n/use-translate"
+import { clx } from "@modules/common/components/ui"
 
 import PaymentButton from "../payment-button"
 import { useSearchParams } from "next/navigation"
@@ -15,6 +16,7 @@ const Review = ({
   /** Amivel a kosar fizet, a hatter szavaval. Lasd a gomb propjanak fejlecet. */
   fizetesiSzerep?: FizetesiSzerepValasz
 }) => {
+  const t = useTranslate()
   const searchParams = useSearchParams()
 
   const isOpen = searchParams.get("step") === "review"
@@ -32,32 +34,24 @@ const Review = ({
     (cart.payment_collection || paidByGiftcard)
 
   return (
-    <div className="bg-white">
-      <div className="flex flex-row items-center justify-between mb-6">
-        <Heading
-          level="h2"
+    <section className="border border-acr-line bg-acr-white px-4 py-5 small:px-6 small:py-6">
+      <div className="mb-4 flex flex-row items-center justify-between">
+        <h2
           className={clx(
-            "flex flex-row text-3xl-regular gap-x-2 items-baseline",
+            "flex flex-row items-center gap-x-2 text-[22px] font-normal leading-[28px] text-acr-ink small:text-[26px] small:leading-[32px]",
             {
-              "opacity-50 pointer-events-none select-none": !isOpen,
+              "pointer-events-none select-none opacity-50": !isOpen,
             },
           )}
         >
-          Ellenőrzés
-        </Heading>
+          {t("checkoutPayment.reviewHeading")}
+        </h2>
       </div>
       {isOpen && previousStepsCompleted && (
         <>
-          <div className="flex items-start gap-x-1 w-full mb-6">
-            <div className="w-full">
-              <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                A rendelés leadásával megerősíted, hogy elolvastad és elfogadod
-                az általános szerződési feltételeket, az értékesítési és
-                visszaküldési szabályzatot, valamint az adatkezelési
-                tájékoztatót.
-              </Text>
-            </div>
-          </div>
+          <p className="mb-6 text-[14px] leading-[22px] text-acr-ink">
+            {t("checkoutPayment.reviewConfirm")}
+          </p>
           <PaymentButton
             cart={cart}
             fizetesiSzerep={fizetesiSzerep}
@@ -66,7 +60,7 @@ const Review = ({
           />
         </>
       )}
-    </div>
+    </section>
   )
 }
 

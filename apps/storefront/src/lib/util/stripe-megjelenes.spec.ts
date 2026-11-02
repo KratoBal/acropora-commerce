@@ -94,6 +94,8 @@ describe("a Stripe mező a Foundations tokenekből", () => {
 
   it("magyar nyelv, Apple Pay és Google Pay, Link soha", () => {
     expect(stripeElementsBeallitas("commerce").locale).toBe("hu")
+    // az angol oldalon a Stripe-mező is angol (a nyelv az első megjelenéskor dől el)
+    expect(stripeElementsBeallitas("commerce", "en").locale).toBe("en")
     expect(STRIPE_FIZETESI_MEZO.wallets).toEqual({
       applePay: "auto",
       googlePay: "auto",

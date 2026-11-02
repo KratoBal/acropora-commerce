@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useState } from "react"
 
+import { useTranslate } from "@lib/i18n/use-translate"
 import { ADATKEZELES_CIM, ASZF_CIM } from "@lib/util/aszf"
-import { JOGI_TESZT_SZOVEG, jogiKapuTesztMod } from "@lib/util/jogi-kapu"
-import { ASZF_PIPA_RESZEK, ASZF_PIPA_SZOVEG } from "@lib/util/megrendeles"
+import { jogiKapuTesztMod } from "@lib/util/jogi-kapu"
+import { ASZF_PIPA_SZOVEG, aszfPipaReszek } from "@lib/util/megrendeles"
 
 /**
  * AZ ASZF ELFOGADASA A FIZETESI OLDALON (Figma 209:3 / 209:133, "Rendelés
@@ -50,6 +51,8 @@ export const ASZF_SZOVEG = ASZF_PIPA_SZOVEG
 const HIVATKOZAS = "underline underline-offset-2 hover:text-acr-heritage"
 
 export default function AszfNegyzet() {
+  const t = useTranslate()
+  const reszek = aszfPipaReszek(t)
   const { elfogadva, beallit } = useAszf()
   if (jogiKapuTesztMod())
     return (
@@ -58,7 +61,7 @@ export default function AszfNegyzet() {
         data-testid="jogi-teszt-figyelmeztetes"
         role="note"
       >
-        {JOGI_TESZT_SZOVEG}
+        {t("checkoutPayment.legalTest")}
       </p>
     )
   return (
@@ -75,25 +78,25 @@ export default function AszfNegyzet() {
         required
       />
       <span>
-        {ASZF_PIPA_RESZEK.elso}
+        {reszek.elso}
         <a
           href={ASZF_CIM}
           target="_blank"
           rel="noreferrer"
           className={HIVATKOZAS}
         >
-          {ASZF_PIPA_RESZEK.aszf}
+          {reszek.aszf}
         </a>
-        {ASZF_PIPA_RESZEK.koztes}
+        {reszek.koztes}
         <a
           href={ADATKEZELES_CIM}
           target="_blank"
           rel="noreferrer"
           className={HIVATKOZAS}
         >
-          {ASZF_PIPA_RESZEK.adatkezeles}
+          {reszek.adatkezeles}
         </a>
-        {ASZF_PIPA_RESZEK.vege}
+        {reszek.vege}
       </span>
     </label>
   )

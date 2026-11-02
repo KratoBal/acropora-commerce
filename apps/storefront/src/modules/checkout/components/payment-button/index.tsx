@@ -7,18 +7,14 @@ import {
   inditsStripeKozosFizetest,
   stripeVisszarendezes,
 } from "@lib/data/stripe"
-import {
-  FIZETES_MOST_NEM_SIKERULT,
-  RENDELES_MOST_NEM_SIKERULT,
-} from "@lib/util/penztar-uzenet"
+import { useTranslate } from "@lib/i18n/use-translate"
+import { hibaSzoveg } from "@lib/util/penztar-hiba"
 import { HttpTypes } from "@medusajs/types"
-import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
 import { Button } from "@modules/common/components/ui"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import { unstable_rethrow, useParams } from "next/navigation"
 import React, { useRef, useState } from "react"
 import {
-  ELUTASITOTT_KARTYA,
   type StripeAllapot,
   stripeGombFelirat,
   stripeHibaFajta,
@@ -48,6 +44,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   stripeKozos,
   "data-testid": dataTestId,
 }) => {
+  const t = useTranslate()
   const notReady =
     !cart ||
     !cart.shipping_address ||
@@ -99,7 +96,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
         <KozvetlenRendelesGomb notReady={notReady} data-testid={dataTestId} />
       )
     default:
-      return <Button disabled>Válassz fizetési módot</Button>
+      return <Button disabled>{t("checkoutPayment.chooseMode")}</Button>
   }
 }
 
@@ -203,6 +200,7 @@ export const StripeKozosGomb = ({
   className,
   elotte,
 }: StripeGombProps) => {
+  const t = useTranslate()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
   const stripe = useStripe()
@@ -213,13 +211,13 @@ export const StripeKozosGomb = ({
     try {
       const eredmeny = await placeOrder()
       if (!eredmeny.ok) {
-        setErrorMessage(eredmeny.uzenet)
+        setErrorMessage(hibaSzoveg(t, eredmeny))
         jelez("alap")
       }
     } catch (hiba) {
       // a sikeres leadas `redirect`-tel zarul (lasd fent): azt atengedjuk
       unstable_rethrow(hiba)
-      setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
+      setErrorMessage(t("checkoutPayment.errOrderFailed"))
       jelez("alap")
     }
   }
@@ -228,7 +226,7 @@ export const StripeKozosGomb = ({
     if (onAllapot) {
       jelez("elutasitva")
     } else {
-      setErrorMessage(ELUTASITOTT_KARTYA)
+      setErrorMessage(t("checkoutPayment.cardDeclined"))
       jelez("elutasitva")
     }
   }
@@ -247,7 +245,7 @@ export const StripeKozosGomb = ({
       if (elotte) {
         const elozetes = await elotte()
         if (!elozetes.ok) {
-          setErrorMessage(elozetes.uzenet)
+          setErrorMessage(hibaSzoveg(t, elozetes))
           jelez("alap")
           return
         }
@@ -255,7 +253,9 @@ export const StripeKozosGomb = ({
       const ellenorzes = await elements.submit()
       if (ellenorzes.error) {
         if (stripeHibaFajta(ellenorzes.error) !== "validacio") {
-          setErrorMessage(ellenorzes.error.message ?? FIZETES_MOST_NEM_SIKERULT)
+          setErrorMessage(
+            ellenorzes.error.message ?? t("checkoutPayment.errPaymentFailed"),
+          )
         }
         jelez("alap")
         return
@@ -263,7 +263,7 @@ export const StripeKozosGomb = ({
 
       const inditas = await inditsStripeKozosFizetest(cart.id)
       if (!inditas.ok) {
-        setErrorMessage(inditas.uzenet)
+        setErrorMessage(hibaSzoveg(t, inditas))
         jelez("alap")
         return
       }
@@ -291,7 +291,9 @@ export const StripeKozosGomb = ({
           elutasitva()
         } else {
           if (stripeHibaFajta(error) !== "validacio") {
-            setErrorMessage(error.message ?? FIZETES_MOST_NEM_SIKERULT)
+            setErrorMessage(
+              error.message ?? t("checkoutPayment.errPaymentFailed"),
+            )
           }
           jelez("alap")
         }
@@ -328,7 +330,7 @@ export const StripeKozosGomb = ({
         data-testid={dataTestId}
         data-allapot={allapot}
       >
-        {stripeGombFelirat(allapot)}
+        {stripeGombFelirat(allapot, t)}
       </Button>
       <ErrorMessage
         error={errorMessage}
@@ -352,6 +354,7 @@ export const StripePaymentButton = ({
   className,
   elotte,
 }: StripeGombProps) => {
+  const t = useTranslate()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
 
@@ -370,7 +373,7 @@ export const StripePaymentButton = ({
       const eredmeny = await placeOrder()
 
       if (!eredmeny.ok) {
-        setErrorMessage(eredmeny.uzenet)
+        setErrorMessage(hibaSzoveg(t, eredmeny))
         jelez("alap")
       }
     } catch (hiba) {
@@ -380,7 +383,7 @@ export const StripePaymentButton = ({
         nem csinal semmit.
       */
       unstable_rethrow(hiba)
-      setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
+      setErrorMessage(t("checkoutPayment.errOrderFailed"))
       jelez("alap")
     }
   }
@@ -403,7 +406,7 @@ export const StripePaymentButton = ({
       if (elotte) {
         const elozetes = await elotte()
         if (!elozetes.ok) {
-          setErrorMessage(elozetes.uzenet)
+          setErrorMessage(hibaSzoveg(t, elozetes))
           jelez("alap")
           return
         }
@@ -432,7 +435,7 @@ export const StripePaymentButton = ({
 
         const fajta = stripeHibaFajta(error)
         if (fajta === "elutasitas") {
-          if (!onAllapot) setErrorMessage(ELUTASITOTT_KARTYA)
+          if (!onAllapot) setErrorMessage(t("checkoutPayment.cardDeclined"))
           jelez("elutasitva")
         } else {
           if (fajta !== "validacio") setErrorMessage(error.message || null)
@@ -473,7 +476,7 @@ export const StripePaymentButton = ({
         data-testid={dataTestId}
         data-allapot={allapot}
       >
-        {stripeGombFelirat(allapot)}
+        {stripeGombFelirat(allapot, t)}
       </Button>
       <ErrorMessage
         error={errorMessage}
@@ -484,6 +487,7 @@ export const StripePaymentButton = ({
 }
 
 const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
+  const t = useTranslate()
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -502,7 +506,7 @@ const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
       const eredmeny = await placeOrder()
 
       if (!eredmeny.ok) {
-        setErrorMessage(eredmeny.uzenet)
+        setErrorMessage(hibaSzoveg(t, eredmeny))
       }
     } catch (hiba) {
       /*
@@ -514,7 +518,7 @@ const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
         Nem-Next hibara ez a hivas nem csinal semmit.
       */
       unstable_rethrow(hiba)
-      setErrorMessage(RENDELES_MOST_NEM_SIKERULT)
+      setErrorMessage(t("checkoutPayment.errOrderFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -535,7 +539,7 @@ const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
         size="large"
         data-testid="submit-order-button"
       >
-        {MEGRENDEL_GOMB_FELIRAT}
+        {t("checkoutPayment.placeOrder")}
       </Button>
       <ErrorMessage
         error={errorMessage}

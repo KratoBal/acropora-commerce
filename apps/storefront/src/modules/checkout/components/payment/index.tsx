@@ -16,10 +16,8 @@ import {
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
 import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { convertToLocale } from "@lib/util/money"
-import {
-  FIZETES_MOST_NEM_SIKERULT,
-  RENDELES_MOST_NEM_SIKERULT,
-} from "@lib/util/penztar-uzenet"
+import { useTranslate } from "@lib/i18n/use-translate"
+import { hibaSzoveg } from "@lib/util/penztar-hiba"
 import { type StripeAllapot, stripeGombFelirat } from "@lib/util/stripe-allapot"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -34,14 +32,7 @@ import {
 import StripeAllapotPanel from "@modules/checkout/components/stripe-allapot"
 import ExpressFizetes from "@modules/checkout/components/payment-button/express"
 import { StripeContext } from "@modules/checkout/components/payment-wrapper/stripe-wrapper"
-import Divider from "@modules/common/components/divider"
-import {
-  Button,
-  Container,
-  Heading,
-  Text,
-  clx,
-} from "@modules/common/components/ui"
+import { Button, clx } from "@modules/common/components/ui"
 import { HttpTypes } from "@medusajs/types"
 import {
   unstable_rethrow,
@@ -53,6 +44,10 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useAszf } from "@modules/checkout/components/aszf-elfogadas"
 import { PENZTAR_CTA_HELY } from "@modules/checkout/components/rendelesed"
+
+const KICSI_CIM =
+  "mb-1 text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate"
+const SOR = "text-[14px] leading-[22px] text-acr-ink"
 
 const Payment = ({
   cart,
@@ -85,6 +80,7 @@ const Payment = ({
    */
   engedelyezettModok: EngedelyezettFizetesiMod[]
 }) => {
+  const t = useTranslate()
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession) => paymentSession.status === "pending",
   )
@@ -173,12 +169,12 @@ const Payment = ({
       try {
         const eredmeny = await valasszKartyatVegyesKosarra(cart.id)
         if (!eredmeny.ok) {
-          setError(eredmeny.uzenet)
+          setError(hibaSzoveg(t, eredmeny))
           return
         }
         router.refresh()
       } catch {
-        setError(FIZETES_MOST_NEM_SIKERULT)
+        setError(t("checkoutPayment.errPaymentFailed"))
       }
       return
     }
@@ -189,14 +185,14 @@ const Payment = ({
       })
 
       if (!inditas.ok) {
-        setError(inditas.uzenet)
+        setError(hibaSzoveg(t, inditas))
         return
       }
 
       const egyeztetes = await egyeztesdAzUtanvetDijat(cart.id)
 
       if (!egyeztetes.ok) {
-        setError(egyeztetes.uzenet)
+        setError(hibaSzoveg(t, egyeztetes))
         return
       }
 
@@ -206,7 +202,7 @@ const Payment = ({
         })
 
         if (!ujrainditas.ok) {
-          setError(ujrainditas.uzenet)
+          setError(hibaSzoveg(t, ujrainditas))
           return
         }
       }
@@ -219,7 +215,7 @@ const Payment = ({
       */
       router.refresh()
     } catch {
-      setError(FIZETES_MOST_NEM_SIKERULT)
+      setError(t("checkoutPayment.errPaymentFailed"))
     }
   }
 
@@ -255,7 +251,7 @@ const Payment = ({
       megjelenitheto.map((mod) => [
         mod.id,
         {
-          title: fizetesiModCimke(mod),
+          title: fizetesiModCimke(mod, t),
           icon: paymentInfoMap[mod.id]?.icon ?? <CreditCard />,
         },
       ]),
@@ -308,7 +304,7 @@ const Payment = ({
       if (oldal) {
         const rogzites = await rogzitsAszfElfogadast(cart.id)
         if (!rogzites.ok) {
-          setError(rogzites.uzenet)
+          setError(hibaSzoveg(t, rogzites))
           return
         }
       }
@@ -332,7 +328,7 @@ const Payment = ({
         })
 
         if (!eredmeny.ok) {
-          setError(eredmeny.uzenet)
+          setError(hibaSzoveg(t, eredmeny))
           return
         }
       }
@@ -348,7 +344,7 @@ const Payment = ({
         uzenetet produkcioban ugyis lecsereltek, tehat kiirni FELREVEZETO
         lenne: a sajat mondatunk megy ki helyette.
       */
-      setError(FIZETES_MOST_NEM_SIKERULT)
+      setError(t("checkoutPayment.errPaymentFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -374,24 +370,29 @@ const Payment = ({
     placeOrder()
       .then((eredmeny) => {
         if (!eredmeny.ok) {
-          setError(eredmeny.uzenet)
+          setError(hibaSzoveg(t, eredmeny))
           setStripeAllapot("alap")
         }
       })
       .catch((hiba) => {
         unstable_rethrow(hiba)
-        setError(RENDELES_MOST_NEM_SIKERULT)
+        setError(t("checkoutPayment.errOrderFailed"))
         setStripeAllapot("alap")
       })
-  }, [stripeAllapot])
+  }, [stripeAllapot, t])
 
   /** Az "Egy fizetés" sor: mindig a kosar teljes fizetendo osszege. */
-  const egyFizetes = `Egy fizetés${vegyes && stripeKozosValasztva ? " · a két rendelés együtt" : ""} · ${convertToLocale(
+  const egyFizetes = t(
+    vegyes && stripeKozosValasztva
+      ? "checkoutPayment.onePaymentBoth"
+      : "checkoutPayment.onePayment",
     {
-      amount: cart.total ?? 0,
-      currency_code: cart.currency_code,
+      amount: convertToLocale({
+        amount: cart.total ?? 0,
+        currency_code: cart.currency_code,
+      }),
     },
-  )}`
+  )
   const stripeValasztva = isStripeLike(selectedPaymentMethod) && !paidByGiftcard
   /*
     A GOMB A STRIPE KORNYEZETEBEN ELHET CSAK (`useStripe`). A nem bontott
@@ -419,35 +420,38 @@ const Payment = ({
     oldal && ctaHely ? createPortal(tartalom, ctaHely) : tartalom
 
   return (
-    <div className="bg-white">
+    <div
+      className={
+        oldal
+          ? undefined
+          : "border border-acr-line bg-acr-white px-4 py-5 small:px-6 small:py-6"
+      }
+    >
       <div
-        className={clx("flex flex-row items-center justify-between mb-6", {
+        className={clx("mb-4 flex flex-row items-center justify-between", {
           hidden: oldal,
         })}
       >
-        <Heading
-          level="h2"
+        <h2
           className={clx(
-            "flex flex-row text-3xl-regular gap-x-2 items-baseline",
+            "flex flex-row items-center gap-x-2 text-[22px] font-normal leading-[28px] text-acr-ink small:text-[26px] small:leading-[32px]",
             {
-              "opacity-50 pointer-events-none select-none":
+              "pointer-events-none select-none opacity-50":
                 !isOpen && !paymentReady,
             },
           )}
         >
-          Fizetés
+          {t("checkoutPayment.paymentLabel")}
           {!isOpen && paymentReady && <CheckCircleSolid />}
-        </Heading>
+        </h2>
         {!isOpen && paymentReady && (
-          <Text>
-            <button
-              onClick={handleEdit}
-              className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
-              data-testid="edit-payment-button"
-            >
-              Szerkesztés
-            </button>
-          </Text>
+          <button
+            onClick={handleEdit}
+            className="text-[14px] font-medium leading-[22px] text-acr-ocean underline"
+            data-testid="edit-payment-button"
+          >
+            {t("checkoutPayment.edit")}
+          </button>
         )}
       </div>
       <div>
@@ -467,7 +471,7 @@ const Payment = ({
           )}
           {stripeAllapot === "ellenorzes" && (
             <Button size="large" className="mt-4" disabled aria-busy>
-              {stripeGombFelirat("ellenorzes")}
+              {stripeGombFelirat("ellenorzes", t)}
             </Button>
           )}
           {stripeAllapot !== "ellenorzes" &&
@@ -509,7 +513,7 @@ const Payment = ({
                           paymentInfoMap={cimkek}
                           paymentProviderId={paymentMethod.id}
                           selectedPaymentOptionId={selectedPaymentMethod}
-                          alcim={fizetesiModAlcim(paymentMethod)}
+                          alcim={fizetesiModAlcim(paymentMethod, t)}
                         />
                       )}
                     </div>
@@ -527,27 +531,17 @@ const Payment = ({
             nincs szolgaltato), tehat nem elmeleti ag.
           */}
           {!paidByGiftcard && megjelenitheto.length === 0 && (
-            <Text
-              className="txt-medium text-ui-fg-subtle"
-              data-testid="nincs-fizetesi-mod"
-            >
-              A választott szállítási módhoz jelenleg nincs elérhető fizetési
-              mód. Válassz másik szállítási módot, vagy vedd fel velünk a
-              kapcsolatot.
-            </Text>
+            <p className={SOR} data-testid="nincs-fizetesi-mod">
+              {t("checkoutPayment.noMode")}
+            </p>
           )}
 
           {paidByGiftcard && (
-            <div className="flex flex-col w-1/3">
-              <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                Fizetési mód
-              </Text>
-              <Text
-                className="txt-medium text-ui-fg-subtle"
-                data-testid="payment-method-summary"
-              >
-                Ajándékkártya
-              </Text>
+            <div className="flex flex-col">
+              <p className={KICSI_CIM}>{t("checkoutPayment.summaryMode")}</p>
+              <p className={SOR} data-testid="payment-method-summary">
+                {t("checkoutPayment.giftCard")}
+              </p>
             </div>
           )}
 
@@ -559,17 +553,14 @@ const Payment = ({
             kuldi. Egy itt kiirt szam sajat talalgatas lenne, es penzrol.
           */}
           {utanvetDij > 0 && (
-            <Text
-              className="txt-medium text-ui-fg-subtle mt-4"
-              data-testid="utanvet-dij"
-            >
-              Utánvét kezelési díj:{" "}
-              {convertToLocale({
-                amount: utanvetDij,
-                currency_code: cart.currency_code,
+            <p className={clx(SOR, "mt-4")} data-testid="utanvet-dij">
+              {t("checkoutPayment.codFee", {
+                amount: convertToLocale({
+                  amount: utanvetDij,
+                  currency_code: cart.currency_code,
+                }),
               })}
-              . A rendelés végösszege ezt tartalmazza.
-            </Text>
+            </p>
           )}
 
           <ErrorMessage
@@ -594,18 +585,15 @@ const Payment = ({
                         className="flex items-center gap-2 border-l-2 border-acr-heritage bg-acr-mist px-3 py-2 text-[13px] text-acr-slate"
                         data-testid="valasztott-fizetes"
                       >
-                        Fizetés
+                        {t("checkoutPayment.paymentLabel")}
                         <span className="font-medium text-acr-ink">
-                          Bankkártya
+                          {t("checkoutPayment.cardShort")}
                         </span>
                       </p>
                     ) : (
-                      <Text className="mt-6 txt-medium text-ui-fg-subtle">
-                        A rendelés leadásával megerősíted, hogy elolvastad és
-                        elfogadod az általános szerződési feltételeket, az
-                        értékesítési és visszaküldési szabályzatot, valamint az
-                        adatkezelési tájékoztatót.
-                      </Text>
+                      <p className={clx(SOR, "mt-6")}>
+                        {t("checkoutPayment.reviewConfirm")}
+                      </p>
                     )}
                     <div
                       className={clx(
@@ -616,7 +604,7 @@ const Payment = ({
                     >
                       <div className="min-w-0 flex-1 small:hidden">
                         <p className="text-[12px] leading-[16px] text-acr-slate">
-                          Bankkártya
+                          {t("checkoutPayment.cardShort")}
                         </p>
                         <p className="text-[16px] font-semibold leading-[22px] text-acr-ink">
                           {convertToLocale({
@@ -638,7 +626,7 @@ const Payment = ({
                             className={ctaOsztaly}
                             data-testid="submit-order-button"
                           >
-                            {stripeGombFelirat("alap")}
+                            {stripeGombFelirat("alap", t)}
                           </Button>
                         ) : stripeKozosValasztva ? (
                           <StripeKozosGomb
@@ -668,8 +656,7 @@ const Payment = ({
                         className="text-[12px] text-acr-slate"
                         data-testid="aszf-hianyzik"
                       >
-                        A rendelés leadásához fogadd el az ÁSZF-et és az
-                        adatkezelési tájékoztatót.
+                        {t("checkoutPayment.aszfMissing")}
                       </p>
                     ) : null}
                     <div className="h-[76px] small:hidden" aria-hidden="true" />
@@ -689,57 +676,46 @@ const Payment = ({
                     }
                     data-testid="submit-payment-button"
                   >
-                    Tovább az ellenőrzéshez
+                    {t("checkoutPayment.toReview")}
                   </Button>,
                 )}
         </div>
 
         <div className={isOpen ? "hidden" : "block"}>
           {cart && paymentReady && activeSession ? (
-            <div className="flex items-start gap-x-1 w-full">
-              <div className="flex flex-col w-1/3">
-                <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Fizetési mód
-                </Text>
-                <Text
-                  className="txt-medium text-ui-fg-subtle"
-                  data-testid="payment-method-summary"
-                >
+            <div className="grid grid-cols-1 gap-4 small:grid-cols-2">
+              <div className="flex flex-col">
+                <p className={KICSI_CIM}>{t("checkoutPayment.summaryMode")}</p>
+                <p className={SOR} data-testid="payment-method-summary">
                   {cimkek[activeSession?.provider_id]?.title ||
                     activeSession?.provider_id}
-                </Text>
+                </p>
               </div>
-              <div className="flex flex-col w-1/3">
-                <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Fizetés részletei
-                </Text>
+              <div className="flex flex-col">
+                <p className={KICSI_CIM}>
+                  {t("checkoutPayment.summaryDetails")}
+                </p>
                 <div
-                  className="flex gap-2 txt-medium text-ui-fg-subtle items-center"
+                  className={clx(SOR, "flex items-center gap-2")}
                   data-testid="payment-details-summary"
                 >
-                  <Container className="flex items-center h-7 w-fit p-2 bg-ui-button-neutral-hover">
+                  <span className="flex h-7 w-fit items-center border border-acr-line p-2">
                     {cimkek[selectedPaymentMethod]?.icon || <CreditCard />}
-                  </Container>
-                  <Text>Megjelenik a következő lépés</Text>
+                  </span>
+                  <p>{t("checkoutPayment.summaryNext")}</p>
                 </div>
               </div>
             </div>
           ) : paidByGiftcard ? (
-            <div className="flex flex-col w-1/3">
-              <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                Fizetési mód
-              </Text>
-              <Text
-                className="txt-medium text-ui-fg-subtle"
-                data-testid="payment-method-summary"
-              >
-                Ajándékkártya
-              </Text>
+            <div className="flex flex-col">
+              <p className={KICSI_CIM}>{t("checkoutPayment.summaryMode")}</p>
+              <p className={SOR} data-testid="payment-method-summary">
+                {t("checkoutPayment.giftCard")}
+              </p>
             </div>
           ) : null}
         </div>
       </div>
-      {oldal ? null : <Divider className="mt-8" />}
     </div>
   )
 }
