@@ -6,25 +6,25 @@ import { describe, expect, it } from "vitest"
 import { categoryPageKind } from "../category-page-data"
 
 /**
- * MELYIK KATEGORIA KAPJA AZ UJ LAPOT (P2). A muszaki (Commerce) ag a 117:30
- * szerinti uj lapot, az elo allat ag (korall, hal, gerinctelen) a P3-ig a
- * regi sablont. A sablon aszinkron gyerekei miatt a kiagazast a forrasban
- * merjuk, a besorolast a valodi fuggvenyen.
+ * MELYIK KATEGORIA MIT KAP (2026-11-01 ota). A muszaki (Commerce) es az elo
+ * allat ag (korall, hal, gerinctelen) UGYANAZT az oldalt kapja, a `kind`
+ * donti el a kartyat es az atvetel sort. A sablon aszinkron gyerekei miatt a
+ * bekotest a forrasban merjuk, a besorolast a valodi fuggvenyen.
  *
- * MI PIROSIT: ha az elo allat ag is az uj lapot kapna; ha a muszaki ag a regi
- * sablonon maradna; ha a Reef/Commerce jelolo lemaradna az uj lap korul.
+ * MI PIROSIT: ha a sablon visszakapna egy masodik, regi elo allat agat (terv-
+ * tokenek, sajat lista); ha a `kind` nem jutna el az oldalig (az elo allat a
+ * muszaki kartyat kapna); ha a Reef/Commerce jelolo lemaradna az oldal korul.
  */
 const sablon = readFileSync(join(__dirname, "..", "index.tsx"), "utf8")
 
-describe("a kategória-sablon ágai", () => {
-  it("a műszaki ág az új lapot kapja, a jelölővel együtt", () => {
-    const ag = sablon.slice(
-      sablon.indexOf('if (kind === "technical")'),
-      sablon.indexOf("</main>"),
-    )
-    expect(ag).toContain("<CommerceKategoriaLap")
-    expect(ag).toContain("data-acr-mod={categoryPageMode(category)}")
+describe("a kategória-sablon", () => {
+  it("egy oldalt rajzol mindkét fajtának, a jelölővel és a fajtával együtt", () => {
     expect(sablon.match(/<CommerceKategoriaLap/g) ?? []).toHaveLength(1)
+    expect(sablon).toContain("data-acr-mod={categoryPageMode(category)}")
+    expect(sablon).toContain("kind={categoryPageKind(category)}")
+    // a regi elo allat sablon nem jon vissza
+    expect(sablon).not.toContain("terv-")
+    expect(sablon).not.toContain("CategoryProducts")
   })
 
   it("a Termékek ága műszaki, a három élő állat gyökér nem", () => {
@@ -53,10 +53,7 @@ describe("a kategória-sablon ágai", () => {
       /const lanc = teljesLanc\(\s*productCategory,\s*kategoriaFelmenoi\(productCategory\.id, mindenKategoria\),?\s*\)/,
     )
     expect(route).toContain("category={lanc}")
-    const ag = sablon.slice(
-      sablon.indexOf("<CommerceKategoriaLap"),
-      sablon.indexOf("</main>"),
-    )
+    const ag = sablon.slice(sablon.indexOf("<CommerceKategoriaLap"))
     expect(ag).toContain("markak={markak}")
   })
 })

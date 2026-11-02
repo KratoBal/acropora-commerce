@@ -16,6 +16,8 @@ import type { OptionValueIds } from "@lib/util/product-option-filters"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
+import type { CategoryPageKind } from "../category-page-data"
+import EloAllatKartya from "./elo-allat-kartya"
 import MarkaLista from "./marka-lista"
 import CommerceRendezes from "./rendezes"
 import CommerceTermekKartya from "./termek-kartya"
@@ -24,9 +26,11 @@ import CommerceTermekKartya from "./termek-kartya"
  * A COMMERCE KATEGORIALAP (P2, 2026-09-29), a handoff (262:3) CANONICAL
  * "Equipment category" kerete szerint: 117:30.
  *
- * Csak a Commerce (muszaki) kategoriakat rajzolja; a korall, hal es
- * gerinctelen lap a P3, az a regi sablonon marad. A fejlec (P1b) a lapon
- * kivul all, ehhez a lap nem nyul.
+ * A muszaki kategoriak mellett (2026-11-01 ota) az elo allat agat is ez
+ * rajzolja (korall, hal, gerinctelen): ugyanaz a vaz, a `kind` csak ket dolgot
+ * valt: a kartyat (`EloAllatKartya`) es az atvetel sort a bevezeto alatt. A
+ * regi elo allat sablon (terv- tokenek, 12-es lapozo) megszunt. A fejlec (P1b)
+ * a lapon kivul all, ehhez a lap nem nyul.
  *
  * A keret sorrendje: morzsamenu (117:42), bevezeto (117:44), gyors-kategoria
  * sav a rendezessel (117:55), szuro-oszlop es talalati racs (117:74). Ami a
@@ -44,6 +48,8 @@ type Props = {
   optionValueIds?: OptionValueIds
   /** A kivalasztott markak (gyujtemeny-azonositok), a cim `marka` parameterei. */
   markak?: string[]
+  /** Muszaki (alap) vagy elo allat: a kartyat es az atvetel sort donti el. */
+  kind?: CategoryPageKind
 }
 
 /** Egy lap a marka-szamlalashoz, es a vedelem felso hatara (3000 termek). */
@@ -185,6 +191,7 @@ export default async function CommerceKategoriaLap({
   countryCode,
   optionValueIds,
   markak = [],
+  kind = "technical",
 }: Props) {
   // the page's language is its path segment's (`hu`, `en-hu`)
   const t = translator(localeOf(countryCode))
@@ -244,6 +251,7 @@ export default async function CommerceKategoriaLap({
   const elso = count === 0 ? 0 : (page - 1) * LAP_MERET + 1
   const tovabbi = count > page * LAP_MERET
   const rendezes = sortBy ?? "created_at"
+  const eloAllat = kind === "livestock"
 
   return (
     <div
@@ -276,7 +284,12 @@ export default async function CommerceKategoriaLap({
           lesz, igen. */}
       <header className="mx-auto max-w-[1440px] px-4 pb-10 pt-8 small:px-[56px] small:pb-[44px] small:pt-[52px]">
         <h1
-          className="text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]"
+          className={
+            "text-[40px] leading-[44px] text-acr-ink small:text-[58px] small:leading-[62px] " +
+            (eloAllat
+              ? "font-kiemelt font-normal tracking-[-0.01em]"
+              : "font-light tracking-[-1px]")
+          }
           data-testid="category-page-title"
         >
           {nev(category)}
@@ -285,6 +298,24 @@ export default async function CommerceKategoriaLap({
           <p className="mt-[18px] max-w-[960px] text-[18px] leading-[30px] text-acr-slate">
             {category.description}
           </p>
+        ) : null}
+        {eloAllat ? (
+          /* AZ ATVETEL SOR: elo allatot csak szemelyesen adunk at. A regi
+              sablon jobb oldali dobozabol lett, a bevezeto alatt all. */
+          <aside
+            className="mt-6 max-w-[560px] border border-acr-line bg-acr-white px-5 py-4"
+            data-testid="category-helper-livestock"
+          >
+            <p className="text-[10px] font-medium uppercase leading-[12px] tracking-[1.8px] text-acr-slate">
+              {t("category.pickupEyebrow")}
+            </p>
+            <h2 className="mt-2 text-[18px] font-bold leading-[22px] tracking-[-0.2px] text-acr-ink">
+              {t("category.pickupTitle")}
+            </h2>
+            <p className="mt-1 text-[14px] leading-[22px] text-acr-slate">
+              {t("category.pickupText")}
+            </p>
+          </aside>
         ) : null}
       </header>
 
@@ -473,16 +504,24 @@ export default async function CommerceKategoriaLap({
             </p>
           ) : (
             <ul
-              className="grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
+              className={
+                eloAllat
+                  ? "grid grid-cols-2 gap-x-3 gap-y-5 small:gap-x-5 small:gap-y-[26px] medium:grid-cols-3"
+                  : "grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
+              }
               data-testid="category-products-list"
             >
               {products.map((product, i) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya
-                    product={product}
-                    elso={i === 0}
-                    t={t}
-                  />
+                  {eloAllat ? (
+                    <EloAllatKartya product={product} elso={i === 0} t={t} />
+                  ) : (
+                    <CommerceTermekKartya
+                      product={product}
+                      elso={i === 0}
+                      t={t}
+                    />
+                  )}
                 </li>
               ))}
             </ul>

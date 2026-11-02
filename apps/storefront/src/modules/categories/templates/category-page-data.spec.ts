@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  categoryPageKind,
-  categoryPageMode,
-  helperCopyFor,
-} from "./category-page-data"
+import { categoryPageKind, categoryPageMode } from "./category-page-data"
 
 /**
  * A kategóriaoldalnak EGY vázra van szüksége, nem két, egymástól lassan
@@ -45,15 +41,6 @@ describe("a kategóriaoldal adatnézete", () => {
         parent_category: { name: "Termékek" },
       }),
     ).toBe("technical")
-  })
-
-  /** Pozitív kontroll: a két ág nem csupán névben különbözik. */
-  it("a két segéddoboz eltérő, adatvezérelt szöveget kap", () => {
-    expect(helperCopyFor("technical").title).toBe("Méretezés-segéd")
-    expect(helperCopyFor("livestock").eyebrow).toBe("ÉLŐ ÁLLAT")
-    expect(helperCopyFor("livestock").description).toBe(
-      "Élő állatot csak személyesen, üzletünkben adunk át neked.",
-    )
   })
 })
 

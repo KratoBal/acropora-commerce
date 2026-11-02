@@ -8,13 +8,14 @@ import { describe, expect, it } from "vitest"
  * KIMONDOM, MIERT EPP IGY.
  *
  * A `templates/index.tsx` `server-only` kodot huz be az adatlekero gyerekein
- * at, tehat jsdom alatt NEM importalhato -- ezert kellett a morzsamenut kulon
- * fajlba emelni. Vagyis a KOMPONENSEK viselkedeset merni tudjuk, a KOZOTTUK
- * levo bekotest nem.
+ * at, tehat jsdom alatt NEM importalhato. Vagyis a KOMPONENS viselkedeset
+ * merni tudjuk, a kozotte levo bekotest nem.
  *
- * Ezt a rest a kalibracio mutatta meg: a `nevek` prop elhagyasa a
- * `<Breadcrumbs ...>` hivasabol NULLA pirosat adott (merve 2026-09-09), tehat
- * a lap csendben visszaeshetne a feltetel nelkuli vagasra.
+ * Ezt a rest a kalibracio mutatta meg: a `nevek` prop elhagyasa a morzsamenu
+ * hivasabol NULLA pirosat adott (merve 2026-09-09), tehat a lap csendben
+ * visszaeshetne a feltetel nelkuli vagasra. 2026-11-01 ota a morzsamenut az
+ * oldal maga rajzolja (`commerce/kategoria-lap.tsx`), a regi kulon
+ * morzsamenu-fajl megszunt.
  *
  * === AMIT EZ MER, ES AMIT NEM ===
  *
@@ -33,10 +34,10 @@ const olvas = (nev: string) =>
   kodSzoveg(readFileSync(join(__dirname, nev), "utf-8"))
 
 describe("a név-térkép bekötése", () => {
-  it("a kategória-lap sablonja átadja a térképet a morzsamenünek", () => {
+  it("a kategória-lap sablonja átadja a térképet az oldalnak", () => {
     const kod = olvas("index.tsx")
 
-    expect(kod).toMatch(/<Breadcrumbs[^>]*\bnevek=\{nevek\}/)
+    expect(kod).toMatch(/<CommerceKategoriaLap[^>]*\bnevek=\{nevek\}/)
   })
 
   /**
@@ -45,16 +46,16 @@ describe("a név-térkép bekötése", () => {
    * komponenst -- es akkor nem a bekotes hianyzana, hanem a kerdesem lenne
    * rossz.
    */
-  it("a morzsamenü hívása egyáltalán ott áll a sablonban", () => {
-    expect(olvas("index.tsx")).toContain("<Breadcrumbs")
+  it("az oldal hívása egyáltalán ott áll a sablonban", () => {
+    expect(olvas("index.tsx")).toContain("<CommerceKategoriaLap")
   })
 
   /**
-   * ES A MASIK VEG: a morzsamenu FOGADJA is a propot. A ket allitas kulon
+   * ES A MASIK VEG: az oldal FOGADJA is a propot. A ket allitas kulon
    * romolhat el -- egy atadott prop, amit a fogado nem ismer, csendben elvesz.
    */
-  it("a morzsamenü fogadja a térképet", () => {
-    expect(olvas("category-breadcrumbs.tsx")).toMatch(
+  it("az oldal fogadja a térképet", () => {
+    expect(olvas("commerce/kategoria-lap.tsx")).toMatch(
       /nevek\?:\s*Map<string,\s*string>/,
     )
   })

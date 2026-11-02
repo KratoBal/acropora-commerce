@@ -25,6 +25,13 @@ export const en: Dictionary = {
     positionOne: "{from} of {count} product",
     loadMore: "Load more products",
     details: "Details",
+    pickupEyebrow: "LIVE ANIMALS",
+    pickupTitle: "Collection in person",
+    pickupText: "We hand over live animals only in person, in our shop.",
+    sold: "Sold",
+    piecesLeft: "{count} left",
+    uniquePiece: "1 pc · Unique piece",
+    findSimilar: "Find a similar one",
   },
   sort: {
     title: "Sort",
