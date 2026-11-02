@@ -44,12 +44,14 @@ const LAPOK_KOZOS = [
  * A PENZTAR MERT HIBAI (2026-10-07, a teszt boltban, FE-1 + FE-8 + FE-9 build):
  * - (JAVITVA ebben a PR-ben, acrobot 27463: a kozos `Input` cimkeje es mezoje
  *   ossze van kotve; a cim-urlap 8 mezoje nevet kapott);
- * - az orszag `select`-jenek fokusza nem latszik (a NEVE a #523-ban javitva);
+ * - (JAVITVA a pénztár 1. szeletében, 2026-11-02: az ország `select`-je a pénztár
+ *   saját mezője, látható fókusszal; a cím- és szállítás-oldalnak van H1-e, a
+ *   CI mérte: `page-has-heading-one` és `bill:lathato-fokusz` már nincs a lapon);
  * - (JAVITVA a #523-ban, barracuda atvetele: a szallitasi es fizetesi mod
  *   radiojanak belso, nev nelkuli gombja jelzo lett, nem vezerlo; a `button-name`
  *   kritikus volt, es kritikus hiba nem allhat ezen a listan);
  * - az osszesito egy termek-linkje nev nelkul (`bill:nev`);
- * - a "Szerkesztés" gombok kontrasztja 3,67:1; nincs H1.
+ * - a "Szerkesztés" gombok kontrasztja 3,67:1.
  */
 const penztar = (lap: string, szabalyok: string[]): A11yVarhato[] =>
   szabalyok.map((szabaly) => ({ lap, szabaly, gazda: "jelentve", ok: PENZTAR }))
@@ -59,17 +61,8 @@ export const A11Y_VARHATO: readonly A11yVarhato[] = [
     { lap, szabaly: "nested-interactive", gazda: "FE-7", ok: FEJLEC_KOSAR },
     { lap, szabaly: "color-contrast", gazda: "design", ok: MARKASZIN },
   ]),
-  ...penztar("penztar-cim", [
-    "color-contrast",
-    "page-has-heading-one",
-    "bill:lathato-fokusz",
-    "bill:nev",
-  ]),
-  ...penztar("penztar-szallitas", [
-    "color-contrast",
-    "page-has-heading-one",
-    "bill:nev",
-  ]),
+  ...penztar("penztar-cim", ["color-contrast", "bill:nev"]),
+  ...penztar("penztar-szallitas", ["color-contrast", "bill:nev"]),
   ...penztar("penztar-fizetes", ["color-contrast"]),
 ]
 
