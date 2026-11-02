@@ -469,8 +469,9 @@ describe("a kategórialap névtérképe élő állat kategórián", () => {
     await lap({ category: SPS, kind: "livestock", nevek: TERKEP })
     expect(morzsaNevek()).toEqual(["Korallok", "WYSIWYG", "SPS"])
     expect(screen.getByTestId("category-page-title").textContent).toBe("SPS")
-    const szoveg = screen.getByRole("navigation", { name: "Morzsamenü" })
-      .textContent
+    const szoveg = screen.getByRole("navigation", {
+      name: "Morzsamenü",
+    }).textContent
     expect(szoveg).not.toContain("SPS - WYSIWYG")
     expect(szoveg).not.toContain("WYSIWYG - Korallok")
   })
