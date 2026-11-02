@@ -1,3 +1,5 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+
 /**
  * A MEGRENDELES GOMBJA ES A PIPA SZOVEGE (commerce-audit-p0, P0-1, 2026-10-27).
  *
@@ -32,3 +34,18 @@ export const ASZF_PIPA_RESZEK = {
 } as const
 
 export const ASZF_PIPA_SZOVEG = Object.values(ASZF_PIPA_RESZEK).join("")
+
+/**
+ * AZ ÁSZF-PIPA SZÖVEGE A LAP NYELVÉN, ugyanabban az öt részben (a két hivatkozás
+ * a két dokumentumra mutat). A magyar rész betű szerint a fenti konstans; az
+ * angol egy szó szerinti fordítás, amit JOGI SZÖVEGKÉNT jóvá kell hagyatni, mielőtt
+ * az angol oldal élesbe megy.
+ */
+export const aszfPipaReszek = (t: Translate = translator("hu")) =>
+  ({
+    elso: t("checkoutPayment.aszfFirst"),
+    aszf: t("checkoutPayment.aszfDoc"),
+    koztes: t("checkoutPayment.aszfMiddle"),
+    adatkezeles: t("checkoutPayment.aszfPrivacy"),
+    vege: t("checkoutPayment.aszfLast"),
+  }) as const

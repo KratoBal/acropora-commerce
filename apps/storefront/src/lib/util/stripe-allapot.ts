@@ -1,10 +1,10 @@
-import { MEGRENDEL_GOMB_FELIRAT } from "@lib/util/megrendeles"
+import { translator, type Translate } from "@lib/i18n/dictionary"
 
 /**
  * A STRIPE-FIZETES ALLAPOTA A FIZETESI LEPESBEN (a keretek 477:*), egy helyen:
  * a gomb ebbol irja a feliratat, a panel ebbol dont, mit mutat.
  *
- *   alap         a megrendel gomb felirata (`MEGRENDEL_GOMB_FELIRAT`)
+ *   alap         a megrendel gomb felirata (`checkoutPayment.placeOrder`)
  *   feldolgozas  "Feldolgozás…", a mezo zarolva, "Fizetés feldolgozása…"
  *   elutasitva   "Próbáld újra", a rogzitett hibamondat
  *   ellenorzes   "Ellenőrzés…", a 3DS utani visszaterites alatt
@@ -15,14 +15,17 @@ export type StripeAllapot = "alap" | "feldolgozas" | "elutasitva" | "ellenorzes"
 export const ELUTASITOTT_KARTYA =
   "A kártyás fizetés nem sikerült. Próbáld újra vagy válassz másik fizetési módot."
 
-export const stripeGombFelirat = (allapot: StripeAllapot): string =>
+export const stripeGombFelirat = (
+  allapot: StripeAllapot,
+  t: Translate = translator("hu"),
+): string =>
   allapot === "feldolgozas"
-    ? "Feldolgozás…"
+    ? t("checkoutPayment.processing")
     : allapot === "ellenorzes"
-      ? "Ellenőrzés…"
+      ? t("checkoutPayment.checking")
       : allapot === "elutasitva"
-        ? "Próbáld újra"
-        : MEGRENDEL_GOMB_FELIRAT
+        ? t("checkoutPayment.tryAgain")
+        : t("checkoutPayment.placeOrder")
 
 /**
  * A HIBA FAJTAJA DONTI EL, MI LATSZIK:

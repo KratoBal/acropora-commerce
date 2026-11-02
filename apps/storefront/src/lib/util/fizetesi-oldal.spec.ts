@@ -32,7 +32,8 @@ describe("a rendelési adatok", () => {
       }),
     ).toEqual({
       kapcsolat: {
-        nev: "Balázs Kratochwill",
+        // magyarul a vezetéknév áll elöl (acrobot, 2026-11-02), mint a cím lépésben
+        nev: "Kratochwill Balázs",
         elerhetoseg: "balazs@example.hu · +36 20 123 4567",
       },
       szamlazas: { nev: "Acropora Kft.", cim: "1111 Budapest, Minta utca 12." },
@@ -42,6 +43,13 @@ describe("a rendelési adatok", () => {
   it("külön számlázási cím nélkül a szállítási a számlázási", () => {
     expect(
       rendelesiAdatok({ email: "x@y.z", shipping_address: cim }).szamlazas.nev,
+    ).toBe("Kratochwill Balázs")
+  })
+
+  it("angolul az utónév áll elöl", () => {
+    expect(
+      rendelesiAdatok({ email: "x@y.z", shipping_address: cim }, "en").kapcsolat
+        .nev,
     ).toBe("Balázs Kratochwill")
   })
 })

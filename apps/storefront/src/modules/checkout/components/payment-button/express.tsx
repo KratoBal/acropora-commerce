@@ -5,7 +5,8 @@ import {
   inditsStripeKozosFizetest,
   stripeVisszarendezes,
 } from "@lib/data/stripe"
-import { RENDELES_MOST_NEM_SIKERULT } from "@lib/util/penztar-uzenet"
+import { useTranslate } from "@lib/i18n/use-translate"
+import { hibaSzoveg } from "@lib/util/penztar-hiba"
 import { type StripeAllapot, stripeHibaFajta } from "@lib/util/stripe-allapot"
 import { HttpTypes } from "@medusajs/types"
 import {
@@ -79,6 +80,7 @@ export default function ExpressFizetes({
   onAllapot: (allapot: StripeAllapot) => void
   onHiba: (uzenet: string | null) => void
 }) {
+  const t = useTranslate()
   const stripe = useStripe()
   const elements = useElements()
   const { countryCode } = useParams()
@@ -89,12 +91,12 @@ export default function ExpressFizetes({
     try {
       const eredmeny = await placeOrder()
       if (!eredmeny.ok) {
-        onHiba(eredmeny.uzenet)
+        onHiba(hibaSzoveg(t, eredmeny))
         onAllapot("alap")
       }
     } catch (hiba) {
       unstable_rethrow(hiba)
-      onHiba(RENDELES_MOST_NEM_SIKERULT)
+      onHiba(t("checkoutPayment.errOrderFailed"))
       onAllapot("alap")
     }
   }
@@ -111,7 +113,7 @@ export default function ExpressFizetes({
         const elozetes = await elotte()
         if (!elozetes.ok) {
           esemeny.paymentFailed({ reason: "fail" })
-          onHiba(elozetes.uzenet)
+          onHiba(hibaSzoveg(t, elozetes))
           onAllapot("alap")
           return
         }
@@ -127,7 +129,7 @@ export default function ExpressFizetes({
         const inditas = await inditsStripeKozosFizetest(cart.id)
         if (!inditas.ok) {
           esemeny.paymentFailed({ reason: "fail" })
-          onHiba(inditas.uzenet)
+          onHiba(hibaSzoveg(t, inditas))
           onAllapot("alap")
           return
         }
@@ -168,7 +170,9 @@ export default function ExpressFizetes({
       data-testid="express-fizetes"
       data-lathato={lathato}
     >
-      <p className="mb-2 text-[11px] text-acr-slate">Gyors fizetés</p>
+      <p className="mb-2 text-[11px] text-acr-slate">
+        {t("checkoutPayment.express")}
+      </p>
       <div className="relative">
         <ExpressCheckoutElement
           options={EXPRESS_BEALLITAS}
@@ -180,12 +184,12 @@ export default function ExpressFizetes({
             className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--acr-color-white)_85%,transparent)] px-3 text-center text-[12px] text-acr-ink"
             data-testid="express-tiltva"
           >
-            A gyors fizetéshez előbb fogadd el az ÁSZF-et (lent).
+            {t("checkoutPayment.expressLocked")}
           </div>
         ) : null}
       </div>
       <p className="mt-3 text-center text-[11px] text-acr-slate">
-        vagy bankkártya
+        {t("checkoutPayment.expressOr")}
       </p>
     </div>
   )

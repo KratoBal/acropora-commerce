@@ -89,6 +89,25 @@ export const SZALLITAS_KULCSOK: readonly [Key, string][] = [
 
 export const MEGJEGYZES_MENTES_HIBA_KOD: Key = "checkoutShipping.errorNoteSave"
 
+const negyszaz = (allapot: number | undefined) =>
+  allapot !== undefined && allapot >= 400 && allapot < 500
+
+/** A fizetés hibájának kulcsa: ugyanaz a vágás, mint a `fizetesUzenet`-é. */
+export function fizetesUzenetKod(allapot: number | undefined): Key {
+  return negyszaz(allapot)
+    ? "checkoutPayment.errPaymentRejected"
+    : "checkoutPayment.errPaymentFailed"
+}
+
+/** A rendelés leadásának hibakulcsa: ugyanaz a vágás, mint a `rendelesUzenet`-é. */
+export function rendelesUzenetKod(allapot: number | undefined): Key {
+  return negyszaz(allapot)
+    ? "checkoutPayment.errOrderRejected"
+    : "checkoutPayment.errOrderFailed"
+}
+
+export const ASZF_ROGZITES_HIBA_KOD: Key = "checkoutPayment.errAszfSave"
+
 export function fizetesUzenet(allapot: number | undefined): string {
   return vagas(allapot, FIZETES_ELUTASITVA, FIZETES_MOST_NEM_SIKERULT)
 }
@@ -142,6 +161,22 @@ export function fizetesHibaUzenet(hiba: unknown): string {
     : fizetesUzenet(hibaAllapota(hiba))
 }
 
+export function rendelesHibaKod(hiba: unknown): Key {
+  const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
+  if (szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD))
+    return "checkoutPayment.errLegalMissing"
+  return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
+    ? "checkoutPayment.errSplitDiscount"
+    : rendelesUzenetKod(hibaAllapota(hiba))
+}
+
+export function fizetesHibaKod(hiba: unknown): Key {
+  const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
+  return szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD)
+    ? "checkoutPayment.errLegalMissing"
+    : fizetesUzenetKod(hibaAllapota(hiba))
+}
+
 export { hibaAllapota }
 
 /** Az ASZF-elfogadas rogzitese nem sikerult: a fizetes el sem indul. */
@@ -155,3 +190,14 @@ export const ASZF_ROGZITES_HIBA =
  */
 export const MEGJEGYZES_MENTES_HIBA =
   "A megjegyzést most nem sikerült elmenteni. Próbáld újra, vagy hagyd üresen a mezőt."
+
+/** A fizetés és a rendelés mondatainak kulcsai a magyar konstansaik párjával: a spec ebből veti össze a szótárt. */
+export const FIZETES_KULCSOK: readonly [Key, string][] = [
+  ["checkoutPayment.errPaymentRejected", FIZETES_ELUTASITVA],
+  ["checkoutPayment.errPaymentFailed", FIZETES_MOST_NEM_SIKERULT],
+  ["checkoutPayment.errOrderRejected", RENDELES_ELUTASITVA],
+  ["checkoutPayment.errOrderFailed", RENDELES_MOST_NEM_SIKERULT],
+  ["checkoutPayment.errSplitDiscount", RENDELES_KEDVEZMENY_BONTAS],
+  ["checkoutPayment.errLegalMissing", RENDELES_JOGI_HIANY],
+  ["checkoutPayment.errAszfSave", ASZF_ROGZITES_HIBA],
+]

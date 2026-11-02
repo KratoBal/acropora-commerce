@@ -3,17 +3,20 @@ import {
   getCartPaymentOptions,
   listCartPaymentMethods,
 } from "@lib/data/payment"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
+import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
+import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
+import StepIndicator from "@modules/cart/components/step-indicator"
 import AszfNegyzet, {
   AszfProvider,
 } from "@modules/checkout/components/aszf-elfogadas"
 import Payment from "@modules/checkout/components/payment"
 import PenztarKartya from "@modules/checkout/components/penztar-kartya"
-import PenztarLepesek from "@modules/checkout/components/penztar-lepesek"
 import RendelesiAdatok from "@modules/checkout/components/rendelesi-adatok"
 import Rendelesed from "@modules/checkout/components/rendelesed"
 import SzallitasiCsoportok from "@modules/checkout/components/szallitasi-csoportok"
-import DiscountCode from "@modules/checkout/components/discount-code"
 
 /**
  * A FIZETESI OLDAL (Figma 209:3 desktop, 209:133 mobil; B hatokor, Balazs
@@ -34,32 +37,47 @@ import DiscountCode from "@modules/checkout/components/discount-code"
  * bankkartyas fizetesrol igaz. A kartya paneljen all, ami csak a bankkartya
  * kivalasztasakor nyilik ki (`StripePaymentContainer`).
  */
-export default async function FizetesiOldal({
+type Lehetosegek = Awaited<ReturnType<typeof getCartPaymentOptions>>
+type Osztaly = Awaited<ReturnType<typeof retrieveCartShippingClass>>
+
+/** A kirajzolás: az adatokat a hívó adja (az oldal a háttértől kéri, a próba fix adatot ad). */
+export function FizetesiOldalNezet({
   cart,
+  countryCode,
+  paymentMethods,
+  lehetosegek,
+  osztaly,
 }: {
   cart: HttpTypes.StoreCart
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
+  paymentMethods: { id: string }[] | null
+  lehetosegek: Lehetosegek
+  osztaly: Osztaly
 }) {
-  const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
-  const lehetosegek = await getCartPaymentOptions(cart.id)
-  const osztaly = await retrieveCartShippingClass()
+  const t = translator(localeOf(countryCode))
 
   return (
     <AszfProvider>
-      <PenztarLepesek aktiv={3} />
-      <div className="content-container py-8 small:py-10">
+      <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
+        <div className="pb-4">
+          <StepIndicator active={2} countryCode={countryCode} />
+        </div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-acr-heritage">
-          Pénztár
+          {t("checkoutPage.title")}
         </p>
         <h1 className="mt-1 text-[34px] font-normal leading-[40px] text-acr-ink small:text-[44px] small:leading-[52px]">
-          Fizetés
+          {t("cartPage.stepPayment")}
         </h1>
         <p className="mt-2 text-[14px] text-acr-slate">
-          Válaszd ki a fizetési módot. A rendelési, számlázási és szállítási
-          adataid már rögzítve vannak.
+          {t("checkoutPayment.lead")}
         </p>
         <div className="mt-6 grid grid-cols-1 gap-6 small:mt-8 small:grid-cols-[1fr_400px] small:gap-8">
           <div className="flex min-w-0 flex-col gap-6">
-            <PenztarKartya cim="Fizetési mód" data-testid="fizetesi-mod-kartya">
+            <PenztarKartya
+              cim={t("checkoutPayment.cardMode")}
+              data-testid="fizetesi-mod-kartya"
+            >
               <Payment
                 cart={cart}
                 oldal
@@ -71,24 +89,62 @@ export default async function FizetesiOldal({
                 }
               />
             </PenztarKartya>
-            <RendelesiAdatok cart={cart} />
+            <RendelesiAdatok cart={cart} countryCode={countryCode} />
             <SzallitasiCsoportok
               cart={cart}
               boltiTetelek={osztaly?.split_line_ids ?? []}
+              countryCode={countryCode}
             />
             <PenztarKartya
-              cim="Rendelés véglegesítése"
+              cim={t("checkoutPayment.cardFinalize")}
               data-testid="veglegesites"
             >
               <AszfNegyzet />
             </PenztarKartya>
           </div>
           <aside className="flex flex-col gap-4 small:sticky small:top-4 small:self-start">
-            <Rendelesed cart={cart} />
-            <DiscountCode cart={cart} />
+            <Rendelesed
+              cart={cart}
+              countryCode={countryCode}
+              ertesites={
+                <SplitNotice
+                  {...splitNoticeProps(
+                    cart.items ?? [],
+                    osztaly,
+                    cart.payment_collection?.payment_sessions?.find(
+                      (session) => session.status === "pending",
+                    )?.provider_id,
+                  )}
+                  countryCode={countryCode}
+                />
+              }
+            />
           </aside>
         </div>
       </div>
     </AszfProvider>
+  )
+}
+
+export default async function FizetesiOldal({
+  cart,
+  countryCode,
+}: {
+  cart: HttpTypes.StoreCart
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
+}) {
+  const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
+  const lehetosegek = await getCartPaymentOptions(cart.id)
+  const osztaly = await retrieveCartShippingClass()
+
+  return (
+    <FizetesiOldalNezet
+      cart={cart}
+      countryCode={countryCode}
+      paymentMethods={paymentMethods}
+      lehetosegek={lehetosegek}
+      osztaly={osztaly}
+    />
   )
 }

@@ -1,7 +1,9 @@
 import { HttpTypes } from "@medusajs/types"
 
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { szallitasiCsoportok } from "@lib/util/fizetesi-oldal"
-import { convertToLocale } from "@lib/util/money"
+import { arSzoveg } from "@lib/util/ar-szoveg"
 import PenztarKartya from "@modules/checkout/components/penztar-kartya"
 
 /**
@@ -11,19 +13,23 @@ import PenztarKartya from "@modules/checkout/components/penztar-kartya"
 export default function SzallitasiCsoportok({
   cart,
   boltiTetelek,
+  countryCode,
 }: {
   cart: HttpTypes.StoreCart
   boltiTetelek: readonly string[]
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
 }) {
-  const csoportok = szallitasiCsoportok(cart, new Set(boltiTetelek))
+  const t = translator(localeOf(countryCode))
+  const csoportok = szallitasiCsoportok(cart, new Set(boltiTetelek), t)
   if (!csoportok.length) return null
   return (
     <PenztarKartya
-      cim="Szállítási csoportok"
+      cim={t("checkoutPayment.cardGroups")}
       data-testid="szallitasi-csoportok"
     >
       <p className="mb-3 text-[13px] text-acr-slate">
-        A szállítási módok ezen a lépésen már nem módosíthatók.
+        {t("checkoutPayment.groupsLead")}
       </p>
       <ul className="flex flex-col gap-3">
         {csoportok.map((cs) => (
@@ -36,11 +42,7 @@ export default function SzallitasiCsoportok({
               {cs.cimke}
             </p>
             <p className="text-[15px] font-medium text-acr-ink">
-              {cs.mod} ·{" "}
-              {convertToLocale({
-                amount: cs.osszeg,
-                currency_code: cart.currency_code,
-              })}
+              {cs.mod} · {arSzoveg(cs.osszeg, cart.currency_code, t)}
             </p>
             <p className="text-[13px] text-acr-slate">
               {[cs.tetelek.join(" + "), cs.hova].filter(Boolean).join(" · ")}

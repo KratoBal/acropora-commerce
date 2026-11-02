@@ -7,6 +7,8 @@ import {
   listCartPaymentMethods,
 } from "@lib/data/payment"
 import { HttpTypes } from "@medusajs/types"
+import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
+import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
 import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
@@ -15,9 +17,12 @@ import Shipping from "@modules/checkout/components/shipping"
 export default async function CheckoutForm({
   cart,
   customer,
+  countryCode,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
 }) {
   if (!cart) {
     return null
@@ -74,6 +79,18 @@ export default async function CheckoutForm({
       <Review
         cart={cart}
         fizetesiSzerep={fizetesiLehetosegek?.selected_payment_role ?? null}
+        ertesites={
+          <SplitNotice
+            {...splitNoticeProps(
+              cart.items ?? [],
+              szallitasiOsztaly,
+              cart.payment_collection?.payment_sessions?.find(
+                (session) => session.status === "pending",
+              )?.provider_id,
+            )}
+            countryCode={countryCode}
+          />
+        }
       />
     </div>
   )

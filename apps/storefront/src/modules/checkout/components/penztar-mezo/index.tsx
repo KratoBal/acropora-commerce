@@ -154,6 +154,13 @@ export function PenztarGomb({
       )}
       data-testid={testId}
     >
+      {foglalt ? (
+        <span
+          aria-hidden="true"
+          className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-acr-white border-t-transparent"
+          data-testid="penztar-gomb-forgo"
+        />
+      ) : null}
       {children}
     </button>
   )

@@ -9,6 +9,9 @@ import {
   MEGJEGYZES_MENTES_HIBA,
   MEGJEGYZES_MENTES_HIBA_KOD,
   SZALLITAS_KULCSOK,
+  FIZETES_KULCSOK,
+  rendelesHibaKod,
+  fizetesHibaKod,
   szallitasUzenetKod,
   FIZETES_ELUTASITVA,
   FIZETES_MOST_NEM_SIKERULT,
@@ -223,5 +226,37 @@ describe("a szállítási hiba szótár-kulcsa", () => {
     expect(szallitasUzenetKod(422)).toBe("checkoutShipping.errorRejected")
     expect(szallitasUzenetKod(500)).toBe("checkoutShipping.errorFailed")
     expect(szallitasUzenetKod(undefined)).toBe("checkoutShipping.errorFailed")
+  })
+})
+
+describe("a fizetés és a rendelés hibájának szótár-kulcsa", () => {
+  it("a magyar szótár betű szerint a konstans mondata, mind a hétre", () => {
+    const hu_ = translator("hu")
+    for (const [kulcs, mondat] of FIZETES_KULCSOK) {
+      expect(hu_(kulcs), kulcs).toBe(mondat)
+    }
+  })
+
+  it("a rendelés hibája: jogi hiány, bontás, 4xx, egyéb", () => {
+    expect(rendelesHibaKod(new Error("legal_documents_missing x"))).toBe(
+      "checkoutPayment.errLegalMissing",
+    )
+    expect(rendelesHibaKod(new Error("split_discount_changed"))).toBe(
+      "checkoutPayment.errSplitDiscount",
+    )
+    expect(rendelesHibaKod({ status: 422 })).toBe(
+      "checkoutPayment.errOrderRejected",
+    )
+    expect(rendelesHibaKod(undefined)).toBe("checkoutPayment.errOrderFailed")
+  })
+
+  it("a fizetés hibája: jogi hiány vagy a 4xx-vágás", () => {
+    expect(fizetesHibaKod(new Error("legal_documents_missing"))).toBe(
+      "checkoutPayment.errLegalMissing",
+    )
+    expect(fizetesHibaKod({ status: 400 })).toBe(
+      "checkoutPayment.errPaymentRejected",
+    )
+    expect(fizetesHibaKod(undefined)).toBe("checkoutPayment.errPaymentFailed")
   })
 })

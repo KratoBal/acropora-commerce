@@ -1,3 +1,4 @@
+import type { Locale } from "@lib/i18n/locale"
 import type { Appearance, CssFontSource } from "@stripe/stripe-js"
 
 /**
@@ -107,13 +108,17 @@ export function stripeMegjelenes(vilag: StripeVilag): Appearance {
 
 /**
  * A MEZO BEALLITASAI A KET ELEMENTS-HEZ (a munkamenetes es a halasztott). A
- * nyelv magyar; a betu nem valtozhat az elso megjelenes utan (a Stripe ezt nem
+ * nyelv a lape (magyar vagy angol); a betu nem valtozhat az elso megjelenes utan (a Stripe ezt nem
  * engedi), a megjelenes igen.
  */
-export const stripeElementsBeallitas = (vilag: StripeVilag) => ({
+export const stripeElementsBeallitas = (
+  vilag: StripeVilag,
+  locale: Locale = "hu",
+) => ({
   appearance: stripeMegjelenes(vilag),
   fonts: STRIPE_BETUK,
-  locale: "hu" as const,
+  // a Stripe `locale` beállítása a mező nyelve: "hu" vagy "en" (a lapé)
+  locale,
 })
 
 /**

@@ -19,9 +19,6 @@ vi.mock("@modules/checkout/components/aszf-elfogadas", () => ({
     <>{children}</>
   ),
 }))
-vi.mock("@modules/checkout/components/penztar-lepesek", () => ({
-  default: () => null,
-}))
 vi.mock("@modules/checkout/components/rendelesi-adatok", () => ({
   default: () => null,
 }))
@@ -46,7 +43,12 @@ afterEach(cleanup)
  */
 describe("a fizetési oldal véglegesítése", () => {
   it("az ÁSZF-et kéri, a kártyaadatokról szóló mondat nélkül", async () => {
-    render(await FizetesiOldal({ cart: { id: "cart_1" } as never }))
+    render(
+      await FizetesiOldal({
+        cart: { id: "cart_1" } as never,
+        countryCode: "hu",
+      }),
+    )
     const veglegesites = screen.getByTestId("veglegesites")
     expect(within(veglegesites).getByTestId("aszf")).toBeInTheDocument()
     expect(screen.getByTestId("fizetesi-mod")).toBeInTheDocument()

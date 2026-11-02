@@ -4,6 +4,7 @@ import { getCartPaymentOptions } from "@lib/data/payment"
 import { isStripeLike } from "@lib/constants"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
+import { lepesjelzoAllas } from "@lib/util/penztar-lepes"
 import StepIndicator from "@modules/cart/components/step-indicator"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
@@ -90,7 +91,7 @@ export default async function Checkout(props: {
         vegyesStripe={vegyesStripe}
         mindigHalasztott={stripeKinalva}
       >
-        <FizetesiOldal cart={cart} />
+        <FizetesiOldal cart={cart} countryCode={countryCode} />
       </PaymentWrapper>
     )
   }
@@ -100,16 +101,27 @@ export default async function Checkout(props: {
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
       <div className="pb-4">
-        <StepIndicator active={1} countryCode={countryCode} />
+        <StepIndicator
+          active={lepesjelzoAllas(step)}
+          countryCode={countryCode}
+        />
       </div>
       <h1 className="pb-8 text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
         {t("checkoutPage.title")}
       </h1>
       <div className="grid grid-cols-1 gap-y-8 small:grid-cols-[minmax(0,1fr)_452px] small:items-start small:gap-x-[44px]">
         <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
-          <CheckoutForm cart={cart} customer={customer} />
+          <CheckoutForm
+            cart={cart}
+            customer={customer}
+            countryCode={countryCode}
+          />
         </PaymentWrapper>
-        <CheckoutSummary cart={cart} countryCode={countryCode} />
+        <CheckoutSummary
+          cart={cart}
+          countryCode={countryCode}
+          savMutat={step !== "review"}
+        />
       </div>
     </div>
   )

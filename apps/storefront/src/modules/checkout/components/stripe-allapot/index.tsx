@@ -1,7 +1,7 @@
-import {
-  ELUTASITOTT_KARTYA,
-  type StripeAllapot,
-} from "@lib/util/stripe-allapot"
+"use client"
+
+import { useTranslate } from "@lib/i18n/use-translate"
+import { type StripeAllapot } from "@lib/util/stripe-allapot"
 
 /**
  * A STRIPE-MEZO ALLAPOTA A FIZETESI LEPESBEN (a keretek: feldolgozas 477:166 /
@@ -23,6 +23,7 @@ export default function StripeAllapotPanel({
 }: {
   allapot: StripeAllapot
 }) {
+  const t = useTranslate()
   if (allapot === "elutasitva") {
     return (
       <p
@@ -30,7 +31,7 @@ export default function StripeAllapotPanel({
         className="mt-3 border border-red-700 bg-red-50 px-3 py-2 text-[12px] leading-[17px] text-red-700"
         data-testid="stripe-elutasitva"
       >
-        {ELUTASITOTT_KARTYA}
+        {t("checkoutPayment.cardDeclined")}
       </p>
     )
   }
@@ -45,20 +46,21 @@ export default function StripeAllapotPanel({
         data-testid={feldolgozas ? "stripe-feldolgozas" : "stripe-ellenorzes"}
       >
         <p className="text-[15px] font-medium leading-[20px] text-acr-ink">
-          {feldolgozas ? "Fizetés feldolgozása…" : "Fizetés ellenőrzése…"}
+          {feldolgozas
+            ? t("checkoutPayment.paymentProcessing")
+            : t("checkoutPayment.paymentChecking")}
         </p>
         <p className="mt-1 text-[12px] leading-[17px] text-acr-slate">
           {feldolgozas
-            ? "Ne zárd be az oldalt."
-            : "A banki hitelesítés eredményét ellenőrizzük."}
+            ? t("checkoutPayment.dontClose")
+            : t("checkoutPayment.bankChecking")}
         </p>
         {feldolgozas && (
           <p
             className="mt-3 max-w-[420px] text-[12px] leading-[17px] text-acr-heritage"
             data-testid="stripe-3ds-jelzes"
           >
-            Ha a bankod további hitelesítést kér, a Stripe biztonságos ablaka
-            most megnyílik. A fizetés addig nincs befejezve.
+            {t("checkoutPayment.threeDs")}
           </p>
         )}
       </div>

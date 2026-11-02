@@ -12,11 +12,15 @@ import {
 } from "@modules/products/components/product-actions/minimum-order-quantity"
 import {
   ASZF_ROGZITES_HIBA,
+  ASZF_ROGZITES_HIBA_KOD,
+  fizetesHibaKod,
   fizetesHibaUzenet,
   MEGJEGYZES_MENTES_HIBA,
   MEGJEGYZES_MENTES_HIBA_KOD,
+  rendelesHibaKod,
   rendelesHibaUzenet,
   rendelesUzenet,
+  rendelesUzenetKod,
   szallitasUzenet,
   szallitasUzenetKod,
 } from "@lib/util/penztar-uzenet"
@@ -405,7 +409,11 @@ export async function initiatePaymentSession(
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: fizetesHibaUzenet(hiba) }
+    return {
+      ok: false,
+      uzenet: fizetesHibaUzenet(hiba),
+      kod: fizetesHibaKod(hiba),
+    }
   }
 
   const cartCacheTag = await getCacheTag("carts")
@@ -674,7 +682,12 @@ export async function rogzitsAszfElfogadast(
   cartId?: string,
 ): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
-  if (!id) return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
+  if (!id)
+    return {
+      ok: false,
+      uzenet: ASZF_ROGZITES_HIBA,
+      kod: ASZF_ROGZITES_HIBA_KOD,
+    }
   try {
     await sdk.client.fetch(`/store/carts/${id}/aszf-elfogadas`, {
       method: "POST",
@@ -684,7 +697,11 @@ export async function rogzitsAszfElfogadast(
     revalidateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
-    return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
+    return {
+      ok: false,
+      uzenet: ASZF_ROGZITES_HIBA,
+      kod: ASZF_ROGZITES_HIBA_KOD,
+    }
   }
 }
 
@@ -721,7 +738,11 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
   if (!id) {
     // NEM DOBAS: kosar nelkul a vevo szamara ugyanaz a helyzet, mint egy
     // elutasitott rendelesnel, es a penztar-lap mar ugyis atiranyit.
-    return { ok: false, uzenet: rendelesUzenet(undefined) }
+    return {
+      ok: false,
+      uzenet: rendelesUzenet(undefined),
+      kod: rendelesUzenetKod(undefined),
+    }
   }
 
   const headers = {
@@ -756,7 +777,11 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: rendelesHibaUzenet(hiba) }
+    return {
+      ok: false,
+      uzenet: rendelesHibaUzenet(hiba),
+      kod: rendelesHibaKod(hiba),
+    }
   }
 
   const cartCacheTag = await getCacheTag("carts")
@@ -801,7 +826,11 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
     `try` utan ugyanarra a hiba-cimre iranyitott. Vagyis ez az allapot eddig is
     KUDARC volt, csak nem mondta ki senki.
   */
-  return { ok: false, uzenet: rendelesUzenet(undefined) }
+  return {
+    ok: false,
+    uzenet: rendelesUzenet(undefined),
+    kod: rendelesUzenetKod(undefined),
+  }
 }
 
 /**
