@@ -148,7 +148,16 @@ export function teljesites(
         0,
       )
     : null
-  const dij = Number(mod?.total ?? mod?.amount ?? 0)
+  /*
+    A SZÁLLÍTÁSI DÍJ AZ ÖSSZES MÓD ÖSSZEGE, nem az utolsó módé: a rendelés
+    végösszege az összes szállítási módot tartalmazza, és ha mellé kerül egy 0
+    Ft-os mód, az utolsó alapján „Ingyenes” látszott 13 500 Ft végösszeg mellett
+    (Balázs 390-es előnézeti képe, acrobot 40313). Egy módnál változatlan.
+  */
+  const dij = (rendeles.shipping_methods ?? []).reduce(
+    (osszeg, m) => osszeg + Number(m.total ?? m.amount ?? 0),
+    0,
+  )
   const utanvet =
     szolgaltato(rendeles) === UTANVET ? Number(rendeles.total ?? 0) : null
   const alap = {
