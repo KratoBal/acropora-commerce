@@ -305,3 +305,72 @@ describe("a szállítási díj az összes szállítási módból áll", () => {
     ).toBe(0)
   })
 })
+
+describe("a szállítás típusa és helye a díjat hordozó módból jön", () => {
+  const rendeles = (modok: object[]) => ({
+    id: "order_91",
+    display_id: 91,
+    email: "vevo@example.test",
+    total: 5650,
+    items: [{ id: "i1", product_title: "Aqua Medic Reef Salt", quantity: 1 }],
+    shipping_address: {
+      postal_code: "1111",
+      city: "Budapest",
+      address_1: "Minta utca 12.",
+    },
+    shipping_methods: modok,
+    payment_collections: [{ payments: [{ provider_id: "pp_stripe_stripe" }] }],
+  })
+
+  it("GLS házhozszállítás 4 500 Ft és egy mögé került 0 Ft-os mód: GLS marad a típus", () => {
+    const t = sikeroldal(
+      rendeles([
+        { name: "GLS házhozszállítás", total: 4500 },
+        { name: "Másik mód", total: 0 },
+      ]),
+      null,
+      false,
+    ).teljesitesek[0]!
+    expect(t.szallito).toBe("gls")
+    expect(t.hely).toBe("GLS házhozszállítás")
+    expect(t.szallitasiDij).toBe(4500)
+  })
+
+  it("a 0 Ft-os, korábban választott Foxpost-pont nem írja felül a fizetős GLS módot", () => {
+    const t = sikeroldal(
+      rendeles([
+        {
+          name: "Foxpost csomagautomata",
+          total: 0,
+          data: {
+            foxpost_pickup_point: { name: "Régi automata", variant: "apm" },
+          },
+        },
+        { name: "GLS házhozszállítás", total: 4500 },
+      ]),
+      null,
+      false,
+    ).teljesitesek[0]!
+    expect(t.szallito).toBe("gls")
+    expect(t.hely).toBe("GLS házhozszállítás")
+  })
+
+  it("a díjas pontos mód mellett a mögé kerülő 0 Ft-os mód nem viszi el a pontot", () => {
+    const t = sikeroldal(
+      rendeles([
+        {
+          name: "Foxpost csomagautomata",
+          total: 1150,
+          data: {
+            foxpost_pickup_point: { name: "Minta automata", variant: "apm" },
+          },
+        },
+        { name: "Másik mód", total: 0 },
+      ]),
+      null,
+      false,
+    ).teljesitesek[0]!
+    expect(t.szallito).toBe("foxpost")
+    expect(t.hely).toBe("Minta automata")
+  })
+})
