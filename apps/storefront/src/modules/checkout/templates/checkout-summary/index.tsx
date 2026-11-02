@@ -22,11 +22,14 @@ export function CheckoutSummaryView({
   cart,
   countryCode,
   szallitasiOsztaly,
+  savMutat = true,
 }: {
   cart: HttpTypes.StoreCart
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
   szallitasiOsztaly: SzallitasiOsztaly
+  /** A két rendelés sávja az oldalsávban; az ellenőrzés lépésben a megrendelés gomb fölött áll, ott nem ismétlődik. */
+  savMutat?: boolean
 }) {
   const t = translator(localeOf(countryCode))
 
@@ -43,16 +46,18 @@ export function CheckoutSummaryView({
         <DiscountCode cart={cart} />
         <CartTotals totals={cart} />
       </div>
-      <SplitNotice
-        {...splitNoticeProps(
-          cart.items ?? [],
-          szallitasiOsztaly,
-          cart.payment_collection?.payment_sessions?.find(
-            (session) => session.status === "pending",
-          )?.provider_id,
-        )}
-        countryCode={countryCode}
-      />
+      {savMutat ? (
+        <SplitNotice
+          {...splitNoticeProps(
+            cart.items ?? [],
+            szallitasiOsztaly,
+            cart.payment_collection?.payment_sessions?.find(
+              (session) => session.status === "pending",
+            )?.provider_id,
+          )}
+          countryCode={countryCode}
+        />
+      ) : null}
     </div>
   )
 }
@@ -60,9 +65,11 @@ export function CheckoutSummaryView({
 export default async function CheckoutSummary({
   cart,
   countryCode,
+  savMutat = true,
 }: {
   cart: HttpTypes.StoreCart
   countryCode: string
+  savMutat?: boolean
 }) {
   // P4-2: a két rendelés sávja a leadásnál is látszik (Balázs, 2026-09-29).
   const szallitasiOsztaly = await retrieveCartShippingClass()
@@ -71,6 +78,7 @@ export default async function CheckoutSummary({
       cart={cart}
       countryCode={countryCode}
       szallitasiOsztaly={szallitasiOsztaly}
+      savMutat={savMutat}
     />
   )
 }

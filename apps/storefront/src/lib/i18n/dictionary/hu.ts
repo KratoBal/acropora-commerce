@@ -575,7 +575,6 @@ export const hu = {
     typeZpoint: "Packeta Z-Pont / átvevőhely",
   },
   checkoutPayment: {
-    stepsLabel: "Pénztár lépései",
     lead: "Válaszd ki a fizetési módot. A rendelési, számlázási és szállítási adataid már rögzítve vannak.",
     cardMode: "Fizetési mód",
     cardOrderData: "Rendelési adatok",

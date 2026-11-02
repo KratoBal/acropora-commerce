@@ -97,4 +97,17 @@ describe("a pénztár oldalsávja", () => {
     expect(screen.getByText("Total to pay")).toBeTruthy()
     expect(screen.queryByText("Fizetendő")).toBeNull()
   })
+
+  it("az ellenőrzés lépésben a sáv nem ismétlődik az oldalsávban (a gomb fölött áll)", () => {
+    render(
+      <CheckoutSummaryView
+        cart={kosar}
+        countryCode="hu"
+        szallitasiOsztaly={{ split_line_ids: ["elo-korall"] }}
+        savMutat={false}
+      />,
+    )
+    expect(screen.queryByTestId("split-notice")).toBeNull()
+    expect(screen.getByTestId("cart-total")).toBeTruthy()
+  })
 })

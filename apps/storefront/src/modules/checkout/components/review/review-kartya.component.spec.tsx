@@ -65,3 +65,40 @@ describe("az ellenőrzés lépése", () => {
     )
   })
 })
+
+/**
+ * A KÉT RENDELÉS SÁVJA A TÉNYLEGES LEADÁS GOMBJA FÖLÖTT (acrobot 40266): az
+ * ellenőrzés lépésben áll a megrendelés gomb. MI PIROSÍT: ha a sáv a gomb után
+ * állna, vagy a lépés nem rajzolná ki a kapott sávot, vagy kapu nélkül (zárt
+ * lépésben) is látszana.
+ */
+describe("a sáv az ellenőrzés lépésben", () => {
+  const sav = <section data-testid="split-notice">két rendelés</section>
+
+  it("a megerősítő mondat ÉS a gomb előtt áll", () => {
+    lepes.ertek = "step=review&fizetes=stripe"
+    render(<Review cart={kosar} fizetesiSzerep={null} ertesites={sav} />)
+    const savElem = screen.getByTestId("split-notice")
+    const mondat = screen.getByText(/A rendelés leadásával megerősíted/)
+    const gomb = screen.getByTestId("submit-order-button")
+    expect(
+      savElem.compareDocumentPosition(mondat) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      savElem.compareDocumentPosition(gomb) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it("zárt lépésben (nem az ellenőrzés) a sáv sem látszik", () => {
+    lepes.ertek = "step=delivery"
+    render(<Review cart={kosar} fizetesiSzerep={null} ertesites={sav} />)
+    expect(screen.queryByTestId("split-notice")).toBeNull()
+  })
+
+  it("sáv nélkül nincs üres doboz sem", () => {
+    lepes.ertek = "step=review&fizetes=stripe"
+    const { container } = render(<Review cart={kosar} fizetesiSzerep={null} />)
+    expect(container.querySelector('[data-testid="split-notice"]')).toBeNull()
+  })
+})

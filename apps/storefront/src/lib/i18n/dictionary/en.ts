@@ -550,7 +550,6 @@ export const en: Dictionary = {
     typeZpoint: "Packeta Z-Pont / pickup place",
   },
   checkoutPayment: {
-    stepsLabel: "Checkout steps",
     lead: "Choose how you pay. Your order, billing and shipping details are already saved.",
     cardMode: "Payment method",
     cardOrderData: "Order details",

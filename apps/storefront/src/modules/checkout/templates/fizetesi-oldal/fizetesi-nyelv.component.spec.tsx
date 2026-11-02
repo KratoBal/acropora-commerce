@@ -26,7 +26,7 @@ vi.mock("@modules/checkout/components/aszf-elfogadas", () => ({
   ),
 }))
 vi.mock("@modules/checkout/components/discount-code", () => ({
-  default: () => null,
+  default: () => <div data-testid="kedvezmenykod" />,
 }))
 
 import FizetesiOldal from "./index"
@@ -103,5 +103,28 @@ describe("a fizetési oldal kerete", () => {
     render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
     expect(screen.queryByTestId("split-notice")).toBeNull()
     expect(document.getElementById("penztar-cta-hely")).not.toBeNull()
+  })
+
+  /**
+   * EGY PÉNZTÁRBAN EGY LÉPÉSJELZŐ (acrobot 40266): a kosáré, a fizetés lépése
+   * jelölve; a kedvezménykód az összesítés kártyában áll, a Fizetendő előtt,
+   * mint a kosárban.
+   */
+  it("a kosár lépésjelzője áll, a harmadik lépés jelölve", async () => {
+    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    const jelzo = screen.getByTestId("cart-step-indicator")
+    expect(jelzo.textContent).toContain("3 / 3 · Fizetés")
+    expect(screen.queryByTestId("penztar-lepesek")).toBeNull()
+  })
+
+  it("a kedvezménykód az összesítés kártyában áll, a Fizetendő előtt", async () => {
+    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    const kartya = screen.getByTestId("rendelesed")
+    const kod = screen.getByTestId("kedvezmenykod")
+    expect(kartya.contains(kod)).toBe(true)
+    expect(
+      kod.compareDocumentPosition(screen.getByTestId("rendelesed-fizetendo")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 })

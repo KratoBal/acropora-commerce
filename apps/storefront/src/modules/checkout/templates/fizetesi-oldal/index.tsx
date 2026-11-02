@@ -8,16 +8,15 @@ import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
 import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
+import StepIndicator from "@modules/cart/components/step-indicator"
 import AszfNegyzet, {
   AszfProvider,
 } from "@modules/checkout/components/aszf-elfogadas"
 import Payment from "@modules/checkout/components/payment"
 import PenztarKartya from "@modules/checkout/components/penztar-kartya"
-import PenztarLepesek from "@modules/checkout/components/penztar-lepesek"
 import RendelesiAdatok from "@modules/checkout/components/rendelesi-adatok"
 import Rendelesed from "@modules/checkout/components/rendelesed"
 import SzallitasiCsoportok from "@modules/checkout/components/szallitasi-csoportok"
-import DiscountCode from "@modules/checkout/components/discount-code"
 
 /**
  * A FIZETESI OLDAL (Figma 209:3 desktop, 209:133 mobil; B hatokor, Balazs
@@ -60,8 +59,10 @@ export function FizetesiOldalNezet({
 
   return (
     <AszfProvider>
-      <PenztarLepesek aktiv={3} countryCode={countryCode} />
-      <div className="content-container py-8 small:py-10">
+      <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
+        <div className="pb-4">
+          <StepIndicator active={2} countryCode={countryCode} />
+        </div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-acr-heritage">
           {t("checkoutPage.title")}
         </p>
@@ -118,7 +119,6 @@ export function FizetesiOldalNezet({
                 />
               }
             />
-            <DiscountCode cart={cart} />
           </aside>
         </div>
       </div>

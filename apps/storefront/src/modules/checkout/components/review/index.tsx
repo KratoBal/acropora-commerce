@@ -11,10 +11,16 @@ import type { FizetesiSzerepValasz } from "@lib/data/payment"
 const Review = ({
   cart,
   fizetesiSzerep,
+  ertesites,
 }: {
   cart: HttpTypes.StoreCart
   /** Amivel a kosar fizet, a hatter szavaval. Lasd a gomb propjanak fejlecet. */
   fizetesiSzerep?: FizetesiSzerepValasz
+  /**
+   * A KÉT RENDELÉS SÁVJA A TÉNYLEGES LEADÁS GOMBJA FÖLÖTT (acrobot 40266, P4-2):
+   * az ellenőrzés lépésben áll a megrendelés gomb, tehát a sáv itt is kell.
+   */
+  ertesites?: React.ReactNode
 }) => {
   const t = useTranslate()
   const searchParams = useSearchParams()
@@ -49,6 +55,7 @@ const Review = ({
       </div>
       {isOpen && previousStepsCompleted && (
         <>
+          {ertesites ? <div className="mb-6">{ertesites}</div> : null}
           <p className="mb-6 text-[14px] leading-[22px] text-acr-ink">
             {t("checkoutPayment.reviewConfirm")}
           </p>

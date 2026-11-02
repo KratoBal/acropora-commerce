@@ -19,9 +19,6 @@ vi.mock("@modules/checkout/components/aszf-elfogadas", () => ({
     <>{children}</>
   ),
 }))
-vi.mock("@modules/checkout/components/penztar-lepesek", () => ({
-  default: () => null,
-}))
 vi.mock("@modules/checkout/components/rendelesi-adatok", () => ({
   default: () => null,
 }))

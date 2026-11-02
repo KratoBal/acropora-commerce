@@ -107,9 +107,17 @@ export default async function Checkout(props: {
       </h1>
       <div className="grid grid-cols-1 gap-y-8 small:grid-cols-[minmax(0,1fr)_452px] small:items-start small:gap-x-[44px]">
         <PaymentWrapper cart={cart} vegyesStripe={vegyesStripe}>
-          <CheckoutForm cart={cart} customer={customer} />
+          <CheckoutForm
+            cart={cart}
+            customer={customer}
+            countryCode={countryCode}
+          />
         </PaymentWrapper>
-        <CheckoutSummary cart={cart} countryCode={countryCode} />
+        <CheckoutSummary
+          cart={cart}
+          countryCode={countryCode}
+          savMutat={step !== "review"}
+        />
       </div>
     </div>
   )

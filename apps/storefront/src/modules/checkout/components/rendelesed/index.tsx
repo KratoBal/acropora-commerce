@@ -5,6 +5,7 @@ import { localeOf } from "@lib/i18n/locale"
 import { tetelSor } from "@lib/util/fizetesi-oldal"
 import { arSzoveg } from "@lib/util/ar-szoveg"
 import { convertToLocale } from "@lib/util/money"
+import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /** A cselekvo gomb helye az osszesitoben: a fizetesi resz ide rajzolja (portal). */
@@ -68,6 +69,9 @@ export default function Rendelesed({
           </li>
         ))}
       </ul>
+      <div className="mt-4">
+        <DiscountCode cart={cart} />
+      </div>
       <div className="my-4 h-px bg-acr-line" />
       <dl className="flex flex-col gap-3 text-[13px] text-acr-slate">
         <div className="flex justify-between">
