@@ -44,7 +44,8 @@
  *   (the address the backend already uses for payment links) to be set and NOT
  *   a live host (`LIVE_STOREFRONT_HOSTS`). Unset or unreadable counts as "cannot
  *   show it is not live", so it is enforce. The refusal is logged
- *   (`logLegalGateMode`, at startup and on every resolution that is refused).
+ *   (`logLegalGateMode`, called once at startup from medusa-config.ts; the gate
+ *   itself then refuses silently, once per request would flood the log).
  *   It falls back to enforce rather than stopping the server: a misconfigured
  *   live shop stays up and takes no order.
  * - To go live: delete `LEGAL_GATE_MODE` (or set "enforce") and switch
