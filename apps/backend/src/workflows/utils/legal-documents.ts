@@ -62,9 +62,16 @@ export const legalReadiness = (config: LegalConfig = readLegalConfig()): LegalRe
   return missing.length === 0 ? { complete: true } : { complete: false, missing }
 }
 
-/** The buyer's sentence: Hungarian first (the shop's language), English under it. */
+/**
+ * The code the storefront matches to show its own sentence (the same way it
+ * matches `split_discount_changed`): the Medusa SDK hands over only the message.
+ */
+export const LEGAL_NOT_READY_CODE = "legal_documents_missing"
+
+/** The refusal: the code, then a sentence for a reader who sees it as it is (Hungarian first, English after). */
 export const LEGAL_NOT_READY =
-  "A rendelés jelenleg nem adható le: az ÁSZF és az adatkezelési tájékoztató még nincs közzétéve. " +
+  LEGAL_NOT_READY_CODE +
+  ": A rendelés jelenleg nem adható le: az ÁSZF és az adatkezelési tájékoztató még nincs közzétéve. " +
   "Orders cannot be placed right now: the terms and the privacy notice are not published yet."
 
 /** A document's source at Fogyasztóbarát. */

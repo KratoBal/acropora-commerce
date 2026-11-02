@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import {
@@ -7,6 +10,9 @@ import {
   RENDELES_MOST_NEM_SIKERULT,
   SZALLITAS_ELUTASITVA,
   SZALLITAS_MOST_NEM_SIKERULT,
+  JOGI_DOKUMENTUM_HIANY_KOD,
+  RENDELES_JOGI_HIANY,
+  fizetesHibaUzenet,
   fizetesUzenet,
   RENDELES_KEDVEZMENY_BONTAS,
   rendelesHibaUzenet,
@@ -150,6 +156,44 @@ describe("a leadás hibájának mondata", () => {
     expect(rendelesHibaUzenet(elutasitas)).toBe(RENDELES_ELUTASITVA)
     expect(rendelesHibaUzenet(new Error("fetch failed"))).toBe(
       RENDELES_MOST_NEM_SIKERULT,
+    )
+  })
+})
+
+/**
+ * A JOGI KAPU MONDATA (kartya f6cb0a51). MI PIROSIT: ha a vevo a kapu
+ * elutasitasara a „nezd at a kosarat” mondatot kapna; ha a kod elter a hatter
+ * kodjatol (akkor a kapu ugy nez ki, mint egy altalanos elutasitas); ha a
+ * fizetes inditasa kimarad a sorbol.
+ */
+describe("a jogi kapu mondata", () => {
+  const kapu = Object.assign(
+    new Error("legal_documents_missing: A rendelés jelenleg nem adható le"),
+    { status: 400 },
+  )
+
+  it("a leadásnál és a fizetés indításánál a saját mondata, nem a kosár átnézése", () => {
+    expect(rendelesHibaUzenet(kapu)).toBe(RENDELES_JOGI_HIANY)
+    expect(fizetesHibaUzenet(kapu)).toBe(RENDELES_JOGI_HIANY)
+    expect(RENDELES_JOGI_HIANY).not.toBe(RENDELES_ELUTASITVA)
+  })
+
+  it("más 4xx hibára a mai vágás marad", () => {
+    const masik = Object.assign(new Error("Nincs ilyen mód"), { status: 400 })
+    expect(fizetesHibaUzenet(masik)).toBe(FIZETES_ELUTASITVA)
+    expect(rendelesHibaUzenet(masik)).toBe(RENDELES_ELUTASITVA)
+  })
+
+  it("a kód azonos a háttér kódjával", () => {
+    const hatter = readFileSync(
+      resolve(
+        __dirname,
+        "../../../../backend/src/workflows/utils/legal-documents.ts",
+      ),
+      "utf8",
+    )
+    expect(hatter).toContain(
+      `LEGAL_NOT_READY_CODE = "${JOGI_DOKUMENTUM_HIANY_KOD}"`,
     )
   })
 })
