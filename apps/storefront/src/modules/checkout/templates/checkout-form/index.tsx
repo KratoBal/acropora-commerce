@@ -17,9 +17,12 @@ import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
 export default async function CheckoutForm({
   cart,
   customer,
+  countryCode,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
 }) {
   if (!cart) {
     return null
@@ -59,6 +62,7 @@ export default async function CheckoutForm({
             (session) => session.status === "pending",
           )?.provider_id,
         )}
+        countryCode={countryCode}
       />
 
       <Addresses cart={cart} customer={customer} />

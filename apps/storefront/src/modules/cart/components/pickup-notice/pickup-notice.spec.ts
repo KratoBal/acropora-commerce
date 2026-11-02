@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { translator } from "@lib/i18n/dictionary"
+
 import {
   PICKUP_LEAD,
   PICKUP_REASON,
@@ -13,13 +15,17 @@ import {
   splitNoticeProps,
 } from "./pickup-notice"
 
+const t = translator("hu")
+
 describe("az átvételi sáv szövege", () => {
   /**
    * A HANGNEM TENYKOZLES, NEM TILTAS. A vevo nem hibazott, amikor elo allatot
    * tett a kosarba -- egy tilto szo azt uzenne, hogy valamit rosszul csinalt.
    */
   it("nem tiltó szavakkal beszél", () => {
-    const egyben = [PICKUP_TITLE, PICKUP_LEAD, PICKUP_REASON].join(" ")
+    const egyben = [PICKUP_TITLE, PICKUP_LEAD, PICKUP_REASON]
+      .map((kulcs) => t(kulcs))
+      .join(" ")
     for (const tilto of ["nem lehet", "tilos", "hiba", "nem választható"]) {
       expect(egyben.toLowerCase()).not.toContain(tilto)
     }
@@ -31,7 +37,7 @@ describe("az átvételi sáv szövege", () => {
    * szoveg is atmenne rajta.
    */
   it("megmondja, MIÉRT", () => {
-    expect(PICKUP_REASON).toContain("nem adunk fel csomagként")
+    expect(t(PICKUP_REASON)).toContain("nem adunk fel csomagként")
   })
 
   /**
@@ -58,9 +64,9 @@ describe("az átvételi sáv szövege", () => {
    * készítjük össze") innentől hamis lenne, ezért nem szabad visszajönnie.
    */
   it("a bolti rendelést mondja, és nem ígéri, hogy a vegyes kosár egyben marad", () => {
-    expect(PICKUP_REASON).toContain("a boltban veszed át")
-    expect(PICKUP_REASON).not.toContain("nem bontjuk")
-    expect(PICKUP_REASON).not.toContain("műszaki")
+    expect(t(PICKUP_REASON)).toContain("a boltban veszed át")
+    expect(t(PICKUP_REASON)).not.toContain("nem bontjuk")
+    expect(t(PICKUP_REASON)).not.toContain("műszaki")
   })
 
   it("nincs két kötőjel a vevőnek szánt szövegekben", () => {
@@ -72,7 +78,7 @@ describe("az átvételi sáv szövege", () => {
       SPLIT_LEAD,
       SPLIT_REASON,
     ]) {
-      expect(szoveg).not.toContain("--")
+      expect(t(szoveg)).not.toContain("--")
     }
   })
 })
@@ -249,9 +255,9 @@ describe("a két rendelés sávja", () => {
   })
 
   it("kimondja, hogy két rendelés lesz, és nem állít egy fizetési módot mindenkire", () => {
-    expect(SPLIT_LEAD).toContain("két rendelésed")
-    expect(SPLIT_REASON).toContain("két rendelés lesz belőle")
-    expect(SPLIT_REASON).not.toContain("fizeted")
+    expect(t(SPLIT_LEAD)).toContain("két rendelésed")
+    expect(t(SPLIT_REASON)).toContain("két rendelés lesz belőle")
+    expect(t(SPLIT_REASON)).not.toContain("fizeted")
   })
 
   it("a választott fizetést a kosár élő munkamenetéből olvassa", () => {

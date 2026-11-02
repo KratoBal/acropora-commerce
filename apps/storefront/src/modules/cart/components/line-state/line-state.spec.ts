@@ -3,12 +3,16 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { translator } from "@lib/i18n/dictionary"
+
 import {
   CART_LINE_LABEL,
   UNIQUE_IN_CART_PROMISE,
   cartLineProduct,
   cartLineStateOf,
 } from "./line-state"
+
+const t = translator("hu")
 
 describe("a kosársor állapota", () => {
   it("jelző nélküli tétel NORMAL, akkor is, ha közben elfogyott", () => {
@@ -55,16 +59,18 @@ describe("a kosár szövegei", () => {
    * es kozben kelt el.
    */
   it("az elkelt tétel szava a kosárban Elkelt", () => {
-    expect(CART_LINE_LABEL.ELKELT).toBe("Elkelt")
-    expect(CART_LINE_LABEL.ELKELT).not.toBe("Eladva")
+    const felirat = CART_LINE_LABEL.ELKELT
+    expect(felirat).not.toBeNull()
+    expect(t(felirat!)).toBe("Elkelt")
+    expect(t(felirat!)).not.toBe("Eladva")
   })
 
   it("nincs két kötőjel a vevőnek szánt szövegekben", () => {
-    for (const szoveg of [
+    for (const kulcs of [
       UNIQUE_IN_CART_PROMISE,
-      ...Object.values(CART_LINE_LABEL),
+      ...Object.values(CART_LINE_LABEL).filter((k) => k !== null),
     ]) {
-      expect(szoveg).not.toContain("--")
+      expect(t(kulcs!)).not.toContain("--")
     }
   })
 })

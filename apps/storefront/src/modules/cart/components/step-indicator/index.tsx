@@ -1,57 +1,55 @@
-import { clx } from "@modules/common/components/ui"
+import { translator, type Key } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+
+/** A három lépés szótár-kulcsai, sorrendben: kosár, adatok, fizetés. */
+export const CART_STEPS: readonly Key[] = [
+  "cartPage.stepCart",
+  "cartPage.stepDetails",
+  "cartPage.stepPayment",
+]
 
 /**
- * A HÁROM LÉPÉS, AHOGY A TERVBEN ÁLL: KOSÁR — ADATOK — FIZETÉS.
- *
- * A vevő ebből tudja meg, HOL TART, és hogy a fizetés nem a következő
- * kattintás. A tervben a mobil változat egy rövid alakot is mutat
- * („1 / 3 · KOSÁR"), ezért az is itt áll -- ugyanabból az adatból, nem külön
- * beírva, mert két helyre írt lépésszám külön romlik el.
- *
- * TISZTA MEGJELENÍTÉS: nem tudja, melyik oldalon áll, csak azt, hogy hányadik
- * lépés aktív. Így a fizetési menet további lapjai is használhatják.
+ * A LÉPÉSJELZŐ. Mobilon egy sor ("1 / 3 · Kosár"), asztalon a három lépés
+ * egymás mellett; az aktuális lépés sötét, a többi halvány.
  */
-export const CART_STEPS = ["Kosár", "Adatok", "Fizetés"] as const
-
 export default function StepIndicator({
   active = 0,
+  countryCode,
 }: {
-  /** Hányadik lépés aktív, nullától. */
   active?: number
+  countryCode: string
 }) {
+  const t = translator(localeOf(countryCode))
+
   return (
     <div className="flex flex-col gap-1" data-testid="cart-step-indicator">
-      <span
-        className="text-[10.5px] font-semibold uppercase tracking-wide small:hidden"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
-      >
-        {active + 1} / {CART_STEPS.length} · {CART_STEPS[active]}
+      <span className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate small:hidden">
+        {t("cartPage.stepOf", {
+          current: active + 1,
+          total: CART_STEPS.length,
+          name: t(CART_STEPS[active]),
+        })}
       </span>
-      <ol className="hidden small:flex items-center gap-2">
+      <ol
+        aria-label={t("cartPage.stepsLabel")}
+        className="hidden items-center gap-2 small:flex"
+      >
         {CART_STEPS.map((lepes, i) => (
           <li key={lepes} className="flex items-center gap-2">
             {i > 0 && (
-              <span
-                aria-hidden="true"
-                style={{ color: "var(--terv-szoveg-halvany)" }}
-              >
-                —
+              <span aria-hidden="true" className="text-acr-line">
+                /
               </span>
             )}
             <span
-              className={clx(
-                "text-[11px] font-semibold uppercase tracking-wide",
-                i === active ? "" : "opacity-60",
-              )}
-              style={{
-                color:
-                  i === active
-                    ? "var(--terv-szoveg)"
-                    : "var(--terv-szoveg-halvany)",
-              }}
+              className={
+                i === active
+                  ? "text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-ink"
+                  : "text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate"
+              }
               aria-current={i === active ? "step" : undefined}
             >
-              {lepes}
+              {t(lepes)}
             </span>
           </li>
         ))}

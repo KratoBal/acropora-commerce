@@ -17,7 +17,7 @@ afterEach(cleanup)
  */
 describe("az üres kosár", () => {
   it("mindhárom kiindulópont ott áll, hivatkozással", () => {
-    render(<EmptyCartMessage />)
+    render(<EmptyCartMessage countryCode="hu" />)
 
     const ajanlok = screen.getAllByTestId("empty-cart-ajanlo")
     expect(ajanlok).toHaveLength(3)
@@ -35,7 +35,7 @@ describe("az üres kosár", () => {
    * lekerdezes nincs bekotve, szam NEM allhat ebben a blokkban.
    */
   it("nem áll kitalált darabszám az ajánlókban", () => {
-    render(<EmptyCartMessage />)
+    render(<EmptyCartMessage countryCode="hu" />)
 
     for (const ajanlo of screen.getAllByTestId("empty-cart-ajanlo")) {
       expect(ajanlo.textContent ?? "").not.toMatch(/\d/)
@@ -43,7 +43,7 @@ describe("az üres kosár", () => {
   })
 
   it("a bolt telefonszáma hívható hivatkozás", () => {
-    render(<EmptyCartMessage />)
+    render(<EmptyCartMessage countryCode="hu" />)
 
     expect(
       screen.getByRole("link", { name: /\+36 20 267 6801/ }),

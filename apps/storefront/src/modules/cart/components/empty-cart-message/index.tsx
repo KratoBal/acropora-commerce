@@ -1,126 +1,81 @@
-import { Heading, Text } from "@modules/common/components/ui"
+import { translator, type Key } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
- * AZ ÜRES KOSÁR (Balázs terve, kosar-2026-09-07).
- *
- * A terv nem egy "üres" feliratot mutat, hanem HÁROM KIINDULÓPONTOT: az üres
- * kosár nem hibaállapot, hanem az a pillanat, amikor a vevő nem tudja, hol
- * kezdje.
- *
- * === AMIT A TERVBŐL NEM VETTÜNK ÁT, ÉS MIÉRT ===
- *
- * A tervben a korall-kártyán ez áll: „31 egyedi példány, saját fotóval". A
- * HARMINCEGY egy ÉLŐ SZÁM: a készlettől függ, és minden héten más. Beégetve
- * három nap múlva hazudna, és senki nem venné észre, mert egy szám nem hibázik.
- *
- * Amíg nincs bekötve a lekérdezés, ami megszámolja, a mondat a szám NÉLKÜL áll
- * itt. Ez a brief szabálya: ami megvan, valódi adattal álljon; ami nincs, ott ne
- * találjunk ki semmit.
+ * AZ ÜRES KOSÁR NEM HIBAÁLLAPOT, HANEM KIINDULÓPONT. A terv három ajánlót
+ * mutat, mert az üres kosár az a pillanat, amikor a vevő nem tudja, hol
+ * kezdje. A szövegek szótár-kulcsok; a hivatkozás egyelőre mind a bolt.
  */
-const AJANLOK = [
+const AJANLOK: readonly { cim: Key; leiras: Key; href: string }[] = [
   {
-    cim: "E heti WYSIWYG korallok",
-    /** A darabszám szándékosan hiányzik: élő adat, lásd a fenti indokot. */
-    leiras: "Egyedi példányok, saját fotóval · szerdán frissül",
+    cim: "cartPage.emptyOfferWysiwyg",
+    leiras: "cartPage.emptyOfferWysiwygText",
     href: "/store",
   },
   {
-    cim: "Technika",
-    leiras: "Lámpa, szivattyú, lehabzó, méretezés-segéddel",
+    cim: "cartPage.emptyOfferTech",
+    leiras: "cartPage.emptyOfferTechText",
     href: "/store",
   },
   {
-    cim: "Só, teszt, tápszer",
-    leiras: "Amit havonta újra kell venni",
+    cim: "cartPage.emptyOfferConsumables",
+    leiras: "cartPage.emptyOfferConsumablesText",
     href: "/store",
   },
-] as const
+]
 
-const EmptyCartMessage = () => {
+const EmptyCartMessage = ({ countryCode }: { countryCode: string }) => {
+  const t = translator(localeOf(countryCode))
+
   return (
     <div
-      className="py-16 px-2 flex flex-col items-start gap-8"
+      className="flex flex-col items-start gap-8 py-8 small:py-12"
       data-testid="empty-cart-message"
     >
-      <div className="flex flex-col gap-3 max-w-[36rem]">
-        <span
-          className="text-[10.5px] font-semibold uppercase tracking-wide"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
-        >
-          Üres kosár
+      <div className="flex max-w-[36rem] flex-col gap-3">
+        <span className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate">
+          {t("cartPage.emptyLabel")}
         </span>
-        <Heading level="h1" className="text-3xl-regular">
-          A kosár még üres
-        </Heading>
-        {/*
-         * A HANGSULY BETUJE, ES EZ AZ EGYETLEN HELY, AHOL MERESSEL ALL.
-         *
-         * A #174 harom mondatot kotott a Newsreader lancra. Kettot 2026-09-08-an
-         * VISSZAVONTUNK: azoknal ugyanaz a mondat KETSZER all a tervben, ket
-         * KULONBOZO betuvel, oszloponkent (nautilus helyesbitese, msg 14993).
-         *
-         * EZ A MONDAT MAS: a tervben szinten ketszer all, de MIND A KETSZER
-         * Newsreader -- 18px (x=1338) es 17px (x=74). Nincs olyan elrendezes,
-         * amelyikben Space Grotesk lenne, tehat a valasztas nem fugg attol,
-         * hogy a mi lapunk melyik oszlopnak felel meg.
-         *
-         * (Merve a `measurement/terv-kosar/KOSAR-SZOVEGEK.md` anyagon,
-         * 2026-09-08. A szam a terv EGY kiolvasasabol valo.)
-         */}
-        <Text className="text-base-regular font-kiemelt">
-          Kezdd ott, ahol a legtöbben: a heti új korallpéldányoknál, vagy a
-          technikánál, ha most építesz.
-        </Text>
+        <h1 className="text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
+          {t("cartPage.emptyHeading")}
+        </h1>
+        <p className="text-[18px] leading-[30px] text-acr-slate">
+          {t("cartPage.emptyLead")}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 small:grid-cols-3 gap-4 w-full">
+      <div className="grid w-full grid-cols-1 gap-4 small:grid-cols-3">
         {AJANLOK.map((ajanlo) => (
           <LocalizedClientLink
             key={ajanlo.cim}
             href={ajanlo.href}
-            className="flex flex-col gap-2 p-4 border h-full"
-            style={{
-              borderColor: "var(--terv-keret-meleg)",
-              background: "var(--terv-hatter-lap)",
-            }}
+            className="flex h-full flex-col gap-2 border border-acr-line bg-acr-white p-[18px] hover:border-acr-slate"
             data-testid="empty-cart-ajanlo"
           >
-            <span className="text-[15px] font-semibold">{ajanlo.cim}</span>
-            <span
-              className="text-[12.5px] leading-relaxed"
-              style={{ color: "var(--terv-szoveg-halvany)" }}
-            >
-              {ajanlo.leiras}
+            <span className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
+              {t(ajanlo.cim)}
+            </span>
+            <span className="text-[14px] leading-[22px] text-acr-slate">
+              {t(ajanlo.leiras)}
             </span>
             <span
-              className="mt-auto pt-2 text-[12.5px]"
-              style={{ color: "var(--terv-kiemel-tinta)" }}
+              className="mt-auto pt-2 text-[14px] text-acr-ocean"
               aria-hidden="true"
             >
-              Megnézem →
+              {t("cartPage.emptyOfferCta")}
             </span>
           </LocalizedClientLink>
         ))}
       </div>
 
-      {/*
-        A TERV NEGYEDIK BLOKKJA. A szoveg es a telefonszam a terv sajat
-        tartalma, tehat NEM talalt adat -- a bolt allitja magarol.
-      */}
-      <div
-        className="p-4 border w-full"
-        style={{
-          borderColor: "var(--terv-keret-meleg)",
-          background: "var(--terv-hatter-lap)",
-        }}
-      >
-        <p className="text-[15px] font-semibold">Most kezdesz akváriumot?</p>
-        <p
-          className="text-[12.5px] leading-relaxed"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
-        >
-          Írd meg a méretet és a terveket, összeállítjuk a listát.{" "}
+      {/* Az akváriumot kezdőknek: a telefonszám a bolté, nem fordítandó. */}
+      <div className="w-full border border-acr-line bg-acr-mist p-[18px]">
+        <p className="text-[16px] font-medium leading-[26px] text-acr-ink">
+          {t("cartPage.emptyStartTitle")}
+        </p>
+        <p className="text-[14px] leading-[22px] text-acr-slate">
+          {t("cartPage.emptyStartText")}{" "}
           <a href="tel:+36202676801" className="underline">
             +36 20 267 6801
           </a>

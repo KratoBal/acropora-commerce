@@ -1,15 +1,27 @@
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { retrieveCart, retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import CartTemplate from "@modules/cart/templates"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-export const metadata: Metadata = {
-  title: "Kosár",
-  description: "A kosarad tartalma.",
+export async function generateMetadata(props: {
+  params: Promise<{ countryCode: string }>
+}): Promise<Metadata> {
+  const { countryCode } = await props.params
+  const t = translator(localeOf(countryCode))
+  return {
+    title: t("cartPage.title"),
+    description: t("cartPage.metaDescription"),
+  }
 }
 
-export default async function Cart() {
+export default async function Cart(props: {
+  params: Promise<{ countryCode: string }>
+}) {
+  const { countryCode } = await props.params
+
   const cart = await retrieveCart().catch((error) => {
     console.error(error)
     return notFound()
@@ -28,6 +40,7 @@ export default async function Cart() {
       cart={cart}
       customer={customer}
       shippingClass={shippingClass}
+      countryCode={countryCode}
     />
   )
 }

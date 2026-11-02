@@ -3,6 +3,8 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { hu } from "@lib/i18n/dictionary/hu"
+
 /**
  * A BEJELENTKEZES-DOBOZ SZOVEGE MAGYARUL ALL.
  *
@@ -28,14 +30,31 @@ describe("a bejelentkezés-doboz szövege", () => {
     expect(forras()).toContain('data-testid="sign-in-button"')
   })
 
-  it("a három mondat magyarul áll", () => {
-    expect(forras()).toContain("Van már fiókod?")
-    expect(forras()).toContain("Jelentkezz be, és gyorsabban végzel.")
-    expect(forras()).toContain("Bejelentkezés")
+  /**
+   * A SZOVEG SZOTAR-KULCSBOL JON: a forras a kulcsokat nevezi meg, a magyar
+   * mondatok a szotarban allnak. Mindket oldalt merjuk, kulonben a kulcs
+   * lehetne egy masik mondat kulcsa.
+   */
+  it("a három mondat szótár-kulcsból áll, magyarul", () => {
+    for (const kulcs of [
+      "cartPage.signInHeading",
+      "cartPage.signInText",
+      "cartPage.signInButton",
+    ]) {
+      expect(forras()).toContain(kulcs)
+    }
+    expect(hu.cartPage.signInHeading).toBe("Van már fiókod?")
+    expect(hu.cartPage.signInText).toBe("Jelentkezz be, és gyorsabban végzel.")
+    expect(hu.cartPage.signInButton).toBe("Bejelentkezés")
   })
 
-  it("a starter angol mondatai nincsenek ott", () => {
-    expect(forras()).not.toContain("Already have an account?")
-    expect(forras()).not.toContain("Sign in for a better experience.")
+  it("a starter angol mondatai sem a forrásban, sem a magyar szótárban nincsenek ott", () => {
+    for (const regi of [
+      "Already have an account?",
+      "Sign in for a better experience.",
+    ]) {
+      expect(forras()).not.toContain(regi)
+      expect(JSON.stringify(hu.cartPage)).not.toContain(regi)
+    }
   })
 })

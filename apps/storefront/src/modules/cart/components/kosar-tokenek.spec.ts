@@ -4,6 +4,13 @@ import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
 /**
+ * 2026-11-02: A KOSAR A CSALAD `acr-` TOKENJEIRE ALLT (acrobot, task
+ * commerce-kirakat-kosar). A keret mostantol `border-acr-line` (#e3e1dc, meleg
+ * szurke), ami UGYANAZT a dontest viszi tovabb, amit a `--terv-keret-meleg`
+ * vitt: a kosar keretei melegek, a hideg `--terv-keret` egyik komponensben
+ * sem all. A pozitiv kontroll ezert a `border-acr-line`-t keresi; a tiltas
+ * valtozatlan. Az alabbi szoveg a regi dontes tortenete.
+ *
  * A KOSAR KERETEI MELEGEK -- MERVE, NEM IZLESBOL.
  *
  * A ket token egyetlen szamban ter el, es az a SZINEZET:
@@ -54,7 +61,7 @@ describe("a kosár keret-tokenjei", () => {
     expect(fajlok.length).toBeGreaterThanOrEqual(10)
 
     const melegek = fajlok.filter((f) =>
-      readFileSync(f, "utf-8").includes("var(--terv-keret-meleg)"),
+      readFileSync(f, "utf-8").includes("border-acr-line"),
     )
     expect(melegek.length).toBeGreaterThan(0)
   })

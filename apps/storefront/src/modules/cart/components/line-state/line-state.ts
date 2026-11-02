@@ -1,3 +1,4 @@
+import type { Key } from "@lib/i18n/dictionary"
 import { uniquePieceOf } from "@modules/products/components/stock-state/availability"
 
 /**
@@ -46,14 +47,14 @@ export function cartLineStateOf({
  * csak nézelődött. A kosárban viszont MÁR DÖNTÖTT, és közben kelt el -- ez a
  * rosszabb élmény, és jár neki a pontosabb mondat.
  */
-export const CART_LINE_LABEL: Record<CartLineState, string> = {
-  NORMAL: "",
-  EGYEDI: "1 db · Egyedi",
-  ELKELT: "Elkelt",
+export const CART_LINE_LABEL: Record<CartLineState, Key | null> = {
+  NORMAL: null,
+  EGYEDI: "cartPage.lineUnique",
+  ELKELT: "cartPage.lineSold",
 }
 
 /** A mennyiség-léptető helyén álló szöveg egyedi példánynál. */
-export const NOT_INCREMENTABLE = "Nem növelhető"
+export const NOT_INCREMENTABLE: Key = "cartPage.lineNotIncrementable"
 
 /**
  * A WYSIWYG-ígéret KOSÁR-BELI alakja, a tervből szó szerint.
@@ -61,11 +62,10 @@ export const NOT_INCREMENTABLE = "Nem növelhető"
  * Nem ugyanaz, mint a terméklapé („ezt kapod, nem egy hasonlót"): ott a vevő
  * még választ, itt már a kosarába tette, ezért a mondat a KOSÁRRÓL beszél.
  */
-export const UNIQUE_IN_CART_PROMISE =
-  "A fotón pontosan ezt a példányt látod: ez kerül a kosaradba"
+export const UNIQUE_IN_CART_PROMISE: Key = "cartPage.lineUniquePromise"
 
 /** Az elkelt példány sorában a továbbvivő hivatkozás felirata. */
-export const SIMILAR_PIECES_LABEL = "Hasonló példányok"
+export const SIMILAR_PIECES_LABEL: Key = "cartPage.lineSimilar"
 
 /**
  * MELYIK TERMEK-OBJEKTUMOT OLVASSA EGY KOSAR-SOR.

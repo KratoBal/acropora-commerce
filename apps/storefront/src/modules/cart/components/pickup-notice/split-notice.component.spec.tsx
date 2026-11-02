@@ -11,7 +11,7 @@ afterEach(() => cleanup())
  */
 describe("a két rendelés sávja", () => {
   it("kimondja a két rendelést, és megnevezi a bolti tételt", () => {
-    render(<SplitNotice lines={["Mithrax tarisznyarák"]} />)
+    render(<SplitNotice countryCode="hu" lines={["Mithrax tarisznyarák"]} />)
     expect(screen.getByTestId("split-notice-lead").textContent).toBe(
       "Az élő állat miatt két rendelésed keletkezik.",
     )
@@ -28,23 +28,27 @@ describe("a két rendelés sávja", () => {
    */
   it("a fizetés mondata a választott mód szerint", () => {
     const { rerender } = render(
-      <SplitNotice lines={["Mithrax"]} fizetes="kartya" />,
+      <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="kartya" />,
     )
     expect(screen.getByTestId("split-notice-payment").textContent).toBe(
       "Kártyás fizetésnél a két rendelést egy fizetéssel rendezed.",
     )
-    rerender(<SplitNotice lines={["Mithrax"]} fizetes="utanvet" />)
+    rerender(
+      <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="utanvet" />,
+    )
     expect(screen.getByTestId("split-notice-payment").textContent).toBe(
       "Utánvétnél a kiszállított rendelést a csomag átvételekor fizeted, az élő állatot a boltban.",
     )
-    rerender(<SplitNotice lines={["Mithrax"]} />)
+    rerender(<SplitNotice countryCode="hu" lines={["Mithrax"]} />)
     const nincs = screen.getByTestId("split-notice-payment").textContent ?? ""
     expect(nincs).toContain("egy fizetéssel")
     expect(nincs).toContain("utánvétnél")
   })
 
   it("a két rendelés ténye és az átvétel helye minden módnál ott áll", () => {
-    render(<SplitNotice lines={["Mithrax"]} fizetes="kartya" />)
+    render(
+      <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="kartya" />,
+    )
     const sav = screen.getByTestId("split-notice").textContent ?? ""
     expect(sav).toContain("két rendelés lesz belőle")
     expect(sav).toContain("Az élő állatot a boltban veszed át.")
@@ -52,7 +56,7 @@ describe("a két rendelés sávja", () => {
   })
 
   it("rejtve nem jelenik meg", () => {
-    render(<SplitNotice lines={["Mithrax"]} visible={false} />)
+    render(<SplitNotice countryCode="hu" lines={["Mithrax"]} visible={false} />)
     expect(screen.queryByTestId("split-notice")).toBeNull()
   })
 })

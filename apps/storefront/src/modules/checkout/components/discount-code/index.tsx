@@ -7,6 +7,9 @@ import {
   Label,
   Text,
 } from "@modules/common/components/ui"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+import { useParams } from "next/navigation"
 import React from "react"
 
 import { applyPromotions } from "@lib/data/cart"
@@ -21,6 +24,8 @@ type DiscountCodeProps = {
 }
 
 const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
+  const { countryCode } = useParams() as { countryCode: string }
+  const t = translator(localeOf(countryCode))
   const [isOpen, setIsOpen] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState("")
 
@@ -85,7 +90,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
               className="txt-medium text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
               data-testid="add-discount-button"
             >
-              Kedvezménykód hozzáadása
+              {t("cartPage.discountAdd")}
             </button>
 
             {/* <Tooltip content="You can add multiple promotion codes">
@@ -108,7 +113,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                   variant="secondary"
                   data-testid="discount-apply-button"
                 >
-                  Alkalmazás
+                  {t("cartPage.discountApply")}
                 </SubmitButton>
               </div>
 
@@ -129,7 +134,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                 most javitott hibauzenet -- ket sorral feljebb.
               */}
               <Heading className="txt-medium mb-2">
-                Alkalmazott kedvezmények:
+                {t("cartPage.discountApplied")}
               </Heading>
 
               {promotions.map((promotion) => {
