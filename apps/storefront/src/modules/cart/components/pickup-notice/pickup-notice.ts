@@ -1,3 +1,5 @@
+import type { Key } from "@lib/i18n/dictionary"
+
 /**
  * MIKOR CSAK SZEMÉLYES ÁTVÉTEL VÁLASZTHATÓ.
  *
@@ -137,10 +139,10 @@ export function pickupNoticeVisible(
 }
 
 /** A sáv címe. Ténykozlés, nem tiltás. */
-export const PICKUP_TITLE = "Élő állat a kosárban"
+export const PICKUP_TITLE: Key = "cartPage.pickupTitle"
 
 /** A mondat, ami megmondja, mi történik. */
-export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át."
+export const PICKUP_LEAD: Key = "cartPage.pickupLead"
 
 /**
  * A MAGYARÁZAT, ÉS EZ NEM UDVARIASSÁG.
@@ -184,30 +186,28 @@ export const PICKUP_LEAD = "Ezt a rendelést a boltban adjuk át."
  * `SPLIT_REASON` mondja), ez a sav pedig mar csak a CSUPA bolti atveteles
  * kosarnal all. A mondat tehat ugyanazzal a merccel esett ki, amivel bekerult.
  */
-export const PICKUP_REASON =
-  "Egy élő példányt nem adunk fel csomagként, ezért ezt a rendelést a boltban veszed át."
+export const PICKUP_REASON: Key = "cartPage.pickupReason"
 
 /** A bolt címe és nyitvatartása, a tervből. */
 export const SHOP_ADDRESS = "1106 Budapest, Pesti Gábor utca 35"
-export const SHOP_HOURS = "Kedd–Péntek 10–18, Szombat 10–14"
+export const SHOP_HOURS: Key = "cartPage.shopHours"
 
 /** Meddig tartjuk fenn a példányt. A tervben álló ígéret. */
-export const HOLD_PROMISE = "Az élő példányt 5 munkanapig tartjuk fenn."
+export const HOLD_PROMISE: Key = "cartPage.holdPromise"
 
 /**
  * A KÉT RENDELÉS SÁVJA (P4-2, Balázs 2026-09-29): "Már a kosár oldalon és
  * rendelés leadásánál is jól láthatóan írjuk ki, hogy az élő állat miatt két
  * rendelése keletkezik." Megjelenik a kosárban és a pénztárban.
  */
-export const SPLIT_TITLE = "Két rendelés lesz belőle"
+export const SPLIT_TITLE: Key = "cartPage.splitTitle"
 
-export const SPLIT_LEAD = "Az élő állat miatt két rendelésed keletkezik."
+export const SPLIT_LEAD: Key = "cartPage.splitLead"
 
-export const SPLIT_REASON =
-  "Egyszerre adod le, de két rendelés lesz belőle: az élő állatos rendelés és a kiszállítandó. A fiókodban mindkettőt látod."
+export const SPLIT_REASON: Key = "cartPage.splitReason"
 
 /** Az átvétel helye (acrobot 26682, Balázs 2026-09-29, emlék 1933). */
-export const SPLIT_PICKUP = "Az élő állatot a boltban veszed át."
+export const SPLIT_PICKUP: Key = "cartPage.splitPickup"
 
 /**
  * A FIZETÉS MONDATA A VÁLASZTOTT MÓD SZERINT (acrobot 26682; Balázs
@@ -221,12 +221,10 @@ export const SPLIT_PICKUP = "Az élő állatot a boltban veszed át."
  */
 export type SplitFizetes = "kartya" | "utanvet" | null
 
-export const SPLIT_PAYMENT: Record<"kartya" | "utanvet" | "nincs", string> = {
-  kartya: "Kártyás fizetésnél a két rendelést egy fizetéssel rendezed.",
-  utanvet:
-    "Utánvétnél a kiszállított rendelést a csomag átvételekor fizeted, az élő állatot a boltban.",
-  nincs:
-    "Kártyával a két rendelést egy fizetéssel rendezed; utánvétnél a kiszállított rendelést átvételkor, az élő állatot a boltban fizeted.",
+export const SPLIT_PAYMENT: Record<"kartya" | "utanvet" | "nincs", Key> = {
+  kartya: "cartPage.splitPayCard",
+  utanvet: "cartPage.splitPayCod",
+  nincs: "cartPage.splitPayNone",
 }
 
 /** A választott fizetés a kosár élő fizetési munkamenetéből (a pénztár ugyanígy olvassa). */

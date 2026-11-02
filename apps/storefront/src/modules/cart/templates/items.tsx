@@ -1,6 +1,7 @@
 import repeat from "@lib/util/repeat"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Table } from "@modules/common/components/ui"
 
 import Item from "@modules/cart/components/item"
 import StepIndicator from "@modules/cart/components/step-indicator"
@@ -9,90 +10,94 @@ import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 
 type ItemsTemplateProps = {
   cart?: HttpTypes.StoreCart
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
 }
 
-const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
+const ItemsTemplate = ({ cart, countryCode }: ItemsTemplateProps) => {
+  const t = translator(localeOf(countryCode))
   const items = cart?.items
+
   return (
     <div>
-      <div className="pb-3">
-        <StepIndicator active={0} />
+      <div className="pb-4">
+        <StepIndicator active={0} countryCode={countryCode} />
       </div>
-      <div className="pb-3 flex items-center">
+      <div className="flex flex-wrap items-baseline gap-x-4 pb-4">
         {/*
-          A TERV FEJLECE, MAGYARUL. A tetelszam a terv sajat alakja
-          ("4 TETEL"), es valodi adatbol jon -- nem diszites.
+          A TERV FEJLECE. A tetelszam a terv sajat alakja ("4 TETEL"), es
+          valodi adatbol jon -- nem diszites. A lap egyetlen H1-e (axe
+          `page-has-heading-one`).
         */}
-        {/* a lap egyetlen H1-e (axe `page-has-heading-one`); a merete valtozatlan */}
-        <Heading level="h1" className="text-[2rem] leading-[2.75rem]">
-          Kosár
-        </Heading>
+        <h1 className="text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
+          {t("cartPage.title")}
+        </h1>
         {items?.length ? (
           <span
-            className="ml-3 text-[11px] font-semibold uppercase tracking-wide"
-            style={{ color: "var(--terv-szoveg-halvany)" }}
+            className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate"
             data-testid="cart-item-count"
           >
-            {items.length} tétel
+            {t(
+              items.length === 1
+                ? "cartPage.itemCountOne"
+                : "cartPage.itemCount",
+              { count: items.length },
+            )}
           </span>
         ) : null}
       </div>
-      <Table>
-        <Table.Header className="border-t-0">
-          <Table.Row className="text-ui-fg-subtle txt-medium-plus">
-            <Table.HeaderCell className="!pl-0">Termék</Table.HeaderCell>
+      <table className="block w-full border-collapse small:table">
+        <thead className="hidden small:table-header-group">
+          <tr className="text-left text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate">
+            <th className="pb-3 pr-4 font-medium">
+              {t("cartPage.colProduct")}
+            </th>
             {/* a felolvasonak nev kell az oszlopnak (axe `empty-table-header`) */}
-            <Table.HeaderCell>
-              <span className="sr-only">Megnevezés</span>
-            </Table.HeaderCell>
-            <Table.HeaderCell>Mennyiség</Table.HeaderCell>
-            <Table.HeaderCell className="hidden small:table-cell">
-              Egységár
-            </Table.HeaderCell>
-            <Table.HeaderCell className="!pr-0 text-right">
-              Sorösszeg
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
+            <th className="pb-3 pr-4 font-medium">
+              <span className="sr-only">{t("cartPage.colName")}</span>
+            </th>
+            <th className="pb-3 pr-4 font-medium">
+              {t("cartPage.colQuantity")}
+            </th>
+            <th className="hidden pb-3 pr-4 font-medium small:table-cell">
+              {t("cartPage.colUnitPrice")}
+            </th>
+            <th className="pb-3 text-right font-medium">
+              {t("cartPage.colLineTotal")}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="block small:table-row-group">
           {items
-            ? items
-                .sort((a, b) => {
-                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-                })
-                .map((item) => {
-                  return (
-                    <Item
-                      key={item.id}
-                      item={item}
-                      currencyCode={cart?.currency_code}
-                    />
-                  )
-                })
-            : repeat(5).map((i) => {
-                return <SkeletonLineItem key={i} />
-              })}
-        </Table.Body>
-      </Table>
+            ? [...items]
+                .sort((a, b) =>
+                  (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1,
+                )
+                .map((item) => (
+                  <Item
+                    key={item.id}
+                    item={item}
+                    currencyCode={cart?.currency_code ?? ""}
+                  />
+                ))
+            : repeat(5).map((i) => <SkeletonLineItem key={i} />)}
+        </tbody>
+      </table>
       {/*
         A TERV KET ZARO SORA. A visszavivo hivatkozas azert kell, mert egy
         kosar, amibol csak elore lehet menni, zsakutca; az afa-mondat pedig a
         terv sajat szovege, es a vevo szamara az arak ertelmezese.
       */}
-      <div className="pt-6 flex flex-col gap-2">
+      <div className="flex flex-col gap-2 border-t border-acr-line pt-6">
         <LocalizedClientLink
           href="/store"
-          className="w-fit text-sm underline"
-          style={{ color: "var(--terv-kiemel-tinta)" }}
+          className="w-fit text-[14px] text-acr-ocean underline"
           data-testid="continue-shopping-link"
         >
-          Vásárlás folytatása
+          {t("cartPage.continueShopping")}
         </LocalizedClientLink>
-        <span
-          className="text-[11px]"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
-        >
-          Az árak bruttó árak, 27% áfával.
+        <span className="text-[12px] leading-[18px] text-acr-slate">
+          {t("cartPage.vatNote")}
         </span>
       </div>
     </div>

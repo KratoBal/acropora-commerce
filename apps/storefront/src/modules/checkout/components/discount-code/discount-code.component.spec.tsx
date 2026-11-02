@@ -10,6 +10,10 @@ vi.mock("@lib/data/cart", () => ({
   applyPromotions: (...args: unknown[]) => applyPromotions(...args),
 }))
 
+vi.mock("next/navigation", () => ({
+  useParams: () => ({ countryCode: "hu" }),
+}))
+
 import DiscountCode from "./index"
 
 afterEach(cleanup)

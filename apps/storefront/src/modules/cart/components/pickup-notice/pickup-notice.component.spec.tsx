@@ -11,7 +11,12 @@ describe("az átvételi sáv kirajzolása", () => {
    * olyan dobozon is zold lenne, ami SOHA nem jelenik meg.
    */
   it("megnevezi mindegyik tételt, ami miatt bolti átvétel van", () => {
-    render(<PickupNotice lines={["Acropora tenuis", "Zoanthus keverék"]} />)
+    render(
+      <PickupNotice
+        countryCode="hu"
+        lines={["Acropora tenuis", "Zoanthus keverék"]}
+      />,
+    )
 
     const lista = screen.getByTestId("pickup-notice-lines")
     expect(lista.querySelectorAll("li")).toHaveLength(2)
@@ -20,7 +25,7 @@ describe("az átvételi sáv kirajzolása", () => {
   })
 
   it("a bolt címe és nyitvatartása ott áll", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     expect(screen.getByTestId("pickup-notice")).toHaveTextContent(
       "1106 Budapest, Pesti Gábor utca 35",
@@ -42,7 +47,9 @@ describe("az átvételi sáv kirajzolása", () => {
    * dontott, egy meg nem nevezheto korlatozas ELTUNT volna.
    */
   it("bolti átvétel nélkül nem jelenik meg", () => {
-    const { container } = render(<PickupNotice visible={false} lines={[]} />)
+    const { container } = render(
+      <PickupNotice countryCode="hu" visible={false} lines={[]} />,
+    )
 
     expect(container).toBeEmptyDOMElement()
   })
@@ -58,7 +65,7 @@ describe("az átvételi sáv kirajzolása", () => {
    * Az ELHALLGATAS lenne a dragabb hiba: azt a vevo a fizetesnel tudna meg.
    */
   it("megnevezés nélkül is áll, ha a korlátozás valós", () => {
-    render(<PickupNotice lines={[]} />)
+    render(<PickupNotice countryCode="hu" lines={[]} />)
 
     expect(screen.getByTestId("pickup-notice")).toHaveTextContent(
       "Ezt a rendelést a boltban adjuk át.",
@@ -88,19 +95,19 @@ describe("a cím, a nyitvatartás és a tartás egy sorban", () => {
 
   /** ISMERT POZITIV KONTROLL: a sav megjelenik, es a sor benne van. */
   it("a sáv megjelenik, és a sor is", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     expect(sor()).toBeTruthy()
   })
 
   it("HÁROM elem áll benne, egy közös szülőben", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     expect(sor().querySelectorAll("span")).toHaveLength(3)
   })
 
   it("mind a három szöveg ott van", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     const szoveg = sor().textContent ?? ""
     expect(szoveg).toContain("Pesti Gábor")
@@ -108,10 +115,10 @@ describe("a cím, a nyitvatartás és a tartás egy sorban", () => {
     expect(szoveg).toContain("munkanapig")
   })
 
-  it("a méret a tervbeli 13,5 pixel", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+  it("a méret 14 pixel, a kategórialap szövegméretével", () => {
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
-    expect(sor().className).toContain("text-[13.5px]")
+    expect(sor().className).toContain("text-[14px]")
   })
 
   /**
@@ -120,11 +127,12 @@ describe("a cím, a nyitvatartás és a tartás egy sorban", () => {
    * regi allapot, csak maskepp.
    */
   it("egyetlen elem sem visel saját színt", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
-    expect(sor().style.color).toBe("var(--terv-szoveg-halvany)")
+    expect(sor().className).toContain("text-acr-ink")
     for (const span of Array.from(sor().querySelectorAll("span"))) {
-      expect((span as HTMLElement).style.color).toBe("")
+      expect(span.getAttribute("class")).toBeNull()
+      expect(span.getAttribute("style")).toBeNull()
     }
   })
 })
@@ -147,58 +155,54 @@ describe("a cím, a nyitvatartás és a tartás egy sorban", () => {
 describe("a sáv címkéje és indoka tokenből színez", () => {
   /** ISMERT POZITIV KONTROLL: mind a ketto megjelenik. */
   it("a címke és az indok is megjelenik", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     expect(screen.getByTestId("pickup-notice-cimke")).toBeTruthy()
     expect(screen.getByTestId("pickup-notice-indok")).toBeTruthy()
   })
 
-  it("a címke a réz TINTA tokent viseli, nem a felületet", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+  it("a címke az óceán tokent viseli, osztályból, nem beégetett színből", () => {
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
-    expect(screen.getByTestId("pickup-notice-cimke").style.color).toBe(
-      "var(--terv-kiemel-tinta)",
-    )
+    const cimke = screen.getByTestId("pickup-notice-cimke")
+    expect(cimke.className).toContain("text-acr-ocean")
+    expect(cimke.getAttribute("style")).toBeNull()
   })
 
   it("az indok a halvány szöveg tokenjét viseli", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
-    expect(screen.getByTestId("pickup-notice-indok").style.color).toBe(
-      "var(--terv-szoveg-halvany)",
-    )
+    const indok = screen.getByTestId("pickup-notice-indok")
+    expect(indok.className).toContain("text-acr-slate")
+    expect(indok.getAttribute("style")).toBeNull()
   })
 })
 
 /**
- * A SZERIF MINDEN NEZETBEN -- UGYANAZ A MERES, MINT A `line-state`-nel,
- * es a ket hely EGYUTT mozdul.
+ * A BEKEZDESEK A KERESKEDELMI LAP BETUJEVEL ALLNAK, NEM SZERIFFEL.
  *
- * A terv 3a lapjan ez a bekezdes a 390-es mobil kereten belul orokolt betuvel
- * all (13.5px), az 1440-es asztalin Newsreaderrel (17px). A toresponthoz kotest
- * picasso merese oldotta fel: egy MASIK 390-es keretben (az "Ures kosar"
- * allapote) szerif fut ugyanebben a szerepben, tehat nem a szelesseg az ok.
+ * A kosar regi terve a magyarazo bekezdest szerifben szedte (`font-kiemelt`),
+ * mobilon az orokolt betuvel. A kezdolap, a terméklap es a kategorialap a
+ * szoveget sans betuvel szedi, a szerif a cimeke; a kosar a csaladhoz igazodik
+ * (Balazs 2026-11-01 17:12, "vilagos", acrobot 39610-39612). A DONTES TEHAT
+ * KIMONDOTT: az elozo "szerif minden nezetben" meres ezzel lecserelodott, nem
+ * veletlenul tunt el.
  *
- * A MERETET EZ A KOR NEM VESZI AT: nalunk 12.5px all, ami sem a mobil 13.5-nek,
- * sem az asztali 17-nek nem felel meg. Kulon kerdes, kulon kartyan.
- *
- * A MASODIK ALLITAS A KONTROLL: a cimke ugyanabban a dobozban all, es SAJAT
- * kezelese van (nagybetus, rez tinta). Ha valaki a szerifet a teljes dobozra
- * vinne, az elso allitas akkor is zold maradna -- ez pirosodik.
+ * A ket allitas egyutt kulonboztet: az indok nem visel szerifet SEMMILYEN
+ * torespontnal, es a cimke sem.
  */
-describe("a szerif minden nézetben", () => {
-  /** A ket allitas egyutt kulonboztet: lasd a `line-state` parjat. */
-  it("az átvétel indoklása feltétel nélkül szerifet visel", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+describe("a bekezdések sans betűvel állnak", () => {
+  it("az átvétel indoklása nem visel szerifet", () => {
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     const indok = screen.getByTestId("pickup-notice-indok")
 
-    expect(indok.className).toContain("font-kiemelt")
+    expect(indok.className).not.toContain("font-kiemelt")
     expect(indok.className).not.toContain("small:font-kiemelt")
   })
 
-  it("a sáv címkéje NEM kapta meg a szerifet", () => {
-    render(<PickupNotice lines={["Acropora tenuis"]} />)
+  it("a sáv címkéje sem kapta meg a szerifet", () => {
+    render(<PickupNotice countryCode="hu" lines={["Acropora tenuis"]} />)
 
     expect(screen.getByTestId("pickup-notice-cimke").className).not.toContain(
       "font-kiemelt",

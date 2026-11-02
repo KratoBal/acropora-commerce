@@ -1,3 +1,6 @@
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+
 import {
   SHOP_ADDRESS,
   SHOP_HOURS,
@@ -10,72 +13,59 @@ import {
 } from "./pickup-notice"
 
 /**
- * A KÉT RENDELÉS SÁVJA (P4-2; Balázs, 2026-09-29): a kosárban és a pénztárban
- * jól láthatóan kimondja, hogy az élő állat miatt két rendelés keletkezik, és
- * megnevezi, melyik tétel kerül a bolti átvételesbe.
- *
- * A mai kinézetben, az átvételi sáv (`PickupNotice`) formáján: új terv nincs
- * hozzá, és a kosár átrajzolása külön szóra vár. Ténykozlés, nem tiltás.
+ * A KÉT RENDELÉS SÁVJA A KOSÁRBAN (P4-2). A mondatok és a döntések a
+ * `pickup-notice.ts`-ben állnak; itt a kirajzolás van, a szövegek kulcsok.
  */
 export default function SplitNotice({
   lines,
   visible = true,
   fizetes = null,
+  countryCode,
 }: {
   lines: readonly string[]
   visible?: boolean
   fizetes?: SplitFizetes
+  countryCode: string
 }) {
   if (!visible) return null
+  const t = translator(localeOf(countryCode))
 
   return (
     <section
-      className="flex flex-col gap-2 p-4 border"
-      style={{
-        borderColor: "var(--terv-keret-meleg)",
-        background: "var(--terv-hatter-lap)",
-      }}
+      className="flex flex-col gap-2 border border-acr-line bg-acr-mist p-[18px]"
       data-testid="split-notice"
     >
-      <span
-        className="text-[10.5px] font-semibold uppercase tracking-wide"
-        style={{ color: "var(--terv-kiemel-tinta)" }}
-      >
-        {SPLIT_TITLE}
+      <span className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-ocean">
+        {t(SPLIT_TITLE)}
       </span>
-      <p className="text-[15px] font-semibold" data-testid="split-notice-lead">
-        {SPLIT_LEAD}
-      </p>
       <p
-        className="text-[12.5px] leading-relaxed font-kiemelt"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
+        className="text-[16px] font-medium leading-[26px] text-acr-ink"
+        data-testid="split-notice-lead"
       >
-        {SPLIT_REASON} {SPLIT_PICKUP}
+        {t(SPLIT_LEAD)}
+      </p>
+      <p className="text-[14px] leading-[22px] text-acr-slate">
+        {t(SPLIT_REASON)} {t(SPLIT_PICKUP)}
       </p>
       <p
-        className="text-[12.5px] leading-relaxed font-kiemelt"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
+        className="text-[14px] leading-[22px] text-acr-slate"
         data-testid="split-notice-payment"
       >
-        {SPLIT_PAYMENT[fizetes ?? "nincs"]}
+        {t(SPLIT_PAYMENT[fizetes ?? "nincs"])}
       </p>
       {lines.length > 0 && (
         <ul
-          className="text-[12.5px] leading-relaxed list-disc pl-5"
-          style={{ color: "var(--terv-szoveg-halvany)" }}
+          className="list-disc pl-5 text-[14px] leading-[22px] text-acr-slate"
           data-testid="split-notice-lines"
         >
           {lines.map((cim) => (
-            <li key={cim}>{cim} · a boltban veszed át</li>
+            <li key={cim}>{t("cartPage.splitLine", { name: cim })}</li>
           ))}
         </ul>
       )}
-      <div
-        className="flex flex-wrap gap-x-7 gap-y-1 text-[13.5px]"
-        style={{ color: "var(--terv-szoveg-halvany)" }}
-      >
+      <div className="flex flex-wrap gap-x-7 gap-y-1 text-[14px] leading-[22px] text-acr-ink">
         <span>{SHOP_ADDRESS}</span>
-        <span>{SHOP_HOURS}</span>
+        <span>{t(SHOP_HOURS)}</span>
       </div>
     </section>
   )

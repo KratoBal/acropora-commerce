@@ -1,73 +1,35 @@
 "use client"
 
-import { IconBadge, clx } from "@modules/common/components/ui"
-import {
-  SelectHTMLAttributes,
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react"
+import { SelectHTMLAttributes, forwardRef } from "react"
 
 import ChevronDown from "@modules/common/icons/chevron-down"
 
-type NativeSelectProps = {
-  placeholder?: string
-  errors?: Record<string, unknown>
-  touched?: Record<string, unknown>
-} & Omit<SelectHTMLAttributes<HTMLSelectElement>, "size">
-
-const CartItemSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
-  ({ placeholder = "Select...", className, children, ...props }, ref) => {
-    const innerRef = useRef<HTMLSelectElement>(null)
-    const [isPlaceholder, setIsPlaceholder] = useState(false)
-
-    useImperativeHandle<HTMLSelectElement | null, HTMLSelectElement | null>(
-      ref,
-      () => innerRef.current,
-    )
-
-    useEffect(() => {
-      if (innerRef.current && innerRef.current.value === "") {
-        setIsPlaceholder(true)
-      } else {
-        setIsPlaceholder(false)
+/**
+ * A MENNYISÉG-VÁLASZTÓ A KOSÁRSORBAN: natív `select`, a kategórialap
+ * keretével. Minden tulajdonság (`value`, `onChange`, `data-testid`,
+ * `aria-label`) a `select` elemre kerül, mert a tesztek és a böngésző is azt
+ * éri el.
+ */
+const CartItemSelect = forwardRef<
+  HTMLSelectElement,
+  Omit<SelectHTMLAttributes<HTMLSelectElement>, "size">
+>(({ className, children, ...props }, ref) => (
+  <div className="relative flex w-[76px] items-center">
+    <select
+      ref={ref}
+      {...props}
+      className={
+        "h-[44px] w-full cursor-pointer appearance-none border border-acr-line bg-acr-white pl-3 pr-8 text-[14px] text-acr-ink outline-none hover:border-acr-slate focus-visible:border-acr-ink " +
+        (className ?? "")
       }
-    }, [innerRef.current?.value])
-
-    return (
-      <div>
-        <IconBadge
-          onFocus={() => innerRef.current?.focus()}
-          onBlur={() => innerRef.current?.blur()}
-          className={clx(
-            "relative flex items-center txt-compact-small border text-ui-fg-base group",
-            className,
-            {
-              "text-ui-fg-subtle": isPlaceholder,
-            },
-          )}
-        >
-          <select
-            ref={innerRef}
-            {...props}
-            className="appearance-none bg-transparent border-none px-4 transition-colors duration-150 focus:border-gray-700 outline-none w-16 h-16 items-center justify-center"
-          >
-            <option disabled value="">
-              {placeholder}
-            </option>
-            {children}
-          </select>
-          <span className="absolute flex pointer-events-none justify-end w-8 group-hover:animate-pulse">
-            <ChevronDown />
-          </span>
-        </IconBadge>
-      </div>
-    )
-  },
-)
-
+    >
+      {children}
+    </select>
+    <span className="pointer-events-none absolute right-2 flex text-acr-slate">
+      <ChevronDown />
+    </span>
+  </div>
+))
 CartItemSelect.displayName = "CartItemSelect"
 
 export default CartItemSelect

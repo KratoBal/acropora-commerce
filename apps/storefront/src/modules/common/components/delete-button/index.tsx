@@ -24,11 +24,14 @@ const DeleteButton = ({
   children,
   className,
   "data-testid": dataTestid,
+  ariaLabel,
 }: {
   id: string
   children?: React.ReactNode
   className?: string
   "data-testid"?: string
+  /** the accessible name of the icon-only button; the default is Hungarian */
+  ariaLabel?: string
 }) => {
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -56,7 +59,7 @@ const DeleteButton = ({
         className="flex gap-x-1 text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer"
         onClick={() => handleDelete(id)}
         data-testid={dataTestid}
-        aria-label={children ? undefined : "Tétel törlése"}
+        aria-label={children ? undefined : (ariaLabel ?? "Tétel törlése")}
       >
         {isDeleting ? <Spinner className="animate-spin" /> : <Trash />}
         <span>{children}</span>

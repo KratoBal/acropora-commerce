@@ -1,19 +1,19 @@
 "use client"
 
-import { Table, Text, clx } from "@modules/common/components/ui"
 import { updateLineItem } from "@lib/data/cart"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+import { convertToLocale } from "@lib/util/money"
 import { KOSAR_MOST_NEM_SIKERULT } from "@lib/util/kosar-uzenet"
 import { HttpTypes } from "@medusajs/types"
 import CartItemSelect from "@modules/cart/components/cart-item-select"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
-import LineItemOptions from "@modules/common/components/line-item-options"
-import LineItemPrice from "@modules/common/components/line-item-price"
-import LineItemUnitPrice from "@modules/common/components/line-item-unit-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Spinner from "@modules/common/icons/spinner"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { similarItemsHref } from "@modules/products/components/stock-state/availability"
+import { useParams } from "next/navigation"
 import { useState } from "react"
 
 import CartLineState, { NotIncrementable } from "../line-state"
@@ -24,6 +24,7 @@ import {
   orderQuantityStep,
 } from "@modules/products/components/product-actions/minimum-order-quantity"
 import { kosarMennyisegOpciok } from "./mennyiseg-opciok"
+import { valtozatNev } from "./valtozat"
 import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 type ItemProps = {
@@ -33,6 +34,8 @@ type ItemProps = {
 }
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
+  const { countryCode } = useParams() as { countryCode: string }
+  const t = translator(localeOf(countryCode))
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -149,15 +152,35 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
     stillAvailable: true,
   })
 
+  /**
+   * AZ ÁRAK: a sor összege és az egységár, a kedvezményes ár áthúzott
+   * eredetivel. A számolás a közös `LineItemPrice` és `LineItemUnitPrice`
+   * komponensekével azonos, a kosár saját, szótáras és világos kirajzolásával
+   * (azok a pénztár és a rendelés oldalán is állnak, és azok külön kör).
+   */
+  const sorOsszeg = item.total ?? 0
+  const sorEredeti = item.original_total ?? 0
+  const kedvezmenyes = sorOsszeg < sorEredeti
+  const egysegAr = sorOsszeg / (item.quantity || 1)
+  const egysegEredeti = sorEredeti / (item.quantity || 1)
+  const penz = (amount: number) =>
+    convertToLocale({ amount, currency_code: currencyCode })
+
   return (
-    <Table.Row className="w-full" data-testid="product-row">
-      <Table.Cell className="!pl-0 p-4 w-24">
+    <tr
+      className="grid w-full grid-cols-[72px_minmax(0,1fr)_auto] gap-x-3 gap-y-2 border-t border-acr-line py-4 align-top small:table-row small:py-0"
+      data-testid="product-row"
+    >
+      <td
+        className={
+          type === "preview"
+            ? "row-span-2 w-16 small:py-4 small:pr-4"
+            : "row-span-2 small:w-24 small:py-4 small:pr-4"
+        }
+      >
         <LocalizedClientLink
           href={`/termek/${item.product_handle}`}
-          className={clx("flex", {
-            "w-16": type === "preview",
-            "small:w-24 w-12": type === "full",
-          })}
+          className="flex w-full border border-acr-line"
         >
           <Thumbnail
             alt={item.product_title ?? item.title ?? ""}
@@ -166,57 +189,47 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             size="square"
           />
         </LocalizedClientLink>
-      </Table.Cell>
-
-      <Table.Cell className="text-left">
-        <Text
-          className="txt-medium-plus text-ui-fg-base"
+      </td>
+      <td className="col-start-2 text-left small:py-4 small:pr-4">
+        <p
+          className="text-[16px] font-medium leading-[26px] text-acr-ink"
           data-testid="product-title"
         >
           {item.product_title}
-        </Text>
-        <LineItemOptions variant={item.variant} data-testid="product-variant" />
+        </p>
+        {valtozatNev(item.variant?.title) ? (
+          <p
+            className="text-[14px] leading-[22px] text-acr-slate"
+            data-testid="product-variant"
+          >
+            {valtozatNev(item.variant?.title)}
+          </p>
+        ) : null}
         <CartLineState
           state={lineState}
           similarHref={similarItemsHref(sorTermeke)}
+          countryCode={countryCode}
         />
-      </Table.Cell>
-
+      </td>
       {type === "full" && (
-        <Table.Cell>
-          <div className="flex gap-2 items-center w-28">
-            <DeleteButton id={item.id} data-testid="product-delete-button" />
+        <td className="col-span-2 col-start-2 small:py-4 small:pr-4">
+          <div className="flex items-center gap-3">
             {lineState !== "NORMAL" ? (
-              <NotIncrementable />
+              <NotIncrementable countryCode={countryCode} />
             ) : (
               <CartItemSelect
-                aria-label="Mennyiség"
+                aria-label={t("cartPage.quantityLabel")}
                 value={item.quantity}
                 onChange={(value) =>
                   changeQuantity(parseInt(value.target.value))
                 }
-                className="w-14 h-10 p-4"
                 data-testid="product-select-button"
               >
                 {/*
-                A LISTA A MINIMUMTOL INDUL, NEM EGYTOL.
-
-                A minimalis rendelesi mennyiseget eddig csak a termeklap
-                ismerte; a kosar mindig 1-tol kinalt tizig. Merve a boltban
-                (2026-09-08): tizennegy termeknek van egynel nagyobb minimuma
-                (nyolcnak 10, otnek 100, egynek 5).
-
-                Ket baj kovetkezett belole, es a masodik a sulyosabb: a vevo a
-                minimum ALA vihette a mennyiseget, szazas minimumnal pedig a
-                helyes erteket EL SEM TUDTA ERNI, mert a lista tizig ert.
-
-                A STRAY MASODIK "1" OPCIO IS KIKERULT: a starterbol maradt itt,
-                es a lista elso elemet duplazta.
-
-                ES 2026-09-08 OTA A LEPESKOZT ES A RENDELESI MAXIMUMOT IS
-                OLVASSA. A harom parameter ugyanannak a szabalynak a resze, es
-                ugyanabbol a modulbol jon, mint a termeklapon -- kulonben a
-                kosar mas mennyisegeket kinalna, mint amit a lap enged.
+                A LISTA A MINIMUMTOL INDUL, A LEPESKOZT ES A RENDELESI
+                MAXIMUMOT IS OLVASSA: ugyanabbol a modulbol, mint a
+                termeklap, kulonben a kosar mas mennyisegeket kinalna, mint
+                amit a lap enged.
               */}
                 {kosarMennyisegOpciok({
                   minimum: minimumOrderQuantity(sorTermeke),
@@ -230,46 +243,52 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                 ))}
               </CartItemSelect>
             )}
+            <DeleteButton
+              id={item.id}
+              ariaLabel={t("cartPage.deleteLine")}
+              data-testid="product-delete-button"
+            />
             {updating && <Spinner />}
           </div>
           <ErrorMessage error={error} data-testid="product-error-message" />
-        </Table.Cell>
+        </td>
       )}
-
       {type === "full" && (
-        <Table.Cell className="hidden small:table-cell">
-          <LineItemUnitPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
-        </Table.Cell>
+        <td className="hidden small:table-cell small:py-4 small:pr-4">
+          <div className="text-[14px] leading-[22px] text-acr-slate">
+            {kedvezmenyes && (
+              <p
+                className="line-through"
+                data-testid="product-unit-original-price"
+              >
+                {penz(egysegEredeti)}
+              </p>
+            )}
+            <span data-testid="product-unit-price">{penz(egysegAr)}</span>
+          </div>
+        </td>
       )}
-
-      <Table.Cell className="!pr-0">
-        <span
-          className={clx("!pr-0", {
-            "flex flex-col items-end h-full justify-center": type === "preview",
-          })}
-        >
+      <td className="col-start-3 row-start-1 text-right small:py-4">
+        <div className="flex flex-col items-end text-[16px] leading-[26px] text-acr-ink">
           {type === "preview" && (
-            <span className="flex gap-x-1 ">
-              <Text className="text-ui-fg-muted">{item.quantity}x </Text>
-              <LineItemUnitPrice
-                item={item}
-                style="tight"
-                currencyCode={currencyCode}
-              />
+            <span className="text-[14px] text-acr-slate">
+              {item.quantity}x {penz(egysegAr)}
             </span>
           )}
-          <LineItemPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
-        </span>
-      </Table.Cell>
-    </Table.Row>
+          {kedvezmenyes && (
+            <span
+              className="text-[14px] text-acr-slate line-through"
+              data-testid="product-original-price"
+            >
+              {penz(sorEredeti)}
+            </span>
+          )}
+          <span className="font-medium" data-testid="product-price">
+            {penz(sorOsszeg)}
+          </span>
+        </div>
+      </td>
+    </tr>
   )
 }
 
