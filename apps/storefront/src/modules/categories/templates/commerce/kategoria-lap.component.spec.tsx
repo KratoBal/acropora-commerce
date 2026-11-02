@@ -432,3 +432,79 @@ describe("az élőállat-ág ugyanazon az oldalon", () => {
     )
   })
 })
+
+/**
+ * A MORZSAMENU ES A CIM A MEGJELENITENDO NEVET MUTATJA, NEM A TELJEST.
+ *
+ * A bolt nevadasa: a szulo neve a gyerek nevebe is beleall (`SPS - WYSIWYG`,
+ * `WYSIWYG - Korallok`). A rovid alakot a MEGJELENITES szamolja, az adat a
+ * teljeset hordozza; a terkepet (`nevek`) itt KEZZEL adjuk, szandekosan nem a
+ * roviditesi szabalybol: a kerdes az, hogy az oldal HASZNALJA-E a kapott
+ * terkepet. A roviditesi szabalyt a sajat specje meri.
+ *
+ * MI PIROSIT: ha a `nev()` a terkepet kihagyja, vagy a morzsamenu, vagy a cim
+ * a teljes nevet kezdi mutatni (kalibralva: a `nev()` terkep-agat kiveve az
+ * elso ket teszt piros).
+ */
+describe("a kategórialap névtérképe élő állat kategórián", () => {
+  const KORALLOK = kat("korallok", "Korallok")
+  const WYSIWYG = kat("wysiwyg", "WYSIWYG - Korallok", {
+    parent_category: KORALLOK,
+  })
+  const SPS = kat("sps", "SPS - WYSIWYG", { parent_category: WYSIWYG })
+  const TERKEP = new Map([
+    ["korallok", "Korallok"],
+    ["wysiwyg", "WYSIWYG"],
+    ["sps", "SPS"],
+  ])
+
+  const morzsaNevek = () =>
+    Array.from(
+      screen
+        .getByRole("navigation", { name: "Morzsamenü" })
+        .querySelectorAll("li"),
+    ).map((e) => (e.textContent ?? "").replace("/", "").trim())
+
+  it("térképpel a felmenők és a jelenlegi szint a rövid nevet mutatja, a címben is", async () => {
+    await lap({ category: SPS, kind: "livestock", nevek: TERKEP })
+    expect(morzsaNevek()).toEqual(["Korallok", "WYSIWYG", "SPS"])
+    expect(screen.getByTestId("category-page-title").textContent).toBe("SPS")
+    const szoveg = screen.getByRole("navigation", { name: "Morzsamenü" })
+      .textContent
+    expect(szoveg).not.toContain("SPS - WYSIWYG")
+    expect(szoveg).not.toContain("WYSIWYG - Korallok")
+  })
+
+  it("ütköző névnél a térkép a teljes alakot adja, és az áll ott", async () => {
+    await lap({
+      category: SPS,
+      kind: "livestock",
+      nevek: new Map([
+        ["korallok", "Korallok"],
+        ["wysiwyg", "WYSIWYG"],
+        ["sps", "SPS - WYSIWYG"],
+      ]),
+    })
+    expect(morzsaNevek()).toEqual(["Korallok", "WYSIWYG", "SPS - WYSIWYG"])
+    expect(screen.getByTestId("category-page-title").textContent).toBe(
+      "SPS - WYSIWYG",
+    )
+  })
+
+  it("térkép nélkül a teljes nevek állnak, nem a rövidek", async () => {
+    await lap({ category: SPS, kind: "livestock" })
+    expect(morzsaNevek()).toEqual([
+      "Korallok",
+      "WYSIWYG - Korallok",
+      "SPS - WYSIWYG",
+    ])
+    expect(screen.getByTestId("category-page-title").textContent).toBe(
+      "SPS - WYSIWYG",
+    )
+  })
+
+  it("a gyökér neve térképpel is változatlan", async () => {
+    await lap({ category: KORALLOK, kind: "livestock", nevek: TERKEP })
+    expect(morzsaNevek()).toEqual(["Korallok"])
+  })
+})
