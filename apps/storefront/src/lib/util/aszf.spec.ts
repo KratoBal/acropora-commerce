@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { SAJAT_HIVATKOZASOK } from "@modules/layout/templates/footer/hivatkozasok"
 
@@ -6,7 +6,9 @@ import {
   ADATKEZELES_CIM,
   ASZF_CIM,
   ASZF_VERZIO,
+  ASZF_VERZIO_MAI_BOLT,
   aszfElfogadas,
+  aszfMegjelenitettVerzio,
   aszfHatalyDatum,
   regisztracioHiba,
 } from "./aszf"
@@ -122,5 +124,31 @@ describe("a regisztráció szerveroldali ellenőrzése", () => {
     expect(regisztracioHiba({ ...jo, jelszo: "", jelszoUjra: "" })).toBe(
       "A két jelszó nem egyezik.",
     )
+  })
+})
+
+/**
+ * AMIT A KIRAKAT MUTATOTT, A KERESBEN (barracuda, #622). MI PIROSIT: ha a
+ * kapcsolo allasatol fuggetlenul mindig ugyanazt a verziot kuldene; ha a ket
+ * verzio nem a rekord verzioival egyezne.
+ */
+describe("a kirakat által mutatott verzió", () => {
+  it("a kapcsoló szerint a Fogyasztóbarát vagy a mai bolt verziója, ugyanaz, mint a rekordé", () => {
+    expect(aszfMegjelenitettVerzio(true)).toBe(ASZF_VERZIO)
+    expect(aszfMegjelenitettVerzio(false)).toBe(ASZF_VERZIO_MAI_BOLT)
+    expect(ASZF_VERZIO).toBe("fogyasztobarat-JPNFMVH0")
+  })
+
+  it("teszt-módban a teszt-mód verziója, az éles címen nem", () => {
+    vi.stubEnv("NEXT_PUBLIC_LEGAL_GATE_MODE", "test")
+    vi.stubEnv("NEXT_PUBLIC_BASE_URL", "https://shop-staging.acropora.hu")
+    try {
+      expect(aszfMegjelenitettVerzio(true)).toBe("teszt-mod")
+      expect(aszfMegjelenitettVerzio(false)).toBe("teszt-mod")
+      vi.stubEnv("NEXT_PUBLIC_BASE_URL", "https://shop.acropora.hu")
+      expect(aszfMegjelenitettVerzio(false)).toBe(ASZF_VERZIO_MAI_BOLT)
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 })

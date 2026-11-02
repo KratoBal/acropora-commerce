@@ -4,7 +4,6 @@ import { sdk } from "@lib/config"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
-import { fogyasztobaratBekapcsolva } from "@lib/util/fogyasztobarat"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
@@ -13,12 +12,13 @@ import {
 } from "@modules/products/components/product-actions/minimum-order-quantity"
 import {
   ASZF_ROGZITES_HIBA,
-  fizetesUzenet,
+  fizetesHibaUzenet,
   MEGJEGYZES_MENTES_HIBA,
   rendelesHibaUzenet,
   rendelesUzenet,
   szallitasUzenet,
 } from "@lib/util/penztar-uzenet"
+import { aszfElfogadasTorzs } from "@lib/util/aszf"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -391,7 +391,7 @@ export async function initiatePaymentSession(
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: fizetesUzenet(allapot) }
+    return { ok: false, uzenet: fizetesHibaUzenet(hiba) }
   }
 
   const cartCacheTag = await getCacheTag("carts")
@@ -649,27 +649,22 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
  * kozos fizetes inditasakor (`stripe-start`) megtortenik, es a bolti kosar
  * abbol orokli, ami akkor a fo kosaron all.
  *
- * Ha a Fogyasztobarat-kapcsolo be van kapcsolva, a hatter egyelore nem tudja
- * rogziteni az o dokumentumat. Mindket iranyban hangosan all meg a pipa, nem
- * egy olyan rekorddal, ami mast allit, mint amit a vevo kapott: a hatter
- * kapcsoloja bekapcsolva 501-et ad, a kirakat sajat kapcsoloja bekapcsolva pedig
- * a vegpontot sem hivja.
+ * A Fogyasztobarat-kapcsolo bekapcsolva a hatter a Fogyasztobarat dokumentumat
+ * rogziti (forras, hatalydatum, lenyomat), kikapcsolva a mai bolt ASZF-jet; a
+ * kirakat ket kapcsoloja es a hatter kapcsoloja egyutt valtozik (a hatter
+ * `.env.template` fajlja). A rekord a hatter dokumentuma, tehat itt nincs mas
+ * dolgunk, mint a vegpontot hivni: a korabbi „bekapcsolva nem hivjuk” ag a 501
+ * ideje volt.
  */
 export async function rogzitsAszfElfogadast(
   cartId?: string,
 ): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
   if (!id) return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
-  // A MASIK IRANY IS HANGOSAN ALL MEG (barracuda, #587 review): ha a kirakat
-  // Fogyasztobarat-kapcsoloja be van kapcsolva, a vevo a Fogyasztobarat
-  // dokumentumat latja, a hatter viszont (egyelore) a mai bolt ASZF-jet irna
-  // a rekordba -- a 2026-10-06-i elteres. Ilyenkor nem hivjuk a vegpontot.
-  if (fogyasztobaratBekapcsolva())
-    return { ok: false, uzenet: ASZF_ROGZITES_HIBA }
   try {
     await sdk.client.fetch(`/store/carts/${id}/aszf-elfogadas`, {
       method: "POST",
-      body: { elfogadom: true },
+      body: aszfElfogadasTorzs(),
       headers: { ...(await getAuthHeaders()) },
     })
     revalidateTag(await getCacheTag("carts"))

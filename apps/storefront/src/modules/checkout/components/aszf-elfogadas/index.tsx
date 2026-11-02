@@ -3,6 +3,7 @@
 import { createContext, useContext, useState } from "react"
 
 import { ADATKEZELES_CIM, ASZF_CIM } from "@lib/util/aszf"
+import { JOGI_TESZT_SZOVEG, jogiKapuTesztMod } from "@lib/util/jogi-kapu"
 import { ASZF_PIPA_RESZEK, ASZF_PIPA_SZOVEG } from "@lib/util/megrendeles"
 
 /**
@@ -29,7 +30,9 @@ export const AszfContext = createContext<AszfAllapot>({
 export const useAszf = () => useContext(AszfContext)
 
 export function AszfProvider({ children }: { children: React.ReactNode }) {
-  const [elfogadva, beallit] = useState(false)
+  // Teszt-modban nincs pipa (nincs mit elfogadtatni, sajat szoveget nem irunk): a
+  // gomb nem var ra. A hatter a rekordot teszt-modban jelolve irja.
+  const [elfogadva, beallit] = useState(jogiKapuTesztMod())
   return (
     <AszfContext.Provider value={{ elfogadva, beallit }}>
       {children}
@@ -48,6 +51,16 @@ const HIVATKOZAS = "underline underline-offset-2 hover:text-acr-heritage"
 
 export default function AszfNegyzet() {
   const { elfogadva, beallit } = useAszf()
+  if (jogiKapuTesztMod())
+    return (
+      <p
+        className="border border-acr-ink px-4 py-3 text-[14px] leading-[20px] text-acr-ink"
+        data-testid="jogi-teszt-figyelmeztetes"
+        role="note"
+      >
+        {JOGI_TESZT_SZOVEG}
+      </p>
+    )
   return (
     <label
       className="flex cursor-pointer items-start gap-3 text-[14px] leading-[20px] text-acr-ink"

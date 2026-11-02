@@ -131,16 +131,39 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
       "/store/customers/me/aszf-elfogadas",
       {
         method: "POST",
-        body: { elfogadom: true },
+        // a vevő szava ÉS az, amit a kirakat mutatott (a szerver ezzel veti össze a sajátját)
+        body: {
+          elfogadom: true,
+          megjelenitett_verzio: "unas-shop-2026-09-29",
+          nyelv: "hu",
+        },
         headers: { authorization: "Bearer login-token" },
       },
     )
     // a kliens sehova nem kuld idopontot, verziot vagy dokumentumot
     expect(JSON.stringify(sdk.client.fetch.mock.calls)).not.toMatch(
-      /idopont|verzio|dokumentum|lenyomat/,
+      /"(idopont|verzio|dokumentum|lenyomat)"/,
     )
     expect(suti.removePendingCustomer).toHaveBeenCalled()
     expect(suti.setAuthToken).toHaveBeenCalledWith("login-token")
+  })
+
+  it("bekapcsolt kirakat-kapcsolónál is hívja a végpontot, a Fogyasztóbarát verzióval (barracuda, #622)", async () => {
+    const mentett = process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
+    process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
+    try {
+      await signup(null, urlap(JO))
+      expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
+      const [, opciok] = sdk.client.fetch.mock.calls[0] as unknown as [
+        string,
+        { body: { megjelenitett_verzio: string } },
+      ]
+      expect(opciok.body.megjelenitett_verzio).toBe("fogyasztobarat-JPNFMVH0")
+    } finally {
+      if (mentett === undefined)
+        delete process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
+      else process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = mentett
+    }
   })
 
   /*
@@ -224,11 +247,14 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
    * ROGZITENI (a kosar rekordjaval azonos szabaly): a vegpontot nem hivjuk, a
    * megallas hangos.
    */
-  it("bekapcsolt Fogyasztóbaráttal nem hívja a végpontot, de a belépés sikerül és a süti marad", async () => {
+  it("bekapcsolt Fogyasztóbaráttal is hívja a végpontot; ha a szerver elutasítja (409, más verzió), a belépés sikerül és a süti marad", async () => {
     process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
+    sdk.client.fetch.mockRejectedValue(
+      Object.assign(new Error("aszf_version_mismatch"), { status: 409 }),
+    )
     const valasz = await signup(null, urlap(JO))
     expect(valasz).toEqual({ state: "success", aszfRogzitesHianyzik: true })
-    expect(sdk.client.fetch).not.toHaveBeenCalled()
+    expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
     expect(suti.setAuthToken).toHaveBeenCalledWith("login-token")
     expect(suti.removePendingCustomer).not.toHaveBeenCalled()
   })

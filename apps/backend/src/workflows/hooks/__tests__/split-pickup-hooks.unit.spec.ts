@@ -107,6 +107,17 @@ describe("the split pricing hook", () => {
 })
 
 describe("completing a cart", () => {
+  // the checks below run with the legal documents ready; the gate has its own test in the ÁSZF describe
+  const envBefore = { ...process.env }
+  beforeEach(() => {
+    process.env.FOGYASZTOBARAT_ENABLED = "true"
+    process.env.FOGYASZTOBARAT_ID_HU = "JPNFMVH0"
+    process.env.FOGYASZTOBARAT_ID_EN = "ENSHOP01"
+  })
+  afterEach(() => {
+    process.env = { ...envBefore }
+  })
+
   it("refuses a mixed cart before anything else runs", async () => {
     await expect(
       handlers.completeValidate!(
@@ -211,6 +222,31 @@ describe("completing a cart", () => {
       await expect(
         handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: AszfRekord }) }, { container })
       ).resolves.not.toThrow()
+    })
+
+    it("test mode on a test shop: the order passes without Fogyasztóbarát, with the test-mode record; on the live shop it does not", async () => {
+      delete process.env.FOGYASZTOBARAT_ENABLED
+      delete process.env.FOGYASZTOBARAT_ID_EN
+      process.env.LEGAL_GATE_MODE = "test"
+      process.env.ACROPORA_STOREFRONT_URL = "https://shop-staging.acropora.hu"
+      const testRecord = { ...AszfRekord, verzio: "teszt-mod", teszt_mod: true }
+      await expect(
+        handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: testRecord }) }, { container })
+      ).resolves.not.toThrow()
+      await expect(handlers.completeValidate!({ cart: kosar({}) }, { container })).rejects.toThrow("Az ÁSZF elfogadása nélkül")
+      process.env.ACROPORA_STOREFRONT_URL = "https://shop.acropora.hu"
+      await expect(
+        handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: testRecord }) }, { container })
+      ).rejects.toThrow("nincs közzétéve")
+    })
+
+    it("the legal documents gate: no English source, no order, even with the record and on the card path", async () => {
+      process.env.FOGYASZTOBARAT_ID_EN = ""
+      for (const sessions of [[], [{ provider_id: "pp_stripe_stripe", status: "pending" }]]) {
+        await expect(
+          handlers.completeValidate!({ cart: kosar({ aszf_elfogadas: AszfRekord }, sessions) }, { container })
+        ).rejects.toThrow("nincs közzétéve")
+      }
     })
   })
 })

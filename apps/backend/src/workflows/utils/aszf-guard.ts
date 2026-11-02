@@ -1,3 +1,4 @@
+import { LEGAL_NOT_READY, legalReadiness, type LegalReadiness } from "./legal-documents"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 import { ASZF_METADATA_KEY } from "./split-completion"
 
@@ -17,6 +18,13 @@ import { ASZF_METADATA_KEY } from "./split-completion"
  *   net is where its intent is made: `stripe-start` here, and the session's
  *   creation once the plain cart moves to the same deferred path (acrobot
  *   26333, the next PR).
+ *
+ * THE LEGAL DOCUMENTS COME FIRST (card f6cb0a51, item 2). Before the record is
+ * looked at, the Fogyasztóbarát terms and privacy sources must be configured
+ * for Hungarian and English (legal-documents.ts). Unlike the record this holds
+ * on the card path at placing too: the card path's own net is the intent, and
+ * the intent is refused here at its start, so a card is never held under
+ * documents nobody could read. A shop that is not ready takes no order.
  */
 export const ASZF_HIANYZIK = "Az ÁSZF elfogadása nélkül a rendelés nem adható le."
 
@@ -38,10 +46,12 @@ export type AszfGuardResult = { action: "pass" } | { action: "refuse"; message: 
 
 export const guardAszf = (
   cart: AszfGuardCart | null,
-  when: "start_card_payment" | "place_order"
+  when: "start_card_payment" | "place_order",
+  readiness: LegalReadiness = legalReadiness()
 ): AszfGuardResult => {
   // an unknown cart is the route's to answer (404), not this guard's
   if (!cart) return { action: "pass" }
+  if (!readiness.complete) return { action: "refuse", message: LEGAL_NOT_READY }
   if (hasRecord(cart.metadata)) return { action: "pass" }
   if (when === "place_order" && cardPath(cart)) return { action: "pass" }
   return { action: "refuse", message: ASZF_HIANYZIK }

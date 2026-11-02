@@ -31,10 +31,12 @@
  * egyutt mondja meg, MELYIK szoveget fogadta el a vevo, akkor is, ha a
  * Fogyasztobarat a regi allapotot nem adja vissza.
  */
+import { ASZF_VERZIO_TESZT_MOD, jogiKapuTesztMod } from "@lib/util/jogi-kapu"
 import { JELSZO_ROVID_UZENET, jelszoHosszuEleg } from "@lib/util/jelszo"
 import {
   FOGYASZTOBARAT_ID,
   dokumentumForras,
+  fogyasztobaratBekapcsolva,
   jogiDokumentum,
   jogiOldal,
 } from "@lib/util/fogyasztobarat"
@@ -70,6 +72,30 @@ export type AszfDokumentumAllapot =
       hatalyos: string | null
       lenyomat: string | null
     }
+
+/**
+ * AMIT A KIRAKAT A VEVONEK MUTATOTT, A KERESBEN (barracuda, #622). A hatter a
+ * sajat beallitasaval veti ossze, es elutasitja (409), ha mas az: a ket kapcsolo
+ * (a kirakate es a hatteré) igy nem csuszhat szet csendben, a 2026-10-06-i
+ * elteres modjan. A kirakat jelenleg csak magyarul rogzit elfogadast.
+ */
+export const aszfMegjelenitettVerzio = (
+  bekapcsolva: boolean = fogyasztobaratBekapcsolva(),
+): string =>
+  jogiKapuTesztMod()
+    ? ASZF_VERZIO_TESZT_MOD
+    : bekapcsolva
+      ? ASZF_VERZIO
+      : ASZF_VERZIO_MAI_BOLT
+
+export const ASZF_ELFOGADAS_NYELV = "hu"
+
+/** A vegpont torzse: a vevo szava, es az, amit a kirakat mutatott. */
+export const aszfElfogadasTorzs = () => ({
+  elfogadom: true,
+  megjelenitett_verzio: aszfMegjelenitettVerzio(),
+  nyelv: ASZF_ELFOGADAS_NYELV,
+})
 
 export type AszfElfogadas = {
   idopont: string

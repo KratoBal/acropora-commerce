@@ -25,7 +25,7 @@ afterEach(() => vi.clearAllMocks())
  * AZ ASZF-ELFOGADAS A SZERVER VEGPONTJAN KERESZTUL MEGY (audit A4). MI PIROSIT:
  * ha a kirakat ujra maga allitana ossze a rekordot (idopont, verzio, dokumentum)
  * vagy a gyari `cart.update` hivassal irna a kosar metaadatat; ha a vegpont nem
- * a path-beli kosarra mutat; ha a hiba (a 501 is) dobaskent szokne ki a
+ * a path-beli kosarra mutat; ha a hiba (a 503 is) dobaskent szokne ki a
  * fizetesi gombhoz. A rekord tartalmat a hatter tesztjei fedik
  * (`aszf-record.unit.spec.ts`): a mai-bolt es a Fogyasztobarat ag szerinti
  * szetvalasztas ott el.
@@ -40,8 +40,13 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     ]
     expect(url).toBe("/store/carts/cart_1/aszf-elfogadas")
     expect(opciok.method).toBe("POST")
-    // se időpont, se verzió, se dokumentum: azt a szerver adja
-    expect(opciok.body).toEqual({ elfogadom: true })
+    // se időpont, se rekord-verzió, se dokumentum: azt a szerver adja; a kirakat csak
+    // azt mondja meg, melyik verziót mutatta (a szerver ezzel veti össze a sajátját)
+    expect(opciok.body).toEqual({
+      elfogadom: true,
+      megjelenitett_verzio: "unas-shop-2026-09-29",
+      nyelv: "hu",
+    })
     expect(opciok.headers.authorization).toBe("Bearer x")
     expect(sdk.store.cart.update).not.toHaveBeenCalled()
   })
@@ -53,13 +58,20 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     )
   })
 
-  it("bekapcsolt kirakat-kapcsolónál nincs hívás, a pipa hibával áll meg (a másik irány)", async () => {
+  it("bekapcsolt kirakat-kapcsolónál is a szerver végpontját hívja: a Fogyasztóbarát rekordot a szerver írja", async () => {
     const mentett = process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED
     process.env.NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED = "true"
     try {
-      const eredmeny = await rogzitsAszfElfogadast("cart_1")
-      expect(eredmeny.ok).toBe(false)
-      expect(sdk.client.fetch).not.toHaveBeenCalled()
+      expect(await rogzitsAszfElfogadast("cart_1")).toEqual({ ok: true })
+      expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
+      expect(
+        (
+          sdk.client.fetch.mock.calls[0] as unknown as [
+            string,
+            { body: { megjelenitett_verzio: string } },
+          ]
+        )[1].body.megjelenitett_verzio,
+      ).toBe("fogyasztobarat-JPNFMVH0")
       expect(sdk.store.cart.update).not.toHaveBeenCalled()
     } finally {
       if (mentett === undefined)
@@ -68,7 +80,7 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     }
   })
 
-  it("hibánál (a szerver 501-e is) visszaadott üzenet, nem dobás", async () => {
+  it("hibánál (a szerver 503-a is) visszaadott üzenet, nem dobás", async () => {
     sdk.client.fetch.mockRejectedValueOnce(new Error("501"))
     const eredmeny = await rogzitsAszfElfogadast("cart_1")
     expect(eredmeny.ok).toBe(false)

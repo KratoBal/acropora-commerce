@@ -90,15 +90,36 @@ export const RENDELES_KEDVEZMENY_BONTAS =
   "Az élő állat miatt a kosarad két rendelésre bomlik, és így a kedvezmény nem érvényesíthető ugyanúgy. Add le az élő állatot külön kosárban, vagy távolítsd el a kupont, és próbáld újra."
 
 /**
+ * A JOGI KAPU KODJA (kartya f6cb0a51): a hatter nem fogad rendelest, amig a
+ * Fogyasztobarat ASZF- es adatkezelesi forrasa nincs beallitva magyarul ES
+ * angolul. A vevonek ez nem a kosarrol szol, ezert nem „nezd at a kosarat”.
+ * A kod a hatter `legal-documents.ts` fajljaban all; a ketto egyezeset a
+ * `penztar-uzenet.spec.ts` rogziti.
+ */
+export const JOGI_DOKUMENTUM_HIANY_KOD = "legal_documents_missing"
+
+export const RENDELES_JOGI_HIANY =
+  "A rendelést most nem tudjuk fogadni: az ÁSZF és az adatkezelési tájékoztató még nincs közzétéve."
+
+/**
  * A leadas hibajanak mondata: a bontas kedvezmeny-kodjara a sajat mondata
  * (itt biztonsagos az ujraprobalas, mert semmi nem adodott le), minden masra a
  * mai vagas.
  */
 export function rendelesHibaUzenet(hiba: unknown): string {
   const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
+  if (szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD)) return RENDELES_JOGI_HIANY
   return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
     ? RENDELES_KEDVEZMENY_BONTAS
     : rendelesUzenet(hibaAllapota(hiba))
+}
+
+/** A fizetesi munkamenet hibaja: a jogi kapu sajat mondata, minden masra a mai vagas. */
+export function fizetesHibaUzenet(hiba: unknown): string {
+  const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
+  return szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD)
+    ? RENDELES_JOGI_HIANY
+    : fizetesUzenet(hibaAllapota(hiba))
 }
 
 export { hibaAllapota }
