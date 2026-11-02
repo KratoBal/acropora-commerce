@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   ASZF_VERZIO_TESZT_MOD,
@@ -18,6 +18,16 @@ const TESZT = "https://shop-staging.acropora.hu"
  * olvashatatlansaga nem zarna le; ha a hatter hosztlistaja vagy verzioja mas.
  */
 describe("a kirakat jogi kapuja", () => {
+  // Az `undefined` argumentum a paraméter ALAPÉRTÉKÉT hívja (a környezetet), ezért a
+  // „hiányzó” eseteket a környezet kiürítésével mérjük, nem `undefined` átadásával:
+  // a CI-n a NEXT_PUBLIC_BASE_URL be van állítva, és a spec ettől függetlenül kell,
+  // hogy mérjen (2026-11-02, a #622 CI-je ezen bukott).
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_LEGAL_GATE_MODE", "")
+    vi.stubEnv("NEXT_PUBLIC_BASE_URL", "")
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
   it("hianyzo, ures vagy elgepelt ertek: enforce", () => {
     for (const ertek of [
       undefined,
@@ -50,8 +60,11 @@ describe("a kirakat jogi kapuja", () => {
   })
 
   it("olvashatatlan vagy hianyzo cimnel nem bizonyithato, hogy nem eles: enforce", () => {
-    for (const cim of [undefined, "", "   ", "nem cim", "shop.acropora.hu"])
+    for (const cim of ["", "   ", "nem cim", "shop.acropora.hu"])
       expect(jogiKapuTesztMod("test", cim)).toBe(false)
+    // maga a változó hiányzik a környezetből
+    vi.stubEnv("NEXT_PUBLIC_LEGAL_GATE_MODE", "test")
+    expect(jogiKapuTesztMod()).toBe(false)
   })
 
   it("a mondat nem tartalmaz sajat jogi szoveget, csak a forrast nevezi meg", () => {

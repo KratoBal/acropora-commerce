@@ -105,6 +105,7 @@ describe("a pénztár jogi sora teszt-módban", () => {
   })
 
   it("érték nélkül a pipa marad", () => {
+    vi.stubEnv("NEXT_PUBLIC_LEGAL_GATE_MODE", "")
     vi.stubEnv("NEXT_PUBLIC_BASE_URL", "https://shop-staging.acropora.hu")
     kirak()
     expect(screen.getByTestId("aszf-pipa")).toBeTruthy()
