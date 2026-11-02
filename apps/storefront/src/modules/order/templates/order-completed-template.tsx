@@ -1,12 +1,10 @@
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 
+import { arSzoveg } from "@lib/util/ar-szoveg"
 import { convertToLocale } from "@lib/util/money"
-import {
-  GLS_KOVETKEZO_LEPES,
-  KOVETKEZO_LEPES,
-  type Teljesites,
-  sikeroldal,
-} from "@lib/util/sikeroldal"
+import { type Teljesites, sikeroldal } from "@lib/util/sikeroldal"
 import FoxpostLogo from "@modules/checkout/components/foxpost-logo"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { clx } from "@modules/common/components/ui"
@@ -17,6 +15,8 @@ type OrderCompletedTemplateProps = {
   par?: HttpTypes.StoreOrder | null
   /** A par a bolti atveteles-e (akkor ez a kiszallitott), vagy forditva. */
   parBolti?: boolean
+  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
+  countryCode: string
 }
 
 /**
@@ -32,8 +32,10 @@ export default async function OrderCompletedTemplate({
   order,
   par = null,
   parBolti = false,
+  countryCode,
 }: OrderCompletedTemplateProps) {
-  const lap = sikeroldal(order, par, parBolti)
+  const t = translator(localeOf(countryCode))
+  const lap = sikeroldal(order, par, parBolti, t)
   const penz = (amount: number) =>
     convertToLocale({ amount, currency_code: order.currency_code })
 
@@ -51,17 +53,21 @@ export default async function OrderCompletedTemplate({
             ✓
           </span>
           <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-acr-heritage">
-            Rendelés sikeres
+            {t("orderConfirmed.success")}
           </p>
           <h1 className="mt-2 text-[30px] font-normal leading-[36px] text-acr-ink small:text-[38px] small:leading-[46px]">
-            <span className="small:hidden">Köszönjük!</span>
-            <span className="hidden small:inline">Köszönjük a rendelésed!</span>
+            <span className="small:hidden">
+              {t("orderConfirmed.thanksShort")}
+            </span>
+            <span className="hidden small:inline">
+              {t("orderConfirmed.thanksLong")}
+            </span>
           </h1>
           <p className="mt-2 text-[15px] text-acr-ink" data-testid="order-id">
             {lap.rendelesszam}
           </p>
           <p className="mt-1 text-[13px] text-acr-slate">
-            A rendeléshez megadott e-mail-cím:{" "}
+            {t("orderConfirmed.emailLine")}{" "}
             <span className="text-acr-ink" data-testid="order-email">
               {lap.email}
             </span>
@@ -74,32 +80,38 @@ export default async function OrderCompletedTemplate({
             data-testid="teljesites"
           >
             <h2 className="mb-4 text-[22px] font-normal text-acr-ink small:text-[26px]">
-              Teljesítés
+              {t("orderConfirmed.fulfilment")}
             </h2>
             <div className="flex flex-col gap-4">
-              {lap.teljesitesek.map((t) => (
-                <TeljesitesBlokk key={t.cimke} t={t} penz={penz} />
+              {lap.teljesitesek.map((tj) => (
+                <TeljesitesBlokk
+                  key={tj.cimke}
+                  tj={tj}
+                  penz={penz}
+                  currencyCode={order.currency_code}
+                  t={t}
+                />
               ))}
               {lap.rendelesekSzama > 1 ? (
                 <p
                   className="text-[13px] text-acr-ink"
                   data-testid="ket-teljesites"
                 >
-                  A két teljesítés külön rendelésként követhető.
+                  {t("orderConfirmed.twoFulfilments")}
                 </p>
               ) : null}
-              {lap.teljesitesek.some((t) => t.szallito !== "bolt") ? (
+              {lap.teljesitesek.some((tj) => tj.szallito !== "bolt") ? (
                 <div
                   className="bg-acr-mist px-4 py-4"
                   data-testid="mi-tortenik"
                 >
                   <p className="text-[14px] font-medium text-acr-ink">
-                    Mi történik ezután?
+                    {t("orderConfirmed.whatNext")}
                   </p>
                   <p className="mt-1 text-[13px] text-acr-slate">
-                    {lap.teljesitesek.some((t) => t.szallito === "gls")
-                      ? GLS_KOVETKEZO_LEPES
-                      : KOVETKEZO_LEPES}
+                    {lap.teljesitesek.some((tj) => tj.szallito === "gls")
+                      ? t("orderConfirmed.nextStepGls")
+                      : t("orderConfirmed.nextStep")}
                   </p>
                 </div>
               ) : null}
@@ -111,26 +123,37 @@ export default async function OrderCompletedTemplate({
             data-testid="rendeles-osszesito"
           >
             <h2 className="mb-4 text-[22px] font-normal text-acr-ink small:text-[26px]">
-              Rendelés összesítő
+              {t("orderConfirmed.summary")}
             </h2>
             <dl className="flex flex-col gap-3 text-[13px] text-acr-slate">
-              <Sor cimke="Rendelésszám" ertek={lap.rendelesszam} />
-              <Sor cimke="Fizetés" ertek={lap.fizetes} />
-              <Sor cimke="Végösszeg" ertek={penz(lap.vegosszeg)} />
-              <Sor cimke="Rendelések" ertek={`${lap.rendelesekSzama} db`} />
+              <Sor
+                cimke={t("orderConfirmed.orderNumber")}
+                ertek={lap.rendelesszam}
+              />
+              <Sor cimke={t("orderConfirmed.payment")} ertek={lap.fizetes} />
+              <Sor
+                cimke={t("orderConfirmed.total")}
+                ertek={penz(lap.vegosszeg)}
+              />
+              <Sor
+                cimke={t("orderConfirmed.orders")}
+                ertek={t("orderConfirmed.ordersCount", {
+                  count: lap.rendelesekSzama,
+                })}
+              />
             </dl>
             <LocalizedClientLink
               href="/account/orders"
               className="mt-6 flex h-12 items-center justify-center bg-acr-heritage text-[15px] font-semibold text-acr-white hover:opacity-90"
               data-testid="rendeleseim"
             >
-              Rendeléseim megnyitása
+              {t("orderConfirmed.openOrders")}
             </LocalizedClientLink>
             <LocalizedClientLink
               href="/"
               className="mt-3 flex h-11 items-center justify-center border border-acr-line text-[14px] font-medium text-acr-ink hover:border-acr-slate"
             >
-              Vissza a webshophoz
+              {t("orderConfirmed.backToShop")}
             </LocalizedClientLink>
           </aside>
         </div>
@@ -149,13 +172,17 @@ function Sor({ cimke, ertek }: { cimke: string; ertek: string }) {
 }
 
 function TeljesitesBlokk({
-  t,
+  tj,
   penz,
+  currencyCode,
+  t,
 }: {
-  t: Teljesites
+  tj: Teljesites
   penz: (amount: number) => string
+  currencyCode: string
+  t: Translate
 }) {
-  const foxpost = t.szallito === "foxpost"
+  const foxpost = tj.szallito === "foxpost"
   return (
     <div
       className={clx(
@@ -165,17 +192,19 @@ function TeljesitesBlokk({
           : "border-acr-line bg-acr-white",
       )}
       data-testid="teljesites-blokk"
-      data-szallito={t.szallito}
+      data-szallito={tj.szallito}
     >
       <div className="flex flex-col gap-3 small:flex-row small:items-start">
-        {foxpost ? <FoxpostLogo className="h-[44px] w-auto shrink-0" /> : null}
-        {t.logo ? (
+        {foxpost ? (
+          <FoxpostLogo className="h-[44px] w-auto shrink-0 self-start" />
+        ) : null}
+        {tj.logo ? (
           // a GLS hivatalos logoja a pont fajtajahoz (GLS-prompt 10)
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={t.logo}
+            src={tj.logo}
             alt=""
-            className="h-[22px] w-auto shrink-0 small:mt-1"
+            className="h-[22px] w-auto shrink-0 self-start small:mt-1"
             data-testid="teljesites-logo"
           />
         ) : null}
@@ -186,41 +215,45 @@ function TeljesitesBlokk({
               foxpost ? "text-[#b30000]" : "text-acr-heritage",
             )}
           >
-            {t.cimke}
+            {tj.cimke}
           </p>
-          {t.tipus && t.tipus !== t.hely ? (
+          {tj.tipus && tj.tipus !== tj.hely ? (
             <p
               className="text-[12px] text-acr-slate"
               data-testid="teljesites-tipus"
             >
-              {t.tipus}
+              {tj.tipus}
             </p>
           ) : null}
-          <p className="text-[15px] font-medium text-acr-ink">{t.hely}</p>
-          <p className="text-[12px] text-acr-slate">{t.cim}</p>
+          <p className="text-[15px] font-medium text-acr-ink">{tj.hely}</p>
+          <p className="text-[12px] text-acr-slate">{tj.cim}</p>
         </div>
       </div>
       <ul className="mt-3 text-[13px] text-acr-ink">
-        {t.tetelek.map((sor) => (
+        {tj.tetelek.map((sor) => (
           <li key={sor}>{sor}</li>
         ))}
       </ul>
-      {t.szallito !== "bolt" ? (
+      {tj.szallito !== "bolt" ? (
         <p className="mt-2 text-[13px] text-acr-ink">
-          Szállítás: {penz(t.szallitasiDij)}
+          {t("orderConfirmed.shippingFee", {
+            amount: arSzoveg(tj.szallitasiDij, currencyCode, t),
+          })}
         </p>
       ) : null}
-      {t.kezelesiDij !== null ? (
+      {tj.kezelesiDij !== null ? (
         <p className="text-[13px] text-acr-ink" data-testid="kezelesi-dij">
-          Utánvét kezelési díj: {penz(t.kezelesiDij)}
+          {t("orderConfirmed.codFee", { amount: penz(tj.kezelesiDij) })}
         </p>
       ) : null}
-      {t.atvetelkorFizetendo !== null ? (
+      {tj.atvetelkorFizetendo !== null ? (
         <p
           className="mt-2 border-l-2 border-acr-heritage bg-acr-mist px-3 py-2 text-[13px] font-medium text-acr-ink"
           data-testid="atvetelkor-fizetendo"
         >
-          Átvételkor fizetendő: {penz(t.atvetelkorFizetendo)}
+          {t("orderConfirmed.payOnReceipt", {
+            amount: penz(tj.atvetelkorFizetendo),
+          })}
         </p>
       ) : null}
     </div>

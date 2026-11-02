@@ -41,6 +41,19 @@ describe("the dictionaries", () => {
     }
   })
 
+  /**
+   * A BELSŐ RENDSZER NEVE NEM VEVŐNEK VALÓ (acrobot, 2026-11-02): a szótár
+   * szövegei mind a vevő elé kerülnek, tehát az "Acropora OS" (a belső
+   * rendszer) egyikben sem állhat. A visszaigazoló oldal következő-lépés
+   * mondata állt így, a vevő nem tudja, mi az.
+   */
+  it("no customer text names the internal system", () => {
+    const hits = [...huLeaves, ...enLeaves]
+      .filter(([, text]) => /Acropora OS/i.test(text))
+      .map(([k]) => k)
+    expect(hits).toEqual([])
+  })
+
   it("the English text is not the Hungarian one (a copied text is an untranslated one), except for a few shared words", () => {
     const enBy = new Map(enLeaves)
     const same = huLeaves
