@@ -21,8 +21,16 @@
  *   Fogyasztóbarát serves the English documents (the same id with another key or
  *   parameter, or a separate id) is not known yet, and its API answers only a
  *   registered domain's Referer, so it could not be measured. Empty means the
- *   checkout does not take an order. When the real shape is known this is the one
- *   place to change.
+ *   checkout does not take an order. FILLING IT OPENS THE GATE, NOT THE ENGLISH
+ *   RECORD: the record (aszf-record.ts) names the Hungarian document, and an
+ *   English acceptance is refused (`language_unsupported`, checkAszfClaim) until
+ *   the real shape is known. Taking the English record live needs more than this
+ *   setting: `currentAszfRecord` and `checkAszfClaim` in aszf-record.ts, and the
+ *   storefront's `ASZF_ELFOGADAS_NYELV` (aszf.ts), which today is a constant and
+ *   must then come from the document actually shown.
+ * - `FOGYASZTOBARAT_REQUIRE_EN`: TEST BACKEND ONLY, never on the live one. Exactly
+ *   "false" stops the gate from requiring the English source (acrobot 2026-11-02),
+ *   so the Hungarian checkout can run while the English documents do not exist.
  */
 export const FOGYASZTOBARAT_DEFAULT_ID_HU = "JPNFMVH0"
 
