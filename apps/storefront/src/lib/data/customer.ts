@@ -1,8 +1,11 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { ASZF_METADATA_KULCS, regisztracioHiba } from "@lib/util/aszf"
-import { fogyasztobaratBekapcsolva } from "@lib/util/fogyasztobarat"
+import {
+  ASZF_METADATA_KULCS,
+  aszfElfogadasTorzs,
+  regisztracioHiba,
+} from "@lib/util/aszf"
 import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
 import {
   alapertelmezettUrlapbol,
@@ -388,14 +391,14 @@ const elfogadasVarJa = (fuggo: PendingCustomer) =>
 
 // The customer says they accepted the ÁSZF; the time, the version and the
 // document are the server's (`POST /store/customers/me/aszf-elfogadas`). Like
-// the cart's record: with the Fogyasztóbarát switch on the backend cannot yet
-// record that document, so the call is not made. True: it was recorded.
+// the cart's record, the body also says which version the shop showed
+// (`aszfElfogadasTorzs`): the server refuses the record when its own setting
+// names another one. True: it was recorded.
 async function rogzitsRegisztraciosAszfet(token: string): Promise<boolean> {
-  if (fogyasztobaratBekapcsolva()) return false
   try {
     await sdk.client.fetch("/store/customers/me/aszf-elfogadas", {
       method: "POST",
-      body: { elfogadom: true },
+      body: aszfElfogadasTorzs(),
       headers: { authorization: `Bearer ${token}` },
     })
     return true

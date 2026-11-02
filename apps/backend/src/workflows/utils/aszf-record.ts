@@ -30,9 +30,13 @@ import { createHash } from "node:crypto"
  * back: the record says `lenyomat: "nincs"` and the date is null, so what is
  * missing is written down, not guessed.
  *
- * The record names the HUNGARIAN document. Which language the customer read is
- * not part of the request yet (the English source is still open: see
- * legal-documents.ts).
+ * THE REQUEST SAYS WHAT THE SHOP SHOWED (barracuda, #622): the version of the
+ * document and the language. A version other than the server's own is refused
+ * (`version_mismatch`), so the two switches cannot drift apart unnoticed. The
+ * record names the HUNGARIAN document and carries `nyelv`; an English
+ * acceptance is refused (`language_unsupported`) until the English source's
+ * shape is known and the record can name it (legal-documents.ts). Filling
+ * `FOGYASZTOBARAT_ID_EN` opens the gate, not the English record.
  */
 export const ASZF_VERZIO_MAI_BOLT = "unas-shop-2026-09-29"
 export const ASZF_FORRAS_MAI_BOLT = "https://shop.acropora.hu/shop_help.php?tab=terms"
@@ -41,11 +45,15 @@ export type AszfRecord = {
   idopont: string
   verzio: string
   dokumentum: string
+  /** The language of the document the customer was shown. */
+  nyelv?: "hu" | "en"
   /** Fogyasztóbarát only: the effective date the document's text states (ÉÉÉÉ-HH-NN), or null. */
   hatalyos?: string | null
   /** Fogyasztóbarát only: `sha256:<hex>` of the text, or `nincs`. */
   lenyomat?: string
 }
+
+export type AszfClaim = { verzio: string; nyelv: "hu" | "en" }
 
 export const LENYOMAT_NINCS = "nincs"
 /** Waits this long for Fogyasztóbarát, then the record goes without a hash. */
@@ -71,12 +79,14 @@ export const buildFogyasztobaratRecord = async (
   fetcher: typeof fetch = fetch
 ): Promise<AszfRecord> => {
   const source = legalSource(LEGAL_DOCUMENT_KEYS.aszf, shopId)
-  const base = { idopont: now.toISOString(), verzio: `fogyasztobarat-${shopId}`, dokumentum: source }
+  const base = { idopont: now.toISOString(), verzio: `fogyasztobarat-${shopId}`, dokumentum: source, nyelv: "hu" as const }
   try {
     const response = await fetcher(source, {
       headers: { Referer: referer() },
       signal: AbortSignal.timeout(FOGYASZTOBARAT_FETCH_MS),
       cache: "no-store",
+      // a redirect could hand back another document's bytes under this source
+      redirect: "error",
     })
     const bytes = new Uint8Array(await response.arrayBuffer())
     const text = new TextDecoder("utf-8").decode(bytes)
@@ -102,11 +112,30 @@ export const currentAszfRecord = async (now: Date, fetcher: typeof fetch = fetch
   return config.hu ? buildFogyasztobaratRecord(now, config.hu, fetcher) : null
 }
 
+/** The version the server would record now; `null`: no document to name. */
+export const currentAszfVersion = (): string | null => {
+  const config = readLegalConfig()
+  if (!config.enabled) return ASZF_VERZIO_MAI_BOLT
+  return config.hu ? `fogyasztobarat-${config.hu}` : null
+}
+
+export type AszfClaimCheck = "ok" | "not_configured" | "version_mismatch" | "language_unsupported"
+
+/** What the storefront said it showed, against the server's own setting. */
+export const checkAszfClaim = (claim: AszfClaim): AszfClaimCheck => {
+  const version = currentAszfVersion()
+  if (!version) return "not_configured"
+  if (claim.verzio !== version) return "version_mismatch"
+  if (claim.nyelv !== "hu") return "language_unsupported"
+  return "ok"
+}
+
 /** The record for this moment; the clock is the caller's, so a test can hold it still. */
 export const buildAszfRecord = (now: Date): AszfRecord => ({
   idopont: now.toISOString(),
   verzio: ASZF_VERZIO_MAI_BOLT,
   dokumentum: ASZF_FORRAS_MAI_BOLT,
+  nyelv: "hu",
 })
 
 export type SaveAszfResult =
@@ -114,10 +143,13 @@ export type SaveAszfResult =
   | { status: "not_found" }
   | { status: "completed" }
   | { status: "not_configured" }
+  | { status: "version_mismatch" }
+  | { status: "language_unsupported" }
 
 export const saveAszfAcceptance = async (
   container: MedusaContainer,
   cartId: string,
+  claim: AszfClaim,
   now: Date = new Date(),
   fetcher: typeof fetch = fetch
 ): Promise<SaveAszfResult> => {
@@ -133,6 +165,8 @@ export const saveAszfAcceptance = async (
   if (!cart) return { status: "not_found" }
   if (cart.completed_at) return { status: "completed" }
 
+  const check = checkAszfClaim(claim)
+  if (check !== "ok") return { status: check }
   const record = await currentAszfRecord(now, fetcher)
   if (!record) return { status: "not_configured" }
   // the other keys stay as they are: only this one is written

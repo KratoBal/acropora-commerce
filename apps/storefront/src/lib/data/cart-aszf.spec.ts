@@ -40,8 +40,13 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     ]
     expect(url).toBe("/store/carts/cart_1/aszf-elfogadas")
     expect(opciok.method).toBe("POST")
-    // se időpont, se verzió, se dokumentum: azt a szerver adja
-    expect(opciok.body).toEqual({ elfogadom: true })
+    // se időpont, se rekord-verzió, se dokumentum: azt a szerver adja; a kirakat csak
+    // azt mondja meg, melyik verziót mutatta (a szerver ezzel veti össze a sajátját)
+    expect(opciok.body).toEqual({
+      elfogadom: true,
+      megjelenitett_verzio: "unas-shop-2026-09-29",
+      nyelv: "hu",
+    })
     expect(opciok.headers.authorization).toBe("Bearer x")
     expect(sdk.store.cart.update).not.toHaveBeenCalled()
   })
@@ -59,6 +64,14 @@ describe("az ÁSZF elfogadásának rögzítése", () => {
     try {
       expect(await rogzitsAszfElfogadast("cart_1")).toEqual({ ok: true })
       expect(sdk.client.fetch).toHaveBeenCalledTimes(1)
+      expect(
+        (
+          sdk.client.fetch.mock.calls[0] as unknown as [
+            string,
+            { body: { megjelenitett_verzio: string } },
+          ]
+        )[1].body.megjelenitett_verzio,
+      ).toBe("fogyasztobarat-JPNFMVH0")
       expect(sdk.store.cart.update).not.toHaveBeenCalled()
     } finally {
       if (mentett === undefined)

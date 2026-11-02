@@ -22,9 +22,23 @@ export const POST = async (
     res.status(401).json({ message: "Nincs bejelentkezett vevő." })
     return
   }
-  const result = await saveCustomerAszfAcceptance(req.scope, customerId)
+  const result = await saveCustomerAszfAcceptance(req.scope, customerId, { verzio: req.validatedBody.megjelenitett_verzio, nyelv: req.validatedBody.nyelv })
   if (result.status === "not_found") {
     res.status(404).json({ message: "Nincs ilyen vevő." })
+    return
+  }
+  if (result.status === "version_mismatch") {
+    res.status(409).json({
+      code: "aszf_version_mismatch",
+      message: "A kirakat más ÁSZF-verziót mutatott, mint amit a rendszer rögzítene, ezért az elfogadás nem rögzíthető.",
+    })
+    return
+  }
+  if (result.status === "language_unsupported") {
+    res.status(409).json({
+      code: "aszf_language_unsupported",
+      message: "Az ÁSZF elfogadásának rögzítése ezen a nyelven még nincs bekötve.",
+    })
     return
   }
   if (result.status === "not_configured") {

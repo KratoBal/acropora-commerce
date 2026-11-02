@@ -18,6 +18,7 @@ import {
   rendelesUzenet,
   szallitasUzenet,
 } from "@lib/util/penztar-uzenet"
+import { aszfElfogadasTorzs } from "@lib/util/aszf"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -663,7 +664,7 @@ export async function rogzitsAszfElfogadast(
   try {
     await sdk.client.fetch(`/store/carts/${id}/aszf-elfogadas`, {
       method: "POST",
-      body: { elfogadom: true },
+      body: aszfElfogadasTorzs(),
       headers: { ...(await getAuthHeaders()) },
     })
     revalidateTag(await getCacheTag("carts"))

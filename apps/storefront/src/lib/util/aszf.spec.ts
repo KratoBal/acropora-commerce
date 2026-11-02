@@ -6,7 +6,9 @@ import {
   ADATKEZELES_CIM,
   ASZF_CIM,
   ASZF_VERZIO,
+  ASZF_VERZIO_MAI_BOLT,
   aszfElfogadas,
+  aszfMegjelenitettVerzio,
   aszfHatalyDatum,
   regisztracioHiba,
 } from "./aszf"
@@ -122,5 +124,18 @@ describe("a regisztráció szerveroldali ellenőrzése", () => {
     expect(regisztracioHiba({ ...jo, jelszo: "", jelszoUjra: "" })).toBe(
       "A két jelszó nem egyezik.",
     )
+  })
+})
+
+/**
+ * AMIT A KIRAKAT MUTATOTT, A KERESBEN (barracuda, #622). MI PIROSIT: ha a
+ * kapcsolo allasatol fuggetlenul mindig ugyanazt a verziot kuldene; ha a ket
+ * verzio nem a rekord verzioival egyezne.
+ */
+describe("a kirakat által mutatott verzió", () => {
+  it("a kapcsoló szerint a Fogyasztóbarát vagy a mai bolt verziója, ugyanaz, mint a rekordé", () => {
+    expect(aszfMegjelenitettVerzio(true)).toBe(ASZF_VERZIO)
+    expect(aszfMegjelenitettVerzio(false)).toBe(ASZF_VERZIO_MAI_BOLT)
+    expect(ASZF_VERZIO).toBe("fogyasztobarat-JPNFMVH0")
   })
 })

@@ -1,7 +1,7 @@
 import type { ICustomerModuleService, MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
-import { currentAszfRecord, type AszfRecord } from "./aszf-record"
+import { checkAszfClaim, currentAszfRecord, type AszfClaim, type AszfRecord } from "./aszf-record"
 import { ASZF_METADATA_KEY } from "./split-completion"
 
 /**
@@ -33,10 +33,13 @@ export type SaveCustomerAszfResult =
   | { status: "already"; record: unknown }
   | { status: "not_found" }
   | { status: "not_configured" }
+  | { status: "version_mismatch" }
+  | { status: "language_unsupported" }
 
 export const saveCustomerAszfAcceptance = async (
   container: MedusaContainer,
   customerId: string,
+  claim: AszfClaim,
   now: Date = new Date(),
   fetcher: typeof fetch = fetch
 ): Promise<SaveCustomerAszfResult> => {
@@ -49,6 +52,8 @@ export const saveCustomerAszfAcceptance = async (
   const existing = customer.metadata?.[ASZF_METADATA_KEY]
   if (existing) return { status: "already", record: existing }
 
+  const check = checkAszfClaim(claim)
+  if (check !== "ok") return { status: check }
   const record = await currentAszfRecord(now, fetcher)
   if (!record) return { status: "not_configured" }
   await customers.updateCustomers(customerId, {
