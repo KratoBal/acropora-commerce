@@ -2,6 +2,8 @@
 
 import { createElement, useEffect, useRef, useState } from "react"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+
 import { glsPontWidgetbol } from "@lib/util/gls"
 
 /** A GLS hivatalos terkepes keresoje (barracuda merese, 2026-10-05: kulcs nem kell). */
@@ -40,6 +42,7 @@ export default function GlsKereso({
   /** Teszthez: a `customElements` helyett. */
   elemek?: CustomElementsLike
 }) {
+  const t = useTranslate()
   const elem = useRef<HTMLElement>(null)
   const [kesz, setKesz] = useState(false)
 
@@ -86,7 +89,7 @@ export default function GlsKereso({
             className="absolute inset-0 flex items-center justify-center text-[13px] text-acr-slate"
             data-testid="gls-kereso-betolt"
           >
-            A GLS térképes kereső betöltése…
+            {t("checkoutShipping.glsLoading")}
           </p>
         )}
         {createElement("gls-dpm", {
@@ -105,7 +108,7 @@ export default function GlsKereso({
         className="self-start text-[13px] text-acr-heritage underline underline-offset-2"
         data-testid="gls-lista-nezet"
       >
-        Keresés listában
+        {t("checkoutShipping.glsToList")}
       </button>
     </div>
   )

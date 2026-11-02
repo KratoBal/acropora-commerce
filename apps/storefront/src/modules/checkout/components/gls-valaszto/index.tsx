@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react"
 
+import { useLocale, useTranslate } from "@lib/i18n/use-translate"
+
 import { searchGlsPickupPoints } from "@lib/data/csomagpont"
 import type { FoxpostCsomagpont } from "@lib/util/csomagpont"
 import {
@@ -11,15 +13,10 @@ import {
   glsNyitvatartas,
   glsTipusLogo,
 } from "@lib/util/gls"
-import CsomagpontValaszto from "@modules/checkout/components/csomagpont-valaszto"
+import CsomagpontValaszto, {
+  listaSzovegek,
+} from "@modules/checkout/components/csomagpont-valaszto"
 import GlsKereso from "@modules/checkout/components/gls-kereso"
-
-/** A tartalek lista szovegei, szo szerint a Figma allapotaibol (508:426). */
-export const GLS_LISTA_SZOVEGEK = {
-  ures: "Keress irányítószámra vagy városra.",
-  nincs: "Nem találtunk átvételi pontot. Próbáld irányítószámmal.",
-  hiba: "Nem sikerült betölteni a GLS pontokat.",
-}
 
 /** A kosarban allo, a hatter altal irt pont (`gls_pickup_point`). */
 export type GlsKivalasztott = Partial<GlsPont> & {
@@ -51,6 +48,8 @@ export default function GlsValaszto({
     forras: "finder" | "fallback",
   ) => void | Promise<void>
 }) {
+  const t = useTranslate()
+  const locale = useLocale()
   const [mod, setMod] = useState<"kereso" | "lista" | null>(
     kivalasztott?.name ? null : "kereso",
   )
@@ -72,7 +71,7 @@ export default function GlsValaszto({
   const tartalek = useCallback(() => setMod("lista"), [])
   const mutatPontot = kivalasztott?.name && mod === null
 
-  const nyitva = glsNyitvatartas(kivalasztott?.hours)
+  const nyitva = glsNyitvatartas(kivalasztott?.hours, t)
   const cim = kivalasztott?.address
     ? [kivalasztott.address, nyitva].filter(Boolean).join(" · ")
     : null
@@ -82,7 +81,7 @@ export default function GlsValaszto({
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           <h3 className="text-[18px] font-medium text-acr-ink">
-            Átvételi pont kiválasztása
+            {t("checkoutShipping.pointHeading")}
           </h3>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -93,8 +92,8 @@ export default function GlsValaszto({
         </div>
         <p className="text-[13px] leading-[18px] text-acr-slate">
           {nehez
-            ? "A GLS hivatalos térképes keresője. Nehézárut GLS ParcelShopba küldünk."
-            : "A GLS hivatalos térképes keresője. A hálózat GLS ParcelShopokat és GLS Automatákat tartalmaz."}
+            ? t("checkoutShipping.glsIntroHeavy")
+            : t("checkoutShipping.glsIntro")}
         </p>
       </div>
       {mutatPontot ? (
@@ -104,7 +103,7 @@ export default function GlsValaszto({
         >
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-acr-heritage">
-              Kiválasztott átvételi pont
+              {t("checkoutShipping.pointSelected")}
             </p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -122,7 +121,7 @@ export default function GlsValaszto({
             className="text-[12px] text-acr-slate"
             data-testid="gls-kivalasztott-info"
           >
-            {glsInfoSor(kivalasztott ?? {})}
+            {glsInfoSor(kivalasztott ?? {}, t)}
           </p>
           <button
             type="button"
@@ -130,7 +129,7 @@ export default function GlsValaszto({
             className="mt-1 self-start text-[13px] text-acr-heritage underline underline-offset-2"
             data-testid="gls-masik-pont"
           >
-            Másik pont választása
+            {t("checkoutShipping.pointOther")}
           </button>
         </div>
       ) : null}
@@ -144,17 +143,17 @@ export default function GlsValaszto({
       {mod === "lista" ? (
         <div className="flex flex-col gap-2" data-testid="gls-lista">
           <p className="text-[15px] font-medium text-acr-ink">
-            GLS átvételi pontok
+            {t("checkoutShipping.glsListHeading")}
           </p>
           <CsomagpontValaszto
             szolgaltato="GLS"
             kereso={(kereses: string) =>
-              searchGlsPickupPoints(kereses, optionId)
+              searchGlsPickupPoints(kereses, optionId, 20, locale)
             }
             kivalasztott={null}
             onValaszt={valasztListabol}
-            szovegek={GLS_LISTA_SZOVEGEK}
-            keresoCimke="Irányítószám, város vagy a pont neve"
+            szovegek={listaSzovegek(t, "GLS")}
+            keresoCimke={t("checkoutShipping.glsSearchLabel")}
           />
         </div>
       ) : null}

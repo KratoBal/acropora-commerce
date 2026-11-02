@@ -41,12 +41,13 @@ describe("mentsMegjegyzeseket", () => {
     })
   })
 
-  it("a hiba magyar üzenet, nem dobás", async () => {
+  it("a hiba magyar üzenet, nem dobás, és a szótár-kulcsa is jön", async () => {
     sdk.client.fetch.mockRejectedValueOnce(new Error("409"))
     expect(await mentsMegjegyzeseket("cart_1", { customer_note: "x" })).toEqual(
       {
         ok: false,
         uzenet: MEGJEGYZES_MENTES_HIBA,
+        kod: "checkoutShipping.errorNoteSave",
       },
     )
   })

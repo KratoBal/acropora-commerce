@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+
 import {
   type FoxpostCsomagpont,
   foxpostPontUzenetbol,
@@ -35,6 +37,7 @@ export default function FoxpostKereso({
   onTartalek: (ok: "idokorlat" | "kezi") => void
   idokorlatMs?: number
 }) {
+  const t = useTranslate()
   const keret = useRef<HTMLIFrameElement>(null)
   const [betoltve, setBetoltve] = useState(false)
   const betoltveRef = useRef(false)
@@ -67,13 +70,13 @@ export default function FoxpostKereso({
             className="absolute inset-0 flex items-center justify-center text-[13px] text-acr-slate"
             data-testid="foxpost-kereso-betolt"
           >
-            A FOXPOST térképes kereső betöltése…
+            {t("checkoutShipping.foxpostLoading")}
           </p>
         )}
         <iframe
           ref={keret}
           src={FOXPOST_KERESO_URL}
-          title="FOXPOST térképes átvételipont-kereső"
+          title={t("checkoutShipping.foxpostFrameTitle")}
           allow="geolocation"
           onLoad={() => {
             betoltveRef.current = true
@@ -89,7 +92,7 @@ export default function FoxpostKereso({
         className="self-start text-[13px] text-acr-heritage underline underline-offset-2"
         data-testid="foxpost-kereso-lista"
       >
-        Nem töltődik be a térkép? Keress listában.
+        {t("checkoutShipping.foxpostToList")}
       </button>
     </div>
   )

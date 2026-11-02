@@ -1,3 +1,4 @@
+import { translator } from "@lib/i18n/dictionary"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -111,6 +112,45 @@ describe("foxpostTiltottTetel", () => {
   it("a Figma mondata", () => {
     expect(foxpostTiltvaSzoveg("Acropora tenisz „Miami Vice”")).toBe(
       "Ez a tétel nem küldhető automatába: Acropora tenisz „Miami Vice”.",
+    )
+  })
+})
+
+/**
+ * A PONT SZÖVEGEI A LAP NYELVÉN. A márkanevek (FOXPOST, Packeta app, Z-BOX)
+ * nem fordulnak; a szavak igen; az ismeretlen fizetési kód angolul sem kerül
+ * be.
+ */
+describe("a Foxpost-pont szövegei angolul", () => {
+  const en = translator("en")
+
+  it("a típus: a márkanév marad, a szó angol", () => {
+    expect(foxpostPontTipus("FOXPOST A-BOX", en)).toBe("FOXPOST locker")
+    expect(foxpostPontTipus("FOXPOST Z-BOX", en)).toBe("Packeta Z-BOX")
+    expect(foxpostPontTipus("Z-Pont", en)).toBe("Packeta Z-Pont / pickup place")
+  })
+
+  it("a szolgáltatás és a fizetés sora angol, a Packeta app változatlan", () => {
+    expect(
+      foxpostPontReszletek(
+        {
+          services: ["pick up", "dispatch"],
+          payment_options: ["card", "app", "ismeretlen"],
+        },
+        en,
+      ),
+    ).toBe("Parcel drop-off and pickup · Payment: card, Packeta app")
+    expect(foxpostPontReszletek({ services: ["pick up"] }, en)).toBe(
+      "Parcel pickup only",
+    )
+  })
+
+  it("a tiltott tétel mondata nyelvenként", () => {
+    expect(foxpostTiltvaSzoveg("Reef Salt", en)).toBe(
+      "This item cannot be sent to a parcel locker: Reef Salt.",
+    )
+    expect(foxpostTiltvaSzoveg("Reef Salt")).toBe(
+      "Ez a tétel nem küldhető automatába: Reef Salt.",
     )
   })
 })

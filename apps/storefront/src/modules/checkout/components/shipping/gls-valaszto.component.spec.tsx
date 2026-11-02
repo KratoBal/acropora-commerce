@@ -218,7 +218,13 @@ describe("a GLS a szállítási lépésben", () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
-    expect(searchGlsPickupPoints).toHaveBeenCalledWith("2100", "so-gls")
+    // a negyedik argumentum a lap nyelve: a nyitvatartás és a jellemzők mondata azon jön vissza
+    expect(searchGlsPickupPoints).toHaveBeenCalledWith(
+      "2100",
+      "so-gls",
+      20,
+      "hu",
+    )
     const [rossz, tele] = await screen.findAllByTestId("csomagpont")
     expect((rossz as HTMLButtonElement).disabled).toBe(true)
     expect(rossz.textContent).toContain("Jelenleg nem választható.")

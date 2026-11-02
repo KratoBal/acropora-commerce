@@ -1,3 +1,5 @@
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+
 /**
  * A FOXPOST-CSOMAGPONT (P4-1), ahogy a backend kereseje adja
  * (`GET /store/foxpost/pickup-points?q=`). A penztar csak az azonositot kuldi
@@ -33,12 +35,13 @@ export type FoxpostCsomagpont = {
   reszletek?: string
 }
 
-const FIZETESI_LEHETOSEG: Record<string, string> = {
-  card: "bankkártya",
-  cash: "készpénz",
-  link: "fizetési link",
+/** A Foxpost fizetési kódjai; a "Packeta app" márkanév, az nem szótár-szöveg. */
+const FIZETESI_LEHETOSEG: Record<string, Key | null> = {
+  card: "checkoutShipping.payCard",
+  cash: "checkoutShipping.payCash",
+  link: "checkoutShipping.payLink",
   // a Foxpost-prompt 6. pontja: a Packeta alkalmazasa (a FOXPOST a Packeta Group resze)
-  app: "Packeta app",
+  app: null,
 }
 
 /**
@@ -47,23 +50,32 @@ const FIZETESI_LEHETOSEG: Record<string, string> = {
  * csomagátvétel"; fizetes bankkartyaval, keszpenzzel, linken, appon at).
  * Csak az kerul bele, amit a pont tenylegesen tud; ismeretlen kod kimarad.
  */
-export function foxpostPontReszletek(pont: {
-  services?: string[]
-  payment_options?: string[]
-}): string {
+export function foxpostPontReszletek(
+  pont: {
+    services?: string[]
+    payment_options?: string[]
+  },
+  t: Translate = translator("hu"),
+): string {
   const szolg = pont.services ?? []
   const reszek: string[] = []
   if (szolg.includes("pick up")) {
     reszek.push(
       szolg.includes("dispatch")
-        ? "Csomagfeladás és -átvétel"
-        : "Csak csomagátvétel",
+        ? t("checkoutShipping.foxpostPickupDispatch")
+        : t("checkoutShipping.foxpostPickupOnly"),
     )
   }
   const fizetes = (pont.payment_options ?? [])
-    .map((kod) => FIZETESI_LEHETOSEG[kod])
-    .filter(Boolean)
-  if (fizetes.length) reszek.push(`Fizetés: ${fizetes.join(", ")}`)
+    .filter((kod) => kod in FIZETESI_LEHETOSEG)
+    .map((kod) => {
+      const kulcs = FIZETESI_LEHETOSEG[kod]
+      return kulcs ? t(kulcs) : "Packeta app"
+    })
+  if (fizetes.length)
+    reszek.push(
+      t("checkoutShipping.foxpostPayment", { methods: fizetes.join(", ") }),
+    )
   return reszek.join(" · ")
 }
 
@@ -138,12 +150,16 @@ export function foxpostSzallitasiAdat(
  * elotaggal all, a prompt szerint viszont Packeta Z-BOX. Ismeretlen tipus a
  * Foxpost szavaival marad: abbol sem lesz automata.
  */
-export function foxpostPontTipus(variant: string | null | undefined): string {
+export function foxpostPontTipus(
+  variant: string | null | undefined,
+  t: Translate = translator("hu"),
+): string {
   const nyers = (variant ?? "").trim()
   const kod = nyers.toUpperCase().replace(/\s+/g, " ")
   if (/\bZ-?BOX\b/.test(kod)) return "Packeta Z-BOX"
-  if (/\bZ-?PONT\b/.test(kod)) return "Packeta Z-Pont / átvevőhely"
-  if (/\bA-?BOX\b/.test(kod) || kod === "FOXPOST") return "FOXPOST automata"
+  if (/\bZ-?PONT\b/.test(kod)) return t("checkoutShipping.typeZpoint")
+  if (/\bA-?BOX\b/.test(kod) || kod === "FOXPOST")
+    return t("checkoutShipping.typeFoxpost")
   return nyers
 }
 
@@ -192,5 +208,7 @@ export function foxpostTiltottTetel(
 }
 
 /** A Figma 486:346 "FOXPOST letiltva" mondata. */
-export const foxpostTiltvaSzoveg = (tetel: string) =>
-  `Ez a tétel nem küldhető automatába: ${tetel}.`
+export const foxpostTiltvaSzoveg = (
+  tetel: string,
+  t: Translate = translator("hu"),
+) => t("checkoutShipping.foxpostBlocked", { item: tetel })
