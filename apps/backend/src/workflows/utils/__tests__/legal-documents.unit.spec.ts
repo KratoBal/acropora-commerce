@@ -90,22 +90,38 @@ describe("resolveLegalGateMode", () => {
     }
   })
 
-  it("test is refused on the live shop, in every spelling of its address", () => {
+  it("test is granted ONLY on the test shop's exact host: the live shop, a www., a cut-over address and look-alikes are enforce", () => {
     for (const url of [
       "https://shop.acropora.hu",
       "https://shop.acropora.hu/",
-      "https://SHOP.acropora.hu:443/hu",
       "https://www.shop.acropora.hu",
       "https://acropora.hu",
       "http://www.acropora.hu/",
+      "https://www.shop-staging.acropora.hu",
+      "https://shop-staging.acropora.hu.evil.com",
+      "https://evil-shop-staging.acropora.hu",
+      "https://shop-staging.acropora.hu@evil.com",
+      "https://evil.com/shop-staging.acropora.hu",
+      "https://shop-staging2.acropora.hu",
+      "https://shop-uj.acropora.hu",
     ]) {
       const result = resolveLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: url })
       expect(result.mode).toBe("enforce")
-      expect(result.problem).toContain("live shop")
+      expect(result.problem).toContain("not a test shop address")
     }
   })
 
-  it("test cannot show it is not live when the address is unset or unreadable: enforce", () => {
+  it("the exact test host is test however it is written (case, port, path)", () => {
+    for (const url of [
+      "https://shop-staging.acropora.hu",
+      "https://shop-staging.acropora.hu/",
+      "https://SHOP-STAGING.acropora.hu:443/hu",
+      "http://shop-staging.acropora.hu:8000",
+    ])
+      expect(resolveLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: url }).mode).toBe("test")
+  })
+
+  it("test cannot show it is the test shop when the address is unset or unreadable: enforce", () => {
     for (const url of [undefined, "", "   ", "not a url", "shop.acropora.hu"]) {
       const result = resolveLegalGateMode({ LEGAL_GATE_MODE: "test", ACROPORA_STOREFRONT_URL: url })
       expect(result.mode).toBe("enforce")

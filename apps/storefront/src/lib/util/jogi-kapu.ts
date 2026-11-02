@@ -10,17 +10,15 @@
  *
  * ALAPBOL ES MINDEN KETSEGNEL `enforce`: a teszt-mod csak a pontos `test`
  * ertekre kapcsol be, es csak akkor, ha a kirakat cime (NEXT_PUBLIC_BASE_URL)
- * olvashato es NEM az eles bolt. Az ertek a buildbe eg, a valtas uj buildet ker.
+ * olvashato es a hosztja PONTOSAN a teszt kirakate (engedelylista, nem
+ * tiltolista: egy uj eles cim, egy `www.` vagy egy atallaskori ideiglenes cim
+ * csendben nem kerulhet teszt-modba; acrobot, 2026-11-02). Nem vegzodes-egyezes:
+ * `shop-staging.acropora.hu.evil.com` nincs a listan. Az ertek a buildbe eg, a valtas uj buildet ker.
  *
  * NINCS SAJAT ASZF-SZOVEG: a teszt-modban a penztar az ASZF-pipa helyen csak
  * azt mondja, honnan jonnek majd a dokumentumok.
  */
-export const ELO_KIRAKAT_HOSZTOK = [
-  "shop.acropora.hu",
-  "www.shop.acropora.hu",
-  "acropora.hu",
-  "www.acropora.hu",
-] as const
+export const TESZT_KIRAKAT_HOSZTOK = ["shop-staging.acropora.hu"] as const
 
 /** A rekord verzioja teszt-modban: a hatter ugyanezt irja (`LEGAL_TEST_MODE_VERSION`). */
 export const ASZF_VERZIO_TESZT_MOD = "teszt-mod"
@@ -41,7 +39,7 @@ export function jogiKapuTesztMod(
     host = null
   }
   if (!host) return false
-  return !(ELO_KIRAKAT_HOSZTOK as readonly string[]).includes(
+  return (TESZT_KIRAKAT_HOSZTOK as readonly string[]).includes(
     host.toLowerCase(),
   )
 }

@@ -40,10 +40,14 @@
  *   plain "test shop" line where the ÁSZF and the privacy notice would be (no
  *   text of ours), and the record on the cart, which the order carries, is
  *   marked: `verzio: "teszt-mod"`, `teszt_mod: true`.
- * - TEST MODE IS REFUSED ON THE LIVE SHOP. It needs `ACROPORA_STOREFRONT_URL`
- *   (the address the backend already uses for payment links) to be set and NOT
- *   a live host (`LIVE_STOREFRONT_HOSTS`). Unset or unreadable counts as "cannot
- *   show it is not live", so it is enforce. The refusal is logged
+ * - TEST MODE IS GRANTED ONLY ON THE TEST SHOP'S OWN ADDRESS (acrobot, 2026-11-02:
+ *   an allowlist, not a denylist: a new live address, a `www.` or a cut-over
+ *   address would otherwise slip into test mode in silence). It needs
+ *   `ACROPORA_STOREFRONT_URL` (the address the backend already uses for payment
+ *   links) to be set and its host to be EXACTLY one of `TEST_STOREFRONT_HOSTS`
+ *   (the whole hostname, never an ending: `shop-staging.acropora.hu.evil.com` and
+ *   `www.shop-staging.acropora.hu` are not on it). Unset, unreadable or any other
+ *   host is enforce. The refusal is logged
  *   (`logLegalGateMode`, called once at startup from medusa-config.ts; the gate
  *   itself then refuses silently, once per request would flood the log).
  *   It falls back to enforce rather than stopping the server: a misconfigured
@@ -58,8 +62,12 @@ export type LegalGateMode = (typeof LEGAL_GATE_MODES)[number]
 /** The version a test-mode acceptance names: the OS must know it (webshop-legal.ts). */
 export const LEGAL_TEST_MODE_VERSION = "teszt-mod"
 
-/** The addresses of the live shop; test mode is never allowed behind one. */
-export const LIVE_STOREFRONT_HOSTS = ["shop.acropora.hu", "www.shop.acropora.hu", "acropora.hu", "www.acropora.hu"] as const
+/**
+ * The only hosts test mode is ever granted on: the test shop (the storefront
+ * URL of the CI and the stage). A new test address is a new entry here AND in
+ * the storefront's `TESZT_KIRAKAT_HOSZTOK`; every other address is enforce.
+ */
+export const TEST_STOREFRONT_HOSTS = ["shop-staging.acropora.hu"] as const
 export const FOGYASZTOBARAT_DEFAULT_ID_HU = "JPNFMVH0"
 
 /** `api.php` keys of the two required documents (storefront JOGI_DOKUMENTUMOK). */
@@ -101,10 +109,13 @@ export const resolveLegalGateMode = (env: LegalEnv = process.env): LegalModeReso
     return {
       mode: "enforce",
       problem:
-        "LEGAL_GATE_MODE=test needs ACROPORA_STOREFRONT_URL to show that this is not the live shop; it is unset or unreadable, so enforce is in force.",
+        "LEGAL_GATE_MODE=test needs ACROPORA_STOREFRONT_URL to show that this is the test shop; it is unset or unreadable, so enforce is in force.",
     }
-  if ((LIVE_STOREFRONT_HOSTS as readonly string[]).includes(host))
-    return { mode: "enforce", problem: `LEGAL_GATE_MODE=test is refused: ${host} is the live shop, so enforce is in force.` }
+  if (!(TEST_STOREFRONT_HOSTS as readonly string[]).includes(host))
+    return {
+      mode: "enforce",
+      problem: `LEGAL_GATE_MODE=test is refused: ${host} is not a test shop address (${TEST_STOREFRONT_HOSTS.join(", ")}), so enforce is in force.`,
+    }
   return { mode: "test", problem: null }
 }
 
@@ -128,7 +139,7 @@ export type LegalReadiness = { complete: true } | { complete: false; missing: st
 
 /** What is missing, by name, so a refusal in the log says which setting to look at. */
 export const legalReadiness = (config: LegalConfig = readLegalConfig()): LegalReadiness => {
-  // test mode (only ever granted off the live shop: resolveLegalGateMode) takes orders without Fogyasztóbarát
+  // test mode (only ever granted on the test shop's own address: resolveLegalGateMode) takes orders without Fogyasztóbarát
   if (config.mode === "test") return { complete: true }
   const missing: string[] = []
   if (!config.enabled) missing.push("FOGYASZTOBARAT_ENABLED")

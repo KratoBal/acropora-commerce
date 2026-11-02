@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   ASZF_VERZIO_TESZT_MOD,
-  ELO_KIRAKAT_HOSZTOK,
+  TESZT_KIRAKAT_HOSZTOK,
   JOGI_TESZT_SZOVEG,
   jogiKapuTesztMod,
 } from "./jogi-kapu"
@@ -47,7 +47,7 @@ describe("a kirakat jogi kapuja", () => {
     expect(jogiKapuTesztMod(" test ", TESZT)).toBe(true)
   })
 
-  it("az eles cimen sosem teszt-mod, akarhogy irjak", () => {
+  it("CSAK a teszt kirakat pontos hosztjan teszt-mod: az eles cim, a www., az ideiglenes cim es a hasonmasok enforce", () => {
     for (const cim of [
       "https://shop.acropora.hu",
       "https://shop.acropora.hu/",
@@ -55,11 +55,26 @@ describe("a kirakat jogi kapuja", () => {
       "https://www.shop.acropora.hu",
       "https://acropora.hu",
       "http://www.acropora.hu/",
+      "https://www.shop-staging.acropora.hu",
+      "https://shop-staging.acropora.hu.evil.com",
+      "https://evil-shop-staging.acropora.hu",
+      "https://shop-staging.acropora.hu@evil.com",
+      "https://evil.com/shop-staging.acropora.hu",
+      "https://shop-uj.acropora.hu",
     ])
       expect(jogiKapuTesztMod("test", cim)).toBe(false)
   })
 
-  it("olvashatatlan vagy hianyzo cimnel nem bizonyithato, hogy nem eles: enforce", () => {
+  it("a teszt hoszt akarhogy irva (kis-nagybetu, port, utvonal) teszt-mod", () => {
+    for (const cim of [
+      "https://shop-staging.acropora.hu/",
+      "https://SHOP-STAGING.acropora.hu:443/hu",
+      "http://shop-staging.acropora.hu:8000",
+    ])
+      expect(jogiKapuTesztMod("test", cim)).toBe(true)
+  })
+
+  it("olvashatatlan vagy hianyzo cimnel nem bizonyithato, hogy teszt kirakat: enforce", () => {
     for (const cim of ["", "   ", "nem cim", "shop.acropora.hu"])
       expect(jogiKapuTesztMod("test", cim)).toBe(false)
     // maga a változó hiányzik a környezetből
@@ -81,7 +96,7 @@ describe("a kirakat jogi kapuja", () => {
       ),
       "utf8",
     )
-    for (const host of ELO_KIRAKAT_HOSZTOK)
+    for (const host of TESZT_KIRAKAT_HOSZTOK)
       expect(hatter).toContain(`"${host}"`)
     expect(hatter).toContain(
       `LEGAL_TEST_MODE_VERSION = "${ASZF_VERZIO_TESZT_MOD}"`,
