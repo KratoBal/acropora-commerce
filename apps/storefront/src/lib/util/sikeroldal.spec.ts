@@ -154,6 +154,9 @@ describe("a visszaigazoló lap", () => {
   })
 
   it("nem ígér követési számot levélben", () => {
+    // a vevőnek nem mondjuk ki a belső rendszer nevét (acrobot, 2026-11-02)
+    expect(KOVETKEZO_LEPES).not.toMatch(/Acropora OS/)
+    expect(GLS_KOVETKEZO_LEPES).not.toMatch(/Acropora OS/)
     expect(KOVETKEZO_LEPES).not.toMatch(/e-mail|levél|küldjük/i)
     expect(GLS_KOVETKEZO_LEPES).not.toMatch(/e-mail|levél|küldjük/i)
     expect(GLS_KOVETKEZO_LEPES).toContain(

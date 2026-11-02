@@ -80,7 +80,7 @@ describe("a sikeroldal GLS-rendelésnél", () => {
       "1117 Budapest, Október huszonharmadika utca 8–10. · 0–24",
     )
     expect(screen.getByTestId("mi-tortenik").textContent).toContain(
-      "A GLS követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt.",
+      "A GLS követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
     )
   })
 

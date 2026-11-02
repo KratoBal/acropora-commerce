@@ -17,7 +17,7 @@ import { rendelesSzam } from "@lib/util/rendelesek"
  *   terheles a teljesiteskor jon, tehat "Végösszeg" all helyette.
  */
 export const KOVETKEZO_LEPES =
-  "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt."
+  "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor a csomagot feladtuk."
 
 type Pont = {
   id?: string
@@ -34,7 +34,7 @@ type Pont = {
  * kovetesi szam a pénztár után még nem feltétlenül létezik.
  */
 export const GLS_KOVETKEZO_LEPES =
-  "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt."
+  "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor a csomagot feladtuk."
 
 type Rendeles = {
   id: string

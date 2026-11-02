@@ -653,9 +653,9 @@ export const en: Dictionary = {
     twoFulfilments: "The two fulfilments can be followed as separate orders.",
     whatNext: "What happens next?",
     nextStep:
-      "We pack your parcel. The tracking number appears when we have created and dispatched the shipment in Acropora OS.",
+      "We pack your parcel. The tracking number appears when we have dispatched the parcel.",
     nextStepGls:
-      "We pack your parcel. The GLS tracking number appears when we have created and dispatched the shipment in Acropora OS.",
+      "We pack your parcel. The GLS tracking number appears when we have dispatched the parcel.",
     summary: "Order summary",
     orderNumber: "Order number",
     payment: "Payment",

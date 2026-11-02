@@ -678,9 +678,9 @@ export const hu = {
     twoFulfilments: "A két teljesítés külön rendelésként követhető.",
     whatNext: "Mi történik ezután?",
     nextStep:
-      "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt.",
+      "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
     nextStepGls:
-      "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor az Acropora OS-ben létrehoztuk és feladtuk a küldeményt.",
+      "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
     summary: "Rendelés összesítő",
     orderNumber: "Rendelésszám",
     payment: "Fizetés",
