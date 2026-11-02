@@ -1,6 +1,8 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { translator } from "@lib/i18n/dictionary"
+import type { Locale } from "@lib/i18n/locale"
 import type {
   CsomagpontKereses,
   FoxpostCsomagpont,
@@ -110,7 +112,10 @@ export async function searchGlsPickupPoints(
   kereses: string,
   optionId: string,
   limit = 20,
+  /** A lap nyelve: a nyitvatartás, a jellemzők és a figyelmeztetés mondata ezen jön vissza. */
+  locale: Locale = "hu",
 ): Promise<CsomagpontKereses> {
+  const t = translator(locale)
   const q = kereses.trim()
   if (!q) return NINCS
 
@@ -126,7 +131,7 @@ export async function searchGlsPickupPoints(
         ? {
             elerheto: true,
             pontok: valasz.pickup_points.map((pont) => {
-              const allapot = glsTelitettsegAllapot(pont.locker_saturation)
+              const allapot = glsTelitettsegAllapot(pont.locker_saturation, t)
               return {
                 id: pont.id,
                 name: pont.name,
@@ -136,7 +141,10 @@ export async function searchGlsPickupPoints(
                 city: pont.city,
                 variant: glsTipusFelirat(pont.type),
                 tipus_logo: glsTipusLogo(pont.type),
-                reszletek: [glsNyitvatartas(pont.hours), ...glsJellemzok(pont)]
+                reszletek: [
+                  glsNyitvatartas(pont.hours, t),
+                  ...glsJellemzok(pont, t),
+                ]
                   .filter(Boolean)
                   .join(" · "),
                 nem_valaszthato: !allapot.valaszthato,

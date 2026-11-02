@@ -181,6 +181,42 @@ describe("a GLS-csomagpont keresése", () => {
     })
   })
 
+  /**
+   * A KERESÉS A LAP NYELVÉN VÁLASZOL: a szerver-művelet a mondatokat (jellemzők,
+   * figyelmeztetés, nyitvatartás-napok) a kapott nyelven írja, mert a böngésző
+   * azt már csak kirajzolja. A pont neve és a cím a GLS adata, az nem fordul.
+   */
+  it("angol nyelven a jellemzők, a napok és a figyelmeztetés angol", async () => {
+    sdk.client.fetch.mockResolvedValue({
+      available: true,
+      pickup_points: [
+        {
+          id: "L1",
+          name: "GLS Automata",
+          zip: "2100",
+          city: "Gödöllő",
+          address: "Piac 2.",
+          type: "parcel-shop",
+          hours: [1, 2, 3, 4, 5].map((day) => ({
+            day,
+            from: "08:00",
+            to: "17:00",
+          })),
+          features: ["acceptsCard"],
+          locker_saturation: "highVolume",
+        },
+      ],
+      count: 1,
+    })
+    const [pont] = (await searchGlsPickupPoints("2100", "so_gls", 20, "en"))
+      .pontok
+    expect(pont).toMatchObject({
+      name: "GLS Automata",
+      reszletek: "Mon–Fri 8–17 · card payment",
+      figyelmeztetes: "High load: delivery may take longer.",
+    })
+  })
+
   it("a GLS-módok hibája üres listát ad, nem dob", async () => {
     sdk.client.fetch.mockRejectedValue(new Error("503"))
     expect(await retrieveGlsOptions()).toEqual([])

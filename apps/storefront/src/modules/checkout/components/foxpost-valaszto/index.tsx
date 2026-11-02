@@ -2,13 +2,17 @@
 
 import { useCallback, useState } from "react"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+
 import { searchFoxpostPickupPoints } from "@lib/data/csomagpont"
 import {
   type FoxpostCsomagpont,
   foxpostPontReszletek,
   foxpostPontTipus,
 } from "@lib/util/csomagpont"
-import CsomagpontValaszto from "@modules/checkout/components/csomagpont-valaszto"
+import CsomagpontValaszto, {
+  listaSzovegek,
+} from "@modules/checkout/components/csomagpont-valaszto"
 import FoxpostKereso from "@modules/checkout/components/foxpost-kereso"
 import FoxpostLogo from "@modules/checkout/components/foxpost-logo"
 
@@ -20,13 +24,6 @@ export type FoxpostKivalasztott = {
   payment_options?: string[]
   /** A tipus hivatalos ikonja; a hatter csak cdn.foxpost.hu https cimet ir ide. */
   icon_url?: string | null
-}
-
-/** A tartalek lista szovegei a Figma allapotai szerint (486:346). */
-export const FOXPOST_LISTA_SZOVEGEK = {
-  ures: "Keress irányítószámra vagy városra.",
-  nincs: "Nem találtunk átvételi pontot. Próbáld irányítószámmal.",
-  hiba: "Nem sikerült betölteni a FOXPOST pontokat.",
 }
 
 /**
@@ -53,6 +50,7 @@ export default function FoxpostValaszto({
     forras: "finder" | "fallback",
   ) => void | Promise<void>
 }) {
+  const t = useTranslate()
   const [mod, setMod] = useState<"kereso" | "lista" | null>(
     kivalasztott?.name ? null : "kereso",
   )
@@ -81,13 +79,12 @@ export default function FoxpostValaszto({
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           <h3 className="text-[18px] font-medium text-acr-ink">
-            Átvételi pont kiválasztása
+            {t("checkoutShipping.pointHeading")}
           </h3>
           <FoxpostLogo className="h-[34px] w-auto" />
         </div>
         <p className="text-[13px] leading-[18px] text-acr-slate">
-          A FOXPOST hivatalos térképes keresője nyílik meg. A hálózat FOXPOST
-          automatákat, Z-BOX automatákat és Z-Pont átvevőhelyeket is tartalmaz.
+          {t("checkoutShipping.foxpostIntro")}
         </p>
       </div>
 
@@ -97,7 +94,7 @@ export default function FoxpostValaszto({
           data-testid="foxpost-kivalasztott"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-acr-heritage">
-            Kiválasztott átvételi pont
+            {t("checkoutShipping.pointSelected")}
           </p>
           {kivalasztott?.variant ? (
             <p
@@ -114,7 +111,7 @@ export default function FoxpostValaszto({
                   data-testid="foxpost-kivalasztott-ikon"
                 />
               ) : null}
-              {foxpostPontTipus(kivalasztott.variant)}
+              {foxpostPontTipus(kivalasztott.variant, t)}
             </p>
           ) : null}
           <p className="min-w-0 break-words text-[15px] font-medium text-acr-ink">
@@ -125,12 +122,12 @@ export default function FoxpostValaszto({
               {kivalasztott.address}
             </p>
           ) : null}
-          {foxpostPontReszletek(kivalasztott ?? {}) ? (
+          {foxpostPontReszletek(kivalasztott ?? {}, t) ? (
             <p
               className="text-[12px] text-acr-slate"
               data-testid="foxpost-kivalasztott-reszletek"
             >
-              {foxpostPontReszletek(kivalasztott ?? {})}
+              {foxpostPontReszletek(kivalasztott ?? {}, t)}
             </p>
           ) : null}
           <button
@@ -139,7 +136,7 @@ export default function FoxpostValaszto({
             className="mt-1 self-start text-[13px] text-acr-heritage underline underline-offset-2"
             data-testid="foxpost-masik-pont"
           >
-            Másik pont választása
+            {t("checkoutShipping.pointOther")}
           </button>
         </div>
       ) : null}
@@ -154,7 +151,7 @@ export default function FoxpostValaszto({
           kereso={(kereses: string) => searchFoxpostPickupPoints(kereses)}
           kivalasztott={null}
           onValaszt={listabol}
-          szovegek={FOXPOST_LISTA_SZOVEGEK}
+          szovegek={listaSzovegek(t, "FOXPOST")}
         />
       ) : null}
     </div>

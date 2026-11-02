@@ -5,7 +5,7 @@ import {
   type Megjegyzesek,
   VEVO_MEGJEGYZES_MAX,
 } from "@lib/util/megjegyzes"
-import { Label, Text } from "@modules/common/components/ui"
+import { useTranslate } from "@lib/i18n/use-translate"
 
 type Props = {
   ertek: Megjegyzesek
@@ -15,7 +15,7 @@ type Props = {
 }
 
 const MEZO =
-  "block w-full px-4 py-3 bg-ui-bg-field border rounded-md focus:outline-none focus:ring-0 focus:shadow-borders-interactive-with-active border-ui-border-base hover:bg-ui-bg-field-hover txt-compact-medium resize-y"
+  "block w-full resize-y border border-acr-line bg-acr-white px-3 py-3 text-[14px] leading-[22px] text-acr-ink outline-none focus:border-acr-ink"
 
 function Mezo({
   id,
@@ -32,14 +32,18 @@ function Mezo({
   sorok: number
   valtozik: (ertek: string) => void
 }) {
+  const t = useTranslate()
   return (
     <div className="flex flex-col gap-y-2">
-      <Label htmlFor={id} className="txt-compact-medium-plus">
+      <label
+        htmlFor={id}
+        className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate"
+      >
         {cimke}{" "}
-        <span className="text-ui-fg-muted txt-compact-small">
-          (nem kötelező)
+        <span className="normal-case tracking-normal">
+          {t("checkoutShipping.optional")}
         </span>
-      </Label>
+      </label>
       <textarea
         id={id}
         name={id}
@@ -50,9 +54,9 @@ function Mezo({
         className={MEZO}
         data-testid={id}
       />
-      <Text className="txt-compact-small text-ui-fg-muted self-end">
+      <p className="self-end text-[12px] leading-[16px] text-acr-slate">
         {ertek.length}/{max}
-      </Text>
+      </p>
     </div>
   )
 }
@@ -63,14 +67,15 @@ function Mezo({
  * gombon tortenik (`mentsMegjegyzeseket`).
  */
 export default function RendelesMegjegyzes({ ertek, valtozik, hazhoz }: Props) {
+  const t = useTranslate()
   return (
     <div
-      className="flex flex-col gap-y-4 mb-6"
+      className="mb-6 flex flex-col gap-y-4"
       data-testid="rendeles-megjegyzes"
     >
       <Mezo
         id="megjegyzes-vevo"
-        cimke="Megjegyzés a rendeléshez"
+        cimke={t("checkoutShipping.noteOrder")}
         ertek={ertek.vevo}
         max={VEVO_MEGJEGYZES_MAX}
         sorok={3}
@@ -79,7 +84,7 @@ export default function RendelesMegjegyzes({ ertek, valtozik, hazhoz }: Props) {
       {hazhoz && (
         <Mezo
           id="megjegyzes-futar"
-          cimke="Üzenet a futárnak"
+          cimke={t("checkoutShipping.noteCourier")}
           ertek={ertek.futar}
           max={FUTAR_MEGJEGYZES_MAX}
           sorok={2}

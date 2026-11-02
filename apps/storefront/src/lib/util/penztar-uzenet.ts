@@ -1,3 +1,4 @@
+import type { Key } from "@lib/i18n/dictionary"
 import { hibaAllapota } from "./kedvezmeny-uzenet"
 
 /**
@@ -68,6 +69,25 @@ function vagas(
 export function szallitasUzenet(allapot: number | undefined): string {
   return vagas(allapot, SZALLITAS_ELUTASITVA, SZALLITAS_MOST_NEM_SIKERULT)
 }
+
+/**
+ * A SZÁLLÍTÁSI HIBA SZÓTÁR-KULCSA. A szerver-művelet a magyar mondatot (`uzenet`,
+ * a naplónak) ÉS a kulcsot adja vissza; a böngésző a kulcsot a lap nyelvén
+ * írja ki. A vágás ugyanaz, mint a `szallitasUzenet`-é: 4xx kontra minden más.
+ */
+export function szallitasUzenetKod(allapot: number | undefined): Key {
+  return allapot !== undefined && allapot >= 400 && allapot < 500
+    ? "checkoutShipping.errorRejected"
+    : "checkoutShipping.errorFailed"
+}
+
+/** A szállítás hibakulcsai a mondataik párjával: a spec ebből veti össze a szótárt a konstansokkal. */
+export const SZALLITAS_KULCSOK: readonly [Key, string][] = [
+  ["checkoutShipping.errorRejected", SZALLITAS_ELUTASITVA],
+  ["checkoutShipping.errorFailed", SZALLITAS_MOST_NEM_SIKERULT],
+]
+
+export const MEGJEGYZES_MENTES_HIBA_KOD: Key = "checkoutShipping.errorNoteSave"
 
 export function fizetesUzenet(allapot: number | undefined): string {
   return vagas(allapot, FIZETES_ELUTASITVA, FIZETES_MOST_NEM_SIKERULT)

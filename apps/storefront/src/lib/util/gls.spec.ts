@@ -1,3 +1,4 @@
+import { translator } from "@lib/i18n/dictionary"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -8,6 +9,7 @@ import {
   glsPontWidgetbol,
   glsTelitettsegAllapot,
   glsTipusFelirat,
+  szallitasiSor,
   glsTipusLogo,
 } from "./gls"
 
@@ -103,5 +105,56 @@ describe("GLS a pénztárban", () => {
     expect(glsPontWidgetbol({ id: 7 })).toBeNull()
     expect(glsPontWidgetbol("1011-X")).toBeNull()
     expect(glsPontWidgetbol(null)).toBeNull()
+  })
+
+  it("a nyitvatartás és a jellemzők a lap nyelvén: angol napok és szavak", () => {
+    const en = translator("en")
+    expect(
+      glsNyitvatartas(
+        [
+          ...[1, 2, 3, 4, 5].map((day) => ({
+            day,
+            from: "08:00",
+            to: "17:30",
+          })),
+          { day: 6, from: "09:00", to: "14:30" },
+        ],
+        en,
+      ),
+    ).toBe("Mon–Fri 8–17:30, Sat 9–14:30")
+    // minden nap neve: egy csak a végpontokat mérő állítás a kihagyott napot nem látná
+    expect(
+      glsNyitvatartas(
+        [1, 2, 3, 4, 5, 6, 7].map((day) => ({
+          day,
+          from: "0" + day + ":00",
+          to: "1" + day + ":00",
+        })),
+        en,
+      ),
+    ).toBe(
+      "Mon 1–11, Tue 2–12, Wed 3–13, Thu 4–14, Fri 5–15, Sat 6–16, Sun 7–17",
+    )
+    expect(
+      glsJellemzok(
+        {
+          features: ["acceptsCard", "acceptsCash"],
+          has_wheelchair_access: true,
+        },
+        en,
+      ),
+    ).toEqual(["card payment", "cash", "wheelchair accessible"])
+    expect(glsTelitettsegAllapot("outOfOrder", en).figyelmeztetes).toBe(
+      "Not available at the moment.",
+    )
+  })
+
+  it("a szállítási sor szövege nyelvenként, a FOXPOST név márkanév", () => {
+    expect(szallitasiSor("glsPontNehez").nev).toBe("GLS nehézáru csomagpont")
+    expect(szallitasiSor("glsPontNehez", translator("en")).nev).toBe(
+      "GLS heavy-goods pickup point",
+    )
+    expect(szallitasiSor("foxpost", translator("en")).nev).toBe("FOXPOST")
+    expect(szallitasiSor("foxpost").nev).toBe("FOXPOST")
   })
 })
