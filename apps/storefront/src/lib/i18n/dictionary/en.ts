@@ -35,6 +35,14 @@ export const en: Dictionary = {
     uniquePiece: "1 pc · Unique piece",
     findSimilar: "Find a similar one",
   },
+  brandIndex: {
+    breadcrumbLabel: "Breadcrumb",
+    crumb: "Brands",
+    title: "Brands we sell",
+    count: "{count} brands",
+    lettersLabel: "Jump to a letter",
+    empty: "There are no brands to show at the moment.",
+  },
   sort: {
     title: "Sort",
     newest: "Newest",
