@@ -2,8 +2,9 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { WEBSHOP_MAIL_OUTBOX_MODULE } from "../../../modules/webshop-mail-outbox"
+import { orderLocaleOf } from "../order-locale"
 import { customerNameOf } from "./facts"
-import { osMailRenderConfig, renderWithOs, webshopMailRenderer } from "./os-mail-render"
+import { osMailRenderConfig, renderWithOs, webshopMailEnglish, webshopMailRenderer } from "./os-mail-render"
 import {
   type DeliveryResult,
   type MailRenderFacts,
@@ -39,17 +40,21 @@ export const outboxOperations = (
       const { data } = await query.graph({
         entity: "order",
         filters: { id: orderId },
-        fields: ["created_at", "billing_address.first_name", "billing_address.last_name"],
+        fields: ["created_at", "metadata", "billing_address.first_name", "billing_address.last_name"],
       })
       const order = data?.[0] as
         | {
             created_at?: Date | string
+            metadata?: Record<string, unknown> | null
             billing_address?: { first_name?: string; last_name?: string }
           }
         | undefined
       return {
         customer_name: customerNameOf(order?.billing_address),
         order_created_at: order?.created_at ? new Date(order.created_at).toISOString() : null,
+        // the language the customer ordered in; an order without it is Hungarian, and with the
+        // English switch off every mail is asked for in Hungarian
+        locale: webshopMailEnglish(env) ? orderLocaleOf(order?.metadata) : "hu",
       }
     },
     render: (request) => renderWithOs(request, osMailRenderConfig(env)),

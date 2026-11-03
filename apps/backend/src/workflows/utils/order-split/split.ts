@@ -1,3 +1,4 @@
+import { STOREFRONT_LOCALE_KEY } from "../order-locale"
 import type { PaymentRole } from "../payment-eligibility"
 import type { SplitPayment } from "../webshop-mail/order-split-mail"
 import {
@@ -125,8 +126,12 @@ export type SplitResult =
       resumed: boolean
     }
 
-/** What B carries over from A besides its lines: the ÁSZF acceptance and the customer's notes. */
-const CARRIED_METADATA_KEYS = ["aszf_elfogadas", "acropora_customer_note", "acropora_carrier_note"]
+/**
+ * What B carries over from A besides its lines: the ÁSZF acceptance, the customer's notes and
+ * the language the customer ordered in (B's mails follow it; a split order that lost it would
+ * send every later mail in Hungarian, card d5c6befd, barracuda #645).
+ */
+const CARRIED_METADATA_KEYS = ["aszf_elfogadas", "acropora_customer_note", "acropora_carrier_note", STOREFRONT_LOCALE_KEY]
 
 /** Every role has its own kind; a new role must be named here, not fall into "store". */
 const SPLIT_PAYMENT_OF: Record<NonNullable<SplitSource["payment_role"]>, SplitPayment> = {

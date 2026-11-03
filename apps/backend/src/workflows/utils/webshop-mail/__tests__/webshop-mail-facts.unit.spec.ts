@@ -27,7 +27,7 @@ const order: LoadedOrder = {
   shipping: [{ name: "GLS csomagpont", amount: 1150 }],
   payment: "ONLINE_CARD",
 }
-const common = { customer_name: "Teszt Elek", order_created_at: "2026-10-05T10:00:00.000Z" }
+const common = { customer_name: "Teszt Elek", order_created_at: "2026-10-05T10:00:00.000Z", locale: "hu" as const }
 
 const samples: { [T in keyof WebshopMailFactsOf]: WebshopMailFactsOf[T] } = {
   "order-placed": {
@@ -66,21 +66,21 @@ const keysOf = (value: unknown): string[] =>
 
 // THE CONTRACT: the top-level keys of each template's facts, and the inner objects' keys
 const CONTRACT: Record<string, Record<string, string[]>> = {
-  "order-placed": { "": ["customer_name", "legal_version", "order_created_at", "orders"], "orders[0]": ["display_id", "items", "payment", "pickup", "shipping", "total"] },
-  "order-status-confirmed": { "": ["customer_name", "order", "order_created_at"] },
-  "order-status-out_for_delivery": { "": ["customer_name", "order", "order_created_at"] },
-  "order-status-ready_for_pickup": { "": ["customer_name", "order", "order_created_at"] },
-  "order-status-closed": { "": ["customer_name", "order", "order_created_at"] },
+  "order-placed": { "": ["customer_name", "legal_version", "locale", "order_created_at", "orders"], "orders[0]": ["display_id", "items", "payment", "pickup", "shipping", "total"] },
+  "order-status-confirmed": { "": ["customer_name", "locale", "order", "order_created_at"] },
+  "order-status-out_for_delivery": { "": ["customer_name", "locale", "order", "order_created_at"] },
+  "order-status-ready_for_pickup": { "": ["customer_name", "locale", "order", "order_created_at"] },
+  "order-status-closed": { "": ["customer_name", "locale", "order", "order_created_at"] },
   "order-shipped": {
-    "": ["customer_name", "order_created_at", "shipped"],
+    "": ["customer_name", "locale", "order_created_at", "shipped"],
     shipped: ["carrier", "cod_amount", "destination_address", "destination_title", "display_id", "foxpost_logo_url", "gls_point", "items", "tracking_number", "tracking_url"],
   },
-  "order-payment-delayed": { "": ["amount", "customer_name", "order", "order_created_at", "pickup_display_id"] },
-  "order-payment-link": { "": ["amount", "customer_name", "expires_at", "order", "order_created_at", "pickup", "url"] },
-  "order-payment-reminder": { "": ["amount", "customer_name", "expires_at", "order", "order_created_at", "pickup", "url"] },
-  "payment-refunded": { "": ["customer_name", "order_created_at", "refund"], refund: ["amount", "display_id", "last4", "refunded_total"] },
+  "order-payment-delayed": { "": ["amount", "customer_name", "locale", "order", "order_created_at", "pickup_display_id"] },
+  "order-payment-link": { "": ["amount", "customer_name", "expires_at", "locale", "order", "order_created_at", "pickup", "url"] },
+  "order-payment-reminder": { "": ["amount", "customer_name", "expires_at", "locale", "order", "order_created_at", "pickup", "url"] },
+  "payment-refunded": { "": ["customer_name", "locale", "order_created_at", "refund"], refund: ["amount", "display_id", "last4", "refunded_total"] },
   "order-split": {
-    "": ["customer_name", "order", "order_created_at", "payment", "split_order"],
+    "": ["customer_name", "locale", "order", "order_created_at", "payment", "split_order"],
     split_order: ["display_id", "email", "id", "items", "payment", "shipping", "total"],
   },
 }

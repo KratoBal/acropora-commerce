@@ -1,5 +1,5 @@
 import { renderRequest } from "../facts"
-import { osMailRenderConfig, renderWithOs, webshopMailRenderer } from "../os-mail-render"
+import { osMailRenderConfig, renderWithOs, webshopMailEnglish, webshopMailRenderer } from "../os-mail-render"
 
 /**
  * THE OS RENDER CLIENT (nautilus 26557). What must fail: a 400/422 retried
@@ -12,6 +12,7 @@ const config = { url: "https://os.example.test/webshop-mail/render", token: "tok
 const request = renderRequest("order-status-closed", {
   customer_name: null,
   order_created_at: null,
+  locale: "hu",
   order: { id: "o", display_id: 1, email: null, total: 1, items: [], shipping: [], payment: null },
 })
 const answer = (status: number, body: unknown) => async () => ({ status, json: async () => body })
@@ -74,6 +75,15 @@ describe("the settings", () => {
     expect(webshopMailRenderer({ ACROPORA_WEBSHOP_MAIL_RENDERER: "os" })).toBe("os")
     expect(webshopMailRenderer({ ACROPORA_WEBSHOP_MAIL_RENDERER: "OS" })).toBe("local")
     expect(webshopMailRenderer({})).toBe("local")
+  })
+
+  it("English mails are on only when the switch says on", () => {
+    expect(webshopMailEnglish({ ACROPORA_WEBSHOP_MAIL_ENGLISH: "on" })).toBe(true)
+    expect(webshopMailEnglish({ ACROPORA_WEBSHOP_MAIL_ENGLISH: " on " })).toBe(true)
+    expect(webshopMailEnglish({ ACROPORA_WEBSHOP_MAIL_ENGLISH: "ON" })).toBe(false)
+    expect(webshopMailEnglish({ ACROPORA_WEBSHOP_MAIL_ENGLISH: "true" })).toBe(false)
+    expect(webshopMailEnglish({ ACROPORA_WEBSHOP_MAIL_ENGLISH: "" })).toBe(false)
+    expect(webshopMailEnglish({})).toBe(false)
   })
 
   it("the endpoint needs an http(s) address and a token", () => {

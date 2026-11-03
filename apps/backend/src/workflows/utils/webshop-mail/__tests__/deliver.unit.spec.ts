@@ -19,7 +19,7 @@ type Row = OutboxRow & {
   last_error?: string | null
 }
 
-const world = () => {
+const world = (orderMetadata?: Record<string, unknown>) => {
   const rows: Row[] = []
   const notifications: Array<Record<string, unknown>> = []
   const warnings: string[] = []
@@ -62,6 +62,7 @@ const world = () => {
             data: [
               {
                 created_at: "2026-10-05T19:00:00.000Z",
+                metadata: orderMetadata,
                 billing_address: { first_name: "Vevő", last_name: "Próba" },
               },
             ],
@@ -172,10 +173,45 @@ describe("deliverShopMail", () => {
       facts: {
         customer_name: "Próba Vevő",
         order_created_at: "2026-10-05T19:00:00.000Z",
+        locale: "hu",
         order: { display_id: 42 },
       },
     })
     expect(w.rows[0].sent_at).toBeInstanceOf(Date)
+  })
+
+  /*
+    THE LANGUAGE THE CUSTOMER ORDERED IN GOES TO THE OS WITH EVERY MAIL (card
+    d5c6befd): read from the order's own metadata (`storefront_locale`, set
+    from the cart at checkout). An order without the key, or with a value the
+    shop does not know, is Hungarian, never a guess.
+  */
+  it("the facts carry the order's language, and an order without one is Hungarian", async () => {
+    const asked = async (metadata?: Record<string, unknown>, english = true) => {
+      const w = world(metadata)
+      const fetch = osAnswers(200, { subject: "s", html: "<p>h</p>", text: "t", customized: false })
+      await deliverShopMail(w.container, mail, english ? { ...OS, ACROPORA_WEBSHOP_MAIL_ENGLISH: "on" } : OS)
+      const [, init] = fetch.mock.calls[fetch.mock.calls.length - 1] as [string, { body: string }]
+      return JSON.parse(init.body).facts.locale
+    }
+    expect(await asked({ storefront_locale: "en" })).toBe("en")
+    expect(await asked({ storefront_locale: "hu" })).toBe("hu")
+    expect(await asked({ egyeb: 1 })).toBe("hu")
+    expect(await asked(undefined)).toBe("hu")
+    expect(await asked({ storefront_locale: "de" })).toBe("hu")
+  })
+
+  /*
+    THE ENGLISH SWITCH (card d5c6befd): off by default, so merging this before
+    the OS has its English words cannot send a half-English mail. Off, an
+    English order is still asked for in Hungarian.
+  */
+  it("with the English switch off, an English order is asked for in Hungarian", async () => {
+    const w = world({ storefront_locale: "en" })
+    const fetch = osAnswers(200, { subject: "s", html: "<p>h</p>", text: "t", customized: false })
+    await deliverShopMail(w.container, mail, OS)
+    const [, init] = fetch.mock.calls[fetch.mock.calls.length - 1] as [string, { body: string }]
+    expect(JSON.parse(init.body).facts.locale).toBe("hu")
   })
 
   it("with the switch on and the OS down, nothing goes: the mail waits", async () => {
