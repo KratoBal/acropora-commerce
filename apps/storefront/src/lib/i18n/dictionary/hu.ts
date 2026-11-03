@@ -26,6 +26,8 @@ export const hu = {
     empty: "Ebben a kategóriában még nincs megjeleníthető termék.",
     emptyList: "Még nincs megjeleníthető termék.",
     allProducts: "Minden termék",
+    brands: "Márkák",
+    emptyBrand: "Ennél a márkánál még nincs megjeleníthető termék.",
     position: "{from} / {count} termék",
     positionOne: "{from} / {count} termék",
     loadMore: "További termékek betöltése",

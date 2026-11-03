@@ -38,21 +38,21 @@ describe("a markaoldal gyűjteménye", () => {
       collection_handle: "aqua-medic",
     })
     mocks.getCollectionByHandle.mockResolvedValue({ id: "pcol_1" })
-    await markaLapTorzs(params, {}, "/hu/marka/aquamedic", true)
+    await markaLapTorzs(params, {}, true)
     expect(mocks.getCollectionByHandle).toHaveBeenCalledWith("aqua-medic")
   })
 
   it("párosítás nélkül (nincs mező vagy null) a marka handle-jén keres", async () => {
     mocks.getCollectionByHandle.mockResolvedValue({ id: "pcol_1" })
     mocks.markaHandleAlapjan.mockResolvedValueOnce({ handle: "aquamedic" })
-    await markaLapTorzs(params, {}, "/hu/marka/aquamedic", true)
+    await markaLapTorzs(params, {}, true)
     mocks.markaHandleAlapjan.mockResolvedValueOnce({
       handle: "aquamedic",
       collection_handle: null,
     })
-    await markaLapTorzs(params, {}, "/hu/marka/aquamedic", true)
+    await markaLapTorzs(params, {}, true)
     mocks.markaHandleAlapjan.mockResolvedValueOnce(null)
-    await markaLapTorzs(params, {}, "/hu/marka/aquamedic", true)
+    await markaLapTorzs(params, {}, true)
     expect(mocks.getCollectionByHandle.mock.calls).toEqual([
       ["aquamedic"],
       ["aquamedic"],
@@ -73,8 +73,8 @@ describe("a markaoldal gyűjteménye", () => {
       collection_handle: "nincs-ilyen",
     })
     mocks.getCollectionByHandle.mockResolvedValue(null)
-    await expect(
-      markaLapTorzs(params, {}, "/hu/marka/aquamedic", true),
-    ).rejects.toThrow("NEXT_NOT_FOUND")
+    await expect(markaLapTorzs(params, {}, true)).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    )
   })
 })

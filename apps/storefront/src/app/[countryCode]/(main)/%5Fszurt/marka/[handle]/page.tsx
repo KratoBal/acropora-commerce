@@ -23,10 +23,5 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function MarkaSzurt(props: Props) {
   const params = await props.params
-  return markaLapTorzs(
-    params,
-    await props.searchParams,
-    `/${params.countryCode}/marka/${params.handle}`,
-    true,
-  )
+  return markaLapTorzs(params, await props.searchParams, true)
 }
