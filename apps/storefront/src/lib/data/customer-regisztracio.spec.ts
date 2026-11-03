@@ -76,7 +76,7 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
     const valasz = await signup(null, urlap({ ...JO, password_again: "masik" }))
     expect(valasz).toEqual({
       state: "error",
-      error: "A két jelszó nem egyezik.",
+      error: "passwords_differ",
       ertekek: {
         last_name: "Minta",
         first_name: "Anna",
@@ -266,7 +266,7 @@ describe("a regisztráció az ÁSZF-elfogadással", () => {
  * belepes elbukott agat. A stage-en mert szoveggel all itt.
  */
 describe("a belépés hibája a vevő felé", () => {
-  it("rossz jelszónál magyar mondat, nem a szerver angol szövege", async () => {
+  it("rossz jelszónál a hiba KÓDJA, nem a szerver angol szövege", async () => {
     sdk.auth.login.mockRejectedValue(new Error("Invalid email or password"))
     const valasz = await login(
       null,
@@ -274,7 +274,7 @@ describe("a belépés hibája a vevő felé", () => {
     )
     expect(valasz).toEqual({
       state: "error",
-      error: "Hibás e-mail-cím vagy jelszó.",
+      error: "invalid_credentials",
       ertekek: { email: "vevo@example.hu" },
     })
     expect(JSON.stringify(valasz)).not.toContain("rossz")

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
 import React from "react"
 import { useFormStatus } from "react-dom"
 
@@ -26,6 +27,7 @@ export function AuthKartya({
   children: React.ReactNode
   "data-testid"?: string
 }) {
+  const t = useTranslate()
   return (
     <div className="flex w-full justify-center bg-acr-shell px-4 pb-10 pt-[26px] font-acr-sans small:min-h-[720px] small:items-center small:py-[96px]">
       <div
@@ -33,7 +35,7 @@ export function AuthKartya({
         data-testid={testId}
       >
         <p className="hidden text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.1px] text-acr-heritage small:block">
-          Fiók
+          {t("account.auth.eyebrow")}
         </p>
         <h1 className="text-[26px] font-semibold leading-[34px] text-acr-ink small:text-[30px] small:leading-[39px]">
           {cim}

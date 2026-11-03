@@ -1,28 +1,65 @@
-import { JELSZO_ROVID_UZENET } from "./jelszo"
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+
+import { JELSZO_MIN_HOSSZ } from "./jelszo"
 
 /**
- * A BELEPES ES A REGISZTRACIO HIBAI MAGYARUL (P5). A szerver angol, nyers
- * uzenete ("Error: Invalid email or password") eddig valtozatlanul a vevo ele
- * kerult (merve a stage ellen, 2026-09-29). Az ismert eseteknek sajat mondata
- * van; minden mas egy altalanos mondatot kap, a nyers szoveg nem megy ki.
+ * A BELEPES ES A REGISZTRACIO HIBAI (P5). A szerver angol, nyers uzenete
+ * ("Error: Invalid email or password") eddig valtozatlanul a vevo ele kerult
+ * (merve a stage ellen, 2026-09-29). Az ismert eseteknek sajat kodjuk van;
+ * minden mas az altalanos kodot kapja, a nyers szoveg nem megy ki.
+ *
+ * KOD, NEM MONDAT (2026-11-03): a szerver-muvelet nem tudja, milyen nyelven
+ * ir, ezert a belepes es a regisztracio KODOT ad vissza (`AuthHibaKod`), a
+ * komponens fordit (`authHibaFelirat`, szotar: `account.error.*`). A magyar
+ * mondat a szotarban all, nem a koddal egyutt; a meg nem atallitott muveletek
+ * (profil, jelszo, szamlazas, cimek) a `authHibaSzoveg`-et hasznaljak, ami a
+ * magyar szotar-szoveget adja.
  */
-const ISMERT: readonly [RegExp, string][] = [
-  [/invalid email or password/i, "Hibás e-mail-cím vagy jelszó."],
-  [
-    /too many attempts|too_many_requests/i,
-    "Túl sok próbálkozás. Próbáld újra pár perc múlva.",
-  ],
-  [/password must be at least/i, JELSZO_ROVID_UZENET],
+export type AuthHibaKod =
+  | "invalid_credentials"
+  | "too_many_attempts"
+  | "password_short"
+  | "email_taken"
+  | "generic"
+  | "aszf_required"
+  | "passwords_differ"
+
+const ISMERT: readonly [RegExp, AuthHibaKod][] = [
+  [/invalid email or password/i, "invalid_credentials"],
+  [/too many attempts|too_many_requests/i, "too_many_attempts"],
+  [/password must be at least/i, "password_short"],
   [
     /(identity|customer) with email already exists|email already exists/i,
-    "Ezzel az e-mail-címmel már van fiók. Jelentkezz be.",
+    "email_taken",
   ],
 ]
 
-export const ALTALANOS_AUTH_HIBA =
-  "Nem sikerült, próbáld újra. Ha újra előjön, írj nekünk."
+const KULCS: Record<AuthHibaKod, Key> = {
+  invalid_credentials: "account.error.invalidCredentials",
+  too_many_attempts: "account.error.tooManyAttempts",
+  password_short: "account.error.passwordShort",
+  email_taken: "account.error.emailTaken",
+  generic: "account.error.generic",
+  aszf_required: "account.error.aszfRequired",
+  passwords_differ: "account.error.passwordsDiffer",
+}
 
-export function authHibaSzoveg(hiba: unknown): string {
+/** A nyers hiba kodja: ismert eset, vagy az altalanos. */
+export function authHibaKod(hiba: unknown): AuthHibaKod {
   const nyers = hiba instanceof Error ? hiba.message : String(hiba ?? "")
-  return ISMERT.find(([minta]) => minta.test(nyers))?.[1] ?? ALTALANOS_AUTH_HIBA
+  return ISMERT.find(([minta]) => minta.test(nyers))?.[1] ?? "generic"
+}
+
+/** A kod mondata a megadott nyelven (a komponens `useTranslate`-je adja a `t`-t). */
+export function authHibaFelirat(kod: AuthHibaKod, t: Translate): string {
+  return t(KULCS[kod], { min: JELSZO_MIN_HOSSZ })
+}
+
+const magyar = translator("hu")
+
+export const ALTALANOS_AUTH_HIBA = authHibaFelirat("generic", magyar)
+
+/** A hiba MAGYAR mondata: a meg nem atallitott muveletek (profil, jelszo, szamlazas, cimek) ezt kapjak. */
+export function authHibaSzoveg(hiba: unknown): string {
+  return authHibaFelirat(authHibaKod(hiba), magyar)
 }

@@ -6,7 +6,12 @@ import {
   aszfElfogadasTorzs,
   regisztracioHiba,
 } from "@lib/util/aszf"
-import { ALTALANOS_AUTH_HIBA, authHibaSzoveg } from "@lib/util/auth-hiba"
+import {
+  ALTALANOS_AUTH_HIBA,
+  authHibaKod,
+  authHibaSzoveg,
+  type AuthHibaKod,
+} from "@lib/util/auth-hiba"
 import {
   alapertelmezettUrlapbol,
   cimNevUrlapbol,
@@ -45,7 +50,8 @@ import {
 export type CustomerAuthState =
   // `ertekek`: the submitted values (never the passwords), so the form can
   // refill after React 19 resets it following the action.
-  | { state: "error"; error: string; ertekek?: Record<string, string> }
+  // `error` is a CODE (`AuthHibaKod`): the component translates it (`authHibaFelirat`).
+  | { state: "error"; error: AuthHibaKod; ertekek?: Record<string, string> }
   | { state: "verification_required"; email: string }
   // `aszfRogzitesHianyzik`: the sign-in went through, but the server could not
   // record the ÁSZF acceptance yet; the pending cookie stays and the next
@@ -354,7 +360,7 @@ async function regisztral(formData: FormData): Promise<CustomerAuthState> {
       fetchError.statusText !== "Unauthorized" ||
       fetchError.message !== "Identity with email already exists"
     ) {
-      return { state: "error", error: authHibaSzoveg(error) }
+      return { state: "error", error: authHibaKod(error) }
     }
   }
 
@@ -419,7 +425,7 @@ async function completeLogin(
   try {
     result = await sdk.auth.login("customer", "emailpass", { email, password })
   } catch (error) {
-    return { state: "error", error: authHibaSzoveg(error) }
+    return { state: "error", error: authHibaKod(error) }
   }
 
   // A `location` is returned by third-party auth providers, which this flow
@@ -427,7 +433,7 @@ async function completeLogin(
   if (typeof result === "object" && "location" in result) {
     return {
       state: "error",
-      error: ALTALANOS_AUTH_HIBA,
+      error: "generic",
     }
   }
 
@@ -449,7 +455,7 @@ async function completeLogin(
   if (typeof result !== "string") {
     return {
       state: "error",
-      error: ALTALANOS_AUTH_HIBA,
+      error: "generic",
     }
   }
 
@@ -486,7 +492,7 @@ async function completeLogin(
         password,
       })) as string
     } catch (error) {
-      return { state: "error", error: authHibaSzoveg(error) }
+      return { state: "error", error: authHibaKod(error) }
     }
   }
 
@@ -524,7 +530,7 @@ async function completeLogin(
   try {
     await transferCart()
   } catch (error) {
-    return { state: "error", error: authHibaSzoveg(error) }
+    return { state: "error", error: authHibaKod(error) }
   }
 
   return aszfRogzitesHianyzik
