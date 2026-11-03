@@ -49,6 +49,7 @@ const fakeOps = (renders: OsRenderResult[] = [RENDERED]) => {
     loadCommon: jest.fn(async () => ({
       customer_name: "Próba Vevő",
       order_created_at: "2026-10-05T19:00:00.000Z",
+      locale: "hu" as const,
     })),
     render: jest.fn(async () => renders.shift() ?? RENDERED),
     send: async (mail) => {
@@ -93,6 +94,7 @@ describe("deliverThroughOutbox", () => {
       facts: {
         customer_name: "Próba Vevő",
         order_created_at: "2026-10-05T19:00:00.000Z",
+        locale: "hu",
         order: { id: "order_42", display_id: 42 },
       },
     })

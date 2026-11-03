@@ -1,3 +1,4 @@
+import type { OrderLocale } from "../order-locale"
 import type { MailLine, MailOrder } from "./order-placed-mail"
 import type { LoadedOrder } from "./prepare"
 import type { RefundMailFacts } from "./refund-mail"
@@ -46,6 +47,16 @@ type CommonFacts = {
   customer_name: string | null
   /** When the order was placed, ISO. */
   order_created_at: string | null
+  /**
+   * The language the customer ordered in (`storefront_locale` on the order,
+   * order-locale.ts; an order without it is Hungarian). The OS writes the mail
+   * in it. ADDED WITHOUT RAISING THE VERSION, as `legal_version` and G3's keys
+   * were: the OS reads the facts key by key and treats a missing `locale` as
+   * Hungarian, so the OS and this shop can be deployed in either order
+   * (card d5c6befd). The OS must not be sent `en` before its English words are
+   * merged (acropora-os, second step).
+   */
+  locale: OrderLocale
 }
 
 type PaymentLinkFacts = CommonFacts & {

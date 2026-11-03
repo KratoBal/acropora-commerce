@@ -12,6 +12,7 @@ const config = { url: "https://os.example.test/webshop-mail/render", token: "tok
 const request = renderRequest("order-status-closed", {
   customer_name: null,
   order_created_at: null,
+  locale: "hu",
   order: { id: "o", display_id: 1, email: null, total: 1, items: [], shipping: [], payment: null },
 })
 const answer = (status: number, body: unknown) => async () => ({ status, json: async () => body })
