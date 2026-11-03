@@ -97,6 +97,36 @@ export const en: Dictionary = {
     failed: "That did not work, try again",
     addAria: "Add {name} to cart",
   },
+  header: {
+    account: "My account",
+    mainMenu: "Main menu",
+    mobile: {
+      openMenu: "Open the menu",
+      closeMenu: "Close the menu",
+      search: "Search",
+      account: "Account",
+    },
+    cart: {
+      label: "Cart",
+      aria: "Cart · {count}",
+    },
+  },
+  nav: {
+    knowledge: "Knowledge base",
+    services: "Services",
+    myAquariums: "My aquariums",
+  },
+  cartMenu: {
+    title: "Cart",
+    quantity: "Quantity: {count}",
+    remove: "Remove",
+    subtotal: "Subtotal",
+    subtotalNote: "(excl. taxes)",
+    goToCart: "Go to the cart",
+    empty: "Your cart is empty.",
+    allProducts: "Go to all products",
+    discover: "Explore products",
+  },
   account: {
     auth: {
       eyebrow: "Account",
@@ -156,36 +186,6 @@ export const en: Dictionary = {
         "To register you have to accept the terms and conditions and the privacy notice.",
       passwordsDiffer: "The two passwords do not match.",
     },
-  },
-  header: {
-    account: "My account",
-    mainMenu: "Main menu",
-    mobile: {
-      openMenu: "Open the menu",
-      closeMenu: "Close the menu",
-      search: "Search",
-      account: "Account",
-    },
-    cart: {
-      label: "Cart",
-      aria: "Cart · {count}",
-    },
-  },
-  nav: {
-    knowledge: "Knowledge base",
-    services: "Services",
-    myAquariums: "My aquariums",
-  },
-  cartMenu: {
-    title: "Cart",
-    quantity: "Quantity: {count}",
-    remove: "Remove",
-    subtotal: "Subtotal",
-    subtotalNote: "(excl. taxes)",
-    goToCart: "Go to the cart",
-    empty: "Your cart is empty.",
-    allProducts: "Go to all products",
-    discover: "Explore products",
   },
   headerText: {
     bar1: "Livestock for in-store pickup only, at our Budapest shop",

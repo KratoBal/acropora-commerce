@@ -100,6 +100,41 @@ export const hu = {
     failed: "Nem sikerült, próbáld újra",
     addAria: "{name} kosárba",
   },
+  header: {
+    account: "Fiókom",
+    mainMenu: "Fő menü",
+    mobile: {
+      openMenu: "Menü megnyitása",
+      closeMenu: "Menü bezárása",
+      search: "Keresés",
+      account: "Fiók",
+    },
+    cart: {
+      label: "Kosár",
+      aria: "Kosár · {count}",
+    },
+  },
+  nav: {
+    knowledge: "Tudástár",
+    services: "Szolgáltatások",
+    myAquariums: "Akváriumaim",
+  },
+  cartMenu: {
+    title: "Kosár",
+    quantity: "Mennyiség: {count}",
+    remove: "Eltávolítás",
+    subtotal: "Részösszeg",
+    subtotalNote: "(adók nélkül)",
+    goToCart: "Ugrás a kosárhoz",
+    empty: "A kosarad üres.",
+    allProducts: "Ugrás az összes termékhez",
+    discover: "Termékek felfedezése",
+  },
+  /**
+   * THE HEADER TEXTS THE SHOP OWNER CAN EDIT IN THE OS (the catalogue `fejlec.*` defaults in `modules/kezdolap/szovegek.ts`). The English
+   * shop shows the English text only while the OS still holds this exact Hungarian default; an OS text that was changed is shown as
+   * written (the editor has no per-language fields yet). `dictionary.spec.ts` keeps this group equal to the catalogue defaults.
+   */
   account: {
     auth: {
       eyebrow: "Fiók",
@@ -159,41 +194,6 @@ export const hu = {
       passwordsDiffer: "A két jelszó nem egyezik.",
     },
   },
-  header: {
-    account: "Fiókom",
-    mainMenu: "Fő menü",
-    mobile: {
-      openMenu: "Menü megnyitása",
-      closeMenu: "Menü bezárása",
-      search: "Keresés",
-      account: "Fiók",
-    },
-    cart: {
-      label: "Kosár",
-      aria: "Kosár · {count}",
-    },
-  },
-  nav: {
-    knowledge: "Tudástár",
-    services: "Szolgáltatások",
-    myAquariums: "Akváriumaim",
-  },
-  cartMenu: {
-    title: "Kosár",
-    quantity: "Mennyiség: {count}",
-    remove: "Eltávolítás",
-    subtotal: "Részösszeg",
-    subtotalNote: "(adók nélkül)",
-    goToCart: "Ugrás a kosárhoz",
-    empty: "A kosarad üres.",
-    allProducts: "Ugrás az összes termékhez",
-    discover: "Termékek felfedezése",
-  },
-  /**
-   * THE HEADER TEXTS THE SHOP OWNER CAN EDIT IN THE OS (the catalogue `fejlec.*` defaults in `modules/kezdolap/szovegek.ts`). The English
-   * shop shows the English text only while the OS still holds this exact Hungarian default; an OS text that was changed is shown as
-   * written (the editor has no per-language fields yet). `dictionary.spec.ts` keeps this group equal to the catalogue defaults.
-   */
   headerText: {
     bar1: "Élőállat kizárólag személyes átvétellel, a budapesti boltban",
     bar2: "Technika és vegyszer: házhozszállítás 2–3 munkanap alatt",
