@@ -40,6 +40,7 @@ import {
 import { AdminOrderShippingNotice } from "./admin/order-shipping-notice/validators";
 import { AdminPostOrderSplit } from "./admin/order-split/validators";
 import { StorePostCartNotes } from "./store/cart-notes/validators";
+import { StorePostCartLocale } from "./store/cart-locale/validators";
 import { StorePostNewsletterSubscription } from "./store/newsletter-subscriptions/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import {
@@ -301,6 +302,12 @@ export default defineMiddlewares({
       matcher: "/store/cart-notes/:cart_id",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostCartNotes)],
+    },
+    {
+      // the language the customer orders in (card d5c6befd)
+      matcher: "/store/cart-locale/:cart_id",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostCartLocale)],
     },
     {
       matcher: "/store/newsletter-subscriptions",

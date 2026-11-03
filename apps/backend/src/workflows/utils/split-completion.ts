@@ -1,4 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils"
+import { parseOrderLocale, STOREFRONT_LOCALE_KEY } from "./order-locale"
 import {
   STRIPE_JOINED_KEY,
   STRIPE_JOINT_KEY,
@@ -48,7 +49,11 @@ export const PARENT_ORDER_METADATA_KEY = "acropora_parent_order_id"
  */
 export const ASZF_METADATA_KEY = "aszf_elfogadas"
 
-/** The pickup cart's metadata: its parent, and the parent's ÁSZF acceptance if there is one. */
+/**
+ * The pickup cart's metadata: its parent, the parent's ÁSZF acceptance if
+ * there is one, and the language the customer ordered in (both orders of a
+ * mixed cart get their mails in it; order-locale.ts).
+ */
 export const pickupCartMetadata = (
   parentId: string,
   parentMetadata: Record<string, unknown> | null | undefined
@@ -56,6 +61,9 @@ export const pickupCartMetadata = (
   [PARENT_CART_METADATA_KEY]: parentId,
   ...(parentMetadata?.[ASZF_METADATA_KEY] !== undefined
     ? { [ASZF_METADATA_KEY]: parentMetadata[ASZF_METADATA_KEY] }
+    : {}),
+  ...(parseOrderLocale(parentMetadata?.[STOREFRONT_LOCALE_KEY])
+    ? { [STOREFRONT_LOCALE_KEY]: parentMetadata?.[STOREFRONT_LOCALE_KEY] }
     : {}),
 })
 

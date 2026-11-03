@@ -22,6 +22,7 @@ vi.mock("@lib/data/cart", () => ({
   initiatePaymentSession: (...args: unknown[]) =>
     initiatePaymentSession(...args),
   placeOrder: vi.fn(),
+  mentsRendelesiNyelvet: vi.fn().mockResolvedValue({ ok: true }),
   rogzitsAszfElfogadast: vi.fn(),
 }))
 vi.mock("@lib/data/payment", () => ({

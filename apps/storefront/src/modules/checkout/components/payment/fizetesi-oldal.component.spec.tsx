@@ -11,20 +11,23 @@ vi.mock("@lib/data/stripe", () => ({
   inditsStripeKozosFizetest: stripeData.inditsStripeKozosFizetest,
   stripeVisszarendezes: stripeData.stripeVisszarendezes,
 }))
+const lap = vi.hoisted(() => ({ countryCode: "hu" }))
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
+  useParams: () => ({ countryCode: lap.countryCode }),
   usePathname: () => "/hu/checkout",
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams("step=payment"),
   unstable_rethrow: () => {},
 }))
 const cartMock = vi.hoisted(() => ({
+  mentsRendelesiNyelvet: vi.fn(),
   rogzitsAszfElfogadast: vi.fn(),
   placeOrder: vi.fn(),
 }))
 vi.mock("@lib/data/cart", () => ({
   initiatePaymentSession: vi.fn().mockResolvedValue({ ok: true }),
   placeOrder: cartMock.placeOrder,
+  mentsRendelesiNyelvet: cartMock.mentsRendelesiNyelvet,
   rogzitsAszfElfogadast: cartMock.rogzitsAszfElfogadast,
 }))
 const stripeMock = vi.hoisted(() => ({
@@ -88,6 +91,7 @@ import Payment from "./index"
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  lap.countryCode = "hu"
   tarca.van = true
 })
 
@@ -210,6 +214,11 @@ describe("a fizetési oldal", () => {
       fireEvent.click(await screen.findByTestId("submit-order-button"))
     })
     expect(cartMock.rogzitsAszfElfogadast).toHaveBeenCalledWith("cart-1")
+    // a vevő nyelve (ennek a lapnak a nyelve) a kosárra megy, az ÁSZF előtt
+    expect(cartMock.mentsRendelesiNyelvet).toHaveBeenCalledWith("cart-1", "hu")
+    expect(
+      cartMock.mentsRendelesiNyelvet.mock.invocationCallOrder[0],
+    ).toBeLessThan(cartMock.rogzitsAszfElfogadast.mock.invocationCallOrder[0])
     expect(stripeMock.confirmPayment).toHaveBeenCalledTimes(1)
     expect(stripeData.inditsStripeKozosFizetest).toHaveBeenCalledWith("cart-1")
     expect(
@@ -223,6 +232,26 @@ describe("a fizetési oldal", () => {
     expect(stripeMock.confirmPayment).toHaveBeenCalledWith(
       expect.objectContaining({ clientSecret: "pi_uj_secret_x" }),
     )
+  })
+
+  it("az angol lapon a vevő nyelve en megy a kosárra, nem a magyar alapérték", async () => {
+    lap.countryCode = "en-hu"
+    cartMock.rogzitsAszfElfogadast.mockResolvedValue({ ok: true })
+    stripeData.inditsStripeKozosFizetest.mockResolvedValue({
+      ok: true,
+      titok: "pi_en_secret",
+    })
+    stripeMock.confirmPayment.mockResolvedValue({
+      error: { type: "card_error", message: "declined" },
+    })
+    oldal()
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("aszf-pipa"))
+    })
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId("submit-order-button"))
+    })
+    expect(cartMock.mentsRendelesiNyelvet).toHaveBeenCalledWith("cart-1", "en")
   })
 
   it("ha a rögzítés nem sikerül, nincs fizetés, és a hiba kiíródik", async () => {
