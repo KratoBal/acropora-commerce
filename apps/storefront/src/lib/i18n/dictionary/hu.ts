@@ -1,3 +1,5 @@
+import { STORE_DESCRIPTION } from "@lib/store"
+
 /**
  * THE HUNGARIAN DICTIONARY: the SOURCE of the keys. `en.ts` has the same shape, and a missing English key is a type error.
  *
@@ -55,10 +57,56 @@ export const hu = {
     priceAsc: "Ár szerint növekvő",
     priceDesc: "Ár szerint csökkenő",
   },
+  search: {
+    eyebrow: "Keresés",
+    resultsTitle: "Találatok",
+    searchLabel: "Keresés",
+    countFor: "{count} találat erre: „{query}”",
+    countForOne: "{count} találat erre: „{query}”",
+    truncated:
+      "Több mint {count} termék illik erre a keresésre, itt a {count} legújabb látszik. Pontosítsd a keresést, ha nem találod, amit keresel.",
+    rootsLabel: "Találatok kategóriánként",
+    all: "Összes",
+    filtersButton: "Szűrők",
+    filters: "Szűrés",
+    clear: "Törlés",
+    brand: "Márka",
+    noBrandData: "Ezekhez a találatokhoz nincs márkaadat.",
+    groupAll: "Minden találat",
+    resultCount: "{count} találat",
+    resultCountOne: "{count} találat",
+    resultsLabel: "Találatok",
+    filteredEmpty: "A szűrőkkel együtt nincs találat.",
+    position: "{from} / {count} találat",
+    positionOne: "{from} / {count} találat",
+    more: "További találatok",
+    noResultsTitle: "Nincs találat",
+    noResultsHeading: "Nem találtunk ilyet",
+    noResultsAdvice:
+      "Próbáld rövidebb kifejezéssel, márkanévvel, cikkszámmal, magyar vagy tudományos névvel.",
+    tipsLabel: "Keresési tippek",
+    help: "Segítség a kereséshez",
+    categories: "Kategóriák",
+    category: "Kategória",
+    productCount: "{count} termék",
+  },
   stock: {
     outOfStock: "Nincs raktáron",
     inStockCount: "Raktáron – {count} db",
     orderable: "Rendelhető",
+  },
+  meta: {
+    storeDescription: STORE_DESCRIPTION,
+    categoryDescription:
+      "A(z) {name} kategória termékei az {store} webáruházban.",
+    brandDescription: "A(z) {name} márka termékei az {store} webáruházban.",
+    productDescription: "{title}: rendelés az {store} webáruházban.",
+    selectionDescription: "{title}: válogatás az {store} webáruházban.",
+    searchTitle: "Keresés: {query}",
+    searchDescription: "Találatok erre: „{query}” az {store} webáruházban.",
+    allProductsTitle: "Összes termék",
+    allProductsDescription: "Az {store} webáruház összes terméke.",
+    pageSuffix: "{page}. oldal",
   },
   cart: {
     add: "Kosárba",

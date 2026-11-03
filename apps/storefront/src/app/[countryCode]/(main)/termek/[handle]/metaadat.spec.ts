@@ -72,3 +72,31 @@ describe("a terméklap metaadata", () => {
     expect(m.description).not.toBe(m.title)
   })
 })
+
+describe("a terméklap metaadata az angol úton", () => {
+  const enProps = {
+    params: Promise.resolve({ countryCode: "en-hu", handle: "vitalis-lps" }),
+    searchParams: Promise.resolve({}),
+  }
+
+  it("leírás nélkül az angol sablonmondat áll, a cím a terméknév, az OpenGraph en_US", async () => {
+    adat.termek = { title: "Vitalis LPS Coral Pellets", metadata: null }
+    const m = await generateMetadata(enProps)
+    expect(m.title).toBe("Vitalis LPS Coral Pellets | Acropora")
+    expect(m.description).toBe(
+      "Vitalis LPS Coral Pellets: order from the Acropora web shop.",
+    )
+    expect(m.openGraph).toMatchObject({ locale: "en_US" })
+    expect(m.alternates?.canonical).toMatch(/\/en-hu\/termek\/vitalis-lps$/)
+  })
+
+  it("a termék saját leírása adat: az angol úton sem fordul", async () => {
+    adat.termek = {
+      title: "T",
+      metadata: { seo_description: "Magyar SEO-leírás." },
+    }
+    expect((await generateMetadata(enProps)).description).toBe(
+      "Magyar SEO-leírás.",
+    )
+  })
+})

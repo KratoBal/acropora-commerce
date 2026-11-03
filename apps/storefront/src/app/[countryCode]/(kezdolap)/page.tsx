@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { localeOf } from "@lib/i18n/locale"
 import {
   indexelhetoRobots,
   kezdolapLeiras,
@@ -47,15 +48,18 @@ export async function generateMetadata(props: {
   const params = await props.params
 
   const canonical = fooldalCanonical(params.countryCode)
+  // the description follows the page's language (`hu`, `en-hu`)
+  const locale = localeOf(params.countryCode)
   return {
     title: STORE_NAME,
-    description: kezdolapLeiras(),
+    description: kezdolapLeiras(locale),
     robots: indexelhetoRobots(),
     alternates: { canonical },
     openGraph: openGraph({
       cim: STORE_NAME,
-      leiras: kezdolapLeiras(),
+      leiras: kezdolapLeiras(locale),
       url: canonical,
+      locale,
     }),
   }
 }

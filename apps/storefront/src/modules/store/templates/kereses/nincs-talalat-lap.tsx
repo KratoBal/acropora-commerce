@@ -4,6 +4,8 @@ import {
 } from "@lib/data/categories"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { fejlecMenuPontok } from "@lib/util/fejlec-menu-pontok"
 import { keresesCim } from "@lib/util/kereses-talalatok"
 import {
@@ -52,6 +54,7 @@ export default async function NincsTalalatLap({
   kereses: string
   countryCode: string
 }) {
+  const t = translator(localeOf(countryCode))
   const region = await getRegion(countryCode).catch(() => null)
   const menuAdat = region
     ? await listNonEmptyRootCategories(region.id).catch(() => null)
@@ -70,13 +73,13 @@ export default async function NincsTalalatLap({
         {/* FEJ (253:73-253:77): felulcim, cim, a mezo a kerdessel. */}
         <div className="flex flex-col gap-[18px]">
           <p className="hidden text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.2px] text-acr-heritage small:block">
-            Keresés
+            {t("search.eyebrow")}
           </p>
           <h1
             className="text-[26px] font-semibold leading-[34px] text-acr-ink small:text-[38px] small:leading-[50px]"
             data-testid="store-page-title"
           >
-            Nincs találat
+            {t("search.noResultsTitle")}
           </h1>
         </div>
         <form
@@ -91,7 +94,7 @@ export default async function NincsTalalatLap({
             ⌕
           </span>
           <label className="sr-only" htmlFor="kereses-lap-mezo">
-            Keresés
+            {t("search.searchLabel")}
           </label>
           <input
             id="kereses-lap-mezo"
@@ -117,15 +120,14 @@ export default async function NincsTalalatLap({
             id="kereses-nincs-talalat-cim"
             className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[26px] small:leading-[34px]"
           >
-            Nem találtunk ilyet
+            {t("search.noResultsHeading")}
           </h2>
           <p className="max-w-[574px] text-[12.5px] leading-[18px] text-acr-slate small:text-[14px]">
-            Próbáld rövidebb kifejezéssel, márkanévvel, cikkszámmal, magyar vagy
-            tudományos névvel.
+            {t("search.noResultsAdvice")}
           </p>
           <ul
             className="flex flex-wrap gap-[6px] small:justify-center small:gap-[10px]"
-            aria-label="Keresési tippek"
+            aria-label={t("search.tipsLabel")}
             data-testid="kereses-tippek"
           >
             {KERESES_TIPPEK.map((szo) => (
@@ -144,7 +146,7 @@ export default async function NincsTalalatLap({
             className="hidden h-[44px] w-full max-w-[280px] items-center justify-center border small:flex border-acr-heritage text-[13.5px] font-semibold leading-[18px] text-acr-ink"
             data-testid="kereses-segitseg"
           >
-            Segítség a kereséshez
+            {t("search.help")}
           </a>
         </section>
 
@@ -162,7 +164,7 @@ export default async function NincsTalalatLap({
               id="kereses-kategoriak-cim"
               className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[22px] small:leading-[29px]"
             >
-              Kategóriák
+              {t("search.categories")}
             </h2>
             <ul
               className="grid grid-cols-1 gap-3 small:grid-cols-2 medium:grid-cols-4"
@@ -175,14 +177,14 @@ export default async function NincsTalalatLap({
                     className="flex flex-col gap-[3px] py-[9px] small:h-[110px] small:gap-[5px] small:border small:border-acr-line small:bg-acr-white small:p-4 small:hover:border-acr-slate"
                   >
                     <span className="text-[9.5px] font-semibold uppercase leading-[12px] tracking-[0.8px] text-acr-heritage small:hidden">
-                      Kategória
+                      {t("search.category")}
                     </span>
                     <span className="text-[13.5px] font-semibold leading-[18px] text-acr-ink small:text-[15px] small:leading-[20px]">
                       {kartya.felirat}
                     </span>
                     {szamok[i] !== undefined ? (
                       <span className="text-[11.8px] leading-[15px] text-acr-slate small:text-[12.5px] small:leading-[16px]">
-                        {szamok[i]} termék
+                        {t("search.productCount", { count: szamok[i] })}
                       </span>
                     ) : null}
                   </a>
