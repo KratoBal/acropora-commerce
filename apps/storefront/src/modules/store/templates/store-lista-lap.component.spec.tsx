@@ -280,4 +280,19 @@ describe("a Minden termék lista a közös lista-lapon", () => {
       "40 products",
     )
   })
+
+  it("hibás katalógusnál a lista nem tör, a levél-kategória a műszaki kártyát kapja", async () => {
+    katAdat.listCategories.mockRejectedValue(new Error("hálózati hiba"))
+    adat.listProductsWithSort.mockResolvedValue({
+      response: { products: [ELO_LEVEL], count: 1 },
+      nextPage: null,
+    })
+    await lap()
+    const kartya = within(
+      screen.getByTestId("category-products-list"),
+    ).getAllByRole("listitem")[0]
+    expect(
+      kartya.querySelector("[data-testid='commerce-termek-kartya']"),
+    ).not.toBeNull()
+  })
 })

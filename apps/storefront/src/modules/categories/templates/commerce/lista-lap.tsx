@@ -40,6 +40,8 @@ export type ListaLapProps = {
   morzsa: ListaMorzsaElem[]
   cim: string
   leiras?: string | null
+  /** Keep the line breaks of the intro text (a curated selection's own text). */
+  leirasSortoressel?: boolean
   /**
    * The page's world: the live-animal title face, the pickup note under the
    * intro and the two-column live-animal grid. A list that mixes both worlds
@@ -50,8 +52,11 @@ export type ListaLapProps = {
   sav: { osszes: boolean; elemek: ListaSavElem[] }
   count: number
   page: number
-  /** The sort the select shows. */
-  rendezes: SortOptions
+  /**
+   * The sort the select shows; null leaves the select out (a list in a fixed
+   * order, such as a curated selection, has nothing to sort).
+   */
+  rendezes: SortOptions | null
   /** Any filter or sort in the address: the "clear" link shows. */
   szuroAktiv: boolean
   torlesHref: string
@@ -91,6 +96,7 @@ export default function ListaLap({
   morzsa,
   cim,
   leiras,
+  leirasSortoressel = false,
   eloAllat,
   sav,
   count,
@@ -158,7 +164,12 @@ export default function ListaLap({
           {cim}
         </h1>
         {leiras ? (
-          <p className="mt-[18px] max-w-[960px] text-[18px] leading-[30px] text-acr-slate">
+          <p
+            className={
+              "mt-[18px] max-w-[960px] text-[18px] leading-[30px] text-acr-slate" +
+              (leirasSortoressel ? " whitespace-pre-line" : "")
+            }
+          >
             {leiras}
           </p>
         ) : null}
@@ -236,7 +247,7 @@ export default function ListaLap({
                 { count },
               )}
             </span>
-            <CommerceRendezes sortBy={rendezes} />
+            {rendezes ? <CommerceRendezes sortBy={rendezes} /> : null}
           </div>
         </div>
       </div>
