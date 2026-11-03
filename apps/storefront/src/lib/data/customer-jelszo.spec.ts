@@ -32,7 +32,7 @@ afterEach(() => vi.clearAllMocks())
  * A JELSZOCSERE (257:191). MI PIROSIT: ha ures mezovel vagy eltero uj
  * jelszavakkal a szerverhez fordul; ha nem a sajat vegpontunkat hivja, vagy a
  * munkamenet nelkul; ha a rossz jelenlegi jelszo nyers angol szovegkent jon
- * vissza; ha barmelyik jelszo visszakerul a valaszba.
+ * vissza (a valasz KOD, a komponens fordit); ha barmelyik jelszo visszakerul a valaszba.
  */
 describe("a jelszó módosítása", () => {
   it("a jelenlegi és az új jelszót küldi a saját végpontra, a munkamenettel", async () => {
@@ -54,7 +54,7 @@ describe("a jelszó módosítása", () => {
     )
     expect(valasz).toEqual({
       state: "error",
-      error: "Mindhárom mező kitöltése kötelező.",
+      error: "all_fields_required",
     })
     expect(sdk.client.fetch).not.toHaveBeenCalled()
   })
@@ -66,19 +66,19 @@ describe("a jelszó módosítása", () => {
     )
     expect(valasz).toEqual({
       state: "error",
-      error: "A két új jelszó nem egyezik.",
+      error: "new_passwords_differ",
     })
     expect(sdk.client.fetch).not.toHaveBeenCalled()
   })
 
-  it("a rossz jelenlegi jelszó magyar mondatként jön vissza, jelszó nélkül", async () => {
+  it("a rossz jelenlegi jelszó kódként jön vissza, jelszó nélkül", async () => {
     sdk.client.fetch.mockRejectedValue(
       new Error("Current password is incorrect"),
     )
     const valasz = await changePassword(null, urlap(JO))
     expect(valasz).toEqual({
       state: "error",
-      error: "A jelenlegi jelszó nem helyes.",
+      error: "current_password_wrong",
     })
     expect(JSON.stringify(valasz)).not.toContain("regi-jelszo")
     expect(JSON.stringify(valasz)).not.toContain("uj-jelszo-12")
@@ -91,6 +91,6 @@ describe("a jelszó módosítása", () => {
     const valasz = await changePassword(null, urlap(JO))
     expect(valasz?.state).toBe("error")
     expect(JSON.stringify(valasz)).not.toContain("could not")
-    expect(JSON.stringify(valasz)).not.toContain("A jelenlegi jelszó")
+    expect(valasz).toEqual({ state: "error", error: "generic" })
   })
 })

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+import { authHibaFelirat } from "@lib/util/auth-hiba"
 import { useActionState } from "react"
 
 import { changePassword } from "@lib/data/customer"
@@ -17,6 +19,7 @@ import { AuthHiba, AuthMezo } from "../auth"
  * kiurult mezok mellett kulonben nem latszana, hogy megtortent.
  */
 export default function JelszoUrlap() {
+  const t = useTranslate()
   const [allapot, mentes] = useActionState(changePassword, null)
 
   return (
@@ -26,10 +29,10 @@ export default function JelszoUrlap() {
       data-testid="jelszo-urlap"
     >
       <h2 className="text-[17px] font-semibold leading-[22px] text-acr-ink small:text-[20px] small:leading-[26px]">
-        Jelszó módosítása
+        {t("account.password.heading")}
       </h2>
       <AuthMezo
-        cimke="Jelenlegi jelszó"
+        cimke={t("account.password.current")}
         name="current_password"
         type="password"
         required
@@ -37,7 +40,7 @@ export default function JelszoUrlap() {
         data-testid="current-password-input"
       />
       <AuthMezo
-        cimke="Új jelszó"
+        cimke={t("account.password.next")}
         name="new_password"
         type="password"
         required
@@ -45,7 +48,7 @@ export default function JelszoUrlap() {
         data-testid="new-password-input"
       />
       <AuthMezo
-        cimke="Új jelszó újra"
+        cimke={t("account.password.nextAgain")}
         name="new_password_again"
         type="password"
         required
@@ -53,7 +56,9 @@ export default function JelszoUrlap() {
         data-testid="new-password-again-input"
       />
       <AuthHiba
-        hiba={allapot?.state === "error" ? allapot.error : null}
+        hiba={
+          allapot?.state === "error" ? authHibaFelirat(allapot.error, t) : null
+        }
         data-testid="jelszo-hiba"
       />
       <div className="flex flex-col gap-2 small:flex-row small:items-center small:gap-4">
@@ -62,14 +67,14 @@ export default function JelszoUrlap() {
           className="flex h-[46px] w-full items-center justify-center bg-acr-heritage text-[13.5px] font-semibold text-acr-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--acr-color-heritage)] small:h-[44px] small:w-[180px]"
           data-testid="jelszo-mentes"
         >
-          Jelszó mentése
+          {t("account.password.save")}
         </button>
         <p
           role="status"
           className="text-[13px] leading-[18px] text-acr-slate"
           data-testid="jelszo-siker"
         >
-          {allapot?.state === "success" ? "A jelszó megváltozott." : ""}
+          {allapot?.state === "success" ? t("account.password.saved") : ""}
         </p>
       </div>
     </form>

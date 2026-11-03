@@ -23,6 +23,15 @@ export type AuthHibaKod =
   | "generic"
   | "aszf_required"
   | "passwords_differ"
+  | "names_required"
+  | "all_fields_required"
+  | "new_passwords_differ"
+  | "current_password_wrong"
+  | "billing_address_required"
+  | "postcode_four_digits"
+  | "company_required"
+  | "tax_id_format"
+  | "tax_id_invalid"
 
 const ISMERT: readonly [RegExp, AuthHibaKod][] = [
   [/invalid email or password/i, "invalid_credentials"],
@@ -42,6 +51,15 @@ const KULCS: Record<AuthHibaKod, Key> = {
   generic: "account.error.generic",
   aszf_required: "account.error.aszfRequired",
   passwords_differ: "account.error.passwordsDiffer",
+  names_required: "account.error.namesRequired",
+  all_fields_required: "account.error.allFieldsRequired",
+  new_passwords_differ: "account.error.newPasswordsDiffer",
+  current_password_wrong: "account.error.currentPasswordWrong",
+  billing_address_required: "account.error.billingAddressRequired",
+  postcode_four_digits: "account.error.postcodeFourDigits",
+  company_required: "account.error.companyRequired",
+  tax_id_format: "account.error.taxIdFormat",
+  tax_id_invalid: "account.error.taxIdInvalid",
 }
 
 /** A nyers hiba kodja: ismert eset, vagy az altalanos. */

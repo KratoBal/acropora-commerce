@@ -7,6 +7,8 @@
  * ugyanezt olvassa. Magyar alak: 8-1-2 szamjegy ("12345678-1-23"), mindig
  * kotojelesen tarolva. Maganszemelynel `null`.
  */
+import type { AuthHibaKod } from "./auth-hiba"
+
 export const ADOSZAM_METADATA_KULCS = "tax_id"
 
 export type SzamlazasiTipus = "maganszemely" | "ceg"
@@ -51,22 +53,22 @@ export type SzamlazasiUrlap = {
   utca: string
 }
 
-/** Az urlap hibaja magyarul, vagy `null`, ha menthető. */
-export function szamlazasiHiba(urlap: SzamlazasiUrlap): string | null {
+/** Az urlap hibajanak KODJA (a komponens a lap nyelven fordítja), vagy `null`, ha menthető. */
+export function szamlazasiHiba(urlap: SzamlazasiUrlap): AuthHibaKod | null {
   if (!urlap.iranyitoszam || !urlap.varos || !urlap.utca) {
-    return "Az irányítószám, a város és az utca kötelező."
+    return "billing_address_required"
   }
   if (!/^\d{4}$/.test(urlap.iranyitoszam)) {
-    return "Az irányítószám négy számjegy."
+    return "postcode_four_digits"
   }
   if (urlap.tipus === "ceg") {
-    if (!urlap.ceg) return "Céges számlához a cégnév kötelező."
+    if (!urlap.ceg) return "company_required"
     const szamok = urlap.adoszam.replace(/[\s-]/g, "")
     if (!/^\d{8}[1-5]\d{2}$/.test(szamok)) {
-      return "Az adószámot 12345678-1-23 alakban add meg."
+      return "tax_id_format"
     }
     if (!adoszamEgysegesitve(urlap.adoszam)) {
-      return "Az adószám nem érvényes: az első nyolc számjegy ellenőrző számjegye nem stimmel."
+      return "tax_id_invalid"
     }
   }
   return null

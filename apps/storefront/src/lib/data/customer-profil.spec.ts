@@ -37,7 +37,7 @@ describe("a profil mentése", () => {
     )
     expect(valasz).toEqual({
       state: "error",
-      error: "A vezetéknév és a keresztnév kötelező.",
+      error: "names_required",
       ertekek: { first_name: "", last_name: "Minta", phone: "" },
     })
     expect(sdk.store.customer.update).not.toHaveBeenCalled()
@@ -75,13 +75,14 @@ describe("a profil mentése", () => {
     expect(adat.phone).toBeNull()
   })
 
-  it("a szerver hibája magyar mondatként jön vissza", async () => {
+  it("a szerver hibája kódként jön vissza, nem nyers szövegként", async () => {
     sdk.store.customer.update.mockRejectedValue(new Error("Something broke"))
     const valasz = await saveProfile(
       null,
       urlap({ first_name: "Anna", last_name: "Minta" }),
     )
     expect(valasz?.state).toBe("error")
+    expect(valasz).toMatchObject({ error: "generic" })
     expect(JSON.stringify(valasz)).not.toContain("Something broke")
     // The typed values come back, so the form refills after the reset.
     expect(valasz).toMatchObject({

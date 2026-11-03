@@ -67,7 +67,7 @@ describe("a számlázási űrlap szabályai", () => {
         ...CIM,
         varos: "",
       }),
-    ).toContain("kötelező")
+    ).toBe("billing_address_required")
     expect(
       szamlazasiHiba({
         tipus: "maganszemely",
@@ -76,10 +76,10 @@ describe("a számlázási űrlap szabályai", () => {
         ...CIM,
         iranyitoszam: "111",
       }),
-    ).toBe("Az irányítószám négy számjegy.")
+    ).toBe("postcode_four_digits")
   })
 
-  it("cégnél a cégnév és az érvényes adószám kötelező, a két hiba külön mondat", () => {
+  it("cégnél a cégnév és az érvényes adószám kötelező, a két hiba külön kód", () => {
     expect(
       szamlazasiHiba({
         tipus: "ceg",
@@ -87,7 +87,7 @@ describe("a számlázási űrlap szabályai", () => {
         adoszam: `${JO_A}-2-13`,
         ...CIM,
       }),
-    ).toContain("cégnév")
+    ).toBe("company_required")
     expect(
       szamlazasiHiba({
         tipus: "ceg",
@@ -95,7 +95,7 @@ describe("a számlázási űrlap szabályai", () => {
         adoszam: "123",
         ...CIM,
       }),
-    ).toBe("Az adószámot 12345678-1-23 alakban add meg.")
+    ).toBe("tax_id_format")
     expect(
       szamlazasiHiba({
         tipus: "ceg",
@@ -103,7 +103,7 @@ describe("a számlázási űrlap szabályai", () => {
         adoszam: "12345677-2-13",
         ...CIM,
       }),
-    ).toContain("ellenőrző számjegye")
+    ).toBe("tax_id_invalid")
     expect(
       szamlazasiHiba({
         tipus: "ceg",

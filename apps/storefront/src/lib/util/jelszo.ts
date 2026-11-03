@@ -1,3 +1,5 @@
+import type { AuthHibaKod } from "./auth-hiba"
+
 /**
  * A JELSZO MINIMALIS HOSSZA (audit P1/8, B9): tiz karakter az uj jelszonal, a
  * regisztracional es a cserenel egyarant. Korabban nem volt hossz-szabaly
@@ -26,16 +28,14 @@ export type JelszoCsereUrlap = {
   ujUjra: FormDataEntryValue | null
 }
 
-export function jelszoCsereHiba(urlap: JelszoCsereUrlap): string | null {
+export function jelszoCsereHiba(urlap: JelszoCsereUrlap): AuthHibaKod | null {
   if (!urlap.jelenlegi || !urlap.uj || !urlap.ujUjra) {
-    return "Mindhárom mező kitöltése kötelező."
+    return "all_fields_required"
   }
-  if (urlap.uj !== urlap.ujUjra) return "A két új jelszó nem egyezik."
-  if (!jelszoHosszuEleg(urlap.uj)) return JELSZO_ROVID_UZENET
+  if (urlap.uj !== urlap.ujUjra) return "new_passwords_differ"
+  if (!jelszoHosszuEleg(urlap.uj)) return "password_short"
   return null
 }
 
 /** A backend mondata a rossz jelenlegi jelszora (`/store/customers/me/password`). */
 export const ROSSZ_JELENLEGI_JELSZO = /current password is incorrect/i
-
-export const ROSSZ_JELENLEGI_JELSZO_SZOVEG = "A jelenlegi jelszó nem helyes."

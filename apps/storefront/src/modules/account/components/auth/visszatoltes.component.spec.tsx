@@ -97,7 +97,7 @@ describe("hibás beküldés után a mezők megmaradnak", () => {
   it("a profil a beírt értékkel marad, nem ugrik vissza a mentettre", async () => {
     muveletek.saveProfile.mockResolvedValue({
       state: "error",
-      error: "A vezetéknév és a keresztnév kötelező.",
+      error: "names_required",
       ertekek: { first_name: "", last_name: "Újnév", phone: "+36 30 999 8888" },
     })
     render(

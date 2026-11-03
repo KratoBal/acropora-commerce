@@ -7,7 +7,6 @@ import {
   regisztracioHiba,
 } from "@lib/util/aszf"
 import {
-  ALTALANOS_AUTH_HIBA,
   authHibaKod,
   authHibaSzoveg,
   type AuthHibaKod,
@@ -17,11 +16,7 @@ import {
   cimNevUrlapbol,
   cimUrlapErtekek,
 } from "@lib/util/cim"
-import {
-  jelszoCsereHiba,
-  ROSSZ_JELENLEGI_JELSZO,
-  ROSSZ_JELENLEGI_JELSZO_SZOVEG,
-} from "@lib/util/jelszo"
+import { jelszoCsereHiba, ROSSZ_JELENLEGI_JELSZO } from "@lib/util/jelszo"
 import {
   ADOSZAM_METADATA_KULCS,
   adoszamEgysegesitve,
@@ -121,7 +116,7 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
 export type ProfilMentesAllapot =
   | { state: "success" }
   // `ertekek`: the submitted values, so the form refills after the reset.
-  | { state: "error"; error: string; ertekek: Record<string, string> }
+  | { state: "error"; error: AuthHibaKod; ertekek: Record<string, string> }
   | null
 
 /**
@@ -139,11 +134,7 @@ export async function saveProfile(
   const ertekek = { first_name, last_name, phone }
 
   if (!first_name || !last_name) {
-    return {
-      state: "error",
-      error: "A vezetéknév és a keresztnév kötelező.",
-      ertekek,
-    }
+    return { state: "error", error: "names_required", ertekek }
   }
 
   try {
@@ -151,7 +142,7 @@ export async function saveProfile(
     // the old number.
     await updateCustomer({ first_name, last_name, phone: phone || null })
   } catch (error) {
-    return { state: "error", error: authHibaSzoveg(error), ertekek }
+    return { state: "error", error: authHibaKod(error), ertekek }
   }
 
   return { state: "success" }
@@ -160,7 +151,7 @@ export async function saveProfile(
 export type JelszoCsereAllapot =
   | { state: "success" }
   // No `ertekek`: every field is a password, and none is sent back.
-  | { state: "error"; error: string }
+  | { state: "error"; error: AuthHibaKod }
   | null
 
 /**
@@ -199,8 +190,8 @@ export async function changePassword(
     return {
       state: "error",
       error: ROSSZ_JELENLEGI_JELSZO.test(uzenet)
-        ? ROSSZ_JELENLEGI_JELSZO_SZOVEG
-        : authHibaSzoveg(error),
+        ? "current_password_wrong"
+        : authHibaKod(error),
     }
   }
 
@@ -211,7 +202,7 @@ export type SzamlazasMentesAllapot =
   | { state: "success" }
   | {
       state: "error"
-      error: string
+      error: AuthHibaKod
       /**
        * A BEKULDOTT ERTEKEK. A React 19 egy form action utan alaphelyzetbe
        * allitja az urlapot (a mezok a `defaultValue`-ra allnak vissza): e
@@ -257,7 +248,7 @@ export async function saveBilling(
   if (hiba) return { state: "error", error: hiba, ertekek }
 
   const vevo = await retrieveCustomer()
-  if (!vevo) return { state: "error", error: ALTALANOS_AUTH_HIBA, ertekek }
+  if (!vevo) return { state: "error", error: "generic", ertekek }
 
   const meglevo = (vevo.addresses ?? []).find((c) => c.is_default_billing)
   const ceges = tipus === "ceg"
@@ -299,7 +290,7 @@ export async function saveBilling(
       )
     }
   } catch (error) {
-    return { state: "error", error: authHibaSzoveg(error), ertekek }
+    return { state: "error", error: authHibaKod(error), ertekek }
   }
 
   const customerCacheTag = await getCacheTag("customers")

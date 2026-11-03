@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+import { authHibaFelirat } from "@lib/util/auth-hiba"
 import { useActionState } from "react"
 
 import { saveProfile } from "@lib/data/customer"
@@ -21,6 +23,7 @@ export default function ProfilUrlap({
 }: {
   customer: HttpTypes.StoreCustomer
 }) {
+  const t = useTranslate()
   const [allapot, mentes] = useActionState(saveProfile, null)
   // After a failed save the fields keep what was typed, not the saved values:
   // React 19 resets the form after the action.
@@ -34,7 +37,7 @@ export default function ProfilUrlap({
     >
       <div className="grid gap-3 small:grid-cols-2">
         <AuthMezo
-          cimke="Vezetéknév"
+          cimke={t("account.profile.lastName")}
           name="last_name"
           required
           autoComplete="family-name"
@@ -42,7 +45,7 @@ export default function ProfilUrlap({
           data-testid="last-name-input"
         />
         <AuthMezo
-          cimke="Keresztnév"
+          cimke={t("account.profile.firstName")}
           name="first_name"
           required
           autoComplete="given-name"
@@ -53,7 +56,7 @@ export default function ProfilUrlap({
       <div className="grid gap-3 small:grid-cols-2">
         <div className="flex flex-col gap-[5px]">
           <AuthMezo
-            cimke="E-mail"
+            cimke={t("account.profile.email")}
             name="email"
             type="email"
             readOnly
@@ -65,11 +68,11 @@ export default function ProfilUrlap({
             id="profil-email-megjegyzes"
             className="text-[12px] leading-[16px] text-acr-slate"
           >
-            Az e-mail-cím itt nem módosítható.
+            {t("account.profile.emailNote")}
           </p>
         </div>
         <AuthMezo
-          cimke="Telefonszám"
+          cimke={t("account.profile.phone")}
           name="phone"
           type="tel"
           autoComplete="tel"
@@ -78,7 +81,9 @@ export default function ProfilUrlap({
         />
       </div>
       <AuthHiba
-        hiba={allapot?.state === "error" ? allapot.error : null}
+        hiba={
+          allapot?.state === "error" ? authHibaFelirat(allapot.error, t) : null
+        }
         data-testid="profile-error"
       />
       <div className="flex flex-col gap-2 small:flex-row small:items-center small:gap-4">
@@ -87,14 +92,14 @@ export default function ProfilUrlap({
           className="flex h-[46px] w-full items-center justify-center bg-acr-heritage text-[13.5px] font-semibold text-acr-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--acr-color-heritage)] small:h-[44px] small:w-[180px]"
           data-testid="profile-save-button"
         >
-          Mentés
+          {t("account.profile.save")}
         </button>
         <p
           role="status"
           className="text-[13px] leading-[18px] text-acr-slate"
           data-testid="profile-success"
         >
-          {allapot?.state === "success" ? "Mentve." : ""}
+          {allapot?.state === "success" ? t("account.profile.saved") : ""}
         </p>
       </div>
     </form>

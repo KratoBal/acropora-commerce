@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  JELSZO_MIN_HOSSZ,
-  JELSZO_ROVID_UZENET,
-  jelszoCsereHiba,
-  jelszoHosszuEleg,
-} from "./jelszo"
+import { JELSZO_MIN_HOSSZ, jelszoCsereHiba, jelszoHosszuEleg } from "./jelszo"
 
 /**
  * A JELSZO MINIMALIS HOSSZA (audit P1/8). MI PIROSIT: ha egy rovid uj jelszo
@@ -39,16 +34,16 @@ describe("a jelszócsere ellenőrzése", () => {
   it("rövid új jelszóval megáll, a rövid JELENLEGI jelszóval nem", () => {
     expect(jelszoCsereHiba(jo)).toBeNull()
     expect(jelszoCsereHiba({ ...jo, uj: "rovid", ujUjra: "rovid" })).toBe(
-      JELSZO_ROVID_UZENET,
+      "password_short",
     )
   })
 
   it("a meglévő hibák sorrendje marad: üres mező, eltérő jelszó, aztán a hossz", () => {
     expect(jelszoCsereHiba({ ...jo, jelenlegi: "" })).toBe(
-      "Mindhárom mező kitöltése kötelező.",
+      "all_fields_required",
     )
     expect(jelszoCsereHiba({ ...jo, ujUjra: "mas" })).toBe(
-      "A két új jelszó nem egyezik.",
+      "new_passwords_differ",
     )
   })
 })
