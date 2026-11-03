@@ -1,15 +1,13 @@
 import { Metadata } from "next"
 
 import { markaLista } from "@lib/data/brands"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { indexelhetoRobots, lapCim, openGraph } from "@lib/seo/oldal-metaadat"
 import { markaListaCanonical } from "@lib/util/lap-canonical"
 import { MarkaListaLap } from "@modules/marka/marka-lista-lap"
 
 type Props = { params: Promise<{ countryCode: string }> }
-
-const CIM = "Forgalmazott márkák"
-const LEIRAS =
-  "Az Acropora által forgalmazott márkák: tengeri akvarisztikai termékek gyártói egy helyen."
 
 /**
  * A FORGALMAZOTT MARKAK LISTAJA (`/hu/marka`, Balazs, 2026-10-27,
@@ -20,12 +18,18 @@ const LEIRAS =
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
   const canonical = markaListaCanonical(countryCode)
+  // the title and the description follow the page's language (`hu`, `en-hu`):
+  // the page body is translated (`brandIndex.*`)
+  const locale = localeOf(countryCode)
+  const t = translator(locale)
+  const cim = lapCim(t("brandIndex.title"))
+  const leiras = t("brandIndex.metaDescription")
   return {
-    title: lapCim(CIM),
-    description: LEIRAS,
+    title: cim,
+    description: leiras,
     robots: indexelhetoRobots(),
     alternates: { canonical },
-    openGraph: openGraph({ cim: lapCim(CIM), leiras: LEIRAS, url: canonical }),
+    openGraph: openGraph({ cim, leiras, url: canonical, locale }),
   }
 }
 

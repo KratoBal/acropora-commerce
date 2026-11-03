@@ -45,6 +45,8 @@ export const en: Dictionary = {
     count: "{count} brands",
     lettersLabel: "Jump to a letter",
     empty: "There are no brands to show at the moment.",
+    metaDescription:
+      "The brands Acropora sells: the makers of marine aquarium products in one place.",
   },
   sort: {
     title: "Sort",
