@@ -12,7 +12,7 @@ import { lapozottCim } from "@lib/util/belso-lap-metaadat"
 import { listProducts } from "@lib/data/products"
 import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
 import { notFound } from "next/navigation"
-import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
+import { LAP_MERET } from "@modules/categories/templates/commerce/lista-lap"
 
 /**
  * A STORE-LAP TORZSE ES METAADATA, HAROM UTNAK (FE-7 3. resz). Ugyanaz a
@@ -64,14 +64,14 @@ export async function storeLapTorzs(
   params: { countryCode: string },
   searchParams: StoreKeres,
 ) {
-  // a nem letezo lapszam 404 (`lapszam.ts`); a lista 12-es lapokat mutat
+  // a nem letezo lapszam 404 (`lapszam.ts`); a lista 18-as lapokat mutat
   const lap = csakLapszam(searchParams)
   if (lap !== null) {
     const darab = await listProducts({
       countryCode: params.countryCode,
       queryParams: { limit: 1 },
     }).then(({ response }) => response.count)
-    if (!lapszamLetezik(lap, darab, 12)) notFound()
+    if (!lapszamLetezik(lap, darab, LAP_MERET)) notFound()
   }
 
   const { sortBy, page } = searchParams
@@ -91,10 +91,6 @@ export async function storeLapTorzs(
       kereses={kereses}
       gyoker={gyoker}
       markak={markaAzonositok(searchParams[MARKA_PARAM])}
-      lapozo={{
-        alap: `/${params.countryCode}/store`,
-        keres: lapozoKeres(searchParams),
-      }}
     />
   )
 }

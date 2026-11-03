@@ -3,6 +3,9 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { en } from "@lib/i18n/dictionary/en"
+import { hu } from "@lib/i18n/dictionary/hu"
+
 import { RENDEZES_CIM, sortOptions } from "./index"
 
 /**
@@ -73,42 +76,43 @@ describe("a rendezés-vezérlő feliratai", () => {
 /**
  * A STORE LAP CIME -- ES A HATARA, KIMONDVA.
  *
- * A `StoreTemplate` kiszolgalo-komponens, jsdomban nem renderelheto, ezert ez
- * a FORRAST olvassa, ugyanabban az alakban, mint a muszaki lap sablonjanal.
- * Amit bizonyit: a cim magyar es nincs benne az angol alak. Amit nem: hogy a
- * bongeszo ezt rajzolja ki.
+ * A lista 2026-11-03 ota a kozos lista-lapon all (`store-lista-lap.tsx`), a
+ * cim pedig a szotarbol jon (`category.allProducts`, magyar es angol). A
+ * `StoreListaLap` kiszolgalo-komponens: a renderelt cimet a komponens-teszt
+ * (`store-lista-lap.component.spec.tsx`) meri. Ez a FORRAST olvassa, es azt
+ * bizonyitja, hogy a lap a szotar kulcsat hasznalja, a szotar pedig mindket
+ * nyelven megadja a cimet. Amit nem: hogy a bongeszo ezt rajzolja ki.
  */
 describe("a store lap címe", () => {
-  const forras = readFileSync(
-    join(__dirname, "..", "..", "..", "templates", "index.tsx"),
-    "utf-8",
-  )
+  const sablonok = join(__dirname, "..", "..", "..", "templates")
+  const forras = readFileSync(join(sablonok, "store-lista-lap.tsx"), "utf-8")
+  const kod = forras
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
 
-  /** ISMERT POZITIV KONTROLL: a fajlt tenyleg beolvastuk, es ez a sablon. */
-  it("a sablon forrása olvasható, és tartalmazza a cím elemét", () => {
-    expect(forras).toContain('data-testid="store-page-title"')
+  /** ISMERT POZITIV KONTROLL: a fajlt tenyleg beolvastuk, es ez a lista-lap. */
+  it("a lista-lap forrása olvasható, és a közös keretet rajzolja", () => {
+    expect(kod).toContain("<ListaLap")
   })
 
   /**
-   * A CIM MOSTANTOL KET AGU (2026-09-08), es ezert nem a `>szoveg<` alakra mer.
-   *
-   * A `/store` lap kereshetove valt, tehat a cim vagy a kereses szoveget
-   * mutatja, vagy a teljes listaet. A regi allitas a `>Minden termék<` alakra
-   * kereseett, ami egy JSX KIFEJEZES melle nem illik -- es jogosan pirosodott
-   * ki, amikor a cim kifejezes lett.
-   *
    * A MEGJEGYZESEKET KISZEDJUK: enelkul egy magyarazo bekezdes, ami idezi a
    * cimet, kielegitene a sajat allitasat. Ez ma tobbszor is elofordult.
    */
-  it("a lap címe magyarul áll, mindkét ágon", () => {
-    const kod = forras
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "")
-
-    expect(kod).toContain("Minden termék")
-    // Kereseskor a talalati lap all, sajat cimmel (P2, 4a).
-    expect(kod).toContain("<KeresesLap")
+  it("a lap címe a szótár kulcsából áll, nem beírt szövegből", () => {
+    expect(kod).toContain('t("category.allProducts")')
+    expect(kod).not.toContain("Minden termék")
     expect(kod).not.toContain("All products")
-    expect(kod).not.toContain("Search:")
+  })
+
+  it("a szótár magyarul és angolul is megadja a címet", () => {
+    expect(hu.category.allProducts).toBe("Minden termék")
+    expect(en.category.allProducts).toBe("All products")
+  })
+
+  it("kereséskor a találati lap áll, egyébként a lista-lap", () => {
+    const index = readFileSync(join(sablonok, "index.tsx"), "utf-8")
+    expect(index).toContain("<KeresesLap")
+    expect(index).toContain("<StoreListaLap")
   })
 })

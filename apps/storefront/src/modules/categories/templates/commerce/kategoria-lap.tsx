@@ -4,7 +4,6 @@ import { listCategories } from "@lib/data/categories"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
-import { szuroLinkRel } from "@lib/seo/szuro-link"
 import {
   MarkaSor,
   markaSorok,
@@ -13,14 +12,10 @@ import {
 } from "@lib/util/marka-szuro"
 import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 import type { CategoryPageKind } from "../category-page-data"
-import EloAllatKartya from "./elo-allat-kartya"
-import MarkaLista from "./marka-lista"
-import CommerceRendezes from "./rendezes"
-import CommerceTermekKartya from "./termek-kartya"
+import ListaLap, { LAP_MERET } from "./lista-lap"
 
 /**
  * A COMMERCE KATEGORIALAP (P2, 2026-09-29), a handoff (262:3) CANONICAL
@@ -37,7 +32,7 @@ import CommerceTermekKartya from "./termek-kartya"
  * keretbol adat vagy funkcio hijan kimaradt, a `docs/P2-CATEGORY.md` sorolja
  * fel, az okaval.
  */
-export const LAP_MERET = 18
+export { LAP_MERET }
 
 type Props = {
   category: HttpTypes.StoreProductCategory
@@ -57,7 +52,7 @@ const MARKA_LAP = 100
 const MARKA_MAX_LAP = 30
 
 /**
- * A KATEGORIA MARKAI, DARABSZAMMAL (117:108).
+ * A KATEGORIA MARKAI, DARABSZAMMAL (117:108). Kategoria nelkul: a bolt mind.
  *
  * A Medusa nem ad facet-szamot, tehat a kategoria MINDEN termekenek a
  * gyujtemenyet le kell kerni, szuk mezolistaval. Merve 2026-09-29, a
@@ -66,15 +61,15 @@ const MARKA_MAX_LAP = 30
  * maradnak. Egy sikertelen lekeres nem torheti el a lapot: akkor nincs
  * Márka szakasz.
  */
-async function kategoriaMarkai(
-  categoryId: string,
+export async function kategoriaMarkai(
+  categoryId: string | undefined,
   countryCode: string,
 ): Promise<MarkaSor[]> {
   const lap = (pageParam: number) =>
     listProducts({
       pageParam,
       queryParams: {
-        category_id: [categoryId],
+        ...(categoryId ? { category_id: [categoryId] } : {}),
         limit: MARKA_LAP,
         fields: "id,collection.id,collection.title",
       },
@@ -232,7 +227,6 @@ export default async function CommerceKategoriaLap({
     })),
     kategoriaMarkai(category.id, countryCode),
   ])
-  const markaNev = new Map(markaLista.map((sor) => [sor.id, sor.nev]))
   const markaLink = (id: string) =>
     szuroCim({ sortBy, optionValueIds, markak: markaValtas(markak, id) })
 
@@ -247,316 +241,56 @@ export default async function CommerceKategoriaLap({
       ? sav.elemek.map(({ kategoria, szam }) => ({ gyerek: kategoria, szam }))
       : []
 
-  const eddig = Math.min(page * LAP_MERET, count)
-  const elso = count === 0 ? 0 : (page - 1) * LAP_MERET + 1
   const tovabbi = count > page * LAP_MERET
-  const rendezes = sortBy ?? "created_at"
-  const eloAllat = kind === "livestock"
 
   return (
-    <div
-      className="bg-acr-shell font-acr-sans"
-      data-testid="commerce-kategoria-lap"
-    >
-      {/* MORZSAMENU (117:42): nagybetus, 14 px, a szovegszinben. */}
-      <nav
-        aria-label={t("category.breadcrumbLabel")}
-        className="mx-auto flex min-h-[58px] max-w-[1440px] items-center px-4 small:px-[80px]"
-      >
-        <ol className="flex flex-wrap items-center gap-x-2 text-[14px] uppercase leading-[22px] text-acr-slate">
-          {felmenok.map((felmeno) => (
-            <li key={felmeno.id} className="flex items-center gap-2">
-              <LocalizedClientLink
-                href={`/categories/${felmeno.handle}`}
-                className="hover:text-acr-ink"
-              >
-                {nev(felmeno)}
-              </LocalizedClientLink>
-              <span aria-hidden="true">/</span>
-            </li>
-          ))}
-          <li aria-current="page">{nev(category)}</li>
-        </ol>
-      </nav>
-
-      {/* BEVEZETO (117:44). A felulcim, a leiras es a "Rendszerem beállítása"
-          seged adat es funkcio hijan nem jelenik meg; a leiras, ha egyszer
-          lesz, igen. */}
-      <header className="mx-auto max-w-[1440px] px-4 pb-10 pt-8 small:px-[56px] small:pb-[44px] small:pt-[52px]">
-        <h1
-          className={
-            "text-[40px] leading-[44px] text-acr-ink small:text-[58px] small:leading-[62px] " +
-            (eloAllat
-              ? "font-kiemelt font-normal tracking-[-0.01em]"
-              : "font-light tracking-[-1px]")
-          }
-          data-testid="category-page-title"
-        >
-          {nev(category)}
-        </h1>
-        {category.description ? (
-          <p className="mt-[18px] max-w-[960px] text-[18px] leading-[30px] text-acr-slate">
-            {category.description}
-          </p>
-        ) : null}
-        {eloAllat ? (
-          /* AZ ATVETEL SOR: elo allatot csak szemelyesen adunk at. A regi
-              sablon jobb oldali dobozabol lett, a bevezeto alatt all. */
-          <aside
-            className="mt-6 max-w-[560px] border border-acr-line bg-acr-white px-5 py-4"
-            data-testid="category-helper-livestock"
-          >
-            <p className="text-[10px] font-medium uppercase leading-[12px] tracking-[1.8px] text-acr-slate">
-              {t("category.pickupEyebrow")}
-            </p>
-            <h2 className="mt-2 text-[18px] font-bold leading-[22px] tracking-[-0.2px] text-acr-ink">
-              {t("category.pickupTitle")}
-            </h2>
-            <p className="mt-1 text-[14px] leading-[22px] text-acr-slate">
-              {t("category.pickupText")}
-            </p>
-          </aside>
-        ) : null}
-      </header>
-
-      {/* GYORS-KATEGORIAK ES RENDEZES (117:55), a `mist` savon. */}
-      <div className="bg-acr-mist">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between small:px-[56px]">
-          <ul
-            className="flex min-w-0 gap-2 overflow-x-auto"
-            aria-label={t("category.subcategories")}
-            data-testid="gyors-kategoriak"
-          >
-            {sav.mod === "gyerekek" ? (
-              <li className="shrink-0">
-                <span
-                  className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                  aria-current="page"
-                >
-                  {t("category.all")}
-                </span>
-              </li>
-            ) : null}
-            {sav.elemek.map(({ kategoria, aktiv }) => (
-              <li key={kategoria.id} className="shrink-0">
-                {aktiv ? (
-                  <span
-                    className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                    aria-current="page"
-                  >
-                    {nev(kategoria)}
-                  </span>
-                ) : (
-                  <LocalizedClientLink
-                    href={`/categories/${kategoria.handle}`}
-                    className="flex h-[44px] items-center border border-acr-line bg-acr-white px-6 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
-                  >
-                    {nev(kategoria)}
-                  </LocalizedClientLink>
-                )}
-              </li>
-            ))}
-          </ul>
-          <div className="flex shrink-0 items-center gap-[10px]">
-            <span
-              className="text-[14px] leading-[22px] text-acr-slate"
-              data-testid="kategoria-termekszam"
-            >
-              {t(
-                count === 1
-                  ? "category.productCountOne"
-                  : "category.productCount",
-                { count },
-              )}
-            </span>
-            <CommerceRendezes sortBy={rendezes} />
-          </div>
-        </div>
-      </div>
-
-      {/* SZUROK ES TALALATOK (117:74). */}
-      <div className="mx-auto grid max-w-[1440px] gap-7 px-4 pb-16 pt-8 small:grid-cols-[250px_minmax(0,1fr)] small:px-[56px]">
-        <aside
-          className="flex flex-col gap-[18px] self-start border border-acr-line bg-acr-white p-[18px]"
-          aria-label={t("category.filter")}
-          data-testid="kategoria-szurok"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
-              {t("category.filter")}
-            </h2>
-            {sortBy ||
-            (optionValueIds?.length ?? 0) > 0 ||
-            markak.length > 0 ? (
-              <LocalizedClientLink
-                href={`/categories/${category.handle}`}
-                className="text-[14px] text-acr-ocean"
-              >
-                {t("category.clearFilter")}
-              </LocalizedClientLink>
-            ) : null}
-          </div>
-          {/* A szuro kereso (117:79) a bolt keresojere kuld: a kategorian
-              beluli kereses a kereses PR-javal jon. */}
-          <form
-            action={`/${countryCode}/store`}
-            method="get"
-            className="border border-acr-line bg-acr-mist p-3"
-          >
-            <label className="sr-only" htmlFor="kategoria-kereso">
-              {t("category.searchLabel")}
-            </label>
-            <input
-              id="kategoria-kereso"
-              type="search"
-              name="q"
-              placeholder={t("category.searchPlaceholder")}
-              className="w-full bg-transparent text-[14px] leading-[22px] text-acr-ink outline-none placeholder:text-acr-slate"
-            />
-          </form>
-          {lathatoGyerekek.length > 0 ? (
-            /*
-              MOBILON (a `small` alatt) A KATEGORIA SZAKASZ REJTVE: ugyanez a
-              navigacio a gyors-kategoria savban vizszintesen gorgetheto, es a
-              21 soros lista a termekek ele tolna (mervel 390-en). Figma mobil
-              kerete ehhez a laphoz nincs; ez a mi reszponziv szabalyunk.
-            */
-            <section className="hidden flex-col gap-2 border-t border-acr-line pt-[13px] small:flex">
-              <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                {t("category.categoryHeading")}
-              </h3>
-              <ul
-                className="flex flex-col gap-2"
-                data-testid="szuro-kategoriak"
-              >
-                {lathatoGyerekek.map(({ gyerek, szam }) => (
-                  <li key={gyerek.id}>
-                    <LocalizedClientLink
-                      href={`/categories/${gyerek.handle}`}
-                      className="flex items-center justify-between gap-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span
-                          className="h-[15px] w-[15px] shrink-0 border border-acr-slate bg-acr-mist"
-                          aria-hidden="true"
-                        />
-                        <span className="min-w-0">{nev(gyerek)}</span>
-                      </span>
-                      {szam !== null ? (
-                        <span className="shrink-0">{szam}</span>
-                      ) : null}
-                    </LocalizedClientLink>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-          {markaLista.length > 0 ? (
-            <section
-              className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
-              data-testid="szuro-markak"
-            >
-              <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                {t("category.brandHeading")}
-              </h3>
-              <MarkaLista
-                sorok={markaLista}
-                aktiv={markak}
-                link={markaLink}
-                t={t}
-              />
-            </section>
-          ) : null}
-        </aside>
-
-        <section aria-label={t("category.products")} id="category-products">
-          {/* AKTIV SZUROK (117:197): a kivalasztott markak, egy-egy
-              kattintassal levehetok. */}
-          {markak.length > 0 ? (
-            <div
-              className="mb-[26px] flex flex-wrap items-center gap-2"
-              data-testid="aktiv-szurok"
-            >
-              <span className="text-[14px] leading-[22px] text-acr-slate">
-                {t("category.activeFilters")}
-              </span>
-              {markak.map((id) => (
-                <a
-                  key={id}
-                  href={markaLink(id)}
-                  rel={szuroLinkRel(markaLink(id))}
-                  className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                  aria-label={t("category.removeBrandFilter", {
-                    name: markaNev.get(id) ?? t("category.brandFallback"),
-                  })}
-                >
-                  {markaNev.get(id) ?? t("category.unknownBrand")} ×
-                </a>
-              ))}
-            </div>
-          ) : null}
-          {products.length === 0 ? (
-            <p
-              className="text-[14px] text-acr-slate"
-              data-testid="category-products-empty"
-            >
-              {t("category.empty")}
-            </p>
-          ) : (
-            <ul
-              className={
-                eloAllat
-                  ? "grid grid-cols-2 gap-x-3 gap-y-5 small:gap-x-5 small:gap-y-[26px] medium:grid-cols-3"
-                  : "grid gap-x-5 gap-y-[26px] xsmall:grid-cols-2 medium:grid-cols-3"
-              }
-              data-testid="category-products-list"
-            >
-              {products.map((product, i) => (
-                <li key={product.id}>
-                  {eloAllat ? (
-                    <EloAllatKartya product={product} elso={i === 0} t={t} />
-                  ) : (
-                    <CommerceTermekKartya
-                      product={product}
-                      elso={i === 0}
-                      t={t}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* TOVABBI TERMEKEK (117:359). A gomb a kovetkezo lapra visz; a
-              szam azt mondja, hanyadik termekeknel tartunk, nem azt, hogy
-              mind itt all. */}
-          {count > 0 ? (
-            <div className="mt-[26px] flex flex-col items-center gap-[10px]">
-              <p
-                className="text-[14px] leading-[22px] text-acr-slate"
-                data-testid="kategoria-hol-tartunk"
-              >
-                {t(count === 1 ? "category.positionOne" : "category.position", {
-                  from: page === 1 ? eddig : `${elso}–${eddig}`,
-                  count,
-                })}
-              </p>
-              {tovabbi ? (
-                <a
-                  href={kovetkezoLap(page, sortBy, optionValueIds, markak)}
-                  rel={szuroLinkRel(
-                    kovetkezoLap(page, sortBy, optionValueIds, markak),
-                  )}
-                  className="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink"
-                  data-testid="category-more-products"
-                >
-                  {t("category.loadMore")}
-                </a>
-              ) : null}
-            </div>
-          ) : null}
-        </section>
-      </div>
-    </div>
+    <ListaLap
+      t={t}
+      morzsa={[
+        ...felmenok.map((felmeno) => ({
+          id: felmeno.id,
+          nev: nev(felmeno),
+          href: `/categories/${felmeno.handle}`,
+        })),
+        { id: category.id, nev: nev(category) },
+      ]}
+      cim={nev(category)}
+      leiras={category.description}
+      eloAllat={kind === "livestock"}
+      sav={{
+        osszes: sav.mod === "gyerekek",
+        elemek: sav.elemek.map(({ kategoria, aktiv }) => ({
+          id: kategoria.id,
+          nev: nev(kategoria),
+          href: `/categories/${kategoria.handle}`,
+          aktiv,
+        })),
+      }}
+      count={count}
+      page={page}
+      rendezes={sortBy ?? "created_at"}
+      szuroAktiv={
+        Boolean(sortBy) ||
+        (optionValueIds?.length ?? 0) > 0 ||
+        markak.length > 0
+      }
+      torlesHref={`/categories/${category.handle}`}
+      keresoAction={`/${countryCode}/store`}
+      kategoriak={lathatoGyerekek.map(({ gyerek, szam }) => ({
+        id: gyerek.id,
+        nev: nev(gyerek),
+        href: `/categories/${gyerek.handle}`,
+        szam,
+      }))}
+      markaLista={markaLista}
+      markak={markak}
+      markaLink={markaLink}
+      products={products}
+      eloAllatKartya={() => kind === "livestock"}
+      uresSzoveg={t("category.empty")}
+      kovetkezoHref={
+        tovabbi ? kovetkezoLap(page, sortBy, optionValueIds, markak) : null
+      }
+    />
   )
 }
