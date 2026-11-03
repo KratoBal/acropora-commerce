@@ -50,6 +50,8 @@ export const hu = {
     count: "{count} márka",
     lettersLabel: "Ugrás betűre",
     empty: "Jelenleg nincs megjeleníthető márka.",
+    metaDescription:
+      "Az Acropora által forgalmazott márkák: tengeri akvarisztikai termékek gyártói egy helyen.",
   },
   sort: {
     title: "Rendezés",
