@@ -3,6 +3,10 @@ import { join, relative } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { lapozottCim } from "@lib/util/belso-lap-metaadat"
+import { STORE_DESCRIPTION } from "@lib/store"
+import { valogatasLeirasForrasa } from "@lib/util/valogatas"
+
 import {
   ANGOL_HELYKITOLTOK,
   angolSzo,
@@ -276,5 +280,103 @@ describe("a termék saját robots-döntése", () => {
         follow: true,
       })
     expect(termekRobotsJel({ seo_robots: "noindexed" }).noindex).toBe(false)
+  })
+})
+
+/**
+ * AZ ANGOL UT METAADATA (2026-11-03): a cim- es leiras-sablonok a lap nyelven
+ * allnak, a magyar utak valtozatlanok. MI PIROSIT: ha az angol uton magyar
+ * mondat marad; ha a magyar ut szovege elmozdul; ha egy sajat (adat) leiras
+ * lefordulna vagy elveszne; ha az OpenGraph nyelve nem koveti a lapet.
+ */
+describe("az angol út metaadata", () => {
+  it("a kezdőlap leírása: magyarul a bolt mondata, angolul az angol", () => {
+    expect(kezdolapLeiras()).toBe(STORE_DESCRIPTION)
+    expect(kezdolapLeiras("hu")).toBe(STORE_DESCRIPTION)
+    expect(kezdolapLeiras("en")).toBe(
+      "Marine aquarium web shop: corals, fish, invertebrates, equipment, chemicals and food.",
+    )
+  })
+
+  it("a kategória, a márka és a termék sablonmondata a lap nyelvén áll", () => {
+    expect(kategoriaLeiras("Világítás")).toBe(
+      "A(z) Világítás kategória termékei az Acropora webáruházban.",
+    )
+    expect(kategoriaLeiras("Világítás", null, "en")).toBe(
+      "Products in the Világítás category at the Acropora web shop.",
+    )
+    expect(markaLeiras("ATI", null, "en")).toBe(
+      "Products of the ATI brand at the Acropora web shop.",
+    )
+    expect(termekLeiras({ title: "Radion XR15" }, "en")).toBe(
+      "Radion XR15: order from the Acropora web shop.",
+    )
+    expect(termekLeiras({ title: "Radion XR15" })).toBe(
+      "Radion XR15: rendelés az Acropora webáruházban.",
+    )
+  })
+
+  it("a saját leírás adat: az angol úton sem fordul, és nem vész el", () => {
+    expect(kategoriaLeiras("X", "<p>Saját magyar leírás.</p>", "en")).toBe(
+      "Saját magyar leírás.",
+    )
+    expect(markaLeiras("X", "Own text", "en")).toBe("Own text")
+    expect(
+      termekLeiras(
+        { title: "T", metadata: { seo_description: "SEO szöveg" } },
+        "en",
+      ),
+    ).toBe("SEO szöveg")
+  })
+
+  it("a keresés és az összes termék cime és leírása a lap nyelvén áll", () => {
+    expect(keresesMetaadat("led")).toEqual({
+      cim: "Keresés: led | Acropora",
+      leiras: "Találatok erre: „led” az Acropora webáruházban.",
+    })
+    expect(keresesMetaadat("led", "en")).toEqual({
+      cim: "Search: led | Acropora",
+      leiras: "Results for “led” at the Acropora web shop.",
+    })
+    expect(keresesMetaadat(null, "en")).toEqual({
+      cim: "All products | Acropora",
+      leiras: "All products of the Acropora web shop.",
+    })
+    expect(keresesMetaadat(null).cim).toBe("Összes termék | Acropora")
+  })
+
+  it("a válogatás tartaléka a lap nyelvén áll, a saját szöveg előnyben", () => {
+    const v = { title: "Akciós LED", meta_description: null, intro: null }
+    expect(valogatasLeirasForrasa(v)).toBe(
+      "Akciós LED: válogatás az Acropora webáruházban.",
+    )
+    expect(valogatasLeirasForrasa(v, "en")).toBe(
+      "Akciós LED: a selection at the Acropora web shop.",
+    )
+    expect(
+      valogatasLeirasForrasa({ ...v, intro: "Saját bevezető" }, "en"),
+    ).toBe("Saját bevezető")
+  })
+
+  it("a lapozott cím lapszáma a lap nyelvén áll, a sablon-cím érintetlen", () => {
+    expect(lapozottCim("Címke | Acropora", 2)).toBe(
+      "Címke | Acropora (2. oldal)",
+    )
+    expect(lapozottCim("Címke | Acropora", 2, "en")).toBe(
+      "Címke | Acropora (page 2)",
+    )
+    const sablon = { default: "x", template: "%s" }
+    expect(lapozottCim(sablon, 2, "en")).toBe(sablon)
+  })
+
+  it("az OpenGraph nyelve követi a lapét", () => {
+    const alap = { cim: "C", leiras: "L" }
+    expect(openGraph(alap)).toMatchObject({ locale: "hu_HU" })
+    expect(openGraph({ ...alap, locale: "hu" })).toMatchObject({
+      locale: "hu_HU",
+    })
+    expect(openGraph({ ...alap, locale: "en" })).toMatchObject({
+      locale: "en_US",
+    })
   })
 })
