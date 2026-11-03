@@ -1,8 +1,10 @@
 import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+// the language of the page is its path segment: `hu` (Hungarian) or `en-hu` (English)
+const nav = vi.hoisted(() => ({ countryCode: "hu" }))
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
+  useParams: () => ({ countryCode: nav.countryCode }),
   usePathname: () => "/hu/store",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams("q=led"),
@@ -17,6 +19,7 @@ const kereses = vi.hoisted(() => ({ keresesTalalatok: vi.fn() }))
 vi.mock("@lib/data/termek-kereses", () => kereses)
 // A nulla-talalat lap (4b) sajat adatot ker; a sajat spec meri, itt ures.
 vi.mock("@lib/data/regions", () => ({ getRegion: vi.fn(async () => null) }))
+const katAdat = vi.hoisted(() => ({ listCategories: vi.fn() }))
 vi.mock("@lib/data/categories", () => ({
   // Alapertek, nem `undefined`: egy ures valasz a teszt-dupla hibaja lenne.
   listNonEmptyRootCategories: vi.fn(async () => ({
@@ -25,6 +28,8 @@ vi.mock("@lib/data/categories", () => ({
     szamok: new Map(),
   })),
   listCategoryIdsWithDescendants: vi.fn(async () => []),
+  // the catalogue the card choice resolves a leaf's root from
+  listCategories: katAdat.listCategories,
 }))
 // A kartya gombja a kosar szerver-muveletet importalja; itt nem hivodik.
 vi.mock("@lib/data/cart", () => ({ addToCart: vi.fn() }))
@@ -70,6 +75,7 @@ const lap = async (props: Record<string, unknown> = {}) =>
   )
 
 beforeEach(() => {
+  katAdat.listCategories.mockResolvedValue([])
   kereses.keresesTalalatok.mockResolvedValue({
     ids: IDS,
     count: 150,
@@ -90,6 +96,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  nav.countryCode = "hu"
 })
 
 /**
@@ -243,5 +250,87 @@ describe("a keresési találatok lapja", () => {
       screen.getAllByTestId("commerce-termek-kartya")[0].querySelector("h2")
         ?.className,
     ).toContain("text-[13px]")
+  })
+
+  describe("a kártya termékenként", () => {
+    const kartyak = () =>
+      within(screen.getByTestId("products-list")).getAllByRole("listitem")
+    const elo = (li: HTMLElement) =>
+      li.querySelector("[data-testid='category-product-card-livestock']")
+    const muszaki = (li: HTMLElement) =>
+      li.querySelector("[data-testid='commerce-termek-kartya']")
+
+    it("az élő állat az élő állat kártyáját kapja, a műszaki a műszakit", async () => {
+      adat.listProductsWithSort.mockResolvedValue({
+        response: {
+          products: [
+            {
+              ...termekek(1)[0],
+              id: "pe",
+              categories: [{ id: "k", name: "Korallok", mpath: "k" }],
+            },
+            {
+              ...termekek(1)[0],
+              id: "pt",
+              categories: [{ id: "t", name: "Technika", mpath: "t" }],
+            },
+          ],
+          count: 2,
+        },
+        nextPage: null,
+      })
+      await lap()
+      const lista = kartyak()
+      expect(elo(lista[0])).not.toBeNull()
+      expect(muszaki(lista[0])).toBeNull()
+      expect(muszaki(lista[1])).not.toBeNull()
+      expect(elo(lista[1])).toBeNull()
+      // a lista mezői között ott a kategória, amiből a választás dolgozik
+      expect(
+        adat.listProductsWithSort.mock.calls[0][0].queryParams.fields,
+      ).toContain("*categories")
+    })
+
+    it("a gyökér nélküli levél a katalógusból oldódik fel, hibás katalógusnál a műszaki marad", async () => {
+      const level = {
+        ...termekek(1)[0],
+        id: "pl",
+        categories: [{ id: "g1", name: "Rákok", mpath: "g.g1" }],
+      }
+      adat.listProductsWithSort.mockResolvedValue({
+        response: { products: [level], count: 1 },
+        nextPage: null,
+      })
+      katAdat.listCategories.mockResolvedValue([
+        { id: "g", name: "Gerinctelenek", parent_category_id: null },
+        { id: "g1", name: "Rákok", parent_category_id: "g" },
+      ])
+      await lap()
+      expect(elo(kartyak()[0])).not.toBeNull()
+      cleanup()
+
+      katAdat.listCategories.mockRejectedValue(new Error("hálózati hiba"))
+      await lap()
+      expect(muszaki(kartyak()[0])).not.toBeNull()
+    })
+  })
+
+  it("az angol szegmensen a fej, a szűrő és a lapozás angolul áll", async () => {
+    nav.countryCode = "en-hu"
+    await lap({ countryCode: "en-hu" })
+    expect(screen.getByTestId("store-page-title").textContent).toBe("Results")
+    expect(screen.getByTestId("kereses-talalatszam").textContent).toBe(
+      "150 results for “led”",
+    )
+    expect(screen.getByRole("complementary", { name: "Filter" })).toBeTruthy()
+    expect(screen.getByTestId("kereses-hol-tartunk").textContent).toBe(
+      "18 / 150 results",
+    )
+    expect(screen.getByTestId("kereses-tovabb").textContent).toBe(
+      "More results",
+    )
+    expect(screen.getByTestId("kereses-csoport-cim").textContent).toBe(
+      "All results",
+    )
   })
 })

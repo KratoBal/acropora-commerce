@@ -102,3 +102,26 @@ describe("a válogatás metaadata", () => {
     }
   })
 })
+
+describe("a válogatás metaadata az angol úton", () => {
+  const enProps = {
+    params: Promise.resolve({ countryCode: "en-hu", handle: "kh-potlas" }),
+  }
+
+  it("a tartalék leírás angol, az OpenGraph en_US, a canonical az angol út", async () => {
+    adat.v = valogatas({ intro: null })
+    const m = await generateMetadata(enProps)
+    expect(m.description).toBe(
+      "KH-pótlók: a selection at the Acropora web shop.",
+    )
+    expect(m.openGraph).toMatchObject({ locale: "en_US" })
+    expect(m.alternates?.canonical).toBe("/en-hu/valogatas/kh-potlas")
+  })
+
+  it("a válogatás saját szövege adat: az angol úton sem fordul", async () => {
+    adat.v = valogatas()
+    expect((await generateMetadata(enProps)).description).toBe(
+      "A karbonátkeménység emelésére.",
+    )
+  })
+})

@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { localeOf } from "@lib/i18n/locale"
 import {
   lapCim,
   openGraph,
@@ -74,7 +75,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 
   const cim = lapCim(product.title ?? "")
-  const leiras = termekLeiras(product)
+  const locale = localeOf(params.countryCode)
+  const leiras = termekLeiras(product, locale)
   const canonical = termeklapCanonical(params.countryCode, params.handle)
   return {
     title: cim,
@@ -90,6 +92,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       cim,
       leiras,
       url: canonical,
+      locale,
       kepek: product.thumbnail ? [product.thumbnail] : [],
     }),
   }

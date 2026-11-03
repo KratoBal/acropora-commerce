@@ -1,5 +1,8 @@
+import { listCategories } from "@lib/data/categories"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
 import { keresesTalalatok } from "@lib/data/termek-kereses"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import {
   gyokerSorok,
   keresesCim,
@@ -13,7 +16,9 @@ import { markaValtas } from "@lib/util/marka-szuro"
 import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import MarkaLista from "@modules/categories/templates/commerce/marka-lista"
 import CommerceRendezes from "@modules/categories/templates/commerce/rendezes"
+import EloAllatKartya from "@modules/categories/templates/commerce/elo-allat-kartya"
 import CommerceTermekKartya from "@modules/categories/templates/commerce/termek-kartya"
+import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 
 import NincsTalalatLap from "./nincs-talalat-lap"
 
@@ -74,6 +79,8 @@ export default async function KeresesLap({
   gyoker?: string
   markak?: string[]
 }) {
+  // the page's language is its path segment's (`hu`, `en-hu`)
+  const t = translator(localeOf(countryCode))
   const talalat = await keresesTalalatok(kereses)
   // NULLA TALALAT: sajat lap (253:57), tippekkel es kategoriakkal (P2, 4b).
   if (talalat.count === 0) return NincsTalalatLap({ kereses, countryCode })
@@ -100,12 +107,20 @@ export default async function KeresesLap({
         queryParams: {
           id: szuro.ids,
           limit: TALALAT_LAP,
-          fields: `${TERMEKLISTA_MEZOK}*collection`,
+          // the categories too: the card choice (live animal or technical) reads them
+          fields: `${TERMEKLISTA_MEZOK}*collection,*categories`,
         },
         sortBy,
         countryCode,
       })
     : null
+  // the catalogue resolves a leaf's root (as on the product page); a failure
+  // leaves the technical card, it does not break the search
+  const katalogus = lista
+    ? await listCategories({
+        fields: "id,name,handle,parent_category_id",
+      }).catch(() => [])
+    : []
   const products = lista?.response.products ?? []
   const count = lista?.response.count ?? 0
   const eddig = Math.min(page * TALALAT_LAP, count)
@@ -130,7 +145,7 @@ export default async function KeresesLap({
     <>
       <div className="flex items-center justify-between">
         <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
-          Szűrés
+          {t("search.filters")}
         </h2>
         {gyoker || markak.length > 0 ? (
           <a
@@ -138,7 +153,7 @@ export default async function KeresesLap({
             rel={szuroLinkRel(cim({ gyoker: null, markak: [] }))}
             className="text-[14px] text-acr-ocean"
           >
-            Törlés
+            {t("search.clear")}
           </a>
         ) : null}
       </div>
@@ -148,17 +163,18 @@ export default async function KeresesLap({
           data-testid={asztali ? "kereses-markak" : undefined}
         >
           <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-            Márka
+            {t("search.brand")}
           </h3>
           <MarkaLista
             sorok={markaLista}
             aktiv={markak}
             link={(id) => cim({ markak: markaValtas(markak, id) })}
+            t={t}
           />
         </section>
       ) : (
         <p className="text-[14px] leading-[22px] text-acr-slate">
-          Ezekhez a találatokhoz nincs márkaadat.
+          {t("search.noBrandData")}
         </p>
       )}
     </>
@@ -172,13 +188,13 @@ export default async function KeresesLap({
       */}
       <header className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 pb-6 pt-[18px] small:px-[56px] small:pt-[42px]">
         <p className="hidden text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-heritage small:block">
-          Keresés
+          {t("search.eyebrow")}
         </p>
         <h1
           className="text-[26px] font-semibold leading-[34px] text-acr-ink small:text-[46px] small:font-light small:leading-[62px] small:tracking-[-1px]"
           data-testid="store-page-title"
         >
-          Találatok
+          {t("search.resultsTitle")}
         </h1>
         <form
           action={`/${countryCode}/store`}
@@ -192,7 +208,7 @@ export default async function KeresesLap({
             ⌕
           </span>
           <label className="sr-only" htmlFor="kereses-lap-mezo">
-            Keresés
+            {t("search.searchLabel")}
           </label>
           <input
             id="kereses-lap-mezo"
@@ -206,7 +222,10 @@ export default async function KeresesLap({
           className="text-[12.5px] leading-[16px] text-acr-slate small:text-[14px] small:leading-[22px]"
           data-testid="kereses-talalatszam"
         >
-          {talalat.count} találat erre: „{kereses}”
+          {t(talalat.count === 1 ? "search.countForOne" : "search.countFor", {
+            count: talalat.count,
+            query: kereses,
+          })}
         </p>
         {/*
           A CSONKOLAS KIMONDVA (a #379 atvetele): a vegpont legfeljebb 200
@@ -218,16 +237,14 @@ export default async function KeresesLap({
             className="text-[12.5px] leading-[16px] text-acr-slate small:text-[14px] small:leading-[22px]"
             data-testid="kereses-csonkolt"
           >
-            Több mint {talalat.count} termék illik erre a keresésre, itt a{" "}
-            {talalat.count} legújabb látszik. Pontosítsd a keresést, ha nem
-            találod, amit keresel.
+            {t("search.truncated", { count: talalat.count })}
           </p>
         ) : null}
         {/* GYOKER-FULEK (152:119): "Összes" es a talalatok gyokerei. */}
         {gyokerek.length > 1 ? (
           <ul
             className="flex gap-[6px] overflow-x-auto pt-1 small:gap-2"
-            aria-label="Találatok kategóriánként"
+            aria-label={t("search.rootsLabel")}
             data-testid="kereses-gyokerek"
           >
             <li className="shrink-0">
@@ -242,7 +259,7 @@ export default async function KeresesLap({
                     : "border-acr-heritage bg-acr-heritage font-medium text-acr-white")
                 }
               >
-                Összes
+                {t("search.all")}
               </a>
             </li>
             {gyokerek.map((sor) => (
@@ -277,7 +294,8 @@ export default async function KeresesLap({
         <div className="relative flex gap-2 small:hidden">
           <details className="group w-1/2" data-testid="kereses-szurok-mobil">
             <summary className="flex h-[42px] cursor-pointer list-none items-center justify-center border border-acr-line bg-acr-white text-[12.5px] font-medium leading-[16px] text-acr-ink [&::-webkit-details-marker]:hidden">
-              Szűrők{aktivSzurok > 0 ? ` ${aktivSzurok}` : ""}
+              {t("search.filtersButton")}
+              {aktivSzurok > 0 ? ` ${aktivSzurok}` : ""}
             </summary>
             <div className="absolute inset-x-0 top-full z-10 mt-2 flex flex-col gap-4 border border-acr-line bg-acr-white p-4">
               {szuroTorzs(false)}
@@ -291,13 +309,13 @@ export default async function KeresesLap({
         </div>
         <aside
           className="hidden flex-col gap-4 self-start border border-acr-line bg-acr-white p-4 small:flex"
-          aria-label="Szűrés"
+          aria-label={t("search.filters")}
           data-testid="kereses-szurok"
         >
           {szuroTorzs(true)}
         </aside>
 
-        <section aria-label="Találatok" id="kereses-talalatok">
+        <section aria-label={t("search.resultsLabel")} id="kereses-talalatok">
           {/*
             A CSOPORT FEJE (152:189): a kivalasztott gyoker neve 300/28, jobbra
             a szam. A rendezes a keretben nincs, a bolt meglevo funkcioja: marad.
@@ -308,11 +326,14 @@ export default async function KeresesLap({
               data-testid="kereses-csoport-cim"
             >
               {gyokerek.find((sor) => sor.id === gyoker)?.nev ??
-                "Minden találat"}
+                t("search.groupAll")}
             </h2>
             <div className="flex items-center gap-4">
               <span className="text-[14px] leading-[22px] text-acr-slate">
-                {count} találat
+                {t(
+                  count === 1 ? "search.resultCountOne" : "search.resultCount",
+                  { count },
+                )}
               </span>
               {count > 1 ? (
                 <div className="hidden small:block">
@@ -326,7 +347,7 @@ export default async function KeresesLap({
               className="text-[14px] text-acr-slate"
               data-testid="kereses-szurt-ures"
             >
-              A szűrőkkel együtt nincs találat.
+              {t("search.filteredEmpty")}
             </p>
           ) : (
             <ul
@@ -335,11 +356,18 @@ export default async function KeresesLap({
             >
               {products.map((product, i) => (
                 <li key={product.id}>
-                  <CommerceTermekKartya
-                    product={product}
-                    tomor
-                    elso={i === 0}
-                  />
+                  {/* the card per product, as the category page: a live animal gets the
+                      live-animal card (no quick add to cart); both compact, two columns */}
+                  {vilagaTermeknek(product, katalogus) === "sotet" ? (
+                    <EloAllatKartya product={product} elso={i === 0} t={t} />
+                  ) : (
+                    <CommerceTermekKartya
+                      product={product}
+                      tomor
+                      elso={i === 0}
+                      t={t}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -350,7 +378,10 @@ export default async function KeresesLap({
                 className="text-[14px] leading-[22px] text-acr-slate"
                 data-testid="kereses-hol-tartunk"
               >
-                {page === 1 ? eddig : `${elso}–${eddig}`} / {count} találat
+                {t(count === 1 ? "search.positionOne" : "search.position", {
+                  from: page === 1 ? eddig : `${elso}–${eddig}`,
+                  count,
+                })}
               </p>
               {count > page * TALALAT_LAP ? (
                 <a
@@ -359,7 +390,7 @@ export default async function KeresesLap({
                   className="flex h-[54px] w-full max-w-[320px] items-center justify-center border border-acr-line bg-acr-white px-8 text-[15px] font-medium text-acr-ink"
                   data-testid="kereses-tovabb"
                 >
-                  További találatok
+                  {t("search.more")}
                 </a>
               ) : null}
             </div>

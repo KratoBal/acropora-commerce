@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { localeOf } from "@lib/i18n/locale"
 import {
   indexelhetoRobots,
   kategoriaLeiras,
@@ -94,9 +95,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       visszaterni ide.
     */
     const title = lapCim(productCategory.name)
+    const locale = localeOf(params.countryCode)
     const description = kategoriaLeiras(
       productCategory.name,
       productCategory.description,
+      locale,
     )
     const canonical = kategoriaCanonical(params.countryCode, params.category)
 
@@ -105,7 +108,12 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       description,
       robots: indexelhetoRobots(),
       alternates: { canonical },
-      openGraph: openGraph({ cim: title, leiras: description, url: canonical }),
+      openGraph: openGraph({
+        cim: title,
+        leiras: description,
+        url: canonical,
+        locale,
+      }),
     }
   } catch {
     notFound()

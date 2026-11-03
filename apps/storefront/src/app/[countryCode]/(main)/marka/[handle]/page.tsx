@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { localeOf } from "@lib/i18n/locale"
 import { notFound } from "next/navigation"
 
 import { markaHandleAlapjan } from "@lib/data/brands"
@@ -29,9 +30,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const marka = await markaHandleAlapjan(decodeHandleParam(params.handle))
   if (!marka) notFound()
 
+  const locale = localeOf(params.countryCode)
   const cim = marka.seo_title ?? lapCim(marka.name)
   const leiras =
-    marka.meta_description ?? markaLeiras(marka.name, marka.description)
+    marka.meta_description ?? markaLeiras(marka.name, marka.description, locale)
   const canonical = markaCanonical(params.countryCode, params.handle)
   return {
     title: cim,
@@ -42,6 +44,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       cim,
       leiras,
       url: canonical,
+      locale,
       kepek: marka.logo_url ? [marka.logo_url] : [],
     }),
   }

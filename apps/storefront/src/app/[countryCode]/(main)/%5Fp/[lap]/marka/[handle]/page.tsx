@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 
+import { localeOf } from "@lib/i18n/locale"
 import { lapozottMetaadat } from "@lib/util/belso-lap-metaadat"
 import { markaLapTorzs } from "@modules/collections/templates/marka-lap-torzs"
 
@@ -21,6 +22,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return lapozottMetaadat(
     await alapMetaadat({ params: Promise.resolve(params) }),
     lap,
+    localeOf(params.countryCode),
   )
 }
 

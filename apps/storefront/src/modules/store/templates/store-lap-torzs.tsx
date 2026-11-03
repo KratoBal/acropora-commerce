@@ -1,3 +1,4 @@
+import { localeOf } from "@lib/i18n/locale"
 import { Metadata } from "next"
 import { keresesMetaadat } from "@lib/seo/oldal-metaadat"
 
@@ -45,11 +46,12 @@ export function storeMetaadat(
   // a kereses noindexe a roadmap FE-4-e; itt a magyar cim es leiras (FE-1, #519)
   const { cim, leiras } = keresesMetaadat(
     typeof searchParams.q === "string" ? searchParams.q : null,
+    localeOf(countryCode),
   )
   const lapozott = Number.isFinite(oldal) && oldal > 1
   return {
     // a lapozott lap cime a lapszammal (`belso-lap-metaadat.ts`)
-    title: lapozott ? lapozottCim(cim, oldal) : cim,
+    title: lapozott ? lapozottCim(cim, oldal, localeOf(countryCode)) : cim,
     description: leiras,
     alternates: {
       canonical: storeCanonical(
