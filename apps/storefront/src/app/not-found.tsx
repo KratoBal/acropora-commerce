@@ -1,7 +1,6 @@
-import { ArrowUpRightMini } from "@medusajs/icons"
-import { Text } from "@modules/common/components/ui"
 import { Metadata } from "next"
-import Link from "next/link"
+
+import NincsOldal from "@modules/common/components/nincs-oldal"
 
 export const metadata: Metadata = {
   title: "404",
@@ -9,19 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function NotFound() {
-  return (
-    <div className="flex flex-col gap-4 items-center justify-center min-h-[calc(100vh-64px)]">
-      <h1 className="text-2xl-semi text-ui-fg-base">Nincs ilyen oldal</h1>
-      <p className="text-small-regular text-ui-fg-base">
-        A keresett oldal nem található.
-      </p>
-      <Link className="flex gap-x-1 items-center group" href="/">
-        <Text className="text-ui-fg-interactive">Vissza a főoldalra</Text>
-        <ArrowUpRightMini
-          className="group-hover:rotate-45 ease-in-out duration-150"
-          color="var(--fg-interactive)"
-        />
-      </Link>
-    </div>
-  )
+  return <NincsOldal />
 }
