@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 
-import { STORE_DESCRIPTION, STORE_NAME } from "@lib/store"
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+import { STORE_NAME } from "@lib/store"
 
 /**
  * AZ OLDALAK METAADATA, OLDALTIPUSONKENT, EGY HELYEN (SEO frontend FE-1,
@@ -102,18 +104,22 @@ export function szurtMetaadat(alap: Metadata): Metadata {
   return { ...alap, robots: szurtLapRobots() }
 }
 
-/** A lap OpenGraph-ja: magyar nyelv, a bolt neve, es a kanonikus cim, ha van. */
+/**
+ * A lap OpenGraph-ja: a lap nyelve (`hu_HU`, az angol uton `en_US`), a bolt
+ * neve, es a kanonikus cim, ha van.
+ */
 export function openGraph(input: {
   cim: string
   leiras: string
   url?: string
   kepek?: string[]
+  locale?: Locale
 }): Metadata["openGraph"] {
   return {
     title: input.cim,
     description: input.leiras,
     siteName: STORE_NAME,
-    locale: "hu_HU",
+    locale: input.locale === "en" ? "en_US" : "hu_HU",
     type: "website",
     ...(input.url ? { url: input.url } : {}),
     ...(input.kepek?.length ? { images: input.kepek } : {}),
@@ -125,24 +131,44 @@ export function lapCim(nev: string): string {
   return `${nev} | ${STORE_NAME}`
 }
 
+/**
+ * AZ OLDALAK SZOVEGE A LAP NYELVEN (2026-11-03): a cim- es leiras-sablonok a
+ * szotarbol jonnek (`meta.*`, magyar es angol), a lap nyelvet az utvonal
+ * szegmense adja (`localeOf(countryCode)`). A nyelv alapertelme magyar, tehat
+ * a magyar utak es a regi hivok valtozatlanok. A termek-, kategoria- es
+ * markanev, a SEO-cim es a sajat leiras ADAT: azok nem fordulnak.
+ */
+const szoveg = (locale: Locale) => translator(locale)
+
 /** A kezdolap leirasa. */
-export function kezdolapLeiras(): string {
-  return STORE_DESCRIPTION
+export function kezdolapLeiras(locale: Locale = DEFAULT_LOCALE): string {
+  return szoveg(locale)("meta.storeDescription")
 }
 
-/** A kategorialap leirasa: a sajat leirasa, vagy egy magyar mondat a nevevel. */
-export function kategoriaLeiras(nev: string, leiras?: string | null): string {
+/** A kategorialap leirasa: a sajat leirasa, vagy egy mondat a nevevel, a lap nyelven. */
+export function kategoriaLeiras(
+  nev: string,
+  leiras?: string | null,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   return (
     leirasSzovegbol(leiras) ??
-    `A(z) ${nev} kategória termékei az ${STORE_NAME} webáruházban.`
+    szoveg(locale)("meta.categoryDescription", {
+      name: nev,
+      store: STORE_NAME,
+    })
   )
 }
 
-/** A markalap leirasa: a sajat leirasa, vagy egy magyar mondat a nevevel. */
-export function markaLeiras(nev: string, leiras?: string | null): string {
+/** A markalap leirasa: a sajat leirasa, vagy egy mondat a nevevel, a lap nyelven. */
+export function markaLeiras(
+  nev: string,
+  leiras?: string | null,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   return (
     leirasSzovegbol(leiras) ??
-    `A(z) ${nev} márka termékei az ${STORE_NAME} webáruházban.`
+    szoveg(locale)("meta.brandDescription", { name: nev, store: STORE_NAME })
   )
 }
 
@@ -155,14 +181,20 @@ export function markaLeiras(nev: string, leiras?: string | null): string {
  * 3. a leiras eleje;
  * 4. egy magyar mondat a nevvel. Soha nem a cim masolata.
  */
-export function termekLeiras(termek: {
-  title?: string | null
-  description?: string | null
-  metadata?: Record<string, unknown> | null
-}): string {
+export function termekLeiras(
+  termek: {
+    title?: string | null
+    description?: string | null
+    metadata?: Record<string, unknown> | null
+  },
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   return (
     termekSajatLeiras(termek) ??
-    `${termek.title ?? ""}: rendelés az ${STORE_NAME} webáruházban.`.trim()
+    szoveg(locale)("meta.productDescription", {
+      title: termek.title ?? "",
+      store: STORE_NAME,
+    }).trim()
   )
 }
 
@@ -195,19 +227,23 @@ export function termekSajatLeiras(
  * belso utra megy (`belso-utvonalak.js`), es ott `szurtMetaadat` adja a
  * `noindex, follow`-t; az osszes termek alaplapja indexelheto.
  */
-export function keresesMetaadat(kifejezes?: string | null): {
+export function keresesMetaadat(
+  kifejezes?: string | null,
+  locale: Locale = DEFAULT_LOCALE,
+): {
   cim: string
   leiras: string
 } {
+  const t = szoveg(locale)
   const q = kifejezes?.trim()
   return q
     ? {
-        cim: lapCim(`Keresés: ${q}`),
-        leiras: `Találatok erre: „${q}” az ${STORE_NAME} webáruházban.`,
+        cim: lapCim(t("meta.searchTitle", { query: q })),
+        leiras: t("meta.searchDescription", { query: q, store: STORE_NAME }),
       }
     : {
-        cim: lapCim("Összes termék"),
-        leiras: `Az ${STORE_NAME} webáruház összes terméke.`,
+        cim: lapCim(t("meta.allProductsTitle")),
+        leiras: t("meta.allProductsDescription", { store: STORE_NAME }),
       }
 }
 

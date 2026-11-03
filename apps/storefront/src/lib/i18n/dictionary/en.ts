@@ -90,6 +90,20 @@ export const en: Dictionary = {
     inStockCount: "In stock – {count} pcs",
     orderable: "Available to order",
   },
+  meta: {
+    storeDescription:
+      "Marine aquarium web shop: corals, fish, invertebrates, equipment, chemicals and food.",
+    categoryDescription:
+      "Products in the {name} category at the {store} web shop.",
+    brandDescription: "Products of the {name} brand at the {store} web shop.",
+    productDescription: "{title}: order from the {store} web shop.",
+    selectionDescription: "{title}: a selection at the {store} web shop.",
+    searchTitle: "Search: {query}",
+    searchDescription: "Results for “{query}” at the {store} web shop.",
+    allProductsTitle: "All products",
+    allProductsDescription: "All products of the {store} web shop.",
+    pageSuffix: "page {page}",
+  },
   cart: {
     add: "Add to cart",
     adding: "Adding to cart…",

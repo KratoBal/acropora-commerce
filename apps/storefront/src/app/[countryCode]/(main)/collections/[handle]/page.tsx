@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { localeOf } from "@lib/i18n/locale"
 import {
   indexelhetoRobots,
   lapCim,
@@ -85,11 +86,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 
   const cim = lapCim(collection.title)
+  const locale = localeOf(params.countryCode)
   const leiras = markaLeiras(
     collection.title,
     typeof collection.metadata?.description === "string"
       ? collection.metadata.description
       : null,
+    locale,
   )
   /*
     SEO P0 PR 11: ha a marka-modulban van azonos handle-u marka, a regi
@@ -110,7 +113,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     title: cim,
     description: leiras,
     robots: indexelhetoRobots(),
-    openGraph: openGraph({ cim, leiras }),
+    openGraph: openGraph({ cim, leiras, locale }),
   } as Metadata
 
   return metadata

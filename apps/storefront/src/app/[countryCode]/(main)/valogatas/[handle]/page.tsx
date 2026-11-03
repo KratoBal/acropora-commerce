@@ -1,4 +1,7 @@
 import { Metadata } from "next"
+import { STORE_NAME } from "@lib/store"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { notFound } from "next/navigation"
 
 import {
@@ -32,10 +35,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   )
   if (!valogatas || !valogatasErvenyes(valogatas.filter)) notFound()
 
+  const locale = localeOf(params.countryCode)
   const cim = valogatas.seo_title ?? lapCim(valogatas.title)
   const leiras =
-    leirasSzovegbol(valogatasLeirasForrasa(valogatas)) ??
-    `${valogatas.title}: válogatás az Acropora webáruházban.`
+    leirasSzovegbol(valogatasLeirasForrasa(valogatas, locale)) ??
+    translator(locale)("meta.selectionDescription", {
+      title: valogatas.title,
+      store: STORE_NAME,
+    })
   const canonical = valogatasCanonical(params.countryCode, params.handle)
   /*
     A 0 TERMEKES VALOGATAS NEM INDEXELHETO (barracuda #544 review): egy "nincs
@@ -52,7 +59,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       ? indexelhetoRobots()
       : { index: false, follow: true },
     alternates: { canonical },
-    openGraph: openGraph({ cim, leiras, url: canonical }),
+    openGraph: openGraph({ cim, leiras, url: canonical, locale }),
   }
 }
 

@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
 
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+
 /**
  * A BELSO UTAK METAADATA (FE-7 3. resz). A `_p` ut ugyanazt a lapot adja, mint
  * a publikus cim, tehat az alaplap `generateMetadata`-jat hasznalja, harom
@@ -16,22 +19,32 @@ import type { Metadata } from "next"
  *
  * Ha az alaplapnak nincs canonicalja vagy OG-ja, itt sem kerul bele kitalalt.
  */
-export function lapozottMetaadat(alap: Metadata, lap: string): Metadata {
+export function lapozottMetaadat(
+  alap: Metadata,
+  lap: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Metadata {
   const canonical = alap.alternates?.canonical
   if (typeof canonical !== "string") return alap
   const sajat = `${canonical}?page=${lap}`
   return {
     ...alap,
-    title: lapozottCim(alap.title, lap),
+    title: lapozottCim(alap.title, lap, locale),
     alternates: { ...alap.alternates, canonical: sajat },
     ...(alap.openGraph ? { openGraph: { ...alap.openGraph, url: sajat } } : {}),
   }
 }
 
-/** A cim a lapszammal; nem szoveges (sablon-) cimet erintetlenul hagy. */
+/**
+ * A cim a lapszammal, a lap nyelven ("(2. oldal)", angolul "(page 2)"); nem
+ * szoveges (sablon-) cimet erintetlenul hagy.
+ */
 export function lapozottCim(
   cim: Metadata["title"],
   lap: string | number,
+  locale: Locale = DEFAULT_LOCALE,
 ): Metadata["title"] {
-  return typeof cim === "string" ? `${cim} (${lap}. oldal)` : cim
+  return typeof cim === "string"
+    ? `${cim} (${translator(locale)("meta.pageSuffix", { page: lap })})`
+    : cim
 }
