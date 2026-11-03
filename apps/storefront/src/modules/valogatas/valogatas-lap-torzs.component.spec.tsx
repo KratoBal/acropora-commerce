@@ -17,9 +17,8 @@ vi.mock("next/navigation", () => ({
 
 const adat = vi.hoisted(() => ({ listProducts: vi.fn() }))
 vi.mock("@lib/data/products", () => adat)
-vi.mock("@lib/data/categories", () => ({
-  listCategories: vi.fn(async () => []),
-}))
+const katAdat = vi.hoisted(() => ({ listCategories: vi.fn() }))
+vi.mock("@lib/data/categories", () => katAdat)
 vi.mock("@lib/data/regions", () => ({
   getRegion: vi.fn(async () => ({ id: "reg_hu" })),
 }))
@@ -59,6 +58,7 @@ const lap = async (keres: Record<string, string> = {}, p = params) =>
   render(await valogatasLapTorzs(p, keres))
 
 beforeEach(() => {
+  katAdat.listCategories.mockResolvedValue([])
   valAdat.valogatasHandleAlapjan.mockResolvedValue(VALOGATAS)
   valAdat.valogatasTermekAzonositok.mockResolvedValue(AZONOSITOK)
   // the shop answers in ANOTHER order than asked: the page must keep ours
@@ -177,6 +177,18 @@ describe("a válogatás oldal a közös lista-lapon", () => {
     ).not.toBeNull()
     expect(
       kartyak[1].querySelector("[data-testid='commerce-termek-kartya']"),
+    ).not.toBeNull()
+  })
+
+  it("hibás katalógusnál a lap nem tör, a műszaki kártya marad", async () => {
+    katAdat.listCategories.mockRejectedValue(new Error("hálózati hiba"))
+    await lap()
+    const kartyak = within(
+      screen.getByTestId("category-products-list"),
+    ).getAllByRole("listitem")
+    expect(kartyak).toHaveLength(18)
+    expect(
+      kartyak[0].querySelector("[data-testid='commerce-termek-kartya']"),
     ).not.toBeNull()
   })
 })

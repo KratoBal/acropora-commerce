@@ -56,7 +56,11 @@ export async function listaTermekek({
       countryCode,
       optionValueIds,
     }),
-    listCategories({ fields: "id,name,handle,parent_category_id" }),
+    // the catalogue only resolves a leaf's root: a failure leaves the technical
+    // card, it does not break the list (the search page does the same)
+    listCategories({ fields: "id,name,handle,parent_category_id" }).catch(
+      () => [],
+    ),
   ])
   return {
     products,

@@ -57,7 +57,10 @@ export async function valogatasLapTorzs(
           return lap.azonositok.flatMap((id) => szerint.get(id) ?? [])
         })
       : [],
-    listCategories({ fields: "id,name,handle,parent_category_id" }),
+    // a failed catalogue leaves the technical card, it does not break the page
+    listCategories({ fields: "id,name,handle,parent_category_id" }).catch(
+      () => [],
+    ),
   ])
   const t = translator(localeOf(params.countryCode))
 
