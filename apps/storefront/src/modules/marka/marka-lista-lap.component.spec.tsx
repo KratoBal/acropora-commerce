@@ -66,7 +66,7 @@ describe("a forgalmazott márkák lapja", () => {
       .getAllByRole("link")
       .map((a) => a.getAttribute("href"))
     expect(cimek).toEqual([
-      "#marka-betu-#",
+      "#marka-betu-szam",
       "#marka-betu-A",
       "#marka-betu-Á",
       "#marka-betu-Z",

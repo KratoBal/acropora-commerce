@@ -31,6 +31,9 @@ export function MarkaListaLap({
     betuk.set(kulcs, [...(betuk.get(kulcs) ?? []), marka])
   }
   const kulcsok = Array.from(betuk.keys())
+  /** The section id of a group: the "#" group (names that start with a digit or a sign) gets an ASCII id. */
+  const azonosito = (betu: string) =>
+    `marka-betu-${betu === "#" ? "szam" : betu}`
 
   return (
     <div className="bg-acr-shell font-acr-sans" data-testid="marka-lista-lap">
@@ -70,7 +73,7 @@ export function MarkaListaLap({
                 {kulcsok.map((betu) => (
                   <li key={betu} className="shrink-0">
                     <a
-                      href={`#marka-betu-${betu}`}
+                      href={`#${azonosito(betu)}`}
                       className="flex h-[42px] min-w-[42px] items-center justify-center border border-acr-line bg-acr-white px-3 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
                     >
                       {betu}
@@ -91,11 +94,11 @@ export function MarkaListaLap({
             {Array.from(betuk.entries()).map(([betu, sor]) => (
               <section
                 key={betu}
-                aria-labelledby={`marka-betu-${betu}`}
+                aria-labelledby={azonosito(betu)}
                 className="scroll-mt-6 border-t border-acr-line pt-5"
               >
                 <h2
-                  id={`marka-betu-${betu}`}
+                  id={azonosito(betu)}
                   className="text-[28px] font-light leading-[34px] text-acr-ink"
                 >
                   {betu}
