@@ -118,3 +118,59 @@ describe("a régi gyűjtemény-lap canonicalja", () => {
     expect(m.alternates).toBeUndefined()
   })
 })
+
+describe("az angol út márka- és gyűjtemény-metaadata", () => {
+  const enProps = {
+    params: Promise.resolve({ countryCode: "en-hu", handle: "aquaforest" }),
+  }
+
+  it("a márkaoldal tartaléka angol, az OpenGraph en_US, a canonical az angol út", async () => {
+    adat.marka = marka({ description: null })
+    const m = await generateMetadata(enProps)
+    expect(m.title).toBe("Aquaforest | Acropora")
+    expect(m.description).toBe(
+      "Products of the Aquaforest brand at the Acropora web shop.",
+    )
+    expect(m.openGraph).toMatchObject({ locale: "en_US" })
+    expect(m.alternates?.canonical).toBe("/en-hu/marka/aquaforest")
+  })
+
+  it("a márka saját leírása adat: az angol úton sem fordul", async () => {
+    adat.marka = marka()
+    const m = await generateMetadata(enProps)
+    expect(m.description).toContain("Lengyel tengeriakvarisztikai gyártó.")
+  })
+
+  it("a gyűjtemény-lap és a lapozott változata a lap nyelvén áll", async () => {
+    adat.marka = null
+    const m = await gyujtemenyMetaadat(enProps)
+    expect(m.description).toBe(
+      "Products of the Aquaforest brand at the Acropora web shop.",
+    )
+    expect(m.openGraph).toMatchObject({ locale: "en_US" })
+    adat.marka = marka()
+    const lapozott = await gyujtemenyLapozott({
+      params: Promise.resolve({
+        countryCode: "en-hu",
+        handle: "aquaforest",
+        lap: "2",
+      }),
+    })
+    expect(lapozott.title).toBe("Aquaforest | Acropora (page 2)")
+  })
+
+  it("a magyar út változatlan: magyar tartalék és (2. oldal)", async () => {
+    adat.marka = marka({ description: null })
+    expect((await generateMetadata(props)).description).toBe(
+      "A(z) Aquaforest márka termékei az Acropora webáruházban.",
+    )
+    const lapozott = await gyujtemenyLapozott({
+      params: Promise.resolve({
+        countryCode: "hu",
+        handle: "aquaforest",
+        lap: "2",
+      }),
+    })
+    expect(lapozott.title).toBe("Aquaforest | Acropora (2. oldal)")
+  })
+})

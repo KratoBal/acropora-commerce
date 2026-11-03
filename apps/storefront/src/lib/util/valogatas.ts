@@ -1,3 +1,7 @@
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+import { STORE_NAME } from "@lib/store"
+
 /**
  * A VÁLOGATÁS (SEO LANDING) KIRAKAT-SZABÁLYAI, TISZTA FÜGGVÉNYKÉNT (t10).
  *
@@ -37,14 +41,20 @@ export function valogatasLapja(
 }
 
 /** A válogatás leírása: a SEO-leírás, különben a bevezető, különben egy mondat. */
-export function valogatasLeirasForrasa(v: {
-  title: string
-  meta_description: string | null
-  intro: string | null
-}): string {
+export function valogatasLeirasForrasa(
+  v: {
+    title: string
+    meta_description: string | null
+    intro: string | null
+  },
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   return (
     v.meta_description?.trim() ||
     v.intro?.trim() ||
-    `${v.title}: válogatás az Acropora webáruházban.`
+    translator(locale)("meta.selectionDescription", {
+      title: v.title,
+      store: STORE_NAME,
+    })
   )
 }

@@ -1,3 +1,5 @@
+import { STORE_DESCRIPTION } from "@lib/store"
+
 /**
  * THE HUNGARIAN DICTIONARY: the SOURCE of the keys. `en.ts` has the same shape, and a missing English key is a type error.
  *
@@ -50,6 +52,19 @@ export const hu = {
     outOfStock: "Nincs raktáron",
     inStockCount: "Raktáron – {count} db",
     orderable: "Rendelhető",
+  },
+  meta: {
+    storeDescription: STORE_DESCRIPTION,
+    categoryDescription:
+      "A(z) {name} kategória termékei az {store} webáruházban.",
+    brandDescription: "A(z) {name} márka termékei az {store} webáruházban.",
+    productDescription: "{title}: rendelés az {store} webáruházban.",
+    selectionDescription: "{title}: válogatás az {store} webáruházban.",
+    searchTitle: "Keresés: {query}",
+    searchDescription: "Találatok erre: „{query}” az {store} webáruházban.",
+    allProductsTitle: "Összes termék",
+    allProductsDescription: "Az {store} webáruház összes terméke.",
+    pageSuffix: "{page}. oldal",
   },
   cart: {
     add: "Kosárba",
