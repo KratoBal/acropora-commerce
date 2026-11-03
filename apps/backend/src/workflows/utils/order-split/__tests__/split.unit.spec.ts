@@ -186,6 +186,25 @@ describe("splitOrder", () => {
     expect((meta.acropora_split_requests as Record<string, unknown>)["req-1"]).toMatchObject({ order_id: "order_B1", done: true })
   })
 
+  /*
+    THE LANGUAGE TRAVELS TO B (card d5c6befd; barracuda, #645): the second part of a split order
+    is a new order, and it carries only the listed keys. Without the language its shipped mail,
+    payment link and reminder would go out in Hungarian for an English customer.
+  */
+  it("B carries the language the customer ordered in, and only when A has one", async () => {
+    const english = fakeOps(order({ metadata: { aszf_elfogadas: { verzio: "1" }, storefront_locale: "en", egyeb: 1 } }))
+    await splitOrder("order_A", ask, "user_key", english.ops)
+    expect(english.created[0].metadata).toEqual({
+      aszf_elfogadas: { verzio: "1" },
+      storefront_locale: "en",
+      acropora_split_from_order_id: "order_A",
+    })
+
+    const none = fakeOps(order())
+    await splitOrder("order_A", ask, "user_key", none.ops)
+    expect(none.created[0].metadata).not.toHaveProperty("storefront_locale")
+  })
+
   it("the same request again answers the same B and changes nothing", async () => {
     const w = fakeOps(order())
     await splitOrder("order_A", ask, "user_key", w.ops)
