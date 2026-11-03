@@ -143,6 +143,12 @@ export const hu = {
     services: "Szolgáltatások",
     myAquariums: "Akváriumaim",
   },
+  hamarosan: {
+    eyebrow: "Hamarosan",
+    text: "Ez az oldal még készül.",
+    back: "Vissza a főoldalra",
+    expert: "Kérdezz a szakértőnktől",
+  },
   cartMenu: {
     title: "Kosár",
     quantity: "Mennyiség: {count}",

@@ -139,6 +139,12 @@ export const en: Dictionary = {
     services: "Services",
     myAquariums: "My aquariums",
   },
+  hamarosan: {
+    eyebrow: "Coming soon",
+    text: "This page is still being built.",
+    back: "Back to the home page",
+    expert: "Ask our expert",
+  },
   cartMenu: {
     title: "Cart",
     quantity: "Quantity: {count}",

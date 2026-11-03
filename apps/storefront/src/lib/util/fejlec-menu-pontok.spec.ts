@@ -1,8 +1,10 @@
+import { translator } from "@lib/i18n/dictionary"
 import { describe, expect, it } from "vitest"
 
 import {
   FEJLEC_MENU_TERV,
   HAMAROSAN_TEMAK,
+  hamarosanCim,
   fejlecMenuPontok,
 } from "./fejlec-menu-pontok"
 
@@ -86,5 +88,38 @@ describe("fejlecMenuPontok", () => {
       }
     }
     expect(HAMAROSAN_TEMAK.get("szakerto")).toBe("Kérdezz a szakértőnktől")
+  })
+})
+
+/**
+ * A HAMAROSAN LAP CIME A LAP NYELVEN. MI PIROSIT: ha a szotar-kulcsos menupont
+ * (Tudastar, Szolgaltatasok, Akvariumaim) nem fordul; ha a kategoria-nev (adat)
+ * lefordulna; ha a szakerto-gomb cime nem a lap nyelven all; ha egy ismeretlen
+ * tema kap cimet (akkor nem lenne 404).
+ */
+describe("a Hamarosan lap címe a lap nyelvén", () => {
+  const hu = translator("hu")
+  const en = translator("en")
+
+  it("a kulcsos menüpontok és a szakértő-gomb lefordulnak", () => {
+    expect(hamarosanCim("tudastar", hu)).toBe("Tudástár")
+    expect(hamarosanCim("tudastar", en)).toBe("Knowledge base")
+    expect(hamarosanCim("szolgaltatasok", en)).toBe("Services")
+    expect(hamarosanCim("akvariumaim", en)).toBe("My aquariums")
+    expect(hamarosanCim("szakerto", hu)).toBe("Kérdezz a szakértőnktől")
+    expect(hamarosanCim("szakerto", en)).toBe("Ask our expert")
+  })
+
+  it("a kategória-név adat: az angol úton sem fordul", () => {
+    expect(hamarosanCim("korallok", en)).toBe("Korallok")
+    expect(hamarosanCim("vizkezeles", en)).toBe("Vízkezelés")
+  })
+
+  it("minden témának van címe mindkét nyelven, az ismeretlennek nincs", () => {
+    for (const tema of Array.from(HAMAROSAN_TEMAK.keys())) {
+      expect(hamarosanCim(tema, hu)).toBeTruthy()
+      expect(hamarosanCim(tema, en)).toBeTruthy()
+    }
+    expect(hamarosanCim("nincs-ilyen", en)).toBeUndefined()
   })
 })

@@ -1,7 +1,9 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { HAMAROSAN_TEMAK } from "@lib/util/fejlec-menu-pontok"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
+import { hamarosanCim } from "@lib/util/fejlec-menu-pontok"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /**
@@ -32,17 +34,20 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const { tema } = await props.params
-  const cim = HAMAROSAN_TEMAK.get(tema)
+  const { tema, countryCode } = await props.params
+  const t = translator(localeOf(countryCode))
+  const cim = hamarosanCim(tema, t)
   return {
-    title: cim ? `${cim} · Hamarosan` : "404",
+    title: cim ? `${cim} · ${t("hamarosan.eyebrow")}` : "404",
     robots: { index: false, follow: true },
   }
 }
 
 export default async function HamarosanLap(props: Props) {
-  const { tema } = await props.params
-  const cim = HAMAROSAN_TEMAK.get(tema)
+  const { tema, countryCode } = await props.params
+  // the language is the path segment's (`hu`, `en-hu`)
+  const t = translator(localeOf(countryCode))
+  const cim = hamarosanCim(tema, t)
   if (!cim) notFound()
 
   return (
@@ -51,19 +56,19 @@ export default async function HamarosanLap(props: Props) {
       data-testid="hamarosan-lap"
     >
       <p className="text-[12.5px] font-semibold uppercase tracking-[1.5px] text-acr-heritage">
-        Hamarosan
+        {t("hamarosan.eyebrow")}
       </p>
       <h1 className="text-[28px] font-bold leading-[34px] text-acr-mode-heading">
         {cim}
       </h1>
       <p className="max-w-[480px] text-[15px] text-acr-mode-text">
-        Ez az oldal még készül.
+        {t("hamarosan.text")}
       </p>
       <LocalizedClientLink
         href="/"
         className="text-[13px] font-semibold text-acr-mode-heading underline underline-offset-4"
       >
-        Vissza a főoldalra
+        {t("hamarosan.back")}
       </LocalizedClientLink>
     </section>
   )
