@@ -3,7 +3,7 @@ import type { HttpTypes } from "@medusajs/types"
 import { listCategories } from "@lib/data/categories"
 import { listProductsWithSort } from "@lib/data/products"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
-import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
+import { termeklistaMezok } from "@lib/util/termeklista-mezok"
 import { LAP_MERET } from "@modules/categories/templates/commerce/lista-lap"
 import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -46,7 +46,7 @@ export async function listaTermekek({
       page,
       queryParams: {
         limit: LAP_MERET,
-        fields: `${TERMEKLISTA_MEZOK}*collection,*categories`,
+        fields: termeklistaMezok,
         ...(szuro.collection_id?.length
           ? { collection_id: szuro.collection_id }
           : {}),
