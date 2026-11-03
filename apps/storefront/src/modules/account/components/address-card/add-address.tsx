@@ -3,6 +3,8 @@
 import { Button, Heading } from "@modules/common/components/ui"
 import { useActionState, useEffect, useState } from "react"
 
+import { authHibaFelirat } from "@lib/util/auth-hiba"
+import { useTranslate } from "@lib/i18n/use-translate"
 import { addCustomerAddress, type CimMentesAllapot } from "@lib/data/customer"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { HttpTypes } from "@medusajs/types"
@@ -20,6 +22,7 @@ const AddAddress = ({
   region: HttpTypes.StoreRegion
   addresses: HttpTypes.StoreCustomerAddress[]
 }) => {
+  const t = useTranslate()
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
 
@@ -57,12 +60,12 @@ const AddAddress = ({
         onClick={open}
         data-testid="add-address-button"
       >
-        Új cím
+        {t("account.addresses.newAddress")}
       </button>
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Cím hozzáadása</Heading>
+          <Heading className="mb-2">{t("account.addresses.addTitle")}</Heading>
         </Modal.Title>
         <form action={formAction}>
           <Modal.Body>
@@ -77,7 +80,7 @@ const AddAddress = ({
               />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
-                  label="Keresztnév"
+                  label={t("account.addresses.firstName")}
                   name="first_name"
                   defaultValue={beirt?.first_name}
                   required
@@ -85,7 +88,7 @@ const AddAddress = ({
                   data-testid="first-name-input"
                 />
                 <Input
-                  label="Vezetéknév"
+                  label={t("account.addresses.lastName")}
                   name="last_name"
                   defaultValue={beirt?.last_name}
                   required
@@ -94,14 +97,14 @@ const AddAddress = ({
                 />
               </div>
               <Input
-                label="Cégnév"
+                label={t("account.addresses.company")}
                 name="company"
                 defaultValue={beirt?.company}
                 autoComplete="organization"
                 data-testid="company-input"
               />
               <Input
-                label="Cím"
+                label={t("account.addresses.address1")}
                 name="address_1"
                 defaultValue={beirt?.address_1}
                 required
@@ -109,7 +112,7 @@ const AddAddress = ({
                 data-testid="address-1-input"
               />
               <Input
-                label="Emelet, ajtó stb."
+                label={t("account.addresses.address2")}
                 name="address_2"
                 defaultValue={beirt?.address_2}
                 autoComplete="address-line2"
@@ -117,7 +120,7 @@ const AddAddress = ({
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
                 <Input
-                  label="Irányítószám"
+                  label={t("account.addresses.postalCode")}
                   name="postal_code"
                   defaultValue={beirt?.postal_code}
                   required
@@ -125,7 +128,7 @@ const AddAddress = ({
                   data-testid="postal-code-input"
                 />
                 <Input
-                  label="Város"
+                  label={t("account.addresses.city")}
                   name="city"
                   defaultValue={beirt?.city}
                   required
@@ -134,7 +137,7 @@ const AddAddress = ({
                 />
               </div>
               <Input
-                label="Megye / állam"
+                label={t("account.addresses.state")}
                 name="province"
                 defaultValue={beirt?.province}
                 autoComplete="address-level1"
@@ -143,13 +146,14 @@ const AddAddress = ({
               <CountrySelect
                 region={region}
                 name="country_code"
+                placeholder={t("account.addresses.country")}
                 defaultValue={beirt?.country_code}
                 required
                 autoComplete="country"
                 data-testid="country-select"
               />
               <Input
-                label="Telefonszám"
+                label={t("account.addresses.phone")}
                 name="phone"
                 defaultValue={beirt?.phone}
                 autoComplete="phone"
@@ -161,7 +165,7 @@ const AddAddress = ({
                 className="text-rose-500 text-small-regular py-2"
                 data-testid="address-error"
               >
-                {formState.error}
+                {authHibaFelirat(formState.error, t)}
               </div>
             )}
           </Modal.Body>
@@ -174,9 +178,11 @@ const AddAddress = ({
                 className="h-10"
                 data-testid="cancel-button"
               >
-                Mégse
+                {t("account.addresses.cancel")}
               </Button>
-              <SubmitButton data-testid="save-button">Mentés</SubmitButton>
+              <SubmitButton data-testid="save-button">
+                {t("account.addresses.save")}
+              </SubmitButton>
             </div>
           </Modal.Footer>
         </form>

@@ -6,11 +6,7 @@ import {
   aszfElfogadasTorzs,
   regisztracioHiba,
 } from "@lib/util/aszf"
-import {
-  authHibaKod,
-  authHibaSzoveg,
-  type AuthHibaKod,
-} from "@lib/util/auth-hiba"
+import { authHibaKod, type AuthHibaKod } from "@lib/util/auth-hiba"
 import {
   alapertelmezettUrlapbol,
   cimNevUrlapbol,
@@ -579,7 +575,7 @@ export async function transferCart() {
 // React 19 resets the form (as #418 does for the other account forms).
 export type CimMentesAllapot = {
   success: boolean
-  error: string | null
+  error: AuthHibaKod | null
   ertekek?: Record<string, string>
 }
 
@@ -622,7 +618,7 @@ export const addCustomerAddress = async (
     .catch((err) => {
       return {
         success: false,
-        error: authHibaSzoveg(err),
+        error: authHibaKod(err),
         ertekek: cimUrlapErtekek(formData),
       }
     })
@@ -657,7 +653,7 @@ export const updateCustomerAddress = async (
   if (!addressId) {
     return {
       success: false,
-      error: "Address ID is required",
+      error: "address_id_required",
       ertekek: cimUrlapErtekek(formData),
     }
   }
@@ -702,7 +698,7 @@ export const updateCustomerAddress = async (
     .catch((err) => {
       return {
         success: false,
-        error: authHibaSzoveg(err),
+        error: authHibaKod(err),
         ertekek: cimUrlapErtekek(formData),
       }
     })

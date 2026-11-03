@@ -16,16 +16,16 @@ type Cim = {
 
 /**
  * A kartya cime (257:89): a cim neve ("Otthon"). Nev nelkul a cimzett neve,
- * magyar sorrendben; ha az sincs, "Cím".
+ * magyar sorrendben; ha az sincs, a `tartalek` (alapertelmezetten "Cím").
  */
-export function cimCim(cim: Cim): string {
+export function cimCim(cim: Cim, tartalek = "Cím"): string {
   const nev = (cim.address_name ?? "").trim()
   if (nev) return nev
   const cimzett = [cim.last_name, cim.first_name]
     .map((r) => (r ?? "").trim())
     .filter(Boolean)
     .join(" ")
-  return cimzett || "Cím"
+  return cimzett || tartalek
 }
 
 /** A kartya sora (257:91): "1111 Budapest, Minta utca 12." */
