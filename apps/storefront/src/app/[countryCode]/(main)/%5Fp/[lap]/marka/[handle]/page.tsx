@@ -26,10 +26,5 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function MarkaLapozott(props: Props) {
   const { lap, ...params } = await props.params
-  return markaLapTorzs(
-    params,
-    { page: lap },
-    `/${params.countryCode}/marka/${params.handle}`,
-    true,
-  )
+  return markaLapTorzs(params, { page: lap }, true)
 }

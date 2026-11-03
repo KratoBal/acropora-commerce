@@ -12,7 +12,7 @@ import { lapozottCim } from "@lib/util/belso-lap-metaadat"
 import { listProducts } from "@lib/data/products"
 import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
 import { notFound } from "next/navigation"
-import { LAP_MERET } from "@modules/categories/templates/commerce/lista-lap"
+import { LAP_MERET } from "@lib/util/lap-meret"
 
 /**
  * A STORE-LAP TORZSE ES METAADATA, HAROM UTNAK (FE-7 3. resz). Ugyanaz a

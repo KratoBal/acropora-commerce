@@ -1,14 +1,9 @@
-import {
-  listCategories,
-  listNonEmptyRootCategories,
-} from "@lib/data/categories"
-import { listProductsWithSort } from "@lib/data/products"
+import { listNonEmptyRootCategories } from "@lib/data/categories"
 import { getRegion } from "@lib/data/regions"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { markaValtas, szuroCim, type MarkaSor } from "@lib/util/marka-szuro"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
-import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
 import {
   kategoriaMarkai,
   kovetkezoLap,
@@ -16,8 +11,9 @@ import {
 import ListaLap, {
   LAP_MERET,
 } from "@modules/categories/templates/commerce/lista-lap"
-import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+
+import { listaTermekek } from "./lista-termekek"
 
 /**
  * THE ALL-PRODUCTS LIST (`/store`, 2026-11-03) on the shared list page.
@@ -57,26 +53,18 @@ export default async function StoreListaLap({
   if (!region) return null
 
   const [
-    {
-      response: { products, count },
-    },
+    { products, count, eloAllatKartya },
     { gyokerek, nevek, szamok },
-    katalogus,
     markaLista,
   ] = await Promise.all([
-    listProductsWithSort({
-      page,
-      queryParams: {
-        limit: LAP_MERET,
-        fields: `${TERMEKLISTA_MEZOK}*collection,*categories`,
-        ...(markak.length > 0 ? { collection_id: markak } : {}),
-      },
-      sortBy,
+    listaTermekek({
       countryCode,
+      page,
+      sortBy,
       optionValueIds,
+      szuro: { collection_id: markak },
     }),
     listNonEmptyRootCategories(region.id),
-    listCategories({ fields: "id,name,handle,parent_category_id" }),
     kategoriaMarkai(undefined, countryCode),
   ])
 
@@ -121,9 +109,7 @@ export default async function StoreListaLap({
       markak={markak}
       markaLink={markaLink}
       products={products}
-      eloAllatKartya={(termek) =>
-        vilagaTermeknek(termek, katalogus ?? []) === "sotet"
-      }
+      eloAllatKartya={eloAllatKartya}
       uresSzoveg={t("category.emptyList")}
       kovetkezoHref={
         tovabbi ? kovetkezoLap(page, sortBy, optionValueIds, markak) : null
