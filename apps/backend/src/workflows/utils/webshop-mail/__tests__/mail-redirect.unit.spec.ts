@@ -44,6 +44,7 @@ describe("webshopMailRedirect", () => {
       "a@b",
       "a@b.hu, c@d.hu",
       "a@b.hu;c@d.hu",
+      "a@b.hu,c@d.hu",
       "a@b.hu c@d.hu",
       "Név <a@b.hu>",
       "@b.hu",
