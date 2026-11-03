@@ -68,3 +68,35 @@ describe("createPickupCart", () => {
     expect(createCart.mock.calls[0][0].input.metadata).not.toHaveProperty("storefront_locale")
   })
 })
+
+/*
+  THE TWO ORDERS' CROSS-REFERENCES KEEP WHAT EACH ORDER ALREADY CARRIES (acrobot 41499): `linkOrders`
+  writes the parent's id on the pickup order and the pickup order's id on the parent, each on top of
+  its OWN stored metadata, so the language both orders got from their carts is still there after.
+*/
+describe("linkOrders", () => {
+  it("writes the cross-references on top of each order's own metadata, language included", async () => {
+    const updateOrders = jest.fn()
+    const orders = [
+      { id: "order_parent", metadata: { storefront_locale: "en", aszf_elfogadas: { verzio: "1" } } },
+      { id: "order_pickup", metadata: { storefront_locale: "en" } },
+    ]
+    const container = {
+      resolve: (key: string) =>
+        key === "query"
+          ? { graph: async () => ({ data: orders }) }
+          : key === "order"
+            ? { updateOrders }
+            : { warn: jest.fn(), info: jest.fn(), error: jest.fn() },
+    } as never
+    const ops = splitCompletionOperations(container, { storePickupOptionId: "so_pickup" })
+    await ops.linkOrders("order_parent", "order_pickup")
+    expect(updateOrders).toHaveBeenCalledWith([
+      {
+        id: "order_parent",
+        metadata: { storefront_locale: "en", aszf_elfogadas: { verzio: "1" }, acropora_pickup_order_id: "order_pickup" },
+      },
+      { id: "order_pickup", metadata: { storefront_locale: "en", acropora_parent_order_id: "order_parent" } },
+    ])
+  })
+})
