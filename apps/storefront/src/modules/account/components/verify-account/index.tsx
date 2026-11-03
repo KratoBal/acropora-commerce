@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@modules/common/components/ui"
@@ -9,6 +10,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 type VerificationState = "verifying" | "success" | "error"
 
 const VerifyAccount = () => {
+  const t = useTranslate()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const [state, setState] = useState<VerificationState>("verifying")
@@ -37,21 +39,23 @@ const VerifyAccount = () => {
       className="max-w-sm w-full flex flex-col items-center text-center gap-y-4"
       data-testid="verify-account-page"
     >
-      <h1 className="text-large-semi uppercase">E-mail-cím ellenőrzése</h1>
+      <h1 className="text-large-semi uppercase">
+        {t("account.auth.verify.title")}
+      </h1>
 
       {state === "verifying" && (
         <p className="text-base-regular text-ui-fg-base">
-          Az e-mail-cím ellenőrzése folyamatban...
+          {t("account.auth.verify.verifying")}
         </p>
       )}
 
       {state === "success" && (
         <>
           <p className="text-base-regular text-ui-fg-base">
-            Az e-mail-címed ellenőrizve. Most már beléphetsz a fiókodba.
+            {t("account.auth.verify.success")}
           </p>
           <LocalizedClientLink href="/account">
-            <Button variant="primary">Belépés</Button>
+            <Button variant="primary">{t("account.auth.verify.signIn")}</Button>
           </LocalizedClientLink>
         </>
       )}
@@ -59,11 +63,12 @@ const VerifyAccount = () => {
       {state === "error" && (
         <>
           <p className="text-base-regular text-ui-fg-base">
-            Ez az ellenőrző link érvénytelen vagy lejárt. Jelentkezz be új
-            ellenőrző e-mail kéréséhez.
+            {t("account.auth.verify.failure")}
           </p>
           <LocalizedClientLink href="/account">
-            <Button variant="secondary">Belépés</Button>
+            <Button variant="secondary">
+              {t("account.auth.verify.signIn")}
+            </Button>
           </LocalizedClientLink>
         </>
       )}

@@ -32,7 +32,8 @@
  * Fogyasztobarat a regi allapotot nem adja vissza.
  */
 import { ASZF_VERZIO_TESZT_MOD, jogiKapuTesztMod } from "@lib/util/jogi-kapu"
-import { JELSZO_ROVID_UZENET, jelszoHosszuEleg } from "@lib/util/jelszo"
+import type { AuthHibaKod } from "@lib/util/auth-hiba"
+import { jelszoHosszuEleg } from "@lib/util/jelszo"
 import {
   FOGYASZTOBARAT_ID,
   dokumentumForras,
@@ -143,19 +144,17 @@ export function aszfHatalyDatum(html: string): string | null {
 /**
  * A REGISZTRACIO SZERVEROLDALI ELLENORZESE. A kliens `required` es a pipa
  * a bongeszoben is megall, de egy kozvetlen POST-ot nem allit meg: ez igen.
- * `null`, ha rendben; kulonben a vevonek szolo magyar mondat.
+ * `null`, ha rendben; kulonben a hiba KODJA (`AuthHibaKod`): a mondatot a
+ * komponens fordítja a lap nyelven (`authHibaFelirat`).
  */
 export function regisztracioHiba(urlap: {
   aszf: FormDataEntryValue | null
   jelszo: FormDataEntryValue | null
   jelszoUjra: FormDataEntryValue | null
-}): string | null {
-  if (urlap.aszf !== "on") {
-    return "A regisztrációhoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót."
-  }
-  if (!urlap.jelszo || urlap.jelszo !== urlap.jelszoUjra) {
-    return "A két jelszó nem egyezik."
-  }
-  if (!jelszoHosszuEleg(urlap.jelszo)) return JELSZO_ROVID_UZENET
+}): AuthHibaKod | null {
+  if (urlap.aszf !== "on") return "aszf_required"
+  if (!urlap.jelszo || urlap.jelszo !== urlap.jelszoUjra)
+    return "passwords_differ"
+  if (!jelszoHosszuEleg(urlap.jelszo)) return "password_short"
   return null
 }

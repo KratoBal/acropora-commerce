@@ -97,20 +97,18 @@ describe("a regisztráció szerveroldali ellenőrzése", () => {
   })
 
   it("pipa nélkül megáll, és megmondja, miért", () => {
-    expect(regisztracioHiba({ ...jo, aszf: null })).toContain("ÁSZF")
+    expect(regisztracioHiba({ ...jo, aszf: null })).toBe("aszf_required")
   })
 
   it("két különböző jelszóval megáll", () => {
     expect(regisztracioHiba({ ...jo, jelszoUjra: "titok12346" })).toBe(
-      "A két jelszó nem egyezik.",
+      "passwords_differ",
     )
   })
 
   it("rövid jelszóval megáll, tíz karakter még átmegy (audit P1/8)", () => {
     const rovid = { ...jo, jelszo: "kilenc123", jelszoUjra: "kilenc123" }
-    expect(regisztracioHiba(rovid)).toBe(
-      "A jelszó legalább 10 karakter legyen.",
-    )
+    expect(regisztracioHiba(rovid)).toBe("password_short")
     expect(
       regisztracioHiba({
         ...jo,
@@ -122,7 +120,7 @@ describe("a regisztráció szerveroldali ellenőrzése", () => {
 
   it("üres jelszóval is megáll, akkor is, ha a kettő egyforma", () => {
     expect(regisztracioHiba({ ...jo, jelszo: "", jelszoUjra: "" })).toBe(
-      "A két jelszó nem egyezik.",
+      "passwords_differ",
     )
   })
 })

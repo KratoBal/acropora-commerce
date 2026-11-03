@@ -42,7 +42,7 @@ describe("hibás beküldés után a mezők megmaradnak", () => {
   it("a regisztráció a beírt adatokkal és a pipával marad, a jelszavak nélkül", async () => {
     muveletek.signup.mockResolvedValue({
       state: "error",
-      error: "A két jelszó nem egyezik.",
+      error: "passwords_differ",
       ertekek: {
         last_name: "Minta",
         first_name: "Anna",
@@ -79,7 +79,7 @@ describe("hibás beküldés után a mezők megmaradnak", () => {
   it("a belépés megtartja az e-mailt, a jelszót nem", async () => {
     muveletek.login.mockResolvedValue({
       state: "error",
-      error: "Hibás e-mail-cím vagy jelszó.",
+      error: "invalid_credentials",
       ertekek: { email: "vevo@example.hu" },
     })
     render(<LoginTemplate />)

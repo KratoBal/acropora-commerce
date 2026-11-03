@@ -1,4 +1,6 @@
 import { login } from "@lib/data/customer"
+import { useTranslate } from "@lib/i18n/use-translate"
+import { authHibaFelirat } from "@lib/util/auth-hiba"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import { useActionState } from "react"
 
@@ -14,6 +16,7 @@ type Props = {
  * allithato, a masodikhoz nincs levelkuldes (docs/P5-LEFT-OUT.md).
  */
 const Login = ({ setCurrentView }: Props) => {
+  const t = useTranslate()
   const [message, formAction] = useActionState(login, null)
   // A failed sign-in keeps the email (React 19 resets the form after the
   // action); the password is typed again.
@@ -21,9 +24,9 @@ const Login = ({ setCurrentView }: Props) => {
 
   return (
     <AuthKartya
-      cim="Bejelentkezés"
-      leiras="Lépj be a rendeléseidhez, címeidhez és számláidhoz."
-      mobilLeiras="Lépj be a rendeléseidhez és számláidhoz."
+      cim={t("account.auth.login.title")}
+      leiras={t("account.auth.login.description")}
+      mobilLeiras={t("account.auth.login.mobileDescription")}
       data-testid="login-page"
     >
       {/*
@@ -38,24 +41,24 @@ const Login = ({ setCurrentView }: Props) => {
           className="border border-acr-line bg-acr-mist p-3 text-[13px] leading-[19px] text-acr-ink"
           data-testid="login-verification-message"
         >
-          A belépés előtt ellenőrizni kell ezt az e-mail-címet:{" "}
-          <strong>{message.email}</strong>. Az ellenőrző levél küldése még nincs
-          bekötve, ezért kérjük, vedd fel velünk a kapcsolatot.
+          {t("account.auth.login.verificationStart")}{" "}
+          <strong>{message.email}</strong>.{" "}
+          {t("account.auth.login.verificationEnd")}
         </p>
       )}
       <form className="flex flex-col gap-[14px]" action={formAction}>
         <AuthMezo
-          cimke="E-mail"
+          cimke={t("account.auth.login.email")}
           name="email"
           type="email"
-          title="Adj meg érvényes e-mail-címet."
+          title={t("account.auth.login.emailTitle")}
           autoComplete="email"
           required
           defaultValue={beirt?.email ?? ""}
           data-testid="email-input"
         />
         <AuthMezo
-          cimke="Jelszó"
+          cimke={t("account.auth.login.password")}
           name="password"
           type="password"
           autoComplete="current-password"
@@ -63,14 +66,20 @@ const Login = ({ setCurrentView }: Props) => {
           data-testid="password-input"
         />
         <AuthHiba
-          hiba={message?.state === "error" ? message.error : null}
+          hiba={
+            message?.state === "error"
+              ? authHibaFelirat(message.error, t)
+              : null
+          }
           data-testid="login-error-message"
         />
-        <AuthGomb data-testid="sign-in-button">Bejelentkezés</AuthGomb>
+        <AuthGomb data-testid="sign-in-button">
+          {t("account.auth.login.submit")}
+        </AuthGomb>
       </form>
       <AuthValto
-        mondat="Nincs még fiókod?"
-        gomb="Regisztráció"
+        mondat={t("account.auth.login.noAccount")}
+        gomb={t("account.auth.login.toRegister")}
         onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
         data-testid="register-button"
       />

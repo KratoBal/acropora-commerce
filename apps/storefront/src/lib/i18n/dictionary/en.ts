@@ -150,6 +150,66 @@ export const en: Dictionary = {
     allProducts: "Go to all products",
     discover: "Explore products",
   },
+  account: {
+    auth: {
+      eyebrow: "Account",
+      login: {
+        title: "Sign in",
+        description: "Sign in to see your orders, addresses and invoices.",
+        mobileDescription: "Sign in to see your orders and invoices.",
+        verificationStart:
+          "This e-mail address has to be verified before you can sign in:",
+        verificationEnd:
+          "The verification e-mail is not set up yet, so please contact us.",
+        email: "Email",
+        emailTitle: "Enter a valid e-mail address.",
+        password: "Password",
+        submit: "Sign in",
+        noAccount: "Do not have an account yet?",
+        toRegister: "Register",
+      },
+      register: {
+        title: "Register",
+        description: "Create your Acropora account for faster shopping.",
+        mobileDescription: "Create your Acropora account.",
+        lastName: "Last name",
+        firstName: "First name",
+        email: "Email",
+        password: "Password",
+        passwordAgain: "Password again",
+        acceptStart: "I accept the",
+        termsLink: "terms and conditions",
+        acceptMiddle: "and the",
+        privacyLink: "privacy notice",
+        submit: "Create account",
+        haveAccount: "Already have an account?",
+        toLogin: "Sign in",
+      },
+      verify: {
+        title: "Verifying your e-mail address",
+        verifying: "Verifying your e-mail address...",
+        success: "Your e-mail address is verified. You can sign in now.",
+        failure:
+          "This verification link is invalid or has expired. Sign in to ask for a new verification e-mail.",
+        signIn: "Sign in",
+        metaTitle: "Confirm your e-mail address",
+        metaDescription: "Confirm your e-mail address to finish registering.",
+      },
+      loginMetaDescription: "Sign in to your {store} account.",
+    },
+    error: {
+      invalidCredentials: "Wrong e-mail address or password.",
+      tooManyAttempts: "Too many attempts. Try again in a few minutes.",
+      passwordShort: "The password must be at least {min} characters long.",
+      emailTaken:
+        "There is already an account with this e-mail address. Sign in.",
+      generic:
+        "That did not work, try again. If it happens again, write to us.",
+      aszfRequired:
+        "To register you have to accept the terms and conditions and the privacy notice.",
+      passwordsDiffer: "The two passwords do not match.",
+    },
+  },
   headerText: {
     bar1: "Livestock for in-store pickup only, at our Budapest shop",
     bar2: "Equipment and chemicals: home delivery in 2–3 working days",

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+import { authHibaFelirat } from "@lib/util/auth-hiba"
 import { useActionState } from "react"
 
 import { signup } from "@lib/data/customer"
@@ -24,6 +26,7 @@ type Props = {
  * vevon (`lib/util/aszf.ts`). A szerver is ellenorzi, nem csak a bongeszo.
  */
 const Register = ({ setCurrentView }: Props) => {
+  const t = useTranslate()
   const [message, formAction] = useActionState(signup, null)
   // After a failed submit the fields refill from the submitted values: React 19
   // resets the form after the action. The passwords are typed again.
@@ -31,9 +34,9 @@ const Register = ({ setCurrentView }: Props) => {
 
   return (
     <AuthKartya
-      cim="Regisztráció"
-      leiras="Hozd létre az Acropora fiókodat a gyorsabb vásárláshoz."
-      mobilLeiras="Hozd létre az Acropora fiókodat."
+      cim={t("account.auth.register.title")}
+      leiras={t("account.auth.register.description")}
+      mobilLeiras={t("account.auth.register.mobileDescription")}
       data-testid="register-page"
     >
       {/*
@@ -48,14 +51,14 @@ const Register = ({ setCurrentView }: Props) => {
           className="border border-acr-line bg-acr-mist p-3 text-[13px] leading-[19px] text-acr-ink"
           data-testid="register-verification-message"
         >
-          A belépés előtt ellenőrizni kell ezt az e-mail-címet:{" "}
-          <strong>{message.email}</strong>. Az ellenőrző levél küldése még nincs
-          bekötve, ezért kérjük, vedd fel velünk a kapcsolatot.
+          {t("account.auth.login.verificationStart")}{" "}
+          <strong>{message.email}</strong>.{" "}
+          {t("account.auth.login.verificationEnd")}
         </p>
       )}
       <form className="flex flex-col gap-[14px]" action={formAction}>
         <AuthMezo
-          cimke="Vezetéknév"
+          cimke={t("account.auth.register.lastName")}
           name="last_name"
           required
           defaultValue={beirt?.last_name ?? ""}
@@ -63,7 +66,7 @@ const Register = ({ setCurrentView }: Props) => {
           data-testid="last-name-input"
         />
         <AuthMezo
-          cimke="Keresztnév"
+          cimke={t("account.auth.register.firstName")}
           name="first_name"
           required
           defaultValue={beirt?.first_name ?? ""}
@@ -71,7 +74,7 @@ const Register = ({ setCurrentView }: Props) => {
           data-testid="first-name-input"
         />
         <AuthMezo
-          cimke="E-mail"
+          cimke={t("account.auth.register.email")}
           name="email"
           type="email"
           required
@@ -80,7 +83,7 @@ const Register = ({ setCurrentView }: Props) => {
           data-testid="email-input"
         />
         <AuthMezo
-          cimke="Jelszó"
+          cimke={t("account.auth.register.password")}
           name="password"
           type="password"
           required
@@ -88,7 +91,7 @@ const Register = ({ setCurrentView }: Props) => {
           data-testid="password-input"
         />
         <AuthMezo
-          cimke="Jelszó újra"
+          cimke={t("account.auth.register.passwordAgain")}
           name="password_again"
           type="password"
           required
@@ -105,36 +108,42 @@ const Register = ({ setCurrentView }: Props) => {
             data-testid="aszf-checkbox"
           />
           <span>
-            Elfogadom az{" "}
+            {t("account.auth.register.acceptStart")}{" "}
             <a
               href={ASZF_CIM}
               target="_blank"
               rel="noreferrer"
               className="underline underline-offset-2 hover:text-acr-ink"
             >
-              ÁSZF-et
+              {t("account.auth.register.termsLink")}
             </a>{" "}
-            és az{" "}
+            {t("account.auth.register.acceptMiddle")}{" "}
             <a
               href={ADATKEZELES_CIM}
               target="_blank"
               rel="noreferrer"
               className="underline underline-offset-2 hover:text-acr-ink"
             >
-              adatkezelési tájékoztatót
+              {t("account.auth.register.privacyLink")}
             </a>
             .
           </span>
         </label>
         <AuthHiba
-          hiba={message?.state === "error" ? message.error : null}
+          hiba={
+            message?.state === "error"
+              ? authHibaFelirat(message.error, t)
+              : null
+          }
           data-testid="register-error"
         />
-        <AuthGomb data-testid="register-button">Fiók létrehozása</AuthGomb>
+        <AuthGomb data-testid="register-button">
+          {t("account.auth.register.submit")}
+        </AuthGomb>
       </form>
       <AuthValto
-        mondat="Már van fiókod?"
-        gomb="Bejelentkezés"
+        mondat={t("account.auth.register.haveAccount")}
+        gomb={t("account.auth.register.toLogin")}
         onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
         data-testid="sign-in-link"
       />

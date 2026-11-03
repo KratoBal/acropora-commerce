@@ -154,6 +154,65 @@ export const hu = {
     allProducts: "Ugrás az összes termékhez",
     discover: "Termékek felfedezése",
   },
+  account: {
+    auth: {
+      eyebrow: "Fiók",
+      login: {
+        title: "Bejelentkezés",
+        description: "Lépj be a rendeléseidhez, címeidhez és számláidhoz.",
+        mobileDescription: "Lépj be a rendeléseidhez és számláidhoz.",
+        verificationStart:
+          "A belépés előtt ellenőrizni kell ezt az e-mail-címet:",
+        verificationEnd:
+          "Az ellenőrző levél küldése még nincs bekötve, ezért kérjük, vedd fel velünk a kapcsolatot.",
+        email: "E-mail",
+        emailTitle: "Adj meg érvényes e-mail-címet.",
+        password: "Jelszó",
+        submit: "Bejelentkezés",
+        noAccount: "Nincs még fiókod?",
+        toRegister: "Regisztráció",
+      },
+      register: {
+        title: "Regisztráció",
+        description: "Hozd létre az Acropora fiókodat a gyorsabb vásárláshoz.",
+        mobileDescription: "Hozd létre az Acropora fiókodat.",
+        lastName: "Vezetéknév",
+        firstName: "Keresztnév",
+        email: "E-mail",
+        password: "Jelszó",
+        passwordAgain: "Jelszó újra",
+        acceptStart: "Elfogadom az",
+        termsLink: "ÁSZF-et",
+        acceptMiddle: "és az",
+        privacyLink: "adatkezelési tájékoztatót",
+        submit: "Fiók létrehozása",
+        haveAccount: "Már van fiókod?",
+        toLogin: "Bejelentkezés",
+      },
+      verify: {
+        title: "E-mail-cím ellenőrzése",
+        verifying: "Az e-mail-cím ellenőrzése folyamatban...",
+        success: "Az e-mail-címed ellenőrizve. Most már beléphetsz a fiókodba.",
+        failure:
+          "Ez az ellenőrző link érvénytelen vagy lejárt. Jelentkezz be új ellenőrző e-mail kéréséhez.",
+        signIn: "Belépés",
+        metaTitle: "E-mail-cím megerősítése",
+        metaDescription:
+          "Erősítsd meg az e-mail-címedet a regisztráció befejezéséhez.",
+      },
+      loginMetaDescription: "Lépj be a(z) {store} fiókodba.",
+    },
+    error: {
+      invalidCredentials: "Hibás e-mail-cím vagy jelszó.",
+      tooManyAttempts: "Túl sok próbálkozás. Próbáld újra pár perc múlva.",
+      passwordShort: "A jelszó legalább {min} karakter legyen.",
+      emailTaken: "Ezzel az e-mail-címmel már van fiók. Jelentkezz be.",
+      generic: "Nem sikerült, próbáld újra. Ha újra előjön, írj nekünk.",
+      aszfRequired:
+        "A regisztrációhoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.",
+      passwordsDiffer: "A két jelszó nem egyezik.",
+    },
+  },
   /**
    * THE HEADER TEXTS THE SHOP OWNER CAN EDIT IN THE OS (the catalogue `fejlec.*` defaults in `modules/kezdolap/szovegek.ts`). The English
    * shop shows the English text only while the OS still holds this exact Hungarian default; an OS text that was changed is shown as
