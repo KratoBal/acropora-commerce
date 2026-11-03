@@ -18,6 +18,15 @@ export type OsMailRenderConfig = { url: string; token: string }
 export const webshopMailRenderer = (env: NodeJS.ProcessEnv = process.env): "os" | "local" =>
   env.ACROPORA_WEBSHOP_MAIL_RENDERER?.trim() === "os" ? "os" : "local"
 
+/**
+ * ENGLISH MAILS ARE OFF UNTIL THE OS IS READY (card d5c6befd). With the switch
+ * off, every mail is asked for in Hungarian whatever language the customer
+ * ordered in, so merging this before the OS has its English words cannot send
+ * a half-English mail. The order's language stays on the order either way.
+ */
+export const webshopMailEnglish = (env: NodeJS.ProcessEnv = process.env): boolean =>
+  env.ACROPORA_WEBSHOP_MAIL_ENGLISH?.trim() === "on"
+
 export const osMailRenderConfig = (env: NodeJS.ProcessEnv = process.env): OsMailRenderConfig | null => {
   const url = env.ACROPORA_OS_MAIL_RENDER_URL?.trim() ?? ""
   const token = env.ACROPORA_OS_MAIL_TOKEN?.trim() ?? ""
