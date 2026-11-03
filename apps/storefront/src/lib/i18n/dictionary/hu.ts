@@ -67,6 +67,13 @@ export const hu = {
     failed: "Nem sikerült, próbáld újra",
     addAria: "{name} kosárba",
   },
+  notFound: {
+    title: "Nincs ilyen oldal",
+    text: "A keresett oldal nem található.",
+    cartText:
+      "A keresett kosár nem található. Töröld a böngésző sütijeit, és próbáld újra.",
+    back: "Vissza a főoldalra",
+  },
   header: {
     account: "Fiókom",
     mainMenu: "Fő menü",

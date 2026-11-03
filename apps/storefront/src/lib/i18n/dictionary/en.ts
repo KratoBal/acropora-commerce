@@ -64,6 +64,13 @@ export const en: Dictionary = {
     failed: "That did not work, try again",
     addAria: "Add {name} to cart",
   },
+  notFound: {
+    title: "Page not found",
+    text: "The page you are looking for does not exist.",
+    cartText:
+      "The cart you are looking for does not exist. Clear your browser cookies and try again.",
+    back: "Back to the home page",
+  },
   header: {
     account: "My account",
     mainMenu: "Main menu",
