@@ -97,3 +97,29 @@ export const webshopMailModules = (env: NodeJS.ProcessEnv = process.env) => {
       ]
     : []
 }
+
+/**
+ * THE TEST SHOP'S MAIL GOES TO ONE INTERNAL ADDRESS (acrobot 41809; the same pattern as the OS's
+ * PUSH_REDIRECT_TO_USER_IDS, Balázs 2026-09-25): with `ACROPORA_WEBSHOP_MAIL_REDIRECT_TO` set to one
+ * address, every shop mail is sent there instead of to the customer, and the original recipient is
+ * named in the subject and the body.
+ *
+ *   unset or blank   no redirect: the mail goes to the customer, exactly as before
+ *   one address      the redirect
+ *   anything else    `invalid`: the mail is NOT sent. A value that is set but cannot be read as ONE
+ *                    address must never fall back to the real recipient: the whole point of the key
+ *                    is that nothing reaches a customer from a place that asked for the opposite.
+ */
+export const WEBSHOP_MAIL_REDIRECT_ENV = "ACROPORA_WEBSHOP_MAIL_REDIRECT_TO"
+
+export type WebshopMailRedirect = { kind: "off" } | { kind: "to"; address: string } | { kind: "invalid" }
+
+// one plain address: no whitespace, no comma or semicolon (a list), no angle brackets (a name part)
+const ONE_ADDRESS = /^[^\s@<>,;"']+@[^\s@<>,;"']+\.[^\s@<>,;"']+$/
+
+export const webshopMailRedirect = (env: NodeJS.ProcessEnv = process.env): WebshopMailRedirect => {
+  const value = env[WEBSHOP_MAIL_REDIRECT_ENV]
+  if (value === undefined || value.trim() === "") return { kind: "off" }
+  const address = value.trim()
+  return ONE_ADDRESS.test(address) ? { kind: "to", address } : { kind: "invalid" }
+}
