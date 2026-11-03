@@ -2,7 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { translator, type Key } from "@lib/i18n/dictionary"
-import { localeOf } from "@lib/i18n/locale"
+import { localeOf, type Locale } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
@@ -729,6 +729,35 @@ export async function mentsMegjegyzeseket(
       uzenet: MEGJEGYZES_MENTES_HIBA,
       kod: MEGJEGYZES_MENTES_HIBA_KOD,
     }
+  }
+}
+
+/**
+ * A VEVO NYELVE A KOSARRA (kartya d5c6befd): a webshop levelei (es a szamla
+ * levele) azon a nyelven mennek, amelyiken a vevo a fizetes inditasakor a
+ * lapot latta. Sajat hatter-vegpont (`POST /store/cart-locale/:id`), nem a
+ * nyers `cart.update`: az csak ezt az egy kulcsot irja, es csak `hu`-t vagy
+ * `en`-t fogad el.
+ *
+ * A HIBA NEM ALLITJA MEG A FIZETEST. A nyelv nem jogi rekord, mint az ASZF:
+ * ha a mentes elmarad, a rendeles magyar levelet kap (a regi rendelesek
+ * alapertelmezese), a vevo pedig fizethet. A visszateres ezert csak jelzi,
+ * hogy sikerult-e; a hivo nem all meg rajta.
+ */
+export async function mentsRendelesiNyelvet(
+  cartId: string,
+  locale: Locale,
+): Promise<{ ok: boolean }> {
+  try {
+    await sdk.client.fetch(`/store/cart-locale/${cartId}`, {
+      method: "POST",
+      body: { locale },
+      headers: { ...(await getAuthHeaders()) },
+    })
+    revalidateTag(await getCacheTag("carts"))
+    return { ok: true }
+  } catch {
+    return { ok: false }
   }
 }
 

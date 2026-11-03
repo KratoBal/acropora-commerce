@@ -893,4 +893,12 @@ describe("the pickup cart's metadata", () => {
     expect(pickupCartMetadata("cart_1", null)).toEqual({ acropora_parent_cart_id: "cart_1" })
     expect(pickupCartMetadata("cart_1", { egyeb: 1 })).toEqual({ acropora_parent_cart_id: "cart_1" })
   })
+
+  it("carries the language the customer ordered in, when it is one we know", () => {
+    expect(pickupCartMetadata("cart_1", { storefront_locale: "en", egyeb: 1 })).toEqual({
+      acropora_parent_cart_id: "cart_1",
+      storefront_locale: "en",
+    })
+    expect(pickupCartMetadata("cart_1", { storefront_locale: "de" })).toEqual({ acropora_parent_cart_id: "cart_1" })
+  })
 })

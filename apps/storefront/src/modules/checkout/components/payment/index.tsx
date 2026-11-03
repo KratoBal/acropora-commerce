@@ -11,12 +11,13 @@ import { STRIPE_PUBLIKUS_KULCS } from "@lib/util/stripe-kulcs"
 import {
   initiatePaymentSession,
   placeOrder,
+  mentsRendelesiNyelvet,
   rogzitsAszfElfogadast,
 } from "@lib/data/cart"
 import { egyeztesdAzUtanvetDijat } from "@lib/data/payment"
 import { valasszKartyatVegyesKosarra } from "@lib/data/stripe"
 import { convertToLocale } from "@lib/util/money"
-import { useTranslate } from "@lib/i18n/use-translate"
+import { useLocale, useTranslate } from "@lib/i18n/use-translate"
 import { hibaSzoveg } from "@lib/util/penztar-hiba"
 import { type StripeAllapot, stripeGombFelirat } from "@lib/util/stripe-allapot"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
@@ -81,6 +82,16 @@ const Payment = ({
   engedelyezettModok: EngedelyezettFizetesiMod[]
 }) => {
   const t = useTranslate()
+  const locale = useLocale()
+  /*
+    A FIZETES INDITASA ELOTT KET DOLOG A KOSARRA KERUL: a vevo nyelve (a
+    levelek ezen mennek; hiba eseten nem allitja meg a fizetest, a rendeles
+    magyar levelet kap) es az ASZF elfogadasa (ez megallit, ha elmarad).
+  */
+  const fizetesElott = async () => {
+    await mentsRendelesiNyelvet(cart.id, locale)
+    return rogzitsAszfElfogadast(cart.id)
+  }
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession) => paymentSession.status === "pending",
   )
@@ -302,7 +313,7 @@ const Payment = ({
     try {
       // a fizetesi oldalon az ASZF a kosarra kerul, mielott tovabblepunk
       if (oldal) {
-        const rogzites = await rogzitsAszfElfogadast(cart.id)
+        const rogzites = await fizetesElott()
         if (!rogzites.ok) {
           setError(hibaSzoveg(t, rogzites))
           return
@@ -412,7 +423,7 @@ const Payment = ({
   */
   const nemElfogadva = oldal && !aszfElfogadva
   // a fizetesi oldalon a pipa a kosarra kerul, mielott barmilyen fizetes indul
-  const aszfRogzites = oldal ? () => rogzitsAszfElfogadast(cart.id) : undefined
+  const aszfRogzites = oldal ? fizetesElott : undefined
   const ctaOsztaly = oldal
     ? `${STRIPE_CTA_OSZTALY} small:!w-full small:!min-w-0`
     : STRIPE_CTA_OSZTALY
