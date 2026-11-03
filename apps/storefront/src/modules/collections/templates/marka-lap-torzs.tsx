@@ -6,8 +6,8 @@ import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
 import CollectionTemplate from "@modules/collections/templates"
 import { listProducts } from "@lib/data/products"
+import { LAP_MERET } from "@lib/util/lap-meret"
 import { csakLapszam, lapszamLetezik } from "@lib/util/lapszam"
-import { lapozoKeres } from "@modules/store/components/pagination/lap-href"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 /**
@@ -24,11 +24,6 @@ export type MarkaKeres = Record<string, string | string[] | undefined> & {
 export async function markaLapTorzs(
   params: { handle: string; countryCode: string },
   searchParams: MarkaKeres,
-  /**
-   * A lapozo alap-utja. A markaoldal (`/marka/`, SEO P0 PR 11) ugyanezt a
-   * torzset hasznalja; alapertelmezes a regi gyujtemeny-ut.
-   */
-  alapUt = `/${params.countryCode}/collections/${params.handle}`,
   /**
    * Igaz a markaoldalaknal (`/marka/{handle}`): a handle a MARKA handle-je, a
    * gyujtemenyt a marka-modul parositasa adja meg. A regi gyujtemeny-utnal
@@ -55,14 +50,14 @@ export async function markaLapTorzs(
     notFound()
   }
 
-  // a nem letezo lapszam 404 (`lapszam.ts`); a lista 12-es lapokat mutat
+  // a nem letezo lapszam 404 (`lapszam.ts`); a lista 18-as lapokat mutat
   const lap = csakLapszam(searchParams)
   if (lap !== null) {
     const darab = await listProducts({
       countryCode: params.countryCode,
       queryParams: { collection_id: [collection.id], limit: 1 },
     }).then(({ response }) => response.count)
-    if (!lapszamLetezik(lap, darab, 12)) notFound()
+    if (!lapszamLetezik(lap, darab, LAP_MERET)) notFound()
   }
 
   return (
@@ -72,10 +67,6 @@ export async function markaLapTorzs(
       sortBy={sortBy}
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
-      lapozo={{
-        alap: alapUt,
-        keres: lapozoKeres(searchParams),
-      }}
     />
   )
 }
