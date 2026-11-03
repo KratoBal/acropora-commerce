@@ -5,6 +5,7 @@ import type React from "react"
 import { useParams, usePathname } from "next/navigation"
 
 import { signout } from "@lib/data/customer"
+import { useTranslate } from "@lib/i18n/use-translate"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import {
@@ -20,19 +21,20 @@ import {
  * nincs felulcim, a cim 600/25.
  */
 export function FiokFej() {
+  const t = useTranslate()
   const utvonal = usePathname() ?? ""
   const { countryCode } = useParams() as { countryCode: string }
-  const leiras = fiokLeiras(utvonal, countryCode)
+  const leiras = fiokLeiras(utvonal, countryCode, t)
   return (
     <div className="flex flex-col gap-[5px]">
       <p className="hidden text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.1px] text-acr-heritage small:block">
-        Fiókom
+        {t("account.menu.eyebrow")}
       </p>
       <h1
         className="text-[25px] font-semibold leading-[33px] text-acr-ink small:text-[34px] small:leading-[44px]"
         data-testid="fiok-cim"
       >
-        {fiokCim(utvonal, countryCode)}
+        {fiokCim(utvonal, countryCode, t)}
       </h1>
       {leiras ? (
         <p
@@ -57,13 +59,14 @@ export function FiokFej() {
  * szovegkent.
  */
 export default function FiokMenu() {
+  const t = useTranslate()
   const utvonal = usePathname() ?? ""
   const { countryCode } = useParams() as { countryCode: string }
   const aktiv = aktivPont(utvonal, countryCode)
   const kilepes = () => signout(countryCode)
 
   return (
-    <nav aria-label="Fiók" className="font-acr-sans">
+    <nav aria-label={t("account.menu.navLabel")} className="font-acr-sans">
       <ul
         className="flex gap-[6px] overflow-x-auto small:hidden"
         data-testid="mobile-account-nav"
@@ -80,7 +83,7 @@ export default function FiokMenu() {
                   : "border-acr-line bg-acr-shell")
               }
             >
-              {pont.mobilCimke}
+              {t(pont.mobilCimke)}
             </LocalizedClientLink>
           </li>
         ))}
@@ -91,7 +94,7 @@ export default function FiokMenu() {
             className="flex h-[28px] items-center px-2 text-[10.5px] leading-[14px] text-acr-slate underline underline-offset-2"
             data-testid="logout-button-mobile"
           >
-            Kijelentkezés
+            {t("account.menu.logout")}
           </button>
         </li>
       </ul>
@@ -114,7 +117,7 @@ export default function FiokMenu() {
                 }
                 data-testid={pont.testId}
               >
-                {pont.cimke}
+                {t(pont.cimke)}
               </LocalizedClientLink>
             </li>
           ))}
@@ -125,7 +128,7 @@ export default function FiokMenu() {
           className="self-start px-3 text-[13.5px] leading-[18px] text-acr-slate underline underline-offset-2 hover:text-acr-ink"
           data-testid="logout-button"
         >
-          Kijelentkezés
+          {t("account.menu.logout")}
         </button>
       </div>
     </nav>

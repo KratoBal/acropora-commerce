@@ -1,8 +1,11 @@
 import { HttpTypes } from "@medusajs/types"
 
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { convertToLocale } from "@lib/util/money"
 import {
   allapotFajta,
+  allapotFelirat,
   fizetesiAllapot,
   kapcsoltFelirat,
   kapcsoltRendeles,
@@ -29,7 +32,13 @@ const tetelSzam = (r: Rendeles) =>
  * Az allapot cimkeje (249:41; mobilon 249:220). A keret szovegstilusa
  * nagybetus (`textCase: UPPER`, 0.5 px betukoz); a szoveg maga a bolt neve.
  */
-export function AllapotCimke({ allapot }: { allapot: UzletiAllapot }) {
+export function AllapotCimke({
+  allapot,
+  t = translator(DEFAULT_LOCALE),
+}: {
+  allapot: UzletiAllapot
+  t?: Translate
+}) {
   const fajta = allapotFajta(allapot.status)
   return (
     <span
@@ -44,7 +53,7 @@ export function AllapotCimke({ allapot }: { allapot: UzletiAllapot }) {
       data-testid="rendeles-allapot"
       data-fajta={fajta}
     >
-      {allapot.label}
+      {allapotFelirat(allapot, t)}
     </span>
   )
 }
@@ -57,13 +66,17 @@ export function AllapotCimke({ allapot }: { allapot: UzletiAllapot }) {
 function NyitottKartya({
   sor,
   kapcsolt,
+  t,
+  locale,
 }: {
   sor: RendelesSor<Rendeles>
   /** P4-2: "Egy leadásból: #13, bolti átvétel", ha van pár. */
   kapcsolt?: string | null
+  t: Translate
+  locale: Locale
 }) {
   const { rendeles, allapot } = sor
-  const fizetes = fizetesiAllapot(rendeles.payment_status)
+  const fizetes = fizetesiAllapot(rendeles.payment_status, t)
   return (
     <article
       className="flex flex-col gap-[10px] border border-acr-line bg-acr-white p-[14px] small:gap-[14px] small:p-5"
@@ -76,7 +89,7 @@ function NyitottKartya({
         >
           {rendelesSzam(rendeles.display_id)}
         </h3>
-        {allapot ? <AllapotCimke allapot={allapot} /> : null}
+        {allapot ? <AllapotCimke allapot={allapot} t={t} /> : null}
         <span
           className="ml-auto hidden text-[20px] font-bold leading-[26px] text-acr-ink small:inline"
           data-testid="rendeles-osszeg"
@@ -86,10 +99,10 @@ function NyitottKartya({
       </div>
       <p className="text-[11.8px] leading-[15px] text-acr-slate small:text-[12.5px] small:leading-[16px]">
         <span className="small:hidden">
-          {rendelesDatumRovid(rendeles.created_at)}
+          {rendelesDatumRovid(rendeles.created_at, locale)}
         </span>
         <span className="hidden small:inline">
-          {rendelesDatum(rendeles.created_at)}
+          {rendelesDatum(rendeles.created_at, locale)}
         </span>
         {fizetes ? ` · ${fizetes}` : ""}
       </p>
@@ -109,7 +122,7 @@ function NyitottKartya({
         className="flex h-[44px] w-full items-center justify-center bg-acr-heritage text-[13.5px] font-semibold text-acr-white small:h-[42px] small:w-[150px]"
         data-testid="rendeles-reszletek"
       >
-        Rendelés részletei
+        {t("account.orders.details")}
       </LocalizedClientLink>
     </article>
   )
@@ -123,9 +136,13 @@ function NyitottKartya({
 function KorabbiKartya({
   sor,
   kapcsolt,
+  t,
+  locale,
 }: {
   sor: RendelesSor<Rendeles>
   kapcsolt?: string | null
+  t: Translate
+  locale: Locale
 }) {
   const { rendeles, allapot } = sor
   return (
@@ -142,7 +159,7 @@ function KorabbiKartya({
             {rendelesSzam(rendeles.display_id)}
           </span>
           <span className="text-[11.5px] leading-[15px] text-acr-slate">
-            {allapot?.label ?? ""}
+            {allapot ? allapotFelirat(allapot, t) : ""}
           </span>
         </span>
         <span className="text-[13.5px] font-medium leading-[18px] text-acr-ink">
@@ -154,13 +171,14 @@ function KorabbiKartya({
           <h3 className="text-[15px] font-semibold leading-[20px] text-acr-ink">
             {rendelesSzam(rendeles.display_id)}
           </h3>
-          {allapot ? <AllapotCimke allapot={allapot} /> : null}
+          {allapot ? <AllapotCimke allapot={allapot} t={t} /> : null}
           <span className="ml-auto text-[16px] font-bold leading-[21px] text-acr-ink">
             {osszeg(rendeles)}
           </span>
         </div>
         <p className="text-[12.5px] leading-[16px] text-acr-slate">
-          {rendelesDatum(rendeles.created_at)} · {tetelSzam(rendeles)} tétel ·{" "}
+          {rendelesDatum(rendeles.created_at, locale)} ·{" "}
+          {t("account.orders.itemCount", { count: tetelSzam(rendeles) })} ·{" "}
           {kapcsolt ? (
             <span data-testid="rendeles-kapcsolt">{kapcsolt} · </span>
           ) : null}
@@ -168,7 +186,7 @@ function KorabbiKartya({
             href={reszletek(rendeles)}
             className="underline underline-offset-2 hover:text-acr-ink"
           >
-            megtekintés
+            {t("account.orders.view")}
           </LocalizedClientLink>
         </p>
       </div>
@@ -183,9 +201,14 @@ function KorabbiKartya({
 export default function Rendelesek({
   rendelesek,
   allapotok,
+  t = translator(DEFAULT_LOCALE),
+  locale = DEFAULT_LOCALE,
 }: {
   rendelesek: Rendeles[]
   allapotok: UzletiAllapot[]
+  /** The page's translator and language (the page knows them from its route); Hungarian by default. */
+  t?: Translate
+  locale?: Locale
 }) {
   if (rendelesek.length === 0) {
     return (
@@ -194,14 +217,14 @@ export default function Rendelesek({
         data-testid="no-orders-container"
       >
         <p className="text-[13.5px] leading-[19px] text-acr-slate">
-          Még nincs rendelésed.
+          {t("account.orders.empty")}
         </p>
         <LocalizedClientLink
           href="/store"
           className="flex h-[44px] items-center justify-center bg-acr-heritage px-6 text-[13.5px] font-semibold text-acr-white"
           data-testid="continue-shopping-button"
         >
-          Vásárlás
+          {t("account.orders.shop")}
         </LocalizedClientLink>
       </div>
     )
@@ -214,7 +237,7 @@ export default function Rendelesek({
   const kapcsolt = (r: Rendeles) => {
     const par = kapcsoltRendeles(r.metadata)
     return par && szamok.has(par.id)
-      ? kapcsoltFelirat(szamok.get(par.id), par.bolti)
+      ? kapcsoltFelirat(szamok.get(par.id), par.bolti, t)
       : null
   }
   return (
@@ -224,18 +247,22 @@ export default function Rendelesek({
           key={sor.rendeles.id}
           sor={sor}
           kapcsolt={kapcsolt(sor.rendeles)}
+          t={t}
+          locale={locale}
         />
       ))}
       {korabbi.length > 0 ? (
         <section className="flex flex-col gap-3 small:gap-[18px]">
           <h2 className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[22px] small:leading-[29px]">
-            Korábbi rendelések
+            {t("account.orders.previous")}
           </h2>
           {korabbi.map((sor) => (
             <KorabbiKartya
               key={sor.rendeles.id}
               sor={sor}
               kapcsolt={kapcsolt(sor.rendeles)}
+              t={t}
+              locale={locale}
             />
           ))}
         </section>

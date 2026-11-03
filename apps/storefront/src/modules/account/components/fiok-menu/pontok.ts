@@ -1,3 +1,6 @@
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE } from "@lib/i18n/locale"
+
 /**
  * A FIOK MENUJE (P5, 257:21; mobilon a fulsor, 257:219), egy helyen.
  *
@@ -7,47 +10,47 @@
  * moge nincs adat, ezert kimarad (docs/P5-LEFT-OUT.md).
  */
 export type FiokPont = {
-  /** Az asztali menu felirata. */
-  cimke: string
+  /** Az asztali menu felirata (szotar-kulcs, a lap nyelven). */
+  cimke: Key
   /** A mobil ful felirata; a keret rovidit (257:225: "Számlázás"). */
-  mobilCimke: string
+  mobilCimke: Key
   href: string
   testId: string
   /** A fej leirasa a cim alatt, ha a keret ad ilyet (249:215). */
-  leiras?: string
+  leiras?: Key
 }
 
 export const FIOK_PONTOK: readonly FiokPont[] = [
   {
-    cimke: "Profil",
-    mobilCimke: "Profil",
+    cimke: "account.menu.profile",
+    mobilCimke: "account.menu.profile",
     href: "/account/profile",
     testId: "profile-link",
   },
   {
-    cimke: "Rendeléseim",
-    mobilCimke: "Rendeléseim",
+    cimke: "account.menu.orders",
+    mobilCimke: "account.menu.orders",
     href: "/account/orders",
     testId: "orders-link",
     // A mobil keret mondata (249:215). Az asztali (249:20) szallitasi
     // csoportokat es elo allatos atvetelt igerne, ami a P4 hattere.
-    leiras: "Aktuális és korábbi rendeléseid egy helyen.",
+    leiras: "account.menu.ordersDescription",
   },
   {
-    cimke: "Címek",
-    mobilCimke: "Címek",
+    cimke: "account.menu.addresses",
+    mobilCimke: "account.menu.addresses",
     href: "/account/addresses",
     testId: "addresses-link",
   },
   {
-    cimke: "Számlázási adatok",
-    mobilCimke: "Számlázás",
+    cimke: "account.menu.billing",
+    mobilCimke: "account.menu.billingShort",
     href: "/account/billing",
     testId: "billing-link",
   },
   {
-    cimke: "Beállítások",
-    mobilCimke: "Beállítások",
+    cimke: "account.menu.settings",
+    mobilCimke: "account.menu.settings",
     href: "/account/settings",
     testId: "settings-link",
   },
@@ -70,15 +73,21 @@ export function aktivPont(utvonal: string, countryCode: string): string | null {
 export function fiokLeiras(
   utvonal: string,
   countryCode: string,
+  t: Translate = translator(DEFAULT_LOCALE),
 ): string | undefined {
   const aktiv = aktivPont(utvonal, countryCode)
-  return FIOK_PONTOK.find((p) => p.href === aktiv)?.leiras
+  const kulcs = FIOK_PONTOK.find((p) => p.href === aktiv)?.leiras
+  return kulcs ? t(kulcs) : undefined
 }
 
-export function fiokCim(utvonal: string, countryCode: string): string {
+export function fiokCim(
+  utvonal: string,
+  countryCode: string,
+  t: Translate = translator(DEFAULT_LOCALE),
+): string {
   const aktiv = aktivPont(utvonal, countryCode)
   const pont = FIOK_PONTOK.find((p) => p.href === aktiv)
-  return pont?.cimke ?? "Áttekintés"
+  return t(pont?.cimke ?? "account.menu.overview")
 }
 
 /**
