@@ -67,7 +67,7 @@ describe("a jelszó módosítása", () => {
   it("hibánál a mondat látszik, és a jelszavak sem maradnak a mezőben", async () => {
     muveletek.changePassword.mockResolvedValue({
       state: "error",
-      error: "A jelenlegi jelszó nem helyes.",
+      error: "current_password_wrong",
     })
     render(<JelszoUrlap />)
     kitolt()

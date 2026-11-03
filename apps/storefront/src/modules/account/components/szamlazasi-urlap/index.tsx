@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
+import { authHibaFelirat } from "@lib/util/auth-hiba"
 import { useActionState, useState } from "react"
 
 import { saveBilling } from "@lib/data/customer"
@@ -26,6 +28,7 @@ export default function SzamlazasiUrlap({
 }: {
   cim: HttpTypes.StoreCustomerAddress | null
 }) {
+  const t = useTranslate()
   const [allapot, mentes] = useActionState(saveBilling, null)
   // Hibas bekuldes utan a mezok a bekuldott erteket kapjak vissza (a React 19
   // az action utan alaphelyzetbe allitja az urlapot).
@@ -74,13 +77,13 @@ export default function SzamlazasiUrlap({
       */}
       <input type="hidden" name="tipus" value={tipus} />
       <fieldset className="flex gap-2">
-        <legend className="sr-only">Számlázás típusa</legend>
-        {valaszto("maganszemely", "Magánszemély")}
-        {valaszto("ceg", "Cég")}
+        <legend className="sr-only">{t("account.billing.typeLabel")}</legend>
+        {valaszto("maganszemely", t("account.billing.private"))}
+        {valaszto("ceg", t("account.billing.company"))}
       </fieldset>
       {tipus === "ceg" ? (
         <AuthMezo
-          cimke="Cégnév"
+          cimke={t("account.billing.companyName")}
           name="company"
           required
           autoComplete="organization"
@@ -91,7 +94,7 @@ export default function SzamlazasiUrlap({
       <div className="grid gap-3 small:grid-cols-2">
         {tipus === "ceg" ? (
           <AuthMezo
-            cimke="Adószám"
+            cimke={t("account.billing.taxId")}
             name="tax_id"
             required
             inputMode="numeric"
@@ -104,7 +107,7 @@ export default function SzamlazasiUrlap({
           />
         ) : null}
         <AuthMezo
-          cimke="Irányítószám"
+          cimke={t("account.billing.postalCode")}
           name="postal_code"
           required
           inputMode="numeric"
@@ -115,7 +118,7 @@ export default function SzamlazasiUrlap({
       </div>
       <div className="grid gap-3 small:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <AuthMezo
-          cimke="Város"
+          cimke={t("account.billing.city")}
           name="city"
           required
           autoComplete="address-level2"
@@ -123,7 +126,7 @@ export default function SzamlazasiUrlap({
           data-testid="city-input"
         />
         <AuthMezo
-          cimke="Utca, házszám"
+          cimke={t("account.billing.street")}
           name="address_1"
           required
           autoComplete="address-line1"
@@ -132,7 +135,9 @@ export default function SzamlazasiUrlap({
         />
       </div>
       <AuthHiba
-        hiba={allapot?.state === "error" ? allapot.error : null}
+        hiba={
+          allapot?.state === "error" ? authHibaFelirat(allapot.error, t) : null
+        }
         data-testid="szamlazas-hiba"
       />
       <div className="flex flex-col gap-2 small:flex-row small:items-center small:gap-4">
@@ -141,14 +146,14 @@ export default function SzamlazasiUrlap({
           className="flex h-[46px] w-full items-center justify-center bg-acr-heritage text-[13.5px] font-semibold text-acr-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--acr-color-heritage)] small:h-[44px] small:w-[180px]"
           data-testid="szamlazas-mentes"
         >
-          Mentés
+          {t("account.billing.save")}
         </button>
         <p
           role="status"
           className="text-[13px] leading-[18px] text-acr-slate"
           data-testid="szamlazas-siker"
         >
-          {allapot?.state === "success" ? "Mentve." : ""}
+          {allapot?.state === "success" ? t("account.billing.saved") : ""}
         </p>
       </div>
     </form>

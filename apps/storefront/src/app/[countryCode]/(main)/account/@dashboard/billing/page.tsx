@@ -1,12 +1,21 @@
 import { Metadata } from "next"
+import { localeOf } from "@lib/i18n/locale"
+import { translator } from "@lib/i18n/dictionary"
 import { notFound } from "next/navigation"
 
 import { retrieveCustomer } from "@lib/data/customer"
 import SzamlazasiUrlap from "@modules/account/components/szamlazasi-urlap"
 
-export const metadata: Metadata = {
-  title: "Számlázási adatok",
-  description: "A számlázáshoz használt név, cím és adószám.",
+type Props = { params: Promise<{ countryCode: string }> }
+
+// the page's title and description follow its language (`hu`, `en-hu`)
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { countryCode } = await props.params
+  const t = translator(localeOf(countryCode))
+  return {
+    title: t("account.billing.metaTitle"),
+    description: t("account.billing.metaDescription"),
+  }
 }
 
 /** A SZAMLAZASI ADATOK (P5, 257:102): a vevo alapertelmezett szamlazasi cime. */
