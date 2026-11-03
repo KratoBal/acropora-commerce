@@ -1,3 +1,4 @@
+import { translator } from "@lib/i18n/dictionary"
 import { existsSync } from "fs"
 import { join } from "path"
 
@@ -38,7 +39,8 @@ describe("a fiók menüjének pontjai", () => {
 
   it("a keret sorrendje: Profil, Rendeléseim, Címek, Számlázási adatok, Beállítások", () => {
     // A keret Hűségpontok pontja kimarad: nincs mogotte adat (P5-LEFT-OUT).
-    expect(FIOK_PONTOK.map((p) => p.cimke)).toEqual([
+    const t = translator("hu")
+    expect(FIOK_PONTOK.map((p) => t(p.cimke))).toEqual([
       "Profil",
       "Rendeléseim",
       "Címek",
@@ -46,7 +48,7 @@ describe("a fiók menüjének pontjai", () => {
       "Beállítások",
     ])
     // A mobil ful a keret rovid alakja (257:225).
-    expect(FIOK_PONTOK[3].mobilCimke).toBe("Számlázás")
+    expect(t(FIOK_PONTOK[3].mobilCimke)).toBe("Számlázás")
   })
 
   it("az aktív pont az útvonalból jön, a részletek a Rendeléseim alá tartoznak", () => {
@@ -77,5 +79,31 @@ describe("a fiók menüjének pontjai", () => {
     )
     expect(reszletekUtvonal("/hu/account/orders", "hu")).toBe(false)
     expect(reszletekUtvonal("/hu/account/profile", "hu")).toBe(false)
+  })
+})
+
+describe("a fiók menüje és címe a lap nyelvén", () => {
+  const en = translator("en")
+  const hu = translator("hu")
+
+  it("az angol menü felirata és mobil alakja", () => {
+    expect(FIOK_PONTOK.map((p) => en(p.cimke))).toEqual([
+      "Profile",
+      "My orders",
+      "Addresses",
+      "Billing details",
+      "Settings",
+    ])
+    expect(en(FIOK_PONTOK[3].mobilCimke)).toBe("Billing")
+  })
+
+  it("a fej címe és leírása a nyelv szerint, az áttekintés a tartalék", () => {
+    expect(fiokCim("/en-hu/account/orders", "en-hu", en)).toBe("My orders")
+    expect(fiokCim("/hu/account/orders", "hu", hu)).toBe("Rendeléseim")
+    expect(fiokCim("/en-hu/account", "en-hu", en)).toBe("Overview")
+    expect(fiokLeiras("/en-hu/account/orders", "en-hu", en)).toBe(
+      "Your current and past orders in one place.",
+    )
+    expect(fiokLeiras("/en-hu/account/profile", "en-hu", en)).toBeUndefined()
   })
 })

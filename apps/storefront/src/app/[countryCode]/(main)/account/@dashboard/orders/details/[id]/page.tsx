@@ -2,6 +2,8 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { retrieveOrder, retrieveOrderBusinessStatus } from "@lib/data/orders"
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import {
   kapcsoltFelirat,
   kapcsoltRendeles,
@@ -10,7 +12,7 @@ import {
 import RendelesReszletek from "@modules/account/components/rendeles-reszletek"
 
 type Props = {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; countryCode: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -21,15 +23,21 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  // the page's title and description follow its language (`hu`, `en-hu`)
+  const t = translator(localeOf(params.countryCode))
   return {
-    title: `Rendelés ${rendelesSzam(order.display_id)}`,
-    description: "A rendelésed részletei.",
+    title: t("account.orderDetails.metaTitle", {
+      number: rendelesSzam(order.display_id),
+    }),
+    description: t("account.orderDetails.metaDescription"),
   }
 }
 
 /** A RENDELES RESZLETEI (P5, 249:96). */
 export default async function OrderDetailPage(props: Props) {
   const params = await props.params
+  const locale = localeOf(params.countryCode)
+  const t = translator(locale)
   const [order, allapot] = await Promise.all([
     retrieveOrder(params.id).catch(() => null),
     retrieveOrderBusinessStatus(params.id),
@@ -47,11 +55,13 @@ export default async function OrderDetailPage(props: Props) {
     <RendelesReszletek
       rendeles={order}
       allapot={allapot}
+      t={t}
+      locale={locale}
       par={
         par && parRendeles
           ? {
               id: par.id,
-              felirat: kapcsoltFelirat(parRendeles.display_id, par.bolti),
+              felirat: kapcsoltFelirat(parRendeles.display_id, par.bolti, t),
             }
           : null
       }

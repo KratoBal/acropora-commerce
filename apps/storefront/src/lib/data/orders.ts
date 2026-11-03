@@ -111,22 +111,29 @@ export const retrieveOrderBusinessStatus = async (
     .catch(() => null)
 }
 
+/**
+ * AZ ATVETELI KERELEM HIBAJA KOD (2026-11-03): a muvelet nem tudja, milyen
+ * nyelven ir, ezert KODOT ad (a komponens fordit, `account.orders.transfer.*`),
+ * es a szerver nyers, angol szovege nem megy ki a vevo ele.
+ */
+export type AtvetelHibaKod = "order_id_required" | "generic"
+
 export const createTransferRequest = async (
   state: {
     success: boolean
-    error: string | null
+    error: AtvetelHibaKod | null
     order: HttpTypes.StoreOrder | null
   },
   formData: FormData,
 ): Promise<{
   success: boolean
-  error: string | null
+  error: AtvetelHibaKod | null
   order: HttpTypes.StoreOrder | null
 }> => {
   const id = formData.get("order_id") as string
 
   if (!id) {
-    return { success: false, error: "Order ID is required", order: null }
+    return { success: false, error: "order_id_required", order: null }
   }
 
   const headers = await getAuthHeaders()
@@ -141,7 +148,7 @@ export const createTransferRequest = async (
       headers,
     )
     .then(({ order }) => ({ success: true, error: null, order }))
-    .catch((err) => ({ success: false, error: err.message, order: null }))
+    .catch(() => ({ success: false, error: "generic" as const, order: null }))
 }
 
 export const acceptTransferRequest = async (id: string, token: string) => {

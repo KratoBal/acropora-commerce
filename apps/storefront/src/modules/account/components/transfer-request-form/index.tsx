@@ -1,5 +1,6 @@
 "use client"
 import { createTransferRequest } from "@lib/data/orders"
+import { useTranslate } from "@lib/i18n/use-translate"
 import { CheckCircleMiniSolid, XCircleSolid } from "@medusajs/icons"
 import { Heading, IconButton, Input, Text } from "@modules/common/components/ui"
 import { useActionState } from "react"
@@ -8,6 +9,7 @@ import { SubmitButton } from "@modules/checkout/components/submit-button"
 import { useEffect, useState } from "react"
 
 export default function TransferRequestForm() {
+  const t = useTranslate()
   const [showSuccess, setShowSuccess] = useState(false)
 
   const [state, formAction] = useActionState(createTransferRequest, {
@@ -30,11 +32,11 @@ export default function TransferRequestForm() {
             level="h3"
             className="!text-sm font-semibold text-neutral-950"
           >
-            Rendelés átvétele
+            {t("account.orders.transfer.heading")}
           </Heading>
           <p className="text-small-regular text-neutral-500">
-            Nem találod a keresett rendelést?
-            <br /> Kapcsold a rendelést a fiókodhoz.
+            {t("account.orders.transfer.leadFirst")}
+            <br /> {t("account.orders.transfer.leadSecond")}
           </p>
         </div>
         <form
@@ -45,21 +47,25 @@ export default function TransferRequestForm() {
             <Input
               className="w-full"
               name="order_id"
-              placeholder="Rendelésazonosító"
+              placeholder={t("account.orders.transfer.placeholder")}
             />
             <SubmitButton
               variant="secondary"
               size="small"
               className="w-fit whitespace-nowrap self-end"
             >
-              Átvétel kérése
+              {t("account.orders.transfer.submit")}
             </SubmitButton>
           </div>
         </form>
       </div>
       {!state.success && state.error && (
         <Text className="text-base-regular text-rose-500 text-right">
-          {state.error}
+          {t(
+            state.error === "order_id_required"
+              ? "account.orders.transfer.errorIdRequired"
+              : "account.orders.transfer.errorGeneric",
+          )}
         </Text>
       )}
       {showSuccess && (
@@ -68,7 +74,9 @@ export default function TransferRequestForm() {
             <CheckCircleMiniSolid className="w-4 h-4 text-emerald-500" />
             <div className="flex flex-col gap-y-1">
               <Text className="text-medim-pl text-neutral-950">
-                A(z) {state.order?.id} rendelés átvételét kérted
+                {t("account.orders.transfer.requested", {
+                  id: state.order?.id ?? "",
+                })}
               </Text>
               {/*
                 NEM ALLITJUK, HOGY LEVELET KULDTUNK (Balazs, 2026-10-05). Az
@@ -81,9 +89,7 @@ export default function TransferRequestForm() {
                 className="text-base-regular text-neutral-600"
                 data-testid="transfer-request-note"
               >
-                A kérelmet rögzítettük. A jóváhagyó levél küldése még nincs
-                bekötve, ezért az átvételhez kérjük, vedd fel velünk a
-                kapcsolatot.
+                {t("account.orders.transfer.note")}
               </Text>
             </div>
           </div>
