@@ -18,12 +18,15 @@ vi.mock("@lib/data/products", () => ({
   listProducts: async () => ({ response: { products: [], count: 0 } }),
 }))
 vi.mock("@lib/data/regions", () => ({ getRegion: async () => ({ id: "reg" }) }))
+vi.mock("@lib/data/categories", () => ({ listCategories: async () => [] }))
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND")
   },
 }))
-vi.mock("@modules/products/components/product-preview", () => ({
+// the page body is not under test here (its own spec renders it): the shared
+// list page pulls the cart's server action, which a metadata spec has no use for
+vi.mock("@modules/categories/templates/commerce/lista-lap", () => ({
   default: () => null,
 }))
 
