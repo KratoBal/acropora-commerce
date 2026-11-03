@@ -137,4 +137,22 @@ describe("a nincs-találat lap", () => {
     expect(screen.queryByTestId("kereses-kategoriak")).toBeNull()
     expect(screen.getByTestId("kereses-nincs-talalat")).toBeTruthy()
   })
+
+  it("az angol szegmensen a cím, a tanács, a tippek és a kártyák angolul állnak", async () => {
+    render(await NincsTalalatLap({ kereses: "xyzzy", countryCode: "en-hu" }))
+    expect(screen.getByTestId("store-page-title").textContent).toBe(
+      "No results",
+    )
+    expect(
+      within(screen.getByTestId("kereses-nincs-talalat")).getByRole("heading")
+        .textContent,
+    ).toBe("We did not find that")
+    expect(screen.getByLabelText("Search tips")).toBeTruthy()
+    expect(screen.getByTestId("kereses-segitseg").textContent).toBe(
+      "Help with searching",
+    )
+    expect(screen.getByTestId("kereses-kategoriak").textContent).toContain(
+      "8 products",
+    )
+  })
 })
