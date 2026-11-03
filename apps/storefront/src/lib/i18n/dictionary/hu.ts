@@ -41,6 +41,14 @@ export const hu = {
     uniquePiece: "1 db · Egyedi példány",
     findSimilar: "Hasonlót keresek",
   },
+  brandIndex: {
+    breadcrumbLabel: "Morzsamenü",
+    crumb: "Márkák",
+    title: "Forgalmazott márkák",
+    count: "{count} márka",
+    lettersLabel: "Ugrás betűre",
+    empty: "Jelenleg nincs megjeleníthető márka.",
+  },
   sort: {
     title: "Rendezés",
     newest: "Legújabbak",
