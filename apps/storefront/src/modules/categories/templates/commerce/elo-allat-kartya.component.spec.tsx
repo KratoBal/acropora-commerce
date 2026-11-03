@@ -125,6 +125,32 @@ describe("az élőállat-kártya", () => {
     )
   })
 
+  /**
+   * A BETUMERET KET MODJA. MI PIROSIT: ha az elo allat lista kartyaja telefonon
+   * elvesztene a kompakt betut (a ket oszlop szetesne); ha a vegyes lista
+   * kartyaja a kompakt betuvel maradna a muszaki mellett.
+   */
+  describe("a betűméret módja", () => {
+    const cimOsztaly = () => screen.getByRole("heading").className
+    const arOsztaly = () => screen.getByTestId("kartya-ar").className
+
+    it("alapból kompakt `small` alatt: az elo allat lista két oszlopához", () => {
+      render(<EloAllatKartya product={termek([kezelt(1)])} />)
+      expect(cimOsztaly()).toContain("text-[14px]")
+      expect(cimOsztaly()).toContain("small:text-[18px]")
+      expect(arOsztaly()).toContain("text-[16px]")
+    })
+
+    it("tomor=false: a teljes méret minden szélességen, mint a műszaki kártyán", () => {
+      render(<EloAllatKartya product={termek([kezelt(1)])} tomor={false} />)
+      expect(cimOsztaly()).toContain("text-[18px]")
+      expect(cimOsztaly()).not.toContain("text-[14px]")
+      expect(cimOsztaly()).not.toContain("small:")
+      expect(arOsztaly()).toContain("text-[24px]")
+      expect(arOsztaly()).not.toContain("text-[16px]")
+    })
+  })
+
   it("a termék oldalára visz mindkét linkkel", () => {
     render(<EloAllatKartya product={termek([kezelt(1)])} />)
     const linkek = screen.getAllByRole("link")

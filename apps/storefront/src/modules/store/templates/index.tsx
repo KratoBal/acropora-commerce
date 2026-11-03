@@ -1,13 +1,8 @@
-import { Suspense } from "react"
-
 import { OptionValueIds } from "@lib/util/product-option-filters"
-import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 import KeresesLap from "./kereses/kereses-lap"
-import PaginatedProducts from "./paginated-products"
-import type { LapozoCel } from "@modules/store/components/pagination/lap-href"
+import StoreListaLap from "./store-lista-lap"
 
 const StoreTemplate = ({
   sortBy,
@@ -17,7 +12,6 @@ const StoreTemplate = ({
   kereses,
   gyoker,
   markak,
-  lapozo,
 }: {
   sortBy?: SortOptions
   page?: string
@@ -27,18 +21,15 @@ const StoreTemplate = ({
   kereses?: string
   /** A talalati lap gyoker-fule (`?gyoker=`), csak kereseskor. */
   gyoker?: string
-  /** A talalati lap marka-szuroje (`?marka=`), csak kereseskor. */
+  /** A marka-szuro (`?marka=`): a talalati lapon es a listan is. */
   markak?: string[]
-  /** A lapozo nyilvanos celja a szervertol (`LapozoCel`, FE-7 3. resz). */
-  lapozo?: LapozoCel
 }) => {
   const pageNumber = page ? parseInt(page) : 1
-  const sort = sortBy || "created_at"
 
   /*
     KERESESKOR A TALALATI LAP ALL (P2, 4a, a 152:88 szerint), sajat fejjel,
     gyoker-fulekkel es Márka szurovel. Kereses nelkul a "Minden termék" lap
-    valtozatlan.
+    a kozos lista-lapra kerul (`store-lista-lap.tsx`).
   */
   if (kereses) {
     return (
@@ -54,26 +45,13 @@ const StoreTemplate = ({
   }
 
   return (
-    <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
-      data-testid="category-container"
-    >
-      <RefinementList sortBy={sort} />
-      <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1 data-testid="store-page-title">Minden termék</h1>
-        </div>
-        <Suspense fallback={<SkeletonProductGrid />}>
-          <PaginatedProducts
-            sortBy={sort}
-            page={pageNumber}
-            countryCode={countryCode}
-            optionValueIds={optionValueIds}
-            lapozo={lapozo}
-          />
-        </Suspense>
-      </div>
-    </div>
+    <StoreListaLap
+      countryCode={countryCode}
+      sortBy={sortBy}
+      page={Number.isFinite(pageNumber) && pageNumber > 0 ? pageNumber : 1}
+      optionValueIds={optionValueIds}
+      markak={markak}
+    />
   )
 }
 

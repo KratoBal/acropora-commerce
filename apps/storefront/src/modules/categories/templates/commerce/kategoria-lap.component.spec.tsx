@@ -407,6 +407,12 @@ describe("az élőállat-ág ugyanazon az oldalon", () => {
     expect(
       screen.getByTestId("category-helper-livestock").textContent,
     ).toContain("Személyes átvétel")
+    // the live-animal page is two columns on a phone: its card stays compact
+    expect(
+      screen
+        .getAllByTestId("category-product-card-livestock")[0]
+        .querySelector("h2")!.className,
+    ).toContain("text-[14px]")
   })
 
   it("a műszaki oldalon nincs átvétel sor, és a műszaki kártya áll", async () => {

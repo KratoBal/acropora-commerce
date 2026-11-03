@@ -24,6 +24,8 @@ export const hu = {
     brandFallback: "Márka",
     products: "Termékek",
     empty: "Ebben a kategóriában még nincs megjeleníthető termék.",
+    emptyList: "Még nincs megjeleníthető termék.",
+    allProducts: "Minden termék",
     position: "{from} / {count} termék",
     positionOne: "{from} / {count} termék",
     loadMore: "További termékek betöltése",
