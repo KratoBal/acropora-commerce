@@ -32,18 +32,34 @@ import StoreListaLap from "./store-lista-lap"
 
 const gyoker = (id: string, name: string) => ({ id, name, handle: id }) as never
 
+/** One purchasable variant with a price, so both cards draw their price. */
+const VALTOZAT = [
+  {
+    id: "v1",
+    manage_inventory: true,
+    allow_backorder: false,
+    inventory_quantity: 3,
+    calculated_price: {
+      calculated_amount: 45000,
+      original_amount: 45000,
+      currency_code: "huf",
+      calculated_price: { price_list_type: "default" },
+    },
+  },
+]
+
 const ELO = {
   id: "p_elo",
   handle: "p_elo",
   title: "Élő korall",
-  variants: [],
+  variants: VALTOZAT,
   categories: [{ id: "k", name: "Korallok", mpath: "k" }],
 }
 const MUSZAKI = {
   id: "p_musz",
   handle: "p_musz",
   title: "Műszaki termék",
-  variants: [],
+  variants: VALTOZAT,
   categories: [{ id: "v", name: "Világítás", mpath: "v" }],
 }
 /** Only the leaf came with the product: the root is resolved from the catalogue. */
@@ -190,6 +206,26 @@ describe("a Minden termék lista a közös lista-lapon", () => {
     // the technical product keeps the technical card
     expect(muszakiKartya(kartyak[1])).not.toBeNull()
     expect(eloKartya(kartyak[1])).toBeNull()
+  })
+
+  it("a vegyes listán az élő állat kártyája ugyanakkora betűvel áll, mint a műszaki", async () => {
+    await lap()
+    const lista = screen.getByTestId("category-products-list")
+    const elo = lista.querySelector(
+      "[data-testid='category-product-card-livestock']",
+    ) as HTMLElement
+    const muszaki = lista.querySelector(
+      "[data-testid='commerce-termek-kartya']",
+    ) as HTMLElement
+    const cim = (kartya: HTMLElement) => kartya.querySelector("h2")!.className
+    const ar = (kartya: HTMLElement) =>
+      kartya.querySelector("[data-testid='kartya-ar']")!.className
+    // the same title and price sizes, at every width (no compact `small:` pair)
+    expect(cim(elo)).toContain("text-[18px]")
+    expect(cim(muszaki)).toContain("text-[18px]")
+    expect(cim(elo)).not.toContain("text-[14px]")
+    expect(ar(elo)).toContain("text-[24px]")
+    expect(ar(muszaki)).toContain("text-[24px]")
   })
 
   it("van további oldal: a gomb a következő lapra visz, az utolsón nincs", async () => {

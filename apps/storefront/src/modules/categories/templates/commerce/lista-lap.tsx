@@ -368,7 +368,12 @@ export default function ListaLap({
               {products.map((product, i) => (
                 <li key={product.id}>
                   {eloAllatKartya(product) ? (
-                    <EloAllatKartya product={product} elso={i === 0} t={t} />
+                    <EloAllatKartya
+                      product={product}
+                      elso={i === 0}
+                      t={t}
+                      tomor={eloAllat}
+                    />
                   ) : (
                     <CommerceTermekKartya
                       product={product}
