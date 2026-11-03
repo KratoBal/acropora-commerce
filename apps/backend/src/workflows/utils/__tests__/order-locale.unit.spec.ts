@@ -6,7 +6,7 @@ jest.mock("@medusajs/medusa/core-flows", () => ({
 import middlewares from "../../../api/middlewares"
 import { POST as route } from "../../../api/store/cart-locale/[cart_id]/route"
 import { StorePostCartLocale } from "../../../api/store/cart-locale/validators"
-import { orderLocaleOf, parseOrderLocale, saveCartLocale, withOrderLocale } from "../order-locale"
+import { orderLocaleOf, parseOrderLocale, saveCartLocale } from "../order-locale"
 
 const scopeWith = (row: unknown) =>
   ({
@@ -39,17 +39,6 @@ describe("orderLocaleOf", () => {
   })
 })
 
-describe("withOrderLocale", () => {
-  const stored = { aszf_elfogadas: { verzio: "1" }, acropora_customer_note: "kapu" }
-  it("sets the one key and leaves the rest of the metadata alone", () => {
-    expect(withOrderLocale(stored, "en")).toEqual({ ...stored, storefront_locale: "en" })
-    expect(withOrderLocale(null, "hu")).toEqual({ storefront_locale: "hu" })
-  })
-  it("an unknown language changes nothing", () => {
-    expect(withOrderLocale({ ...stored, storefront_locale: "en" }, "de")).toEqual({ ...stored, storefront_locale: "en" })
-  })
-})
-
 describe("the body", () => {
   it("takes hu or en and no other key", () => {
     expect(StorePostCartLocale.safeParse({ locale: "en" }).success).toBe(true)
@@ -63,12 +52,13 @@ describe("the body", () => {
 })
 
 describe("saveCartLocale", () => {
-  it("writes the language on an open cart, merged into its metadata", async () => {
-    const result = await saveCartLocale(scopeWith({ id: "cart_1", metadata: { egyeb: 1 }, completed_at: null }), "cart_1", "en")
+  it("writes ONLY the language key: the stored metadata is merged by Medusa, never read and written back", async () => {
+    const result = await saveCartLocale(scopeWith({ id: "cart_1", metadata: { aszf_elfogadas: { verzio: "1" } }, completed_at: null }), "cart_1", "en")
     expect(result).toEqual({ status: "saved", locale: "en" })
-    expect(updateCart).toHaveBeenCalledWith({ input: { id: "cart_1", metadata: { egyeb: 1, storefront_locale: "en" } } })
+    expect(updateCart).toHaveBeenCalledTimes(1)
+    expect(updateCart).toHaveBeenCalledWith({ input: { id: "cart_1", metadata: { storefront_locale: "en" } } })
   })
-  it("a switch between cart and payment overwrites the earlier language", async () => {
+  it("a switch between cart and payment sends the new language the same way", async () => {
     await saveCartLocale(scopeWith({ id: "cart_1", metadata: { storefront_locale: "hu" }, completed_at: null }), "cart_1", "en")
     expect(updateCart).toHaveBeenCalledWith({ input: { id: "cart_1", metadata: { storefront_locale: "en" } } })
   })

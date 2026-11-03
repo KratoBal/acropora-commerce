@@ -757,6 +757,9 @@ export async function mentsRendelesiNyelvet(
     revalidateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
+    // NEM NEMA: ha egy angol vevo emiatt kap magyar levelet, a naplobol latszik
+    // (barracuda, #644). Se azonosito, se vevoadat nem kerul bele.
+    console.warn("A vevő nyelvének mentése a kosárra nem sikerült.")
     return { ok: false }
   }
 }

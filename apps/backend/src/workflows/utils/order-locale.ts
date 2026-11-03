@@ -33,17 +33,6 @@ export const parseOrderLocale = (value: unknown): OrderLocale | null =>
 export const orderLocaleOf = (metadata: Record<string, unknown> | null | undefined): OrderLocale =>
   parseOrderLocale(metadata?.[STOREFRONT_LOCALE_KEY]) ?? DEFAULT_ORDER_LOCALE
 
-/** The metadata with the language set; the rest of it is untouched. An unknown language leaves it as it was. */
-export const withOrderLocale = (
-  metadata: Record<string, unknown> | null | undefined,
-  locale: unknown
-): Record<string, unknown> => {
-  const next = { ...(metadata ?? {}) }
-  const parsed = parseOrderLocale(locale)
-  if (parsed) next[STOREFRONT_LOCALE_KEY] = parsed
-  return next
-}
-
 export type CartLocaleResult = { status: "saved"; locale: OrderLocale } | { status: "not_found" } | { status: "completed" }
 
 /** The checkout's write: the cart's metadata, before the order exists. */
@@ -56,11 +45,19 @@ export const saveCartLocale = async (
   const { data } = await query.graph({
     entity: "cart",
     filters: { id: cartId },
-    fields: ["id", "metadata", "completed_at"],
+    fields: ["id", "completed_at"],
   })
-  const cart = data?.[0] as { id: string; metadata?: Record<string, unknown> | null; completed_at?: unknown } | undefined
+  const cart = data?.[0] as { id: string; completed_at?: unknown } | undefined
   if (!cart) return { status: "not_found" }
   if (cart.completed_at) return { status: "completed" }
-  await updateCartWorkflow(container).run({ input: { id: cartId, metadata: withOrderLocale(cart.metadata, locale) } })
+  /*
+    ONLY THE ONE KEY GOES IN. Medusa merges a cart update's metadata into what
+    is stored at the moment of the update, key by key (`mergeMetadata` in
+    `@medusajs/utils`, applied by `MedusaInternalService.update`, measured on
+    2.20.1; an empty string removes a key). So the rest of the metadata is
+    never read here and never written back: a late write of this door cannot
+    put an old copy of `aszf_elfogadas` over a newer one (barracuda, #644).
+  */
+  await updateCartWorkflow(container).run({ input: { id: cartId, metadata: { [STOREFRONT_LOCALE_KEY]: locale } } })
   return { status: "saved", locale }
 }
