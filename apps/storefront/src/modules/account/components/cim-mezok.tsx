@@ -1,3 +1,4 @@
+import { useTranslate } from "@lib/i18n/use-translate"
 import Input from "@modules/common/components/input"
 
 /**
@@ -14,10 +15,11 @@ export default function CimMezok({
   nev?: string | null
   alapertelmezett?: boolean | null
 }) {
+  const t = useTranslate()
   return (
     <>
       <Input
-        label="A cím neve (pl. Otthon)"
+        label={t("account.addresses.nameField")}
         name="address_name"
         defaultValue={nev ?? undefined}
         data-testid="address-name-input"
@@ -31,7 +33,7 @@ export default function CimMezok({
           className="h-[15px] w-[15px] accent-[var(--acr-color-navy)]"
           data-testid="address-default-checkbox"
         />
-        Alapértelmezett szállítási cím
+        {t("account.addresses.defaultShipping")}
       </label>
     </>
   )

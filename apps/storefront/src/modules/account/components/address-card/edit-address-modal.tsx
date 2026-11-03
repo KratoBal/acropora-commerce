@@ -1,5 +1,7 @@
 "use client"
 
+import { authHibaFelirat } from "@lib/util/auth-hiba"
+import { useTranslate } from "@lib/i18n/use-translate"
 import {
   type CimMentesAllapot,
   deleteCustomerAddress,
@@ -28,6 +30,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
   address,
   isActive = false,
 }) => {
+  const t = useTranslate()
   const [removing, setRemoving] = useState(false)
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
@@ -85,14 +88,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
             className="order-1 text-[14px] font-semibold leading-[18px] text-acr-ink small:order-none small:text-[15px] small:leading-[20px]"
             data-testid="address-name"
           >
-            {cimCim(address)}
+            {cimCim(address, t("account.addresses.fallbackName"))}
           </p>
           {address.is_default_shipping ? (
             <span
               className="order-3 text-[9.5px] font-semibold uppercase leading-[12px] tracking-[0.7px] text-acr-heritage small:order-none"
               data-testid="address-default"
             >
-              Alapértelmezett
+              {t("account.addresses.defaultBadge")}
             </span>
           ) : null}
         </div>
@@ -109,7 +112,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             onClick={open}
             data-testid="address-edit-button"
           >
-            Szerkesztés
+            {t("account.addresses.edit")}
           </button>
           <span
             className="-mx-[10px] font-medium text-acr-heritage small:hidden"
@@ -125,14 +128,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
             aria-busy={removing}
             data-testid="address-delete-button"
           >
-            Törlés
+            {t("account.addresses.delete")}
           </button>
         </div>
       </div>
 
       <Modal isOpen={state} close={close} data-testid="edit-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Cím szerkesztése</Heading>
+          <Heading className="mb-2">{t("account.addresses.editTitle")}</Heading>
         </Modal.Title>
         <form action={formAction}>
           <input type="hidden" name="addressId" value={address.id} />
@@ -148,7 +151,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
-                  label="Keresztnév"
+                  label={t("account.addresses.firstName")}
                   name="first_name"
                   required
                   autoComplete="given-name"
@@ -158,7 +161,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="first-name-input"
                 />
                 <Input
-                  label="Vezetéknév"
+                  label={t("account.addresses.lastName")}
                   name="last_name"
                   required
                   autoComplete="family-name"
@@ -169,14 +172,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
-                label="Cégnév"
+                label={t("account.addresses.company")}
                 name="company"
                 autoComplete="organization"
                 defaultValue={beirt?.company ?? (address.company || undefined)}
                 data-testid="company-input"
               />
               <Input
-                label="Cím"
+                label={t("account.addresses.address1")}
                 name="address_1"
                 required
                 autoComplete="address-line1"
@@ -186,7 +189,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="address-1-input"
               />
               <Input
-                label="Emelet, ajtó stb."
+                label={t("account.addresses.address2")}
                 name="address_2"
                 autoComplete="address-line2"
                 defaultValue={
@@ -196,7 +199,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
                 <Input
-                  label="Irányítószám"
+                  label={t("account.addresses.postalCode")}
                   name="postal_code"
                   required
                   autoComplete="postal-code"
@@ -206,7 +209,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="postal-code-input"
                 />
                 <Input
-                  label="Város"
+                  label={t("account.addresses.city")}
                   name="city"
                   required
                   autoComplete="locality"
@@ -215,7 +218,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
-                label="Megye / állam"
+                label={t("account.addresses.state")}
                 name="province"
                 autoComplete="address-level1"
                 defaultValue={
@@ -225,6 +228,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               />
               <CountrySelect
                 name="country_code"
+                placeholder={t("account.addresses.country")}
                 region={region}
                 required
                 autoComplete="country"
@@ -234,7 +238,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="country-select"
               />
               <Input
-                label="Telefonszám"
+                label={t("account.addresses.phone")}
                 name="phone"
                 autoComplete="phone"
                 defaultValue={beirt?.phone ?? (address.phone || undefined)}
@@ -243,7 +247,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             </div>
             {formState.error && (
               <div className="text-rose-500 text-small-regular py-2">
-                {formState.error}
+                {authHibaFelirat(formState.error, t)}
               </div>
             )}
           </Modal.Body>
@@ -256,9 +260,11 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 className="h-10"
                 data-testid="cancel-button"
               >
-                Mégse
+                {t("account.addresses.cancel")}
               </Button>
-              <SubmitButton data-testid="save-button">Mentés</SubmitButton>
+              <SubmitButton data-testid="save-button">
+                {t("account.addresses.save")}
+              </SubmitButton>
             </div>
           </Modal.Footer>
         </form>

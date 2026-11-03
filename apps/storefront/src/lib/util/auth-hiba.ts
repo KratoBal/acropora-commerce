@@ -12,8 +12,8 @@ import { JELSZO_MIN_HOSSZ } from "./jelszo"
  * ir, ezert a belepes es a regisztracio KODOT ad vissza (`AuthHibaKod`), a
  * komponens fordit (`authHibaFelirat`, szotar: `account.error.*`). A magyar
  * mondat a szotarban all, nem a koddal egyutt; a meg nem atallitott muveletek
- * (profil, jelszo, szamlazas, cimek) a `authHibaSzoveg`-et hasznaljak, ami a
- * magyar szotar-szoveget adja.
+ * a `authHibaSzoveg` a magyar szotar-szoveget adja
+ * (mar csak a magyar szoveget varo hivoknak).
  */
 export type AuthHibaKod =
   | "invalid_credentials"
@@ -32,6 +32,7 @@ export type AuthHibaKod =
   | "company_required"
   | "tax_id_format"
   | "tax_id_invalid"
+  | "address_id_required"
 
 const ISMERT: readonly [RegExp, AuthHibaKod][] = [
   [/invalid email or password/i, "invalid_credentials"],
@@ -60,6 +61,7 @@ const KULCS: Record<AuthHibaKod, Key> = {
   company_required: "account.error.companyRequired",
   tax_id_format: "account.error.taxIdFormat",
   tax_id_invalid: "account.error.taxIdInvalid",
+  address_id_required: "account.error.addressIdRequired",
 }
 
 /** A nyers hiba kodja: ismert eset, vagy az altalanos. */
@@ -77,7 +79,7 @@ const magyar = translator("hu")
 
 export const ALTALANOS_AUTH_HIBA = authHibaFelirat("generic", magyar)
 
-/** A hiba MAGYAR mondata: a meg nem atallitott muveletek (profil, jelszo, szamlazas, cimek) ezt kapjak. */
+/** A hiba MAGYAR mondata, kod helyett. */
 export function authHibaSzoveg(hiba: unknown): string {
   return authHibaFelirat(authHibaKod(hiba), magyar)
 }

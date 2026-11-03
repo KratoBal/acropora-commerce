@@ -1,6 +1,8 @@
 import React from "react"
 
 import { HttpTypes } from "@medusajs/types"
+import { translator } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { rendezettCimek } from "@lib/util/cim"
 
 import AddAddress from "../address-card/add-address"
@@ -9,6 +11,8 @@ import EditAddress from "../address-card/edit-address-modal"
 type AddressBookProps = {
   customer: HttpTypes.StoreCustomer
   region: HttpTypes.StoreRegion
+  /** The language of the page; Hungarian where the caller gives none. */
+  locale?: Locale
 }
 
 /**
@@ -19,7 +23,12 @@ type AddressBookProps = {
  * szelesseggel. Mobilon nincs fej-sor, az "Új cím" a lista alatt all, teljes
  * szelessegben. Az alapertelmezett cim elol all.
  */
-const AddressBook: React.FC<AddressBookProps> = ({ customer, region }) => {
+const AddressBook: React.FC<AddressBookProps> = ({
+  customer,
+  region,
+  locale = DEFAULT_LOCALE,
+}) => {
+  const t = translator(locale)
   const cimek = rendezettCimek(customer.addresses ?? [])
   return (
     <div
@@ -28,7 +37,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ customer, region }) => {
     >
       <div className="order-last flex items-center justify-between small:order-none">
         <h2 className="hidden text-[20px] font-semibold leading-[26px] text-acr-ink small:block">
-          Mentett szállítási címek
+          {t("account.addresses.heading")}
         </h2>
         <div className="w-full small:w-auto">
           <AddAddress region={region} addresses={customer.addresses ?? []} />
@@ -39,7 +48,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ customer, region }) => {
           className="text-[13px] leading-[18px] text-acr-slate"
           data-testid="address-empty"
         >
-          Még nincs mentett címed.
+          {t("account.addresses.empty")}
         </p>
       ) : (
         <ul className="flex flex-col items-start gap-3 small:gap-4">

@@ -96,11 +96,18 @@ describe("a cím mentése", () => {
     expect("is_default_shipping" in adat).toBe(false)
   })
 
-  it("a szerver hibája magyarul jön vissza", async () => {
+  it("a szerver hibája kódként jön vissza, nem nyers szövegként", async () => {
     sdk.store.customer.createAddress.mockRejectedValue(new Error("Boom"))
     const valasz = await addCustomerAddress({}, urlap(CIM))
     expect(valasz.success).toBe(false)
-    expect(valasz.error).not.toContain("Boom")
+    expect(valasz.error).toBe("generic")
+  })
+
+  it("azonosító nélküli szerkesztés a saját kódját kapja, a Medusáig nem jut", async () => {
+    const valasz = await updateCustomerAddress({}, urlap(CIM))
+    expect(valasz.success).toBe(false)
+    expect(valasz.error).toBe("address_id_required")
+    expect(sdk.store.customer.updateAddress).not.toHaveBeenCalled()
   })
 
   /*

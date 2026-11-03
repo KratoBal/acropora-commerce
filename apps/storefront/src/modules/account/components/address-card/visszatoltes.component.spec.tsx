@@ -52,7 +52,7 @@ describe("hibás mentés után a cím-ablak mezői megmaradnak", () => {
   it("a szerkesztő ablak a beírt értékkel marad, nem a mentettel", async () => {
     muveletek.updateCustomerAddress.mockResolvedValue({
       success: false,
-      error: "Nem sikerült, próbáld újra.",
+      error: "generic",
       ertekek: {
         address_name: "Munkahely",
         first_name: "Anna",
@@ -90,7 +90,7 @@ describe("hibás mentés után a cím-ablak mezői megmaradnak", () => {
   it("a felvevő ablak nem ürül ki", async () => {
     muveletek.addCustomerAddress.mockResolvedValue({
       success: false,
-      error: "Nem sikerült, próbáld újra.",
+      error: "generic",
       ertekek: {
         address_name: "Nyaraló",
         first_name: "Béla",
