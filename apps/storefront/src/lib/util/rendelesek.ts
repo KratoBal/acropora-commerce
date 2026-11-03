@@ -1,3 +1,6 @@
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+
 /**
  * A FIOK RENDELESEI (P5, 249:3; mobilon 249:204): csoportositas, cimkek,
  * datum. Tiszta fuggvenyek; a lekeres a `lib/data/orders.ts`-ben van.
@@ -57,31 +60,42 @@ export function allapotFajta(
   return "nyitott"
 }
 
-const HONAP = new Intl.DateTimeFormat("hu-HU", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  timeZone: "Europe/Budapest",
-})
-const ROVID = new Intl.DateTimeFormat("hu-HU", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: "Europe/Budapest",
-})
+/**
+ * A DATUM A LAP NYELVEN: a magyar alak "2026. szeptember 28.", az angol
+ * ("en-GB") "28 September 2026"; az idozona mindket nyelven Budapest.
+ */
+const DATUM_NYELV: Record<Locale, string> = { hu: "hu-HU", en: "en-GB" }
+const HONAP = (locale: Locale) =>
+  new Intl.DateTimeFormat(DATUM_NYELV[locale], {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Europe/Budapest",
+  })
+const ROVID = (locale: Locale) =>
+  new Intl.DateTimeFormat(DATUM_NYELV[locale], {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Europe/Budapest",
+  })
 
-/** "2026. szeptember 28." (asztal, 249:45) */
-export function rendelesDatum(ido: string | Date | null | undefined): string {
-  if (!ido) return ""
-  return HONAP.format(new Date(ido))
-}
-
-/** "2026. 09. 28." (mobil, 249:222) */
-export function rendelesDatumRovid(
+/** "2026. szeptember 28." (asztal, 249:45), angolul "28 September 2026" */
+export function rendelesDatum(
   ido: string | Date | null | undefined,
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
   if (!ido) return ""
-  return ROVID.format(new Date(ido))
+  return HONAP(locale).format(new Date(ido))
+}
+
+/** "2026. 09. 28." (mobil, 249:222), angolul "28/09/2026" */
+export function rendelesDatumRovid(
+  ido: string | Date | null | undefined,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  if (!ido) return ""
+  return ROVID(locale).format(new Date(ido))
 }
 
 /** A rendelesszam: a Medusa sorszama. A keret "ACR-2026-…" alakja nincs meg. */
@@ -89,22 +103,50 @@ export function rendelesSzam(displayId: number | string | null | undefined) {
   return displayId === null || displayId === undefined ? "" : `#${displayId}`
 }
 
-const FIZETES: Record<string, string> = {
-  not_paid: "fizetésre vár",
-  awaiting: "fizetésre vár",
-  authorized: "fizetés engedélyezve",
-  partially_authorized: "részben engedélyezve",
-  captured: "kifizetve",
-  partially_captured: "részben kifizetve",
-  partially_refunded: "részben visszatérítve",
-  refunded: "visszatérítve",
-  canceled: "fizetés törölve",
-  requires_action: "fizetési teendő",
+const FIZETES: Record<string, Key> = {
+  not_paid: "account.paymentStatus.not_paid",
+  awaiting: "account.paymentStatus.awaiting",
+  authorized: "account.paymentStatus.authorized",
+  partially_authorized: "account.paymentStatus.partially_authorized",
+  captured: "account.paymentStatus.captured",
+  partially_captured: "account.paymentStatus.partially_captured",
+  partially_refunded: "account.paymentStatus.partially_refunded",
+  refunded: "account.paymentStatus.refunded",
+  canceled: "account.paymentStatus.canceled",
+  requires_action: "account.paymentStatus.requires_action",
 }
 
-/** A Medusa fizetesi allapota magyarul; ismeretlen ertekre ures. */
-export function fizetesiAllapot(status: string | null | undefined): string {
-  return (status && FIZETES[status]) || ""
+/** A Medusa fizetesi allapota a lap nyelven (alapbol magyarul); ismeretlen ertekre ures. */
+export function fizetesiAllapot(
+  status: string | null | undefined,
+  t: Translate = translator(DEFAULT_LOCALE),
+): string {
+  const kulcs = status ? FIZETES[status] : undefined
+  return kulcs ? t(kulcs) : ""
+}
+
+/**
+ * AZ UZLETI ALLAPOT FELIRATA A LAP NYELVEN. A hatter a magyar cimkeet is
+ * kuldi (`label`); az ismert allapotokat a szotarbol vesszuk (a felirat a lap
+ * nyelven all), egy ISMERETLEN allapot (a hatter kesobb ujat vehet fel) a
+ * hatter sajat cimkejet kapja, nem kerul el.
+ */
+const UZLETI_ALLAPOT: Record<string, Key> = {
+  pending_processing: "account.orderStatus.pending_processing",
+  confirmed: "account.orderStatus.confirmed",
+  stocking: "account.orderStatus.stocking",
+  out_for_delivery: "account.orderStatus.out_for_delivery",
+  ready_for_pickup: "account.orderStatus.ready_for_pickup",
+  closed: "account.orderStatus.closed",
+  closed_unsuccessfully: "account.orderStatus.closed_unsuccessfully",
+}
+
+export function allapotFelirat(
+  allapot: UzletiAllapot,
+  t: Translate = translator(DEFAULT_LOCALE),
+): string {
+  const kulcs = UZLETI_ALLAPOT[allapot.status]
+  return kulcs ? t(kulcs) : allapot.label
 }
 
 /**
@@ -132,12 +174,16 @@ export function kapcsoltRendeles(
   return null
 }
 
-/** "Egy leadásból: #13, bolti átvétel" -- a pár száma és a fajtája. */
+/** "Egy leadásból: #13, bolti átvétel" -- a pár száma és a fajtája, a lap nyelven. */
 export function kapcsoltFelirat(
   displayId: number | string | null | undefined,
   bolti: boolean,
+  t: Translate = translator(DEFAULT_LOCALE),
 ): string {
-  return `Egy leadásból: ${rendelesSzam(displayId)}, ${
-    bolti ? "bolti átvétel" : "kiszállítás"
-  }`
+  return t("account.orders.pairLine", {
+    number: rendelesSzam(displayId),
+    kind: t(
+      bolti ? "account.orders.pairPickup" : "account.orders.pairDelivery",
+    ),
+  })
 }

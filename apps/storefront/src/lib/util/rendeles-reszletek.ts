@@ -3,6 +3,8 @@
  * osszesito sorai, a termektetelek. Tiszta fuggvenyek a Medusa rendelesebol.
  */
 import { paymentInfoMap } from "@lib/constants"
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE } from "@lib/i18n/locale"
 
 type Tetel = {
   id: string
@@ -49,12 +51,19 @@ export function termekTetelek<T extends Tetel>(rendeles: {
  * "Fizetés átvételkor"). Elobb a kesz fizetesbol, utana a munkamenetbol;
  * ismeretlen szolgaltatonal ures, nem a nyers azonosito.
  */
-export function fizetesiMod(rendeles: Rendeles): string {
+export function fizetesiMod(
+  rendeles: Rendeles,
+  t: Translate = translator(DEFAULT_LOCALE),
+): string {
   const gyujtemeny = rendeles.payment_collections?.[0]
   const szolgaltato =
     gyujtemeny?.payments?.[0]?.provider_id ??
     gyujtemeny?.payment_sessions?.[0]?.provider_id ??
     ""
+  // a ket sajat szerep (bolti fizetes, utanvet) a lap nyelven; a tobbi a szolgaltato neve
+  if (szolgaltato === "pp_system_default")
+    return t("checkoutPayment.modePayAtStore")
+  if (szolgaltato === "pp_acropora_cod") return t("checkoutPayment.modeCod")
   return paymentInfoMap[szolgaltato]?.title ?? ""
 }
 
@@ -66,19 +75,27 @@ export type OsszesitoSor = { cimke: string; osszeg: number }
  * (Foxpost, GLS, Élőállat átvétel) a P4 hattere; itt a Medusa szallitasi
  * modjai allnak, ahogy a rendelesben vannak.
  */
-export function osszesitoSorok(rendeles: Rendeles): OsszesitoSor[] {
+export function osszesitoSorok(
+  rendeles: Rendeles,
+  t: Translate = translator(DEFAULT_LOCALE),
+): OsszesitoSor[] {
   const termekek = termekTetelek(rendeles).reduce(
     (osszeg, t) => osszeg + (t.total ?? 0),
     0,
   )
-  const dijak = (rendeles.items ?? [])
-    .filter(dijSor)
-    .map((t) => ({ cimke: t.title ?? "Díj", osszeg: t.total ?? 0 }))
+  const dijak = (rendeles.items ?? []).filter(dijSor).map((tetel) => ({
+    cimke: tetel.title ?? t("account.orderDetails.sumFee"),
+    osszeg: tetel.total ?? 0,
+  }))
   const szallitas = (rendeles.shipping_methods ?? []).map((m) => ({
-    cimke: m.name ?? "Szállítás",
+    cimke: m.name ?? t("account.orderDetails.sumShipping"),
     osszeg: m.total ?? m.amount ?? 0,
   }))
-  return [{ cimke: "Termékek", osszeg: termekek }, ...dijak, ...szallitas]
+  return [
+    { cimke: t("account.orderDetails.sumProducts"), osszeg: termekek },
+    ...dijak,
+    ...szallitas,
+  ]
 }
 
 /**
@@ -88,6 +105,11 @@ export function osszesitoSorok(rendeles: Rendeles): OsszesitoSor[] {
  */
 export function vegosszegCimke(
   paymentStatus: string | null | undefined,
+  t: Translate = translator(DEFAULT_LOCALE),
 ): string {
-  return paymentStatus === "captured" ? "Fizetett összeg" : "Végösszeg"
+  return t(
+    paymentStatus === "captured"
+      ? "account.orderDetails.totalPaid"
+      : "account.orderDetails.total",
+  )
 }

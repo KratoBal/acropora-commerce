@@ -17,7 +17,9 @@ import OrderDetailPage from "./page"
 afterEach(() => vi.clearAllMocks())
 
 const lap = () =>
-  OrderDetailPage({ params: Promise.resolve({ id: "order_1" }) })
+  OrderDetailPage({
+    params: Promise.resolve({ id: "order_1", countryCode: "hu" }),
+  })
 
 /**
  * A RESZLETEK LAPJA (P5, 4b). MI PIROSIT: ha a lap nem a rendeles sajat

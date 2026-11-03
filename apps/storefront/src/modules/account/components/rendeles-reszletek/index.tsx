@@ -1,5 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 
+import { translator, type Translate } from "@lib/i18n/dictionary"
+import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { cimSor } from "@lib/util/cim"
 import { convertToLocale } from "@lib/util/money"
 import {
@@ -10,6 +12,7 @@ import {
 } from "@lib/util/rendeles-reszletek"
 import {
   fizetesiAllapot,
+  allapotFelirat,
   rendelesDatum,
   rendelesDatumRovid,
   rendelesSzam,
@@ -61,9 +64,14 @@ export default function RendelesReszletek({
   rendeles,
   allapot,
   par = null,
+  t = translator(DEFAULT_LOCALE),
+  locale = DEFAULT_LOCALE,
 }: {
   rendeles: Rendeles
   allapot: UzletiAllapot | null
+  /** The page's translator and language (the page knows them from its route); Hungarian by default. */
+  t?: Translate
+  locale?: Locale
   /**
    * P4-2: a rendelés párja ugyanabból a leadásból (a vegyes kosár kiszállított
    * és bolti átvételes rendelése), a felirattal és a részletei azonosítójával.
@@ -75,14 +83,14 @@ export default function RendelesReszletek({
       amount: osszeg ?? 0,
       currency_code: rendeles.currency_code,
     })
-  const mod = fizetesiMod(rendeles)
-  const fizetes = fizetesiAllapot(rendeles.payment_status)
+  const mod = fizetesiMod(rendeles, t)
+  const fizetes = fizetesiAllapot(rendeles.payment_status, t)
   const szam = rendelesSzam(rendeles.display_id)
   const tetelek = termekTetelek(rendeles)
   const szallitas = rendeles.shipping_methods?.[0]
   const szallitasiCim = rendeles.shipping_address
   const szamlazasi = rendeles.billing_address
-  const levelCim = `mailto:${CEG.email}?subject=${encodeURIComponent(`Rendelés ${szam}`)}`
+  const levelCim = `mailto:${CEG.email}?subject=${encodeURIComponent(t("account.orderDetails.mailSubject", { number: szam }))}`
   const adoszam =
     typeof szamlazasi?.metadata?.tax_id === "string"
       ? (szamlazasi.metadata.tax_id as string)
@@ -98,13 +106,13 @@ export default function RendelesReszletek({
         className="self-start text-[12.5px] leading-[16px] text-acr-slate underline underline-offset-2 hover:text-acr-ink"
         data-testid="vissza-rendelesekhez"
       >
-        ‹ Rendeléseim
+        {t("account.orderDetails.back")}
       </LocalizedClientLink>
 
       {/* FEJ (249:110; mobilon 249:257) */}
       <header className="flex flex-col gap-[6px] small:gap-[7px]">
         <p className="text-[10.5px] font-semibold uppercase leading-[14px] tracking-[1.1px] text-acr-heritage">
-          Rendelésem
+          {t("account.orderDetails.eyebrow")}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <h1
@@ -116,7 +124,7 @@ export default function RendelesReszletek({
           {/* Mobilon (249:257) a fejben nincs cimke: az allapot a Teljesítés dobozban all. */}
           {allapot ? (
             <span className="hidden small:inline-flex">
-              <AllapotCimke allapot={allapot} />
+              <AllapotCimke allapot={allapot} t={t} />
             </span>
           ) : null}
         </div>
@@ -125,10 +133,10 @@ export default function RendelesReszletek({
           data-testid="rendeles-fej-sor"
         >
           <span className="small:hidden">
-            {rendelesDatumRovid(rendeles.created_at)}
+            {rendelesDatumRovid(rendeles.created_at, locale)}
           </span>
           <span className="hidden small:inline">
-            {rendelesDatum(rendeles.created_at)}
+            {rendelesDatum(rendeles.created_at, locale)}
           </span>
           {mod ? (
             <span className="hidden small:inline">{` · ${mod}`}</span>
@@ -150,7 +158,7 @@ export default function RendelesReszletek({
       {/* MOBIL FIZETESI DOBOZ (249:262) */}
       <div className="flex flex-col gap-2 border border-acr-line bg-acr-mist p-[14px] small:hidden">
         <p className="text-[16px] font-semibold leading-[21px] text-acr-ink first-letter:uppercase">
-          {fizetes || "Fizetés"}
+          {fizetes || t("account.orderDetails.payment")}
         </p>
         <p className="text-[12.5px] leading-[16px] text-acr-slate">
           {[mod, penz(rendeles.total)].filter(Boolean).join(" · ")}
@@ -165,33 +173,37 @@ export default function RendelesReszletek({
             data-testid="rendeles-teljesites"
           >
             <h2 className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[23px] small:leading-[30px]">
-              Teljesítés
+              {t("account.orderDetails.fulfilment")}
             </h2>
             <div className="flex flex-col gap-1 small:gap-[7px] small:border small:border-acr-line small:bg-acr-mist small:p-[14px]">
               <div className="flex items-center gap-[10px]">
                 <p className="text-[10px] font-semibold uppercase leading-[13px] text-acr-heritage">
-                  Szállítás
+                  {t("account.orderDetails.shipping")}
                 </p>
                 {allapot ? (
                   <span className="hidden small:inline-flex">
-                    <AllapotCimke allapot={allapot} />
+                    <AllapotCimke allapot={allapot} t={t} />
                   </span>
                 ) : null}
               </div>
               <p className="text-[13.5px] font-semibold leading-[18px] text-acr-ink small:text-[15px] small:leading-[20px]">
-                {szallitas?.name ?? "Szállítási mód nincs megadva"}
+                {szallitas?.name ?? t("account.orderDetails.noShippingMethod")}
               </p>
               {allapot ? (
                 <p className="text-[11.8px] leading-[15px] text-acr-slate small:hidden">
-                  {allapot.label}
+                  {allapotFelirat(allapot, t)}
                 </p>
               ) : null}
               <p className="hidden text-[12.5px] leading-[16px] text-acr-slate small:block">
-                {tetelek.map((t) => t.product_title ?? t.title).join(" + ")}
+                {tetelek
+                  .map((tetel) => tetel.product_title ?? tetel.title)
+                  .join(" + ")}
               </p>
               {szallitasiCim ? (
                 <p className="hidden text-[12.3px] leading-[19px] text-acr-slate small:block">
-                  Szállítási cím: {cimSor(szallitasiCim)}
+                  {t("account.orderDetails.shippingAddress", {
+                    address: cimSor(szallitasiCim),
+                  })}
                 </p>
               ) : null}
             </div>
@@ -200,22 +212,24 @@ export default function RendelesReszletek({
           {/* TETELEK (249:145) */}
           <Kartya className="gap-3" data-testid="rendeles-tetelek">
             <h2 className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[23px] small:leading-[30px]">
-              Tételek
+              {t("account.orderDetails.items")}
             </h2>
             <ul className="flex flex-col">
-              {tetelek.map((t) => (
+              {tetelek.map((tetel) => (
                 <li
-                  key={t.id}
+                  key={tetel.id}
                   className="flex items-center gap-[10px] border-b border-acr-line py-[15px] last:border-b-0"
                 >
                   <span className="min-w-0 flex-1 text-[14px] font-semibold leading-[18px] text-acr-ink">
-                    {t.product_title ?? t.title}
+                    {tetel.product_title ?? tetel.title}
                   </span>
                   <span className="shrink-0 text-[12.5px] leading-[16px] text-acr-slate">
-                    {t.quantity} db
+                    {t("account.orderDetails.itemQty", {
+                      count: tetel.quantity ?? 0,
+                    })}
                   </span>
                   <span className="shrink-0 text-[14px] font-medium leading-[18px] text-acr-ink">
-                    {penz(t.total)}
+                    {penz(tetel.total)}
                   </span>
                 </li>
               ))}
@@ -230,19 +244,19 @@ export default function RendelesReszletek({
             data-testid="rendeles-osszesites"
           >
             <h2 className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[22px] small:leading-[29px]">
-              Összesítés
+              {t("account.orderDetails.summary")}
             </h2>
-            {osszesitoSorok(rendeles).map((s) => (
+            {osszesitoSorok(rendeles, t).map((s) => (
               <Sor key={s.cimke} cimke={s.cimke} ertek={penz(s.osszeg)} />
             ))}
             <div className="h-px bg-acr-line" />
             <Sor
-              cimke={vegosszegCimke(rendeles.payment_status)}
+              cimke={vegosszegCimke(rendeles.payment_status, t)}
               ertek={penz(rendeles.total)}
             />
             <div className="hidden small:block">
               <Sor
-                cimke="Fizetés"
+                cimke={t("account.orderDetails.payment")}
                 ertek={[mod, fizetes].filter(Boolean).join(" · ")}
               />
             </div>
@@ -252,7 +266,7 @@ export default function RendelesReszletek({
           {szamlazasi ? (
             <Kartya className="gap-2" data-testid="rendeles-szamlazas">
               <h2 className="text-[18px] font-semibold leading-[23px] text-acr-ink small:text-[20px] small:leading-[26px]">
-                Számlázás
+                {t("account.orderDetails.billing")}
               </h2>
               <p className="text-[13.5px] font-semibold leading-[18px] text-acr-ink">
                 {szamlazasi.company ||
@@ -274,10 +288,10 @@ export default function RendelesReszletek({
           {/* KERDES (249:200; mobilon gomb, 249:303) */}
           <section className="hidden flex-col gap-2 border border-acr-line bg-acr-mist p-[18px] small:flex">
             <h2 className="text-[15px] font-semibold leading-[20px] text-acr-ink">
-              Kérdésed van a rendelésről?
+              {t("account.orderDetails.question")}
             </h2>
             <p className="text-[12.5px] leading-[16px] text-acr-slate">
-              Írj nekünk a rendelési számmal:{" "}
+              {t("account.orderDetails.questionText")}{" "}
               <a
                 href={levelCim}
                 className="underline underline-offset-2 hover:text-acr-ink"
@@ -291,7 +305,7 @@ export default function RendelesReszletek({
             className="flex h-[44px] items-center justify-center bg-acr-heritage text-[13px] font-semibold text-acr-white small:hidden"
             data-testid="rendeles-kerdes"
           >
-            Kérdés a rendeléssel kapcsolatban
+            {t("account.orderDetails.questionButton")}
           </a>
         </div>
       </div>

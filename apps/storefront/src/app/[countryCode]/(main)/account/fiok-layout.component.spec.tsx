@@ -1,9 +1,11 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+// the language of the page is its path segment: `hu` (Hungarian) or `en-hu` (English)
+const nav = vi.hoisted(() => ({ countryCode: "hu", pathname: "/hu/account" }))
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
-  usePathname: () => "/hu/account",
+  useParams: () => ({ countryCode: nav.countryCode }),
+  usePathname: () => nav.pathname,
   useRouter: () => ({ push: vi.fn() }),
 }))
 const vevo = vi.hoisted(() => ({
@@ -17,6 +19,8 @@ import AccountPageLayout from "./layout"
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  nav.countryCode = "hu"
+  nav.pathname = "/hu/account"
 })
 
 const lap = async () =>
@@ -56,5 +60,48 @@ describe("a fiók útvonalának kerete", () => {
     expect(screen.getByTestId("account-nav")).toBeTruthy()
     expect(screen.getByTestId("fiok-cim").textContent).toBe("Áttekintés")
     expect(screen.queryByTestId("belepo-slot")).toBeNull()
+  })
+})
+
+describe("a fiók kerete a lap nyelvén", () => {
+  const bejelentkezve = () =>
+    vevo.retrieveCustomer.mockResolvedValue({
+      id: "cus_1",
+      first_name: "Anna",
+      last_name: "Minta",
+      email: "vevo@example.hu",
+    })
+
+  it("angolul a fej, a menü és a kijelentkezés angol, a linkek az angol úton", async () => {
+    nav.countryCode = "en-hu"
+    nav.pathname = "/en-hu/account/orders"
+    bejelentkezve()
+    await lap()
+    expect(screen.getByTestId("fiok-cim").textContent).toBe("My orders")
+    expect(screen.getByTestId("fiok-leiras").textContent).toBe(
+      "Your current and past orders in one place.",
+    )
+    expect(screen.getByText("My account")).toBeTruthy()
+    const menu = screen.getByTestId("account-nav")
+    expect(menu.textContent).toContain("Billing details")
+    expect(screen.getByTestId("logout-button").textContent).toBe("Sign out")
+    expect(screen.getByTestId("orders-link").getAttribute("href")).toBe(
+      "/en-hu/account/orders",
+    )
+    expect(screen.getByRole("navigation", { name: "Account" })).toBeTruthy()
+    expect(screen.getByTestId("mobile-account-nav").textContent).toContain(
+      "Billing",
+    )
+  })
+
+  it("magyarul a régi feliratok", async () => {
+    nav.pathname = "/hu/account/orders"
+    bejelentkezve()
+    await lap()
+    expect(screen.getByTestId("fiok-cim").textContent).toBe("Rendeléseim")
+    expect(screen.getByTestId("logout-button").textContent).toBe(
+      "Kijelentkezés",
+    )
+    expect(screen.getByRole("navigation", { name: "Fiók" })).toBeTruthy()
   })
 })
