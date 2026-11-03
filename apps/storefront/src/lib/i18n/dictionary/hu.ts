@@ -115,6 +115,13 @@ export const hu = {
     failed: "Nem sikerült, próbáld újra",
     addAria: "{name} kosárba",
   },
+  notFound: {
+    title: "Nincs ilyen oldal",
+    text: "A keresett oldal nem található.",
+    cartText:
+      "A keresett kosár nem található. Töröld a böngésző sütijeit, és próbáld újra.",
+    back: "Vissza a főoldalra",
+  },
   header: {
     account: "Fiókom",
     mainMenu: "Fő menü",
@@ -145,11 +152,6 @@ export const hu = {
     allProducts: "Ugrás az összes termékhez",
     discover: "Termékek felfedezése",
   },
-  /**
-   * THE HEADER TEXTS THE SHOP OWNER CAN EDIT IN THE OS (the catalogue `fejlec.*` defaults in `modules/kezdolap/szovegek.ts`). The English
-   * shop shows the English text only while the OS still holds this exact Hungarian default; an OS text that was changed is shown as
-   * written (the editor has no per-language fields yet). `dictionary.spec.ts` keeps this group equal to the catalogue defaults.
-   */
   account: {
     auth: {
       eyebrow: "Fiók",
@@ -209,6 +211,11 @@ export const hu = {
       passwordsDiffer: "A két jelszó nem egyezik.",
     },
   },
+  /**
+   * THE HEADER TEXTS THE SHOP OWNER CAN EDIT IN THE OS (the catalogue `fejlec.*` defaults in `modules/kezdolap/szovegek.ts`). The English
+   * shop shows the English text only while the OS still holds this exact Hungarian default; an OS text that was changed is shown as
+   * written (the editor has no per-language fields yet). `dictionary.spec.ts` keeps this group equal to the catalogue defaults.
+   */
   headerText: {
     bar1: "Élőállat kizárólag személyes átvétellel, a budapesti boltban",
     bar2: "Technika és vegyszer: házhozszállítás 2–3 munkanap alatt",
