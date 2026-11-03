@@ -67,6 +67,12 @@ export const hu = {
     failed: "Nem sikerült, próbáld újra",
     addAria: "{name} kosárba",
   },
+  hamarosan: {
+    eyebrow: "Hamarosan",
+    text: "Ez az oldal még készül.",
+    back: "Vissza a főoldalra",
+    expert: "Kérdezz a szakértőnktől",
+  },
   header: {
     account: "Fiókom",
     mainMenu: "Fő menü",

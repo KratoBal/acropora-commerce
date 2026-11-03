@@ -64,6 +64,12 @@ export const en: Dictionary = {
     failed: "That did not work, try again",
     addAria: "Add {name} to cart",
   },
+  hamarosan: {
+    eyebrow: "Coming soon",
+    text: "This page is still being built.",
+    back: "Back to the home page",
+    expert: "Ask our expert",
+  },
   header: {
     account: "My account",
     mainMenu: "Main menu",

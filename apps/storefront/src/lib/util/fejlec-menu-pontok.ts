@@ -65,6 +65,19 @@ export const HAMAROSAN_TEMAK: ReadonlyMap<string, string> = new Map([
   ["szakerto", "Kérdezz a szakértőnktől"],
 ])
 
+/**
+ * A HAMAROSAN LAP CIME A LAP NYELVEN: a menupont szotar-kulcsos felirata
+ * (Tudastar, Szolgaltatasok, Akvariumaim) lefordul, a szakerto-gomb sajat
+ * kulcsot kap, a kategoria-nevek (Korallok, Halak, ...) a bolt adatai, azok
+ * nem. Ismeretlen temanal `undefined` (a lap 404).
+ */
+export function hamarosanCim(tema: string, t: Translate): string | undefined {
+  if (tema === "szakerto") return t("hamarosan.expert")
+  const terv = FEJLEC_MENU_TERV.find((pont) => pont.tema === tema)
+  if (!terv) return undefined
+  return terv.kulcs ? t(terv.kulcs) : terv.felirat
+}
+
 type Kategoria = {
   handle?: string | null
   category_children?: readonly Kategoria[] | null
