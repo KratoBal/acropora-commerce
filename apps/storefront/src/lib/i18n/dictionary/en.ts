@@ -23,6 +23,8 @@ export const en: Dictionary = {
     empty: "There are no products to show in this category yet.",
     emptyList: "There are no products to show yet.",
     allProducts: "All products",
+    brands: "Brands",
+    emptyBrand: "This brand has no products to show yet.",
     position: "{from} of {count} products",
     positionOne: "{from} of {count} product",
     loadMore: "Load more products",

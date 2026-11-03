@@ -2,6 +2,7 @@ import type { HttpTypes } from "@medusajs/types"
 
 import type { Translate } from "@lib/i18n/dictionary"
 import { szuroLinkRel } from "@lib/seo/szuro-link"
+import { LAP_MERET } from "@lib/util/lap-meret"
 import type { MarkaSor } from "@lib/util/marka-szuro"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -11,8 +12,7 @@ import MarkaLista from "./marka-lista"
 import CommerceRendezes from "./rendezes"
 import CommerceTermekKartya from "./termek-kartya"
 
-/** Products per page on every list that uses this page. */
-export const LAP_MERET = 18
+export { LAP_MERET }
 
 export type ListaMorzsaElem = {
   id: string
@@ -66,6 +66,12 @@ export type ListaLapProps = {
   /** The card per product: the live-animal one or the technical one. */
   eloAllatKartya: (product: HttpTypes.StoreProduct) => boolean
   uresSzoveg: string
+  /**
+   * The filter column (search, categories, brands). A list with nothing to
+   * filter by (one brand's products) passes false: the column goes and the
+   * grid takes the full width.
+   */
+  szuro?: boolean
   /** The address of the next page; empty when this is the last. */
   kovetkezoHref: string | null
   testId?: string
@@ -100,6 +106,7 @@ export default function ListaLap({
   products,
   eloAllatKartya,
   uresSzoveg,
+  szuro = true,
   kovetkezoHref,
   testId = "commerce-kategoria-lap",
 }: ListaLapProps) {
@@ -178,41 +185,45 @@ export default function ListaLap({
       {/* GYORS-KATEGORIAK ES RENDEZES (117:55), a `mist` savon. */}
       <div className="bg-acr-mist">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between small:px-[56px]">
-          <ul
-            className="flex min-w-0 gap-2 overflow-x-auto"
-            aria-label={t("category.subcategories")}
-            data-testid="gyors-kategoriak"
-          >
-            {sav.osszes ? (
-              <li className="shrink-0">
-                <span
-                  className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
-                  aria-current="page"
-                >
-                  {t("category.all")}
-                </span>
-              </li>
-            ) : null}
-            {sav.elemek.map((elem) => (
-              <li key={elem.id} className="shrink-0">
-                {elem.aktiv ? (
+          {sav.osszes || sav.elemek.length > 0 ? (
+            <ul
+              className="flex min-w-0 gap-2 overflow-x-auto"
+              aria-label={t("category.subcategories")}
+              data-testid="gyors-kategoriak"
+            >
+              {sav.osszes ? (
+                <li className="shrink-0">
                   <span
                     className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
                     aria-current="page"
                   >
-                    {elem.nev}
+                    {t("category.all")}
                   </span>
-                ) : (
-                  <LocalizedClientLink
-                    href={elem.href}
-                    className="flex h-[44px] items-center border border-acr-line bg-acr-white px-6 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
-                  >
-                    {elem.nev}
-                  </LocalizedClientLink>
-                )}
-              </li>
-            ))}
-          </ul>
+                </li>
+              ) : null}
+              {sav.elemek.map((elem) => (
+                <li key={elem.id} className="shrink-0">
+                  {elem.aktiv ? (
+                    <span
+                      className="flex h-[42px] items-center bg-acr-navy px-6 text-[14px] font-medium text-acr-white"
+                      aria-current="page"
+                    >
+                      {elem.nev}
+                    </span>
+                  ) : (
+                    <LocalizedClientLink
+                      href={elem.href}
+                      className="flex h-[44px] items-center border border-acr-line bg-acr-white px-6 text-[14px] font-medium text-acr-ink hover:border-acr-slate"
+                    >
+                      {elem.nev}
+                    </LocalizedClientLink>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div />
+          )}
           <div className="flex shrink-0 items-center gap-[10px]">
             <span
               className="text-[14px] leading-[22px] text-acr-slate"
@@ -231,97 +242,104 @@ export default function ListaLap({
       </div>
 
       {/* SZUROK ES TALALATOK (117:74). */}
-      <div className="mx-auto grid max-w-[1440px] gap-7 px-4 pb-16 pt-8 small:grid-cols-[250px_minmax(0,1fr)] small:px-[56px]">
-        <aside
-          className="flex flex-col gap-[18px] self-start border border-acr-line bg-acr-white p-[18px]"
-          aria-label={t("category.filter")}
-          data-testid="kategoria-szurok"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
-              {t("category.filter")}
-            </h2>
-            {szuroAktiv ? (
-              <LocalizedClientLink
-                href={torlesHref}
-                className="text-[14px] text-acr-ocean"
-              >
-                {t("category.clearFilter")}
-              </LocalizedClientLink>
-            ) : null}
-          </div>
-          {/* A szuro kereso (117:79) a bolt keresojere kuld: a kategorian
-              beluli kereses a kereses PR-javal jon. */}
-          <form
-            action={keresoAction}
-            method="get"
-            className="border border-acr-line bg-acr-mist p-3"
+      <div
+        className={
+          "mx-auto max-w-[1440px] px-4 pb-16 pt-8 small:px-[56px] " +
+          (szuro ? "grid gap-7 small:grid-cols-[250px_minmax(0,1fr)]" : "")
+        }
+      >
+        {szuro ? (
+          <aside
+            className="flex flex-col gap-[18px] self-start border border-acr-line bg-acr-white p-[18px]"
+            aria-label={t("category.filter")}
+            data-testid="kategoria-szurok"
           >
-            <label className="sr-only" htmlFor="kategoria-kereso">
-              {t("category.searchLabel")}
-            </label>
-            <input
-              id="kategoria-kereso"
-              type="search"
-              name="q"
-              placeholder={t("category.searchPlaceholder")}
-              className="w-full bg-transparent text-[14px] leading-[22px] text-acr-ink outline-none placeholder:text-acr-slate"
-            />
-          </form>
-          {kategoriak.length > 0 ? (
-            /*
+            <div className="flex items-center justify-between">
+              <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
+                {t("category.filter")}
+              </h2>
+              {szuroAktiv ? (
+                <LocalizedClientLink
+                  href={torlesHref}
+                  className="text-[14px] text-acr-ocean"
+                >
+                  {t("category.clearFilter")}
+                </LocalizedClientLink>
+              ) : null}
+            </div>
+            {/* A szuro kereso (117:79) a bolt keresojere kuld: a kategorian
+              beluli kereses a kereses PR-javal jon. */}
+            <form
+              action={keresoAction}
+              method="get"
+              className="border border-acr-line bg-acr-mist p-3"
+            >
+              <label className="sr-only" htmlFor="kategoria-kereso">
+                {t("category.searchLabel")}
+              </label>
+              <input
+                id="kategoria-kereso"
+                type="search"
+                name="q"
+                placeholder={t("category.searchPlaceholder")}
+                className="w-full bg-transparent text-[14px] leading-[22px] text-acr-ink outline-none placeholder:text-acr-slate"
+              />
+            </form>
+            {kategoriak.length > 0 ? (
+              /*
               MOBILON (a `small` alatt) A KATEGORIA SZAKASZ REJTVE: ugyanez a
               navigacio a gyors-kategoria savban vizszintesen gorgetheto, es a
               21 soros lista a termekek ele tolna (mervel 390-en). Figma mobil
               kerete ehhez a laphoz nincs; ez a mi reszponziv szabalyunk.
             */
-            <section className="hidden flex-col gap-2 border-t border-acr-line pt-[13px] small:flex">
-              <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                {t("category.categoryHeading")}
-              </h3>
-              <ul
-                className="flex flex-col gap-2"
-                data-testid="szuro-kategoriak"
+              <section className="hidden flex-col gap-2 border-t border-acr-line pt-[13px] small:flex">
+                <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                  {t("category.categoryHeading")}
+                </h3>
+                <ul
+                  className="flex flex-col gap-2"
+                  data-testid="szuro-kategoriak"
+                >
+                  {kategoriak.map((sor) => (
+                    <li key={sor.id}>
+                      <LocalizedClientLink
+                        href={sor.href}
+                        className="flex items-center justify-between gap-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span
+                            className="h-[15px] w-[15px] shrink-0 border border-acr-slate bg-acr-mist"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">{sor.nev}</span>
+                        </span>
+                        {sor.szam !== null ? (
+                          <span className="shrink-0">{sor.szam}</span>
+                        ) : null}
+                      </LocalizedClientLink>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {markaLista.length > 0 ? (
+              <section
+                className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
+                data-testid="szuro-markak"
               >
-                {kategoriak.map((sor) => (
-                  <li key={sor.id}>
-                    <LocalizedClientLink
-                      href={sor.href}
-                      className="flex items-center justify-between gap-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span
-                          className="h-[15px] w-[15px] shrink-0 border border-acr-slate bg-acr-mist"
-                          aria-hidden="true"
-                        />
-                        <span className="min-w-0">{sor.nev}</span>
-                      </span>
-                      {sor.szam !== null ? (
-                        <span className="shrink-0">{sor.szam}</span>
-                      ) : null}
-                    </LocalizedClientLink>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-          {markaLista.length > 0 ? (
-            <section
-              className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
-              data-testid="szuro-markak"
-            >
-              <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                {t("category.brandHeading")}
-              </h3>
-              <MarkaLista
-                sorok={markaLista}
-                aktiv={markak}
-                link={markaLink}
-                t={t}
-              />
-            </section>
-          ) : null}
-        </aside>
+                <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                  {t("category.brandHeading")}
+                </h3>
+                <MarkaLista
+                  sorok={markaLista}
+                  aktiv={markak}
+                  link={markaLink}
+                  t={t}
+                />
+              </section>
+            ) : null}
+          </aside>
+        ) : null}
 
         <section aria-label={t("category.products")} id="category-products">
           {/* AKTIV SZUROK (117:197): a kivalasztott markak, egy-egy

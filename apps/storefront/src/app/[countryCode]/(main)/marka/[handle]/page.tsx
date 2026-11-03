@@ -56,10 +56,5 @@ export async function generateStaticParams() {
 
 export default async function MarkaPage(props: Props) {
   const params = await props.params
-  return markaLapTorzs(
-    params,
-    {},
-    `/${params.countryCode}/marka/${params.handle}`,
-    true,
-  )
+  return markaLapTorzs(params, {}, true)
 }
