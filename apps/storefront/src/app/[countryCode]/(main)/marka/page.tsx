@@ -36,7 +36,8 @@ export async function generateStaticParams() {
   return []
 }
 
-export default async function MarkaListaOldal() {
+export default async function MarkaListaOldal(props: Props) {
+  const { countryCode } = await props.params
   /*
     EGY ATMENETI BOLTI HIBA NE ADJON HIBALAPOT (barracuda, #576): ures lista
     es naplosor; a lap ures listanal kimondja, hogy nincs mit mutatni, es a
@@ -46,5 +47,5 @@ export default async function MarkaListaOldal() {
     console.warn("[marka] a markalista nem jott meg:", hiba)
     return []
   })
-  return <MarkaListaLap cim={CIM} markak={markak} />
+  return <MarkaListaLap markak={markak} countryCode={countryCode} />
 }

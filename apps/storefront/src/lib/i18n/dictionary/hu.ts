@@ -28,6 +28,7 @@ export const hu = {
     allProducts: "Minden termék",
     brands: "Márkák",
     emptyBrand: "Ennél a márkánál még nincs megjeleníthető termék.",
+    emptySelection: "Ebben a válogatásban most nincs termék.",
     position: "{from} / {count} termék",
     positionOne: "{from} / {count} termék",
     loadMore: "További termékek betöltése",
@@ -39,6 +40,14 @@ export const hu = {
     piecesLeft: "{count} db",
     uniquePiece: "1 db · Egyedi példány",
     findSimilar: "Hasonlót keresek",
+  },
+  brandIndex: {
+    breadcrumbLabel: "Morzsamenü",
+    crumb: "Márkák",
+    title: "Forgalmazott márkák",
+    count: "{count} márka",
+    lettersLabel: "Ugrás betűre",
+    empty: "Jelenleg nincs megjeleníthető márka.",
   },
   sort: {
     title: "Rendezés",

@@ -25,6 +25,7 @@ export const en: Dictionary = {
     allProducts: "All products",
     brands: "Brands",
     emptyBrand: "This brand has no products to show yet.",
+    emptySelection: "There are no products in this selection right now.",
     position: "{from} of {count} products",
     positionOne: "{from} of {count} product",
     loadMore: "Load more products",
@@ -36,6 +37,14 @@ export const en: Dictionary = {
     piecesLeft: "{count} left",
     uniquePiece: "1 pc · Unique piece",
     findSimilar: "Find a similar one",
+  },
+  brandIndex: {
+    breadcrumbLabel: "Breadcrumb",
+    crumb: "Brands",
+    title: "Brands we sell",
+    count: "{count} brands",
+    lettersLabel: "Jump to a letter",
+    empty: "There are no brands to show at the moment.",
   },
   sort: {
     title: "Sort",

@@ -150,4 +150,28 @@ describe("a márka (gyűjtemény) oldal a közös lista-lapon", () => {
       ).textContent,
     ).toBe("Brands")
   })
+
+  it("hibás katalógusnál az oldal nem tör, a gyökér nélküli levél a műszaki kártyát kapja", async () => {
+    katAdat.listCategories.mockRejectedValue(new Error("hálózati hiba"))
+    adat.listProductsWithSort.mockResolvedValue({
+      response: {
+        products: [
+          {
+            ...MUSZAKI,
+            id: "pl",
+            categories: [{ id: "g1", name: "Rákok", mpath: "g.g1" }],
+          },
+        ],
+        count: 1,
+      },
+      nextPage: null,
+    })
+    await lap()
+    const kartya = within(
+      screen.getByTestId("category-products-list"),
+    ).getAllByRole("listitem")[0]
+    expect(
+      kartya.querySelector("[data-testid='commerce-termek-kartya']"),
+    ).not.toBeNull()
+  })
 })
