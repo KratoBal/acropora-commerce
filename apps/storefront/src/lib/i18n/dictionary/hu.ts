@@ -1139,6 +1139,10 @@ export const hu = {
         "A telefonszám csak számjegyet, szóközt, plusz- és kötőjelet tartalmazhat.",
       errorSend:
         "A bejelentést most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
+      reportsTitle: "Már leadott bejelentéseid",
+      reportRef: "Ügy azonosítója: {id}",
+      stageReceived: "Beérkezett",
+      stageInProgress: "Átvette a csapatunk",
       done: "Megkaptuk a bejelentésedet. Az ügy azonosítója: {id}. [KITÖLTENDŐ: válaszidő] belül jelentkezünk.",
     },
   },

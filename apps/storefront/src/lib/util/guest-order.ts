@@ -1,5 +1,7 @@
 import type { Key } from "@lib/i18n/dictionary"
 
+import type { ProblemKind } from "./problem-report"
+
 /**
  * THE GUEST ORDER PAGE'S SHAPES AND RULES (V1.1). The answer of `POST /store/guest-orders/lookup`
  * (backend `workflows/utils/guest-order/lookup.ts`, the customer-safe view) and the pure decisions
@@ -18,6 +20,17 @@ export type GuestOrderTracking = {
   url: string | null
 }
 
+/**
+ * A problem report the customer filed for the order, as the shop gives it back: the case reference, the kind,
+ * the time and a two-step state. No text, phone number or photo comes back, and no promise is made by either state.
+ */
+export type GuestProblemReport = {
+  id: string
+  kind: ProblemKind
+  created_at: string
+  stage: "received" | "in_progress"
+}
+
 export type GuestOrder = {
   display_id: number | string
   created_at: string | null
@@ -33,6 +46,8 @@ export type GuestOrder = {
     store_pickup: boolean
   } | null
   tracking: GuestOrderTracking | null
+  /** absent from an older shop answer: then there is nothing to list */
+  problem_reports?: GuestProblemReport[]
 }
 
 export type GuestOrderLookupResult =

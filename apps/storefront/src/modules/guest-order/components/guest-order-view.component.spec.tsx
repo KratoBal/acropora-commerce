@@ -218,4 +218,45 @@ describe("the problem button", () => {
     )
     expect(screen.queryByTestId("problem-open-1042")).toBeNull()
   })
+
+  it("lists the problem reports the order already has, with the case reference and a two-step state", () => {
+    render(
+      <GuestOrderView
+        orders={[
+          {
+            ...base,
+            problem_reports: [
+              {
+                id: "ordprb_01A",
+                kind: "item_damaged",
+                created_at: "2026-11-04T10:00:00.000Z",
+                stage: "received",
+              },
+              {
+                id: "ordprb_01B",
+                kind: "animal_dead",
+                created_at: "2026-11-05T10:00:00.000Z",
+                stage: "in_progress",
+              },
+            ],
+          },
+        ]}
+      />,
+    )
+    const list = screen.getByTestId("problem-reports-1042")
+    expect(list.textContent).toContain("Már leadott bejelentéseid")
+    expect(list.textContent).toContain("A termék sérült vagy hibás")
+    expect(list.textContent).toContain("Ügy azonosítója: ordprb_01A")
+    expect(list.textContent).toContain("Beérkezett")
+    expect(list.textContent).toContain("Az állat elpusztult")
+    expect(list.textContent).toContain("Átvette a csapatunk")
+  })
+
+  it("draws no report list for an order without reports, or from an answer that has no such field", () => {
+    render(<GuestOrderView orders={[base]} />)
+    expect(screen.queryByTestId("problem-reports-1042")).toBeNull()
+    cleanup()
+    render(<GuestOrderView orders={[{ ...base, problem_reports: [] }]} />)
+    expect(screen.queryByTestId("problem-reports-1042")).toBeNull()
+  })
 })
