@@ -41,7 +41,8 @@ const service = (container: MedusaContainer) =>
 export const photoFolderOf = (orderId: string): string =>
   `problem-reports/${createHash("sha256").update(orderId).digest("hex").slice(0, 16)}`
 
-export type StoredPhoto = { id: string; url: string }
+/** `id` is the image row's id (what a report names); `file_key` is the file module's own key (what removing the file needs). */
+export type StoredPhoto = { id: string; url: string; file_key: string }
 
 /** Stores one decoded photo in the shop's file module and records it for the order (not yet in a report). */
 export const storePhoto = async (
@@ -71,7 +72,7 @@ export const storePhoto = async (
     mime_type: type.mime,
     size_bytes: bytes.length,
   })
-  return { id: row.id, url: created.url }
+  return { id: row.id, url: created.url, file_key: created.id }
 }
 
 /** How many of the order's uploads no report has taken yet (the route caps it: an abandoned form leaves files). */
@@ -101,7 +102,8 @@ export const storePhotoWithinCap = async (
   if (place >= 0 && place < cap) return stored
   await svc.deleteOrderProblemImages(stored.id)
   const file = container.resolve(Modules.FILE) as unknown as { deleteFiles(ids: string[]): Promise<void> }
-  await file.deleteFiles([stored.id]).catch(() => undefined)
+  // the FILE module is keyed by its own id (the row's `file_key`), not by the image row's id
+  await file.deleteFiles([stored.file_key]).catch(() => undefined)
   return null
 }
 

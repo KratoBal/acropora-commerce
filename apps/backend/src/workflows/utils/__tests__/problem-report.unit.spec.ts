@@ -193,11 +193,15 @@ describe("storePhotoWithinCap", () => {
   const type = { ext: "jpg", mime: "image/jpeg" }
 
   it("keeps the first `cap` unsent uploads of an order and removes the one beyond, with its file", async () => {
-    const { container, images, deletedFiles } = fakeContainer([ORDER])
+    const parts = fakeContainer([ORDER])
+    const { container, images, deletedFiles } = parts
     for (let i = 0; i < 3; i++) expect(await storePhotoWithinCap(container, "order_1", jpeg, type, 3)).not.toBeNull()
     expect(await storePhotoWithinCap(container, "order_1", jpeg, type, 3)).toBeNull()
     expect(images).toHaveLength(3)
-    expect(deletedFiles).toHaveLength(1)
+    // the file that goes is the one the FILE module stored under its own key, not the image row's id
+    const { files } = parts
+    expect(deletedFiles).toEqual([files[files.length - 1].filename])
+    expect(deletedFiles[0]).not.toMatch(/^img_/)
   })
 
   it("two uploads that both passed the early count cannot leave more than the cap", async () => {
