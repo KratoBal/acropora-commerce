@@ -1,11 +1,13 @@
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@modules/guest-order/components/guest-order-form", () => ({
   default: () => <div data-testid="form-stub" />,
 }))
 
 import Page, { metadata } from "./page"
+
+afterEach(cleanup)
 
 /*
   WHAT TURNS THIS RED (V1.1). The page indexable (a customer's own order lookup in a search engine); the
@@ -17,7 +19,7 @@ describe("the guest order page", () => {
   })
 
   it("draws the heading, the intro and the form (Hungarian)", async () => {
-    render(await Page({ params: Promise.resolve({ countryCode: "hu-hu" }) }))
+    render(await Page({ params: Promise.resolve({ countryCode: "hu" }) }))
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Rendelés megtekintése",
     )
