@@ -1,7 +1,8 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
 
-import { oszlopHajtogatva, szavakra } from "./ekezet-hajtogatas";
+import { sqlFeltetelek } from "./kereses-sql";
+import { keresesiTerv } from "./kereses-terv";
 
 /**
  * EKEZET-FUGGETLEN TERMEKKERESES -- CSAK AZONOSITOKAT AD VISSZA.
@@ -46,6 +47,12 @@ import { oszlopHajtogatva, szavakra } from "./ekezet-hajtogatas";
  *
  * A szavakat ES-sel kotjuk, ahogy a mag is: `q=kek lampa` mind a kettot keresi.
  *
+ * SZINONIMAK, ROVIDITESEK, TOALAK (V4.1, 2026-11-04): a szavakbol egy terv lesz
+ * (`kereses-terv.ts`): egy csoport-tag a csoport barmelyik tagjara illeszkedik
+ * (lehabzó = skimmer = fehérje lefölöző ...), a rovidites (KH, ATO, Ca) csak
+ * kulon szokent, es a gyakori magyar toldalek lekerul (lehabzók -> lehabz). Az
+ * SQL-t a `kereses-sql.ts` epiti, ugyanazokra a mezokre.
+ *
  * === A FELSO HATAR, ES AMI ROSSZ LENNE NELKULE ===
  *
  * A talalati lista a kirakatba mint `id` szuro megy vissza, vagyis a
@@ -84,43 +91,25 @@ const FELSO_HATAR = 200;
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const nyers = (req.query.q ?? "") as string | string[];
   const kifejezes = Array.isArray(nyers) ? (nyers[0] ?? "") : nyers;
-  const szavak = szavakra(kifejezes);
+  const terv = keresesiTerv(kifejezes);
 
   // URES KERESES URES VALASZ, es NEM "minden termek": a hivo maga dont arrol,
   // mit mutat ures keresesre, es ma a teljes listat mutatja -- ha ide
   // mindent visszaadnank, ugyanazt a dontest egy masodik helyen is meghoznank.
-  if (szavak.length === 0) {
+  if (terv.length === 0) {
     res.json({ ids: [], count: 0, csonkolt: false });
     return;
   }
 
   const kapcsolat = req.scope.resolve(ContainerRegistrationKeys.PG_CONNECTION);
-
-  const feltetelek: string[] = [];
-  const ertekek: string[] = [];
-  for (const szo of szavak) {
-    // A `?` helyorzokbe MENNEK az ertekek; a szoveg sosem kerul a lekerdezesbe.
-    feltetelek.push(`(
-      ${oszlopHajtogatva("p.title")} LIKE ?
-      OR ${oszlopHajtogatva("coalesce(p.subtitle, '')")} LIKE ?
-      OR ${oszlopHajtogatva("coalesce(p.description, '')")} LIKE ?
-      OR EXISTS (
-        SELECT 1 FROM product_variant v
-        WHERE v.product_id = p.id
-          AND v.deleted_at IS NULL
-          AND ${oszlopHajtogatva("coalesce(v.sku, '')")} LIKE ?
-      )
-    )`);
-    const minta = `%${szo}%`;
-    ertekek.push(minta, minta, minta, minta);
-  }
+  const { feltetelek, ertekek } = sqlFeltetelek(terv);
 
   const sql = `
     SELECT p.id
     FROM product p
     WHERE p.deleted_at IS NULL
       AND p.status = 'published'
-      AND ${feltetelek.join(" AND ")}
+      AND ${feltetelek}
     ORDER BY p.created_at DESC, p.id DESC
     LIMIT ${FELSO_HATAR + 1}
   `;
