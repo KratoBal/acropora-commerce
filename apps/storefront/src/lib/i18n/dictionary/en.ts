@@ -121,6 +121,19 @@ export const en: Dictionary = {
       "The cart you are looking for does not exist. Clear your browser cookies and try again.",
     back: "Back to the home page",
   },
+  /** The page of a product no longer available (V4.2). */
+  discontinued: {
+    title: "This product is no longer available",
+    intro: "{name} is no longer in our range.",
+    replacementsTitle: "We found these instead",
+    similarTitle: "Similar products from the same category",
+    none: "We cannot find a direct replacement right now. Look around the category, or search for the product.",
+    backToCategory: "Back to the category: {name}",
+    search: "Search the shop",
+    metaTitlePrefix: "No longer available: ",
+    metaDescription:
+      "This product is no longer available. Here are the closest replacements from the same category.",
+  },
   header: {
     account: "My account",
     mainMenu: "Main menu",

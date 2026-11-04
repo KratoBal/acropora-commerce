@@ -125,6 +125,19 @@ export const hu = {
       "A keresett kosár nem található. Töröld a böngésző sütijeit, és próbáld újra.",
     back: "Vissza a főoldalra",
   },
+  /** A nem kapható (kifutott) termék lapja (V4.2), korall szövegei (v-feluleti-szovegek.md). */
+  discontinued: {
+    title: "Ez a termék már nem kapható",
+    intro: "{name} már nem szerepel a kínálatunkban.",
+    replacementsTitle: "Ezeket találtuk helyette",
+    similarTitle: "Hasonló termékek ugyanabból a kategóriából",
+    none: "Most nem találunk közvetlen helyettesítőt. Nézz körül a kategóriában, vagy keress rá a termékre.",
+    backToCategory: "Vissza a kategóriához: {name}",
+    search: "Keresés a boltban",
+    metaTitlePrefix: "Már nem kapható: ",
+    metaDescription:
+      "Ez a termék már nem kapható. Mutatjuk a legközelebbi helyettesítőket ugyanabból a kategóriából.",
+  },
   header: {
     account: "Fiókom",
     mainMenu: "Fő menü",
