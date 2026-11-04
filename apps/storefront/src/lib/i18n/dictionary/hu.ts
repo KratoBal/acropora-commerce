@@ -105,6 +105,7 @@ export const hu = {
     productDescription: "{title}: rendelés az {store} webáruházban.",
     selectionDescription: "{title}: válogatás az {store} webáruházban.",
     searchTitle: "Keresés: {query}",
+    unavailableTitlePrefix: "Nem elérhető: ",
     searchDescription: "Találatok erre: „{query}” az {store} webáruházban.",
     allProductsTitle: "Összes termék",
     allProductsDescription: "Az {store} webáruház összes terméke.",
@@ -665,6 +666,8 @@ export const hu = {
     similarTitle: "Hasonló termékek",
     accessoriesSub: "Ezekkel egészítik ki.",
     similarSub: "Ezek is érdekelhetnek.",
+    similarNowTitle: "Most kapható, hasonló darabok",
+    similarNowNone: "Most nincs kapható ugyanilyen darabunk.",
     tabTechnical: "Műszaki adatok",
     tabTechnicalShort: "Adatok",
     tabDescription: "Leírás",
@@ -991,5 +994,95 @@ export const hu = {
     labelDelivery: "{n}. Kiszállítandó rendelés",
     shopName: "Acropora üzlet",
     itemLine: "{title} · {quantity} db",
+  },
+  guestOrder: {
+    pageTitle: "Rendelés megtekintése",
+    intro:
+      "Add meg a rendelésszámot és a vásárláskor használt e-mail címet, és megmutatjuk a rendelésed állapotát.",
+    orderNumberLabel: "Rendelésszám",
+    orderNumberHelp: "Megtalálod a visszaigazoló e-mailben.",
+    emailLabel: "E-mail cím",
+    emailHelp: "Az a cím, amellyel rendeltél.",
+    submit: "Rendelés megnézése",
+    searching: "Keresés…",
+    privacyNote:
+      "Az adataidat csak a rendelés megkeresésére használjuk. [KITÖLTENDŐ: jogi ellenőrzés]",
+    errorRequired: "Kérjük, töltsd ki ezt a mezőt.",
+    errorEmail: "Ellenőrizd az e-mail címet, valami hiányzik belőle.",
+    errorNumber: "A rendelésszám csak számjegyekből áll.",
+    errorNotFound:
+      "Nem találtuk a rendelést ezekkel az adatokkal. Ellenőrizd a rendelésszámot és az e-mail címet, vagy írj nekünk: [KITÖLTENDŐ: ügyfélszolgálat elérhetősége].",
+    errorTooMany:
+      "Túl sok sikertelen próbálkozás történt. Próbáld újra [KITÖLTENDŐ: várakozási idő] múlva, vagy írj nekünk.",
+    errorUnavailable:
+      "Most nem tudjuk megmutatni a rendelést. Próbáld újra kicsit később, vagy írj nekünk: [KITÖLTENDŐ: ügyfélszolgálat elérhetősége].",
+    splitNotice:
+      "Ez a vásárlás két rendelésből áll, mert élő állat is volt benne. Az egyiket kiszállítjuk, a másik élő állatokat a boltban veheted át.",
+    blockShipped: "Kiszállítandó termékek",
+    blockPickup: "Élő állatok, átvétel a boltban",
+    orderNumber: "Rendelés #{number}",
+    placedOn: "Leadva: {date}",
+    statusHeading: "Állapot",
+    paymentHeading: "Fizetés",
+    itemsHeading: "Tételek",
+    shippingLine: "Szállítás: {name}",
+    totalLine: "Végösszeg",
+    pickupPoint: "Átvételi pont: {name}, {address}",
+    pickupPointNameOnly: "Átvételi pont: {name}",
+    carrierLine: "Szállító: {carrier}",
+    trackingButton: "Csomag követése",
+    trackingNumber: "Csomagszám: {number}",
+    trackingNone:
+      "A csomagszám akkor jelenik meg, amikor a futár átvette a csomagot.",
+    trackingNoLink:
+      "A követés most nem érhető el. A csomagszámmal megnézheted a szállító oldalán.",
+    status: {
+      pendingProcessing: {
+        label: "Beérkezett",
+        text: "Megkaptuk a rendelésedet.",
+      },
+      confirmed: {
+        label: "Visszaigazolva",
+        text: "Visszaigazoltuk a rendelésedet.",
+      },
+      stocking: {
+        label: "Feldolgozás alatt",
+        text: "Összeállítjuk a rendelésedet.",
+      },
+      outForDelivery: {
+        label: "Úton van",
+        text: "A csomagot átvette a futárszolgálat.",
+      },
+      readyForPickup: {
+        label: "Átvehető",
+        text: "A rendelésed átvehető.",
+      },
+      closed: {
+        label: "Átvéve",
+        text: "A rendelés lezárult.",
+      },
+      closedUnsuccessfully: {
+        label: "Sikertelenül lezárt",
+        text: "A rendelés nem teljesült. [KITÖLTENDŐ: visszatérítés menete és ideje]",
+      },
+    },
+    payment: {
+      awaiting: {
+        label: "Fizetésre vár",
+        text: "A fizetés még nem érkezett meg. [KITÖLTENDŐ: határidő és mi történik lejáratkor]",
+      },
+      paid: {
+        label: "Kifizetve",
+        text: "A fizetés megérkezett.",
+      },
+      refunded: {
+        label: "Visszatérítve",
+        text: "A visszatérítés megtörtént. [KITÖLTENDŐ: mikor kerül a számládra]",
+      },
+      partiallyRefunded: {
+        label: "Részben visszatérítve",
+        text: "A visszatérítés egy része megtörtént. [KITÖLTENDŐ: mikor kerül a számládra]",
+      },
+    },
   },
 } as const
