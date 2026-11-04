@@ -1,0 +1,69 @@
+import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
+import { guestOrderOperations } from "../guest-order/operations"
+
+/*
+  WHAT TURNS THIS RED (V1.1). The store pickup flag decided by the shipping option's NAME instead of its id
+  (names are translated and edited); a field of the customer's address, name or phone added to the query
+  (what is not requested cannot leak); a split cart's mates read from the wrong cart; the order itself
+  returned as its own cart-mate.
+*/
+const pickupId = resolveShippingOptionRoleBindings().find((binding) => binding.role === "PICKUP")!.id
+
+const order = (id: string, displayId: number, optionId: string, name = "Bármi") => ({
+  id,
+  display_id: displayId,
+  email: "vevo@example.hu",
+  created_at: "2026-11-03T10:00:00.000Z",
+  total: 1000,
+  currency_code: "huf",
+  payment_status: "captured",
+  metadata: null,
+  items: [{ id: "i1", title: "Termék", product_title: "Termék", variant_title: "", quantity: 1, total: 1000 }],
+  shipping_methods: [{ id: "sm1", name, shipping_option_id: optionId, data: null }],
+})
+
+const container = (calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[]) =>
+  ({
+    resolve: () => ({
+      graph: async (q: { entity: string; filters: Record<string, unknown>; fields: string[] }) => {
+        calls.push(q)
+        if (q.entity === "order_cart" && q.filters.order_id) return { data: [{ cart_id: "cart_1" }] }
+        if (q.entity === "order_cart" && q.filters.cart_id) return { data: [{ order_id: "o_1" }, { order_id: "o_2" }] }
+        if (q.entity === "order" && q.filters.display_id === 1042)
+          return { data: [order("o_1", 1042, "so_other", "Bolti átvétel")] }
+        if (q.entity === "order" && Array.isArray(q.filters.id))
+          return { data: [order("o_2", 1043, pickupId, "Átvétel")] }
+        return { data: [] }
+      },
+    }),
+  }) as never
+
+describe("guestOrderOperations", () => {
+  it("the store pickup flag follows the option ID, not the name", async () => {
+    const calls: never[] = []
+    const ops = guestOrderOperations(container(calls))
+    const primary = await ops.findByDisplayId(1042)
+    expect(primary?.shipping_method?.name).toBe("Bolti átvétel")
+    expect(primary?.shipping_method?.store_pickup).toBe(false)
+    const [mate] = await ops.siblingsOf("o_1")
+    expect(mate?.shipping_method?.name).toBe("Átvétel")
+    expect(mate?.shipping_method?.store_pickup).toBe(true)
+  })
+
+  it("reads the cart-mates through the order's own cart, and never returns the order as its own mate", async () => {
+    const calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[] = []
+    const mates = await guestOrderOperations(container(calls)).siblingsOf("o_1")
+    expect(calls[0]).toMatchObject({ entity: "order_cart", filters: { order_id: "o_1" } })
+    expect(calls[1]).toMatchObject({ entity: "order_cart", filters: { cart_id: "cart_1" } })
+    expect(calls[2]).toMatchObject({ entity: "order", filters: { id: ["o_2"] } })
+    expect(mates.map((m) => m.id)).toEqual(["o_2"])
+  })
+
+  it("asks for NO address, name or phone field", async () => {
+    const calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[] = []
+    await guestOrderOperations(container(calls)).findByDisplayId(1042)
+    const fields = calls.find((call) => call.entity === "order")!.fields
+    expect(fields.length).toBeGreaterThan(5)
+    for (const field of fields) expect(field).not.toMatch(/address|phone|first_name|last_name|customer|billing/i)
+  })
+})

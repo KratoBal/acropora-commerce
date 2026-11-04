@@ -31,6 +31,8 @@ export type GuestOrderSource = {
   shipping_method: {
     name: string
     data?: Record<string, unknown> | null
+    /** the shipping option is the store pickup one (decided by the option id, never by the name) */
+    store_pickup: boolean
   } | null
   metadata: Record<string, unknown> | null
 }
@@ -54,6 +56,8 @@ export type GuestOrderView = {
   shipping: {
     method_name: string
     pickup_point: { name: string; address: string } | null
+    /** the order is collected in the store (a mixed cart's live-animal order): the page names its block by this */
+    store_pickup: boolean
   } | null
   tracking: StoredTracking | null
 }
@@ -109,6 +113,7 @@ export const guestOrderView = (source: GuestOrderSource, status: GuestOrderStatu
     ? {
         method_name: source.shipping_method.name,
         pickup_point: pickupPointOf(source.shipping_method.data),
+        store_pickup: source.shipping_method.store_pickup,
       }
     : null,
   tracking: trackingOf(source.metadata),

@@ -5,6 +5,7 @@ import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-st
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
+import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
 import { lineTitle } from "../webshop-mail/operations"
 import type { GuestOrderDeps, GuestOrderSource, GuestOrderStatus } from "./lookup"
 
@@ -29,10 +30,19 @@ const ORDER_FIELDS = [
   "items.total",
   "shipping_methods.id",
   "shipping_methods.name",
+  "shipping_methods.shipping_option_id",
   "shipping_methods.data",
 ]
 
 const label = (status: string): string => ORDER_BUSINESS_STATUS_LABELS[status as OrderBusinessStatus] ?? status
+
+/** The shipping option ids that play the store pickup role (by id, never by name: names are translated and edited). */
+const storePickupIds = (): Set<string> =>
+  new Set(
+    resolveShippingOptionRoleBindings()
+      .filter((binding) => binding.role === "PICKUP")
+      .map((binding) => binding.id),
+  )
 
 const sourceOf = (order: any): GuestOrderSource => {
   const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
@@ -49,7 +59,13 @@ const sourceOf = (order: any): GuestOrderSource => {
       quantity: medusaNumber(item.quantity, `The quantity of item ${item.id}`),
       total: medusaNumber(item.total, `The total of item ${item.id}`),
     })),
-    shipping_method: method ? { name: String(method.name ?? ""), data: method.data ?? null } : null,
+    shipping_method: method
+      ? {
+          name: String(method.name ?? ""),
+          data: method.data ?? null,
+          store_pickup: storePickupIds().has(String(method.shipping_option_id ?? "")),
+        }
+      : null,
     metadata: order.metadata ?? null,
   }
 }

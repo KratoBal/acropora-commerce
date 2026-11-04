@@ -88,7 +88,7 @@ describe("lookupGuestOrders: one answer for every miss", () => {
 
 describe("lookupGuestOrders: a mixed cart is two orders", () => {
   const primary = source({ id: "o_1", display_id: 1042 })
-  const pickup = source({ id: "o_2", display_id: 1043, shipping_method: { name: "Bolti átvétel", data: null } })
+  const pickup = source({ id: "o_2", display_id: 1043, shipping_method: { name: "Bolti átvétel", data: null, store_pickup: true } })
 
   it("the requested order is first, its cart-mate follows", async () => {
     const d = deps([primary, pickup], { o_1: [pickup], o_2: [primary] })
@@ -186,11 +186,12 @@ describe("guestOrderView: only named fields leave", () => {
 
   it("a home delivery has no parcel shop, a missing shipping method is null", () => {
     expect(
-      guestOrderView(source({ id: "o", display_id: 1, shipping_method: { name: "GLS házhoz", data: {} } }), null)
+      guestOrderView(source({ id: "o", display_id: 1, shipping_method: { name: "GLS házhoz", data: {}, store_pickup: false } }), null)
         .shipping,
     ).toEqual({
       method_name: "GLS házhoz",
       pickup_point: null,
+      store_pickup: false,
     })
     expect(guestOrderView(source({ id: "o", display_id: 1, shipping_method: null }), null).shipping).toBeNull()
   })
