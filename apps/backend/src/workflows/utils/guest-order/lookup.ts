@@ -9,7 +9,8 @@
  *  - The answer carries what the customer's own mail already showed: the lines, the amounts, the
  *    shipping method and the parcel shop's name and address (a public place), the business status,
  *    the payment state and the tracking. NEVER the e-mail address, a name, a phone number, or a
- *    home address.
+ *    home address. A problem report the customer filed shows only its case reference, its kind, its
+ *    time and a two-step state: never the text, the phone number or the photos.
  *  - A MIXED CART IS TWO ORDERS and the customer ordered once: the sibling orders of the same cart
  *    come with the requested one, but only those whose own address matches too. The requested order
  *    is first.
@@ -18,6 +19,7 @@
  */
 import type { StoredTracking } from "../order-tracking"
 import { trackingOf } from "../order-tracking"
+import type { ProblemKind } from "../../../modules/order-problem-report/types"
 
 export type GuestOrderSource = {
   id: string
@@ -44,6 +46,19 @@ export type GuestOrderStatus = {
   history: { to_label: string; created_at: string }[]
 }
 
+/** One problem report of the order, as the customer sees it again. */
+export type GuestProblemReport = {
+  /** the case reference the customer was given when filing */
+  id: string
+  kind: ProblemKind
+  created_at: string
+  /** received: the shop has it; in_progress: the shop's team took it over. No promise is made by either. */
+  stage: "received" | "in_progress"
+}
+
+/** What the module stores of a report that the customer view needs (the rest never reaches it). */
+export type StoredProblemReport = { id: string; kind: ProblemKind; created_at: Date | string; status: string }
+
 export type GuestOrderView = {
   display_id: number | string
   created_at: string | null
@@ -60,6 +75,8 @@ export type GuestOrderView = {
     store_pickup: boolean
   } | null
   tracking: StoredTracking | null
+  /** the order's problem reports, the oldest first; empty when there are none */
+  problem_reports: GuestProblemReport[]
 }
 
 const PAYMENT_STATUSES = new Set([
@@ -96,8 +113,22 @@ const iso = (value: Date | string | null): string | null => {
   return Number.isNaN(at.getTime()) ? null : at.toISOString()
 }
 
+export const guestProblemReports = (stored: readonly StoredProblemReport[]): GuestProblemReport[] =>
+  [...stored]
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .map((report) => ({
+      id: report.id,
+      kind: report.kind,
+      created_at: new Date(report.created_at).toISOString(),
+      stage: report.status === "pulled" ? ("in_progress" as const) : ("received" as const),
+    }))
+
 /** The customer-safe shape of one order. Every field is named: nothing else of the source passes. */
-export const guestOrderView = (source: GuestOrderSource, status: GuestOrderStatus | null): GuestOrderView => ({
+export const guestOrderView = (
+  source: GuestOrderSource,
+  status: GuestOrderStatus | null,
+  reports: readonly StoredProblemReport[] = [],
+): GuestOrderView => ({
   display_id: source.display_id,
   created_at: iso(source.created_at),
   total: source.total,
@@ -118,6 +149,7 @@ export const guestOrderView = (source: GuestOrderSource, status: GuestOrderStatu
       }
     : null,
   tracking: trackingOf(source.metadata),
+  problem_reports: guestProblemReports(reports),
 })
 
 export type GuestOrderDeps = {
@@ -125,6 +157,8 @@ export type GuestOrderDeps = {
   /** The other orders of the cart the order was placed from (not the order itself). */
   siblingsOf(orderId: string): Promise<GuestOrderSource[]>
   statusOf(orderId: string): Promise<GuestOrderStatus | null>
+  /** The problem reports filed for the order. */
+  problemReportsOf(orderId: string): Promise<StoredProblemReport[]>
 }
 
 /** The requested order first, then its cart-mates; `null` is the one answer for every miss. */
@@ -139,5 +173,9 @@ export const lookupGuestOrders = async (
   const siblings = (await deps.siblingsOf(order.id))
     .filter((sibling) => sibling.id !== order.id && emailKey(sibling.email) === wanted)
     .sort((a, b) => Number(a.display_id) - Number(b.display_id))
-  return Promise.all([order, ...siblings].map(async (source) => guestOrderView(source, await deps.statusOf(source.id))))
+  return Promise.all(
+    [order, ...siblings].map(async (source) =>
+      guestOrderView(source, await deps.statusOf(source.id), await deps.problemReportsOf(source.id)),
+    ),
+  )
 }

@@ -1,6 +1,7 @@
 import {
   emailKey,
   guestOrderView,
+  guestProblemReports,
   lookupGuestOrders,
   type GuestOrderDeps,
   type GuestOrderSource,
@@ -51,6 +52,7 @@ const deps = (
       statusCalls.push(orderId)
       return orderId === "o_1" ? status : null
     },
+    problemReportsOf: async () => [],
   }
 }
 
@@ -199,6 +201,49 @@ describe("guestOrderView: only named fields leave", () => {
   it("a bad date is null, not an exception", () => {
     expect(guestOrderView(source({ id: "o", display_id: 1, created_at: "nem datum" }), null).created_at).toBeNull()
     expect(guestOrderView(source({ id: "o", display_id: 1, created_at: null }), null).created_at).toBeNull()
+  })
+})
+
+describe("the order's problem reports", () => {
+  const stored = (over: Record<string, unknown> = {}) => ({
+    id: "ordprb_1",
+    kind: "item_damaged" as const,
+    created_at: "2026-11-04T10:00:00.000Z",
+    status: "new",
+    // what the module also holds and the customer view must NEVER pass on
+    description: "Titkos leírás",
+    phone: "+36 30 111 2222",
+    item_ids: ["item_1"],
+    ...over,
+  })
+
+  it("shows the case reference, the kind, the time and a two-step state, the oldest first", () => {
+    const reports = guestProblemReports([
+      stored({ id: "ordprb_2", created_at: "2026-11-05T10:00:00.000Z", status: "pulled" }),
+      stored(),
+    ] as never)
+    expect(reports).toEqual([
+      { id: "ordprb_1", kind: "item_damaged", created_at: "2026-11-04T10:00:00.000Z", stage: "received" },
+      { id: "ordprb_2", kind: "item_damaged", created_at: "2026-11-05T10:00:00.000Z", stage: "in_progress" },
+    ])
+  })
+
+  it("never passes the text, the phone number or the line ids", () => {
+    const view = guestOrderView(source({ id: "o_1", display_id: 1042 }), null, [stored()] as never)
+    const text = JSON.stringify(view)
+    expect(text).not.toContain("Titkos leírás")
+    expect(text).not.toContain("+36 30 111 2222")
+    expect(text).not.toContain("item_ids")
+    expect(view.problem_reports).toHaveLength(1)
+  })
+
+  it("an order without a report has an empty list, and each order of a split cart gets its own", async () => {
+    const orders = [source({ id: "o_1", display_id: 1042 })]
+    const mate = source({ id: "o_2", display_id: 1043 })
+    const d = deps(orders, { o_1: [mate] })
+    d.problemReportsOf = async (orderId) => (orderId === "o_2" ? ([stored()] as never) : [])
+    const result = await lookupGuestOrders({ displayId: 1042, email: "vevo@example.hu" }, d)
+    expect(result?.map((o) => o.problem_reports.length)).toEqual([0, 1])
   })
 })
 

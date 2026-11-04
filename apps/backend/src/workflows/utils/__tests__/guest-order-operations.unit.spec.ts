@@ -1,3 +1,4 @@
+import { ORDER_PROBLEM_REPORT_MODULE } from "../../../modules/order-problem-report"
 import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
 import { guestOrderOperations } from "../guest-order/operations"
 
@@ -22,9 +23,30 @@ const order = (id: string, displayId: number, optionId: string, name = "Bármi")
   shipping_methods: [{ id: "sm1", name, shipping_option_id: optionId, data: null }],
 })
 
+const reportCalls: { filter: Record<string, unknown>; config: unknown }[] = []
+const problemService = {
+  listOrderProblemReports: async (filter: Record<string, unknown>, config: unknown) => {
+    reportCalls.push({ filter, config })
+    return [
+      {
+        id: "ordprb_1",
+        kind: "item_missing",
+        created_at: new Date("2026-11-04T10:00:00Z"),
+        status: "pulled",
+        description: "Titkos",
+        phone: "+36 1",
+        item_ids: ["i1"],
+      },
+    ]
+  },
+}
+
 const container = (calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[]) =>
   ({
-    resolve: () => ({
+    resolve: (key: string) =>
+      key === ORDER_PROBLEM_REPORT_MODULE
+        ? problemService
+        : {
       graph: async (q: { entity: string; filters: Record<string, unknown>; fields: string[] }) => {
         calls.push(q)
         if (q.entity === "order_cart" && q.filters.order_id) return { data: [{ cart_id: "cart_1" }] }
@@ -35,7 +57,7 @@ const container = (calls: { entity: string; filters: Record<string, unknown>; fi
           return { data: [order("o_2", 1043, pickupId, "Átvétel")] }
         return { data: [] }
       },
-    }),
+    },
   }) as never
 
 describe("guestOrderOperations", () => {
@@ -65,5 +87,15 @@ describe("guestOrderOperations", () => {
     const fields = calls.find((call) => call.entity === "order")!.fields
     expect(fields.length).toBeGreaterThan(5)
     for (const field of fields) expect(field).not.toMatch(/address|phone|first_name|last_name|customer|billing/i)
+  })
+
+  it("reads the order's problem reports by the order id, the oldest first, and keeps only what the view names", async () => {
+    reportCalls.length = 0
+    const stored = await guestOrderOperations(container([])).problemReportsOf("o_1")
+    expect(reportCalls[0]).toEqual({ filter: { order_id: "o_1" }, config: { order: { created_at: "ASC" } } })
+    expect(stored).toEqual([
+      { id: "ordprb_1", kind: "item_missing", created_at: new Date("2026-11-04T10:00:00Z"), status: "pulled" },
+    ])
+    expect(JSON.stringify(stored)).not.toContain("Titkos")
   })
 })

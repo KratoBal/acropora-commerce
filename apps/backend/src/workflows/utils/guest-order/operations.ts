@@ -1,6 +1,9 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 
+import { ORDER_PROBLEM_REPORT_MODULE } from "../../../modules/order-problem-report"
+import type OrderProblemReportModuleService from "../../../modules/order-problem-report/service"
+import type { ProblemKind } from "../../../modules/order-problem-report/types"
 import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-status"
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
@@ -100,6 +103,17 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
         .map((link) => link.order_id)
         .filter((id): id is string => Boolean(id) && id !== orderId)
       return ids.length ? load({ id: ids }) : []
+    },
+    problemReportsOf: async (orderId) => {
+      const service = container.resolve<OrderProblemReportModuleService>(ORDER_PROBLEM_REPORT_MODULE)
+      const rows = await service.listOrderProblemReports({ order_id: orderId }, { order: { created_at: "ASC" } })
+      // only what the customer view names; the text, the phone and the photos stay in the module
+      return rows.map((row) => ({
+        id: String(row.id),
+        kind: row.kind as ProblemKind,
+        created_at: row.created_at as Date | string,
+        status: String(row.status),
+      }))
     },
     statusOf: async (orderId): Promise<GuestOrderStatus | null> => {
       const service = container.resolve<OrderBusinessStatusModuleService>(ORDER_BUSINESS_STATUS_MODULE)
