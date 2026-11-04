@@ -25,7 +25,8 @@ export type GuestOrder = {
   currency_code: string
   payment_status: string | null
   business_status: GuestOrderStatus | null
-  items: { title: string; quantity: number; total: number }[]
+  /** `id`: the order line's id (the problem report names the lines by it) */
+  items: { id: string; title: string; quantity: number; total: number }[]
   shipping: {
     method_name: string
     pickup_point: { name: string; address: string } | null

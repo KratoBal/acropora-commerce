@@ -12,12 +12,18 @@ const lookupGuestOrder = vi.fn()
 vi.mock("@lib/data/guest-order", () => ({
   lookupGuestOrder: (...args: unknown[]) => lookupGuestOrder(...args),
 }))
+const submitProblemReport = vi.fn()
+vi.mock("@lib/data/problem-report", () => ({
+  uploadProblemPhoto: vi.fn(),
+  submitProblemReport: (...args: unknown[]) => submitProblemReport(...args),
+}))
 
 import GuestOrderForm from "./guest-order-form"
 
 afterEach(() => {
   cleanup()
   lookupGuestOrder.mockReset()
+  submitProblemReport.mockReset()
 })
 
 /*
@@ -133,5 +139,49 @@ describe("the guest order form", () => {
     await waitFor(() => expect(lookupGuestOrder).toHaveBeenCalled())
     expect(window.location.href).not.toContain("vevo")
     expect(window.location.href).not.toContain("1042")
+  })
+  it("keeps the address the order was found with for an open problem form, even if the field is edited afterwards", async () => {
+    lookupGuestOrder.mockResolvedValue({
+      ok: true,
+      orders: [
+        {
+          ...order,
+          items: [{ id: "item_1", title: "Korall A", quantity: 1, total: 500 }],
+        },
+      ],
+    })
+    submitProblemReport.mockResolvedValue({
+      ok: true,
+      reportId: "ordprb_01",
+      createdAt: "2026-11-04T10:00:00.000Z",
+    })
+    render(<GuestOrderForm />)
+    fill("1042", "vevo@example.hu")
+    await submit()
+    await waitFor(() =>
+      expect(screen.getByTestId("guest-order-view")).toBeTruthy(),
+    )
+    fireEvent.click(
+      screen.getByRole("button", { name: /Probléma a szállítmánnyal/ }),
+    )
+    // the customer starts typing another address into the lookup field
+    fireEvent.change(screen.getByLabelText("E-mail cím"), {
+      target: { value: "mas@example.hu" },
+    })
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("Mi a probléma?"), {
+      target: { value: "item_damaged" },
+    })
+    fireEvent.change(screen.getByLabelText("Mi történt pontosan?"), {
+      target: { value: "Törött a láb" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("problem-form-1042"))
+    })
+    await waitFor(() => expect(submitProblemReport).toHaveBeenCalledTimes(1))
+    expect(submitProblemReport.mock.calls[0][0]).toMatchObject({
+      orderNumber: "1042",
+      email: "vevo@example.hu",
+    })
   })
 })

@@ -1066,5 +1066,50 @@ export const en: Dictionary = {
         text: "Part of the refund has been made. [TO BE FILLED IN: when it reaches your account]",
       },
     },
+    problem: {
+      openButton: "Problem with the shipment",
+      title: "Problem with the shipment",
+      intro:
+        "Tell us what happened and, if you can, attach a photo. The sooner you report it, the faster we can help.",
+      liveNote:
+        "For live animals, please report the problem on the day you receive the parcel, or as soon as you can, with a photo. A quick report and a picture help us decide quickly. [TO BE FILLED IN: the exact reporting deadline and its legal wording]",
+      itemsLabel: "Which product is affected?",
+      kindLabel: "What is the problem?",
+      kindPlaceholder: "Choose…",
+      kindAnimalDead: "The animal died",
+      kindAnimalHurt: "The animal is injured or ill",
+      kindItemDamaged: "The product is damaged or faulty",
+      kindItemMissing: "An item is missing",
+      kindOther: "Something else",
+      receivedLabel: "When did you receive the parcel?",
+      descriptionLabel: "What exactly happened?",
+      descriptionHelp: "Briefly describe what you see.",
+      phoneLabel: "Phone number (optional)",
+      phoneHelp:
+        "If we can help faster by phone, this is where we can reach you.",
+      photosLabel: "Photos",
+      photosHelp:
+        "Take a picture of the animal and of the packaging too, in good light if possible.",
+      addPhoto: "Add a photo",
+      removePhoto: "Remove",
+      photoErrorSize:
+        "This file is too large. The largest allowed size is 5 MB. [TO BE FILLED IN: size]",
+      photoErrorType:
+        "This file type is not supported. Use a JPG or PNG picture.",
+      photoErrorCount:
+        "You can attach at most 5 pictures. [TO BE FILLED IN: number]",
+      photoErrorUpload: "We could not upload the picture {name}.",
+      submit: "Send the report",
+      sending: "Sending…",
+      close: "Close",
+      errorItems: "Mark at least one product.",
+      errorKind: "Choose what the problem is.",
+      errorDescription: "Please describe briefly what happened.",
+      errorPhone:
+        "The phone number may contain only digits, spaces, plus and hyphen signs.",
+      errorSend:
+        "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: [TO BE FILLED IN: contact].",
+      done: "We have received your report. The case reference is {id}. We will get back to you within [TO BE FILLED IN: response time].",
+    },
   },
 }

@@ -28,6 +28,8 @@ export default function GuestOrderForm() {
   const [errors, setErrors] = useState<GuestFormErrors>({})
   const [failure, setFailure] = useState<string | null>(null)
   const [orders, setOrders] = useState<GuestOrder[] | null>(null)
+  // the address the answer was found with: the field may be edited afterwards, an open problem form must keep this one
+  const [lookupEmail, setLookupEmail] = useState("")
   const [pending, startTransition] = useTransition()
 
   const submit = (event: FormEvent) => {
@@ -38,12 +40,15 @@ export default function GuestOrderForm() {
     setErrors(found)
     if (found.orderNumber || found.email) return
     startTransition(async () => {
+      const sentEmail = email.trim()
       const result = await lookupGuestOrder({
         orderNumber: orderNumber.trim(),
-        email: email.trim(),
+        email: sentEmail,
       })
-      if (result.ok) setOrders(result.orders)
-      else setFailure(t(lookupErrorKey(result.kind)))
+      if (result.ok) {
+        setOrders(result.orders)
+        setLookupEmail(sentEmail)
+      } else setFailure(t(lookupErrorKey(result.kind)))
     })
   }
 
@@ -95,7 +100,7 @@ export default function GuestOrderForm() {
           </p>
         )}
       </form>
-      {orders && <GuestOrderView orders={orders} />}
+      {orders && <GuestOrderView orders={orders} email={lookupEmail} />}
     </div>
   )
 }
