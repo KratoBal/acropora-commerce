@@ -3,6 +3,10 @@ const notifyProblemReportReceived = jest.fn()
 jest.mock("../../../../../workflows/utils/webshop-mail/problem-report-received-mail", () => ({
   notifyProblemReportReceived: (...args: unknown[]) => notifyProblemReportReceived(...args),
 }))
+const guestProblemReportsOf = jest.fn()
+jest.mock("../../../../../workflows/utils/guest-order/operations", () => ({
+  guestProblemReportsOf: (...args: unknown[]) => guestProblemReportsOf(...args),
+}))
 const createReport = jest.fn()
 jest.mock("../../../../../workflows/utils/problem-report/report", () => ({
   accessibleOrder: (...args: unknown[]) => accessibleOrder(...args),
@@ -38,7 +42,12 @@ const run = async (over: Record<string, unknown> = {}) => {
   return { json, status }
 }
 
+const standingList = [
+  { id: "rep_1", kind: "item_damaged", created_at: "2026-11-04T10:00:00.000Z", stage: "received" },
+]
+
 beforeEach(() => {
+  guestProblemReportsOf.mockResolvedValue(standingList)
   accessibleOrder.mockResolvedValue({
     id: "order_1",
     itemIds: ["item_1"],
@@ -49,6 +58,7 @@ beforeEach(() => {
   createReport.mockResolvedValue({ status: "created", id: "rep_1", createdAt: "2026-11-04T10:00:00.000Z" })
 })
 afterEach(() => {
+  guestProblemReportsOf.mockReset()
   accessibleOrder.mockReset()
   createReport.mockReset()
   notifyProblemReportReceived.mockReset()
@@ -66,7 +76,11 @@ describe("POST /store/guest-orders/problem", () => {
   it("creates the report from the cleaned values and answers its id and time", async () => {
     const { json, status } = await run()
     expect(status).toHaveBeenCalledWith(201)
-    expect(json).toHaveBeenCalledWith({ report_id: "rep_1", created_at: "2026-11-04T10:00:00.000Z" })
+    expect(json).toHaveBeenCalledWith({
+      report_id: "rep_1",
+      created_at: "2026-11-04T10:00:00.000Z",
+      problem_reports: standingList,
+    })
     expect(accessibleOrder).toHaveBeenCalledWith(expect.anything(), 1042, "vevo@example.hu")
     const input = createReport.mock.calls[0][2]
     expect(input).toMatchObject({
@@ -92,7 +106,11 @@ describe("POST /store/guest-orders/problem", () => {
     notifyProblemReportReceived.mockReturnValue(new Promise(() => undefined))
     const { json, status } = await run()
     expect(status).toHaveBeenCalledWith(201)
-    expect(json).toHaveBeenCalledWith({ report_id: "rep_1", created_at: "2026-11-04T10:00:00.000Z" })
+    expect(json).toHaveBeenCalledWith({
+      report_id: "rep_1",
+      created_at: "2026-11-04T10:00:00.000Z",
+      problem_reports: standingList,
+    })
     expect(notifyProblemReportReceived).toHaveBeenCalledTimes(1)
   })
 
@@ -126,6 +144,33 @@ describe("POST /store/guest-orders/problem", () => {
       report_id: "ordprb_old",
       message: "Erről a problémáról már van bejelentésed.",
     })
+    expect(guestProblemReportsOf).not.toHaveBeenCalled()
+  })
+
+  it("reads the list for the order that was found, after the report is filed", async () => {
+    await run()
+    expect(guestProblemReportsOf).toHaveBeenCalledWith(expect.anything(), "order_1")
+    expect(createReport.mock.invocationCallOrder[0]).toBeLessThan(guestProblemReportsOf.mock.invocationCallOrder[0])
+  })
+
+  it("leaves the list out, and still answers 201, when it cannot be read", async () => {
+    guestProblemReportsOf.mockResolvedValue(null)
+    const r = await run()
+    expect(r.status).toHaveBeenCalledWith(201)
+    expect(r.json).toHaveBeenCalledWith({ report_id: "rep_1", created_at: "2026-11-04T10:00:00.000Z" })
+  })
+
+  it("reads no list when nothing was filed (a miss, a bad item, a bad photo, a duplicate)", async () => {
+    accessibleOrder.mockResolvedValue(null)
+    await run()
+    accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1, email: "a@b.hu" })
+    createReport.mockResolvedValue({ status: "bad_items" })
+    await run()
+    createReport.mockResolvedValue({ status: "bad_photos" })
+    await run()
+    createReport.mockResolvedValue({ status: "duplicate", id: "ordprb_old" })
+    await run()
+    expect(guestProblemReportsOf).not.toHaveBeenCalled()
   })
 
   it("a missing time and phone are null", async () => {

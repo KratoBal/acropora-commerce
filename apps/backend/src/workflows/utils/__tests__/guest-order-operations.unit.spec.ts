@@ -1,7 +1,7 @@
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { ORDER_PROBLEM_REPORT_MODULE } from "../../../modules/order-problem-report"
 import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
-import { guestOrderOperations } from "../guest-order/operations"
+import { guestOrderOperations, guestProblemReportsOf } from "../guest-order/operations"
 
 /*
   WHAT TURNS THIS RED (V1.1). The store pickup flag decided by the shipping option's NAME instead of its id
@@ -121,6 +121,27 @@ describe("guestOrderOperations", () => {
     expect(warnings).toHaveLength(1)
     expect(warnings[0]).toContain("o_1")
     // only the error kind is logged, never its message
+    expect(warnings[0]).toContain("TypeError")
+    expect(warnings[0]).not.toContain("secret details")
+  })
+
+  it("answers the order's reports in the customer view shape, with no text, phone or item", async () => {
+    const view = await guestProblemReportsOf(container([]) as never, "o_1")
+    expect(view).toEqual([
+      { id: "ordprb_1", kind: "item_missing", created_at: "2026-11-04T10:00:00.000Z", stage: "in_progress" },
+    ])
+    expect(JSON.stringify(view)).not.toMatch(/Titkos|phone|item_ids/)
+  })
+
+  it("an unreadable list is null (the report route then leaves the field out), logged by kind only", async () => {
+    warnings.length = 0
+    reportsFail = true
+    try {
+      expect(await guestProblemReportsOf(container([]) as never, "o_1")).toBeNull()
+    } finally {
+      reportsFail = false
+    }
+    expect(warnings).toHaveLength(1)
     expect(warnings[0]).toContain("TypeError")
     expect(warnings[0]).not.toContain("secret details")
   })

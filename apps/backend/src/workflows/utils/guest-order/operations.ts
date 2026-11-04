@@ -10,7 +10,14 @@ import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../..
 import { medusaNumber } from "../medusa-number"
 import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
 import { lineTitle } from "../webshop-mail/operations"
-import type { GuestOrderDeps, GuestOrderSource, GuestOrderStatus } from "./lookup"
+import {
+  guestProblemReports,
+  type GuestOrderDeps,
+  type GuestOrderSource,
+  type GuestOrderStatus,
+  type GuestProblemReport,
+  type StoredProblemReport,
+} from "./lookup"
 
 /**
  * The Medusa side of the guest order lookup. It asks for the fields the customer-safe view names and
@@ -74,6 +81,39 @@ const sourceOf = (order: any): GuestOrderSource => {
   }
 }
 
+/**
+ * The problem reports filed for one order, as the module stores them. Only what the customer view names is read out: the
+ * text, the phone and the photos stay in the module. Throws when the module cannot be read.
+ */
+const readStoredProblemReports = async (container: MedusaContainer, orderId: string): Promise<StoredProblemReport[]> => {
+  const service = container.resolve<OrderProblemReportModuleService>(ORDER_PROBLEM_REPORT_MODULE)
+  const rows = await service.listOrderProblemReports({ order_id: orderId }, { order: { created_at: "ASC" } })
+  return rows.map((row) => ({
+    id: String(row.id),
+    kind: row.kind as ProblemKind,
+    created_at: row.created_at as Date | string,
+    status: String(row.status),
+  }))
+}
+
+/**
+ * The customer view of one order's problem reports, for the report route to answer with: the page then shows the
+ * list from the answer itself and does not spend a guest lookup (which is rate limited) to refresh it. `null` when the
+ * list cannot be read: the answer then leaves the field out and the page keeps the list it has.
+ */
+export const guestProblemReportsOf = async (
+  container: MedusaContainer,
+  orderId: string,
+): Promise<GuestProblemReport[] | null> => {
+  try {
+    return guestProblemReports(await readStoredProblemReports(container, orderId))
+  } catch (error) {
+    const logger = container.resolve(ContainerRegistrationKeys.LOGGER) as { warn(message: string): void }
+    logger.warn(`order ${orderId}: the problem reports could not be read (${(error as Error)?.name ?? "error"})`)
+    return null
+  }
+}
+
 export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const load = async (filters: Record<string, unknown>): Promise<GuestOrderSource[]> => {
@@ -106,15 +146,7 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
     },
     problemReportsOf: async (orderId) => {
       try {
-        const service = container.resolve<OrderProblemReportModuleService>(ORDER_PROBLEM_REPORT_MODULE)
-        const rows = await service.listOrderProblemReports({ order_id: orderId }, { order: { created_at: "ASC" } })
-        // only what the customer view names; the text, the phone and the photos stay in the module
-        return rows.map((row) => ({
-          id: String(row.id),
-          kind: row.kind as ProblemKind,
-          created_at: row.created_at as Date | string,
-          status: String(row.status),
-        }))
+        return await readStoredProblemReports(container, orderId)
       } catch (error) {
         // the list of reports is an extra: when it cannot be read the order itself is still shown (the
         // customer must not lose the lookup over it). The log names the order and the error kind, nothing else.

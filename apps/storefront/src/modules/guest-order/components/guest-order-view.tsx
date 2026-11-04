@@ -10,6 +10,7 @@ import {
   safeTrackingUrl,
   statusTextKeys,
   type GuestOrder,
+  type GuestProblemReport,
 } from "@lib/util/guest-order"
 import { convertToLocale } from "@lib/util/money"
 import { Button } from "@modules/common/components/ui"
@@ -27,6 +28,12 @@ import ProblemReportForm from "./problem-report-form"
  * NOTHING HERE IS BUILT BY THE SHOP: the tracking button is the link the carrier gave, and without
  * one the page says so and shows the number only.
  */
+/** `reports`: the order's list from the shop's answer, when it came with one. */
+export type ReportsChanged = (
+  displayId: GuestOrder["display_id"],
+  reports?: GuestProblemReport[],
+) => void
+
 export default function GuestOrderView({
   orders,
   email,
@@ -38,8 +45,11 @@ export default function GuestOrderView({
    * ("Probléma a szállítmánnyal", V1.2); without it (a display with no way to file) the button is not drawn.
    */
   email?: string
-  /** A report was filed or refused as already reported: the page reads the orders again, so the list is current. */
-  onReportsChanged?: () => void
+  /**
+   * A report was filed (the order's new list comes with it) or refused as already reported (no list: the page reads
+   * the orders again), so the list under the order is current.
+   */
+  onReportsChanged?: ReportsChanged
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -83,7 +93,7 @@ function OrderBlock({
   order: GuestOrder
   heading: string | null
   email?: string
-  onReportsChanged?: () => void
+  onReportsChanged?: ReportsChanged
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -289,7 +299,9 @@ function OrderBlock({
             <ProblemReportForm
               order={order}
               email={email}
-              onFiled={onReportsChanged}
+              onFiled={(reports) =>
+                onReportsChanged?.(order.display_id, reports)
+              }
               onClose={() => setReporting(false)}
             />
           )}

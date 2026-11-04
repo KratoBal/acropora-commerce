@@ -12,7 +12,7 @@ import {
 import { Button } from "@modules/common/components/ui"
 import { useState, useTransition, type FormEvent } from "react"
 
-import GuestOrderView from "./guest-order-view"
+import GuestOrderView, { type ReportsChanged } from "./guest-order-view"
 
 /**
  * THE GUEST ORDER LOOKUP FORM (V1.1): the order number and the e-mail address, checked in the browser
@@ -55,9 +55,26 @@ export default function GuestOrderForm() {
     })
   }
 
-  // After a report is filed (or refused as already reported) the list of reports under the order is read again,
-  // with the number and the address the orders were found with (the fields may have been edited since): a list
-  // loaded when the order was opened would not hold the report the customer has just been told about.
+  // After a report is filed the order's list comes with the shop's answer and replaces the one on screen: no lookup is
+  // spent (the guest lookup is rate limited, and a refresh used to take its share).
+  // After a refusal as already reported the answer carries no list, so the orders are read again, with the number and
+  // the address they were found with (the fields may have been edited since): a list loaded when the order was
+  // opened would not hold the report the customer has just been told about.
+  const reportsChanged: ReportsChanged = (displayId, reports) => {
+    if (!reports) {
+      refreshReports()
+      return
+    }
+    setOrders((all) =>
+      all
+        ? all.map((order) =>
+            String(order.display_id) === String(displayId)
+              ? { ...order, problem_reports: reports }
+              : order,
+          )
+        : all,
+    )
+  }
   const refreshReports = () =>
     startTransition(async () => {
       const result = await lookupGuestOrder({
@@ -119,7 +136,7 @@ export default function GuestOrderForm() {
         <GuestOrderView
           orders={orders}
           email={lookupEmail}
-          onReportsChanged={refreshReports}
+          onReportsChanged={reportsChanged}
         />
       )}
     </div>

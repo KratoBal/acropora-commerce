@@ -241,4 +241,82 @@ describe("the guest order form", () => {
     const list = await screen.findByTestId("problem-reports-1042")
     expect(list.textContent).toContain("ordprb_01FIRST")
   })
+
+  it("after a report is filed the list under the order is the one the answer carried, and no lookup is spent", async () => {
+    const withItems = {
+      ...order,
+      items: [{ id: "item_1", title: "Korall A", quantity: 1, total: 500 }],
+    }
+    lookupGuestOrder.mockResolvedValue({ ok: true, orders: [withItems] })
+    submitProblemReport.mockResolvedValue({
+      ok: true,
+      reportId: "ordprb_01NEW",
+      createdAt: "2026-11-04T10:00:00.000Z",
+      problemReports: [
+        {
+          id: "ordprb_01NEW",
+          kind: "item_damaged",
+          created_at: "2026-11-04T10:00:00.000Z",
+          stage: "received",
+        },
+      ],
+    })
+    render(<GuestOrderForm />)
+    fill("1042", "vevo@example.hu")
+    await submit()
+    await waitFor(() =>
+      expect(screen.getByTestId("guest-order-view")).toBeTruthy(),
+    )
+    expect(screen.queryByTestId("problem-reports-1042")).toBeNull()
+    fireEvent.click(
+      screen.getByRole("button", { name: /Probléma a szállítmánnyal/ }),
+    )
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("Mi a probléma?"), {
+      target: { value: "item_damaged" },
+    })
+    fireEvent.change(screen.getByLabelText("Mi történt pontosan?"), {
+      target: { value: "Törött a láb" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("problem-form-1042"))
+    })
+    const list = await screen.findByTestId("problem-reports-1042")
+    expect(list.textContent).toContain("ordprb_01NEW")
+    // the one lookup of the search itself, and none for the refresh
+    expect(lookupGuestOrder).toHaveBeenCalledTimes(1)
+  })
+
+  it("an older shop answer without a list leaves the one on screen and still reads the orders again", async () => {
+    const withItems = {
+      ...order,
+      items: [{ id: "item_1", title: "Korall A", quantity: 1, total: 500 }],
+    }
+    lookupGuestOrder.mockResolvedValue({ ok: true, orders: [withItems] })
+    submitProblemReport.mockResolvedValue({
+      ok: true,
+      reportId: "ordprb_01OLD",
+      createdAt: "2026-11-04T10:00:00.000Z",
+    })
+    render(<GuestOrderForm />)
+    fill("1042", "vevo@example.hu")
+    await submit()
+    await waitFor(() =>
+      expect(screen.getByTestId("guest-order-view")).toBeTruthy(),
+    )
+    fireEvent.click(
+      screen.getByRole("button", { name: /Probléma a szállítmánnyal/ }),
+    )
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("Mi a probléma?"), {
+      target: { value: "item_damaged" },
+    })
+    fireEvent.change(screen.getByLabelText("Mi történt pontosan?"), {
+      target: { value: "Törött a láb" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("problem-form-1042"))
+    })
+    await waitFor(() => expect(lookupGuestOrder).toHaveBeenCalledTimes(2))
+  })
 })

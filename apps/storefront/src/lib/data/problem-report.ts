@@ -2,6 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
+import type { GuestProblemReport } from "@lib/util/guest-order"
 import {
   problemFailureOfStatus,
   type ProblemFailure,
@@ -16,7 +17,13 @@ import {
 export type PhotoResult =
   { ok: true; photoId: string } | { ok: false; failure: ProblemFailure }
 export type ReportResult =
-  | { ok: true; reportId: string; createdAt: string }
+  | {
+      ok: true
+      reportId: string
+      createdAt: string
+      /** the order's list of reports as the shop answers it (the new one included); absent from an older answer */
+      problemReports?: GuestProblemReport[]
+    }
   | { ok: false; failure: ProblemFailure }
 
 const failed = (
@@ -68,6 +75,7 @@ export async function submitProblemReport(input: {
     const answer = await sdk.client.fetch<{
       report_id?: string
       created_at?: string
+      problem_reports?: GuestProblemReport[]
     }>("/store/guest-orders/problem", {
       method: "POST",
       body: {
@@ -87,6 +95,9 @@ export async function submitProblemReport(input: {
           ok: true,
           reportId: answer.report_id,
           createdAt: answer.created_at ?? "",
+          ...(Array.isArray(answer.problem_reports)
+            ? { problemReports: answer.problem_reports }
+            : {}),
         }
       : { ok: false, failure: "unavailable" }
   } catch (hiba) {
