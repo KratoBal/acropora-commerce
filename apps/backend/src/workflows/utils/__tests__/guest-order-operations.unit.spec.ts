@@ -1,3 +1,4 @@
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { ORDER_PROBLEM_REPORT_MODULE } from "../../../modules/order-problem-report"
 import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
 import { guestOrderOperations } from "../guest-order/operations"
@@ -41,11 +42,21 @@ const problemService = {
   },
 }
 
+const warnings: string[] = []
+let reportsFail = false
 const container = (calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[]) =>
   ({
     resolve: (key: string) =>
-      key === ORDER_PROBLEM_REPORT_MODULE
-        ? problemService
+      key === ContainerRegistrationKeys.LOGGER
+        ? { warn: (message: string) => warnings.push(message) }
+        : key === ORDER_PROBLEM_REPORT_MODULE
+        ? reportsFail
+          ? {
+              listOrderProblemReports: async () => {
+                throw new TypeError("secret details")
+              },
+            }
+          : problemService
         : {
       graph: async (q: { entity: string; filters: Record<string, unknown>; fields: string[] }) => {
         calls.push(q)
@@ -97,5 +108,20 @@ describe("guestOrderOperations", () => {
       { id: "ordprb_1", kind: "item_missing", created_at: new Date("2026-11-04T10:00:00Z"), status: "pulled" },
     ])
     expect(JSON.stringify(stored)).not.toContain("Titkos")
+  })
+
+  it("an unreadable list of reports is an empty list with a log line, not a failed lookup", async () => {
+    warnings.length = 0
+    reportsFail = true
+    try {
+      expect(await guestOrderOperations(container([])).problemReportsOf("o_1")).toEqual([])
+    } finally {
+      reportsFail = false
+    }
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain("o_1")
+    // only the error kind is logged, never its message
+    expect(warnings[0]).toContain("TypeError")
+    expect(warnings[0]).not.toContain("secret details")
   })
 })

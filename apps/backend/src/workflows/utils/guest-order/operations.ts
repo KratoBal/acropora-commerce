@@ -105,15 +105,23 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
       return ids.length ? load({ id: ids }) : []
     },
     problemReportsOf: async (orderId) => {
-      const service = container.resolve<OrderProblemReportModuleService>(ORDER_PROBLEM_REPORT_MODULE)
-      const rows = await service.listOrderProblemReports({ order_id: orderId }, { order: { created_at: "ASC" } })
-      // only what the customer view names; the text, the phone and the photos stay in the module
-      return rows.map((row) => ({
-        id: String(row.id),
-        kind: row.kind as ProblemKind,
-        created_at: row.created_at as Date | string,
-        status: String(row.status),
-      }))
+      try {
+        const service = container.resolve<OrderProblemReportModuleService>(ORDER_PROBLEM_REPORT_MODULE)
+        const rows = await service.listOrderProblemReports({ order_id: orderId }, { order: { created_at: "ASC" } })
+        // only what the customer view names; the text, the phone and the photos stay in the module
+        return rows.map((row) => ({
+          id: String(row.id),
+          kind: row.kind as ProblemKind,
+          created_at: row.created_at as Date | string,
+          status: String(row.status),
+        }))
+      } catch (error) {
+        // the list of reports is an extra: when it cannot be read the order itself is still shown (the
+        // customer must not lose the lookup over it). The log names the order and the error kind, nothing else.
+        const logger = container.resolve(ContainerRegistrationKeys.LOGGER) as { warn(message: string): void }
+        logger.warn(`guest order ${orderId}: the problem reports could not be read (${(error as Error)?.name ?? "error"})`)
+        return []
+      }
     },
     statusOf: async (orderId): Promise<GuestOrderStatus | null> => {
       const service = container.resolve<OrderBusinessStatusModuleService>(ORDER_BUSINESS_STATUS_MODULE)
