@@ -99,6 +99,7 @@ function futtat({
   csatornak?: string[];
 }) {
   const listaKeresek: unknown[] = [];
+  const markaKeresek: unknown[] = [];
   const scope = {
     resolve: (kulcs: string) => {
       if (kulcs === "product")
@@ -114,12 +115,14 @@ function futtat({
           listProductBrands: async (f: {
             product_id?: string[];
             os_brand_id?: string[];
-          }) =>
-            markaKotesek.filter(
+          }) => {
+            markaKeresek.push(f);
+            return markaKotesek.filter(
               (k) =>
                 f.product_id?.includes(k.product_id) ||
                 f.os_brand_id?.includes(k.os_brand_id),
-            ),
+            );
+          },
         };
       if (kulcs === "query")
         return {
@@ -157,7 +160,7 @@ function futtat({
       publishable_key_context: { sales_channel_ids: csatornak },
     } as never,
     res as never,
-  ).then(() => ({ res, listaKeresek }));
+  ).then(() => ({ res, listaKeresek, markaKeresek }));
 }
 
 const kifutottTermek: Termek = {
@@ -175,19 +178,22 @@ const kifutottTermek: Termek = {
 
 describe("GET /store/nem-kaphato/:handle", () => {
   it("a kifutott termekre a nevet, a kategoriat es a ket listat adja", async () => {
-    const { res, listaKeresek } = await futtat({
+    const { res, listaKeresek, markaKeresek } = await futtat({
       termek: kifutottTermek,
       markaKotesek: [
         { product_id: "prod_regi", os_brand_id: "b1" },
         { product_id: "prod_m1", os_brand_id: "b1" },
         { product_id: "prod_a", os_brand_id: "b1" },
+        { product_id: "prod_masmarka", os_brand_id: "b2" },
       ],
-      kategoriaMarkas: ["prod_m1", "prod_a"],
+      // a kategoria legujabb termekei; a mas markaju kiesik
+      kategoriaMarkas: ["prod_m1", "prod_masmarka", "prod_a"],
       csatornas: {
         prod_a: ["published", ["sc_kirakat"]],
         prod_vazlat: ["draft", ["sc_kirakat"]],
         prod_masik_csatorna: ["published", ["sc_pult"]],
         prod_m1: ["published", ["sc_kirakat"]],
+        prod_masmarka: ["published", ["sc_kirakat"]],
       },
     });
     expect(res.statusCode).toBe(200);
@@ -201,12 +207,15 @@ describe("GET /store/nem-kaphato/:handle", () => {
       helyette: ["prod_a"],
       hasonlo: ["prod_m1"],
     });
-    // a gepi jelolt csak publikalt, ugyanabban a kategoriaban, a marka termekeibol
+    // a gepi jelolt: a kategoria publikalt termekei korlattal; a marka csak ezeken szur (barracuda, #655)
     expect(listaKeresek[1]).toEqual({
-      id: ["prod_m1", "prod_a"],
       status: "published",
       categories: { id: ["pcat_1"] },
     });
+    expect(markaKeresek).toEqual([
+      { product_id: ["prod_regi"] },
+      { product_id: ["prod_m1", "prod_masmarka", "prod_a"] },
+    ]);
   });
 
   it("a publikalt, a jelolo nelkuli es a nem letezo termekre 404", async () => {

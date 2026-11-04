@@ -66,29 +66,39 @@ export const GET = async (req: MedusaStoreRequest, res: MedusaResponse) => {
     { take: 1 },
   );
   if (kategoria && kotes) {
-    const markaTermekei = (
-      await markak.listProductBrands(
-        { os_brand_id: [kotes.os_brand_id] },
-        { take: null },
+    /*
+      KORLATOS MINDKET LEKERDEZES (barracuda, #655): elobb a kategoria legujabb
+      publikalt termekei, legfeljebb JELOLT_KERES_HATAR, es csak AZOK markajat
+      nezzuk meg. A forditott sorrend (a marka OSSZES termeke egy id-szurobe)
+      egy nagy markanal korlatlan IN-listat adott.
+    */
+    const kategoriaTermekei = (
+      await termekModul.listProducts(
+        { status: "published", categories: { id: [kategoria.id] } },
+        {
+          select: ["id"],
+          order: { created_at: "DESC", id: "DESC" },
+          take: JELOLT_KERES_HATAR,
+        },
       )
     )
-      .map((k: { product_id: string }) => k.product_id)
-      .filter((id: string) => id !== termek.id);
-    if (markaTermekei.length)
-      kategoriaMarkas = (
-        await termekModul.listProducts(
-          {
-            id: markaTermekei,
-            status: "published",
-            categories: { id: [kategoria.id] },
-          },
-          {
-            select: ["id"],
-            order: { created_at: "DESC", id: "DESC" },
-            take: JELOLT_KERES_HATAR,
-          },
+      .map((t) => t.id)
+      .filter((id) => id !== termek.id);
+    if (kategoriaTermekei.length) {
+      const azonosMarka = new Set(
+        (
+          await markak.listProductBrands(
+            { product_id: kategoriaTermekei },
+            { take: null },
+          )
         )
-      ).map((t) => t.id);
+          .filter(
+            (k: { os_brand_id: string }) => k.os_brand_id === kotes.os_brand_id,
+          )
+          .map((k: { product_id: string }) => k.product_id),
+      );
+      kategoriaMarkas = kategoriaTermekei.filter((id) => azonosMarka.has(id));
+    }
   }
 
   const megveheto = await kirakatonMegveheto(req, [
