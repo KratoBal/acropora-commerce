@@ -88,7 +88,7 @@ describe("POST /store/guest-orders/problem", () => {
     })
   })
 
-  it("sends no acknowledgement when nothing was filed (a miss, a bad item, a bad photo)", async () => {
+  it("sends no acknowledgement when nothing was filed (a miss, a bad item, a bad photo, a duplicate)", async () => {
     accessibleOrder.mockResolvedValue(null)
     await run()
     accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1, email: "a@b.hu" })
@@ -96,7 +96,20 @@ describe("POST /store/guest-orders/problem", () => {
     await run()
     createReport.mockResolvedValue({ status: "bad_photos" })
     await run()
+    createReport.mockResolvedValue({ status: "duplicate", id: "ordprb_old" })
+    await run()
     expect(notifyProblemReportReceived).not.toHaveBeenCalled()
+  })
+
+  it("answers 409 with the case reference that stands for a problem already reported", async () => {
+    createReport.mockResolvedValue({ status: "duplicate", id: "ordprb_old" })
+    const { json, status } = await run()
+    expect(status).toHaveBeenCalledWith(409)
+    expect(json).toHaveBeenCalledWith({
+      type: "already_reported",
+      report_id: "ordprb_old",
+      message: "Erről a problémáról már van bejelentésed.",
+    })
   })
 
   it("a missing time and phone are null", async () => {
