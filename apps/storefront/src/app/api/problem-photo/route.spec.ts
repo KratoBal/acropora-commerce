@@ -95,7 +95,7 @@ describe("POST /api/problem-photo", () => {
   })
 
   it("takes the first entry of a forwarded host list, ignores the case and the default port (barracuda, #668 review)", async () => {
-    for (const fejlec of [
+    for (const fejlec of <Record<string, string>[]>[
       {
         host: "10.0.0.5:8000",
         "x-forwarded-host": "shop.example.hu, proxy.internal",
