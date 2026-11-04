@@ -64,6 +64,8 @@ import { guardOrderRead } from "./order-read-guard";
 import {
   guestOrderAddressAttempts,
   guestOrderNumberAttempts,
+  guestInvoiceAddressAttempts,
+  guestInvoiceNumberAttempts,
   guestProblemAddressAttempts,
   guestProblemNumberAttempts,
   promotionAttempts,
@@ -71,6 +73,7 @@ import {
   signUpAttempts,
 } from "./attempt-limits";
 import { StorePostGuestOrderLookup } from "./store/guest-orders/lookup/validators";
+import { StorePostGuestInvoice } from "./store/guest-orders/invoice/validators";
 import { StorePostGuestProblem } from "./store/guest-orders/problem/validators";
 import { StorePostGuestProblemPhoto } from "./store/guest-orders/problem-photos/validators";
 import { requireLongPassword } from "./password-rules";
@@ -325,6 +328,12 @@ export default defineMiddlewares({
       matcher: "/store/guest-orders/lookup",
       method: "POST",
       middlewares: [guestOrderAddressAttempts, guestOrderNumberAttempts, validateAndTransformBody(StorePostGuestOrderLookup)],
+    },
+    {
+      // V1.1: the guest's invoice link; the attempt limits count BEFORE the body is validated, like the lookup
+      matcher: "/store/guest-orders/invoice",
+      method: "POST",
+      middlewares: [guestInvoiceAddressAttempts, guestInvoiceNumberAttempts, validateAndTransformBody(StorePostGuestInvoice)],
     },
     {
       // V1.2: one photo per call, as base64 text: 5 MB is about 7 MB of text, the default body limit is 100 kB

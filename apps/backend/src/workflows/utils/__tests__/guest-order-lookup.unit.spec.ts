@@ -1,5 +1,6 @@
 import {
   emailKey,
+  findGuestOrderId,
   guestOrderView,
   guestProblemReports,
   lookupGuestOrders,
@@ -252,5 +253,26 @@ describe("emailKey", () => {
     expect(emailKey("  A@B.hu ")).toBe("a@b.hu")
     expect(emailKey(null)).toBe("")
     expect(emailKey(undefined)).toBe("")
+  })
+})
+
+describe("findGuestOrderId: the same pair as the lookup, the id of ONE order", () => {
+  const deps = (found: GuestOrderSource | null) => ({ findByDisplayId: jest.fn().mockResolvedValue(found) })
+
+  it("gives the order's id for the right number and address, whatever the address's case and spaces", async () => {
+    const d = deps(source({ id: "order_1", display_id: 1042 }))
+    expect(await findGuestOrderId({ displayId: 1042, email: "  vevo@EXAMPLE.hu " }, d)).toBe("order_1")
+    expect(d.findByDisplayId).toHaveBeenCalledWith(1042)
+  })
+
+  it("every miss is null: a wrong address, an unknown number, a malformed number, an order with no address", async () => {
+    expect(await findGuestOrderId({ displayId: 1042, email: "masvalaki@example.hu" }, deps(source({ id: "o", display_id: 1042 })))).toBeNull()
+    expect(await findGuestOrderId({ displayId: 1042, email: "vevo@example.hu" }, deps(null))).toBeNull()
+    for (const displayId of [0, -3, 1.5, Number.NaN]) {
+      const d = deps(source({ id: "o", display_id: 1 }))
+      expect(await findGuestOrderId({ displayId, email: "vevo@example.hu" }, d)).toBeNull()
+      expect(d.findByDisplayId).not.toHaveBeenCalled()
+    }
+    expect(await findGuestOrderId({ displayId: 1042, email: "" }, deps(source({ id: "o", display_id: 1042, email: null })))).toBeNull()
   })
 })

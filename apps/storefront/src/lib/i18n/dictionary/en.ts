@@ -1066,6 +1066,18 @@ export const en: Dictionary = {
         text: "Part of the refund has been made. [TO BE FILLED IN: when it reaches your account]",
       },
     },
+    invoice: {
+      button: "Download invoice",
+      searching: "Looking for the invoice…",
+      none: "The invoice is not ready yet. You will be able to download it here as soon as it is.",
+      error:
+        "We cannot download the invoice right now. Please try again later, or write to us.",
+      typeInvoice: "Invoice",
+      typeAdvance: "Advance invoice",
+      typeFinal: "Final invoice",
+      download: "Download {type}: {number}",
+      downloadNoNumber: "Download {type}",
+    },
     problem: {
       openButton: "Problem with the shipment",
       title: "Problem with the shipment",

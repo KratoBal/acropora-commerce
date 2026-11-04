@@ -73,6 +73,12 @@ export const ATTEMPT_LIMITS = {
    */
   guestProblemPerAddress: { max: 30, windowMs: 15 * MINUTES },
   guestProblemPerOrderNumber: { max: 40, windowMs: 15 * MINUTES },
+  /**
+   * The invoice link (V1.1): a click per order of the cart and per retry, counted apart from the lookup and the report.
+   * Thirty per address and forty per order number in fifteen minutes.
+   */
+  guestInvoicePerAddress: { max: 30, windowMs: 15 * MINUTES },
+  guestInvoicePerOrderNumber: { max: 40, windowMs: 15 * MINUTES },
 } as const
 
 export const TOO_MANY_ATTEMPTS = {
@@ -178,5 +184,15 @@ export const guestProblemAddressAttempts = limitAttempts({
 
 export const guestProblemNumberAttempts = limitAttempts({
   perKey: limiter(ATTEMPT_LIMITS.guestProblemPerOrderNumber),
+  keyOf: (req) => orderNumberKeyOf(req.body),
+})
+
+export const guestInvoiceAddressAttempts = limitAttempts({
+  perKey: limiter(ATTEMPT_LIMITS.guestInvoicePerAddress),
+  keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const guestInvoiceNumberAttempts = limitAttempts({
+  perKey: limiter(ATTEMPT_LIMITS.guestInvoicePerOrderNumber),
   keyOf: (req) => orderNumberKeyOf(req.body),
 })

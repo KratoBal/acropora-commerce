@@ -1097,6 +1097,18 @@ export const hu = {
         text: "A visszatérítés egy része megtörtént. [KITÖLTENDŐ: mikor kerül a számládra]",
       },
     },
+    invoice: {
+      button: "Számla letöltése",
+      searching: "Számla keresése…",
+      none: "A számla még nem készült el. Amint elkészül, itt tölthető le. [KITÖLTENDŐ: mikor készül, pl. feladáskor]",
+      error:
+        "A számlát most nem tudjuk letölteni. Próbáld újra később, vagy írj nekünk.",
+      typeInvoice: "Számla",
+      typeAdvance: "Előlegszámla",
+      typeFinal: "Végszámla",
+      download: "{type} letöltése: {number}",
+      downloadNoNumber: "{type} letöltése",
+    },
     problem: {
       openButton: "Probléma a szállítmánnyal",
       title: "Probléma a szállítmánnyal",

@@ -18,6 +18,7 @@ import { useState } from "react"
 
 import { kindKey } from "@lib/util/problem-report"
 
+import GuestInvoice from "./guest-invoice"
 import ProblemReportForm from "./problem-report-form"
 
 /** `reports`: the order's list from the shop's answer, when it came with one. */
@@ -285,6 +286,7 @@ function OrderBlock({
 
       {email && order.items.length > 0 && (
         <div className="flex flex-col gap-y-3">
+          <GuestInvoice order={order} email={email} />
           {!reporting && (
             <Button
               type="button"

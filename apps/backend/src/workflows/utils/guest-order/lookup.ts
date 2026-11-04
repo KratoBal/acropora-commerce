@@ -161,6 +161,20 @@ export type GuestOrderDeps = {
   problemReportsOf(orderId: string): Promise<StoredProblemReport[]>
 }
 
+/**
+ * THE ORDER'S OWN ID, for a thing the guest asks of ONE order (the invoice link): the same pair as the lookup, the same ONE
+ * answer for every miss. Nothing of the order leaves with it but its id, and only to the shop's own servers.
+ */
+export const findGuestOrderId = async (
+  input: { displayId: number; email: string },
+  deps: Pick<GuestOrderDeps, "findByDisplayId">,
+): Promise<string | null> => {
+  const wanted = emailKey(input.email)
+  if (wanted === "" || !Number.isSafeInteger(input.displayId) || input.displayId <= 0) return null
+  const order = await deps.findByDisplayId(input.displayId)
+  return order && emailKey(order.email) === wanted ? order.id : null
+}
+
 /** The requested order first, then its cart-mates; `null` is the one answer for every miss. */
 export const lookupGuestOrders = async (
   input: { displayId: number; email: string },
