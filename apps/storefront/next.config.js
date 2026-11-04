@@ -40,11 +40,10 @@ const nextConfig = {
   // fejlecek egy helyen allnak (`biztonsagi-fejlecek.js`, az indoklassal).
   poweredByHeader: false,
   /*
-    A SZERVER-MŰVELETEK TÖRZSKORLÁTJA 8 MB (V1.2, a "Probléma a szállítmánnyal" fotói). Egy kép legfeljebb
-    5 MB, base64 szövegként kb. 7 MB, a Next alapértelmezése 1 MB. A korlát minden szerver-műveletre
-    érvényes; a kép méretét a backend a saját szabályával (5 MB) úgyis megvizsgálja.
+    A SZERVER-MŰVELETEK TÖRZSKORLÁTJA A NEXT ALAPÉRTELMEZÉSE (1 MB). A "Probléma a szállítmánnyal" fotói idáig ezen
+    mentek át, és emiatt volt a korlát 8 MB, MINDEN szerver-műveletre. A képek most a saját útjukon mennek
+    (`app/api/problem-photo`), a maga korlátjával, így a szerver-műveletek nem fogadnak el nagy törzset.
   */
-  experimental: { serverActions: { bodySizeLimit: "8mb" } },
   async headers() {
     return biztonsagiFejlecek(process.env)
   },

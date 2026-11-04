@@ -10,12 +10,11 @@ import {
 } from "@lib/util/problem-report"
 
 /**
- * The problem report's two server actions (V1.2, slice 3): one photo at a time (base64 text, the backend reads
- * the bytes), then the report that names the photos by the ids the first call gave. NOTHING is cached, and the
- * customer's address and number are never logged: a failure writes only the status code.
+ * The problem report's server action (V1.2, slice 3): the report that names the photos by the ids the upload gave.
+ * The photos go up on their own route (`/api/problem-photo`, `lib/util/problem-photo-upload`): their body is far over
+ * the server actions' limit. NOTHING is cached, and the customer's address and number are never logged: a failure
+ * writes only the status code.
  */
-export type PhotoResult =
-  { ok: true; photoId: string } | { ok: false; failure: ProblemFailure }
 export type ReportResult =
   | {
       ok: true
@@ -33,32 +32,6 @@ const failed = (
   const status = hibaAllapota(hiba)
   if (status !== 404) console.error(what, status ?? "(nincs állapotkód)")
   return { ok: false, failure: problemFailureOfStatus(status) }
-}
-
-export async function uploadProblemPhoto(input: {
-  orderNumber: string
-  email: string
-  content: string
-}): Promise<PhotoResult> {
-  try {
-    const answer = await sdk.client.fetch<{ photo_id?: string }>(
-      "/store/guest-orders/problem-photos",
-      {
-        method: "POST",
-        body: {
-          order_number: input.orderNumber.trim(),
-          email: input.email.trim(),
-          content: input.content,
-        },
-        cache: "no-store",
-      },
-    )
-    return answer?.photo_id
-      ? { ok: true, photoId: answer.photo_id }
-      : { ok: false, failure: "unavailable" }
-  } catch (hiba) {
-    return failed("A kép feltöltése nem sikerült:", hiba)
-  }
 }
 
 export async function submitProblemReport(input: {

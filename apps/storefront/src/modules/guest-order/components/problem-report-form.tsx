@@ -1,12 +1,10 @@
 "use client"
 
-import {
-  submitProblemReport,
-  uploadProblemPhoto,
-} from "@lib/data/problem-report"
+import { submitProblemReport } from "@lib/data/problem-report"
 import { translator, type Key } from "@lib/i18n/dictionary"
 import { useLocale } from "@lib/i18n/use-translate"
 import type { GuestOrder, GuestProblemReport } from "@lib/util/guest-order"
+import { uploadProblemPhoto } from "@lib/util/problem-photo-upload"
 import {
   isAnimalKind,
   kindKey,
