@@ -16,47 +16,47 @@
  *
  * The attempt limits are the route's middleware (`attempt-limits.ts`); this file only decides.
  */
-import type { StoredTracking } from "../order-tracking";
-import { trackingOf } from "../order-tracking";
+import type { StoredTracking } from "../order-tracking"
+import { trackingOf } from "../order-tracking"
 
 export type GuestOrderSource = {
-  id: string;
-  display_id: number | string;
-  email: string | null;
-  created_at: Date | string | null;
-  total: number;
-  currency_code: string;
-  payment_status: string | null;
-  items: { title: string; quantity: number; total: number }[];
+  id: string
+  display_id: number | string
+  email: string | null
+  created_at: Date | string | null
+  total: number
+  currency_code: string
+  payment_status: string | null
+  items: { title: string; quantity: number; total: number }[]
   shipping_method: {
-    name: string;
-    data?: Record<string, unknown> | null;
-  } | null;
-  metadata: Record<string, unknown> | null;
-};
+    name: string
+    data?: Record<string, unknown> | null
+  } | null
+  metadata: Record<string, unknown> | null
+}
 
 export type GuestOrderStatus = {
-  status: string;
-  label: string;
-  updated_at: string;
-  history: { to_label: string; created_at: string }[];
-};
+  status: string
+  label: string
+  updated_at: string
+  history: { to_label: string; created_at: string }[]
+}
 
 export type GuestOrderView = {
-  display_id: number | string;
-  created_at: string | null;
-  total: number;
-  currency_code: string;
+  display_id: number | string
+  created_at: string | null
+  total: number
+  currency_code: string
   /** a whitelisted Medusa payment status, or null */
-  payment_status: string | null;
-  business_status: GuestOrderStatus | null;
-  items: { title: string; quantity: number; total: number }[];
+  payment_status: string | null
+  business_status: GuestOrderStatus | null
+  items: { title: string; quantity: number; total: number }[]
   shipping: {
-    method_name: string;
-    pickup_point: { name: string; address: string } | null;
-  } | null;
-  tracking: StoredTracking | null;
-};
+    method_name: string
+    pickup_point: { name: string; address: string } | null
+  } | null
+  tracking: StoredTracking | null
+}
 
 const PAYMENT_STATUSES = new Set([
   "not_paid",
@@ -69,44 +69,36 @@ const PAYMENT_STATUSES = new Set([
   "refunded",
   "canceled",
   "requires_action",
-]);
+])
 
 /** An address as a comparison key: trimmed, lower case. */
-export const emailKey = (value: string | null | undefined): string =>
-  (value ?? "").trim().toLowerCase();
+export const emailKey = (value: string | null | undefined): string => (value ?? "").trim().toLowerCase()
 
 const pickupPointOf = (data: Record<string, unknown> | null | undefined) => {
   for (const key of ["foxpost_pickup_point", "gls_pickup_point"]) {
-    const point = data?.[key] as
-      { name?: unknown; address?: unknown } | undefined;
+    const point = data?.[key] as { name?: unknown; address?: unknown } | undefined
     if (point && typeof point.name === "string" && point.name !== "")
       return {
         name: point.name,
         address: typeof point.address === "string" ? point.address : "",
-      };
+      }
   }
-  return null;
-};
+  return null
+}
 
 const iso = (value: Date | string | null): string | null => {
-  if (value === null) return null;
-  const at = new Date(value);
-  return Number.isNaN(at.getTime()) ? null : at.toISOString();
-};
+  if (value === null) return null
+  const at = new Date(value)
+  return Number.isNaN(at.getTime()) ? null : at.toISOString()
+}
 
 /** The customer-safe shape of one order. Every field is named: nothing else of the source passes. */
-export const guestOrderView = (
-  source: GuestOrderSource,
-  status: GuestOrderStatus | null,
-): GuestOrderView => ({
+export const guestOrderView = (source: GuestOrderSource, status: GuestOrderStatus | null): GuestOrderView => ({
   display_id: source.display_id,
   created_at: iso(source.created_at),
   total: source.total,
   currency_code: source.currency_code,
-  payment_status:
-    source.payment_status && PAYMENT_STATUSES.has(source.payment_status)
-      ? source.payment_status
-      : null,
+  payment_status: source.payment_status && PAYMENT_STATUSES.has(source.payment_status) ? source.payment_status : null,
   business_status: status,
   items: source.items.map((item) => ({
     title: item.title,
@@ -120,38 +112,26 @@ export const guestOrderView = (
       }
     : null,
   tracking: trackingOf(source.metadata),
-});
+})
 
 export type GuestOrderDeps = {
-  findByDisplayId(displayId: number): Promise<GuestOrderSource | null>;
+  findByDisplayId(displayId: number): Promise<GuestOrderSource | null>
   /** The other orders of the cart the order was placed from (not the order itself). */
-  siblingsOf(orderId: string): Promise<GuestOrderSource[]>;
-  statusOf(orderId: string): Promise<GuestOrderStatus | null>;
-};
+  siblingsOf(orderId: string): Promise<GuestOrderSource[]>
+  statusOf(orderId: string): Promise<GuestOrderStatus | null>
+}
 
 /** The requested order first, then its cart-mates; `null` is the one answer for every miss. */
 export const lookupGuestOrders = async (
   input: { displayId: number; email: string },
   deps: GuestOrderDeps,
 ): Promise<GuestOrderView[] | null> => {
-  const wanted = emailKey(input.email);
-  if (
-    wanted === "" ||
-    !Number.isSafeInteger(input.displayId) ||
-    input.displayId <= 0
-  )
-    return null;
-  const order = await deps.findByDisplayId(input.displayId);
-  if (!order || emailKey(order.email) !== wanted) return null;
+  const wanted = emailKey(input.email)
+  if (wanted === "" || !Number.isSafeInteger(input.displayId) || input.displayId <= 0) return null
+  const order = await deps.findByDisplayId(input.displayId)
+  if (!order || emailKey(order.email) !== wanted) return null
   const siblings = (await deps.siblingsOf(order.id))
-    .filter(
-      (sibling) =>
-        sibling.id !== order.id && emailKey(sibling.email) === wanted,
-    )
-    .sort((a, b) => Number(a.display_id) - Number(b.display_id));
-  return Promise.all(
-    [order, ...siblings].map(async (source) =>
-      guestOrderView(source, await deps.statusOf(source.id)),
-    ),
-  );
-};
+    .filter((sibling) => sibling.id !== order.id && emailKey(sibling.email) === wanted)
+    .sort((a, b) => Number(a.display_id) - Number(b.display_id))
+  return Promise.all([order, ...siblings].map(async (source) => guestOrderView(source, await deps.statusOf(source.id))))
+}

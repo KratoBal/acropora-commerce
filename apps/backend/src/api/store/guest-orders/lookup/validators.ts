@@ -1,4 +1,4 @@
-import { z } from "@medusajs/framework/zod";
+import { z } from "@medusajs/framework/zod"
 
 /**
  * The guest order lookup's body: the order number (digits, `#` allowed) and the e-mail address. Strict:
@@ -13,8 +13,6 @@ export const StorePostGuestOrderLookup = z
       .regex(/^#?\d{1,10}$/),
     email: z.string().trim().email().max(254),
   })
-  .strict();
+  .strict()
 
-export type StorePostGuestOrderLookupType = z.infer<
-  typeof StorePostGuestOrderLookup
->;
+export type StorePostGuestOrderLookupType = z.infer<typeof StorePostGuestOrderLookup>

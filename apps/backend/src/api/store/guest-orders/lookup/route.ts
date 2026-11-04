@@ -1,8 +1,8 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
-import { guestOrderOperations } from "../../../../workflows/utils/guest-order/operations";
-import { lookupGuestOrders } from "../../../../workflows/utils/guest-order/lookup";
-import type { StorePostGuestOrderLookupType } from "./validators";
+import { guestOrderOperations } from "../../../../workflows/utils/guest-order/operations"
+import { lookupGuestOrders } from "../../../../workflows/utils/guest-order/lookup"
+import type { StorePostGuestOrderLookupType } from "./validators"
 
 /**
  * POST /store/guest-orders/lookup
@@ -15,18 +15,15 @@ import type { StorePostGuestOrderLookupType } from "./validators";
  * address AND per order number, 429 above). The answer never carries the e-mail address, a name,
  * a phone number or a home address (`lookup.ts`).
  */
-export const POST = async (
-  req: MedusaRequest<StorePostGuestOrderLookupType>,
-  res: MedusaResponse,
-) => {
-  const { order_number, email } = req.validatedBody;
+export const POST = async (req: MedusaRequest<StorePostGuestOrderLookupType>, res: MedusaResponse) => {
+  const { order_number, email } = req.validatedBody
   const orders = await lookupGuestOrders(
     { displayId: Number(order_number.replace(/^#/, "")), email },
     guestOrderOperations(req.scope),
-  );
+  )
   if (!orders) {
-    res.status(404).json({ message: "Nem találtuk a rendelést." });
-    return;
+    res.status(404).json({ message: "Nem találtuk a rendelést." })
+    return
   }
-  res.json({ orders });
-};
+  res.json({ orders })
+}
