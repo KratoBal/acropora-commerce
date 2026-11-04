@@ -1,8 +1,8 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils";
-import type { MedusaContainer } from "@medusajs/framework/types";
-import { updateOrderWorkflow } from "@medusajs/medusa/core-flows";
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import type { MedusaContainer } from "@medusajs/framework/types"
+import { updateOrderWorkflow } from "@medusajs/medusa/core-flows"
 
-import { isStubParcelNumber } from "./webshop-mail/shipped";
+import { isStubParcelNumber } from "./webshop-mail/shipped"
 
 /**
  * THE PARCEL'S TRACKING DATA ON THE ORDER (V1.1, the guest order page).
@@ -18,73 +18,65 @@ import { isStubParcelNumber } from "./webshop-mail/shipped";
  *
  * A NEW NUMBER REPLACES THE OLD (a relabelled parcel); the same data again writes nothing. A `STUB-`
  * number (the OS's stand-in carrier) is never stored: it is not a parcel. Only these three keys are
- * touched, never the rest of the metadata (the notes, the language, the terms record).
+ * sent, never the rest of the metadata (the notes, the language, the terms record).
  */
-export const TRACKING_CARRIER_KEY = "acropora_tracking_carrier" as const;
-export const TRACKING_NUMBER_KEY = "acropora_tracking_number" as const;
-export const TRACKING_URL_KEY = "acropora_tracking_url" as const;
+export const TRACKING_CARRIER_KEY = "acropora_tracking_carrier" as const
+export const TRACKING_NUMBER_KEY = "acropora_tracking_number" as const
+export const TRACKING_URL_KEY = "acropora_tracking_url" as const
 
 export type TrackingNotice = {
-  carrier: string;
-  tracking_number: string;
-  tracking_url?: string | null;
-};
+  carrier: string
+  tracking_number: string
+  tracking_url?: string | null
+}
 
 export type StoredTracking = {
-  carrier: string;
-  number: string;
-  url: string | null;
-};
+  carrier: string
+  number: string
+  url: string | null
+}
 
 /** The tracking an order's metadata carries, or null (no number, or not a text). */
-export const trackingOf = (
-  metadata: Record<string, unknown> | null | undefined,
-): StoredTracking | null => {
-  const number = metadata?.[TRACKING_NUMBER_KEY];
-  const carrier = metadata?.[TRACKING_CARRIER_KEY];
-  if (
-    typeof number !== "string" ||
-    number.trim() === "" ||
-    typeof carrier !== "string" ||
-    carrier === ""
-  )
-    return null;
-  const url = metadata?.[TRACKING_URL_KEY];
+export const trackingOf = (metadata: Record<string, unknown> | null | undefined): StoredTracking | null => {
+  const number = metadata?.[TRACKING_NUMBER_KEY]
+  const carrier = metadata?.[TRACKING_CARRIER_KEY]
+  if (typeof number !== "string" || number.trim() === "" || typeof carrier !== "string" || carrier === "") return null
+  const url = metadata?.[TRACKING_URL_KEY]
   return {
     carrier,
     number,
     url: typeof url === "string" && url !== "" ? url : null,
-  };
-};
+  }
+}
 
 /**
- * The metadata after the notice, or null when nothing changes (a stub number, or the same data).
- * Only the three keys are set or removed; an absent link removes a link that an older notice stored.
+ * The metadata PATCH of the notice, or null when nothing changes (a stub number, or the same data).
+ *
+ * ONLY THE THREE KEYS, AND NEVER A COPY OF THE REST. Medusa merges an order update's metadata into
+ * what is stored at the moment of the update, key by key (`mergeMetadata`, `MedusaInternalService.update`,
+ * measured on 2.20.1: the same rule as `order-locale.ts`), and only an EMPTY TEXT removes a key. So the
+ * patch carries the three keys and nothing else: a late write cannot put an old copy of the notes, the
+ * language or the terms record over a newer one (barracuda, #644 and #648). A notice without a link
+ * sends the link key as "" (that removes a link an older notice stored); leaving the key out would
+ * keep the OLD parcel's link on a relabelled parcel.
  */
-export const withTracking = (
+export const trackingPatch = (
   metadata: Record<string, unknown> | null | undefined,
   notice: TrackingNotice,
-): Record<string, unknown> | null => {
-  const number = notice.tracking_number.trim();
-  if (number === "" || isStubParcelNumber(number)) return null;
-  const url = notice.tracking_url?.trim() || null;
-  const current = trackingOf(metadata);
-  if (
-    current &&
-    current.carrier === notice.carrier &&
-    current.number === number &&
-    current.url === url
-  )
-    return null;
-  const next: Record<string, unknown> = { ...(metadata ?? {}) };
-  next[TRACKING_CARRIER_KEY] = notice.carrier;
-  next[TRACKING_NUMBER_KEY] = number;
-  if (url) next[TRACKING_URL_KEY] = url;
-  else delete next[TRACKING_URL_KEY];
-  return next;
-};
+): Record<string, string> | null => {
+  const number = notice.tracking_number.trim()
+  if (number === "" || isStubParcelNumber(number)) return null
+  const url = notice.tracking_url?.trim() || null
+  const current = trackingOf(metadata)
+  if (current && current.carrier === notice.carrier && current.number === number && current.url === url) return null
+  return {
+    [TRACKING_CARRIER_KEY]: notice.carrier,
+    [TRACKING_NUMBER_KEY]: number,
+    [TRACKING_URL_KEY]: url ?? "",
+  }
+}
 
-export type SaveTrackingResult = "saved" | "unchanged" | "not_found";
+export type SaveTrackingResult = "saved" | "unchanged" | "not_found"
 
 export const saveShippingTracking = async (
   container: MedusaContainer,
@@ -93,19 +85,18 @@ export const saveShippingTracking = async (
   /** The admin caller: Medusa records the change (old and new metadata) under this id. */
   userId: string,
 ): Promise<SaveTrackingResult> => {
-  const query = container.resolve(ContainerRegistrationKeys.QUERY);
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "order",
     filters: { id: orderId },
     fields: ["id", "metadata"],
-  });
-  const order = data?.[0] as
-    { id: string; metadata?: Record<string, unknown> | null } | undefined;
-  if (!order) return "not_found";
-  const metadata = withTracking(order.metadata, notice);
-  if (!metadata) return "unchanged";
+  })
+  const order = data?.[0] as { id: string; metadata?: Record<string, unknown> | null } | undefined
+  if (!order) return "not_found"
+  const metadata = trackingPatch(order.metadata, notice)
+  if (!metadata) return "unchanged"
   await updateOrderWorkflow(container).run({
     input: { id: orderId, metadata, user_id: userId },
-  });
-  return "saved";
-};
+  })
+  return "saved"
+}
