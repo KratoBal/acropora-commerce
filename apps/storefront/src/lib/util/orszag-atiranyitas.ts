@@ -34,6 +34,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "marka",
   "order",
   "rendeles-fizetese",
+  "rendeles-megtekintese",
   "store",
   "szallitas",
   "termek",

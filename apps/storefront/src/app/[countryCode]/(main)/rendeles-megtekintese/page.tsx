@@ -16,6 +16,13 @@ export const metadata: Metadata = {
  * állapotát, regisztráció nélkül. A lap csak a keretet adja, az űrlap és a válasz kliens oldali
  * (`GuestOrderForm`): a keresés szervermű, nem kerül se URL-be, se gyorsítótárba.
  */
+export const revalidate = 300
+
+// a lap statikus keret (a keresés kliens oldali szervermű): ISR, mint a többi publikus lap
+export async function generateStaticParams() {
+  return []
+}
+
 export default async function RendelesMegtekintesePage(props: Props) {
   const { countryCode } = await props.params
   const t = translator(localeOf(countryCode))
