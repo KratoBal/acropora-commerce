@@ -519,7 +519,21 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         data-testid="related-products-container"
       >
         <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
+          {/*
+            A NEM ELERHETO EGYEDI DARAB (V2.4): a most kaphato hasonlok, elol az
+            azonos faj; kapcsolat nelkul a legmelyebb kategoria a tartalek, kulonben
+            egy kapcsolat nelkuli korall lapjan semmi nem allna a gomb helyett.
+          */}
+          <RelatedProducts
+            product={product}
+            countryCode={countryCode}
+            eladott={ragadosSavAllapota === "ELADVA"}
+            tartalekKategoriaId={
+              ragadosSavAllapota === "ELADVA"
+                ? besorolasUt(product, categories).at(-1)?.id
+                : undefined
+            }
+          />
         </Suspense>
       </div>
     </>

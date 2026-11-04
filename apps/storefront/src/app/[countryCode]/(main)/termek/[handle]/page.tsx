@@ -13,6 +13,14 @@ import { termekLapTorzs } from "@modules/products/templates/termek-lap-torzs"
 import { termeklapCanonical } from "@lib/util/lap-canonical"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { listProducts } from "@lib/data/products"
+import { translator } from "@lib/i18n/dictionary"
+import { ELADOTT_LAP_MEZOK, nemElerhetoLapCim } from "@lib/util/eladott-darab"
+import {
+  anyVariantPurchasable,
+  availabilityOf,
+  inventoryKnownOf,
+  uniquePieceOf,
+} from "@modules/products/components/stock-state/availability"
 import { getRegion, listRegions } from "@lib/data/regions"
 
 type Props = {
@@ -65,17 +73,34 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  // a kaphatosaghoz a `manage_inventory` is kell: nelkule minden valtozat kaphatonak latszik (V2.4)
   const product = await listProducts({
     countryCode: params.countryCode,
-    queryParams: { handle },
+    queryParams: { handle, fields: ELADOTT_LAP_MEZOK },
   }).then(({ response }) => response.products[0])
 
   if (!product) {
     notFound()
   }
 
-  const cim = lapCim(product.title ?? "")
   const locale = localeOf(params.countryCode)
+  /*
+    A NEM ELERHETO EGYEDI DARAB LAPCIME (V2.4): "Nem elérhető: [nev]", ugyanaz a
+    dontes, mint a lap ELADVA allapota; jelen ideju, mert a nulla keszlet ma sem
+    eladas-meres (acrobot 42122).
+  */
+  const nemElerheto =
+    availabilityOf({
+      inStock: anyVariantPurchasable(product),
+      uniquePiece: uniquePieceOf(product.metadata),
+      inventoryKnown: inventoryKnownOf(product),
+    }) === "ELADVA"
+  const cim = nemElerheto
+    ? nemElerhetoLapCim(
+        product.title ?? "",
+        translator(locale)("meta.unavailableTitlePrefix"),
+      )
+    : lapCim(product.title ?? "")
   const leiras = termekLeiras(product, locale)
   const canonical = termeklapCanonical(params.countryCode, params.handle)
   return {

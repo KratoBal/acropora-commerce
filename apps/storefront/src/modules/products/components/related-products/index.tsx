@@ -2,6 +2,7 @@ import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
+import { ELADOTT_LAP_MEZOK, kaphatoHasonlok } from "@lib/util/eladott-darab"
 import { HttpTypes } from "@medusajs/types"
 import Product from "../product-preview"
 import KapcsolatKartya from "./kapcsolat-kartya"
@@ -59,6 +60,14 @@ type RelatedProductsProps = {
    * racs es a kozos `ProductPreview` marad.
    */
   valtozat?: "1b"
+  /**
+   * AZ ELADOTT EGYEDI DARAB LAPJA (V2.4): csak most kaphato darabok, elol az
+   * azonos faj (a cimbol), sajat cimmel, es ures listanal nem tunik el, hanem
+   * kimondja, hogy most nincs kaphato hasonlo. A kaphatosaghoz bovebb mezokeszlet
+   * kell (`ELADOTT_LAP_MEZOK`), es a kategoriabol tobbet kerunk, mert a szures
+   * utan kevesebb marad.
+   */
+  eladott?: boolean
 }
 
 export default async function RelatedProducts({
@@ -68,6 +77,7 @@ export default async function RelatedProducts({
   kapcsolat = "hasonlo",
   tartalekKategoriaId,
   valtozat,
+  eladott = false,
 }: RelatedProductsProps) {
   const region = await getRegion(countryCode)
 
@@ -103,15 +113,34 @@ export default async function RelatedProducts({
     tartalekKategoriaId,
   )
 
+  const t = translator(localeOf(countryCode))
+  const nincsKaphato = (
+    <div className="product-page-constraint" data-testid="eladott-hasonlok">
+      <p className="text-base-regular text-gray-600">
+        {t("product.similarNowNone")}
+      </p>
+    </div>
+  )
+
   if (forras.mod === "nincs") {
-    return null
+    return eladott ? nincsKaphato : null
   }
 
   const valasz = await listProducts({
     queryParams:
       forras.mod === "gondozott"
-        ? { id: forras.azonositok, limit: forras.azonositok.length }
-        : /*
+        ? {
+            id: forras.azonositok,
+            limit: forras.azonositok.length,
+            ...(eladott ? { fields: ELADOTT_LAP_MEZOK } : {}),
+          }
+        : eladott
+          ? {
+              category_id: [forras.kategoriaId],
+              limit: KAPCSOLAT_HATAR * 4,
+              fields: ELADOTT_LAP_MEZOK,
+            }
+          : /*
             EGGYEL TOBBAT KERUNK, MINT AMENNYIT MUTATUNK.
 
             A kategoria a termek SAJAT kategoriaja, tehat a valaszban benne
@@ -119,10 +148,10 @@ export default async function RelatedProducts({
             a sajat kiszurese egy elemet ELVENNE a listabol -- a doboz
             tizenketto helyett tizenegyet mutatna, es senki nem venne eszre.
           */
-          {
-            category_id: [forras.kategoriaId],
-            limit: KAPCSOLAT_HATAR + 1,
-          },
+            {
+              category_id: [forras.kategoriaId],
+              limit: KAPCSOLAT_HATAR + 1,
+            },
     countryCode,
   }).then(({ response }) => response.products)
 
@@ -130,10 +159,13 @@ export default async function RelatedProducts({
     (responseProduct) => responseProduct.id !== product.id,
   )
 
-  const products =
+  const rendezett =
     forras.mod === "gondozott"
       ? kertSorrendben(sajatNelkul, forras.azonositok)
-      : sajatNelkul.slice(0, KAPCSOLAT_HATAR)
+      : sajatNelkul
+  const products = eladott
+    ? kaphatoHasonlok(rendezett, product, KAPCSOLAT_HATAR)
+    : rendezett.slice(0, KAPCSOLAT_HATAR)
 
   /*
     NULLA HASONLO NEM URES DOBOZ, HANEM HIANYZO SZAKASZ (acrobot kikotese,
@@ -145,14 +177,19 @@ export default async function RelatedProducts({
     nez ki, mint a semmi.
   */
   if (!products.length) {
-    return null
+    return eladott ? nincsKaphato : null
   }
-
-  const t = translator(localeOf(countryCode))
 
   return (
     <div className="product-page-constraint">
-      {fejlecNelkul ? null : (
+      {eladott ? (
+        <h2
+          className="mb-8 text-xl-semi text-ui-fg-base"
+          data-testid="eladott-hasonlok-cim"
+        >
+          {t("product.similarNowTitle")}
+        </h2>
+      ) : fejlecNelkul ? null : (
         <div className="flex flex-col items-center text-center mb-16">
           <span className="text-base-regular text-gray-600 mb-6">
             {kapcsolat === "kiegeszito"
