@@ -15,6 +15,11 @@ const TERMEK_OSZLOPOK = [
   "coalesce(p.description, '')",
 ];
 
+/** A LIKE harom kulonleges jele (\\, %, _) szo szerint. */
+export function likeEscape(ertek: string): string {
+  return ertek.replace(/[\\%_]/g, "\\$&");
+}
+
 function oszlopIllesztes(
   oszlop: string,
   illesztes: Illesztes,
@@ -24,8 +29,9 @@ function oszlopIllesztes(
     ertekek.push(szoMinta(illesztes.ertek));
     return `${oszlopHajtogatva(oszlop)} ~ ?`;
   }
-  ertekek.push(`%${illesztes.ertek}%`);
-  return `${oszlopHajtogatva(oszlop)} LIKE ?`;
+  // a felhasznalo % es _ jele betu, nem joker (barracuda, #650): visszaper-escape, ESCAPE-pel
+  ertekek.push(`%${likeEscape(illesztes.ertek)}%`);
+  return `${oszlopHajtogatva(oszlop)} LIKE ? ESCAPE '\\'`;
 }
 
 function barmelyik(

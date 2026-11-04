@@ -1,7 +1,8 @@
-import { sqlFeltetelek } from "../kereses-sql";
+import { likeEscape, sqlFeltetelek } from "../kereses-sql";
 import {
   keresesiTerv,
   kulcs,
+  MAX_SZO,
   SZINONIMA_CSOPORTOK,
   szoMinta,
   toalak,
@@ -73,13 +74,32 @@ describe("keresesi terv", () => {
     expect(toalak("aramoltatok")).toBe("aramoltat");
     expect(toalak("pumpat")).toBe("pumpa");
     expect(toalak("korallok")).toBe("korall");
-    // a "-t" itt a szo resze, de a maradek (nitra) is csak a nitratot fogja: a reszszoveg-illesztes elviseli
-    expect(toalak("nitrat")).toBe("nitra");
-    expect(toalak("foszfat")).toBe("foszf");
+    // a vegyszernevek -at vege a szo resze (barracuda, #650): a szilikat nem "szili" (szilikon), a karbonat nem "karbon"
+    expect(toalak("nitrat")).toBe("nitrat");
+    expect(toalak("foszfat")).toBe("foszfat");
+    expect(toalak("szilikat")).toBe("szilikat");
+    expect(toalak("szilikatot")).toBe("szilikat");
+    expect(toalak("karbonat")).toBe("karbonat");
+    expect(toalak("szulfatok")).toBe("szulfat");
+    expect(toalak("karbonatkemenyseg")).toBe("karbonatkemenyseg");
     expect(toalak("teszt")).toBe("teszt");
     expect(keresesiTerv("lehabzók")).toEqual([
       [{ fajta: "resz", ertek: "lehabz" }],
     ]);
+  });
+
+  it("hosszu kerdesbol legfeljebb a hatarnyi feltetel lesz, az ismetelt szo egy feltetel (barracuda, #650)", () => {
+    expect(
+      keresesiTerv(
+        Array(500)
+          .fill("szo")
+          .map((s, i) => s + i)
+          .join(" "),
+      ).length,
+    ).toBe(MAX_SZO);
+    expect(keresesiTerv(Array(500).fill("ato").join(" "))).toHaveLength(1);
+    expect(keresesiTerv("KH kh karbonátkeménység")).toHaveLength(1);
+    expect(keresesiTerv("lehabzók lehabzót")).toHaveLength(1);
   });
 
   it("ures kerdesbol nincs feltetel", () => {
@@ -106,6 +126,13 @@ describe("a terv SQL-je", () => {
     expect(ertekek.filter((e) => e === szoMinta("kh"))).toHaveLength(4);
     expect(ertekek).toContain("%lehabzo%");
     expect(feltetelek.split(" AND (").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("a felhasznalo % es _ jele a LIKE-ban betu, nem joker", () => {
+    expect(likeEscape("50%_a\\b")).toBe("50\\%\\_a\\\\b");
+    const { feltetelek, ertekek } = sqlFeltetelek(keresesiTerv("50%"));
+    expect(ertekek).toContain("%50\\%%");
+    expect(feltetelek).toContain("ESCAPE");
   });
 
   it("a rovidites mintaja szohatart kap, es a regex-jeleket kiveszi", () => {

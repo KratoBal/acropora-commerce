@@ -115,7 +115,29 @@ const TOLDALEKOK = [
 ];
 const MIN_TO = 5;
 
+/**
+ * VEDETT SZAVAK: a vegyszernevek -at/-et vege a szo resze, nem targyrag (barracuda,
+ * #650): a "szilikát" tove nem "szili" (az a szilikonra is illeszkedne), a
+ * "karbonát"-e nem "karbon" (az aktiv szen). Ha a szo ezek egyike, vagy egyike es
+ * mogotte egy ismert toldalek, a vedett szo marad (szilikátot -> szilikat); egy
+ * osszetett szo (karbonátkeménység) nem vedett.
+ */
+export const VEDETT_SZAVAK: readonly string[] = [
+  "nitrat",
+  "foszfat",
+  "szilikat",
+  "karbonat",
+  "szulfat",
+];
+
 export function toalak(szo: string): string {
+  // csak a szo maga, vagy mogotte egy ismert toldalek: a "karbonátkeménység" nem vedett szo
+  const vedett = VEDETT_SZAVAK.find(
+    (v) =>
+      szo === v ||
+      (szo.startsWith(v) && TOLDALEKOK.includes(szo.slice(v.length))),
+  );
+  if (vedett) return vedett;
   for (const toldalek of TOLDALEKOK)
     if (szo.endsWith(toldalek) && szo.length - toldalek.length >= MIN_TO)
       return szo.slice(0, -toldalek.length);
@@ -150,9 +172,30 @@ function egyedi(illesztesek: Illesztes[]): Illesztes[] {
  * LEGHOSSZABB csoport-tagot keresi (a "fehérje lefölöző" ket szava egy
  * feltetel), es ha nincs, a szo maga lesz egy feltetel a toalakjaval.
  */
+/**
+ * A FELSO HATAR (barracuda, #650): a kereses nyilvanos es hitelesites nelkuli, es
+ * egy csoport-szo a csoport minden tagjat viszi mind a negy oszlopra. Egy hosszu
+ * `q` (ugyanaz a rovid szo az URL hosszaig) sok ezer OR-olt feltetelt es a
+ * bind-parameterek hataranak kozeleben allo lekerdezest adna, egyetlen keresbol.
+ * A kirakat keresoje nyolc szonal tobbet ertelmesen nem kap; a tobbi elmarad.
+ */
+export const MAX_SZO = 8;
+
 export function keresesiTerv(kifejezes: string): Feltetel[] {
-  const szavak = kifejezes.trim().split(/\s+/).filter(Boolean);
+  const szavak = kifejezes
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, MAX_SZO);
   const feltetelek: Feltetel[] = [];
+  // az azonos feltetel (ugyanaz a csoport vagy ugyanaz a to ketszer) egyszer kerul be
+  const latott = new Set<string>();
+  const felvesz = (feltetel: Feltetel) => {
+    const k = JSON.stringify(feltetel);
+    if (latott.has(k)) return;
+    latott.add(k);
+    feltetelek.push(feltetel);
+  };
   for (let i = 0; i < szavak.length;) {
     let talalt = false;
     for (let n = Math.min(LEGHOSSZABB_TAG, szavak.length - i); n >= 1; n -= 1) {
@@ -160,16 +203,14 @@ export function keresesiTerv(kifejezes: string): Feltetel[] {
         kulcs(szavak.slice(i, i + n).join(" ")),
       );
       if (csoport === undefined) continue;
-      feltetelek.push(
-        egyedi(SZINONIMA_CSOPORTOK[csoport]!.flatMap(tagIllesztesei)),
-      );
+      felvesz(egyedi(SZINONIMA_CSOPORTOK[csoport]!.flatMap(tagIllesztesei)));
       i += n;
       talalt = true;
       break;
     }
     if (talalt) continue;
     const szo = hajtogat(szavak[i]!);
-    feltetelek.push([{ fajta: "resz", ertek: toalak(szo) }]);
+    felvesz([{ fajta: "resz", ertek: toalak(szo) }]);
     i += 1;
   }
   return feltetelek;
