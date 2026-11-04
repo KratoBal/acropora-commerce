@@ -8,6 +8,7 @@ import {
   markPulled,
   photoFolderOf,
   storePhoto,
+  storePhotoWithinCap,
   unattachedPhotoCount,
 } from "../problem-report/report"
 
@@ -23,6 +24,9 @@ function fakeContainer(orders: Row[]) {
   const reports: Row[] = []
   const images: Row[] = []
   const files: Row[] = []
+  const deletedFiles: string[] = []
+  // a test sets this to let "another request" act between a report's check and its claim
+  const hooks: { beforeClaim?: () => void } = {}
   let seq = 0
   const matches = (row: Row, filter: Row) =>
     Object.entries(filter).every(([key, value]) =>
@@ -30,11 +34,29 @@ function fakeContainer(orders: Row[]) {
     )
   const service = {
     createOrderProblemImages: async (data: Row) => {
-      const row = { id: `img_${++seq}`, ...data }
+      const row = { id: `img_${++seq}`, created_at: new Date(Date.UTC(2026, 10, 4, 10, 0, seq)), ...data }
       images.push(row)
       return row
     },
-    listOrderProblemImages: async (filter: Row) => images.filter((row) => matches(row, filter)),
+    listOrderProblemImages: async (filter: Row, config?: Row) => {
+      const rows = images.filter((row) => matches(row, filter))
+      // the real list honours the order option: oldest first, the id as the tie-break
+      if (config?.order?.created_at === "ASC")
+        rows.sort((a, b) => a.created_at - b.created_at || String(a.id).localeCompare(String(b.id)))
+      return rows
+    },
+    deleteOrderProblemImages: async (id: string) => {
+      images.splice(
+        images.findIndex((row) => row.id === id),
+        1,
+      )
+    },
+    deleteOrderProblemReports: async (id: string) => {
+      reports.splice(
+        reports.findIndex((row) => row.id === id),
+        1,
+      )
+    },
     updateOrderProblemImages: async (data: Row) =>
       Object.assign(
         images.find((row) => row.id === data.id)!,
@@ -61,18 +83,42 @@ function fakeContainer(orders: Row[]) {
             data: orders.filter((order) => order.display_id === q.filters.display_id),
           }),
         }
+      if (key === ContainerRegistrationKeys.PG_CONNECTION)
+        return {
+          // the two statements the report flow sends, read by their binding order
+          raw: async (sql: string, bindings: string[]) => {
+            if (/SET report_id = \?, updated_at/.test(sql)) {
+              hooks.beforeClaim?.()
+              const [reportId, ...rest] = bindings
+              const orderId = rest.pop()
+              const taken = images.filter(
+                (row) => rest.includes(row.id) && row.order_id === orderId && row.report_id == null,
+              )
+              for (const row of taken) row.report_id = reportId
+              return { rows: taken.map((row) => ({ id: row.id })) }
+            }
+            if (/SET report_id = NULL/.test(sql)) {
+              for (const row of images) if (row.report_id === bindings[0]) row.report_id = null
+              return { rows: [] }
+            }
+            throw new Error(`unexpected statement ${sql}`)
+          },
+        }
       if (key === Modules.FILE)
         return {
           createFiles: async (data: Row) => {
             files.push(data)
             return { id: data.filename, url: `https://shop.example/static/${data.filename}` }
           },
+          deleteFiles: async (ids: string[]) => {
+            deletedFiles.push(...ids)
+          },
         }
       if (key === ORDER_PROBLEM_REPORT_MODULE) return service
       throw new Error(`unexpected resolve ${key}`)
     },
   } as never
-  return { container, reports, images, files }
+  return { container, reports, images, files, deletedFiles, hooks }
 }
 
 const ORDER = { id: "order_1", display_id: 1042, email: "Vevo@Example.hu", items: [{ id: "item_1" }, { id: "item_2" }] }
@@ -142,8 +188,64 @@ describe("storePhoto", () => {
   })
 })
 
+describe("storePhotoWithinCap", () => {
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff])
+  const type = { ext: "jpg", mime: "image/jpeg" }
+
+  it("keeps the first `cap` unsent uploads of an order and removes the one beyond, with its file", async () => {
+    const parts = fakeContainer([ORDER])
+    const { container, images, deletedFiles } = parts
+    for (let i = 0; i < 3; i++) expect(await storePhotoWithinCap(container, "order_1", jpeg, type, 3)).not.toBeNull()
+    expect(await storePhotoWithinCap(container, "order_1", jpeg, type, 3)).toBeNull()
+    expect(images).toHaveLength(3)
+    // the file that goes is the one the FILE module stored under its own key, not the image row's id
+    const { files } = parts
+    expect(deletedFiles).toEqual([files[files.length - 1].filename])
+    expect(deletedFiles[0]).not.toMatch(/^img_/)
+  })
+
+  it("two uploads that both passed the early count cannot leave more than the cap", async () => {
+    const { container, images } = fakeContainer([ORDER])
+    for (let i = 0; i < 2; i++) await storePhoto(container, "order_1", jpeg, type)
+    // both requests saw two of three places taken, and both store; the fixed order lets exactly one stay
+    const results = await Promise.all([
+      storePhotoWithinCap(container, "order_1", jpeg, type, 3),
+      storePhotoWithinCap(container, "order_1", jpeg, type, 3),
+    ])
+    expect(results.filter(Boolean)).toHaveLength(1)
+    expect(images).toHaveLength(3)
+  })
+
+  it("does not count the photos a report already took", async () => {
+    const { container, images } = fakeContainer([ORDER])
+    for (let i = 0; i < 3; i++) await storePhoto(container, "order_1", jpeg, type)
+    for (const row of images) row.report_id = "rep_old"
+    expect(await storePhotoWithinCap(container, "order_1", jpeg, type, 3)).not.toBeNull()
+  })
+})
+
 describe("createReport", () => {
   const access = { id: "order_1", itemIds: ["item_1", "item_2"] }
+
+  it("when another report takes a photo between the check and the claim, this report is not made and its other photos are given back", async () => {
+    const { container, images, reports, hooks } = fakeContainer([ORDER])
+    const jpg = Buffer.from([0xff, 0xd8, 0xff])
+    const a = await storePhoto(container, "order_1", jpg, { ext: "jpg", mime: "image/jpeg" })
+    const b = await storePhoto(container, "order_1", jpg, { ext: "jpg", mime: "image/jpeg" })
+    // the rival report takes photo b in the gap
+    hooks.beforeClaim = () => {
+      images.find((row) => row.id === b.id)!.report_id = "rep_rival"
+    }
+    expect(await createReport(container, access, { ...input, photoIds: [a.id, b.id] })).toEqual({
+      status: "bad_photos",
+    })
+    expect(reports).toHaveLength(0)
+    // photo b stays with the rival, photo a is free again for another report
+    expect(images.find((row) => row.id === b.id)!.report_id).toBe("rep_rival")
+    expect(images.find((row) => row.id === a.id)!.report_id).toBeNull()
+    hooks.beforeClaim = undefined
+    expect((await createReport(container, access, { ...input, photoIds: [a.id] })).status).toBe("created")
+  })
 
   it("creates the report and links the order's own photos to it", async () => {
     const { container, images, reports } = fakeContainer([ORDER])

@@ -1,9 +1,9 @@
 const accessibleOrder = jest.fn()
-const storePhoto = jest.fn()
+const storePhotoWithinCap = jest.fn()
 const unattachedPhotoCount = jest.fn()
 jest.mock("../../../../../workflows/utils/problem-report/report", () => ({
   accessibleOrder: (...args: unknown[]) => accessibleOrder(...args),
-  storePhoto: (...args: unknown[]) => storePhoto(...args),
+  storePhotoWithinCap: (...args: unknown[]) => storePhotoWithinCap(...args),
   unattachedPhotoCount: (...args: unknown[]) => unattachedPhotoCount(...args),
 }))
 
@@ -33,11 +33,11 @@ const run = async (content: string) => {
 beforeEach(() => {
   accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: [] })
   unattachedPhotoCount.mockResolvedValue(0)
-  storePhoto.mockResolvedValue({ id: "img_1", url: "https://x/y.jpg" })
+  storePhotoWithinCap.mockResolvedValue({ id: "img_1", url: "https://x/y.jpg" })
 })
 afterEach(() => {
   accessibleOrder.mockReset()
-  storePhoto.mockReset()
+  storePhotoWithinCap.mockReset()
   unattachedPhotoCount.mockReset()
 })
 
@@ -48,31 +48,38 @@ describe("POST /store/guest-orders/problem-photos", () => {
     expect(status).toHaveBeenCalledWith(404)
     expect(json).toHaveBeenCalledWith({ message: "Nem találtuk a rendelést." })
     expect(unattachedPhotoCount).not.toHaveBeenCalled()
-    expect(storePhoto).not.toHaveBeenCalled()
+    expect(storePhotoWithinCap).not.toHaveBeenCalled()
   })
 
   it("stores a JPEG and answers only its id", async () => {
     const { json, status } = await run(JPEG_B64)
     expect(status).toHaveBeenCalledWith(201)
     expect(json).toHaveBeenCalledWith({ photo_id: "img_1" })
-    expect(storePhoto).toHaveBeenCalledWith(expect.anything(), "order_1", expect.any(Buffer), {
+    expect(storePhotoWithinCap).toHaveBeenCalledWith(expect.anything(), "order_1", expect.any(Buffer), {
       ext: "jpg",
       mime: "image/jpeg",
-    })
+    }, 10)
+  })
+
+  it("answers 429 when a racing upload lost its place after the store", async () => {
+    storePhotoWithinCap.mockResolvedValue(null)
+    const { json, status } = await run(JPEG_B64)
+    expect(status).toHaveBeenCalledWith(429)
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ type: "too_many_photos" }))
   })
 
   it("refuses what is not an image, with the reason, and stores nothing", async () => {
     const { json, status } = await run(Buffer.from("<svg onload=1>").toString("base64"))
     expect(status).toHaveBeenCalledWith(400)
     expect(json).toHaveBeenCalledWith({ type: "invalid_photo", reason: "not_an_image" })
-    expect(storePhoto).not.toHaveBeenCalled()
+    expect(storePhotoWithinCap).not.toHaveBeenCalled()
   })
 
   it("refuses the eleventh unsent upload of an order", async () => {
     unattachedPhotoCount.mockResolvedValue(10)
     const { status } = await run(JPEG_B64)
     expect(status).toHaveBeenCalledWith(429)
-    expect(storePhoto).not.toHaveBeenCalled()
+    expect(storePhotoWithinCap).not.toHaveBeenCalled()
     unattachedPhotoCount.mockResolvedValue(9)
     expect((await run(JPEG_B64)).status).toHaveBeenCalledWith(201)
   })
