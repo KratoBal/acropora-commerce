@@ -165,7 +165,42 @@ const releasePhotos = async (container: MedusaContainer, reportId: string): Prom
 }
 
 export type CreateReportResult =
-  { status: "created"; id: string; createdAt: string } | { status: "bad_items" } | { status: "bad_photos" }
+  | { status: "created"; id: string; createdAt: string }
+  | { status: "bad_items" }
+  | { status: "bad_photos" }
+  /** the same problem is already reported: `id` is the case reference of the report that stands */
+  | { status: "duplicate"; id: string }
+
+/**
+ * How long a report keeps the same problem "already reported", unless the shop has not taken it over yet (then
+ * for as long as it waits). The aim is the repeated send (a double click, a retry after a lost answer, a second
+ * try of the same page), not blocking a customer for good: nothing tells the shop when the OS closes a case, so
+ * an old, taken-over report must not hold the problem shut forever.
+ */
+export const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000
+
+/**
+ * The reports of the order that already cover this problem: the same kind, at least one line in common, and open
+ * (not yet taken over by the OS, or filed within the window). Oldest first, the id as the tie-break: the same
+ * order for every request, so that two racing sends agree on which one stands.
+ */
+const standingReports = async (
+  svc: OrderProblemReportModuleService,
+  orderId: string,
+  kind: string,
+  itemIds: string[],
+  now: Date,
+) => {
+  const rows = await svc.listOrderProblemReports({ order_id: orderId, kind })
+  return rows
+    .filter((row) => {
+      const items = Array.isArray(row.item_ids) ? (row.item_ids as string[]) : []
+      const overlaps = items.some((id) => itemIds.includes(id))
+      const recent = now.getTime() - new Date(row.created_at).getTime() < DUPLICATE_WINDOW_MS
+      return overlaps && (row.status === "new" || recent)
+    })
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime() || String(a.id).localeCompare(String(b.id)))
+}
 
 /**
  * Creates the report. Every item must be this order's line; every photo must be this order's own upload that no
@@ -175,6 +210,7 @@ export const createReport = async (
   container: MedusaContainer,
   order: Pick<AccessibleOrder, "id" | "itemIds">,
   input: ProblemInput,
+  now: Date = new Date(),
 ): Promise<CreateReportResult> => {
   const unique = (ids: string[]) => [...new Set(ids)]
   const itemIds = unique(input.itemIds)
@@ -186,6 +222,9 @@ export const createReport = async (
     const own = await svc.listOrderProblemImages({ id: photoIds, order_id: order.id, report_id: null })
     if (own.length !== photoIds.length) return { status: "bad_photos" }
   }
+  // the same problem already reported: answer with the case reference that stands, write nothing
+  const standing = await standingReports(svc, order.id, input.kind, itemIds, now)
+  if (standing.length) return { status: "duplicate", id: standing[0]!.id }
   const report = await svc.createOrderProblemReports({
     order_id: order.id,
     kind: input.kind,
@@ -195,6 +234,12 @@ export const createReport = async (
     phone: input.phone,
     status: "new",
   })
+  // two sends that raced past the check above: the fixed order decides which one stands, the other removes itself
+  const standingNow = await standingReports(svc, order.id, input.kind, itemIds, now)
+  if (standingNow.length && standingNow[0]!.id !== report.id) {
+    await svc.deleteOrderProblemReports(report.id)
+    return { status: "duplicate", id: standingNow[0]!.id }
+  }
   if (photoIds.length && !(await claimPhotos(container, order.id, report.id, photoIds))) {
     // another report took a photo between the check and now: nothing of this one may stay
     await releasePhotos(container, report.id)

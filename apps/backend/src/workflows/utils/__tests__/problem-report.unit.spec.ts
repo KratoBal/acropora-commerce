@@ -313,6 +313,67 @@ describe("createReport", () => {
   })
 })
 
+describe("createReport: the same problem twice", () => {
+  const access = { id: "order_1", itemIds: ["item_1", "item_2", "item_3"], displayId: 1042, email: "a@b.hu", metadata: null }
+  const SOON = new Date("2026-11-04T12:00:00Z")
+
+  it("answers the case reference that stands and writes nothing new for the same kind and a shared line", async () => {
+    const { container, reports } = fakeContainer([ORDER])
+    const first = await createReport(container, access, { ...input, itemIds: ["item_1", "item_2"] }, SOON)
+    expect(first.status).toBe("created")
+    const again = await createReport(container, access, { ...input, itemIds: ["item_2", "item_3"] }, SOON)
+    expect(again).toEqual({ status: "duplicate", id: reports[0].id })
+    expect(reports).toHaveLength(1)
+  })
+
+  it("a different kind, or lines with nothing in common, is a new report", async () => {
+    const { container, reports } = fakeContainer([ORDER])
+    await createReport(container, access, { ...input, itemIds: ["item_1"] }, SOON)
+    expect((await createReport(container, access, { ...input, kind: "item_missing", itemIds: ["item_1"] }, SOON)).status).toBe(
+      "created",
+    )
+    expect((await createReport(container, access, { ...input, itemIds: ["item_2"] }, SOON)).status).toBe("created")
+    expect(reports).toHaveLength(3)
+  })
+
+  it("a report the shop has not taken over keeps the problem reported, however old", async () => {
+    const { container, reports } = fakeContainer([ORDER])
+    await createReport(container, access, input, SOON)
+    const weekLater = new Date("2026-11-11T12:00:00Z")
+    expect(await createReport(container, access, input, weekLater)).toEqual({ status: "duplicate", id: reports[0].id })
+  })
+
+  it("a report the shop took over and that is older than a day does not block a new one", async () => {
+    const { container, reports } = fakeContainer([ORDER])
+    await createReport(container, access, input, SOON)
+    await markPulled(container, reports[0].id, SOON)
+    // within the window it still counts
+    expect((await createReport(container, access, input, SOON)).status).toBe("duplicate")
+    const weekLater = new Date("2026-11-11T12:00:00Z")
+    expect((await createReport(container, access, input, weekLater)).status).toBe("created")
+  })
+
+  it("two sends that race past the check leave one report, and the other gets its reference", async () => {
+    const { container, reports } = fakeContainer([ORDER])
+    const results = await Promise.all([
+      createReport(container, access, input, SOON),
+      createReport(container, access, input, SOON),
+    ])
+    expect(results.filter((r) => r.status === "created")).toHaveLength(1)
+    const duplicate = results.find((r) => r.status === "duplicate") as { status: "duplicate"; id: string }
+    expect(duplicate.id).toBe(reports[0].id)
+    expect(reports).toHaveLength(1)
+  })
+
+  it("a duplicate does not take the photos of its own send", async () => {
+    const { container, images } = fakeContainer([ORDER])
+    await createReport(container, access, input, SOON)
+    const photo = await storePhoto(container, "order_1", Buffer.from([0xff, 0xd8, 0xff]), { ext: "jpg", mime: "image/jpeg" })
+    expect((await createReport(container, access, { ...input, photoIds: [photo.id] }, SOON)).status).toBe("duplicate")
+    expect(images.find((row) => row.id === photo.id)!.report_id).toBeNull()
+  })
+})
+
 describe("the OS side", () => {
   it("lists the reports with their photos, the status filter applied", async () => {
     const { container } = fakeContainer([ORDER])

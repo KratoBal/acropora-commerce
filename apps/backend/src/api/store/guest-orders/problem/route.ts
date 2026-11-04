@@ -34,6 +34,15 @@ export const POST = async (req: MedusaRequest<StorePostGuestProblemType>, res: M
       .json({ type: "invalid_items", message: "Az egyik kiválasztott tétel nem ehhez a rendeléshez tartozik." })
     return
   }
+  if (result.status === "duplicate") {
+    // the same problem is already reported: the customer gets the reference that stands (no new case is made)
+    res.status(409).json({
+      type: "already_reported",
+      report_id: result.id,
+      message: "Erről a problémáról már van bejelentésed.",
+    })
+    return
+  }
   if (result.status === "bad_photos") {
     res.status(400).json({ type: "invalid_photos", message: "Az egyik kép nem használható ehhez a bejelentéshez." })
     return
