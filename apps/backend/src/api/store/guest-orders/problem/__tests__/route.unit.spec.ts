@@ -88,6 +88,22 @@ describe("POST /store/guest-orders/problem", () => {
     })
   })
 
+  it("answers 201 without waiting for the mail, even when the mail never finishes", async () => {
+    notifyProblemReportReceived.mockReturnValue(new Promise(() => undefined))
+    const { json, status } = await run()
+    expect(status).toHaveBeenCalledWith(201)
+    expect(json).toHaveBeenCalledWith({ report_id: "rep_1", created_at: "2026-11-04T10:00:00.000Z" })
+    expect(notifyProblemReportReceived).toHaveBeenCalledTimes(1)
+  })
+
+  it("a rejected mail promise changes nothing in the answer and leaves nothing unhandled", async () => {
+    notifyProblemReportReceived.mockRejectedValue(new Error("boom"))
+    const { status } = await run()
+    expect(status).toHaveBeenCalledWith(201)
+    // let the rejection settle: an unhandled one would fail the test run
+    await new Promise((resolve) => setImmediate(resolve))
+  })
+
   it("sends no acknowledgement when nothing was filed (a miss, a bad item, a bad photo, a duplicate)", async () => {
     accessibleOrder.mockResolvedValue(null)
     await run()
