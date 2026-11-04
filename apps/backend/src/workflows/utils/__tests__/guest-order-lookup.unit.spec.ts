@@ -22,7 +22,7 @@ const source = (over: Partial<GuestOrderSource> & { id: string; display_id: numb
   total: 15000,
   currency_code: "huf",
   payment_status: "captured",
-  items: [{ title: "Reef Pump (Nagy)", quantity: 2, total: 12000 }],
+  items: [{ id: "item_1", title: "Reef Pump (Nagy)", quantity: 2, total: 12000 }],
   shipping_method: {
     name: "Foxpost csomagpont",
     data: { foxpost_pickup_point: { name: "Pont 1", address: "1011 Budapest, Fő u. 1." } },
@@ -135,7 +135,7 @@ describe("guestOrderView: only named fields leave", () => {
       total: 15000,
       currency_code: "huf",
       payment_status: "captured",
-      items: [{ title: "Reef Pump (Nagy)", quantity: 2, total: 12000 }],
+      items: [{ id: "item_1", title: "Reef Pump (Nagy)", quantity: 2, total: 12000 }],
       shipping: {
         method_name: "Foxpost csomagpont",
         pickup_point: { name: "Pont 1", address: "1011 Budapest, Fő u. 1." },

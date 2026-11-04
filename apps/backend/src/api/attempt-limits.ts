@@ -66,6 +66,13 @@ export const ATTEMPT_LIMITS = {
    */
   guestOrderPerAddress: { max: 8, windowMs: 15 * MINUTES },
   guestOrderPerOrderNumber: { max: 15, windowMs: 15 * MINUTES },
+  /**
+   * The problem report (V1.2): a photo upload and the report are several calls for one filing (up to five photos
+   * and the report), so the window is wider than the lookup's and counted apart from it (one customer's lookup
+   * must not use up the report's tries, nor the reverse). Thirty per address and forty per order number.
+   */
+  guestProblemPerAddress: { max: 30, windowMs: 15 * MINUTES },
+  guestProblemPerOrderNumber: { max: 40, windowMs: 15 * MINUTES },
 } as const
 
 export const TOO_MANY_ATTEMPTS = {
@@ -161,5 +168,15 @@ export const guestOrderAddressAttempts = limitAttempts({
 
 export const guestOrderNumberAttempts = limitAttempts({
   perKey: limiter(ATTEMPT_LIMITS.guestOrderPerOrderNumber),
+  keyOf: (req) => orderNumberKeyOf(req.body),
+})
+
+export const guestProblemAddressAttempts = limitAttempts({
+  perKey: limiter(ATTEMPT_LIMITS.guestProblemPerAddress),
+  keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const guestProblemNumberAttempts = limitAttempts({
+  perKey: limiter(ATTEMPT_LIMITS.guestProblemPerOrderNumber),
   keyOf: (req) => orderNumberKeyOf(req.body),
 })

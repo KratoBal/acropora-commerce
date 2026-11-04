@@ -55,6 +55,7 @@ const sourceOf = (order: any): GuestOrderSource => {
     currency_code: String(order.currency_code ?? "huf"),
     payment_status: typeof order.payment_status === "string" ? order.payment_status : null,
     items: (order.items ?? []).filter(Boolean).map((item: any) => ({
+      id: String(item.id),
       title: lineTitle(item),
       quantity: medusaNumber(item.quantity, `The quantity of item ${item.id}`),
       total: medusaNumber(item.total, `The total of item ${item.id}`),
