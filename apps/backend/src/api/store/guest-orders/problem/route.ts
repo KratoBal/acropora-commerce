@@ -47,10 +47,12 @@ export const POST = async (req: MedusaRequest<StorePostGuestProblemType>, res: M
     res.status(400).json({ type: "invalid_photos", message: "Az egyik kép nem használható ehhez a bejelentéshez." })
     return
   }
-  // the customer's acknowledgement mail: its failure never changes the answer (the report is filed)
-  await notifyProblemReportReceived(req.scope, {
+  res.status(201).json({ report_id: result.id, created_at: result.createdAt })
+  // The customer's acknowledgement mail goes AFTER the answer and is not waited for: the report is filed, and a slow OS
+  // render or a slow mail provider must not keep the customer's button spinning. It never throws (the function catches
+  // and logs); the catch here is only a net for a rejection that would otherwise go unhandled.
+  void notifyProblemReportReceived(req.scope, {
     order: { id: order.id, displayId: order.displayId, email: order.email },
     reportId: result.id,
-  })
-  res.status(201).json({ report_id: result.id, created_at: result.createdAt })
+  }).catch(() => undefined)
 }
