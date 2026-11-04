@@ -78,6 +78,33 @@ export const storePhoto = async (
 export const unattachedPhotoCount = async (container: MedusaContainer, orderId: string): Promise<number> =>
   (await service(container).listOrderProblemImages({ order_id: orderId, report_id: null })).length
 
+/**
+ * Stores a photo and keeps the order's cap even when uploads race. The route checks the count first (a cheap early
+ * answer), but two uploads at the cap's edge both see room. So after storing, the photo finds its place among the
+ * order's unsent uploads in one fixed order (oldest first, id as the tie-break): the first `cap` stay, any beyond
+ * remove themselves and the caller answers "too many". Two racing requests therefore never leave more than `cap`.
+ */
+export const storePhotoWithinCap = async (
+  container: MedusaContainer,
+  orderId: string,
+  bytes: Buffer,
+  type: PhotoType,
+  cap: number,
+): Promise<StoredPhoto | null> => {
+  const stored = await storePhoto(container, orderId, bytes, type)
+  const svc = service(container)
+  const unsent = await svc.listOrderProblemImages(
+    { order_id: orderId, report_id: null },
+    { order: { created_at: "ASC", id: "ASC" } },
+  )
+  const place = unsent.findIndex((row) => row.id === stored.id)
+  if (place >= 0 && place < cap) return stored
+  await svc.deleteOrderProblemImages(stored.id)
+  const file = container.resolve(Modules.FILE) as unknown as { deleteFiles(ids: string[]): Promise<void> }
+  await file.deleteFiles([stored.id]).catch(() => undefined)
+  return null
+}
+
 export type ProblemInput = {
   kind: ProblemKind
   itemIds: string[]
@@ -85,6 +112,38 @@ export type ProblemInput = {
   description: string
   phone: string | null
   photoIds: string[]
+}
+
+/**
+ * Takes the photos for the report in ONE statement: a photo is taken only if it is still this order's and no report
+ * has it. The check before creating the report is not enough alone (two reports can both pass it); this is the
+ * decision. True only when every photo was taken.
+ */
+const claimPhotos = async (
+  container: MedusaContainer,
+  orderId: string,
+  reportId: string,
+  photoIds: string[],
+): Promise<boolean> => {
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION) as unknown as {
+    raw(sql: string, bindings: unknown[]): Promise<{ rows?: { id: string }[] }>
+  }
+  const marks = photoIds.map(() => "?").join(", ")
+  const result = await pg.raw(
+    `UPDATE order_problem_image SET report_id = ?, updated_at = now()
+     WHERE id IN (${marks}) AND order_id = ? AND report_id IS NULL AND deleted_at IS NULL
+     RETURNING id`,
+    [reportId, ...photoIds, orderId],
+  )
+  return (result?.rows ?? []).length === photoIds.length
+}
+
+/** Gives back whatever photos a failed claim took, so they can go into another report. */
+const releasePhotos = async (container: MedusaContainer, reportId: string): Promise<void> => {
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION) as unknown as {
+    raw(sql: string, bindings: unknown[]): Promise<unknown>
+  }
+  await pg.raw(`UPDATE order_problem_image SET report_id = NULL, updated_at = now() WHERE report_id = ?`, [reportId])
 }
 
 export type CreateReportResult =
@@ -118,7 +177,12 @@ export const createReport = async (
     phone: input.phone,
     status: "new",
   })
-  for (const id of photoIds) await svc.updateOrderProblemImages({ id, report_id: report.id })
+  if (photoIds.length && !(await claimPhotos(container, order.id, report.id, photoIds))) {
+    // another report took a photo between the check and now: nothing of this one may stay
+    await releasePhotos(container, report.id)
+    await svc.deleteOrderProblemReports(report.id)
+    return { status: "bad_photos" }
+  }
   return { status: "created", id: report.id, createdAt: new Date(report.created_at).toISOString() }
 }
 
