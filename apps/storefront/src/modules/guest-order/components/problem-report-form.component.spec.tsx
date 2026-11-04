@@ -125,8 +125,9 @@ describe("the problem report form", () => {
       orderNumber: "1043",
       email: "vevo@example.hu",
     })
-    expect(uploadProblemPhoto.mock.calls[0][0].content).toMatch(
-      /^[A-Za-z0-9+/]+=*$/,
+    // the content is the file's own bytes as base64 (eight 0xff bytes), without any data: prefix
+    expect(uploadProblemPhoto.mock.calls[0][0].content).toBe(
+      btoa(String.fromCharCode(...new Uint8Array(8).fill(0xff))),
     )
     expect(submitProblemReport.mock.calls[0][0]).toMatchObject({
       orderNumber: "1043",
@@ -141,6 +142,18 @@ describe("the problem report form", () => {
     expect(uploadProblemPhoto.mock.invocationCallOrder[1]).toBeLessThan(
       submitProblemReport.mock.invocationCallOrder[0]!,
     )
+  })
+
+  it("a form with a reason but no item or description is still not sent", async () => {
+    renderForm()
+    fireEvent.change(screen.getByLabelText("Mi a probléma?"), {
+      target: { value: "other" },
+    })
+    await submit()
+    expect(submitProblemReport).not.toHaveBeenCalled()
+    expect(screen.getByTestId("problem-items-error")).toBeTruthy()
+    expect(screen.getByTestId("problem-description-error")).toBeTruthy()
+    expect(screen.queryByTestId("problem-kind-error")).toBeNull()
   })
 
   it("a success shows the case reference and a close button", async () => {
