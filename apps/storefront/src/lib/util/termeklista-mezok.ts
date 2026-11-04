@@ -14,3 +14,11 @@ export const TERMEKLISTA_MEZOK =
  * lista-lapon all, ezt kerheti.
  */
 export const termeklistaMezok = `${TERMEKLISTA_MEZOK}*collection,*categories`
+
+/**
+ * A VASARLASI KERET MEZOI: az alap mezok plusz a VALTOZAT METAADATA. Az Omnibus hivatkozasi ar a
+ * valtozat `omnibus_lowest_price_30d` kulcsan all (az OS irja), es CSAK a termeklapon kell: a
+ * listak kartyai nem mutatjak, tehat a listak mezoihez nem kerul (egy 1492 termekes valaszt nem
+ * hizlalunk vele). A `+` a metaadatot hozzaadja, nem felulirja.
+ */
+export const VASARLAS_KERET_MEZOK = `${TERMEKLISTA_MEZOK}+variants.metadata`

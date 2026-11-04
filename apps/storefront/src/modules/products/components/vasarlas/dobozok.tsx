@@ -6,6 +6,10 @@ import { Button } from "@modules/common/components/ui"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
 
+import { getProductPrice } from "@lib/util/get-product-price"
+import { convertToLocale } from "@lib/util/money"
+import { omnibusReferenceOf, type OmnibusReference } from "@lib/util/omnibus"
+
 import ProductPrice from "../product-price"
 import StockState from "../stock-state"
 import { useVasarlas } from "./kontextus"
@@ -28,12 +32,83 @@ export function ArDoboz() {
   const locale = useLocale()
   const a = useVasarlas()
   if (!a) return null
+  /*
+    AZ OMNIBUS-SOR A VALASZTOTT VALTOZATE (nem az elso valtozate), es CSAK akkor all, ha a
+    fizetendo ar a hivatkozasi ar ALATT van (`omnibusReferenceOf`). Az ar nelkuli allapotban
+    (a szamolt ar meg nem jott) nincs mihez viszonyitani, tehat nincs sor.
+  */
+  const shown = a.selectedVariant
+    ? getProductPrice({ product: a.product, variantId: a.selectedVariant.id })
+        .variantPrice
+    : null
+  const referencia = omnibusReferenceOf(
+    a.selectedVariant?.metadata,
+    shown
+      ? {
+          amount: shown.calculated_price_number,
+          currencyCode: shown.currency_code,
+        }
+      : null,
+  )
   return (
-    <ProductPrice
-      product={a.product}
-      variant={a.selectedVariant}
-      locale={locale}
-    />
+    <>
+      <ProductPrice
+        product={a.product}
+        variant={a.selectedVariant}
+        locale={locale}
+      />
+      <OmnibusSor referencia={referencia} />
+    </>
+  )
+}
+
+/**
+ * AZ OMNIBUS-SOR: "Az árcsökkentés előtti 30 nap legalacsonyabb ára: X" (V0.2, 3. szelet).
+ *
+ * TISZTA MEGJELENITES: a hivo (`ArDoboz`) donti el, hogy van-e mit mondani
+ * (`omnibusReferenceOf`), ez csak kirajzol. `null`: nincs sor, semmi nem all a helyen.
+ *
+ * KET SZOVEG VAN, ES A KETTO NEM UGYANAZT ALLITJA. Teljes tortenetnel (`complete`) a 30 napos
+ * mondat all. Ha a valtozat ar-tortenete FIATALABB 30 napnal, a "30 nap" szo nem lenne igaz: a
+ * rovidebb szoveg az AR ISMERT IDOSZAKAROL szol ("... {since} ota"), NEM arrol, hogy a termek mioata
+ * kaphato (az ar-tortenetunk fiatalabb a termekeknel; barracuda, #647). Az ismeretlen aru reset az OS
+ * nem irja ki, es a `omnibusReferenceOf` az ellentmondo napokat eldobja: ide csak ertelmes alak jut.
+ * A SZOVEGEK JOGI MEGFOGALMAZASA Balazs/jogasz tetele; ez a ket mondat a mostani, nem a vegleges.
+ */
+export function OmnibusSor({
+  referencia,
+}: {
+  referencia: OmnibusReference | null
+}) {
+  const locale = useLocale()
+  const t = translator(locale)
+  if (!referencia) return null
+  const price = convertToLocale({
+    amount: referencia.amount,
+    currency_code: referencia.currencyCode,
+  })
+  const since = new Date(
+    `${referencia.historyBegins}T00:00:00Z`,
+  ).toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: locale === "hu" ? "numeric" : "short",
+    day: "numeric",
+  })
+  return (
+    <p
+      className="text-[12.5px]"
+      style={{
+        marginTop: "4px",
+        color: "var(--terv-szoveg-halvany)",
+        fontFamily: "var(--terv-betu-fo-lanc)",
+      }}
+      data-testid="vaz-omnibus-sor"
+    >
+      {referencia.complete
+        ? t("product.omnibusLine", { price })
+        : t("product.omnibusLineShort", { price, since })}
+    </p>
   )
 }
 
@@ -533,11 +608,9 @@ export function KiszerelesSor({ kiszereles }: { kiszereles?: string | null }) {
  * === AMI SZANDEKOSAN NINCS BENNE ===
  *
  * A terv 1b lapjan ugyanez a sor igy folytatodik: "Legalacsonyabb ar az elmult
- * 30 napban: 319 900 Ft". Az EU Omnibus-kovetelmeny, es NULLA forrasa van
- * (merve 2026-09-10: "30 nap", "lowest_price", "price_history", "omnibus" mind
- * nulla talalat a kirakat es a hatteroldal forrasaban). Ma nincs kivaltva, mert
- * a stage-en nulla termek akcios (1490-bol, aminek van ara) -- de az elso akcio
- * pillanataban kotelezove valik. Kulon kartyan all, Balazsnal.
+ * 30 napban: 319 900 Ft". Az EU Omnibus-kovetelmeny. NEM ebben a sorban all: az
+ * `OmnibusSor` rajzolja az ar alatt (V0.2, 2026-11-04), a valtozat metaadatabol, amit az OS
+ * ir az arcsokkentes elotti 30 nap legalacsonyabb arabol. Itt tovabbra sem all.
  *
  * Ugyanigy kimarad a "27% afaval" es a "Kedvezmeny: -30 000 Ft": mindketto
  * SZAMOT allit, es egyikhez sincs meresem arrol, hogy a bolt ugyanazt szamolja.
