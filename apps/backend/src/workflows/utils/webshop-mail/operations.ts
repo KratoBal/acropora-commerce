@@ -34,7 +34,7 @@ const ORDER_FIELDS = [
 ]
 
 /** "Termék (változat)", the variant only when it says something the product does not. */
-const lineTitle = (item: any): string => {
+export const lineTitle = (item: any): string => {
   const product = String(item?.product_title || item?.title || "").trim()
   const variant = String(item?.variant_title ?? "").trim()
   return variant && variant !== product && !/^default/i.test(variant) ? `${product} (${variant})` : product

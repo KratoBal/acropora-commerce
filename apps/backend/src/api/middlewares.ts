@@ -61,7 +61,14 @@ import { StoreGetGlsPickupPointsParams } from "./store/gls/pickup-points/validat
 import { refuseClientSessionData } from "./refuse-client-session-data";
 import { refuseClientCartMetadata } from "./refuse-client-cart-metadata";
 import { guardOrderRead } from "./order-read-guard";
-import { promotionAttempts, signInAttempts, signUpAttempts } from "./attempt-limits";
+import {
+  guestOrderAddressAttempts,
+  guestOrderNumberAttempts,
+  promotionAttempts,
+  signInAttempts,
+  signUpAttempts,
+} from "./attempt-limits";
+import { StorePostGuestOrderLookup } from "./store/guest-orders/lookup/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
@@ -308,6 +315,12 @@ export default defineMiddlewares({
       matcher: "/store/cart-locale/:cart_id",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostCartLocale)],
+    },
+    {
+      // the guest order page (V1.1): the attempt limits count BEFORE the body is validated, like sign-in
+      matcher: "/store/guest-orders/lookup",
+      method: "POST",
+      middlewares: [guestOrderAddressAttempts, guestOrderNumberAttempts, validateAndTransformBody(StorePostGuestOrderLookup)],
     },
     {
       matcher: "/store/newsletter-subscriptions",

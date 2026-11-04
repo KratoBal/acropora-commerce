@@ -59,6 +59,13 @@ export const ATTEMPT_LIMITS = {
   promotionsPerCart: { max: 10, windowMs: 10 * MINUTES },
   /** The password change: five tries per account in fifteen minutes. */
   passwordChangePerAccount: { max: 5, windowMs: 15 * MINUTES },
+  /**
+   * The guest order lookup (V1.1): the e-mail address is the second factor, so it is counted per
+   * ADDRESS (guessing order numbers for one address) AND per ORDER NUMBER (guessing addresses for
+   * one order). Eight tries per address and fifteen per order number in fifteen minutes.
+   */
+  guestOrderPerAddress: { max: 8, windowMs: 15 * MINUTES },
+  guestOrderPerOrderNumber: { max: 15, windowMs: 15 * MINUTES },
 } as const
 
 export const TOO_MANY_ATTEMPTS = {
@@ -138,3 +145,21 @@ export const promotionAttempts = limitAttempts({
 
 /** The password change counts inside the route, where the account is known. */
 export const passwordChangeAttempts = createRateLimiter(ATTEMPT_LIMITS.passwordChangePerAccount)
+
+/** The order number a body names, as a key: digits only, bounded (`#1042` and `1042` are one key). */
+export const orderNumberKeyOf = (body: unknown): string | null => {
+  const value = (body as { order_number?: unknown } | undefined)?.order_number
+  if (typeof value !== "string") return null
+  const key = value.trim().replace(/^#/, "")
+  return /^\d{1,10}$/.test(key) ? String(Number(key)) : null
+}
+
+export const guestOrderAddressAttempts = limitAttempts({
+  perKey: limiter(ATTEMPT_LIMITS.guestOrderPerAddress),
+  keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const guestOrderNumberAttempts = limitAttempts({
+  perKey: limiter(ATTEMPT_LIMITS.guestOrderPerOrderNumber),
+  keyOf: (req) => orderNumberKeyOf(req.body),
+})
