@@ -26,7 +26,8 @@ function fakeContainer(orders: Row[]) {
   const files: Row[] = []
   const deletedFiles: string[] = []
   // a test sets this to let "another request" act between a report's check and its claim
-  const hooks: { beforeClaim?: () => void } = {}
+  const hooks: { beforeClaim?: () => void; beforeAttach?: () => void; failCreate?: boolean } = {}
+  const created = { count: 0 }
   let seq = 0
   const matches = (row: Row, filter: Row) =>
     Object.entries(filter).every(([key, value]) =>
@@ -63,6 +64,8 @@ function fakeContainer(orders: Row[]) {
         data,
       ),
     createOrderProblemReports: async (data: Row) => {
+      created.count++
+      if (hooks.failCreate) throw new Error("create failed")
       const row = { id: `rep_${++seq}`, created_at: new Date("2026-11-04T10:00:00Z"), pulled_at: null, ...data }
       reports.push(row)
       return row
@@ -87,6 +90,13 @@ function fakeContainer(orders: Row[]) {
         return {
           // the two statements the report flow sends, read by their binding order
           raw: async (sql: string, bindings: string[]) => {
+            if (/SET report_id = \?, updated_at = now\(\) WHERE report_id = \?/.test(sql)) {
+              // the hand-over of a claim to the report that now exists
+              hooks.beforeAttach?.()
+              const [reportId, claimId] = bindings
+              for (const row of images) if (row.report_id === claimId) row.report_id = reportId
+              return { rows: [] }
+            }
             if (/SET report_id = \?, updated_at/.test(sql)) {
               hooks.beforeClaim?.()
               const [reportId, ...rest] = bindings
@@ -118,7 +128,7 @@ function fakeContainer(orders: Row[]) {
       throw new Error(`unexpected resolve ${key}`)
     },
   } as never
-  return { container, reports, images, files, deletedFiles, hooks }
+  return { container, reports, images, files, deletedFiles, hooks, created }
 }
 
 const ORDER = { id: "order_1", display_id: 1042, email: "Vevo@Example.hu", items: [{ id: "item_1" }, { id: "item_2" }] }
@@ -231,7 +241,7 @@ describe("createReport", () => {
   const access = { id: "order_1", itemIds: ["item_1", "item_2"] }
 
   it("when another report takes a photo between the check and the claim, this report is not made and its other photos are given back", async () => {
-    const { container, images, reports, hooks } = fakeContainer([ORDER])
+    const { container, images, reports, hooks, created } = fakeContainer([ORDER])
     const jpg = Buffer.from([0xff, 0xd8, 0xff])
     const a = await storePhoto(container, "order_1", jpg, { ext: "jpg", mime: "image/jpeg" })
     const b = await storePhoto(container, "order_1", jpg, { ext: "jpg", mime: "image/jpeg" })
@@ -243,11 +253,49 @@ describe("createReport", () => {
       status: "bad_photos",
     })
     expect(reports).toHaveLength(0)
+    // the report was never created: there was no moment in which the OS could have pulled it
+    expect(created.count).toBe(0)
     // photo b stays with the rival, photo a is free again for another report
     expect(images.find((row) => row.id === b.id)!.report_id).toBe("rep_rival")
     expect(images.find((row) => row.id === a.id)!.report_id).toBeNull()
     hooks.beforeClaim = undefined
     expect((await createReport(container, access, { ...input, photoIds: [a.id] })).status).toBe("created")
+  })
+
+  it("a report that cannot be created gives the photos it had taken back, and the error is not swallowed", async () => {
+    const { container, images, hooks } = fakeContainer([ORDER])
+    const photo = await storePhoto(container, "order_1", Buffer.from([0xff, 0xd8, 0xff]), {
+      ext: "jpg",
+      mime: "image/jpeg",
+    })
+    hooks.failCreate = true
+    await expect(createReport(container, access, { ...input, photoIds: [photo.id] })).rejects.toThrow("create failed")
+    expect(images.find((row) => row.id === photo.id)!.report_id).toBeNull()
+  })
+
+  it("a report whose photos cannot be handed over is removed, and the photos are free again", async () => {
+    const { container, images, reports, hooks } = fakeContainer([ORDER])
+    const photo = await storePhoto(container, "order_1", Buffer.from([0xff, 0xd8, 0xff]), {
+      ext: "jpg",
+      mime: "image/jpeg",
+    })
+    hooks.beforeAttach = () => {
+      throw new Error("attach failed")
+    }
+    await expect(createReport(container, access, { ...input, photoIds: [photo.id] })).rejects.toThrow("attach failed")
+    expect(reports).toHaveLength(0)
+    expect(images.find((row) => row.id === photo.id)!.report_id).toBeNull()
+  })
+
+  it("no photo ever sits under the temporary claim once the report is made", async () => {
+    const { container, images } = fakeContainer([ORDER])
+    const photo = await storePhoto(container, "order_1", Buffer.from([0xff, 0xd8, 0xff]), {
+      ext: "jpg",
+      mime: "image/jpeg",
+    })
+    const result = await createReport(container, access, { ...input, photoIds: [photo.id] })
+    expect(result.status).toBe("created")
+    expect(String(images.find((row) => row.id === photo.id)!.report_id)).not.toMatch(/^claim_/)
   })
 
   it("creates the report and links the order's own photos to it", async () => {
