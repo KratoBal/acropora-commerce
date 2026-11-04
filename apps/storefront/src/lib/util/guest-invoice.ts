@@ -3,7 +3,8 @@
  * through the shop's backend; the page only draws them. A link is single use and short lived, so the page never keeps one
  * longer than the click that asked for it.
  */
-export type GuestInvoiceType = "INVOICE" | "ADVANCE_INVOICE" | "FINAL_INVOICE"
+export type GuestInvoiceType =
+  "INVOICE" | "ADVANCE_INVOICE" | "FINAL_INVOICE" | "CORRECTION"
 
 export type GuestInvoiceDocument = {
   invoice_number: string | null
@@ -21,7 +22,9 @@ export const invoiceTypeKey = (type: GuestInvoiceType) =>
     ? ("guestOrder.invoice.typeAdvance" as const)
     : type === "FINAL_INVOICE"
       ? ("guestOrder.invoice.typeFinal" as const)
-      : ("guestOrder.invoice.typeInvoice" as const)
+      : type === "CORRECTION"
+        ? ("guestOrder.invoice.typeCorrection" as const)
+        : ("guestOrder.invoice.typeInvoice" as const)
 
 /** A link the page may put in front of the customer: the backend vouches for the path, the page checks the scheme. */
 export const safeInvoiceUrl = (url: string): boolean => {

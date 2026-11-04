@@ -53,6 +53,12 @@ describe("GuestInvoice", () => {
           issue_date: null,
           url: `${link}2`,
         },
+        {
+          invoice_number: "SZ/2026-2",
+          document_type: "CORRECTION",
+          issue_date: null,
+          url: `${link}3`,
+        },
       ],
     })
     render(<GuestInvoice order={order} email="vevo@example.hu" />)
@@ -63,11 +69,12 @@ describe("GuestInvoice", () => {
       email: "vevo@example.hu",
     })
     const anchors = links.querySelectorAll("a")
-    expect(anchors).toHaveLength(2)
+    expect(anchors).toHaveLength(3)
     expect(anchors[0]!.getAttribute("href")).toBe(link)
     expect(anchors[0]!.textContent).toContain("SZ/2026-1")
     expect(anchors[1]!.textContent).not.toContain("null")
     expect(anchors[1]!.textContent).toContain("Előlegszámla")
+    expect(anchors[2]!.textContent).toContain("Helyesbítő számla")
   })
 
   it("none yet is one plain sentence, not an error", async () => {

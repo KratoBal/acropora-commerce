@@ -1106,6 +1106,7 @@ export const hu = {
       typeInvoice: "Számla",
       typeAdvance: "Előlegszámla",
       typeFinal: "Végszámla",
+      typeCorrection: "Helyesbítő számla",
       download: "{type} letöltése: {number}",
       downloadNoNumber: "{type} letöltése",
     },

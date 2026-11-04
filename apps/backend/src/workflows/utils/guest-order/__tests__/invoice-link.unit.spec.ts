@@ -95,6 +95,12 @@ describe("requestInvoiceLinks", () => {
 
   it("one malformed document (a foreign link, an unknown type, no link) makes the whole answer unavailable", async () => {
     const good = { invoice_number: "SZ/1", document_type: "INVOICE", issue_date: null, url: LINK }
+    // a correction invoice is one of the documents the customer gets
+    expect(
+      await requestInvoiceLinks("order_1", config, {
+        fetcher: answer(200, { documents: [{ ...good, document_type: "CORRECTION" }] }),
+      }),
+    ).toEqual({ kind: "ok", documents: [{ ...good, document_type: "CORRECTION" }] })
     for (const bad of [
       { ...good, url: "https://evil.test/elsewhere" },
       { ...good, url: "javascript:alert(1)" },

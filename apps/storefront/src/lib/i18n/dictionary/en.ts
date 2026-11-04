@@ -1075,6 +1075,7 @@ export const en: Dictionary = {
       typeInvoice: "Invoice",
       typeAdvance: "Advance invoice",
       typeFinal: "Final invoice",
+      typeCorrection: "Correction invoice",
       download: "Download {type}: {number}",
       downloadNoNumber: "Download {type}",
     },

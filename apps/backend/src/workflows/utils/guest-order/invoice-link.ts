@@ -16,7 +16,7 @@ export const INVOICE_SECRET_ENV = "WEBSHOP_INVOICE_SECRET"
 export const INVOICE_URL_ENV = "ACROPORA_OS_INVOICE_URL"
 export const SECRET_MIN_LENGTH = 32
 const DOWNLOAD_PATH = "/integrations/webshop-invoice/download/"
-const DOCUMENT_TYPES = ["INVOICE", "ADVANCE_INVOICE", "FINAL_INVOICE"] as const
+const DOCUMENT_TYPES = ["INVOICE", "ADVANCE_INVOICE", "FINAL_INVOICE", "CORRECTION"] as const
 
 export type InvoiceLinkConfig = { secret: string; url: string }
 
