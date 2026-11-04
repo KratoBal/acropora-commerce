@@ -30,6 +30,7 @@ export default function GuestOrderForm() {
   const [orders, setOrders] = useState<GuestOrder[] | null>(null)
   // the address the answer was found with: the field may be edited afterwards, an open problem form must keep this one
   const [lookupEmail, setLookupEmail] = useState("")
+  const [lookupNumber, setLookupNumber] = useState("")
   const [pending, startTransition] = useTransition()
 
   const submit = (event: FormEvent) => {
@@ -41,16 +42,30 @@ export default function GuestOrderForm() {
     if (found.orderNumber || found.email) return
     startTransition(async () => {
       const sentEmail = email.trim()
+      const sentNumber = orderNumber.trim()
       const result = await lookupGuestOrder({
-        orderNumber: orderNumber.trim(),
+        orderNumber: sentNumber,
         email: sentEmail,
       })
       if (result.ok) {
         setOrders(result.orders)
         setLookupEmail(sentEmail)
+        setLookupNumber(sentNumber)
       } else setFailure(t(lookupErrorKey(result.kind)))
     })
   }
+
+  // After a report is filed (or refused as already reported) the list of reports under the order is read again,
+  // with the number and the address the orders were found with (the fields may have been edited since): a list
+  // loaded when the order was opened would not hold the report the customer has just been told about.
+  const refreshReports = () =>
+    startTransition(async () => {
+      const result = await lookupGuestOrder({
+        orderNumber: lookupNumber,
+        email: lookupEmail,
+      })
+      if (result.ok) setOrders(result.orders)
+    })
 
   return (
     <div className="flex flex-col gap-y-8">
@@ -100,7 +115,13 @@ export default function GuestOrderForm() {
           </p>
         )}
       </form>
-      {orders && <GuestOrderView orders={orders} email={lookupEmail} />}
+      {orders && (
+        <GuestOrderView
+          orders={orders}
+          email={lookupEmail}
+          onReportsChanged={refreshReports}
+        />
+      )}
     </div>
   )
 }

@@ -30,6 +30,7 @@ import ProblemReportForm from "./problem-report-form"
 export default function GuestOrderView({
   orders,
   email,
+  onReportsChanged,
 }: {
   orders: GuestOrder[]
   /**
@@ -37,6 +38,8 @@ export default function GuestOrderView({
    * ("Probléma a szállítmánnyal", V1.2); without it (a display with no way to file) the button is not drawn.
    */
   email?: string
+  /** A report was filed or refused as already reported: the page reads the orders again, so the list is current. */
+  onReportsChanged?: () => void
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -57,6 +60,7 @@ export default function GuestOrderView({
           key={String(order.display_id)}
           order={order}
           email={email}
+          onReportsChanged={onReportsChanged}
           heading={
             split
               ? order.shipping?.store_pickup
@@ -74,10 +78,12 @@ function OrderBlock({
   order,
   heading,
   email,
+  onReportsChanged,
 }: {
   order: GuestOrder
   heading: string | null
   email?: string
+  onReportsChanged?: () => void
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -283,6 +289,7 @@ function OrderBlock({
             <ProblemReportForm
               order={order}
               email={email}
+              onFiled={onReportsChanged}
               onClose={() => setReporting(false)}
             />
           )}
