@@ -304,6 +304,7 @@ describe("az Omnibus-sor angolul", () => {
     )
     const rovid = screen.getByTestId("vaz-omnibus-sor").textContent ?? ""
     expect(rovid).not.toContain("30 days")
+    expect(rovid).not.toMatch(/available/i)
     expect(rovid).toContain("25 Oct 2026")
   })
 })

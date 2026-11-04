@@ -324,6 +324,8 @@ describe("az Omnibus-sor", () => {
     )
     const szoveg = screen.getByTestId("vaz-omnibus-sor").textContent ?? ""
     expect(szoveg).not.toContain("30 nap")
+    // the first price day of OUR history says nothing about availability
+    expect(szoveg).not.toMatch(/kapható/)
     expect(szoveg).toContain("2026. 10. 25.")
     expect(szoveg).toMatch(/1\s500\sFt$/)
   })
