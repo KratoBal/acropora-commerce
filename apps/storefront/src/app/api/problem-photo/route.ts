@@ -23,18 +23,36 @@ import { PROBLEM_PHOTO_MAX_BODY_BYTES } from "@lib/util/problem-photo-upload"
  */
 export const dynamic = "force-dynamic"
 
+/**
+ * A GAZDANÉV ÖSSZEHASONLÍTÁSRA: kisbetűs, és az alapértelmezett port nélkül (a böngésző `Origin` fejléce az alapértelmezett
+ * portot elhagyja, a proxy fejlécében viszont ott lehet).
+ */
+const gazdaAlakja = (gazda: string): string =>
+  gazda
+    .trim()
+    .toLowerCase()
+    .replace(/:(80|443)$/, "")
+
 const hivoGazdaja = (request: NextRequest): string | null => {
   const eredet = request.headers.get("origin")
   if (!eredet) return null
   try {
-    return new URL(eredet).host
+    return gazdaAlakja(new URL(eredet).host)
   } catch {
     return null
   }
 }
 
-const sajatGazda = (request: NextRequest): string | null =>
-  request.headers.get("x-forwarded-host") ?? request.headers.get("host")
+/**
+ * A kiszolgáló gazdája: a proxy mögött az `x-forwarded-host`, amit több proxy vesszős LISTÁVAL is küldhet ("a, b"); az
+ * első elem az, amit a böngésző kért (stage-próba, barracuda #668 review).
+ */
+const sajatGazda = (request: NextRequest): string | null => {
+  const kapott =
+    request.headers.get("x-forwarded-host")?.split(",")[0] ??
+    request.headers.get("host")
+  return kapott?.trim() ? gazdaAlakja(kapott) : null
+}
 
 export async function POST(request: NextRequest) {
   const hivo = hivoGazdaja(request)
