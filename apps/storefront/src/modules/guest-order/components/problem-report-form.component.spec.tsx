@@ -127,7 +127,7 @@ describe("the problem report form", () => {
     })
     // the content is the file's own bytes as base64 (eight 0xff bytes), without any data: prefix
     expect(uploadProblemPhoto.mock.calls[0][0].content).toBe(
-      btoa(String.fromCharCode(...new Uint8Array(8).fill(0xff))),
+      btoa("\u00ff".repeat(8)),
     )
     expect(submitProblemReport.mock.calls[0][0]).toMatchObject({
       orderNumber: "1043",
