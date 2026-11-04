@@ -1,4 +1,8 @@
 const accessibleOrder = jest.fn()
+const notifyProblemReportReceived = jest.fn()
+jest.mock("../../../../../workflows/utils/webshop-mail/problem-report-received-mail", () => ({
+  notifyProblemReportReceived: (...args: unknown[]) => notifyProblemReportReceived(...args),
+}))
 const createReport = jest.fn()
 jest.mock("../../../../../workflows/utils/problem-report/report", () => ({
   accessibleOrder: (...args: unknown[]) => accessibleOrder(...args),
@@ -35,12 +39,19 @@ const run = async (over: Record<string, unknown> = {}) => {
 }
 
 beforeEach(() => {
-  accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"] })
+  accessibleOrder.mockResolvedValue({
+    id: "order_1",
+    itemIds: ["item_1"],
+    displayId: 1042,
+    email: "vevo@example.hu",
+  })
+  notifyProblemReportReceived.mockResolvedValue({ sent: true })
   createReport.mockResolvedValue({ status: "created", id: "rep_1", createdAt: "2026-11-04T10:00:00.000Z" })
 })
 afterEach(() => {
   accessibleOrder.mockReset()
   createReport.mockReset()
+  notifyProblemReportReceived.mockReset()
 })
 
 describe("POST /store/guest-orders/problem", () => {
@@ -66,6 +77,26 @@ describe("POST /store/guest-orders/problem", () => {
       photoIds: ["img_1"],
     })
     expect(input.receivedAt).toEqual(new Date("2026-11-03T10:00:00+01:00"))
+  })
+
+  it("sends the acknowledgement once, for the new report, with the order's own address", async () => {
+    await run()
+    expect(notifyProblemReportReceived).toHaveBeenCalledTimes(1)
+    expect(notifyProblemReportReceived.mock.calls[0][1]).toEqual({
+      order: { id: "order_1", displayId: 1042, email: "vevo@example.hu" },
+      reportId: "rep_1",
+    })
+  })
+
+  it("sends no acknowledgement when nothing was filed (a miss, a bad item, a bad photo)", async () => {
+    accessibleOrder.mockResolvedValue(null)
+    await run()
+    accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1, email: "a@b.hu" })
+    createReport.mockResolvedValue({ status: "bad_items" })
+    await run()
+    createReport.mockResolvedValue({ status: "bad_photos" })
+    await run()
+    expect(notifyProblemReportReceived).not.toHaveBeenCalled()
   })
 
   it("a missing time and phone are null", async () => {

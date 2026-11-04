@@ -26,6 +26,8 @@ export type MailToSend = {
     | "order-payment-link"
     | "order-payment-reminder"
     | "order-split"
+    // the acknowledgement of a problem report (OS-rendered only: it has no built-in text)
+    | "problem-report-received"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string

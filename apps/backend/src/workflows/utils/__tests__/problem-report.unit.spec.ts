@@ -138,6 +138,9 @@ describe("accessibleOrder", () => {
     expect(await accessibleOrder(container, 1042, "  vevo@example.hu ")).toEqual({
       id: "order_1",
       itemIds: ["item_1", "item_2"],
+      // what the acknowledgement mail needs: the number and the order's own address
+      displayId: 1042,
+      email: "Vevo@Example.hu",
     })
   })
 

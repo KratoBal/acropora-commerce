@@ -38,6 +38,9 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   "order-payment-reminder",
   "payment-refunded",
   "order-split",
+  // the twelfth (V1.2 slice 4, Balázs 2026-11-04): the acknowledgement of a problem report; the OS has no text for
+  // it on an older version and answers 422, so the mail waits in the outbox until the OS knows the template
+  "problem-report-received",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]
 
@@ -97,6 +100,8 @@ export type WebshopMailFactsOf = {
   "payment-refunded": CommonFacts & { refund: RefundMailFacts }
   /** The split notice: the part that comes now (`order`), the one that comes later, and how both are paid. */
   "order-split": CommonFacts & { order: LoadedOrder; split_order: LoadedOrder; payment: "card" | "cod" | "store" | "transfer" }
+  /** The order's number and the case reference the customer was given when filing; nothing else of the report. */
+  "problem-report-received": CommonFacts & { display_id: number | string; report_id: string }
 }
 
 /** The render request for one template. */
