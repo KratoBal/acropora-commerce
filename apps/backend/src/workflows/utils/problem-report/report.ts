@@ -179,6 +179,34 @@ const releasePhotos = async (container: MedusaContainer, reportId: string): Prom
   await pg.raw(`UPDATE order_problem_image SET report_id = NULL, updated_at = now() WHERE report_id = ?`, [reportId])
 }
 
+/** How long a photo may sit under a claim (`claim_…`) before the claim is taken to be abandoned. */
+export const STALE_CLAIM_MS = 60 * 60 * 1000
+
+/**
+ * Gives back the photos a report flow left under a temporary claim: the process stopped between the claim and the
+ * report (a restart, a crash), so no report will ever carry them, and under `claim_…` they count towards no cap and
+ * no other report may take them (barracuda, #667 review). A live claim lasts a few statements, so one an hour old is
+ * abandoned. Returns the number of photos given back. The uploads themselves stay: they are free again for the
+ * customer's next report, or for the shop's own cleanup of unsent uploads.
+ */
+export const releaseStaleClaims = async (
+  container: MedusaContainer,
+  now: Date = new Date(),
+  olderThanMs: number = STALE_CLAIM_MS,
+): Promise<number> => {
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION) as unknown as {
+    raw(sql: string, bindings: unknown[]): Promise<{ rows?: { id: string }[] }>
+  }
+  const cutoff = new Date(now.getTime() - olderThanMs)
+  const result = await pg.raw(
+    `UPDATE order_problem_image SET report_id = NULL, updated_at = now()
+     WHERE left(report_id, 6) = 'claim_' AND deleted_at IS NULL AND updated_at < ?
+     RETURNING id`,
+    [cutoff],
+  )
+  return (result?.rows ?? []).length
+}
+
 export type CreateReportResult =
   | { status: "created"; id: string; createdAt: string }
   | { status: "bad_items" }
