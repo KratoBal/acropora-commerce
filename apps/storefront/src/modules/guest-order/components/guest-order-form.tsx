@@ -95,7 +95,7 @@ export default function GuestOrderForm() {
           </p>
         )}
       </form>
-      {orders && <GuestOrderView orders={orders} />}
+      {orders && <GuestOrderView orders={orders} email={email.trim()} />}
     </div>
   )
 }

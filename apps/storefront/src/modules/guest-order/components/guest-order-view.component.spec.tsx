@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import type { GuestOrder } from "@lib/util/guest-order"
@@ -25,7 +25,9 @@ const base: GuestOrder = {
     updated_at: "2026-11-04T08:00:00.000Z",
     history: [],
   },
-  items: [{ title: "Reef Pump (Nagy)", quantity: 2, total: 12000 }],
+  items: [
+    { id: "item_1", title: "Reef Pump (Nagy)", quantity: 2, total: 12000 },
+  ],
   shipping: {
     method_name: "Foxpost csomagpont",
     pickup_point: { name: "Pont 1", address: "1011 Budapest, Fő u. 1." },
@@ -194,5 +196,26 @@ describe("a mixed cart's two orders", () => {
     expect(text).not.toContain("Csomagszám")
     expect(text).not.toContain("csomagszám")
     expect(text).toContain("A rendelésed átvehető.")
+  })
+})
+
+describe("the problem button", () => {
+  it("is drawn only with the address the orders were opened with, and opens the form of THAT order", () => {
+    const { rerender } = render(<GuestOrderView orders={[base]} />)
+    expect(screen.queryByTestId("problem-open-1042")).toBeNull()
+    rerender(<GuestOrderView orders={[base]} email="vevo@example.hu" />)
+    fireEvent.click(screen.getByTestId("problem-open-1042"))
+    expect(screen.getByTestId("problem-form-1042")).toBeTruthy()
+    expect(screen.queryByTestId("problem-open-1042")).toBeNull()
+  })
+
+  it("is not drawn for an order with no lines", () => {
+    render(
+      <GuestOrderView
+        orders={[{ ...base, items: [] }]}
+        email="vevo@example.hu"
+      />,
+    )
+    expect(screen.queryByTestId("problem-open-1042")).toBeNull()
   })
 })

@@ -12,6 +12,10 @@ import {
   type GuestOrder,
 } from "@lib/util/guest-order"
 import { convertToLocale } from "@lib/util/money"
+import { Button } from "@modules/common/components/ui"
+import { useState } from "react"
+
+import ProblemReportForm from "./problem-report-form"
 
 /**
  * THE GUEST ORDER PAGE'S ANSWER (V1.1): one block per order, a mixed cart's two orders under one
@@ -21,7 +25,17 @@ import { convertToLocale } from "@lib/util/money"
  * NOTHING HERE IS BUILT BY THE SHOP: the tracking button is the link the carrier gave, and without
  * one the page says so and shows the number only.
  */
-export default function GuestOrderView({ orders }: { orders: GuestOrder[] }) {
+export default function GuestOrderView({
+  orders,
+  email,
+}: {
+  orders: GuestOrder[]
+  /**
+   * The address the customer opened the orders with. With it, each order offers the problem report
+   * ("Probléma a szállítmánnyal", V1.2); without it (a display with no way to file) the button is not drawn.
+   */
+  email?: string
+}) {
   const locale = useLocale()
   const t = translator(locale)
   const ordered = orderedForPage(orders)
@@ -40,6 +54,7 @@ export default function GuestOrderView({ orders }: { orders: GuestOrder[] }) {
         <OrderBlock
           key={String(order.display_id)}
           order={order}
+          email={email}
           heading={
             split
               ? order.shipping?.store_pickup
@@ -56,12 +71,15 @@ export default function GuestOrderView({ orders }: { orders: GuestOrder[] }) {
 function OrderBlock({
   order,
   heading,
+  email,
 }: {
   order: GuestOrder
   heading: string | null
+  email?: string
 }) {
   const locale = useLocale()
   const t = translator(locale)
+  const [reporting, setReporting] = useState(false)
   const money = (amount: number) =>
     convertToLocale({ amount, currency_code: order.currency_code })
   const status = order.business_status
@@ -209,6 +227,28 @@ function OrderBlock({
           </span>
         </li>
       </ul>
+
+      {email && order.items.length > 0 && (
+        <div className="flex flex-col gap-y-3">
+          {!reporting && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setReporting(true)}
+              data-testid={`problem-open-${order.display_id}`}
+            >
+              {t("guestOrder.problem.openButton")}
+            </Button>
+          )}
+          {reporting && (
+            <ProblemReportForm
+              order={order}
+              email={email}
+              onClose={() => setReporting(false)}
+            />
+          )}
+        </div>
+      )}
     </section>
   )
 }

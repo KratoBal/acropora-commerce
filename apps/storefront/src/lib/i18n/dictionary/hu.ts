@@ -1097,5 +1097,49 @@ export const hu = {
         text: "A visszatérítés egy része megtörtént. [KITÖLTENDŐ: mikor kerül a számládra]",
       },
     },
+    problem: {
+      openButton: "Probléma a szállítmánnyal",
+      title: "Probléma a szállítmánnyal",
+      intro:
+        "Írd le, mi történt, és ha tudsz, csatolj fényképet. Minél előbb jelzed, annál gyorsabban tudunk segíteni.",
+      liveNote:
+        "Élő állatnál kérjük, a hibát még az átvétel napján, vagy minél előbb jelezd, fényképpel. A gyors jelzés és a kép segít, hogy gyorsan dönthessünk. [KITÖLTENDŐ: pontos jelzési határidő és annak jogi megfogalmazása]",
+      itemsLabel: "Melyik terméket érinti?",
+      kindLabel: "Mi a probléma?",
+      kindPlaceholder: "Válassz…",
+      kindAnimalDead: "Az állat elpusztult",
+      kindAnimalHurt: "Az állat sérült vagy beteg",
+      kindItemDamaged: "A termék sérült vagy hibás",
+      kindItemMissing: "Hiányzik egy tétel",
+      kindOther: "Más",
+      receivedLabel: "Mikor vetted át a csomagot?",
+      descriptionLabel: "Mi történt pontosan?",
+      descriptionHelp: "Röviden írd le, mit látsz.",
+      phoneLabel: "Telefonszám (nem kötelező)",
+      phoneHelp: "Ha gyorsabban tudunk segíteni telefonon, itt érhetünk el.",
+      photosLabel: "Fényképek",
+      photosHelp:
+        "Az állatról és a csomagolásról is készíts képet, lehetőleg jó fényben.",
+      addPhoto: "Kép hozzáadása",
+      removePhoto: "Eltávolítás",
+      photoErrorSize:
+        "Ez a fájl túl nagy. A legnagyobb engedélyezett méret: 5 MB. [KITÖLTENDŐ: méret]",
+      photoErrorType:
+        "Ez a fájltípus nem támogatott. Használj JPG vagy PNG képet.",
+      photoErrorCount:
+        "Legfeljebb 5 képet csatolhatsz. [KITÖLTENDŐ: darabszám]",
+      photoErrorUpload: "A(z) {name} képet nem tudtuk feltölteni.",
+      submit: "Bejelentés elküldése",
+      sending: "Küldés…",
+      close: "Bezárás",
+      errorItems: "Jelöld meg legalább egy terméket.",
+      errorKind: "Válaszd ki, mi a probléma.",
+      errorDescription: "Írd le röviden, mi történt.",
+      errorPhone:
+        "A telefonszám csak számjegyet, szóközt, plusz- és kötőjelet tartalmazhat.",
+      errorSend:
+        "A bejelentést most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
+      done: "Megkaptuk a bejelentésedet. Az ügy azonosítója: {id}. [KITÖLTENDŐ: válaszidő] belül jelentkezünk.",
+    },
   },
 } as const
