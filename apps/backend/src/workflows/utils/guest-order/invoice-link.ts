@@ -15,7 +15,8 @@ import { createHmac } from "node:crypto"
 export const INVOICE_SECRET_ENV = "WEBSHOP_INVOICE_SECRET"
 export const INVOICE_URL_ENV = "ACROPORA_OS_INVOICE_URL"
 export const SECRET_MIN_LENGTH = 32
-const DOWNLOAD_PATH = "/integrations/webshop-invoice/download/"
+const DOWNLOAD_SEGMENT = "download/"
+const LINK_SEGMENT = "/link"
 const DOCUMENT_TYPES = ["INVOICE", "ADVANCE_INVOICE", "FINAL_INVOICE", "CORRECTION"] as const
 
 export type InvoiceLinkConfig = { secret: string; url: string }
@@ -46,14 +47,29 @@ export const signLinkRequest = (secret: string, orderId: string, ts: number): st
   return createHmac("sha256", key).update(`link-v1|${orderId}|${ts}`).digest("base64url")
 }
 
-/** A document the OS gave, kept only if it is exactly the shape the page draws and its link is a download link. */
-const documentOf = (value: unknown): GuestInvoiceDocument | null => {
+/**
+ * Where a download link of THIS OS must start: the origin of the link endpoint the shop is configured with, and the same path
+ * prefix with `/download/` in place of `/link` (barracuda, #671 review: a link to another host with the right path would
+ * otherwise pass). The OS gives its public API address for the links and the shop calls the same host, so the two origins agree.
+ */
+const downloadPrefixOf = (linkUrl: string): { origin: string; path: string } | null => {
+  try {
+    const url = new URL(linkUrl)
+    const base = url.pathname.endsWith(LINK_SEGMENT) ? url.pathname.slice(0, -LINK_SEGMENT.length) : url.pathname
+    return { origin: url.origin, path: `${base.replace(/\/+$/, "")}/${DOWNLOAD_SEGMENT}` }
+  } catch {
+    return null
+  }
+}
+
+/** A document the OS gave, kept only if it is exactly the shape the page draws and its link is a download link of this OS. */
+const documentOf = (value: unknown, allowed: { origin: string; path: string }): GuestInvoiceDocument | null => {
   if (typeof value !== "object" || value === null) return null
   const row = value as Record<string, unknown>
   if (typeof row.url !== "string" || !(DOCUMENT_TYPES as readonly unknown[]).includes(row.document_type)) return null
   try {
     const url = new URL(row.url)
-    if ((url.protocol !== "https:" && url.protocol !== "http:") || !url.pathname.includes(DOWNLOAD_PATH)) return null
+    if (url.origin !== allowed.origin || !url.pathname.startsWith(allowed.path)) return null
   } catch {
     return null
   }
@@ -89,7 +105,9 @@ export const requestInvoiceLinks = async (
     if (response.status !== 200) return { kind: "unavailable" }
     const body = (await response.json()) as { documents?: unknown }
     if (!Array.isArray(body?.documents)) return { kind: "unavailable" }
-    const documents = body.documents.map(documentOf)
+    const allowed = downloadPrefixOf(config.url)
+    if (!allowed) return { kind: "unavailable" }
+    const documents = body.documents.map((document) => documentOf(document, allowed))
     // one malformed row is a malformed answer: the shop does not hand out a half-trusted list
     return documents.every((document) => document !== null)
       ? { kind: "ok", documents: documents as GuestInvoiceDocument[] }
