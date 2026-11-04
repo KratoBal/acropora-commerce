@@ -36,6 +36,7 @@ import {
   ArAlattiSor,
   DoaGarancia,
   KiszerelesSor,
+  OmnibusSor,
 } from "./components/vasarlas/dobozok"
 import { TermekTudasBlokk } from "./templates/muszaki-lap/termek-tudas"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
@@ -271,5 +272,38 @@ describe("a képek alt-szövege", () => {
     expect(galeriaAlt("Eheim Skim", 1, 3, en)).toBe("Eheim Skim (image 2)")
     expect(galeriaAlt("Eheim Skim", 0, 3, en)).toBe("Eheim Skim")
     expect(hu("product.imageAlt", { title: "A", n: 2 })).toBe("A (2. kép)")
+  })
+})
+
+describe("az Omnibus-sor angolul", () => {
+  it("teljes és rövid történetnél is angol mondat, magyar betű nélkül", () => {
+    const { rerender } = render(
+      <OmnibusSor
+        referencia={{
+          amount: 12500,
+          currencyCode: "huf",
+          complete: true,
+          historyBegins: "2026-09-01",
+        }}
+      />,
+    )
+    const teljes = screen.getByTestId("vaz-omnibus-sor").textContent ?? ""
+    expect(teljes).toContain(
+      "Lowest price in the 30 days before the price reduction:",
+    )
+    expect(teljes).not.toMatch(MAGYAR_BETU)
+    rerender(
+      <OmnibusSor
+        referencia={{
+          amount: 1500,
+          currencyCode: "huf",
+          complete: false,
+          historyBegins: "2026-10-25",
+        }}
+      />,
+    )
+    const rovid = screen.getByTestId("vaz-omnibus-sor").textContent ?? ""
+    expect(rovid).not.toContain("30 days")
+    expect(rovid).toContain("25 Oct 2026")
   })
 })

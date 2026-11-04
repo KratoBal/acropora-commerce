@@ -1,4 +1,5 @@
 import { listProducts } from "@lib/data/products"
+import { VASARLAS_KERET_MEZOK } from "@lib/util/termeklista-mezok"
 import { HttpTypes } from "@medusajs/types"
 
 import { VasarlasProvider } from "@modules/products/components/vasarlas/allapot"
@@ -72,7 +73,7 @@ export default async function VasarlasKeret({
   children: React.ReactNode
 }) {
   const product = await listProducts({
-    queryParams: { id: [id] },
+    queryParams: { id: [id], fields: VASARLAS_KERET_MEZOK },
     regionId: region.id,
   }).then(({ response }) => response.products[0])
 

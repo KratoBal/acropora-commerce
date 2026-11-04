@@ -655,6 +655,9 @@ export const hu = {
     uniqueNote: "Egyedi példány, nem pótolható",
     priceFrom: "{price}-tól",
     originalPrice: "Eredeti ár:",
+    omnibusLine: "Az árcsökkentés előtti 30 nap legalacsonyabb ára: {price}",
+    omnibusLineShort:
+      "Az árcsökkentés előtti legalacsonyabb ár ({since} óta kapható): {price}",
     unitPrice: "Egységár: {price}/{unit}",
     showPhoto: "{n}. fotó megjelenítése",
     imageAlt: "{title} ({n}. kép)",
