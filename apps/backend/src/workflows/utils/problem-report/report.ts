@@ -156,6 +156,21 @@ const claimPhotos = async (
   return (result?.rows ?? []).length === photoIds.length
 }
 
+/**
+ * Hands the photos a claim took over to the report that now exists. The claim was made under a temporary identifier
+ * (before the report was created, so a claim that fails leaves no report behind for the OS to pull); this is the
+ * second half. Only the photos of that one claim move.
+ */
+const attachPhotos = async (container: MedusaContainer, claimId: string, reportId: string): Promise<void> => {
+  const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION) as unknown as {
+    raw(sql: string, bindings: unknown[]): Promise<unknown>
+  }
+  await pg.raw(
+    `UPDATE order_problem_image SET report_id = ?, updated_at = now() WHERE report_id = ? AND deleted_at IS NULL`,
+    [reportId, claimId],
+  )
+}
+
 /** Gives back whatever photos a failed claim took, so they can go into another report. */
 const releasePhotos = async (container: MedusaContainer, reportId: string): Promise<void> => {
   const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION) as unknown as {
@@ -225,26 +240,47 @@ export const createReport = async (
   // the same problem already reported: answer with the case reference that stands, write nothing
   const standing = await standingReports(svc, order.id, input.kind, itemIds, now)
   if (standing.length) return { status: "duplicate", id: standing[0]!.id }
-  const report = await svc.createOrderProblemReports({
-    order_id: order.id,
-    kind: input.kind,
-    item_ids: itemIds,
-    received_at: input.receivedAt,
-    description: input.description,
-    phone: input.phone,
-    status: "new",
-  })
+  // The photos are taken BEFORE the report exists, under a temporary identifier: a claim that fails (another report
+  // took a photo between the check and now) then leaves no report behind. Done the other way round, the report was
+  // visible as "new" for a moment and the OS could pull one that was deleted a moment later (barracuda, #658 review).
+  const claimId = photoIds.length ? `claim_${randomBytes(8).toString("hex")}` : null
+  if (claimId && !(await claimPhotos(container, order.id, claimId, photoIds))) {
+    // nothing of this send may stay: the photos it did take go back
+    await releasePhotos(container, claimId)
+    return { status: "bad_photos" }
+  }
+  let report: { id: string; created_at: Date | string }
+  try {
+    report = await svc.createOrderProblemReports({
+      order_id: order.id,
+      kind: input.kind,
+      item_ids: itemIds,
+      received_at: input.receivedAt,
+      description: input.description,
+      phone: input.phone,
+      status: "new",
+    })
+  } catch (error) {
+    // the photos must not stay under a claim no report will ever carry
+    if (claimId) await releasePhotos(container, claimId)
+    throw error
+  }
   // two sends that raced past the check above: the fixed order decides which one stands, the other removes itself
   const standingNow = await standingReports(svc, order.id, input.kind, itemIds, now)
   if (standingNow.length && standingNow[0]!.id !== report.id) {
     await svc.deleteOrderProblemReports(report.id)
+    if (claimId) await releasePhotos(container, claimId)
     return { status: "duplicate", id: standingNow[0]!.id }
   }
-  if (photoIds.length && !(await claimPhotos(container, order.id, report.id, photoIds))) {
-    // another report took a photo between the check and now: nothing of this one may stay
-    await releasePhotos(container, report.id)
-    await svc.deleteOrderProblemReports(report.id)
-    return { status: "bad_photos" }
+  if (claimId) {
+    try {
+      await attachPhotos(container, claimId, report.id)
+    } catch (error) {
+      // a report without the photos the customer sent is worse than none: nothing of this one stays
+      await releasePhotos(container, claimId).catch(() => undefined)
+      await svc.deleteOrderProblemReports(report.id).catch(() => undefined)
+      throw error
+    }
   }
   return { status: "created", id: report.id, createdAt: new Date(report.created_at).toISOString() }
 }

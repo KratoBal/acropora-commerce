@@ -20,6 +20,12 @@ import { kindKey } from "@lib/util/problem-report"
 
 import ProblemReportForm from "./problem-report-form"
 
+/** `reports`: the order's list from the shop's answer, when it came with one. */
+export type ReportsChanged = (
+  displayId: GuestOrder["display_id"],
+  reports?: GuestProblemReport[],
+) => void
+
 /**
  * THE GUEST ORDER PAGE'S ANSWER (V1.1): one block per order, a mixed cart's two orders under one
  * notice. PURE DISPLAY: it gets the orders the backend named and draws them; the decisions
@@ -28,12 +34,6 @@ import ProblemReportForm from "./problem-report-form"
  * NOTHING HERE IS BUILT BY THE SHOP: the tracking button is the link the carrier gave, and without
  * one the page says so and shows the number only.
  */
-/** `reports`: the order's list from the shop's answer, when it came with one. */
-export type ReportsChanged = (
-  displayId: GuestOrder["display_id"],
-  reports?: GuestProblemReport[],
-) => void
-
 export default function GuestOrderView({
   orders,
   email,
