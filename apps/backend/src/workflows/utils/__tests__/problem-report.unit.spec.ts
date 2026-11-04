@@ -7,6 +7,8 @@ import {
   listReportsForOs,
   markPulled,
   photoFolderOf,
+  releaseStaleClaims,
+  STALE_CLAIM_MS,
   storePhoto,
   storePhotoWithinCap,
   unattachedPhotoCount,
@@ -106,6 +108,16 @@ function fakeContainer(orders: Row[]) {
               )
               for (const row of taken) row.report_id = reportId
               return { rows: taken.map((row) => ({ id: row.id })) }
+            }
+            if (/left\(report_id, 6\) = 'claim_'/.test(sql)) {
+              // the cleanup of abandoned claims: the cutoff is the only binding
+              const cutoff = bindings[0] as unknown as Date
+              const freed = images.filter(
+                (row) =>
+                  String(row.report_id ?? "").startsWith("claim_") && new Date(row.updated_at ?? 0) < cutoff,
+              )
+              for (const row of freed) row.report_id = null
+              return { rows: freed.map((row) => ({ id: row.id })) }
             }
             if (/SET report_id = NULL/.test(sql)) {
               for (const row of images) if (row.report_id === bindings[0]) row.report_id = null
@@ -419,6 +431,49 @@ describe("createReport: the same problem twice", () => {
     const photo = await storePhoto(container, "order_1", Buffer.from([0xff, 0xd8, 0xff]), { ext: "jpg", mime: "image/jpeg" })
     expect((await createReport(container, access, { ...input, photoIds: [photo.id] }, SOON)).status).toBe("duplicate")
     expect(images.find((row) => row.id === photo.id)!.report_id).toBeNull()
+  })
+})
+
+describe("releaseStaleClaims (barracuda, #667 review)", () => {
+  const NOW = new Date("2026-11-04T12:00:00.000Z")
+  const rows = [
+    // abandoned: claimed two hours ago and never attached
+    { id: "img_old", order_id: "order_1", report_id: "claim_aaaa", updated_at: new Date("2026-11-04T10:00:00Z") },
+    // live: claimed a minute ago (the request may still be running)
+    { id: "img_new", order_id: "order_1", report_id: "claim_bbbb", updated_at: new Date("2026-11-04T11:59:00Z") },
+    // attached to a real report, however old
+    { id: "img_done", order_id: "order_1", report_id: "ordprb_01", updated_at: new Date("2026-11-01T10:00:00Z") },
+    // an unsent upload
+    { id: "img_free", order_id: "order_1", report_id: null, updated_at: new Date("2026-11-01T10:00:00Z") },
+  ]
+
+  it("frees only the claims older than the limit, and counts them", async () => {
+    const { container, images } = fakeContainer([ORDER])
+    images.push(...rows.map((row) => ({ ...row })))
+    expect(await releaseStaleClaims(container, NOW)).toBe(1)
+    const by = (id: string) => images.find((row) => row.id === id)!.report_id
+    expect([by("img_old"), by("img_new"), by("img_done"), by("img_free")]).toEqual([
+      null,
+      "claim_bbbb",
+      "ordprb_01",
+      null,
+    ])
+  })
+
+  it("the limit is an hour, and a claim exactly at it is not yet abandoned", async () => {
+    expect(STALE_CLAIM_MS).toBe(60 * 60 * 1000)
+    const { container, images } = fakeContainer([ORDER])
+    images.push({ id: "edge", order_id: "order_1", report_id: "claim_c", updated_at: new Date(NOW.getTime() - STALE_CLAIM_MS) })
+    expect(await releaseStaleClaims(container, NOW)).toBe(0)
+  })
+
+  it("nothing to free is zero, and a freed photo can go into a report again", async () => {
+    const { container, images } = fakeContainer([ORDER])
+    expect(await releaseStaleClaims(container, NOW)).toBe(0)
+    images.push({ id: "img_old", order_id: "order_1", report_id: "claim_aaaa", updated_at: new Date("2026-11-04T10:00:00Z") })
+    await releaseStaleClaims(container, NOW)
+    const result = await createReport(container, { id: "order_1", itemIds: ["item_1"] }, { ...input, photoIds: ["img_old"] })
+    expect(result.status).toBe("created")
   })
 })
 
