@@ -94,6 +94,33 @@ describe("POST /api/problem-photo", () => {
     expect(valasz.status).toBe(200)
   })
 
+  it("takes the first entry of a forwarded host list, ignores the case and the default port (barracuda, #668 review)", async () => {
+    for (const fejlec of [
+      {
+        host: "10.0.0.5:8000",
+        "x-forwarded-host": "shop.example.hu, proxy.internal",
+      },
+      { host: "10.0.0.5:8000", "x-forwarded-host": "SHOP.example.hu" },
+      { host: "10.0.0.5:8000", "x-forwarded-host": "shop.example.hu:443" },
+      { host: "shop.example.hu:443" },
+    ]) {
+      const valasz = await POST(keres(body(), fejlec))
+      expect(valasz.status).toBe(200)
+    }
+  })
+
+  it("still refuses a list whose first entry is another host, and a non-default port that differs", async () => {
+    for (const fejlec of [
+      {
+        host: "10.0.0.5:8000",
+        "x-forwarded-host": "evil.example, shop.example.hu",
+      },
+      { host: "10.0.0.5:8000", "x-forwarded-host": "shop.example.hu:8443" },
+    ]) {
+      expect((await POST(keres(body(), fejlec))).status).toBe(403)
+    }
+  })
+
   it("is 413 over the limit by the content-length, and the backend is not called", async () => {
     const valasz = await POST(
       keres(body(), {
