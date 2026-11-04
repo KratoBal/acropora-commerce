@@ -1109,6 +1109,10 @@ export const en: Dictionary = {
         "The phone number may contain only digits, spaces, plus and hyphen signs.",
       errorSend:
         "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: [TO BE FILLED IN: contact].",
+      reportsTitle: "Reports you have already filed",
+      reportRef: "Case reference: {id}",
+      stageReceived: "Received",
+      stageInProgress: "Taken over by our team",
       done: "We have received your report. The case reference is {id}. We will get back to you within [TO BE FILLED IN: response time].",
     },
   },

@@ -15,6 +15,8 @@ import { convertToLocale } from "@lib/util/money"
 import { Button } from "@modules/common/components/ui"
 import { useState } from "react"
 
+import { kindKey } from "@lib/util/problem-report"
+
 import ProblemReportForm from "./problem-report-form"
 
 /**
@@ -227,6 +229,43 @@ function OrderBlock({
           </span>
         </li>
       </ul>
+
+      {order.problem_reports && order.problem_reports.length > 0 && (
+        <div
+          className="flex flex-col gap-y-1 text-[14px] text-acr-ink"
+          data-testid={`problem-reports-${order.display_id}`}
+        >
+          <p className="text-[11px] font-bold tracking-[0.08em] text-acr-slate">
+            {t("guestOrder.problem.reportsTitle")}
+          </p>
+          <ul className="flex flex-col gap-y-2">
+            {order.problem_reports.map((report) => (
+              <li key={report.id} className="flex flex-col">
+                <span>
+                  {t(kindKey(report.kind))} ·{" "}
+                  {new Intl.DateTimeFormat(
+                    locale === "hu" ? "hu-HU" : "en-GB",
+                    {
+                      timeZone: "Europe/Budapest",
+                      year: "numeric",
+                      month: locale === "hu" ? "numeric" : "short",
+                      day: "numeric",
+                    },
+                  ).format(new Date(report.created_at))}
+                </span>
+                <span className="text-[13px] text-acr-slate">
+                  {t("guestOrder.problem.reportRef", { id: report.id })} ·{" "}
+                  {t(
+                    report.stage === "in_progress"
+                      ? "guestOrder.problem.stageInProgress"
+                      : "guestOrder.problem.stageReceived",
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {email && order.items.length > 0 && (
         <div className="flex flex-col gap-y-3">
