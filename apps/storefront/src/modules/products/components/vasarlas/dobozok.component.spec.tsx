@@ -1,7 +1,12 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { ArAlattiSor, ElerhetosegDoboz, KiszerelesSor } from "./dobozok"
+import {
+  ArAlattiSor,
+  ElerhetosegDoboz,
+  KiszerelesSor,
+  OmnibusSor,
+} from "./dobozok"
 
 afterEach(cleanup)
 
@@ -275,5 +280,53 @@ describe("a kiszerelés sora", () => {
     const { container } = render(<KiszerelesSor />)
 
     expect(container.firstChild).toBeNull()
+  })
+})
+
+/*
+  AZ OMNIBUS-SOR (V0.2, 3. szelet). MI PIROSIT: ha referencia nelkul is kirajzolna valamit; ha a teljes
+  tortenetnel nem a 30 napos mondat allna; ha a 30 napnal fiatalabb tortenetnel is a "30 nap" szo
+  allna (valotlan allitas), vagy a kezdonap kimaradna; ha az osszeg nem tagolt forint.
+*/
+describe("az Omnibus-sor", () => {
+  it("referencia nélkül nem rajzol semmit", () => {
+    const { container } = render(<OmnibusSor referencia={null} />)
+    expect(container.innerHTML).toBe("")
+  })
+
+  it("teljes történetnél a 30 napos mondat áll, tagolt forinttal", () => {
+    render(
+      <OmnibusSor
+        referencia={{
+          amount: 12500,
+          currencyCode: "huf",
+          complete: true,
+          historyBegins: "2026-09-01",
+        }}
+      />,
+    )
+    const szoveg = screen.getByTestId("vaz-omnibus-sor").textContent ?? ""
+    expect(szoveg).toMatch(
+      /^Az árcsökkentés előtti 30 nap legalacsonyabb ára: 12\s500\sFt$/,
+    )
+  })
+
+  it("30 napnál fiatalabb történetnél NEM áll a 30 nap, hanem a kezdőnap", () => {
+    render(
+      <OmnibusSor
+        referencia={{
+          amount: 1500,
+          currencyCode: "huf",
+          complete: false,
+          historyBegins: "2026-10-25",
+        }}
+      />,
+    )
+    const szoveg = screen.getByTestId("vaz-omnibus-sor").textContent ?? ""
+    expect(szoveg).not.toContain("30 nap")
+    // the first price day of OUR history says nothing about availability
+    expect(szoveg).not.toMatch(/kapható/)
+    expect(szoveg).toContain("2026. 10. 25.")
+    expect(szoveg).toMatch(/1\s500\sFt$/)
   })
 })
