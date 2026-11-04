@@ -970,4 +970,85 @@ export const en: Dictionary = {
     shopName: "Acropora store",
     itemLine: "{title} · qty {quantity}",
   },
+  guestOrder: {
+    pageTitle: "View your order",
+    intro:
+      "Enter the order number and the e-mail address you used when you ordered, and we will show you the status of your order.",
+    orderNumberLabel: "Order number",
+    orderNumberHelp: "You will find it in the confirmation e-mail.",
+    emailLabel: "E-mail address",
+    emailHelp: "The address you ordered with.",
+    submit: "Show my order",
+    searching: "Searching…",
+    privacyNote:
+      "We use your details only to find the order. [TO BE FILLED IN: legal check]",
+    errorRequired: "Please fill in this field.",
+    errorEmail: "Please check the e-mail address, something is missing.",
+    errorNumber: "The order number consists of digits only.",
+    errorNotFound:
+      "We could not find the order with these details. Please check the order number and the e-mail address, or write to us: [TO BE FILLED IN: customer service contact].",
+    errorTooMany:
+      "There were too many unsuccessful attempts. Please try again in [TO BE FILLED IN: waiting time], or write to us.",
+    errorUnavailable:
+      "We cannot show the order right now. Please try again a little later, or write to us: [TO BE FILLED IN: customer service contact].",
+    splitNotice:
+      "This purchase consists of two orders, because it included live animals. One is delivered to you; the live animals can be collected in the store.",
+    blockShipped: "Products to be delivered",
+    blockPickup: "Live animals, collection in the store",
+    orderNumber: "Order #{number}",
+    placedOn: "Placed on: {date}",
+    statusHeading: "Status",
+    paymentHeading: "Payment",
+    itemsHeading: "Items",
+    shippingLine: "Shipping: {name}",
+    totalLine: "Total",
+    pickupPoint: "Pick-up point: {name}, {address}",
+    pickupPointNameOnly: "Pick-up point: {name}",
+    carrierLine: "Carrier: {carrier}",
+    trackingButton: "Track the parcel",
+    trackingNumber: "Tracking number: {number}",
+    trackingNone:
+      "The tracking number appears when the courier has taken over the parcel.",
+    trackingNoLink:
+      "Tracking is not available right now. You can look the parcel up with the tracking number on the carrier's site.",
+    status: {
+      pendingProcessing: {
+        label: "Received",
+        text: "We have received your order.",
+      },
+      confirmed: { label: "Confirmed", text: "We have confirmed your order." },
+      stocking: {
+        label: "Being prepared",
+        text: "We are putting your order together.",
+      },
+      outForDelivery: {
+        label: "On its way",
+        text: "The courier service has taken over the parcel.",
+      },
+      readyForPickup: {
+        label: "Ready for collection",
+        text: "Your order is ready for collection.",
+      },
+      closed: { label: "Received by you", text: "The order is closed." },
+      closedUnsuccessfully: {
+        label: "Closed unsuccessfully",
+        text: "The order could not be fulfilled. [TO BE FILLED IN: how and when the refund is made]",
+      },
+    },
+    payment: {
+      awaiting: {
+        label: "Awaiting payment",
+        text: "The payment has not arrived yet. [TO BE FILLED IN: deadline and what happens when it passes]",
+      },
+      paid: { label: "Paid", text: "The payment has arrived." },
+      refunded: {
+        label: "Refunded",
+        text: "The refund has been made. [TO BE FILLED IN: when it reaches your account]",
+      },
+      partiallyRefunded: {
+        label: "Partly refunded",
+        text: "Part of the refund has been made. [TO BE FILLED IN: when it reaches your account]",
+      },
+    },
+  },
 }
