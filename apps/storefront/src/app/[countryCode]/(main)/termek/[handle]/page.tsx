@@ -13,6 +13,7 @@ import { termekLapTorzs } from "@modules/products/templates/termek-lap-torzs"
 import { termeklapCanonical } from "@lib/util/lap-canonical"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
 import { listProducts } from "@lib/data/products"
+import { nemKaphatoTermek } from "@lib/data/nem-kaphato"
 import { translator } from "@lib/i18n/dictionary"
 import { ELADOTT_LAP_MEZOK, nemElerhetoLapCim } from "@lib/util/eladott-darab"
 import {
@@ -79,11 +80,27 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     queryParams: { handle, fields: ELADOTT_LAP_MEZOK },
   }).then(({ response }) => response.products[0])
 
+  const locale = localeOf(params.countryCode)
+
   if (!product) {
-    notFound()
+    // a kifutott termek lapja (V4.2): korall meta-szovegei, a lapcim a V2.4 vagasaval
+    const kifutott = await nemKaphatoTermek(handle)
+    if (!kifutott) notFound()
+    const t = translator(locale)
+    const cim = nemElerhetoLapCim(
+      kifutott.termek.title,
+      t("discontinued.metaTitlePrefix"),
+    )
+    const leiras = t("discontinued.metaDescription")
+    const canonical = termeklapCanonical(params.countryCode, params.handle)
+    return {
+      title: cim,
+      description: leiras,
+      alternates: { canonical },
+      openGraph: openGraph({ cim, leiras, url: canonical, locale, kepek: [] }),
+    }
   }
 
-  const locale = localeOf(params.countryCode)
   /*
     A NEM ELERHETO EGYEDI DARAB LAPCIME (V2.4): "Nem elérhető: [nev]", ugyanaz a
     dontes, mint a lap ELADVA allapota; jelen ideju, mert a nulla keszlet ma sem

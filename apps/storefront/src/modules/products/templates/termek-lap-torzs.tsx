@@ -4,6 +4,8 @@ import { termekMarka } from "@lib/data/brands"
 import { listCategories } from "@lib/data/categories"
 import { termekTudas } from "@lib/data/product-knowledge"
 import { listProducts } from "@lib/data/products"
+import { nemKaphatoTermek } from "@lib/data/nem-kaphato"
+import NemKaphatoLap from "@modules/products/templates/nem-kaphato-lap"
 import { getRegion } from "@lib/data/regions"
 import { TERMEKLAP_FIELDS } from "@lib/data/termeklap-fields"
 import { decodeHandleParam } from "@lib/util/decode-handle-param"
@@ -102,6 +104,17 @@ export async function termekLapTorzs(
   }).then(({ response }) => response.products[0])
 
   if (!pricedProduct) {
+    /*
+      A KIFUTOTT TERMEK NEM ZSAKUTCA (V4.2): ha a hatter a handle-re kifutott
+      termeket ad, a 404 helyett a nem kaphato lap all, helyettesitokkel. Csak
+      a kifutott jeloloju termekre valaszol, tehat egy keszulo termek handle-je
+      tovabbra is 404.
+    */
+    const kifutott = selectedVariantId
+      ? null
+      : await nemKaphatoTermek(decodeHandleParam(params.handle))
+    if (kifutott)
+      return <NemKaphatoLap adat={kifutott} countryCode={params.countryCode} />
     notFound()
   }
 
