@@ -1,4 +1,7 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http";
 import {
   ContainerRegistrationKeys,
   MedusaError,
@@ -23,7 +26,7 @@ import { AdminOrderShippingNoticeType } from "../validators";
  * mail. See `shipped.ts`.
  */
 export const POST = async (
-  req: MedusaRequest<AdminOrderShippingNoticeType>,
+  req: AuthenticatedMedusaRequest<AdminOrderShippingNoticeType>,
   res: MedusaResponse,
 ) => {
   const { order_id } = req.params;
