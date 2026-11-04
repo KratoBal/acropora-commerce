@@ -11,8 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 const uploadProblemPhoto = vi.fn()
 const submitProblemReport = vi.fn()
 vi.mock("@lib/data/problem-report", () => ({
-  uploadProblemPhoto: (...args: unknown[]) => uploadProblemPhoto(...args),
   submitProblemReport: (...args: unknown[]) => submitProblemReport(...args),
+}))
+// the photos go up on their own route now, not through a server action
+vi.mock("@lib/util/problem-photo-upload", () => ({
+  uploadProblemPhoto: (...args: unknown[]) => uploadProblemPhoto(...args),
 }))
 
 import type { GuestOrder } from "@lib/util/guest-order"

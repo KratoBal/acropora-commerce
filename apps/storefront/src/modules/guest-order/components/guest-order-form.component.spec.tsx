@@ -14,8 +14,10 @@ vi.mock("@lib/data/guest-order", () => ({
 }))
 const submitProblemReport = vi.fn()
 vi.mock("@lib/data/problem-report", () => ({
-  uploadProblemPhoto: vi.fn(),
   submitProblemReport: (...args: unknown[]) => submitProblemReport(...args),
+}))
+vi.mock("@lib/util/problem-photo-upload", () => ({
+  uploadProblemPhoto: vi.fn(),
 }))
 
 import GuestOrderForm from "./guest-order-form"
