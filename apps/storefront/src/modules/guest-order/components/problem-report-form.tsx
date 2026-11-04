@@ -6,7 +6,7 @@ import {
 } from "@lib/data/problem-report"
 import { translator, type Key } from "@lib/i18n/dictionary"
 import { useLocale } from "@lib/i18n/use-translate"
-import type { GuestOrder } from "@lib/util/guest-order"
+import type { GuestOrder, GuestProblemReport } from "@lib/util/guest-order"
 import {
   isAnimalKind,
   kindKey,
@@ -51,7 +51,11 @@ export default function ProblemReportForm({
   email: string
   onClose: () => void
   /** The shop took the report, or said the problem is already reported: the list under the order may have changed. */
-  onFiled?: () => void
+  /**
+   * The report is filed (with the order's list of reports as the shop answered it) or refused as already reported
+   * (no list: the failed answer carries nothing but its status).
+   */
+  onFiled?: (reports?: GuestProblemReport[]) => void
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -143,7 +147,7 @@ export default function ProblemReportForm({
       })
       if (result.ok) {
         setDoneId(result.reportId)
-        onFiled?.()
+        onFiled?.(result.problemReports)
       } else {
         if (result.failure === "duplicate") onFiled?.()
         // "invalid" may mean a photo the shop no longer accepts: the next try uploads them afresh
