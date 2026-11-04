@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+import { notifyProblemReportReceived } from "../../../../workflows/utils/webshop-mail/problem-report-received-mail"
 import { accessibleOrder, createReport } from "../../../../workflows/utils/problem-report/report"
 import { cleanDescription, cleanPhone } from "../../../../workflows/utils/problem-report/rules"
 import type { StorePostGuestProblemType } from "./validators"
@@ -37,5 +38,10 @@ export const POST = async (req: MedusaRequest<StorePostGuestProblemType>, res: M
     res.status(400).json({ type: "invalid_photos", message: "Az egyik kép nem használható ehhez a bejelentéshez." })
     return
   }
+  // the customer's acknowledgement mail: its failure never changes the answer (the report is filed)
+  await notifyProblemReportReceived(req.scope, {
+    order: { id: order.id, displayId: order.displayId, email: order.email },
+    reportId: result.id,
+  })
   res.status(201).json({ report_id: result.id, created_at: result.createdAt })
 }

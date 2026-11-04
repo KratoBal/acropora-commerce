@@ -91,6 +91,8 @@ export const displayIdOf = (facts: Record<string, unknown>): string | number | n
     return typeof id === "string" || typeof id === "number" ? id : null
   }
   return (
+    // a template that carries the number at the top (the problem report acknowledgement)
+    pick(facts) ??
     pick(facts.order) ??
     pick(facts.shipped) ??
     pick(facts.refund) ??

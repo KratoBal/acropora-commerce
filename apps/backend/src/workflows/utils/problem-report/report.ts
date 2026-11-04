@@ -14,7 +14,13 @@ import { MAX_PHOTOS, type PhotoType } from "./rules"
  * report only with the same pair the guest lookup takes (the order number and the address it was ordered with),
  * and every miss is ONE answer (`null`): no such order, a wrong address, an order of another customer.
  */
-export type AccessibleOrder = { id: string; itemIds: string[] }
+export type AccessibleOrder = {
+  id: string
+  itemIds: string[]
+  /** what the acknowledgement mail needs: the number the customer knows and the order's own address */
+  displayId: number | string
+  email: string | null
+}
 
 /** The order the pair opens, with its line item ids, or null. The address is compared trimmed and lower case. */
 export const accessibleOrder = async (
@@ -27,11 +33,21 @@ export const accessibleOrder = async (
   const { data } = await query.graph({
     entity: "order",
     filters: { display_id: displayId } as Record<string, unknown>,
-    fields: ["id", "email", "items.id"],
+    fields: ["id", "display_id", "email", "items.id"],
   })
-  const order = (data?.[0] ?? null) as { id: string; email?: string | null; items?: ({ id: string } | null)[] } | null
+  const order = (data?.[0] ?? null) as {
+    id: string
+    display_id?: number | string
+    email?: string | null
+    items?: ({ id: string } | null)[]
+  } | null
   if (!order || emailKey(order.email) !== emailKey(email)) return null
-  return { id: order.id, itemIds: (order.items ?? []).filter(Boolean).map((item) => item!.id) }
+  return {
+    id: order.id,
+    itemIds: (order.items ?? []).filter(Boolean).map((item) => item!.id),
+    displayId: order.display_id ?? displayId,
+    email: order.email ?? null,
+  }
 }
 
 const service = (container: MedusaContainer) =>
@@ -157,7 +173,7 @@ export type CreateReportResult =
  */
 export const createReport = async (
   container: MedusaContainer,
-  order: AccessibleOrder,
+  order: Pick<AccessibleOrder, "id" | "itemIds">,
   input: ProblemInput,
 ): Promise<CreateReportResult> => {
   const unique = (ids: string[]) => [...new Set(ids)]
