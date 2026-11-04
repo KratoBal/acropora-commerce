@@ -27,7 +27,7 @@ export type GuestOrderSource = {
   total: number
   currency_code: string
   payment_status: string | null
-  items: { title: string; quantity: number; total: number }[]
+  items: { id: string; title: string; quantity: number; total: number }[]
   shipping_method: {
     name: string
     data?: Record<string, unknown> | null
@@ -52,7 +52,7 @@ export type GuestOrderView = {
   /** a whitelisted Medusa payment status, or null */
   payment_status: string | null
   business_status: GuestOrderStatus | null
-  items: { title: string; quantity: number; total: number }[]
+  items: { id: string; title: string; quantity: number; total: number }[]
   shipping: {
     method_name: string
     pickup_point: { name: string; address: string } | null
@@ -105,6 +105,7 @@ export const guestOrderView = (source: GuestOrderSource, status: GuestOrderStatu
   payment_status: source.payment_status && PAYMENT_STATUSES.has(source.payment_status) ? source.payment_status : null,
   business_status: status,
   items: source.items.map((item) => ({
+    id: item.id,
     title: item.title,
     quantity: item.quantity,
     total: item.total,

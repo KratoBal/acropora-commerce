@@ -157,6 +157,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/order-business-status",
     },
+    // the problem reports customers file from the order page (V1.2); the OS pulls them
+    {
+      resolve: "./src/modules/order-problem-report",
+    },
     // the shop's mails on their way to the OS renderer (Levélsablonok)
     {
       resolve: "./src/modules/webshop-mail-outbox",

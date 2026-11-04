@@ -64,11 +64,15 @@ import { guardOrderRead } from "./order-read-guard";
 import {
   guestOrderAddressAttempts,
   guestOrderNumberAttempts,
+  guestProblemAddressAttempts,
+  guestProblemNumberAttempts,
   promotionAttempts,
   signInAttempts,
   signUpAttempts,
 } from "./attempt-limits";
 import { StorePostGuestOrderLookup } from "./store/guest-orders/lookup/validators";
+import { StorePostGuestProblem } from "./store/guest-orders/problem/validators";
+import { StorePostGuestProblemPhoto } from "./store/guest-orders/problem-photos/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
@@ -321,6 +325,18 @@ export default defineMiddlewares({
       matcher: "/store/guest-orders/lookup",
       method: "POST",
       middlewares: [guestOrderAddressAttempts, guestOrderNumberAttempts, validateAndTransformBody(StorePostGuestOrderLookup)],
+    },
+    {
+      // V1.2: one photo per call, as base64 text: 5 MB is about 7 MB of text, the default body limit is 100 kB
+      matcher: "/store/guest-orders/problem-photos",
+      method: "POST",
+      bodyParser: { sizeLimit: "8mb" },
+      middlewares: [guestProblemAddressAttempts, guestProblemNumberAttempts, validateAndTransformBody(StorePostGuestProblemPhoto)],
+    },
+    {
+      matcher: "/store/guest-orders/problem",
+      method: "POST",
+      middlewares: [guestProblemAddressAttempts, guestProblemNumberAttempts, validateAndTransformBody(StorePostGuestProblem)],
     },
     {
       matcher: "/store/newsletter-subscriptions",
