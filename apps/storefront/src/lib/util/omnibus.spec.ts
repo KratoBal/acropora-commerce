@@ -80,7 +80,70 @@ describe("omnibusReferenceOf", () => {
     ["a missing complete flag", text({ complete: undefined })],
     ["a malformed first day", text({ history_begins: "2026.09.01" })],
     ["a missing first day", text({ history_begins: undefined })],
+    ["a missing reduction start", text({ reduction_start: undefined })],
+    ["a malformed reduction start", text({ reduction_start: "2026.11.01" })],
   ])("is null for %s", (_name, value) => {
     expect(omnibusReferenceOf(meta(value), shown)).toBeNull()
+  })
+})
+/*
+  THE TWO "NOT COMPLETE" CASES (barracuda, #647). The window is the 30 days before reduction_start
+  (2026-11-01: from 2026-10-02). A young history starts INSIDE the window and is read; a "not complete"
+  text whose first day is at or before the window start has a gap in it, and a "complete" text whose
+  first day is after the window start contradicts itself: both are no line.
+*/
+describe("omnibusReferenceOf, the days decide", () => {
+  it("a young history (first price day inside the window) is read, with that day", () => {
+    expect(
+      omnibusReferenceOf(
+        meta(text({ complete: false, history_begins: "2026-10-03" })),
+        shown,
+      ),
+    ).toMatchObject({ complete: false, historyBegins: "2026-10-03" })
+  })
+
+  it("a 'not complete' text that reaches back to the window start has a gap: no line", () => {
+    for (const first of ["2026-10-02", "2026-09-15", "2026-01-01"])
+      expect(
+        omnibusReferenceOf(
+          meta(text({ complete: false, history_begins: first })),
+          shown,
+        ),
+      ).toBeNull()
+  })
+
+  it("a 'not complete' text whose first day is not before the reduction is no line either", () => {
+    for (const first of ["2026-11-01", "2026-11-05"])
+      expect(
+        omnibusReferenceOf(
+          meta(text({ complete: false, history_begins: first })),
+          shown,
+        ),
+      ).toBeNull()
+  })
+
+  it("a 'complete' text must reach back to the window start: on the boundary it does, a day later it does not", () => {
+    expect(
+      omnibusReferenceOf(meta(text({ history_begins: "2026-10-02" })), shown),
+    ).not.toBeNull()
+    expect(
+      omnibusReferenceOf(meta(text({ history_begins: "2026-10-03" })), shown),
+    ).toBeNull()
+  })
+
+  it("the window crosses a month and a year end correctly", () => {
+    // reduction on 2027-01-10: the window starts 2026-12-11
+    const at = (complete: boolean, first: string) =>
+      meta(
+        text({
+          complete,
+          history_begins: first,
+          reduction_start: "2027-01-10",
+        }),
+      )
+    expect(omnibusReferenceOf(at(true, "2026-12-11"), shown)).not.toBeNull()
+    expect(omnibusReferenceOf(at(true, "2026-12-12"), shown)).toBeNull()
+    expect(omnibusReferenceOf(at(false, "2026-12-12"), shown)).not.toBeNull()
+    expect(omnibusReferenceOf(at(false, "2026-12-11"), shown)).toBeNull()
   })
 })

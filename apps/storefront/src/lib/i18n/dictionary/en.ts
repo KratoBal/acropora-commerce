@@ -635,7 +635,7 @@ export const en: Dictionary = {
     omnibusLine:
       "Lowest price in the 30 days before the price reduction: {price}",
     omnibusLineShort:
-      "Lowest price before the price reduction (available since {since}): {price}",
+      "Lowest price before the price reduction, since {since}: {price}",
     unitPrice: "Unit price: {price}/{unit}",
     showPhoto: "Show photo {n}",
     imageAlt: "{title} (image {n})",

@@ -69,10 +69,11 @@ export function ArDoboz() {
  * (`omnibusReferenceOf`), ez csak kirajzol. `null`: nincs sor, semmi nem all a helyen.
  *
  * KET SZOVEG VAN, ES A KETTO NEM UGYANAZT ALLITJA. Teljes tortenetnel (`complete`) a 30 napos
- * mondat all. Ha a valtozat ar-tortenete FIATALABB 30 napnal, a "30 nap" szo nem lenne igaz:
- * a rovidebb szoveg megmondja, MIOTA ismerjuk az arat (acrobot dontese az #2120-ban: az elso ar
- * napjatol szamit). A SZOVEGEK JOGI MEGFOGALMAZASA Balazs/jogasz tetele; ez a ket mondat a
- * mostani, nem a vegleges.
+ * mondat all. Ha a valtozat ar-tortenete FIATALABB 30 napnal, a "30 nap" szo nem lenne igaz: a
+ * rovidebb szoveg az AR ISMERT IDOSZAKAROL szol ("... {since} ota"), NEM arrol, hogy a termek mioata
+ * kaphato (az ar-tortenetunk fiatalabb a termekeknel; barracuda, #647). Az ismeretlen aru reset az OS
+ * nem irja ki, es a `omnibusReferenceOf` az ellentmondo napokat eldobja: ide csak ertelmes alak jut.
+ * A SZOVEGEK JOGI MEGFOGALMAZASA Balazs/jogasz tetele; ez a ket mondat a mostani, nem a vegleges.
  */
 export function OmnibusSor({
   referencia,

@@ -657,7 +657,7 @@ export const hu = {
     originalPrice: "Eredeti ár:",
     omnibusLine: "Az árcsökkentés előtti 30 nap legalacsonyabb ára: {price}",
     omnibusLineShort:
-      "Az árcsökkentés előtti legalacsonyabb ár ({since} óta kapható): {price}",
+      "Az árcsökkentés előtti legalacsonyabb ár {since} óta: {price}",
     unitPrice: "Egységár: {price}/{unit}",
     showPhoto: "{n}. fotó megjelenítése",
     imageAlt: "{title} ({n}. kép)",
