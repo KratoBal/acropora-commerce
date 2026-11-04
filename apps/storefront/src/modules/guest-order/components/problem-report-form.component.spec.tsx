@@ -90,6 +90,49 @@ beforeEach(() => {
 })
 
 describe("the problem report form", () => {
+  it("does not upload a photo again when the report is sent a second time", async () => {
+    submitProblemReport
+      .mockResolvedValueOnce({ ok: false, failure: "unavailable" })
+      .mockResolvedValueOnce({
+        ok: true,
+        reportId: "ordprb_02",
+        createdAt: "2026-11-04T10:00:00.000Z",
+      })
+    renderForm()
+    fillValid()
+    addFile(jpeg("egy.jpg"))
+    await submit()
+    await waitFor(() => expect(submitProblemReport).toHaveBeenCalledTimes(1))
+    await submit()
+    await waitFor(() => expect(submitProblemReport).toHaveBeenCalledTimes(2))
+    // one upload for two sends, and both reports name the same photo
+    expect(uploadProblemPhoto).toHaveBeenCalledTimes(1)
+    expect(submitProblemReport.mock.calls[0][0].photoIds).toEqual(["img_1"])
+    expect(submitProblemReport.mock.calls[1][0].photoIds).toEqual(["img_1"])
+  })
+
+  it("uploads the photos afresh after the shop called the report invalid", async () => {
+    submitProblemReport
+      .mockResolvedValueOnce({ ok: false, failure: "invalid" })
+      .mockResolvedValueOnce({
+        ok: true,
+        reportId: "ordprb_03",
+        createdAt: "2026-11-04T10:00:00.000Z",
+      })
+    uploadProblemPhoto
+      .mockResolvedValueOnce({ ok: true, photoId: "img_1" })
+      .mockResolvedValueOnce({ ok: true, photoId: "img_2" })
+    renderForm()
+    fillValid()
+    addFile(jpeg("egy.jpg"))
+    await submit()
+    await waitFor(() => expect(submitProblemReport).toHaveBeenCalledTimes(1))
+    await submit()
+    await waitFor(() => expect(submitProblemReport).toHaveBeenCalledTimes(2))
+    expect(uploadProblemPhoto).toHaveBeenCalledTimes(2)
+    expect(submitProblemReport.mock.calls[1][0].photoIds).toEqual(["img_2"])
+  })
+
   it("does not ask the server for an incomplete form, and names every missing part", async () => {
     renderForm()
     await submit()

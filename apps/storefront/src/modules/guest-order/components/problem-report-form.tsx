@@ -64,6 +64,9 @@ export default function ProblemReportForm({
   const [doneId, setDoneId] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const picker = useRef<HTMLInputElement | null>(null)
+  // a photo that already went up keeps its id, so a retry after a failed report does not upload it again
+  // (the shop caps the uploads no report has taken, and a failed try must not use that cap up)
+  const uploadedIds = useRef(new Map<File, string>())
   const orderNumber = String(order.display_id)
 
   const addFiles = (picked: FileList | null) => {
@@ -95,6 +98,11 @@ export default function ProblemReportForm({
     startTransition(async () => {
       const photoIds: string[] = []
       for (const file of files) {
+        const known = uploadedIds.current.get(file)
+        if (known) {
+          photoIds.push(known)
+          continue
+        }
         let content: string
         try {
           content = await toBase64(file)
@@ -117,6 +125,7 @@ export default function ProblemReportForm({
           )
           return
         }
+        uploadedIds.current.set(file, uploaded.photoId)
         photoIds.push(uploaded.photoId)
       }
       const result = await submitProblemReport({
@@ -130,7 +139,11 @@ export default function ProblemReportForm({
         photoIds,
       })
       if (result.ok) setDoneId(result.reportId)
-      else setFailure(t(problemFailureKey(result.failure)))
+      else {
+        // "invalid" may mean a photo the shop no longer accepts: the next try uploads them afresh
+        if (result.failure === "invalid") uploadedIds.current.clear()
+        setFailure(t(problemFailureKey(result.failure)))
+      }
     })
   }
 
