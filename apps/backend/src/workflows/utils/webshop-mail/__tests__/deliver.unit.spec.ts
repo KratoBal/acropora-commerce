@@ -148,6 +148,34 @@ describe("deliverShopMail", () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  // THE TEST REDIRECT ON THE OUTBOX PATH (acrobot 41809): the OS-rendered mail goes to the redirect
+  // address, with the original recipient named, and the outbox row still records it as sent
+  it("with the redirect on, the OS-rendered mail goes to the redirect address and names the customer", async () => {
+    const w = world()
+    osAnswers(200, { subject: "OS tárgy", html: "<p>OS</p>", text: "OS", customized: true })
+    const env = { ...OS, ACROPORA_WEBSHOP_MAIL_REDIRECT_TO: "teszt@acropora.hu" }
+    expect(await deliverShopMail(w.container, mail, env)).toEqual({ sent: true })
+    expect(w.notifications).toHaveLength(1)
+    expect(w.notifications[0]).toMatchObject({
+      to: "teszt@acropora.hu",
+      idempotency_key: mail.idempotency_key,
+    })
+    expect((w.notifications[0]!.content as { subject: string }).subject).toBe(
+      "[TESZT: az eredeti címzett vevo@example.test] OS tárgy"
+    )
+  })
+
+  it("with an unreadable redirect value, nothing reaches the customer: the mail waits in the outbox with the error", async () => {
+    const w = world()
+    osAnswers(200, { subject: "OS tárgy", html: "<p>OS</p>", text: "OS", customized: true })
+    const env = { ...OS, ACROPORA_WEBSHOP_MAIL_REDIRECT_TO: "nem-cim" }
+    const result = await deliverShopMail(w.container, mail, env)
+    expect(result).toMatchObject({ sent: false, queued: true })
+    expect(w.notifications).toHaveLength(0)
+    expect(w.rows[0]).toMatchObject({ sent_at: null })
+    expect(String(w.rows[0]!.last_error)).toMatch(/not sent/)
+  })
+
   it("with the switch on, the OS's text goes, through the outbox, with the customer's name in Hungarian order", async () => {
     const w = world()
     const fetch = osAnswers(200, {

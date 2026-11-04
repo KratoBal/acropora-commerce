@@ -59,7 +59,7 @@ export const outboxOperations = (
     },
     render: (request) => renderWithOs(request, osMailRenderConfig(env)),
     send: async (mail) => {
-      await sendShopMail(container.resolve(Modules.NOTIFICATION), mail)
+      await sendShopMail(container.resolve(Modules.NOTIFICATION), mail, env)
     },
     now: () => new Date(),
   }
@@ -78,7 +78,7 @@ export const deliverShopMail = async (
   env: NodeJS.ProcessEnv = process.env
 ): Promise<DeliveryResult> => {
   if (webshopMailRenderer(env) !== "os" || !mail.render) {
-    await sendShopMail(container.resolve(Modules.NOTIFICATION), mail)
+    await sendShopMail(container.resolve(Modules.NOTIFICATION), mail, env)
     return { sent: true }
   }
   return deliverThroughOutbox(mail as MailToSend & { render: MailRenderFacts }, outboxOperations(container, env))

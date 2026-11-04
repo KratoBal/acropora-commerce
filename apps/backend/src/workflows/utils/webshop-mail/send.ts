@@ -1,6 +1,7 @@
 import type { CreateNotificationDTO } from "@medusajs/framework/types"
+import { MedusaError } from "@medusajs/framework/utils"
 
-import { webshopMailState } from "../webshop-mail-config"
+import { WEBSHOP_MAIL_REDIRECT_ENV, webshopMailRedirect, webshopMailState } from "../webshop-mail-config"
 import type { MailToSend } from "./prepare"
 
 /**
@@ -14,15 +15,48 @@ type NotificationModule = {
   createNotifications(data: CreateNotificationDTO): Promise<unknown>
 }
 
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+
+/**
+ * The recipient and the content as they leave. With the test redirect on, the mail goes to the
+ * redirect address and says, in the subject and at the top of both bodies, who it was meant for.
+ * A redirect value that is set but not one address stops the mail (it throws, the outbox keeps the
+ * row and its error): it never falls back to the real recipient.
+ */
+export const mailAsSent = (
+  mail: MailToSend,
+  env: NodeJS.ProcessEnv = process.env
+): { to: string; content: MailToSend["content"] } => {
+  const redirect = webshopMailRedirect(env)
+  if (redirect.kind === "off") return { to: mail.to, content: mail.content }
+  if (redirect.kind === "invalid")
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `${WEBSHOP_MAIL_REDIRECT_ENV} is set but is not one e-mail address: the mail is not sent`
+    )
+  const note = `TESZT: az eredeti címzett ${mail.to}`
+  return {
+    to: redirect.address,
+    content: {
+      subject: `[${note}] ${mail.content.subject}`,
+      text: `${note}\n\n${mail.content.text}`,
+      html: `<p><strong>${escapeHtml(note)}</strong></p>${mail.content.html}`,
+    },
+  }
+}
+
 /** One mail through the email channel; the idempotency key keeps it single. */
-export const sendShopMail = (notifications: NotificationModule, mail: MailToSend) =>
-  notifications.createNotifications({
-    to: mail.to,
+export const sendShopMail = (notifications: NotificationModule, mail: MailToSend, env: NodeJS.ProcessEnv = process.env) => {
+  const { to, content } = mailAsSent(mail, env)
+  return notifications.createNotifications({
+    to,
     channel: "email",
     template: mail.template,
     trigger_type: mail.trigger ?? mail.template,
     resource_id: mail.resource_id,
     resource_type: "order",
     idempotency_key: mail.idempotency_key,
-    content: mail.content,
+    content,
   })
+}
