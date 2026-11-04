@@ -104,11 +104,15 @@ describe("the small decisions", () => {
     expect(problemFailureOfStatus(404)).toBe("not_found")
     expect(problemFailureOfStatus(429)).toBe("too_many")
     expect(problemFailureOfStatus(400)).toBe("invalid")
+    expect(problemFailureOfStatus(409)).toBe("duplicate")
     for (const status of [500, 503, undefined])
       expect(problemFailureOfStatus(status)).toBe("unavailable")
     expect(problemFailureKey("too_many")).toBe("guestOrder.errorTooMany")
     expect(problemFailureKey("not_found")).toBe("guestOrder.errorNotFound")
     expect(problemFailureKey("invalid")).toBe("guestOrder.problem.errorSend")
+    expect(problemFailureKey("duplicate")).toBe(
+      "guestOrder.problem.errorDuplicate",
+    )
     expect(problemFailureKey("unavailable")).toBe(
       "guestOrder.problem.errorSend",
     )

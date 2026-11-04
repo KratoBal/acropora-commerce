@@ -227,6 +227,24 @@ describe("the problem report form", () => {
     ).toBe(true)
   })
 
+  it("a problem already reported says so, points to the list on the order and keeps what was typed", async () => {
+    submitProblemReport.mockResolvedValue({ ok: false, failure: "duplicate" })
+    renderForm()
+    fillValid()
+    await submit()
+    const failure = await screen.findByTestId("problem-failure")
+    expect(failure.textContent).toContain(
+      "Erről a problémáról már van bejelentésed",
+    )
+    expect(failure.textContent).toContain("Már leadott bejelentéseid")
+    // not the generic "try again": a second send would only make a second duplicate
+    expect(failure.textContent).not.toContain("próbáld újra")
+    expect(
+      (screen.getByLabelText("Mi történt pontosan?") as HTMLTextAreaElement)
+        .value,
+    ).toBe(" Törött a láb ")
+  })
+
   it("a lockout is not worded as the generic failure", async () => {
     submitProblemReport.mockResolvedValue({ ok: false, failure: "too_many" })
     renderForm()

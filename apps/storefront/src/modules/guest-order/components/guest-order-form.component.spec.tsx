@@ -184,4 +184,61 @@ describe("the guest order form", () => {
       email: "vevo@example.hu",
     })
   })
+
+  it("after a 409 (already reported) the list under the order is read again with the pinned number and address", async () => {
+    const withItems = {
+      ...order,
+      items: [{ id: "item_1", title: "Korall A", quantity: 1, total: 500 }],
+    }
+    lookupGuestOrder
+      .mockResolvedValueOnce({ ok: true, orders: [withItems] })
+      .mockResolvedValueOnce({
+        ok: true,
+        orders: [
+          {
+            ...withItems,
+            problem_reports: [
+              {
+                id: "ordprb_01FIRST",
+                kind: "item_damaged",
+                created_at: "2026-11-04T10:00:00.000Z",
+                stage: "received",
+              },
+            ],
+          },
+        ],
+      })
+    submitProblemReport.mockResolvedValue({ ok: false, failure: "duplicate" })
+    render(<GuestOrderForm />)
+    fill("1042", "vevo@example.hu")
+    await submit()
+    await waitFor(() =>
+      expect(screen.getByTestId("guest-order-view")).toBeTruthy(),
+    )
+    // no report is listed yet: the first one went out in this very session
+    expect(screen.queryByTestId("problem-reports-1042")).toBeNull()
+    fireEvent.click(
+      screen.getByRole("button", { name: /Probléma a szállítmánnyal/ }),
+    )
+    // the lookup fields are edited meanwhile: the refresh must still use what the orders were found with
+    fill("9999", "mas@example.hu")
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("Mi a probléma?"), {
+      target: { value: "item_damaged" },
+    })
+    fireEvent.change(screen.getByLabelText("Mi történt pontosan?"), {
+      target: { value: "Törött a láb" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("problem-form-1042"))
+    })
+    await waitFor(() => expect(lookupGuestOrder).toHaveBeenCalledTimes(2))
+    expect(lookupGuestOrder.mock.calls[1][0]).toEqual({
+      orderNumber: "1042",
+      email: "vevo@example.hu",
+    })
+    // the list the 409's text points to now holds the report
+    const list = await screen.findByTestId("problem-reports-1042")
+    expect(list.textContent).toContain("ordprb_01FIRST")
+  })
 })

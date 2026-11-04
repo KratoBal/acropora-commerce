@@ -45,10 +45,13 @@ export default function ProblemReportForm({
   order,
   email,
   onClose,
+  onFiled,
 }: {
   order: GuestOrder
   email: string
   onClose: () => void
+  /** The shop took the report, or said the problem is already reported: the list under the order may have changed. */
+  onFiled?: () => void
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -138,8 +141,11 @@ export default function ProblemReportForm({
         phone,
         photoIds,
       })
-      if (result.ok) setDoneId(result.reportId)
-      else {
+      if (result.ok) {
+        setDoneId(result.reportId)
+        onFiled?.()
+      } else {
+        if (result.failure === "duplicate") onFiled?.()
         // "invalid" may mean a photo the shop no longer accepts: the next try uploads them afresh
         if (result.failure === "invalid") uploadedIds.current.clear()
         setFailure(t(problemFailureKey(result.failure)))

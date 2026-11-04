@@ -1137,6 +1137,8 @@ export const hu = {
       errorDescription: "Írd le röviden, mi történt.",
       errorPhone:
         "A telefonszám csak számjegyet, szóközt, plusz- és kötőjelet tartalmazhat.",
+      errorDuplicate:
+        "Erről a problémáról már van bejelentésed. Az ügy azonosítóját a rendelésed alatt, a „Már leadott bejelentéseid” részben találod.",
       errorSend:
         "A bejelentést most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
       reportsTitle: "Már leadott bejelentéseid",

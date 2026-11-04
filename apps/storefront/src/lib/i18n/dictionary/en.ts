@@ -1107,6 +1107,8 @@ export const en: Dictionary = {
       errorDescription: "Please describe briefly what happened.",
       errorPhone:
         "The phone number may contain only digits, spaces, plus and hyphen signs.",
+      errorDuplicate:
+        'You have already reported this problem. You can find its case reference under your order, in "Reports you have already filed".',
       errorSend:
         "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: [TO BE FILLED IN: contact].",
       reportsTitle: "Reports you have already filed",

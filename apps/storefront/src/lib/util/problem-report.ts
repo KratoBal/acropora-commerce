@@ -80,7 +80,7 @@ export const photoProblem = (file: {
 }
 
 export type ProblemFailure =
-  "not_found" | "too_many" | "invalid" | "unavailable"
+  "not_found" | "too_many" | "invalid" | "duplicate" | "unavailable"
 
 export const problemFailureOfStatus = (
   status: number | undefined,
@@ -91,15 +91,19 @@ export const problemFailureOfStatus = (
       ? "too_many"
       : status === 400
         ? "invalid"
-        : "unavailable"
+        : status === 409
+          ? "duplicate"
+          : "unavailable"
 
-/** The text for each kind of failure: a lockout is not "not found", and all the rest tell the customer to retry. */
+/** The text for each kind of failure: a lockout is not "not found", a problem already reported says so, all the rest tell the customer to retry. */
 export const problemFailureKey = (failure: ProblemFailure): Key =>
   failure === "too_many"
     ? "guestOrder.errorTooMany"
     : failure === "not_found"
       ? "guestOrder.errorNotFound"
-      : "guestOrder.problem.errorSend"
+      : failure === "duplicate"
+        ? "guestOrder.problem.errorDuplicate"
+        : "guestOrder.problem.errorSend"
 
 /** The local date-time field's value as the ISO time with the offset the backend asks for, or undefined. */
 export const receivedAtOf = (value: string): string | undefined => {
