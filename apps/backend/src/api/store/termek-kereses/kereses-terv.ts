@@ -1,4 +1,5 @@
 import { hajtogat } from "./ekezet-hajtogatas";
+import { FAJ_CSOPORTOK } from "./faj-szinonimak";
 
 /**
  * A KERESES TERVE: SZINONIMAK, ROVIDITESEK, TOALAK (V4.1, kartya f59d7d12).
@@ -82,16 +83,53 @@ export function kulcs(szoveg: string): string {
   return hajtogat(szoveg).replace(/[\s\-/]+/g, "");
 }
 
+/**
+ * Minden csoport: a szakszavak (korall kereso-szinonimak.md) es a fajnevek (korall
+ * fajnev-lista.csv, `faj-szinonimak.ts`). Egy kulcs csak egy csoportban allhat (teszt meri).
+ */
+export const OSSZES_CSOPORT: readonly (readonly string[])[] = [
+  ...SZINONIMA_CSOPORTOK,
+  ...FAJ_CSOPORTOK,
+];
+
 const CSOPORT_INDEX: ReadonlyMap<string, number> = new Map(
-  SZINONIMA_CSOPORTOK.flatMap((csoport, i) =>
+  OSSZES_CSOPORT.flatMap((csoport, i) =>
     csoport.map((tag) => [kulcs(tag), i] as const),
   ),
 );
 
 /** A leghosszabb tobb szavas tag szoszama: eddig nezunk elore a kerdesben. */
 const LEGHOSSZABB_TAG = Math.max(
-  ...SZINONIMA_CSOPORTOK.flat().map((tag) => tag.split(/\s+/).length),
+  ...OSSZES_CSOPORT.flat().map((tag) => tag.split(/\s+/).length),
 );
+
+/** Az egyszavas tagok kulcsa es csoportja: a toldalekos alak felismeresehez. */
+const EGYSZAVAS_TAGOK: ReadonlyArray<readonly [string, number]> =
+  OSSZES_CSOPORT.flatMap((csoport, i) =>
+    csoport
+      .filter((tag) => !/\s/.test(tag.trim()))
+      .map((tag) => [kulcs(tag), i] as const),
+  );
+
+/**
+ * A TOLDALEKOS ALAK IS A CSOPORTJAT KAPJA (V4.1, 2. szelet; merve a #650 utan: a
+ * "lehabzók" 64-et adott a "lehabzó" 70-e helyett, mert csak a tovet kereste). Ha a
+ * szobol toldalek esik le, es a to (legalabb ot betu) pontosan EGY csoport egyszavas
+ * tagja, vagy a tag legfeljebb egy betuvel hosszabb nala (lehabz -> lehabzo), a szo azt a
+ * csoportot kapja. Hosszabb tag-elejre nem: a "korallok" ne egy korall-fajnevet kapjon.
+ * Ket csoportnal nem dontunk: akkor a to marad.
+ */
+function toldalekosCsoport(szo: string): number | undefined {
+  const k = kulcs(szo);
+  const to = toalak(k);
+  if (to === k || to.length < MIN_TO) return undefined;
+  const csoportok = new Set(
+    EGYSZAVAS_TAGOK.filter(
+      ([tag]) => tag.startsWith(to) && tag.length - to.length <= 1,
+    ).map(([, i]) => i),
+  );
+  return csoportok.size === 1 ? [...csoportok][0] : undefined;
+}
 
 /**
  * A levaghato toldalekok, a hosszabb elol. Csak hajtogatott alakra (lehabzók ->
@@ -147,7 +185,12 @@ export function toalak(szo: string): string {
 /** Egy tag illesztesei: rovidites szohatarral, kulonben a tag es irasmodjai reszszovegkent. */
 function tagIllesztesei(tag: string): Illesztes[] {
   const hajtogatott = hajtogat(tag);
-  if (ROVIDITESEK.has(hajtogatott))
+  // A rovid egyszavas tag (Nemo, RODI) is szohatarral megy: reszszovegkent az
+  // "anemóna" a "nemo"-t, tehat a bohochal-csoport minden anemonat hozna.
+  if (
+    ROVIDITESEK.has(hajtogatott) ||
+    (hajtogatott.length < MIN_TO && !/\s/.test(hajtogatott))
+  )
     return [{ fajta: "szo", ertek: hajtogatott }];
   const alakok = new Set([
     hajtogatott,
@@ -203,12 +246,18 @@ export function keresesiTerv(kifejezes: string): Feltetel[] {
         kulcs(szavak.slice(i, i + n).join(" ")),
       );
       if (csoport === undefined) continue;
-      felvesz(egyedi(SZINONIMA_CSOPORTOK[csoport]!.flatMap(tagIllesztesei)));
+      felvesz(egyedi(OSSZES_CSOPORT[csoport]!.flatMap(tagIllesztesei)));
       i += n;
       talalt = true;
       break;
     }
     if (talalt) continue;
+    const toldalekos = toldalekosCsoport(szavak[i]!);
+    if (toldalekos !== undefined) {
+      felvesz(egyedi(OSSZES_CSOPORT[toldalekos]!.flatMap(tagIllesztesei)));
+      i += 1;
+      continue;
+    }
     const szo = hajtogat(szavak[i]!);
     felvesz([{ fajta: "resz", ertek: toalak(szo) }]);
     i += 1;

@@ -3,7 +3,7 @@ import {
   keresesiTerv,
   kulcs,
   MAX_SZO,
-  SZINONIMA_CSOPORTOK,
+  OSSZES_CSOPORT,
   szoMinta,
   toalak,
   type Feltetel,
@@ -59,7 +59,8 @@ describe("keresesi terv", () => {
     expect(szavak(keresesiTerv("karbonátkeménység")[0]!)).toEqual(["kh"]);
     expect(szavak(keresesiTerv("ATO")[0]!)).toEqual(["ato"]);
     expect(szavak(keresesiTerv("Ca")[0]!)).toEqual(["ca"]);
-    expect(szavak(keresesiTerv("RO/DI")[0]!)).toEqual(["ro/di"]);
+    // a negybetus "RODI" is szohatarral megy (a rovid egyszavas tag szabalya)
+    expect(szavak(keresesiTerv("RO/DI")[0]!)).toEqual(["ro/di", "rodi"]);
   });
 
   it("a tobb szavas tag egy feltetel, a mellette allo szo egy masik", () => {
@@ -83,8 +84,46 @@ describe("keresesi terv", () => {
     expect(toalak("szulfatok")).toBe("szulfat");
     expect(toalak("karbonatkemenyseg")).toBe("karbonatkemenyseg");
     expect(toalak("teszt")).toBe("teszt");
-    expect(keresesiTerv("lehabzók")).toEqual([
-      [{ fajta: "resz", ertek: "lehabz" }],
+  });
+
+  it("a toldalekos alak a csoportjat kapja, de csak ha a to egy csoport tagja (V4.1, 2. szelet)", () => {
+    const lehabzo = new Set(reszek(keresesiTerv("lehabzó")[0]!));
+    expect(new Set(reszek(keresesiTerv("lehabzók")[0]!))).toEqual(lehabzo);
+    expect(new Set(reszek(keresesiTerv("lehabzót")[0]!))).toEqual(lehabzo);
+    expect(reszek(keresesiTerv("áramoltatók")[0]!)).toContain("wavemaker");
+    expect(szavak(keresesiTerv("nitrátot")[0]!)).toEqual(["no3"]);
+    // a "korall" egy fajnev eleje lehet, de nem a tagja: a to marad
+    expect(keresesiTerv("korallok")).toEqual([
+      [{ fajta: "resz", ertek: "korall" }],
+    ]);
+    expect(keresesiTerv("pumpát")).toEqual([
+      [{ fajta: "resz", ertek: "pumpa" }],
+    ]);
+  });
+
+  it("a fajnev barmely nyelvu alakja a faj minden nevet keresi (korall fajnev-lista.csv)", () => {
+    const palettas = new Set(reszek(keresesiTerv("palettás doktorhal")[0]!));
+    expect(palettas).toEqual(
+      new Set(reszek(keresesiTerv("Paracanthurus hepatus")[0]!)),
+    );
+    expect(palettas).toEqual(new Set(reszek(keresesiTerv("Blue Tang")[0]!)));
+    expect(palettas).toContain("paracanthurus hepatus");
+    // a tobb szavas fajnev egy feltetel, a mellette allo szo egy masik
+    expect(keresesiTerv("blue tang tenyesztett")).toHaveLength(2);
+  });
+
+  it("a rovid fajnev szohatarral megy, nem reszszovegkent (az anemona ne legyen Nemo)", () => {
+    const nemo = keresesiTerv("Nemo")[0]!;
+    expect(szavak(nemo)).toEqual(["nemo"]);
+    expect(reszek(nemo)).not.toContain("nemo");
+    expect(reszek(nemo)).toContain("amphiprion ocellaris");
+    expect(szavak(keresesiTerv("Amphiprion ocellaris")[0]!)).toEqual(["nemo"]);
+  });
+
+  it("a bizonytalan es a ket fajra illo nev nem csoport (korall: ULTRA, kagylo)", () => {
+    expect(keresesiTerv("ultra")).toEqual([[{ fajta: "resz", ertek: "ultra" }]]);
+    expect(keresesiTerv("kagyló")).toEqual([
+      [{ fajta: "resz", ertek: "kagylo" }],
     ]);
   });
 
@@ -108,7 +147,7 @@ describe("keresesi terv", () => {
 
   it("egy kulcs nem all ket kulonbozo csoportban (az irasmod-valtozat egy csoporton belul rendben van)", () => {
     const hol = new Map<string, Set<number>>();
-    SZINONIMA_CSOPORTOK.forEach((csoport, i) =>
+    OSSZES_CSOPORT.forEach((csoport, i) =>
       csoport.forEach((tag) =>
         hol.set(kulcs(tag), (hol.get(kulcs(tag)) ?? new Set()).add(i)),
       ),
