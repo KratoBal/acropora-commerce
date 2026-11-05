@@ -42,6 +42,8 @@ beforeAll(() => {
 })
 const AszfRekord = { idopont: "2026-10-27T12:00:00.000Z", verzio: "v", dokumentum: "d" }
 import { MIXED_CART_MESSAGE } from "../../utils/assert-cart-not-mixed"
+import { LOCKER_UNSUITABLE_MESSAGE } from "../../utils/locker-rule"
+import { resolveShippingOptionRoleBindings } from "../../utils/shipping-option-roles"
 import { SPLIT_LINE_IDS_CONTEXT_KEY } from "../../utils/split-pricing-context"
 
 // A cart with an ordinary line (l1) and a pickup-only line (l2).
@@ -133,6 +135,33 @@ describe("completing a cart", () => {
         { container: containerFor() }
       )
     ).rejects.toThrow(MIXED_CART_MESSAGE)
+  })
+
+  // a82ed229: the completion's net under the parcel-locker rule (the rule itself: locker-rule.unit.spec.ts)
+  it("refuses a cart with a locker-unsuitable item on a GLS locker", async () => {
+    const glsPoint = resolveShippingOptionRoleBindings().find((b) => b.env === "ACROPORA_SO_GLS_POINT")!.id
+    const graph = async ({ entity, filters }: any) => {
+      if (entity === "variant")
+        return { data: [{ id: "v1", product: { id: "p1" } }].filter((v) => filters.id.includes(v.id)) }
+      if (entity === "shipping_attribute")
+        return { data: [{ product_id: "p1", locker_unsuitable: true }] }
+      return { data: [] }
+    }
+    await expect(
+      handlers.completeValidate!(
+        {
+          cart: {
+            id: "cart_1",
+            metadata: { aszf_elfogadas: AszfRekord },
+            items: [{ id: "l1", variant_id: "v1", requires_shipping: true }],
+            shipping_methods: [
+              { shipping_option_id: glsPoint, data: { gls_pickup_point: { id: "L", type: "parcel-locker" } } },
+            ],
+          },
+        },
+        { container: { resolve: () => ({ graph }) } }
+      )
+    ).rejects.toThrow(LOCKER_UNSUITABLE_MESSAGE)
   })
 
   it("refuses a cart whose card payment is not its total (P4-3c)", async () => {

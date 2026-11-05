@@ -130,14 +130,18 @@ export const glsPointSelectable = (point: GlsPickupPoint) => point.locker_satura
  * WHICH POINTS AN OPTION MAY USE (acrobot, 2026-09-29): heavy goods only to a
  * parcel shop (a locker does not take them); the ordinary GLS pickup point to
  * either. The one place this rule lives.
+ *
+ * `shopOnly` is true for the heavy-goods option, and since a82ed229 also for a
+ * cart with an item that does not fit a locker (`locker-rule.ts`): the caller
+ * passes `option.heavy || cartIsShopOnly`.
  */
-/** The option's rule (heavy goods only to a parcel shop); the point may still be out of order. */
-export const glsPointFitsOption = (point: GlsPickupPoint, heavy: boolean) =>
-  !heavy || point.type === "parcel-shop";
+/** The option's rule (parcel shops only, when `shopOnly`); the point may still be out of order. */
+export const glsPointFitsOption = (point: GlsPickupPoint, shopOnly: boolean) =>
+  !shopOnly || point.type === "parcel-shop";
 
 /** What an order may be shipped to: fits the option, and can be chosen now. */
-export const glsPointAllowed = (point: GlsPickupPoint, heavy: boolean) =>
-  glsPointFitsOption(point, heavy) && glsPointSelectable(point);
+export const glsPointAllowed = (point: GlsPickupPoint, shopOnly: boolean) =>
+  glsPointFitsOption(point, shopOnly) && glsPointSelectable(point);
 
 /** "1011 BUDAPEST I. KERÜLET, Batthyány tér 5 -6": the address as shown and stored. */
 export const glsPointAddress = (point: GlsPickupPoint) =>

@@ -18,11 +18,42 @@ const item = (
   is_livestock: false,
   is_heavy: false,
   foxpost_forbidden: false,
+  locker_unsuitable: false,
   requires_shipping: true,
   ...overrides,
 })
 
 describe("computeShippingClass", () => {
+  // a82ed229: WHAT TURNS THIS RED: the locker flag lost behind NO_FOXPOST (a locker would stay choosable), or
+  // winning over HEAVY (the heavy-goods price would be lost)
+  describe("NO_LOCKER", () => {
+    it("an item that does not fit a locker makes the cart NO_LOCKER, over a Foxpost ban", () => {
+      expect(
+        computeShippingClass([
+          item("a", { foxpost_forbidden: true }),
+          item("b", { locker_unsuitable: true }),
+        ])
+      ).toEqual({ shipping_class: "NO_LOCKER", shipping_class_source: "b" })
+    })
+
+    it("heavy goods still win: they go to a parcel shop through their own options", () => {
+      expect(
+        computeShippingClass([
+          item("a", { locker_unsuitable: true }),
+          item("b", { is_heavy: true }),
+        ]).shipping_class
+      ).toBe("HEAVY")
+    })
+
+    it("a line that does not ship does not narrow the cart", () => {
+      expect(
+        computeShippingClass([
+          item("a", { locker_unsuitable: true, requires_shipping: false }),
+        ]).shipping_class
+      ).toBe("NORMAL")
+    })
+  })
+
   describe("NORMAL", () => {
     it("returns NORMAL for an empty cart", () => {
       expect(computeShippingClass([])).toEqual({

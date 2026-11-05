@@ -6,6 +6,7 @@ export const AdminShippingAttributeFlags = z
     foxpost_forbidden: z.boolean().optional(),
     is_heavy: z.boolean().optional(),
     is_frozen: z.boolean().optional(),
+    locker_unsuitable: z.boolean().optional(),
   })
   .strict()
 

@@ -15,6 +15,11 @@ describe("shipping option eligibility", () => {
     ])
   })
 
+  // a82ed229: the GLS pickup point stays; that it must be a parcel shop is the point checks' job (locker-rule.ts)
+  it("NO_LOCKER: pickup and normal GLS, no Foxpost and no heavy-goods option", () => {
+    expect(allowedRolesFor("NO_LOCKER")).toEqual(["PICKUP", "GLS_NORMAL"])
+  })
+
   it("NO_FOXPOST: pickup and normal GLS, no Foxpost", () => {
     expect(allowedRolesFor("NO_FOXPOST")).toEqual(["PICKUP", "GLS_NORMAL"])
   })

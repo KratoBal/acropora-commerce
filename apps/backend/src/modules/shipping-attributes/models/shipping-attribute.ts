@@ -37,6 +37,13 @@ export const ShippingAttribute = model
 
     /** Frozen goods cannot be shipped, so they behave like `pickup_only`. */
     is_frozen: model.boolean().default(false),
+
+    /**
+     * Does not fit a parcel locker (a82ed229, set by hand in the OS: UNAS has
+     * no such flag). Foxpost is not offered, and a GLS pickup point may only
+     * be a parcel shop. It ships at the normal price.
+     */
+    locker_unsuitable: model.boolean().default(false),
   })
   .indexes([
     {

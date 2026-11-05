@@ -18,6 +18,7 @@
 export const SHIPPING_CLASSES = [
   "PICKUP_ONLY",
   "HEAVY",
+  "NO_LOCKER",
   "NO_FOXPOST",
   "NORMAL",
 ] as const
@@ -59,6 +60,12 @@ export type ShippingRelevantItem = {
   foxpost_forbidden?: boolean | null
 
   /**
+   * Does not fit a parcel locker (a82ed229): no Foxpost, and a GLS pickup
+   * point only if it is a parcel shop. Set by hand in the OS.
+   */
+  locker_unsuitable?: boolean | null
+
+  /**
    * Lines that do not require shipping cannot make a cart heavy or
    * pickup-only. Medusa's own completion check filters the same way
    * (`@medusajs/core-flows/dist/cart/steps/validate-shipping.js`). Defaults to
@@ -90,12 +97,20 @@ const isHeavy = (item: ShippingRelevantItem) => item.is_heavy === true
 const forbidsFoxpost = (item: ShippingRelevantItem) =>
   item.foxpost_forbidden === true
 
+const forbidsLocker = (item: ShippingRelevantItem) =>
+  item.locker_unsuitable === true
+
 const sourceOf = (item: ShippingRelevantItem) => item.line_item_id ?? null
 
 /**
- * Precedence: PICKUP_ONLY > HEAVY > NO_FOXPOST > NORMAL.
- * The four classes are mutually exclusive by construction, and every input is
- * an explicit flag: nothing is inferred from weight, names or categories.
+ * Precedence: PICKUP_ONLY > HEAVY > NO_LOCKER > NO_FOXPOST > NORMAL.
+ * The classes are mutually exclusive by construction, and every input is an
+ * explicit flag: nothing is inferred from weight, names or categories.
+ *
+ * NO_LOCKER sits above NO_FOXPOST because it is the stricter one: it takes
+ * Foxpost away too, and on top of that the GLS pickup point may only be a
+ * parcel shop. It sits below HEAVY because heavy goods already go only to a
+ * parcel shop, through their own options.
  */
 export const computeShippingClass = (
   items: ShippingRelevantItem[] | null | undefined
@@ -110,6 +125,14 @@ export const computeShippingClass = (
   const heavy = shippable.find(isHeavy)
   if (heavy) {
     return { shipping_class: "HEAVY", shipping_class_source: sourceOf(heavy) }
+  }
+
+  const noLocker = shippable.find(forbidsLocker)
+  if (noLocker) {
+    return {
+      shipping_class: "NO_LOCKER",
+      shipping_class_source: sourceOf(noLocker),
+    }
   }
 
   const noFoxpost = shippable.find(forbidsFoxpost)
