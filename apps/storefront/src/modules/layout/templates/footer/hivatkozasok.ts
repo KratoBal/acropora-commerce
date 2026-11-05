@@ -138,6 +138,17 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
   },
   { cimke: "Kosár", kulcs: "footerText.cart", oszlop: "fiok", cim: "/cart" },
   /*
+    A VENDEG BEJARATA (2026-11-05, kartya a rendelesem-oldalhoz): a "Rendeles megtekintese" lapra eddig
+    SEMMI nem hivatkozott, a vendeg csak a cimet begepelve ernie el. A regi boltban ez a "rendeles
+    koveteses" lap volt; itt a sajat lap, nem a regi bolt.
+  */
+  {
+    cimke: "Rendelés megtekintése",
+    kulcs: "footerText.orderView",
+    oszlop: "fiok",
+    cim: "/rendeles-megtekintese",
+  },
+  /*
     SAJAT OLDALA VAN (commerce-audit-p1, P1/11): az "Elérhetőségek" eddig a regi
     UNAS boltra mutatott, ami a domainvaltas utan onmagara mutatna. A ceg-adatokat
     mutatja (`CEG`, lent), ugyanabbol a forrasbol, mint ez a lablec.

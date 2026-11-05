@@ -17,6 +17,12 @@ type OrderCompletedTemplateProps = {
   parBolti?: boolean
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
+  /**
+   * A LATOGATO NINCS BEJELENTKEZVE (vendeg). Neki a "Rendeleseim" a belepteto lapra visz, a rendeleset viszont a
+   * vendeg lapon, a rendelesszammal es az e-mail-cimmel latja: ide kell egy bejarat (2026-11-05, a "Rendelesem"
+   * oldal hianylistaja). Bejelentkezve a fiok rendelesei a bejarat, ott nincs szukseg erre.
+   */
+  vendeg?: boolean
 }
 
 /**
@@ -33,6 +39,7 @@ export default async function OrderCompletedTemplate({
   par = null,
   parBolti = false,
   countryCode,
+  vendeg = false,
 }: OrderCompletedTemplateProps) {
   const t = translator(localeOf(countryCode))
   const lap = sikeroldal(order, par, parBolti, t)
@@ -149,6 +156,15 @@ export default async function OrderCompletedTemplate({
             >
               {t("orderConfirmed.openOrders")}
             </LocalizedClientLink>
+            {vendeg ? (
+              <LocalizedClientLink
+                href="/rendeles-megtekintese"
+                className="mt-3 flex h-11 items-center justify-center border border-acr-line text-[14px] font-medium text-acr-ink hover:border-acr-slate"
+                data-testid="rendeles-megtekintese-link"
+              >
+                {t("orderConfirmed.viewOrderGuest")}
+              </LocalizedClientLink>
+            ) : null}
             <LocalizedClientLink
               href="/"
               className="mt-3 flex h-11 items-center justify-center border border-acr-line text-[14px] font-medium text-acr-ink hover:border-acr-slate"

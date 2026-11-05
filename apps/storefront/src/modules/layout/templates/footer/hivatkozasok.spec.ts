@@ -33,8 +33,9 @@ describe("a lábléc hivatkozásai", () => {
   // 2026-10-27: + Forgalmazott márkák (`/marka`, kirakat-lablec-kep)
   // 2026-10-27: + Elérhetőségek (`/elerhetosegek`, commerce-audit-p1 P1/11)
   // 2026-10-27: + Fizetés, Szállítás, Képes vásárlói tájékoztató (saját oldalak, lablec)
-  it("tizennyolc tetelnek van sajat utvonala, es mind relativ", () => {
-    expect(SAJAT_HIVATKOZASOK).toHaveLength(18)
+  // 2026-11-05: + Rendelés megtekintése (`/rendeles-megtekintese`, a vendég bejárata)
+  it("tizenkilenc tetelnek van sajat utvonala, es mind relativ", () => {
+    expect(SAJAT_HIVATKOZASOK).toHaveLength(19)
 
     for (const h of SAJAT_HIVATKOZASOK) {
       expect(h.cim.startsWith("/")).toBe(true)
@@ -52,6 +53,17 @@ describe("a lábléc hivatkozásai", () => {
     }
   })
 
+  it("a Rendelés megtekintése a vendég saját lapjára visz, a Fiók oszlopban (nem a régi boltba)", () => {
+    const sor = SAJAT_HIVATKOZASOK.find(
+      (h) => h.cimke === "Rendelés megtekintése",
+    )
+    expect(sor).toMatchObject({
+      cim: "/rendeles-megtekintese",
+      oszlop: "fiok",
+      kulcs: "footerText.orderView",
+    })
+  })
+
   it("a Fizetés, a Szállítás és a Képes tájékoztató saját oldalra visz, nem a régi boltba", () => {
     const cim = (felirat: string) =>
       SAJAT_HIVATKOZASOK.find((h) => h.cimke === felirat)?.cim
@@ -65,13 +77,14 @@ describe("a lábléc hivatkozásai", () => {
     ).toEqual([])
   })
 
-  it("a tizenkilenc felirat mind kulonbozik", () => {
+  // 2026-11-05: + Rendelés megtekintése (a vendég bejárata): 19 -> 20
+  it("a húsz felirat mind kulonbozik", () => {
     const cimkek = [...SAJAT_HIVATKOZASOK, ...REGI_BOLT_HIVATKOZASOK].map(
       (h) => h.cimke,
     )
 
-    expect(cimkek).toHaveLength(19)
-    expect(new Set(cimkek).size).toBe(19)
+    expect(cimkek).toHaveLength(20)
+    expect(new Set(cimkek).size).toBe(20)
   })
 
   /**
@@ -86,7 +99,8 @@ describe("a lábléc hivatkozásai", () => {
 
     // Nyitóoldal, Termékek, és 2026-10-27 óta a Forgalmazott márkák
     expect(db("oldalterkep")).toBe(3)
-    expect(db("fiok")).toBe(5)
+    // 2026-11-05: + Rendelés megtekintése (5 -> 6)
+    expect(db("fiok")).toBe(6)
     // a negy megmaradt regi-bolti tetel es a het jogi dokumentum
     expect(db("informaciok")).toBe(11)
     expect(OSZLOP_SORREND).toHaveLength(3)

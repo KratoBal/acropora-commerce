@@ -4,6 +4,8 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 import { ORDER_PROBLEM_REPORT_MODULE } from "../../../modules/order-problem-report"
 import type OrderProblemReportModuleService from "../../../modules/order-problem-report/service"
 import type { ProblemKind } from "../../../modules/order-problem-report/types"
+import { ORDER_WITHDRAWAL_MODULE } from "../../../modules/order-withdrawal"
+import type OrderWithdrawalModuleService from "../../../modules/order-withdrawal/service"
 import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-status"
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
@@ -12,11 +14,14 @@ import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
 import { lineTitle } from "../webshop-mail/operations"
 import {
   guestProblemReports,
+  guestWithdrawals,
   type GuestOrderDeps,
   type GuestOrderSource,
   type GuestOrderStatus,
   type GuestProblemReport,
+  type GuestWithdrawal,
   type StoredProblemReport,
+  type StoredWithdrawal,
 } from "./lookup"
 
 /**
@@ -114,6 +119,38 @@ export const guestProblemReportsOf = async (
   }
 }
 
+/**
+ * The withdrawal declarations made for one order, as the module stores them. Only what the customer view names is read
+ * out: the name typed into the declaration stays in the module. Throws when the module cannot be read.
+ */
+const readStoredWithdrawals = async (container: MedusaContainer, orderId: string): Promise<StoredWithdrawal[]> => {
+  const service = container.resolve<OrderWithdrawalModuleService>(ORDER_WITHDRAWAL_MODULE)
+  const rows = await service.listOrderWithdrawals({ order_id: orderId }, { order: { created_at: "ASC" } })
+  return rows.map((row) => ({
+    id: String(row.id),
+    created_at: row.created_at as Date | string,
+    item_ids: Array.isArray(row.item_ids) ? (row.item_ids as string[]) : [],
+  }))
+}
+
+/**
+ * The customer view of one order's withdrawal declarations, for the declaration route to answer with: the page then
+ * shows the list from the answer itself and does not spend a guest lookup (which is rate limited). `null` when the list
+ * cannot be read: the answer then leaves the field out and the page keeps the list it has.
+ */
+export const guestWithdrawalsOf = async (
+  container: MedusaContainer,
+  orderId: string,
+): Promise<GuestWithdrawal[] | null> => {
+  try {
+    return guestWithdrawals(await readStoredWithdrawals(container, orderId))
+  } catch (error) {
+    const logger = container.resolve(ContainerRegistrationKeys.LOGGER) as { warn(message: string): void }
+    logger.warn(`order ${orderId}: the withdrawals could not be read (${(error as Error)?.name ?? "error"})`)
+    return null
+  }
+}
+
 export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const load = async (filters: Record<string, unknown>): Promise<GuestOrderSource[]> => {
@@ -152,6 +189,16 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
         // customer must not lose the lookup over it). The log names the order and the error kind, nothing else.
         const logger = container.resolve(ContainerRegistrationKeys.LOGGER) as { warn(message: string): void }
         logger.warn(`guest order ${orderId}: the problem reports could not be read (${(error as Error)?.name ?? "error"})`)
+        return []
+      }
+    },
+    withdrawalsOf: async (orderId) => {
+      try {
+        return await readStoredWithdrawals(container, orderId)
+      } catch (error) {
+        // like the reports: the list is an extra, and the order is still shown when it cannot be read
+        const logger = container.resolve(ContainerRegistrationKeys.LOGGER) as { warn(message: string): void }
+        logger.warn(`guest order ${orderId}: the withdrawals could not be read (${(error as Error)?.name ?? "error"})`)
         return []
       }
     },
