@@ -44,6 +44,14 @@ export const ShippingAttribute = model
      * be a parcel shop. It ships at the normal price.
      */
     locker_unsuitable: model.boolean().default(false),
+
+    /**
+     * What kind of live animal the product is (`FISH`, `INVERTEBRATE`, `CORAL`),
+     * written by the OS from the product's root category; null for everything
+     * else. Plain text, validated at the admin route (`livestock-kind.ts`).
+     * Only the order confirmation reads it (V2.6): it is not a shipping rule.
+     */
+    livestock_kind: model.text().nullable(),
   })
   .indexes([
     {

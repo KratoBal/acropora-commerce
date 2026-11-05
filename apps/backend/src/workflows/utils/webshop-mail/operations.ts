@@ -13,6 +13,7 @@ import type { OrderSplitMailDeps } from "./order-split-mail"
 import type { PaymentDelayedDeps } from "./payment-delayed-mail"
 import type { PaymentLinkMailDeps } from "./payment-link-mail"
 import type { StatusMailDeps } from "./status-mail"
+import { livestockKindsOfOrder } from "./livestock-kinds"
 
 const ORDER_FIELDS = [
   "id",
@@ -55,6 +56,7 @@ const roleOf = (order: any, roles: Map<string, PaymentRole>): PaymentRole | null
 export const orderMailOperations = (container: MedusaContainer): OrderMailDeps => ({
   cartOf: (orderId) => cartOfOrder(container, orderId),
   completeSplit: (cartId) => completeSplitForCart(container, cartId),
+  livestockKinds: (orderId) => livestockKindsOfOrder(container, orderId),
   loadOrder: async (orderId): Promise<LoadedOrder | null> => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const { data } = await query.graph({ entity: "order", filters: { id: orderId }, fields: ORDER_FIELDS })

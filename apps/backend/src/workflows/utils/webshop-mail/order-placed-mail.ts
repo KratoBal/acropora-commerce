@@ -1,3 +1,4 @@
+import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
 import type { PaymentRole } from "../payment-eligibility"
 import { escapeHtml, forint, htmlDocument, SHOP_NAME } from "./format"
 
@@ -25,6 +26,12 @@ export type MailOrder = {
   payment: PaymentRole | null
   /** The pickup half of a mixed cart (collected in the shop). */
   pickup: boolean
+  /**
+   * The kinds of live animal among the order's lines (V2.6), in the fixed kind
+   * order; empty for an order with none. Only the OS-rendered mail reads it
+   * (its acclimatisation section): the built-in text does not use it.
+   */
+  livestock_kinds?: readonly LivestockKind[]
 }
 
 export type MailContent = { subject: string; text: string; html: string }

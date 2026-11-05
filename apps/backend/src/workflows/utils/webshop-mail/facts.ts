@@ -149,8 +149,11 @@ export const customerNameOf = (
  * tell the OS side.
  */
 export const WEBSHOP_MAIL_FACTS_CONTRACT = {
+  // V2.6 (f4e4832b): `livestock_kinds` is optional and the OS's fact parser keeps only the keys it
+  // knows, so an OS without the acclimatisation section ignores it: the version stays 1 and the two
+  // sides deploy in either order (the same way `locale` was added)
   LoadedOrder: ["id", "display_id", "email", "total", "items", "shipping", "payment"],
-  MailOrder: ["display_id", "items", "shipping", "total", "payment", "pickup"],
+  MailOrder: ["display_id", "items", "shipping", "total", "payment", "pickup", "livestock_kinds"],
   MailLine: ["title", "quantity", "total"],
   ShippedMailFacts: [
     "display_id",
