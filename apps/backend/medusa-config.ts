@@ -161,6 +161,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/order-problem-report",
     },
+    // the withdrawal declarations customers make from the order page (V0.3); the OS pulls them
+    {
+      resolve: "./src/modules/order-withdrawal",
+    },
     // the shop's mails on their way to the OS renderer (Levélsablonok)
     {
       resolve: "./src/modules/webshop-mail-outbox",
