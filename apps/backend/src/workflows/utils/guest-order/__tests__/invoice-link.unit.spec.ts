@@ -51,6 +51,43 @@ describe("invoiceLinkConfig", () => {
   })
 })
 
+describe("requestInvoiceLinks: a link on another origin is refused AND said", () => {
+  it("logs the two origins (never the token or the path) when the OS gives its links on another origin", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined)
+    try {
+      const secretLink = "https://os-public.example.test/api/integrations/webshop-invoice/download/SECRET.TOKEN"
+      const outcome = await requestInvoiceLinks("order_1", config, {
+        fetcher: answer(200, {
+          documents: [{ invoice_number: "SZ/1", document_type: "INVOICE", issue_date: null, url: secretLink }],
+        }),
+      })
+      expect(outcome).toEqual({ kind: "unavailable" })
+      expect(warn).toHaveBeenCalledTimes(1)
+      const line = String(warn.mock.calls[0]![0])
+      expect(line).toContain("https://os-public.example.test")
+      expect(line).toContain("https://api.example.test")
+      expect(line).not.toContain("SECRET.TOKEN")
+      expect(line).not.toContain("/download/")
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it("is quiet when the origin agrees", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined)
+    try {
+      await requestInvoiceLinks("order_1", config, {
+        fetcher: answer(200, {
+          documents: [{ invoice_number: "SZ/1", document_type: "INVOICE", issue_date: null, url: LINK }],
+        }),
+      })
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+  })
+})
+
 describe("requestInvoiceLinks", () => {
   it("posts the signed request (order id, time, signature only) and returns the clean documents", async () => {
     const fetcher = answer(200, {
