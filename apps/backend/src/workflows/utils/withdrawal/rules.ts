@@ -8,7 +8,6 @@ export const MAX_ITEMS = 50
 /** The name as stored: control characters dropped, runs of whitespace made one space, trimmed. */
 export const cleanName = (value: string): string =>
   value
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
