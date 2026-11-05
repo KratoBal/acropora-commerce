@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+import { guestWithdrawalsOf } from "../../../../workflows/utils/guest-order/operations"
 import { accessibleOrder } from "../../../../workflows/utils/problem-report/report"
 import { cleanName } from "../../../../workflows/utils/withdrawal/rules"
 import { createWithdrawal } from "../../../../workflows/utils/withdrawal/withdrawal"
@@ -41,5 +42,12 @@ export const POST = async (req: MedusaRequest<StorePostGuestWithdrawalType>, res
     })
     return
   }
-  res.status(201).json({ withdrawal_id: result.id, created_at: result.createdAt })
+  // The order's list of declarations comes with the answer (the one just made included): the page shows it as it is and
+  // does not spend a guest lookup to read it again. Left out when it cannot be read; the declaration is recorded either way.
+  const withdrawals = await guestWithdrawalsOf(req.scope, order.id)
+  res.status(201).json({
+    withdrawal_id: result.id,
+    created_at: result.createdAt,
+    ...(withdrawals ? { withdrawals } : {}),
+  })
 }
