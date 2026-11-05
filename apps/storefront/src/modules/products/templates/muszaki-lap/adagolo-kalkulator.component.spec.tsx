@@ -40,6 +40,15 @@ describe("az adagolo-kalkulator", () => {
     )
   })
 
+  // barracuda, #682 a: 99,6 L-nel a pontos adag 0,996 csepp; kerekitve "1 csepp" allna a "tul keves" mondatban
+  it("a tul kicsi adag pontos erteke is lefele kerekit, nem lesz belole 1 csepp", () => {
+    render(<AdagoloKalkulator ertek="1 drop/100 L/day" />)
+    beir("99,6")
+    expect(screen.getByTestId("adagolo-tul-kicsi").textContent).toContain(
+      "a pontos adag 0,99 csepp",
+    )
+  })
+
   it("lefele kerekit, es 20 szazalek folott a pontos erteket is kiirja", () => {
     render(<AdagoloKalkulator ertek="1 drop/100 L/day" />)
     beir("150")
