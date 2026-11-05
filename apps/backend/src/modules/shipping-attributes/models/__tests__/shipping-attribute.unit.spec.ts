@@ -17,7 +17,7 @@ describe("ShippingAttribute model", () => {
     expect(parsed.name).toBe("ShippingAttribute")
   })
 
-  it("defines the product key and the three flags", () => {
+  it("defines the product key and the flags", () => {
     // created_at, updated_at and deleted_at are added by the DML layer itself.
     expect(Object.keys(parsed.schema).sort()).toEqual([
       "created_at",
@@ -26,6 +26,7 @@ describe("ShippingAttribute model", () => {
       "id",
       "is_frozen",
       "is_heavy",
+      "locker_unsuitable",
       "pickup_only",
       "product_id",
       "updated_at",
@@ -48,6 +49,7 @@ describe("ShippingAttribute model", () => {
       "foxpost_forbidden",
       "is_heavy",
       "is_frozen",
+      "locker_unsuitable",
     ]) {
       const property = parsed.schema[flag] as unknown as {
         parse: (name: string) => { defaultValue?: unknown; nullable?: boolean }

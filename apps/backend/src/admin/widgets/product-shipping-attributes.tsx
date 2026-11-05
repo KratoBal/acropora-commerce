@@ -8,6 +8,7 @@ type Flags = {
   foxpost_forbidden: boolean
   is_heavy: boolean
   is_frozen: boolean
+  locker_unsuitable: boolean
 }
 
 const EMPTY: Flags = {
@@ -15,6 +16,7 @@ const EMPTY: Flags = {
   foxpost_forbidden: false,
   is_heavy: false,
   is_frozen: false,
+  locker_unsuitable: false,
 }
 
 const FIELDS: { key: keyof Flags; label: string; hint: string }[] = [
@@ -37,6 +39,11 @@ const FIELDS: { key: keyof Flags; label: string; hint: string }[] = [
     key: "is_frozen",
     label: "Fagyasztott",
     hint: "Fagyasztott áru, csak bolti átvétellel adható át.",
+  },
+  {
+    key: "locker_unsuitable",
+    label: "Csomagautomatába nem fér",
+    hint: "A Foxpost nem választható, GLS csomagponton csak bolt. Normál áron szállítható.",
   },
 ]
 
@@ -73,6 +80,7 @@ const ProductShippingAttributesWidget = ({
             foxpost_forbidden: Boolean(shippingAttribute.foxpost_forbidden),
             is_heavy: Boolean(shippingAttribute.is_heavy),
             is_frozen: Boolean(shippingAttribute.is_frozen),
+            locker_unsuitable: Boolean(shippingAttribute.locker_unsuitable),
           })
         }
       } catch (e) {

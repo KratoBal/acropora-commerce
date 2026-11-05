@@ -20,8 +20,10 @@ export type ShippingOptionRole = (typeof SHIPPING_OPTION_ROLES)[number]
  * for these cart shipping classes.
  */
 export const ROLE_ELIGIBILITY: Record<ShippingOptionRole, ShippingClass[]> = {
-  PICKUP: ["NORMAL", "NO_FOXPOST", "HEAVY", "PICKUP_ONLY"],
-  GLS_NORMAL: ["NORMAL", "NO_FOXPOST"],
+  PICKUP: ["NORMAL", "NO_FOXPOST", "NO_LOCKER", "HEAVY", "PICKUP_ONLY"],
+  // NO_LOCKER keeps both GLS options; its pickup point must be a parcel shop
+  // (`glsPointFitsOption`), which a rule cannot say, so the point checks do
+  GLS_NORMAL: ["NORMAL", "NO_FOXPOST", "NO_LOCKER"],
   GLS_HEAVY: ["HEAVY"],
   FOXPOST: ["NORMAL"],
 }

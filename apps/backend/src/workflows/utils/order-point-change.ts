@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/framework/utils"
 
+import { cartIsShopOnly } from "./locker-rule"
 import { buildShippingOptionRoleMap, glsPointOptionOf } from "./shipping-option-roles"
 
 /**
@@ -26,6 +27,8 @@ export type PointOrder = {
   status: string
   fulfillments: Array<{ id: string; canceled_at?: unknown } | null> | null
   shipping_methods: Array<PointMethod | null> | null
+  /** the lines the shipping class reads (a82ed229: a locker-unsuitable item allows parcel shops only) */
+  items?: Array<{ id?: string | null; variant_id?: string | null; requires_shipping?: boolean | null } | null> | null
 }
 
 /** Why the point cannot change; each has the OS's Hungarian message. */
@@ -77,6 +80,8 @@ export type PointChangeOperations = {
   loadOption(optionId: string): Promise<{ provider_id: string; data: Record<string, unknown> | null } | null>
   validate(providerId: string, optionData: Record<string, unknown>, data: Record<string, unknown>): Promise<Record<string, unknown>>
   updateMethod(id: string, changes: { data: Record<string, unknown>; metadata: Record<string, unknown> }): Promise<void>
+  /** Whether the order's lines allow a GLS parcel shop only (a82ed229, `locker-rule.ts`). */
+  shopOnly(order: PointOrder): Promise<boolean>
   now(): Date
 }
 
@@ -131,6 +136,13 @@ export const changeOrderPoint = async (
     throw error
   }
 
+  // a82ed229: the provider checks the option's rule; the order's lines can narrow it to parcel shops
+  if (carrier === "gls" && (await ops.shopOnly(order))) {
+    const point = validated[key]
+    const type = point && typeof point === "object" ? Reflect.get(point, "type") : undefined
+    if (type !== "parcel-shop") return { status: "invalid_point" }
+  }
+
   const history = Array.isArray(method.metadata?.acropora_point_history) ? method.metadata!.acropora_point_history : []
   await ops.updateMethod(method.id, {
     data: { ...(method.data ?? {}), ...validated },
@@ -154,6 +166,9 @@ const ORDER_FIELDS = [
   "shipping_methods.shipping_option_id",
   "shipping_methods.data",
   "shipping_methods.metadata",
+  "items.id",
+  "items.variant_id",
+  "items.requires_shipping",
 ]
 
 export const loadPointOrder = async (container: MedusaContainer, orderId: string): Promise<PointOrder | null> => {
@@ -165,6 +180,7 @@ export const loadPointOrder = async (container: MedusaContainer, orderId: string
 /** The Medusa side of `changeOrderPoint`. */
 export const pointChangeOperations = (container: MedusaContainer): PointChangeOperations => ({
   loadOrder: (orderId) => loadPointOrder(container, orderId),
+  shopOnly: (order) => cartIsShopOnly({ items: (order.items ?? []).filter(Boolean) as never }, container),
   loadOption: async (optionId) => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const { data } = await query.graph({

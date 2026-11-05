@@ -8,6 +8,7 @@ export type ShippingAttributeFlags = {
   foxpost_forbidden: boolean
   is_heavy: boolean
   is_frozen: boolean
+  locker_unsuitable: boolean
 }
 
 /**
@@ -21,6 +22,7 @@ export const defaultFlags = (product_id: string) => ({
   foxpost_forbidden: false,
   is_heavy: false,
   is_frozen: false,
+  locker_unsuitable: false,
 })
 
 export const resolveService = (
