@@ -1,7 +1,11 @@
 import type { TermekTudas } from "@lib/data/product-knowledge"
 import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+import { adagOlvas } from "@lib/util/adagolas"
+import { gyartoiAdagSzoveg } from "@lib/util/adagolas-szoveg"
 import React from "react"
+
+import { AdagoloKalkulator } from "./adagolo-kalkulator"
 
 /**
  * A TERMEK-TUDAS BLOKK A MUSZAKI LAPON (KZ Amino szelet, PD-014).
@@ -56,11 +60,43 @@ const SZAKASZOK: [string, Key][] = [
   ["manufacturerInfo", "product.knowledgeInfo"],
 ]
 
-function reszek(tudas: TermekTudas, t: Translate = translator("hu")) {
+/**
+ * AZ ADAGOLAS OLVASHATOAN (V3.1): a kanonikus alak ("5 ml/100 L/day") helyett
+ * "5 ml / 100 liter, naponta". Ami nem kanonikus, az ugy marad, ahogy jott.
+ */
+function olvashato(
+  mezo: string,
+  m: Megjelenes,
+  t: Translate,
+  locale: Locale,
+): Megjelenes {
+  if (mezo !== "dosing" || !m || !("ertek" in m)) return m
+  const adag = adagOlvas(m.ertek)
+  return adag ? { ertek: gyartoiAdagSzoveg(adag, t, locale) } : m
+}
+
+/** A kalkulator csak ELLENORZOTT (VERIFIED) es kanonikus adagnal jelenik meg; a SUGGESTED nem eleg. */
+export function kalkulatorErtek(tudas: TermekTudas): string | null {
+  const teny = tudas.facts.find((f) => f.field === "dosing")
+  return teny?.status === "VERIFIED" && teny.value && adagOlvas(teny.value)
+    ? teny.value
+    : null
+}
+
+function reszek(
+  tudas: TermekTudas,
+  t: Translate = translator("hu"),
+  locale: Locale = DEFAULT_LOCALE,
+) {
   const lathato = (lista: [string, Key][]) =>
     lista
       .map(
-        ([mezo, kulcs]) => [mezo, t(kulcs), megjelenes(tudas, mezo)] as const,
+        ([mezo, kulcs]) =>
+          [
+            mezo,
+            t(kulcs),
+            olvashato(mezo, megjelenes(tudas, mezo), t, locale),
+          ] as const,
       )
       .filter(([, , m]) => m)
   return {
@@ -130,7 +166,8 @@ export function TermekTudasBlokk({
 }) {
   if (!tudas || !vanTudas(tudas)) return null
   const t = translator(locale)
-  const { kulcs, szakaszok } = reszek(tudas, t)
+  const { kulcs, szakaszok } = reszek(tudas, t, locale)
+  const kalkulator = kalkulatorErtek(tudas)
 
   return (
     <section
@@ -153,6 +190,9 @@ export function TermekTudasBlokk({
         <div key={mezo} data-testid={`tudas-${mezo}`}>
           <h3 className="text-base-semi">{cimke}</h3>
           <Ertek m={m!} t={t} />
+          {mezo === "dosing" && kalkulator ? (
+            <AdagoloKalkulator ertek={kalkulator} locale={locale} />
+          ) : null}
         </div>
       ))}
     </section>

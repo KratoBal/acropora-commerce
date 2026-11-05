@@ -40,6 +40,25 @@ const KZ: TermekTudas = {
 }
 
 describe("a termék-tudás blokk", () => {
+  // V3.1: WHAT TURNS THIS RED: a calculator on a SUGGESTED dose; the canonical dose left raw on the row
+  it("az adagolas sora olvashato; a kalkulator csak az ellenorzott adag mellett all", () => {
+    const tudas = (status: string): TermekTudas => ({
+      ...KZ,
+      facts: [teny("dosing", "5 ml/100 L/day", status)],
+    })
+    const { unmount } = render(<TermekTudasBlokk tudas={tudas("VERIFIED")} />)
+    expect(screen.getByTestId("tudas-kulcs-dosing").textContent).toContain(
+      "5 ml / 100 liter, naponta",
+    )
+    expect(screen.getByTestId("adagolo-kalkulator")).toBeInTheDocument()
+    unmount()
+    render(<TermekTudasBlokk tudas={tudas("SUGGESTED")} />)
+    expect(screen.getByTestId("tudas-dosing").textContent).toContain(
+      "5 ml / 100 liter, naponta",
+    )
+    expect(screen.queryByTestId("adagolo-kalkulator")).toBeNull()
+  })
+
   it("az ütköző mező látszik, 'A források eltérnek' felirattal, érték nélkül", () => {
     render(<TermekTudasBlokk tudas={KZ} />)
     const kulcs = screen.getByTestId("tudas-kulcs-dosing")
