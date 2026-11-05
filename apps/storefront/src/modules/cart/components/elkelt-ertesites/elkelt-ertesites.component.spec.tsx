@@ -1,9 +1,22 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const hasonlo = vi.fn()
 vi.mock("@lib/data/hasonlo-kaphato", () => ({
   hasonloKaphatoTermekek: (...a: unknown[]) => hasonlo(...a),
+}))
+const torles = vi.fn()
+vi.mock("@lib/data/cart", () => ({
+  deleteLineItem: (...a: unknown[]) => torles(...a),
+}))
+vi.mock("@modules/layout/components/kosar-allapot/kosar-esemeny", () => ({
+  kosarValtozott: vi.fn(),
 }))
 vi.mock("@modules/common/components/localized-client-link", () => ({
   default: ({
@@ -27,7 +40,9 @@ afterEach(() => {
   given similar pieces drawn; the "other items kept" line shown for a cart with only the sold piece; ANY sentence about the
   money already paid (it is an open legal question): no refund promise, no word about the hold.
 */
-const elkeltek = [{ title: "WYSIWYG Acropora", handle: "wysiwyg-acropora" }]
+const elkeltek = [
+  { title: "WYSIWYG Acropora", handle: "wysiwyg-acropora", lineId: "line_1" },
+]
 const render_ = async (
   over: { maradtMas?: boolean; countryCode?: string } = {},
 ) =>
@@ -95,6 +110,25 @@ describe("ElkeltErtesites", () => {
     await render_({ countryCode: "en-hu" })
     expect(screen.getByTestId("cart-sold-notice").textContent).toContain(
       "has just been sold",
+    )
+  })
+
+  it("offers a remove button per sold line that deletes THAT line with the existing action (barracuda, #675)", async () => {
+    hasonlo.mockResolvedValue([])
+    torles.mockResolvedValue(undefined)
+    await render_()
+    const gomb = screen.getByTestId("cart-sold-remove-line_1")
+    expect(gomb.textContent).toContain("Kiveszem a kosárból")
+    fireEvent.click(gomb)
+    await waitFor(() => expect(torles).toHaveBeenCalledWith("line_1"))
+    expect(torles).toHaveBeenCalledTimes(1)
+  })
+
+  it("the remove button is in English on the English storefront", async () => {
+    hasonlo.mockResolvedValue([])
+    await render_({ countryCode: "en-hu" })
+    expect(screen.getByTestId("cart-sold-remove-line_1").textContent).toContain(
+      "Remove from my cart",
     )
   })
 })

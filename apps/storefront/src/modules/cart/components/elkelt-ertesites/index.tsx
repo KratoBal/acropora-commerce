@@ -1,8 +1,10 @@
 import { hasonloKaphatoTermekek } from "@lib/data/hasonlo-kaphato"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
-import type { ElkeltDarab } from "@lib/util/elkelt-darab"
+import type { ElkeltTetel } from "@lib/util/elkelt-darab"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+
+import ElkeltKivetel from "./elkelt-kivetel"
 
 /**
  * A KOZBEN ELKELT EGYEDI DARAB ERTESITESE A KOSAR TETEJEN (V2.5). Emberi mondat a darab nevevel, harom hasonlo, most kaphato
@@ -14,7 +16,7 @@ export default async function ElkeltErtesites({
   countryCode,
   maradtMas,
 }: {
-  elkeltek: ElkeltDarab[]
+  elkeltek: ElkeltTetel[]
   countryCode: string
   /** van-e a kosarban mas tetel is az elkelteken kivul */
   maradtMas: boolean
@@ -54,6 +56,17 @@ export default async function ElkeltErtesites({
           {t("cartPage.soldNone")}
         </p>
       )}
+      <ul className="flex flex-col gap-y-1" data-testid="cart-sold-remove">
+        {elkeltek.map((darab) => (
+          <li key={darab.lineId}>
+            <ElkeltKivetel
+              lineId={darab.lineId}
+              title={darab.title}
+              label={t("cartPage.soldRemove")}
+            />
+          </li>
+        ))}
+      </ul>
       {maradtMas ? (
         <p className="text-[14px]">{t("cartPage.soldOthersKept")}</p>
       ) : null}

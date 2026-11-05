@@ -56,17 +56,31 @@ export function elkeltKezelok(ertek: string | string[] | undefined): string[] {
     .slice(0, LEGTOBB)
 }
 
-/** A kosar tetelei kozul az elkelt kezelok tetelei (cimmel): csak ami tenyleg a kosarban van. */
+/** Egy elkelt darab a kosarban: a tetel azonositoja is megvan (a "Kiveszem a kosarbol" gomb ezt torli). */
+export type ElkeltTetel = ElkeltDarab & { lineId: string }
+
+/** A kosar tetelei kozul az elkelt kezelok tetelei (cimmel, tetel-azonositoval): csak ami tenyleg a kosarban van. */
 export function elkeltATetelek(
   kezelok: readonly string[],
   tetelek:
-    | readonly { title?: string | null; product_handle?: string | null }[]
+    | readonly {
+        id?: string | null
+        title?: string | null
+        product_handle?: string | null
+      }[]
     | undefined,
-): ElkeltDarab[] {
-  const talalt: ElkeltDarab[] = []
+): ElkeltTetel[] {
+  const talalt: ElkeltTetel[] = []
   for (const kezelo of kezelok) {
-    const tetel = (tetelek ?? []).find((t) => t.product_handle === kezelo)
-    if (tetel) talalt.push({ title: tetel.title || kezelo, handle: kezelo })
+    const tetel = (tetelek ?? []).find(
+      (t) => t.product_handle === kezelo && t.id,
+    )
+    if (tetel?.id)
+      talalt.push({
+        title: tetel.title || kezelo,
+        handle: kezelo,
+        lineId: tetel.id,
+      })
   }
   return talalt
 }
