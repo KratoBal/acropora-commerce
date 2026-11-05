@@ -421,6 +421,7 @@ export const en: Dictionary = {
     register: "Sign up",
     profile: "My profile",
     cart: "Cart",
+    orderView: "View your order",
     favourites: "My favourites",
     contact: "Contact",
     payment: "Payment",
@@ -1002,6 +1003,7 @@ export const en: Dictionary = {
     minimalText:
       "You find the details of your order in the confirmation email. If you have an account, you can also see your orders on the My orders page after signing in.",
     openOrders: "Open my orders",
+    viewOrderGuest: "View your order",
     backToShop: "Back to the shop",
     fulfilment: "Fulfilment",
     twoFulfilments: "The two fulfilments can be followed as separate orders.",

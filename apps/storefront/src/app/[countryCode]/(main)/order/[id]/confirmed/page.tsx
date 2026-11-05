@@ -69,6 +69,7 @@ export default async function OrderConfirmedPage(props: Props) {
       par={parRendeles}
       parBolti={par?.bolti ?? false}
       countryCode={countryCode}
+      vendeg={!vevo}
     />
   )
 }

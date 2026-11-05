@@ -431,6 +431,7 @@ export const hu = {
     register: "Regisztráció",
     profile: "Profilom",
     cart: "Kosár",
+    orderView: "Rendelés megtekintése",
     favourites: "Kedvenceim",
     contact: "Elérhetőségek",
     payment: "Fizetés",
@@ -1024,6 +1025,7 @@ export const hu = {
     minimalText:
       "A rendelésed részleteit a visszaigazoló e-mailben találod. Ha van fiókod, a rendeléseidet bejelentkezés után a Rendeléseim oldalon is megnézheted.",
     openOrders: "Rendeléseim megnyitása",
+    viewOrderGuest: "Rendelés megtekintése",
     backToShop: "Vissza a webshophoz",
     fulfilment: "Teljesítés",
     twoFulfilments: "A két teljesítés külön rendelésként követhető.",
