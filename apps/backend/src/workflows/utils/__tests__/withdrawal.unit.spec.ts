@@ -35,6 +35,21 @@ function fakeContainer() {
         throw new Error("duplicate key value violates unique constraint")
       for (const d of data) lines.push({ id: `wdi_${++lineSeq}`, created_at: new Date(Date.UTC(2026, 10, 5, 18, 0, 30 + lineSeq)), ...d })
     },
+    // the declaration and the claim of its lines in ONE transaction: a refused claim writes nothing at all
+    declareWithClaims: async (input: Row) => {
+      if (input.item_ids.some((id: string) => lines.some((l) => l.order_id === input.order_id && l.item_id === id)))
+        throw new Error("duplicate key value violates unique constraint")
+      const row = await service.createOrderWithdrawals({
+        order_id: input.order_id,
+        customer_name: input.customer_name,
+        item_ids: input.item_ids,
+        status: "new",
+      })
+      await service.createOrderWithdrawalItems(
+        input.item_ids.map((item_id: string) => ({ withdrawal_id: row.id, order_id: input.order_id, item_id })),
+      )
+      return row
+    },
     updateOrderWithdrawals: async (data: Row) => Object.assign(rows.find((row) => row.id === data.id)!, data),
     deleteOrderWithdrawals: async (id: string) => {
       rows.splice(
@@ -106,46 +121,48 @@ describe("createWithdrawal", () => {
     expect(rows).toHaveLength(2)
   })
 
-  it("two sends that raced past the check: the claim of the later one fails, its declaration removes itself, the earlier stands", async () => {
+  it("two sends that raced past the check: the later one's transaction is refused and leaves nothing, the earlier stands", async () => {
     const { container, rows, lines, service } = fakeContainer()
-    const create = service.createOrderWithdrawals as (data: Row) => Promise<Row>
-    // "another request" writes its declaration AND its claim between our check and our own claim
-    service.createOrderWithdrawals = async (data: Row) => {
-      rows.push({ id: "wdr_early", created_at: new Date("2026-11-05T17:59:59Z"), pulled_at: null, ...data })
+    const declare = service.declareWithClaims as (data: Row) => Promise<Row>
+    // "another request" writes its declaration AND its claim between our check and our own transaction
+    service.declareWithClaims = async (data: Row) => {
+      rows.push({ id: "wdr_early", created_at: new Date("2026-11-05T17:59:59Z"), pulled_at: null, order_id: data.order_id, item_ids: ["item_1"] })
       lines.push({ id: "wdi_early", order_id: data.order_id, item_id: "item_1", withdrawal_id: "wdr_early", created_at: new Date("2026-11-05T17:59:59Z") })
-      return create(data)
+      return declare(data)
     }
     const result = await createWithdrawal(container, order, { customerName: "A", itemIds: ["item_1"] })
     expect(result).toEqual({ status: "duplicate", id: "wdr_early", itemIds: ["item_1"] })
     expect(rows.map((row) => row.id)).toEqual(["wdr_early"])
   })
 
-  it("a race on one of two lines loses the whole claim, then the free line is recorded in the next round", async () => {
+  it("a race on one of two lines refuses the whole transaction, then the free line is recorded in the next round", async () => {
     const { container, rows, lines, service } = fakeContainer()
-    const create = service.createOrderWithdrawals as (data: Row) => Promise<Row>
+    const declare = service.declareWithClaims as (data: Row) => Promise<Row>
     let once = true
-    service.createOrderWithdrawals = async (data: Row) => {
+    service.declareWithClaims = async (data: Row) => {
       if (once) {
         once = false
         rows.push({ id: "wdr_early", created_at: new Date("2026-11-05T17:59:59Z"), pulled_at: null, order_id: data.order_id, item_ids: ["item_1"] })
         lines.push({ id: "wdi_early", order_id: data.order_id, item_id: "item_1", withdrawal_id: "wdr_early", created_at: new Date("2026-11-05T17:59:59Z") })
       }
-      return create(data)
+      return declare(data)
     }
     const result = await createWithdrawal(container, order, { customerName: "A", itemIds: ["item_1", "item_2"] })
     expect(result).toMatchObject({ status: "created", itemIds: ["item_2"], skipped: [{ itemId: "item_1", withdrawalId: "wdr_early" }] })
-    // no declaration of ours is left holding item_1
+    // no declaration of ours ever held item_1, and no claim without its declaration
     expect(rows.filter((row) => (row.item_ids as string[]).includes("item_1")).map((row) => row.id)).toEqual(["wdr_early"])
     expect(lines.filter((l) => l.item_id === "item_1")).toHaveLength(1)
+    for (const l of lines) expect(rows.some((row) => row.id === l.withdrawal_id)).toBe(true)
   })
 
-  it("a claim that fails for another reason removes the declaration and rethrows the error", async () => {
-    const { container, rows, service } = fakeContainer()
-    service.createOrderWithdrawalItems = async () => {
+  it("a transaction that fails for another reason leaves nothing and rethrows the error", async () => {
+    const { container, rows, lines, service } = fakeContainer()
+    service.declareWithClaims = async () => {
       throw new Error("connection lost")
     }
     await expect(createWithdrawal(container, order, { customerName: "A", itemIds: ["item_1"] })).rejects.toThrow("connection lost")
     expect(rows).toHaveLength(0)
+    expect(lines).toHaveLength(0)
   })
 })
 

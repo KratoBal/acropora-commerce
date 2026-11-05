@@ -80,9 +80,9 @@ const MAX_ROUNDS = 3
  * Records the declaration. Every item must be this order's line (a violation is a 4xx the page can word; nothing is
  * written). THE FREE LINES ARE RECORDED, THE TAKEN ONES ARE NAMED: a line already withdrawn from is skipped (named in
  * `skipped`, with the declaration that holds it) and the rest of the request still stands; only when EVERY requested
- * line is taken is it a duplicate. The exclusion is the database's (a unique claim per line, one bulk insert: all of
- * the declaration's lines or none): the declaration row is written first, then its lines are claimed; a declaration
- * that loses the claim removes itself and the request goes another round with what is still free.
+ * line is taken is it a duplicate. The exclusion is the database's (a unique claim per line): the declaration and the
+ * claim of its lines are written in ONE transaction (`declareWithClaims`), so a declaration that loses the claim is
+ * rolled back with it and never stands; the request goes another round with what is still free.
  */
 export const createWithdrawal = async (
   container: MedusaContainer,
@@ -101,17 +101,12 @@ export const createWithdrawal = async (
       const firstId = [...skipped.values()][0]!
       return { status: "duplicate", id: firstId, itemIds: requested }
     }
-    const row = await svc.createOrderWithdrawals({
-      order_id: order.id,
-      customer_name: input.customerName,
-      item_ids: free,
-      status: "new",
-    })
+    let row: { id: string; created_at: Date | string }
     try {
-      await svc.createOrderWithdrawalItems(free.map((itemId) => ({ withdrawal_id: row.id, order_id: order.id, item_id: itemId })))
+      // the declaration and the claim of its lines are ONE transaction: a lost claim leaves nothing behind
+      row = await svc.declareWithClaims({ order_id: order.id, customer_name: input.customerName, item_ids: free })
     } catch (error) {
-      // the claim failed: this declaration removes itself; whether a line was taken meanwhile is read again
-      await svc.deleteOrderWithdrawals(row.id)
+      // whether a line was taken meanwhile is read again: if one is, it was a lost race (another round with the rest)
       const lost = await standingLines(svc, order.id, free)
       if (lost.length === 0) throw error
       continue
