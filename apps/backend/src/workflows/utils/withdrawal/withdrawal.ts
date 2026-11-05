@@ -53,53 +53,78 @@ export type WithdrawalInput = {
 }
 
 export type CreateWithdrawalResult =
-  | { status: "created"; id: string; createdAt: string; itemIds: string[] }
+  /** `itemIds` are the lines recorded; `skipped` the requested lines that were already withdrawn from, with the declaration that holds each */
+  | { status: "created"; id: string; createdAt: string; itemIds: string[]; skipped: SkippedLine[] }
   | { status: "bad_items" }
-  /** a line of this declaration is already withdrawn from: `id` is the declaration that stands */
-  | { status: "duplicate"; id: string }
+  /** every requested line is already withdrawn from: `id` is the first declaration that stands, `itemIds` the lines */
+  | { status: "duplicate"; id: string; itemIds: string[] }
+
+export type SkippedLine = { itemId: string; withdrawalId: string }
 
 /**
- * The declarations of the order that already cover one of these lines. Oldest first, the id as the tie-break: the
- * same order for every request, so that two racing sends agree on which one stands. A declaration never lapses:
- * a line that is withdrawn from stays so (the OS decides what follows), so there is no window as with the reports.
+ * The lines among these that are already withdrawn from, with the declaration that holds each. Oldest claim first, the
+ * id as the tie-break (the same order for every request). A declaration never lapses: a line that is withdrawn from
+ * stays so (the OS decides what follows), so there is no window as with the reports.
  */
-const standingWithdrawals = async (svc: OrderWithdrawalModuleService, orderId: string, itemIds: string[]) => {
-  const rows = await svc.listOrderWithdrawals({ order_id: orderId })
+const standingLines = async (svc: OrderWithdrawalModuleService, orderId: string, itemIds: string[]) => {
+  const rows = await svc.listOrderWithdrawalItems({ order_id: orderId, item_id: itemIds })
   return rows
-    .filter((row) => (Array.isArray(row.item_ids) ? (row.item_ids as string[]) : []).some((id) => itemIds.includes(id)))
-    .sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime() || String(a.id).localeCompare(String(b.id)),
-    )
+    .map((row) => ({ itemId: String(row.item_id), withdrawalId: String(row.withdrawal_id), at: new Date(row.created_at).getTime() }))
+    .sort((a, b) => a.at - b.at || a.withdrawalId.localeCompare(b.withdrawalId) || a.itemId.localeCompare(b.itemId))
 }
+
+/** A lost race can repeat only if other requests keep winning the very same lines; three rounds is already absurd. */
+const MAX_ROUNDS = 3
 
 /**
  * Records the declaration. Every item must be this order's line (a violation is a 4xx the page can word; nothing is
- * written). A line already withdrawn from is a duplicate: the answer is the reference that stands, nothing is written.
+ * written). THE FREE LINES ARE RECORDED, THE TAKEN ONES ARE NAMED: a line already withdrawn from is skipped (named in
+ * `skipped`, with the declaration that holds it) and the rest of the request still stands; only when EVERY requested
+ * line is taken is it a duplicate. The exclusion is the database's (a unique claim per line, one bulk insert: all of
+ * the declaration's lines or none): the declaration row is written first, then its lines are claimed; a declaration
+ * that loses the claim removes itself and the request goes another round with what is still free.
  */
 export const createWithdrawal = async (
   container: MedusaContainer,
   order: { id: string; itemIds: string[] },
   input: WithdrawalInput,
 ): Promise<CreateWithdrawalResult> => {
-  const itemIds = [...new Set(input.itemIds)]
-  if (itemIds.length === 0 || itemIds.some((id) => !order.itemIds.includes(id))) return { status: "bad_items" }
+  const requested = [...new Set(input.itemIds)]
+  if (requested.length === 0 || requested.some((id) => !order.itemIds.includes(id))) return { status: "bad_items" }
   const svc = service(container)
-  const standing = await standingWithdrawals(svc, order.id, itemIds)
-  if (standing.length) return { status: "duplicate", id: standing[0]!.id }
-  const row = await svc.createOrderWithdrawals({
-    order_id: order.id,
-    customer_name: input.customerName,
-    item_ids: itemIds,
-    status: "new",
-  })
-  // two sends that raced past the check above: the fixed order decides which one stands, the other removes itself
-  const standingNow = await standingWithdrawals(svc, order.id, itemIds)
-  if (standingNow.length && standingNow[0]!.id !== row.id) {
-    await svc.deleteOrderWithdrawals(row.id)
-    return { status: "duplicate", id: standingNow[0]!.id }
+  const skipped = new Map<string, string>()
+  let free = requested
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    for (const line of await standingLines(svc, order.id, free)) if (!skipped.has(line.itemId)) skipped.set(line.itemId, line.withdrawalId)
+    free = requested.filter((id) => !skipped.has(id))
+    if (free.length === 0) {
+      const firstId = [...skipped.values()][0]!
+      return { status: "duplicate", id: firstId, itemIds: requested }
+    }
+    const row = await svc.createOrderWithdrawals({
+      order_id: order.id,
+      customer_name: input.customerName,
+      item_ids: free,
+      status: "new",
+    })
+    try {
+      await svc.createOrderWithdrawalItems(free.map((itemId) => ({ withdrawal_id: row.id, order_id: order.id, item_id: itemId })))
+    } catch (error) {
+      // the claim failed: this declaration removes itself; whether a line was taken meanwhile is read again
+      await svc.deleteOrderWithdrawals(row.id)
+      const lost = await standingLines(svc, order.id, free)
+      if (lost.length === 0) throw error
+      continue
+    }
+    return {
+      status: "created",
+      id: row.id,
+      createdAt: new Date(row.created_at).toISOString(),
+      itemIds: free,
+      skipped: [...skipped].map(([itemId, withdrawalId]) => ({ itemId, withdrawalId })),
+    }
   }
-  return { status: "created", id: row.id, createdAt: new Date(row.created_at).toISOString(), itemIds }
+  throw new Error("withdrawal: the lines kept being claimed by other requests")
 }
 
 export type PulledWithdrawal = {

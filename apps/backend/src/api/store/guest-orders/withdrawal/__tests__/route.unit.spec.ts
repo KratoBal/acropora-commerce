@@ -51,6 +51,7 @@ beforeEach(() => {
     id: "ordwdr_1",
     createdAt: "2026-11-05T18:00:00.000Z",
     itemIds: ["item_1"],
+    skipped: [],
   })
   notifyWithdrawalReceived.mockResolvedValue({ sent: true })
 })
@@ -134,7 +135,7 @@ describe("POST /store/guest-orders/withdrawal", () => {
     await run({ customer_name: "\u0007" })
     createWithdrawal.mockResolvedValue({ status: "bad_items" })
     await run()
-    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old" })
+    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old", itemIds: ["item_1"] })
     await run()
     expect(notifyWithdrawalReceived).not.toHaveBeenCalled()
     expect(guestWithdrawalsOf).not.toHaveBeenCalled()
@@ -155,14 +156,47 @@ describe("POST /store/guest-orders/withdrawal", () => {
   })
 
   it("answers 409 with the reference that stands for a line already withdrawn from", async () => {
-    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old" })
+    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old", itemIds: ["item_1"] })
     const { json, status } = await run()
     expect(status).toHaveBeenCalledWith(409)
     expect(json).toHaveBeenCalledWith({
       type: "already_declared",
       withdrawal_id: "ordwdr_old",
+      item_ids: ["item_1"],
       message: "Erről a tételről már van elállási nyilatkozatod.",
     })
+  })
+
+  it("names every taken line in the 409 when several were asked for, in the plural sentence", async () => {
+    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old", itemIds: ["item_1", "item_2"] })
+    const { json } = await run()
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ item_ids: ["item_1", "item_2"], message: "Ezekről a tételekről már van elállási nyilatkozatod." }),
+    )
+  })
+
+  it("a PARTLY taken request is a 201 for the recorded lines that names the taken ones, and the mail is for the recorded lines only", async () => {
+    createWithdrawal.mockResolvedValue({
+      status: "created",
+      id: "ordwdr_2",
+      createdAt: "2026-11-05T18:05:00.000Z",
+      itemIds: ["item_2"],
+      skipped: [{ itemId: "item_1", withdrawalId: "ordwdr_1" }],
+    })
+    const { json, status } = await run({ item_ids: ["item_1", "item_2"] })
+    expect(status).toHaveBeenCalledWith(201)
+    expect(json).toHaveBeenCalledWith({
+      withdrawal_id: "ordwdr_2",
+      created_at: "2026-11-05T18:05:00.000Z",
+      withdrawals: standingList,
+      already_declared_item_ids: ["item_1"],
+    })
+    expect(notifyWithdrawalReceived.mock.calls[0][1]).toMatchObject({ withdrawalId: "ordwdr_2", itemIds: ["item_2"] })
+  })
+
+  it("a fully recorded request carries no already_declared_item_ids", async () => {
+    const { json } = await run()
+    expect(json.mock.calls[0][0]).not.toHaveProperty("already_declared_item_ids")
   })
 })
 

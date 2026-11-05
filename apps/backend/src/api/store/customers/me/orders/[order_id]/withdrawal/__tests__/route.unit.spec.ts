@@ -54,6 +54,7 @@ beforeEach(() => {
     id: "ordwdr_1",
     createdAt: "2026-11-05T18:00:00.000Z",
     itemIds: ["item_1"],
+    skipped: [],
   })
   notifyWithdrawalReceived.mockResolvedValue({ sent: true })
 })
@@ -119,15 +120,32 @@ describe("POST /store/customers/me/orders/:order_id/withdrawal", () => {
   it("a bad item is a 400, a duplicate a 409 with the standing id, an empty name a 400; none sends the acknowledgement", async () => {
     createWithdrawal.mockResolvedValue({ status: "bad_items" })
     expect((await run()).status).toHaveBeenCalledWith(400)
-    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old" })
+    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old", itemIds: ["item_1"] })
     const dup = await run()
     expect(dup.status).toHaveBeenCalledWith(409)
-    expect(dup.json).toHaveBeenCalledWith(expect.objectContaining({ type: "already_declared", withdrawal_id: "ordwdr_old" }))
+    expect(dup.json).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "already_declared", withdrawal_id: "ordwdr_old", item_ids: ["item_1"] }),
+    )
     createWithdrawal.mockClear()
     const noName = await run({ body: { customer_name: " \u0007 " } })
     expect(noName.status).toHaveBeenCalledWith(400)
     expect(createWithdrawal).not.toHaveBeenCalled()
     expect(notifyWithdrawalReceived).not.toHaveBeenCalled()
+  })
+})
+
+describe("a partly taken request", () => {
+  it("is a 201 for the recorded lines that names the taken ones, like the guest route", async () => {
+    createWithdrawal.mockResolvedValue({
+      status: "created",
+      id: "ordwdr_2",
+      createdAt: "2026-11-05T18:05:00.000Z",
+      itemIds: ["item_2"],
+      skipped: [{ itemId: "item_1", withdrawalId: "ordwdr_1" }],
+    })
+    const { json, status } = await run({ body: { item_ids: ["item_1", "item_2"] } })
+    expect(status).toHaveBeenCalledWith(201)
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ withdrawal_id: "ordwdr_2", already_declared_item_ids: ["item_1"] }))
   })
 })
 

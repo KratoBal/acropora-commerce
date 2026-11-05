@@ -13,9 +13,10 @@ import { createWithdrawal } from "./withdrawal"
  * both routes answer alike: the page reads one contract.
  *
  * The order is already proven to be the caller's. The name is cleaned here (an empty one is a 400), the items must be that
- * order's lines (a 400), a line already withdrawn from is a 409 with the reference that stands, and a recorded declaration
- * is a 201 with its id, the time of receipt and the order's list of declarations (left out when it cannot be read; the
- * declaration is recorded either way). The durable-medium acknowledgement (OS-rendered, no wording of the shop's own)
+ * order's lines (a 400); a request whose every line is already withdrawn from is a 409 with the reference that stands and
+ * the lines; a recorded declaration is a 201 with its id, the time of receipt and the order's list of declarations (left
+ * out when it cannot be read; the declaration is recorded either way). A request that is only PARTLY taken records the
+ * free lines and names the taken ones in `already_declared_item_ids` of the 201. The durable-medium acknowledgement (OS-rendered, no wording of the shop's own)
  * goes AFTER the answer and is not waited for: a slow OS render or mail provider must not keep the button spinning.
  */
 export const declareWithdrawal = async (
@@ -37,11 +38,16 @@ export const declareWithdrawal = async (
     return
   }
   if (result.status === "duplicate") {
-    // the same line is already withdrawn from: the customer gets the reference that stands (no new declaration is made)
+    // every requested line is already withdrawn from: the customer gets the reference that stands and the lines it holds
+    // (no new declaration is made)
     res.status(409).json({
       type: "already_declared",
       withdrawal_id: result.id,
-      message: "Erről a tételről már van elállási nyilatkozatod.",
+      item_ids: result.itemIds,
+      message:
+        result.itemIds.length === 1
+          ? "Erről a tételről már van elállási nyilatkozatod."
+          : "Ezekről a tételekről már van elállási nyilatkozatod.",
     })
     return
   }
@@ -50,6 +56,9 @@ export const declareWithdrawal = async (
     withdrawal_id: result.id,
     created_at: result.createdAt,
     ...(withdrawals ? { withdrawals } : {}),
+    // the requested lines that were already withdrawn from are named (the rest of the request was recorded): a 201 body
+    // reaches the page, a 4xx body does not (the storefront SDK drops it), so a partly taken request is answered 201
+    ...(result.skipped.length ? { already_declared_item_ids: result.skipped.map((line) => line.itemId) } : {}),
   })
   // It never throws (the function catches and logs); the catch here is only a net for a rejection that would otherwise
   // go unhandled.
