@@ -68,6 +68,8 @@ import {
   guestInvoiceNumberAttempts,
   guestProblemAddressAttempts,
   guestProblemNumberAttempts,
+  guestWithdrawalAddressAttempts,
+  guestWithdrawalNumberAttempts,
   promotionAttempts,
   signInAttempts,
   signUpAttempts,
@@ -76,6 +78,7 @@ import { StorePostGuestOrderLookup } from "./store/guest-orders/lookup/validator
 import { StorePostGuestInvoice } from "./store/guest-orders/invoice/validators";
 import { StorePostGuestProblem } from "./store/guest-orders/problem/validators";
 import { StorePostGuestProblemPhoto } from "./store/guest-orders/problem-photos/validators";
+import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
@@ -346,6 +349,12 @@ export default defineMiddlewares({
       matcher: "/store/guest-orders/problem",
       method: "POST",
       middlewares: [guestProblemAddressAttempts, guestProblemNumberAttempts, validateAndTransformBody(StorePostGuestProblem)],
+    },
+    {
+      // V0.3: the withdrawal declaration; the attempt limits count BEFORE the body is validated, like the report
+      matcher: "/store/guest-orders/withdrawal",
+      method: "POST",
+      middlewares: [guestWithdrawalAddressAttempts, guestWithdrawalNumberAttempts, validateAndTransformBody(StorePostGuestWithdrawal)],
     },
     {
       matcher: "/store/newsletter-subscriptions",
