@@ -1,7 +1,9 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { ORDER_WITHDRAWAL_MODULE } from "../../../modules/order-withdrawal"
 import type OrderWithdrawalModuleService from "../../../modules/order-withdrawal/service"
+import type { AccessibleOrder } from "../problem-report/report"
 
 /**
  * THE WITHDRAWAL'S FLOW (V0.3), the Medusa side. The customer reaches the order with the same pair the guest lookup
@@ -10,6 +12,40 @@ import type OrderWithdrawalModuleService from "../../../modules/order-withdrawal
  */
 const service = (container: MedusaContainer) =>
   container.resolve<OrderWithdrawalModuleService>(ORDER_WITHDRAWAL_MODULE)
+
+/**
+ * The order of the SIGNED-IN customer, or null. The customer id comes from the session (never from the request) and is
+ * the filter: another customer's order is not "forbidden" but absent, the same null as an order that does not exist, so
+ * the route cannot be used to probe which order ids are real. Same shape as the guest pair opens (`accessibleOrder`).
+ */
+export const ownOrder = async (
+  container: MedusaContainer,
+  customerId: string,
+  orderId: string,
+): Promise<AccessibleOrder | null> => {
+  if (!customerId || !orderId) return null
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "order",
+    filters: { id: orderId, customer_id: customerId } as Record<string, unknown>,
+    fields: ["id", "display_id", "email", "customer_id", "items.id"],
+  })
+  const order = (data?.[0] ?? null) as {
+    id: string
+    display_id?: number | string
+    email?: string | null
+    customer_id?: string | null
+    items?: ({ id: string } | null)[]
+  } | null
+  // the filter does the work; this is the net for a query layer that ignored it (the customer AND the order must match)
+  if (!order || order.customer_id !== customerId || order.id !== orderId) return null
+  return {
+    id: order.id,
+    itemIds: (order.items ?? []).filter(Boolean).map((item) => item!.id),
+    displayId: order.display_id ?? "",
+    email: order.email ?? null,
+  }
+}
 
 export type WithdrawalInput = {
   customerName: string
