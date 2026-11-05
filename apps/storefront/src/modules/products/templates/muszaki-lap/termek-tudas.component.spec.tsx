@@ -59,6 +59,16 @@ describe("a termék-tudás blokk", () => {
     expect(screen.queryByTestId("adagolo-kalkulator")).toBeNull()
   })
 
+  // barracuda, #682 b: a projection sends one fact per field, and a conflict is that fact's status, so the
+  // calculator never reads a dose the page shows as disputed
+  it("az ütköző adagolás mellett nincs kalkulátor", () => {
+    render(<TermekTudasBlokk tudas={KZ} />)
+    expect(screen.getByTestId("tudas-dosing").textContent).toContain(
+      "A források eltérnek",
+    )
+    expect(screen.queryByTestId("adagolo-kalkulator")).toBeNull()
+  })
+
   it("az ütköző mező látszik, 'A források eltérnek' felirattal, érték nélkül", () => {
     render(<TermekTudasBlokk tudas={KZ} />)
     const kulcs = screen.getByTestId("tudas-kulcs-dosing")

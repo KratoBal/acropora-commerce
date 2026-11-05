@@ -49,7 +49,14 @@ export function AdagoloKalkulator({
         }[allapot.hiba]
       : null
   const pontos = szamolt
-    ? adagSzoveg(Math.round(szamolt.pontos * 100) / 100, adag.egyseg, t, locale)
+    ? // a pontos ertek is LEFELE ket tizedesre (barracuda, #682 a): 0,996 csepp ne "1 csepp"-kent alljon a
+      // "tul keves" mondatban; a kis epszilon a lebegopontos szorzas ellen van, mint az adagSzamol-ban
+      adagSzoveg(
+        Math.floor(szamolt.pontos * 100 + 1e-9) / 100,
+        adag.egyseg,
+        t,
+        locale,
+      )
     : ""
 
   return (
