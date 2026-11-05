@@ -54,10 +54,11 @@ const kosar = (modok: unknown[] = []) =>
     currency_code: "huf",
   }) as unknown as HttpTypes.StoreCart
 
-const rajzol = (k = kosar()) =>
+const rajzol = (k = kosar(), csakCsomagbolt = false) =>
   render(
     <Shipping
       cart={k}
+      csakCsomagbolt={csakCsomagbolt}
       availableShippingMethods={[
         mod("so-home", "GLS házhozszállítás"),
         mod("so-gls", "GLS csomagpont"),
@@ -134,6 +135,41 @@ describe("a GLS a szállítási lépésben", () => {
     rajzol()
     fireEvent.click(radio(2))
     expect(keresoElem().getAttribute("filter-type")).toBe("parcel-shop")
+  })
+
+  // a82ed229: WHAT TURNS THIS RED: a cart with an item that does not fit a locker offered GLS lockers on the
+  // ordinary option; the reason left unsaid; the fallback list not asking with the cart; the rule reaching a plain cart
+  it("ha egy tétel nem fér automatába, a sima GLS csomagpont is csak ParcelShopot kínál, és megmondja, miért", () => {
+    rajzol(kosar(), true)
+    fireEvent.click(radio(1))
+    expect(keresoElem().getAttribute("filter-type")).toBe("parcel-shop")
+    expect(screen.getByTestId("gls-valaszto").textContent).toContain(
+      "nem fér csomagautomatába",
+    )
+  })
+
+  it("a tartalék-lista a kosárral kérdez, hogy a háttér ugyanazt a szabályt alkalmazza", async () => {
+    searchGlsPickupPoints.mockResolvedValue({
+      elerheto: true,
+      pontok: [],
+      talalat: 0,
+    })
+    rajzol(kosar(), true)
+    fireEvent.click(radio(1))
+    fireEvent.click(screen.getByTestId("gls-lista-nezet"))
+    fireEvent.change(screen.getByTestId("csomagpont-kereses"), {
+      target: { value: "2100" },
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
+    })
+    expect(searchGlsPickupPoints).toHaveBeenCalledWith(
+      "2100",
+      "so-gls",
+      20,
+      "hu",
+      "cart-1",
+    )
   })
 
   it("a keresőből csak az azonosító megy a módra, a forrásával", async () => {
@@ -218,12 +254,14 @@ describe("a GLS a szállítási lépésben", () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId("csomagpont-kereses-gomb"))
     })
-    // a negyedik argumentum a lap nyelve: a nyitvatartás és a jellemzők mondata azon jön vissza
+    // a negyedik argumentum a lap nyelve: a nyitvatartás és a jellemzők mondata azon jön vissza;
+    // az ötödik a kosár (a82ed229): a háttér dönti el, hogy csak csomagbolt jöhet-e
     expect(searchGlsPickupPoints).toHaveBeenCalledWith(
       "2100",
       "so-gls",
       20,
       "hu",
+      "cart-1",
     )
     const [rossz, tele] = await screen.findAllByTestId("csomagpont")
     expect((rossz as HTMLButtonElement).disabled).toBe(true)

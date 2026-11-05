@@ -135,6 +135,21 @@ describe("a GLS-csomagpont keresése", () => {
     })
   })
 
+  // a82ed229: the cart goes along only when given; without it the old query stays, so an old backend still answers
+  it("a kosárral kérdez, ha megkapta; nélküle a régi alakban", async () => {
+    sdk.client.fetch.mockResolvedValue({
+      available: true,
+      pickup_points: [],
+      count: 0,
+    })
+    await searchGlsPickupPoints("2100", "so_gls", 20, "hu", "cart_1")
+    expect(sdk.client.fetch.mock.calls[0][1].query).toMatchObject({
+      cart_id: "cart_1",
+    })
+    await searchGlsPickupPoints("2100", "so_gls")
+    expect("cart_id" in sdk.client.fetch.mock.calls[1][1].query).toBe(false)
+  })
+
   it("a pont fajtája, nyitvatartása, jellemzői és telítettsége a sorba kerül", async () => {
     sdk.client.fetch.mockResolvedValue({
       available: true,

@@ -187,7 +187,18 @@ export type GlsPontMod = { option_id: string; heavy: boolean }
  * Csak akkor szol, ha FUTARRAL tovabbra is mehet (nehezaru, vagy "Foxpost
  * nelkul" tetel): a csak bolti atvetelt az atveteli sav mondja ki.
  */
-const FOXPOST_NELKULI_OSZTALYOK = ["NO_FOXPOST", "HEAVY"]
+const FOXPOST_NELKULI_OSZTALYOK = ["NO_FOXPOST", "NO_LOCKER", "HEAVY"]
+
+/**
+ * A KOSAR CSAK CSOMAGBOLTBA MEHET GLS CSOMAGPONTON (a82ed229): egy tetel nem fer
+ * csomagautomataba. A hattere ugyanezt donti el (`locker-rule.ts`), a kirakat
+ * csak a valasztot szukiti es megmondja, miert.
+ */
+export const csakCsomagboltOsztaly = (
+  osztaly?: {
+    shipping_class?: string | null
+  } | null,
+) => osztaly?.shipping_class === "NO_LOCKER"
 
 export function foxpostTiltottTetel(
   tetelek: readonly {
