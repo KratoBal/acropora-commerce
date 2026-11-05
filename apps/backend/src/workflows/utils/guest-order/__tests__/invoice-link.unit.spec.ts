@@ -103,6 +103,12 @@ describe("requestInvoiceLinks", () => {
     ).toEqual({ kind: "ok", documents: [{ ...good, document_type: "CORRECTION" }] })
     for (const bad of [
       { ...good, url: "https://evil.test/elsewhere" },
+      // the right path on ANOTHER host (barracuda, #671 review), another scheme or port of the same host, another path prefix
+      { ...good, url: "https://evil.test/api/integrations/webshop-invoice/download/abc.def" },
+      { ...good, url: "http://api.example.test/api/integrations/webshop-invoice/download/abc.def" },
+      { ...good, url: "https://api.example.test:8443/api/integrations/webshop-invoice/download/abc.def" },
+      { ...good, url: "https://api.example.test/other/integrations/webshop-invoice/download/abc.def" },
+      { ...good, url: "https://api.example.test/api/integrations/webshop-invoice/link" },
       { ...good, url: "javascript:alert(1)" },
       { ...good, document_type: "PROFORMA" },
       { ...good, url: undefined },
