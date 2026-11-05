@@ -19,6 +19,17 @@ import {
 export const KERESES_KORLAT = { max: 20, ablakMs: 10 * 60 * 1000 } as const
 export const SZAMLA_KORLAT = { max: 20, ablakMs: 10 * 60 * 1000 } as const
 
+/**
+ * A PROBLEMA-BEJELENTES ES A KEPFELTOLTES KERETE (V1.2): a bejelentes ritka, es egy bejelentes legfeljebb ot kepet visz, ezert a
+ * bejelentes kerete szuk, a kepeke tagabb. A kettot kulon szamoljuk: egy bejelentes kepei ne fogyasszak a bejelentes keretet.
+ */
+export const BEJELENTES_KORLAT = { max: 15, ablakMs: 10 * 60 * 1000 } as const
+export const FOTO_KORLAT = { max: 40, ablakMs: 10 * 60 * 1000 } as const
+
+export const bejelentesKorlat = (): SebessegKorlat =>
+  sebessegKorlat(BEJELENTES_KORLAT)
+export const fotoKorlat = (): SebessegKorlat => sebessegKorlat(FOTO_KORLAT)
+
 export const keresesKorlat = (): SebessegKorlat =>
   sebessegKorlat(KERESES_KORLAT)
 export const szamlaKorlat = (): SebessegKorlat => sebessegKorlat(SZAMLA_KORLAT)
