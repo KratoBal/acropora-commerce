@@ -100,3 +100,44 @@ describe("a sikeroldal GLS-rendelésnél", () => {
     expect(screen.getByTestId("mi-tortenik").textContent).not.toContain("GLS")
   })
 })
+
+/*
+  A VENDEG BEJARATA A VISSZAIGAZOLO OLDALON (a "Rendelesem" oldal hianylistaja, 2026-11-05).
+  MI PIROSIT: a bejelentkezetlen latogato nem kap hivatkozast a vendeg lapra; a bejelentkezett kap egyet (neki a
+  fiok rendelesei a bejarat); a hivatkozas masra visz; a felirat nem a szotarbol jon (angol oldalon is magyar).
+*/
+describe("a vendég bejárata a rendelés-visszaigazoló oldalon", () => {
+  const fogyasztoi = {
+    name: "GLS csomagpont",
+    total: 1490,
+    data: {},
+  }
+  const oldal = async (extra: { vendeg?: boolean; countryCode?: string }) =>
+    render(
+      await OrderCompletedTemplate({
+        order: rendeles(fogyasztoi),
+        countryCode: extra.countryCode ?? "hu",
+        vendeg: extra.vendeg,
+      }),
+    )
+
+  it("vendégnek van hivatkozás a Rendelés megtekintése lapra, bejelentkezettnek nincs", async () => {
+    await oldal({ vendeg: true })
+    const link = screen.getByTestId("rendeles-megtekintese-link")
+    expect(link.getAttribute("href")).toBe("/rendeles-megtekintese")
+    expect(link.textContent).toBe("Rendelés megtekintése")
+    cleanup()
+    await oldal({ vendeg: false })
+    expect(screen.queryByTestId("rendeles-megtekintese-link")).toBeNull()
+    cleanup()
+    await oldal({})
+    expect(screen.queryByTestId("rendeles-megtekintese-link")).toBeNull()
+  })
+
+  it("az angol oldalon a felirat angol", async () => {
+    await oldal({ vendeg: true, countryCode: "en-hu" })
+    expect(screen.getByTestId("rendeles-megtekintese-link").textContent).toBe(
+      "View your order",
+    )
+  })
+})
