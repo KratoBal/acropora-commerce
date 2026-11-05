@@ -1,5 +1,9 @@
 const accessibleOrder = jest.fn()
 const createWithdrawal = jest.fn()
+const guestWithdrawalsOf = jest.fn()
+jest.mock("../../../../../workflows/utils/guest-order/operations", () => ({
+  guestWithdrawalsOf: (...args: unknown[]) => guestWithdrawalsOf(...args),
+}))
 jest.mock("../../../../../workflows/utils/problem-report/report", () => ({
   accessibleOrder: (...args: unknown[]) => accessibleOrder(...args),
 }))
@@ -33,11 +37,15 @@ const run = async (over: Record<string, unknown> = {}) => {
   return { json, status }
 }
 
+const standingList = [{ id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z", item_ids: ["item_1"] }]
+
 beforeEach(() => {
+  guestWithdrawalsOf.mockResolvedValue(standingList)
   accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1042, email: "vevo@example.hu" })
   createWithdrawal.mockResolvedValue({ status: "created", id: "ordwdr_1", createdAt: "2026-11-05T18:00:00.000Z" })
 })
 afterEach(() => {
+  guestWithdrawalsOf.mockReset()
   accessibleOrder.mockReset()
   createWithdrawal.mockReset()
 })
@@ -54,9 +62,38 @@ describe("POST /store/guest-orders/withdrawal", () => {
   it("records the declaration with the cleaned name and answers its id and time of receipt", async () => {
     const { json, status } = await run()
     expect(status).toHaveBeenCalledWith(201)
-    expect(json).toHaveBeenCalledWith({ withdrawal_id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z" })
+    expect(json).toHaveBeenCalledWith({
+      withdrawal_id: "ordwdr_1",
+      created_at: "2026-11-05T18:00:00.000Z",
+      withdrawals: standingList,
+    })
     expect(accessibleOrder).toHaveBeenCalledWith(expect.anything(), 1042, "vevo@example.hu")
     expect(createWithdrawal.mock.calls[0][2]).toEqual({ customerName: "Kiss Anna", itemIds: ["item_1"] })
+  })
+
+  it("reads the list for the order that was found, after the declaration is recorded", async () => {
+    await run()
+    expect(guestWithdrawalsOf).toHaveBeenCalledWith(expect.anything(), "order_1")
+    expect(createWithdrawal.mock.invocationCallOrder[0]).toBeLessThan(guestWithdrawalsOf.mock.invocationCallOrder[0])
+  })
+
+  it("leaves the list out, and still answers 201, when it cannot be read", async () => {
+    guestWithdrawalsOf.mockResolvedValue(null)
+    const { json, status } = await run()
+    expect(status).toHaveBeenCalledWith(201)
+    expect(json).toHaveBeenCalledWith({ withdrawal_id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z" })
+  })
+
+  it("reads no list when nothing was recorded (a miss, a bad name, a bad item, a duplicate)", async () => {
+    accessibleOrder.mockResolvedValue(null)
+    await run()
+    accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1, email: "a@b.hu" })
+    await run({ customer_name: "\u0007" })
+    createWithdrawal.mockResolvedValue({ status: "bad_items" })
+    await run()
+    createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old" })
+    await run()
+    expect(guestWithdrawalsOf).not.toHaveBeenCalled()
   })
 
   it("a name that is empty once cleaned is a 400 and nothing is created", async () => {

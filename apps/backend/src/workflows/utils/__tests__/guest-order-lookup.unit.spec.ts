@@ -3,6 +3,7 @@ import {
   findGuestOrderId,
   guestOrderView,
   guestProblemReports,
+  guestWithdrawals,
   lookupGuestOrders,
   type GuestOrderDeps,
   type GuestOrderSource,
@@ -54,6 +55,7 @@ const deps = (
       return orderId === "o_1" ? status : null
     },
     problemReportsOf: async () => [],
+    withdrawalsOf: async () => [],
   }
 }
 
@@ -245,6 +247,46 @@ describe("the order's problem reports", () => {
     d.problemReportsOf = async (orderId) => (orderId === "o_2" ? ([stored()] as never) : [])
     const result = await lookupGuestOrders({ displayId: 1042, email: "vevo@example.hu" }, d)
     expect(result?.map((o) => o.problem_reports.length)).toEqual([0, 1])
+  })
+})
+
+describe("the withdrawal declarations in the customer view", () => {
+  const stored = (over: Record<string, unknown> = {}) => ({
+    id: "ordwdr_1",
+    created_at: new Date("2026-11-05T18:00:00Z"),
+    item_ids: ["item_1"],
+    customer_name: "Titkos Név",
+    status: "new",
+    ...over,
+  })
+
+  it("shows the reference, the time of receipt and the lines, the oldest first", () => {
+    const list = guestWithdrawals([
+      stored({ id: "ordwdr_2", created_at: "2026-11-06T09:00:00.000Z", item_ids: ["item_2"] }),
+      stored(),
+    ] as never)
+    expect(list).toEqual([
+      { id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z", item_ids: ["item_1"] },
+      { id: "ordwdr_2", created_at: "2026-11-06T09:00:00.000Z", item_ids: ["item_2"] },
+    ])
+  })
+
+  it("never passes the name typed into the declaration or the shop's own status", () => {
+    const view = guestOrderView(source({ id: "o_1", display_id: 1042 }), null, [], [stored()] as never)
+    const text = JSON.stringify(view)
+    expect(text).not.toContain("Titkos Név")
+    expect(text).not.toContain("customer_name")
+    expect(text).not.toContain("\"status\":\"new\"")
+    expect(view.withdrawals).toHaveLength(1)
+  })
+
+  it("an order without a declaration has an empty list, and each order of a split cart gets its own", async () => {
+    const orders = [source({ id: "o_1", display_id: 1042 })]
+    const mate = source({ id: "o_2", display_id: 1043 })
+    const d = deps(orders, { o_1: [mate] })
+    d.withdrawalsOf = async (orderId) => (orderId === "o_2" ? ([stored()] as never) : [])
+    const result = await lookupGuestOrders({ displayId: 1042, email: "vevo@example.hu" }, d)
+    expect(result?.map((o) => o.withdrawals.length)).toEqual([0, 1])
   })
 })
 
