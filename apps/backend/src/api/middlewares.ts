@@ -79,6 +79,7 @@ import { StorePostGuestInvoice } from "./store/guest-orders/invoice/validators";
 import { StorePostGuestProblem } from "./store/guest-orders/problem/validators";
 import { StorePostGuestProblemPhoto } from "./store/guest-orders/problem-photos/validators";
 import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/validators";
+import { StorePostCustomerWithdrawal } from "./store/customers/me/orders/[order_id]/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
@@ -355,6 +356,12 @@ export default defineMiddlewares({
       matcher: "/store/guest-orders/withdrawal",
       method: "POST",
       middlewares: [guestWithdrawalAddressAttempts, guestWithdrawalNumberAttempts, validateAndTransformBody(StorePostGuestWithdrawal)],
+    },
+    {
+      // V0.3: the signed-in customer's withdrawal declaration (the session opens the order; the stock /store/customers/me* middleware requires it)
+      matcher: "/store/customers/me/orders/:order_id/withdrawal",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostCustomerWithdrawal)],
     },
     {
       matcher: "/store/newsletter-subscriptions",
