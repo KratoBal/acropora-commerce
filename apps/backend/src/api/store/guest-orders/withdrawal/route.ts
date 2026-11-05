@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
+import { notifyWithdrawalReceived } from "../../../../workflows/utils/webshop-mail/withdrawal-received-mail"
 import { accessibleOrder } from "../../../../workflows/utils/problem-report/report"
 import { cleanName } from "../../../../workflows/utils/withdrawal/rules"
 import { createWithdrawal } from "../../../../workflows/utils/withdrawal/withdrawal"
@@ -11,7 +12,8 @@ import type { StorePostGuestWithdrawalType } from "./validators"
  * The withdrawal declaration itself (V0.3: the "Elállás megerősítése" step; the form before it is the page's). The
  * same pair as the guest lookup opens the order (every miss is ONE 404); the items must be that order's lines. Answers
  * 201 with the declaration's id and the time of receipt (the shop's server time): the customer's reference. The
- * durable-medium acknowledgement (the mail) is the next slice; nothing is promised in words here.
+ * durable-medium acknowledgement (the mail, OS-rendered, no wording of the shop's own) goes AFTER the answer and is not
+ * waited for: the declaration is recorded, and a slow OS render or a slow mail provider must not keep the button spinning.
  */
 export const POST = async (req: MedusaRequest<StorePostGuestWithdrawalType>, res: MedusaResponse) => {
   const body = req.validatedBody
@@ -42,4 +44,13 @@ export const POST = async (req: MedusaRequest<StorePostGuestWithdrawalType>, res
     return
   }
   res.status(201).json({ withdrawal_id: result.id, created_at: result.createdAt })
+  // It never throws (the function catches and logs); the catch here is only a net for a rejection that would otherwise
+  // go unhandled.
+  void notifyWithdrawalReceived(req.scope, {
+    order: { id: order.id, displayId: order.displayId, email: order.email },
+    withdrawalId: result.id,
+    declaredName: customerName,
+    itemIds: result.itemIds,
+    receivedAt: result.createdAt,
+  }).catch(() => undefined)
 }
