@@ -1,5 +1,9 @@
 const accessibleOrder = jest.fn()
 const createWithdrawal = jest.fn()
+const notifyWithdrawalReceived = jest.fn()
+jest.mock("../../../../../workflows/utils/webshop-mail/withdrawal-received-mail", () => ({
+  notifyWithdrawalReceived: (...args: unknown[]) => notifyWithdrawalReceived(...args),
+}))
 const guestWithdrawalsOf = jest.fn()
 jest.mock("../../../../../workflows/utils/guest-order/operations", () => ({
   guestWithdrawalsOf: (...args: unknown[]) => guestWithdrawalsOf(...args),
@@ -42,12 +46,19 @@ const standingList = [{ id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z", 
 beforeEach(() => {
   guestWithdrawalsOf.mockResolvedValue(standingList)
   accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1042, email: "vevo@example.hu" })
-  createWithdrawal.mockResolvedValue({ status: "created", id: "ordwdr_1", createdAt: "2026-11-05T18:00:00.000Z" })
+  createWithdrawal.mockResolvedValue({
+    status: "created",
+    id: "ordwdr_1",
+    createdAt: "2026-11-05T18:00:00.000Z",
+    itemIds: ["item_1"],
+  })
+  notifyWithdrawalReceived.mockResolvedValue({ sent: true })
 })
 afterEach(() => {
   guestWithdrawalsOf.mockReset()
   accessibleOrder.mockReset()
   createWithdrawal.mockReset()
+  notifyWithdrawalReceived.mockReset()
 })
 
 describe("POST /store/guest-orders/withdrawal", () => {
@@ -71,6 +82,38 @@ describe("POST /store/guest-orders/withdrawal", () => {
     expect(createWithdrawal.mock.calls[0][2]).toEqual({ customerName: "Kiss Anna", itemIds: ["item_1"] })
   })
 
+  it("sends the acknowledgement once, for the new declaration, with the order's own address and the cleaned name", async () => {
+    await run()
+    expect(notifyWithdrawalReceived).toHaveBeenCalledTimes(1)
+    expect(notifyWithdrawalReceived.mock.calls[0][1]).toEqual({
+      order: { id: "order_1", displayId: 1042, email: "vevo@example.hu" },
+      withdrawalId: "ordwdr_1",
+      declaredName: "Kiss Anna",
+      itemIds: ["item_1"],
+      receivedAt: "2026-11-05T18:00:00.000Z",
+    })
+  })
+
+  it("answers 201 without waiting for the mail, even when the mail never finishes", async () => {
+    notifyWithdrawalReceived.mockReturnValue(new Promise(() => undefined))
+    const { json, status } = await run()
+    expect(status).toHaveBeenCalledWith(201)
+    expect(json).toHaveBeenCalledWith({
+      withdrawal_id: "ordwdr_1",
+      created_at: "2026-11-05T18:00:00.000Z",
+      withdrawals: standingList,
+    })
+    expect(notifyWithdrawalReceived).toHaveBeenCalledTimes(1)
+  })
+
+  it("a rejected mail promise changes nothing in the answer and leaves nothing unhandled", async () => {
+    notifyWithdrawalReceived.mockRejectedValue(new Error("boom"))
+    const { status } = await run()
+    expect(status).toHaveBeenCalledWith(201)
+    // let the rejection settle: an unhandled one would fail the test run
+    await new Promise((resolve) => setImmediate(resolve))
+  })
+
   it("reads the list for the order that was found, after the declaration is recorded", async () => {
     await run()
     expect(guestWithdrawalsOf).toHaveBeenCalledWith(expect.anything(), "order_1")
@@ -84,7 +127,7 @@ describe("POST /store/guest-orders/withdrawal", () => {
     expect(json).toHaveBeenCalledWith({ withdrawal_id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z" })
   })
 
-  it("reads no list when nothing was recorded (a miss, a bad name, a bad item, a duplicate)", async () => {
+  it("records nothing, sends no acknowledgement and reads no list (a miss, a bad name, a bad item, a duplicate)", async () => {
     accessibleOrder.mockResolvedValue(null)
     await run()
     accessibleOrder.mockResolvedValue({ id: "order_1", itemIds: ["item_1"], displayId: 1, email: "a@b.hu" })
@@ -93,6 +136,7 @@ describe("POST /store/guest-orders/withdrawal", () => {
     await run()
     createWithdrawal.mockResolvedValue({ status: "duplicate", id: "ordwdr_old" })
     await run()
+    expect(notifyWithdrawalReceived).not.toHaveBeenCalled()
     expect(guestWithdrawalsOf).not.toHaveBeenCalled()
   })
 

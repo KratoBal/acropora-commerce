@@ -41,6 +41,9 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   // the twelfth (V1.2 slice 4, Balázs 2026-11-04): the acknowledgement of a problem report; the OS has no text for
   // it on an older version and answers 422, so the mail waits in the outbox until the OS knows the template
   "problem-report-received",
+  // the thirteenth (V0.3 slice 2): the acknowledgement of a withdrawal declaration, on a durable medium; the OS has no
+  // text for it until its template exists and answers 422, so the mail waits in the outbox until the OS knows it
+  "withdrawal-received",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]
 
@@ -102,6 +105,18 @@ export type WebshopMailFactsOf = {
   "order-split": CommonFacts & { order: LoadedOrder; split_order: LoadedOrder; payment: "card" | "cod" | "store" | "transfer" }
   /** The order's number and the case reference the customer was given when filing; nothing else of the report. */
   "problem-report-received": CommonFacts & { display_id: number | string; report_id: string }
+  /**
+   * The withdrawal declaration's acknowledgement: what the customer declared and when the shop received it. `declared_name`
+   * is the name typed into the declaration (it may differ from the billing name in `customer_name`); `item_ids` are the order
+   * lines withdrawn from (the OS names them from the order); `received_at` is the shop server's time of receipt, ISO.
+   */
+  "withdrawal-received": CommonFacts & {
+    display_id: number | string
+    withdrawal_id: string
+    declared_name: string
+    item_ids: string[]
+    received_at: string
+  }
 }
 
 /** The render request for one template. */

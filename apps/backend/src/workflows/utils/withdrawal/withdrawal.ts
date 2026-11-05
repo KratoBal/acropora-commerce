@@ -17,7 +17,7 @@ export type WithdrawalInput = {
 }
 
 export type CreateWithdrawalResult =
-  | { status: "created"; id: string; createdAt: string }
+  | { status: "created"; id: string; createdAt: string; itemIds: string[] }
   | { status: "bad_items" }
   /** a line of this declaration is already withdrawn from: `id` is the declaration that stands */
   | { status: "duplicate"; id: string }
@@ -63,7 +63,7 @@ export const createWithdrawal = async (
     await svc.deleteOrderWithdrawals(row.id)
     return { status: "duplicate", id: standingNow[0]!.id }
   }
-  return { status: "created", id: row.id, createdAt: new Date(row.created_at).toISOString() }
+  return { status: "created", id: row.id, createdAt: new Date(row.created_at).toISOString(), itemIds }
 }
 
 export type PulledWithdrawal = {
