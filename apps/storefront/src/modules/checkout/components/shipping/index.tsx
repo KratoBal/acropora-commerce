@@ -67,6 +67,11 @@ type ShippingProps = {
    * `foxpostTiltottTetel`); `null`, ha jar, vagy nem tudjuk megnevezni.
    */
   foxpostTiltottTetel?: string | null
+  /**
+   * A kosar csak csomagboltba mehet GLS csomagponton (a82ed229,
+   * `csakCsomagboltOsztaly`): egy tetele nem fer automataba.
+   */
+  csakCsomagbolt?: boolean
 }
 
 /** Egy csomagpontos mod: kinel, hogyan keres, es milyen adatot kuld a modhoz. */
@@ -101,6 +106,7 @@ const Shipping: React.FC<ShippingProps> = ({
   glsOptions = [],
   glsHomeOptions = [],
   foxpostTiltottTetel = null,
+  csakCsomagbolt = false,
 }) => {
   const t = useTranslate()
   const locale = useLocale()
@@ -118,7 +124,8 @@ const Shipping: React.FC<ShippingProps> = ({
   for (const gls of glsOptions) {
     pontModok.set(gls.option_id, {
       szolgaltato: "GLS",
-      kereso: (q) => searchGlsPickupPoints(q, gls.option_id, 20, locale),
+      kereso: (q) =>
+        searchGlsPickupPoints(q, gls.option_id, 20, locale, cart?.id),
       adat: glsSzallitasiAdat,
       adatKulcs: "gls_pickup_point",
     })
@@ -581,6 +588,8 @@ const Shipping: React.FC<ShippingProps> = ({
                     key={shippingMethodId ?? ""}
                     optionId={glsPontAktiv.option_id}
                     nehez={glsPontAktiv.heavy}
+                    automataNem={csakCsomagbolt}
+                    cartId={cart?.id ?? null}
                     kivalasztott={(kosarPont as GlsKivalasztott) ?? null}
                     onValaszt={(id, forras) => handlePont({ id }, forras)}
                   />

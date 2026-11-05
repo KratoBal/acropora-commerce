@@ -820,6 +820,8 @@ export const en: Dictionary = {
       "The official GLS map finder. The network includes GLS ParcelShops and GLS lockers.",
     glsIntroHeavy:
       "The official GLS map finder. Heavy goods are sent to a GLS ParcelShop.",
+    glsIntroLocker:
+      "The official GLS map finder. An item in your cart does not fit a parcel locker, so it is sent to a GLS ParcelShop.",
     glsListHeading: "GLS pickup points",
     glsSearchLabel: "Postal code, city or the name of the point",
     glsLoading: "Loading the GLS map finder…",

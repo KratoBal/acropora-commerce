@@ -114,6 +114,11 @@ export async function searchGlsPickupPoints(
   limit = 20,
   /** A lap nyelve: a nyitvatartás, a jellemzők és a figyelmeztetés mondata ezen jön vissza. */
   locale: Locale = "hu",
+  /**
+   * A kosar (a82ed229): ha egy tetele nem fer automataba, a hatter csak
+   * csomagboltot ad. Nelkule is valaszol, csak a kesobb elutasitott pontokkal.
+   */
+  cartId?: string | null,
 ): Promise<CsomagpontKereses> {
   const t = translator(locale)
   const q = kereses.trim()
@@ -123,7 +128,13 @@ export async function searchGlsPickupPoints(
     .fetch<GlsValasz>(`/store/gls/pickup-points`, {
       method: "GET",
       // az uzemen kivuli pont is jojjon: a lista letiltva mutatja (a prompt 6. pontja)
-      query: { q, option_id: optionId, limit, include_unavailable: "true" },
+      query: {
+        q,
+        option_id: optionId,
+        limit,
+        include_unavailable: "true",
+        ...(cartId ? { cart_id: cartId } : {}),
+      },
       cache: "no-store",
     })
     .then((valasz) =>

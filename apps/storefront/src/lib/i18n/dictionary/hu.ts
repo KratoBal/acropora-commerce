@@ -842,6 +842,8 @@ export const hu = {
       "A GLS hivatalos térképes keresője. A hálózat GLS ParcelShopokat és GLS Automatákat tartalmaz.",
     glsIntroHeavy:
       "A GLS hivatalos térképes keresője. Nehézárut GLS ParcelShopba küldünk.",
+    glsIntroLocker:
+      "A GLS hivatalos térképes keresője. A kosárban van egy tétel, ami nem fér csomagautomatába, ezért GLS ParcelShopba küldjük.",
     glsListHeading: "GLS átvételi pontok",
     glsSearchLabel: "Irányítószám, város vagy a pont neve",
     glsLoading: "A GLS térképes kereső betöltése…",

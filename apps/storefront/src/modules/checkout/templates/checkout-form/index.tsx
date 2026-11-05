@@ -1,6 +1,9 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveFoxpostOption, retrieveGlsModok } from "@lib/data/csomagpont"
-import { foxpostTiltottTetel } from "@lib/util/csomagpont"
+import {
+  csakCsomagboltOsztaly,
+  foxpostTiltottTetel,
+} from "@lib/util/csomagpont"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
@@ -65,6 +68,7 @@ export default async function CheckoutForm({
           cart.items ?? [],
           szallitasiOsztaly,
         )}
+        csakCsomagbolt={csakCsomagboltOsztaly(szallitasiOsztaly)}
       />
 
       <Payment
