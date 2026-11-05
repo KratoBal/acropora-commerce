@@ -22,7 +22,7 @@ import type { MailToSend } from "./prepare"
 export type MailRenderFacts = {
   [T in WebshopMailTemplate]: {
     template: T
-    facts: Omit<WebshopMailFactsOf[T], "customer_name" | "order_created_at" | "locale">
+    facts: Omit<WebshopMailFactsOf[T], "customer_name" | "order_created_at" | "locale" | "order_view_url">
   }
 }[WebshopMailTemplate]
 
@@ -55,7 +55,12 @@ export type OutboxOperations = {
   /** The facts every template carries, from the order (`resource_id`): the name, the time, the language. */
   loadCommon(
     resourceId: string
-  ): Promise<{ customer_name: string | null; order_created_at: string | null; locale: OrderLocale }>
+  ): Promise<{
+    customer_name: string | null
+    order_created_at: string | null
+    locale: OrderLocale
+    order_view_url: string | null
+  }>
   render(request: WebshopMailRenderRequest): Promise<OsRenderResult>
   /** The rendered mail to the notification module, under the mail's own key. */
   send(mail: MailToSend): Promise<void>

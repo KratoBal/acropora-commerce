@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { WEBSHOP_MAIL_OUTBOX_MODULE } from "../../../modules/webshop-mail-outbox"
 import { orderLocaleOf } from "../order-locale"
+import { orderViewUrl } from "./order-view-url"
 import { customerNameOf } from "./facts"
 import { osMailRenderConfig, renderWithOs, webshopMailEnglish, webshopMailRenderer } from "./os-mail-render"
 import {
@@ -49,12 +50,15 @@ export const outboxOperations = (
             billing_address?: { first_name?: string; last_name?: string }
           }
         | undefined
+      // the language the customer ordered in; an order without it is Hungarian, and with the
+      // English switch off every mail is asked for in Hungarian
+      const locale = webshopMailEnglish(env) ? orderLocaleOf(order?.metadata) : "hu"
       return {
         customer_name: customerNameOf(order?.billing_address),
         order_created_at: order?.created_at ? new Date(order.created_at).toISOString() : null,
-        // the language the customer ordered in; an order without it is Hungarian, and with the
-        // English switch off every mail is asked for in Hungarian
-        locale: webshopMailEnglish(env) ? orderLocaleOf(order?.metadata) : "hu",
+        locale,
+        // the address of the guest order page in that language (null without the storefront's https address)
+        order_view_url: orderViewUrl(env, locale),
       }
     },
     render: (request) => renderWithOs(request, osMailRenderConfig(env)),

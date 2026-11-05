@@ -60,6 +60,12 @@ type CommonFacts = {
    * merged (acropora-os, second step).
    */
   locale: OrderLocale
+  /**
+   * The address of the storefront's guest order page in the mail's language (`order-view-url.ts`), or null when the
+   * shop does not know its own https address. A fact, not a sentence: the OS draws the link, in its own words, where
+   * its template wants one. ADDED WITHOUT RAISING THE VERSION (an unknown key is ignored by an older OS).
+   */
+  order_view_url: string | null
 }
 
 type PaymentLinkFacts = CommonFacts & {
