@@ -1,5 +1,10 @@
 "use server"
 
+import {
+  ELKELT_PARAM,
+  elkeltDarabokAzUzenetbol,
+  elkeltParam,
+} from "@lib/util/elkelt-darab"
 import { sdk } from "@lib/config"
 import { translator, type Key } from "@lib/i18n/dictionary"
 import { localeOf, type Locale } from "@lib/i18n/locale"
@@ -809,6 +814,15 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
+    // Egy egyedi darab kozben elkelt (V2.5): a vevo a kosarhoz kerul, ahol az ertesites all. A sikeres leadashoz hasonloan
+    // `redirect` zarja, amit a fizeto gombok mar atengednek (`unstable_rethrow`).
+    const elkeltek = elkeltDarabokAzUzenetbol(
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    if (elkeltek)
+      redirect(
+        `/${orszag ?? "hu"}/cart?${ELKELT_PARAM}=${encodeURIComponent(elkeltParam(elkeltek))}`,
+      )
     return {
       ok: false,
       uzenet: rendelesHibaUzenet(hiba),

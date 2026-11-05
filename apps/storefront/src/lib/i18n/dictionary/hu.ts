@@ -708,6 +708,12 @@ export const hu = {
     cartFailed: "A kosár frissítése most nem sikerült. Próbáld meg újra.",
   },
   cartPage: {
+    soldTitle: "Ez a darab közben elkelt",
+    soldText:
+      "Sajnáljuk, {name} közben elkelt, mielőtt befejezted volna a rendelést. Egyedi darabról van szó, ezért nem tudjuk újra kínálni.",
+    soldSimilar: "Hasonló, most kapható darabok:",
+    soldNone: "Most nincs kapható hasonló darabunk.",
+    soldOthersKept: "A kosarad többi tétele megmaradt.",
     title: "Kosár",
     metaDescription: "A kosarad tartalma.",
     itemCount: "{count} tétel",

@@ -74,6 +74,25 @@ describe("a rendelés leadása", () => {
     expect(nav.redirect).not.toHaveBeenCalled()
   })
 
+  it("ha egy egyedi darab közben elkelt, a kosárhoz visz, a darab kezelőjével (V2.5)", async () => {
+    valaszok(
+      new Error(
+        'unique_piece_sold:[{"title":"WYSIWYG Acropora","handle":"wysiwyg-acropora"}]',
+      ),
+    )
+    await placeOrder("cart_1")
+    expect(nav.redirect).toHaveBeenCalledWith(
+      "/hu/cart?elkelt=wysiwyg-acropora",
+    )
+  })
+
+  it("egy rossz alakú elkelt-üzenet nem visz sehova: marad a mai hibamondat", async () => {
+    valaszok(new Error("unique_piece_sold:[{nem json"))
+    const eredmeny = await placeOrder("cart_1")
+    expect(eredmeny.ok).toBe(false)
+    expect(nav.redirect).not.toHaveBeenCalled()
+  })
+
   it("ha a bontás megváltoztatná a kedvezményt, megmondja a vevőnek, mit tehet", async () => {
     valaszok(
       new Error(

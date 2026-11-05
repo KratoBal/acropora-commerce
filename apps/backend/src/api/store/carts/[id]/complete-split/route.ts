@@ -7,6 +7,8 @@ import {
 } from "../../../../../workflows/utils/payment-providers"
 import { completeSplitCart } from "../../../../../workflows/utils/split-completion"
 import { splitCompletionOperations } from "../../../../../workflows/utils/split-completion-operations"
+import { isInsufficientInventory, soldMessage } from "../../../../../workflows/utils/sold-lines"
+import { soldUniqueLinesOfCart } from "../../../../../workflows/utils/sold-lines-of-cart"
 import { resolveShippingOptionRoleBindings } from "../../../../../workflows/utils/shipping-option-roles"
 
 /**
@@ -36,17 +38,29 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   }
 
-  const result = await completeSplitCart(
-    cartId,
-    splitCompletionOperations(req.scope, {
-      storePickupOptionId: storePickup.id,
-    }),
-    {
-      payAtStoreProviderId:
-        process.env[PAYMENT_ROLE_PROVIDER_ENV.PAY_AT_STORE]?.trim() ?? "",
-      onlineCardProviderIds: onlineCardProviderIds(),
+  let result: Awaited<ReturnType<typeof completeSplitCart>>
+  try {
+    result = await completeSplitCart(
+      cartId,
+      splitCompletionOperations(req.scope, {
+        storePickupOptionId: storePickup.id,
+      }),
+      {
+        payAtStoreProviderId:
+          process.env[PAYMENT_ROLE_PROVIDER_ENV.PAY_AT_STORE]?.trim() ?? "",
+        onlineCardProviderIds: onlineCardProviderIds(),
+      }
+    )
+  } catch (error) {
+    // A unique piece sold while it was in the cart (V2.5): name it, so the storefront can say so. Any other failure goes on
+    // unchanged, and so does a shortage that is not on a unique piece.
+    if (isInsufficientInventory(error)) {
+      const sold = await soldUniqueLinesOfCart(req.scope, cartId)
+      if (sold.length > 0)
+        throw new MedusaError(MedusaError.Types.NOT_ALLOWED, soldMessage(sold))
     }
-  )
+    throw error
+  }
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const { data: orders } = await query.graph({

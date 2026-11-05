@@ -2,6 +2,7 @@ import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { retrieveCart, retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { ELKELT_PARAM, elkeltKezelok } from "@lib/util/elkelt-darab"
 import CartTemplate from "@modules/cart/templates"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
@@ -19,8 +20,10 @@ export async function generateMetadata(props: {
 
 export default async function Cart(props: {
   params: Promise<{ countryCode: string }>
+  searchParams?: Promise<{ elkelt?: string | string[] }>
 }) {
   const { countryCode } = await props.params
+  const elkelt = elkeltKezelok((await props.searchParams)?.[ELKELT_PARAM])
 
   const cart = await retrieveCart().catch((error) => {
     console.error(error)
@@ -41,6 +44,7 @@ export default async function Cart(props: {
       customer={customer}
       shippingClass={shippingClass}
       countryCode={countryCode}
+      elkeltKezelok={elkelt}
     />
   )
 }

@@ -684,6 +684,12 @@ export const en: Dictionary = {
     cartFailed: "Updating the cart did not work just now. Please try again.",
   },
   cartPage: {
+    soldTitle: "This piece has just been sold",
+    soldText:
+      "We are sorry, {name} was sold before you finished your order. It is a unique piece, so we cannot offer it again.",
+    soldSimilar: "Similar pieces available now:",
+    soldNone: "We have no similar piece available right now.",
+    soldOthersKept: "The other items in your cart are still there.",
     title: "Cart",
     metaDescription: "The contents of your cart.",
     itemCount: "{count} items",

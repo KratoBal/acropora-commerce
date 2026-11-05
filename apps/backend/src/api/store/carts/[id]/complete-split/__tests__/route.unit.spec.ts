@@ -9,6 +9,13 @@ jest.mock("../../../../../../workflows/utils/split-completion-operations", () =>
     (splitCompletionOperations as any)(...args),
 }))
 
+const soldUniqueLinesOfCart = jest.fn()
+jest.mock("../../../../../../workflows/utils/sold-lines-of-cart", () => ({
+  soldUniqueLinesOfCart: (...args: unknown[]) => soldUniqueLinesOfCart(...args),
+}))
+
+import { MedusaError } from "@medusajs/framework/utils"
+
 import { POST } from "../route"
 
 /**
@@ -42,6 +49,7 @@ const call = async (env: Record<string, string>) => {
 }
 
 beforeEach(() => {
+  soldUniqueLinesOfCart.mockReset()
   completeSplitCart.mockReset()
   splitCompletionOperations.mockClear()
 })
@@ -94,6 +102,48 @@ describe("POST /store/carts/:id/complete-split", () => {
     expect(completeSplitCart.mock.calls[0][2]).toEqual({
       payAtStoreProviderId: "",
       onlineCardProviderIds: [],
+    })
+  })
+
+  describe("a unique piece sold while it was in the cart (V2.5)", () => {
+    const shortage = () =>
+      new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Some variant does not have the required inventory",
+        MedusaError.Codes.INSUFFICIENT_INVENTORY
+      )
+    const attempt = async () => {
+      process.env.ACROPORA_SO_PICKUP = "so_bolti"
+      return POST(
+        { params: { id: "cart_1" }, scope: { resolve: () => ({ graph: jest.fn() }) } } as never,
+        { json: jest.fn() } as never
+      ).then(
+        () => null,
+        (error: unknown) => error as MedusaError
+      )
+    }
+
+    it("names the sold unique pieces in the error's message, after the code", async () => {
+      completeSplitCart.mockRejectedValue(shortage())
+      soldUniqueLinesOfCart.mockResolvedValue([{ title: "WYSIWYG Acropora", handle: "wysiwyg-acropora" }])
+      const error = await attempt()
+      expect(error).toBeInstanceOf(MedusaError)
+      expect(error!.message).toBe('unique_piece_sold:[{"title":"WYSIWYG Acropora","handle":"wysiwyg-acropora"}]')
+      expect(soldUniqueLinesOfCart.mock.calls[0]![1]).toBe("cart_1")
+    })
+
+    it("a shortage on no unique piece goes on unchanged (the generic sentence stays)", async () => {
+      const original = shortage()
+      completeSplitCart.mockRejectedValue(original)
+      soldUniqueLinesOfCart.mockResolvedValue([])
+      expect(await attempt()).toBe(original)
+    })
+
+    it("any other failure goes on unchanged and the cart is not even asked", async () => {
+      const other = new Error("boom")
+      completeSplitCart.mockRejectedValue(other)
+      expect(await attempt()).toBe(other)
+      expect(soldUniqueLinesOfCart).not.toHaveBeenCalled()
     })
   })
 })
