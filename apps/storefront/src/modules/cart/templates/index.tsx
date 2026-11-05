@@ -4,6 +4,8 @@ import {
   splitNoticeProps,
 } from "../components/pickup-notice/pickup-notice"
 import SplitNotice from "../components/pickup-notice/split-notice"
+import ElkeltErtesites from "../components/elkelt-ertesites"
+import { elkeltATetelek } from "@lib/util/elkelt-darab"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
@@ -15,8 +17,11 @@ const CartTemplate = ({
   customer,
   shippingClass,
   countryCode,
+  elkeltKezelok = [],
 }: {
   cart: HttpTypes.StoreCart | null
+  /** V2.5: a kozben elkelt egyedi darabok kezeloi a kereso-parameterbol; csak a kosarban levo tetelek szamitanak */
+  elkeltKezelok?: string[]
   customer: HttpTypes.StoreCustomer | null
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
@@ -57,6 +62,16 @@ const CartTemplate = ({
         {cart?.items?.length ? (
           <div className="grid grid-cols-1 small:grid-cols-[minmax(0,1fr)_452px] small:gap-x-[44px]">
             <div className="flex flex-col gap-y-6">
+              {(() => {
+                const elkeltek = elkeltATetelek(elkeltKezelok, cart.items)
+                return elkeltek.length > 0 ? (
+                  <ElkeltErtesites
+                    elkeltek={elkeltek}
+                    countryCode={countryCode}
+                    maradtMas={(cart.items?.length ?? 0) > elkeltek.length}
+                  />
+                ) : null
+              })()}
               <ItemsTemplate cart={cart} countryCode={countryCode} />
               {/*
                 A TAJEKOZTATAS A TETELEK UTAN ALL (acrobot, 2026-11-02): a
