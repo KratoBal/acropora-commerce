@@ -689,6 +689,7 @@ export const en: Dictionary = {
       "We are sorry, {name} was sold before you finished your order. It is a unique piece, so we cannot offer it again.",
     soldSimilar: "Similar pieces available now:",
     soldNone: "We have no similar piece available right now.",
+    soldRemove: "Remove from my cart",
     soldOthersKept: "The other items in your cart are still there.",
     title: "Cart",
     metaDescription: "The contents of your cart.",

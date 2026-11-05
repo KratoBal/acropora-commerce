@@ -713,6 +713,7 @@ export const hu = {
       "Sajnáljuk, {name} közben elkelt, mielőtt befejezted volna a rendelést. Egyedi darabról van szó, ezért nem tudjuk újra kínálni.",
     soldSimilar: "Hasonló, most kapható darabok:",
     soldNone: "Most nincs kapható hasonló darabunk.",
+    soldRemove: "Kiveszem a kosárból",
     soldOthersKept: "A kosarad többi tétele megmaradt.",
     title: "Kosár",
     metaDescription: "A kosarad tartalma.",

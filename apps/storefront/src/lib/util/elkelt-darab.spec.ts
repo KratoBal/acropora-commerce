@@ -63,15 +63,30 @@ describe("the search parameter", () => {
 
 describe("elkeltATetelek", () => {
   const tetelek = [
-    { title: "WYSIWYG Acropora", product_handle: "wysiwyg-acropora" },
-    { title: "Pumpa", product_handle: "pumpa" },
+    {
+      id: "line_1",
+      title: "WYSIWYG Acropora",
+      product_handle: "wysiwyg-acropora",
+    },
+    { id: "line_2", title: "Pumpa", product_handle: "pumpa" },
   ]
-  it("keeps only the handles that are really lines of the cart, with the cart's own title", () => {
+  it("keeps only the handles that are really lines of the cart, with the cart's own title and the line id", () => {
     expect(
       elkeltATetelek(["wysiwyg-acropora", "nincs-a-kosarban"], tetelek),
-    ).toEqual([{ title: "WYSIWYG Acropora", handle: "wysiwyg-acropora" }])
+    ).toEqual([
+      {
+        title: "WYSIWYG Acropora",
+        handle: "wysiwyg-acropora",
+        lineId: "line_1",
+      },
+    ])
     expect(elkeltATetelek(["x"], undefined)).toEqual([])
     expect(elkeltATetelek([], tetelek)).toEqual([])
+  })
+  it("a line without an id is not offered (there would be nothing to remove)", () => {
+    expect(
+      elkeltATetelek(["pumpa"], [{ title: "Pumpa", product_handle: "pumpa" }]),
+    ).toEqual([])
   })
 })
 
