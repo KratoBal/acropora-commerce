@@ -80,26 +80,65 @@ describe("literOlvas", () => {
 })
 
 describe("adagSzamol", () => {
-  it("a literrel aranyos, ml-nel egy tizedesre kerekit", () => {
+  /*
+    SOHA A GYARTOI ARANY FOLOTT (acrobot dontese, 2026-11-05). MI PIROSIT: barmely medencenel tobb jon ki, mint
+    a pontos ertek; 1 csepp alatt szam jon ki; a nagy lefele-elteres a pontos ertek nelkul all.
+  */
+  it("ml-nel egy tizedesre lefele kerekit, es soha nem ad tobbet a pontos erteknel", () => {
     const adag = adagOlvas("5 ml/100 L/day")!
     expect(adagSzamol(adag, 250)).toMatchObject({
       adag: 12.5,
       egyseg: "ml",
       idoszak: "nap",
+      pontosIsKell: false,
     })
-    expect(adagSzamol(adag, 333).adag).toBe(16.7)
+    expect(adagSzamol(adag, 333).adag).toBe(16.6)
     expect(adagSzamol(adag, 333).pontos).toBeCloseTo(16.65)
+    // a lebegopontos szorzas nem viszi lejjebb a pontosan kijovo erteket (0,3 x 9 = 2,6999...; node-dal kikeresve)
+    expect(adagSzamol(adagOlvas("0.3 ml/1 L/day")!, 9).adag).toBe(2.7)
   })
 
-  it("cseppnel egeszre kerekit, fel csepp alatt nem ad szamot", () => {
+  it("cseppnel lefele kerekit; 1 csepp alatt nincs szam, csak a pontos ertek", () => {
     const adag = adagOlvas("1 drop/100 L, 1-2/week")!
     expect(adagSzamol(adag, 450)).toMatchObject({
-      adag: 5,
+      adag: 4,
       egyseg: "csepp",
       tulKicsi: false,
+      pontosIsKell: false,
       gyakorisag: { min: 1, max: 2 },
     })
-    expect(adagSzamol(adag, 40)).toMatchObject({ tulKicsi: true })
-    expect(adagSzamol(adag, 60)).toMatchObject({ adag: 1, tulKicsi: false })
+    expect(adagSzamol(adag, 60)).toMatchObject({ adag: 0, tulKicsi: true })
+    expect(adagSzamol(adag, 60).pontos).toBeCloseTo(0.6)
+    expect(adagSzamol(adag, 50)).toMatchObject({ adag: 0, tulKicsi: true })
+    expect(adagSzamol(adag, 100)).toMatchObject({ adag: 1, tulKicsi: false })
+  })
+
+  it("ha a lefele kerekites 20 szazaleknal tobbet vesz el, a pontos ertek is kell", () => {
+    const adag = adagOlvas("1 drop/100 L/day")!
+    expect(adagSzamol(adag, 150)).toMatchObject({ adag: 1, pontosIsKell: true })
+    expect(adagSzamol(adag, 190)).toMatchObject({ adag: 1, pontosIsKell: true })
+    expect(adagSzamol(adag, 120)).toMatchObject({
+      adag: 1,
+      pontosIsKell: false,
+    })
+    expect(adagSzamol(adag, 125)).toMatchObject({
+      adag: 1,
+      pontosIsKell: false,
+    })
+  })
+
+  it("egyetlen medencemeretnel sem ad tobbet a gyartoi aranynal", () => {
+    for (const ertek of [
+      "1 drop/100 L/day",
+      "2 drop/50 L, 1-2/week",
+      "5 ml/100 L/day",
+      "0.5 ml/40 L/week",
+    ]) {
+      const adag = adagOlvas(ertek)!
+      for (let liter = 1; liter <= 2000; liter += 7)
+        expect(adagSzamol(adag, liter).adag).toBeLessThanOrEqual(
+          adagSzamol(adag, liter).pontos + 1e-9,
+        )
+    }
   })
 })

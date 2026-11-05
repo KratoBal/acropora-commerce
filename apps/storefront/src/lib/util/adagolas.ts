@@ -66,30 +66,46 @@ export function literOlvas(beirt: string): number | null {
 }
 
 export type Szamolt = {
-  /** Az alkalmankenti adag a vevo medencejere, kerekitve (ml: egy tizedes, csepp: egesz). */
+  /**
+   * Az alkalmankenti adag a vevo medencejere, LEFELE kerekitve (csepp: egesz, ml: egy tizedes). A kalkulator
+   * SOHA nem ad a gyartoi aranynal tobbet (acrobot dontese, 2026-11-05, barracuda kerdesere: egy felfele
+   * kerekitett csepp kis medencenel akar ketszeres adag, elo allatnal ez a veszelyes irany).
+   */
   adag: number
   egyseg: Adag["egyseg"]
-  /** A kerekites elotti ertek: a lap ebbol mondja meg, ha a kerekites sokat valtoztat. */
+  /** A kerekites elotti, pontos ertek. */
   pontos: number
   /**
-   * Cseppnel fel csepp alatt nincs mit kiirni: a lap ilyenkor nem szamot ad,
-   * hanem a gyartoi utmutatora kuld.
+   * A lefele kerekitett adag 0 (cseppnel 1 csepp, ml-nel 0,1 ml alatt): a lap ilyenkor nem ad szamot, hanem
+   * a pontos erteket es a gyartoi utmutatora kuldo mondatot.
    */
   tulKicsi: boolean
+  /**
+   * A lefele kerekites 20 szazaleknal tobbel kisebb a pontos erteknel (pl. 1,9 csepp helyett 1): a lap a
+   * pontos erteket is kiirja mellette.
+   */
+  pontosIsKell: boolean
   gyakorisag: Adag["gyakorisag"]
   idoszak: Adag["idoszak"]
 }
 
-/** Az alkalmankenti adag egy `liter` literes medencere. */
+/** A lebegopontos szorzas (2,3 x 10 = 22,999...) ne vigye egy egesz ertek ala a lefele kerekitest. */
+const EPSZILON = 1e-9
+
+/** Az alkalmankenti adag egy `liter` literes medencere, sosem a gyartoi arany folott. */
 export function adagSzamol(adag: Adag, liter: number): Szamolt {
   const pontos = (adag.mennyiseg * liter) / adag.literre
   const kerekitett =
-    adag.egyseg === "csepp" ? Math.round(pontos) : Math.round(pontos * 10) / 10
+    adag.egyseg === "csepp"
+      ? Math.floor(pontos + EPSZILON)
+      : Math.floor(pontos * 10 + EPSZILON) / 10
+  const tulKicsi = kerekitett === 0
   return {
     adag: kerekitett,
     egyseg: adag.egyseg,
     pontos,
-    tulKicsi: adag.egyseg === "csepp" ? pontos < 0.5 : kerekitett === 0,
+    tulKicsi,
+    pontosIsKell: !tulKicsi && (pontos - kerekitett) / pontos > 0.2,
     gyakorisag: adag.gyakorisag,
     idoszak: adag.idoszak,
   }
