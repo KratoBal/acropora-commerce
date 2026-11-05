@@ -1,11 +1,21 @@
 "use server"
 
+import { headers } from "next/headers"
+
 import { sdk } from "@lib/config"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 import type {
   GuestInvoiceDocument,
   GuestInvoiceResult,
 } from "@lib/util/guest-invoice"
+import {
+  engedelyezett,
+  latogatoKulcs,
+  szamlaKorlat,
+} from "@lib/util/vendeg-korlat"
+
+/** Latogatonkent (IP) a szamla-kerések korlatja, ebben a kirakat-folyamatban (lasd `vendeg-korlat.ts`). */
+const korlat = szamlaKorlat()
 
 /**
  * The guest's invoice links (V1.1): the order's own number and the e-mail address the customer opened the page with go to the
@@ -16,6 +26,8 @@ export async function requestGuestInvoice(input: {
   orderNumber: string
   email: string
 }): Promise<GuestInvoiceResult> {
+  if (!engedelyezett(korlat, latogatoKulcs(await headers())))
+    return { ok: false }
   try {
     const answer = await sdk.client.fetch<{
       documents?: GuestInvoiceDocument[]
