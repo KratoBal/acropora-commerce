@@ -1,5 +1,7 @@
 "use server"
 
+import { headers } from "next/headers"
+
 import { sdk } from "@lib/config"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 import type { GuestProblemReport } from "@lib/util/guest-order"
@@ -8,6 +10,14 @@ import {
   type ProblemFailure,
   type ProblemKind,
 } from "@lib/util/problem-report"
+import {
+  bejelentesKorlat,
+  engedelyezett,
+  latogatoKulcs,
+} from "@lib/util/vendeg-korlat"
+
+/** Latogatonkent (IP) a bejelentesek korlatja, ebben a kirakat-folyamatban (lasd `vendeg-korlat.ts`). */
+const korlat = bejelentesKorlat()
 
 /**
  * The problem report's server action (V1.2, slice 3): the report that names the photos by the ids the upload gave.
@@ -44,6 +54,9 @@ export async function submitProblemReport(input: {
   phone?: string
   photoIds: string[]
 }): Promise<ReportResult> {
+  // a latogato korlatja a bolt elott: egyetlen latogato ne tudja elhasznalni a bolt rendelesenkenti bejelentes-keretet
+  if (!engedelyezett(korlat, latogatoKulcs(await headers())))
+    return { ok: false, failure: "too_many" }
   try {
     const answer = await sdk.client.fetch<{
       report_id?: string

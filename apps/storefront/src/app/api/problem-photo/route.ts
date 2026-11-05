@@ -4,6 +4,14 @@ import { sdk } from "@lib/config"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 import { korlatosTorzs } from "@lib/util/korlatos-torzs"
 import { PROBLEM_PHOTO_MAX_BODY_BYTES } from "@lib/util/problem-photo-upload"
+import {
+  engedelyezett,
+  fotoKorlat,
+  latogatoKulcs,
+} from "@lib/util/vendeg-korlat"
+
+/** Latogatonkent (IP) a kep-feltoltesek korlatja, ebben a kirakat-folyamatban (lasd `vendeg-korlat.ts`). */
+const korlat = fotoKorlat()
 
 /**
  * A "PROBLÉMA A SZÁLLÍTMÁNNYAL" KÉPEINEK FELTÖLTÉSE (V1.2), KÜLÖN ÚTON. Egy kép legfeljebb 5 MB, base64 szövegként kb.
@@ -17,7 +25,8 @@ import { PROBLEM_PHOTO_MAX_BODY_BYTES } from "@lib/util/problem-photo-upload"
  *   - a törzs a határig folyamként olvasódik, `content-length` nélkül is (413 a fölött);
  *   - a törzs szerkezetét és a kép méretét/típusát a backend ellenőrzi a saját szabályával; ez az út csak továbbítja,
  *     és a backend állapotkódját adja vissza (a vevő oldala ebből dönti el, mit mond).
- * A kérésszám-korlát a backendé (rendelésszámonként és címenként): ez az út nem számol.
+ * A kérésszám-korlát: a backendé (rendelésszámonként és címenként) ÉS a kirakaté látogatónként (`vendeg-korlat.ts`, az
+ * `x-real-ip` szerint; fejléc nélkül nem számol).
  *
  * `/api` alatt áll, tehát a middleware országkód-átirányítása nem éri.
  */
@@ -58,6 +67,9 @@ export async function POST(request: NextRequest) {
   const hivo = hivoGazdaja(request)
   if (!hivo || hivo !== sajatGazda(request))
     return new NextResponse(null, { status: 403 })
+  // a latogato korlatja a torzs beolvasasa ELOTT: a tul sok keres olcson, a nagy torzs elolvasasa nelkul esik el
+  if (!engedelyezett(korlat, latogatoKulcs(request.headers)))
+    return new NextResponse(null, { status: 429 })
 
   const hossz = Number(request.headers.get("content-length") ?? "0")
   if (hossz > PROBLEM_PHOTO_MAX_BODY_BYTES)
