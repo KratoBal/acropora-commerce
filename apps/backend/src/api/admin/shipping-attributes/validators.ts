@@ -1,5 +1,7 @@
 import { z } from "@medusajs/framework/zod"
 
+import { LIVESTOCK_KINDS } from "../../../modules/shipping-attributes/livestock-kind"
+
 export const AdminShippingAttributeFlags = z
   .object({
     pickup_only: z.boolean().optional(),
@@ -7,6 +9,8 @@ export const AdminShippingAttributeFlags = z
     is_heavy: z.boolean().optional(),
     is_frozen: z.boolean().optional(),
     locker_unsuitable: z.boolean().optional(),
+    // written by the OS from the root category; null clears it (V2.6)
+    livestock_kind: z.enum(LIVESTOCK_KINDS).nullable().optional(),
   })
   .strict()
 

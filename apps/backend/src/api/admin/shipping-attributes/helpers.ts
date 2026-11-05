@@ -1,6 +1,7 @@
 import { MedusaContainer } from "@medusajs/framework"
 
 import { SHIPPING_ATTRIBUTES_MODULE } from "../../../modules/shipping-attributes"
+import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
 import ShippingAttributesModuleService from "../../../modules/shipping-attributes/service"
 
 export type ShippingAttributeFlags = {
@@ -9,6 +10,7 @@ export type ShippingAttributeFlags = {
   is_heavy: boolean
   is_frozen: boolean
   locker_unsuitable: boolean
+  livestock_kind: LivestockKind | null
 }
 
 /**
@@ -23,6 +25,7 @@ export const defaultFlags = (product_id: string) => ({
   is_heavy: false,
   is_frozen: false,
   locker_unsuitable: false,
+  livestock_kind: null,
 })
 
 export const resolveService = (

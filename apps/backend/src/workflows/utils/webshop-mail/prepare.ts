@@ -1,3 +1,4 @@
+import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
 import type { MailRenderFacts } from "./outbox-delivery"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { ASZF_METADATA_KEY, PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-completion"
@@ -42,13 +43,19 @@ export type MailToSend = {
 
 export type PrepareResult = { action: "send"; mail: MailToSend } | { action: "skip"; reason: string }
 
-export type LoadedOrder = Omit<MailOrder, "pickup"> & { id: string; email: string | null }
+export type LoadedOrder = Omit<MailOrder, "pickup" | "livestock_kinds"> & { id: string; email: string | null }
 
 export type OrderMailDeps = {
   cartOf(orderId: string): Promise<{ id: string; metadata: Record<string, unknown> | null } | null>
   /** The split's own idempotent completion (`completeSplitCart`): both orders, placed and linked. */
   completeSplit(cartId: string): Promise<{ order_ids: string[] }>
   loadOrder(orderId: string): Promise<LoadedOrder | null>
+  /**
+   * The kinds of live animal in an order (V2.6), for the OS's acclimatisation
+   * section. Only the order confirmation asks for them. Never rejects: a read
+   * that fails gives none, so the confirmation is never held back by it.
+   */
+  livestockKinds?(orderId: string): Promise<LivestockKind[]>
 }
 
 /**
@@ -98,7 +105,12 @@ export const prepareOrderPlacedMail = async (
   const to = orders[0].email?.trim()
   if (!to) return { action: "skip", reason: "no_email" }
 
-  const mailOrders = orders.map(({ id, email: _email, ...order }) => ({ ...order, pickup: id !== orderId }))
+  const kinds = await Promise.all(orders.map((order) => (deps.livestockKinds ? deps.livestockKinds(order.id) : null)))
+  const mailOrders = orders.map(({ id, email: _email, ...order }, index) => ({
+    ...order,
+    pickup: id !== orderId,
+    ...(kinds[index] ? { livestock_kinds: kinds[index] } : {}),
+  }))
   return {
     action: "send",
     mail: {

@@ -192,6 +192,49 @@ describe("when the order confirmation goes", () => {
   })
 
   /*
+    V2.6 (f4e4832b): az OS a rendeles elo allat fajtaibol epiti az akklimatizacios
+    szakaszt. MI PIROSIT: ha a fajtak nem jutnak el a renderelesi keresig; ha a
+    beepitett (nem OS-renderelt) szoveg a fajtak miatt megvaltozik.
+  */
+  it("the render request carries each order's livestock kinds, and the built-in text is the same without them", async () => {
+    const base = {
+      cartOf: async () => ({ id: "cart_1", metadata: null }),
+      completeSplit: async () => ({ order_ids: [] }),
+      loadOrder: async () => order("order_1", 36),
+    }
+    const plain = await prepareOrderPlacedMail("order_1", base)
+    const asked = jest.fn(async () => ["FISH", "CORAL"] as ("FISH" | "CORAL")[])
+    const kinds = await prepareOrderPlacedMail("order_1", { ...base, livestockKinds: asked })
+    expect(plain.action).toBe("send")
+    expect(kinds.action).toBe("send")
+    const mailOf = (result: unknown) =>
+      (result as { mail: { content: unknown; render: { facts: { orders: { livestock_kinds?: string[] }[] } } } }).mail
+    expect(asked).toHaveBeenCalledWith("order_1")
+    expect(mailOf(kinds).render.facts.orders[0].livestock_kinds).toEqual(["FISH", "CORAL"])
+    // a webshop without the dependency (and an OS that has not asked for it) sends no key at all
+    expect("livestock_kinds" in mailOf(plain).render.facts.orders[0]).toBe(false)
+    expect(mailOf(kinds).content).toEqual(mailOf(plain).content)
+  })
+
+  // MI PIROSÍT: ha a vegyes kosár bolti fele a szállított fél fajtáit kapná (két rendelés, két külön lista)
+  it("a split asks for each order's kinds on its own", async () => {
+    const kindsOf = jest.fn(async (id: string) => (id === "order_pick" ? (["CORAL"] as "CORAL"[]) : []))
+    const d = {
+      cartOf: async () => ({ id: "cart_1", metadata: { [PICKUP_CART_METADATA_KEY]: "cart_2" } as Record<string, unknown> }),
+      completeSplit: async () => ({ order_ids: ["order_pick"] }),
+      loadOrder: async (id: string) => (id === "order_pick" ? order("order_pick", 38) : order("order_ship", 37)),
+      livestockKinds: kindsOf,
+    }
+    const result = await prepareOrderPlacedMail("order_ship", d)
+    const orders = (result as { mail: { render: { facts: { orders: { display_id: number; livestock_kinds?: string[] }[] } } } }).mail.render
+      .facts.orders
+    expect(orders.map((o) => [o.display_id, o.livestock_kinds])).toEqual([
+      [37, []],
+      [38, ["CORAL"]],
+    ])
+  })
+
+  /*
     P0 #2 (acrobot 36693): a level jogi szoveget az OS adja, a kosar ASZF-
     elfogadasanak VERZIOJA szerint. MI PIROSIT: ha a kosar rekordjanak verzioja
     nem jutna el a renderelesi keresig; ha rekord nelkuli kosarra kitalalt

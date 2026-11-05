@@ -26,6 +26,7 @@ describe("ShippingAttribute model", () => {
       "id",
       "is_frozen",
       "is_heavy",
+      "livestock_kind",
       "locker_unsuitable",
       "pickup_only",
       "product_id",
@@ -59,6 +60,17 @@ describe("ShippingAttribute model", () => {
       expect(definition.defaultValue).toBe(false)
       expect(definition.nullable).toBe(false)
     }
+  })
+
+  // MI PIROSÍT: ha a fajta kötelező vagy alapértelmezett volna (a nem élő állat sor is "fajtát" kapna)
+  it("keeps the livestock kind null unless the OS writes one", () => {
+    const property = parsed.schema.livestock_kind as unknown as {
+      parse: (name: string) => { defaultValue?: unknown; nullable?: boolean }
+    }
+    const definition = property.parse("livestock_kind")
+
+    expect(definition.nullable).toBe(true)
+    expect(definition.defaultValue).toBeUndefined()
   })
 
   it("carries no weight column: heavy is a hand-set flag, not a measurement", () => {
