@@ -7,6 +7,12 @@ import CartTemplate from "@modules/cart/templates"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+/**
+ * A kosar oldal a kereso-parametert is olvassa (`elkelt`, V2.5), ezert kifejezetten dinamikus: a kosar amugy is sutibol dolgozik, de
+ * az `isr-lapok.spec` minden `searchParams`-olvaso laptol kimondva kéri (`DYNAMIC_SERVER_USAGE` 500 ellen).
+ */
+export const dynamic = "force-dynamic"
+
 export async function generateMetadata(props: {
   params: Promise<{ countryCode: string }>
 }): Promise<Metadata> {
