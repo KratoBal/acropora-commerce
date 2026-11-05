@@ -37,11 +37,20 @@ export type GlsKivalasztott = Partial<GlsPont> & {
 export default function GlsValaszto({
   optionId,
   nehez,
+  automataNem = false,
+  cartId = null,
   kivalasztott,
   onValaszt,
 }: {
   optionId: string
   nehez: boolean
+  /**
+   * A kosarban van egy tetel, ami nem fer csomagautomataba (a82ed229): a
+   * kereso csak csomagboltot mutat, mint nehezarunal, de mas indokkal.
+   */
+  automataNem?: boolean
+  /** A kosar: a tartalek-lista a hatterevel ugyanazt a szabalyt kerdezi. */
+  cartId?: string | null
   kivalasztott?: GlsKivalasztott | null
   onValaszt: (
     pontId: string,
@@ -93,7 +102,9 @@ export default function GlsValaszto({
         <p className="text-[13px] leading-[18px] text-acr-slate">
           {nehez
             ? t("checkoutShipping.glsIntroHeavy")
-            : t("checkoutShipping.glsIntro")}
+            : automataNem
+              ? t("checkoutShipping.glsIntroLocker")
+              : t("checkoutShipping.glsIntro")}
         </p>
       </div>
       {mutatPontot ? (
@@ -135,7 +146,7 @@ export default function GlsValaszto({
       ) : null}
       {mod === "kereso" ? (
         <GlsKereso
-          nehez={nehez}
+          nehez={nehez || automataNem}
           onValaszt={valasztKeresobol}
           onTartalek={tartalek}
         />
@@ -148,7 +159,7 @@ export default function GlsValaszto({
           <CsomagpontValaszto
             szolgaltato="GLS"
             kereso={(kereses: string) =>
-              searchGlsPickupPoints(kereses, optionId, 20, locale)
+              searchGlsPickupPoints(kereses, optionId, 20, locale, cartId)
             }
             kivalasztott={null}
             onValaszt={valasztListabol}

@@ -36,6 +36,7 @@ type ShippingAttributeRow = {
   foxpost_forbidden?: boolean | null
   is_heavy?: boolean | null
   is_frozen?: boolean | null
+  locker_unsuitable?: boolean | null
 }
 
 /**
@@ -66,6 +67,7 @@ export const normalizeCartShippingItems = (
       // Heavy is a hand-set product flag, never derived from variant weight.
       is_heavy: attributes?.is_heavy === true,
       is_frozen: attributes?.is_frozen === true,
+      locker_unsuitable: attributes?.locker_unsuitable === true,
       is_livestock: isLivestockProductType(variant?.product?.type_id),
       requires_shipping: item.requires_shipping,
     }
@@ -152,6 +154,7 @@ export const resolveCartShippingClass = async (
         "foxpost_forbidden",
         "is_heavy",
         "is_frozen",
+        "locker_unsuitable",
       ],
     })
 

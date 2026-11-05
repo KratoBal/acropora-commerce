@@ -5,6 +5,7 @@ import {
   foxpostPontReszletek,
   foxpostPontTipus,
   foxpostSzallitasiAdat,
+  csakCsomagboltOsztaly,
   foxpostTiltottTetel,
   foxpostTiltvaSzoveg,
 } from "./csomagpont"
@@ -85,6 +86,18 @@ describe("foxpostTiltottTetel", () => {
         shipping_class_source: "l1",
       }),
     ).toBe("Red Sea Coral Pro")
+  })
+
+  it("az automataba nem fero tetelnel is megnevezi (a82ed229)", () => {
+    expect(
+      foxpostTiltottTetel(tetelek, {
+        shipping_class: "NO_LOCKER",
+        shipping_class_source: "l1",
+      }),
+    ).toBe("Red Sea Coral Pro")
+    expect(csakCsomagboltOsztaly({ shipping_class: "NO_LOCKER" })).toBe(true)
+    expect(csakCsomagboltOsztaly({ shipping_class: "HEAVY" })).toBe(false)
+    expect(csakCsomagboltOsztaly(null)).toBe(false)
   })
 
   it("normal kosarnal, csak bolti atvetelnel, ismeretlen sornal es valasz nelkul hallgat", () => {

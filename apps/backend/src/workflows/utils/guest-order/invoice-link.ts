@@ -107,6 +107,22 @@ export const requestInvoiceLinks = async (
     if (!Array.isArray(body?.documents)) return { kind: "unavailable" }
     const allowed = downloadPrefixOf(config.url)
     if (!allowed) return { kind: "unavailable" }
+    // A SILENT MISCONFIGURATION MADE VISIBLE (barracuda, #672 review): if the OS gives its links on another origin than the one the
+    // shop calls (an internal address against the public one), EVERY answer is refused and the guest only reads "not available".
+    // One log line with the two origins, never the token or the path, shows the setting is wrong.
+    for (const row of body.documents) {
+      const link = (row as { url?: unknown } | null)?.url
+      if (typeof link !== "string") continue
+      try {
+        const linkOrigin = new URL(link).origin
+        if (linkOrigin !== allowed.origin)
+          console.warn(
+            `Guest invoice: the OS gave a link on ${linkOrigin} but the link endpoint is on ${allowed.origin}; the answer is refused. Set ACROPORA_OS_INVOICE_URL and the OS's WEBSHOP_INVOICE_PUBLIC_BASE_URL to the same origin.`,
+          )
+      } catch {
+        // an unparsable link is refused below, without a word about its content
+      }
+    }
     const documents = body.documents.map((document) => documentOf(document, allowed))
     // one malformed row is a malformed answer: the shop does not hand out a half-trusted list
     return documents.every((document) => document !== null)

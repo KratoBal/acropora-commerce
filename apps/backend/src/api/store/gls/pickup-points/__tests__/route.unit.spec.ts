@@ -30,14 +30,32 @@ const load = async (fetchOk = true) => {
   };
 };
 
-const call = async (GET: (req: never, res: never) => Promise<void>, validatedQuery: object = {}) => {
+/** A container whose one cart line is on a product with or without `locker_unsuitable` (a82ed229). */
+const scopeWith = (lockerUnsuitable: boolean) => ({
+  resolve: () => ({
+    graph: async ({ entity }: { entity: string }) => {
+      if (entity === "cart")
+        return { data: [{ id: "cart_1", items: [{ id: "l1", variant_id: "v1", requires_shipping: true }] }] };
+      if (entity === "variant") return { data: [{ id: "v1", product: { id: "p1", type_id: null } }] };
+      if (entity === "shipping_attribute")
+        return { data: [{ product_id: "p1", locker_unsuitable: lockerUnsuitable }] };
+      return { data: [] };
+    },
+  }),
+});
+
+const call = async (
+  GET: (req: never, res: never) => Promise<void>,
+  validatedQuery: object = {},
+  scope?: object,
+) => {
   const res = {
     statusCode: 200,
     body: undefined as unknown,
     status(code: number) { this.statusCode = code; return this; },
     json(b: unknown) { this.body = b; },
   };
-  await GET({ validatedQuery } as never, res as never);
+  await GET({ validatedQuery, scope } as never, res as never);
   return res;
 };
 
@@ -67,6 +85,16 @@ describe("GET /store/gls and /store/gls/pickup-points", () => {
     expect((ordinary.body as { pickup_points: { id: string }[] }).pickup_points.map((p) => p.id)).toEqual(["LOCKER", "SHOP"].sort());
     const heavy = await call(search, { q: "2100", option_id: "so_nehez", limit: 20 });
     expect((heavy.body as { pickup_points: { id: string }[] }).pickup_points.map((p) => p.id)).toEqual(["SHOP"]);
+  });
+
+  // a82ed229: WHAT TURNS THIS RED: a cart with a locker-unsuitable item offered a locker on the ordinary option;
+  // the rule reaching a cart without one
+  it("the cart narrows the ordinary option to parcel shops when an item does not fit a locker", async () => {
+    const { search } = await load();
+    const ids = (body: unknown) => (body as { pickup_points: { id: string }[] }).pickup_points.map((p) => p.id).sort();
+    const query = { q: "2100", option_id: "so_pont", limit: 20, cart_id: "cart_1" };
+    expect(ids((await call(search, query, scopeWith(true))).body)).toEqual(["SHOP"]);
+    expect(ids((await call(search, query, scopeWith(false))).body)).toEqual(["LOCKER", "SHOP"]);
   });
 
   /*

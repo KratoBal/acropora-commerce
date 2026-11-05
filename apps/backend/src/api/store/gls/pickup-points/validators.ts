@@ -19,6 +19,9 @@ export const StoreGetGlsPickupPointsParams = z
       .default(DEFAULT_PICKUP_POINT_SEARCH_LIMIT),
     // the checkout that greys out an out-of-order locker asks for it (GLS prompt, point 6)
     include_unavailable: z.enum(["true", "false"]).default("false"),
+    // a82ed229: the cart decides too; an item that does not fit a locker
+    // leaves parcel shops only (the completion checks it again)
+    cart_id: z.string().trim().min(1).max(100).optional(),
   })
   .strict();
 

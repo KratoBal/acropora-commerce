@@ -1,5 +1,7 @@
 "use server"
 
+import { headers } from "next/headers"
+
 import { sdk } from "@lib/config"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 import {
@@ -7,6 +9,14 @@ import {
   type GuestOrder,
   type GuestOrderLookupResult,
 } from "@lib/util/guest-order"
+import {
+  engedelyezett,
+  keresesKorlat,
+  latogatoKulcs,
+} from "@lib/util/vendeg-korlat"
+
+/** Latogatonkent (IP) a rendeles-keresesek korlatja, ebben a kirakat-folyamatban (lasd `vendeg-korlat.ts`). */
+const korlat = keresesKorlat()
 
 /**
  * The guest order lookup (V1.1): the order number and the e-mail address go to the backend, nothing is
@@ -17,6 +27,9 @@ export async function lookupGuestOrder(input: {
   orderNumber: string
   email: string
 }): Promise<GuestOrderLookupResult> {
+  // a latogato korlatja a bolt elott: a bolt parankenti keretet egyetlen latogato ne tudja elhasznalni
+  if (!engedelyezett(korlat, latogatoKulcs(await headers())))
+    return { ok: false, kind: lookupKindOfStatus(429) }
   try {
     const answer = await sdk.client.fetch<{ orders?: GuestOrder[] }>(
       "/store/guest-orders/lookup",

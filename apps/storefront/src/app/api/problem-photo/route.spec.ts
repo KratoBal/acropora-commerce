@@ -8,6 +8,7 @@ vi.mock("@lib/config", () => ({
 }))
 
 import { PROBLEM_PHOTO_MAX_BODY_BYTES } from "@lib/util/problem-photo-upload"
+import { FOTO_KORLAT } from "@lib/util/vendeg-korlat"
 
 import { POST } from "./route"
 
@@ -195,5 +196,43 @@ describe("POST /api/problem-photo", () => {
     expect((await POST(keres(body()))).status).toBe(502)
     fetchMock.mockResolvedValueOnce({})
     expect((await POST(keres(body()))).status).toBe(502)
+  })
+
+  describe("the per-visitor limit (x-real-ip)", () => {
+    it("is 429 over the limit, before the body is read and without asking the backend; another visitor is not affected", async () => {
+      for (let i = 0; i < FOTO_KORLAT.max; i += 1)
+        expect(
+          (await POST(keres(body(), { "x-real-ip": "203.0.113.41" }))).status,
+        ).toBe(200)
+      fetchMock.mockClear()
+      const tul = await POST(keres(body(), { "x-real-ip": "203.0.113.41" }))
+      expect(tul.status).toBe(429)
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(
+        (await POST(keres(body(), { "x-real-ip": "203.0.113.42" }))).status,
+      ).toBe(200)
+    })
+
+    it("a foreign origin is still 403 first, and it does not spend the visitor's allowance", async () => {
+      for (let i = 0; i < FOTO_KORLAT.max + 5; i += 1)
+        expect(
+          (
+            await POST(
+              keres(body(), {
+                "x-real-ip": "203.0.113.43",
+                origin: "https://masik.example.hu",
+              }),
+            )
+          ).status,
+        ).toBe(403)
+      expect(
+        (await POST(keres(body(), { "x-real-ip": "203.0.113.43" }))).status,
+      ).toBe(200)
+    })
+
+    it("does not limit a request without the header (no shared key)", async () => {
+      for (let i = 0; i < FOTO_KORLAT.max + 10; i += 1)
+        expect((await POST(keres(body()))).status).toBe(200)
+    })
   })
 })

@@ -38,7 +38,11 @@ const order = (optionId: string, extra: Partial<PointOrder> = {}, data: Record<s
 
 const T = new Date("2026-10-05T21:10:00.000Z")
 
-const fakeOps = (o: PointOrder | null, validate?: PointChangeOperations["validate"]) => {
+const fakeOps = (
+  o: PointOrder | null,
+  validate?: PointChangeOperations["validate"],
+  shopOnly = false
+) => {
   const updates: Array<{ id: string; changes: unknown }> = []
   const ops: PointChangeOperations & { validate: jest.Mock } = {
     loadOrder: async () => o,
@@ -54,6 +58,7 @@ const fakeOps = (o: PointOrder | null, validate?: PointChangeOperations["validat
       updates.push({ id, changes })
     },
     now: () => T,
+    shopOnly: async () => shopOnly,
   }
   return { ops, updates }
 }
@@ -107,6 +112,24 @@ describe("changeOrderPoint", () => {
         },
       },
     ])
+  })
+
+  // a82ed229: WHAT TURNS THIS RED: an order with an item that does not fit a locker moved to a GLS locker;
+  // the same order refused a parcel shop; the rule reaching an order without such an item
+  it("an order with a locker-unsuitable item moves to a GLS parcel shop only", async () => {
+    const asType = (type: string): PointChangeOperations["validate"] => async (_p, _o, data) => {
+      const [key, value] = Object.entries(data)[0] as [string, { id: string }]
+      return { [key]: { id: value.id, type } }
+    }
+    const locker = fakeOps(order(GLS_POINT), asType("parcel-locker"), true)
+    expect(await changeOrderPoint("order_1", { point_id: "L" }, "k", locker.ops)).toEqual({ status: "invalid_point" })
+    expect(locker.updates).toEqual([])
+
+    const shop = fakeOps(order(GLS_POINT), asType("parcel-shop"), true)
+    expect(await changeOrderPoint("order_1", { point_id: "S" }, "k", shop.ops)).toMatchObject({ status: "done" })
+
+    const free = fakeOps(order(GLS_POINT), asType("parcel-locker"), false)
+    expect(await changeOrderPoint("order_1", { point_id: "L" }, "k", free.ops)).toMatchObject({ status: "done" })
   })
 
   it("Foxpost sends only the id; without a name the key's actor is the author", async () => {

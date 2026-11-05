@@ -3,6 +3,7 @@ import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
 import { guardAszf } from "../utils/aszf-guard"
 import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
+import { assertCartPointsFitLocker } from "../utils/locker-rule"
 import { assertCardShare } from "../utils/assert-card-share"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
@@ -47,6 +48,8 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
   // A workflow hook takes one handler, so the P4-2 check lives here too: a
   // mixed cart is completed as two orders, never as one.
   await assertCartNotMixed(cart, container)
+  // a82ed229: an item that does not fit a parcel locker never completes on one
+  await assertCartPointsFitLocker(cart as never, container)
   // And the P4-3c one: a card payment covers exactly this cart, or this cart
   // and its split pair together.
   await assertCardShare(cart.id, container)
