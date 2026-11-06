@@ -29,6 +29,8 @@ export type MailToSend = {
     | "order-split"
     // the acknowledgement of a problem report (OS-rendered only: it has no built-in text)
     | "problem-report-received"
+    // the acknowledgement of a withdrawal declaration, on a durable medium (OS-rendered only: it has no built-in text)
+    | "withdrawal-received"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string

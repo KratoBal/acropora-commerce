@@ -36,11 +36,17 @@ vi.mock("@modules/order/templates/order-completed-template", () => ({
   default: ({
     order,
     par,
+    vendeg,
   }: {
     order: { email: string }
     par: { id: string } | null
+    vendeg?: boolean
   }) => (
-    <div data-testid="reszletes" data-par={par?.id ?? ""}>
+    <div
+      data-testid="reszletes"
+      data-par={par?.id ?? ""}
+      data-vendeg={String(vendeg ?? false)}
+    >
       {order.email}
     </div>
   ),
@@ -117,6 +123,26 @@ describe("a rendelés-visszaigazoló lap", () => {
     await lap("order_A")
     expect(screen.queryByTestId("reszletes")).toBeNull()
     expect(screen.getByTestId("order-complete-minimal")).toBeTruthy()
+  })
+
+  // A VENDÉG BEJÁRATA (a „Rendelésem” oldal hiánylistája, 2026-11-05): a sablon megtudja, hogy a látogató nincs
+  // bejelentkezve, mert csak neki kell a vendég lapra hivatkozás. MI PIROSIT: a bejelentkezetlen (süti) látogató
+  // nem kap vendég-jelzőt, vagy a bejelentkezett kap.
+  it("a sablon vendég-jelzőt kap a bejelentkezetlen látogatónak, a bejelentkezettnek nem", async () => {
+    process.env.ORDER_VIEW_SECRET = "proba-titok-nem-valodi"
+    adat.suti = alairtMegtekintesSuti(["order_A"])!
+    adat.rendelesek = { order_A: rendeles("order_A") }
+    await lap("order_A")
+    expect(screen.getByTestId("reszletes").getAttribute("data-vendeg")).toBe(
+      "true",
+    )
+    cleanup()
+    adat.suti = undefined
+    adat.vevo = { id: "cus_1" }
+    await lap("order_A")
+    expect(screen.getByTestId("reszletes").getAttribute("data-vendeg")).toBe(
+      "false",
+    )
   })
 
   it("a pár-rendelés csak akkor jelenik meg, ha az is a látogatóé", async () => {

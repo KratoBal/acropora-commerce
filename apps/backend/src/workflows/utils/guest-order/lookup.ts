@@ -59,6 +59,19 @@ export type GuestProblemReport = {
 /** What the module stores of a report that the customer view needs (the rest never reaches it). */
 export type StoredProblemReport = { id: string; kind: ProblemKind; created_at: Date | string; status: string }
 
+/**
+ * One withdrawal declaration of the order, as the customer sees it again: the reference, the time of receipt (the shop
+ * server's) and the lines. No name and no stage: nothing is promised about what follows, the shop's team decides that.
+ */
+export type GuestWithdrawal = {
+  id: string
+  created_at: string
+  item_ids: string[]
+}
+
+/** What the module stores of a declaration that the customer view needs (the rest never reaches it). */
+export type StoredWithdrawal = { id: string; created_at: Date | string; item_ids: string[] }
+
 export type GuestOrderView = {
   display_id: number | string
   created_at: string | null
@@ -77,6 +90,8 @@ export type GuestOrderView = {
   tracking: StoredTracking | null
   /** the order's problem reports, the oldest first; empty when there are none */
   problem_reports: GuestProblemReport[]
+  /** the order's withdrawal declarations, the oldest first; empty when there are none */
+  withdrawals: GuestWithdrawal[]
 }
 
 const PAYMENT_STATUSES = new Set([
@@ -123,11 +138,23 @@ export const guestProblemReports = (stored: readonly StoredProblemReport[]): Gue
       stage: report.status === "pulled" ? ("in_progress" as const) : ("received" as const),
     }))
 
+export const guestWithdrawals = (stored: readonly StoredWithdrawal[]): GuestWithdrawal[] =>
+  [...stored]
+    .sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime() || String(a.id).localeCompare(String(b.id)),
+    )
+    .map((row) => ({
+      id: row.id,
+      created_at: new Date(row.created_at).toISOString(),
+      item_ids: Array.isArray(row.item_ids) ? [...row.item_ids] : [],
+    }))
+
 /** The customer-safe shape of one order. Every field is named: nothing else of the source passes. */
 export const guestOrderView = (
   source: GuestOrderSource,
   status: GuestOrderStatus | null,
   reports: readonly StoredProblemReport[] = [],
+  withdrawals: readonly StoredWithdrawal[] = [],
 ): GuestOrderView => ({
   display_id: source.display_id,
   created_at: iso(source.created_at),
@@ -150,6 +177,7 @@ export const guestOrderView = (
     : null,
   tracking: trackingOf(source.metadata),
   problem_reports: guestProblemReports(reports),
+  withdrawals: guestWithdrawals(withdrawals),
 })
 
 export type GuestOrderDeps = {
@@ -159,6 +187,8 @@ export type GuestOrderDeps = {
   statusOf(orderId: string): Promise<GuestOrderStatus | null>
   /** The problem reports filed for the order. */
   problemReportsOf(orderId: string): Promise<StoredProblemReport[]>
+  /** The withdrawal declarations made for the order. */
+  withdrawalsOf(orderId: string): Promise<StoredWithdrawal[]>
 }
 
 /**
@@ -189,7 +219,12 @@ export const lookupGuestOrders = async (
     .sort((a, b) => Number(a.display_id) - Number(b.display_id))
   return Promise.all(
     [order, ...siblings].map(async (source) =>
-      guestOrderView(source, await deps.statusOf(source.id), await deps.problemReportsOf(source.id)),
+      guestOrderView(
+        source,
+        await deps.statusOf(source.id),
+        await deps.problemReportsOf(source.id),
+        await deps.withdrawalsOf(source.id),
+      ),
     ),
   )
 }

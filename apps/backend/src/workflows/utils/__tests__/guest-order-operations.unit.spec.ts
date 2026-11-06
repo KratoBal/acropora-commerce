@@ -1,7 +1,8 @@
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { ORDER_PROBLEM_REPORT_MODULE } from "../../../modules/order-problem-report"
+import { ORDER_WITHDRAWAL_MODULE } from "../../../modules/order-withdrawal"
 import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
-import { guestOrderOperations, guestProblemReportsOf } from "../guest-order/operations"
+import { guestOrderOperations, guestProblemReportsOf, guestWithdrawalsOf } from "../guest-order/operations"
 
 /*
   WHAT TURNS THIS RED (V1.1). The store pickup flag decided by the shipping option's NAME instead of its id
@@ -42,13 +43,38 @@ const problemService = {
   },
 }
 
+const withdrawalCalls: { filter: Record<string, unknown>; config: unknown }[] = []
+const withdrawalService = {
+  listOrderWithdrawals: async (filter: Record<string, unknown>, config: unknown) => {
+    withdrawalCalls.push({ filter, config })
+    return [
+      {
+        id: "ordwdr_1",
+        created_at: new Date("2026-11-05T18:00:00Z"),
+        item_ids: ["i1"],
+        customer_name: "Titkos Név",
+        status: "pulled",
+      },
+    ]
+  },
+}
+
 const warnings: string[] = []
 let reportsFail = false
+let withdrawalsFail = false
 const container = (calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[]) =>
   ({
     resolve: (key: string) =>
       key === ContainerRegistrationKeys.LOGGER
         ? { warn: (message: string) => warnings.push(message) }
+        : key === ORDER_WITHDRAWAL_MODULE
+        ? withdrawalsFail
+          ? {
+              listOrderWithdrawals: async () => {
+                throw new TypeError("secret details")
+              },
+            }
+          : withdrawalService
         : key === ORDER_PROBLEM_REPORT_MODULE
         ? reportsFail
           ? {
@@ -140,6 +166,46 @@ describe("guestOrderOperations", () => {
       expect(await guestProblemReportsOf(container([]) as never, "o_1")).toBeNull()
     } finally {
       reportsFail = false
+    }
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain("TypeError")
+    expect(warnings[0]).not.toContain("secret details")
+  })
+  it("reads the order's withdrawals by the order id, the oldest first, and keeps only what the view names", async () => {
+    withdrawalCalls.length = 0
+    const stored = await guestOrderOperations(container([])).withdrawalsOf("o_1")
+    expect(withdrawalCalls[0]).toEqual({ filter: { order_id: "o_1" }, config: { order: { created_at: "ASC" } } })
+    expect(stored).toEqual([{ id: "ordwdr_1", created_at: new Date("2026-11-05T18:00:00Z"), item_ids: ["i1"] }])
+    expect(JSON.stringify(stored)).not.toContain("Titkos")
+  })
+
+  it("an unreadable list of withdrawals is an empty list with a log line, not a failed lookup", async () => {
+    warnings.length = 0
+    withdrawalsFail = true
+    try {
+      expect(await guestOrderOperations(container([])).withdrawalsOf("o_1")).toEqual([])
+    } finally {
+      withdrawalsFail = false
+    }
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain("o_1")
+    expect(warnings[0]).toContain("TypeError")
+    expect(warnings[0]).not.toContain("secret details")
+  })
+
+  it("answers the order's withdrawals in the customer view shape, with no name and no status", async () => {
+    const view = await guestWithdrawalsOf(container([]) as never, "o_1")
+    expect(view).toEqual([{ id: "ordwdr_1", created_at: "2026-11-05T18:00:00.000Z", item_ids: ["i1"] }])
+    expect(JSON.stringify(view)).not.toMatch(/Titkos|customer_name|status/)
+  })
+
+  it("an unreadable list is null (the declaration route then leaves the field out), logged by kind only", async () => {
+    warnings.length = 0
+    withdrawalsFail = true
+    try {
+      expect(await guestWithdrawalsOf(container([]) as never, "o_1")).toBeNull()
+    } finally {
+      withdrawalsFail = false
     }
     expect(warnings).toHaveLength(1)
     expect(warnings[0]).toContain("TypeError")

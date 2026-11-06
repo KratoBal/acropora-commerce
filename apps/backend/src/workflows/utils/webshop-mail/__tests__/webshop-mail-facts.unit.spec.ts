@@ -65,6 +65,14 @@ const samples: { [T in keyof WebshopMailFactsOf]: WebshopMailFactsOf[T] } = {
   "payment-refunded": { ...common, refund: { display_id: 45, amount: 1000, refunded_total: 1000, last4: "4242" } },
   "order-split": { ...common, order, split_order: { ...order, id: "order_split", display_id: 46 }, payment: "card" },
   "problem-report-received": { ...common, display_id: 45, report_id: "ordprb_01ABC" },
+  "withdrawal-received": {
+    ...common,
+    display_id: 45,
+    withdrawal_id: "ordwdr_01ABC",
+    declared_name: "Kiss Anna",
+    item_ids: ["item_1"],
+    received_at: "2026-11-05T18:00:00.000Z",
+  },
 }
 
 const keysOf = (value: unknown): string[] =>
@@ -87,6 +95,10 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
   "payment-refunded": { "": ["customer_name", "locale", "order_created_at", "order_view_url", "refund"], refund: ["amount", "display_id", "last4", "refunded_total"] },
   // the acknowledgement of a problem report: the number and the case reference, nothing of the report itself
   "problem-report-received": { "": ["customer_name", "display_id", "locale", "order_created_at", "order_view_url", "report_id"] },
+  // the acknowledgement of a withdrawal declaration: what was declared and when it was received, no wording
+  "withdrawal-received": {
+    "": ["customer_name", "declared_name", "display_id", "item_ids", "locale", "order_created_at", "order_view_url", "received_at", "withdrawal_id"],
+  },
   "order-split": {
     "": ["customer_name", "locale", "order", "order_created_at", "order_view_url", "payment", "split_order"],
     split_order: ["display_id", "email", "id", "items", "payment", "shipping", "total"],
@@ -95,8 +107,8 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
 const ORDER_KEYS = ["display_id", "email", "id", "items", "payment", "shipping", "total"]
 
 describe("the webshop mail facts", () => {
-  it("twelve templates (the problem report acknowledgement the twelfth), version 1", () => {
-    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(12)
+  it("thirteen templates (the withdrawal acknowledgement the thirteenth), version 1", () => {
+    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(13)
     expect(WEBSHOP_MAIL_FACTS_VERSION).toBe(1)
     expect(Object.keys(samples).sort()).toEqual([...WEBSHOP_MAIL_TEMPLATES].sort())
     expect(isWebshopMailTemplate("order-shipped")).toBe(true)
