@@ -202,6 +202,7 @@ describe("deliverShopMail", () => {
         customer_name: "Próba Vevő",
         order_created_at: "2026-10-05T19:00:00.000Z",
         locale: "hu",
+        order_view_url: null,
         order: { display_id: 42 },
       },
     })
@@ -227,6 +228,31 @@ describe("deliverShopMail", () => {
     expect(await asked({ egyeb: 1 })).toBe("hu")
     expect(await asked(undefined)).toBe("hu")
     expect(await asked({ storefront_locale: "de" })).toBe("hu")
+  })
+
+  /*
+    THE GUEST ORDER PAGE'S ADDRESS GOES TO THE OS WITH EVERY MAIL (the "Rendelésem" page, acrobot 43870): from the
+    storefront's own https address and the mail's language, so the OS can draw a link in its words. Without the
+    address it is null.
+  */
+  it("the facts carry the guest order page's address, in the mail's language, and null without the storefront's address", async () => {
+    const asked = async (metadata: Record<string, unknown> | undefined, env: NodeJS.ProcessEnv) => {
+      const w = world(metadata)
+      const fetch = osAnswers(200, { subject: "s", html: "<p>h</p>", text: "t", customized: false })
+      await deliverShopMail(w.container, mail, env)
+      const [, init] = fetch.mock.calls[fetch.mock.calls.length - 1] as [string, { body: string }]
+      return JSON.parse(init.body).facts.order_view_url
+    }
+    const withShop = { ...OS, ACROPORA_STOREFRONT_URL: "https://shop-staging.acropora.hu" }
+    expect(await asked(undefined, withShop)).toBe("https://shop-staging.acropora.hu/hu/rendeles-megtekintese")
+    expect(await asked({ storefront_locale: "en" }, { ...withShop, ACROPORA_WEBSHOP_MAIL_ENGLISH: "on" })).toBe(
+      "https://shop-staging.acropora.hu/en-hu/rendeles-megtekintese"
+    )
+    // with the English switch off the mail is Hungarian, and so is the page it links to
+    expect(await asked({ storefront_locale: "en" }, withShop)).toBe(
+      "https://shop-staging.acropora.hu/hu/rendeles-megtekintese"
+    )
+    expect(await asked(undefined, OS)).toBeNull()
   })
 
   /*
