@@ -450,7 +450,7 @@ export const en: Dictionary = {
     consentLinkPattern: "privacy notice",
     name: "Name",
     email: "Email",
-    done: "Thank you, you have subscribed to our newsletter.",
+    done: "Thank you! Confirm your subscription with the link in the mail that comes to the address you gave.",
     errorMissing: "Please enter your name and your email address.",
     errorEmail: "That email address does not look right.",
     errorConsent: "To subscribe you need to accept the data processing.",
@@ -458,6 +458,22 @@ export const en: Dictionary = {
       "Too many subscriptions came from here. Please try again in a few minutes.",
     errorOff: "Newsletter subscription is not available right now.",
     errorFailed: "The subscription did not work. Please try again later.",
+  },
+  newsletterLink: {
+    confirmTitle: "Confirm your newsletter subscription",
+    confirmIntro: "One click, and your subscription starts.",
+    confirmButton: "Confirm my subscription",
+    confirmed: "Thank you, your subscription is confirmed.",
+    expired:
+      "This link has expired. Subscribe again at the bottom of the page, and we will send a new one.",
+    leaveTitle: "Unsubscribe from the newsletter",
+    leaveIntro: "One click, and we send no more newsletters to this address.",
+    leaveButton: "Unsubscribe",
+    left: "You have unsubscribed; we send no more newsletters to this address.",
+    invalid:
+      "This link is not valid. If you have already used it, there is nothing more to do.",
+    limit: "Too many requests right now. Please try again in a few minutes.",
+    failed: "That did not work. Please try again later.",
   },
   homeText: {
     heroTenyek1Cim: "In-store pickup",
