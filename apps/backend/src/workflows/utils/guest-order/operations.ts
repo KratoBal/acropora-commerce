@@ -148,6 +148,12 @@ export const guestWithdrawalsOf = async (
  * Whether the order holds a live animal: some product of it has a livestock kind in the shipping attributes (the OS
  * writes it from the product's root category; the shop never derives it from a name). The same source the order
  * confirmation's acclimatisation section reads. The read never throws: a failure answers false and the reader logs it.
+ *
+ * THE FALSE ON A FAILED READ IS DELIBERATE, and it is the one place where the shop decides for the page: the reader
+ * answers an empty list for a failure, so a failure and "no live animal" cannot be told apart here, and the page then
+ * offers the button. That is the smaller harm: the declaration is read by the shop's team, so a button wrongly shown on
+ * a live animal order costs a conversation, while a button withheld from an ordinary order would take away a right the
+ * customer has whatever the delivery. Change the reader to tell the two apart before changing this.
  */
 export const liveAnimalOfOrder = async (container: MedusaContainer, orderId: string): Promise<boolean> =>
   (await livestockKindsOfOrder(container, orderId)).length > 0

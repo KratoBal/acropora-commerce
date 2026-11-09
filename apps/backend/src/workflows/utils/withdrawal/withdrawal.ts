@@ -49,10 +49,11 @@ export const ownOrder = async (
 }
 
 /**
- * Whether the order is collected in the store (the live animals' order of a mixed cart): its LAST shipping method is
- * the store pickup option, the same rule the guest view applies (`isStorePickupOption`). The order must already be
- * proven the caller's (`ownOrder`); an order that cannot be read is NOT a pickup (false), so the answer never
- * withholds the button on a guess.
+ * Whether the order is collected in the store: its LAST shipping method is the store pickup option, the same rule the
+ * guest view applies (`isStorePickupOption`). A FACT ABOUT THE DELIVERY ONLY: the shop offers the store pickup for
+ * every cart (`ROLE_ELIGIBILITY.PICKUP`), so it does NOT mean a live animal and nothing about the withdrawal may be
+ * decided from it (the live animal is `liveAnimalOfOrder`). The order must already be proven the caller's
+ * (`ownOrder`); an order that cannot be read is not a pickup (false).
  */
 export const storePickupOf = async (container: MedusaContainer, orderId: string): Promise<boolean> => {
   if (!orderId) return false
