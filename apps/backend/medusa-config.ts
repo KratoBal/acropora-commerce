@@ -181,6 +181,8 @@ module.exports = defineConfig({
       resolve: "./src/modules/rate-limit",
       options: {
         redisUrl: process.env.REDIS_URL,
+        // the key HMAC's secret is derived from it (barracuda, #695 review)
+        keySecret: process.env.COOKIE_SECRET,
       },
     },
     {

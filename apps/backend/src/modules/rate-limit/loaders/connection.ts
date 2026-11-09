@@ -1,7 +1,7 @@
 import type { LoaderOptions } from "@medusajs/framework/types"
 import Redis from "ioredis"
 
-import { createRedisRateLimitStore, setRateLimitStore } from "../store"
+import { createRedisRateLimitStore, rateLimitKeySecret, setRateLimitStore } from "../store"
 
 /**
  * THE REDIS CLIENT OF THE ATTEMPT LIMITS. Without `redisUrl` nothing is set, and every limit keeps counting in its own
@@ -12,7 +12,7 @@ import { createRedisRateLimitStore, setRateLimitStore } from "../store"
  * a queue to drain. The price, stated: during an outage each instance counts alone again, which only loosens the
  * limit; it never refuses everyone and never lets everyone through.
  */
-export default async ({ logger, options }: LoaderOptions<{ redisUrl?: string }>) => {
+export default async ({ logger, options }: LoaderOptions<{ redisUrl?: string; keySecret?: string }>) => {
   const log = logger ?? console
   const redisUrl = options?.redisUrl
   if (!redisUrl) {
@@ -33,6 +33,8 @@ export default async ({ logger, options }: LoaderOptions<{ redisUrl?: string }>)
   } catch (error) {
     log.warn(`[rate-limit] Redis did not connect (${(error as Error).message}); each try falls back to memory until it does`)
   }
-  setRateLimitStore(createRedisRateLimitStore(client))
+  // Without COOKIE_SECRET (a local run) the HMAC falls back to Medusa's own "supersecret" default: the limits still
+  // work, and the addresses are then as guessable as with a plain hash.
+  setRateLimitStore(createRedisRateLimitStore(client, rateLimitKeySecret(options?.keySecret || "supersecret")))
   log.info("[rate-limit] the attempt limits count in Redis")
 }
