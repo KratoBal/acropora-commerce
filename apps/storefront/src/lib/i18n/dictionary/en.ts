@@ -1255,6 +1255,8 @@ export const en: Dictionary = {
       errorName: "Enter your name.",
       errorDuplicate:
         "There is already a withdrawal declaration for the products you marked. You will find its reference under your order, in the “Withdrawal declarations you have already made” section.",
+      errorUnknown:
+        "Something went wrong while sending the withdrawal declaration, and we do not know whether it arrived. Look under your order at “Withdrawal declarations you have already made”: if it is listed there, there is nothing more to do. If not, try again or write to us: [TO BE FILLED IN: contact].",
       errorSend:
         "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: [TO BE FILLED IN: contact].",
       done: "We have received your withdrawal declaration. Its reference is {id}. [TO BE FILLED IN: next steps and deadlines]",

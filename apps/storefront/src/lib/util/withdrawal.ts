@@ -98,7 +98,13 @@ export const withdrawalFailureOfStatus = (
           ? "duplicate"
           : "unavailable"
 
-/** The text for each kind of failure: a lockout is not "not found", an already declared line says so, the rest say retry. */
+/**
+ * The text for each kind of failure: a lockout is not "not found", an already declared line says so, and the OUTCOME
+ * IS UNKNOWN only for `unavailable` (a 5xx, a network failure, an answer without the declaration's id): the shop may
+ * have recorded the declaration and the answer got lost (seen on the test shop, 2026-11-09: recorded, shown as failed).
+ * That one must NOT tell the customer to just try again, because the second try would be refused as already declared
+ * and read as a second error. A 400 (`invalid`) is the shop refusing the request: nothing was recorded, so "try again".
+ */
 export const withdrawalFailureKey = (failure: WithdrawalFailure): Key =>
   failure === "too_many"
     ? "guestOrder.errorTooMany"
@@ -106,4 +112,10 @@ export const withdrawalFailureKey = (failure: WithdrawalFailure): Key =>
       ? "guestOrder.errorNotFound"
       : failure === "duplicate"
         ? "guestOrder.withdrawal.errorDuplicate"
-        : "guestOrder.withdrawal.errorSend"
+        : failure === "unavailable"
+          ? "guestOrder.withdrawal.errorUnknown"
+          : "guestOrder.withdrawal.errorSend"
+
+/** Whether the page must read the shop's declarations again after this failure: the declaration may stand already. */
+export const withdrawalMayStand = (failure: WithdrawalFailure): boolean =>
+  failure === "duplicate" || failure === "unavailable"

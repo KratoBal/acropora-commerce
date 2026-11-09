@@ -187,6 +187,39 @@ describe("the signed-in withdrawal block", () => {
     expect(screen.getByLabelText(/Korall B/)).toBeTruthy()
   })
 
+  it("after an answer that did not come back reads the shop's state again: a declaration that stands is listed", async () => {
+    submitOwnWithdrawal.mockResolvedValue({ ok: false, failure: "unavailable" })
+    retrieveOwnWithdrawalState.mockResolvedValue({
+      liveAnimal: false,
+      withdrawals: [
+        {
+          id: "ordwd_landed",
+          created_at: "2026-11-09T12:00:00.000Z",
+          item_ids: ["item_1"],
+        },
+      ],
+    })
+    renderBlock()
+    fireEvent.click(screen.getByTestId("rendeles-elallas-nyito"))
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("A neved"), {
+      target: { value: "Kiss Anna" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("withdrawal-form-1043"))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("withdrawal-send"))
+    })
+    await waitFor(() => screen.getByTestId("withdrawals-1043"))
+    expect(screen.getByTestId("withdrawals-1043").textContent).toContain(
+      "ordwd_landed",
+    )
+    expect(screen.getByTestId("withdrawal-failure").textContent).toContain(
+      "nem tudjuk, megérkezett-e",
+    )
+  })
+
   it("keeps what it has when the state cannot be read again after the refusal", async () => {
     submitOwnWithdrawal.mockResolvedValue({ ok: false, failure: "duplicate" })
     retrieveOwnWithdrawalState.mockResolvedValue(null)

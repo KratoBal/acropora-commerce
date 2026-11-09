@@ -196,6 +196,43 @@ describe("the withdrawal form", () => {
     expect(submitWithdrawal).not.toHaveBeenCalled()
   })
 
+  /*
+    AN ANSWER THAT DID NOT COME BACK (seen on the test shop, 2026-11-09: the shop RECORDED the declaration, the page said
+    it could not be sent, and a second try was refused as already declared). Mi pirosit: the page telling the customer to
+    simply try again when the outcome is unknown; the page not reading the shop again, so a declaration that stands is
+    not listed; the typed text lost.
+  */
+  it("after an answer that did not come back says the outcome is unknown, asks the page to read the shop again, and keeps the text", async () => {
+    const onFiled = vi.fn()
+    submitWithdrawal.mockResolvedValue({ ok: false, failure: "unavailable" })
+    renderForm(vi.fn(), onFiled)
+    fillValid()
+    await goOn()
+    await send()
+    await waitFor(() => screen.getByTestId("withdrawal-failure"))
+    const text = screen.getByTestId("withdrawal-failure").textContent ?? ""
+    expect(text).toContain("nem tudjuk, megérkezett-e")
+    expect(text).not.toContain("nem tudtuk elküldeni")
+    expect(onFiled).toHaveBeenCalledWith()
+    expect((screen.getByLabelText("A neved") as HTMLInputElement).value).toBe(
+      "  Kiss   Anna ",
+    )
+  })
+
+  it("a refusal by the shop (400) says nothing was recorded and does not read the shop again", async () => {
+    const onFiled = vi.fn()
+    submitWithdrawal.mockResolvedValue({ ok: false, failure: "invalid" })
+    renderForm(vi.fn(), onFiled)
+    fillValid()
+    await goOn()
+    await send()
+    await waitFor(() => screen.getByTestId("withdrawal-failure"))
+    expect(screen.getByTestId("withdrawal-failure").textContent).toContain(
+      "nem tudtuk elküldeni",
+    )
+    expect(onFiled).not.toHaveBeenCalled()
+  })
+
   it("goes back to the form with the typed text kept", async () => {
     renderForm()
     fillValid()
