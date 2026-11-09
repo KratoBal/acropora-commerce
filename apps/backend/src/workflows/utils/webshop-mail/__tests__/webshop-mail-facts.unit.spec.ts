@@ -73,6 +73,15 @@ const samples: { [T in keyof WebshopMailFactsOf]: WebshopMailFactsOf[T] } = {
     item_ids: ["item_1"],
     received_at: "2026-11-05T18:00:00.000Z",
   },
+  "newsletter-confirm": {
+    customer_name: "Kiss Anna",
+    order_created_at: null,
+    locale: "hu",
+    order_view_url: null,
+    confirm_url: "https://shop.example.test/hu/hirlevel/megerosites?token=x",
+    unsubscribe_url: "https://shop.example.test/hu/hirlevel/leiratkozas?token=y",
+    expires_at: "2026-11-16T15:00:00.000Z",
+  },
 }
 
 const keysOf = (value: unknown): string[] =>
@@ -99,6 +108,10 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
   "withdrawal-received": {
     "": ["customer_name", "declared_name", "display_id", "item_ids", "locale", "order_created_at", "order_view_url", "received_at", "withdrawal_id"],
   },
+  // the newsletter's confirmation: the two links and the link's end; the common keys too (no order: null)
+  "newsletter-confirm": {
+    "": ["confirm_url", "customer_name", "expires_at", "locale", "order_created_at", "order_view_url", "unsubscribe_url"],
+  },
   "order-split": {
     "": ["customer_name", "locale", "order", "order_created_at", "order_view_url", "payment", "split_order"],
     split_order: ["display_id", "email", "id", "items", "payment", "shipping", "total"],
@@ -107,8 +120,8 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
 const ORDER_KEYS = ["display_id", "email", "id", "items", "payment", "shipping", "total"]
 
 describe("the webshop mail facts", () => {
-  it("thirteen templates (the withdrawal acknowledgement the thirteenth), version 1", () => {
-    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(13)
+  it("fourteen templates (the newsletter's confirmation the fourteenth), version 1", () => {
+    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(14)
     expect(WEBSHOP_MAIL_FACTS_VERSION).toBe(1)
     expect(Object.keys(samples).sort()).toEqual([...WEBSHOP_MAIL_TEMPLATES].sort())
     expect(isWebshopMailTemplate("order-shipped")).toBe(true)

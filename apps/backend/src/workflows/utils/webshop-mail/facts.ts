@@ -44,6 +44,9 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   // the thirteenth (V0.3 slice 2): the acknowledgement of a withdrawal declaration, on a durable medium; the OS has no
   // text for it until its template exists and answers 422, so the mail waits in the outbox until the OS knows it
   "withdrawal-received",
+  // the fourteenth (card d707cf5f): the newsletter's confirmation link (double opt-in); no order behind it, so its common
+  // facts come from the sign-up (the name typed, the form's language). An older OS answers 422 and the mail waits.
+  "newsletter-confirm",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]
 
@@ -122,6 +125,16 @@ export type WebshopMailFactsOf = {
     declared_name: string
     item_ids: string[]
     received_at: string
+  }
+  /**
+   * The newsletter's confirmation (double opt-in): the link that confirms (it works once, until `expires_at`, ISO), and
+   * the link that leaves the list. `customer_name` is the name typed into the sign-up; `order_created_at` and
+   * `order_view_url` are null (there is no order).
+   */
+  "newsletter-confirm": CommonFacts & {
+    confirm_url: string
+    unsubscribe_url: string
+    expires_at: string
   }
 }
 

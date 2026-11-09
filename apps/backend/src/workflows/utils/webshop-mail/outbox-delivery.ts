@@ -26,6 +26,14 @@ export type MailRenderFacts = {
   }
 }[WebshopMailTemplate]
 
+/** The facts every template carries on top; from the order, unless the mail brings its own (`MailToSend.common`). */
+export type MailCommonFacts = {
+  customer_name: string | null
+  order_created_at: string | null
+  locale: OrderLocale
+  order_view_url: string | null
+}
+
 export type OutboxRow = {
   id: string
   template: string
@@ -53,14 +61,7 @@ export type OutboxOperations = {
     }
   ): Promise<void>
   /** The facts every template carries, from the order (`resource_id`): the name, the time, the language. */
-  loadCommon(
-    resourceId: string
-  ): Promise<{
-    customer_name: string | null
-    order_created_at: string | null
-    locale: OrderLocale
-    order_view_url: string | null
-  }>
+  loadCommon(resourceId: string): Promise<MailCommonFacts>
   render(request: WebshopMailRenderRequest): Promise<OsRenderResult>
   /** The rendered mail to the notification module, under the mail's own key. */
   send(mail: MailToSend): Promise<void>
@@ -146,7 +147,7 @@ export const deliverThroughOutbox = async (
     (await ops.create({
       template: mail.render.template,
       facts: {
-        ...(await ops.loadCommon(mail.resource_id)),
+        ...(mail.common ?? (await ops.loadCommon(mail.resource_id))),
         ...mail.render.facts,
       },
       facts_version: WEBSHOP_MAIL_FACTS_VERSION,
