@@ -1,4 +1,4 @@
-import { assertNoForeignHold, holdOnAdd, holderOf } from "../cart-hold"
+import { assertNoForeignHold, holdOnAdd, holderOf, isLockTimeout, pieceHolds } from "../cart-hold"
 
 /**
  * THE CART HOLD'S MEDUSA WIRING (V2.3, card 52024fc0), on a container without a database. What must fail: two carts
@@ -96,7 +96,7 @@ const world = (carts: Cart[], unique: string[] = ["v_piece", "v_piece2", "v_piec
       throw new Error(`unexpected ${key}`)
     },
   }
-  return { container, rows, warnings, carts, query }
+  return { container, rows, warnings, carts, query, locking }
 }
 
 const minutesFromNow = (minutes: number) => new Date(Date.now() + minutes * 60 * 1000)
@@ -312,5 +312,118 @@ describe("placing the order", () => {
     expect(holderOf({ id: "cart_p", metadata: { acropora_parent_cart_id: "cart_a" } })).toBe("cart_a")
     expect(holderOf({ id: "cart_a", metadata: null })).toBe("cart_a")
     expect(holderOf({ id: "cart_a", metadata: { acropora_parent_cart_id: "" } })).toBe("cart_a")
+  })
+})
+
+/** What both Medusa lock providers reject a wait past the timeout with (the Redis one as a MedusaError CONFLICT). */
+const lockTimeout = () => new Error("Timed-out acquiring lock.")
+
+describe("the lock's timeout is the race, not trouble (S2, barracuda's review of #703)", () => {
+  it("CHW-BUSY: a lock still taken after a retry refuses with its own code, and holds nothing", async () => {
+    const w = world([{ id: "cart_a", items: [] }])
+    let calls = 0
+    w.locking.execute = async () => {
+      calls++
+      throw lockTimeout()
+    }
+    await expect(holdOnAdd(w.container, "cart_a", ["v_piece"])).rejects.toMatchObject({
+      type: "not_allowed",
+      message: expect.stringMatching(/^unique_piece_busy:/),
+    })
+    expect(calls).toBe(2)
+    expect(w.rows).toEqual([])
+    expect(w.warnings).toEqual([])
+    const lines = JSON.parse(
+      (await holdOnAdd(w.container, "cart_a", ["v_piece"]).catch((e: Error) => e.message)).slice(
+        "unique_piece_busy:".length
+      )
+    )
+    expect(lines).toEqual([{ title: "Title v_piece", handle: "handle-v_piece" }])
+  })
+
+  it("CHW-BUSY-RETRY: one timeout and then the lock: the hold is made", async () => {
+    const w = world([{ id: "cart_a", items: [] }])
+    const real = w.locking.execute
+    let calls = 0
+    w.locking.execute = async (keys: string[], job: () => Promise<unknown>) => {
+      calls++
+      if (calls === 1) throw lockTimeout()
+      return real(keys, job)
+    }
+    await holdOnAdd(w.container, "cart_a", ["v_piece"])
+    expect(calls).toBe(2)
+    expect(w.rows).toHaveLength(1)
+  })
+
+  it("CHW-LOCK-TROUBLE: any other lock failure (Redis down) still lets the line in, with a warning", async () => {
+    const w = world([{ id: "cart_a", items: [] }])
+    let calls = 0
+    w.locking.execute = async () => {
+      calls++
+      throw new Error("Connection is closed.")
+    }
+    await expect(holdOnAdd(w.container, "cart_a", ["v_piece"])).resolves.toBeUndefined()
+    expect(calls).toBe(1)
+    expect(w.warnings).toEqual([expect.stringContaining("Connection is closed.")])
+  })
+
+  it("CHW-TIMEOUT-SHAPE: both providers' timeout is recognised, other messages are not", () => {
+    expect(isLockTimeout(lockTimeout())).toBe(true)
+    expect(isLockTimeout({ message: "Timed-out acquiring lock.", type: "conflict" })).toBe(true)
+    expect(isLockTimeout(new Error("Connection is closed."))).toBe(false)
+    expect(isLockTimeout(undefined)).toBe(false)
+  })
+})
+
+describe("the storefront's question: is this piece held, and until when (S2)", () => {
+  it("CHR-FOREIGN: another cart's standing hold shows its end, not mine; an ordinary product is not unique", async () => {
+    const w = world([
+      { id: "cart_a", items: [{ variant_id: "v_piece" }] },
+      { id: "cart_b", items: [] },
+    ])
+    await holdOnAdd(w.container, "cart_a", ["v_piece"])
+    const answer = await pieceHolds(w.container, ["v_piece", "v_plain"], "cart_b")
+    expect(answer).toEqual({
+      on: true,
+      pieces: [
+        { variant_id: "v_piece", unique: true, hold: { until: w.rows[0].expires_at.toISOString(), mine: false } },
+        { variant_id: "v_plain", unique: false, hold: null },
+      ],
+    })
+    // without a cart, the same: the page of a visitor with no cart yet
+    expect((await pieceHolds(w.container, ["v_piece"])).pieces[0].hold).toMatchObject({ mine: false })
+  })
+
+  it("CHR-DEAD: another cart's hold that no longer stands (piece dropped, or ended) shows nothing", async () => {
+    const w = world([
+      { id: "cart_a", items: [] },
+      { id: "cart_c", items: [{ variant_id: "v_piece2" }] },
+    ])
+    w.rows.push(
+      { id: "chold_x", variant_id: "v_piece", cart_id: "cart_a", expires_at: minutesFromNow(20), updated_at: longAgo },
+      { id: "chold_y", variant_id: "v_piece2", cart_id: "cart_c", expires_at: longAgo, updated_at: longAgo }
+    )
+    const answer = await pieceHolds(w.container, ["v_piece", "v_piece2"], "cart_b")
+    expect(answer.pieces.map((piece) => piece.hold)).toEqual([null, null])
+  })
+
+  it("CHR-MINE: the asking cart's own hold shows even after its end, and a pickup half asks as its parent", async () => {
+    const w = world([
+      { id: "cart_a", metadata: { acropora_pickup_cart_id: "cart_p" }, items: [{ variant_id: "v_piece" }] },
+      { id: "cart_p", metadata: { acropora_parent_cart_id: "cart_a" }, items: [] },
+    ])
+    w.rows.push({ id: "chold_x", variant_id: "v_piece", cart_id: "cart_a", expires_at: longAgo, updated_at: longAgo })
+    for (const asking of ["cart_a", "cart_p"]) {
+      const answer = await pieceHolds(w.container, ["v_piece"], asking)
+      expect(answer.pieces[0].hold).toEqual({ until: longAgo.toISOString(), mine: true })
+    }
+  })
+
+  it("CHR-OFF: without the switch nothing is read", async () => {
+    process.env.ACROPORA_CART_HOLD = ""
+    const w = world([])
+    const graph = jest.spyOn(w.query, "graph")
+    expect(await pieceHolds(w.container, ["v_piece"], "cart_a")).toEqual({ on: false, pieces: [] })
+    expect(graph).not.toHaveBeenCalled()
   })
 })

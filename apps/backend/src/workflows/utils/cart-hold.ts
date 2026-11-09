@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, MedusaError, Modules } from "@medusajs/frame
 
 import { CART_HOLD_MODULE } from "../../modules/cart-hold"
 import {
+  busyMessage,
   cartHoldOn,
   decideHold,
   expiresAtOf,
@@ -27,9 +28,14 @@ import { PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "./split-comp
  *   assertNoForeignHold  completeCartWorkflow's validate hook: every way a cart becomes an order (the stock
  *                        `/complete`, both halves of `complete-split`). Refuses a piece another cart holds.
  *
- * Both do nothing unless `ACROPORA_CART_HOLD=on`. Both FAIL OPEN on their own trouble (a query or the lock that
- * throws): the hold is a courtesy to the buyer, the stock is still guarded by Medusa at completion and V2.5 names the
- * piece sold meanwhile. A failing hold must not stop a sale; only a decision refuses.
+ * Both do nothing unless `ACROPORA_CART_HOLD=on`. Both FAIL OPEN on their own trouble (a query, the database or Redis
+ * that throws): the hold is a courtesy to the buyer, the stock is still guarded by Medusa at completion and V2.5 names
+ * the piece sold meanwhile. A failing hold must not stop a sale; only a decision refuses.
+ *
+ * THE LOCK'S TIMEOUT IS NOT TROUBLE, IT IS THE RACE (barracuda's review of #703): a lock still taken after the wait
+ * means another buyer is adding this piece right now, and letting the line in would put it in two carts at the very
+ * moment the hold exists for. So a timeout gets one retry, and then a refusal of its own (`unique_piece_busy`), never
+ * the sold or the held one.
  *
  * THE LOCK makes read-decide-write one step for a piece and for a cart, across instances (Redis-backed on stage,
  * like the split's). The unique index on `variant_id` is the backstop under it.
@@ -48,6 +54,27 @@ type CartHoldService = {
 type FamilyLine = { variant_id: string; title: string; handle: string | null; unique: boolean }
 
 const LOCK_TIMEOUT_SECONDS = 5
+
+/**
+ * Both Medusa lock providers (in-memory and Redis, 2.20.1) reject a wait past the timeout with this message: the Redis
+ * one as a CONFLICT `MedusaError`, the in-memory one as a plain `Error`. Any other rejection is trouble, not a race.
+ */
+export const isLockTimeout = (error: unknown): boolean =>
+  /Timed-out acquiring lock/.test(String((error as Error | undefined)?.message ?? ""))
+
+const BUSY = Symbol("busy")
+
+/** The job under the keys' lock; a timeout is retried once, and a second one answers `BUSY`. Anything else throws. */
+async function underLock<T>(locking: any, keys: string[], job: () => Promise<T>): Promise<T | typeof BUSY> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await locking.execute(keys, job, { timeout: LOCK_TIMEOUT_SECONDS })
+    } catch (error) {
+      if (!isLockTimeout(error)) throw error
+    }
+  }
+  return BUSY
+}
 
 /** The cart that holds for this one: a mixed cart's pickup half holds through its parent. */
 export const holderOf = (cart: { id: string; metadata?: Record<string, unknown> | null }): string => {
@@ -140,7 +167,8 @@ export async function holdOnAdd(container: Container, cartId: string, variantIds
     const hasPiece = pieceLookup(query)
 
     for (const piece of pieces) {
-      const decision = await locking.execute(
+      const decision = await underLock(
+        locking,
         [`cart_hold:variant:${piece.id}`, `cart_hold:cart:${cart.id}`],
         async (): Promise<HoldDecision> => {
           const now = new Date()
@@ -159,9 +187,12 @@ export async function holdOnAdd(container: Container, cartId: string, variantIds
           if (decided.action === "take")
             await holds.updateCartHolds([{ id: decided.id, cart_id: cart.id, expires_at: decided.expires_at }])
           return decided
-        },
-        { timeout: LOCK_TIMEOUT_SECONDS }
+        }
       )
+      if (decision === BUSY) {
+        refusal = busyMessage([{ title: piece.product?.title ?? "", handle: piece.product?.handle ?? null }])
+        break
+      }
       if (decision.action === "refuse_held") {
         refusal = heldMessage([
           { title: piece.product?.title ?? "", handle: piece.product?.handle ?? null, until: decision.until.toISOString() },
@@ -212,4 +243,66 @@ export async function assertNoForeignHold(
     return
   }
   if (blocked.length) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, heldMessage(blocked))
+}
+
+/** One piece on the store's question: is it a unique piece, and is it held (and by the asking cart)? */
+export type PieceHoldState = {
+  variant_id: string
+  unique: boolean
+  /** `until` is ISO time. `mine`: the asking cart's own hold, shown live or ended; another cart's only while it stands. */
+  hold: { until: string; mine: boolean } | null
+}
+
+/**
+ * THE STOREFRONT'S QUESTION (S2): the product page asks whether its piece is in someone's cart and until when; the cart
+ * asks until when its own pieces are kept. Nothing about the other cart comes back (not its id, not its lines): only
+ * the end of its hold. `unique` is what the product page already shows (`metadata.unique_piece`); the storefront's
+ * per-visitor limit counts only those adds.
+ *
+ * Switch off: `on: false` and no pieces, so the storefront draws nothing. Trouble throws: the route answers it, and
+ * the storefront treats an unanswered question as "nothing to show", the same as the hooks failing open.
+ */
+export async function pieceHolds(
+  container: Container,
+  variantIds: string[],
+  cartId?: string | null
+): Promise<{ on: boolean; pieces: PieceHoldState[] }> {
+  if (!cartHoldOn()) return { on: false, pieces: [] }
+  const ids = [...new Set(variantIds)]
+  if (!ids.length) return { on: true, pieces: [] }
+
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: variants } = await query.graph({
+    entity: "variant",
+    filters: { id: ids },
+    fields: ["id", "product.metadata"],
+  })
+  const unique = new Set(
+    ((variants ?? []) as any[])
+      .filter((variant) => isUniquePiece(variant?.product?.metadata?.unique_piece))
+      .map((variant) => variant.id as string)
+  )
+
+  let holder: string | null = null
+  if (cartId) {
+    const { data: carts } = await query.graph({ entity: "cart", filters: { id: cartId }, fields: ["id", "metadata"] })
+    const cart = (carts ?? [])[0] as { id: string; metadata?: Record<string, unknown> | null } | undefined
+    holder = cart ? holderOf(cart) : null
+  }
+
+  const rows = unique.size
+    ? await container.resolve<CartHoldService>(CART_HOLD_MODULE).listCartHolds({ variant_id: [...unique] })
+    : []
+  const now = new Date()
+  const hasPiece = pieceLookup(query)
+  const pieces: PieceHoldState[] = []
+  for (const id of ids) {
+    const row = rows.find((candidate) => candidate.variant_id === id)
+    let hold: PieceHoldState["hold"] = null
+    if (row && holder && row.cart_id === holder) hold = { until: expiresAtOf(row).toISOString(), mine: true }
+    else if (row && holdStands(row, now, await hasPiece(row.cart_id, id)))
+      hold = { until: expiresAtOf(row).toISOString(), mine: false }
+    pieces.push({ variant_id: id, unique: unique.has(id), hold })
+  }
+  return { on: true, pieces }
 }
