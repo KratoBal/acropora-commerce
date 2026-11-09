@@ -1,6 +1,7 @@
 import { z } from "@medusajs/framework/zod"
 
 import { NEWSLETTER_LANGUAGES } from "../../../modules/newsletter/defaults"
+import { NEWSLETTER_TOKEN_PATTERN } from "../../../modules/newsletter/double-opt-in"
 
 /**
  * A sign-up from the footer: name, address, and the consent box ticked. The
@@ -22,3 +23,13 @@ export const StorePostNewsletterSubscription = z
 export type StorePostNewsletterSubscriptionType = z.infer<
   typeof StorePostNewsletterSubscription
 >
+
+/**
+ * A link's token, from the storefront's confirmation or leaving page: the 43 characters a token has, or the request
+ * is refused before anything is looked up.
+ */
+export const StorePostNewsletterToken = z
+  .object({ token: z.string().regex(NEWSLETTER_TOKEN_PATTERN) })
+  .strict()
+
+export type StorePostNewsletterTokenType = z.infer<typeof StorePostNewsletterToken>

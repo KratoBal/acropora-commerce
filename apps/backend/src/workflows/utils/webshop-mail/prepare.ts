@@ -1,5 +1,5 @@
 import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
-import type { MailRenderFacts } from "./outbox-delivery"
+import type { MailCommonFacts, MailRenderFacts } from "./outbox-delivery"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { ASZF_METADATA_KEY, PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-completion"
 import { type MailContent, type MailOrder, renderOrderPlacedMail } from "./order-placed-mail"
@@ -31,6 +31,8 @@ export type MailToSend = {
     | "problem-report-received"
     // the acknowledgement of a withdrawal declaration, on a durable medium (OS-rendered only: it has no built-in text)
     | "withdrawal-received"
+    // the newsletter's confirmation link (OS-rendered only: it has no built-in text)
+    | "newsletter-confirm"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string
@@ -41,6 +43,11 @@ export type MailToSend = {
    * input. Used only with ACROPORA_WEBSHOP_MAIL_RENDERER=os (`deliverShopMail`).
    */
   render?: MailRenderFacts
+  /**
+   * The common facts when the mail has no order behind it (the newsletter's confirmation): given here, the outbox
+   * does not read an order for them.
+   */
+  common?: MailCommonFacts
 }
 
 export type PrepareResult = { action: "send"; mail: MailToSend } | { action: "skip"; reason: string }

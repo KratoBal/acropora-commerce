@@ -9,10 +9,11 @@ import {
   shownConsentText,
 } from "../../../modules/newsletter/defaults"
 import type NewsletterModuleService from "../../../modules/newsletter/service"
+import type { NewsletterSignUpResult, NewsletterTokenResult } from "../../../modules/newsletter/service"
 import type { HomepageNewsletter } from "../../../modules/homepage-content/service"
 import { resolveHomepageContentService } from "../../admin/homepage-content/helpers"
 import { createRateLimiter, type RateLimiter } from "./rate-limit"
-import type { StorePostNewsletterSubscriptionType } from "./validators"
+import type { StorePostNewsletterSubscriptionType, StorePostNewsletterTokenType } from "./validators"
 
 const TEN_MINUTES = 10 * 60 * 1000
 
@@ -31,16 +32,28 @@ export const defaultLimiters = () => ({
   overall: createRateLimiter({ name: "newsletter-overall", max: 100, windowMs: TEN_MINUTES }),
 })
 
+/** The confirmation mail's sender (`notifyNewsletterConfirm`), behind a seam for the spec. */
+export type SendNewsletterConfirm = (
+  scope: MedusaStoreRequest["scope"],
+  signUp: Extract<NewsletterSignUpResult, { action: "confirm" }>,
+  to: string,
+  sentAt: Date
+) => Promise<unknown>
+
 /**
- * THE SIGN-UP. In order: the limit (429), the row's switch (a row the OS
- * turned off takes no sign-ups: 403, `FORBIDDEN`; Medusa answers
- * `NOT_ALLOWED` with 400), then the upsert with the consent the shop shows
- * today. A second sign-up with the same address updates the row and answers
- * exactly like the first, so the answer does not tell whether an address was
- * already on the list.
+ * THE SIGN-UP (double opt-in, card d707cf5f). In order: the limit (429), the
+ * row's switch (a row the OS turned off takes no sign-ups: 403, `FORBIDDEN`;
+ * Medusa answers `NOT_ALLOWED` with 400), then the sign-up with the consent the
+ * shop shows today: a `pending` row and the confirmation mail, or nothing for an
+ * address already confirmed. Every case answers exactly the same, and the mail is
+ * NOT awaited: a reply that waited for the OS and the mail provider would take
+ * longer for a new address than for a confirmed one, and tell them apart.
  */
 export const createNewsletterPost =
-  (limiters: { perAddress: RateLimiter; overall: RateLimiter }) =>
+  (
+    limiters: { perAddress: RateLimiter; overall: RateLimiter },
+    sendConfirm: SendNewsletterConfirm
+  ) =>
   async (
     req: MedusaStoreRequest<StorePostNewsletterSubscriptionType>,
     res: MedusaResponse
@@ -66,14 +79,45 @@ export const createNewsletterPost =
 
     const consentText = shownConsentText(row, language)
     const service: NewsletterModuleService = req.scope.resolve(NEWSLETTER_MODULE)
-    await service.upsertSubscriberByEmail({
-      email,
-      name,
-      consent_text: consentText,
-      consent_version: consentVersion(consentText),
-      consent_language: language,
-      consented_at: new Date(),
-      source: "footer",
-    })
+    const now = new Date()
+    const signUp = await service.signUpByEmail(
+      {
+        email,
+        name,
+        consent_text: consentText,
+        consent_version: consentVersion(consentText),
+        consent_language: language,
+        consented_at: now,
+        source: "footer",
+      },
+      now
+    )
+    // the sender never throws (`notifyNewsletterConfirm`); the catch keeps a seam that did from failing the process
+    if (signUp.action === "confirm") void sendConfirm(req.scope, signUp, email, now).catch(() => undefined)
     res.status(200).json({ subscribed: true })
+  }
+
+/** A link's page: two hundred tries per ten minutes in all (a token is 256 random bits; this only bounds a flood). */
+export const defaultTokenLimiter = (name: string) =>
+  createRateLimiter({ name, max: 200, windowMs: TEN_MINUTES })
+
+/**
+ * THE CONFIRMATION AND THE LEAVING LINK (the storefront's two pages post the token
+ * here). Every outcome is a 200 with its `result` (`confirmed`, `unsubscribed`,
+ * `invalid`, `expired`): the page words each one. Neither looks at the row's
+ * switch: leaving must work when sign-ups are off, and a confirmation finishes a
+ * consent given while they were on.
+ */
+export const createNewsletterTokenPost =
+  (
+    limiter: RateLimiter,
+    use: (service: NewsletterModuleService, token: string) => Promise<NewsletterTokenResult>
+  ) =>
+  async (req: MedusaStoreRequest<StorePostNewsletterTokenType>, res: MedusaResponse) => {
+    if (!(await limiter.allow("all"))) {
+      res.status(429).json({ message: "Too many requests, try again later" })
+      return
+    }
+    const service: NewsletterModuleService = req.scope.resolve(NEWSLETTER_MODULE)
+    res.status(200).json(await use(service, req.validatedBody.token))
   }

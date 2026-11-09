@@ -15,14 +15,18 @@ export const ORDER_VIEW_PATH = "rendeles-megtekintese"
 
 const COUNTRY_SEGMENT: Record<OrderLocale, string> = { hu: "hu", en: "en-hu" }
 
-export const orderViewUrl = (env: NodeJS.ProcessEnv, locale: OrderLocale): string | null => {
+/** A storefront page's address in a language (`hu/<path>` or `en-hu/<path>`), on the rules above; null without them. */
+export const storefrontPageUrl = (env: NodeJS.ProcessEnv, locale: OrderLocale, path: string): string | null => {
   const raw = env.ACROPORA_STOREFRONT_URL?.trim()
   if (!raw) return null
   try {
     const url = new URL(raw)
     if (url.protocol !== "https:") return null
-    return `${url.origin}/${COUNTRY_SEGMENT[locale]}/${ORDER_VIEW_PATH}`
+    return `${url.origin}/${COUNTRY_SEGMENT[locale]}/${path}`
   } catch {
     return null
   }
 }
+
+export const orderViewUrl = (env: NodeJS.ProcessEnv, locale: OrderLocale): string | null =>
+  storefrontPageUrl(env, locale, ORDER_VIEW_PATH)

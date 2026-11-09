@@ -118,6 +118,17 @@ describe("deliverThroughOutbox", () => {
     })
   })
 
+  it("a mail that brings its own common facts (no order behind it) is not read from an order", async () => {
+    const { ops } = fakeOps()
+    const common = { customer_name: "Kiss Anna", order_created_at: null, locale: "en" as const, order_view_url: null }
+    await deliverThroughOutbox({ ...mail("newsletter-confirm:nlsub_1:ab"), resource_id: "nlsub_1", common }, ops)
+    expect(ops.loadCommon).not.toHaveBeenCalled()
+    expect((ops.render as jest.Mock).mock.calls[0][0].facts).toEqual({
+      ...common,
+      order: { id: "order_42", display_id: 42 },
+    })
+  })
+
   it("a mail already sent is not rendered or sent again", async () => {
     const { ops, sent } = fakeOps()
     await deliverThroughOutbox(mail(), ops)

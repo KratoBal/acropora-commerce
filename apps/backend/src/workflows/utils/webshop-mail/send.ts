@@ -55,7 +55,8 @@ export const sendShopMail = (notifications: NotificationModule, mail: MailToSend
     template: mail.template,
     trigger_type: mail.trigger ?? mail.template,
     resource_id: mail.resource_id,
-    resource_type: "order",
+    // every shop mail is about an order, except the newsletter's confirmation (its resource is the sign-up)
+    resource_type: mail.template === "newsletter-confirm" ? "newsletter_subscriber" : "order",
     idempotency_key: mail.idempotency_key,
     content,
   })
