@@ -12,7 +12,7 @@ const migrations = () => {
 }
 
 describe("stock alert subscription model", () => {
-  it("SA-MODEL: the address, the subject, the consent as given and the double opt-in's columns", () => {
+  it("SA-MODEL: the address, the subject, the consent as given, the double opt-in's and the arrival's columns", () => {
     expect(Object.keys(StockAlertSubscription.parse().schema).sort()).toEqual([
       "confirmation_sent_at",
       "confirmation_token_hash",
@@ -25,6 +25,9 @@ describe("stock alert subscription model", () => {
       "deleted_at",
       "email",
       "id",
+      "known_available",
+      "notified_at",
+      "notified_product_id",
       "source",
       "source_product_id",
       "status",

@@ -234,6 +234,33 @@ describe("POST /store/stock-alerts", () => {
     expect(h.sendConfirm).toHaveBeenCalledTimes(1)
   })
 
+  it("SA-POST-TOLD: a confirmed row already told of an arrival is a new wait: pending, a new link, the arrival forgotten", async () => {
+    const h = harness()
+    const post = createStockAlertPost(loose(), h.sendConfirm, ON)
+    await h.call(post)
+    const leave = h.rows[0]!.unsubscribe_token
+    Object.assign(h.rows[0]!, {
+      status: "confirmed",
+      confirmation_sent_at: new Date(0),
+      confirmation_token_hash: null,
+      known_available: ["prod_seen"],
+      notified_at: new Date("2026-11-09T18:00:00.000Z"),
+      notified_product_id: "prod_new",
+    })
+    const again = await h.call(post)
+    expect(again.payload).toEqual({ subscribed: true })
+    expect(h.sendConfirm).toHaveBeenCalledTimes(2)
+    expect(h.rows).toHaveLength(1)
+    expect(h.rows[0]).toMatchObject({
+      status: "pending",
+      unsubscribe_token: leave,
+      known_available: null,
+      notified_at: null,
+      notified_product_id: null,
+    })
+    expect(h.rows[0]!.confirmation_token_hash).toEqual(expect.any(String))
+  })
+
   it("SA-COOL-ADDRESS: inside the cooldown a second species from the same address makes no row and no mail, and answers the same (barracuda, #701)", async () => {
     const h = harness()
     const post = createStockAlertPost(loose(), h.sendConfirm, ON)
