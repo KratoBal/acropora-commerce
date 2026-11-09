@@ -130,6 +130,40 @@ const pieceLookup = (query: any) => {
   }
 }
 
+/**
+ * THE SAME QUESTION FOR MANY HOLDERS AT ONCE (barracuda's review of #705): two queries however many holders, one for the
+ * holders' carts and one for their pickup halves. The public `GET /store/cart-holds` asks for up to 20 pieces, and
+ * `pieceLookup` would run one or two queries per holder; this keeps that route at a fixed number of queries.
+ */
+async function piecesByHolder(query: any, holders: string[]): Promise<Map<string, Set<string>>> {
+  const result = new Map<string, Set<string>>(holders.map((holder) => [holder, new Set<string>()]))
+  if (!holders.length) return result
+  const fields = ["id", "completed_at", "metadata", "items.variant_id"]
+  const { data: roots } = await query.graph({ entity: "cart", filters: { id: holders }, fields })
+  const owner = new Map<string, string>()
+  const carts: any[] = []
+  for (const root of (roots ?? []) as any[]) {
+    if (!root) continue
+    owner.set(root.id, root.id)
+    carts.push(root)
+    const pickupId = root.metadata?.[PICKUP_CART_METADATA_KEY]
+    if (typeof pickupId === "string" && pickupId) owner.set(pickupId, root.id)
+  }
+  const pickupIds = [...owner.keys()].filter((id) => owner.get(id) !== id)
+  if (pickupIds.length) {
+    const { data: pickups } = await query.graph({ entity: "cart", filters: { id: pickupIds }, fields })
+    carts.push(...((pickups ?? []) as any[]).filter(Boolean))
+  }
+  for (const cart of carts) {
+    if (cart.completed_at) continue
+    const holder = owner.get(cart.id)
+    if (!holder) continue
+    for (const item of cart.items ?? [])
+      if (typeof item?.variant_id === "string") result.get(holder)!.add(item.variant_id)
+  }
+  return result
+}
+
 const warn = (container: Container, message: string) => {
   try {
     container.resolve(ContainerRegistrationKeys.LOGGER).warn(message)
@@ -294,13 +328,14 @@ export async function pieceHolds(
     ? await container.resolve<CartHoldService>(CART_HOLD_MODULE).listCartHolds({ variant_id: [...unique] })
     : []
   const now = new Date()
-  const hasPiece = pieceLookup(query)
+  const foreign = [...new Set(rows.map((row) => row.cart_id).filter((cart) => cart !== holder))]
+  const held = await piecesByHolder(query, foreign)
   const pieces: PieceHoldState[] = []
   for (const id of ids) {
     const row = rows.find((candidate) => candidate.variant_id === id)
     let hold: PieceHoldState["hold"] = null
     if (row && holder && row.cart_id === holder) hold = { until: expiresAtOf(row).toISOString(), mine: true }
-    else if (row && holdStands(row, now, await hasPiece(row.cart_id, id)))
+    else if (row && holdStands(row, now, held.get(row.cart_id)?.has(id) ?? false))
       hold = { until: expiresAtOf(row).toISOString(), mine: false }
     pieces.push({ variant_id: id, unique: unique.has(id), hold })
   }
