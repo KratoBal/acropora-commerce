@@ -46,6 +46,17 @@ describe("AdminPutUrlRedirects", () => {
     expect(ok([{ ...r("/a", "/x"), extra: 1 }])).toBe(false);
   });
 
+  it("takes a 410 row only with its own source as destination, and not as a chain's end", () => {
+    const gone = (path: string, destination = path) => ({
+      source_path: path,
+      destination_path: destination,
+      status: 410,
+    });
+    expect(ok([gone("/SLW-10"), r("/SLW-20", "/hu/marka/jebao")])).toBe(true);
+    expect(ok([gone("/SLW-10", "/hu")])).toBe(false);
+    expect(ok([gone("/x"), r("/y", "/X")])).toBe(false);
+  });
+
   it("refuses a destination a browser takes as another domain (open redirect)", () => {
     for (const cel of [
       "//idegen.hu/x",

@@ -18,6 +18,8 @@ import {
   ATIRANYITAS_CACHE_CONTROL,
   atiranyitasCelja,
   atiranyitasLista,
+  MEGSZUNT_LAP_HTML,
+  MEGSZUNT_STATUSZ,
 } from "@lib/util/atiranyitas"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
@@ -177,6 +179,15 @@ async function regioKozep(request: NextRequest): Promise<NextResponse> {
       await atiranyitasLista(BACKEND_URL, PUBLISHABLE_API_KEY),
       request.nextUrl.pathname,
     )
+    // a megszűnt régi cím: 410, nem átirányítás (a sor célja a forrás maga)
+    if (cel?.statusz === MEGSZUNT_STATUSZ)
+      return new NextResponse(MEGSZUNT_LAP_HTML, {
+        status: MEGSZUNT_STATUSZ,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": ATIRANYITAS_CACHE_CONTROL,
+        },
+      })
     const celUrl = cel
       ? new URL(`${cel.cel}${request.nextUrl.search}`, request.nextUrl.origin)
       : null

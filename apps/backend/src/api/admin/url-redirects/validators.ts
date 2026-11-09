@@ -14,13 +14,24 @@ const PATH = z
     "a path of this shop, without query or space",
   );
 
+/**
+ * 301, or 410 for an old address whose product has no page and no brand page
+ * (d707cf5f, A9). A 410 row has no destination: the OS sends the source itself
+ * there, so the row keeps its shape and the fingerprint stays the same on both
+ * sides.
+ */
+export const GONE = 410;
+
 const Redirect = z
   .object({
     source_path: PATH,
     destination_path: PATH,
-    status: z.literal(301),
+    status: z.union([z.literal(301), z.literal(GONE)]),
   })
-  .strict();
+  .strict()
+  .refine((r) => r.status !== GONE || r.destination_path === r.source_path, {
+    message: "A 410 row's destination is its own source",
+  });
 
 /**
  * THE WHOLE LIST (SEO P0 PR 7a). The OS keeps two rules, and this is the second
@@ -28,6 +39,8 @@ const Redirect = z
  * - a source appears once, case-insensitively (the lookup is lowercase);
  * - no destination is a source (no chain): the shop follows one hop. A rule
  *   pointing to itself is the shortest chain, so the same check refuses it.
+ *   A 410 row is not a hop, so its own destination is not checked; a 301 into
+ *   a 410 source still is.
  */
 export const AdminPutUrlRedirects = z
   .object({
@@ -44,7 +57,9 @@ export const AdminPutUrlRedirects = z
         (rows) => {
           const sources = new Set(rows.map((r) => r.source_path.toLowerCase()));
           return rows.every(
-            (r) => !sources.has(r.destination_path.toLowerCase()),
+            (r) =>
+              r.status === GONE ||
+              !sources.has(r.destination_path.toLowerCase()),
           );
         },
         { message: "A destination is also a source (chain)" },

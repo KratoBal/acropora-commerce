@@ -27,6 +27,21 @@ export type AtiranyitasCel = { cel: string; statusz: number }
 /** A 301 böngésző-tárolása (D1, acrobot 27850): egy hibás szabály egy napon belül javul. */
 export const ATIRANYITAS_CACHE_CONTROL = "public, max-age=86400"
 
+/**
+ * A MEGSZŰNT RÉGI CÍM (410, d707cf5f A9): a termékének nincs lapja, és a márkájának
+ * sincs. A cél a forrás maga, nem követjük. A törzs a vevőnek szól, aki egy régi
+ * linkről érkezik: egy üres 410 a böngészőben üres lap lenne.
+ */
+export const MEGSZUNT_STATUSZ = 410
+
+export const MEGSZUNT_LAP_HTML =
+  '<!doctype html><html lang="hu"><head><meta charset="utf-8">' +
+  '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+  "<title>Ez a lap megszűnt</title></head><body>" +
+  "<h1>Ez a lap megszűnt</h1>" +
+  "<p>A keresett termék már nem érhető el a webshopban.</p>" +
+  '<p><a href="/hu">Tovább a webshopba</a></p></body></html>'
+
 const ELETTARTAM_MS = 300_000
 /**
  * Egy sikertelen betöltés után ennyi ideig nem próbálja újra (nem terheli a

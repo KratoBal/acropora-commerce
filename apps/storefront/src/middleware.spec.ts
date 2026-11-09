@@ -219,6 +219,17 @@ describe("a régi címek 301-e (SEO P0 PR 7c)", () => {
     expect(valasz.headers.get("location")).toBe("https://bolt.test/hu/Regi")
   })
 
+  it("a megszűnt régi cím: 410 egy lappal, átirányítás nélkül, az országkód előtt", async () => {
+    const valasz = await futtatListaval("/SLW-10", {
+      redirects: [["/slw-10", "/SLW-10", 410]],
+    })
+    expect(valasz.status).toBe(410)
+    expect(valasz.headers.get("location")).toBeNull()
+    expect(valasz.headers.get("content-type")).toBe("text/html; charset=utf-8")
+    expect(valasz.headers.get("cache-control")).toBe("public, max-age=86400")
+    expect(await valasz.text()).toContain('<a href="/hu">')
+  })
+
   it("ismeretlen út: a mai viselkedés (országkód-átirányítás)", async () => {
     const valasz = await futtatListaval("/termek/hanna")
     expect(valasz.headers.get("location")).toBe(
