@@ -10,7 +10,8 @@ import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-st
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
-import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
+import { isStorePickupOption } from "../shipping-option-roles"
+import { livestockKindsOfOrder } from "../webshop-mail/livestock-kinds"
 import { lineTitle } from "../webshop-mail/operations"
 import {
   guestProblemReports,
@@ -51,14 +52,6 @@ const ORDER_FIELDS = [
 
 const label = (status: string): string => ORDER_BUSINESS_STATUS_LABELS[status as OrderBusinessStatus] ?? status
 
-/** The shipping option ids that play the store pickup role (by id, never by name: names are translated and edited). */
-const storePickupIds = (): Set<string> =>
-  new Set(
-    resolveShippingOptionRoleBindings()
-      .filter((binding) => binding.role === "PICKUP")
-      .map((binding) => binding.id),
-  )
-
 const sourceOf = (order: any): GuestOrderSource => {
   const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
   return {
@@ -79,7 +72,7 @@ const sourceOf = (order: any): GuestOrderSource => {
       ? {
           name: String(method.name ?? ""),
           data: method.data ?? null,
-          store_pickup: storePickupIds().has(String(method.shipping_option_id ?? "")),
+          store_pickup: isStorePickupOption(method.shipping_option_id),
         }
       : null,
     metadata: order.metadata ?? null,
@@ -151,6 +144,20 @@ export const guestWithdrawalsOf = async (
   }
 }
 
+/**
+ * Whether the order holds a live animal: some product of it has a livestock kind in the shipping attributes (the OS
+ * writes it from the product's root category; the shop never derives it from a name). The same source the order
+ * confirmation's acclimatisation section reads. The read never throws: a failure answers false and the reader logs it.
+ *
+ * THE FALSE ON A FAILED READ IS DELIBERATE, and it is the one place where the shop decides for the page: the reader
+ * answers an empty list for a failure, so a failure and "no live animal" cannot be told apart here, and the page then
+ * offers the button. That is the smaller harm: the declaration is read by the shop's team, so a button wrongly shown on
+ * a live animal order costs a conversation, while a button withheld from an ordinary order would take away a right the
+ * customer has whatever the delivery. Change the reader to tell the two apart before changing this.
+ */
+export const liveAnimalOfOrder = async (container: MedusaContainer, orderId: string): Promise<boolean> =>
+  (await livestockKindsOfOrder(container, orderId)).length > 0
+
 export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const load = async (filters: Record<string, unknown>): Promise<GuestOrderSource[]> => {
@@ -202,6 +209,7 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
         return []
       }
     },
+    liveAnimalOf: (orderId) => liveAnimalOfOrder(container, orderId),
     statusOf: async (orderId): Promise<GuestOrderStatus | null> => {
       const service = container.resolve<OrderBusinessStatusModuleService>(ORDER_BUSINESS_STATUS_MODULE)
       try {

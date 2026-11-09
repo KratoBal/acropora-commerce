@@ -11,20 +11,29 @@ import {
   statusTextKeys,
   type GuestOrder,
   type GuestProblemReport,
+  type GuestWithdrawal,
 } from "@lib/util/guest-order"
 import { convertToLocale } from "@lib/util/money"
 import { Button } from "@modules/common/components/ui"
 import { useState } from "react"
 
 import { kindKey } from "@lib/util/problem-report"
+import { withdrawalOffer } from "@lib/util/withdrawal"
 
 import GuestInvoice from "./guest-invoice"
 import ProblemReportForm from "./problem-report-form"
+import WithdrawalForm from "./withdrawal-form"
 
 /** `reports`: the order's list from the shop's answer, when it came with one. */
 export type ReportsChanged = (
   displayId: GuestOrder["display_id"],
   reports?: GuestProblemReport[],
+) => void
+
+/** `withdrawals`: the order's list of declarations from the shop's answer, when it came with one. */
+export type WithdrawalsChanged = (
+  displayId: GuestOrder["display_id"],
+  withdrawals?: GuestWithdrawal[],
 ) => void
 
 /**
@@ -39,6 +48,7 @@ export default function GuestOrderView({
   orders,
   email,
   onReportsChanged,
+  onWithdrawalsChanged,
 }: {
   orders: GuestOrder[]
   /**
@@ -51,6 +61,8 @@ export default function GuestOrderView({
    * the orders again), so the list under the order is current.
    */
   onReportsChanged?: ReportsChanged
+  /** A declaration was made (the order's new list comes with it) or refused as already declared (no list: read again). */
+  onWithdrawalsChanged?: WithdrawalsChanged
 }) {
   const locale = useLocale()
   const t = translator(locale)
@@ -72,6 +84,7 @@ export default function GuestOrderView({
           order={order}
           email={email}
           onReportsChanged={onReportsChanged}
+          onWithdrawalsChanged={onWithdrawalsChanged}
           heading={
             split
               ? order.shipping?.store_pickup
@@ -90,15 +103,19 @@ function OrderBlock({
   heading,
   email,
   onReportsChanged,
+  onWithdrawalsChanged,
 }: {
   order: GuestOrder
   heading: string | null
   email?: string
   onReportsChanged?: ReportsChanged
+  onWithdrawalsChanged?: WithdrawalsChanged
 }) {
   const locale = useLocale()
   const t = translator(locale)
   const [reporting, setReporting] = useState(false)
+  const [withdrawing, setWithdrawing] = useState(false)
+  const offer = withdrawalOffer(order)
   const money = (amount: number) =>
     convertToLocale({ amount, currency_code: order.currency_code })
   const status = order.business_status
@@ -284,6 +301,44 @@ function OrderBlock({
         </div>
       )}
 
+      {order.withdrawals && order.withdrawals.length > 0 && (
+        <div
+          className="flex flex-col gap-y-1 text-[14px] text-acr-ink"
+          data-testid={`withdrawals-${order.display_id}`}
+        >
+          <p className="text-[11px] font-bold tracking-[0.08em] text-acr-slate">
+            {t("guestOrder.withdrawal.listTitle")}
+          </p>
+          <ul className="flex flex-col gap-y-2">
+            {order.withdrawals.map((withdrawal) => (
+              <li key={withdrawal.id} className="flex flex-col">
+                <span>
+                  {withdrawal.item_ids
+                    .map(
+                      (id) => order.items.find((item) => item.id === id)?.title,
+                    )
+                    .filter(Boolean)
+                    .join(", ")}{" "}
+                  ·{" "}
+                  {new Intl.DateTimeFormat(
+                    locale === "hu" ? "hu-HU" : "en-GB",
+                    {
+                      timeZone: "Europe/Budapest",
+                      year: "numeric",
+                      month: locale === "hu" ? "numeric" : "short",
+                      day: "numeric",
+                    },
+                  ).format(new Date(withdrawal.created_at))}
+                </span>
+                <span className="text-[13px] text-acr-slate">
+                  {t("guestOrder.withdrawal.listRef", { id: withdrawal.id })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {email && order.items.length > 0 && (
         <div className="flex flex-col gap-y-3">
           <GuestInvoice order={order} email={email} />
@@ -306,6 +361,34 @@ function OrderBlock({
               }
               onClose={() => setReporting(false)}
             />
+          )}
+          {offer === "button" && !withdrawing && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setWithdrawing(true)}
+              data-testid={`withdrawal-open-${order.display_id}`}
+            >
+              {t("guestOrder.withdrawal.openButton")}
+            </Button>
+          )}
+          {offer === "button" && withdrawing && (
+            <WithdrawalForm
+              order={order}
+              email={email}
+              onFiled={(withdrawals) =>
+                onWithdrawalsChanged?.(order.display_id, withdrawals)
+              }
+              onClose={() => setWithdrawing(false)}
+            />
+          )}
+          {offer === "live_animal" && (
+            <p
+              className="text-[13px] text-acr-slate"
+              data-testid={`withdrawal-live-${order.display_id}`}
+            >
+              {t("guestOrder.withdrawal.liveAnimal")}
+            </p>
           )}
         </div>
       )}

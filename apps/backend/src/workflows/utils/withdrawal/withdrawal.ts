@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { ORDER_WITHDRAWAL_MODULE } from "../../../modules/order-withdrawal"
 import type OrderWithdrawalModuleService from "../../../modules/order-withdrawal/service"
+import { isStorePickupOption } from "../shipping-option-roles"
 import type { AccessibleOrder } from "../problem-report/report"
 
 /**
@@ -45,6 +46,27 @@ export const ownOrder = async (
     displayId: order.display_id ?? "",
     email: order.email ?? null,
   }
+}
+
+/**
+ * Whether the order is collected in the store: its LAST shipping method is the store pickup option, the same rule the
+ * guest view applies (`isStorePickupOption`). A FACT ABOUT THE DELIVERY ONLY: the shop offers the store pickup for
+ * every cart (`ROLE_ELIGIBILITY.PICKUP`), so it does NOT mean a live animal and nothing about the withdrawal may be
+ * decided from it (the live animal is `liveAnimalOfOrder`). The order must already be proven the caller's
+ * (`ownOrder`); an order that cannot be read is not a pickup (false).
+ */
+export const storePickupOf = async (container: MedusaContainer, orderId: string): Promise<boolean> => {
+  if (!orderId) return false
+  const query = container.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "order",
+    filters: { id: orderId } as Record<string, unknown>,
+    fields: ["id", "shipping_methods.shipping_option_id"],
+  })
+  const order = (data?.[0] ?? null) as { id: string; shipping_methods?: ({ shipping_option_id?: unknown } | null)[] } | null
+  if (!order || order.id !== orderId) return false
+  const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
+  return isStorePickupOption(method?.shipping_option_id)
 }
 
 export type WithdrawalInput = {

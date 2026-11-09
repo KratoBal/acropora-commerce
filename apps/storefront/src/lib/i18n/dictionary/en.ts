@@ -1234,5 +1234,35 @@ export const en: Dictionary = {
       stageInProgress: "Taken over by our team",
       done: "We have received your report. The case reference is {id}. We will get back to you within [TO BE FILLED IN: response time].",
     },
+    withdrawal: {
+      openButton: "Withdraw from the contract",
+      title: "Withdraw from the contract",
+      intro:
+        "Mark the products you want to withdraw from and enter your name. [TO BE FILLED IN: legal review]",
+      itemsLabel: "Which products do you withdraw from?",
+      nameLabel: "Your name",
+      nameHelp: "You make the withdrawal declaration under this name.",
+      next: "Continue to confirmation",
+      confirmTitle: "Check your declaration",
+      confirmText:
+        "With this you declare that you withdraw from the contract for the following products of order {number}:",
+      confirmName: "Name on the declaration: {name}",
+      confirmButton: "I confirm and send it",
+      back: "Back to editing",
+      sending: "Sending…",
+      close: "Close",
+      errorItems: "Mark at least one product.",
+      errorName: "Enter your name.",
+      errorDuplicate:
+        "There is already a withdrawal declaration for the products you marked. You will find its reference under your order, in the “Withdrawal declarations you have already made” section.",
+      errorSend:
+        "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: [TO BE FILLED IN: contact].",
+      done: "We have received your withdrawal declaration. Its reference is {id}. [TO BE FILLED IN: next steps and deadlines]",
+      donePartial:
+        "You have already made a declaration for these products, so they were not recorded again: {items}",
+      listTitle: "Withdrawal declarations you have already made",
+      listRef: "Reference: {id}",
+      liveAnimal: "[TO BE FILLED IN: legal text for live animals]",
+    },
   },
 }

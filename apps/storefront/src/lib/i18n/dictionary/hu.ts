@@ -1276,5 +1276,35 @@ export const hu = {
       stageInProgress: "Átvette a csapatunk",
       done: "Megkaptuk a bejelentésedet. Az ügy azonosítója: {id}. [KITÖLTENDŐ: válaszidő] belül jelentkezünk.",
     },
+    withdrawal: {
+      openButton: "Elállás a szerződéstől",
+      title: "Elállás a szerződéstől",
+      intro:
+        "Jelöld meg azokat a termékeket, amelyektől el szeretnél állni, és írd be a neved. [KITÖLTENDŐ: jogi ellenőrzés]",
+      itemsLabel: "Melyik termékektől állsz el?",
+      nameLabel: "A neved",
+      nameHelp: "Ezzel a névvel adod le az elállási nyilatkozatot.",
+      next: "Tovább a megerősítéshez",
+      confirmTitle: "Ellenőrizd a nyilatkozatot",
+      confirmText:
+        "Ezzel kijelented, hogy elállsz a szerződéstől a(z) {number} számú rendelés következő termékeinél:",
+      confirmName: "A nyilatkozat neve: {name}",
+      confirmButton: "Megerősítem és elküldöm",
+      back: "Vissza a szerkesztéshez",
+      sending: "Küldés…",
+      close: "Bezárás",
+      errorItems: "Jelölj meg legalább egy terméket.",
+      errorName: "Add meg a nevedet.",
+      errorDuplicate:
+        "A kijelölt tételekről már van elállási nyilatkozatod. Az azonosítóját a rendelésed alatt, a „Már leadott elállási nyilatkozataid” részben találod.",
+      errorSend:
+        "Az elállási nyilatkozatot most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
+      done: "Megkaptuk az elállási nyilatkozatodat. Az azonosítója: {id}. [KITÖLTENDŐ: további teendők és határidők]",
+      donePartial:
+        "Ezekről a tételekről korábban már leadtál nyilatkozatot, ezeket nem rögzítettük újra: {items}",
+      listTitle: "Már leadott elállási nyilatkozataid",
+      listRef: "Azonosító: {id}",
+      liveAnimal: "[KITÖLTENDŐ: jogi szöveg élő állatra]",
+    },
   },
 } as const

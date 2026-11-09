@@ -12,7 +12,10 @@ import {
 import { Button } from "@modules/common/components/ui"
 import { useState, useTransition, type FormEvent } from "react"
 
-import GuestOrderView, { type ReportsChanged } from "./guest-order-view"
+import GuestOrderView, {
+  type ReportsChanged,
+  type WithdrawalsChanged,
+} from "./guest-order-view"
 
 /**
  * THE GUEST ORDER LOOKUP FORM (V1.1): the order number and the e-mail address, checked in the browser
@@ -70,6 +73,23 @@ export default function GuestOrderForm() {
         ? all.map((order) =>
             String(order.display_id) === String(displayId)
               ? { ...order, problem_reports: reports }
+              : order,
+          )
+        : all,
+    )
+  }
+  // the same for a withdrawal declaration: the shop's list replaces the one on screen, and a refusal as already declared
+  // (no list) reads the orders again
+  const withdrawalsChanged: WithdrawalsChanged = (displayId, withdrawals) => {
+    if (!withdrawals) {
+      refreshReports()
+      return
+    }
+    setOrders((all) =>
+      all
+        ? all.map((order) =>
+            String(order.display_id) === String(displayId)
+              ? { ...order, withdrawals }
               : order,
           )
         : all,
@@ -137,6 +157,7 @@ export default function GuestOrderForm() {
           orders={orders}
           email={lookupEmail}
           onReportsChanged={reportsChanged}
+          onWithdrawalsChanged={withdrawalsChanged}
         />
       )}
     </div>
