@@ -12,6 +12,7 @@ import {
   withdrawableItems,
   withdrawalFailureKey,
   withdrawalFailureOfStatus,
+  withdrawalMayStand,
   withdrawalFormErrors,
   withdrawalOffer,
 } from "./withdrawal"
@@ -164,9 +165,17 @@ describe("the failures", () => {
     expect(withdrawalFailureKey("invalid")).toBe(
       "guestOrder.withdrawal.errorSend",
     )
+    // the outcome is unknown after an answer that did not come back: not "try again", look at the list first
     expect(withdrawalFailureKey("unavailable")).toBe(
-      "guestOrder.withdrawal.errorSend",
+      "guestOrder.withdrawal.errorUnknown",
     )
+  })
+
+  it("the page reads the shop again only where the declaration may stand (already declared, or the outcome unknown)", () => {
+    expect(withdrawalMayStand("duplicate")).toBe(true)
+    expect(withdrawalMayStand("unavailable")).toBe(true)
+    for (const failure of ["invalid", "not_found", "too_many"] as const)
+      expect(withdrawalMayStand(failure)).toBe(false)
   })
 
   it("has every key the form uses in both languages", () => {
@@ -175,6 +184,7 @@ describe("the failures", () => {
       "errorName",
       "errorDuplicate",
       "errorSend",
+      "errorUnknown",
       "openButton",
       "confirmButton",
       "liveAnimal",

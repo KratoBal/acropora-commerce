@@ -1297,6 +1297,8 @@ export const hu = {
       errorName: "Add meg a nevedet.",
       errorDuplicate:
         "A kijelölt tételekről már van elállási nyilatkozatod. Az azonosítóját a rendelésed alatt, a „Már leadott elállási nyilatkozataid” részben találod.",
+      errorUnknown:
+        "Az elállási nyilatkozat elküldése közben hiba történt, és nem tudjuk, megérkezett-e. Nézd meg a rendelésed alatt a „Már leadott elállási nyilatkozataid” részt: ha ott megjelenik, nincs több teendőd. Ha nem, próbáld újra, vagy írj nekünk: [KITÖLTENDŐ: elérhetőség].",
       errorSend:
         "Az elállási nyilatkozatot most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
       done: "Megkaptuk az elállási nyilatkozatodat. Az azonosítója: {id}. [KITÖLTENDŐ: további teendők és határidők]",

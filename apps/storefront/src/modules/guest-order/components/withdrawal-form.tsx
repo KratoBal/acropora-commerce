@@ -7,6 +7,7 @@ import type { GuestWithdrawal } from "@lib/util/guest-order"
 import {
   cleanedName,
   withdrawalFailureKey,
+  withdrawalMayStand,
   withdrawalFormErrors,
   type WithdrawalFormErrors,
 } from "@lib/util/withdrawal"
@@ -92,7 +93,8 @@ export default function WithdrawalForm({
       }
       // back to the first step: the customer sees what was typed and can change it
       setConfirming(false)
-      if (result.failure === "duplicate") onFiled?.()
+      // a refusal as already declared, or an answer that did not come back (the declaration may stand): read the shop again
+      if (withdrawalMayStand(result.failure)) onFiled?.()
       setFailure(t(withdrawalFailureKey(result.failure)))
     })
   }
