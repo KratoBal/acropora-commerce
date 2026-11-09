@@ -6,6 +6,10 @@ vi.mock("@lib/data/orders", () => ({
   retrieveOrder: vi.fn(async () => ({ id: "order_1", display_id: 14 })),
   retrieveOrderBusinessStatus: vi.fn(),
 }))
+vi.mock("@lib/data/own-withdrawal", () => ({
+  retrieveOwnWithdrawalState: vi.fn(async () => null),
+  submitOwnWithdrawal: vi.fn(),
+}))
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND")
