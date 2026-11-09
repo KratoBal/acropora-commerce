@@ -342,7 +342,14 @@ function OrderBlock({
               {t("guestOrder.withdrawal.openButton")}
             </Button>
           )}
-          {offer === "button" && withdrawing && (
+          {/*
+            THE FORM STAYS WHILE IT IS OPEN, WHATEVER THE OFFER BECOMES (test shop, 2026-11-09): a successful declaration
+            puts every line among the declared ones, so the offer turns to "none" and the button branch went with it,
+            taking the form's own "Megkaptuk az elállási nyilatkozatodat" screen along before the customer could read
+            it. The form is the customer's confirmation: it goes only when the customer closes it. A form is opened
+            from the button, so it is never open for an order that holds a live animal.
+          */}
+          {withdrawing && offer !== "live_animal" && (
             <WithdrawalForm
               orderNumber={String(order.display_id)}
               items={withdrawableItems(order)}
