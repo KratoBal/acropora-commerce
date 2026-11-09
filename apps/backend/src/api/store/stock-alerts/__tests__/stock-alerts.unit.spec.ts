@@ -19,7 +19,8 @@ import { StorePostStockAlert, StorePostStockAlertToken } from "../validators"
   the product's own title; an unpublished product signed up for; a second sign-up for the same species adding a row,
   or one for another species overwriting the first; an answer that differs for an address already on the list (and
   korall's "már feliratkoztál" sentence would be exactly that); the reply waiting for the mail; a link that works
-  twice, after its seven days, or after leaving; leaving that needs the switch.
+  twice, after its seven days, or after leaving; leaving that needs the switch; the cooldown counted per row, so one
+  address signed up for every species gets a mail for each (barracuda, #701 review).
 */
 
 const PRODUCTS = [
@@ -98,6 +99,11 @@ const fakeService = () => {
 }
 
 const ON = { ACROPORA_STOCK_ALERT: "on" } as NodeJS.ProcessEnv
+
+/** Every row's confirmation as if mailed before the cooldown: the next sign-up may mail again. */
+const cooled = (rows: Row[]) => {
+  for (const row of rows) row.confirmation_sent_at = new Date(Date.now() - NEWSLETTER_CONFIRM_COOLDOWN_MS - 1)
+}
 
 const harness = () => {
   const { rows, service } = fakeService()
@@ -203,8 +209,9 @@ describe("POST /store/stock-alerts", () => {
     const h = harness()
     const post = createStockAlertPost(loose(), h.sendConfirm, ON)
     const first = await h.call(post)
-    h.rows[0]!.confirmation_sent_at = new Date(Date.now() - NEWSLETTER_CONFIRM_COOLDOWN_MS - 1)
+    cooled(h.rows)
     const again = await h.call(post)
+    cooled(h.rows)
     await h.call(post, { product_id: "prod_other" })
     expect(again.payload).toEqual(first.payload)
     expect(h.rows.map((r) => r.subject_key)).toEqual(["acropora abrolhosensis", "acropora tenuis"])
@@ -225,6 +232,31 @@ describe("POST /store/stock-alerts", () => {
     expect(confirmed.payload).toEqual({ subscribed: true })
     expect(h.rows[0]!.status).toBe("confirmed")
     expect(h.sendConfirm).toHaveBeenCalledTimes(1)
+  })
+
+  it("SA-COOL-ADDRESS: inside the cooldown a second species from the same address makes no row and no mail, and answers the same (barracuda, #701)", async () => {
+    const h = harness()
+    const post = createStockAlertPost(loose(), h.sendConfirm, ON)
+    const first = await h.call(post)
+    const second = await h.call(post, { product_id: "prod_other" })
+    expect(second.payload).toEqual(first.payload)
+    expect(h.sendConfirm).toHaveBeenCalledTimes(1)
+    expect(h.rows.map((r) => r.subject_key)).toEqual(["acropora abrolhosensis"])
+    // another address is not held by this one's cooldown
+    await h.call(post, { email: "masik@pelda.hu", product_id: "prod_other" })
+    expect(h.sendConfirm).toHaveBeenCalledTimes(2)
+    // a confirmed row's recent mail holds the address too: the cooldown counts mails, not states
+    h.rows[0]!.status = "confirmed"
+    await h.call(post, { product_id: "prod_other" })
+    expect(h.sendConfirm).toHaveBeenCalledTimes(2)
+    // after the cooldown the second species gets its row and its mail
+    cooled(h.rows)
+    await h.call(post, { product_id: "prod_other" })
+    expect(h.sendConfirm).toHaveBeenCalledTimes(3)
+    expect(h.rows.filter((r) => r.email === "teszt@pelda.hu").map((r) => r.subject_key)).toEqual([
+      "acropora abrolhosensis",
+      "acropora tenuis",
+    ])
   })
 
   it("SA-POST-OFF: with the switch off nothing is read, written or sent (403, FORBIDDEN)", async () => {
@@ -312,6 +344,7 @@ describe("the stock alert's double opt-in", () => {
     expect((await confirm(h, token)).payload).toEqual({ result: "invalid" })
     expect((await confirm(h, "z".repeat(43))).payload).toEqual({ result: "invalid" })
 
+    cooled(h.rows)
     await h.call(post, { product_id: "prod_other" })
     const late = new Date(Date.now() + NEWSLETTER_CONFIRM_TTL_MS + 60_000)
     expect((await confirm(h, h.lastMail().confirmation_token, late)).payload).toEqual({ result: "expired" })
@@ -323,7 +356,7 @@ describe("the stock alert's double opt-in", () => {
     const post = createStockAlertPost(loose(), h.sendConfirm, ON)
     await h.call(post)
     const first = h.lastMail()
-    h.rows[0]!.confirmation_sent_at = new Date(Date.now() - NEWSLETTER_CONFIRM_COOLDOWN_MS - 1)
+    cooled(h.rows)
     await h.call(post)
     const second = h.lastMail()
     expect(second.unsubscribe_token).toBe(first.unsubscribe_token)

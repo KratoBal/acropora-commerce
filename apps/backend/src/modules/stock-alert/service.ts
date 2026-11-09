@@ -44,6 +44,8 @@ export type StockAlertTokenResult = { result: "confirmed" | "unsubscribed" | "in
 
 type Row = {
   id: string
+  subject_kind: string
+  subject_key: string
   status: StockAlertStatus
   confirmation_sent_at: Date | string | null
   unsubscribe_token: string | null
@@ -51,24 +53,29 @@ type Row = {
 
 /**
  * THE NEWSLETTER'S DOUBLE OPT-IN (card d707cf5f), per address AND subject. The token rules (32 random bytes, only the
- * confirmation token's hash kept, seven days, thirty minutes between two mails to one row) are the newsletter's own
- * functions, so the two lists cannot drift apart.
+ * confirmation token's hash kept, seven days, thirty minutes between two mails) are the newsletter's own functions,
+ * so the two lists cannot drift apart.
  */
 class StockAlertModuleService extends MedusaService({ StockAlertSubscription }) {
   /**
    * THE SIGN-UP. A new address and subject, or one pending or left: the row takes the consent given now, turns (or
    * stays) `pending` and gets a NEW confirmation token, so only the latest mail's link works. A confirmed row is left
-   * as it is, and so is a pending one mailed inside the cooldown. The unique index is the real guard against two
-   * racing sign-ups; the loser's constraint error is answered like any other failure.
+   * as it is. The unique index is the real guard against two racing sign-ups; the loser's constraint error is
+   * answered like any other failure.
+   *
+   * THE COOLDOWN IS PER ADDRESS, NOT PER ROW (barracuda, #701 review): every subject is a new row, so a cooldown per
+   * row let a stranger sign one address up for every species in the catalogue, one confirmation mail each (with the
+   * route's three tries per ten minutes, 432 mails a day from our sender). If ANY row of the address had a
+   * confirmation mailed in the last thirty minutes, the sign-up changes nothing: no row, no token, no mail, and the
+   * same answer. The buyer signs up for the second species after the cooldown.
    */
   async signUp(input: StockAlertSignUp, now: Date = new Date()): Promise<StockAlertSignUpResult> {
-    const [existing] = (await this.listStockAlertSubscriptions(
-      { email: input.email, subject_kind: input.subject_kind, subject_key: input.subject_key },
-      { take: 1 }
-    )) as unknown as Row[]
+    const rows = (await this.listStockAlertSubscriptions({ email: input.email })) as unknown as Row[]
+    if (rows.some((row) => confirmationCoolingDown(row.confirmation_sent_at, now))) return { action: "none" }
+    const existing = rows.find(
+      (row) => row.subject_kind === input.subject_kind && row.subject_key === input.subject_key
+    )
     if (existing?.status === "confirmed") return { action: "none" }
-    if (existing?.status === "pending" && confirmationCoolingDown(existing.confirmation_sent_at, now))
-      return { action: "none" }
 
     const confirmationToken = newNewsletterToken()
     const unsubscribeToken = existing?.unsubscribe_token ?? newNewsletterToken()
