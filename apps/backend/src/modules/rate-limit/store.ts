@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto"
+import { createHmac, randomUUID } from "node:crypto"
 
 /**
  * WHERE THE ATTEMPT COUNTS LIVE (card d707cf5f, item 5: "elesre Redis-alapu kell").
@@ -10,8 +10,11 @@ import { createHash, randomUUID } from "node:crypto"
  * does not hand every caller a fresh allowance.
  */
 export type RateLimitStore = {
-  /** Counts a try against `name:key` and answers whether it is within `max` in the last `windowMs`. */
-  hit(opts: { name: string; key: string; max: number; windowMs: number; now: number }): Promise<boolean>
+  /**
+   * Counts a try against `name:key` and answers whether it is within `max` in the last `windowMs`. `now` only when the
+   * caller fixes the clock (tests); without it the store takes its own clock (Redis `TIME`), one for every instance.
+   */
+  hit(opts: { name: string; key: string; max: number; windowMs: number; now?: number }): Promise<boolean>
 }
 
 let shared: RateLimitStore | null = null
@@ -36,35 +39,44 @@ export type EvalClient = {
 export const SLIDING_WINDOW_SCRIPT = `
 local key = KEYS[1]
 local now = tonumber(ARGV[1])
+if now < 0 then
+  local t = redis.call("TIME")
+  now = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
+end
 local window = tonumber(ARGV[2])
 local max = tonumber(ARGV[3])
 redis.call("ZREMRANGEBYSCORE", key, "-inf", now - window)
 if redis.call("ZCARD", key) >= max then
   return 0
 end
-redis.call("ZADD", key, now, ARGV[4])
+redis.call("ZADD", key, now, now .. "-" .. ARGV[4])
 redis.call("PEXPIRE", key, window)
 return 1
 `
 
 /**
- * THE KEY IS HASHED: a limit is keyed by an e-mail address, an account or a cart, and the address should not sit in
- * Redis in clear text (readable by anyone with the Redis password). The name stays readable, so a key can still be
- * told apart by limit.
+ * THE KEY IS AN HMAC WITH A SERVER SECRET (barracuda, #695 review): a limit is keyed by an e-mail address, an
+ * account or a cart. A plain hash would keep the address out of Redis, but anyone who can read Redis could still
+ * hash a KNOWN address and see whether someone tried it in the window. The secret is derived from the backend's
+ * `COOKIE_SECRET` under its own label (acrobot 44934: no new secret; a secret change only resets these short-lived
+ * counts). The name stays readable, so a key can still be told apart by limit.
  */
-export const redisKeyOf = (name: string, key: string) =>
-  `acr:rate-limit:${name}:${createHash("sha256").update(key).digest("hex")}`
+export const rateLimitKeySecret = (cookieSecret: string) =>
+  createHmac("sha256", cookieSecret).update("acropora:rate-limit:v1").digest()
 
-export const createRedisRateLimitStore = (client: EvalClient): RateLimitStore => ({
+export const redisKeyOf = (secret: Buffer, name: string, key: string) =>
+  `acr:rate-limit:${name}:${createHmac("sha256", secret).update(key).digest("hex")}`
+
+export const createRedisRateLimitStore = (client: EvalClient, secret: Buffer): RateLimitStore => ({
   async hit({ name, key, max, windowMs, now }) {
     const answer = await client.eval(
       SLIDING_WINDOW_SCRIPT,
       1,
-      redisKeyOf(name, key),
-      now,
+      redisKeyOf(secret, name, key),
+      now ?? -1,
       windowMs,
       max,
-      `${now}-${randomUUID()}`
+      randomUUID()
     )
     return Number(answer) === 1
   },

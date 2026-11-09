@@ -48,14 +48,16 @@ const warnStoreFailed = (name: string, error: unknown, now: number) => {
 export function createRateLimiter(opts: LimitOptions & { name?: string }): RateLimiter {
   const memory = createMemoryRateLimiter(opts)
   return {
-    async allow(key, now = Date.now()) {
+    async allow(key, now) {
       const store = opts.name ? rateLimitStore() : null
-      if (!store || !opts.name) return memory.allow(key, now)
+      if (!store || !opts.name) return memory.allow(key, now ?? Date.now())
       try {
+        // without `now` the store keeps its own clock (Redis TIME): one clock for every instance
         return await store.hit({ name: opts.name, key, max: opts.max, windowMs: opts.windowMs, now })
       } catch (error) {
-        warnStoreFailed(opts.name, error, now)
-        return memory.allow(key, now)
+        const local = now ?? Date.now()
+        warnStoreFailed(opts.name, error, local)
+        return memory.allow(key, local)
       }
     },
   }
