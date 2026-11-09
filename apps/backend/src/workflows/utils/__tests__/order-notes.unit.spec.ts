@@ -11,7 +11,7 @@ import middlewares from "../../../api/middlewares"
 import { POST as storeRoute } from "../../../api/store/cart-notes/[cart_id]/route"
 import { StorePostCartNotes } from "../../../api/store/cart-notes/validators"
 import { mergeMetadata } from "@medusajs/framework/utils"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 
 import { cleanNote, notesOf, notesPatch, saveCartNotes, saveOrderNotes, withNotes } from "../order-notes"
@@ -120,6 +120,25 @@ describe("saveCartNotes", () => {
     const utils = dirname(require.resolve("@medusajs/utils", { paths: [framework] }))
     const source = readFileSync(join(utils, "modules-sdk", "medusa-internal-service.js"), "utf8")
     expect(source).toMatch(/mergeMetadata\)\(entity_\.metadata \?\? \{\}, update_\.metadata\)/)
+  })
+  // THE SAME PREMISE FOR THE CART (barracuda, #694: the cart is where #644 happened and where two writers live, the notes and the
+  // ÁSZF record): the cart module has no service of its own besides the module, `updateCarts_` hands the update to the generic
+  // `cartService_.update`, the `update-carts` step calls `cartModule.updateCarts(data)`, and the `prepare-cart-to-update` step
+  // does not build the metadata itself. If any of these changes, a note save could replace the cart's whole metadata (the ÁSZF
+  // record and the pickup cart id gone): this turns red first.
+  it("the installed Medusa's cart update goes through the generic, merging service, and no step builds the metadata", () => {
+    const medusa = dirname(require.resolve("@medusajs/medusa/package.json"))
+    const cartEntry = require.resolve("@medusajs/cart", { paths: [medusa] })
+    const cartServices = join(dirname(cartEntry), "services")
+    expect(readdirSync(cartServices).filter((f) => f.endsWith(".js"))).toEqual(["cart-module.js", "index.js"])
+    expect(readFileSync(join(cartServices, "cart-module.js"), "utf8")).toMatch(/this\.cartService_\.update\(toUpdate, sharedContext\)/)
+    const coreFlows = dirname(require.resolve("@medusajs/core-flows", { paths: [medusa] }))
+    expect(readFileSync(join(coreFlows, "cart", "steps", "update-carts.js"), "utf8")).toMatch(/cartModule\.updateCarts\(data\)/)
+    const workflow = readFileSync(join(coreFlows, "cart", "workflows", "update-cart.js"), "utf8")
+    const start = workflow.indexOf('"prepare-cart-to-update"')
+    const prepare = workflow.slice(start, workflow.indexOf("exports.", start + 1))
+    expect(prepare.length).toBeGreaterThan(200)
+    expect(prepare).not.toMatch(/metadata/)
   })
   // the same premise for the ORDER (the OS's write): the order service is Medusa's generic one and has no `update` of its own, and the
   // module hands the update to it (`updateOrders_` -> `orderService_.update`), so the incoming metadata is merged, not replaced.

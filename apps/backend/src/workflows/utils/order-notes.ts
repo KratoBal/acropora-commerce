@@ -68,7 +68,8 @@ export const withNotes = (
  * (2.20.1, `medusa-internal-service.js`) merges the incoming `metadata` into the entity's own, read inside the same
  * update (`mergeMetadata`: the given keys replace, an empty string removes the key, the others stay). Sending the whole
  * picture read earlier was needless and dangerous: two writers (the notes and the ÁSZF record) each wrote back the other's
- * old state, and the one that wrote last could undo the other's key. An empty note is "" here, which removes the key.
+ * old state, and the one that wrote last could undo the other's key. What remains is Medusa's own read-merge-write inside its
+ * update (a short window, no row lock under READ COMMITTED), not a copy of ours read earlier. An empty note is "" here, which removes the key.
  */
 export const notesPatch = (input: NotesInput): Record<string, string> => {
   const patch: Record<string, string> = {}
