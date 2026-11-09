@@ -1,12 +1,11 @@
 "use client"
 
-import { submitWithdrawal } from "@lib/data/withdrawal"
+import type { WithdrawalResult } from "@lib/data/withdrawal-post"
 import { translator, type Key } from "@lib/i18n/dictionary"
 import { useLocale } from "@lib/i18n/use-translate"
-import type { GuestOrder, GuestWithdrawal } from "@lib/util/guest-order"
+import type { GuestWithdrawal } from "@lib/util/guest-order"
 import {
   cleanedName,
-  withdrawableItems,
   withdrawalFailureKey,
   withdrawalFormErrors,
   type WithdrawalFormErrors,
@@ -15,21 +14,30 @@ import { Button } from "@modules/common/components/ui"
 import { useState, useTransition, type FormEvent } from "react"
 
 /**
- * THE WITHDRAWAL FORM (V0.3): "Elállás a szerződéstől". It opens under an order on the guest page and files a
- * declaration for THAT order with the pair the customer already typed (the order's own number and the address).
- * Two steps, because a declaration is not undone by closing the page: the lines and the name first, then a screen
+ * THE WITHDRAWAL FORM (V0.3): "Elállás a szerződéstől". It opens under an order (the guest page, and the signed-in
+ * customer's order page) and files a declaration for THAT order through `submit`, which the page binds to its own way
+ * in (the order's number and the address the guest typed, or the session). Two steps, because a declaration is not undone by closing the page: the lines and the name first, then a screen
  * that repeats exactly what will be sent, and only its own button sends. EVERYTHING the customer typed stays on a
  * failure (the text says so). The legal placeholders ([KITÖLTENDŐ]) stand as they are: whether, for what and until
  * when the right applies is the owner's and the lawyer's, not this form's.
  */
+export type WithdrawalItem = { id: string; title: string; quantity: number }
+
 export default function WithdrawalForm({
-  order,
-  email,
+  orderNumber,
+  items: offered,
+  submit,
   onClose,
   onFiled,
 }: {
-  order: GuestOrder
-  email: string
+  /** the number the customer knows: it names the order in the confirmation and keys the form's test ids */
+  orderNumber: string
+  /** the lines a NEW declaration may still name (the page leaves out the ones a declaration already holds) */
+  items: WithdrawalItem[]
+  submit: (input: {
+    customerName: string
+    itemIds: string[]
+  }) => Promise<WithdrawalResult>
   onClose: () => void
   /**
    * The shop took the declaration (with the order's list of declarations as it answered), or refused it as already
@@ -48,17 +56,16 @@ export default function WithdrawalForm({
     null,
   )
   const [pending, startTransition] = useTransition()
-  const orderNumber = String(order.display_id)
-  // the lines a declaration already names are not offered again
-  const offered = withdrawableItems(order)
+  // the lines as they were when the form opened: a line that gets a declaration drops out of `offered` (the page reads
+  // the orders again), but the note of a partly taken request still names it
+  const [opened] = useState(offered)
+  const titleOf = (id: string) => opened.find((item) => item.id === id)?.title
   // ONLY the marked lines that are still offered: after a refusal the page reads the orders again and a line that has a
   // declaration now drops out of the list, but its id would stay in `itemIds`. The screen and the sent declaration must
   // be the same set (a legal declaration), so every use below goes through this.
   const selectedIds = offered
     .filter((item) => itemIds.includes(item.id))
     .map((item) => item.id)
-  const titleOf = (id: string) =>
-    order.items.find((item) => item.id === id)?.title
 
   const next = (event: FormEvent) => {
     event.preventDefault()
@@ -71,9 +78,7 @@ export default function WithdrawalForm({
   const send = () => {
     setFailure(null)
     startTransition(async () => {
-      const result = await submitWithdrawal({
-        orderNumber,
-        email,
+      const result = await submit({
         customerName: cleanedName(name),
         itemIds: selectedIds,
       })
@@ -132,7 +137,7 @@ export default function WithdrawalForm({
     return (
       <div
         className="flex flex-col gap-y-4 border border-acr-slate/30 px-4 py-4"
-        data-testid={`withdrawal-confirm-${order.display_id}`}
+        data-testid={`withdrawal-confirm-${orderNumber}`}
       >
         <h3 className="text-[16px] font-semibold text-acr-ink">
           {t("guestOrder.withdrawal.confirmTitle")}
@@ -184,7 +189,7 @@ export default function WithdrawalForm({
       onSubmit={next}
       noValidate
       className="flex flex-col gap-y-4 border border-acr-slate/30 px-4 py-4"
-      data-testid={`withdrawal-form-${order.display_id}`}
+      data-testid={`withdrawal-form-${orderNumber}`}
     >
       <div className="flex flex-col gap-y-1">
         <h3 className="text-[16px] font-semibold text-acr-ink">
@@ -223,13 +228,13 @@ export default function WithdrawalForm({
 
       <div className="flex flex-col gap-y-1">
         <label
-          htmlFor={`withdrawal-name-${order.display_id}`}
+          htmlFor={`withdrawal-name-${orderNumber}`}
           className="text-[14px] font-semibold text-acr-ink"
         >
           {t("guestOrder.withdrawal.nameLabel")}
         </label>
         <input
-          id={`withdrawal-name-${order.display_id}`}
+          id={`withdrawal-name-${orderNumber}`}
           type="text"
           autoComplete="name"
           value={name}

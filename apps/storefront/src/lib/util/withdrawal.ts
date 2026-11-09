@@ -1,6 +1,6 @@
 import type { Key } from "@lib/i18n/dictionary"
 
-import type { GuestOrder } from "./guest-order"
+import type { GuestOrder, GuestWithdrawal } from "./guest-order"
 
 /**
  * THE WITHDRAWAL FORM'S RULES (V0.3), PURE. The limits are only sanity bounds and mirror the backend's
@@ -20,9 +20,10 @@ export const declaredItemIds = (
   )
 
 /** The lines a NEW declaration may still name: the ones no declaration holds. */
-export const withdrawableItems = (
-  order: Pick<GuestOrder, "items" | "withdrawals">,
-): GuestOrder["items"] => {
+export const withdrawableItems = <T extends { id: string }>(order: {
+  items: T[]
+  withdrawals?: GuestWithdrawal[]
+}): T[] => {
   const taken = declaredItemIds(order)
   return order.items.filter((item) => !taken.has(item.id))
 }
@@ -45,6 +46,16 @@ export const withdrawalOffer = (
   if (order.live_animal === undefined) return "none"
   if (order.live_animal) return "live_animal"
   return withdrawableItems(order).length > 0 ? "button" : "none"
+}
+
+/**
+ * What the shop tells the signed-in customer's order page about the withdrawal: whether the order holds a live animal
+ * (the page then draws the legal placeholder, not the button) and the declarations already made. `null` where it is
+ * used means the page has no answer (an older shop, a failure): it then draws nothing.
+ */
+export type OwnWithdrawalState = {
+  liveAnimal: boolean
+  withdrawals: GuestWithdrawal[]
 }
 
 export type WithdrawalFormInput = { itemIds: string[]; name: string }

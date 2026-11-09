@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const nav = vi.hoisted(() => ({ countryCode: "hu" }))
+vi.mock("@lib/data/own-withdrawal", () => ({ submitOwnWithdrawal: vi.fn() }))
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: nav.countryCode }),
 }))
