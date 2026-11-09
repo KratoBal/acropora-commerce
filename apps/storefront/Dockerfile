@@ -77,6 +77,11 @@ ENV NEXT_PUBLIC_FOGYASZTOBARAT_ID=$NEXT_PUBLIC_FOGYASZTOBARAT_ID
 # atallaskor a valtozot TOROLNI kell. A buildbe eg: a valtas uj buildet ker.
 ARG NEXT_PUBLIC_LEGAL_GATE_MODE=
 ENV NEXT_PUBLIC_LEGAL_GATE_MODE=$NEXT_PUBLIC_LEGAL_GATE_MODE
+# A "Szólj, ha jön hasonló" urlap (V2.4, 0c1265d2): ALAPBOL URES (= nincs urlap). Csak a teszt
+# kirakat allitja `on`-ra, parban a bolt ACROPORA_STOCK_ALERT kapcsolojaval; a hozzajarulas es a
+# level szovege jovahagyasra var. A buildbe eg: a valtas uj buildet ker.
+ARG NEXT_PUBLIC_STOCK_ALERT=
+ENV NEXT_PUBLIC_STOCK_ALERT=$NEXT_PUBLIC_STOCK_ALERT
 
 RUN pnpm --filter @dtc/storefront build
 

@@ -4,6 +4,7 @@ import ImageGallery from "@modules/products/components/image-gallery"
 import { kepAltok } from "@modules/products/components/image-gallery/kep-alt"
 import ProductActions from "@modules/products/components/product-actions"
 import RelatedProducts from "@modules/products/components/related-products"
+import SzoljHasonlo from "@modules/products/components/szolj-hasonlo"
 import ProductInfo from "@modules/products/templates/product-info"
 import ProductBreadcrumb from "@modules/products/components/product-breadcrumb"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
@@ -30,6 +31,7 @@ import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import { besorolasUt } from "@lib/util/kategoria-fa"
+import { szoljUrlapKell } from "@lib/util/szolj-hasonlo"
 import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 
 type ProductTemplateProps = {
@@ -535,6 +537,14 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             }
           />
         </Suspense>
+        {/*
+          "SZOLJ, HA JON HASONLO" (V2.4): a nem elerheto egyedi darab FAJARA, csak ha
+          a cim fajt nevez, es csak a kapcsolo mogott (a hozzajarulas es a level
+          szovege nem vegleges).
+        */}
+        {szoljUrlapKell(ragadosSavAllapota, product.title) ? (
+          <SzoljHasonlo termekId={product.id} locale={locale} />
+        ) : null}
       </div>
     </>
   )

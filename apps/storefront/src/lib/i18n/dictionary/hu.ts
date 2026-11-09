@@ -488,6 +488,45 @@ export const hu = {
     failed: "Ez most nem sikerült. Próbáld újra később.",
   },
   /**
+   * "Szólj, ha jön hasonló" (V2.4, 0c1265d2): korall szövegei az eladott egyedi darab lapján. A hozzájárulás betűre a bolt
+   * mondata (apps/backend/src/modules/stock-alert/subject.ts, a spec méri). A "már feliratkoztál" hiba szándékosan nincs itt:
+   * elárulná, hogy egy cím rajta van-e a listán.
+   */
+  stockAlert: {
+    title: "Szólj, ha jön hasonló",
+    text: "Add meg az e-mail címedet, és értesítünk, amikor ilyen fajt újra kapunk.",
+    email: "E-mail cím",
+    consent:
+      "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a fajról.",
+    policyLink: "Adatkezelési tájékoztató",
+    button: "Értesítést kérek",
+    // NEM allit kuldott levelet (kuldott-level-allitas.spec.ts), es nem igeri az ertesitest megerosites elott
+    done: "Köszönjük! A megadott címre érkező levél linkjével erősítsd meg, és szólunk, ha ilyen fajt újra kapunk.",
+    errorEmail: "Ellenőrizd az e-mail címet, valami hiányzik belőle.",
+    errorConsent: "Az értesítéshez a hozzájárulás szükséges.",
+    errorLimit: "Túl sok kérés érkezett innen. Próbáld újra pár perc múlva.",
+    errorOff: "Az értesítés-kérés most nem elérhető.",
+    errorFailed: "Az értesítés-kérés most nem sikerült. Próbáld újra később.",
+  },
+  /** Az értesítés-kérés levélben küldött két linkjének lapja (a hírlevélé mintájára). */
+  stockAlertLink: {
+    confirmTitle: "Értesítés-kérés megerősítése",
+    confirmIntro: "Egy kattintás, és szólunk, ha ilyen fajt újra kapunk.",
+    confirmButton: "Megerősítem az értesítés-kérést",
+    confirmed: "Köszönjük, az értesítés-kérésed megerősítve.",
+    expired:
+      "Ez a link már lejárt. Kérj újra értesítést a termék lapján, és küldünk egy újat.",
+    leaveTitle: "Leiratkozás az értesítésről",
+    leaveIntro:
+      "Egy kattintás, és erről több értesítést nem küldünk erre a címre.",
+    leaveButton: "Leiratkozom",
+    left: "Leiratkoztál, erről több értesítést nem küldünk erre a címre.",
+    invalid:
+      "Ez a link nem érvényes. Ha már használtad, nincs további teendőd.",
+    limit: "Most túl sok kérés érkezett. Próbáld újra pár perc múlva.",
+    failed: "Ez most nem sikerült. Próbáld újra később.",
+  },
+  /**
    * THE HOME PAGE TEXTS THE OS CATALOGUE HOLDS (`modules/kezdolap/szovegek.ts`, the non-header keys): the Hungarian value is the
    * catalogue default word for word, the key is the first catalogue key with that text. The English shop translates a text only
    * while it is exactly one of these (see `knownText`); reviews, brand names, the address and the opening hours are data and are not

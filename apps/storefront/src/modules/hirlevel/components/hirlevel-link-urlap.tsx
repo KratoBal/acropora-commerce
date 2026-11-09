@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react"
 
 import { hirlevelLinkKuldes } from "@lib/data/hirlevel"
+import { szoljLinkKuldes } from "@lib/data/szolj-hasonlo"
 import { translator, type Translate } from "@lib/i18n/dictionary"
 import { useLocale } from "@lib/i18n/use-translate"
 import type {
@@ -11,22 +12,34 @@ import type {
 } from "@lib/util/hirlevel-link"
 import { Button } from "@modules/common/components/ui"
 
-const uzenet = (allapot: HirlevelLinkAllapot, t: Translate): string => {
+/**
+ * KET LISTA, EGY LAP-MINTA: a hirlevel (d707cf5f) es a "Szólj, ha jön hasonló"
+ * ertesites (V2.4) levelenek ket linkje ugyanugy mukodik; a szovegek csoportja
+ * es a bolt utja mas.
+ */
+export type LinkTema = "hirlevel" | "ertesites"
+
+const TEMA = {
+  hirlevel: { szoveg: "newsletterLink", kuld: hirlevelLinkKuldes },
+  ertesites: { szoveg: "stockAlertLink", kuld: szoljLinkKuldes },
+} as const
+
+const uzenet = (
+  allapot: HirlevelLinkAllapot,
+  t: Translate,
+  cs: (typeof TEMA)[LinkTema]["szoveg"],
+): string => {
   switch (allapot.allapot) {
     case "megerositve":
-      return t("newsletterLink.confirmed")
+      return t(`${cs}.confirmed`)
     case "leiratkozva":
-      return t("newsletterLink.left")
+      return t(`${cs}.left`)
     case "lejart":
-      return t("newsletterLink.expired")
+      return t(`${cs}.expired`)
     case "ervenytelen":
-      return t("newsletterLink.invalid")
+      return t(`${cs}.invalid`)
     case "hiba":
-      return t(
-        allapot.ok === "korlat"
-          ? "newsletterLink.limit"
-          : "newsletterLink.failed",
-      )
+      return t(allapot.ok === "korlat" ? `${cs}.limit` : `${cs}.failed`)
   }
 }
 
@@ -38,10 +51,13 @@ const uzenet = (allapot: HirlevelLinkAllapot, t: Translate): string => {
  */
 export default function HirlevelLinkUrlap({
   fajta,
+  tema = "hirlevel",
 }: {
   fajta: HirlevelLinkFajta
+  tema?: LinkTema
 }) {
   const t = translator(useLocale())
+  const cs = TEMA[tema].szoveg
   // a cimet a bongeszobol olvassa, nem `useSearchParams`-szal: a lap ISR, es azon renderkor nem szabad (statikus-lap-kereso.spec.tsx)
   const [token, setToken] = useState<string | null>(null)
   useEffect(() => {
@@ -54,14 +70,14 @@ export default function HirlevelLinkUrlap({
   if (!token)
     return (
       <p role="status" data-testid="hirlevel-link-allapot">
-        {t("newsletterLink.invalid")}
+        {t(`${cs}.invalid`)}
       </p>
     )
   // a kesz valasz utan nincs gomb: az ujabb kattintas ugyanazt adna, vagy (egyszer hasznalhato linknel) ervenytelent
   if (allapot && allapot.allapot !== "hiba")
     return (
       <p role="status" data-testid="hirlevel-link-allapot">
-        {uzenet(allapot, t)}
+        {uzenet(allapot, t, cs)}
       </p>
     )
   return (
@@ -73,19 +89,17 @@ export default function HirlevelLinkUrlap({
         data-testid="hirlevel-link-gomb"
         onClick={() =>
           startTransition(async () => {
-            setAllapot(await hirlevelLinkKuldes(fajta, token))
+            setAllapot(await TEMA[tema].kuld(fajta, token))
           })
         }
       >
         {t(
-          fajta === "megerosites"
-            ? "newsletterLink.confirmButton"
-            : "newsletterLink.leaveButton",
+          fajta === "megerosites" ? `${cs}.confirmButton` : `${cs}.leaveButton`,
         )}
       </Button>
       {allapot ? (
         <p role="alert" data-testid="hirlevel-link-allapot">
-          {uzenet(allapot, t)}
+          {uzenet(allapot, t, cs)}
         </p>
       ) : null}
     </div>
