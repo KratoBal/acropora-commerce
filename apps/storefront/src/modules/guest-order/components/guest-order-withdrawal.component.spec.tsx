@@ -6,6 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react"
+import { useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const submitWithdrawal = vi.fn()
@@ -132,5 +133,68 @@ describe("the withdrawal in the order block", () => {
       customerName: "Kiss Anna",
       itemIds: ["item_1"],
     })
+  })
+
+  /*
+    THE CONFIRMATION STAYS (test shop, 2026-11-09: after a successful send the customer saw NO confirmation, only the list
+    changed). The declaration covers every line, the page puts it into the order's list, the offer turns to "none", and the
+    form used to unmount with it, taking its "Megkaptuk az elállási nyilatkozatodat" screen along. The wrapper holds the
+    orders like the page does (`GuestOrderForm`), so the list really changes under the open form.
+  */
+  it("keeps the form's confirmation on screen when the declaration takes the last free line and the list changes", async () => {
+    const declaration = {
+      id: "ordwdr_new",
+      created_at: "2026-11-09T12:00:00.000Z",
+      item_ids: ["item_1"],
+    }
+    submitWithdrawal.mockResolvedValue({
+      ok: true,
+      withdrawalId: "ordwdr_new",
+      createdAt: declaration.created_at,
+      withdrawals: [declaration],
+      alreadyDeclaredItemIds: [],
+    })
+    function Page() {
+      const [orders, setOrders] = useState([base])
+      return (
+        <GuestOrderView
+          orders={orders}
+          email="vevo@example.hu"
+          onWithdrawalsChanged={(displayId, withdrawals) =>
+            setOrders((all) =>
+              all.map((o) =>
+                String(o.display_id) === String(displayId)
+                  ? { ...o, withdrawals }
+                  : o,
+              ),
+            )
+          }
+        />
+      )
+    }
+    render(<Page />)
+    fireEvent.click(screen.getByTestId("withdrawal-open-1042"))
+    fireEvent.click(screen.getByLabelText(/Reef Pump/))
+    fireEvent.change(screen.getByLabelText("A neved"), {
+      target: { value: "Kiss Anna" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("withdrawal-form-1042"))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("withdrawal-send"))
+    })
+    await waitFor(() => screen.getByTestId("withdrawal-done"))
+    // the list changed under the open form (the only line is declared now), and the confirmation is still there
+    expect(screen.getByTestId("withdrawals-1042").textContent).toContain(
+      "ordwdr_new",
+    )
+    expect(screen.getByTestId("withdrawal-done").textContent).toContain(
+      "ordwdr_new",
+    )
+    expect(screen.queryByTestId("withdrawal-open-1042")).toBeNull()
+    // and it goes only when the customer closes it
+    fireEvent.click(screen.getByText("Bezárás"))
+    expect(screen.queryByTestId("withdrawal-done")).toBeNull()
   })
 })
