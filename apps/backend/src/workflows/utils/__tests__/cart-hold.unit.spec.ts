@@ -419,6 +419,34 @@ describe("the storefront's question: is this piece held, and until when (S2)", (
     }
   })
 
+  it("CHR-QUERIES: twenty pieces held by twenty carts cost a fixed number of queries, not one per cart", async () => {
+    const pieces = Array.from({ length: 20 }, (_, i) => `v_p${i}`)
+    const carts: Cart[] = pieces.map((piece, i) => ({ id: `cart_${i}`, items: [{ variant_id: piece }] }))
+    const w = world([...carts, { id: "cart_me", items: [] }], pieces)
+    for (const [i, piece] of pieces.entries())
+      w.rows.push({
+        id: `chold_${i}`,
+        variant_id: piece,
+        cart_id: `cart_${i}`,
+        expires_at: minutesFromNow(20),
+        updated_at: longAgo,
+      })
+    const graph = jest.spyOn(w.query, "graph")
+    const answer = await pieceHolds(w.container, pieces, "cart_me")
+    expect(answer.pieces.every((piece) => piece.hold?.mine === false)).toBe(true)
+    // the variants, the asking cart, the holders' carts (no pickup halves here)
+    expect(graph).toHaveBeenCalledTimes(3)
+  })
+
+  it("CHR-FOREIGN-PICKUP: another cart's piece moved to its pickup half still stands", async () => {
+    const w = world([
+      { id: "cart_a", metadata: { acropora_pickup_cart_id: "cart_p" }, items: [] },
+      { id: "cart_p", metadata: { acropora_parent_cart_id: "cart_a" }, items: [{ variant_id: "v_piece" }] },
+    ])
+    w.rows.push({ id: "chold_x", variant_id: "v_piece", cart_id: "cart_a", expires_at: minutesFromNow(20), updated_at: longAgo })
+    expect((await pieceHolds(w.container, ["v_piece"], "cart_b")).pieces[0].hold).toMatchObject({ mine: false })
+  })
+
   it("CHR-OFF: without the switch nothing is read", async () => {
     process.env.ACROPORA_CART_HOLD = ""
     const w = world([])
