@@ -48,6 +48,34 @@ describe("a rendelés részletei lap", () => {
     expect(elem.props.allapot).toBe(allapot)
   })
 
+  /*
+    V0.3: az elo allat jelzo. A jelzo a PAR METAADATABOL jon: ha a rendelesen a FO rendeles hivatkozasa all, a rendeles
+    maga a bolti atvételes fele a vegyes kosarnak. Mi pirosit: a jelzo mindig igaz vagy mindig hamis; a ket kulcs
+    felcserelve.
+  */
+  it.each([
+    [
+      "a bolti atvételes fél (a fő rendelés hivatkozása áll rajta)",
+      { acropora_parent_order_id: "order_2" },
+      true,
+    ],
+    [
+      "a kiszállított fél (a bolti rendelés hivatkozása áll rajta)",
+      { acropora_pickup_order_id: "order_2" },
+      false,
+    ],
+    ["pár nélküli rendelés", {}, false],
+  ])("az elállás elő állat jelzője: %s", async (_nev, metadata, vart) => {
+    adat.retrieveOrder.mockResolvedValue({
+      id: "order_1",
+      display_id: 1,
+      metadata,
+    })
+    adat.retrieveOrderBusinessStatus.mockResolvedValue(null)
+    const elem = (await lap()) as { props: { eloAllat: boolean } }
+    expect(elem.props.eloAllat).toBe(vart)
+  })
+
   it("nem létező rendelésnél 404", async () => {
     adat.retrieveOrder.mockRejectedValue(new Error("not found"))
     adat.retrieveOrderBusinessStatus.mockResolvedValue(null)
