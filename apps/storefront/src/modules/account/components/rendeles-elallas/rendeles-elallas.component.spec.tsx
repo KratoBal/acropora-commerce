@@ -30,13 +30,21 @@ const items = [
   { id: "item_1", title: "Korall A", quantity: 1 },
   { id: "item_2", title: "Korall B", quantity: 2 },
 ]
-const renderBlock = (liveAnimal = false) =>
+const renderBlock = (
+  liveAnimal = false,
+  initialWithdrawals: {
+    id: string
+    created_at: string
+    item_ids: string[]
+  }[] = [],
+) =>
   render(
     <RendelesElallas
       orderId="order_01"
       orderNumber="1043"
       items={items}
       liveAnimal={liveAnimal}
+      initialWithdrawals={initialWithdrawals}
     />,
   )
 
@@ -47,7 +55,34 @@ describe("the signed-in withdrawal block", () => {
     expect(screen.queryByTestId("rendeles-elallas-elo-allat")).toBeNull()
   })
 
-  it("draws the legal placeholder and no button for the live animal half of a mixed cart", () => {
+  it("lists the declarations the shop already holds, and does not offer their lines again", () => {
+    renderBlock(false, [
+      {
+        id: "ordwd_old",
+        created_at: "2026-11-08T10:00:00.000Z",
+        item_ids: ["item_1"],
+      },
+    ])
+    expect(screen.getByTestId("withdrawals-1043").textContent).toContain(
+      "ordwd_old",
+    )
+    fireEvent.click(screen.getByTestId("rendeles-elallas-nyito"))
+    expect(screen.queryByLabelText(/Korall A/)).toBeNull()
+    expect(screen.getByLabelText(/Korall B/)).toBeTruthy()
+  })
+
+  it("draws no button when every line already has a declaration", () => {
+    renderBlock(false, [
+      {
+        id: "ordwd_old",
+        created_at: "2026-11-08T10:00:00.000Z",
+        item_ids: ["item_1", "item_2"],
+      },
+    ])
+    expect(screen.queryByTestId("rendeles-elallas-nyito")).toBeNull()
+  })
+
+  it("draws the legal placeholder and no button for an order that holds a live animal", () => {
     renderBlock(true)
     expect(screen.queryByTestId("rendeles-elallas-nyito")).toBeNull()
     expect(

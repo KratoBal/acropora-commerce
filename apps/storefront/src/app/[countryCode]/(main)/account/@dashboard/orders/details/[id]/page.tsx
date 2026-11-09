@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { retrieveOrder, retrieveOrderBusinessStatus } from "@lib/data/orders"
+import { retrieveOwnWithdrawalState } from "@lib/data/own-withdrawal"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import {
@@ -38,9 +39,10 @@ export default async function OrderDetailPage(props: Props) {
   const params = await props.params
   const locale = localeOf(params.countryCode)
   const t = translator(locale)
-  const [order, allapot] = await Promise.all([
+  const [order, allapot, elallas] = await Promise.all([
     retrieveOrder(params.id).catch(() => null),
     retrieveOrderBusinessStatus(params.id),
+    retrieveOwnWithdrawalState(params.id),
   ])
 
   if (!order) {
@@ -57,8 +59,7 @@ export default async function OrderDetailPage(props: Props) {
       allapot={allapot}
       t={t}
       locale={locale}
-      // V0.3: `bolti: false` = a pár a fő rendelés, tehát EZ a bolti atvételes fele (az elo allatok)
-      eloAllat={par !== null && par.bolti === false}
+      elallas={elallas}
       par={
         par && parRendeles
           ? {

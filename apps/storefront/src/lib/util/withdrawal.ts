@@ -48,6 +48,16 @@ export const withdrawalOffer = (
   return withdrawableItems(order).length > 0 ? "button" : "none"
 }
 
+/**
+ * What the shop tells the signed-in customer's order page about the withdrawal: whether the order holds a live animal
+ * (the page then draws the legal placeholder, not the button) and the declarations already made. `null` where it is
+ * used means the page has no answer (an older shop, a failure): it then draws nothing.
+ */
+export type OwnWithdrawalState = {
+  liveAnimal: boolean
+  withdrawals: GuestWithdrawal[]
+}
+
 export type WithdrawalFormInput = { itemIds: string[]; name: string }
 export type WithdrawalFormErrors = { itemIds?: Key; name?: Key }
 

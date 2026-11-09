@@ -5,7 +5,11 @@ const nav = vi.hoisted(() => ({
     throw new Error("NOT_FOUND")
   }),
 }))
-vi.mock("@lib/data/own-withdrawal", () => ({ submitOwnWithdrawal: vi.fn() }))
+const elallasAdat = vi.hoisted(() => ({
+  retrieveOwnWithdrawalState: vi.fn(),
+  submitOwnWithdrawal: vi.fn(),
+}))
+vi.mock("@lib/data/own-withdrawal", () => elallasAdat)
 vi.mock("next/navigation", () => nav)
 const adat = vi.hoisted(() => ({
   retrieveOrder: vi.fn(),
@@ -49,31 +53,28 @@ describe("a rendelés részletei lap", () => {
   })
 
   /*
-    V0.3: az elo allat jelzo. A jelzo a PAR METAADATABOL jon: ha a rendelesen a FO rendeles hivatkozasa all, a rendeles
-    maga a bolti atvételes fele a vegyes kosarnak. Mi pirosit: a jelzo mindig igaz vagy mindig hamis; a ket kulcs
-    felcserelve.
+    V0.3: az elallas blokk allapota a BOLT valaszabol jon (az elo allat jelzo es a leadott nyilatkozatok), nem a par
+    metaadatabol. Mi pirosit: a lap a rendeles sajat azonositojatol eltero rendelesre kerdez; a bolt valasza nem jut el a
+    komponensig; a hianyzo valasz (regi bolt, hiba) tevesen allapotnak latszik.
   */
-  it.each([
-    [
-      "a bolti atvételes fél (a fő rendelés hivatkozása áll rajta)",
-      { acropora_parent_order_id: "order_2" },
-      true,
-    ],
-    [
-      "a kiszállított fél (a bolti rendelés hivatkozása áll rajta)",
-      { acropora_pickup_order_id: "order_2" },
-      false,
-    ],
-    ["pár nélküli rendelés", {}, false],
-  ])("az elállás elő állat jelzője: %s", async (_nev, metadata, vart) => {
-    adat.retrieveOrder.mockResolvedValue({
-      id: "order_1",
-      display_id: 1,
-      metadata,
-    })
+  it("az elállás állapotát a rendelés saját azonosítójával kéri a bolttól, és változtatás nélkül adja tovább", async () => {
+    const allapot = { liveAnimal: true, withdrawals: [] }
+    adat.retrieveOrder.mockResolvedValue({ id: "order_1", display_id: 1 })
     adat.retrieveOrderBusinessStatus.mockResolvedValue(null)
-    const elem = (await lap()) as { props: { eloAllat: boolean } }
-    expect(elem.props.eloAllat).toBe(vart)
+    elallasAdat.retrieveOwnWithdrawalState.mockResolvedValue(allapot)
+    const elem = (await lap()) as { props: { elallas: unknown } }
+    expect(elallasAdat.retrieveOwnWithdrawalState).toHaveBeenCalledWith(
+      "order_1",
+    )
+    expect(elem.props.elallas).toBe(allapot)
+  })
+
+  it("válasz nélkül (null) null-t ad tovább: a blokk semmit nem rajzol", async () => {
+    adat.retrieveOrder.mockResolvedValue({ id: "order_1", display_id: 1 })
+    adat.retrieveOrderBusinessStatus.mockResolvedValue(null)
+    elallasAdat.retrieveOwnWithdrawalState.mockResolvedValue(null)
+    const elem = (await lap()) as { props: { elallas: unknown } }
+    expect(elem.props.elallas).toBeNull()
   })
 
   it("nem létező rendelésnél 404", async () => {

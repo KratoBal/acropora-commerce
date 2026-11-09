@@ -14,27 +14,30 @@ import { useState } from "react"
 
 /**
  * THE SIGNED-IN CUSTOMER'S WITHDRAWAL (V0.3): the same two-step form as the guest page, sent with the session to the
- * customer's own order route. The shop lists the declarations only in its answer to a new one, so the list below shows
- * the ones made on this page; a line already declared before is refused by the shop (the form says so).
+ * customer's own order route.
  *
- * `liveAnimal`: the order is the store pickup half of a mixed cart (the live animals). Whether the right applies to a
- * live animal is the owner's and the lawyer's question, so the legal placeholder stands instead of the button, as on the
- * guest page. A store pickup order that has no pair cannot be told from here: the shop alone knows its pickup options.
+ * `liveAnimal`: the order holds a live animal (the shop's answer). Whether the right applies to a live animal is the
+ * owner's and the lawyer's question, so the legal placeholder stands instead of the button, as on the guest page.
+ * The declarations come from the shop when the page is drawn and from its answer to each new one.
  */
 export default function RendelesElallas({
   orderId,
   orderNumber,
   items,
   liveAnimal,
+  initialWithdrawals = [],
 }: {
   orderId: string
   orderNumber: string
   items: WithdrawalItem[]
   liveAnimal: boolean
+  /** the declarations the shop already holds for the order (read when the page was drawn) */
+  initialWithdrawals?: GuestWithdrawal[]
 }) {
   const t = translator(useLocale())
   const [open, setOpen] = useState(false)
-  const [withdrawals, setWithdrawals] = useState<GuestWithdrawal[]>([])
+  const [withdrawals, setWithdrawals] =
+    useState<GuestWithdrawal[]>(initialWithdrawals)
   if (items.length === 0) return null
   const offered = withdrawableItems({ items, withdrawals })
   return (

@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@lib/data/own-withdrawal", () => ({ submitOwnWithdrawal: vi.fn() }))
@@ -145,5 +151,54 @@ describe("egy leadásból két rendelés a részleteken", () => {
   it("pár nélkül nincs ilyen sor", () => {
     render(<RendelesReszletek rendeles={RENDELES} allapot={ALLAPOT} />)
     expect(screen.queryByTestId("rendeles-kapcsolt")).toBeNull()
+  })
+})
+
+/*
+  WHAT TURNS THIS RED (V0.3, the withdrawal block on the details page). The block drawn without the shop's answer (an
+  older shop or a failure: a button or a legal line on a guess); the block missing when the shop answered; the fee line
+  offered as a product to withdraw from (the block must take the product lines only, like the "Tételek" card).
+*/
+describe("az elállás blokk a rendelés részletein", () => {
+  it("válasz nélkül (null, vagy nincs megadva) semmit nem rajzol", () => {
+    const { unmount } = render(
+      <RendelesReszletek rendeles={RENDELES} allapot={ALLAPOT as never} />,
+    )
+    expect(screen.queryByTestId("rendeles-elallas")).toBeNull()
+    unmount()
+    render(
+      <RendelesReszletek
+        rendeles={RENDELES}
+        allapot={ALLAPOT as never}
+        elallas={null}
+      />,
+    )
+    expect(screen.queryByTestId("rendeles-elallas")).toBeNull()
+  })
+
+  it("a bolt válaszával a gombot adja, és csak a termék-tételeket, a díjsort nem", () => {
+    render(
+      <RendelesReszletek
+        rendeles={RENDELES}
+        allapot={ALLAPOT as never}
+        elallas={{ liveAnimal: false, withdrawals: [] }}
+      />,
+    )
+    expect(screen.getByTestId("rendeles-elallas-nyito")).toBeTruthy()
+    fireEvent.click(screen.getByTestId("rendeles-elallas-nyito"))
+    expect(screen.getByLabelText(/Aquavital Perlonvatta/)).toBeTruthy()
+    expect(screen.queryByLabelText(/Utánvét kezelési díj/)).toBeNull()
+  })
+
+  it("elő állatnál a jogi helykitöltőt adja a gomb helyett", () => {
+    render(
+      <RendelesReszletek
+        rendeles={RENDELES}
+        allapot={ALLAPOT as never}
+        elallas={{ liveAnimal: true, withdrawals: [] }}
+      />,
+    )
+    expect(screen.queryByTestId("rendeles-elallas-nyito")).toBeNull()
+    expect(screen.getByTestId("rendeles-elallas-elo-allat")).toBeTruthy()
   })
 })

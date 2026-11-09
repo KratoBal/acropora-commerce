@@ -17,7 +17,10 @@ vi.mock("@lib/data/cookies", () => ({ getAuthHeaders: async () => auth }))
 
 import { BEJELENTES_KORLAT } from "@lib/util/vendeg-korlat"
 
-import { submitOwnWithdrawal } from "./own-withdrawal"
+import {
+  retrieveOwnWithdrawalState,
+  submitOwnWithdrawal,
+} from "./own-withdrawal"
 import { submitWithdrawal } from "./withdrawal"
 
 /**
@@ -124,5 +127,62 @@ describe("submitOwnWithdrawal (signed in)", () => {
     auth = {}
     expect(await sajat()).toEqual({ ok: false, failure: "not_found" })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+/*
+  WHAT TURNS THIS RED (V0.3, the state of the order page). The state asked without the session, or for another path than
+  the order's own; an answer without a boolean live animal flag (an older shop) taken for "no live animal" (the page
+  would then offer the button on a guess); a failure turned into a state; the list left out of a clean answer.
+*/
+describe("retrieveOwnWithdrawalState", () => {
+  it("asks the customer's own order route with the session, nothing cached, and maps the answer", async () => {
+    fetchMock.mockResolvedValue({
+      live_animal: true,
+      store_pickup: true,
+      withdrawals: [
+        {
+          id: "ordwd_1",
+          created_at: "2026-11-09T12:00:00.000Z",
+          item_ids: ["item_1"],
+        },
+      ],
+    })
+    expect(await retrieveOwnWithdrawalState("order_01/AB")).toEqual({
+      liveAnimal: true,
+      withdrawals: [
+        {
+          id: "ordwd_1",
+          created_at: "2026-11-09T12:00:00.000Z",
+          item_ids: ["item_1"],
+        },
+      ],
+    })
+    const [path, options] = fetchMock.mock.calls[0]
+    expect(path).toBe("/store/customers/me/orders/order_01%2FAB/withdrawal")
+    expect(options.method).toBe("GET")
+    expect(options.headers).toEqual({ authorization: "Bearer jwt" })
+    expect(options.cache).toBe("no-store")
+  })
+
+  it("is an empty list when the shop could not read the declarations", async () => {
+    fetchMock.mockResolvedValue({ live_animal: false })
+    expect(await retrieveOwnWithdrawalState("order_01")).toEqual({
+      liveAnimal: false,
+      withdrawals: [],
+    })
+  })
+
+  it("is null without a clean answer: no session, no flag (an older shop), a failure", async () => {
+    auth = {}
+    expect(await retrieveOwnWithdrawalState("order_01")).toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
+    auth = { authorization: "Bearer jwt" }
+    fetchMock.mockResolvedValue({ store_pickup: true })
+    expect(await retrieveOwnWithdrawalState("order_01")).toBeNull()
+    fetchMock.mockResolvedValue({ live_animal: "false" })
+    expect(await retrieveOwnWithdrawalState("order_01")).toBeNull()
+    fetchMock.mockRejectedValue({ status: 404 })
+    expect(await retrieveOwnWithdrawalState("order_01")).toBeNull()
   })
 })

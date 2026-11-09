@@ -19,6 +19,7 @@ import {
   type UzletiAllapot,
 } from "@lib/util/rendelesek"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import type { OwnWithdrawalState } from "@lib/util/withdrawal"
 import RendelesElallas from "../rendeles-elallas"
 import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
 
@@ -65,7 +66,7 @@ export default function RendelesReszletek({
   rendeles,
   allapot,
   par = null,
-  eloAllat = false,
+  elallas = null,
   t = translator(DEFAULT_LOCALE),
   locale = DEFAULT_LOCALE,
 }: {
@@ -80,10 +81,10 @@ export default function RendelesReszletek({
    */
   par?: { id: string; felirat: string } | null
   /**
-   * V0.3: a rendelés a vegyes kosar bolti atvételes fele (az elo allatok): az elallas gombja helyett a jogi
-   * helykitolto all.
+   * V0.3: az elallas blokk allapota a boltbol (elo allat jelzo es a leadott nyilatkozatok); `null`, ha nincs tiszta
+   * valasz (regi bolt, hiba): akkor a blokk SEMMIT nem rajzol.
    */
-  eloAllat?: boolean
+  elallas?: OwnWithdrawalState | null
 }) {
   const penz = (osszeg: number | null | undefined) =>
     convertToLocale({
@@ -244,16 +245,19 @@ export default function RendelesReszletek({
           </Kartya>
 
           {/* ELALLAS (V0.3) */}
-          <RendelesElallas
-            orderId={rendeles.id}
-            orderNumber={String(rendeles.display_id)}
-            items={tetelek.map((tetel) => ({
-              id: tetel.id,
-              title: tetel.product_title ?? tetel.title ?? "",
-              quantity: tetel.quantity ?? 0,
-            }))}
-            liveAnimal={eloAllat}
-          />
+          {elallas ? (
+            <RendelesElallas
+              orderId={rendeles.id}
+              orderNumber={String(rendeles.display_id)}
+              items={tetelek.map((tetel) => ({
+                id: tetel.id,
+                title: tetel.product_title ?? tetel.title ?? "",
+                quantity: tetel.quantity ?? 0,
+              }))}
+              liveAnimal={elallas.liveAnimal}
+              initialWithdrawals={elallas.withdrawals}
+            />
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-3 small:gap-[14px]">
