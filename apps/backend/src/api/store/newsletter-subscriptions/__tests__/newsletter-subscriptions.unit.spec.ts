@@ -71,24 +71,24 @@ describe("AdminPutHomepageContent: the newsletter row", () => {
 })
 
 describe("createRateLimiter", () => {
-  it("NL-LIMIT: the max-th call passes, the next is refused, a refused retry does not extend the window", () => {
+  it("NL-LIMIT: the max-th call passes, the next is refused, a refused retry does not extend the window", async () => {
     const limit = createRateLimiter({ max: 2, windowMs: 1000 })
-    expect(limit.allow("a", 0)).toBe(true)
-    expect(limit.allow("a", 100)).toBe(true)
-    expect(limit.allow("a", 200)).toBe(false)
-    expect(limit.allow("b", 200)).toBe(true)
-    expect(limit.allow("a", 999)).toBe(false)
+    expect(await limit.allow("a", 0)).toBe(true)
+    expect(await limit.allow("a", 100)).toBe(true)
+    expect(await limit.allow("a", 200)).toBe(false)
+    expect(await limit.allow("b", 200)).toBe(true)
+    expect(await limit.allow("a", 999)).toBe(false)
     // the first hit (t=0) left the window; the refused ones were never counted
-    expect(limit.allow("a", 1001)).toBe(true)
+    expect(await limit.allow("a", 1001)).toBe(true)
   })
 
-  it("NL-LIMIT-KEYS: a flood of invented keys inside one window stays under the key cap (the oldest go first)", () => {
+  it("NL-LIMIT-KEYS: a flood of invented keys inside one window stays under the key cap (the oldest go first)", async () => {
     const limit = createRateLimiter({ max: 1, windowMs: 1_000_000, sweepAbove: 5, maxKeys: 10 })
-    for (let i = 0; i < 200; i++) limit.allow(`k${i}`, i)
+    for (let i = 0; i < 200; i++) await limit.allow(`k${i}`, i)
     // the newest keys are still counted: a second try on the latest is refused
-    expect(limit.allow("k199", 300)).toBe(false)
+    expect(await limit.allow("k199", 300)).toBe(false)
     // the oldest were dropped to bound the memory: they start a fresh allowance
-    expect(limit.allow("k0", 301)).toBe(true)
+    expect(await limit.allow("k0", 301)).toBe(true)
   })
 })
 

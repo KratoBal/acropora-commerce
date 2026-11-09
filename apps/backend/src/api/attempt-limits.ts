@@ -42,8 +42,10 @@ import { createRateLimiter, type RateLimiter } from "./store/newsletter-subscrip
  * route answers), so a customer signing in from many devices in quick
  * succession can reach ten. Rare; if complaints come, this is the reason.
  *
- * IN MEMORY, like the newsletter's: enough for one backend process; a second
- * instance keeps its own count, which only loosens the limit.
+ * IN REDIS WHEN THE BACKEND HAS IT (card d707cf5f, item 5), like the
+ * newsletter's: every instance sees one count, and a restart is not a fresh
+ * allowance. Without Redis, or when it fails on a try, each process counts in
+ * its own memory, which only loosens the limit (`rate-limit.ts`).
  */
 const MINUTES = 60 * 1000
 
@@ -120,7 +122,7 @@ export const limitAttempts =
     overallWarn?: { limiter: RateLimiter; what: string }
     keyOf: (req: MedusaRequest) => string | null
   }) =>
-  (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
+  async (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
     const key = opts.keyOf(req)
     // No key means no address or cart to count against: the route's own
     // validation answers that request.
@@ -129,37 +131,38 @@ export const limitAttempts =
       return
     }
     // The all-addresses ceiling warns once per window and lets the try through
-    if (opts.overallWarn && !opts.overallWarn.limiter.allow("all")) {
+    if (opts.overallWarn && !(await opts.overallWarn.limiter.allow("all"))) {
       warnOncePerWindow(req, opts.overallWarn.what)
     }
-    if (!opts.perKey.allow(key)) {
+    if (!(await opts.perKey.allow(key))) {
       res.status(429).json(TOO_MANY_ATTEMPTS)
       return
     }
     next()
   }
 
-const limiter = (limit: { max: number; windowMs: number }) => createRateLimiter(limit)
+/** A named limit: the name keys its shared count (`acr:rate-limit:<name>:...` in Redis). */
+const limiter = (name: keyof typeof ATTEMPT_LIMITS) => createRateLimiter({ name, ...ATTEMPT_LIMITS[name] })
 
 export const signInAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.signInPerAddress),
-  overallWarn: { limiter: limiter(ATTEMPT_LIMITS.signInOverall), what: "sign-in across all addresses" },
+  perKey: limiter("signInPerAddress"),
+  overallWarn: { limiter: limiter("signInOverall"), what: "sign-in across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const signUpAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.signUpPerAddress),
-  overallWarn: { limiter: limiter(ATTEMPT_LIMITS.signUpOverall), what: "sign-up across all addresses" },
+  perKey: limiter("signUpPerAddress"),
+  overallWarn: { limiter: limiter("signUpOverall"), what: "sign-up across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const promotionAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.promotionsPerCart),
+  perKey: limiter("promotionsPerCart"),
   keyOf: (req) => (typeof req.params?.id === "string" && req.params.id ? req.params.id : null),
 })
 
 /** The password change counts inside the route, where the account is known. */
-export const passwordChangeAttempts = createRateLimiter(ATTEMPT_LIMITS.passwordChangePerAccount)
+export const passwordChangeAttempts = limiter("passwordChangePerAccount")
 
 /** The order number a body names, as a key: digits only, bounded (`#1042` and `1042` are one key). */
 export const orderNumberKeyOf = (body: unknown): string | null => {
@@ -170,41 +173,41 @@ export const orderNumberKeyOf = (body: unknown): string | null => {
 }
 
 export const guestOrderAddressAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestOrderPerAddress),
+  perKey: limiter("guestOrderPerAddress"),
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const guestOrderNumberAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestOrderPerOrderNumber),
+  perKey: limiter("guestOrderPerOrderNumber"),
   keyOf: (req) => orderNumberKeyOf(req.body),
 })
 
 export const guestProblemAddressAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestProblemPerAddress),
+  perKey: limiter("guestProblemPerAddress"),
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const guestProblemNumberAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestProblemPerOrderNumber),
+  perKey: limiter("guestProblemPerOrderNumber"),
   keyOf: (req) => orderNumberKeyOf(req.body),
 })
 
 export const guestWithdrawalAddressAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestWithdrawalPerAddress),
+  perKey: limiter("guestWithdrawalPerAddress"),
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const guestWithdrawalNumberAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestWithdrawalPerOrderNumber),
+  perKey: limiter("guestWithdrawalPerOrderNumber"),
   keyOf: (req) => orderNumberKeyOf(req.body),
 })
 
 export const guestInvoiceAddressAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestInvoicePerAddress),
+  perKey: limiter("guestInvoicePerAddress"),
   keyOf: (req) => addressKeyOf(req.body),
 })
 
 export const guestInvoiceNumberAttempts = limitAttempts({
-  perKey: limiter(ATTEMPT_LIMITS.guestInvoicePerOrderNumber),
+  perKey: limiter("guestInvoicePerOrderNumber"),
   keyOf: (req) => orderNumberKeyOf(req.body),
 })

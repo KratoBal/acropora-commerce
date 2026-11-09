@@ -1,17 +1,26 @@
+import { rateLimitStore } from "../../../modules/rate-limit/store"
+
 /**
- * A SLIDING-WINDOW LIMIT, IN MEMORY. The newsletter route is the shop's first
- * public write that needs no cart and no account, so it gets one (acrobot
- * 36614). In memory is enough for the test storefront's one backend process; a
- * second instance would keep its own count, which only loosens the limit.
+ * A SLIDING-WINDOW LIMIT. The newsletter route is the shop's first public write
+ * that needs no cart and no account, so it gets one (acrobot 36614).
+ *
+ * WHERE IT COUNTS (card d707cf5f, item 5): a NAMED limit counts in the shared
+ * store the rate-limit module sets when the backend has Redis
+ * (`modules/rate-limit`), so every instance sees one count and a restart is
+ * not a fresh allowance. Without that store (unit tests, a local run), or when
+ * Redis fails on a try, it counts in this process's memory, which only loosens
+ * the limit. A limit without a name always counts in memory.
  *
  * `allow` records the hit only when it is allowed: a refused caller does not
  * push its own window further out by retrying.
  */
 export type RateLimiter = {
-  allow(key: string, now?: number): boolean
+  allow(key: string, now?: number): Promise<boolean>
 }
 
-export function createRateLimiter(opts: {
+type MemoryRateLimiter = { allow(key: string, now?: number): boolean }
+
+type LimitOptions = {
   max: number
   windowMs: number
   /** Above this many keys the expired ones are swept (a flood of addresses). */
@@ -23,7 +32,36 @@ export function createRateLimiter(opts: {
    * which loosens the limit for them and keeps the memory bounded).
    */
   maxKeys?: number
-}): RateLimiter {
+}
+
+/** One warning line per limit per ten minutes when the shared store fails, however many tries hit it. */
+const failedAt = new Map<string, number>()
+const warnStoreFailed = (name: string, error: unknown, now: number) => {
+  const last = failedAt.get(name)
+  if (last !== undefined && now - last < 10 * 60 * 1000) return
+  failedAt.set(name, now)
+  console.warn(
+    `[rate-limit] the shared store failed for "${name}" (${error instanceof Error ? error.message : String(error)}); this try is counted in memory`
+  )
+}
+
+export function createRateLimiter(opts: LimitOptions & { name?: string }): RateLimiter {
+  const memory = createMemoryRateLimiter(opts)
+  return {
+    async allow(key, now = Date.now()) {
+      const store = opts.name ? rateLimitStore() : null
+      if (!store || !opts.name) return memory.allow(key, now)
+      try {
+        return await store.hit({ name: opts.name, key, max: opts.max, windowMs: opts.windowMs, now })
+      } catch (error) {
+        warnStoreFailed(opts.name, error, now)
+        return memory.allow(key, now)
+      }
+    },
+  }
+}
+
+function createMemoryRateLimiter(opts: LimitOptions): MemoryRateLimiter {
   const hits = new Map<string, number[]>()
   const sweepAbove = opts.sweepAbove ?? 10_000
   const maxKeys = opts.maxKeys ?? 50_000
