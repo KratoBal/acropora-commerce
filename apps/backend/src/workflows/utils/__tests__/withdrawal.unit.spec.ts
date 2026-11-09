@@ -69,6 +69,67 @@ function fakeContainer() {
 
 const order = { id: "order_1", itemIds: ["item_1", "item_2", "item_3"] }
 
+/*
+  THE ROW THE TRANSACTION HANDS BACK HAS NO created_at YET (seen on the test shop, 2026-11-09: the declaration was recorded
+  and the request answered 500). `declareWithClaims` writes in one open transaction, so its returned row is serialized
+  before the flush; the unit fake above hands back a row that already carries the time, which is why this was never red.
+  Mi pirosit: the time of receipt taken from the unflushed row (Invalid Date, a throw after the commit); the committed
+  row not read back; a failed read-back turning a recorded declaration into an error.
+*/
+describe("createWithdrawal, with the row the real transaction hands back (no created_at yet)", () => {
+  const unflushed = (service: ReturnType<typeof fakeContainer>["service"]) => {
+    const declare = service.declareWithClaims
+    service.declareWithClaims = async (input: Row) => {
+      const { created_at: _gone, ...row } = (await declare(input)) as Row
+      return row as never
+    }
+  }
+
+  it("answers the time the database set, read back by the row's id, not an error", async () => {
+    const { container, rows, service } = fakeContainer()
+    unflushed(service)
+    const result = await createWithdrawal(container, order, { customerName: "Kiss Anna", itemIds: ["item_1"] })
+    expect(result.status).toBe("created")
+    if (result.status !== "created") return
+    expect(result.createdAt).toBe((rows[0].created_at as Date).toISOString())
+  })
+
+  it("answers a valid time (the clock) when the read-back fails, and still records the declaration", async () => {
+    const { container, rows, service } = fakeContainer()
+    unflushed(service)
+    const list = service.listOrderWithdrawals
+    let failNext = false
+    service.listOrderWithdrawals = async (filter: Row, config?: Row) => {
+      if (failNext) throw new Error("read failed")
+      return list(filter, config)
+    }
+    const declare = service.declareWithClaims
+    service.declareWithClaims = async (input: Row) => {
+      const row = await declare(input)
+      failNext = true
+      return row
+    }
+    const before = Date.now()
+    const result = await createWithdrawal(container, order, { customerName: "Kiss Anna", itemIds: ["item_1"] })
+    expect(result.status).toBe("created")
+    if (result.status !== "created") return
+    expect(Number.isNaN(new Date(result.createdAt).getTime())).toBe(false)
+    expect(new Date(result.createdAt).getTime()).toBeGreaterThanOrEqual(before)
+    expect(rows).toHaveLength(1)
+  })
+
+  it("takes a time that is already on the row as it is (a string or a date)", async () => {
+    const { container, service } = fakeContainer()
+    const declare = service.declareWithClaims
+    service.declareWithClaims = async (input: Row) => ({
+      ...((await declare(input)) as Row),
+      created_at: "2026-11-05T18:00:07.000Z",
+    }) as never
+    const result = await createWithdrawal(container, order, { customerName: "Kiss Anna", itemIds: ["item_1"] })
+    expect(result.status === "created" && result.createdAt).toBe("2026-11-05T18:00:07.000Z")
+  })
+})
+
 describe("createWithdrawal", () => {
   it("records the declaration for the order's own lines, once per line, with the server's time, and claims each line", async () => {
     const { container, rows, lines } = fakeContainer()
