@@ -182,9 +182,12 @@ export const saveAszfAcceptance = async (
   if (check !== "ok") return { status: check }
   const record = await currentAszfRecord(now, fetcher)
   if (!record) return { status: "not_configured" }
-  // the other keys stay as they are: only this one is written
+  // only this one key is sent: Medusa merges it into the cart's metadata itself (2.20.1 `mergeMetadata`, see `notesPatch`
+  // in order-notes.ts), so the cart's other keys stay and a concurrent write is no longer undone by OUR stale copy. The window
+  // that remains is Medusa's own read-merge-write inside its update (no row lock, READ COMMITTED), far smaller than a
+  // write-back of a copy read earlier
   await updateCartWorkflow(container).run({
-    input: { id: cartId, metadata: { ...(cart.metadata ?? {}), [ASZF_METADATA_KEY]: record } },
+    input: { id: cartId, metadata: { [ASZF_METADATA_KEY]: record } },
   })
   return { status: "saved", record }
 }

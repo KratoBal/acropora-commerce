@@ -3,6 +3,8 @@ jest.mock("@medusajs/medusa/core-flows", () => ({
   updateCartWorkflow: () => ({ run: (args: unknown) => updateCart(args) }),
 }))
 
+import { mergeMetadata } from "@medusajs/framework/utils"
+
 import { POST as route } from "../../../api/store/carts/[id]/aszf-elfogadas/route"
 import { StorePostAszfElfogadas } from "../../../api/store/carts/[id]/aszf-elfogadas/validators"
 import middlewares from "../../../api/middlewares"
@@ -93,7 +95,9 @@ describe("the Fogyasztóbarát record", () => {
 })
 
 describe("saveAszfAcceptance", () => {
-  it("writes the record on an open cart and keeps the other metadata keys", async () => {
+  // WHAT TURNS THIS RED (a0f8668e, barracuda #644): the write sending the cart's other keys back (a full-picture write can undo a
+  // key another writer set in between); the record not under its own key. Medusa merges the one key into the cart's metadata.
+  it("sends only its own key on an open cart; merged the way Medusa merges, the other keys stay", async () => {
     const result = await saveAszfAcceptance(
       scopeWith({ id: "cart_1", metadata: { acropora_pickup_cart_id: "cart_2", acropora_customer_note: "x" }, completed_at: null }),
       "cart_1", CLAIM,
@@ -101,14 +105,13 @@ describe("saveAszfAcceptance", () => {
     )
     expect(result).toEqual({ status: "saved", record: buildAszfRecord(NOW) })
     expect(updateCart).toHaveBeenCalledWith({
-      input: {
-        id: "cart_1",
-        metadata: {
-          acropora_pickup_cart_id: "cart_2",
-          acropora_customer_note: "x",
-          aszf_elfogadas: buildAszfRecord(NOW),
-        },
-      },
+      input: { id: "cart_1", metadata: { aszf_elfogadas: buildAszfRecord(NOW) } },
+    })
+    const sent = (updateCart.mock.calls[0][0] as { input: { metadata: Record<string, unknown> } }).input.metadata
+    expect(mergeMetadata({ acropora_pickup_cart_id: "cart_2", acropora_customer_note: "x" }, sent)).toEqual({
+      acropora_pickup_cart_id: "cart_2",
+      acropora_customer_note: "x",
+      aszf_elfogadas: buildAszfRecord(NOW),
     })
   })
 

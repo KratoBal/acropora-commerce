@@ -63,6 +63,25 @@ export const withNotes = (
   return next
 }
 
+/**
+ * WHAT THE CART'S WRITE SENDS: only the keys given, and nothing of the rest of the metadata. Medusa's generic `update`
+ * (2.20.1, `medusa-internal-service.js`) merges the incoming `metadata` into the entity's own, read inside the same
+ * update (`mergeMetadata`: the given keys replace, an empty string removes the key, the others stay). Sending the whole
+ * picture read earlier was needless and dangerous: two writers (the notes and the ÁSZF record) each wrote back the other's
+ * old state, and the one that wrote last could undo the other's key. What remains is Medusa's own read-merge-write inside its
+ * update (a short window, no row lock under READ COMMITTED), not a copy of ours read earlier. An empty note is "" here, which removes the key.
+ */
+export const notesPatch = (input: NotesInput): Record<string, string> => {
+  const patch: Record<string, string> = {}
+  const set = (key: string, value: string | null | undefined) => {
+    if (value === undefined) return
+    patch[key] = cleanNote(value) ?? ""
+  }
+  set(CUSTOMER_NOTE_KEY, input.customer_note)
+  set(CARRIER_NOTE_KEY, input.carrier_note)
+  return patch
+}
+
 /** What the OS and the success page read back. */
 export const notesOf = (metadata: Record<string, unknown> | null | undefined) => {
   const read = (key: string) => {
@@ -92,9 +111,11 @@ export const saveCartNotes = async (
   const cart = data?.[0] as { id: string; metadata?: Record<string, unknown> | null; completed_at?: unknown } | undefined
   if (!cart) return { status: "not_found" }
   if (cart.completed_at) return { status: "completed" }
-  const metadata = withNotes(cart.metadata, input)
-  await updateCartWorkflow(container).run({ input: { id: cartId, metadata } })
-  return { status: "saved", notes: notesOf(metadata) }
+  // only the notes' own keys go to Medusa, which merges them into the cart's metadata itself (see `notesPatch`)
+  const patch = notesPatch(input)
+  if (Object.keys(patch).length > 0)
+    await updateCartWorkflow(container).run({ input: { id: cartId, metadata: patch } })
+  return { status: "saved", notes: notesOf(withNotes(cart.metadata, input)) }
 }
 
 export type OrderNotesResult =
@@ -131,7 +152,11 @@ export const saveOrderNotes = async (
   if (labelOut && input.carrier_note !== undefined && cleanNote(input.carrier_note) !== notesOf(order.metadata).carrier_note) {
     return { status: "label_out" }
   }
-  const metadata = withNotes(order.metadata, input)
-  await updateOrderWorkflow(container).run({ input: { id: orderId, metadata, user_id: userId } })
-  return { status: "saved", notes: notesOf(metadata) }
+  // only the notes' own keys go to Medusa, whose order service merges them into the order's metadata itself (see `notesPatch`;
+  // `OrderService extends MedusaInternalService`, no own `update`). The workflow's change record then holds the keys that
+  // changed as "new", next to the whole metadata as "old". Nothing given is no write (and no empty change record).
+  const patch = notesPatch(input)
+  if (Object.keys(patch).length > 0)
+    await updateOrderWorkflow(container).run({ input: { id: orderId, metadata: patch, user_id: userId } })
+  return { status: "saved", notes: notesOf(withNotes(order.metadata, input)) }
 }
