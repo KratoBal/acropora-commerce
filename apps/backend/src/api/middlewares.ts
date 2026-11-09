@@ -25,6 +25,7 @@ import {
   StorePostPaymentOptions,
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
+import { StoreGetCartHoldsParams } from "./store/cart-holds/validators";
 import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
 import {
   AdminPutBrand,
@@ -482,6 +483,12 @@ export default defineMiddlewares({
       matcher: "/store/shipping-class",
       method: "GET",
       middlewares: [validateAndTransformQuery(StoreGetShippingClassParams, {})],
+    },
+    {
+      // V2.3 S2: a unique piece's hold, for the product page and the cart
+      matcher: "/store/cart-holds",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(StoreGetCartHoldsParams, {})],
     },
   ],
 });

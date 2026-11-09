@@ -43,11 +43,19 @@ export const maxHoldsPerCart = (env: NodeJS.ProcessEnv = process.env): number =>
  */
 export const HELD_CODE = "unique_piece_held"
 export const LIMIT_CODE = "cart_hold_limit"
+/**
+ *   unique_piece_busy:[{title, handle}]          the piece's lock stayed taken through a wait and one retry: another
+ *                                                buyer is adding it right now (S2, barracuda's review of #703). Not
+ *                                                "sold" and not "held": the buyer may simply try again.
+ */
+export const BUSY_CODE = "unique_piece_busy"
 
 export type HeldLine = { title: string; handle: string | null; until: string }
+export type BusyLine = { title: string; handle: string | null }
 
 export const heldMessage = (lines: readonly HeldLine[]): string => `${HELD_CODE}:${JSON.stringify(lines)}`
 export const limitMessage = (max: number): string => `${LIMIT_CODE}:${JSON.stringify({ max })}`
+export const busyMessage = (lines: readonly BusyLine[]): string => `${BUSY_CODE}:${JSON.stringify(lines)}`
 
 export type HoldRow = { id: string; cart_id: string; expires_at: Date | string; updated_at?: Date | string | null }
 
