@@ -795,8 +795,23 @@ export const hu = {
     cartRejected:
       "Ezt a mennyiséget nem tudtuk beállítani. Próbálj meg kevesebbet.",
     cartFailed: "A kosár frissítése most nem sikerült. Próbáld meg újra.",
+    // V2.3 kosárfoglalás (a terv javaslatai, korall szövegéig)
+    holdHeldByOther:
+      "Most valaki kosarában van. {perc} perc múlva újra elérhető lehet.",
+    holdHeldByOtherNoTime:
+      "Most valaki kosarában van. Ha a foglalása lejár, újra elérhető lehet.",
+    holdLimit:
+      "Egy kosárban legfeljebb {max} egyedi darabot tarthatunk egyszerre.",
+    holdBusy:
+      "Most többen nézik ezt a darabot. Próbáld újra egy pillanat múlva.",
+    holdVisitorLimit:
+      "Most nem tehetsz több egyedi darabot kosárba. Próbáld újra fél óra múlva.",
   },
   cartPage: {
+    // V2.3 kosárfoglalás (a terv javaslatai, korall szövegéig)
+    holdMine: "{title}: ezt a darabot {ido}-ig neked tartjuk.",
+    holdEnded:
+      "{title}: a foglalás lejárt; ha még szabad, a rendeléskor a tiéd.",
     soldTitle: "Ez a darab közben elkelt",
     soldText:
       "Sajnáljuk, {name} közben elkelt, mielőtt befejezted volna a rendelést. Egyedi darabról van szó, ezért nem tudjuk újra kínálni.",
@@ -1064,6 +1079,8 @@ export const hu = {
       "A rendelést nem tudtuk leadni. Nézd át a kosarat és a megadott adatokat.",
     errOrderFailed:
       "A rendelés leadása most nem sikerült. Mielőtt újra próbálod, nézd meg a rendeléseid között, hogy megérkezett-e.",
+    errPieceHeld:
+      "Egy egyedi darabot most más vevő kosara tart. Ha a foglalása lejár, újra a tiéd lehet: próbáld újra később.",
     errSplitDiscount:
       "Az élő állat miatt a kosarad két rendelésre bomlik, és így a kedvezmény nem érvényesíthető ugyanúgy. Add le az élő állatot külön kosárban, vagy távolítsd el a kupont, és próbáld újra.",
     errLegalMissing:

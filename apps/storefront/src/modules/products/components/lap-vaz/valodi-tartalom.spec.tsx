@@ -29,6 +29,10 @@ vi.mock("next/navigation", () => ({
 vi.mock("@lib/data/cart", () => ({
   addToCart: vi.fn(async () => undefined),
 }))
+vi.mock("@lib/data/kosar-foglalas", () => ({
+  termekFoglalas: async () => null,
+  kosarFoglalasai: async () => null,
+}))
 
 afterEach(cleanup)
 

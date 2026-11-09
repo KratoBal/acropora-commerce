@@ -45,6 +45,10 @@ vi.mock("next/navigation", () => ({
 vi.mock("@lib/data/cart", () => ({
   addToCart: vi.fn(async () => undefined),
 }))
+vi.mock("@lib/data/kosar-foglalas", () => ({
+  termekFoglalas: async () => null,
+  kosarFoglalasai: async () => null,
+}))
 
 /** Egy valtozat, egy opcio -- a teszt bolt mind az 1492 termeke ilyen. */
 const EGY_VALTOZAT = {

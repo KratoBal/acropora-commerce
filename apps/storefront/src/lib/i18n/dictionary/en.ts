@@ -762,8 +762,20 @@ export const en: Dictionary = {
     cartClippedWas: " ({inCart} were already in it).",
     cartRejected: "We could not set that quantity. Try a smaller one.",
     cartFailed: "Updating the cart did not work just now. Please try again.",
+    holdHeldByOther:
+      "This piece is in someone's cart right now. It may be available again in {perc} minutes.",
+    holdHeldByOtherNoTime:
+      "This piece is in someone's cart right now. It may be available again when their hold ends.",
+    holdLimit: "One cart can hold at most {max} unique pieces at a time.",
+    holdBusy:
+      "Several people are looking at this piece. Please try again in a moment.",
+    holdVisitorLimit:
+      "You cannot put more unique pieces in a cart right now. Please try again in half an hour.",
   },
   cartPage: {
+    holdMine: "{title}: we keep this piece for you until {ido}.",
+    holdEnded:
+      "{title}: the hold has ended; if the piece is still free, it is yours when you order.",
     soldTitle: "This piece has just been sold",
     soldText:
       "We are sorry, {name} was sold before you finished your order. It is a unique piece, so we cannot offer it again.",
@@ -1033,6 +1045,8 @@ export const en: Dictionary = {
       "We could not place the order. Check your cart and the details you gave.",
     errOrderFailed:
       "Placing the order failed just now. Before you try again, check your orders to see whether it arrived.",
+    errPieceHeld:
+      "A unique piece in your cart is held in another buyer's cart right now. When their hold ends it may be yours: please try again later.",
     errSplitDiscount:
       "Because of the live animal your cart splits into two orders, and the discount cannot apply the same way. Order the live animal in a separate cart, or remove the coupon, and try again.",
     errLegalMissing:

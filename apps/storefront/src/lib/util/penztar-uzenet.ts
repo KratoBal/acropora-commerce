@@ -1,5 +1,6 @@
 import type { Key } from "@lib/i18n/dictionary"
 import { hibaAllapota } from "./kedvezmeny-uzenet"
+import { FOGLALT_KOD } from "./kosar-foglalas"
 
 /**
  * MIT MONDUNK A VEVONEK, HA A PENZTAR EGYIK LEPESE NEM MENT AT.
@@ -141,6 +142,14 @@ export const RENDELES_JOGI_HIANY =
   "A rendelést most nem tudjuk fogadni: az ÁSZF és az adatkezelési tájékoztató még nincs közzétéve."
 
 /**
+ * A KOSARFOGLALAS KODJA A LEADASNAL (V2.3, kartya 52024fc0): egy egyedi darabot most mas vevo kosara
+ * tart. Nem "kozben elkelt" (az a V2.5 utja): a darab felszabadulhat, tehat a vevo ujraprobalhatja.
+ * A kod a bolt `cart-hold/policy.ts` fajljaban all (`HELD_CODE`), a kirakat oldalon a `kosar-foglalas.ts`-ben.
+ */
+export const RENDELES_DARAB_FOGLALT =
+  "Egy egyedi darabot most más vevő kosara tart. Ha a foglalása lejár, újra a tiéd lehet: próbáld újra később."
+
+/**
  * A leadas hibajanak mondata: a bontas kedvezmeny-kodjara a sajat mondata
  * (itt biztonsagos az ujraprobalas, mert semmi nem adodott le), minden masra a
  * mai vagas.
@@ -148,6 +157,7 @@ export const RENDELES_JOGI_HIANY =
 export function rendelesHibaUzenet(hiba: unknown): string {
   const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
   if (szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD)) return RENDELES_JOGI_HIANY
+  if (szoveg.includes(`${FOGLALT_KOD}:`)) return RENDELES_DARAB_FOGLALT
   return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
     ? RENDELES_KEDVEZMENY_BONTAS
     : rendelesUzenet(hibaAllapota(hiba))
@@ -165,6 +175,7 @@ export function rendelesHibaKod(hiba: unknown): Key {
   const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
   if (szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD))
     return "checkoutPayment.errLegalMissing"
+  if (szoveg.includes(`${FOGLALT_KOD}:`)) return "checkoutPayment.errPieceHeld"
   return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
     ? "checkoutPayment.errSplitDiscount"
     : rendelesUzenetKod(hibaAllapota(hiba))
@@ -199,5 +210,6 @@ export const FIZETES_KULCSOK: readonly [Key, string][] = [
   ["checkoutPayment.errOrderFailed", RENDELES_MOST_NEM_SIKERULT],
   ["checkoutPayment.errSplitDiscount", RENDELES_KEDVEZMENY_BONTAS],
   ["checkoutPayment.errLegalMissing", RENDELES_JOGI_HIANY],
+  ["checkoutPayment.errPieceHeld", RENDELES_DARAB_FOGLALT],
   ["checkoutPayment.errAszfSave", ASZF_ROGZITES_HIBA],
 ]

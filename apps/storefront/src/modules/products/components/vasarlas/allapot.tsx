@@ -1,6 +1,7 @@
 "use client"
 
 import { addToCart } from "@lib/data/cart"
+import { termekFoglalas } from "@lib/data/kosar-foglalas"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
@@ -242,6 +243,55 @@ export function VasarlasProvider({
     lap az ELFOGYOTT ágat rajzolja. A halkabb tévedés a szándék, nem a hiány.
   */
   const uniquePiece = uniquePieceOf(product.metadata)
+
+  /*
+    MASIK KOSARBAN VAN-E MOST (V2.3 S2b). Csak egyedi darabnal kerdezzuk, a lap
+    betoltese utan es egy elutasitott kosarba tetel utan: a lap maga gyorsitotarazott,
+    a foglalas pedig percenkent valtozik, tehat a kiszolgalo-oldali rajz nem tudhatja.
+    Valasz hianyaban (hiba, kikapcsolt foglalas) nincs sor, a gomb a mai.
+  */
+  const [masKosaraban, setMasKosaraban] = useState<{ until: Date } | null>(null)
+  const [foglalasKor, setFoglalasKor] = useState(0)
+  const foglalasValtozat = uniquePiece ? selectedVariant?.id : undefined
+  useEffect(() => {
+    if (!foglalasValtozat) {
+      setMasKosaraban(null)
+      return
+    }
+    let el = true
+    termekFoglalas(foglalasValtozat)
+      .then((valasz) => {
+        if (el)
+          setMasKosaraban(valasz ? { until: new Date(valasz.until) } : null)
+      })
+      .catch(() => undefined)
+    return () => {
+      el = false
+    }
+  }, [foglalasValtozat, foglalasKor])
+
+  /*
+    A LEJARAT IS ESEMENY (barracuda, #706 review, 1.): a foglalas vege utan a sor
+    eltunik, a gomb felszabadul, es a lap ujra kerdez (lehet, hogy kozben mas kosar
+    foglalta le). Addig percenkent ujrarajzol, hogy a "N perc mulva" ne alljon meg.
+    Enelkul aki a lapon kivarja a foglalast, a vegen is tiltott gombot latna.
+  */
+  const [, setPercUtem] = useState(0)
+  useEffect(() => {
+    if (!masKosaraban) return
+    const utem = setInterval(() => setPercUtem((n) => n + 1), 60_000)
+    const lejarat = setTimeout(
+      () => {
+        setMasKosaraban(null)
+        setFoglalasKor((kor) => kor + 1)
+      },
+      Math.max(0, masKosaraban.until.getTime() - Date.now()) + 1_000,
+    )
+    return () => {
+      clearInterval(utem)
+      clearTimeout(lejarat)
+    }
+  }, [masKosaraban])
   const similarHref = similarItemsHref(product)
   /**
    * TUDJUK-E, MENNYI A KESZLET.
@@ -321,6 +371,8 @@ export function VasarlasProvider({
           : null
         : { szoveg: eredmeny.uzenet, hiba: true },
     )
+    // egy elutasitas utan a foglalas allapota is ujra kerul (lehet, hogy most foglalta le mas)
+    if (!eredmeny.ok) setFoglalasKor((kor) => kor + 1)
     setIsAdding(false)
   }
 
@@ -340,6 +392,7 @@ export function VasarlasProvider({
     rendelesiMondat,
     availability,
     uniquePiece,
+    masKosaraban,
     similarHref,
     isAdding,
     kosarVisszajelzes,

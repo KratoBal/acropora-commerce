@@ -13,6 +13,10 @@ vi.mock("next/navigation", () => ({
 
 const kosar = vi.hoisted(() => ({ addToCart: vi.fn() }))
 vi.mock("@lib/data/cart", () => kosar)
+vi.mock("@lib/data/kosar-foglalas", () => ({
+  termekFoglalas: async () => null,
+  kosarFoglalasai: async () => null,
+}))
 
 afterEach(() => {
   cleanup()
