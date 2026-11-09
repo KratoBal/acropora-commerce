@@ -9,8 +9,11 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const submitOwnWithdrawal = vi.fn()
+const retrieveOwnWithdrawalState = vi.fn()
 vi.mock("@lib/data/own-withdrawal", () => ({
   submitOwnWithdrawal: (...args: unknown[]) => submitOwnWithdrawal(...args),
+  retrieveOwnWithdrawalState: (...args: unknown[]) =>
+    retrieveOwnWithdrawalState(...args),
 }))
 
 import RendelesElallas from "."
@@ -18,6 +21,7 @@ import RendelesElallas from "."
 afterEach(() => {
   cleanup()
   submitOwnWithdrawal.mockReset()
+  retrieveOwnWithdrawalState.mockReset()
 })
 
 /*
@@ -141,5 +145,65 @@ describe("the signed-in withdrawal block", () => {
     fireEvent.click(screen.getByTestId("rendeles-elallas-nyito"))
     expect(screen.queryByLabelText(/Korall A/)).toBeNull()
     expect(screen.getByLabelText(/Korall B/)).toBeTruthy()
+  })
+
+  /*
+    AFTER AN "ALREADY DECLARED" REFUSAL (barracuda's review of #710: two tabs, or a declaration made as a guest
+    meanwhile). The refusal carries no list, so the block must read the shop's state again and take the declarations from
+    it; otherwise the line stays offered and the customer gets the same refusal again.
+  */
+  it("after an already declared refusal reads the shop's state again: the line drops out of the offer and the list shows it", async () => {
+    submitOwnWithdrawal.mockResolvedValue({ ok: false, failure: "duplicate" })
+    retrieveOwnWithdrawalState.mockResolvedValue({
+      liveAnimal: false,
+      withdrawals: [
+        {
+          id: "ordwd_other_tab",
+          created_at: "2026-11-09T12:00:00.000Z",
+          item_ids: ["item_1"],
+        },
+      ],
+    })
+    renderBlock()
+    fireEvent.click(screen.getByTestId("rendeles-elallas-nyito"))
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("A neved"), {
+      target: { value: "Kiss Anna" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("withdrawal-form-1043"))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("withdrawal-send"))
+    })
+    await waitFor(() =>
+      expect(retrieveOwnWithdrawalState).toHaveBeenCalledWith("order_01"),
+    )
+    await waitFor(() => screen.getByTestId("withdrawals-1043"))
+    expect(screen.getByTestId("withdrawals-1043").textContent).toContain(
+      "ordwd_other_tab",
+    )
+    expect(screen.queryByLabelText(/Korall A/)).toBeNull()
+    expect(screen.getByLabelText(/Korall B/)).toBeTruthy()
+  })
+
+  it("keeps what it has when the state cannot be read again after the refusal", async () => {
+    submitOwnWithdrawal.mockResolvedValue({ ok: false, failure: "duplicate" })
+    retrieveOwnWithdrawalState.mockResolvedValue(null)
+    renderBlock()
+    fireEvent.click(screen.getByTestId("rendeles-elallas-nyito"))
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.change(screen.getByLabelText("A neved"), {
+      target: { value: "Kiss Anna" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("withdrawal-form-1043"))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("withdrawal-send"))
+    })
+    await waitFor(() => expect(retrieveOwnWithdrawalState).toHaveBeenCalled())
+    expect(screen.getByLabelText(/Korall A/)).toBeTruthy()
+    expect(screen.queryByTestId("withdrawals-1043")).toBeNull()
   })
 })

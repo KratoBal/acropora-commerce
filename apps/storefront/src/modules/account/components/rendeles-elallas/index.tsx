@@ -1,6 +1,9 @@
 "use client"
 
-import { submitOwnWithdrawal } from "@lib/data/own-withdrawal"
+import {
+  retrieveOwnWithdrawalState,
+  submitOwnWithdrawal,
+} from "@lib/data/own-withdrawal"
 import { translator } from "@lib/i18n/dictionary"
 import { useLocale } from "@lib/i18n/use-translate"
 import type { GuestWithdrawal } from "@lib/util/guest-order"
@@ -64,7 +67,17 @@ export default function RendelesElallas({
           submit={(declaration) =>
             submitOwnWithdrawal({ orderId, ...declaration })
           }
-          onFiled={(list) => list && setWithdrawals(list)}
+          onFiled={(list) => {
+            if (list) {
+              setWithdrawals(list)
+              return
+            }
+            // refused as already declared (two tabs, or a declaration made as a guest meanwhile): the refusal carries
+            // no list, so read the shop's state again; the lines it holds then drop out of the offer
+            void retrieveOwnWithdrawalState(orderId).then(
+              (state) => state && setWithdrawals(state.withdrawals),
+            )
+          }}
           onClose={() => setOpen(false)}
         />
       ) : offered.length > 0 ? (

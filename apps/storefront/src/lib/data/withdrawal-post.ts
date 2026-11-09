@@ -1,3 +1,9 @@
+/*
+  NOT A SERVER ACTION, ON PURPOSE, AND IT MUST NEVER BECOME ONE. `postWithdrawal(path, body, authHeaders)` posts to
+  whatever shop path it is given: as a "use server" function it would be a public endpoint a browser could call with any
+  path. It is only imported by the two action files next to it (`withdrawal.ts`, `own-withdrawal.ts`), which fix the path.
+  The form imports only its TYPE from here (erased in the build).
+*/
 import { headers as requestHeaders } from "next/headers"
 
 import { sdk } from "@lib/config"
