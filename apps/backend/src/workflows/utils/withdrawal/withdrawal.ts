@@ -95,6 +95,36 @@ const standingLines = async (svc: OrderWithdrawalModuleService, orderId: string,
     .sort((a, b) => a.at - b.at || a.withdrawalId.localeCompare(b.withdrawalId) || a.itemId.localeCompare(b.itemId))
 }
 
+/**
+ * THE TIME OF RECEIPT OF A RECORDED DECLARATION, as ISO text. `declareWithClaims` writes the declaration and the claims of
+ * its lines in ONE open transaction, and the row it hands back is serialized BEFORE that transaction is flushed: the
+ * database-side defaults and `created_at` (set when the row is flushed) are not on it yet. Reading `row.created_at` then
+ * gave `Invalid Date`, `toISOString()` threw AFTER the commit, and the customer's request answered 500 for a declaration
+ * that stood (seen on the test shop, 2026-11-09; the unit tests fake a row that already carries the time, so they never
+ * saw it). So: the row's own time when it is a usable one, else the committed row read back by its id (the time the
+ * database set), else the server's clock now. It never throws: a recorded declaration must not turn into an error here.
+ */
+const receivedAtOf = async (
+  svc: OrderWithdrawalModuleService,
+  row: { id: string; created_at?: Date | string | null },
+): Promise<string> => {
+  const usable = (value: unknown): string | null => {
+    if (value === undefined || value === null || value === "") return null
+    const at = new Date(value as Date | string)
+    return Number.isNaN(at.getTime()) ? null : at.toISOString()
+  }
+  const own = usable(row.created_at)
+  if (own) return own
+  try {
+    const [stored] = await svc.listOrderWithdrawals({ id: row.id })
+    const read = usable(stored?.created_at)
+    if (read) return read
+  } catch {
+    // the declaration stands whether or not the read works; the clock below is the last resort
+  }
+  return new Date().toISOString()
+}
+
 /** A lost race can repeat only if other requests keep winning the very same lines; three rounds is already absurd. */
 const MAX_ROUNDS = 3
 
@@ -123,7 +153,7 @@ export const createWithdrawal = async (
       const firstId = [...skipped.values()][0]!
       return { status: "duplicate", id: firstId, itemIds: requested }
     }
-    let row: { id: string; created_at: Date | string }
+    let row: { id: string; created_at?: Date | string | null }
     try {
       // the declaration and the claim of its lines are ONE transaction: a lost claim leaves nothing behind
       row = await svc.declareWithClaims({ order_id: order.id, customer_name: input.customerName, item_ids: free })
@@ -136,7 +166,7 @@ export const createWithdrawal = async (
     return {
       status: "created",
       id: row.id,
-      createdAt: new Date(row.created_at).toISOString(),
+      createdAt: await receivedAtOf(svc, row),
       itemIds: free,
       skipped: [...skipped].map(([itemId, withdrawalId]) => ({ itemId, withdrawalId })),
     }
