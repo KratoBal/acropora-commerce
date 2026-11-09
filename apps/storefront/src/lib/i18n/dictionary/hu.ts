@@ -460,7 +460,8 @@ export const hu = {
     consentLinkPattern: "adatkezelési tájékoztató[a-záéíóöőúüű]*",
     name: "Név",
     email: "E-mail",
-    done: "Köszönjük, feliratkoztál a hírlevelünkre.",
+    // NEM allit kuldott levelet (kuldott-level-allitas.spec.ts): a megerosito level kapcsolo mogott all
+    done: "Köszönjük! A feliratkozás a megadott címre érkező levél linkjével erősíthető meg.",
     errorMissing: "Add meg a neved és az e-mail-címed.",
     errorEmail: "Az e-mail-cím formája nem jó.",
     errorConsent: "A feliratkozáshoz el kell fogadnod az adatkezelést.",
@@ -468,6 +469,23 @@ export const hu = {
       "Túl sok feliratkozás érkezett innen. Próbáld újra pár perc múlva.",
     errorOff: "A hírlevél-feliratkozás most nem elérhető.",
     errorFailed: "A feliratkozás most nem sikerült. Próbáld újra később.",
+  },
+  /** A hírlevél levélben küldött két linkjének lapja (kettős megerősítés, d707cf5f): megerősítés és leiratkozás. */
+  newsletterLink: {
+    confirmTitle: "Hírlevél-feliratkozás megerősítése",
+    confirmIntro: "Egy kattintás, és a feliratkozásod él.",
+    confirmButton: "Megerősítem a feliratkozást",
+    confirmed: "Köszönjük, a feliratkozásod megerősítve.",
+    expired:
+      "Ez a link már lejárt. Iratkozz fel újra a lap alján, és küldünk egy újat.",
+    leaveTitle: "Leiratkozás a hírlevélről",
+    leaveIntro: "Egy kattintás, és több hírlevelet nem küldünk erre a címre.",
+    leaveButton: "Leiratkozom",
+    left: "Leiratkoztál, több hírlevelet nem küldünk erre a címre.",
+    invalid:
+      "Ez a link nem érvényes. Ha már használtad, nincs további teendőd.",
+    limit: "Most túl sok kérés érkezett. Próbáld újra pár perc múlva.",
+    failed: "Ez most nem sikerült. Próbáld újra később.",
   },
   /**
    * THE HOME PAGE TEXTS THE OS CATALOGUE HOLDS (`modules/kezdolap/szovegek.ts`, the non-header keys): the Hungarian value is the

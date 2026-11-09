@@ -9,6 +9,12 @@ import {
   sebessegKorlat,
   type HirlevelAllapot,
 } from "@lib/util/hirlevel-feliratkozas"
+import {
+  HIRLEVEL_LINK_UT,
+  hirlevelLink,
+  type HirlevelLinkAllapot,
+  type HirlevelLinkFajta,
+} from "@lib/util/hirlevel-link"
 
 /** Latogatonkent (IP) ot feliratkozas tiz percenkent, ebben a kirakat-folyamatban. */
 const korlat = sebessegKorlat({ max: 5, ablakMs: 10 * 60 * 1000 })
@@ -41,5 +47,24 @@ export async function hirlevelFeliratkozasAkcio(
           cache: "no-store",
         }),
     },
+  )
+}
+
+/**
+ * A LEVELBEN KULDOTT KET LINK LAPJA (d707cf5f): a gomb megnyomasa kuldi a
+ * tokent a bolthoz. Ismeretlen fajtara nem kuldunk semmit.
+ */
+export async function hirlevelLinkKuldes(
+  fajta: HirlevelLinkFajta,
+  token: string,
+): Promise<HirlevelLinkAllapot> {
+  if (fajta !== "megerosites" && fajta !== "leiratkozas")
+    return { allapot: "ervenytelen" }
+  return hirlevelLink(token, (torzs) =>
+    sdk.client.fetch(HIRLEVEL_LINK_UT[fajta], {
+      method: "POST",
+      body: torzs,
+      cache: "no-store",
+    }),
   )
 }

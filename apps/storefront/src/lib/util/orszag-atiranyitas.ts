@@ -29,6 +29,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "elerhetosegek",
   "fizetes",
   "hamarosan",
+  "hirlevel",
   "jogi",
   "kezdolap-elonezet",
   "marka",
