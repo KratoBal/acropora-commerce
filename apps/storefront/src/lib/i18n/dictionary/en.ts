@@ -475,6 +475,38 @@ export const en: Dictionary = {
     limit: "Too many requests right now. Please try again in a few minutes.",
     failed: "That did not work. Please try again later.",
   },
+  stockAlert: {
+    title: "Tell me when a similar one arrives",
+    text: "Leave your e-mail address and we will let you know when this species is in stock again.",
+    email: "E-mail address",
+    consent: "I agree to be notified at this address about this species.",
+    policyLink: "Privacy notice",
+    button: "Notify me",
+    done: "Thank you! Confirm it with the link in the mail arriving at this address, and we will tell you when this species is back.",
+    errorEmail: "Check the e-mail address, something is missing from it.",
+    errorConsent: "The notification needs your consent.",
+    errorLimit:
+      "Too many requests came from here. Please try again in a few minutes.",
+    errorOff: "Notifications are not available right now.",
+    errorFailed: "The request did not work. Please try again later.",
+  },
+  stockAlertLink: {
+    confirmTitle: "Confirm your notification request",
+    confirmIntro: "One click, and we will tell you when this species is back.",
+    confirmButton: "Confirm the request",
+    confirmed: "Thank you, your notification request is confirmed.",
+    expired:
+      "This link has expired. Ask again on the product page, and we will send a new one.",
+    leaveTitle: "Stop the notification",
+    leaveIntro:
+      "One click, and we will send no more notifications about this to this address.",
+    leaveButton: "Unsubscribe",
+    left: "Done: no more notifications about this to this address.",
+    invalid:
+      "This link is not valid. If you have used it already, there is nothing more to do.",
+    limit: "Too many requests right now. Please try again in a few minutes.",
+    failed: "That did not work. Please try again later.",
+  },
   homeText: {
     heroTenyek1Cim: "In-store pickup",
     heroTenyek1Szoveg: "at our Budapest shop",

@@ -27,6 +27,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "checkout",
   "collections",
   "elerhetosegek",
+  "ertesites",
   "fizetes",
   "hamarosan",
   "hirlevel",

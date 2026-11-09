@@ -19,6 +19,10 @@ const hirlevelLinkKuldes = vi.fn()
 vi.mock("@lib/data/hirlevel", () => ({
   hirlevelLinkKuldes: (...args: unknown[]) => hirlevelLinkKuldes(...args),
 }))
+const szoljLinkKuldes = vi.fn()
+vi.mock("@lib/data/szolj-hasonlo", () => ({
+  szoljLinkKuldes: (...args: unknown[]) => szoljLinkKuldes(...args),
+}))
 
 import HirlevelLinkUrlap from "./hirlevel-link-urlap"
 
@@ -34,6 +38,7 @@ const TOKEN = "A".repeat(42) + "_"
 afterEach(() => {
   cleanup()
   hirlevelLinkKuldes.mockReset()
+  szoljLinkKuldes.mockReset()
   cim("")
   orszag = "hu"
 })
@@ -118,6 +123,41 @@ describe("HirlevelLinkUrlap", () => {
     await waitFor(() =>
       expect(screen.getByTestId("hirlevel-link-allapot").textContent).toContain(
         "This link is not valid",
+      ),
+    )
+  })
+
+  /*
+    A "SZÓLJ, HA JÖN HASONLÓ" ERTESITES KET LINKJE (V2.4) UGYANEZT A LAPOT HASZNALJA. MI PIROSIT: az ertesites
+    tokenje a hirlevel boltbeli utjara megy (ott ervenytelen, vagy rosszabb: egy hirlevel-sort erosit meg), vagy
+    a lap a hirlevel szovegeit mondja.
+  */
+  it("HLU-ERTESITES: az ertesites lapja a sajat akciojat hivja, a hirlevelet nem, es a sajat szovegeit mondja", async () => {
+    cim(`?token=${TOKEN}`)
+    szoljLinkKuldes.mockResolvedValueOnce({ allapot: "lejart" })
+    szoljLinkKuldes.mockResolvedValueOnce({ allapot: "megerositve" })
+    render(<HirlevelLinkUrlap fajta="megerosites" tema="ertesites" />)
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Megerősítem az értesítés-kérést" }),
+      )
+    })
+    expect(szoljLinkKuldes).toHaveBeenCalledWith("megerosites", TOKEN)
+    expect(hirlevelLinkKuldes).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(screen.getByTestId("hirlevel-link-allapot").textContent).toContain(
+        "a termék lapján",
+      ),
+    )
+    // a lejart utan nincs gomb (kesz valasz), tehat ujra renderelve probaljuk a megerositest
+    cleanup()
+    render(<HirlevelLinkUrlap fajta="megerosites" tema="ertesites" />)
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"))
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId("hirlevel-link-allapot").textContent).toBe(
+        "Köszönjük, az értesítés-kérésed megerősítve.",
       ),
     )
   })
