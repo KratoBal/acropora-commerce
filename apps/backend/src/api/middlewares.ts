@@ -42,6 +42,7 @@ import { AdminPostOrderSplit } from "./admin/order-split/validators";
 import { StorePostCartNotes } from "./store/cart-notes/validators";
 import { StorePostCartLocale } from "./store/cart-locale/validators";
 import { StorePostNewsletterSubscription, StorePostNewsletterToken } from "./store/newsletter-subscriptions/validators";
+import { StorePostStockAlert, StorePostStockAlertToken } from "./store/stock-alerts/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import {
   AdminGetOrderPickupPointsParams,
@@ -378,6 +379,22 @@ export default defineMiddlewares({
       matcher: "/store/newsletter-subscriptions/unsubscribe",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostNewsletterToken)],
+    },
+    {
+      // "Szólj, ha jön hasonló" (V2.4, card 0c1265d2) and its two links, the newsletter's double opt-in
+      matcher: "/store/stock-alerts",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostStockAlert)],
+    },
+    {
+      matcher: "/store/stock-alerts/confirm",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostStockAlertToken)],
+    },
+    {
+      matcher: "/store/stock-alerts/unsubscribe",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostStockAlertToken)],
     },
     {
       // the order page's two note pencils (card d3b54954)

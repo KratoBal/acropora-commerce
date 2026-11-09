@@ -82,6 +82,16 @@ const samples: { [T in keyof WebshopMailFactsOf]: WebshopMailFactsOf[T] } = {
     unsubscribe_url: "https://shop.example.test/hu/hirlevel/leiratkozas?token=y",
     expires_at: "2026-11-16T15:00:00.000Z",
   },
+  "stock-alert-confirm": {
+    customer_name: null,
+    order_created_at: null,
+    locale: "hu",
+    order_view_url: null,
+    confirm_url: "https://shop.example.test/hu/ertesites/megerosites?token=x",
+    unsubscribe_url: "https://shop.example.test/hu/ertesites/leiratkozas?token=y",
+    expires_at: "2026-11-16T15:00:00.000Z",
+    subject_label: "Acropora abrolhosensis",
+  },
 }
 
 const keysOf = (value: unknown): string[] =>
@@ -112,6 +122,10 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
   "newsletter-confirm": {
     "": ["confirm_url", "customer_name", "expires_at", "locale", "order_created_at", "order_view_url", "unsubscribe_url"],
   },
+  // the stock alert's confirmation ("Szólj, ha jön hasonló"): the newsletter's keys and what was signed up for
+  "stock-alert-confirm": {
+    "": ["confirm_url", "customer_name", "expires_at", "locale", "order_created_at", "order_view_url", "subject_label", "unsubscribe_url"],
+  },
   "order-split": {
     "": ["customer_name", "locale", "order", "order_created_at", "order_view_url", "payment", "split_order"],
     split_order: ["display_id", "email", "id", "items", "payment", "shipping", "total"],
@@ -120,8 +134,8 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
 const ORDER_KEYS = ["display_id", "email", "id", "items", "payment", "shipping", "total"]
 
 describe("the webshop mail facts", () => {
-  it("fourteen templates (the newsletter's confirmation the fourteenth), version 1", () => {
-    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(14)
+  it("fifteen templates (the stock alert's confirmation the fifteenth), version 1", () => {
+    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(15)
     expect(WEBSHOP_MAIL_FACTS_VERSION).toBe(1)
     expect(Object.keys(samples).sort()).toEqual([...WEBSHOP_MAIL_TEMPLATES].sort())
     expect(isWebshopMailTemplate("order-shipped")).toBe(true)
