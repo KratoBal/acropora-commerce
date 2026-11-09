@@ -60,6 +60,11 @@ export type GuestOrder = {
   problem_reports?: GuestProblemReport[]
   /** the order's withdrawal declarations, the oldest first; absent from an older shop answer: then there is nothing to list */
   withdrawals?: GuestWithdrawal[]
+  /**
+   * the order holds a live animal; absent from an older shop answer. NOT `shipping.store_pickup`: the store pickup is
+   * offered for every cart, a live animal is only one reason for it.
+   */
+  live_animal?: boolean
 }
 
 export type GuestOrderLookupResult =

@@ -36,6 +36,7 @@ const order = (over: Partial<GuestOrder> = {}): GuestOrder => ({
   ],
   shipping: { method_name: "GLS", pickup_point: null, store_pickup: false },
   tracking: null,
+  live_animal: false,
   ...over,
 })
 
@@ -87,7 +88,11 @@ describe("what the order block draws", () => {
     expect(withdrawalOffer(order({ items: [] }))).toBe("none")
   })
 
-  it("draws the legal placeholder, not the button, for the store pickup (live animal) order", () => {
+  it("draws the legal placeholder, not the button, for an order that holds a live animal", () => {
+    expect(withdrawalOffer(order({ live_animal: true }))).toBe("live_animal")
+  })
+
+  it("keeps the button on an ordinary store pickup order: the pickup is offered for every cart, it is not a live animal", () => {
     expect(
       withdrawalOffer(
         order({
@@ -98,11 +103,11 @@ describe("what the order block draws", () => {
           },
         }),
       ),
-    ).toBe("live_animal")
+    ).toBe("button")
   })
 
-  it("treats an order with no shipping line as an ordinary one", () => {
-    expect(withdrawalOffer(order({ shipping: null }))).toBe("button")
+  it("draws nothing when the shop's answer does not say whether there is a live animal (an older shop)", () => {
+    expect(withdrawalOffer(order({ live_animal: undefined }))).toBe("none")
   })
 })
 

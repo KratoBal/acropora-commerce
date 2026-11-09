@@ -51,13 +51,19 @@ export default function WithdrawalForm({
   const orderNumber = String(order.display_id)
   // the lines a declaration already names are not offered again
   const offered = withdrawableItems(order)
+  // ONLY the marked lines that are still offered: after a refusal the page reads the orders again and a line that has a
+  // declaration now drops out of the list, but its id would stay in `itemIds`. The screen and the sent declaration must
+  // be the same set (a legal declaration), so every use below goes through this.
+  const selectedIds = offered
+    .filter((item) => itemIds.includes(item.id))
+    .map((item) => item.id)
   const titleOf = (id: string) =>
     order.items.find((item) => item.id === id)?.title
 
   const next = (event: FormEvent) => {
     event.preventDefault()
     setFailure(null)
-    const found = withdrawalFormErrors({ itemIds, name })
+    const found = withdrawalFormErrors({ itemIds: selectedIds, name })
     setErrors(found)
     if (Object.keys(found).length === 0) setConfirming(true)
   }
@@ -69,7 +75,7 @@ export default function WithdrawalForm({
         orderNumber,
         email,
         customerName: cleanedName(name),
-        itemIds,
+        itemIds: selectedIds,
       })
       if (result.ok) {
         setDone({
@@ -139,7 +145,7 @@ export default function WithdrawalForm({
           data-testid="withdrawal-confirm-items"
         >
           {offered
-            .filter((item) => itemIds.includes(item.id))
+            .filter((item) => selectedIds.includes(item.id))
             .map((item) => (
               <li key={item.id}>
                 {item.title} × {item.quantity}
