@@ -176,6 +176,13 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/url-redirect",
     },
+    // the attempt limits' shared count (card d707cf5f, item 5); without REDIS_URL each process counts in memory
+    {
+      resolve: "./src/modules/rate-limit",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
     {
       resolve: "@medusajs/medusa/caching",
       options: {

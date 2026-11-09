@@ -34,7 +34,7 @@ export const POST = async (
 
   // Five tries per account in fifteen minutes: this route answers whether the
   // current password is right, so it is a password-guessing door (audit P1/8).
-  if (!passwordChangeAttempts.allow(authIdentityId)) {
+  if (!(await passwordChangeAttempts.allow(authIdentityId))) {
     res.status(429).json(TOO_MANY_ATTEMPTS)
     return
   }

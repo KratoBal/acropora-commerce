@@ -27,8 +27,8 @@ const TEN_MINUTES = 10 * 60 * 1000
  * proxy's `x-real-ip`); a direct caller is held by the overall cap.
  */
 export const defaultLimiters = () => ({
-  perAddress: createRateLimiter({ max: 3, windowMs: TEN_MINUTES }),
-  overall: createRateLimiter({ max: 100, windowMs: TEN_MINUTES }),
+  perAddress: createRateLimiter({ name: "newsletter-per-address", max: 3, windowMs: TEN_MINUTES }),
+  overall: createRateLimiter({ name: "newsletter-overall", max: 100, windowMs: TEN_MINUTES }),
 })
 
 /**
@@ -47,7 +47,7 @@ export const createNewsletterPost =
   ) => {
     const { name, email } = req.validatedBody
     const language = req.validatedBody.locale ?? DEFAULT_NEWSLETTER_LANGUAGE
-    if (!limiters.perAddress.allow(email) || !limiters.overall.allow("all")) {
+    if (!(await limiters.perAddress.allow(email)) || !(await limiters.overall.allow("all"))) {
       res.status(429).json({ message: "Too many sign-ups, try again later" })
       return
     }
