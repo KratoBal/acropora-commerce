@@ -8,6 +8,7 @@ import {
   consentVersion,
 } from "../../../../modules/newsletter/defaults"
 import {
+  NEWSLETTER_CONFIRM_COOLDOWN_MS,
   NEWSLETTER_CONFIRM_TTL_MS,
   newsletterTokenHash,
 } from "../../../../modules/newsletter/double-opt-in"
@@ -196,10 +197,11 @@ const loose = () => ({
 })
 
 describe("POST /store/newsletter-subscriptions", () => {
-  it("NL-POST: records the shop's consent text and its version; a second sign-up updates, and answers the same", async () => {
+  it("NL-POST: records the shop's consent text and its version; a second sign-up (after the cooldown) updates, and answers the same", async () => {
     const h = harness(undefined)
     const post = createNewsletterPost(loose(), h.sendConfirm)
     const first = await h.call(post)
+    h.rows[0]!.confirmation_sent_at = new Date(Date.now() - NEWSLETTER_CONFIRM_COOLDOWN_MS - 1)
     const second = await h.call(post, { name: "Teszt Elek Második" })
 
     expect(first.statusCode).toBe(200)
@@ -304,16 +306,12 @@ describe("POST /store/newsletter-subscriptions", () => {
 describe("the double opt-in (card d707cf5f)", () => {
   const confirm = (h: ReturnType<typeof harness>, token: string, now?: Date) =>
     h.callToken(
-      createNewsletterTokenPost(createRateLimiter({ max: 100, windowMs: 60_000 }), (service, t) =>
-        service.confirmByToken(t, now)
-      ),
+      createNewsletterTokenPost((service, t) => service.confirmByToken(t, now)),
       token
     )
   const leave = (h: ReturnType<typeof harness>, token: string, now?: Date) =>
     h.callToken(
-      createNewsletterTokenPost(createRateLimiter({ max: 100, windowMs: 60_000 }), (service, t) =>
-        service.unsubscribeByToken(t, now)
-      ),
+      createNewsletterTokenPost((service, t) => service.unsubscribeByToken(t, now)),
       token
     )
 
@@ -334,12 +332,28 @@ describe("the double opt-in (card d707cf5f)", () => {
     expect(h.sendConfirm.mock.calls[0]![2]).toBe("teszt@pelda.hu")
   })
 
-  it("NL-AGAIN: signing up again while pending mails a new link and the old one stops working; the leaving token stays", async () => {
+  it("NL-COOLDOWN: inside thirty minutes a second sign-up for a pending address answers the same, mails nothing and keeps the link", async () => {
+    const h = harness(undefined)
+    const post = createNewsletterPost(loose(), h.sendConfirm)
+    const first = await h.call(post)
+    const hash = h.rows[0]!.confirmation_token_hash
+    const again = await h.call(post, { name: "Valaki Más" })
+    expect(again.statusCode).toBe(first.statusCode)
+    expect(again.payload).toEqual(first.payload)
+    expect(h.sendConfirm).toHaveBeenCalledTimes(1)
+    expect(h.rows[0]).toMatchObject({ confirmation_token_hash: hash, name: "Teszt Elek" })
+    expect((await confirm(h, h.lastMail().confirmation_token)).payload).toEqual({ result: "confirmed" })
+  })
+
+  it("NL-AGAIN: after the cooldown, signing up again mails a new link and the old one stops working; the leaving token stays", async () => {
     const h = harness(undefined)
     const post = createNewsletterPost(loose(), h.sendConfirm)
     await h.call(post)
     const first = h.lastMail()
+    // the last mail left a millisecond more than thirty minutes ago
+    h.rows[0]!.confirmation_sent_at = new Date(Date.now() - NEWSLETTER_CONFIRM_COOLDOWN_MS - 1)
     await h.call(post)
+    expect(h.sendConfirm).toHaveBeenCalledTimes(2)
     const second = h.lastMail()
     expect(second.confirmation_token).not.toBe(first.confirmation_token)
     expect(second.unsubscribe_token).toBe(first.unsubscribe_token)
@@ -426,14 +440,16 @@ describe("the double opt-in (card d707cf5f)", () => {
     expect((await confirm(h, h.lastMail().confirmation_token)).payload).toEqual({ result: "confirmed" })
   })
 
-  it("NL-TOKEN-LIMIT: the links' overall cap answers 429 and reads nothing", async () => {
+  it("NL-NO-SHARED-CAP: a flood of junk tokens locks nobody out: a real link still confirms and leaves after it", async () => {
     const h = harness(undefined)
-    const post = createNewsletterTokenPost(createRateLimiter({ max: 1, windowMs: 60_000 }), (service, t) =>
-      service.confirmByToken(t)
-    )
-    expect((await h.callToken(post, "x".repeat(43))).statusCode).toBe(200)
-    expect((await h.callToken(post, "x".repeat(43))).statusCode).toBe(429)
-    expect(h.service.listNewsletterSubscribers).toHaveBeenCalledTimes(1)
+    await h.call(createNewsletterPost(loose(), h.sendConfirm))
+    const { confirmation_token, unsubscribe_token } = h.lastMail()
+    for (let i = 0; i < 250; i++) {
+      expect((await confirm(h, `${i}`.padStart(43, "x"))).statusCode).toBe(200)
+      expect((await leave(h, `${i}`.padStart(43, "y"))).statusCode).toBe(200)
+    }
+    expect((await confirm(h, confirmation_token)).payload).toEqual({ result: "confirmed" })
+    expect((await leave(h, unsubscribe_token)).payload).toEqual({ result: "unsubscribed" })
   })
 })
 

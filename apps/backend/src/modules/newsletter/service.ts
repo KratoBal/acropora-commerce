@@ -2,6 +2,7 @@ import { MedusaService } from "@medusajs/framework/utils"
 
 import {
   type NewsletterStatus,
+  confirmationCoolingDown,
   confirmationLinkLive,
   newNewsletterToken,
   newsletterTokenHash,
@@ -23,8 +24,9 @@ export type NewsletterSignUp = {
 /**
  * What a sign-up leads to. `confirm`: the confirmation mail goes out with these
  * tokens (they exist only here and in the mail). `none`: the address is already
- * confirmed, nothing changes and nothing is sent; the route answers the same either
- * way, so the answer does not tell whether an address is on the list.
+ * confirmed, or pending with a confirmation mailed inside the cooldown; nothing
+ * changes and nothing is sent. The route answers the same either way, so the
+ * answer does not tell whether an address is on the list.
  */
 export type NewsletterSignUpResult =
   | {
@@ -54,7 +56,10 @@ class NewsletterModuleService extends MedusaService({ NewsletterSubscriber }) {
    * that is pending or left: the row takes the name and the consent given now,
    * turns (or stays) `pending`, and gets a NEW confirmation token, so only the
    * latest mail's link works. A confirmed address is left as it is: a sign-up
-   * nobody confirmed must not rewrite a confirmed row's name or consent.
+   * nobody confirmed must not rewrite a confirmed row's name or consent. A pending
+   * address mailed less than thirty minutes ago is left as it is too
+   * (`NEWSLETTER_CONFIRM_COOLDOWN_MS`): its link still works, and no stranger can
+   * turn sign-ups into a stream of mails to it.
    *
    * The unique index on `email` is the real guard; two sign-ups racing on the same
    * new address end in one row and one constraint error, which the route answers
@@ -66,6 +71,8 @@ class NewsletterModuleService extends MedusaService({ NewsletterSubscriber }) {
       { take: 1 }
     )) as unknown as SubscriberRow[]
     if (existing?.status === "confirmed") return { action: "none" }
+    if (existing?.status === "pending" && confirmationCoolingDown(existing.confirmation_sent_at, now))
+      return { action: "none" }
 
     const confirmationToken = newNewsletterToken()
     const unsubscribeToken = existing?.unsubscribe_token ?? newNewsletterToken()

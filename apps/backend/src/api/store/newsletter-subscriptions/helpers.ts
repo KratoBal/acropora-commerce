@@ -97,27 +97,21 @@ export const createNewsletterPost =
     res.status(200).json({ subscribed: true })
   }
 
-/** A link's page: two hundred tries per ten minutes in all (a token is 256 random bits; this only bounds a flood). */
-export const defaultTokenLimiter = (name: string) =>
-  createRateLimiter({ name, max: 200, windowMs: TEN_MINUTES })
-
 /**
  * THE CONFIRMATION AND THE LEAVING LINK (the storefront's two pages post the token
  * here). Every outcome is a 200 with its `result` (`confirmed`, `unsubscribed`,
  * `invalid`, `expired`): the page words each one. Neither looks at the row's
  * switch: leaving must work when sign-ups are off, and a confirmation finishes a
  * consent given while they were on.
+ *
+ * NO SHARED LIMIT (barracuda, #698 review): a cap counted for everyone together is
+ * one a stranger fills with junk tokens, and then nobody can leave the list, which
+ * the law says must always work. A token is 256 random bits, so guessing needs no
+ * limit either.
  */
 export const createNewsletterTokenPost =
-  (
-    limiter: RateLimiter,
-    use: (service: NewsletterModuleService, token: string) => Promise<NewsletterTokenResult>
-  ) =>
+  (use: (service: NewsletterModuleService, token: string) => Promise<NewsletterTokenResult>) =>
   async (req: MedusaStoreRequest<StorePostNewsletterTokenType>, res: MedusaResponse) => {
-    if (!(await limiter.allow("all"))) {
-      res.status(429).json({ message: "Too many requests, try again later" })
-      return
-    }
     const service: NewsletterModuleService = req.scope.resolve(NEWSLETTER_MODULE)
     res.status(200).json(await use(service, req.validatedBody.token))
   }

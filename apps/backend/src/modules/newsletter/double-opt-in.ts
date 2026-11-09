@@ -14,6 +14,17 @@ export type NewsletterStatus = (typeof NEWSLETTER_STATUSES)[number]
  */
 export const NEWSLETTER_CONFIRM_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
+/**
+ * HOW OFTEN ONE ADDRESS CAN BE MAILED A CONFIRMATION: once per thirty minutes (barracuda, #698 review: otherwise
+ * anyone could send a stranger's address hundreds of our mails a day). Inside the cooldown a sign-up for a
+ * pending address answers the same, makes no new token (the mailed link keeps working) and sends nothing.
+ */
+export const NEWSLETTER_CONFIRM_COOLDOWN_MS = 30 * 60 * 1000
+
+/** Whether a pending row's last confirmation mail is recent enough that no new one may go at `now`. */
+export const confirmationCoolingDown = (sentAt: Date | string | null | undefined, now: Date): boolean =>
+  !!sentAt && now.getTime() - new Date(sentAt).getTime() < NEWSLETTER_CONFIRM_COOLDOWN_MS
+
 /** A link's token: 32 random bytes, base64url (43 characters). */
 export const newNewsletterToken = (): string => randomBytes(32).toString("base64url")
 
