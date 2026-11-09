@@ -20,6 +20,13 @@ import { model } from "@medusajs/framework/utils"
  *                            back to it.
  *   confirmation_token_hash  SHA-256 of the confirmation link's token; cleared when used (or on leaving).
  *   unsubscribe_token        the leaving link's token, kept as it is: every alert mail carries it. Never expires.
+ *
+ * THE ARRIVAL (`arrival.ts`, the job `stock-alert-arrivals`): a confirmed row is told ONCE, when a piece of its subject
+ * becomes buyable that it had not seen buyable.
+ *   known_available          the subject's products that were already buyable, as the last sweep saw them (null until
+ *                            the first sweep after the confirmation); a product in it is not news.
+ *   notified_at              when the arrival mail was handed over; the row is then done until a new sign-up.
+ *   notified_product_id      the product the arrival mail named.
  */
 export const StockAlertSubscription = model
   .define("stock_alert_subscription", {
@@ -43,6 +50,9 @@ export const StockAlertSubscription = model
     confirmed_at: model.dateTime().nullable(),
     unsubscribe_token: model.text().nullable(),
     unsubscribed_at: model.dateTime().nullable(),
+    known_available: model.json().nullable(),
+    notified_at: model.dateTime().nullable(),
+    notified_product_id: model.text().nullable(),
   })
   .indexes([
     {

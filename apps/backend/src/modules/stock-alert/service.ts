@@ -49,6 +49,7 @@ type Row = {
   status: StockAlertStatus
   confirmation_sent_at: Date | string | null
   unsubscribe_token: string | null
+  notified_at: Date | string | null
 }
 
 /**
@@ -59,8 +60,9 @@ type Row = {
 class StockAlertModuleService extends MedusaService({ StockAlertSubscription }) {
   /**
    * THE SIGN-UP. A new address and subject, or one pending or left: the row takes the consent given now, turns (or
-   * stays) `pending` and gets a NEW confirmation token, so only the latest mail's link works. A confirmed row is left
-   * as it is. The unique index is the real guard against two racing sign-ups; the loser's constraint error is
+   * stays) `pending` and gets a NEW confirmation token, so only the latest mail's link works. A confirmed row still
+   * waiting is left as it is. A confirmed row ALREADY TOLD (`notified_at`, the arrival mail is one mail) is a new
+   * wait: it goes through the double opt-in again, like a left one, and starts its arrival from nothing. The unique index is the real guard against two racing sign-ups; the loser's constraint error is
    * answered like any other failure.
    *
    * THE COOLDOWN IS PER ADDRESS, NOT PER ROW (barracuda, #701 review): every subject is a new row, so a cooldown per
@@ -75,7 +77,7 @@ class StockAlertModuleService extends MedusaService({ StockAlertSubscription }) 
     const existing = rows.find(
       (row) => row.subject_kind === input.subject_kind && row.subject_key === input.subject_key
     )
-    if (existing?.status === "confirmed") return { action: "none" }
+    if (existing?.status === "confirmed" && !existing.notified_at) return { action: "none" }
 
     const confirmationToken = newNewsletterToken()
     const unsubscribeToken = existing?.unsubscribe_token ?? newNewsletterToken()
@@ -85,6 +87,10 @@ class StockAlertModuleService extends MedusaService({ StockAlertSubscription }) 
       confirmation_token_hash: newsletterTokenHash(confirmationToken),
       confirmation_sent_at: now,
       unsubscribe_token: unsubscribeToken,
+      // a new wait sees its subject afresh (`arrival.ts`)
+      known_available: null,
+      notified_at: null,
+      notified_product_id: null,
     }
     const [row] = existing
       ? await this.updateStockAlertSubscriptions([{ id: existing.id, ...changes }])

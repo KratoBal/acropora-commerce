@@ -50,6 +50,7 @@ export const mailAsSent = (
 const SIGN_UP_RESOURCE: Partial<Record<MailToSend["template"], string>> = {
   "newsletter-confirm": "newsletter_subscriber",
   "stock-alert-confirm": "stock_alert_subscription",
+  "stock-alert-arrival": "stock_alert_subscription",
 }
 
 /** One mail through the email channel; the idempotency key keeps it single. */
@@ -61,7 +62,7 @@ export const sendShopMail = (notifications: NotificationModule, mail: MailToSend
     template: mail.template,
     trigger_type: mail.trigger ?? mail.template,
     resource_id: mail.resource_id,
-    // every shop mail is about an order, except the two confirmations (their resource is the sign-up)
+    // every shop mail is about an order, except the sign-ups' mails (their resource is the sign-up)
     resource_type: SIGN_UP_RESOURCE[mail.template] ?? "order",
     idempotency_key: mail.idempotency_key,
     content,

@@ -35,6 +35,8 @@ export type MailToSend = {
     | "newsletter-confirm"
     // the stock alert's confirmation link (OS-rendered only: it has no built-in text)
     | "stock-alert-confirm"
+    // the stock alert's arrival, once per confirmed row (OS-rendered only: it has no built-in text)
+    | "stock-alert-arrival"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string
