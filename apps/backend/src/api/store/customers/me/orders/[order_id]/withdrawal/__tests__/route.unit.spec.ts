@@ -5,11 +5,13 @@ const storePickupOf = jest.fn()
 const createWithdrawal = jest.fn()
 const notifyWithdrawalReceived = jest.fn()
 const guestWithdrawalsOf = jest.fn()
+const liveAnimalOfOrder = jest.fn()
 jest.mock("../../../../../../../../workflows/utils/webshop-mail/withdrawal-received-mail", () => ({
   notifyWithdrawalReceived: (...args: unknown[]) => notifyWithdrawalReceived(...args),
 }))
 jest.mock("../../../../../../../../workflows/utils/guest-order/operations", () => ({
   guestWithdrawalsOf: (...args: unknown[]) => guestWithdrawalsOf(...args),
+  liveAnimalOfOrder: (...args: unknown[]) => liveAnimalOfOrder(...args),
 }))
 jest.mock("../../../../../../../../workflows/utils/withdrawal/withdrawal", () => ({
   ownOrder: (...args: unknown[]) => ownOrder(...args),
@@ -63,6 +65,7 @@ beforeEach(() => {
 afterEach(() => {
   guestWithdrawalsOf.mockReset()
   storePickupOf.mockReset()
+  liveAnimalOfOrder.mockReset()
   ownOrder.mockReset()
   createWithdrawal.mockReset()
   notifyWithdrawalReceived.mockReset()
@@ -93,6 +96,7 @@ const get = async (over: { actor?: string | null; orderId?: string } = {}) => {
 describe("GET /store/customers/me/orders/:order_id/withdrawal", () => {
   it("opens the order with the SESSION's customer id and the path's order id", async () => {
     storePickupOf.mockResolvedValue(false)
+    liveAnimalOfOrder.mockResolvedValue(false)
     await get({ actor: "cus_a", orderId: "order_9" })
     expect(ownOrder.mock.calls[0].slice(1)).toEqual(["cus_a", "order_9"])
   })
@@ -110,22 +114,27 @@ describe("GET /store/customers/me/orders/:order_id/withdrawal", () => {
     expect(status).toHaveBeenCalledWith(404)
     expect(json).toHaveBeenCalledWith({ message: "Nem találtuk a rendelést." })
     expect(storePickupOf).not.toHaveBeenCalled()
+    expect(liveAnimalOfOrder).not.toHaveBeenCalled()
     expect(guestWithdrawalsOf).not.toHaveBeenCalled()
   })
 
-  it("answers the pickup flag and the standing declarations, both read for the order's own id", async () => {
+  it("answers the live animal flag, the pickup fact and the standing declarations, all read for the order's own id", async () => {
     storePickupOf.mockResolvedValue(true)
+    liveAnimalOfOrder.mockResolvedValue(false)
     const { json } = await get()
-    expect(json).toHaveBeenCalledWith({ store_pickup: true, withdrawals: standingList })
+    // a store pickup order is NOT a live animal order: the two answers are independent
+    expect(json).toHaveBeenCalledWith({ live_animal: false, store_pickup: true, withdrawals: standingList })
     expect(storePickupOf.mock.calls[0][1]).toBe("order_1")
+    expect(liveAnimalOfOrder.mock.calls[0][1]).toBe("order_1")
     expect(guestWithdrawalsOf.mock.calls[0][1]).toBe("order_1")
   })
 
   it("leaves the declarations out when they cannot be read, instead of answering an empty list", async () => {
     storePickupOf.mockResolvedValue(false)
+    liveAnimalOfOrder.mockResolvedValue(true)
     guestWithdrawalsOf.mockResolvedValue(null)
     const { json } = await get()
-    expect(json).toHaveBeenCalledWith({ store_pickup: false })
+    expect(json).toHaveBeenCalledWith({ live_animal: true, store_pickup: false })
   })
 })
 

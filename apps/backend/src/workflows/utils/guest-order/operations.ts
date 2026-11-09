@@ -11,6 +11,7 @@ import type OrderBusinessStatusModuleService from "../../../modules/order-busine
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
 import { isStorePickupOption } from "../shipping-option-roles"
+import { livestockKindsOfOrder } from "../webshop-mail/livestock-kinds"
 import { lineTitle } from "../webshop-mail/operations"
 import {
   guestProblemReports,
@@ -143,6 +144,14 @@ export const guestWithdrawalsOf = async (
   }
 }
 
+/**
+ * Whether the order holds a live animal: some product of it has a livestock kind in the shipping attributes (the OS
+ * writes it from the product's root category; the shop never derives it from a name). The same source the order
+ * confirmation's acclimatisation section reads. The read never throws: a failure answers false and the reader logs it.
+ */
+export const liveAnimalOfOrder = async (container: MedusaContainer, orderId: string): Promise<boolean> =>
+  (await livestockKindsOfOrder(container, orderId)).length > 0
+
 export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps => {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const load = async (filters: Record<string, unknown>): Promise<GuestOrderSource[]> => {
@@ -194,6 +203,7 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
         return []
       }
     },
+    liveAnimalOf: (orderId) => liveAnimalOfOrder(container, orderId),
     statusOf: async (orderId): Promise<GuestOrderStatus | null> => {
       const service = container.resolve<OrderBusinessStatusModuleService>(ORDER_BUSINESS_STATUS_MODULE)
       try {
