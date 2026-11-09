@@ -5,6 +5,7 @@ import { guardAszf } from "../utils/aszf-guard"
 import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
 import { assertCartPointsFitLocker } from "../utils/locker-rule"
 import { assertCardShare } from "../utils/assert-card-share"
+import { assertNoForeignHold } from "../utils/cart-hold"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
 
@@ -53,6 +54,12 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
   // And the P4-3c one: a card payment covers exactly this cart, or this cart
   // and its split pair together.
   await assertCardShare(cart.id, container)
+  // V2.3 (card 52024fc0): a unique piece another cart holds is not ordered here,
+  // checked over both halves of a mixed cart.
+  await assertNoForeignHold(container, {
+    id: cart.id,
+    metadata: (cart?.metadata as Record<string, unknown> | null | undefined) ?? null,
+  })
 
   const context = await resolveCartPaymentContext(cart, container)
 

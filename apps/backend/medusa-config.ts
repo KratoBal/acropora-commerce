@@ -155,6 +155,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/stock-alert",
     },
+    // V2.3: a unique piece held for one cart, behind ACROPORA_CART_HOLD (test storefront)
+    {
+      resolve: "./src/modules/cart-hold",
+    },
     {
       resolve: "./src/modules/commerce-settings",
     },
