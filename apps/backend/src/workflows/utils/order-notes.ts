@@ -63,6 +63,24 @@ export const withNotes = (
   return next
 }
 
+/**
+ * WHAT THE CART'S WRITE SENDS: only the keys given, and nothing of the rest of the metadata. Medusa's generic `update`
+ * (2.20.1, `medusa-internal-service.js`) merges the incoming `metadata` into the entity's own, read inside the same
+ * update (`mergeMetadata`: the given keys replace, an empty string removes the key, the others stay). Sending the whole
+ * picture read earlier was needless and dangerous: two writers (the notes and the ÁSZF record) each wrote back the other's
+ * old state, and the one that wrote last could undo the other's key. An empty note is "" here, which removes the key.
+ */
+export const notesPatch = (input: NotesInput): Record<string, string> => {
+  const patch: Record<string, string> = {}
+  const set = (key: string, value: string | null | undefined) => {
+    if (value === undefined) return
+    patch[key] = cleanNote(value) ?? ""
+  }
+  set(CUSTOMER_NOTE_KEY, input.customer_note)
+  set(CARRIER_NOTE_KEY, input.carrier_note)
+  return patch
+}
+
 /** What the OS and the success page read back. */
 export const notesOf = (metadata: Record<string, unknown> | null | undefined) => {
   const read = (key: string) => {
@@ -92,9 +110,11 @@ export const saveCartNotes = async (
   const cart = data?.[0] as { id: string; metadata?: Record<string, unknown> | null; completed_at?: unknown } | undefined
   if (!cart) return { status: "not_found" }
   if (cart.completed_at) return { status: "completed" }
-  const metadata = withNotes(cart.metadata, input)
-  await updateCartWorkflow(container).run({ input: { id: cartId, metadata } })
-  return { status: "saved", notes: notesOf(metadata) }
+  // only the notes' own keys go to Medusa, which merges them into the cart's metadata itself (see `notesPatch`)
+  const patch = notesPatch(input)
+  if (Object.keys(patch).length > 0)
+    await updateCartWorkflow(container).run({ input: { id: cartId, metadata: patch } })
+  return { status: "saved", notes: notesOf(withNotes(cart.metadata, input)) }
 }
 
 export type OrderNotesResult =

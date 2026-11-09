@@ -10,7 +10,11 @@ import { AdminPostOrderNotes } from "../../../api/admin/order-notes/validators"
 import middlewares from "../../../api/middlewares"
 import { POST as storeRoute } from "../../../api/store/cart-notes/[cart_id]/route"
 import { StorePostCartNotes } from "../../../api/store/cart-notes/validators"
-import { cleanNote, notesOf, saveCartNotes, saveOrderNotes, withNotes } from "../order-notes"
+import { mergeMetadata } from "@medusajs/framework/utils"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+
+import { cleanNote, notesOf, notesPatch, saveCartNotes, saveOrderNotes, withNotes } from "../order-notes"
 
 const scopeWith = (entity: "cart" | "order", row: unknown) =>
   ({
@@ -70,7 +74,7 @@ describe("the bodies", () => {
 })
 
 describe("saveCartNotes", () => {
-  it("writes the merged metadata on an open cart and answers the notes", async () => {
+  it("sends ONLY the notes' own keys on an open cart (Medusa merges them in), and answers the notes", async () => {
     const result = await saveCartNotes(
       scopeWith("cart", { id: "cart_1", metadata: { egyeb: 1 }, completed_at: null }),
       "cart_1",
@@ -78,8 +82,44 @@ describe("saveCartNotes", () => {
     )
     expect(result).toEqual({ status: "saved", notes: { customer_note: "Délután", carrier_note: "Kapukód 12" } })
     expect(updateCart).toHaveBeenCalledWith({
-      input: { id: "cart_1", metadata: { egyeb: 1, acropora_customer_note: "Délután", acropora_carrier_note: "Kapukód 12" } },
+      input: { id: "cart_1", metadata: { acropora_customer_note: "Délután", acropora_carrier_note: "Kapukód 12" } },
     })
+  })
+  // WHAT TURNS THIS RED (a0f8668e, barracuda #644): the cart's write sending the other keys back again (the whole picture read
+  // earlier), which lets a write of another key in between be undone; a cleared note not sent as "" (Medusa removes a key only
+  // for an empty string); a write with nothing to say.
+  it("a note sent alone changes only that key, a cleared one is an empty string, and nothing given is no write", async () => {
+    await saveCartNotes(
+      scopeWith("cart", { id: "cart_1", metadata: { aszf_elfogadas: { verzio: "v" }, acropora_carrier_note: "régi" }, completed_at: null }),
+      "cart_1",
+      { carrier_note: "   " }
+    )
+    expect(updateCart).toHaveBeenCalledWith({ input: { id: "cart_1", metadata: { acropora_carrier_note: "" } } })
+    updateCart.mockReset()
+    const result = await saveCartNotes(
+      scopeWith("cart", { id: "cart_1", metadata: { acropora_customer_note: "marad" }, completed_at: null }),
+      "cart_1",
+      {}
+    )
+    expect(updateCart).not.toHaveBeenCalled()
+    expect(result).toEqual({ status: "saved", notes: { customer_note: "marad", carrier_note: null } })
+  })
+  it("what it sends, merged the way Medusa merges, leaves every other key and removes a cleared note", () => {
+    const stored = { aszf_elfogadas: { verzio: "v" }, acropora_pickup_cart_id: "cart_2", acropora_carrier_note: "régi", acropora_customer_note: "x" }
+    expect(mergeMetadata(stored, notesPatch({ customer_note: "Új", carrier_note: null }))).toEqual({
+      aszf_elfogadas: { verzio: "v" },
+      acropora_pickup_cart_id: "cart_2",
+      acropora_customer_note: "Új",
+    })
+    expect(notesPatch({})).toEqual({})
+  })
+  // the premise of sending only the own key: Medusa's generic update merges the incoming metadata into the entity's own, read in
+  // the same update. If an upgrade changes that, the cart's other keys would be lost on every note: this turns red first.
+  it("the installed Medusa's update still merges the incoming metadata into the entity's own", () => {
+    const framework = dirname(require.resolve("@medusajs/framework/utils"))
+    const utils = dirname(require.resolve("@medusajs/utils", { paths: [framework] }))
+    const source = readFileSync(join(utils, "modules-sdk", "medusa-internal-service.js"), "utf8")
+    expect(source).toMatch(/mergeMetadata\)\(entity_\.metadata \?\? \{\}, update_\.metadata\)/)
   })
   it("refuses a cart already ordered, and a missing one, without writing", async () => {
     expect(await saveCartNotes(scopeWith("cart", { id: "cart_1", completed_at: new Date() }), "cart_1", { customer_note: "x" })).toEqual({
