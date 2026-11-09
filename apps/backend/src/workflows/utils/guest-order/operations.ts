@@ -10,7 +10,7 @@ import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-st
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
-import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
+import { isStorePickupOption } from "../shipping-option-roles"
 import { lineTitle } from "../webshop-mail/operations"
 import {
   guestProblemReports,
@@ -51,14 +51,6 @@ const ORDER_FIELDS = [
 
 const label = (status: string): string => ORDER_BUSINESS_STATUS_LABELS[status as OrderBusinessStatus] ?? status
 
-/** The shipping option ids that play the store pickup role (by id, never by name: names are translated and edited). */
-const storePickupIds = (): Set<string> =>
-  new Set(
-    resolveShippingOptionRoleBindings()
-      .filter((binding) => binding.role === "PICKUP")
-      .map((binding) => binding.id),
-  )
-
 const sourceOf = (order: any): GuestOrderSource => {
   const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
   return {
@@ -79,7 +71,7 @@ const sourceOf = (order: any): GuestOrderSource => {
       ? {
           name: String(method.name ?? ""),
           data: method.data ?? null,
-          store_pickup: storePickupIds().has(String(method.shipping_option_id ?? "")),
+          store_pickup: isStorePickupOption(method.shipping_option_id),
         }
       : null,
     metadata: order.metadata ?? null,
