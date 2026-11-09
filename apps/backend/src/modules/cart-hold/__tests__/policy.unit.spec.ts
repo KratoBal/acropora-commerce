@@ -11,6 +11,8 @@ import {
   holdStands,
   limitMessage,
   maxHoldsPerCart,
+  maxHoldsTotal,
+  DEFAULT_MAX_TOTAL,
 } from "../policy"
 
 /**
@@ -116,6 +118,40 @@ describe("the decision for one piece", () => {
     expect(
       decideHold({ ...base, row: row("cart_other", 12), otherCartHasPiece: true, standingOwnHolds: 5 }).action
     ).toBe("refuse_held")
+  })
+})
+
+describe("the shop's ceiling (barracuda's review of #706)", () => {
+  it("CH-CEILING: at the ceiling a new hold becomes no hold, not a refusal; below it nothing changes", () => {
+    const ceiling = { maxTotal: 3 }
+    expect(decideHold({ ...base, ...ceiling, row: null, standingTotal: 3 })).toEqual({ action: "no_hold", max: 3 })
+    expect(decideHold({ ...base, ...ceiling, row: row("cart_other", -1), standingTotal: 4 })).toEqual({
+      action: "no_hold",
+      max: 3,
+    })
+    expect(decideHold({ ...base, ...ceiling, row: null, standingTotal: 2 })).toEqual({
+      action: "create",
+      expires_at: at(30),
+    })
+  })
+
+  it("CH-CEILING-ORDER: another cart's hold is still refused, an own live hold still kept, the cart limit still refuses", () => {
+    const full = { maxTotal: 1, standingTotal: 10 }
+    expect(decideHold({ ...base, ...full, row: row("cart_other", 12), otherCartHasPiece: true })).toMatchObject({
+      action: "refuse_held",
+    })
+    expect(decideHold({ ...base, ...full, row: row("cart_me", 12) })).toMatchObject({ action: "keep" })
+    expect(decideHold({ ...base, ...full, row: null, standingOwnHolds: 5 })).toMatchObject({ action: "refuse_limit" })
+  })
+
+  it("CH-CEILING-OFF: without a ceiling, as before", () => {
+    expect(decideHold({ ...base, row: null, standingTotal: 10_000 })).toMatchObject({ action: "create" })
+  })
+
+  it("CH-CEILING-SETTING: a whole number within 1..1000, or the default", () => {
+    expect(maxHoldsTotal({ ACROPORA_CART_HOLD_MAX_TOTAL: "12" } as NodeJS.ProcessEnv)).toBe(12)
+    for (const value of [undefined, "", "0", "1001", "2.5", "x"])
+      expect(maxHoldsTotal({ ACROPORA_CART_HOLD_MAX_TOTAL: value } as NodeJS.ProcessEnv)).toBe(DEFAULT_MAX_TOTAL)
   })
 })
 

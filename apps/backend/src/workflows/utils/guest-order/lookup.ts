@@ -92,6 +92,12 @@ export type GuestOrderView = {
   problem_reports: GuestProblemReport[]
   /** the order's withdrawal declarations, the oldest first; empty when there are none */
   withdrawals: GuestWithdrawal[]
+  /**
+   * the order holds a live animal (a product the OS marked with a livestock kind). The page keeps the withdrawal button
+   * back from such an order until the owner and the lawyer say whether the right applies to a live animal. NOT the same
+   * as `shipping.store_pickup`: the store pickup is offered for every cart, a live animal is only one reason for it.
+   */
+  live_animal: boolean
 }
 
 const PAYMENT_STATUSES = new Set([
@@ -155,6 +161,7 @@ export const guestOrderView = (
   status: GuestOrderStatus | null,
   reports: readonly StoredProblemReport[] = [],
   withdrawals: readonly StoredWithdrawal[] = [],
+  liveAnimal = false,
 ): GuestOrderView => ({
   display_id: source.display_id,
   created_at: iso(source.created_at),
@@ -178,6 +185,7 @@ export const guestOrderView = (
   tracking: trackingOf(source.metadata),
   problem_reports: guestProblemReports(reports),
   withdrawals: guestWithdrawals(withdrawals),
+  live_animal: liveAnimal,
 })
 
 export type GuestOrderDeps = {
@@ -189,6 +197,8 @@ export type GuestOrderDeps = {
   problemReportsOf(orderId: string): Promise<StoredProblemReport[]>
   /** The withdrawal declarations made for the order. */
   withdrawalsOf(orderId: string): Promise<StoredWithdrawal[]>
+  /** Whether the order holds a live animal (false when it cannot be read: the page then offers the button). */
+  liveAnimalOf(orderId: string): Promise<boolean>
 }
 
 /**
@@ -224,6 +234,7 @@ export const lookupGuestOrders = async (
         await deps.statusOf(source.id),
         await deps.problemReportsOf(source.id),
         await deps.withdrawalsOf(source.id),
+        await deps.liveAnimalOf(source.id),
       ),
     ),
   )

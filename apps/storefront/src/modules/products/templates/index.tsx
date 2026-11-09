@@ -239,9 +239,16 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               hasonloResz={
                 <div data-testid="related-products-container">
                   <Suspense fallback={<SkeletonRelatedProducts />}>
+                    {/*
+                      A NEM ELERHETO EGYEDI DARAB (V2.4) A VAZON IS: a korall
+                      lapja ezt az agat kapja, es a #702 csak a masikba kototte
+                      be (merve a teszt kirakaton 2026-11-09: ELADVA lap,
+                      hasonlok es urlap nelkul).
+                    */}
                     <RelatedProducts
                       product={product}
                       countryCode={countryCode}
+                      eladott={ragadosSavAllapota === "ELADVA"}
                       valtozat={vilagosLap ? "1b" : undefined}
                       fejlecNelkul
                       /*
@@ -260,6 +267,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       }
                     />
                   </Suspense>
+                  {szoljUrlapKell(ragadosSavAllapota, product.title) ? (
+                    <SzoljHasonlo termekId={product.id} locale={locale} />
+                  ) : null}
                 </div>
               }
               /**
