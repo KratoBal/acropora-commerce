@@ -29,17 +29,22 @@ export const withdrawableItems = <T extends { id: string }>(order: {
 }
 
 /**
- * What the order block draws for the withdrawal: the button, the legal placeholder (the store pickup order is the
- * live animal order of a mixed cart, and whether the right applies to a live animal is a legal question the owner has
- * not answered), or nothing (no lines, or every line already has a declaration).
+ * What the order block draws for the withdrawal: the button, the legal placeholder (the order holds a live animal, and
+ * whether the right applies to a live animal is a legal question the owner has not answered), or nothing (no lines,
+ * every line already has a declaration, or the shop's answer does not say whether there is a live animal).
+ *
+ * THE SIGNAL IS `live_animal`, NOT THE STORE PICKUP: the shop offers the store pickup for every cart, so an ordinary
+ * pickup order must keep its button (the right of withdrawal does not depend on the way of delivery). An answer without
+ * the flag (an older shop) draws nothing: a button or a legal line on a guess is worse than none.
  */
 export type WithdrawalOffer = "button" | "live_animal" | "none"
 
 export const withdrawalOffer = (
-  order: Pick<GuestOrder, "items" | "withdrawals" | "shipping">,
+  order: Pick<GuestOrder, "items" | "withdrawals" | "live_animal">,
 ): WithdrawalOffer => {
   if (order.items.length === 0) return "none"
-  if (order.shipping?.store_pickup === true) return "live_animal"
+  if (order.live_animal === undefined) return "none"
+  if (order.live_animal) return "live_animal"
   return withdrawableItems(order).length > 0 ? "button" : "none"
 }
 

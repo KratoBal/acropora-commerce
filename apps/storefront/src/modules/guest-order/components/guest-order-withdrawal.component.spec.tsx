@@ -29,9 +29,10 @@ afterEach(() => {
 
 /*
   WHAT TURNS THIS RED (V0.3, the order block). The withdrawal button missing from a shipped order, or drawn without
-  the address (a display with no way to file); the button drawn for the store pickup (live animal) order instead of
-  the legal placeholder; the declaration sent without the order's own number or the address (it would reach another
-  order, or none); the list of declarations not shown with the line titles and the reference; the button still
+  the address (a display with no way to file); the button drawn for an order that holds a live animal instead of the
+  legal placeholder, or withheld from an ordinary store pickup order; the declaration sent without the order's own
+  number or the address (it would reach another order, or none); the list of declarations not shown with the line
+  titles and the reference; the button still
   drawn when every line already has a declaration.
 */
 const base: GuestOrder = {
@@ -44,6 +45,7 @@ const base: GuestOrder = {
   items: [{ id: "item_1", title: "Reef Pump", quantity: 1, total: 1000 }],
   shipping: { method_name: "GLS", pickup_point: null, store_pickup: false },
   tracking: null,
+  live_animal: false,
 }
 
 describe("the withdrawal in the order block", () => {
@@ -59,7 +61,20 @@ describe("the withdrawal in the order block", () => {
     expect(screen.queryByTestId("withdrawal-open-1042")).toBeNull()
   })
 
-  it("draws the legal placeholder and no button for the store pickup order", () => {
+  it("draws the legal placeholder and no button for an order that holds a live animal", () => {
+    render(
+      <GuestOrderView
+        orders={[{ ...base, live_animal: true }]}
+        email="vevo@example.hu"
+      />,
+    )
+    expect(screen.queryByTestId("withdrawal-open-1042")).toBeNull()
+    expect(screen.getByTestId("withdrawal-live-1042").textContent).toContain(
+      "[KITÖLTENDŐ: jogi szöveg élő állatra]",
+    )
+  })
+
+  it("keeps the button on an ordinary store pickup order (the pickup is offered for every cart)", () => {
     const pickup = {
       ...base,
       shipping: {
@@ -69,10 +84,8 @@ describe("the withdrawal in the order block", () => {
       },
     }
     render(<GuestOrderView orders={[pickup]} email="vevo@example.hu" />)
-    expect(screen.queryByTestId("withdrawal-open-1042")).toBeNull()
-    expect(screen.getByTestId("withdrawal-live-1042").textContent).toContain(
-      "[KITÖLTENDŐ: jogi szöveg élő állatra]",
-    )
+    expect(screen.getByTestId("withdrawal-open-1042")).toBeTruthy()
+    expect(screen.queryByTestId("withdrawal-live-1042")).toBeNull()
   })
 
   it("lists the declarations with the line titles and the reference, and no button once every line has one", () => {

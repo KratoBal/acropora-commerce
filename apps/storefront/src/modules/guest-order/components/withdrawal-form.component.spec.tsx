@@ -126,6 +126,76 @@ describe("the withdrawal form", () => {
     })
   })
 
+  /*
+    AFTER A REFUSAL THE SCREEN AND THE SENT DECLARATION ARE ONE SET (barracuda's review of #709): the page reads the
+    orders again, a line that has a declaration now drops out of the offer, but its id used to stay in the marked ids.
+    Mi pirosit: a confirmation that shows one line while the declaration carries another; a "Tovább" through with only a
+    dropped line marked (an empty confirmation, then a second refusal).
+  */
+  it("sends only the marked lines that are still offered, the same ones the confirmation shows", async () => {
+    const view = renderForm()
+    fireEvent.click(screen.getByLabelText(/Korall A/))
+    fireEvent.click(screen.getByLabelText(/Korall B/))
+    fireEvent.change(screen.getByLabelText("A neved"), {
+      target: { value: "Kiss Anna" },
+    })
+    // the page read the orders again: Korall A has a declaration now
+    view.rerender(
+      <WithdrawalForm
+        orderNumber={String(order.display_id)}
+        items={withdrawableItems({
+          ...order,
+          withdrawals: [
+            ...(order.withdrawals ?? []),
+            {
+              id: "ordwd_new",
+              created_at: "2026-11-09T11:00:00.000Z",
+              item_ids: ["item_1"],
+            },
+          ],
+        })}
+        submit={(declaration) => submitWithdrawal(declaration)}
+        onClose={vi.fn()}
+        onFiled={vi.fn()}
+      />,
+    )
+    await goOn()
+    const confirm = screen.getByTestId("withdrawal-confirm-1043")
+    expect(confirm.textContent).toContain("Korall B")
+    expect(confirm.textContent).not.toContain("Korall A")
+    await send()
+    await waitFor(() => expect(submitWithdrawal).toHaveBeenCalledTimes(1))
+    expect(submitWithdrawal.mock.calls[0][0].itemIds).toEqual(["item_2"])
+  })
+
+  it("does not go on to the confirmation when the only marked line dropped out of the offer", async () => {
+    const view = renderForm()
+    fillValid()
+    view.rerender(
+      <WithdrawalForm
+        orderNumber={String(order.display_id)}
+        items={withdrawableItems({
+          ...order,
+          withdrawals: [
+            ...(order.withdrawals ?? []),
+            {
+              id: "ordwd_new",
+              created_at: "2026-11-09T11:00:00.000Z",
+              item_ids: ["item_1"],
+            },
+          ],
+        })}
+        submit={(declaration) => submitWithdrawal(declaration)}
+        onClose={vi.fn()}
+        onFiled={vi.fn()}
+      />,
+    )
+    await goOn()
+    expect(screen.getByTestId("withdrawal-items-error")).toBeTruthy()
+    expect(screen.queryByTestId("withdrawal-confirm-1043")).toBeNull()
+    expect(submitWithdrawal).not.toHaveBeenCalled()
+  })
+
   it("goes back to the form with the typed text kept", async () => {
     renderForm()
     fillValid()

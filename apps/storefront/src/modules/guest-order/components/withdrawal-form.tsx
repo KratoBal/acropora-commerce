@@ -56,15 +56,21 @@ export default function WithdrawalForm({
     null,
   )
   const [pending, startTransition] = useTransition()
-  // the lines as they were when the form opened: the page's list shrinks the moment a declaration is recorded, and the
-  // confirmation and the note of a partly taken request still name the lines that were sent
-  const [items] = useState(offered)
-  const titleOf = (id: string) => items.find((item) => item.id === id)?.title
+  // the lines as they were when the form opened: a line that gets a declaration drops out of `offered` (the page reads
+  // the orders again), but the note of a partly taken request still names it
+  const [opened] = useState(offered)
+  const titleOf = (id: string) => opened.find((item) => item.id === id)?.title
+  // ONLY the marked lines that are still offered: after a refusal the page reads the orders again and a line that has a
+  // declaration now drops out of the list, but its id would stay in `itemIds`. The screen and the sent declaration must
+  // be the same set (a legal declaration), so every use below goes through this.
+  const selectedIds = offered
+    .filter((item) => itemIds.includes(item.id))
+    .map((item) => item.id)
 
   const next = (event: FormEvent) => {
     event.preventDefault()
     setFailure(null)
-    const found = withdrawalFormErrors({ itemIds, name })
+    const found = withdrawalFormErrors({ itemIds: selectedIds, name })
     setErrors(found)
     if (Object.keys(found).length === 0) setConfirming(true)
   }
@@ -74,7 +80,7 @@ export default function WithdrawalForm({
     startTransition(async () => {
       const result = await submit({
         customerName: cleanedName(name),
-        itemIds,
+        itemIds: selectedIds,
       })
       if (result.ok) {
         setDone({
@@ -143,8 +149,8 @@ export default function WithdrawalForm({
           className="flex list-disc flex-col gap-y-1 pl-5 text-[14px] text-acr-ink"
           data-testid="withdrawal-confirm-items"
         >
-          {items
-            .filter((item) => itemIds.includes(item.id))
+          {offered
+            .filter((item) => selectedIds.includes(item.id))
             .map((item) => (
               <li key={item.id}>
                 {item.title} × {item.quantity}
@@ -198,7 +204,7 @@ export default function WithdrawalForm({
         <legend className="text-[14px] font-semibold text-acr-ink">
           {t("guestOrder.withdrawal.itemsLabel")}
         </legend>
-        {items.map((item) => (
+        {offered.map((item) => (
           <label
             key={item.id}
             className="flex items-center gap-x-2 text-[14px] text-acr-ink"
