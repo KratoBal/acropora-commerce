@@ -41,6 +41,8 @@ export type VasarlasAllapot = {
   rendelesiMondat: string | null
   availability: Availability
   uniquePiece: boolean
+  /** V2.3 S2b: az egyedi darabot most MASIK kosar tartja, eddig (`null`: nem, vagy nem tudjuk). */
+  masKosaraban: { until: Date } | null
   similarHref: string
   isAdding: boolean
   /**

@@ -32,6 +32,11 @@ vi.mock("next/navigation", () => ({
 vi.mock("@lib/data/cart", () => ({
   addToCart: vi.fn(async () => undefined),
 }))
+// a vasarlasi allapot (`kezdoOpciok` innen jon) a foglalas szerver-akciojat is importalja (V2.3 S2b)
+vi.mock("@lib/data/kosar-foglalas", () => ({
+  termekFoglalas: async () => null,
+  kosarFoglalasai: async () => null,
+}))
 
 /**
  * A LEBEGŐ MOBIL SÁV KI VAN HAGYVA, ÉS EZT KI KELL MONDANI.

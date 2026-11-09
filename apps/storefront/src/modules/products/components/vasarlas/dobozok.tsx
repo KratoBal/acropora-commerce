@@ -9,6 +9,7 @@ import { vanValaszthatoOpcio } from "@modules/products/components/product-action
 import { getProductPrice } from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
 import { omnibusReferenceOf, type OmnibusReference } from "@lib/util/omnibus"
+import { percMulva } from "@lib/util/kosar-foglalas"
 
 import ProductPrice from "../product-price"
 import StockState from "../stock-state"
@@ -454,12 +455,24 @@ export function MennyisegDoboz() {
           </button>
         </div>
       )}
+      {a.masKosaraban ? (
+        <p
+          role="status"
+          data-testid="foglalt-sor"
+          className="text-small-regular text-ui-fg-subtle"
+        >
+          {t("product.holdHeldByOther", {
+            perc: percMulva(a.masKosaraban.until, new Date()),
+          })}
+        </p>
+      ) : null}
       <StockState
         availability={a.availability}
         similarHref={a.similarHref}
         onAddToCart={a.handleAddToCart}
         isAdding={a.isAdding}
-        disabled={a.disabled || a.isAdding}
+        // V2.3 S2b: a mas kosaraban allo darab nem teheto kosarba (a bolt is elutasitana)
+        disabled={a.disabled || a.isAdding || !!a.masKosaraban}
         locale={locale}
       />
       {a.kosarVisszajelzes ? (

@@ -12,6 +12,12 @@ import medusaError from "@lib/util/medusa-error"
 import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
+  kosarbaElutasitasMondat,
+  LATOGATO_FOGLALAS_KORLAT,
+} from "@lib/util/kosar-foglalas"
+import { sebessegKorlat } from "@lib/util/hirlevel-feliratkozas"
+import { engedelyezett, latogatoKulcs } from "@lib/util/vendeg-korlat"
+import {
   kosarbaTehetoMennyiseg,
   type KosarbaTetel,
 } from "@modules/products/components/product-actions/minimum-order-quantity"
@@ -33,6 +39,8 @@ import { aszfElfogadasTorzs } from "@lib/util/aszf"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
+import { headers as keresFejlecek } from "next/headers"
+import { foglalasLekerdezes } from "./kosar-foglalas-lekerdezes"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -154,6 +162,9 @@ export async function updateCart(data: HttpTypes.StoreUpdateCart) {
  * metaadatabol jon (a hivo ismeri a termeket); ha van, a kosarban mar levo
  * mennyiseggel egyutt vagjuk a maradek keretre, es a vevo megkapja, miert.
  */
+/** A latogatonkenti foglalas-keret (V2.3 S2b; `LATOGATO_FOGLALAS_KORLAT`), ebben a kirakat-folyamatban. */
+const foglalasKorlat = sebessegKorlat(LATOGATO_FOGLALAS_KORLAT)
+
 export async function addToCart({
   variantId,
   quantity,
@@ -194,6 +205,23 @@ export async function addToCart({
     if (tetel.kind === "tele") return { ok: false, uzenet: tetel.uzenet }
   }
 
+  /*
+    A LATOGATONKENTI KORLAT (V2.3 S2b; barracuda, #703 review, 2. pont). Csak az UJ foglalas
+    szamit: egy egyedi darab, amin meg nincs foglalas. A sajat kosarba ujra tett darab nem
+    foglal ujra, a masik kosarban allot pedig a bolt utasitja el, tehat egyik sem fogy a keretbol.
+    A lekerdezes hibaja nem korlatoz (`null`): a bolt kosaranketi korlatja akkor is all.
+  */
+  const foglalas = await foglalasLekerdezes([variantId], cart.id)
+  const darab = foglalas?.on
+    ? foglalas.pieces.find((p) => p.variant_id === variantId)
+    : undefined
+  if (
+    darab?.unique &&
+    !darab.hold &&
+    !engedelyezett(foglalasKorlat, latogatoKulcs(await keresFejlecek()))
+  )
+    return { ok: false, uzenet: t("product.holdVisitorLimit") }
+
   const headers = {
     ...(await getAuthHeaders()),
   }
@@ -215,7 +243,12 @@ export async function addToCart({
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: kosarUzenet(allapot, t) }
+    // V2.3: a foglalas harom elutasitasa sajat mondatot kap, minden mas a mai ket mondatot
+    const foglalasMondat = kosarbaElutasitasMondat(
+      hiba instanceof Error ? hiba.message : String(hiba),
+      t,
+    )
+    return { ok: false, uzenet: foglalasMondat ?? kosarUzenet(allapot, t) }
   }
 
   const cartCacheTag = await getCacheTag("carts")

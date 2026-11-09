@@ -5,6 +5,8 @@ import {
 } from "../components/pickup-notice/pickup-notice"
 import SplitNotice from "../components/pickup-notice/split-notice"
 import ElkeltErtesites from "../components/elkelt-ertesites"
+import FoglalasSorok from "../components/foglalas-sorok"
+import type { FoglalasValasz } from "@lib/util/kosar-foglalas"
 import { elkeltATetelek } from "@lib/util/elkelt-darab"
 import ItemsTemplate from "./items"
 import Summary from "./summary"
@@ -18,7 +20,10 @@ const CartTemplate = ({
   shippingClass,
   countryCode,
   elkeltKezelok = [],
+  foglalasok = null,
 }: {
+  /** V2.3 S2b: a bolt valasza a kosar darabjainak foglalasarol (`null`: nincs valasz, nincs sor) */
+  foglalasok?: FoglalasValasz | null
   cart: HttpTypes.StoreCart | null
   /** V2.5: a kozben elkelt egyedi darabok kezeloi a kereso-parameterbol; csak a kosarban levo tetelek szamitanak */
   elkeltKezelok?: string[]
@@ -72,6 +77,11 @@ const CartTemplate = ({
                   />
                 ) : null
               })()}
+              <FoglalasSorok
+                tetelek={cart.items}
+                foglalasok={foglalasok}
+                countryCode={countryCode}
+              />
               <ItemsTemplate cart={cart} countryCode={countryCode} />
               {/*
                 A TAJEKOZTATAS A TETELEK UTAN ALL (acrobot, 2026-11-02): a
