@@ -1,6 +1,6 @@
 import type { Key } from "@lib/i18n/dictionary"
 
-import type { GuestOrder } from "./guest-order"
+import type { GuestOrder, GuestWithdrawal } from "./guest-order"
 
 /**
  * THE WITHDRAWAL FORM'S RULES (V0.3), PURE. The limits are only sanity bounds and mirror the backend's
@@ -20,9 +20,10 @@ export const declaredItemIds = (
   )
 
 /** The lines a NEW declaration may still name: the ones no declaration holds. */
-export const withdrawableItems = (
-  order: Pick<GuestOrder, "items" | "withdrawals">,
-): GuestOrder["items"] => {
+export const withdrawableItems = <T extends { id: string }>(order: {
+  items: T[]
+  withdrawals?: GuestWithdrawal[]
+}): T[] => {
   const taken = declaredItemIds(order)
   return order.items.filter((item) => !taken.has(item.id))
 }

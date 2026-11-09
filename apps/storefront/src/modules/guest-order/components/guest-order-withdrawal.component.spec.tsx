@@ -1,7 +1,17 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-vi.mock("@lib/data/withdrawal", () => ({ submitWithdrawal: vi.fn() }))
+const submitWithdrawal = vi.fn()
+vi.mock("@lib/data/withdrawal", () => ({
+  submitWithdrawal: (...args: unknown[]) => submitWithdrawal(...args),
+}))
 vi.mock("@lib/data/problem-report", () => ({ submitProblemReport: vi.fn() }))
 vi.mock("@lib/util/problem-photo-upload", () => ({
   uploadProblemPhoto: vi.fn(),
@@ -12,12 +22,16 @@ import type { GuestOrder } from "@lib/util/guest-order"
 
 import GuestOrderView from "./guest-order-view"
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  submitWithdrawal.mockReset()
+})
 
 /*
   WHAT TURNS THIS RED (V0.3, the order block). The withdrawal button missing from a shipped order, or drawn without
   the address (a display with no way to file); the button drawn for the store pickup (live animal) order instead of
-  the legal placeholder; the list of declarations not shown with the line titles and the reference; the button still
+  the legal placeholder; the declaration sent without the order's own number or the address (it would reach another
+  order, or none); the list of declarations not shown with the line titles and the reference; the button still
   drawn when every line already has a declaration.
 */
 const base: GuestOrder = {
@@ -77,5 +91,33 @@ describe("the withdrawal in the order block", () => {
     expect(list.textContent).toContain("Reef Pump")
     expect(list.textContent).toContain("ordwd_1")
     expect(screen.queryByTestId("withdrawal-open-1042")).toBeNull()
+  })
+
+  it("sends the declaration with the order's own number and the address the order was opened with", async () => {
+    submitWithdrawal.mockResolvedValue({
+      ok: true,
+      withdrawalId: "ordwd_new",
+      createdAt: "2026-11-09T12:00:00.000Z",
+      alreadyDeclaredItemIds: [],
+    })
+    render(<GuestOrderView orders={[base]} email="vevo@example.hu" />)
+    fireEvent.click(screen.getByTestId("withdrawal-open-1042"))
+    fireEvent.click(screen.getByLabelText(/Reef Pump/))
+    fireEvent.change(screen.getByLabelText("A neved"), {
+      target: { value: "Kiss Anna" },
+    })
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId("withdrawal-form-1042"))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("withdrawal-send"))
+    })
+    await waitFor(() => expect(submitWithdrawal).toHaveBeenCalledTimes(1))
+    expect(submitWithdrawal).toHaveBeenCalledWith({
+      orderNumber: "1042",
+      email: "vevo@example.hu",
+      customerName: "Kiss Anna",
+      itemIds: ["item_1"],
+    })
   })
 })

@@ -5,6 +5,7 @@ const nav = vi.hoisted(() => ({
     throw new Error("NOT_FOUND")
   }),
 }))
+vi.mock("@lib/data/own-withdrawal", () => ({ submitOwnWithdrawal: vi.fn() }))
 vi.mock("next/navigation", () => nav)
 const adat = vi.hoisted(() => ({
   retrieveOrder: vi.fn(),

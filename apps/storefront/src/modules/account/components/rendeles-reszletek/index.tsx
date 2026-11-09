@@ -19,6 +19,7 @@ import {
   type UzletiAllapot,
 } from "@lib/util/rendelesek"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import RendelesElallas from "../rendeles-elallas"
 import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
 
 import { AllapotCimke } from "../rendelesek"
@@ -64,6 +65,7 @@ export default function RendelesReszletek({
   rendeles,
   allapot,
   par = null,
+  eloAllat = false,
   t = translator(DEFAULT_LOCALE),
   locale = DEFAULT_LOCALE,
 }: {
@@ -77,6 +79,11 @@ export default function RendelesReszletek({
    * és bolti átvételes rendelése), a felirattal és a részletei azonosítójával.
    */
   par?: { id: string; felirat: string } | null
+  /**
+   * V0.3: a rendelés a vegyes kosar bolti atvételes fele (az elo allatok): az elallas gombja helyett a jogi
+   * helykitolto all.
+   */
+  eloAllat?: boolean
 }) {
   const penz = (osszeg: number | null | undefined) =>
     convertToLocale({
@@ -235,6 +242,18 @@ export default function RendelesReszletek({
               ))}
             </ul>
           </Kartya>
+
+          {/* ELALLAS (V0.3) */}
+          <RendelesElallas
+            orderId={rendeles.id}
+            orderNumber={String(rendeles.display_id)}
+            items={tetelek.map((tetel) => ({
+              id: tetel.id,
+              title: tetel.product_title ?? tetel.title ?? "",
+              quantity: tetel.quantity ?? 0,
+            }))}
+            liveAnimal={eloAllat}
+          />
         </div>
 
         <div className="flex flex-col gap-3 small:gap-[14px]">

@@ -57,6 +57,8 @@ export default async function OrderDetailPage(props: Props) {
       allapot={allapot}
       t={t}
       locale={locale}
+      // V0.3: `bolti: false` = a pár a fő rendelés, tehát EZ a bolti atvételes fele (az elo allatok)
+      eloAllat={par !== null && par.bolti === false}
       par={
         par && parRendeles
           ? {

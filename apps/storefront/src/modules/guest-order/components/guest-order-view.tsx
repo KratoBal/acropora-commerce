@@ -14,15 +14,17 @@ import {
   type GuestWithdrawal,
 } from "@lib/util/guest-order"
 import { convertToLocale } from "@lib/util/money"
+import { submitWithdrawal } from "@lib/data/withdrawal"
 import { Button } from "@modules/common/components/ui"
 import { useState } from "react"
 
 import { kindKey } from "@lib/util/problem-report"
-import { withdrawalOffer } from "@lib/util/withdrawal"
+import { withdrawableItems, withdrawalOffer } from "@lib/util/withdrawal"
 
 import GuestInvoice from "./guest-invoice"
 import ProblemReportForm from "./problem-report-form"
 import WithdrawalForm from "./withdrawal-form"
+import WithdrawalList from "./withdrawal-list"
 
 /** `reports`: the order's list from the shop's answer, when it came with one. */
 export type ReportsChanged = (
@@ -301,43 +303,11 @@ function OrderBlock({
         </div>
       )}
 
-      {order.withdrawals && order.withdrawals.length > 0 && (
-        <div
-          className="flex flex-col gap-y-1 text-[14px] text-acr-ink"
-          data-testid={`withdrawals-${order.display_id}`}
-        >
-          <p className="text-[11px] font-bold tracking-[0.08em] text-acr-slate">
-            {t("guestOrder.withdrawal.listTitle")}
-          </p>
-          <ul className="flex flex-col gap-y-2">
-            {order.withdrawals.map((withdrawal) => (
-              <li key={withdrawal.id} className="flex flex-col">
-                <span>
-                  {withdrawal.item_ids
-                    .map(
-                      (id) => order.items.find((item) => item.id === id)?.title,
-                    )
-                    .filter(Boolean)
-                    .join(", ")}{" "}
-                  ·{" "}
-                  {new Intl.DateTimeFormat(
-                    locale === "hu" ? "hu-HU" : "en-GB",
-                    {
-                      timeZone: "Europe/Budapest",
-                      year: "numeric",
-                      month: locale === "hu" ? "numeric" : "short",
-                      day: "numeric",
-                    },
-                  ).format(new Date(withdrawal.created_at))}
-                </span>
-                <span className="text-[13px] text-acr-slate">
-                  {t("guestOrder.withdrawal.listRef", { id: withdrawal.id })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <WithdrawalList
+        orderNumber={String(order.display_id)}
+        withdrawals={order.withdrawals ?? []}
+        items={order.items}
+      />
 
       {email && order.items.length > 0 && (
         <div className="flex flex-col gap-y-3">
@@ -374,8 +344,15 @@ function OrderBlock({
           )}
           {offer === "button" && withdrawing && (
             <WithdrawalForm
-              order={order}
-              email={email}
+              orderNumber={String(order.display_id)}
+              items={withdrawableItems(order)}
+              submit={(declaration) =>
+                submitWithdrawal({
+                  orderNumber: String(order.display_id),
+                  email,
+                  ...declaration,
+                })
+              }
               onFiled={(withdrawals) =>
                 onWithdrawalsChanged?.(order.display_id, withdrawals)
               }

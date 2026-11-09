@@ -9,11 +9,9 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const submitWithdrawal = vi.fn()
-vi.mock("@lib/data/withdrawal", () => ({
-  submitWithdrawal: (...args: unknown[]) => submitWithdrawal(...args),
-}))
 
 import type { GuestOrder } from "@lib/util/guest-order"
+import { withdrawableItems } from "@lib/util/withdrawal"
 
 import WithdrawalForm from "./withdrawal-form"
 
@@ -24,8 +22,8 @@ afterEach(() => {
 
 /*
   WHAT TURNS THIS RED (V0.3, the form). The server asked before the customer confirmed (the first step must send
-  nothing); the confirmation screen not repeating the name and lines that will be sent; the order's own number and
-  the address not used; a line already declared offered again; the typed text lost on a failure (the page says it is
+  nothing); the confirmation screen not repeating the name and lines that will be sent; the name not cleaned before it
+  is sent; a line already declared offered again; the typed text lost on a failure (the page says it is
   kept); a lockout shown as the generic error; an already declared refusal not asking the page to read the orders
   again; a success without the reference, or a partly taken request not naming the lines that were not recorded.
 */
@@ -55,8 +53,9 @@ const order: GuestOrder = {
 const renderForm = (onClose = vi.fn(), onFiled = vi.fn()) =>
   render(
     <WithdrawalForm
-      order={order}
-      email="vevo@example.hu"
+      orderNumber={String(order.display_id)}
+      items={withdrawableItems(order)}
+      submit={(declaration) => submitWithdrawal(declaration)}
       onClose={onClose}
       onFiled={onFiled}
     />,
@@ -122,8 +121,6 @@ describe("the withdrawal form", () => {
     await send()
     await waitFor(() => expect(submitWithdrawal).toHaveBeenCalledTimes(1))
     expect(submitWithdrawal).toHaveBeenCalledWith({
-      orderNumber: "1043",
-      email: "vevo@example.hu",
       customerName: "Kiss Anna",
       itemIds: ["item_1"],
     })
