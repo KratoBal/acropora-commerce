@@ -47,6 +47,9 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   // the fourteenth (card d707cf5f): the newsletter's confirmation link (double opt-in); no order behind it, so its common
   // facts come from the sign-up (the name typed, the form's language). An older OS answers 422 and the mail waits.
   "newsletter-confirm",
+  // the fifteenth (V2.4, card 0c1265d2): the stock alert's confirmation link ("Szólj, ha jön hasonló"), the newsletter's
+  // double opt-in; no order behind it, its common facts come from the sign-up (no name, the form's language). An older OS answers 422 and the mail waits.
+  "stock-alert-confirm",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]
 
@@ -135,6 +138,17 @@ export type WebshopMailFactsOf = {
     confirm_url: string
     unsubscribe_url: string
     expires_at: string
+  }
+  /**
+   * The stock alert's confirmation (double opt-in): the two links, the link's end (ISO), and what the address signed up
+   * for (`subject_label`, a species "Acropora abrolhosensis" or a product's title). No name was asked: `customer_name`,
+   * `order_created_at` and `order_view_url` are null.
+   */
+  "stock-alert-confirm": CommonFacts & {
+    confirm_url: string
+    unsubscribe_url: string
+    expires_at: string
+    subject_label: string
   }
 }
 

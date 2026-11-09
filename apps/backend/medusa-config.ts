@@ -151,6 +151,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/newsletter",
     },
+    // "Szólj, ha jön hasonló" (V2.4): stock alert sign-ups, behind ACROPORA_STOCK_ALERT (test storefront)
+    {
+      resolve: "./src/modules/stock-alert",
+    },
     {
       resolve: "./src/modules/commerce-settings",
     },

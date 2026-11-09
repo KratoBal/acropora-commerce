@@ -33,6 +33,8 @@ export type MailToSend = {
     | "withdrawal-received"
     // the newsletter's confirmation link (OS-rendered only: it has no built-in text)
     | "newsletter-confirm"
+    // the stock alert's confirmation link (OS-rendered only: it has no built-in text)
+    | "stock-alert-confirm"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string
