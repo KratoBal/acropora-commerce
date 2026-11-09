@@ -56,8 +56,11 @@ export const saveCustomerAszfAcceptance = async (
   if (check !== "ok") return { status: check }
   const record = await currentAszfRecord(now, fetcher)
   if (!record) return { status: "not_configured" }
+  // only this one key is sent: the customer service is Medusa's generic one, which merges the incoming metadata into the
+  // customer's own, read in the same update (`mergeMetadata`, see `notesPatch` in order-notes.ts), so the other keys stay and a
+  // concurrent write of another key is not undone
   await customers.updateCustomers(customerId, {
-    metadata: { ...(customer.metadata ?? {}), [ASZF_METADATA_KEY]: record },
+    metadata: { [ASZF_METADATA_KEY]: record },
   })
   return { status: "saved", record }
 }

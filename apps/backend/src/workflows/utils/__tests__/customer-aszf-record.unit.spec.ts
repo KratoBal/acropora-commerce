@@ -1,3 +1,7 @@
+import { mergeMetadata } from "@medusajs/framework/utils"
+import { readFileSync, readdirSync } from "node:fs"
+import { dirname, join } from "node:path"
+
 import { POST } from "../../../api/store/customers/me/aszf-elfogadas/route"
 import middlewares from "../../../api/middlewares"
 import { StorePostAszfElfogadas } from "../../../api/store/carts/[id]/aszf-elfogadas/validators"
@@ -41,7 +45,19 @@ describe("saveCustomerAszfAcceptance", () => {
     const result = await saveCustomerAszfAcceptance(container, "cus_1", CLAIM, NOW)
     const record = { idopont: NOW.toISOString(), verzio: ASZF_VERZIO_MAI_BOLT, dokumentum: ASZF_FORRAS_MAI_BOLT, nyelv: "hu" }
     expect(result).toEqual({ status: "saved", record })
-    expect(updates).toEqual([["cus_1", { metadata: { other: "kept", aszf_elfogadas: record } }]])
+    // only the own key is sent; Medusa merges it into the customer's metadata (the other key stays)
+    expect(updates).toEqual([["cus_1", { metadata: { aszf_elfogadas: record } }]])
+    const sent = (updates[0]![1] as { metadata: Record<string, unknown> }).metadata
+    expect(mergeMetadata({ other: "kept" }, sent)).toEqual({ other: "kept", aszf_elfogadas: record })
+  })
+
+  // the premise of sending only the own key, for the CUSTOMER: the module hands the update to a generic service (it has no service of
+  // its own besides the module), which merges the incoming metadata into the customer's own. An upgrade that changes this turns it red.
+  it("the installed Medusa's customer update goes through the generic, merging service", () => {
+    const entry = require.resolve("@medusajs/customer", { paths: [dirname(require.resolve("@medusajs/medusa/package.json"))] })
+    const services = join(dirname(entry), "services")
+    expect(readdirSync(services).filter((f) => f.endsWith(".js") && f !== "index.js")).toEqual(["customer-module.js"])
+    expect(readFileSync(join(services, "customer-module.js"), "utf8")).toMatch(/this\.customerService_\.update\(updateData, sharedContext\)/)
   })
 
   it("writes on a customer with no metadata at all", async () => {

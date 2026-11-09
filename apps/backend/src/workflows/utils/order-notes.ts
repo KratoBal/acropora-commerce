@@ -151,7 +151,11 @@ export const saveOrderNotes = async (
   if (labelOut && input.carrier_note !== undefined && cleanNote(input.carrier_note) !== notesOf(order.metadata).carrier_note) {
     return { status: "label_out" }
   }
-  const metadata = withNotes(order.metadata, input)
-  await updateOrderWorkflow(container).run({ input: { id: orderId, metadata, user_id: userId } })
-  return { status: "saved", notes: notesOf(metadata) }
+  // only the notes' own keys go to Medusa, whose order service merges them into the order's metadata itself (see `notesPatch`;
+  // `OrderService extends MedusaInternalService`, no own `update`). The workflow's change record then holds the keys that
+  // changed as "new", next to the whole metadata as "old". Nothing given is no write (and no empty change record).
+  const patch = notesPatch(input)
+  if (Object.keys(patch).length > 0)
+    await updateOrderWorkflow(container).run({ input: { id: orderId, metadata: patch, user_id: userId } })
+  return { status: "saved", notes: notesOf(withNotes(order.metadata, input)) }
 }

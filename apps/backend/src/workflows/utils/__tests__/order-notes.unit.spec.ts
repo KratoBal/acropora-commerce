@@ -121,6 +121,16 @@ describe("saveCartNotes", () => {
     const source = readFileSync(join(utils, "modules-sdk", "medusa-internal-service.js"), "utf8")
     expect(source).toMatch(/mergeMetadata\)\(entity_\.metadata \?\? \{\}, update_\.metadata\)/)
   })
+  // the same premise for the ORDER (the OS's write): the order service is Medusa's generic one and has no `update` of its own, and the
+  // module hands the update to it (`updateOrders_` -> `orderService_.update`), so the incoming metadata is merged, not replaced.
+  it("the installed Medusa's order update goes through the generic, merging service", () => {
+    const entry = require.resolve("@medusajs/order", { paths: [dirname(require.resolve("@medusajs/medusa/package.json"))] })
+    const services = join(dirname(entry), "services")
+    const orderService = readFileSync(join(services, "order-service.js"), "utf8")
+    expect(orderService).toMatch(/extends utils_1\.ModulesSdkUtils\.MedusaInternalService\(_models_1\.Order\)/)
+    expect(orderService).not.toMatch(/async update\(/)
+    expect(readFileSync(join(services, "order-module-service.js"), "utf8")).toMatch(/this\.orderService_\.update\(toUpdate, sharedContext\)/)
+  })
   it("refuses a cart already ordered, and a missing one, without writing", async () => {
     expect(await saveCartNotes(scopeWith("cart", { id: "cart_1", completed_at: new Date() }), "cart_1", { customer_note: "x" })).toEqual({
       status: "completed",
@@ -140,13 +150,22 @@ describe("saveOrderNotes", () => {
   it("writes the notes under the admin user", async () => {
     const result = await saveOrderNotes(scopeWith("order", order()), "order_1", { carrier_note: "hátsó bejárat" }, "user_1")
     expect(result).toEqual({ status: "saved", notes: { customer_note: "régi", carrier_note: "hátsó bejárat" } })
+    // the order's other keys and the note not given are not sent: Medusa merges the one key in
     expect(updateOrder).toHaveBeenCalledWith({
-      input: {
-        id: "order_1",
-        user_id: "user_1",
-        metadata: { acropora_customer_note: "régi", acropora_carrier_note: "hátsó bejárat" },
-      },
+      input: { id: "order_1", user_id: "user_1", metadata: { acropora_carrier_note: "hátsó bejárat" } },
     })
+  })
+  // WHAT TURNS THIS RED (the order's write like the cart's): the whole metadata sent back; a cleared note not sent as ""; an empty
+  // request leaving an empty change record behind.
+  it("a cleared note is an empty string, only the given key is sent, and nothing given is no write", async () => {
+    await saveOrderNotes(scopeWith("order", order()), "order_1", { customer_note: null }, "user_1")
+    expect(updateOrder).toHaveBeenCalledWith({
+      input: { id: "order_1", user_id: "user_1", metadata: { acropora_customer_note: "" } },
+    })
+    updateOrder.mockReset()
+    const result = await saveOrderNotes(scopeWith("order", order()), "order_1", {}, "user_1")
+    expect(updateOrder).not.toHaveBeenCalled()
+    expect(result).toEqual({ status: "saved", notes: { customer_note: "régi", carrier_note: "kapu" } })
   })
   it("after the label is out the courier note stays, the shop note can still change", async () => {
     const labelled = scopeWith("order", order([{ id: "ful_1", canceled_at: null }]))
