@@ -48,7 +48,7 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   // facts come from the sign-up (the name typed, the form's language). An older OS answers 422 and the mail waits.
   "newsletter-confirm",
   // the fifteenth (V2.4, card 0c1265d2): the stock alert's confirmation link ("Szólj, ha jön hasonló"), the newsletter's
-  // double opt-in; no order behind it, its common facts are given (Hungarian, no name). An older OS answers 422 and the mail waits.
+  // double opt-in; no order behind it, its common facts come from the sign-up (no name, the form's language). An older OS answers 422 and the mail waits.
   "stock-alert-confirm",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]

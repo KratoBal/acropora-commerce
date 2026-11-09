@@ -10,8 +10,8 @@ import { notifyStockAlertConfirm } from "../stock-alert-confirm-mail"
   WHAT TURNS THIS RED ("Szólj, ha jön hasonló", V2.4, card 0c1265d2). A mail sent without the stock alert's switch (the
   texts are not approved), with the mail switch or the renderer off, or without the storefront's https address; a text
   built by the shop (the OS renders it); the links not carrying the tokens, or pointing to the newsletter's pages; the
-  link's end not seven days from the sign-up; the subject missing from the facts; an English page or mail (there is
-  no English shop for this); the same key for two confirmation tokens; an address or a token in the log.
+  link's end not seven days from the sign-up; the subject missing from the facts; the form's language not picking the
+  pages and the mail when the English mails are on, or picking them when they are off; the same key for two confirmation tokens; an address or a token in the log.
 */
 const ON = {
   ACROPORA_STOCK_ALERT: "on",
@@ -20,7 +20,6 @@ const ON = {
   GMAIL_WEBSHOP_CLIENT_SECRET: "secret",
   GMAIL_WEBSHOP_REFRESH_TOKEN: "refresh",
   ACROPORA_WEBSHOP_MAIL_RENDERER: "os",
-  ACROPORA_WEBSHOP_MAIL_ENGLISH: "on",
   ACROPORA_STOREFRONT_URL: "https://kirakat.example.test/valami?x=1",
 } as NodeJS.ProcessEnv
 
@@ -35,6 +34,7 @@ const input = {
   id: "stkal_1",
   to: "vevo@example.hu",
   subject_label: "Acropora abrolhosensis",
+  language: "en",
   confirmation_token: CONFIRM,
   unsubscribe_token: LEAVE,
   sent_at: new Date("2026-11-09T15:00:00.000Z"),
@@ -47,7 +47,7 @@ beforeEach(() => {
 })
 
 describe("notifyStockAlertConfirm", () => {
-  it("SA-MAIL: hands the OS the two links, the link's end and the subject, Hungarian, with no name and no order", async () => {
+  it("SA-MAIL: hands the OS the two links, the link's end and the subject, with no name and no order", async () => {
     expect(await notifyStockAlertConfirm(container, input, ON)).toEqual({ sent: true })
     const mail = deliverShopMail.mock.calls[0][1]
     expect(mail).toMatchObject({
@@ -60,7 +60,7 @@ describe("notifyStockAlertConfirm", () => {
     expect(mail.render).toEqual({
       template: "stock-alert-confirm",
       facts: {
-        // Hungarian pages even with the English mails on: there is no English form for this
+        // the English mails are off: Hungarian, whatever the form's language
         confirm_url: `https://kirakat.example.test/hu/ertesites/megerosites?token=${CONFIRM}`,
         unsubscribe_url: `https://kirakat.example.test/hu/ertesites/leiratkozas?token=${LEAVE}`,
         expires_at: "2026-11-16T15:00:00.000Z",
@@ -68,6 +68,18 @@ describe("notifyStockAlertConfirm", () => {
       },
     })
     expect(mail.common).toEqual({ customer_name: null, order_created_at: null, locale: "hu", order_view_url: null })
+  })
+
+  it("SA-MAIL-EN: with the English mails on, the form's language picks the pages and the mail's language", async () => {
+    const english = { ...ON, ACROPORA_WEBSHOP_MAIL_ENGLISH: "on" } as NodeJS.ProcessEnv
+    await notifyStockAlertConfirm(container, input, english)
+    const mail = deliverShopMail.mock.calls[0][1]
+    expect(mail.common.locale).toBe("en")
+    expect(mail.render.facts.confirm_url).toBe(`https://kirakat.example.test/en-hu/ertesites/megerosites?token=${CONFIRM}`)
+    expect(mail.render.facts.unsubscribe_url).toBe(`https://kirakat.example.test/en-hu/ertesites/leiratkozas?token=${LEAVE}`)
+    // an unknown language is Hungarian
+    await notifyStockAlertConfirm(container, { ...input, language: "de" }, english)
+    expect(deliverShopMail.mock.calls[1][1].common.locale).toBe("hu")
   })
 
   it("SA-MAIL-KEY: a new confirmation token is a new mail; the same one keeps its key", async () => {

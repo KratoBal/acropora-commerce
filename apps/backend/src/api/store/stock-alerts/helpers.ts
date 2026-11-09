@@ -1,7 +1,7 @@
 import type { MedusaResponse, MedusaStoreRequest } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 
-import { consentVersion } from "../../../modules/newsletter/defaults"
+import { DEFAULT_NEWSLETTER_LANGUAGE, consentVersion } from "../../../modules/newsletter/defaults"
 import { STOCK_ALERT_MODULE } from "../../../modules/stock-alert"
 import type StockAlertModuleService from "../../../modules/stock-alert/service"
 import type { StockAlertSignUpResult, StockAlertTokenResult } from "../../../modules/stock-alert/service"
@@ -48,6 +48,7 @@ export const createStockAlertPost =
   async (req: MedusaStoreRequest<StorePostStockAlertType>, res: MedusaResponse) => {
     if (!stockAlertOn(env)) throw new MedusaError(MedusaError.Types.FORBIDDEN, "The stock alert sign-up is off")
     const { product_id, kind, email } = req.validatedBody
+    const language = req.validatedBody.locale ?? DEFAULT_NEWSLETTER_LANGUAGE
     if (!(await limiters.perAddress.allow(email)) || !(await limiters.overall.allow("all"))) {
       res.status(429).json({ message: "Too many sign-ups, try again later" })
       return
@@ -69,7 +70,7 @@ export const createStockAlertPost =
           : null
     if (!subject) throw new MedusaError(MedusaError.Types.INVALID_DATA, "This product names no species")
 
-    const consentText = STOCK_ALERT_CONSENT[kind]
+    const consentText = STOCK_ALERT_CONSENT[language][kind]
     const service: StockAlertModuleService = req.scope.resolve(STOCK_ALERT_MODULE)
     const now = new Date()
     const signUp = await service.signUp(
@@ -81,7 +82,7 @@ export const createStockAlertPost =
         source_product_id: product.id,
         consent_text: consentText,
         consent_version: consentVersion(consentText),
-        consent_language: "hu",
+        consent_language: language,
         consented_at: now,
         source: "sold_piece",
       },

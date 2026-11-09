@@ -1,3 +1,5 @@
+import type { NewsletterLanguage } from "../newsletter/defaults"
+
 /**
  * WHAT A STOCK ALERT IS ABOUT, without Medusa, so the route and its spec share the rules.
  */
@@ -28,13 +30,20 @@ export function speciesOfTitle(title: string | null | undefined): { key: string;
 
 /**
  * THE CONSENT SENTENCES, korall's (exchange/otletek-2026-11-04/v-feluleti-szovegek.md, V2.4; the product form
- * says "termékről" where the species form says "fajról", V2.6). NOT FINAL: the privacy text is waiting for a legal
- * check, so the sign-up is behind `ACROPORA_STOCK_ALERT` until Balázs approves it. Hungarian only (no English shop
- * for this, Balázs 2026-11-04). The storefront shows these same sentences; its spec reads this file.
+ * says "termékről" where the species form says "fajról", V2.6), and their English twins for the English shop (the
+ * form is in the page's language, like the newsletter's, and the record must be the sentence the buyer read). NOT
+ * FINAL: the privacy text is waiting for a legal check, so the sign-up is behind `ACROPORA_STOCK_ALERT` until Balázs
+ * approves it. The storefront shows these same sentences; its spec reads this file.
  */
-export const STOCK_ALERT_CONSENT: Record<StockAlertKind, string> = {
-  species: "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a fajról.",
-  product: "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a termékről.",
+export const STOCK_ALERT_CONSENT: Record<NewsletterLanguage, Record<StockAlertKind, string>> = {
+  hu: {
+    species: "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a fajról.",
+    product: "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a termékről.",
+  },
+  en: {
+    species: "I agree to be notified at this address about this species.",
+    product: "I agree to be notified at this address about this product.",
+  },
 }
 
 /** The one switch: the sign-up and its confirmation mail, on the test shop only, until the texts are approved. */

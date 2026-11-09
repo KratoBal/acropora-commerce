@@ -50,8 +50,10 @@ describe("StorePostStockAlert", () => {
     // neither the species nor the consent text is the caller's to send
     expect(valid(body({ subject_key: "acropora tenuis" })).success).toBe(false)
     expect(valid(body({ consent_text: "Saját szöveg" })).success).toBe(false)
-    // no English form for this
-    expect(valid(body({ locale: "en" })).success).toBe(false)
+    // the form's language: hu or en, optional
+    expect(valid(body({ locale: "en" })).success).toBe(true)
+    expect(valid(body({ locale: "de" })).success).toBe(false)
+    expect(valid(body({ locale: "en-hu" })).success).toBe(false)
   })
 
   it("SA-BODY-TOKEN: a link's token is the 43 characters a token has", () => {
@@ -159,8 +161,8 @@ describe("POST /store/stock-alerts", () => {
       subject_key: "acropora abrolhosensis",
       subject_label: "Acropora abrolhosensis",
       source_product_id: "prod_sold",
-      consent_text: STOCK_ALERT_CONSENT.species,
-      consent_version: consentVersion(STOCK_ALERT_CONSENT.species),
+      consent_text: STOCK_ALERT_CONSENT.hu.species,
+      consent_version: consentVersion(STOCK_ALERT_CONSENT.hu.species),
       consent_language: "hu",
       source: "sold_piece",
       status: "pending",
@@ -180,9 +182,21 @@ describe("POST /store/stock-alerts", () => {
       subject_kind: "product",
       subject_key: "prod_nospecies",
       subject_label: "Red Sea Reef Foundation A",
-      consent_text: STOCK_ALERT_CONSENT.product,
-      consent_version: consentVersion(STOCK_ALERT_CONSENT.product),
+      consent_text: STOCK_ALERT_CONSENT.hu.product,
+      consent_version: consentVersion(STOCK_ALERT_CONSENT.hu.product),
     })
+  })
+
+  it("SA-POST-LANG: the English form records the English sentence under its own version and language, and the mail gets the language", async () => {
+    const h = harness()
+    await h.call(createStockAlertPost(loose(), h.sendConfirm, ON), { locale: "en" })
+    expect(h.rows[0]).toMatchObject({
+      consent_text: STOCK_ALERT_CONSENT.en.species,
+      consent_version: consentVersion(STOCK_ALERT_CONSENT.en.species),
+      consent_language: "en",
+    })
+    expect(consentVersion(STOCK_ALERT_CONSENT.en.species)).not.toBe(consentVersion(STOCK_ALERT_CONSENT.hu.species))
+    expect((h.lastMail() as unknown as { language: string }).language).toBe("en")
   })
 
   it("SA-POST-ROWS: the same species again (after the cooldown) updates its row and answers the same; another species is another row", async () => {

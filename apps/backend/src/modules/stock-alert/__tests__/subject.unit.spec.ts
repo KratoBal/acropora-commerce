@@ -43,8 +43,10 @@ describe("the switch and the consent", () => {
       expect([value, stockAlertOn({ ACROPORA_STOCK_ALERT: value } as NodeJS.ProcessEnv)]).toEqual([value, false])
   })
 
-  it("SA-CONSENT: korall's sentence, species and product apart", () => {
-    expect(STOCK_ALERT_CONSENT.species).toBe("Hozzájárulok, hogy erre a címre értesítést küldjetek erről a fajról.")
-    expect(STOCK_ALERT_CONSENT.product).toBe("Hozzájárulok, hogy erre a címre értesítést küldjetek erről a termékről.")
+  it("SA-CONSENT: korall's sentence, species and product apart, and an English twin for each", () => {
+    expect(STOCK_ALERT_CONSENT.hu.species).toBe("Hozzájárulok, hogy erre a címre értesítést küldjetek erről a fajról.")
+    expect(STOCK_ALERT_CONSENT.hu.product).toBe("Hozzájárulok, hogy erre a címre értesítést küldjetek erről a termékről.")
+    expect(STOCK_ALERT_CONSENT.en.species).toBe("I agree to be notified at this address about this species.")
+    expect(STOCK_ALERT_CONSENT.en.product).toBe("I agree to be notified at this address about this product.")
   })
 })
