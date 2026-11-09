@@ -1,6 +1,7 @@
 import {
   SHIPPING_OPTION_ROLE_BINDINGS,
   buildShippingOptionRoleMap,
+  isStorePickupOption,
   resolveShippingOptionRoleBindings,
 } from "../shipping-option-roles"
 
@@ -61,5 +62,30 @@ describe("resolving shipping option ids from the environment", () => {
     for (const binding of SHIPPING_OPTION_ROLE_BINDINGS) {
       expect(map.get(binding.id)).toBe(binding.role)
     }
+  })
+})
+
+/*
+  WHAT TURNS THIS RED (V0.3, the store pickup rule both readers share). The pickup option not recognised by its id; any
+  OTHER role's option taken for a pickup (the GLS home delivery is not collected in the store); the environment's
+  override ignored (a staging id would then never be a pickup); a missing, empty or non-string id taken for one; the
+  rule matching by name.
+*/
+describe("isStorePickupOption", () => {
+  it("is true for the pickup option's id and false for every other role's option", () => {
+    expect(isStorePickupOption(pickup.id, envOf({}))).toBe(true)
+    for (const other of SHIPPING_OPTION_ROLE_BINDINGS.filter((b) => b.role !== "PICKUP"))
+      expect(isStorePickupOption(other.id, envOf({}))).toBe(false)
+  })
+
+  it("follows the environment's override of the pickup id, and drops the built-in one then", () => {
+    const env = envOf({ ACROPORA_SO_PICKUP: "so_another_environment" })
+    expect(isStorePickupOption("so_another_environment", env)).toBe(true)
+    expect(isStorePickupOption(pickup.id, env)).toBe(false)
+  })
+
+  it("is false for a missing, empty or non-string id, and for the option's NAME", () => {
+    for (const value of [undefined, null, "", 0, {}, pickup.name])
+      expect(isStorePickupOption(value, envOf({}))).toBe(false)
   })
 })

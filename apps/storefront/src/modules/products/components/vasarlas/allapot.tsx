@@ -120,6 +120,9 @@ export function kezdoOpciok(
   return optionsAsKeymap(product.variants[0].options) ?? {}
 }
 
+/** A foglalas vege utani ujrakerdezes legkorabbi ideje (V2.3, barracuda, #706 v2). */
+const UJRAKERDEZES_LEGKOROBBAN_MS = 15_000
+
 export function VasarlasProvider({
   product,
   valtozatId,
@@ -285,7 +288,12 @@ export function VasarlasProvider({
         setMasKosaraban(null)
         setFoglalasKor((kor) => kor + 1)
       },
-      Math.max(0, masKosaraban.until.getTime() - Date.now()) + 1_000,
+      // legalabb 15 mp (barracuda, #706 v2): ha a vevo oraja elore jar, a vege nala mar elmult, a bolt
+      // szerint meg nem, es nelkule a lap masodpercenkent kerdezne, amig a ket ora egyet nem ert
+      Math.max(
+        UJRAKERDEZES_LEGKOROBBAN_MS,
+        masKosaraban.until.getTime() - Date.now() + 1_000,
+      ),
     )
     return () => {
       clearInterval(utem)

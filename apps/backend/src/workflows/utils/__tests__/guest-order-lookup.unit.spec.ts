@@ -56,6 +56,7 @@ const deps = (
     },
     problemReportsOf: async () => [],
     withdrawalsOf: async () => [],
+    liveAnimalOf: async () => false,
   }
 }
 
@@ -287,6 +288,34 @@ describe("the withdrawal declarations in the customer view", () => {
     d.withdrawalsOf = async (orderId) => (orderId === "o_2" ? ([stored()] as never) : [])
     const result = await lookupGuestOrders({ displayId: 1042, email: "vevo@example.hu" }, d)
     expect(result?.map((o) => o.withdrawals.length)).toEqual([0, 1])
+  })
+})
+
+/*
+  WHAT TURNS THIS RED (V0.3, the live animal flag of the customer view). The flag missing from the view, or true for an
+  order without a live animal (the customer would lose the withdrawal button); false for the order that holds one (the
+  button would stand where the owner has not said the right applies); the flag of one order of a split cart given to
+  its mate; the store pickup taken for a live animal (the store pickup is offered for every cart).
+*/
+describe("the live animal flag", () => {
+  it("is false by default and follows the order's own answer, each order of a split cart on its own", async () => {
+    const orders = [source({ id: "o_1", display_id: 1042 })]
+    const mate = source({ id: "o_2", display_id: 1043 })
+    const d = deps(orders, { o_1: [mate] })
+    d.liveAnimalOf = async (orderId) => orderId === "o_2"
+    const result = await lookupGuestOrders({ displayId: 1042, email: "vevo@example.hu" }, d)
+    expect(result?.map((o) => o.live_animal)).toEqual([false, true])
+  })
+
+  it("is not decided by the store pickup of the shipping method", async () => {
+    const pickup = source({
+      id: "o_1",
+      display_id: 1042,
+      shipping_method: { name: "Bolti átvétel", data: null, store_pickup: true },
+    })
+    const result = await lookupGuestOrders({ displayId: 1042, email: "vevo@example.hu" }, deps([pickup]))
+    expect(result?.[0].shipping?.store_pickup).toBe(true)
+    expect(result?.[0].live_animal).toBe(false)
   })
 })
 

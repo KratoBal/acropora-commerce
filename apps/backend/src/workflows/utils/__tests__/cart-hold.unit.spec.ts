@@ -60,7 +60,11 @@ const world = (carts: Cart[], unique: string[] = ["v_piece", "v_piece2", "v_piec
       return rows
         .filter((row) =>
           Object.entries(filters).every(([key, value]) =>
-            Array.isArray(value) ? value.includes((row as any)[key]) : (row as any)[key] === value
+            Array.isArray(value)
+              ? value.includes((row as any)[key])
+              : value && typeof value === "object" && "$gt" in (value as object)
+                ? new Date((row as any)[key]).getTime() > new Date((value as any).$gt).getTime()
+                : (row as any)[key] === value
           )
         )
         .map((row) => ({ ...row }))
@@ -242,6 +246,50 @@ describe("putting a unique piece in a cart", () => {
     }
     await holdOnAdd(w.container, "cart_a", ["v_piece"])
     expect(w.warnings).toEqual([expect.stringContaining("db down")])
+  })
+})
+
+describe("the shop's ceiling (barracuda's review of #706)", () => {
+  const twoHeld = () => {
+    const w = world(
+      [
+        { id: "cart_a", items: [{ variant_id: "v_piece" }] },
+        { id: "cart_b", items: [{ variant_id: "v_piece2" }] },
+        { id: "cart_c", items: [] },
+      ],
+      ["v_piece", "v_piece2", "v_piece3", "v_piece4"]
+    )
+    w.rows.push(
+      { id: "chold_a", variant_id: "v_piece", cart_id: "cart_a", expires_at: minutesFromNow(20), updated_at: longAgo },
+      { id: "chold_b", variant_id: "v_piece2", cart_id: "cart_b", expires_at: minutesFromNow(20), updated_at: longAgo }
+    )
+    return w
+  }
+
+  it("CHW-CEILING: at the ceiling the piece goes in without a hold, with one warning, and is not refused", async () => {
+    process.env.ACROPORA_CART_HOLD_MAX_TOTAL = "2"
+    const w = twoHeld()
+    await expect(holdOnAdd(w.container, "cart_c", ["v_piece3", "v_piece4"])).resolves.toBeUndefined()
+    expect(w.rows.map((row) => row.variant_id)).toEqual(["v_piece", "v_piece2"])
+    expect(w.warnings).toEqual([expect.stringContaining("ceiling (2) reached")])
+  })
+
+  it("CHW-CEILING-COUNTS-STANDING: a hold whose cart dropped its piece, or an ended one, does not count", async () => {
+    process.env.ACROPORA_CART_HOLD_MAX_TOTAL = "2"
+    const w = twoHeld()
+    w.carts[1].items = []
+    w.rows.push({ id: "chold_x", variant_id: "v_piece4", cart_id: "cart_a", expires_at: longAgo, updated_at: longAgo })
+    await holdOnAdd(w.container, "cart_c", ["v_piece3"])
+    expect(w.rows.find((row) => row.variant_id === "v_piece3")).toMatchObject({ cart_id: "cart_c" })
+    expect(w.warnings).toEqual([])
+  })
+
+  it("CHW-CEILING-STILL-REFUSES: past the ceiling, a later piece another cart holds is still refused", async () => {
+    process.env.ACROPORA_CART_HOLD_MAX_TOTAL = "2"
+    const w = twoHeld()
+    await expect(holdOnAdd(w.container, "cart_c", ["v_piece3", "v_piece"])).rejects.toMatchObject({
+      message: expect.stringMatching(/^unique_piece_held:/),
+    })
   })
 })
 
