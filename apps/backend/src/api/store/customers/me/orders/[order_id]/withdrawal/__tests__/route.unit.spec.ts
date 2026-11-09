@@ -1,22 +1,26 @@
 import { storeCustomerRoutesMiddlewares } from "@medusajs/medusa/api/store/customers/middlewares"
 
 const ownOrder = jest.fn()
+const storePickupOf = jest.fn()
 const createWithdrawal = jest.fn()
 const notifyWithdrawalReceived = jest.fn()
 const guestWithdrawalsOf = jest.fn()
+const liveAnimalOfOrder = jest.fn()
 jest.mock("../../../../../../../../workflows/utils/webshop-mail/withdrawal-received-mail", () => ({
   notifyWithdrawalReceived: (...args: unknown[]) => notifyWithdrawalReceived(...args),
 }))
 jest.mock("../../../../../../../../workflows/utils/guest-order/operations", () => ({
   guestWithdrawalsOf: (...args: unknown[]) => guestWithdrawalsOf(...args),
+  liveAnimalOfOrder: (...args: unknown[]) => liveAnimalOfOrder(...args),
 }))
 jest.mock("../../../../../../../../workflows/utils/withdrawal/withdrawal", () => ({
   ownOrder: (...args: unknown[]) => ownOrder(...args),
+  storePickupOf: (...args: unknown[]) => storePickupOf(...args),
   createWithdrawal: (...args: unknown[]) => createWithdrawal(...args),
 }))
 
 import middlewares from "../../../../../../../middlewares"
-import { POST } from "../route"
+import { GET, POST } from "../route"
 import { StorePostCustomerWithdrawal } from "../validators"
 
 /*
@@ -60,9 +64,78 @@ beforeEach(() => {
 })
 afterEach(() => {
   guestWithdrawalsOf.mockReset()
+  storePickupOf.mockReset()
+  liveAnimalOfOrder.mockReset()
   ownOrder.mockReset()
   createWithdrawal.mockReset()
   notifyWithdrawalReceived.mockReset()
+})
+
+/*
+  WHAT TURNS THIS RED (V0.3, the order page's read). The order opened with an id from the REQUEST instead of the session's;
+  a miss answered with anything but the one 404, or no session served instead of refused (the pickup answer or the list
+  of declarations of another customer's order would leak); the pickup flag not coming from the order's own read; the
+  declarations left out when they CAN be read, or a failed read turned into an empty list (the page would then offer
+  lines that are already declared).
+*/
+const get = async (over: { actor?: string | null; orderId?: string } = {}) => {
+  const json = jest.fn()
+  const status = jest.fn().mockReturnValue({ json })
+  const actor = over.actor === undefined ? "cus_a" : over.actor
+  await GET(
+    {
+      auth_context: actor ? { actor_id: actor } : undefined,
+      params: { order_id: over.orderId ?? "order_1" },
+      scope: {},
+    } as never,
+    { json, status } as never,
+  )
+  return { json, status }
+}
+
+describe("GET /store/customers/me/orders/:order_id/withdrawal", () => {
+  it("opens the order with the SESSION's customer id and the path's order id", async () => {
+    storePickupOf.mockResolvedValue(false)
+    liveAnimalOfOrder.mockResolvedValue(false)
+    await get({ actor: "cus_a", orderId: "order_9" })
+    expect(ownOrder.mock.calls[0].slice(1)).toEqual(["cus_a", "order_9"])
+  })
+
+  it("refuses with 401 and reads nothing without a session", async () => {
+    const { status } = await get({ actor: null })
+    expect(status).toHaveBeenCalledWith(401)
+    expect(ownOrder).not.toHaveBeenCalled()
+    expect(storePickupOf).not.toHaveBeenCalled()
+  })
+
+  it("answers the one 404 for another customer's order or a missing one, and reads neither the pickup nor the list", async () => {
+    ownOrder.mockResolvedValue(null)
+    const { json, status } = await get()
+    expect(status).toHaveBeenCalledWith(404)
+    expect(json).toHaveBeenCalledWith({ message: "Nem találtuk a rendelést." })
+    expect(storePickupOf).not.toHaveBeenCalled()
+    expect(liveAnimalOfOrder).not.toHaveBeenCalled()
+    expect(guestWithdrawalsOf).not.toHaveBeenCalled()
+  })
+
+  it("answers the live animal flag, the pickup fact and the standing declarations, all read for the order's own id", async () => {
+    storePickupOf.mockResolvedValue(true)
+    liveAnimalOfOrder.mockResolvedValue(false)
+    const { json } = await get()
+    // a store pickup order is NOT a live animal order: the two answers are independent
+    expect(json).toHaveBeenCalledWith({ live_animal: false, store_pickup: true, withdrawals: standingList })
+    expect(storePickupOf.mock.calls[0][1]).toBe("order_1")
+    expect(liveAnimalOfOrder.mock.calls[0][1]).toBe("order_1")
+    expect(guestWithdrawalsOf.mock.calls[0][1]).toBe("order_1")
+  })
+
+  it("leaves the declarations out when they cannot be read, instead of answering an empty list", async () => {
+    storePickupOf.mockResolvedValue(false)
+    liveAnimalOfOrder.mockResolvedValue(true)
+    guestWithdrawalsOf.mockResolvedValue(null)
+    const { json } = await get()
+    expect(json).toHaveBeenCalledWith({ live_animal: true, store_pickup: false })
+  })
 })
 
 describe("POST /store/customers/me/orders/:order_id/withdrawal", () => {

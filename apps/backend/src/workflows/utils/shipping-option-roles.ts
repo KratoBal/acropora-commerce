@@ -78,6 +78,21 @@ export const resolveShippingOptionRoleBindings = (
     return { ...binding, id: override || binding.id }
   })
 
+/**
+ * WHETHER A SHIPPING OPTION PLAYS THE STORE PICKUP ROLE, by its id (never by its name: names are translated and
+ * edited). One rule for every reader of "is this order collected in the store": the guest order view and the signed-in
+ * customer's withdrawal answer both ask it here, so they cannot disagree. A missing or empty id is not a pickup.
+ */
+export const isStorePickupOption = (
+  optionId: unknown,
+  env: NodeJS.ProcessEnv = process.env
+): boolean =>
+  typeof optionId === "string" &&
+  optionId !== "" &&
+  resolveShippingOptionRoleBindings(env).some(
+    (binding) => binding.role === "PICKUP" && binding.id === optionId
+  )
+
 export const buildShippingOptionRoleMap = (
   env: NodeJS.ProcessEnv = process.env
 ): Map<string, ShippingOptionRole> =>
