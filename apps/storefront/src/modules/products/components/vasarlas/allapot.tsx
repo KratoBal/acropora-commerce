@@ -269,6 +269,29 @@ export function VasarlasProvider({
       el = false
     }
   }, [foglalasValtozat, foglalasKor])
+
+  /*
+    A LEJARAT IS ESEMENY (barracuda, #706 review, 1.): a foglalas vege utan a sor
+    eltunik, a gomb felszabadul, es a lap ujra kerdez (lehet, hogy kozben mas kosar
+    foglalta le). Addig percenkent ujrarajzol, hogy a "N perc mulva" ne alljon meg.
+    Enelkul aki a lapon kivarja a foglalast, a vegen is tiltott gombot latna.
+  */
+  const [, setPercUtem] = useState(0)
+  useEffect(() => {
+    if (!masKosaraban) return
+    const utem = setInterval(() => setPercUtem((n) => n + 1), 60_000)
+    const lejarat = setTimeout(
+      () => {
+        setMasKosaraban(null)
+        setFoglalasKor((kor) => kor + 1)
+      },
+      Math.max(0, masKosaraban.until.getTime() - Date.now()) + 1_000,
+    )
+    return () => {
+      clearInterval(utem)
+      clearTimeout(lejarat)
+    }
+  }, [masKosaraban])
   const similarHref = similarItemsHref(product)
   /**
    * TUDJUK-E, MENNYI A KESZLET.

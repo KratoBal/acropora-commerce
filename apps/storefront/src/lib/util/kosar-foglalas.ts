@@ -18,11 +18,15 @@ export const KORLAT_KOD = "cart_hold_limit"
 export const SOK_KOD = "unique_piece_busy"
 
 /**
- * A LATOGATONKENTI KORLAT (barracuda, #703 review, 2. pont; az elesites feltetele). A bolt
- * kosaranként korlatoz (alapbol 5), de egy latogato sok kosarat nyithat; ez a kirakat oldalan
- * szamolja, hany UJ egyedi darabot tett kosarba egy latogato egy foglalasnyi idoben. A szam ket
- * kosarnyi: aki ennel tobbet tenne felre egy fel ora alatt, az nem egy vevo. A kulcs az `x-real-ip`
- * (`vendeg-korlat.ts`): fejlec nelkul nem szamol, a bolt kosaranketi korlatja akkor is all.
+ * A LATOGATONKENTI KORLAT (barracuda, #703 review, 2. pont). A bolt kosaranként korlatoz
+ * (alapbol 5), de egy latogato sok kosarat nyithat; ez a kirakat oldalan szamolja, hany UJ egyedi
+ * darabot tett kosarba egy latogato egy foglalasnyi idoben. A szam ket kosarnyi: aki ennel tobbet
+ * tenne felre egy fel ora alatt, az nem egy vevo. A kulcs az `x-real-ip` (`vendeg-korlat.ts`):
+ * fejlec nelkul nem szamol, a bolt kosaranketi korlatja akkor is all.
+ *
+ * EZ FELULETI FEK, NEM AZ ELESITES FELTETELE (barracuda, #706 review, 2.): a Store API a publikus
+ * kulccsal a kirakat megkerulesevel is hivhato, egy szkript tehat ezt a szamlalot nem is latja.
+ * Elesre a BOLT oldali korlat a feltetel (a backend `.env.template` kapcsolo-mondata).
  */
 export const LATOGATO_FOGLALAS_KORLAT = {
   max: 10,

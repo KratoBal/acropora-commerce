@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { translator } from "@lib/i18n/dictionary"
@@ -79,5 +79,50 @@ describe("a más kosarában álló egyedi darab a terméklapon", () => {
     expect(translator("hu")("product.holdHeldByOther", { perc: 3 })).toMatch(
       /3 perc/,
     )
+  })
+})
+
+/**
+ * A LEJARAT IS ESEMENY (barracuda, #706 review, 1.). MI PIROSIT: a foglalas vege utan a sor ott marad,
+ * a gomb tiltva, vagy a lap nem kerdez ujra; a "N perc mulva" nem fogy, amig a lapon varnak.
+ */
+describe("a foglalás lejárta a terméklapon", () => {
+  afterEach(() => vi.useRealTimers())
+
+  const egyKor = () =>
+    act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+  it("a vége után a sor eltűnik, a gomb felszabadul, és a lap újra kérdez", async () => {
+    vi.useFakeTimers()
+    foglalas.termekFoglalas
+      .mockResolvedValueOnce({
+        until: new Date(Date.now() + 3 * 60_000).toISOString(),
+      })
+      .mockResolvedValue(null)
+    lap(true)
+    await egyKor()
+    expect(screen.getByTestId("foglalt-sor").textContent).toMatch(/ 3 perc /)
+    expect(
+      screen.getByTestId("add-product-button").hasAttribute("disabled"),
+    ).toBe(true)
+
+    // percenkent fogy, amig a lapon varnak
+    await act(async () => {
+      vi.advanceTimersByTime(60_000)
+    })
+    expect(screen.getByTestId("foglalt-sor").textContent).toMatch(/ 2 perc /)
+
+    await act(async () => {
+      vi.advanceTimersByTime(2 * 60_000 + 1_000)
+    })
+    await egyKor()
+    expect(screen.queryByTestId("foglalt-sor")).toBeNull()
+    expect(
+      screen.getByTestId("add-product-button").hasAttribute("disabled"),
+    ).toBe(false)
+    expect(foglalas.termekFoglalas).toHaveBeenCalledTimes(2)
   })
 })
