@@ -13,6 +13,7 @@ import {
   holdStands,
   limitMessage,
   maxHoldsPerCart,
+  maxHoldsTotal,
   type HeldLine,
   type HoldDecision,
   type HoldRow,
@@ -198,7 +199,9 @@ export async function holdOnAdd(container: Container, cartId: string, variantIds
     const locking = container.resolve(Modules.LOCKING)
     const minutes = holdMinutes()
     const max = maxHoldsPerCart()
+    const maxTotal = maxHoldsTotal()
     const hasPiece = pieceLookup(query)
+    let ceilingLogged = false
 
     for (const piece of pieces) {
       const decision = await underLock(
@@ -215,7 +218,30 @@ export async function holdOnAdd(container: Container, cartId: string, variantIds
             // this call's earlier pieces have holds but no lines yet: holdStands counts them as in flight
             if (holdStands(own, now, await hasPiece(cart.id, own.variant_id))) standingOwnHolds++
           }
-          const decided = decideHold({ row: row ?? null, holder: cart.id, now, minutes, max, otherCartHasPiece, standingOwnHolds })
+          /*
+            THE SHOP'S CEILING (barracuda's review of #706): every standing hold but this piece's own row. Only live
+            rows are read (the table keeps one row per piece ever held), and their holders' carts in two queries.
+            The count is not under one shop-wide lock, so two carts adding at the same moment may pass it by one
+            each: a ceiling on abuse, not a stock count.
+          */
+          const live = (await holds.listCartHolds({ expires_at: { $gt: now } })).filter(
+            (other) => other.variant_id !== piece.id
+          )
+          const byHolder = await piecesByHolder(query, [...new Set(live.map((other) => other.cart_id))])
+          const standingTotal = live.filter((other) =>
+            holdStands(other, now, byHolder.get(other.cart_id)?.has(other.variant_id) ?? false)
+          ).length
+          const decided = decideHold({
+            row: row ?? null,
+            holder: cart.id,
+            now,
+            minutes,
+            max,
+            otherCartHasPiece,
+            standingOwnHolds,
+            standingTotal,
+            maxTotal,
+          })
           if (decided.action === "create")
             await holds.createCartHolds([{ variant_id: piece.id, cart_id: cart.id, expires_at: decided.expires_at }])
           if (decided.action === "take")
@@ -236,6 +262,14 @@ export async function holdOnAdd(container: Container, cartId: string, variantIds
       if (decision.action === "refuse_limit") {
         refusal = limitMessage(decision.max)
         break
+      }
+      if (decision.action === "no_hold") {
+        // not a refusal: the line goes in, unheld (V2.5 still names a piece sold meanwhile). The loop goes on: a later
+        // piece another cart holds is still refused. One log line per call.
+        if (!ceilingLogged)
+          warn(container, `Cart hold ceiling (${decision.max}) reached: cart ${cart.id} adds a unique piece without a hold`)
+        ceilingLogged = true
+        continue
       }
     }
   } catch (error) {

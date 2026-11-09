@@ -15,11 +15,21 @@
 export const CART_HOLD_ENV = "ACROPORA_CART_HOLD"
 export const CART_HOLD_MINUTES_ENV = "ACROPORA_CART_HOLD_MINUTES"
 export const CART_HOLD_MAX_PER_CART_ENV = "ACROPORA_CART_HOLD_MAX_PER_CART"
+export const CART_HOLD_MAX_TOTAL_ENV = "ACROPORA_CART_HOLD_MAX_TOTAL"
 
 /** polip's proposal (the plan, question 1). */
 export const DEFAULT_HOLD_MINUTES = 30
 /** The plan's proposal. */
 export const DEFAULT_MAX_PER_CART = 5
+/**
+ * THE SHOP'S CEILING ON STANDING HOLDS (barracuda's review of #706): the Store API can be called past the storefront
+ * with the public key, so neither the per-cart limit nor the storefront's per-visitor limit stops a script opening
+ * carts. A per-address limit cannot live here: the hook has no request, and the shop sees every storefront buyer
+ * from the storefront's address. So the shop counts all standing holds, and past the ceiling a unique piece goes into
+ * the cart WITHOUT a hold (it is not refused): a script can tie up at most this many pieces, and nobody is kept from
+ * buying. Six full carts' worth by default.
+ */
+export const DEFAULT_MAX_TOTAL = 30
 
 export const cartHoldOn = (env: NodeJS.ProcessEnv = process.env): boolean => env[CART_HOLD_ENV]?.trim() === "on"
 
@@ -34,6 +44,9 @@ export const holdMinutes = (env: NodeJS.ProcessEnv = process.env): number =>
 
 export const maxHoldsPerCart = (env: NodeJS.ProcessEnv = process.env): number =>
   boundedInteger(env[CART_HOLD_MAX_PER_CART_ENV], 1, 50, DEFAULT_MAX_PER_CART)
+
+export const maxHoldsTotal = (env: NodeJS.ProcessEnv = process.env): number =>
+  boundedInteger(env[CART_HOLD_MAX_TOTAL_ENV], 1, 1000, DEFAULT_MAX_TOTAL)
 
 /**
  * The codes in a refusal's message, the way `unique_piece_sold` travels (sold-lines.ts): the message is what reaches
@@ -95,6 +108,8 @@ export type HoldDecision =
   | { action: "refuse_held"; until: Date }
   /** A new hold would be one more than the cart may have. */
   | { action: "refuse_limit"; max: number }
+  /** The shop's ceiling is reached: the line goes in without a hold (not refused). */
+  | { action: "no_hold"; max: number }
 
 /**
  * THE DECISION FOR ONE PIECE PUT IN ONE CART.
@@ -104,6 +119,8 @@ export type HoldDecision =
  *   otherCartHasPiece    when the row is another cart's: does that cart still have the piece on an open cart?
  *   standingOwnHolds     how many of the holder's OTHER holds stand (`holdStands`): the limit counts only those, so a
  *                        buyer who removed a piece is not charged for it
+ *   standingTotal        how many holds stand in the whole shop, this piece's own row left out; with `maxTotal`, the
+ *                        shop's ceiling (both optional: without them there is no ceiling, as before)
  */
 export function decideHold(input: {
   row: HoldRow | null
@@ -113,12 +130,16 @@ export function decideHold(input: {
   max: number
   otherCartHasPiece: boolean
   standingOwnHolds: number
+  standingTotal?: number
+  maxTotal?: number
 }): HoldDecision {
   const { row, holder, now } = input
   if (row && row.cart_id !== holder && holdStands(row, now, input.otherCartHasPiece))
     return { action: "refuse_held", until: expiresAtOf(row) }
   if (row && row.cart_id === holder && liveByTime(row, now)) return { action: "keep", expires_at: expiresAtOf(row) }
   if (input.standingOwnHolds >= input.max) return { action: "refuse_limit", max: input.max }
+  if (input.maxTotal !== undefined && (input.standingTotal ?? 0) >= input.maxTotal)
+    return { action: "no_hold", max: input.maxTotal }
   const expires_at = new Date(now.getTime() + input.minutes * 60 * 1000)
   return row ? { action: "take", id: row.id, expires_at } : { action: "create", expires_at }
 }

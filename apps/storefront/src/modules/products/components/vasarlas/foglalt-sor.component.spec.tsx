@@ -125,4 +125,25 @@ describe("a foglalás lejárta a terméklapon", () => {
     ).toBe(false)
     expect(foglalas.termekFoglalas).toHaveBeenCalledTimes(2)
   })
+
+  it("ha a vevő órája előre jár, nem kérdez másodpercenként: legalább 15 mp-et vár", async () => {
+    vi.useFakeTimers()
+    // a bolt szerint még áll, a vevő órája szerint a vége már elmúlt
+    foglalas.termekFoglalas.mockResolvedValue({
+      until: new Date(Date.now() - 60_000).toISOString(),
+    })
+    lap(true)
+    await egyKor()
+    expect(foglalas.termekFoglalas).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      vi.advanceTimersByTime(14_000)
+    })
+    await egyKor()
+    expect(foglalas.termekFoglalas).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      vi.advanceTimersByTime(1_100)
+    })
+    await egyKor()
+    expect(foglalas.termekFoglalas).toHaveBeenCalledTimes(2)
+  })
 })
