@@ -3,6 +3,7 @@ import {
   updateLineItemInCartWorkflow,
 } from "@medusajs/medusa/core-flows"
 
+import { holdOnAdd } from "../utils/cart-hold"
 import { assertOrderMaximum } from "../utils/order-maximum"
 
 /**
@@ -12,20 +13,24 @@ import { assertOrderMaximum } from "../utils/order-maximum"
  * one handler, and neither of these had one.
  */
 addToCartWorkflow.hooks.validate(async ({ input, cart }, { container }) => {
-  await assertOrderMaximum(
+  const added = (input.items ?? []).flatMap((item: any) =>
+    item?.variant_id
+      ? [
+          {
+            kind: "add" as const,
+            variant_id: item.variant_id as string,
+            quantity: Number(item.quantity),
+          },
+        ]
+      : []
+  )
+  await assertOrderMaximum(container, cart.id, added)
+  // V2.3 (card 52024fc0): a unique piece is held for this cart, or refused when
+  // another cart holds it. After the maximum, so a refused line makes no hold.
+  await holdOnAdd(
     container,
     cart.id,
-    (input.items ?? []).flatMap((item: any) =>
-      item?.variant_id
-        ? [
-            {
-              kind: "add" as const,
-              variant_id: item.variant_id,
-              quantity: Number(item.quantity),
-            },
-          ]
-        : []
-    )
+    added.map((change) => change.variant_id)
   )
 })
 

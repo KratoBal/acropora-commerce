@@ -19,6 +19,13 @@ const calls: unknown[] = []
 jest.mock("../../utils/order-maximum", () => ({
   assertOrderMaximum: async (...args: unknown[]) => {
     calls.push(args.slice(1))
+    if ((args[2] as any[]).some((change) => change.quantity > 99)) throw new Error("over the maximum")
+  },
+}))
+// V2.3 (card 52024fc0): the hold comes after the maximum, on the same variants
+jest.mock("../../utils/cart-hold", () => ({
+  holdOnAdd: async (...args: unknown[]) => {
+    calls.push(["hold", ...args.slice(1)])
   },
 }))
 
@@ -36,7 +43,17 @@ describe("the order maximum on the cart's two ways in", () => {
       { input: { items: [{ variant_id: "v1", quantity: 3 }, { quantity: 1 }] }, cart: { id: "cart_1" } },
       { container: {} }
     )
-    expect(calls).toEqual([["cart_1", [{ kind: "add", variant_id: "v1", quantity: 3 }]]])
+    expect(calls).toEqual([
+      ["cart_1", [{ kind: "add", variant_id: "v1", quantity: 3 }]],
+      ["hold", "cart_1", ["v1"]],
+    ])
+  })
+
+  it("a line over the maximum asks for no hold", async () => {
+    await expect(
+      handlers.add!({ input: { items: [{ variant_id: "v1", quantity: 100 }] }, cart: { id: "cart_1" } }, { container: {} })
+    ).rejects.toThrow("over the maximum")
+    expect(calls).toEqual([["cart_1", [{ kind: "add", variant_id: "v1", quantity: 100 }]]])
   })
 
   it("updating passes the line as a new quantity", async () => {
