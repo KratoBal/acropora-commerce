@@ -31,6 +31,16 @@ export type GuestProblemReport = {
   stage: "received" | "in_progress"
 }
 
+/**
+ * A withdrawal declaration the customer made for the order, as the shop gives it back: the reference, the time of
+ * receipt and the order lines it names. No name and no stage: nothing is promised about what follows.
+ */
+export type GuestWithdrawal = {
+  id: string
+  created_at: string
+  item_ids: string[]
+}
+
 export type GuestOrder = {
   display_id: number | string
   created_at: string | null
@@ -48,6 +58,8 @@ export type GuestOrder = {
   tracking: GuestOrderTracking | null
   /** absent from an older shop answer: then there is nothing to list */
   problem_reports?: GuestProblemReport[]
+  /** the order's withdrawal declarations, the oldest first; absent from an older shop answer: then there is nothing to list */
+  withdrawals?: GuestWithdrawal[]
 }
 
 export type GuestOrderLookupResult =
