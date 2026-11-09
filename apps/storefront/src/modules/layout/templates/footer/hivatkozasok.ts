@@ -201,17 +201,12 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
 /**
  * AKINEK MA NINCS MEGFELELOJE. A REGI BOLTBA visz, teljes cimmel.
  *
- * A "Kedvenceim" azert all itt, es nem a sajat listaban: a kirakatban nincs
- * kivansaglista-utvonal. Nem elfelejtettuk, hanem nincs.
+ * 2026-11-09 OTA URES (d707cf5f, acrobot 44902): az utolso tetel, a
+ * "Kedvenceim", kikerult a lablecbol. A kirakatban nincs kivansaglista, es most
+ * nem is epul; egy halott link a regi boltba rosszabb, mint a hianya. A lista
+ * marad, mert az elesitesi kapu (`/api/health/lablec-linkek`) ebbol is olvas.
  */
-export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
-  {
-    cimke: "Kedvenceim",
-    kulcs: "footerText.favourites",
-    oszlop: "fiok",
-    cim: "https://shop.acropora.hu/shop_order_track.php?tab=favourite",
-  },
-] as const
+export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = []
 
 /**
  * A CEG ADATAI, a bolt lablecebol betuere, EGY TUDATOS ELTERESSEL.
