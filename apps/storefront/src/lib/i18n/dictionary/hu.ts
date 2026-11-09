@@ -432,7 +432,6 @@ export const hu = {
     profile: "Profilom",
     cart: "Kosár",
     orderView: "Rendelés megtekintése",
-    favourites: "Kedvenceim",
     contact: "Elérhetőségek",
     payment: "Fizetés",
     shipping: "Szállítás",

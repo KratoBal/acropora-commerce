@@ -422,7 +422,6 @@ export const en: Dictionary = {
     profile: "My profile",
     cart: "Cart",
     orderView: "View your order",
-    favourites: "My favourites",
     contact: "Contact",
     payment: "Payment",
     shipping: "Shipping",

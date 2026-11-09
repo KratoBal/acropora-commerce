@@ -45,8 +45,9 @@ describe("a lábléc hivatkozásai", () => {
   // 2026-10-05: az ASZF es az adatkezelesi tajekoztato kikerult (kartya a3e48575)
   // 2026-10-27: az Elérhetőségek kikerült (saját oldal, P1/11)
   // 2026-10-27: a Fizetés, a Szállítás és a Képes vásárlói tájékoztató kikerült (saját oldal)
-  it("egy tetel a regi boltba visz, teljes cimmel", () => {
-    expect(REGI_BOLT_HIVATKOZASOK).toHaveLength(1)
+  // 2026-11-09: a Kedvenceim kikerult (nincs kivansaglista; d707cf5f, acrobot 44902)
+  it("egy tetel sem visz a regi boltba", () => {
+    expect(REGI_BOLT_HIVATKOZASOK).toHaveLength(0)
 
     for (const h of REGI_BOLT_HIVATKOZASOK) {
       expect(h.cim.startsWith("https://shop.acropora.hu/")).toBe(true)
@@ -78,13 +79,14 @@ describe("a lábléc hivatkozásai", () => {
   })
 
   // 2026-11-05: + Rendelés megtekintése (a vendég bejárata): 19 -> 20
-  it("a húsz felirat mind kulonbozik", () => {
+  // 2026-11-09: a Kedvenceim kikerult (20 -> 19)
+  it("a tizenkilenc felirat mind kulonbozik", () => {
     const cimkek = [...SAJAT_HIVATKOZASOK, ...REGI_BOLT_HIVATKOZASOK].map(
       (h) => h.cimke,
     )
 
-    expect(cimkek).toHaveLength(20)
-    expect(new Set(cimkek).size).toBe(20)
+    expect(cimkek).toHaveLength(19)
+    expect(new Set(cimkek).size).toBe(19)
   })
 
   /**
@@ -99,8 +101,8 @@ describe("a lábléc hivatkozásai", () => {
 
     // Nyitóoldal, Termékek, és 2026-10-27 óta a Forgalmazott márkák
     expect(db("oldalterkep")).toBe(3)
-    // 2026-11-05: + Rendelés megtekintése (5 -> 6)
-    expect(db("fiok")).toBe(6)
+    // 2026-11-05: + Rendelés megtekintése (5 -> 6); 2026-11-09: - Kedvenceim (6 -> 5)
+    expect(db("fiok")).toBe(5)
     // a negy megmaradt regi-bolti tetel es a het jogi dokumentum
     expect(db("informaciok")).toBe(11)
     expect(OSZLOP_SORREND).toHaveLength(3)
@@ -242,8 +244,9 @@ describe("a külső címek egyetlen helyen állnak", () => {
     expect(lablec.match(/shop\.acropora\.hu/g)).toBeNull()
   })
 
-  it("az egy cím a listában áll", () => {
-    expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toHaveLength(1)
+  // 2026-11-09: a Kedvenceim volt az utolso regi bolti cim (d707cf5f)
+  it("a listában sem áll már régi bolti cím", () => {
+    expect(lista.match(/https:\/\/shop\.acropora\.hu\//g)).toBeNull()
   })
 })
 
