@@ -200,7 +200,12 @@ function reszletSorok(
     [
       "erettseg",
       t("product.husbandryMaturity"),
-      adat.maturityMonths !== null ? `${adat.maturityMonths} hónap` : null,
+      // a 0 hónap ugyanazt mondja, mint a "Vásárlás előtt" sora, ezért ugyanazzal a mondattal (barracuda, #729)
+      adat.maturityMonths === 0
+        ? t("product.husbandryBeforeAnyTank")
+        : adat.maturityMonths !== null
+          ? `${adat.maturityMonths} hónap`
+          : null,
     ],
   ]
   // a gerinctelen zonaja, ha a fenti cella a litert mutatja (korallnal a zona mar fent all)
