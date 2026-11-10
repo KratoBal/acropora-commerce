@@ -1,4 +1,5 @@
-import { GET } from "../route"
+import { kulcsosCache, MAX } from "../gyorsitotar"
+import { husbandryFilterGet } from "../route"
 import { savja, szures, szuroKeresbol, szuroTenyek, type Termek } from "../szures"
 
 /*
@@ -101,20 +102,40 @@ describe("szures", () => {
 })
 
 describe("GET /store/husbandry-filter", () => {
+  const KATEGORIAK = [
+    { id: "pcat_hal", is_active: true, is_internal: false },
+    { id: "c", is_active: true, is_internal: false },
+    { id: "c2", is_active: true, is_internal: false },
+    { id: "inaktiv", is_active: false, is_internal: false },
+    { id: "belso", is_active: true, is_internal: true },
+  ]
   const futtat = async (opts: {
     query: Record<string, unknown>
     products?: { id: string; metadata: Record<string, unknown> | null; channels?: string[] | null }[]
     channels?: string[]
+    /** a handler shared across calls (its caches); a fresh one per call by default */
+    handler?: ReturnType<typeof husbandryFilterGet>
+    listCalls?: { filters: unknown; config: unknown }[]
+    categoryCalls?: unknown[]
+    listProducts?: () => Promise<unknown>
   }) => {
-    const listCalls: { filters: unknown; config: unknown }[] = []
+    const listCalls = opts.listCalls ?? []
+    const categoryCalls = opts.categoryCalls ?? []
     const warnings: string[] = []
     const products = opts.products ?? []
     const scope = {
       resolve: (key: string) => {
         if (key === "product")
           return {
+            listProductCategories: async (filters: { is_active: boolean; is_internal: boolean }) => {
+              categoryCalls.push(filters)
+              return KATEGORIAK.filter(
+                (k) => k.is_active === filters.is_active && k.is_internal === filters.is_internal
+              ).map(({ id }) => ({ id }))
+            },
             listProducts: async (filters: unknown, config: { take: number }) => {
               listCalls.push({ filters, config })
+              if (opts.listProducts) return opts.listProducts()
               return products.slice(0, config.take).map(({ id, metadata }) => ({ id, metadata }))
             },
           }
@@ -134,7 +155,7 @@ describe("GET /store/husbandry-filter", () => {
       },
     }
     const res = { body: undefined as unknown, json: (b: unknown) => (res.body = b) }
-    await GET(
+    await (opts.handler ?? husbandryFilterGet(60_000))(
       {
         scope,
         query: opts.query,
@@ -188,4 +209,82 @@ describe("GET /store/husbandry-filter", () => {
     const { body } = await futtat({ query: { category_id: "c" }, products })
     expect(body.complete).toBe(false)
   })
+
+  /*
+    BEFORE LIVE (barracuda, #730). What turns these red: an inactive, internal or unknown category answered (or its
+    products read); a second call within the TTL reading the products again, also with another filter; a reading
+    served after the TTL; two channel sets sharing a reading; a failed reading cached; concurrent calls reading twice.
+  */
+  it("an inactive, internal or unknown category: 404, and its products are not read", async () => {
+    for (const category_id of ["inaktiv", "belso", "nincs-ilyen"]) {
+      const listCalls: { filters: unknown; config: unknown }[] = []
+      await expect(futtat({ query: { category_id }, listCalls })).rejects.toThrow("was not found")
+      expect(listCalls).toEqual([])
+    }
+  })
+
+  it("within the TTL one reading per category and channel set, whatever the filter; after it, a new one", async () => {
+    let clock = 0
+    const handler = husbandryFilterGet(60_000, () => clock)
+    const listCalls: { filters: unknown; config: unknown }[] = []
+    const categoryCalls: unknown[] = []
+    const products = [
+      { id: "a", metadata: blokk({ difficulty: "KONNYU" }), channels: ["sc_web"] },
+      { id: "b", metadata: blokk({ difficulty: "HALADO" }), channels: ["sc_web"] },
+    ]
+    const hivas = (query: Record<string, unknown>, channels = ["sc_web"]) =>
+      futtat({ query, products, channels, handler, listCalls, categoryCalls })
+
+    expect((await hivas({ category_id: "c", difficulty: "KONNYU" })).body.product_ids).toEqual(["a"])
+    clock = 59_999
+    expect((await hivas({ category_id: "c", difficulty: "HALADO" })).body.product_ids).toEqual(["b"])
+    expect(listCalls).toHaveLength(1)
+    expect(categoryCalls).toHaveLength(1)
+
+    await hivas({ category_id: "c2" })
+    await hivas({ category_id: "c" }, ["sc_pult"])
+    expect(listCalls).toHaveLength(3)
+
+    clock = 60_000
+    await hivas({ category_id: "c" })
+    expect(listCalls).toHaveLength(4)
+    expect(categoryCalls).toHaveLength(2)
+  })
+
+  it("a failed reading is not cached; concurrent calls share one reading", async () => {
+    const handler = husbandryFilterGet(60_000, () => 0)
+    const listCalls: { filters: unknown; config: unknown }[] = []
+    let hiba = true
+    const listProducts = async () => {
+      if (hiba) throw new Error("adatbazis")
+      return [{ id: "a", metadata: null }]
+    }
+    await expect(
+      futtat({ query: { category_id: "c" }, handler, listCalls, listProducts })
+    ).rejects.toThrow("adatbazis")
+    hiba = false
+    await Promise.all([
+      futtat({ query: { category_id: "c" }, handler, listCalls, listProducts }),
+      futtat({ query: { category_id: "c" }, handler, listCalls, listProducts }),
+    ])
+    expect(listCalls).toHaveLength(2)
+  })
 })
+
+describe("kulcsosCache", () => {
+  it("over MAX the expired entries go first, then the oldest", async () => {
+    let clock = 0
+    const cache = kulcsosCache<number>(10, () => clock)
+    let builds = 0
+    const build = async () => ++builds
+    for (let i = 0; i < MAX; i++) await cache(`k${i}`, build)
+    clock = 5
+    await cache("uj", build) // full, none expired: the oldest (k0) goes
+    expect(builds).toBe(MAX + 1)
+    await cache("k1", build) // still cached
+    expect(builds).toBe(MAX + 1)
+    await cache("k0", build) // gone, built again
+    expect(builds).toBe(MAX + 2)
+  })
+})
+
