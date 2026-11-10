@@ -80,7 +80,23 @@ export type TartasiAdat = {
   maxSize: { value: number; dimension: (typeof DIMENZIO)[number] } | null
   sourcing: (typeof SZARMAZAS)[number] | null
   notFor: string | null
+  /*
+    THE OPTIONAL FACTS (V2.2 S1b, murena 46232, #2384): additive keys, `v` stays 1. A range only with both ends (the OS sends
+    no one-sided range); the quarantine's 0 weeks is an answer; the sting or venom flag can come without its warning (the
+    projection does not hide a hazard it finds without one).
+  */
+  tempC: Tartomany | null
+  salinitySg: Tartomany | null
+  khDkh: Tartomany | null
+  lifespanYears: number | null
+  stingOrVenom: boolean | null
+  handlingWarning: string | null
+  quarantineWeeks: number | null
+  acclimatization: string | null
+  breedsInTank: boolean | null
 }
+
+export type Tartomany = { min: number; max: number }
 
 const egyik = <T extends string>(lista: readonly T[], v: unknown): T | null =>
   typeof v === "string" && (lista as readonly string[]).includes(v)
@@ -96,6 +112,16 @@ const nemNegativ = (v: unknown) =>
 const szoveg = (v: unknown) =>
   typeof v === "string" && v.trim() !== "" ? v.trim().slice(0, 500) : null
 const logikai = (v: unknown) => (typeof v === "boolean" ? v : null)
+/** Both ends, finite and positive, the lower not above the upper; anything else is not a range. */
+const tartomany = (v: unknown): Tartomany | null => {
+  if (typeof v !== "object" || v === null) return null
+  const { min, max } = v as { min?: unknown; max?: unknown }
+  const also = szam(min)
+  const felso = szam(max)
+  return also !== null && felso !== null && also <= felso
+    ? { min: also, max: felso }
+    : null
+}
 const nap = (v: unknown) =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null
 
@@ -145,6 +171,15 @@ export function tartasiAdat(
         : null,
     sourcing: egyik(SZARMAZAS, o.sourcing),
     notFor: szoveg(o.not_for),
+    tempC: tartomany(o.temp_c),
+    salinitySg: tartomany(o.salinity_sg),
+    khDkh: tartomany(o.kh_dkh),
+    lifespanYears: szam(o.lifespan_years),
+    stingOrVenom: logikai(o.sting_or_venom),
+    handlingWarning: szoveg(o.handling_warning),
+    quarantineWeeks: nemNegativ(o.quarantine_weeks),
+    acclimatization: szoveg(o.acclimatization),
+    breedsInTank: logikai(o.breeds_in_tank),
   }
 }
 

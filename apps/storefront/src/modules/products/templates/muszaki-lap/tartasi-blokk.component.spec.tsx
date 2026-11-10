@@ -193,6 +193,100 @@ describe("a tartási blokk", () => {
   })
 })
 
+/*
+  AZ OPCIONALIS TENYEK ES A VESZELY (V2.2 S4b, barracuda 46247, murena 46232). MI PIROSIT: a csipes vagy mereg nem a blokk
+  tetejen all (a nehezseg utan, vagy egyaltalan nem); a figyelmeztetes nelkuli veszely elrejtodik; egy hianyzo opcionalis
+  teny "Ellenőrzés alatt" sort kap; egy ismert teny nem latszik; a hamis csipes-ertek veszelydobozt kap.
+*/
+describe("az opcionális tartási tények", () => {
+  it("a csípés vagy méreg elsőként, a kezelési figyelmeztetéssel, a nehézség előtt", () => {
+    render(
+      <TartasiBlokk
+        metadata={meta({
+          v: 1,
+          kind: "coral",
+          difficulty: "KOZEPES",
+          sting_or_venom: true,
+          handling_warning: "Kesztyűben fogd meg, a csalánsejtjei égetnek.",
+        })}
+      />,
+    )
+    const veszely = screen.getByTestId("tartas-veszely")
+    expect(veszely.textContent).toContain("Csíp vagy mérgező")
+    expect(veszely.textContent).toContain(
+      "Kesztyűben fogd meg, a csalánsejtjei égetnek.",
+    )
+    const nehezseg = screen.getByTestId("tartas-nehezseg")
+    // a dokumentum-sorrendben a veszely a nehezseg ELOTT all
+    expect(
+      veszely.compareDocumentPosition(nehezseg) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.queryByTestId("tartas-csipes")).toBeNull()
+  })
+
+  it("figyelmeztetés nélkül is látszik a veszély, a figyelmeztetés helyén az ellenőrzés alatt mondat", () => {
+    render(
+      <TartasiBlokk
+        metadata={meta({ v: 1, kind: "fish", sting_or_venom: true })}
+      />,
+    )
+    expect(screen.getByTestId("tartas-veszely").textContent).toContain(
+      "A kezelési figyelmeztetés ellenőrzés alatt.",
+    )
+  })
+
+  it("az ismert opcionális tények sorai; a hiányzók nem kapnak sort; a hamis csípés válasz, doboz nélkül", () => {
+    render(
+      <TartasiBlokk
+        metadata={meta({
+          v: 1,
+          kind: "invertebrate",
+          temp_c: { min: 24, max: 26 },
+          salinity_sg: { min: 1.024, max: 1.026 },
+          lifespan_years: 5,
+          quarantine_weeks: 0,
+          breeds_in_tank: true,
+          sting_or_venom: false,
+        })}
+      />,
+    )
+    expect(screen.getByTestId("tartas-homerseklet").textContent).toContain(
+      "24–26 °C",
+    )
+    expect(screen.getByTestId("tartas-sotartalom").textContent).toContain(
+      "1,024–1,026 SG",
+    )
+    expect(screen.getByTestId("tartas-elettartam").textContent).toContain(
+      "5 év",
+    )
+    expect(screen.getByTestId("tartas-karanten").textContent).toContain("0 hét")
+    expect(screen.getByTestId("tartas-szaporitas").textContent).toContain(
+      "igen",
+    )
+    expect(screen.getByTestId("tartas-csipes").textContent).toContain("nem")
+    expect(screen.queryByTestId("tartas-veszely")).toBeNull()
+    for (const nincs of ["tartas-kh", "tartas-akklimatizacio"])
+      expect(screen.queryByTestId(nincs), nincs).toBeNull()
+  })
+
+  it("opcionális tény nélkül egyetlen opcionális sor sincs", () => {
+    render(<TartasiBlokk metadata={meta({ v: 1, kind: "fish" })} />)
+    for (const id of [
+      "tartas-homerseklet",
+      "tartas-sotartalom",
+      "tartas-kh",
+      "tartas-elettartam",
+      "tartas-karanten",
+      "tartas-akklimatizacio",
+      "tartas-szaporitas",
+      "tartas-csipes",
+      "tartas-veszely",
+    ])
+      expect(screen.queryByTestId(id), id).toBeNull()
+  })
+})
+
 describe("a műszaki lap", () => {
   const termek = (gyoker: string, metadata: Record<string, unknown> = {}) =>
     ({

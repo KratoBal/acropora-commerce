@@ -57,6 +57,15 @@ describe("a tartási adat olvasása", () => {
       maxSize: { value: 12, dimension: "TESTHOSSZ" },
       sourcing: "TENYESZTETT",
       notFor: "Kezdő, frissen indított medencébe nem.",
+      tempC: null,
+      salinitySg: null,
+      khDkh: null,
+      lifespanYears: null,
+      stingOrVenom: null,
+      handlingWarning: null,
+      quarantineWeeks: null,
+      acclimatization: null,
+      breedsInTank: null,
     })
   })
 
@@ -106,6 +115,52 @@ describe("a tartási adat olvasása", () => {
     ).toBeNull()
     expect(
       tartasiAdat(meta({ v: 1, kind: "fish", min_liter: 0 }))?.minLiter,
+    ).toBeNull()
+  })
+
+  /*
+    AZ OPCIONALIS TENYEK (V2.2 S4b, #2384). MI PIROSIT: egy egyvegu, forditott vagy nem szam tartomany atjut; a karanten
+    0 hete hianynak szamit; a csipes vagy mereg a figyelmeztetes nelkul elveszik; egy ismeretlen ertek nem marad null.
+  */
+  it("az opcionális tények: tartomány két véggel, a 0 hét válasz, a veszély figyelmeztetés nélkül is", () => {
+    const a = tartasiAdat(
+      meta({
+        v: 1,
+        kind: "invertebrate",
+        temp_c: { min: 24, max: 26 },
+        salinity_sg: { min: 1.024, max: 1.026 },
+        kh_dkh: { min: 7, max: 9 },
+        lifespan_years: 5,
+        sting_or_venom: true,
+        quarantine_weeks: 0,
+        acclimatization: "csepegtetéssel, kb. 1 óra",
+        breeds_in_tank: false,
+      }),
+    )!
+    expect(a.tempC).toEqual({ min: 24, max: 26 })
+    expect(a.salinitySg).toEqual({ min: 1.024, max: 1.026 })
+    expect(a.khDkh).toEqual({ min: 7, max: 9 })
+    expect(a.lifespanYears).toBe(5)
+    expect(a.stingOrVenom).toBe(true)
+    expect(a.handlingWarning).toBeNull()
+    expect(a.quarantineWeeks).toBe(0)
+    expect(a.acclimatization).toBe("csepegtetéssel, kb. 1 óra")
+    expect(a.breedsInTank).toBe(false)
+    for (const rossz of [
+      { min: 24 },
+      { min: 26, max: 24 },
+      { min: "24", max: 26 },
+      [24, 26],
+      24,
+    ]) {
+      expect(
+        tartasiAdat(meta({ v: 1, kind: "fish", temp_c: rossz }))?.tempC,
+        JSON.stringify(rossz),
+      ).toBeNull()
+    }
+    expect(
+      tartasiAdat(meta({ v: 1, kind: "fish", sting_or_venom: "igen" }))
+        ?.stingOrVenom,
     ).toBeNull()
   })
 })
