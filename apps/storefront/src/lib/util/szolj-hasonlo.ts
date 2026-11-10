@@ -80,19 +80,20 @@ export async function szoljFeliratkozas(
     email: string
     hozzajarul: boolean
     termekId: string
+    /** az "Érkező állatok" lap kotetlen sora (V2.6 S4c): a termek helyett ezt kuldi, es csak a fajra var */
+    erkezesId?: string
     ip: string
     nyelv?: Locale
     /** mire varunk; hianyzo: a faj (a V2.4 alak) */
     fajta?: SzoljFajta
   },
   fuggosegek: {
-    kuld: (torzs: {
-      product_id: string
-      kind: SzoljFajta
-      email: string
-      consent: true
-      locale: Locale
-    }) => Promise<unknown>
+    kuld: (
+      torzs: (
+        | { product_id: string; kind: SzoljFajta }
+        | { arrival_id: string; kind: "species" }
+      ) & { email: string; consent: true; locale: Locale },
+    ) => Promise<unknown>
     korlat: SebessegKorlat
   },
 ): Promise<SzoljAllapot> {
@@ -108,12 +109,15 @@ export async function szoljFeliratkozas(
     return hiba("stockAlert.errorEmail")
   if (!urlap.hozzajarul) return hiba("stockAlert.errorConsent")
   const termekId = urlap.termekId.trim()
-  if (!termekId) return hiba("stockAlert.errorFailed")
+  const erkezesId = urlap.erkezesId?.trim() ?? ""
+  // pontosan az egyik: a termek lapja a termeket, az erkezo allatok lapja az erkezes sorat kuldi
+  if (!termekId === !erkezesId) return hiba("stockAlert.errorFailed")
   if (!fuggosegek.korlat.allow(urlap.ip)) return hiba("stockAlert.errorLimit")
   try {
     await fuggosegek.kuld({
-      product_id: termekId,
-      kind: urlap.fajta ?? "species",
+      ...(erkezesId
+        ? { arrival_id: erkezesId, kind: "species" as const }
+        : { product_id: termekId, kind: urlap.fajta ?? "species" }),
       email,
       consent: true,
       locale: nyelv,

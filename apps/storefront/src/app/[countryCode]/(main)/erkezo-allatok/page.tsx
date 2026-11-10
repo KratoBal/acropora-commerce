@@ -6,6 +6,7 @@ import { localeOf } from "@lib/i18n/locale"
 import { lapCim, openGraph } from "@lib/seo/oldal-metaadat"
 import { erkezoAllatokCanonical } from "@lib/util/lap-canonical"
 import { shopDay } from "@lib/util/livestock-arrival"
+import { szoljBekapcsolva } from "@lib/util/szolj-hasonlo"
 import ErkezoAllatokLap from "@modules/erkezo-allatok/erkezo-allatok-lap"
 
 type Props = { params: Promise<{ countryCode: string }> }
@@ -50,6 +51,7 @@ export default async function ErkezoAllatokOldal(props: Props) {
       animals={animals}
       handles={handles}
       ma={shopDay()}
+      feliratkozas={szoljBekapcsolva()}
       locale={localeOf(countryCode)}
     />
   )

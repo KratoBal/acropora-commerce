@@ -85,6 +85,31 @@ describe("szoljFeliratkozas", () => {
     ])
   })
 
+  it("SZ-ERKEZES: az erkezo allatok lapja a sor azonositojat kuldi termek helyett, csak fajra; ket azonosito vagy egy sem: nem megy ki", async () => {
+    const kuld = vi.fn(async () => ({ subscribed: true }))
+    expect(
+      await szoljFeliratkozas(
+        urlap({ termekId: "", erkezesId: " lvarr_1 ", fajta: "product" }),
+        { kuld, korlat: laza() },
+      ),
+    ).toEqual({ allapot: "kesz" })
+    expect(kuld).toHaveBeenCalledWith({
+      arrival_id: "lvarr_1",
+      kind: "species",
+      email: "teszt@pelda.hu",
+      consent: true,
+      locale: "hu",
+    })
+    for (const rossz of [
+      urlap({ erkezesId: "lvarr_1" }),
+      urlap({ termekId: "", erkezesId: "" }),
+    ])
+      expect(
+        await szoljFeliratkozas(rossz, { kuld, korlat: laza() }),
+      ).toMatchObject({ allapot: "hiba" })
+    expect(kuld).toHaveBeenCalledTimes(1)
+  })
+
   it("SZ-HIBA: rossz cim, hozzajarulas nelkul: nem megy ki, korall mondata all, a beirt cim megmarad", async () => {
     const kuld = vi.fn()
     expect(
