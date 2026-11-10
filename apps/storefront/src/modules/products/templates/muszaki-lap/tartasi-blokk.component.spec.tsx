@@ -139,6 +139,10 @@ describe("a tartási blokk", () => {
     expect(screen.getByTestId("tartas-vasarlas-elott").textContent).toContain(
       "Érett medencét nem igényel.",
     )
+    // a részletek sora ugyanazt a mondatot mondja, nem "0 hónap"-ot (barracuda, #729)
+    const sor = screen.getByTestId("tartas-erettseg").textContent
+    expect(sor).toContain("Érett medencét nem igényel.")
+    expect(sor).not.toContain("0 hónap")
   })
 
   it("gerinctelennél a liter, ha van (a zóna a részletekbe kerül); ha csak zónája van, az elhelyezés", () => {
