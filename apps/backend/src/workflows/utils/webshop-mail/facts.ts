@@ -233,6 +233,8 @@ export const WEBSHOP_MAIL_FACTS_CONTRACT = {
     // side, so v1 carries them from the start rather than a v2
     "gls_logo_url",
     "gls_point_type",
+    // V3.3 S3 (69b5f2ef): optional, the OS parses it tolerantly (acropora-os #2373): version 1 stays
+    "usage_guides",
   ],
   RefundMailFacts: ["display_id", "amount", "refunded_total", "last4"],
 } as const
