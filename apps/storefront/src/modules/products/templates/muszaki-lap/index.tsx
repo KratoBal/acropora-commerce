@@ -12,6 +12,7 @@ import { besorolasUt } from "@lib/util/kategoria-fa"
 import React from "react"
 import type { TermekTudas } from "@lib/data/product-knowledge"
 import { TermekTudasBlokk, tudasLeiras, vanTudas } from "./termek-tudas"
+import { TartasiBlokk } from "./tartasi-blokk"
 
 /**
  * A MUSZAKI TERMEKLAP: A VAZ BEKOTESE, ES CSAK A MUSZAKI TERMEKEKRE.
@@ -201,6 +202,17 @@ const MuszakiLap = ({
       <>
         {tartalom.fulek}
         <TermekTudasBlokk tudas={tudas!} locale={locale} />
+      </>
+    )
+  /*
+    A TARTASI ADATOK (V2.2 S4) CSAK ELO ALLATON, ES ADAT NELKUL IS: a hely "Ellenőrzés alatt" szoveget kap, hogy a vevo
+    lassa, hogy ez az adat meg nincs ellenorizve, ne azt, hogy nincs is ilyen.
+  */
+  if (vilagaTermeknek(product, kategoriak) === "sotet")
+    tartalom.fulek = (
+      <>
+        {tartalom.fulek}
+        <TartasiBlokk metadata={product.metadata} locale={locale} />
       </>
     )
   return (
