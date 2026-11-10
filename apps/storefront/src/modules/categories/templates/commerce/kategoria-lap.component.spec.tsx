@@ -551,6 +551,28 @@ describe("a tartási szűrő az élő állat kategórián", () => {
     expect(listaHivas().queryParams.id).toBeUndefined()
   })
 
+  it("adat nélküli kategória (minden darabszám 0): nincs tartási szakasz, nincs mondat, a lista szűrés nélkül", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(
+      valasz({
+        product_ids: [],
+        facets: {
+          difficulty: { KONNYU: 0, KOZEPES: 0, HALADO: 0, SZAKERTO: 0 },
+          reef_safe: 0,
+          tank: { "0-100": 0, "101-300": 0, "301-": 0 },
+        },
+      }),
+    )
+    await lap({ kind: "livestock" })
+    for (const id of [
+      "szuro-tartas-nehezseg",
+      "szuro-tartas-korallos",
+      "szuro-tartas-medence",
+      "szuro-megjegyzes",
+    ])
+      expect(screen.queryByTestId(id), id).toBeNull()
+    expect(listaHivas().queryParams.id).toBeUndefined()
+  })
+
   it("szűrő nélkül: a csoportok a darabszámmal, csak a nem nulla érték, és a lista id-szűrő nélkül", async () => {
     tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz())
     await lap({ kind: "livestock" })
