@@ -15,6 +15,17 @@ export const en: Dictionary = {
     categoryHeading: "Category",
     brandHeading: "Brand",
     moreBrands: "{count} more brands",
+    husbandryDifficulty: "Care level",
+    husbandryTank: "Minimum tank",
+    husbandryUnchecked:
+      "The husbandry data of {count} animals is still being checked, so the filter cannot place them.",
+    husbandryUncheckedOne:
+      "The husbandry data of 1 animal is still being checked, so the filter cannot place it.",
+    husbandryShowAll: "Show all without the filter",
+    husbandryTooMany:
+      "Too many animals in this category match this husbandry filter, so it was not applied. Choose a sub-category.",
+    husbandryUnavailable:
+      "The husbandry filter is not available right now, so the list is shown unfiltered.",
     activeFilters: "Active filters:",
     removeBrandFilter: "Remove the {name} filter",
     unknownBrand: "Unknown brand",

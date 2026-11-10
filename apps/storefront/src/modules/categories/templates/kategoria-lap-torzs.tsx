@@ -10,6 +10,7 @@ import {
 } from "@lib/util/kategoria-fa"
 import { markaAzonositok } from "@lib/util/marka-szuro"
 import { parseOptionValueIds } from "@lib/util/product-option-filters"
+import { tartasiSzuroKeresbol } from "@lib/util/tartasi-szuro"
 import CategoryTemplate from "@modules/categories/templates"
 import { morzsaLd } from "@lib/seo/strukturalt-adat"
 import { getBaseURL } from "@lib/util/env"
@@ -37,6 +38,9 @@ export type KategoriaKeres = Record<string, string | string[] | undefined> & {
   page?: string
   optionValueIds?: string | string[]
   marka?: string | string[]
+  nehezseg?: string | string[]
+  korallos?: string | string[]
+  medence?: string | string[]
 }
 
 export async function kategoriaLapTorzs(
@@ -46,6 +50,7 @@ export async function kategoriaLapTorzs(
   const { sortBy, page } = searchParams
   const optionValueIds = parseOptionValueIds(searchParams)
   const markak = markaAzonositok(searchParams.marka)
+  const tartas = tartasiSzuroKeresbol(searchParams)
 
   const productCategory = await getCategoryByHandle(
     decodeHandleParams(params.category),
@@ -129,6 +134,7 @@ export async function kategoriaLapTorzs(
         countryCode={params.countryCode}
         optionValueIds={optionValueIds}
         markak={markak}
+        tartas={tartas}
       />
     </>
   )
