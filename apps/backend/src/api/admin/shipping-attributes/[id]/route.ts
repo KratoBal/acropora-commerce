@@ -30,10 +30,12 @@ export const POST = async (
   req: MedusaRequest<AdminShippingAttributeFlagsType>,
   res: MedusaResponse
 ) => {
+  const { adopt_pickup_only_derived, ...flags } = req.validatedBody
   const shipping_attribute = await upsertByProductId(
     req.scope,
     req.params.id,
-    req.validatedBody
+    flags,
+    { adopt: adopt_pickup_only_derived }
   )
 
   res.json({ shipping_attribute })
