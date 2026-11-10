@@ -502,11 +502,27 @@ export const hu = {
     button: "Értesítést kérek",
     // NEM allit kuldott levelet (kuldott-level-allitas.spec.ts), es nem igeri az ertesitest megerosites elott
     done: "Köszönjük! A megadott címre érkező levél linkjével erősítsd meg, és szólunk, ha ilyen fajt újra kapunk.",
+    productTitle: "Értesíts, ha megérkezik",
+    productText:
+      "Add meg az e-mail címedet, és értesítünk, amikor ez a termék megérkezik.",
+    productConsent:
+      "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a termékről.",
+    productDone:
+      "Köszönjük! A megadott címre érkező levél linkjével erősítsd meg, és szólunk, ha ez a termék megérkezik.",
     errorEmail: "Ellenőrizd az e-mail címet, valami hiányzik belőle.",
     errorConsent: "Az értesítéshez a hozzájárulás szükséges.",
     errorLimit: "Túl sok kérés érkezett innen. Próbáld újra pár perc múlva.",
     errorOff: "Az értesítés-kérés most nem elérhető.",
     errorFailed: "Az értesítés-kérés most nem sikerült. Próbáld újra később.",
+  },
+  /** Egy uton levo elo allat erkezese a termek lapjan (V2.6 S3b): a nap es az allapot, ige nelkul. */
+  livestockArrival: {
+    title: "Érkezik",
+    expected: "Várható érkezés: {date}",
+    ordered: "Megrendelve",
+    inTransit: "Úton van",
+    // a nap mar elmult: nem mondunk datumot a multban, es nem igerunk ujat
+    late: "Az érkezés késik, új időpontot még nem tudunk mondani.",
   },
   /** Az értesítés-kérés levélben küldött két linkjének lapja (a hírlevélé mintájára). */
   stockAlertLink: {

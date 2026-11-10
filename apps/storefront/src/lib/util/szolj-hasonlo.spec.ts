@@ -7,7 +7,9 @@ import { en } from "@lib/i18n/dictionary/en"
 import { hu } from "@lib/i18n/dictionary/hu"
 import { sebessegKorlat } from "./hirlevel-feliratkozas"
 import {
+  erkezesUrlapKell,
   SZOLJ_LINK_UT,
+  szoljFajtaOf,
   szoljFaj,
   szoljFeliratkozas,
   szoljUrlapKell,
@@ -161,5 +163,65 @@ describe("a bolt mondata és a link útja", () => {
       megerosites: "/store/stock-alerts/confirm",
       leiratkozas: "/store/stock-alerts/unsubscribe",
     })
+  })
+})
+
+/*
+  "ÉRTESÍTS, HA MEGÉRKEZIK" (V2.6 S3b): ugyanaz a feliratkozas, a bolt `product` fajtajaval. MI PIROSIT: a termekre varo urlap
+  a FAJT kuldene (a bolt a cim fajara iratna fel: barmelyik darabra szolna, nem erre); az ismeretlen vagy hianyzo fajta a
+  termeket kapna (a kliens nem hivhat elo a regi alaktol eltero viselkedest); a termek-urlap a kapcsolo nelkul all; a
+  termek hozzajarulas-mondata betuben elter a bolt rogzitettjetol.
+*/
+describe("a feliratkozas fajtaja", () => {
+  it("SZ-FAJTA: a kuldott kind a kert fajta; hianyzo fajta a faj (a V2.4 alak)", async () => {
+    const kuld = vi.fn(async () => ({ subscribed: true }))
+    await szoljFeliratkozas(urlap({ fajta: "product" }), {
+      kuld,
+      korlat: laza(),
+    })
+    expect(kuld).toHaveBeenLastCalledWith(
+      expect.objectContaining({ kind: "product", product_id: "prod_sold" }),
+    )
+    await szoljFeliratkozas(urlap(), { kuld, korlat: laza() })
+    expect(kuld).toHaveBeenLastCalledWith(
+      expect.objectContaining({ kind: "species" }),
+    )
+  })
+
+  it("SZ-FAJTA-OLVASO: csak a `product` szo ad termeket, minden mas (ismeretlen, ures, nem szoveg) a fajt", () => {
+    expect(szoljFajtaOf("product")).toBe("product")
+    for (const ertek of [
+      "species",
+      "",
+      "Product",
+      "PRODUCT",
+      null,
+      undefined,
+      7,
+      {},
+    ])
+      expect(szoljFajtaOf(ertek)).toBe("species")
+  })
+
+  it("SZ-ERKEZES-KELL: az erkezes-urlap csak a kapcsoloval, es csak ha az erkezes latszik", () => {
+    vi.stubEnv("NEXT_PUBLIC_STOCK_ALERT", "on")
+    expect(erkezesUrlapKell(true)).toBe(true)
+    expect(erkezesUrlapKell(false)).toBe(false)
+    for (const ertek of ["", "true", "yes", "ON"]) {
+      vi.stubEnv("NEXT_PUBLIC_STOCK_ALERT", ertek)
+      expect([ertek, erkezesUrlapKell(true)]).toEqual([ertek, false])
+    }
+  })
+
+  it("SZ-HOZZAJARULAS-TERMEK: a termek mondata, magyarul es angolul, betuben a bolt subject.ts-e", () => {
+    const bolt = readFileSync(
+      join(__dirname, "../../../../backend/src/modules/stock-alert/subject.ts"),
+      "utf-8",
+    )
+    expect(bolt).toContain("export const STOCK_ALERT_CONSENT")
+    expect(bolt).toContain(JSON.stringify(hu.stockAlert.productConsent))
+    expect(bolt).toContain(JSON.stringify(en.stockAlert.productConsent))
+    // a ket fajta mondata kulon: a termek-mondat nem a fajte
+    expect(hu.stockAlert.productConsent).not.toBe(hu.stockAlert.consent)
   })
 })

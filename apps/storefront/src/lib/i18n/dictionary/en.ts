@@ -483,12 +483,27 @@ export const en: Dictionary = {
     policyLink: "Privacy notice",
     button: "Notify me",
     done: "Thank you! Confirm it with the link in the mail arriving at this address, and we will tell you when this species is back.",
+    productTitle: "Tell me when it arrives",
+    productText:
+      "Leave your e-mail address and we will let you know when this product arrives.",
+    productConsent:
+      "I agree to be notified at this address about this product.",
+    productDone:
+      "Thank you! Confirm it with the link in the mail arriving at this address, and we will tell you when this product arrives.",
     errorEmail: "Check the e-mail address, something is missing from it.",
     errorConsent: "The notification needs your consent.",
     errorLimit:
       "Too many requests came from here. Please try again in a few minutes.",
     errorOff: "Notifications are not available right now.",
     errorFailed: "The request did not work. Please try again later.",
+  },
+  /** The arrival of a live animal on its way, on the product's page (V2.6 S3b): the day and the stage. */
+  livestockArrival: {
+    title: "Arriving",
+    expected: "Expected: {date}",
+    ordered: "Ordered",
+    inTransit: "On its way",
+    late: "The arrival is delayed, and we cannot give a new date yet.",
   },
   stockAlertLink: {
     confirmTitle: "Confirm your notification request",

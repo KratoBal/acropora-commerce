@@ -4,6 +4,7 @@ import ImageGallery from "@modules/products/components/image-gallery"
 import { kepAltok } from "@modules/products/components/image-gallery/kep-alt"
 import ProductActions from "@modules/products/components/product-actions"
 import RelatedProducts from "@modules/products/components/related-products"
+import Erkezik from "@modules/products/components/erkezik"
 import SzoljHasonlo from "@modules/products/components/szolj-hasonlo"
 import ProductInfo from "@modules/products/templates/product-info"
 import ProductBreadcrumb from "@modules/products/components/product-breadcrumb"
@@ -31,7 +32,12 @@ import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
 import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import { besorolasUt } from "@lib/util/kategoria-fa"
-import { szoljUrlapKell } from "@lib/util/szolj-hasonlo"
+import {
+  arrivalShown,
+  livestockArrivalOf,
+  shopDay,
+} from "@lib/util/livestock-arrival"
+import { erkezesUrlapKell, szoljUrlapKell } from "@lib/util/szolj-hasonlo"
 import { vilagaTermeknek } from "@modules/products/components/lap-vaz/vilag-valto"
 
 type ProductTemplateProps = {
@@ -79,6 +85,25 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     uniquePiece: uniquePieceOf(product.metadata),
     inventoryKnown: inventoryKnownOf(product),
   })
+
+  /**
+   * AZ UTON LEVO ELO ALLAT (V2.6 S3b): a termek metaadataban a `livestock_arrival` kulcs (az OS irja), csak ha a termek most
+   * nem kaphato. A BLOKK FUGGVENY (mint a cselekves lent): a ket helyen, ahol a lapba kerul, kulon peldany, nem egy
+   * valtozoba tett JSX, ami ugyanazt az azonositot vinne mindkettore.
+   */
+  const erkezes = livestockArrivalOf(product.metadata)
+  const erkezesLatszik =
+    erkezes !== null && arrivalShown(erkezes, ragadosSavAllapota)
+  const erkezikBlokk = () =>
+    erkezes ? (
+      <Erkezik
+        erkezes={erkezes}
+        termekId={product.id}
+        urlap={erkezesUrlapKell(true)}
+        ma={shopDay()}
+        locale={locale}
+      />
+    ) : null
 
   /**
    * A CSELEKVES FUGGVENY, NEM VALTOZO -- ES EZ NEM STILUS.
@@ -267,7 +292,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
                       }
                     />
                   </Suspense>
-                  {szoljUrlapKell(ragadosSavAllapota, product.title) ? (
+                  {erkezesLatszik ? (
+                    erkezikBlokk()
+                  ) : szoljUrlapKell(ragadosSavAllapota, product.title) ? (
                     <SzoljHasonlo termekId={product.id} locale={locale} />
                   ) : null}
                 </div>
@@ -552,7 +579,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           a cim fajt nevez, es csak a kapcsolo mogott (a hozzajarulas es a level
           szovege nem vegleges).
         */}
-        {szoljUrlapKell(ragadosSavAllapota, product.title) ? (
+        {erkezesLatszik ? (
+          erkezikBlokk()
+        ) : szoljUrlapKell(ragadosSavAllapota, product.title) ? (
           <SzoljHasonlo termekId={product.id} locale={locale} />
         ) : null}
       </div>
