@@ -9,6 +9,7 @@ import {
   SIMILAR_ITEMS_LABEL,
   similarItemsHref,
   SOLD_OUT_EXPLANATION,
+  termekCsakUtanrendelesre,
   UNIQUE_PIECE_PROMISE,
   uniquePieceOf,
   variantPurchasable,
@@ -427,5 +428,63 @@ describe("a szűkösség-sor száma", () => {
   /** Hianyzo mezo nem nulla: ott NEM tudunk semmit, tehat nem allitunk. */
   it("ismeretlen készleten nem áll a sor", () => {
     expect(scarcityCountOf({ allow_backorder: false })).toBeNull()
+  })
+})
+
+/*
+  WHAT TURNS THIS RED (the arrival line on a backorder-only product, 2026-11-10). A product with stock counted as backorder-only
+  (the line would then sit on a product the buy box says "Raktáron" for); an unmanaged-stock variant treated as backorder-only;
+  a product whose only variant cannot be bought at all treated as backorder-only; the zero-stock backorder product NOT counted.
+*/
+describe("a termék csak utánrendeléssel kapható", () => {
+  const utanrendel = {
+    manage_inventory: true,
+    allow_backorder: true,
+    inventory_quantity: 0,
+  }
+  const raktaron = {
+    manage_inventory: true,
+    allow_backorder: true,
+    inventory_quantity: 3,
+  }
+
+  it("kezelt készlet, nulla darab, hátralékkal: igen (a hiányzó darabszám is nullának számít, mint a vásárlási dobozban)", () => {
+    expect(termekCsakUtanrendelesre({ variants: [utanrendel] })).toBe(true)
+    expect(
+      termekCsakUtanrendelesre({
+        variants: [{ ...utanrendel, inventory_quantity: null }],
+      }),
+    ).toBe(true)
+  })
+
+  it("van készlet valamelyik változaton: nem", () => {
+    expect(termekCsakUtanrendelesre({ variants: [raktaron] })).toBe(false)
+    expect(termekCsakUtanrendelesre({ variants: [utanrendel, raktaron] })).toBe(
+      false,
+    )
+  })
+
+  it("kezeletlen készlet valamelyik változaton: nem", () => {
+    expect(
+      termekCsakUtanrendelesre({
+        variants: [utanrendel, { manage_inventory: false }],
+      }),
+    ).toBe(false)
+  })
+
+  it("hátralék nélküli nulla készlet (nem kapható) és a változat nélküli termék: nem", () => {
+    expect(
+      termekCsakUtanrendelesre({
+        variants: [
+          {
+            manage_inventory: true,
+            allow_backorder: false,
+            inventory_quantity: 0,
+          },
+        ],
+      }),
+    ).toBe(false)
+    expect(termekCsakUtanrendelesre({ variants: [] })).toBe(false)
+    expect(termekCsakUtanrendelesre({})).toBe(false)
   })
 })

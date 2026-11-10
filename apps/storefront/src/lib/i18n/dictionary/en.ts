@@ -504,6 +504,9 @@ export const en: Dictionary = {
     ordered: "Ordered",
     inTransit: "On its way",
     late: "The arrival is delayed, and we cannot give a new date yet.",
+    expectedOrderable: "Available to order, expected: {date}",
+    lateOrderable:
+      "Available to order, but the arrival is delayed, and we cannot give a new date yet.",
   },
   stockAlertLink: {
     confirmTitle: "Confirm your notification request",

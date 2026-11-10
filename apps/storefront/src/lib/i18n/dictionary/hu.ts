@@ -523,6 +523,9 @@ export const hu = {
     inTransit: "Úton van",
     // a nap mar elmult: nem mondunk datumot a multban, es nem igerunk ujat
     late: "Az érkezés késik, új időpontot még nem tudunk mondani.",
+    expectedOrderable: "Rendelhető, várható érkezés: {date}",
+    lateOrderable:
+      "Rendelhető, de az érkezés késik, új időpontot még nem tudunk mondani.",
   },
   /** Az értesítés-kérés levélben küldött két linkjének lapja (a hírlevélé mintájára). */
   stockAlertLink: {

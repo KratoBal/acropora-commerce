@@ -483,6 +483,21 @@ export function csakUtanrendelesre(
   )
 }
 
+/**
+ * A TERMEK CSAK UTANRENDELESSEL KAPHATO: van olyan valtozata, ami `csakUtanrendelesre` (kezelt keszlet, nulla darab,
+ * utanrendelheto), es EGYIK valtozatnak sincs keszlete es egyiknek sem kezeletlen a keszlete. Az "Erkezik" sor ezen
+ * all a "kaphato" oldalon is (V2.6 S3b, javitas): az uton levo allat erkezesenek napja annak is szol, aki ra rendel,
+ * mig egy keszleten levo termeken a sor a vasarlasi dobozt zavarna meg.
+ */
+export function termekCsakUtanrendelesre(product: {
+  variants?: ElerhetosegValtozat[] | null
+}): boolean {
+  const valtozatok = product.variants ?? []
+  const raktaron = (v: ElerhetosegValtozat) =>
+    !v.manage_inventory || (v.inventory_quantity || 0) > 0
+  return valtozatok.some(csakUtanrendelesre) && !valtozatok.some(raktaron)
+}
+
 /** A keszlet ismert-e (a vasarlasi allapot `inventoryKnown`-ja, ugyanaz a szabaly). */
 export function keszletIsmert(
   valtozat: ElerhetosegValtozat | null | undefined,

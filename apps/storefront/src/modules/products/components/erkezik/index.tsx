@@ -22,10 +22,13 @@ export default function Erkezik({
   termekId,
   urlap,
   ma,
+  rendelheto = false,
   locale = "hu",
 }: {
   erkezes: LivestockArrival
   termekId: string
+  /** a termek utanrendelessel kaphato: a sor ezt mondja ("Rendelheto, ..."), es az ertesito urlap a hivo dontese (ilyenkor nem kell) */
+  rendelheto?: boolean
   urlap: boolean
   ma: string
   locale?: Locale
@@ -44,10 +47,17 @@ export default function Erkezik({
         </h2>
         <p className="txt-medium" data-testid="erkezik-nap">
           {kesik
-            ? t("livestockArrival.late")
-            : t("livestockArrival.expected", {
-                date: arrivalDayText(erkezes.expectedOn, locale),
-              })}
+            ? t(
+                rendelheto
+                  ? "livestockArrival.lateOrderable"
+                  : "livestockArrival.late",
+              )
+            : t(
+                rendelheto
+                  ? "livestockArrival.expectedOrderable"
+                  : "livestockArrival.expected",
+                { date: arrivalDayText(erkezes.expectedOn, locale) },
+              )}
         </p>
         <p className="txt-small text-gray-600" data-testid="erkezik-allapot">
           {erkezes.stage === "in_transit"

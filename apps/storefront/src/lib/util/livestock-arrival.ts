@@ -86,10 +86,18 @@ export const arrivalIsLate = (
 ): boolean => arrival.expectedOn < today
 
 /**
- * Whether the page shows the arrival at all: not when the product is buyable now (an arrival of more of the same would only
- * confuse the buy box).
+ * Whether the page shows the arrival at all: not when the product is buyable from STOCK (an arrival of more of the same would only
+ * confuse the buy box). A product buyable ONLY on backorder (managed stock, zero pieces, backorder allowed: `backorderOnly`) shows it:
+ * that is the customer who most needs the day, since the order waits for the animal (test shop, 2026-11-10: the OS gives every
+ * ordinary product backorder, so a zero-stock fish is "Rendelhető" and the line never stood on the products it was made for).
  */
 export const arrivalShown = (
   arrival: LivestockArrival | null,
   pageState: string,
-): arrival is LivestockArrival => arrival !== null && pageState !== "KAPHATO"
+  backorderOnly: boolean = false,
+): arrival is LivestockArrival =>
+  arrival !== null && (pageState !== "KAPHATO" || backorderOnly)
+
+/** The line is worded as "orderable": the page is buyable (on backorder) while the arrival is shown. */
+export const arrivalOrderable = (pageState: string): boolean =>
+  pageState === "KAPHATO"
