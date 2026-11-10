@@ -197,8 +197,8 @@ export const NEHEZSEG_SKALA: Readonly<
 }
 
 /**
- * A "KORALLOS AKVARIUMBAN TARTHATO" FELIRAT A SPEC JAVASLATA (a "reef" szo magyar szovegben nincs, Luca szabalya, 11-04);
- * LUCA JOVAHAGYASA KELL az elesites elott (acrobot keri el). Egy helyen all, hogy a csere egy sor legyen.
+ * A "KORALLOS AKVARIUMBAN TARTHATO" FELIRAT: Luca szohasznalati szabalya (emlek 2637, 11-04) pont ezt a kifejezest adja
+ * (korallos / tengeri / sos vizes akvarium; a "reef" es a "zatonyakvarium" kozszo nem), tehat marad (acrobot 46080).
  */
 export const KORALLOS_FELIRAT = "Korallos akváriumban tartható"
 
