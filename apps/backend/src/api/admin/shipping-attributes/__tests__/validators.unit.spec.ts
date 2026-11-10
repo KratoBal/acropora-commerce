@@ -18,3 +18,21 @@ describe("the shipping attribute body", () => {
     }
   })
 })
+
+// card c603774e: the OS marks the pickup_only it derived, and the reviewed adoption can claim an older value
+describe("the pickup_only mark in the body", () => {
+  // MI PIROSIT: ha a jelolo vagy az atvetel mezo nem volna a semaban (a szigoru sema 400-zal utasitana el az OS irasat)
+  it("accepts the mark and the adoption flag, on the list route body and on the per-product body", () => {
+    const body = { pickup_only: true, pickup_only_derived: true, adopt_pickup_only_derived: true }
+    expect(AdminShippingAttributeFlags.safeParse(body).success).toBe(true)
+    expect(AdminUpsertShippingAttribute.safeParse({ product_id: "prod_1", ...body }).success).toBe(true)
+  })
+
+  // MI PIROSIT: ha a jelolo szabad szoveget engedne (egy "false" szoveg igaznak szamitana)
+  it("refuses a mark that is not a boolean", () => {
+    for (const value of ["true", 1, null]) {
+      expect(AdminShippingAttributeFlags.safeParse({ pickup_only_derived: value }).success).toBe(false)
+      expect(AdminShippingAttributeFlags.safeParse({ adopt_pickup_only_derived: value }).success).toBe(false)
+    }
+  })
+})
