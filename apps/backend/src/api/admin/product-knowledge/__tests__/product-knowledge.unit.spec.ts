@@ -6,7 +6,8 @@ import { AdminPutProductKnowledge } from "../validators"
   THE CONTRACT ROUTES (KZ Amino slice, PD-014). What turns these red: a conflict
   accepted WITH a value; an unknown status, block or key let through; a field or
   block sent twice reaching the database; the response not in the contract
-  shape; the store route answering for a draft product.
+  shape; the store route answering for a draft product; the usage guide block
+  (V3.3) refused, or put before the description's blocks.
 */
 const fact = (over: Record<string, unknown> = {}) => ({
   field: "dosing",
@@ -37,6 +38,8 @@ describe("AdminPutProductKnowledge", () => {
         copy: [
           { block: "lead", body: "Lead.", revision: 1 },
           { block: "body", body: "One.\n\nTwo.", revision: 1 },
+          // V3.3 (card 69b5f2ef): the usage guide is a block of its own
+          { block: "usage", body: "Rázd fel.\n\nMérd ki.", revision: 1 },
         ],
       })
     ).toBe(true)
@@ -83,6 +86,7 @@ function scope(published: boolean, extraFacts: Record<string, unknown>[] = []) {
       ...extraFacts.map(row),
     ],
     listProductKnowledgeCopies: async () => [
+      row({ block: "usage", body: "U", revision: 1 }),
       row({ block: "body", body: "B", revision: 2 }),
       row({ block: "lead", body: "L", revision: 2 }),
     ],
@@ -124,11 +128,12 @@ const SHAPE = {
   copy: [
     { block: "lead", body: "L", revision: 2 },
     { block: "body", body: "B", revision: 2 },
+    { block: "usage", body: "U", revision: 1 },
   ],
 }
 
 describe("the routes", () => {
-  it("admin GET answers in the contract shape, facts by field, lead before body", async () => {
+  it("admin GET answers in the contract shape, facts by field, lead before body before usage", async () => {
     expect((await call(adminGet, scope(true).scope)).product_knowledge).toEqual(
       SHAPE
     )

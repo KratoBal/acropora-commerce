@@ -7,7 +7,7 @@ export const resolveService = (
   scope: MedusaContainer
 ): ProductKnowledgeModuleService => scope.resolve(PRODUCT_KNOWLEDGE_MODULE)
 
-const BLOCK_ORDER = ["lead", "body"]
+const BLOCK_ORDER = ["lead", "body", "usage"]
 
 /**
  * The contract shape (PD-014), shared by the admin and the store routes. A
