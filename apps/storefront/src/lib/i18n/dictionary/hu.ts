@@ -807,6 +807,7 @@ export const hu = {
     knowledgeClaims: "A gyártó szerint",
     knowledgeInfo: "Gyártói adatok",
     knowledgePackage: "A csomag tartalma",
+    knowledgeUsageGuide: "Használati útmutató",
     hintMinStep:
       "legalább {minimum} darab rendelhető, és {step} darabonként növelhető",
     hintMin: "legalább {minimum} darab rendelhető",

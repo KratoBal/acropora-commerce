@@ -146,14 +146,36 @@ function escapeHtml(value: string): string {
 }
 
 /**
+ * A HASZNALATI UTMUTATO (V3.3, kartya 69b5f2ef): a `usage` blokk bekezdesei, vagy ures lista. A szoveget korall irja a
+ * sablonja szerint, ember hagyja jova, es az OS csak akkor vetiti, ha minden teny, amire epul, ellenorzott (ugyanaz a
+ * kapu, mint a leirase); a lap tehat csak megjelenit, szamot nem tesz hozza. Az ures sor bekezdest bont; a bekezdesen
+ * beluli sortores MARAD (a lepesek sorai), a React escape-el.
+ */
+export function hasznalatiUtmutato(
+  tudas: TermekTudas | null | undefined,
+): string[] {
+  const blokk = (tudas?.copy ?? []).find((c) => c.block === "usage")
+  return (blokk?.body ?? "")
+    .replace(/\r\n?/g, "\n")
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+}
+
+/**
  * VAN-E MIT MUTATNI. A muszaki lap ebbol donti el, hogy a blokk egyaltalan
  * bekerul-e: tudas nelkuli termeknel a lap BETURE a mai marad (a `fulek` slot
- * nem kap ures toldalekot, ami a vaz varakozo szoveget elnyomna).
+ * nem kap ures toldalekot, ami a vaz varakozo szoveget elnyomna). A hasznalati
+ * utmutato maga is ok (V3.3).
  */
 export function vanTudas(tudas: TermekTudas | null | undefined): boolean {
   if (!tudas) return false
   const { kulcs, szakaszok } = reszek(tudas)
-  return kulcs.length > 0 || szakaszok.length > 0
+  return (
+    kulcs.length > 0 ||
+    szakaszok.length > 0 ||
+    hasznalatiUtmutato(tudas).length > 0
+  )
 }
 
 export function TermekTudasBlokk({
@@ -168,6 +190,7 @@ export function TermekTudasBlokk({
   const t = translator(locale)
   const { kulcs, szakaszok } = reszek(tudas, t, locale)
   const kalkulator = kalkulatorErtek(tudas)
+  const utmutato = hasznalatiUtmutato(tudas)
 
   return (
     <section
@@ -195,6 +218,16 @@ export function TermekTudasBlokk({
           ) : null}
         </div>
       ))}
+      {utmutato.length ? (
+        <div data-testid="tudas-hasznalati-utmutato">
+          <h3 className="text-base-semi">{t("product.knowledgeUsageGuide")}</h3>
+          {utmutato.map((bekezdes, i) => (
+            <p key={i} className="mt-2 whitespace-pre-line">
+              {bekezdes}
+            </p>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
