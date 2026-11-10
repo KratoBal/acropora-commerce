@@ -13,7 +13,8 @@ import { operationsOrSkip } from "./send"
  *
  * THE OS RENDERS IT AND NOTHING ELSE DOES (Balázs, 2026-10-05: the OS renders, the shop sends, no built-in fallback
  * mail), so there is NO TEXT HERE and no statutory wording: the shop sends the facts (the order's number, the
- * declaration's reference, the name declared, the lines, the time of receipt) and the wording of the mail is the owner's
+ * declaration's reference, the name declared, the lines (their ids, and their titles when the order could be read), the
+ * time of receipt) and the wording of the mail is the owner's
  * and the lawyer's, [KITÖLTENDŐ] in the OS's template `WEBSHOP_WITHDRAWAL_RECEIVED`. Until that template exists the OS
  * answers 422 and the mail waits in the outbox (nothing goes out in the shop's own words). With the renderer off
  * (`ACROPORA_WEBSHOP_MAIL_RENDERER` not `os`) nothing goes at all.
@@ -44,6 +45,8 @@ export const notifyWithdrawalReceived = async (
     withdrawalId: string
     declaredName: string
     itemIds: string[]
+    /** the titles of the lines, when they could be read: the OS lists them; left out the mail has no list */
+    itemTitles?: string[]
     receivedAt: string
   },
   env: NodeJS.ProcessEnv = process.env,
@@ -61,6 +64,7 @@ export const notifyWithdrawalReceived = async (
         withdrawal_id: input.withdrawalId,
         declared_name: input.declaredName,
         item_ids: input.itemIds,
+        ...(input.itemTitles?.length ? { item_titles: input.itemTitles } : {}),
         received_at: input.receivedAt,
       },
     }

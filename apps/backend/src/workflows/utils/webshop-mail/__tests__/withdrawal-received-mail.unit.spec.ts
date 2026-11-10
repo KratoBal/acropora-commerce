@@ -64,6 +64,23 @@ describe("notifyWithdrawalReceived", () => {
     })
   })
 
+  it("carries the lines' titles in the facts when it has them, and no key when it has none", async () => {
+    await notifyWithdrawalReceived(container, { ...input, itemTitles: ["Kék korall", "Tengeri só (20 kg)"] }, ON)
+    expect(deliverShopMail.mock.calls[0][1].render.facts).toEqual({
+      display_id: 1042,
+      withdrawal_id: "ordwdr_1",
+      declared_name: "Kiss Anna",
+      item_ids: ["item_1", "item_2"],
+      item_titles: ["Kék korall", "Tengeri só (20 kg)"],
+      received_at: "2026-11-05T18:00:00.000Z",
+    })
+    for (const itemTitles of [undefined, []]) {
+      deliverShopMail.mockClear()
+      await notifyWithdrawalReceived(container, { ...input, itemTitles }, ON)
+      expect(deliverShopMail.mock.calls[0][1].render.facts).not.toHaveProperty("item_titles")
+    }
+  })
+
   it("carries no text of the shop's own: the content is empty, the OS renders", async () => {
     await notifyWithdrawalReceived(container, input, ON)
     expect(deliverShopMail.mock.calls[0][1].content).toEqual({ subject: "", text: "", html: "" })

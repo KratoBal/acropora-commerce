@@ -5,6 +5,7 @@ import { guestWithdrawalsOf } from "../guest-order/operations"
 import type { AccessibleOrder } from "../problem-report/report"
 import { notifyWithdrawalReceived } from "../webshop-mail/withdrawal-received-mail"
 import { cleanName } from "./rules"
+import { withdrawalLineTitles } from "./titles"
 import { createWithdrawal } from "./withdrawal"
 
 /**
@@ -62,11 +63,17 @@ export const declareWithdrawal = async (
   })
   // It never throws (the function catches and logs); the catch here is only a net for a rejection that would otherwise
   // go unhandled.
-  void notifyWithdrawalReceived(container, {
-    order: { id: order.id, displayId: order.displayId, email: order.email },
-    withdrawalId: result.id,
-    declaredName: customerName,
-    itemIds: result.itemIds,
-    receivedAt: result.createdAt,
-  }).catch(() => undefined)
+  // The titles of the lines go into the mail's facts when the order can be read (`withdrawalLineTitles` never throws:
+  // the acknowledgement is a legal one and goes out with or without them).
+  void (async () => {
+    const itemTitles = await withdrawalLineTitles(container, order.id, result.itemIds)
+    await notifyWithdrawalReceived(container, {
+      order: { id: order.id, displayId: order.displayId, email: order.email },
+      withdrawalId: result.id,
+      declaredName: customerName,
+      itemIds: result.itemIds,
+      ...(itemTitles.length ? { itemTitles } : {}),
+      receivedAt: result.createdAt,
+    })
+  })().catch(() => undefined)
 }
