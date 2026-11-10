@@ -153,6 +153,14 @@ export const en: Dictionary = {
     services: "Services",
     myAquariums: "My aquariums",
   },
+  arrivingAnimals: {
+    title: "Arriving animals",
+    intro:
+      "The live animals we have on their way, and the day we expect them. The day of arrival may change.",
+    empty: "There are no animals on their way that we can show here right now.",
+    kind: { FISH: "Fish", INVERTEBRATE: "Invertebrates", CORAL: "Corals" },
+    viewProduct: "View the product page",
+  },
   hamarosan: {
     eyebrow: "Coming soon",
     text: "This page is still being built.",
