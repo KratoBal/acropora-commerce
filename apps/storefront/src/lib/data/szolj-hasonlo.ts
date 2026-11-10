@@ -12,6 +12,7 @@ import {
 } from "@lib/util/hirlevel-link"
 import {
   SZOLJ_LINK_UT,
+  szoljFajtaOf,
   szoljFeliratkozas,
   type SzoljAllapot,
 } from "@lib/util/szolj-hasonlo"
@@ -35,6 +36,8 @@ export async function szoljFeliratkozasAkcio(
       termekId: String(formData.get("product_id") ?? ""),
       ip,
       nyelv: LOCALES.find((l) => l === formData.get("locale")),
+      // az urlap rejtett mezoje; ismeretlen ertek a fajt adja (a szerveroldali akcio nem hisz a kliensnek)
+      fajta: szoljFajtaOf(formData.get("kind")),
     },
     {
       korlat,

@@ -72,4 +72,25 @@ describe("SzoljHasonlo", () => {
       container.querySelector<HTMLInputElement>("input[name=locale]")?.value,
     ).toBe("en")
   })
+
+  it("SZU-FAJTA: a rejtett `kind` mezo a faj (alap) vagy a termek, es a termek-urlap a termek sajat szoveget es mondatat mutatja", () => {
+    const { container, unmount } = render(<SzoljHasonlo termekId="prod_sold" />)
+    const kind = () =>
+      container.querySelector<HTMLInputElement>("input[type=hidden][name=kind]")
+        ?.value
+    expect(kind()).toBe("species")
+    unmount()
+    const termek = render(<SzoljHasonlo termekId="prod_x" fajta="product" />)
+    expect(
+      termek.container.querySelector<HTMLInputElement>(
+        "input[type=hidden][name=kind]",
+      )?.value,
+    ).toBe("product")
+    expect(
+      screen.getByRole("heading", { name: "Értesíts, ha megérkezik" }),
+    ).toBeTruthy()
+    expect(screen.getByTestId("szolj-hasonlo-hozzajarulas").textContent).toBe(
+      "Hozzájárulok, hogy erre a címre értesítést küldjetek erről a termékről.",
+    )
+  })
 })

@@ -6,6 +6,7 @@ import { szoljFeliratkozasAkcio } from "@lib/data/szolj-hasonlo"
 import { translator } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { jogiOldal } from "@lib/util/fogyasztobarat"
+import type { SzoljFajta } from "@lib/util/szolj-hasonlo"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const MEZO =
@@ -24,11 +25,18 @@ const MEZO =
 export default function SzoljHasonlo({
   termekId,
   locale = "hu",
+  fajta = "species",
 }: {
   termekId: string
   locale?: Locale
+  /**
+   * Mire varunk (V2.6 S3b): a FAJRA ("Szólj, ha jön hasonló", az eladott egyedi darab lapjan) vagy pontosan erre a TERMEKRE
+   * ("Értesíts, ha megérkezik", egy uton levo allat). A mezo-nevek ugyanazok; a szoveg es a hozzajarulas mondata mas.
+   */
+  fajta?: SzoljFajta
 }) {
   const t = translator(locale)
+  const termekre = fajta === "product"
   const [allapot, kuld, folyamatban] = useActionState(
     szoljFeliratkozasAkcio,
     null,
@@ -42,7 +50,7 @@ export default function SzoljHasonlo({
       data-testid="szolj-hasonlo"
     >
       <h2 id="szolj-hasonlo-cim" className="text-xl-semi text-ui-fg-base">
-        {t("stockAlert.title")}
+        {t(termekre ? "stockAlert.productTitle" : "stockAlert.title")}
       </h2>
       {allapot?.allapot === "kesz" ? (
         <p
@@ -50,12 +58,15 @@ export default function SzoljHasonlo({
           className="txt-medium"
           data-testid="szolj-hasonlo-kesz"
         >
-          {t("stockAlert.done")}
+          {t(termekre ? "stockAlert.productDone" : "stockAlert.done")}
         </p>
       ) : (
         <form action={kuld} className="flex flex-col gap-3" noValidate>
-          <p className="txt-medium text-gray-600">{t("stockAlert.text")}</p>
+          <p className="txt-medium text-gray-600">
+            {t(termekre ? "stockAlert.productText" : "stockAlert.text")}
+          </p>
           <input type="hidden" name="product_id" value={termekId} />
+          <input type="hidden" name="kind" value={fajta} />
           <input type="hidden" name="locale" value={locale} />
           <div className="flex flex-col gap-3 small:flex-row">
             <input
@@ -95,7 +106,9 @@ export default function SzoljHasonlo({
             />
             <span>
               <span data-testid="szolj-hasonlo-hozzajarulas">
-                {t("stockAlert.consent")}
+                {t(
+                  termekre ? "stockAlert.productConsent" : "stockAlert.consent",
+                )}
               </span>{" "}
               <LocalizedClientLink
                 href={jogiOldal("adatkezeles")}

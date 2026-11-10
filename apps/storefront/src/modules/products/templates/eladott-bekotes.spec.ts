@@ -21,7 +21,11 @@ import { describe, expect, it } from "vitest"
  */
 type Lista = { kiegeszito: boolean; eladott: boolean; sor: number }
 
-function bekotes(forras: string): { listak: Lista[]; urlapok: number } {
+function bekotes(forras: string): {
+  listak: Lista[]
+  urlapok: number
+  erkezesek: number
+} {
   const fa = ts.createSourceFile(
     "index.tsx",
     forras,
@@ -31,6 +35,7 @@ function bekotes(forras: string): { listak: Lista[]; urlapok: number } {
   )
   const listak: Lista[] = []
   let urlapok = 0
+  let erkezesek = 0
   const attr = (n: ts.JsxOpeningLikeElement, nev: string) =>
     n.attributes.properties.find(
       (p): p is ts.JsxAttribute =>
@@ -48,10 +53,17 @@ function bekotes(forras: string): { listak: Lista[]; urlapok: number } {
         })
       if (nev === "SzoljHasonlo") urlapok++
     }
+    // az uton levo allat blokkja (V2.6 S3b): a `erkezikBlokk()` hivasa
+    if (
+      ts.isCallExpression(n) &&
+      ts.isIdentifier(n.expression) &&
+      n.expression.text === "erkezikBlokk"
+    )
+      erkezesek++
     ts.forEachChild(n, bejar)
   }
   bejar(fa)
-  return { listak, urlapok }
+  return { listak, urlapok, erkezesek }
 }
 
 const SABLON = readFileSync(join(__dirname, "index.tsx"), "utf8")
@@ -83,5 +95,22 @@ describe("a nem elérhető egyedi darab a sablon mindkét ágában", () => {
     )
     expect(urlapNelkul).not.toBe(SABLON)
     expect(bekotes(urlapNelkul).urlapok).toBe(1)
+  })
+
+  /*
+    AZ ERKEZES BLOKKJA UGYANAZOKON A HELYEKEN (V2.6 S3b): ahol a faj-urlap all, ott az "Érkezik" blokk is (a sablon ket lapot
+    rajzol, es egy erkezes a masikon is latszik). MI PIROSIT: egy ag, amelyik kimarad (az egyik lapon a termek erkezese nem
+    latszik, a masikon igen); a blokk, amit senki nem hiv meg.
+  */
+  it("az érkezés blokkja minden helyen ott áll, ahol a faj-űrlap", () => {
+    const { urlapok, erkezesek } = bekotes(SABLON)
+    expect(urlapok).toBe(2)
+    expect(erkezesek).toBe(urlapok)
+  })
+
+  it("a mérő kontrollja: az egyik helyről kivett blokk hívást pirosnak látja", () => {
+    const kivett = SABLON.replace(/erkezikBlokk\(\)\n/, "null\n")
+    expect(kivett).not.toBe(SABLON)
+    expect(bekotes(kivett).erkezesek).toBe(bekotes(SABLON).erkezesek - 1)
   })
 })

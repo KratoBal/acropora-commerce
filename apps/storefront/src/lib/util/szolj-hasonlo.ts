@@ -40,6 +40,25 @@ export const szoljUrlapKell = (
   cim: string | null | undefined,
 ): boolean => lapAllapot === "ELADVA" && szoljBekapcsolva() && !!szoljFaj(cim)
 
+/**
+ * MIRE VARUNK: a FAJRA (`species`, "Szólj, ha jön hasonló": a bolt a termek cimebol olvassa a fajt) vagy pontosan erre a
+ * TERMEKRE (`product`, "Értesíts, ha megérkezik", V2.6 S3b: egy uton levo allat, aminek van erkezese). A bolt
+ * mindkettot ismeri (`kind`); a hozzajarulas mondata kulon (a bolt `STOCK_ALERT_CONSENT` mondata fajtankent).
+ */
+export type SzoljFajta = "species" | "product"
+
+/** Ismeretlen vagy hianyzo fajta: a FAJ (a regi alak): ujat az urlap sosem kuld, de a szerveroldali akcio nem hisz neki. */
+export const szoljFajtaOf = (ertek: unknown): SzoljFajta =>
+  ertek === "product" ? "product" : "species"
+
+/**
+ * Kell-e az "Értesíts, ha megérkezik" urlap: van erkezes, a termek most nem kaphato (az `arrivalShown` szabalya), es a
+ * kapcsolo be van kapcsolva (a hozzajarulas es a level szovege nem vegleges). A faj-urlap ilyenkor nem all mellette: a
+ * konkretabb kerdes elsobbseget kap.
+ */
+export const erkezesUrlapKell = (erkezesLatszik: boolean): boolean =>
+  erkezesLatszik && szoljBekapcsolva()
+
 export type SzoljAllapot =
   | { allapot: "kesz" }
   | { allapot: "hiba"; uzenet: string; ertekek: { email: string } }
@@ -63,11 +82,13 @@ export async function szoljFeliratkozas(
     termekId: string
     ip: string
     nyelv?: Locale
+    /** mire varunk; hianyzo: a faj (a V2.4 alak) */
+    fajta?: SzoljFajta
   },
   fuggosegek: {
     kuld: (torzs: {
       product_id: string
-      kind: "species"
+      kind: SzoljFajta
       email: string
       consent: true
       locale: Locale
@@ -92,7 +113,7 @@ export async function szoljFeliratkozas(
   try {
     await fuggosegek.kuld({
       product_id: termekId,
-      kind: "species",
+      kind: urlap.fajta ?? "species",
       email,
       consent: true,
       locale: nyelv,
