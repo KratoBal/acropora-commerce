@@ -6,6 +6,7 @@ import {
   NEWSLETTER_CONFIRM_TTL_MS,
   newsletterTokenHash,
 } from "../../../../modules/newsletter/double-opt-in"
+import { LIVESTOCK_ARRIVAL_MODULE } from "../../../../modules/livestock-arrival"
 import { STOCK_ALERT_MODULE } from "../../../../modules/stock-alert"
 import StockAlertModuleService from "../../../../modules/stock-alert/service"
 import { STOCK_ALERT_CONSENT } from "../../../../modules/stock-alert/subject"
@@ -55,6 +56,13 @@ describe("StorePostStockAlert", () => {
     expect(valid(body({ locale: "en" })).success).toBe(true)
     expect(valid(body({ locale: "de" })).success).toBe(false)
     expect(valid(body({ locale: "en-hu" })).success).toBe(false)
+  })
+
+  it("SA-BODY-ARRIVAL: from the arrivals page an arrival_id instead of a product, exactly one of the two, and only for its species", () => {
+    expect(valid(body({ product_id: undefined, arrival_id: "lvarr_species" })).success).toBe(true)
+    expect(valid(body({ arrival_id: "lvarr_species" })).success).toBe(false)
+    expect(valid(body({ product_id: undefined })).success).toBe(false)
+    expect(valid(body({ product_id: undefined, arrival_id: "lvarr_species", kind: "product" })).success).toBe(false)
   })
 
   it("SA-BODY-TOKEN: a link's token is the 43 characters a token has", () => {
@@ -113,9 +121,23 @@ const harness = () => {
       data: PRODUCTS.filter((p) => p.id === filters.id && p.status === filters.status).map(({ id, title }) => ({ id, title })),
     })),
   }
+  // the "Érkező állatok" page's rows (V2.6 S4a): a species, a group, and a bound piece
+  const ARRIVALS = [
+    { id: "lvarr_species", label: "Amphiprion ocellaris", medusa_product_id: null },
+    { id: "lvarr_group", label: "Zoanthus", medusa_product_id: null },
+  ]
+  const arrivals = {
+    listLivestockArrivals: jest.fn(async (filters: { id: string }) => ARRIVALS.filter((a) => a.id === filters.id)),
+  }
   const scope = {
     resolve: (name: string) =>
-      name === STOCK_ALERT_MODULE ? service : name === ContainerRegistrationKeys.QUERY ? query : undefined,
+      name === STOCK_ALERT_MODULE
+        ? service
+        : name === LIVESTOCK_ARRIVAL_MODULE
+          ? arrivals
+          : name === ContainerRegistrationKeys.QUERY
+            ? query
+            : undefined,
   }
   const reply = () => ({
     statusCode: 0,
@@ -155,6 +177,28 @@ const loose = () => ({
 })
 
 describe("POST /store/stock-alerts", () => {
+  it("SA-POST-ARRIVAL: an arrival's sign-up waits for the species of the ROW's name, with no source product; a group or a missing row is refused", async () => {
+    const h = harness()
+    const res = await h.call(createStockAlertPost(loose(), h.sendConfirm, ON), { product_id: undefined, arrival_id: "lvarr_species" })
+    expect(res.statusCode).toBe(200)
+    expect(h.rows).toHaveLength(1)
+    expect(h.rows[0]).toMatchObject({
+      subject_kind: "species",
+      subject_key: "amphiprion ocellaris",
+      subject_label: "Amphiprion ocellaris",
+      source_product_id: null,
+      source: "arrival",
+    })
+    expect(h.query.graph).not.toHaveBeenCalled()
+    await expect(
+      h.call(createStockAlertPost(loose(), h.sendConfirm, ON), { product_id: undefined, arrival_id: "lvarr_group" })
+    ).rejects.toMatchObject({ type: "invalid_data" })
+    await expect(
+      h.call(createStockAlertPost(loose(), h.sendConfirm, ON), { product_id: undefined, arrival_id: "lvarr_nincs" })
+    ).rejects.toMatchObject({ type: "not_found" })
+    expect(h.rows).toHaveLength(1)
+  })
+
   it("SA-POST: the species from the product's title, the shop's consent sentence and its version, pending; the mail gets the subject", async () => {
     const h = harness()
     const res = await h.call(createStockAlertPost(loose(), h.sendConfirm, ON))
