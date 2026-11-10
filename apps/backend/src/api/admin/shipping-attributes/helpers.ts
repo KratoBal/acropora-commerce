@@ -3,9 +3,11 @@ import { MedusaContainer } from "@medusajs/framework"
 import { SHIPPING_ATTRIBUTES_MODULE } from "../../../modules/shipping-attributes"
 import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
 import ShippingAttributesModuleService from "../../../modules/shipping-attributes/service"
+import { withPickupOnlyDerived } from "./pickup-only-derived"
 
 export type ShippingAttributeFlags = {
   pickup_only: boolean
+  pickup_only_derived: boolean
   foxpost_forbidden: boolean
   is_heavy: boolean
   is_frozen: boolean
@@ -21,6 +23,7 @@ export const defaultFlags = (product_id: string) => ({
   id: null,
   product_id,
   pickup_only: false,
+  pickup_only_derived: false,
   foxpost_forbidden: false,
   is_heavy: false,
   is_frozen: false,
@@ -49,15 +52,18 @@ export const upsertByProductId = async (
     { take: 1 }
   )
 
+  // who set pickup_only follows the write (`pickup-only-derived.ts`)
+  const resolved = withPickupOnlyDerived(existing ?? null, flags)
+
   if (!existing) {
     const [created] = await service.createShippingAttributes([
-      { product_id, ...flags },
+      { product_id, ...resolved },
     ])
     return created
   }
 
   const [updated] = await service.updateShippingAttributes([
-    { id: existing.id, ...flags },
+    { id: existing.id, ...resolved },
   ])
   return updated
 }

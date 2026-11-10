@@ -5,6 +5,8 @@ import { LIVESTOCK_KINDS } from "../../../modules/shipping-attributes/livestock-
 export const AdminShippingAttributeFlags = z
   .object({
     pickup_only: z.boolean().optional(),
+    // written by the OS only: it derived pickup_only (card c603774e); see `pickup-only-derived.ts`
+    pickup_only_derived: z.boolean().optional(),
     foxpost_forbidden: z.boolean().optional(),
     is_heavy: z.boolean().optional(),
     is_frozen: z.boolean().optional(),

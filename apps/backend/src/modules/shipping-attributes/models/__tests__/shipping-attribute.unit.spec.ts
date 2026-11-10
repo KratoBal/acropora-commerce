@@ -29,6 +29,7 @@ describe("ShippingAttribute model", () => {
       "livestock_kind",
       "locker_unsuitable",
       "pickup_only",
+      "pickup_only_derived",
       "product_id",
       "updated_at",
     ])
@@ -47,6 +48,7 @@ describe("ShippingAttribute model", () => {
   it("defaults every flag to false, so missing data is never a restriction", () => {
     for (const flag of [
       "pickup_only",
+      "pickup_only_derived",
       "foxpost_forbidden",
       "is_heavy",
       "is_frozen",

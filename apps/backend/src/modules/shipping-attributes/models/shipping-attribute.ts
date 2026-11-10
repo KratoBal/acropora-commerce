@@ -25,6 +25,14 @@ export const ShippingAttribute = model
     /** The whole cart must be collected in store when any item has this set. */
     pickup_only: model.boolean().default(false),
 
+    /**
+     * WHO SET `pickup_only`: true when the OS DERIVED it (the product is under a live animal category and has no hand-set
+     * pickup of its own), written only by the OS. The OS may take it off again when the product leaves the live animal
+     * categories, and ONLY then: a value set by hand (the Medusa admin widget, or any write that does not carry this mark)
+     * has it false and is never cleared by the OS. The route resets it (`pickup-only-derived.ts`). Card c603774e.
+     */
+    pickup_only_derived: model.boolean().default(false),
+
     /** Foxpost must not be offered when any cart item has this set. */
     foxpost_forbidden: model.boolean().default(false),
 
