@@ -1,4 +1,5 @@
 import type { HttpTypes } from "@medusajs/types"
+import type { ReactNode } from "react"
 
 import type { Translate } from "@lib/i18n/dictionary"
 import { szuroLinkRel } from "@lib/seo/szuro-link"
@@ -67,6 +68,10 @@ export type ListaLapProps = {
   markaLista: MarkaSor[]
   markak: string[]
   markaLink: (id: string) => string
+  /** The live-animal category's husbandry filter groups, after the brands (V2.2 S5). */
+  tartasiSzakasz?: ReactNode
+  /** A sentence over the grid about the filter (unchecked animals, a filter not applied). */
+  szuroMegjegyzes?: ReactNode
   products: HttpTypes.StoreProduct[]
   /** The card per product: the live-animal one or the technical one. */
   eloAllatKartya: (product: HttpTypes.StoreProduct) => boolean
@@ -109,6 +114,8 @@ export default function ListaLap({
   markaLista,
   markak,
   markaLink,
+  tartasiSzakasz,
+  szuroMegjegyzes,
   products,
   eloAllatKartya,
   uresSzoveg,
@@ -349,6 +356,7 @@ export default function ListaLap({
                 />
               </section>
             ) : null}
+            {tartasiSzakasz}
           </aside>
         ) : null}
 
@@ -377,6 +385,14 @@ export default function ListaLap({
                 </a>
               ))}
             </div>
+          ) : null}
+          {szuroMegjegyzes ? (
+            <p
+              className="mb-[26px] text-[14px] leading-[22px] text-acr-slate"
+              data-testid="szuro-megjegyzes"
+            >
+              {szuroMegjegyzes}
+            </p>
           ) : null}
           {products.length === 0 ? (
             <p

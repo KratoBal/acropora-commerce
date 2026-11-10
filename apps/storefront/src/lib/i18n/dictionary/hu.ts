@@ -20,6 +20,17 @@ export const hu = {
     categoryHeading: "Kategória",
     brandHeading: "Márka",
     moreBrands: "További {count} márka",
+    husbandryDifficulty: "Tartási nehézség",
+    husbandryTank: "Minimális medence",
+    husbandryUnchecked:
+      "{count} állat tartási adata még ellenőrzés alatt, ezért a szűrő nem tudja besorolni őket.",
+    husbandryUncheckedOne:
+      "1 állat tartási adata még ellenőrzés alatt, ezért a szűrő nem tudja besorolni.",
+    husbandryShowAll: "Mind mutatása szűrő nélkül",
+    husbandryTooMany:
+      "Erre a tartási szűrésre ebben a kategóriában túl sok állat illik, ezért most nem szűrtünk. Válassz alkategóriát.",
+    husbandryUnavailable:
+      "A tartási szűrő most nem érhető el, ezért a lista szűrés nélkül látszik.",
     activeFilters: "Aktív szűrők:",
     removeBrandFilter: "{name} szűrő levétele",
     unknownBrand: "Ismeretlen márka",
