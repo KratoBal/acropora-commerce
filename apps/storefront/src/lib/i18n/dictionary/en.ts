@@ -775,6 +775,7 @@ export const en: Dictionary = {
     knowledgeClaims: "According to the manufacturer",
     knowledgeInfo: "Manufacturer data",
     knowledgePackage: "What is in the package",
+    knowledgeUsageGuide: "Usage guide",
     hintMinStep: "at least {minimum} pieces can be ordered, in steps of {step}",
     hintMin: "at least {minimum} pieces can be ordered",
     hintStep: "can be ordered in steps of {step}",

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import type { TermekTudas } from "@lib/data/product-knowledge"
 import MuszakiLap from "./index"
-import { TermekTudasBlokk, vanTudas } from "./termek-tudas"
+import { hasznalatiUtmutato, TermekTudasBlokk, vanTudas } from "./termek-tudas"
 
 afterEach(cleanup)
 
@@ -11,7 +11,8 @@ afterEach(cleanup)
   A TUDAS-BLOKK (KZ Amino szelet, PD-014). Ami pirosit: egy CONFLICTING_SOURCES
   mezo ERTEKKEL jelenik meg, vagy egyaltalan nem jelenik meg; egy MISSING vagy
   UNVERIFIED ertek a vevo ele kerul; a gyarto allitasa a sajat cimkeje nelkul
-  all; vagy egy tudas nelkuli termek lapja megvaltozik.
+  all; vagy egy tudas nelkuli termek lapja megvaltozik. A HASZNALATI UTMUTATO (V3.3): a jovahagyott `usage` szoveg nem
+  jelenik meg a sajat cimeje alatt, a lepesek sortorese elveszik, vagy az utmutato a leiras-fulbe keveredik.
 */
 const teny = (field: string, value: string | null, status = "VERIFIED") => ({
   field,
@@ -123,6 +124,62 @@ describe("a termék-tudás blokk", () => {
     expect(
       render(<TermekTudasBlokk tudas={ures} />).container.firstChild,
     ).toBeNull()
+  })
+})
+
+describe("a használati útmutató (V3.3)", () => {
+  const UTMUTATO = {
+    block: "usage",
+    body: "Mire való: aminosav-pótlás.\n\n1. Rázd fel.\n2. Mérd ki a medence szerint.\n\n\nHa kétséges, kevesebbel kezdj.",
+    revision: 1,
+  }
+
+  it("a jóváhagyott szöveg bekezdésekre bomlik, a lépések sortörése megmarad", () => {
+    expect(hasznalatiUtmutato({ ...KZ, copy: [UTMUTATO] })).toEqual([
+      "Mire való: aminosav-pótlás.",
+      "1. Rázd fel.\n2. Mérd ki a medence szerint.",
+      "Ha kétséges, kevesebbel kezdj.",
+    ])
+    expect(hasznalatiUtmutato(KZ)).toEqual([])
+    expect(hasznalatiUtmutato(null)).toEqual([])
+  })
+
+  it("a saját címe alatt áll a tudás-blokkban, és egyedül is elég a blokkhoz", () => {
+    const csakUtmutato = { product_id: "prod_1", facts: [], copy: [UTMUTATO] }
+    expect(vanTudas(csakUtmutato)).toBe(true)
+    render(<TermekTudasBlokk tudas={csakUtmutato} />)
+    const szakasz = screen.getByTestId("tudas-hasznalati-utmutato")
+    expect(szakasz.querySelector("h3")?.textContent).toBe("Használati útmutató")
+    expect(szakasz.querySelectorAll("p")).toHaveLength(3)
+    expect(szakasz.textContent).toContain("1. Rázd fel.\n2. Mérd ki")
+  })
+
+  it("angol lapon angol cím", () => {
+    render(
+      <TermekTudasBlokk
+        tudas={{ product_id: "prod_1", facts: [], copy: [UTMUTATO] }}
+        locale="en"
+      />,
+    )
+    expect(screen.getByRole("heading", { name: "Usage guide" })).toBeTruthy()
+  })
+
+  it("az útmutató nem kerül a leírás-fülbe", () => {
+    render(
+      <MuszakiLap
+        product={
+          {
+            id: "prod_1",
+            title: "KZ Amino",
+            categories: [{ name: "Termékek", mpath: "c1" }],
+            variants: [],
+          } as never
+        }
+        tudas={{ ...KZ, copy: [...KZ.copy, UTMUTATO] }}
+      />,
+    )
+    expect(screen.getByRole("tabpanel").textContent).not.toContain("Rázd fel")
+    expect(screen.getByTestId("tudas-hasznalati-utmutato")).toBeTruthy()
   })
 })
 
