@@ -94,4 +94,18 @@ describe("a tartási adat olvasása", () => {
     expect(a.liveFood).toBeNull()
     expect(a.placementZone).toBe("FELSO")
   })
+
+  it("a medence-érettség 0 is lehet (az OS 0-t is enged); a negatív és a liter 0-ja nem (barracuda, #729)", () => {
+    expect(
+      tartasiAdat(meta({ v: 1, kind: "coral", maturity_months: 0 }))
+        ?.maturityMonths,
+    ).toBe(0)
+    expect(
+      tartasiAdat(meta({ v: 1, kind: "coral", maturity_months: -1 }))
+        ?.maturityMonths,
+    ).toBeNull()
+    expect(
+      tartasiAdat(meta({ v: 1, kind: "fish", min_liter: 0 }))?.minLiter,
+    ).toBeNull()
+  })
 })

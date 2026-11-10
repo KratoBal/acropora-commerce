@@ -798,6 +798,9 @@ export const en: Dictionary = {
     husbandryBeforeBuying: "Before you buy",
     husbandryBeforeTank:
       "Do you have a mature tank of at least this size? ({liter})",
+    husbandryBeforeMature:
+      "Is your tank stable and at least this mature? ({months})",
+    husbandryBeforeAnyTank: "It does not need a mature tank.",
     husbandryBeforeCompat: "Does it suit its tank mates and the corals?",
     husbandryBeforeQuarantine:
       "Do you have a quarantine tank? Do not put a new animal into the main tank without quarantine.",

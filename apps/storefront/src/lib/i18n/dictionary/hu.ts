@@ -830,6 +830,9 @@ export const hu = {
     husbandryBeforeBuying: "Vásárlás előtt",
     husbandryBeforeTank:
       "Van-e legalább ennyi literes, érett medencéd? ({liter})",
+    husbandryBeforeMature:
+      "Van-e legalább ennyire érett, stabil medencéd? ({months})",
+    husbandryBeforeAnyTank: "Érett medencét nem igényel.",
     husbandryBeforeCompat: "Megfelel-e a fajtársaknak és a koralloknak?",
     husbandryBeforeQuarantine:
       "Van-e karanténod? Új állatot a fő medencébe karantén nélkül ne tegyél.",

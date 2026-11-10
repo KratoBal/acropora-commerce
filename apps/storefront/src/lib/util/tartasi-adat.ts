@@ -90,6 +90,9 @@ const tobb = <T extends string>(lista: readonly T[], v: unknown): T[] =>
   Array.isArray(v) ? v.filter((x): x is T => egyik(lista, x) !== null) : []
 const szam = (v: unknown) =>
   typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null
+/** A medence-erettseg 0 is lehet: az OS 0-t is enged, es egy ellenorzott 0 azt mondja, erett medence nem kell (barracuda, #729). */
+const nemNegativ = (v: unknown) =>
+  typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null
 const szoveg = (v: unknown) =>
   typeof v === "string" && v.trim() !== "" ? v.trim().slice(0, 500) : null
 const logikai = (v: unknown) => (typeof v === "boolean" ? v : null)
@@ -123,7 +126,7 @@ export function tartasiAdat(
     verifiedOn: nap(o.verified_on),
     difficulty: egyik(TARTAS_NEHEZSEGEK, o.difficulty),
     minLiter: szam(o.min_liter),
-    maturityMonths: szam(o.maturity_months),
+    maturityMonths: nemNegativ(o.maturity_months),
     placementZone: egyik(ZONAK, o.placement_zone),
     reefSafe: egyik(KORALLOS, o.reef_safe),
     reefSafeReason: szoveg(o.reef_safe_reason),
@@ -249,6 +252,10 @@ export const FELIRATOK = {
   szarmazas: { TENYESZTETT: "tenyésztett", VADFOGAS: "vadfogás" },
 } as const
 
-/** Az elo allat figyelmeztetes a blokk aljan (a spec 3. pontja; Balazs 2026-09-29: elo allat csak bolti atvetellel). */
+/**
+ * Az elo allat figyelmeztetes a blokk aljan (a spec 3. pontja; Balazs 2026-09-29: elo allat csak bolti atvetellel). A spec
+ * szerint a szallitasi profilbol jonne; SZANDEKOS ROVIDITES, hogy fix szoveg: amig minden elo allat bolti atveteles, a ketto
+ * ugyanazt mondja. Ha egyszer lesz szallithato elo allat, ez a mondat a profilbol kell jojjon (barracuda, #729).
+ */
 export const ELO_ALLAT_FIGYELMEZTETES =
   "Élő állat, csak bolti átvétellel, érkezés után akklimatizációs útmutatóval."

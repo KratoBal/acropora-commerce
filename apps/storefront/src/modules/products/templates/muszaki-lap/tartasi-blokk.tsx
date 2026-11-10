@@ -16,7 +16,7 @@ import React from "react"
  * jon (`metadata.husbandry`, murena S3); amig nincs, vagy egy tenye nincs, a hely "Ellenőrzés alatt..." szoveget kap,
  * soha nem ures cellat es soha nem kitalalt erteket. Szam csak abbol, amit az OS ellenorzottkent kiadott.
  *
- * A felepites a spec szerint: osszefoglalo sor (nehezseg, minimalis medence, korallos akvariumban tarthato, etetes, feny es
+ * A felepites a spec szerint: osszefoglalo sor (nehezseg, minimalis medence vagy korallnal elhelyezes, korallos akvariumban tarthato, etetes, feny es
  * aramlas), reszletek, "Kinek ajanljuk / nem ajanljuk", "Vasarlas elott", a 3. es 4. fokozat fix mondata, es alul az elo
  * allat figyelmeztetes.
  */
@@ -36,7 +36,8 @@ export function TartasiBlokk({
       <dd>{ertek ?? HIANYZO_ADAT}</dd>
     </div>
   )
-  const reszletek = adat ? reszletSorok(adat, t) : []
+  const hely = adat ? helyCella(adat) : { zona: false }
+  const reszletek = adat ? reszletSorok(adat, hely.zona, t) : []
 
   return (
     <section
@@ -57,11 +58,19 @@ export function TartasiBlokk({
               nehezseg?.felirat ?? null,
               "nehezseg",
             )}
-            {sor(
-              t("product.husbandryMinTank"),
-              adat.minLiter !== null ? `${adat.minLiter} l` : null,
-              "medence",
-            )}
+            {hely.zona
+              ? sor(
+                  t("product.husbandryPlacement"),
+                  adat.placementZone
+                    ? FELIRATOK.zona[adat.placementZone]
+                    : null,
+                  "elhelyezes",
+                )
+              : sor(
+                  t("product.husbandryMinTank"),
+                  adat.minLiter !== null ? `${adat.minLiter} l` : null,
+                  "medence",
+                )}
             {sor(KORALLOS_FELIRAT, korallos(adat), "korallos")}
             {sor(
               t("product.husbandryFeeding"),
@@ -122,14 +131,7 @@ export function TartasiBlokk({
               {t("product.husbandryBeforeBuying")}
             </p>
             <ul className="list-disc pl-5">
-              <li>
-                {t("product.husbandryBeforeTank", {
-                  liter:
-                    adat.minLiter !== null
-                      ? `${adat.minLiter} l`
-                      : HIANYZO_ADAT,
-                })}
-              </li>
+              <li>{elsoKerdes(adat, hely.zona, t)}</li>
               <li>{t("product.husbandryBeforeCompat")}</li>
               <li>{t("product.husbandryBeforeQuarantine")}</li>
             </ul>
@@ -154,9 +156,42 @@ function korallos(adat: TartasiAdat): string | null {
   return adat.reefSafeReason ? `${ertek} (${adat.reefSafeReason})` : ertek
 }
 
-/** The details: only what is meaningful for the kind; a missing fact stays a row with the missing text. */
+/**
+ * A "MENNYI HELY, HOL" CELLA (barracuda, #729): a spec 1. pontja szerint korallnal a minimalis medence helyett az elhelyezes
+ * all, es az OS (`missingHusbandryFields`) is igy keri: halnal a liter, korallnal a zona, gerinctelennel a liter VAGY a zona.
+ * Egy ellenorzott korallon tehat a liter nem "ellenorzes alatt", hanem nem ertelmezett. A gerinctelen a litert mutatja, ha
+ * van; ha csak zonaja van, azt; ha egyik sincs, a literre mondja, hogy ellenorzes alatt (az OS is a litert kerte).
+ */
+function helyCella(adat: TartasiAdat): { zona: boolean } {
+  if (adat.kind === "coral") return { zona: true }
+  if (adat.kind === "invertebrate")
+    return { zona: adat.minLiter === null && adat.placementZone !== null }
+  return { zona: false }
+}
+
+/** A "Vasarlas elott" elso kerdese: ahol a hely zona, a medence erettsegere kerdez (maturity_months), nem literre. */
+function elsoKerdes(adat: TartasiAdat, zona: boolean, t: Translate): string {
+  if (!zona)
+    return t("product.husbandryBeforeTank", {
+      liter: adat.minLiter !== null ? `${adat.minLiter} l` : HIANYZO_ADAT,
+    })
+  if (adat.maturityMonths === 0) return t("product.husbandryBeforeAnyTank")
+  return t("product.husbandryBeforeMature", {
+    months:
+      adat.maturityMonths !== null
+        ? `${adat.maturityMonths} hónap`
+        : HIANYZO_ADAT,
+  })
+}
+
+/**
+ * The details. The compatibility rows (social, temper, coral eater, invertebrate eater) stand for EVERY kind: the spec makes
+ * them required for all groups, and the OS asks for them whatever the kind (barracuda, #729: a stinging coral's temper is
+ * exactly what "does it suit its tank mates and the corals" asks about). A missing fact stays a row with the missing text.
+ */
 function reszletSorok(
   adat: TartasiAdat,
+  zonaFent: boolean,
   t: Translate,
 ): [string, string, string | null][] {
   const igenNem = (v: boolean | null) =>
@@ -168,35 +203,32 @@ function reszletSorok(
       adat.maturityMonths !== null ? `${adat.maturityMonths} hónap` : null,
     ],
   ]
-  if (adat.kind === "coral")
+  // a gerinctelen zonaja, ha a fenti cella a litert mutatja (korallnal a zona mar fent all)
+  if (adat.kind === "invertebrate" && !zonaFent && adat.placementZone)
     sorok.push([
       "zona",
       t("product.husbandryPlacement"),
-      adat.placementZone ? FELIRATOK.zona[adat.placementZone] : null,
+      FELIRATOK.zona[adat.placementZone],
     ])
-  if (adat.kind !== "coral") {
-    sorok.push(
-      [
-        "tarsas",
-        t("product.husbandrySocial"),
-        adat.social ? FELIRATOK.tarsas[adat.social] : null,
-      ],
-      [
-        "viselkedes",
-        t("product.husbandryTemper"),
-        adat.aggression.length
-          ? adat.aggression.map((a) => FELIRATOK.agresszio[a]).join(", ")
-          : null,
-      ],
-      ["korallevo", t("product.husbandryCoralEater"), igenNem(adat.coralEater)],
-      [
-        "gerinctelenevo",
-        t("product.husbandryInvertebrateEater"),
-        igenNem(adat.invertebrateEater),
-      ],
-    )
-  }
   sorok.push(
+    [
+      "tarsas",
+      t("product.husbandrySocial"),
+      adat.social ? FELIRATOK.tarsas[adat.social] : null,
+    ],
+    [
+      "viselkedes",
+      t("product.husbandryTemper"),
+      adat.aggression.length
+        ? adat.aggression.map((a) => FELIRATOK.agresszio[a]).join(", ")
+        : null,
+    ],
+    ["korallevo", t("product.husbandryCoralEater"), igenNem(adat.coralEater)],
+    [
+      "gerinctelenevo",
+      t("product.husbandryInvertebrateEater"),
+      igenNem(adat.invertebrateEater),
+    ],
     ["gyakorisag", t("product.husbandryFrequency"), adat.feedingFrequency],
     ["elo-eleseg", t("product.husbandryLiveFood"), igenNem(adat.liveFood)],
     [
