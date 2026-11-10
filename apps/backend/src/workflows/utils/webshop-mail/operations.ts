@@ -14,6 +14,8 @@ import type { PaymentDelayedDeps } from "./payment-delayed-mail"
 import type { PaymentLinkMailDeps } from "./payment-link-mail"
 import type { StatusMailDeps } from "./status-mail"
 import { livestockKindsOfOrder } from "./livestock-kinds"
+import { PRODUCT_KNOWLEDGE_MODULE } from "../../../modules/product-knowledge"
+import type ProductKnowledgeModuleService from "../../../modules/product-knowledge/service"
 
 const ORDER_FIELDS = [
   "id",
@@ -159,6 +161,8 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
         "items.variant_title",
         "items.quantity",
         "items.metadata",
+        "items.product_id",
+        "items.product_handle",
         "shipping_address.postal_code",
         "shipping_address.city",
         "shipping_address.address_1",
@@ -194,6 +198,8 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
         title: lineTitle(item),
         quantity: medusaNumber(item.quantity, `The quantity of item ${item.id}`),
         fee: isCashOnDeliveryFeeLineItem(item),
+        product_id: item.product_id ?? null,
+        product_handle: item.product_handle ?? null,
       })),
       method_name: String(method?.name ?? ""),
       foxpost_point: point("foxpost_pickup_point"),
@@ -208,6 +214,13 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
   },
 
   alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
+
+  // V3.3 S3: the approved usage guides the OS projected (the `usage` copy block of the product knowledge module)
+  usageGuides: async (productIds) => {
+    const service = container.resolve(PRODUCT_KNOWLEDGE_MODULE) as ProductKnowledgeModuleService
+    const rows = await service.listProductKnowledgeCopies({ product_id: productIds, block: "usage" })
+    return new Map(rows.map((row) => [row.product_id, row.body]))
+  },
 })
 
 /** The Medusa side of the status mails (`prepareStatusMail`). */
