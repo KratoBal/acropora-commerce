@@ -18,6 +18,7 @@ import {
   inventoryKnownOf,
   keszletSor,
   similarItemsHref,
+  termekCsakUtanrendelesre,
   uniquePieceOf,
 } from "@modules/products/components/stock-state/availability"
 
@@ -33,6 +34,7 @@ import ZaroSor from "@modules/products/components/lap-vaz/zarosor"
 import { cikkszam } from "@modules/products/components/lap-vaz/valodi-tartalom"
 import { besorolasUt } from "@lib/util/kategoria-fa"
 import {
+  arrivalOrderable,
   arrivalShown,
   livestockArrivalOf,
   shopDay,
@@ -93,13 +95,17 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
    */
   const erkezes = livestockArrivalOf(product.metadata)
   const erkezesLatszik =
-    erkezes !== null && arrivalShown(erkezes, ragadosSavAllapota)
+    erkezes !== null &&
+    arrivalShown(erkezes, ragadosSavAllapota, termekCsakUtanrendelesre(product))
+  /** Kaphato (utanrendelessel) es erkezik: "Rendelheto, varhato erkezes", es az ertesito urlap ilyenkor nem all. */
+  const erkezesRendelheto = arrivalOrderable(ragadosSavAllapota)
   const erkezikBlokk = () =>
     erkezes ? (
       <Erkezik
         erkezes={erkezes}
         termekId={product.id}
-        urlap={erkezesUrlapKell(true)}
+        rendelheto={erkezesRendelheto}
+        urlap={erkezesUrlapKell(!erkezesRendelheto)}
         ma={shopDay()}
         locale={locale}
       />

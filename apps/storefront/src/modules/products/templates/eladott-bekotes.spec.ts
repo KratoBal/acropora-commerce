@@ -25,6 +25,10 @@ function bekotes(forras: string): {
   listak: Lista[]
   urlapok: number
   erkezesek: number
+  /** az `arrivalShown` hivasainak argumentumszama */
+  latszikArgok: number[]
+  /** az `erkezesUrlapKell` hivasai: az elso argumentum szovege */
+  urlapKellArgok: string[]
 } {
   const fa = ts.createSourceFile(
     "index.tsx",
@@ -36,6 +40,8 @@ function bekotes(forras: string): {
   const listak: Lista[] = []
   let urlapok = 0
   let erkezesek = 0
+  const latszikArgok: number[] = []
+  const urlapKellArgok: string[] = []
   const attr = (n: ts.JsxOpeningLikeElement, nev: string) =>
     n.attributes.properties.find(
       (p): p is ts.JsxAttribute =>
@@ -60,10 +66,16 @@ function bekotes(forras: string): {
       n.expression.text === "erkezikBlokk"
     )
       erkezesek++
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) {
+      if (n.expression.text === "arrivalShown")
+        latszikArgok.push(n.arguments.length)
+      if (n.expression.text === "erkezesUrlapKell")
+        urlapKellArgok.push(n.arguments[0]?.getText(fa) ?? "")
+    }
     ts.forEachChild(n, bejar)
   }
   bejar(fa)
-  return { listak, urlapok, erkezesek }
+  return { listak, urlapok, erkezesek, latszikArgok, urlapKellArgok }
 }
 
 const SABLON = readFileSync(join(__dirname, "index.tsx"), "utf8")
@@ -112,5 +124,27 @@ describe("a nem elérhető egyedi darab a sablon mindkét ágában", () => {
     const kivett = SABLON.replace(/erkezikBlokk\(\)\n/, "null\n")
     expect(kivett).not.toBe(SABLON)
     expect(bekotes(kivett).erkezesek).toBe(bekotes(SABLON).erkezesek - 1)
+  })
+
+  /*
+    A CSAK UTANRENDELESSEL KAPHATO TERMEK ERKEZESE (2026-11-10, teszt kirakat: a Japan doktorhal kaphato maradt, a sor soha nem
+    jelent meg). MI PIROSIT: az `arrivalShown` a harmadik argumentum (a csak-utanrendeles jelzo) nelkul; az ertesito urlap
+    feltetel nelkul (`erkezesUrlapKell(true)`), amikor a termek rendelheto es az urlap annak az ellentmondana.
+  */
+  it("az érkezés láthatósága a csak-utánrendelés jelzőt is megkapja, az értesítő űrlap pedig csak nem rendelhető terméken áll", () => {
+    const { latszikArgok, urlapKellArgok } = bekotes(SABLON)
+    expect(latszikArgok).toEqual([3])
+    expect(urlapKellArgok).toEqual(["!erkezesRendelheto"])
+  })
+
+  it("a mérő kontrollja: a régi hívás alakját pirosnak látja", () => {
+    const regi = SABLON.replace(
+      /arrivalShown\(\s*erkezes,\s*ragadosSavAllapota,\s*termekCsakUtanrendelesre\(product\),?\s*\)/,
+      "arrivalShown(erkezes, ragadosSavAllapota)",
+    ).replace("erkezesUrlapKell(!erkezesRendelheto)", "erkezesUrlapKell(true)")
+    expect(regi).not.toBe(SABLON)
+    const { latszikArgok, urlapKellArgok } = bekotes(regi)
+    expect(latszikArgok).toEqual([2])
+    expect(urlapKellArgok).toEqual(["true"])
   })
 })

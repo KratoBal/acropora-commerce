@@ -98,6 +98,64 @@ describe("Erkezik", () => {
     expect(screen.queryByText(/erről a fajról/)).toBeNull()
   })
 
+  it("on a product that can be ordered now it says so, in the day's line, and a late arrival too", () => {
+    const { rerender } = render(
+      <Erkezik
+        erkezes={ordered}
+        termekId="prod_1"
+        urlap={false}
+        rendelheto
+        ma="2026-11-10"
+      />,
+    )
+    expect(screen.getByTestId("erkezik-nap").textContent).toBe(
+      "Rendelhető, várható érkezés: 2026. november 13.",
+    )
+    rerender(
+      <Erkezik
+        erkezes={ordered}
+        termekId="prod_1"
+        urlap={false}
+        rendelheto
+        ma="2026-11-14"
+      />,
+    )
+    expect(screen.getByTestId("erkezik-nap").textContent).toBe(
+      "Rendelhető, de az érkezés késik, új időpontot még nem tudunk mondani.",
+    )
+    expect(screen.getByTestId("erkezik-nap").textContent).not.toMatch(/2026/)
+  })
+
+  it("the orderable wording is not the default: without the flag the line is the plain one", () => {
+    render(
+      <Erkezik
+        erkezes={ordered}
+        termekId="prod_1"
+        urlap={false}
+        ma="2026-11-10"
+      />,
+    )
+    expect(screen.getByTestId("erkezik-nap").textContent).not.toMatch(
+      /Rendelhető/,
+    )
+  })
+
+  it("speaks English on the orderable line too", () => {
+    render(
+      <Erkezik
+        erkezes={ordered}
+        termekId="prod_1"
+        urlap={false}
+        rendelheto
+        ma="2026-11-10"
+        locale="en"
+      />,
+    )
+    expect(screen.getByTestId("erkezik-nap").textContent).toBe(
+      "Available to order, expected: 13 November 2026",
+    )
+  })
+
   it("speaks English on the English page, the day included", () => {
     render(
       <Erkezik

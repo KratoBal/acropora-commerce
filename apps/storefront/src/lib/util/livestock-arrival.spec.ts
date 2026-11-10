@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   arrivalDayText,
   arrivalIsLate,
+  arrivalOrderable,
   arrivalShown,
   LIVESTOCK_ARRIVAL_KEY,
   livestockArrivalOf,
@@ -96,5 +97,15 @@ describe("the words and the days", () => {
     expect(arrivalShown(arrival, "ELFOGYOTT")).toBe(true)
     expect(arrivalShown(arrival, "KAPHATO")).toBe(false)
     expect(arrivalShown(null, "ELADVA")).toBe(false)
+  })
+
+  it("a csak utánrendeléssel kapható terméken is áll, és ott rendelhetőnek mondja magát", () => {
+    const arrival = { expectedOn: "2026-11-13", stage: "ordered" as const }
+    expect(arrivalShown(arrival, "KAPHATO", true)).toBe(true)
+    expect(arrivalShown(arrival, "KAPHATO", false)).toBe(false)
+    expect(arrivalShown(null, "KAPHATO", true)).toBe(false)
+    expect(arrivalOrderable("KAPHATO")).toBe(true)
+    expect(arrivalOrderable("ELFOGYOTT")).toBe(false)
+    expect(arrivalOrderable("ELADVA")).toBe(false)
   })
 })
