@@ -112,11 +112,14 @@ const nemNegativ = (v: unknown) =>
 const szoveg = (v: unknown) =>
   typeof v === "string" && v.trim() !== "" ? v.trim().slice(0, 500) : null
 const logikai = (v: unknown) => (typeof v === "boolean" ? v : null)
-/** Both ends, finite and positive, the lower not above the upper; anything else is not a range. */
+/**
+ * Both ends, finite, the lower not above the upper; anything else is not a range. The lower end may be 0 (the OS allows a
+ * KH range from 0; barracuda, #734), the upper must be positive.
+ */
 const tartomany = (v: unknown): Tartomany | null => {
   if (typeof v !== "object" || v === null) return null
   const { min, max } = v as { min?: unknown; max?: unknown }
-  const also = szam(min)
+  const also = nemNegativ(min)
   const felso = szam(max)
   return also !== null && felso !== null && also <= felso
     ? { min: also, max: felso }

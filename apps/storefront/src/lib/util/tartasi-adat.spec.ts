@@ -140,6 +140,15 @@ describe("a tartási adat olvasása", () => {
     expect(a.tempC).toEqual({ min: 24, max: 26 })
     expect(a.salinitySg).toEqual({ min: 1.024, max: 1.026 })
     expect(a.khDkh).toEqual({ min: 7, max: 9 })
+    // az also veg 0 is lehet (az OS a KH-nal 0-t enged), a felso nem (barracuda, #734)
+    expect(
+      tartasiAdat(meta({ v: 1, kind: "fish", kh_dkh: { min: 0, max: 2 } }))
+        ?.khDkh,
+    ).toEqual({ min: 0, max: 2 })
+    expect(
+      tartasiAdat(meta({ v: 1, kind: "fish", kh_dkh: { min: 0, max: 0 } }))
+        ?.khDkh,
+    ).toBeNull()
     expect(a.lifespanYears).toBe(5)
     expect(a.stingOrVenom).toBe(true)
     expect(a.handlingWarning).toBeNull()
