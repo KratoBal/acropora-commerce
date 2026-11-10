@@ -44,6 +44,23 @@ const uzenet = (
 }
 
 /**
+ * A KESZ VALASZ UTAN A CIMBOL KIKERUL A TOKEN (barracuda, d707cf5f): a token a level titka, es a megerosites vagy a
+ * leiratkozas utan a cimsorban, az elozmenyekben es egy megosztott vagy kepernyokepen latszo cimben nincs mit keresnie.
+ * A lap ujratoltese utan a token nelkuli cim az ervenytelen linket mondja, ami igaz: a link elhasznalodott. Hiba utan
+ * marad (a gomb ujra probalhato, es a lap ujratoltve is). A `history.state` megmarad: azt a Next routere tartja.
+ */
+function tokenNelkuliCim() {
+  const cim = new URL(window.location.href)
+  if (!cim.searchParams.has("token")) return
+  cim.searchParams.delete("token")
+  window.history.replaceState(
+    window.history.state,
+    "",
+    cim.pathname + cim.search + cim.hash,
+  )
+}
+
+/**
  * A HIRLEVEL-LINK LAPJANAK URLAPJA (d707cf5f): a token a cim `token`
  * parameterebol jon (a bongeszoben olvasva), es CSAK a gomb megnyomasara megy a bolthoz (egy
  * levelszkenner, ami megnyitja a linket, nem kattint). Token nelkul a lap
@@ -89,7 +106,9 @@ export default function HirlevelLinkUrlap({
         data-testid="hirlevel-link-gomb"
         onClick={() =>
           startTransition(async () => {
-            setAllapot(await TEMA[tema].kuld(fajta, token))
+            const valasz = await TEMA[tema].kuld(fajta, token)
+            if (valasz.allapot !== "hiba") tokenNelkuliCim()
+            setAllapot(valasz)
           })
         }
       >

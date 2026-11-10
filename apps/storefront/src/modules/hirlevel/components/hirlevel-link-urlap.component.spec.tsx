@@ -44,6 +44,50 @@ afterEach(() => {
 })
 
 describe("HirlevelLinkUrlap", () => {
+  /*
+    A TOKEN A KESZ VALASZ UTAN KIKERUL A CIMBOL (barracuda, d707cf5f). MI PIROSIT: a megerosites vagy a leiratkozas
+    utan a token a cimben marad; egy hiba utan kikerul (akkor ujra kell tudni probalni); a tobbi parameter vagy a
+    Next router allapota elveszik.
+  */
+  it("HLU-TOKEN-KI: kész válasz után a token nélküli cím, a többi paraméter és az előzmény-állapot marad", async () => {
+    for (const [fajta, allapot] of [
+      ["megerosites", "megerositve"],
+      ["leiratkozas", "leiratkozva"],
+      ["megerosites", "lejart"],
+    ] as const) {
+      window.history.replaceState(
+        { __NA: true, kulcs: 1 },
+        "",
+        `/hu/hirlevel/x?utm_source=level&token=${TOKEN}#fent`,
+      )
+      hirlevelLinkKuldes.mockResolvedValue({ allapot })
+      render(<HirlevelLinkUrlap fajta={fajta} />)
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("button"))
+      })
+      await waitFor(() =>
+        expect(window.location.search).toBe("?utm_source=level"),
+      )
+      expect(window.location.pathname).toBe("/hu/hirlevel/x")
+      expect(window.location.hash).toBe("#fent")
+      expect(window.history.state).toEqual({ __NA: true, kulcs: 1 })
+      cleanup()
+    }
+  })
+
+  it("HLU-TOKEN-MARAD: hiba után a token a címben marad", async () => {
+    cim(`?token=${TOKEN}`)
+    hirlevelLinkKuldes.mockResolvedValue({ allapot: "hiba", ok: "hiba" })
+    render(<HirlevelLinkUrlap fajta="megerosites" />)
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("button"))
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId("hirlevel-link-allapot")).toBeTruthy(),
+    )
+    expect(window.location.search).toBe(`?token=${TOKEN}`)
+  })
+
   it("HLU-KATTINTAS: betolteskor semmi nem megy a bolthoz, a gomb a lap fajtajat es a cim tokenjet kuldi", async () => {
     cim(`?token=${TOKEN}`)
     hirlevelLinkKuldes.mockResolvedValue({ allapot: "megerositve" })
@@ -149,8 +193,10 @@ describe("HirlevelLinkUrlap", () => {
         "a termék lapján",
       ),
     )
-    // a lejart utan nincs gomb (kesz valasz), tehat ujra renderelve probaljuk a megerositest
+    // a lejart utan nincs gomb (kesz valasz), tehat ujra renderelve probaljuk a megerositest; a kesz valasz a tokent
+    // kivette a cimbol (HLU-TOKEN-KI), ezert a link ujra megnyitva all
     cleanup()
+    cim(`?token=${TOKEN}`)
     render(<HirlevelLinkUrlap fajta="megerosites" tema="ertesites" />)
     await act(async () => {
       fireEvent.click(screen.getByRole("button"))
