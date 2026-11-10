@@ -44,6 +44,7 @@ import { StorePostCartNotes } from "./store/cart-notes/validators";
 import { StorePostCartLocale } from "./store/cart-locale/validators";
 import { StorePostNewsletterSubscription, StorePostNewsletterToken } from "./store/newsletter-subscriptions/validators";
 import { StorePostStockAlert, StorePostStockAlertToken } from "./store/stock-alerts/validators";
+import { AdminPutLivestockArrivals } from "./admin/livestock-arrivals/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
 import {
   AdminGetOrderPickupPointsParams,
@@ -380,6 +381,12 @@ export default defineMiddlewares({
       matcher: "/store/newsletter-subscriptions/unsubscribe",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostNewsletterToken)],
+    },
+    {
+      // V2.6 S4a: the OS's whole set of the live animals on their way
+      matcher: "/admin/livestock-arrivals",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutLivestockArrivals)],
     },
     {
       // "Szólj, ha jön hasonló" (V2.4, card 0c1265d2) and its two links, the newsletter's double opt-in

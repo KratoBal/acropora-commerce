@@ -2,6 +2,8 @@ import type { MedusaResponse, MedusaStoreRequest } from "@medusajs/framework/htt
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 
 import { DEFAULT_NEWSLETTER_LANGUAGE, consentVersion } from "../../../modules/newsletter/defaults"
+import { LIVESTOCK_ARRIVAL_MODULE } from "../../../modules/livestock-arrival"
+import type LivestockArrivalModuleService from "../../../modules/livestock-arrival/service"
 import { STOCK_ALERT_MODULE } from "../../../modules/stock-alert"
 import type StockAlertModuleService from "../../../modules/stock-alert/service"
 import type { StockAlertSignUpResult, StockAlertTokenResult } from "../../../modules/stock-alert/service"
@@ -47,28 +49,41 @@ export const createStockAlertPost =
   ) =>
   async (req: MedusaStoreRequest<StorePostStockAlertType>, res: MedusaResponse) => {
     if (!stockAlertOn(env)) throw new MedusaError(MedusaError.Types.FORBIDDEN, "The stock alert sign-up is off")
-    const { product_id, kind, email } = req.validatedBody
+    const { product_id, arrival_id, kind, email } = req.validatedBody
     const language = req.validatedBody.locale ?? DEFAULT_NEWSLETTER_LANGUAGE
     if (!(await limiters.perAddress.allow(email)) || !(await limiters.overall.allow("all"))) {
       res.status(429).json({ message: "Too many sign-ups, try again later" })
       return
     }
 
-    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-    const { data } = await query.graph({
-      entity: "product",
-      filters: { id: product_id, status: "published" },
-      fields: ["id", "title"],
-    })
-    const product = (data as ProductRow[])[0]
-    if (!product) throw new MedusaError(MedusaError.Types.NOT_FOUND, "No such product")
-    const subject =
-      kind === "species"
-        ? speciesOfTitle(product.title)
-        : product.title?.trim()
-          ? { key: product.id, label: product.title.trim() }
-          : null
-    if (!subject) throw new MedusaError(MedusaError.Types.INVALID_DATA, "This product names no species")
+    let subject: { key: string; label: string } | null
+    let sourceProductId: string | null
+    if (arrival_id !== undefined) {
+      // an arrival on the "Érkező állatok" page (V2.6 S4a): the species from the row's name, never from the request
+      const arrivals: LivestockArrivalModuleService = req.scope.resolve(LIVESTOCK_ARRIVAL_MODULE)
+      const [row] = (await arrivals.listLivestockArrivals({ id: arrival_id }, { take: 1 })) as unknown as { label: string }[]
+      if (!row) throw new MedusaError(MedusaError.Types.NOT_FOUND, "No such arrival")
+      subject = speciesOfTitle(row.label)
+      sourceProductId = null
+      if (!subject) throw new MedusaError(MedusaError.Types.INVALID_DATA, "This arrival names no species")
+    } else {
+      const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+      const { data } = await query.graph({
+        entity: "product",
+        filters: { id: product_id, status: "published" },
+        fields: ["id", "title"],
+      })
+      const product = (data as ProductRow[])[0]
+      if (!product) throw new MedusaError(MedusaError.Types.NOT_FOUND, "No such product")
+      subject =
+        kind === "species"
+          ? speciesOfTitle(product.title)
+          : product.title?.trim()
+            ? { key: product.id, label: product.title.trim() }
+            : null
+      sourceProductId = product.id
+      if (!subject) throw new MedusaError(MedusaError.Types.INVALID_DATA, "This product names no species")
+    }
 
     const consentText = STOCK_ALERT_CONSENT[language][kind]
     const service: StockAlertModuleService = req.scope.resolve(STOCK_ALERT_MODULE)
@@ -79,12 +94,12 @@ export const createStockAlertPost =
         subject_kind: kind,
         subject_key: subject.key,
         subject_label: subject.label,
-        source_product_id: product.id,
+        source_product_id: sourceProductId,
         consent_text: consentText,
         consent_version: consentVersion(consentText),
         consent_language: language,
         consented_at: now,
-        source: "sold_piece",
+        source: arrival_id !== undefined ? "arrival" : "sold_piece",
       },
       now
     )
