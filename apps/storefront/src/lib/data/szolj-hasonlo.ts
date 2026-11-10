@@ -34,6 +34,7 @@ export async function szoljFeliratkozasAkcio(
       email: String(formData.get("email") ?? ""),
       hozzajarul: formData.get("consent") === "on",
       termekId: String(formData.get("product_id") ?? ""),
+      erkezesId: String(formData.get("arrival_id") ?? ""),
       ip,
       nyelv: LOCALES.find((l) => l === formData.get("locale")),
       // az urlap rejtett mezoje; ismeretlen ertek a fajt adja (a szerveroldali akcio nem hisz a kliensnek)

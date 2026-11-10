@@ -508,6 +508,17 @@ export const en: Dictionary = {
     lateOrderable:
       "Available to order, but the arrival is delayed, and we cannot give a new date yet.",
   },
+  /** Az "Érkező állatok" lap (V2.6 S4c). */
+  livestockArrivals: {
+    title: "Animals on their way",
+    intro:
+      "These animals are on their way to us. The day is expected, the state is that of the order with the supplier.",
+    empty: "There is no animal on its way that we could show here right now.",
+    kindFish: "Fish",
+    kindInvertebrate: "Invertebrate",
+    kindCoral: "Coral",
+    notify: "Notify me when it arrives",
+  },
   stockAlertLink: {
     confirmTitle: "Confirm your notification request",
     confirmIntro: "One click, and we will tell you when this species is back.",

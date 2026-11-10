@@ -527,6 +527,17 @@ export const hu = {
     lateOrderable:
       "Rendelhető, de az érkezés késik, új időpontot még nem tudunk mondani.",
   },
+  /** Az "Érkező állatok" lap (V2.6 S4c). */
+  livestockArrivals: {
+    title: "Érkező állatok",
+    intro:
+      "Ezek az állatok úton vannak hozzánk. A nap várható, az állapot a beszállítónál tartó rendelésé.",
+    empty: "Most nincs úton lévő állat, amit itt mutatni tudnánk.",
+    kindFish: "Hal",
+    kindInvertebrate: "Gerinctelen",
+    kindCoral: "Korall",
+    notify: "Értesíts, ha megérkezik",
+  },
   /** Az értesítés-kérés levélben küldött két linkjének lapja (a hírlevélé mintájára). */
   stockAlertLink: {
     confirmTitle: "Értesítés-kérés megerősítése",
