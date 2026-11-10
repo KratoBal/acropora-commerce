@@ -1,7 +1,7 @@
 import { model } from "@medusajs/framework/utils"
 
 /**
- * One approved, non-stale customer copy block (`lead`, `body`), projected from
+ * One approved, non-stale customer copy block (`lead`, `body`, `usage`), projected from
  * Acropora OS. Plain text paragraphs separated by a blank line. SEO title and
  * meta do not live here: they travel in the product's own metadata.
  */
