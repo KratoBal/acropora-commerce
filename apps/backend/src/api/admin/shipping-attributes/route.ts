@@ -8,7 +8,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { product_id } = req.validatedQuery as { product_id?: string | string[] }
 
   const filters = product_id ? { product_id } : {}
-  const shipping_attributes = await service.listShippingAttributes(filters)
+  // `take: null`: a Medusa lista alapbol csak egy lapot ad, es az OS ebbol keresi a
+  // boltban maradt elo allat fajtakat: egy csonka lista ott nullat mutatna, mintha nem lenne mit javitani
+  const shipping_attributes = await service.listShippingAttributes(filters, {
+    take: null,
+  })
 
   res.json({ shipping_attributes })
 }
