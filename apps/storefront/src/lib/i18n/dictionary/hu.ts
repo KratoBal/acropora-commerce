@@ -157,6 +157,14 @@ export const hu = {
     services: "Szolgáltatások",
     myAquariums: "Akváriumaim",
   },
+  arrivingAnimals: {
+    title: "Érkező állatok",
+    intro:
+      "Az úton lévő élő állataink és a várható érkezésük napja. Az érkezés napja változhat.",
+    empty: "Most nincs úton lévő állat, amit itt meg tudnánk mutatni.",
+    kind: { FISH: "Halak", INVERTEBRATE: "Gerinctelenek", CORAL: "Korallok" },
+    viewProduct: "Megnézem a termék oldalát",
+  },
   hamarosan: {
     eyebrow: "Hamarosan",
     text: "Ez az oldal még készül.",

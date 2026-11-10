@@ -26,7 +26,7 @@ const STAGES: readonly LivestockArrivalStage[] = ["ordered", "in_transit"]
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /** A real calendar day (2026-02-31 is not one), as `YYYY-MM-DD`. */
-const isDay = (value: unknown): value is string => {
+export const isDay = (value: unknown): value is string => {
   if (typeof value !== "string") return false
   const m = DAY.exec(value)
   if (!m) return false

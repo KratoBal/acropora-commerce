@@ -120,6 +120,11 @@ export function szallitasCanonical(countryCode: string): string {
   return `/${countryCode}/szallitas`
 }
 
+/** AZ ERKEZO ALLATOK OLDALANAK KANONIKUS CIME (`/hu/erkezo-allatok`, V2.6 S4c). */
+export function erkezoAllatokCanonical(countryCode: string): string {
+  return `/${countryCode}/erkezo-allatok`
+}
+
 /** A FIZETES OLDALANAK KANONIKUS CIME (`/hu/fizetes`, commerce-audit-p1, lablec). */
 export function fizetesCanonical(countryCode: string): string {
   return `/${countryCode}/fizetes`
