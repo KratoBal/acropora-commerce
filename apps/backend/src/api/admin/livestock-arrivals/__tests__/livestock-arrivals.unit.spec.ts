@@ -1,5 +1,5 @@
 import LivestockArrivalModuleService from "../../../../modules/livestock-arrival/service"
-import { storeArrivals } from "../../../store/livestock-arrivals/helpers"
+import { cachedBuyable, storeArrivals } from "../../../store/livestock-arrivals/helpers"
 import { AdminPutLivestockArrivals } from "../validators"
 
 /*
@@ -86,5 +86,20 @@ describe("GET /store/livestock-arrivals: the list", () => {
       ["a4", "2026-12-01", null, false, null],
     ])
     expect(buyable).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("the buyable answer's cache", () => {
+  it("LA-CACHE: asked once per species within the minute, again after it (barracuda, #719)", async () => {
+    let clock = 0
+    const ask = jest.fn(async (key: string) => key === "amphiprion ocellaris")
+    const buyable = cachedBuyable(ask, 60_000, () => clock)
+    expect(await buyable("amphiprion ocellaris")).toBe(true)
+    expect(await buyable("amphiprion ocellaris")).toBe(true)
+    expect(await buyable("zebrasoma flavescens")).toBe(false)
+    expect(ask).toHaveBeenCalledTimes(2)
+    clock = 60_001
+    await buyable("amphiprion ocellaris")
+    expect(ask).toHaveBeenCalledTimes(3)
   })
 })

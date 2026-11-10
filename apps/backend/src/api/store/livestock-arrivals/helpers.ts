@@ -45,3 +45,24 @@ export async function storeArrivals(
     (a, b) => a.expected_on.localeCompare(b.expected_on) || a.label.localeCompare(b.label, "hu")
   )
 }
+
+/**
+ * THE "CAN BE BOUGHT NOW" ANSWER KEPT FOR A MINUTE PER SPECIES (barracuda on #719): the list is public, and each species is a
+ * product search and a stock query; without a cache, anybody calling the route repeats them. A minute late is harmless (the
+ * page's own ISR is five minutes). Per process, like the shop's other in-memory limits.
+ */
+export function cachedBuyable(
+  ask: (speciesKey: string) => Promise<boolean>,
+  ttlMs = 60_000,
+  now: () => number = Date.now
+): (speciesKey: string) => Promise<boolean> {
+  const kept = new Map<string, { value: boolean; until: number }>()
+  return async (key) => {
+    const hit = kept.get(key)
+    if (hit && hit.until > now()) return hit.value
+    const value = await ask(key)
+    kept.set(key, { value, until: now() + ttlMs })
+    if (kept.size > 5000) for (const [k, v] of kept) if (v.until <= now()) kept.delete(k)
+    return value
+  }
+}
