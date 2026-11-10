@@ -37,7 +37,9 @@ export function TartasiBlokk({
     </div>
   )
   const hely = adat ? helyCella(adat) : { zona: false }
-  const reszletek = adat ? reszletSorok(adat, hely.zona, t) : []
+  const reszletek = adat
+    ? [...reszletSorok(adat, hely.zona, t), ...opcionalisSorok(adat, t, locale)]
+    : []
 
   return (
     <section
@@ -45,6 +47,21 @@ export function TartasiBlokk({
       className="mt-6 flex flex-col gap-4 text-small-regular text-[var(--terv-szoveg-halvany)]"
     >
       <h3 className="text-base-semi">{t("product.husbandryTitle")}</h3>
+      {/*
+        A CSIPES VAGY MEREG ELSOKENT ES JOL LATHATOAN (barracuda 46247, acrobot 46248): a blokk tetejen, a nehezseg elott,
+        a kezelesi figyelmeztetessel. A figyelmeztetes nelkul talalt veszelyt sem rejti el (murena 46232): akkor a
+        figyelmeztetes helyen az "ellenorzes alatt" mondat all, a veszely maga latszik.
+      */}
+      {adat?.stingOrVenom === true ? (
+        <div
+          role="note"
+          data-testid="tartas-veszely"
+          className="border-l-4 border-[var(--terv-kiemel)] bg-[var(--terv-doboz-hatter)] p-3 text-[var(--terv-szoveg)]"
+        >
+          <p className="font-semibold">{t("product.husbandryHazard")}</p>
+          <p>{adat.handlingWarning ?? t("product.husbandryHazardNoWarning")}</p>
+        </div>
+      ) : null}
       {!adat ? (
         <p data-testid="tartas-hianyzik">{HIANYZO_ADAT}</p>
       ) : (
@@ -250,4 +267,56 @@ function reszletSorok(
     ],
   )
   return sorok
+}
+
+/**
+ * AZ OPCIONALIS TENYEK SORAI (V2.2 S4b): csak ami ismert. A spec szerint ezek "ha ismert es megbizhato" mezok, tehat a
+ * hianyuk nem "ellenorzes alatt" sor (nyolc ilyen sor minden allaton elnyomna a kotelezoket), hanem nincs sor. A csipes
+ * vagy mereg igaz erteke nem itt all, hanem a blokk tetejen; a hamis itt, valaszkent.
+ */
+function opcionalisSorok(
+  adat: TartasiAdat,
+  t: Translate,
+  locale: Locale,
+): [string, string, string | null][] {
+  const szam = new Intl.NumberFormat(locale === "en" ? "en-GB" : "hu-HU", {
+    maximumFractionDigits: 3,
+  }).format
+  const sav = (r: { min: number; max: number } | null, egyseg: string) =>
+    r
+      ? `${r.min === r.max ? szam(r.min) : `${szam(r.min)}–${szam(r.max)}`} ${egyseg}`
+      : null
+  const igenNem = (v: boolean | null) =>
+    v === null ? null : v ? t("product.husbandryYes") : t("product.husbandryNo")
+  const sorok: [string, string, string | null][] = [
+    ["homerseklet", t("product.husbandryTemp"), sav(adat.tempC, "°C")],
+    ["sotartalom", t("product.husbandrySalinity"), sav(adat.salinitySg, "SG")],
+    ["kh", t("product.husbandryKh"), sav(adat.khDkh, "dKH")],
+    [
+      "elettartam",
+      t("product.husbandryLifespan"),
+      adat.lifespanYears !== null
+        ? t("product.husbandryYearsN", { n: szam(adat.lifespanYears) })
+        : null,
+    ],
+    [
+      "karanten",
+      t("product.husbandryQuarantine"),
+      adat.quarantineWeeks !== null
+        ? t("product.husbandryWeeksN", { n: szam(adat.quarantineWeeks) })
+        : null,
+    ],
+    [
+      "akklimatizacio",
+      t("product.husbandryAcclimatization"),
+      adat.acclimatization,
+    ],
+    ["szaporitas", t("product.husbandryBreeds"), igenNem(adat.breedsInTank)],
+    [
+      "csipes",
+      t("product.husbandrySting"),
+      adat.stingOrVenom === false ? t("product.husbandryNo") : null,
+    ],
+  ]
+  return sorok.filter(([, , ertek]) => ertek !== null)
 }
