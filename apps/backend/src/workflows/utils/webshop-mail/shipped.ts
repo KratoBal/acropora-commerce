@@ -1,6 +1,6 @@
 import { webshopMailState } from "../webshop-mail-config"
 import type { MailToSend } from "./prepare"
-import { type ShippedCarrier, renderShippedMail } from "./shipped-mail"
+import { type ShippedCarrier, type ShippedMailFacts, renderShippedMail } from "./shipped-mail"
 
 /**
  * WHEN THE "FELADTUK" MAIL GOES (Foxpost brief point 12; endpoint agreed with
@@ -32,7 +32,14 @@ export type ShippedOrder = {
   email: string | null
   total: number
   cash_on_delivery: boolean
-  items: { title: string; quantity: number; fee: boolean }[]
+  items: {
+    title: string
+    quantity: number
+    fee: boolean
+    /** The line's product and its handle (V3.3 S3): the usage guide's source and link. */
+    product_id?: string | null
+    product_handle?: string | null
+  }[]
   method_name: string
   foxpost_point: { name: string; address: string } | null
   /** `type`: parcel-shop or parcel-locker, as stored (G1); null on an older order. */
@@ -43,6 +50,58 @@ export type ShippedOrder = {
 export type ShippedDeps = {
   loadOrder(orderId: string): Promise<ShippedOrder | null>
   alreadySent(idempotencyKey: string): Promise<boolean>
+  /**
+   * The approved usage guides (the `usage` copy block the OS projected) of these products, by product id (V3.3 S3).
+   * OPTIONAL: without it, or when it fails, the mail goes without guides.
+   */
+  usageGuides?(productIds: string[]): Promise<Map<string, string>>
+}
+
+/** At most this many guides, each excerpt at most this long (the OS cuts the same way, `WEBSHOP_USAGE_GUIDE_LIMITS`). */
+export const USAGE_GUIDE_LIMITS = { count: 10, excerpt: 400 } as const
+
+/** The guide's first paragraph, one line, cut on a word at the limit. */
+export const usageExcerpt = (body: string): string => {
+  const first = body.replace(/\r\n?/g, "\n").split(/\n{2,}/).map((p) => p.trim()).find(Boolean) ?? ""
+  const line = first.replace(/\s+/g, " ")
+  return line.length <= USAGE_GUIDE_LIMITS.excerpt
+    ? line
+    : `${line.slice(0, USAGE_GUIDE_LIMITS.excerpt).replace(/\s+\S*$/, "")}…`
+}
+
+/** The product page on the storefront (Hungarian, `/hu/termek/<handle>`), https only; null without a base or a handle. */
+export const productPageUrl = (env: NodeJS.ProcessEnv, handle: string | null | undefined): string | null =>
+  handle ? storefrontImageUrl(env, `/hu/termek/${encodeURIComponent(handle)}`) : null
+
+/**
+ * THE PARCEL'S USAGE GUIDES (V3.3 S3): the non-fee lines whose product has an approved guide, each product once, in the
+ * parcel's order. A failed lookup is no guide, never a failed mail.
+ */
+export const shippedUsageGuides = async (
+  order: ShippedOrder,
+  deps: ShippedDeps,
+  env: NodeJS.ProcessEnv
+): Promise<NonNullable<ShippedMailFacts["usage_guides"]>> => {
+  const lines = order.items.filter((item) => !item.fee && item.product_id)
+  const ids = [...new Set(lines.map((item) => item.product_id!))]
+  if (!deps.usageGuides || ids.length === 0) return []
+  let bodies: Map<string, string>
+  try {
+    bodies = await deps.usageGuides(ids)
+  } catch {
+    return []
+  }
+  const seen = new Set<string>()
+  const guides: NonNullable<ShippedMailFacts["usage_guides"]> = []
+  for (const item of lines) {
+    const id = item.product_id!
+    const body = bodies.get(id)
+    if (!body || seen.has(id) || guides.length >= USAGE_GUIDE_LIMITS.count) continue
+    seen.add(id)
+    const excerpt = usageExcerpt(body)
+    if (excerpt) guides.push({ title: item.title, excerpt, url: productPageUrl(env, item.product_handle) })
+  }
+  return guides
 }
 
 export type ShippedResult =
@@ -128,6 +187,8 @@ export const prepareShippedMail = async (
     gls_logo_url: notice.carrier === "gls" ? glsLogoUrl(env, order.gls_point) : null,
     gls_point_type: notice.carrier === "gls" ? (order.gls_point?.type ?? null) : null,
   }
+  const guides = await shippedUsageGuides(order, deps, env)
+  if (guides.length > 0) Object.assign(shipped, { usage_guides: guides })
   return {
     status: "send",
     mail: {

@@ -1,5 +1,12 @@
 import { renderShippedMail, type ShippedMailFacts } from "../shipped-mail"
-import { foxpostLogoUrl, prepareShippedMail, shippedKey, type ShippedOrder } from "../shipped"
+import {
+  foxpostLogoUrl,
+  prepareShippedMail,
+  shippedKey,
+  usageExcerpt,
+  USAGE_GUIDE_LIMITS,
+  type ShippedOrder,
+} from "../shipped"
 import { AdminOrderShippingNotice } from "../../../../api/admin/order-shipping-notice/validators"
 import middlewares from "../../../../api/middlewares"
 
@@ -202,6 +209,58 @@ describe("when the shipping mail goes", () => {
       foxpost_logo_url: null,
     }
     expect(renderShippedMail(facts).html).not.toContain("<b>pont</b>")
+  })
+})
+
+/*
+  V3.3 S3 (card 69b5f2ef): the parcel's usage guides in the facts. WHAT TURNS THIS RED: a guide for a fee line or a product
+  twice; a guide without its product's approved text; the excerpt not the first paragraph, or not cut on a word; a link that is
+  not the storefront's https product page; a failed lookup failing the mail; the key present with no guide (the facts would
+  change for every parcel).
+*/
+describe("the parcel's usage guides", () => {
+  const order = rendeles({
+    items: [
+      { title: "KZ Amino", quantity: 2, fee: false, product_id: "prod_a", product_handle: "kz-amino" },
+      { title: "Hanna HI780-25", quantity: 1, fee: false, product_id: "prod_b", product_handle: "hanna-hi780" },
+      { title: "KZ Amino", quantity: 1, fee: false, product_id: "prod_a", product_handle: "kz-amino" },
+      { title: "Utánvét kezelési díj", quantity: 1, fee: true, product_id: "prod_fee", product_handle: null },
+    ],
+  })
+  const shippedFacts = async (guides: ((ids: string[]) => Promise<Map<string, string>>) | undefined) =>
+    ((await prepareShippedMail(
+      "order_42",
+      { carrier: "foxpost", tracking_number: "CLFOX1" },
+      { ...deps(order), ...(guides ? { usageGuides: jest.fn(guides) } : {}) },
+      ON
+    )) as { mail: { render: { facts: { shipped: Record<string, unknown> } } } }).mail.render.facts.shipped
+
+  it("one guide per product with an approved text, its first paragraph and its product page", async () => {
+    const lookup = jest.fn(async (ids: string[]) => {
+      expect(ids.sort()).toEqual(["prod_a", "prod_b"])
+      return new Map([["prod_a", "Rázd fel.\nMérd ki.\n\nHa kétséges, kevesebbel kezdj."]])
+    })
+    const shipped = await shippedFacts(lookup)
+    expect(shipped.usage_guides).toEqual([
+      { title: "KZ Amino", excerpt: "Rázd fel. Mérd ki.", url: "https://shop-staging.acropora.hu/hu/termek/kz-amino" },
+    ])
+  })
+
+  it("no guide, no lookup, or a failed lookup: no key, the mail goes as today", async () => {
+    expect(await shippedFacts(async () => new Map())).not.toHaveProperty("usage_guides")
+    expect(await shippedFacts(undefined)).not.toHaveProperty("usage_guides")
+    expect(
+      await shippedFacts(async () => {
+        throw new Error("module down")
+      })
+    ).not.toHaveProperty("usage_guides")
+  })
+
+  it("the excerpt is the first paragraph on one line, cut on a word at the limit", () => {
+    expect(usageExcerpt("\n\n  Első  sor\nmásodik.\n\nMásik bekezdés.")).toBe("Első sor második.")
+    const long = usageExcerpt("szó ".repeat(200))
+    expect(long.length).toBeLessThanOrEqual(USAGE_GUIDE_LIMITS.excerpt + 1)
+    expect(long).toMatch(/szó…$/)
   })
 })
 

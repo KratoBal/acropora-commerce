@@ -238,6 +238,16 @@ export default async function KeresesLap({
             data-testid="kereses-csonkolt"
           >
             {t("search.truncated", { count: talalat.count })}
+            {/*
+              AZ AR SZERINTI SORREND A LEVAGOTT LISTAN BELUL ERVENYES (kartya 30b376de): a bolt a levagas elott nem tud
+              ar szerint rendezni (a kirakat a regio es az arlistak szerint szamolt arral rendez, azt a keresesi SQL nem
+              latja), tehat a lap mondja ki.
+            */}
+            {sortBy === "price_asc" || sortBy === "price_desc" ? (
+              <span className="block" data-testid="kereses-csonkolt-ar">
+                {t("search.truncatedPriceSort", { count: talalat.count })}
+              </span>
+            ) : null}
           </p>
         ) : null}
         {/* GYOKER-FULEK (152:119): "Összes" es a talalatok gyokerei. */}

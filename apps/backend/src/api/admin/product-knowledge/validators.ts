@@ -26,7 +26,11 @@ export const forBuyer = (fact: { status: string; public: boolean }) =>
   PUBLIC_PRODUCT_KNOWLEDGE_STATUSES.includes(fact.status) &&
   fact.public === true
 
-export const PRODUCT_KNOWLEDGE_BLOCKS = ["lead", "body"] as const
+/**
+ * The copy blocks: `lead` and `body` are the description; `usage` is the product's usage guide (V3.3, card 69b5f2ef), a
+ * section of its own on the page, never part of the description. The storefront reads each by name.
+ */
+export const PRODUCT_KNOWLEDGE_BLOCKS = ["lead", "body", "usage"] as const
 
 const Fact = z
   .object({

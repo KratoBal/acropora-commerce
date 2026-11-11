@@ -131,6 +131,32 @@ describe("a keresési találatok lapja", () => {
     expect(screen.getByTestId("kereses-csonkolt").textContent).toContain(
       "Több mint 137 termék illik erre a keresésre, itt a 137 legújabb látszik.",
     )
+    // időrendi (alap) rendezésnél nincs ár-mondat
+    expect(screen.queryByTestId("kereses-csonkolt-ar")).toBeNull()
+  })
+
+  // kártya 30b376de: a levágott listán az ár szerinti sorrend csak a legújabbakra érvényes, és ezt a lap kimondja.
+  // MI PIROSÍT: az ár-mondat hiányzik ár szerinti rendezésnél, vagy megjelenik időrendinél vagy levágatlan listánál.
+  it("levágott listán az ár szerinti rendezés kimondja, hogy csak a legújabbakon fut", async () => {
+    kereses.keresesTalalatok.mockResolvedValue({
+      ids: IDS,
+      count: 137,
+      csonkolt: true,
+    })
+    for (const sortBy of ["price_asc", "price_desc"]) {
+      await lap({ sortBy })
+      expect(screen.getByTestId("kereses-csonkolt-ar").textContent).toBe(
+        "Az ár szerinti sorrend is csak erre a 137 legújabb találatra érvényes: egy régebbi, olcsóbb termék kimaradhat belőle.",
+      )
+      cleanup()
+    }
+    kereses.keresesTalalatok.mockResolvedValue({
+      ids: IDS,
+      count: 150,
+      csonkolt: false,
+    })
+    await lap({ sortBy: "price_asc" })
+    expect(screen.queryByTestId("kereses-csonkolt-ar")).toBeNull()
   })
 
   it("a besorolás 100-asával kéri le a találatokat, a gyökérrel és a márkával", async () => {

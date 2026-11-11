@@ -84,12 +84,12 @@ const OPTIONS: sanitizeHtml.IOptions = {
     "sup",
     "sub",
     "pre",
-    // headings -- h1 through h5 all occur
-    "h1",
+    // headings -- h1 through h5 all occur in the source; they leave one level lower (h2..h6, see transformTags)
     "h2",
     "h3",
     "h4",
     "h5",
+    "h6",
     // lists
     "ul",
     "ol",
@@ -157,6 +157,13 @@ const OPTIONS: sanitizeHtml.IOptions = {
     a: sanitizeHtml.simpleTransform("a", {
       rel: "noopener noreferrer nofollow",
     }),
+    // ONE h1 PER PAGE (card 4ea3d5cf): the product page's own title is the h1, so a description heading moves one
+    // level down, all of them, so their order stays (h1 -> h2 ... h5 -> h6). A source h6 stays an h6.
+    h1: "h2",
+    h2: "h3",
+    h3: "h4",
+    h4: "h5",
+    h5: "h6",
   },
   // Stripping a disallowed src leaves the element behind, and an <iframe> or an
   // <img> with no src is an empty box on the page rather than nothing. Measured

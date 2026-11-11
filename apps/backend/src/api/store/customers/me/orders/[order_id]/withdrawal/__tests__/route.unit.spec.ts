@@ -4,8 +4,12 @@ const ownOrder = jest.fn()
 const storePickupOf = jest.fn()
 const createWithdrawal = jest.fn()
 const notifyWithdrawalReceived = jest.fn()
+const withdrawalLineTitles = jest.fn()
 const guestWithdrawalsOf = jest.fn()
 const liveAnimalOfOrder = jest.fn()
+jest.mock("../../../../../../../../workflows/utils/withdrawal/titles", () => ({
+  withdrawalLineTitles: (...args: unknown[]) => withdrawalLineTitles(...args),
+}))
 jest.mock("../../../../../../../../workflows/utils/webshop-mail/withdrawal-received-mail", () => ({
   notifyWithdrawalReceived: (...args: unknown[]) => notifyWithdrawalReceived(...args),
 }))
@@ -31,6 +35,9 @@ import { StorePostCustomerWithdrawal } from "../validators"
   accepted; the route registered without its body validation.
 */
 const body = { customer_name: "  Kiss\u0007   Anna ", item_ids: ["item_1"] }
+
+// the acknowledgement goes after the answer, once the titles are read: let it run before asserting on it
+const settle = () => new Promise((resolve) => setImmediate(resolve))
 
 const run = async (over: { actor?: string | null; orderId?: string; body?: Record<string, unknown> } = {}) => {
   const json = jest.fn()
@@ -61,6 +68,7 @@ beforeEach(() => {
     skipped: [],
   })
   notifyWithdrawalReceived.mockResolvedValue({ sent: true })
+  withdrawalLineTitles.mockResolvedValue(["Kék korall"])
 })
 afterEach(() => {
   guestWithdrawalsOf.mockReset()
@@ -69,6 +77,7 @@ afterEach(() => {
   ownOrder.mockReset()
   createWithdrawal.mockReset()
   notifyWithdrawalReceived.mockReset()
+  withdrawalLineTitles.mockReset()
 })
 
 /*
@@ -178,14 +187,17 @@ describe("POST /store/customers/me/orders/:order_id/withdrawal", () => {
     expect(createWithdrawal.mock.calls[0][2]).toEqual({ customerName: "Kiss Anna", itemIds: ["item_1"] })
   })
 
-  it("sends the acknowledgement once, to the order's own address, for the new declaration", async () => {
+  it("sends the acknowledgement once, to the order's own address, for the new declaration, with the lines' titles", async () => {
     await run()
+    await settle()
     expect(notifyWithdrawalReceived).toHaveBeenCalledTimes(1)
+    expect(withdrawalLineTitles).toHaveBeenCalledWith(expect.anything(), "order_1", ["item_1"])
     expect(notifyWithdrawalReceived.mock.calls[0][1]).toEqual({
       order: { id: "order_1", displayId: 1042, email: "vevo@example.hu" },
       withdrawalId: "ordwdr_1",
       declaredName: "Kiss Anna",
       itemIds: ["item_1"],
+      itemTitles: ["Kék korall"],
       receivedAt: "2026-11-05T18:00:00.000Z",
     })
   })
@@ -203,7 +215,9 @@ describe("POST /store/customers/me/orders/:order_id/withdrawal", () => {
     const noName = await run({ body: { customer_name: " \u0007 " } })
     expect(noName.status).toHaveBeenCalledWith(400)
     expect(createWithdrawal).not.toHaveBeenCalled()
+    await settle()
     expect(notifyWithdrawalReceived).not.toHaveBeenCalled()
+    expect(withdrawalLineTitles).not.toHaveBeenCalled()
   })
 })
 

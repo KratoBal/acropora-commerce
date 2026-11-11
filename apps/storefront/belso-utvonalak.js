@@ -33,7 +33,17 @@
 const BELSO_ELOTAGOK = ["_v", "_p", "_szurt"]
 
 /** Amit a szurt lap olvas. Ami itt nincs, azt a lap nem is hasznalja. */
-const SZURO_KULCSOK = ["sortBy", "marka", "optionValueIds", "q", "gyoker"]
+const SZURO_KULCSOK = [
+  "sortBy",
+  "marka",
+  "optionValueIds",
+  "q",
+  "gyoker",
+  // a tartasi szuro az elo allat kategorian (V2.2 S5, `tartasi-szuro.ts`)
+  "nehezseg",
+  "korallos",
+  "medence",
+]
 
 /** A Medusa valtozat-azonositoja (ULID); mas ertekre nincs atiras. */
 const VALTOZAT_MINTA = "variant_[0-9A-Z]{26}"

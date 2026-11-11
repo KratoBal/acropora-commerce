@@ -7,6 +7,9 @@ import { JOGI_DOKUMENTUMOK } from "@lib/util/fogyasztobarat"
 
 import {
   CEG,
+  FIZETESI_JELVENYEK,
+  FIZETESI_OPCIOK_KEP,
+  fizetesiLogok,
   OSZLOP_SORREND,
   REGI_BOLT_HIVATKOZASOK,
   SAJAT_HIVATKOZASOK,
@@ -428,5 +431,58 @@ describe("a lábléc kategória-rácsa kikerült", () => {
    */
   it("az info-oszlopok rácsa a helyén maradt", () => {
     expect(kod).toContain("lablec-oszlopok")
+  })
+})
+
+/**
+ * A KARTYATARSASAGOK JELVENYEI (d707cf5f): egy jelveny csak hivatalos fajlbol, a hianyzo hely ures marad, es ha egy
+ * sincs, a tartalek kep all. MI PIROSIT: egy beallitott fajl nem letezik; a tartalek kep megmarad a hivatalos jelveny
+ * mellett (a Google Pay ketszer latszana); a jelvenyek sorrendje vagy egyseges magassaga felborul.
+ */
+describe("a fizetési jelvények", () => {
+  const ures = FIZETESI_JELVENYEK.map((j) => ({ ...j, src: null }))
+
+  it("egy hivatalos jelvény sincs: a tartalék kép áll", () => {
+    expect(fizetesiLogok(ures)).toEqual([
+      { ...FIZETESI_OPCIOK_KEP, mag: "h-12" },
+    ])
+  })
+
+  it("amíg egy is hiányzik, a tartalék kép áll (egy hiányos sor azt mondaná, hogy a hiányzó kártyát nem fogadjuk el)", () => {
+    const negy = FIZETESI_JELVENYEK.map((j) =>
+      j.kulcs === "visa"
+        ? { ...j, src: null }
+        : { ...j, src: `/images/fizetes/${j.kulcs}.svg`, w: 10, h: 5 },
+    )
+    expect(fizetesiLogok(negy)).toEqual([
+      { ...FIZETESI_OPCIOK_KEP, mag: "h-12" },
+    ])
+  })
+
+  it("mind az öt megvan: a jelvények a lista sorrendjében, egyforma magasan, a tartalék kép nélkül", () => {
+    const ot = FIZETESI_JELVENYEK.map((j) => ({
+      ...j,
+      src: `/images/fizetes/${j.kulcs}.svg`,
+      w: 10,
+      h: 5,
+    }))
+    expect(fizetesiLogok(ot).map((l) => [l.alt, l.mag])).toEqual([
+      ["Google Pay", "h-8"],
+      ["Apple Pay", "h-8"],
+      ["Mastercard", "h-8"],
+      ["Maestro", "h-8"],
+      ["Visa", "h-8"],
+    ])
+  })
+
+  it("minden beállított jelvény-fájl létezik a public alatt, és a mai lista a Google Pay", () => {
+    const beallitott = FIZETESI_JELVENYEK.filter((j) => j.src !== null)
+    for (const j of beallitott) {
+      const fajl = readFileSync(
+        join(__dirname, "../../../../../public", j.src!),
+      )
+      expect(fajl.length, j.kulcs).toBeGreaterThan(0)
+    }
+    expect(beallitott.map((j) => j.kulcs)).toEqual(["google-pay"])
   })
 })

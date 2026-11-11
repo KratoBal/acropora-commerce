@@ -75,6 +75,13 @@ describe("a rendelés részleteinek számai", () => {
     expect(
       fizetesiMod({
         payment_collections: [
+          { payments: [{ provider_id: "pp_acropora_transfer" }] },
+        ],
+      }),
+    ).toBe("Előre utalás")
+    expect(
+      fizetesiMod({
+        payment_collections: [
           { payment_sessions: [{ provider_id: "pp_ismeretlen" }] },
         ],
       }),

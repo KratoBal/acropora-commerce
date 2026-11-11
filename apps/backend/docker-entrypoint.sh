@@ -94,6 +94,13 @@ node ./src/scripts/verify-auth-secrets.js
 echo "docker-entrypoint: verifying the Stripe webhook secret..."
 node ./src/scripts/verify-stripe-webhook-secret.js
 
+# THE SHOP'S MAIL STATE IS REPORTED, NEVER ENFORCED. With the mail switch off or a Gmail key missing no shop mail goes out
+# and nothing else logs why (the V0.3 walkthrough, 2026-11-11: the order confirmation and the withdrawal acknowledgement
+# never arrived on the test shop). A shop without mail is a legitimate state, so this step cannot refuse the start: it
+# prints one line and the `|| true` keeps even a crash of the report from stopping the server.
+echo "docker-entrypoint: reporting the shop mail state..."
+node ./src/scripts/report-webshop-mail-state.js || true
+
 # ONLY ONE CONTAINER MIGRATES. The server and the worker run the same image
 # and the same entrypoint, so until 2026-09-28 BOTH applied the migrations, to
 # the same database, at the same time: after the 2.20.1 upgrade two containers

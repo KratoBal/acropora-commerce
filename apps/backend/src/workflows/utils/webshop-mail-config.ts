@@ -46,6 +46,35 @@ export const webshopMailState = (env: NodeJS.ProcessEnv = process.env): WebshopM
   return clientId && clientSecret && refreshToken ? "on" : "on_without_keys"
 }
 
+/**
+ * THE STARTUP NOTE FOR A SHOP THAT WILL NOT MAIL (the V0.3 walkthrough, 2026-11-11). With the switch off, or on with a key
+ * missing, no mail provider exists and every mail subscriber returns BEFORE it logs: the order confirmation and the withdrawal
+ * acknowledgement just do not arrive, and nothing in the log says why. The entrypoint prints this once per start
+ * (`scripts/report-webshop-mail-state.ts`). `null` means mail is on. The text names the VARIABLES, never a value.
+ */
+export const webshopMailStartupNote = (env: NodeJS.ProcessEnv = process.env): string | null => {
+  const state = webshopMailState(env)
+  if (state === "on") return null
+  if (state === "off")
+    return (
+      "az ACROPORA_WEBSHOP_MAIL nincs bekapcsolva (pontosan `on` kell), ezért a bolt egyetlen levele sem megy ki: " +
+      "sem a rendelés visszaigazoló, sem az elállás visszaigazoló, és a naplóban ez máshol nem látszik."
+    )
+  const missing = (
+    [
+      ["GMAIL_WEBSHOP_CLIENT_ID", keysOf(env).clientId],
+      ["GMAIL_WEBSHOP_CLIENT_SECRET", keysOf(env).clientSecret],
+      ["GMAIL_WEBSHOP_REFRESH_TOKEN", keysOf(env).refreshToken],
+    ] as const
+  )
+    .filter(([, value]) => !value)
+    .map(([name]) => name)
+  return (
+    `az ACROPORA_WEBSHOP_MAIL be van kapcsolva, de hiányzik: ${missing.join(", ")}. ` +
+    "Kulcs nélkül ugyanaz, mint kikapcsolva: a bolt egyetlen levele sem megy ki, és a naplóban ez máshol nem látszik."
+  )
+}
+
 export const webshopMailProviders = (
   env: NodeJS.ProcessEnv = process.env
 ): { resolve: typeof WEBSHOP_MAIL_PROVIDER_RESOLVE; id: "gmail"; options: WebshopMailOptions }[] => {

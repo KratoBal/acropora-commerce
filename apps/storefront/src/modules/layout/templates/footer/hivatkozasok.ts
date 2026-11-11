@@ -249,6 +249,74 @@ export const FIZETESI_OPCIOK_KEP = {
 } as const
 
 /**
+ * A KARTYATARSASAGOK HIVATALOS JELVENYEI (d707cf5f; Balazs 2026-10-27: Google Pay, Apple Pay, Mastercard, Maestro,
+ * Visa). A penztar mind az otot tudja: a kartyakat a Stripe, az Apple Payt es a Google Payt a Stripe Express Checkout
+ * (`applePay`, `googlePay`: "auto").
+ *
+ * EGY JELVENY CSAK HIVATALOS FAJLBOL KERUL IDE, a marka sajat oldalarol, a mellette allo kommentben a forras, a
+ * licencsor es a marka meret- es szabad-ter szabalya. Ahol a letoltes feltetel-elfogadassal jar (Apple Pay, Mastercard,
+ * Maestro, Visa), az Balazs dontese (acrobot 47495, 47497): addig a `src` null. AMIG NINCS MEG MIND AZ OT, a lablec a
+ * tartalek kepet mutatja (`FIZETESI_OPCIOK_KEP`), mert egy hianyos sor azt mondana a vevonek, hogy a hianyzo kartyat
+ * nem fogadjuk el (acrobot 47497).
+ */
+export type FizetesiJelveny = {
+  kulcs: string
+  /** Markanev: nem forditando. */
+  alt: string
+  /** A hivatalos fajl a `public` alatt, vagy null, amig nincs meg. */
+  src: string | null
+  w: number
+  h: number
+}
+
+export const FIZETESI_JELVENYEK: readonly FizetesiJelveny[] = [
+  /*
+    GOOGLE PAY: a hivatalos acceptance mark (google-pay-mark_800.svg, viewBox 1094x742; a Google fajlja CRLF
+    sorvegu, sha256 9ddde73a0e3e8b16..., a repoban LF-re alakitva, mas valtozas nelkul: sha256 5ae800802bb6511e...).
+    Forras: https://developers.google.com/pay/api/web/guides/brand-guidelines, "Download assets"
+    (developers.google.com/static/pay/api/download-assets/Google-Pay-Acceptance.zip), letoltve 2026-11-11, a
+    karanten-olvasoval atnezett oldal szerint feltetel-elfogadas es belepes nelkul. Licencsort az oldal nem ad.
+    A szabalyok az oldalrol: szabad ter minden oldalon legalabb a nagy G magassaganak fele; nem lehet kisebb, mint a
+    tobbi fizetesi jelveny, es nem mas meretu; szint, korvonalat nem szabad modositani. A fajl tartalma valtozatlan (csak svg,
+    g, path elem, script es kulso hivatkozas nelkul).
+  */
+  {
+    kulcs: "google-pay",
+    alt: "Google Pay",
+    src: "/images/fizetes/google-pay-mark.svg",
+    w: 1094,
+    h: 742,
+  },
+  { kulcs: "apple-pay", alt: "Apple Pay", src: null, w: 0, h: 0 },
+  { kulcs: "mastercard", alt: "Mastercard", src: null, w: 0, h: 0 },
+  { kulcs: "maestro", alt: "Maestro", src: null, w: 0, h: 0 },
+  // VISA: a Visa markaoldalai (visa.com, visa.co.uk) nincsenek a karanten-olvaso engedelyezett listajan (2026-11-11);
+  // forras nelkul nem kerul ide fajl
+  { kulcs: "visa", alt: "Visa", src: null, w: 0, h: 0 },
+]
+
+/**
+ * A lablec fizetesi logoi: ha mind az ot hivatalos jelveny megvan, azok a lista sorrendjeben, egysegesen `h-8` magasan
+ * (a marka sajat szabalya a fajl melletti kommentben); amig barmelyik hianyzik, a tartalek kep.
+ */
+export function fizetesiLogok(
+  jelvenyek: readonly FizetesiJelveny[] = FIZETESI_JELVENYEK,
+) {
+  const meglevo = jelvenyek.filter(
+    (j): j is FizetesiJelveny & { src: string } => j.src !== null,
+  )
+  return meglevo.length === jelvenyek.length
+    ? meglevo.map((j) => ({
+        src: j.src,
+        alt: j.alt,
+        w: j.w,
+        h: j.h,
+        mag: "h-8",
+      }))
+    : [{ ...FIZETESI_OPCIOK_KEP, mag: "h-12" }]
+}
+
+/**
  * A LABLEC (ES A JOGI LAPOK) AZON LINKJEI, AMIK EGY ADOTT HOSZTRA MUTATNAK
  * (commerce-audit-p1, P1/11): az elesitesi kapu. A lablec ma a regi UNAS boltra
  * (`shop.acropora.hu`) mutat negy-ot, es a Fogyasztobarat-kapcsolo kikapcsolt

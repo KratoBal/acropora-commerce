@@ -34,6 +34,12 @@ export type ShippedMailFacts = {
   gls_logo_url?: string | null
   /** A GLS point's kind (parcel-shop / parcel-locker), for the logo's alt text. */
   gls_point_type?: string | null
+  /**
+   * V3.3 S3 (card 69b5f2ef): per product of the parcel with an approved usage guide, its name, the guide's first paragraph
+   * and its product page. OPTIONAL: the OS reads it tolerantly (acropora-os #2373), so the version stays 1 and the two sides
+   * deploy in either order. Missing when no product has a guide.
+   */
+  usage_guides?: { title: string; excerpt: string; url: string | null }[]
 }
 
 export const SHOP_CONTACT = "webshop@acropora.hu"

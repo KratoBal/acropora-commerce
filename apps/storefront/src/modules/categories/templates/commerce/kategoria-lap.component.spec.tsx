@@ -17,6 +17,8 @@ const adat = vi.hoisted(() => ({
 vi.mock("@lib/data/products", () => adat)
 const katAdat = vi.hoisted(() => ({ listCategories: vi.fn() }))
 vi.mock("@lib/data/categories", () => katAdat)
+const tartasAdat = vi.hoisted(() => ({ tartasiSzuroValasz: vi.fn() }))
+vi.mock("@lib/data/tartasi-szuro", () => tartasAdat)
 // A kartya gombja a kosar szerver-muveletet importalja; itt nem hivodik.
 vi.mock("@lib/data/cart", () => ({ addToCart: vi.fn() }))
 
@@ -140,6 +142,29 @@ describe("a Commerce kategórialap", () => {
       .getAllByRole("link")
       .map((a) => a.textContent)
     expect(sorok).toEqual(["Világítás28", "Szűrés"])
+  })
+
+  /*
+    A PANEL TELEFONON CSAK A PANELBAN VALASZTOTT ERTEKNEL NYITOTT (barracuda, #740). A rendezes a gyors-kategoria savban all,
+    nem a panelben: egy csak-rendezes cim zarva hagyja, kulonben a markak a termekek ele tolodnak.
+  */
+  it("csak rendezés a címben: a szűrő panel zárva marad, a törlés link látszik", async () => {
+    await lap({ sortBy: "price_asc" })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(false)
+    expect(
+      within(screen.getByTestId("kategoria-szurok")).getByRole("link", {
+        name: "Törlés",
+      }),
+    ).toBeTruthy()
+  })
+
+  it("kiválasztott márka a címben: a szűrő panel nyitva rajzolódik", async () => {
+    await lap({ markak: ["pcol_ati"] })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(true)
   })
 
   it("a lista a kategóriára, lapméretével és a márkával együtt kérdez", async () => {
@@ -513,5 +538,166 @@ describe("a kategórialap névtérképe élő állat kategórián", () => {
   it("a gyökér neve térképpel is változatlan", async () => {
     await lap({ category: KORALLOK, kind: "livestock", nevek: TERKEP })
     expect(morzsaNevek()).toEqual(["Korallok"])
+  })
+})
+
+/*
+  A TARTASI SZURO AZ ELO ALLAT LAPON (V2.2 S5). MI PIROSIT: a muszaki lap a boltot kerdezi; a talalatok nem `id` szurokent
+  mennek a listara; ures talalatnal a lista szures nelkul jon (egy ures `id` nem szur); az "ellenorzes alatt" allatok
+  szama nem latszik, vagy nincs link a szuro nelkuli listara; tul sok talalatnal csendben vagott lista; a bolt hibajanal
+  egy aktiv szuro csendben elmarad; egy marka- vagy lapvaltas elveszti a tartasi szurot; a nulla darabos ertek sort kap.
+*/
+describe("a tartási szűrő az élő állat kategórián", () => {
+  const valasz = (o: Record<string, unknown> = {}) => ({
+    product_ids: ["p1", "p2"],
+    unchecked: 0,
+    complete: true,
+    facets: {
+      difficulty: { KONNYU: 3, KOZEPES: 0, HALADO: 1, SZAKERTO: 0 },
+      reef_safe: 2,
+      tank: { "0-100": 1, "101-300": 0, "301-": 0 },
+    },
+    ...o,
+  })
+  const szuro = (o: Record<string, unknown> = {}) => ({
+    nehezseg: [],
+    korallos: false,
+    medence: [],
+    ...o,
+  })
+  const listaHivas = () => adat.listProductsWithSort.mock.calls.at(-1)?.[0]
+
+  it("a műszaki lap nem kérdezi a boltot, és nincs tartási szakasz", async () => {
+    await lap({ tartas: szuro({ nehezseg: ["KONNYU"] }) })
+    expect(tartasAdat.tartasiSzuroValasz).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("szuro-tartas-nehezseg")).toBeNull()
+    expect(listaHivas().queryParams.id).toBeUndefined()
+  })
+
+  it("adat nélküli kategória (minden darabszám 0): nincs tartási szakasz, nincs mondat, a lista szűrés nélkül", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(
+      valasz({
+        product_ids: [],
+        facets: {
+          difficulty: { KONNYU: 0, KOZEPES: 0, HALADO: 0, SZAKERTO: 0 },
+          reef_safe: 0,
+          tank: { "0-100": 0, "101-300": 0, "301-": 0 },
+        },
+      }),
+    )
+    await lap({ kind: "livestock" })
+    for (const id of [
+      "szuro-tartas-nehezseg",
+      "szuro-tartas-korallos",
+      "szuro-tartas-medence",
+      "szuro-megjegyzes",
+    ])
+      expect(screen.queryByTestId(id), id).toBeNull()
+    expect(listaHivas().queryParams.id).toBeUndefined()
+  })
+
+  it("szűrő nélkül: a csoportok a darabszámmal, csak a nem nulla érték, és a lista id-szűrő nélkül", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz())
+    await lap({ kind: "livestock" })
+    const nehezseg = screen.getByTestId("szuro-tartas-nehezseg")
+    expect(nehezseg.textContent).toContain("Kezdőknek is3")
+    expect(nehezseg.textContent).toContain("Haladóknak1")
+    expect(nehezseg.textContent).not.toContain("Közepes")
+    expect(screen.getByTestId("szuro-tartas-korallos").textContent).toContain(
+      "Korallos akváriumban tartható",
+    )
+    expect(screen.getByTestId("szuro-tartas-medence").textContent).toContain(
+      "legfeljebb 100 l1",
+    )
+    expect(listaHivas().queryParams.id).toBeUndefined()
+    expect(screen.queryByTestId("szuro-megjegyzes")).toBeNull()
+  })
+
+  it("tartási szűrő a címben: a szűrő panel nyitva rajzolódik, szűrő nélkül zárva", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz())
+    await lap({ kind: "livestock", tartas: szuro({ nehezseg: ["KONNYU"] }) })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(true)
+    cleanup()
+    await lap({ kind: "livestock", tartas: szuro() })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(false)
+  })
+
+  it("aktív szűrő: a találatok id-szűrőként; a linkek megtartják a márkát, a szűrőt és a lapozásban is", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz())
+    await lap({
+      kind: "livestock",
+      markak: ["pcol_ati"],
+      tartas: szuro({ nehezseg: ["KONNYU"] }),
+    })
+    expect(tartasAdat.tartasiSzuroValasz).toHaveBeenCalledWith(
+      "termekek",
+      szuro({ nehezseg: ["KONNYU"] }),
+    )
+    expect(listaHivas().queryParams.id).toEqual(["p1", "p2"])
+    expect(listaHivas().queryParams.collection_id).toEqual(["pcol_ati"])
+    const sorLink = within(screen.getByTestId("szuro-tartas-nehezseg"))
+      .getByText("Haladóknak")
+      .closest("a")
+    expect(sorLink?.getAttribute("href")).toBe(
+      "?marka=pcol_ati&nehezseg=KONNYU&nehezseg=HALADO",
+    )
+    expect(sorLink?.getAttribute("rel")).toBe("nofollow")
+    const aktiv = within(screen.getByTestId("szuro-tartas-nehezseg"))
+      .getByText("Kezdőknek is")
+      .closest("a")
+    expect(aktiv?.getAttribute("aria-current")).toBe("true")
+    expect(aktiv?.getAttribute("href")).toBe("?marka=pcol_ati")
+    expect(
+      screen.getByTestId("category-more-products").getAttribute("href"),
+    ).toBe("?marka=pcol_ati&nehezseg=KONNYU&page=2")
+    expect(screen.getByText("Törlés")).toBeTruthy()
+  })
+
+  it("üres találat: nincs listakérés, üres lista", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz({ product_ids: [] }))
+    await lap({ kind: "livestock", tartas: szuro({ korallos: true }) })
+    expect(adat.listProductsWithSort).not.toHaveBeenCalled()
+    expect(screen.getByTestId("category-products-empty")).toBeTruthy()
+  })
+
+  it("az ellenőrzés alatti állatok száma a lista fölött, link a szűrő nélküli listára", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz({ unchecked: 7 }))
+    await lap({ kind: "livestock", tartas: szuro({ medence: ["0-100"] }) })
+    expect(screen.getByTestId("szuro-megjegyzes").textContent).toContain(
+      "7 állat tartási adata még ellenőrzés alatt",
+    )
+    expect(screen.getByTestId("szuro-tartas-mind").getAttribute("href")).toBe(
+      "?",
+    )
+  })
+
+  it("túl sok találat: nem szűr, és kimondja", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(
+      valasz({
+        product_ids: Array.from({ length: 301 }, (_, i) => `p${i}`),
+      }),
+    )
+    await lap({ kind: "livestock", tartas: szuro({ nehezseg: ["KONNYU"] }) })
+    expect(listaHivas().queryParams.id).toBeUndefined()
+    expect(screen.getByTestId("szuro-megjegyzes").textContent).toContain(
+      "túl sok állat illik",
+    )
+  })
+
+  it("a bolt nem válaszol, vagy a kategória túl nagy: nincs szakasz, az aktív szűrő helyett egy mondat", async () => {
+    for (const v of [null, valasz({ complete: false })]) {
+      tartasAdat.tartasiSzuroValasz.mockResolvedValue(v)
+      await lap({ kind: "livestock", tartas: szuro({ nehezseg: ["KONNYU"] }) })
+      expect(screen.queryByTestId("szuro-tartas-nehezseg")).toBeNull()
+      expect(listaHivas().queryParams.id).toBeUndefined()
+      expect(screen.getByTestId("szuro-megjegyzes").textContent).toContain(
+        "nem érhető el",
+      )
+      cleanup()
+    }
   })
 })

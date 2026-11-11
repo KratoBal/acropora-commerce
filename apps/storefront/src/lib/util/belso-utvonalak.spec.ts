@@ -93,7 +93,8 @@ describe("a listák", () => {
   it("a szűrő-lista minden kulcsot tartalmaz, amit a listalapok ma olvasnak", () => {
     // A lapok forrasabol, kezzel (categories, collections, store page.tsx):
     // sortBy, optionValueIds (parseOptionValueIds), marka (MARKA_PARAM),
-    // q (keresesSzovege), gyoker (GYOKER_PARAM). Ha egy lap uj kulcsot olvas,
+    // q (keresesSzovege), gyoker (GYOKER_PARAM), nehezseg, korallos, medence
+    // (tartasiSzuroKeresbol, V2.2 S5). Ha egy lap uj kulcsot olvas,
     // ide is, a szabalyba is be kell kerulnie.
     expect(belso.SZURO_KULCSOK).toEqual(
       expect.arrayContaining([
@@ -102,6 +103,9 @@ describe("a listák", () => {
         "marka",
         "q",
         "gyoker",
+        "nehezseg",
+        "korallos",
+        "medence",
       ]),
     )
   })

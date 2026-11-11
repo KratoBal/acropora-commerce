@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { OptionValueIds } from "@lib/util/product-option-filters"
+import type { TartasiSzuro } from "@lib/util/tartasi-szuro"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { categoryPageKind, categoryPageMode } from "./category-page-data"
@@ -22,6 +23,7 @@ export default function CategoryTemplate({
   countryCode,
   optionValueIds,
   markak,
+  tartas,
 }: {
   category: HttpTypes.StoreProductCategory
   /**
@@ -43,6 +45,8 @@ export default function CategoryTemplate({
   countryCode: string
   optionValueIds?: OptionValueIds
   markak?: string[]
+  /** The live-animal page's husbandry filter (V2.2 S5); the technical page ignores it. */
+  tartas?: TartasiSzuro
 }) {
   if (!category || !countryCode) notFound()
 
@@ -71,6 +75,7 @@ export default function CategoryTemplate({
         countryCode={countryCode}
         optionValueIds={optionValueIds}
         markak={markak}
+        tartas={tartas}
         kind={categoryPageKind(category)}
       />
     </div>

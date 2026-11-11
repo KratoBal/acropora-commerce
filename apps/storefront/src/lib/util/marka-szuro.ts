@@ -7,6 +7,7 @@
  * kategorialapon van, itt csak a dontes.
  */
 import type { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import { tartasiParameterek, type TartasiSzuro } from "./tartasi-szuro"
 
 export const MARKA_PARAM = "marka"
 
@@ -61,6 +62,8 @@ export function szuroCim(allapot: {
   sortBy?: SortOptions
   optionValueIds?: readonly string[]
   markak?: readonly string[]
+  /** Az elo allat kategoria tartasi szuroje (V2.2 S5): marka- es lapvaltaskor is megmarad. */
+  tartas?: TartasiSzuro | null
   page?: number
 }): string {
   const params = new URLSearchParams()
@@ -68,6 +71,7 @@ export function szuroCim(allapot: {
   for (const id of allapot.optionValueIds ?? [])
     params.append("optionValueIds", id)
   for (const id of allapot.markak ?? []) params.append(MARKA_PARAM, id)
+  tartasiParameterek(params, allapot.tartas)
   if (allapot.page && allapot.page > 1) params.set("page", String(allapot.page))
   const szoveg = params.toString()
   return szoveg ? `?${szoveg}` : "?"
