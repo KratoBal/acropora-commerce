@@ -116,10 +116,10 @@ describe("a lábléc elrendezése", () => {
   })
 
   /**
-   * A FIX ALSO SOR: Foxpost, GLS, Stripe es a kartyak kepe, ebben a sorrendben.
-   * A regi bolt harom eleme (Arukereso, Olcsobbat, SimplePay) NEM kerul ide.
+   * A FIX ALSO SOR: Foxpost, GLS, Stripe, utana a kartyak: amig nincs meg mind az ot hivatalos jelveny (ma csak a
+   * Google Pay; d707cf5f), a tartalek kep. A regi bolt harom eleme (Arukereso, Olcsobbat, SimplePay) NEM kerul ide.
    */
-  it("az alsó sor a négy fix logó, a régi bolt három eleme nélkül", () => {
+  it("az alsó sor a fix logók és a kártyák tartalék képe, amíg nincs meg mind az öt jelvény, a régi bolt elemei nélkül", () => {
     render(<LablecKeret lablec={LABLEC} />)
 
     const kepek = Array.from(
