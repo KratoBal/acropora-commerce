@@ -74,6 +74,7 @@ import {
   guestWithdrawalAddressAttempts,
   guestWithdrawalNumberAttempts,
   promotionAttempts,
+  adminSignInAttempts,
   signInAttempts,
   signUpAttempts,
 } from "./attempt-limits";
@@ -240,6 +241,13 @@ export default defineMiddlewares({
       matcher: "/auth/customer/emailpass",
       method: "POST",
       middlewares: [signInAttempts],
+    },
+    {
+      // The admin sign-in is the stock route too (card 4e13af79): DISABLE_MEDUSA_ADMIN closes the admin SCREEN only, the
+      // sign-in under `/auth` stays open, and it took any number of tries. Counted per address (attempt-limits.ts).
+      matcher: "/auth/user/emailpass",
+      method: "POST",
+      middlewares: [adminSignInAttempts],
     },
     {
       matcher: "/auth/customer/emailpass/register",

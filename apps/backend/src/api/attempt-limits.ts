@@ -54,6 +54,14 @@ export const ATTEMPT_LIMITS = {
   signInPerAddress: { max: 10, windowMs: 15 * MINUTES },
   /** Sign-in across all addresses: a warning only (see above). */
   signInOverall: { max: 300, windowMs: 10 * MINUTES },
+  /**
+   * The ADMIN sign-in (`/auth/user/emailpass`, card 4e13af79): five tries per address in fifteen minutes, half the customer's.
+   * An admin account can do everything, and a person signs in to it a few times a day. The OS does NOT sign in here: it holds a
+   * secret API key (acropora-os medusa-admin.client.ts), so this limit cannot lock the OS out. Counted apart from the customer
+   * sign-in: a customer's tries must not use up an admin address's allowance, nor the reverse.
+   */
+  adminSignInPerAddress: { max: 5, windowMs: 15 * MINUTES },
+  adminSignInOverall: { max: 100, windowMs: 10 * MINUTES },
   /** Sign-up: five per address in fifteen minutes. */
   signUpPerAddress: { max: 5, windowMs: 15 * MINUTES },
   signUpOverall: { max: 100, windowMs: 10 * MINUTES },
@@ -147,6 +155,12 @@ const limiter = (name: keyof typeof ATTEMPT_LIMITS) => createRateLimiter({ name,
 export const signInAttempts = limitAttempts({
   perKey: limiter("signInPerAddress"),
   overallWarn: { limiter: limiter("signInOverall"), what: "sign-in across all addresses" },
+  keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const adminSignInAttempts = limitAttempts({
+  perKey: limiter("adminSignInPerAddress"),
+  overallWarn: { limiter: limiter("adminSignInOverall"), what: "admin sign-in across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
 })
 
