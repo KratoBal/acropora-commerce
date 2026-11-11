@@ -78,6 +78,8 @@ export const hu = {
     countForOne: "{count} találat erre: „{query}”",
     truncated:
       "Több mint {count} termék illik erre a keresésre, itt a {count} legújabb látszik. Pontosítsd a keresést, ha nem találod, amit keresel.",
+    truncatedPriceSort:
+      "Az ár szerinti sorrend is csak erre a {count} legújabb találatra érvényes: egy régebbi, olcsóbb termék kimaradhat belőle.",
     rootsLabel: "Találatok kategóriánként",
     all: "Összes",
     filtersButton: "Szűrők",

@@ -73,6 +73,8 @@ export const en: Dictionary = {
     countForOne: "{count} result for “{query}”",
     truncated:
       "More than {count} products match this search; the {count} newest are shown. Narrow the search if you do not find what you are looking for.",
+    truncatedPriceSort:
+      "The price order, too, covers only these {count} newest results: an older, cheaper product may be missing from it.",
     rootsLabel: "Results by category",
     all: "All",
     filtersButton: "Filters",
