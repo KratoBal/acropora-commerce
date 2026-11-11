@@ -9,6 +9,7 @@ import { STRIPE_LOGO_UT } from "@modules/checkout/components/stripe-logo"
 import { Text } from "@modules/common/components/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { SutiBeallitasGomb } from "@modules/suti/suti-beallitas-gomb"
 
 import { HirlevelSor } from "./hirlevel-sor"
 import { CEG, FIZETESI_OPCIOK_KEP, fizetesiLogok } from "./hivatkozasok"
@@ -278,6 +279,8 @@ export function LablecKeret({ lablec, locale = "hu" }: LablecKeretProps) {
               </li>
             ))}
           </ul>
+          {/* a suti-dontes itt nyithato ujra es vonhato vissza (d5515c7d) */}
+          <SutiBeallitasGomb felirat={t("cookieConsent.footerButton")} />
           <Text
             className="txt-compact-small"
             style={{ color: "var(--terv-szoveg-halvany)" }}

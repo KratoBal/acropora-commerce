@@ -472,6 +472,26 @@ export const hu = {
     paymentAlt:
       "Fizetési opciók: Google Pay, Apple Pay, Mastercard, Maestro, Visa",
   },
+  /** A süti-hozzájárulás ablaka (d5515c7d). HELYŐRZŐ SZÖVEG: a végleges a jogi ellenőrzés után jön. */
+  cookieConsent: {
+    title: "Sütik",
+    text: "A bolt működéséhez szükséges sütiket mindig használjuk. Statisztikai és marketing sütit csak a hozzájárulásoddal teszünk, és ezt bármikor visszavonhatod a lap alján, a Sütibeállítások gombbal.",
+    privacyLink: "Adatkezelési tájékoztató",
+    cookieLink: "Süti tájékoztató",
+    acceptAll: "Mindet elfogadom",
+    necessaryOnly: "Csak a szükségesek",
+    settings: "Beállítások",
+    save: "Kiválasztottak mentése",
+    necessary: "Szükséges",
+    necessaryText:
+      "A kosár, a belépés és a biztonság sütijei. Nélkülük a bolt nem működik, ezért nem kapcsolhatók ki.",
+    statistics: "Statisztika",
+    statisticsText:
+      "Névtelen látogatottsági adatok, hogy lássuk, mi működik jól a boltban.",
+    marketing: "Marketingcélú",
+    marketingText: "Hirdetések mérése és személyre szabása más oldalakon.",
+    footerButton: "Sütibeállítások",
+  },
   newsletter: {
     title: "Hírlevél",
     text: "Iratkozz fel a hírlevelünkre és értesülj elsőként az újdonságokról, akciókról, ajánlatokról!",

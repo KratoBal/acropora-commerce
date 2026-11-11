@@ -4,6 +4,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 
+import { COOKIE_CONSENT_METADATA_KEY } from "../workflows/utils/customer-cookie-consent"
 import { ASZF_METADATA_KEY } from "../workflows/utils/split-completion"
 
 /**
@@ -14,8 +15,9 @@ import { ASZF_METADATA_KEY } from "../workflows/utils/split-completion"
  * (`POST /store/customers/me/aszf-elfogadas`, customer-aszf-record.ts). Two
  * stock doors would let a client forge or wipe it:
  *
- * - `POST /store/customers` (creating the record): the one server-owned key,
- *   `aszf_elfogadas`, is refused; other keys pass (a new customer has no record
+ * - `POST /store/customers` (creating the record): the server-owned keys,
+ *   `aszf_elfogadas` and `suti_hozzajarulas` (customer-cookie-consent.ts), are
+ *   refused; other keys pass (a new customer has no record
  *   to lose, and a later client such as the ReefClub may bring its own fields).
  * - `POST /store/customers/me` (updating): `metadata` is refused altogether,
  *   `{}` and `null` included. Whether Medusa merges or replaces the metadata
@@ -44,6 +46,14 @@ export const refuseCustomerAszfRecord = (
     res.status(400).json({
       type: "invalid_data",
       message: "Az ÁSZF-elfogadás rekordját a szerver írja, nem a kliens.",
+    })
+    return
+  }
+  // the cookie decision is the server's record too (customer-cookie-consent.ts)
+  if (metadata && COOKIE_CONSENT_METADATA_KEY in metadata) {
+    res.status(400).json({
+      type: "invalid_data",
+      message: "A sütihozzájárulás rekordját a szerver írja, nem a kliens.",
     })
     return
   }

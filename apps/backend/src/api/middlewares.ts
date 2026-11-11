@@ -85,6 +85,7 @@ import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/valida
 import { StorePostCustomerWithdrawal } from "./store/customers/me/orders/[order_id]/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
+import { StorePostSutiHozzajarulas } from "./store/customers/me/suti-hozzajarulas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
 import { refundBeforeOrderCancel } from "./refund-before-order-cancel";
@@ -206,6 +207,12 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/aszf-elfogadas",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    {
+      // The signed-in customer's cookie decision; the time is the server's (customer-cookie-consent.ts, card d5515c7d).
+      matcher: "/store/customers/me/suti-hozzajarulas",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostSutiHozzajarulas)],
     },
     {
       matcher: "/store/customers",

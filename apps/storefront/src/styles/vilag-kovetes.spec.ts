@@ -144,6 +144,12 @@ describe("a lap földjét viselő felületek hatóköre", () => {
     /* a vazon KIVUL, tehat a sotet valasztoban is szerepelnie kell */
     "modules/layout/templates/footer/lablec-keret.tsx",
     /*
+      A SUTI-ABLAK (d5515c7d) is a vazon KIVUL all (a gyoker layout `body`-jaban),
+      de sajat valaszto nem kell neki: a `body:has([data-vilag="sotet"])` sor a
+      body OSSZES leszarmazottjara viszi a sotet keszletet (`globals.css`).
+    */
+    "modules/suti/suti-ablak.tsx",
+    /*
       A FEJLEC (`nav/index.tsx`) 2026-09-29 OTA NINCS ITT: a P1b a Figma
       `acr` mod-tokenjeire allitotta (`bg-acr-mode-bg`), es a sotet modot a
       `data-fejlec` jelolon at kapja (`acropora-tokens.css`). A lap foldjet
