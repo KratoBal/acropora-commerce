@@ -25,6 +25,8 @@ type StepExitCodes = {
   authSecrets?: number
   /** `node ./src/scripts/verify-stripe-webhook-secret.js` */
   stripeWebhook?: number
+  /** `node ./src/scripts/report-webshop-mail-state.js` (a report: its failure must NOT stop the server) */
+  mailReport?: number
   /** `npx medusa db:migrate --execute-safe-links` */
   migrate?: number
   /** `npx medusa exec ./src/scripts/verify-links-in-sync.js` */
@@ -70,6 +72,7 @@ function runEntrypoint({
   fileUrl = 0,
   authSecrets = 0,
   stripeWebhook = 0,
+  mailReport = 0,
   migrate = 0,
   links = 0,
   shippingIds = 0,
@@ -112,6 +115,7 @@ function runEntrypoint({
       'case "$1" in',
       `  *verify-auth-secrets*) exit ${authSecrets} ;;`,
       `  *verify-stripe-webhook-secret*) exit ${stripeWebhook} ;;`,
+      `  *report-webshop-mail-state*) exit ${mailReport} ;;`,
       `  *) exit ${fileUrl} ;;`,
       "esac",
       "",
@@ -205,6 +209,26 @@ describe("docker-entrypoint.sh", () => {
 
     expect(status).not.toBe(0)
     expect(serverStarted).toBe(false)
+  })
+
+  /*
+    THE MAIL STATE REPORT IS NOT A CHECK: a shop without mail is a legitimate state, so even a CRASH of the report (exit 1)
+    must leave the server starting. The sibling steps above refuse; this one is the one step that must not, and the
+    assertion looks at the server, not at the exit code alone.
+  */
+  it("starts the server even when the mail state report itself fails", () => {
+    const { status, serverStarted } = runEntrypoint({ mailReport: 1 })
+
+    expect(status).toBe(0)
+    expect(serverStarted).toBe(true)
+  })
+
+  it("runs the mail state report, before the server starts", () => {
+    const source = readFileSync(ENTRYPOINT, "utf8")
+    const report = source.indexOf("node ./src/scripts/report-webshop-mail-state.js || true")
+    expect(report).toBeGreaterThan(-1)
+    expect(report).toBeGreaterThan(source.indexOf("verify-stripe-webhook-secret.js"))
+    expect(report).toBeLessThan(source.lastIndexOf('exec "$@"'))
   })
 
   it("does not start the server when the migration fails", () => {

@@ -232,6 +232,25 @@ describe("a visszaigazoló oldal szövegei nyelvenként", () => {
     }
     expect(fizetesCimke(stripe, en)).toBe("Card")
     expect(fizetesCimke(stripe)).toBe("Bankkártya")
+
+    // the advance transfer is its own method: it used to fall through to "pay at pickup" (the test shop's order 60)
+    const utalas = {
+      id: "o",
+      payment_collections: [
+        { payments: [{ provider_id: "pp_acropora_transfer" }] },
+      ],
+    }
+    expect(fizetesCimke(utalas)).toBe("Előre utalás")
+    expect(fizetesCimke(utalas, en)).toBe("Bank transfer in advance")
+    // the neighbours keep their words
+    expect(
+      fizetesCimke({
+        id: "o",
+        payment_collections: [
+          { payments: [{ provider_id: "pp_system_default" }] },
+        ],
+      }),
+    ).toBe("Fizetés átvételkor")
     const lap = sikeroldal(
       { id: "o", display_id: 5, shipping_methods: [{ name: "GLS házhoz" }] },
       null,
