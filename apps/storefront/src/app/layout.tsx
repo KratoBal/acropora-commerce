@@ -2,7 +2,9 @@ import { getBaseURL } from "@lib/util/env"
 import { szervezetLd, webhelyLd } from "@lib/seo/strukturalt-adat"
 import JsonLd from "@modules/common/components/json-ld"
 import RumJelento from "@modules/common/components/rum-jelento"
+import { consentAlapSzkript } from "@lib/util/suti-hozzajarulas"
 import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
+import SutiAblak from "@modules/suti/suti-ablak"
 import { Metadata } from "next"
 import localFont from "next/font/local"
 import "styles/globals.css"
@@ -130,6 +132,17 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       data-mode="light"
       className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} ${newsreader.variable} ${newsreaderItalic.variable} ${hankenGrotesk.variable}`}
     >
+      <head>
+        {/*
+          GOOGLE CONSENT MODE V2 ALAPALLAPOT (d5515c7d): minden jel `denied`,
+          MINDEN MAS SZKRIPT ELOTT; tarolt dontesnel rogton frissit. Meroeszkoz
+          nincs bekotve (`lib/util/suti-hozzajarulas.ts`).
+        */}
+        <script
+          id="consent-mode-alap"
+          dangerouslySetInnerHTML={{ __html: consentAlapSzkript() }}
+        />
+      </head>
       <body>
         {/* FE-2a: a bolt es a webhely minden lapon, az elso HTML-ben */}
         <JsonLd adat={szervezetLd(getBaseURL())} />
@@ -139,6 +152,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <FogyasztobaratWidget />
         {/* FE-7 RUM: a Core Web Vitals a /api/rum utra, oldaltipusonkent */}
         <RumJelento />
+        {/* a suti-hozzajarulas ablaka minden lapon (d5515c7d) */}
+        <SutiAblak />
       </body>
     </html>
   )

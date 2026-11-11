@@ -35,6 +35,9 @@ describe("the customer creation", () => {
     { email: "a@b.hu", metadata: { aszf_elfogadas: { idopont: "2020-01-01T00:00:00.000Z", verzio: "hamis" } } },
     { metadata: { aszf_elfogadas: null } },
     { metadata: { other: 1, aszf_elfogadas: {} } },
+    // the cookie decision is the server's record too (card d5515c7d)
+    { email: "a@b.hu", metadata: { suti_hozzajarulas: { verzio: "x", statisztika: true, marketing: true, idopont: "2020-01-01T00:00:00.000Z" } } },
+    { metadata: { suti_hozzajarulas: null } },
   ])("refuses %j", (body) => {
     const { res, next } = call(refuseCustomerAszfRecord, body)
     expect(res.statusCode).toBe(400)

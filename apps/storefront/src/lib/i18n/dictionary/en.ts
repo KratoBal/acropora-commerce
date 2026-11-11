@@ -462,6 +462,25 @@ export const en: Dictionary = {
     paymentAlt:
       "Payment options: Google Pay, Apple Pay, Mastercard, Maestro, Visa",
   },
+  cookieConsent: {
+    title: "Cookies",
+    text: "We always use the cookies the shop needs to work. Statistics and marketing cookies are only set with your consent, which you can withdraw at any time with the Cookie settings button at the bottom of the page.",
+    privacyLink: "Privacy policy",
+    cookieLink: "Cookie policy",
+    acceptAll: "Accept all",
+    necessaryOnly: "Necessary only",
+    settings: "Settings",
+    save: "Save selection",
+    necessary: "Necessary",
+    necessaryText:
+      "Cookies for the cart, sign-in and security. The shop does not work without them, so they cannot be turned off.",
+    statistics: "Statistics",
+    statisticsText:
+      "Anonymous visit data, so we can see what works well in the shop.",
+    marketing: "Marketing",
+    marketingText: "Measuring and personalising ads on other sites.",
+    footerButton: "Cookie settings",
+  },
   newsletter: {
     title: "Newsletter",
     text: "Subscribe to our newsletter and be the first to hear about news, sales and offers!",
