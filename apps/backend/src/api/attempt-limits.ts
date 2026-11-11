@@ -62,6 +62,12 @@ export const ATTEMPT_LIMITS = {
    */
   adminSignInPerAddress: { max: 5, windowMs: 15 * MINUTES },
   adminSignInOverall: { max: 100, windowMs: 10 * MINUTES },
+  /**
+   * The admin password-reset REQUEST (`/auth/user/emailpass/reset-password`, card 4e13af79): each try mails the admin a reset
+   * link, so a flood is mail into one inbox and a stream of valid tokens. Three per address in fifteen minutes. The body names the
+   * address as `identifier`, not `email`.
+   */
+  adminResetPerAddress: { max: 3, windowMs: 15 * MINUTES },
   /** Sign-up: five per address in fifteen minutes. */
   signUpPerAddress: { max: 5, windowMs: 15 * MINUTES },
   signUpOverall: { max: 100, windowMs: 10 * MINUTES },
@@ -103,6 +109,14 @@ export const addressKeyOf = (body: unknown): string | null => {
   const email = (body as { email?: unknown } | undefined)?.email
   if (typeof email !== "string") return null
   const key = email.trim().toLowerCase()
+  return key && key.length <= 254 ? key : null
+}
+
+/** The address a reset request names (`identifier`), as a key: trimmed, lower case, bounded. */
+export const identifierKeyOf = (body: unknown): string | null => {
+  const identifier = (body as { identifier?: unknown } | undefined)?.identifier
+  if (typeof identifier !== "string") return null
+  const key = identifier.trim().toLowerCase()
   return key && key.length <= 254 ? key : null
 }
 
@@ -162,6 +176,11 @@ export const adminSignInAttempts = limitAttempts({
   perKey: limiter("adminSignInPerAddress"),
   overallWarn: { limiter: limiter("adminSignInOverall"), what: "admin sign-in across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const adminResetAttempts = limitAttempts({
+  perKey: limiter("adminResetPerAddress"),
+  keyOf: (req) => identifierKeyOf(req.body),
 })
 
 export const signUpAttempts = limitAttempts({

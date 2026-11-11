@@ -74,6 +74,7 @@ import {
   guestWithdrawalAddressAttempts,
   guestWithdrawalNumberAttempts,
   promotionAttempts,
+  adminResetAttempts,
   adminSignInAttempts,
   signInAttempts,
   signUpAttempts,
@@ -248,6 +249,12 @@ export default defineMiddlewares({
       matcher: "/auth/user/emailpass",
       method: "POST",
       middlewares: [adminSignInAttempts],
+    },
+    {
+      // The admin reset request mails a link on every try (attempt-limits.ts, adminResetPerAddress).
+      matcher: "/auth/user/emailpass/reset-password",
+      method: "POST",
+      middlewares: [adminResetAttempts],
     },
     {
       matcher: "/auth/customer/emailpass/register",

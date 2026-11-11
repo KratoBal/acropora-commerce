@@ -1,5 +1,6 @@
 import {
   ATTEMPT_LIMITS,
+  adminResetAttempts,
   adminSignInAttempts,
   TOO_MANY_ATTEMPTS,
   addressKeyOf,
@@ -181,8 +182,30 @@ describe("the admin sign-in limit (card 4e13af79)", () => {
   })
 })
 
+describe("the admin reset request limit (card 4e13af79)", () => {
+  const body = (identifier: string) => ({ body: { identifier } })
+
+  it("allows three requests per address and refuses the fourth with 429, keyed by the identifier", async () => {
+    for (let i = 0; i < ATTEMPT_LIMITS.adminResetPerAddress.max; i++) {
+      expect((await call(adminResetAttempts, body("reset-a@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+    }
+    const refused = await call(adminResetAttempts, body(" Reset-A@acropora.hu"))
+    expect(refused.res.statusCode).toBe(429)
+    expect(refused.res.sent).toEqual(TOO_MANY_ATTEMPTS)
+    expect(refused.next).not.toHaveBeenCalled()
+    expect((await call(adminResetAttempts, body("reset-b@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+  })
+
+  it("a body with no identifier is left to the route's own validation", async () => {
+    for (const request of [{ body: {} }, { body: { identifier: 42 } }, { body: { email: "x@y.hu" } }]) {
+      expect((await call(adminResetAttempts, request)).next).toHaveBeenCalledTimes(1)
+    }
+  })
+})
+
 describe("the wiring", () => {
   it.each([
+    ["/auth/user/emailpass/reset-password", adminResetAttempts],
     ["/auth/user/emailpass", adminSignInAttempts],
     ["/auth/customer/emailpass", signInAttempts],
     ["/auth/customer/emailpass/register", signUpAttempts],
