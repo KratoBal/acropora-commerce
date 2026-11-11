@@ -54,6 +54,20 @@ export const ATTEMPT_LIMITS = {
   signInPerAddress: { max: 10, windowMs: 15 * MINUTES },
   /** Sign-in across all addresses: a warning only (see above). */
   signInOverall: { max: 300, windowMs: 10 * MINUTES },
+  /**
+   * The ADMIN sign-in (`/auth/user/emailpass`, card 4e13af79): five tries per address in fifteen minutes, half the customer's.
+   * An admin account can do everything, and a person signs in to it a few times a day. The OS does NOT sign in here: it holds a
+   * secret API key (acropora-os medusa-admin.client.ts), so this limit cannot lock the OS out. Counted apart from the customer
+   * sign-in: a customer's tries must not use up an admin address's allowance, nor the reverse.
+   */
+  adminSignInPerAddress: { max: 5, windowMs: 15 * MINUTES },
+  adminSignInOverall: { max: 100, windowMs: 10 * MINUTES },
+  /**
+   * The admin password-reset REQUEST (`/auth/user/emailpass/reset-password`, card 4e13af79): each try mails the admin a reset
+   * link, so a flood is mail into one inbox and a stream of valid tokens. Three per address in fifteen minutes. The body names the
+   * address as `identifier`, not `email`.
+   */
+  adminResetPerAddress: { max: 3, windowMs: 15 * MINUTES },
   /** Sign-up: five per address in fifteen minutes. */
   signUpPerAddress: { max: 5, windowMs: 15 * MINUTES },
   signUpOverall: { max: 100, windowMs: 10 * MINUTES },
@@ -95,6 +109,14 @@ export const addressKeyOf = (body: unknown): string | null => {
   const email = (body as { email?: unknown } | undefined)?.email
   if (typeof email !== "string") return null
   const key = email.trim().toLowerCase()
+  return key && key.length <= 254 ? key : null
+}
+
+/** The address a reset request names (`identifier`), as a key: trimmed, lower case, bounded. */
+export const identifierKeyOf = (body: unknown): string | null => {
+  const identifier = (body as { identifier?: unknown } | undefined)?.identifier
+  if (typeof identifier !== "string") return null
+  const key = identifier.trim().toLowerCase()
   return key && key.length <= 254 ? key : null
 }
 
@@ -148,6 +170,17 @@ export const signInAttempts = limitAttempts({
   perKey: limiter("signInPerAddress"),
   overallWarn: { limiter: limiter("signInOverall"), what: "sign-in across all addresses" },
   keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const adminSignInAttempts = limitAttempts({
+  perKey: limiter("adminSignInPerAddress"),
+  overallWarn: { limiter: limiter("adminSignInOverall"), what: "admin sign-in across all addresses" },
+  keyOf: (req) => addressKeyOf(req.body),
+})
+
+export const adminResetAttempts = limitAttempts({
+  perKey: limiter("adminResetPerAddress"),
+  keyOf: (req) => identifierKeyOf(req.body),
 })
 
 export const signUpAttempts = limitAttempts({

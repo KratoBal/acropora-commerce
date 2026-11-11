@@ -1,5 +1,7 @@
 import {
   ATTEMPT_LIMITS,
+  adminResetAttempts,
+  adminSignInAttempts,
   TOO_MANY_ATTEMPTS,
   addressKeyOf,
   limitAttempts,
@@ -150,8 +152,61 @@ describe("the other limits", () => {
   })
 })
 
+describe("the admin sign-in limit (card 4e13af79)", () => {
+  const body = (email: string) => ({ body: { email, password: "x" } })
+
+  it("allows five tries per address and refuses the sixth with 429, the route does not run", async () => {
+    for (let i = 0; i < ATTEMPT_LIMITS.adminSignInPerAddress.max; i++) {
+      expect((await call(adminSignInAttempts, body("admin-a@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+    }
+    const refused = await call(adminSignInAttempts, body("Admin-A@acropora.hu "))
+    expect(refused.res.statusCode).toBe(429)
+    expect(refused.res.sent).toEqual(TOO_MANY_ATTEMPTS)
+    expect(refused.next).not.toHaveBeenCalled()
+  })
+
+  it("is counted per address and apart from the customer sign-in, in both directions", async () => {
+    // ten customer tries use up the customer allowance for the address, and none of the admin one
+    for (let i = 0; i < ATTEMPT_LIMITS.signInPerAddress.max; i++) await call(signInAttempts, body("admin-b@acropora.hu"))
+    expect((await call(signInAttempts, body("admin-b@acropora.hu"))).res.statusCode).toBe(429)
+    expect((await call(adminSignInAttempts, body("admin-b@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+    // and five admin tries for another address leave the customer allowance of that address whole
+    for (let i = 0; i < ATTEMPT_LIMITS.adminSignInPerAddress.max; i++) await call(adminSignInAttempts, body("admin-c@acropora.hu"))
+    expect((await call(adminSignInAttempts, body("admin-c@acropora.hu"))).res.statusCode).toBe(429)
+    expect((await call(signInAttempts, body("admin-c@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+    expect((await call(adminSignInAttempts, body("admin-d@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+  })
+
+  it("is stricter than the customer's", () => {
+    expect(ATTEMPT_LIMITS.adminSignInPerAddress.max).toBeLessThan(ATTEMPT_LIMITS.signInPerAddress.max)
+  })
+})
+
+describe("the admin reset request limit (card 4e13af79)", () => {
+  const body = (identifier: string) => ({ body: { identifier } })
+
+  it("allows three requests per address and refuses the fourth with 429, keyed by the identifier", async () => {
+    for (let i = 0; i < ATTEMPT_LIMITS.adminResetPerAddress.max; i++) {
+      expect((await call(adminResetAttempts, body("reset-a@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+    }
+    const refused = await call(adminResetAttempts, body(" Reset-A@acropora.hu"))
+    expect(refused.res.statusCode).toBe(429)
+    expect(refused.res.sent).toEqual(TOO_MANY_ATTEMPTS)
+    expect(refused.next).not.toHaveBeenCalled()
+    expect((await call(adminResetAttempts, body("reset-b@acropora.hu"))).next).toHaveBeenCalledTimes(1)
+  })
+
+  it("a body with no identifier is left to the route's own validation", async () => {
+    for (const request of [{ body: {} }, { body: { identifier: 42 } }, { body: { email: "x@y.hu" } }]) {
+      expect((await call(adminResetAttempts, request)).next).toHaveBeenCalledTimes(1)
+    }
+  })
+})
+
 describe("the wiring", () => {
   it.each([
+    ["/auth/user/emailpass/reset-password", adminResetAttempts],
+    ["/auth/user/emailpass", adminSignInAttempts],
     ["/auth/customer/emailpass", signInAttempts],
     ["/auth/customer/emailpass/register", signUpAttempts],
     ["/store/carts/:id/promotions", promotionAttempts],
