@@ -1,7 +1,9 @@
 import { HttpTypes } from "@medusajs/types"
 
 import { translator, type Translate } from "@lib/i18n/dictionary"
+import { egysegarVaz } from "@lib/util/egysegar-vaz"
 import { getProductPrice } from "@lib/util/get-product-price"
+import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
 import {
@@ -83,6 +85,9 @@ export default function CommerceTermekKartya({
     tomor ? tomorOsztaly : rendes
   const { cheapestPrice } = getProductPrice({ product })
   const akcios = cheapestPrice?.price_type === "sale"
+  // az egysegar, ugyanabbol a nevbol es arbol, mint a termeklapon (barracuda 7b): tobbvaltozatu termeken valasztott
+  // valtozat nelkul nincs, mert nem tudni, melyik kiszerelesre vonatkozna
+  const egysegar = egysegarVaz(product)
   const keszlet = keszletSor(product, t)
   const marka = (product.collection?.title ?? "").trim()
   const href = `/termek/${product.handle}`
@@ -180,6 +185,23 @@ export default function CommerceTermekKartya({
                     {cheapestPrice.original_price}
                   </span>
                 ) : null}
+              </p>
+            ) : null}
+            {egysegar ? (
+              <p
+                className="text-[12px] leading-[16px] text-acr-slate"
+                data-testid="kartya-egysegar"
+                data-kiszereles={egysegar.kiszereles}
+              >
+                {t("product.unitPrice", {
+                  price: convertToLocale({
+                    amount: egysegar.ar,
+                    currency_code:
+                      product.variants?.[0]?.calculated_price?.currency_code ??
+                      "huf",
+                  }),
+                  unit: egysegar.alap,
+                })}
               </p>
             ) : null}
             <p

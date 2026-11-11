@@ -2,7 +2,9 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { VasarlasKontextus } from "./kontextus"
-import { EgysegarSor, egysegarVaz } from "./egysegar-sor"
+import { egysegarVaz } from "@lib/util/egysegar-vaz"
+
+import { EgysegarSor } from "./egysegar-sor"
 
 afterEach(cleanup)
 
