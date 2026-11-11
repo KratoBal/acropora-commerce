@@ -448,21 +448,30 @@ describe("a fizetési jelvények", () => {
     ])
   })
 
-  it("a meglévők a lista sorrendjében, egyforma magasan, a tartalék kép nélkül; a hiányzó hely üres", () => {
-    const ketto = FIZETESI_JELVENYEK.map((j) =>
-      j.kulcs === "visa" || j.kulcs === "google-pay"
-        ? { ...j, src: `/images/fizetes/${j.kulcs}.svg`, w: 10, h: 5 }
-        : { ...j, src: null },
+  it("amíg egy is hiányzik, a tartalék kép áll (egy hiányos sor azt mondaná, hogy a hiányzó kártyát nem fogadjuk el)", () => {
+    const negy = FIZETESI_JELVENYEK.map((j) =>
+      j.kulcs === "visa"
+        ? { ...j, src: null }
+        : { ...j, src: `/images/fizetes/${j.kulcs}.svg`, w: 10, h: 5 },
     )
-    expect(fizetesiLogok(ketto)).toEqual([
-      {
-        src: "/images/fizetes/google-pay.svg",
-        alt: "Google Pay",
-        w: 10,
-        h: 5,
-        mag: "h-8",
-      },
-      { src: "/images/fizetes/visa.svg", alt: "Visa", w: 10, h: 5, mag: "h-8" },
+    expect(fizetesiLogok(negy)).toEqual([
+      { ...FIZETESI_OPCIOK_KEP, mag: "h-12" },
+    ])
+  })
+
+  it("mind az öt megvan: a jelvények a lista sorrendjében, egyforma magasan, a tartalék kép nélkül", () => {
+    const ot = FIZETESI_JELVENYEK.map((j) => ({
+      ...j,
+      src: `/images/fizetes/${j.kulcs}.svg`,
+      w: 10,
+      h: 5,
+    }))
+    expect(fizetesiLogok(ot).map((l) => [l.alt, l.mag])).toEqual([
+      ["Google Pay", "h-8"],
+      ["Apple Pay", "h-8"],
+      ["Mastercard", "h-8"],
+      ["Maestro", "h-8"],
+      ["Visa", "h-8"],
     ])
   })
 

@@ -43,7 +43,7 @@ const ALSO_LOGOK = [
   },
   { src: GLS_LOGO.altalanos, alt: "GLS", w: 260, h: 88, mag: "h-6" },
   { src: STRIPE_LOGO_UT, alt: "Stripe", w: 360, h: 150, mag: "h-10" },
-  // a kartyatarsasagok hivatalos jelvenyei, amig egy sincs: a tartalek kep (d707cf5f)
+  // a kartyatarsasagok hivatalos jelvenyei, amig nincs meg mind az ot: a tartalek kep (d707cf5f)
   ...fizetesiLogok(),
 ]
 

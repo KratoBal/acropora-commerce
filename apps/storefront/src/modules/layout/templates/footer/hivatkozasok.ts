@@ -255,8 +255,9 @@ export const FIZETESI_OPCIOK_KEP = {
  *
  * EGY JELVENY CSAK HIVATALOS FAJLBOL KERUL IDE, a marka sajat oldalarol, a mellette allo kommentben a forras, a
  * licencsor es a marka meret- es szabad-ter szabalya. Ahol a letoltes feltetel-elfogadassal jar (Apple Pay, Mastercard,
- * Maestro), az Balazs dontese (acrobot 47495): addig a `src` null, es a hely uresen marad. Amig EGYIK jelveny sincs
- * meg, a lablec a tartalek kepet mutatja (`FIZETESI_OPCIOK_KEP`), hogy a fizetesi modok ne tunjenek el.
+ * Maestro, Visa), az Balazs dontese (acrobot 47495, 47497): addig a `src` null. AMIG NINCS MEG MIND AZ OT, a lablec a
+ * tartalek kepet mutatja (`FIZETESI_OPCIOK_KEP`), mert egy hianyos sor azt mondana a vevonek, hogy a hianyzo kartyat
+ * nem fogadjuk el (acrobot 47497).
  */
 export type FizetesiJelveny = {
   kulcs: string
@@ -294,8 +295,8 @@ export const FIZETESI_JELVENYEK: readonly FizetesiJelveny[] = [
 ]
 
 /**
- * A lablec fizetesi logoi: a meglevo hivatalos jelvenyek a lista sorrendjeben, egysegesen `h-8` magasan (a marka sajat
- * minimuma a fajl melletti kommentben, a beepiteskor ellenorizve); ha egy sincs, a tartalek kep.
+ * A lablec fizetesi logoi: ha mind az ot hivatalos jelveny megvan, azok a lista sorrendjeben, egysegesen `h-8` magasan
+ * (a marka sajat szabalya a fajl melletti kommentben); amig barmelyik hianyzik, a tartalek kep.
  */
 export function fizetesiLogok(
   jelvenyek: readonly FizetesiJelveny[] = FIZETESI_JELVENYEK,
@@ -303,7 +304,7 @@ export function fizetesiLogok(
   const meglevo = jelvenyek.filter(
     (j): j is FizetesiJelveny & { src: string } => j.src !== null,
   )
-  return meglevo.length > 0
+  return meglevo.length === jelvenyek.length
     ? meglevo.map((j) => ({
         src: j.src,
         alt: j.alt,
