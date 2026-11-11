@@ -61,7 +61,8 @@ describe("leírás-tisztítás: a valódi katalógus alakjai", () => {
   it("a meta kiesik, a körülötte álló tartalom marad", () => {
     const ki = sanitizeDescription(fixtura("meta-charset"))!
     expect(ki).not.toContain("<meta")
-    expect(ki).toContain("<h2")
+    // a forrás h2 fejléce egy szinttel lejjebb jön ki (kártya 4ea3d5cf: a lap h1-e a lap címe)
+    expect(ki).toContain("<h3")
     expect(ki).toContain("<strong")
   })
 
@@ -329,5 +330,30 @@ describe("leírás-tisztítás: a lap világa adja a színt", () => {
     )!
     expect(ki).toContain("width:114px")
     expect(ki).not.toContain("#000000")
+  })
+})
+
+/*
+  EGY h1 A LAPON (kártya 4ea3d5cf): a terméklap saját címe a h1, ezért a leírás fejlécei egy szinttel lejjebb kerülnek.
+  MI PIROSÍT: a leírásban h1 marad (nagybetűs vagy attribútumos alakban is); a fejlécek sorrendje megbomlik (egy h2 nem
+  h3 lesz, vagy egy h5 elveszik); egy h6 eldobódik; a fejléc a stílusát elveszti.
+*/
+describe("leírás-tisztítás: a fejlécek egy szinttel lejjebb", () => {
+  it("h1 -> h2 ... h5 -> h6, a sorrend megmarad, a h6 h6 marad", () => {
+    expect(
+      sanitizeDescription(
+        "<h1>A</h1><h2>B</h2><h3>C</h3><h4>D</h4><h5>E</h5><h6>F</h6>",
+      ),
+    ).toBe("<h2>A</h2><h3>B</h3><h4>C</h4><h5>D</h5><h6>E</h6><h6>F</h6>")
+  })
+
+  it("nagybetűs és attribútumos h1 sem marad h1, a stílusa megmarad", () => {
+    const ki = sanitizeDescription(
+      '<H1 style="text-align:center" class="cim">Nagy cím</H1><p>szöveg</p>',
+    )
+    expect(ki).not.toMatch(/<h1/i)
+    expect(ki).toContain(
+      '<h2 style="text-align:center" class="cim">Nagy cím</h2>',
+    )
   })
 })
