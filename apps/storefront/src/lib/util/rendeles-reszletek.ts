@@ -64,6 +64,8 @@ export function fizetesiMod(
   if (szolgaltato === "pp_system_default")
     return t("checkoutPayment.modePayAtStore")
   if (szolgaltato === "pp_acropora_cod") return t("checkoutPayment.modeCod")
+  if (szolgaltato === "pp_acropora_transfer")
+    return t("checkoutPayment.modeTransfer")
   return paymentInfoMap[szolgaltato]?.title ?? ""
 }
 
