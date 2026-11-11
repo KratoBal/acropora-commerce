@@ -77,6 +77,7 @@ export async function valogatasLapTorzs(
       page={lapSzam}
       rendezes={null}
       szuroAktiv={false}
+      szuroNyitva={false}
       torlesHref=""
       keresoAction=""
       kategoriak={[]}

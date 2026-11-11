@@ -62,6 +62,7 @@ export default async function CollectionTemplate({
       page={pageNumber}
       rendezes={sortBy ?? "created_at"}
       szuroAktiv={false}
+      szuroNyitva={false}
       torlesHref=""
       keresoAction=""
       kategoriak={[]}

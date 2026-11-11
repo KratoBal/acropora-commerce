@@ -97,6 +97,7 @@ export default async function StoreListaLap({
         (optionValueIds?.length ?? 0) > 0 ||
         markak.length > 0
       }
+      szuroNyitva={markak.length > 0}
       torlesHref="/store"
       keresoAction={`/${countryCode}/store`}
       kategoriak={gyokerek.map((gyoker) => ({

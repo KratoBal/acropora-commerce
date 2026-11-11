@@ -60,6 +60,13 @@ export type ListaLapProps = {
   rendezes: SortOptions | null
   /** Any filter or sort in the address: the "clear" link shows. */
   szuroAktiv: boolean
+  /**
+   * The filter panel renders OPEN on a phone: only what the PANEL holds (a brand, a husbandry group) counts. The sort and
+   * the option filter are NOT here: the sort sits in the quick-category strip, outside the panel, and a sort-only address
+   * must not push the brands and the husbandry groups above the products on a 390 px screen (barracuda on commerce #740).
+   * `szuroAktiv` (any filter or sort: the clear link) stays the clear link's.
+   */
+  szuroNyitva: boolean
   torlesHref: string
   /** The search form's target: the shop's search page. */
   keresoAction: string
@@ -108,6 +115,7 @@ export default function ListaLap({
   page,
   rendezes,
   szuroAktiv,
+  szuroNyitva,
   torlesHref,
   keresoAction,
   kategoriak,
@@ -277,14 +285,15 @@ export default function ListaLap({
               doboz csak a fejlecet es a "Szurok" gombot mutatja; a tartalom (kereso, markak, tartasi csoportok) a gomb
               mogott all, kulonben a harom tartasi csoport es a markak a termekek ele tolnak egy 390 szeles kepernyon.
               JS NELKUL MUKODIK (a lap ISR): a gomb egy jelolonegyzet cimkeje, a tartalom `peer-checked`. Az `small:`-tol
-              a jelolo es a gomb nem letezik, a tartalom mindig latszik, mint eddig. Aktiv szuronel a panel NYITVA
-              rajzolodik, hogy a kivalasztott ertekek a betoltes utan is lathatoak legyenek (a szuro linkjei oldalt
-              toltenek ujra). A `szuroAktiv` a rendezest is magaban foglalja, ezert csak-rendezesnel is nyitva jon.
+              a jelolo es a gomb nem letezik, a tartalom mindig latszik, mint eddig. Ha a PANELBAN
+              valasztott ertek aktiv (`szuroNyitva`: marka, tartasi csoport), a panel NYITVA rajzolodik, hogy a kivalasztott
+              ertekek a betoltes utan is lathatoak legyenek (a szuro linkjei oldalt toltenek ujra). A rendezes NEM nyitja:
+              az a gyors-kategoria savban all, a panelen kivul (barracuda, #740).
             */}
             <input
               id="kategoria-szurok-nyit"
               type="checkbox"
-              defaultChecked={szuroAktiv}
+              defaultChecked={szuroNyitva}
               aria-controls="kategoria-szurok-tartalom"
               className="peer sr-only small:hidden"
               data-testid="szurok-kapcsolo"

@@ -144,6 +144,29 @@ describe("a Commerce kategórialap", () => {
     expect(sorok).toEqual(["Világítás28", "Szűrés"])
   })
 
+  /*
+    A PANEL TELEFONON CSAK A PANELBAN VALASZTOTT ERTEKNEL NYITOTT (barracuda, #740). A rendezes a gyors-kategoria savban all,
+    nem a panelben: egy csak-rendezes cim zarva hagyja, kulonben a markak a termekek ele tolodnak.
+  */
+  it("csak rendezés a címben: a szűrő panel zárva marad, a törlés link látszik", async () => {
+    await lap({ sortBy: "price_asc" })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(false)
+    expect(
+      within(screen.getByTestId("kategoria-szurok")).getByRole("link", {
+        name: "Törlés",
+      }),
+    ).toBeTruthy()
+  })
+
+  it("kiválasztott márka a címben: a szűrő panel nyitva rajzolódik", async () => {
+    await lap({ markak: ["pcol_ati"] })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(true)
+  })
+
   it("a lista a kategóriára, lapméretével és a márkával együtt kérdez", async () => {
     await lap({ sortBy: "price_asc" })
     const hivas = adat.listProductsWithSort.mock.calls[0][0]
@@ -588,6 +611,19 @@ describe("a tartási szűrő az élő állat kategórián", () => {
     )
     expect(listaHivas().queryParams.id).toBeUndefined()
     expect(screen.queryByTestId("szuro-megjegyzes")).toBeNull()
+  })
+
+  it("tartási szűrő a címben: a szűrő panel nyitva rajzolódik, szűrő nélkül zárva", async () => {
+    tartasAdat.tartasiSzuroValasz.mockResolvedValue(valasz())
+    await lap({ kind: "livestock", tartas: szuro({ nehezseg: ["KONNYU"] }) })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(true)
+    cleanup()
+    await lap({ kind: "livestock", tartas: szuro() })
+    expect(
+      (screen.getByTestId("szurok-kapcsolo") as HTMLInputElement).checked,
+    ).toBe(false)
   })
 
   it("aktív szűrő: a találatok id-szűrőként; a linkek megtartják a márkát, a szűrőt és a lapozásban is", async () => {

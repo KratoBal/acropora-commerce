@@ -49,6 +49,7 @@ const lapProps = (o: Partial<ListaLapProps> = {}): ListaLapProps => ({
   page: 1,
   rendezes: null,
   szuroAktiv: false,
+  szuroNyitva: false,
   torlesHref: "/hu/categories/korallok",
   keresoAction: "/hu/store",
   kategoriak: [],
@@ -105,8 +106,14 @@ describe("a szűrő doboz telefonon összecsukható", () => {
     render(<ListaLap {...lapProps()} />)
     expect(kapcsolo().checked).toBe(false)
     cleanup()
-    render(<ListaLap {...lapProps({ szuroAktiv: true })} />)
+    render(<ListaLap {...lapProps({ szuroAktiv: true, szuroNyitva: true })} />)
     expect(kapcsolo().checked).toBe(true)
+  })
+
+  it("csak-rendezés (szuroAktiv igaz, szuroNyitva hamis): a panel zárva, a Törlés link látszik", () => {
+    render(<ListaLap {...lapProps({ szuroAktiv: true, szuroNyitva: false })} />)
+    expect(kapcsolo().checked).toBe(false)
+    expect(screen.getByRole("link", { name: "Törlés" })).toBeTruthy()
   })
 
   it("a tartalom a gomb mögött áll: a kereső, a márkák és a három tartási csoport (a fixture darabszámaival)", () => {
