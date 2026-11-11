@@ -116,10 +116,10 @@ describe("a lábléc elrendezése", () => {
   })
 
   /**
-   * A FIX ALSO SOR: Foxpost, GLS, Stripe es a kartyak kepe, ebben a sorrendben.
-   * A regi bolt harom eleme (Arukereso, Olcsobbat, SimplePay) NEM kerul ide.
+   * A FIX ALSO SOR: Foxpost, GLS, Stripe, utana a kartyatarsasagok MEGLEVO hivatalos jelvenyei (ma a Google Pay;
+   * d707cf5f), ebben a sorrendben. A regi bolt harom eleme (Arukereso, Olcsobbat, SimplePay) NEM kerul ide.
    */
-  it("az alsó sor a négy fix logó, a régi bolt három eleme nélkül", () => {
+  it("az alsó sor a fix logók és a meglévő hivatalos kártyajelvények, a régi bolt három eleme nélkül", () => {
     render(<LablecKeret lablec={LABLEC} />)
 
     const kepek = Array.from(
@@ -129,7 +129,7 @@ describe("a lábléc elrendezése", () => {
       "FOXPOST – Packeta Group",
       "GLS",
       "Stripe",
-      "Fizetési opciók: Google Pay, Apple Pay, Mastercard, Maestro, Visa",
+      "Google Pay",
     ])
     const sav = screen.getByTestId("lablec-also-sav").innerHTML.toLowerCase()
     for (const tilos of ["simplepay", "árukereső", "arukereso", "olcsobbat"])

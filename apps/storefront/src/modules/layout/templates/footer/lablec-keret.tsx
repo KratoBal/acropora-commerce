@@ -11,7 +11,7 @@ import { Text } from "@modules/common/components/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 import { HirlevelSor } from "./hirlevel-sor"
-import { CEG, FIZETESI_OPCIOK_KEP } from "./hivatkozasok"
+import { CEG, FIZETESI_OPCIOK_KEP, fizetesiLogok } from "./hivatkozasok"
 import type { LablecAdat } from "./lablec-adat"
 
 export type LablecKeretProps = {
@@ -43,8 +43,9 @@ const ALSO_LOGOK = [
   },
   { src: GLS_LOGO.altalanos, alt: "GLS", w: 260, h: 88, mag: "h-6" },
   { src: STRIPE_LOGO_UT, alt: "Stripe", w: 360, h: 150, mag: "h-10" },
-  { ...FIZETESI_OPCIOK_KEP, mag: "h-12" },
-] as const
+  // a kartyatarsasagok hivatalos jelvenyei, amig egy sincs: a tartalek kep (d707cf5f)
+  ...fizetesiLogok(),
+]
 
 /**
  * A LABLEC MAGA, ADATBOL. Szerveroldalon a `Footer` hivja (lekeri a kezdolap
