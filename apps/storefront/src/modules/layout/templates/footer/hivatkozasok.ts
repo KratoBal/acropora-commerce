@@ -271,12 +271,13 @@ export type FizetesiJelveny = {
 
 export const FIZETESI_JELVENYEK: readonly FizetesiJelveny[] = [
   /*
-    GOOGLE PAY: a hivatalos acceptance mark (google-pay-mark_800.svg, viewBox 1094x742, sha256 9ddde73a0e3e8b16...).
+    GOOGLE PAY: a hivatalos acceptance mark (google-pay-mark_800.svg, viewBox 1094x742; a Google fajlja CRLF
+    sorvegu, sha256 9ddde73a0e3e8b16..., a repoban LF-re alakitva, mas valtozas nelkul: sha256 5ae800802bb6511e...).
     Forras: https://developers.google.com/pay/api/web/guides/brand-guidelines, "Download assets"
     (developers.google.com/static/pay/api/download-assets/Google-Pay-Acceptance.zip), letoltve 2026-11-11, a
     karanten-olvasoval atnezett oldal szerint feltetel-elfogadas es belepes nelkul. Licencsort az oldal nem ad.
     A szabalyok az oldalrol: szabad ter minden oldalon legalabb a nagy G magassaganak fele; nem lehet kisebb, mint a
-    tobbi fizetesi jelveny, es nem mas meretu; szint, korvonalat nem szabad modositani. A fajl valtozatlan (csak svg,
+    tobbi fizetesi jelveny, es nem mas meretu; szint, korvonalat nem szabad modositani. A fajl tartalma valtozatlan (csak svg,
     g, path elem, script es kulso hivatkozas nelkul).
   */
   {
