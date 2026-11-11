@@ -108,6 +108,8 @@ const szolgaltato = (rendeles: Rendeles): string | null => {
 }
 
 const UTANVET = "pp_acropora_cod"
+/** The advance bank transfer's provider (backend `modules/acropora-transfer`): it has its own label, it is not "pay at pickup". */
+const ELORE_UTALAS = "pp_acropora_transfer"
 
 export function fizetesCimke(
   rendeles: Rendeles,
@@ -116,6 +118,7 @@ export function fizetesCimke(
   const p = szolgaltato(rendeles) ?? ""
   if (isStripeLike(p)) return t("orderConfirmed.payCard")
   if (p === UTANVET) return t("orderConfirmed.payCod")
+  if (p === ELORE_UTALAS) return t("checkoutPayment.modeTransfer")
   return t("orderConfirmed.payAtStore")
 }
 
