@@ -268,10 +268,27 @@ export default function ListaLap({
       >
         {szuro ? (
           <aside
-            className="flex flex-col gap-[18px] self-start border border-acr-line bg-acr-white p-[18px]"
+            className="relative flex flex-col gap-[18px] self-start border border-acr-line bg-acr-white p-[18px]"
             aria-label={t("category.filter")}
             data-testid="kategoria-szurok"
           >
+            {/*
+              A SZURO TELEFONON OSSZECSUKHATO (V2.2 S5 melle; acrobot 46596, a mobil nezet). A `small` (1024) alatt a szuro
+              doboz csak a fejlecet es a "Szurok" gombot mutatja; a tartalom (kereso, markak, tartasi csoportok) a gomb
+              mogott all, kulonben a harom tartasi csoport es a markak a termekek ele tolnak egy 390 szeles kepernyon.
+              JS NELKUL MUKODIK (a lap ISR): a gomb egy jelolonegyzet cimkeje, a tartalom `peer-checked`. Az `small:`-tol
+              a jelolo es a gomb nem letezik, a tartalom mindig latszik, mint eddig. Aktiv szuronel a panel NYITVA
+              rajzolodik, hogy a kivalasztott ertekek a betoltes utan is lathatoak legyenek (a szuro linkjei oldalt
+              toltenek ujra). A `szuroAktiv` a rendezest is magaban foglalja, ezert csak-rendezesnel is nyitva jon.
+            */}
+            <input
+              id="kategoria-szurok-nyit"
+              type="checkbox"
+              defaultChecked={szuroAktiv}
+              aria-controls="kategoria-szurok-tartalom"
+              className="peer sr-only small:hidden"
+              data-testid="szurok-kapcsolo"
+            />
             <div className="flex items-center justify-between">
               <h2 className="text-[20px] leading-[34px] tracking-[-0.2px] text-acr-ink">
                 {t("category.filter")}
@@ -285,78 +302,102 @@ export default function ListaLap({
                 </LocalizedClientLink>
               ) : null}
             </div>
-            {/* A szuro kereso (117:79) a bolt keresojere kuld: a kategorian
-              beluli kereses a kereses PR-javal jon. */}
-            <form
-              action={keresoAction}
-              method="get"
-              className="border border-acr-line bg-acr-mist p-3"
+            <label
+              htmlFor="kategoria-szurok-nyit"
+              className="flex h-[42px] cursor-pointer items-center justify-between border border-acr-line px-4 text-[14px] font-medium text-acr-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-acr-ocean peer-checked:[&_svg]:rotate-180 small:hidden"
+              data-testid="szurok-gomb"
             >
-              <label className="sr-only" htmlFor="kategoria-kereso">
-                {t("category.searchLabel")}
-              </label>
-              <input
-                id="kategoria-kereso"
-                type="search"
-                name="q"
-                placeholder={t("category.searchPlaceholder")}
-                className="w-full bg-transparent text-[14px] leading-[22px] text-acr-ink outline-none placeholder:text-acr-slate"
-              />
-            </form>
-            {kategoriak.length > 0 ? (
-              /*
+              {t("category.filterToggle")}
+              <svg
+                aria-hidden="true"
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M2 4.5 6 8.5 10 4.5" />
+              </svg>
+            </label>
+            <div
+              id="kategoria-szurok-tartalom"
+              className="hidden flex-col gap-[18px] peer-checked:flex small:flex"
+              data-testid="szurok-tartalom"
+            >
+              {/* A szuro kereso (117:79) a bolt keresojere kuld: a kategorian
+              beluli kereses a kereses PR-javal jon. */}
+              <form
+                action={keresoAction}
+                method="get"
+                className="border border-acr-line bg-acr-mist p-3"
+              >
+                <label className="sr-only" htmlFor="kategoria-kereso">
+                  {t("category.searchLabel")}
+                </label>
+                <input
+                  id="kategoria-kereso"
+                  type="search"
+                  name="q"
+                  placeholder={t("category.searchPlaceholder")}
+                  className="w-full bg-transparent text-[14px] leading-[22px] text-acr-ink outline-none placeholder:text-acr-slate"
+                />
+              </form>
+              {kategoriak.length > 0 ? (
+                /*
               MOBILON (a `small` alatt) A KATEGORIA SZAKASZ REJTVE: ugyanez a
               navigacio a gyors-kategoria savban vizszintesen gorgetheto, es a
               21 soros lista a termekek ele tolna (mervel 390-en). Figma mobil
               kerete ehhez a laphoz nincs; ez a mi reszponziv szabalyunk.
             */
-              <section className="hidden flex-col gap-2 border-t border-acr-line pt-[13px] small:flex">
-                <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                  {t("category.categoryHeading")}
-                </h3>
-                <ul
-                  className="flex flex-col gap-2"
-                  data-testid="szuro-kategoriak"
+                <section className="hidden flex-col gap-2 border-t border-acr-line pt-[13px] small:flex">
+                  <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                    {t("category.categoryHeading")}
+                  </h3>
+                  <ul
+                    className="flex flex-col gap-2"
+                    data-testid="szuro-kategoriak"
+                  >
+                    {kategoriak.map((sor) => (
+                      <li key={sor.id}>
+                        <LocalizedClientLink
+                          href={sor.href}
+                          className="flex items-center justify-between gap-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span
+                              className="h-[15px] w-[15px] shrink-0 border border-acr-slate bg-acr-mist"
+                              aria-hidden="true"
+                            />
+                            <span className="min-w-0">{sor.nev}</span>
+                          </span>
+                          {sor.szam !== null ? (
+                            <span className="shrink-0">{sor.szam}</span>
+                          ) : null}
+                        </LocalizedClientLink>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+              {markaLista.length > 0 ? (
+                <section
+                  className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
+                  data-testid="szuro-markak"
                 >
-                  {kategoriak.map((sor) => (
-                    <li key={sor.id}>
-                      <LocalizedClientLink
-                        href={sor.href}
-                        className="flex items-center justify-between gap-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
-                      >
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span
-                            className="h-[15px] w-[15px] shrink-0 border border-acr-slate bg-acr-mist"
-                            aria-hidden="true"
-                          />
-                          <span className="min-w-0">{sor.nev}</span>
-                        </span>
-                        {sor.szam !== null ? (
-                          <span className="shrink-0">{sor.szam}</span>
-                        ) : null}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-            {markaLista.length > 0 ? (
-              <section
-                className="flex flex-col gap-2 border-t border-acr-line pt-[13px]"
-                data-testid="szuro-markak"
-              >
-                <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
-                  {t("category.brandHeading")}
-                </h3>
-                <MarkaLista
-                  sorok={markaLista}
-                  aktiv={markak}
-                  link={markaLink}
-                  t={t}
-                />
-              </section>
-            ) : null}
-            {tartasiSzakasz}
+                  <h3 className="text-[16px] font-medium leading-[26px] text-acr-ink">
+                    {t("category.brandHeading")}
+                  </h3>
+                  <MarkaLista
+                    sorok={markaLista}
+                    aktiv={markak}
+                    link={markaLink}
+                    t={t}
+                  />
+                </section>
+              ) : null}
+              {tartasiSzakasz}
+            </div>
           </aside>
         ) : null}
 

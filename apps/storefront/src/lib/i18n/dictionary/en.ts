@@ -9,6 +9,7 @@ export const en: Dictionary = {
     productCount: "{count} products",
     productCountOne: "{count} product",
     filter: "Filter",
+    filterToggle: "Filters",
     clearFilter: "Clear",
     searchLabel: "Search by product or brand",
     searchPlaceholder: "Search by product or brand…",
