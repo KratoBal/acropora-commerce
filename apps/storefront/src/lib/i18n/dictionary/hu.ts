@@ -14,6 +14,7 @@ export const hu = {
     productCount: "{count} termék",
     productCountOne: "{count} termék",
     filter: "Szűrés",
+    filterToggle: "Szűrők",
     clearFilter: "Törlés",
     searchLabel: "Keresés termék vagy márka alapján",
     searchPlaceholder: "Keresés termék vagy márka alapján…",
