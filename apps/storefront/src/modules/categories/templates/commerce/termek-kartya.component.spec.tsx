@@ -242,3 +242,48 @@ describe("a Commerce termékkártya", () => {
     expect(screen.getByTestId("kartya-reszletek").textContent).toBe("Részletek")
   })
 })
+
+/**
+ * AZ EGYSEGAR A LISTA-KARTYAN (barracuda 7b, d707cf5f): ugyanaz, mint a termeklapon valtozat-valasztas nelkul. MI
+ * PIROSIT: a kartya nem mutatja, ahol a nev egyertelmu mennyiseget hord; tobbvaltozatu termeken (nem tudni, melyik
+ * kiszereles) vagy bizonytalan nevnel kitalalt egysegarat mutat.
+ */
+describe("az egységár a kártyán", () => {
+  afterEach(cleanup)
+
+  const egy = (cim: string, valtozatok: Valtozat[]) =>
+    termek(valtozatok, { title: cim })
+
+  it("egyváltozatú, egyértelmű kiszerelésű terméken az ár alatt áll", () => {
+    render(
+      <CommerceTermekKartya
+        product={egy("Aquaforest Pro Bio F 25g", [
+          { ...raktaron(3), calculated_price: ar(1250, 1250) },
+        ])}
+      />,
+    )
+    const sor = screen.getByTestId("kartya-egysegar")
+    expect(sor.textContent).toMatch(/^Egységár: 50\s000\sFt\/kg$/)
+    expect(sor.getAttribute("data-kiszereles")).toBe("25 g")
+  })
+
+  it("többváltozatú terméken és bizonytalan névnél nincs", () => {
+    const { rerender } = render(
+      <CommerceTermekKartya
+        product={egy("Tápoldat 250 ml", [
+          { ...raktaron(3), calculated_price: ar(1000, 1000) },
+          { ...raktaron(3), calculated_price: ar(3000, 3000) },
+        ])}
+      />,
+    )
+    expect(screen.queryByTestId("kartya-egysegar")).toBeNull()
+    rerender(
+      <CommerceTermekKartya
+        product={egy("Eledel 4x25g", [
+          { ...raktaron(3), calculated_price: ar(1000, 1000) },
+        ])}
+      />,
+    )
+    expect(screen.queryByTestId("kartya-egysegar")).toBeNull()
+  })
+})
