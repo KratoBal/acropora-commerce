@@ -344,6 +344,7 @@ export default async function CommerceKategoriaLap({
         markak.length > 0 ||
         tartasKert
       }
+      szuroNyitva={markak.length > 0 || tartasKert}
       torlesHref={`/categories/${category.handle}`}
       keresoAction={`/${countryCode}/store`}
       kategoriak={lathatoGyerekek.map(({ gyerek, szam }) => ({
