@@ -479,8 +479,9 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     A "hasonlo" ES A "kiegeszitok" DOBOZ ADATA MEGVAN (2026-11-12, murena merese, a teszt bolt store API-jan): 1501
     termekbol 1049 visel `unas_similar_ids` es 801 `unas_accessory_ids` kulcsot (az UNAS-forras aranyai: kb. 70 es 53
     szazalek). A hivatkozott azonositok 83 (hasonlo) es 86 (kiegeszito) szazaleka publikalt termek, a tobbi nincs
-    kint a boltban. Ahol egy termeknek nincs kiegeszitoje, ott a doboz a `varakozo` szoveget mutatja ("Ide jonnek a
-    tartozekok"): ez a szandekos ures-allapot, nem hiba.
+    kint a boltban. Ahol egy termeknek nincs kiegeszitoje, ott az ures szakasz a VEVO ELOTT nem all ott (acrobot,
+    2026-09-10: `jelzesek = process.env.NODE_ENV !== "production"`, lentebb); a `varakozo` szoveg ("Ide jonnek a
+    tartozekok") csak fejlesztoi futasban latszik. (A 2026-11-12-i helyi renderem `next dev` volt, ezert mutatta.)
   */
   {
     kulcs: "kiegeszitok",
