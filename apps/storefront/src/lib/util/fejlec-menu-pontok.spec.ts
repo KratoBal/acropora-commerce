@@ -50,6 +50,24 @@ describe("fejlecMenuPontok", () => {
     ])
   })
 
+  /*
+    A KATEGORIA-BETOLTES UTAN (2026-11-12): a teszt Medusa webcimei ekezet nelkuliek, es a `{nev}---{szulo}`
+    alak `{nev}` lett, ha a nev egyedi (`vízkezelés---termékek` -> `vizkezeles`). MI PIROSIT: ha a
+    Vizkezeles pont az uj alaknal a Hamarosan lapra esik (a regi, `---` alak a fenti esetben marad).
+  */
+  it("a Vízkezelés pont az új, ékezet nélküli handle-lel is oldalra mutat, a hasonló kezdetű másikra nem", () => {
+    const ujFa = [
+      k("termekek", [k("vizkezeles"), k("vilagitastechnika-lampak")]),
+      k("halak"),
+    ]
+    expect(alak(fejlecMenuPontok(ujFa))[4]).toBe("Vízkezelés>oldal:vizkezeles")
+    // a `vizkezeles-es-szures` MAS kategoria: a `---` elotag vagy a pontos egyezes kell, a puszta kezdet nem
+    const mas = [k("termekek", [k("vizkezeles-es-szures")]), k("halak")]
+    expect(alak(fejlecMenuPontok(mas))[4]).toBe(
+      "Vízkezelés>hamarosan:vizkezeles",
+    )
+  })
+
   it("a kereten kívüli gyökér nem kerül a menübe", () => {
     const handlek = fejlecMenuPontok(STAGE).flatMap((pont) =>
       pont.tipus === "gyoker" ? [pont.kategoria.handle] : [],

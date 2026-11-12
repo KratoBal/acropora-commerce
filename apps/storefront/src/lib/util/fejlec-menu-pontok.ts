@@ -32,7 +32,13 @@ export type FejlecMenuTerv = {
   tema: string
   /** A katalogus-gyoker handle-je, ekezet es kis-nagybetu nelkul. */
   gyoker?: string
-  /** Egy nem-gyoker kategoria handle-je, ha gyoker nincs. */
+  /**
+   * Egy nem-gyoker kategoria handle-je, ha gyoker nincs, ekezet nelkul. KET ALAKBAN TALALODIK (2026-11-12,
+   * az OS kategoria-betoltese a teszt Medusaban ujrairta a webcimeket, mert a regi `{nev}---{szulo}` alak
+   * `{nev}` lett, ha a nev egyedi): a MAI `vizkezeles` handle egyezik, es a regi `vizkezeles---termekek`
+   * is (a handle `<alkategoria>---` elotaggal kezdodik). Enelkul a Vizkezeles pont a webcim-valtas utan
+   * a Hamarosan lapra mutatna.
+   */
   alkategoria?: string
 }
 
@@ -45,7 +51,7 @@ export const FEJLEC_MENU_TERV: readonly FejlecMenuTerv[] = [
     felirat: "Vízkezelés",
     tema: "vizkezeles",
     gyoker: "vizkezeles",
-    alkategoria: "vizkezeles---termekek",
+    alkategoria: "vizkezeles",
   },
   { felirat: "Tudástár", tema: "tudastar", kulcs: "nav.knowledge" },
   {
@@ -111,7 +117,12 @@ export function fejlecMenuPontok<T extends Kategoria>(
       return { tipus: "gyoker", felirat, kategoria: gyoker }
     }
     const alkategoria = terv.alkategoria
-      ? alkategoriak.find((k) => kulcs(k.handle) === terv.alkategoria)
+      ? alkategoriak.find((k) => {
+          const h = kulcs(k.handle)
+          return (
+            h === terv.alkategoria || h.startsWith(`${terv.alkategoria}---`)
+          )
+        })
       : undefined
     if (alkategoria?.handle) {
       return {
