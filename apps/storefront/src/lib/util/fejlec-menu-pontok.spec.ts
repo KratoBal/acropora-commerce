@@ -68,6 +68,36 @@ describe("fejlecMenuPontok", () => {
     )
   })
 
+  /*
+    A PONTOS, SORRENDES EGYEZES (barracuda a commerce #750-en): a `{nev}---{szulo}` alak epp akkor marad, ha a nev
+    NEM egyedi, tehat egy masik agon allo `vizkezeles---halak` is elofordulhat. MI PIROSIT: ha a pont a fa tomb-
+    sorrendje szerint egy MASIK szulo vizkezeles-alkategoriajara mutat, vagy ha a regi alak megelozi a maira.
+  */
+  it("egy másik szülő azonos nevű alkategóriája nem viszi el a pontot, és a mai alak megelőzi a régit, a fa sorrendjétől függetlenül", () => {
+    const halak = k("vizkezeles---halak")
+    // a masik szulo alkategoriaja ELOL all a tombben: a regi, ismert alak mellett is a termekek ala tartozot adja
+    expect(
+      alak(
+        fejlecMenuPontok([
+          k("halak", [halak]),
+          k("termekek", [k("vizkezeles---termekek")]),
+        ]),
+      )[4],
+    ).toBe("Vízkezelés>oldal:vizkezeles---termekek")
+    // a mai alak es a regi egyutt: a mai nyer, akarmelyik all elol
+    for (const gyerekek of [
+      [k("vizkezeles---termekek"), k("vizkezeles")],
+      [k("vizkezeles"), k("vizkezeles---termekek")],
+    ])
+      expect(alak(fejlecMenuPontok([k("termekek", gyerekek)]))[4]).toBe(
+        "Vízkezelés>oldal:vizkezeles",
+      )
+    // csak a MASIK szulo alkategoriaja all: nincs ismert alak, a Hamarosan lap
+    expect(alak(fejlecMenuPontok([k("halak", [halak])]))[4]).toBe(
+      "Vízkezelés>hamarosan:vizkezeles",
+    )
+  })
+
   it("a kereten kívüli gyökér nem kerül a menübe", () => {
     const handlek = fejlecMenuPontok(STAGE).flatMap((pont) =>
       pont.tipus === "gyoker" ? [pont.kategoria.handle] : [],

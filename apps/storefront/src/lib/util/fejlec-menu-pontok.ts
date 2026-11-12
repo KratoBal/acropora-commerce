@@ -33,13 +33,14 @@ export type FejlecMenuTerv = {
   /** A katalogus-gyoker handle-je, ekezet es kis-nagybetu nelkul. */
   gyoker?: string
   /**
-   * Egy nem-gyoker kategoria handle-je, ha gyoker nincs, ekezet nelkul. KET ALAKBAN TALALODIK (2026-11-12,
-   * az OS kategoria-betoltese a teszt Medusaban ujrairta a webcimeket, mert a regi `{nev}---{szulo}` alak
-   * `{nev}` lett, ha a nev egyedi): a MAI `vizkezeles` handle egyezik, es a regi `vizkezeles---termekek`
-   * is (a handle `<alkategoria>---` elotaggal kezdodik). Enelkul a Vizkezeles pont a webcim-valtas utan
-   * a Hamarosan lapra mutatna.
+   * Egy nem-gyoker kategoria handle-je, ha gyoker nincs, ekezet nelkul, a KET ISMERT ALAKBAN, ELSOBBSEGI SORRENDBEN
+   * (2026-11-12, barracuda a commerce #750-en). Az OS kategoria-betoltese a teszt Medusaban ujrairta a webcimeket: a regi
+   * `{nev}---{szulo}` alak `{nev}` lett, ha a nev egyedi. A kereses PONTOS egyezes, a felsorolas sorrendjeben: elobb a mai
+   * alak (`vizkezeles`), aztan a regi (`vizkezeles---termekek`), a szulo handle-jevel egyutt. NEM elotag: a `{nev}---{szulo}`
+   * alak epp akkor marad, ha a nev NEM egyedi, tehat egy masik agon allo `vizkezeles---halak` is elofordulhat, es egy
+   * elotagos kereses azt a tomb sorrendje szerint adna.
    */
-  alkategoria?: string
+  alkategoria?: readonly string[]
 }
 
 export const FEJLEC_MENU_TERV: readonly FejlecMenuTerv[] = [
@@ -51,7 +52,7 @@ export const FEJLEC_MENU_TERV: readonly FejlecMenuTerv[] = [
     felirat: "Vízkezelés",
     tema: "vizkezeles",
     gyoker: "vizkezeles",
-    alkategoria: "vizkezeles",
+    alkategoria: ["vizkezeles", "vizkezeles---termekek"],
   },
   { felirat: "Tudástár", tema: "tudastar", kulcs: "nav.knowledge" },
   {
@@ -116,14 +117,10 @@ export function fejlecMenuPontok<T extends Kategoria>(
     if (gyoker) {
       return { tipus: "gyoker", felirat, kategoria: gyoker }
     }
+    // PONTOS egyezes a felsorolt alakokra, a felsorolas sorrendjeben (nem a fa sorrendjeben, nem elotaggal)
     const alkategoria = terv.alkategoria
-      ? alkategoriak.find((k) => {
-          const h = kulcs(k.handle)
-          return (
-            h === terv.alkategoria || h.startsWith(`${terv.alkategoria}---`)
-          )
-        })
-      : undefined
+      ?.map((alak) => alkategoriak.find((k) => kulcs(k.handle) === alak))
+      .find((talalt) => talalt !== undefined)
     if (alkategoria?.handle) {
       return {
         tipus: "oldal",
