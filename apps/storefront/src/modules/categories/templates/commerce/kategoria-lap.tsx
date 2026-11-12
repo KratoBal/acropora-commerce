@@ -326,6 +326,7 @@ export default async function CommerceKategoriaLap({
       cim={nev(category)}
       leiras={category.description}
       eloAllat={kind === "livestock"}
+      kezdolapStilus
       sav={{
         osszes: sav.mod === "gyerekek",
         elemek: sav.elemek.map(({ kategoria, aktiv }) => ({

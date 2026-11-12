@@ -132,6 +132,27 @@ afterEach(() => {
  * the "load more" link on the last page, or missing before it.
  */
 describe("a Minden termék lista a közös lista-lapon", () => {
+  /*
+    A MASIK IRANY (barracuda, commerce #748): a kategoria oldal kapja a kezdolap szelet es betujet
+    (`kezdolapStilus`), a Minden termek lista NEM (acrobot 49265: a 10-26-i szo a fejlecre es a
+    lablecre szolt). MI PIROSIT: ha a kozos keret a kapcsolo nelkul is a 64 pixeles szelet vagy
+    a serifet adja, vagyis a kapcsolo nem szur.
+  */
+  it("a kezdőlapi szél és betű nincs rajta: a régi 80/56 pixeles szél és a világos cím marad", async () => {
+    const { container } = await lap()
+    const sorok = Array.from(
+      container.querySelectorAll("[class*='small:px-']"),
+    ).map((e) => e.className)
+    expect(sorok.length).toBeGreaterThanOrEqual(4)
+    for (const osztaly of sorok) {
+      expect(osztaly).toMatch(/small:px-\[(56|80)px\]/)
+      expect(osztaly).not.toContain("small:px-16")
+    }
+    const cim = screen.getByTestId("category-page-title").className
+    expect(cim).toContain("font-light")
+    expect(cim).not.toContain("font-kiemelt")
+  })
+
   it("a cím és a morzsamenü a közös keretben áll", async () => {
     await lap()
     expect(screen.getByTestId("category-page-title").textContent).toBe(
