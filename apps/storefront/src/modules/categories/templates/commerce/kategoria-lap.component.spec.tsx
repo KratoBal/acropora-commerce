@@ -547,6 +547,42 @@ describe("a kategórialap névtérképe élő állat kategórián", () => {
   szama nem latszik, vagy nincs link a szuro nelkuli listara; tul sok talalatnal csendben vagott lista; a bolt hibajanal
   egy aktiv szuro csendben elmarad; egy marka- vagy lapvaltas elveszti a tartasi szurot; a nulla darabos ertek sort kap.
 */
+/**
+ * A KATEGORIALAP A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-10 "C mehet", mint a termeklap, #572).
+ * MI PIROSIT: ha a lap oldalszele a fejlec es a lablec 64 pixeles szelen kivul esik (a morzsa 80,
+ * a tobbi 56 volt); ha a cim a kezdolap szerif betuje helyett a vilagos talpatlan marad a muszaki
+ * agon. A masik ag (elo allat) mar a szerifet viselte: az sem romolhat vissza.
+ */
+describe("a kategórialap a kezdőlap stílusában", () => {
+  const KORALL = kat("korallok", "Korallok", { category_children: [] })
+
+  it.each([
+    ["műszaki", {}],
+    ["élő állat", { category: KORALL, kind: "livestock" }],
+  ])(
+    "%s ág: a cím a kezdőlap betűjével, normál vastagsággal",
+    async (_n, props) => {
+      await lap(props)
+      const cim = screen.getByTestId("category-page-title").className
+      expect(cim).toContain("font-kiemelt")
+      expect(cim).toContain("font-normal")
+      expect(cim).toContain("tracking-[-0.01em]")
+      expect(cim).not.toContain("font-light")
+    },
+  )
+
+  it("minden sáv oldalszéle a 64 pixeles kezdőlapi szél, és nincs a régi 56 vagy 80", async () => {
+    const { container } = await lap()
+    const savok = Array.from(container.querySelectorAll("[class*='small:px-']"))
+    // a morzsa, a bevezető, a gyorskategória-sáv és a szűrő/találat sor
+    expect(savok.length).toBeGreaterThanOrEqual(4)
+    for (const sav of savok) {
+      expect(sav.className).toContain("small:px-16")
+      expect(sav.className).not.toMatch(/small:px-\[(56|80)px\]/)
+    }
+  })
+})
+
 describe("a tartási szűrő az élő állat kategórián", () => {
   const valasz = (o: Record<string, unknown> = {}) => ({
     product_ids: ["p1", "p2"],

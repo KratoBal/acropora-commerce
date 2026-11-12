@@ -140,7 +140,7 @@ export default function ListaLap({
       {/* MORZSAMENU (117:42): nagybetus, 14 px, a szovegszinben. */}
       <nav
         aria-label={t("category.breadcrumbLabel")}
-        className="mx-auto flex min-h-[58px] max-w-[1440px] items-center px-4 small:px-[80px]"
+        className="mx-auto flex min-h-[58px] max-w-[1440px] items-center px-4 small:px-16"
       >
         <ol className="flex flex-wrap items-center gap-x-2 text-[14px] uppercase leading-[22px] text-acr-slate">
           {morzsa.map((elem) =>
@@ -166,14 +166,15 @@ export default function ListaLap({
       {/* BEVEZETO (117:44). A felulcim, a leiras es a "Rendszerem beállítása"
           seged adat es funkcio hijan nem jelenik meg; a leiras, ha egyszer
           lesz, igen. */}
-      <header className="mx-auto max-w-[1440px] px-4 pb-10 pt-8 small:px-[56px] small:pb-[44px] small:pt-[52px]">
+      <header className="mx-auto max-w-[1440px] px-4 pb-10 pt-8 small:px-16 small:pb-[44px] small:pt-[52px]">
         <h1
-          className={
-            "text-[40px] leading-[44px] text-acr-ink small:text-[58px] small:leading-[62px] " +
-            (eloAllat
-              ? "font-kiemelt font-normal tracking-[-0.01em]"
-              : "font-light tracking-[-1px]")
-          }
+          /*
+            A CIM A KEZDOLAP BETUJEVEL, MINDEN AGON (2026-11-12, Balazs 11-10: a kategoria
+            oldal a kezdolap stilusat kapja, mint a termeklap): serif (`font-kiemelt`),
+            normal suly, -0.01em. A muszaki ag eddig vilagos szuk talpatlan (117:30
+            kerete) volt, az elo allat ag mar a szerifet viselte.
+          */
+          className="font-kiemelt text-[40px] font-normal leading-[44px] tracking-[-0.01em] text-acr-ink small:text-[58px] small:leading-[62px]"
           data-testid="category-page-title"
         >
           {cim}
@@ -210,7 +211,7 @@ export default function ListaLap({
 
       {/* GYORS-KATEGORIAK ES RENDEZES (117:55), a `mist` savon. */}
       <div className="bg-acr-mist">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between small:px-[56px]">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between small:px-16">
           {sav.osszes || sav.elemek.length > 0 ? (
             <ul
               className="flex min-w-0 gap-2 overflow-x-auto"
@@ -270,7 +271,7 @@ export default function ListaLap({
       {/* SZUROK ES TALALATOK (117:74). */}
       <div
         className={
-          "mx-auto max-w-[1440px] px-4 pb-16 pt-8 small:px-[56px] " +
+          "mx-auto max-w-[1440px] px-4 pb-16 pt-8 small:px-16 " +
           (szuro ? "grid gap-7 small:grid-cols-[250px_minmax(0,1fr)]" : "")
         }
       >
