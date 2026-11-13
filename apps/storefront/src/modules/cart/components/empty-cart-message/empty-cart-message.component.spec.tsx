@@ -42,6 +42,20 @@ describe("az üres kosár", () => {
     }
   })
 
+  /**
+   * A KOSAR A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet", mint a kategorialap, #748): a cim a kezdolap
+   * szerif betuje, normal vastagsaggal. MI PIROSIT: ha a cim a vilagos talpatlan marad.
+   */
+  it("a cím a kezdőlap szerif betűjével, normál vastagsággal", () => {
+    render(<EmptyCartMessage countryCode="hu" />)
+
+    const cim = screen.getByRole("heading", { level: 1 }).className
+    expect(cim).toContain("font-kiemelt")
+    expect(cim).toContain("font-normal")
+    expect(cim).toContain("tracking-[-0.01em]")
+    expect(cim).not.toContain("font-light")
+  })
+
   it("a bolt telefonszáma hívható hivatkozás", () => {
     render(<EmptyCartMessage countryCode="hu" />)
 

@@ -40,7 +40,7 @@ const Summary = ({ cart }: SummaryProps) => {
 
   return (
     <div className="flex flex-col gap-y-4 border border-acr-line bg-acr-white p-[22px]">
-      <h2 className="text-[28px] font-light leading-[34px] tracking-[-0.5px] text-acr-ink">
+      <h2 className="font-kiemelt text-[28px] font-normal leading-[34px] tracking-[-0.01em] text-acr-ink">
         {t("cartPage.summaryHeading")}
       </h2>
       <DiscountCode cart={cart} />
