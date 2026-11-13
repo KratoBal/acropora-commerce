@@ -138,6 +138,31 @@ describe("a szállítási csoportok", () => {
     ])
   })
 
+  /*
+    SZEMELYES ATVETELNEL A CSOPORT "ATVETEL" (acrobot 49701, a teszt kirakat kepen merve: a boltban atvett kosar "1. KISZALLITAS"
+    csoportot mutatott). MI PIROSIT: ha a szemelyes atvetel csoportja "Kiszallitas" marad; ha a hova a vevo hazcime
+    (a bolt cime kell); ha a sima kiszallitas is "Atvetel" lenne.
+  */
+  it("személyes átvételnél a csoport Átvétel, és a hova a bolt címe, nem a vevő háza", () => {
+    const kosar = {
+      items: items.slice(0, 2),
+      shipping_address: cim,
+      shipping_methods: [{ name: "Átvétel a boltban", total: 0, data: {} }],
+    }
+    const [atvetel] = szallitasiCsoportok(kosar, new Set(), undefined, true)
+    expect(atvetel).toEqual({
+      cimke: "1. Átvétel",
+      mod: "Átvétel a boltban",
+      osszeg: 0,
+      tetelek: ["Reef LED 160 Pro", "Aquaforest Reef Salt × 2"],
+      hova: "1106 Budapest, Pesti Gábor utca 35",
+    })
+    // az alapértelmezés (nem átvétel) a kiszállítás, a vevő címével
+    const [kiszallitas] = szallitasiCsoportok(kosar, new Set())
+    expect(kiszallitas?.cimke).toBe("1. Kiszállítás")
+    expect(kiszallitas?.hova).toBe("1111 Budapest, Minta utca 12.")
+  })
+
   it("szállítási mód nélkül nincs kitalált csoport", () => {
     expect(
       szallitasiCsoportok(

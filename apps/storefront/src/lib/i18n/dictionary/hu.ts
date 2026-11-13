@@ -1113,6 +1113,7 @@ export const hu = {
     cardGroups: "Szállítási csoportok",
     groupsLead: "A szállítási módok ezen a lépésen már nem módosíthatók.",
     groupDelivery: "Kiszállítás",
+    groupPickup: "Átvétel",
     groupLive: "Élőállat",
     groupStore: "Személyes átvétel",
     yourOrder: "Rendelésed",

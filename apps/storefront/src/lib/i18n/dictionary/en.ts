@@ -1077,6 +1077,7 @@ export const en: Dictionary = {
     cardGroups: "Shipping groups",
     groupsLead: "The shipping methods can no longer be changed at this step.",
     groupDelivery: "Delivery",
+    groupPickup: "Pickup",
     groupLive: "Live animals",
     groupStore: "Pickup in the store",
     yourOrder: "Your order",
