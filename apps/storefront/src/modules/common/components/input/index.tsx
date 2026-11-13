@@ -50,7 +50,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {topLabel && (
           <Label className="mb-2 txt-compact-medium-plus">{topLabel}</Label>
         )}
-        <div className="flex relative z-0 w-full txt-compact-medium">
+        <div className="floating-field flex relative z-0 w-full txt-compact-medium">
           <input
             type={inputType}
             name={name}
