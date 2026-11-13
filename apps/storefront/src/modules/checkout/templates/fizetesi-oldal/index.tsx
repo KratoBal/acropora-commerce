@@ -59,14 +59,14 @@ export function FizetesiOldalNezet({
 
   return (
     <AszfProvider>
-      <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
+      <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-16 small:py-[52px]">
         <div className="pb-4">
           <StepIndicator active={2} countryCode={countryCode} />
         </div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-acr-heritage">
           {t("checkoutPage.title")}
         </p>
-        <h1 className="mt-1 text-[34px] font-normal leading-[40px] text-acr-ink small:text-[44px] small:leading-[52px]">
+        <h1 className="mt-1 font-kiemelt text-[34px] font-normal leading-[40px] tracking-[-0.01em] text-acr-ink small:text-[44px] small:leading-[52px]">
           {t("cartPage.stepPayment")}
         </h1>
         <p className="mt-2 text-[14px] text-acr-slate">

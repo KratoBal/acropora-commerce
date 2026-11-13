@@ -39,7 +39,7 @@ export function CheckoutSummaryView({
         className="flex flex-col gap-y-4 border border-acr-line bg-acr-white p-[22px]"
         data-testid="checkout-summary"
       >
-        <h2 className="text-[28px] font-light leading-[34px] tracking-[-0.5px] text-acr-ink">
+        <h2 className="font-kiemelt text-[28px] font-normal leading-[34px] tracking-[-0.01em] text-acr-ink">
           {t("checkoutPage.summaryHeading")}
         </h2>
         <ItemsPreviewTemplate cart={cart} />

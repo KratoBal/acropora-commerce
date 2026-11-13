@@ -54,4 +54,21 @@ describe("a fizetési oldal véglegesítése", () => {
     expect(screen.getByTestId("fizetesi-mod")).toBeInTheDocument()
     expect(screen.queryByText(/kártyaadatokat/)).toBeNull()
   })
+
+  /**
+   * A FIZETESI OLDAL A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet"): a cim a kezdolap szerif betuje, normal
+   * vastagsaggal. MI PIROSIT: ha a cim a talpatlan marad.
+   */
+  it("a cím a kezdőlap szerif betűjével, normál vastagsággal", async () => {
+    render(
+      await FizetesiOldal({
+        cart: { id: "cart_1" } as never,
+        countryCode: "hu",
+      }),
+    )
+    const cim = screen.getByRole("heading", { level: 1 }).className
+    expect(cim).toContain("font-kiemelt")
+    expect(cim).toContain("font-normal")
+    expect(cim).toContain("tracking-[-0.01em]")
+  })
 })
