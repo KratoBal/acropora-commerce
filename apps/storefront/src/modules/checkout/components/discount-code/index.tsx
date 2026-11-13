@@ -1,5 +1,6 @@
 "use client"
 
+import { TAP_AREA_TIGHT } from "@lib/util/tap-area"
 import {
   Badge,
   Heading,
@@ -87,7 +88,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
             <button
               onClick={() => setIsOpen(!isOpen)}
               type="button"
-              className="text-[14px] leading-[22px] text-acr-ocean underline hover:text-acr-ink"
+              className={`text-[14px] leading-[22px] text-acr-ocean underline hover:text-acr-ink ${TAP_AREA_TIGHT}`}
               data-testid="add-discount-button"
             >
               {t("cartPage.discountAdd")}
