@@ -209,7 +209,7 @@ export default function ListaLap({
             className="mt-6 max-w-[560px] border border-acr-line bg-acr-white px-5 py-4"
             data-testid="category-helper-livestock"
           >
-            <p className="text-[10px] font-medium uppercase leading-[12px] tracking-[1.8px] text-acr-slate">
+            <p className="text-[12px] font-medium uppercase leading-[14px] tracking-[1.8px] text-acr-slate">
               {t("category.pickupEyebrow")}
             </p>
             <h2 className="mt-2 text-[18px] font-bold leading-[22px] tracking-[-0.2px] text-acr-ink">
