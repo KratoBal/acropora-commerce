@@ -1,10 +1,13 @@
 import { renderShippedMail, type ShippedMailFacts } from "../shipped-mail"
 import {
+  categoryChains,
   foxpostLogoUrl,
+  inFallbackScope,
   prepareShippedMail,
   shippedKey,
   usageExcerpt,
   USAGE_GUIDE_LIMITS,
+  type ProductGuideSource,
   type ShippedOrder,
 } from "../shipped"
 import { AdminOrderShippingNotice } from "../../../../api/admin/order-shipping-notice/validators"
@@ -213,10 +216,11 @@ describe("when the shipping mail goes", () => {
 })
 
 /*
-  V3.3 S3 (card 69b5f2ef): the parcel's usage guides in the facts. WHAT TURNS THIS RED: a guide for a fee line or a product
-  twice; a guide without its product's approved text; the excerpt not the first paragraph, or not cut on a word; a link that is
-  not the storefront's https product page; a failed lookup failing the mail; the key present with no guide (the facts would
-  change for every parcel).
+  V3.3 (card 69b5f2ef, korall's spec): the parcel's usage guides in the facts. WHAT TURNS THIS RED: a guide for a fee line or a
+  product twice; the parcel's order lost; case A without its dose, B without its excerpt, C without its link, D outside the
+  treatments let through or inside dropped; a parcel of treatments in case D only sending the key; a link that is not the
+  storefront's https product page; a failed lookup failing the mail; the key present with no guide (the facts would change for
+  every parcel).
 */
 describe("the parcel's usage guides", () => {
   const order = rendeles({
@@ -225,28 +229,59 @@ describe("the parcel's usage guides", () => {
       { title: "Hanna HI780-25", quantity: 1, fee: false, product_id: "prod_b", product_handle: "hanna-hi780" },
       { title: "KZ Amino", quantity: 1, fee: false, product_id: "prod_a", product_handle: "kz-amino" },
       { title: "Utánvét kezelési díj", quantity: 1, fee: true, product_id: "prod_fee", product_handle: null },
+      { title: "Red Sea Kalcium", quantity: 1, fee: false, product_id: "prod_c", product_handle: "rs-ca" },
+      { title: "NoPox", quantity: 1, fee: false, product_id: "prod_d", product_handle: "nopox" },
+      { title: "Szivattyú", quantity: 1, fee: false, product_id: "prod_e", product_handle: "pumpa" },
     ],
   })
-  const shippedFacts = async (guides: ((ids: string[]) => Promise<Map<string, string>>) | undefined) =>
+  const src = (s: Partial<ProductGuideSource>): ProductGuideSource => ({
+    usage: null,
+    dosing: null,
+    categories: [],
+    ...s,
+  })
+  const shippedFacts = async (
+    guides: ((ids: string[]) => Promise<Map<string, ProductGuideSource>>) | undefined
+  ) =>
     ((await prepareShippedMail(
       "order_42",
       { carrier: "foxpost", tracking_number: "CLFOX1" },
       { ...deps(order), ...(guides ? { usageGuides: jest.fn(guides) } : {}) },
       ON
     )) as { mail: { render: { facts: { shipped: Record<string, unknown> } } } }).mail.render.facts.shipped
+  const treatment = [["Termékek", "Problémamegoldás", "Nitrátmegkötők"]]
 
-  it("one guide per product with an approved text, its first paragraph and its product page", async () => {
+  it("the four cases, each product once, in the parcel's order, with its product page", async () => {
     const lookup = jest.fn(async (ids: string[]) => {
-      expect(ids.sort()).toEqual(["prod_a", "prod_b"])
-      return new Map([["prod_a", "Rázd fel.\nMérd ki.\n\nHa kétséges, kevesebbel kezdj."]])
+      expect([...ids].sort()).toEqual(["prod_a", "prod_b", "prod_c", "prod_d", "prod_e"])
+      return new Map([
+        ["prod_a", src({ usage: "Mire való: aminosav-pótlás.\n\n1. Rázd fel.", dosing: "1 drop/100 L/day" })],
+        ["prod_b", src({ usage: "Rázd fel.\nMérd ki.\n\nHa kétséges, kevesebbel kezdj." })],
+        ["prod_c", src({ dosing: "5 ml/100 L/day", categories: [["Termékek", "Nyomelemek"]] })],
+        ["prod_d", src({ categories: treatment })],
+        ["prod_e", src({ categories: [["Termékek", "Áramoltatás"]] })],
+      ])
     })
     const shipped = await shippedFacts(lookup)
+    const page = (h: string) => `https://shop-staging.acropora.hu/hu/termek/${h}`
     expect(shipped.usage_guides).toEqual([
-      { title: "KZ Amino", excerpt: "Rázd fel. Mérd ki.", url: "https://shop-staging.acropora.hu/hu/termek/kz-amino" },
+      { title: "KZ Amino", excerpt: "aminosav-pótlás.", dosing: ["1 drop/100 L/day"], url: page("kz-amino") },
+      { title: "Hanna HI780-25", excerpt: "Rázd fel. Mérd ki.", url: page("hanna-hi780") },
+      {
+        title: "Red Sea Kalcium",
+        excerpt: "",
+        dosing: ["5 ml/100 L/day"],
+        fallback_scope: true,
+        url: page("rs-ca"),
+      },
+      { title: "NoPox", excerpt: "", fallback_scope: true, url: page("nopox") },
     ])
   })
 
-  it("no guide, no lookup, or a failed lookup: no key, the mail goes as today", async () => {
+  it("only treatments with neither excerpt nor dose, no lookup, or a failed lookup: no key, the mail goes as today", async () => {
+    expect(await shippedFacts(async () => new Map([["prod_d", src({ categories: treatment })]]))).not.toHaveProperty(
+      "usage_guides"
+    )
     expect(await shippedFacts(async () => new Map())).not.toHaveProperty("usage_guides")
     expect(await shippedFacts(undefined)).not.toHaveProperty("usage_guides")
     expect(
@@ -256,11 +291,54 @@ describe("the parcel's usage guides", () => {
     ).not.toHaveProperty("usage_guides")
   })
 
-  it("the excerpt is the first paragraph on one line, cut on a word at the limit", () => {
+  it("a text with a placeholder gives no excerpt, so it never goes out", async () => {
+    const shipped = await shippedFacts(
+      async () => new Map([["prod_a", src({ usage: "Mire való: aminosav.\nForrás: [KITÖLTENDŐ: hivatkozás]" })]])
+    )
+    expect(shipped).not.toHaveProperty("usage_guides")
+  })
+
+  /*
+    THE EXCERPT (spec point 3 and 6). WHAT TURNS THIS RED: the label kept in the excerpt; the next label's text pulled in; the
+    first paragraph not used without the label; a long text cut in the middle of a sentence or over the limit; a first sentence
+    over the limit not cut on a word.
+  */
+  it("the excerpt is the Mire való part up to the next label, else the first paragraph, cut after a whole sentence", () => {
+    expect(
+      usageExcerpt("Mire való: nitrifikáló baktériumok\nkeveréke.\nAdagolás (a gyártó szerint): 1 ml / 100 liter.")
+    ).toBe("nitrifikáló baktériumok keveréke.")
+    expect(usageExcerpt("Bevezető.\n\nMIRE VALÓ. Kalciumot pótol.\n\nHogyan: rázd fel.")).toBe("Kalciumot pótol.")
     expect(usageExcerpt("\n\n  Első  sor\nmásodik.\n\nMásik bekezdés.")).toBe("Első sor második.")
-    const long = usageExcerpt("szó ".repeat(200))
-    expect(long.length).toBeLessThanOrEqual(USAGE_GUIDE_LIMITS.excerpt + 1)
-    expect(long).toMatch(/szó…$/)
+    const sentence = "Ez egy hosszabb mondat a korallok táplálásáról és a víz minőségéről."
+    const long = usageExcerpt(`Mire való: ${Array.from({ length: 10 }, () => sentence).join(" ")}`)
+    expect(long.length).toBeLessThanOrEqual(USAGE_GUIDE_LIMITS.excerpt)
+    expect(long).toMatch(/minőségéről\.$/)
+    // as many whole sentences as fit: one more would go over the limit
+    expect(long.length + 1 + sentence.length).toBeGreaterThan(USAGE_GUIDE_LIMITS.excerpt)
+    const word = usageExcerpt("szó ".repeat(200))
+    expect(word.length).toBeLessThanOrEqual(USAGE_GUIDE_LIMITS.excerpt + 1)
+    expect(word).toMatch(/szó…$/)
+  })
+
+  /*
+    THE FALLBACK SCOPE (spec points 4 and 8). WHAT TURNS THIS RED: a product under a treatment category (at any depth) not in
+    scope; equipment in scope; a looping or broken parent link hanging or throwing.
+  */
+  it("the fallback scope follows the category chain, at any depth", () => {
+    const tree = new Map([
+      ["c_root", { name: "Termékek", parentId: null }],
+      ["c_viz", { name: "Vízkezelés", parentId: "c_root" }],
+      ["c_fosz", { name: "Foszfátmegkötők - Vízkezelés", parentId: "c_viz" }],
+      ["c_rowa", { name: "Rowa", parentId: "c_fosz" }],
+      ["c_pumpa", { name: "Áramoltatás", parentId: "c_root" }],
+      ["c_loop1", { name: "Egy", parentId: "c_loop2" }],
+      ["c_loop2", { name: "Kettő", parentId: "c_loop1" }],
+    ])
+    expect(categoryChains(["c_rowa"], tree)).toEqual([["Termékek", "Vízkezelés", "Foszfátmegkötők - Vízkezelés", "Rowa"]])
+    expect(inFallbackScope(categoryChains(["c_rowa"], tree))).toBe(true)
+    expect(inFallbackScope(categoryChains(["c_pumpa"], tree))).toBe(false)
+    expect(inFallbackScope(categoryChains(["c_pumpa", "c_rowa"], tree))).toBe(true)
+    expect(categoryChains(["c_loop1", "c_missing"], tree)).toEqual([["Kettő", "Egy"]])
   })
 })
 

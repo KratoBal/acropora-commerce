@@ -8,7 +8,7 @@ import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
 import { medusaNumber } from "../medusa-number"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
-import type { ShippedDeps, ShippedOrder } from "./shipped"
+import { categoryChains, type ShippedDeps, type ShippedOrder } from "./shipped"
 import type { OrderSplitMailDeps } from "./order-split-mail"
 import type { PaymentDelayedDeps } from "./payment-delayed-mail"
 import type { PaymentLinkMailDeps } from "./payment-link-mail"
@@ -215,11 +215,43 @@ export const shippedMailOperations = (container: MedusaContainer): ShippedDeps =
 
   alreadySent: (key) => notificationSent(container, { idempotency_key: key }),
 
-  // V3.3 S3: the approved usage guides the OS projected (the `usage` copy block of the product knowledge module)
+  // V3.3: what the OS projected into the product knowledge module (the approved `usage` copy block, the `dosing` fact) and
+  // the products' category chains, for the fallback scope
   usageGuides: async (productIds) => {
     const service = container.resolve(PRODUCT_KNOWLEDGE_MODULE) as ProductKnowledgeModuleService
-    const rows = await service.listProductKnowledgeCopies({ product_id: productIds, block: "usage" })
-    return new Map(rows.map((row) => [row.product_id, row.body]))
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const [copies, facts, products, categories] = await Promise.all([
+      service.listProductKnowledgeCopies({ product_id: productIds, block: "usage" }),
+      service.listProductKnowledgeFacts({ product_id: productIds, field: "dosing" }),
+      query.graph({ entity: "product", filters: { id: productIds }, fields: ["id", "categories.id"] }),
+      query.graph({ entity: "product_category", fields: ["id", "name", "parent_category_id"] }),
+    ])
+    const tree = new Map(
+      (categories.data as { id: string; name: string; parent_category_id: string | null }[]).map((c) => [
+        c.id,
+        { name: c.name, parentId: c.parent_category_id },
+      ])
+    )
+    const usage = new Map(copies.map((row) => [row.product_id, row.body]))
+    // the OS projects only VERIFIED, public facts (D5); the same gate again here, at the mail
+    const dosing = new Map(
+      facts.filter((row) => row.status === "VERIFIED" && row.public).map((row) => [row.product_id, row.value])
+    )
+    return new Map(
+      productIds.map((id) => {
+        const product = (products.data as { id: string; categories?: { id: string }[] | null }[]).find(
+          (p) => p.id === id
+        )
+        return [
+          id,
+          {
+            usage: usage.get(id) ?? null,
+            dosing: dosing.get(id) ?? null,
+            categories: categoryChains((product?.categories ?? []).map((c) => c.id), tree),
+          },
+        ]
+      })
+    )
   },
 })
 

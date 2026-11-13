@@ -51,22 +51,102 @@ export type ShippedDeps = {
   loadOrder(orderId: string): Promise<ShippedOrder | null>
   alreadySent(idempotencyKey: string): Promise<boolean>
   /**
-   * The approved usage guides (the `usage` copy block the OS projected) of these products, by product id (V3.3 S3).
-   * OPTIONAL: without it, or when it fails, the mail goes without guides.
+   * What the usage guide is made of, per product id (V3.3): the approved `usage` copy block and the `dosing` fact the OS
+   * projected, and the product's categories (for the fallback scope). OPTIONAL: without it, or when it fails, the mail goes
+   * without guides.
    */
-  usageGuides?(productIds: string[]): Promise<Map<string, string>>
+  usageGuides?(productIds: string[]): Promise<Map<string, ProductGuideSource>>
 }
 
-/** At most this many guides, each excerpt at most this long (the OS cuts the same way, `WEBSHOP_USAGE_GUIDE_LIMITS`). */
-export const USAGE_GUIDE_LIMITS = { count: 10, excerpt: 400 } as const
+/** One product's usage guide sources (korall's spec, point 3). */
+export type ProductGuideSource = {
+  /** The approved `usage` copy block's text, or null. */
+  usage: string | null
+  /** The VERIFIED, public `dosing` fact's value, in the OS canonical form ("5 ml/100 L/day"), or null. */
+  dosing: string | null
+  /** The product's categories, each as its chain of names from the root. */
+  categories: string[][]
+}
 
-/** The guide's first paragraph, one line, cut on a word at the limit. */
+/**
+ * At most this many guides (the OS draws eight and a "rest" line, `WEBSHOP_USAGE_GUIDE_LIMITS`), each excerpt at most this
+ * long (korall's spec: about 300 characters, on a sentence boundary; the OS accepts up to 400).
+ */
+export const USAGE_GUIDE_LIMITS = { count: 10, excerpt: 300 } as const
+
+/**
+ * THE FALLBACK SCOPE (korall's spec, points 4 and 8): a product in one of these categories, or under one, gets the fallback
+ * sentence even with neither an approved guide nor a dose (case D): the water treatments, additives and chemicals the
+ * Product Knowledge covers. Equipment, accessories and livestock do not. ONE LIST, by the category names of the test shop's
+ * tree (measured 2026-11-13, 219 categories); acrobot or Balázs may change it here, nowhere else.
+ */
+export const USAGE_FALLBACK_CATEGORIES: readonly string[] = [
+  "Vízkezelés",
+  "Nyomelemek",
+  "Problémamegoldás",
+  "Indítóbaktériumok",
+  "Koralltápok",
+  "Tengeri só",
+]
+
+export const inFallbackScope = (categories: readonly (readonly string[])[]): boolean =>
+  categories.some((chain) => chain.some((name) => USAGE_FALLBACK_CATEGORIES.includes(name.trim())))
+
+/** The chain of names from the root to each category; a broken or looping parent link ends the chain. */
+export const categoryChains = (
+  ids: readonly string[],
+  tree: ReadonlyMap<string, { name: string; parentId: string | null }>
+): string[][] =>
+  ids.flatMap((id) => {
+    const chain: string[] = []
+    const seen = new Set<string>()
+    for (let at: string | null = id; at && !seen.has(at); ) {
+      seen.add(at)
+      const node = tree.get(at)
+      if (!node) break
+      chain.unshift(node.name)
+      at = node.parentId
+    }
+    return chain.length > 0 ? [chain] : []
+  })
+
+/** The label that opens the "what it is for" part of a usage text (korall's template, point 2): "Mire való:". */
+const PURPOSE_LABEL = /^\s*mire\s+való\s*[:.]\s*/iu
+/** A line that opens the next part: a short label with a colon ("Adagolás (a gyártó szerint):", "Hogyan:"). */
+const NEXT_LABEL = /^\s*\p{Lu}[^\n:.!?]{0,40}:/u
+/** A text still waiting for a fact or a source: it is never sent (spec point 5). */
+const PLACEHOLDER = "[KITÖLTENDŐ"
+
+/**
+ * THE EXCERPT (korall's spec, point 3): the text of the "Mire való" part, up to the next label or the paragraph's end; without
+ * the label, the first paragraph. One line, at most the limit, cut after a whole sentence; a first sentence longer than the
+ * limit is cut on a word. A text with a placeholder gives no excerpt.
+ */
 export const usageExcerpt = (body: string): string => {
-  const first = body.replace(/\r\n?/g, "\n").split(/\n{2,}/).map((p) => p.trim()).find(Boolean) ?? ""
-  const line = first.replace(/\s+/g, " ")
-  return line.length <= USAGE_GUIDE_LIMITS.excerpt
-    ? line
-    : `${line.slice(0, USAGE_GUIDE_LIMITS.excerpt).replace(/\s+\S*$/, "")}…`
+  if (body.includes(PLACEHOLDER)) return ""
+  const lines = body.replace(/\r\n?/g, "\n").split("\n")
+  const start = lines.findIndex((line) => PURPOSE_LABEL.test(line))
+  let part: string
+  if (start >= 0) {
+    const taken = [lines[start].replace(PURPOSE_LABEL, "")]
+    for (const line of lines.slice(start + 1)) {
+      if (!line.trim() || NEXT_LABEL.test(line)) break
+      taken.push(line)
+    }
+    part = taken.join(" ")
+  } else {
+    part = body.replace(/\r\n?/g, "\n").split(/\n{2,}/).map((p) => p.trim()).find(Boolean) ?? ""
+  }
+  const line = part.replace(/\s+/g, " ").trim()
+  const max = USAGE_GUIDE_LIMITS.excerpt
+  if (line.length <= max) return line
+  let cut = ""
+  for (const sentence of line.split(/(?<=[.!?…])\s+/)) {
+    const next = cut ? `${cut} ${sentence}` : sentence
+    if (next.length > max) break
+    cut = next
+  }
+  return cut || `${line.slice(0, max).replace(/\s+\S*$/, "")}…`
 }
 
 /** The product page on the storefront (Hungarian, `/hu/termek/<handle>`), https only; null without a base or a handle. */
@@ -74,8 +154,10 @@ export const productPageUrl = (env: NodeJS.ProcessEnv, handle: string | null | u
   handle ? storefrontImageUrl(env, `/hu/termek/${encodeURIComponent(handle)}`) : null
 
 /**
- * THE PARCEL'S USAGE GUIDES (V3.3 S3): the non-fee lines whose product has an approved guide, each product once, in the
- * parcel's order. A failed lookup is no guide, never a failed mail.
+ * THE PARCEL'S USAGE GUIDES (V3.3, korall's spec point 4): the non-fee lines' products, each once, in the parcel's order,
+ * with the excerpt (case A/B), the dose (A/C), or only the fallback scope (D); a product with none of them is left out.
+ * When no product has an excerpt or a dose, no guide at all (the fallback sentence alone does not make a section). A failed
+ * lookup is no guide, never a failed mail.
  */
 export const shippedUsageGuides = async (
   order: ShippedOrder,
@@ -85,9 +167,9 @@ export const shippedUsageGuides = async (
   const lines = order.items.filter((item) => !item.fee && item.product_id)
   const ids = [...new Set(lines.map((item) => item.product_id!))]
   if (!deps.usageGuides || ids.length === 0) return []
-  let bodies: Map<string, string>
+  let sources: Map<string, ProductGuideSource>
   try {
-    bodies = await deps.usageGuides(ids)
+    sources = await deps.usageGuides(ids)
   } catch {
     return []
   }
@@ -95,13 +177,22 @@ export const shippedUsageGuides = async (
   const guides: NonNullable<ShippedMailFacts["usage_guides"]> = []
   for (const item of lines) {
     const id = item.product_id!
-    const body = bodies.get(id)
-    if (!body || seen.has(id) || guides.length >= USAGE_GUIDE_LIMITS.count) continue
+    const source = sources.get(id)
+    if (!source || seen.has(id) || guides.length >= USAGE_GUIDE_LIMITS.count) continue
     seen.add(id)
-    const excerpt = usageExcerpt(body)
-    if (excerpt) guides.push({ title: item.title, excerpt, url: productPageUrl(env, item.product_handle) })
+    const excerpt = source.usage ? usageExcerpt(source.usage) : ""
+    const dosing = source.dosing?.trim() ? [source.dosing.trim()] : []
+    const fallbackScope = inFallbackScope(source.categories)
+    if (!excerpt && dosing.length === 0 && !fallbackScope) continue
+    guides.push({
+      title: item.title,
+      excerpt,
+      ...(dosing.length > 0 ? { dosing } : {}),
+      ...(fallbackScope ? { fallback_scope: true } : {}),
+      url: productPageUrl(env, item.product_handle),
+    })
   }
-  return guides
+  return guides.some((g) => g.excerpt || g.dosing) ? guides : []
 }
 
 export type ShippedResult =
