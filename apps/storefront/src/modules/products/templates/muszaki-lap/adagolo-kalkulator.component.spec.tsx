@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { AdagoloKalkulator } from "./adagolo-kalkulator"
 
@@ -16,6 +16,31 @@ const beir = (ertek: string) =>
   })
 
 describe("az adagolo-kalkulator", () => {
+  /*
+    A RAGADOS SAV ALATT (acrobot 50206). MI PIROSIT: beiraskor az eredmeny nem kerul a legkozelebbi lathato helyre (a
+    mobilon a kosar-sav moge esne), vagy a "nearest" helyett mas igazitas jon (az a lapot latszo eredmenynel is ugratna),
+    vagy a sav magassaganak megfelelo also margo hianyzik.
+  */
+  it("beiraskor az eredmenyt a legkozelebbi helyre gorgeti, a ragados sav magassagat hagyva alatta", () => {
+    const gorget = vi.fn()
+    const eredeti = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = gorget
+    try {
+      render(<AdagoloKalkulator ertek="0.5 ml/100 L/day" />)
+      expect(gorget).not.toHaveBeenCalled()
+      beir("300")
+      expect(gorget).toHaveBeenLastCalledWith({ block: "nearest" })
+      expect(gorget.mock.contexts.at(-1)).toBe(
+        screen.getByTestId("adagolo-eredmeny"),
+      )
+      expect(screen.getByTestId("adagolo-eredmeny").className).toContain(
+        "max-lg:scroll-mb-28",
+      )
+    } finally {
+      Element.prototype.scrollIntoView = eredeti
+    }
+  })
+
   it("a medence literebol az alkalmankenti adagot adja, a gyarto soraval es a figyelmeztetessel", () => {
     render(<AdagoloKalkulator ertek="5 ml/100 L/day" />)
     expect(screen.getByTestId("adagolo-gyarto").textContent).toBe(
