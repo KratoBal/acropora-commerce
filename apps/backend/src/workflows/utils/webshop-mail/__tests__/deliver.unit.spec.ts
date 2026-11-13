@@ -256,6 +256,42 @@ describe("deliverShopMail", () => {
   })
 
   /*
+    THE ASZF AND PRIVACY-NOTICE PAGES' ADDRESSES GO TO THE OS ONLY BEHIND THE FOGYASZTOBARAT SWITCH (acrobot 50140): in the mail's
+    language, both or none. The switch is the storefront's `NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED`, exactly `true`. Without it the
+    key is ABSENT, so the request to the OS is what it was before.
+  */
+  it("the facts carry the ASZF and privacy pages' addresses only with the switch exactly on, in the mail's language, and no key without", async () => {
+    const asked = async (metadata: Record<string, unknown> | undefined, env: NodeJS.ProcessEnv) => {
+      const w = world(metadata)
+      const fetch = osAnswers(200, { subject: "s", html: "<p>h</p>", text: "t", customized: false })
+      await deliverShopMail(w.container, mail, env)
+      const [, init] = fetch.mock.calls[fetch.mock.calls.length - 1] as [string, { body: string }]
+      return JSON.parse(init.body).facts
+    }
+    const on = {
+      ...OS,
+      ACROPORA_STOREFRONT_URL: "https://shop-staging.acropora.hu",
+      NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED: "true",
+    }
+    expect((await asked(undefined, on)).legal_urls).toEqual({
+      aszf: "https://shop-staging.acropora.hu/hu/jogi/aszf",
+      adatkezeles: "https://shop-staging.acropora.hu/hu/jogi/adatkezeles",
+    })
+    expect((await asked({ storefront_locale: "en" }, { ...on, ACROPORA_WEBSHOP_MAIL_ENGLISH: "on" })).legal_urls).toEqual({
+      aszf: "https://shop-staging.acropora.hu/en-hu/jogi/aszf",
+      adatkezeles: "https://shop-staging.acropora.hu/en-hu/jogi/adatkezeles",
+    })
+    // CONTROL: the same world with the switch off, or not exactly `true`, or without the storefront's address: no key at all
+    for (const off of [
+      { ...on, NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED: "false" },
+      { ...on, NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED: "1" },
+      { ...on, NEXT_PUBLIC_FOGYASZTOBARAT_ENABLED: undefined },
+      { ...on, ACROPORA_STOREFRONT_URL: undefined },
+    ])
+      expect(Object.keys(await asked(undefined, off))).not.toContain("legal_urls")
+  })
+
+  /*
     THE ENGLISH SWITCH (card d5c6befd): off by default, so merging this before
     the OS has its English words cannot send a half-English mail. Off, an
     English order is still asked for in Hungarian.

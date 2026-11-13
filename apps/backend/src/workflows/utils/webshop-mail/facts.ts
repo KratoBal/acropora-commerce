@@ -1,3 +1,4 @@
+import type { LegalUrls } from "./legal-links"
 import type { OrderLocale } from "../order-locale"
 import type { MailLine, MailOrder } from "./order-placed-mail"
 import type { LoadedOrder } from "./prepare"
@@ -78,6 +79,13 @@ type CommonFacts = {
    * its template wants one. ADDED WITHOUT RAISING THE VERSION (an unknown key is ignored by an older OS).
    */
   order_view_url: string | null
+  /**
+   * The addresses of the storefront's ASZF and privacy-notice pages in the mail's language (`legal-links.ts`), or null
+   * without the shop's Fogyasztóbarát switch or its https address. OPTIONAL (the mails with their own `common` do not
+   * send it), and only the order confirmation draws it. ADDED WITHOUT RAISING THE VERSION (an unknown key is ignored by an
+   * older OS).
+   */
+  legal_urls?: LegalUrls | null
 }
 
 type PaymentLinkFacts = CommonFacts & {
