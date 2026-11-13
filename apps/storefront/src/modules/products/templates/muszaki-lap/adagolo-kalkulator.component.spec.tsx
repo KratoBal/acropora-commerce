@@ -36,6 +36,15 @@ describe("az adagolo-kalkulator", () => {
       expect(screen.getByTestId("adagolo-eredmeny").className).toContain(
         "max-lg:scroll-mb-28",
       )
+      // the error message stands in the same place, and is scrolled the same way (barracuda 50230)
+      beir("abc")
+      expect(gorget).toHaveBeenLastCalledWith({ block: "nearest" })
+      expect(gorget.mock.contexts.at(-1)).toBe(
+        screen.getByTestId("adagolo-hiba"),
+      )
+      expect(screen.getByTestId("adagolo-hiba").className).toContain(
+        "max-lg:scroll-mb-28",
+      )
     } finally {
       Element.prototype.scrollIntoView = eredeti
     }
