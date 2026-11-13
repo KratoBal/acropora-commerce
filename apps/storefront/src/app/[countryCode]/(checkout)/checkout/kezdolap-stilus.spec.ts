@@ -50,4 +50,50 @@ describe("a pénztár a kezdőlap stílusában", () => {
     expect(sav).toContain("small:px-16")
     expect(sav).not.toContain("content-container")
   })
+
+  /**
+   * A PENZTAR SZUKITETT FEJLECE A VALODI LOGOVAL, ES A KOZOS LABLEC (acrobot 49644, Balazs 2026-10-26: fejlec es lablec minden
+   * aloldalon a kezdolap szerint). MI PIROSIT: ha a felso sav megint csak az "ACROPORA" szoveget viszi; ha a lablec kimarad; ha
+   * a tartalom `min-h-screen`-nel kitolja a kepernyot a lablec elott.
+   */
+  it("a felső sáv a valódi logót viszi, és a lábléc ott áll", () => {
+    expect(kiosztas).toContain('src="/images/acropora-logo.svg"')
+    expect(kiosztas).toContain('data-testid="penztar-logo"')
+    expect(kiosztas).not.toMatch(/uppercase tracking-\[1\.8px\]/)
+    expect(kiosztas).toContain(
+      'import Footer from "@modules/layout/templates/footer"',
+    )
+    expect(kiosztas).toContain("<Footer countryCode={countryCode} />")
+    expect(kiosztas).not.toContain("min-h-screen")
+  })
+
+  /**
+   * A RAGADO FIZETESI SAV NEM FEDHETI A LABLEC ALJAT (barracuda, #754): mobilon a `stripe-cta-sav` (fixed bottom-0, ~76 px)
+   * a dokumentum aljara esne, ahol most a lablec van. A kiosztas a lablec UTAN helyfoglalot ad, amely csak a sav jelenlete
+   * mellett foglal helyet. MI PIROSIT: ha a helyfoglalo kimarad; ha a lablec ELE kerul; ha a stilus nem a sav jelenletehez
+   * kotott; ha a sav jelzoje (`stripe-cta-sav`) megvaltozik, es a helyfoglalo nem veszi eszre.
+   */
+  it("a lábléc után mobil helyfoglaló áll, amely csak a fizetési sáv mellett foglal helyet", () => {
+    const lablec = kiosztas.indexOf("<Footer countryCode={countryCode} />")
+    const hely = kiosztas.indexOf("penztar-lablec-hely")
+    expect(lablec).toBeGreaterThan(-1)
+    expect(hely, "helyfoglaló hiányzik").toBeGreaterThan(-1)
+    expect(hely).toBeGreaterThan(lablec)
+    expect(kornyeken(kiosztas, 'className="penztar-lablec-hely')).toContain(
+      "small:hidden",
+    )
+    expect(kornyeken(kiosztas, 'className="penztar-lablec-hely')).toContain(
+      'aria-hidden="true"',
+    )
+
+    const stilus = olvas("styles/globals.css")
+    expect(stilus).toContain(
+      'body:has([data-testid="stripe-cta-sav"]) .penztar-lablec-hely',
+    )
+    expect(kornyeken(stilus, ".penztar-lablec-hely {")).toContain("height: 0")
+    // a sav jelzoje valoban a fizetesi lepesben all
+    expect(olvas("modules/checkout/components/payment/index.tsx")).toContain(
+      'data-testid="stripe-cta-sav"',
+    )
+  })
 })

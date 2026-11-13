@@ -51,7 +51,9 @@ const LAPOK_KOZOS = [
  *   radiojanak belso, nev nelkuli gombja jelzo lett, nem vezerlo; a `button-name`
  *   kritikus volt, es kritikus hiba nem allhat ezen a listan);
  * - az osszesito egy termek-linkje nev nelkul (`bill:nev`);
- * - a "Szerkesztés" gombok kontrasztja 3,67:1.
+ * - (JAVITVA a #754-ben, 2026-11-13: a `color-contrast` mindharom penztar-lapon eltunt, mert a Kedvezmenykod link a Medusa
+ *   alapertelmezett elenk kekje helyett a kirakat sotetkek, alahuzott link-stilusat viseli (`text-acr-ocean`); a CI mondta:
+ *   "mar nincs a lapon, vedd ki"; a penztar-fizetes lapnak igy nincs varhato hibaja).
  */
 const penztar = (lap: string, szabalyok: string[]): A11yVarhato[] =>
   szabalyok.map((szabaly) => ({ lap, szabaly, gazda: "jelentve", ok: PENZTAR }))
@@ -61,9 +63,8 @@ export const A11Y_VARHATO: readonly A11yVarhato[] = [
     { lap, szabaly: "nested-interactive", gazda: "FE-7", ok: FEJLEC_KOSAR },
     { lap, szabaly: "color-contrast", gazda: "design", ok: MARKASZIN },
   ]),
-  ...penztar("penztar-cim", ["color-contrast", "bill:nev"]),
-  ...penztar("penztar-szallitas", ["color-contrast", "bill:nev"]),
-  ...penztar("penztar-fizetes", ["color-contrast"]),
+  ...penztar("penztar-cim", ["bill:nev"]),
+  ...penztar("penztar-szallitas", ["bill:nev"]),
 ]
 
 export function a11yVarhato(lap: string, szabaly: string): A11yVarhato | null {

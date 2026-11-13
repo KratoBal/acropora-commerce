@@ -148,3 +148,19 @@ describe("az alkalmazott kedvezmények felirata", () => {
     expect(screen.queryByText("Alkalmazott kedvezmények:")).toBeNull()
   })
 })
+
+/**
+ * A KEDVEZMENYKOD-LINK A KIRAKAT SAJAT LINK-STILUSAT VISELI (acrobot 49644, a teszt kosaron merve): a Medusa alapertelmezett
+ * elenk kekje (`text-ui-fg-interactive`) a kosarban es a penztarban sem a kezdolap szine. A kosar tobbi linkje (`Vasarlas
+ * folytatasa`, `Szerkesztes`) `text-acr-ocean underline`. MI PIROSIT: ha a gomb a Medusa kekjere esik vissza.
+ */
+describe("a kedvezménykód hozzáadása link stílusa", () => {
+  it("a kirakat sötétkék, aláhúzott linkje, nem a Medusa kékje", () => {
+    render(<DiscountCode cart={kosar()} />)
+
+    const gomb = screen.getByTestId("add-discount-button").className
+    expect(gomb).toContain("text-acr-ocean")
+    expect(gomb).toContain("underline")
+    expect(gomb).not.toContain("ui-fg-interactive")
+  })
+})
