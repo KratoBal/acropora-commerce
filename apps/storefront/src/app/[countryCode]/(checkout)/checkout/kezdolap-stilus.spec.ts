@@ -50,4 +50,20 @@ describe("a pénztár a kezdőlap stílusában", () => {
     expect(sav).toContain("small:px-16")
     expect(sav).not.toContain("content-container")
   })
+
+  /**
+   * A PENZTAR SZUKITETT FEJLECE A VALODI LOGOVAL, ES A KOZOS LABLEC (acrobot 49644, Balazs 2026-10-26: fejlec es lablec minden
+   * aloldalon a kezdolap szerint). MI PIROSIT: ha a felso sav megint csak az "ACROPORA" szoveget viszi; ha a lablec kimarad; ha
+   * a tartalom `min-h-screen`-nel kitolja a kepernyot a lablec elott.
+   */
+  it("a felső sáv a valódi logót viszi, és a lábléc ott áll", () => {
+    expect(kiosztas).toContain('src="/images/acropora-logo.svg"')
+    expect(kiosztas).toContain('data-testid="penztar-logo"')
+    expect(kiosztas).not.toMatch(/uppercase tracking-\[1\.8px\]/)
+    expect(kiosztas).toContain(
+      'import Footer from "@modules/layout/templates/footer"',
+    )
+    expect(kiosztas).toContain("<Footer countryCode={countryCode} />")
+    expect(kiosztas).not.toContain("min-h-screen")
+  })
 })

@@ -19,7 +19,8 @@ import Footer from "@modules/layout/templates/footer"
  * kozos cimke), a lablec kozos. Ezt a `aruhaz-keret.spec.tsx` meri.
  *
  * A CHECKOUT (`(checkout)`) NEM ITT ALL: annak a sajat, szandekosan szuk
- * fejlece van (Vissza a kosarhoz); azt Balazs donti el.
+ * fejlece van (Vissza a kosarhoz), de a valodi logoval es ugyanezzel a kozos
+ * lablecel (acrobot 49644, 2026-11-13); a teljes fejlecet Balazs donti el.
  */
 export default async function AruhazKeret(props: {
   children: React.ReactNode

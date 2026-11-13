@@ -197,12 +197,12 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         >
           {item.product_title}
         </p>
-        {valtozatNev(item.variant?.title) ? (
+        {valtozatNev(item.variant?.title, item.product_title) ? (
           <p
             className="text-[14px] leading-[22px] text-acr-slate"
             data-testid="product-variant"
           >
-            {valtozatNev(item.variant?.title)}
+            {valtozatNev(item.variant?.title, item.product_title)}
           </p>
         ) : null}
         <CartLineState
