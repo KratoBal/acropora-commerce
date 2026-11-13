@@ -8,3 +8,11 @@
  */
 export const TAP_AREA =
   "relative after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+
+/**
+ * A SZŰK VÁLTOZAT, ha a szomszéd elem közelebb van 12 px-nél (barracuda, commerce #758): a "Kedvezménykód hozzáadása" Label-je `my-2`
+ * (8 px), alatta nyitott állapotban a kódmező áll, ezért itt csak 4 px-et nyúlik fölfelé és lefelé (22 px magas jel + 8 = 30 px, a
+ * WCAG 2.5.8 24 px-e fölött), és nem lóg rá a mezőre.
+ */
+export const TAP_AREA_TIGHT =
+  "relative after:absolute after:-inset-x-2 after:-inset-y-1 after:content-['']"

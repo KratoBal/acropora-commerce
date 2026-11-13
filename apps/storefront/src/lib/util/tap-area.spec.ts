@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
-import { TAP_AREA } from "./tap-area"
+import { TAP_AREA, TAP_AREA_TIGHT } from "./tap-area"
 
 /**
  * AZ ÉRINTÉSI TERÜLET (stage 390 px, 2026-11-13). MI PIROSIT: ha a kosár törlő ikonja, a "Kedvezménykód hozzáadása", a "Vásárlás
@@ -21,9 +21,18 @@ describe("a kis vezérlők érintési területe", () => {
     expect(TAP_AREA).toMatch(/after:-inset-x-\d/)
   })
 
+  it("a szűk változat (a kedvezménykód-gomb) csak 4 px-et nyúlik függőlegesen, mert alatta a kódmező áll", () => {
+    expect(TAP_AREA_TIGHT).toContain("after:absolute")
+    expect(TAP_AREA_TIGHT).toContain("after:-inset-y-1")
+    expect(TAP_AREA_TIGHT).not.toContain("after:-inset-y-3")
+  })
+
   it.each([
     ["modules/common/components/delete-button/index.tsx", "TAP_AREA,"],
-    ["modules/checkout/components/discount-code/index.tsx", "${TAP_AREA}"],
+    [
+      "modules/checkout/components/discount-code/index.tsx",
+      "${TAP_AREA_TIGHT}",
+    ],
     ["modules/cart/templates/items.tsx", "${TAP_AREA}"],
     ["modules/layout/templates/nav/mobil-menu.tsx", "${TAP_AREA}"],
     ["app/[countryCode]/(checkout)/layout.tsx", "${TAP_AREA}"],
