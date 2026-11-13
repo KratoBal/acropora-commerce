@@ -172,6 +172,7 @@ const CartDropdown = ({
                                 </h3>
                                 <LineItemOptions
                                   variant={item.variant}
+                                  termekNev={item.product_title}
                                   data-testid="cart-item-variant"
                                   data-value={item.variant}
                                 />
