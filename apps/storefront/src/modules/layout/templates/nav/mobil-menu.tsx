@@ -1,6 +1,6 @@
 "use client"
 
-import { TAP_AREA } from "@lib/util/tap-area"
+import { TAP_AREA } from "@modules/common/components/tap-area"
 import { HttpTypes } from "@medusajs/types"
 import { useTranslate } from "@lib/i18n/use-translate"
 import { FejlecMenuPont } from "@lib/util/fejlec-menu-pontok"

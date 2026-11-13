@@ -1,4 +1,4 @@
-import { TAP_AREA } from "@lib/util/tap-area"
+import { TAP_AREA } from "@modules/common/components/tap-area"
 import repeat from "@lib/util/repeat"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"

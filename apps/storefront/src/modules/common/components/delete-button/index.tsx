@@ -2,7 +2,7 @@ import { deleteLineItem } from "@lib/data/cart"
 import { Spinner, Trash } from "@medusajs/icons"
 import { clx } from "@modules/common/components/ui"
 import { useState } from "react"
-import { TAP_AREA } from "@lib/util/tap-area"
+import { TAP_AREA } from "@modules/common/components/tap-area"
 import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 /**

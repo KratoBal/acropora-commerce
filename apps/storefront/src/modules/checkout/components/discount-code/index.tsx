@@ -1,6 +1,6 @@
 "use client"
 
-import { TAP_AREA_TIGHT } from "@lib/util/tap-area"
+import { TAP_AREA_TIGHT } from "@modules/common/components/tap-area"
 import {
   Badge,
   Heading,

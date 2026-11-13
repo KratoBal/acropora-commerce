@@ -16,3 +16,11 @@ export const TAP_AREA =
  */
 export const TAP_AREA_TIGHT =
   "relative after:absolute after:-inset-x-2 after:-inset-y-1 after:content-['']"
+
+/*
+  EZ A FAJL A `src/modules` ALATT ALL, ES EZ NEM KENYELEM. A storefront Tailwind 3-as, explicit `content` globokkal (tailwind.config.js:
+  src/app, src/pages, src/components, src/modules): a `src/lib` alatti fajlbol az osztalyokbol NEM lesz CSS. A #758 elso valtozata a
+  `src/lib/util/tap-area.ts`-ben tartotta ezt a ket konstanst, es a kiadott kirakaton az `after:` utility-k szama 0 volt, a gomb
+  `::after`-je `content: none` (merve 2026-11-13, elementFromPoint a torlo ikon felett 10 px-re a szulo DIV-et adta): a forras-spec
+  az osztalyt latta, a kiadott CSS-t nem. A spec most a tailwind.config.js globjait olvassa.
+*/
