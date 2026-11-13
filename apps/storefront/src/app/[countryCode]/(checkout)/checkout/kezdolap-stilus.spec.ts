@@ -1,0 +1,53 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
+import { describe, expect, it } from "vitest"
+
+/**
+ * A PENZTAR A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet": kosar, penztar, kategoria; a kategoria #748, a
+ * kosar #752): a sav oldalszele a 64 pixeles kezdolapi szel (a fejlec es a lablec is ennyi; a penztar 56 volt), a fo cimek a
+ * kezdolap szerif betujevel, normal vastagsaggal, es a penztar sajat felso savja ugyanazt a szelet viszi (24 helyett).
+ * A mobil oldalszel (16) valtozatlan.
+ *
+ * MI PIROSIT: ha a penztar vagy a fizetesi oldal sav oldalszele a regi 56 marad; ha a penztar cime vagy a fizetesi oldal
+ * cime a talpatlan marad; ha a felso sav a `content-container` 24 pixeles szelet viseli.
+ *
+ * MIERT A FORRASBOL: az oldal es a kiosztas szerver-komponens (a kosar sablonjahoz hasonloan, jsdom-ban nem renderelheto); a
+ * fizetesi oldal cimet es az oldalsav cimet renderelt teszt is nezi.
+ */
+const SRC = join(process.cwd(), "src")
+const olvas = (ut: string) => readFileSync(join(SRC, ut), "utf-8")
+const kornyeken = (forras: string, jel: string) => {
+  const i = forras.indexOf(jel)
+  expect(i, `${jel} hiányzik`).toBeGreaterThan(-1)
+  return forras.slice(Math.max(0, i - 200), i + 200)
+}
+
+describe("a pénztár a kezdőlap stílusában", () => {
+  const oldal = olvas("app/[countryCode]/(checkout)/checkout/page.tsx")
+  const kiosztas = olvas("app/[countryCode]/(checkout)/layout.tsx")
+  const fizetes = olvas("modules/checkout/templates/fizetesi-oldal/index.tsx")
+
+  it("a sávok oldalszele a 64 pixeles kezdőlapi szél, a mobil 16 marad", () => {
+    for (const forras of [oldal, fizetes]) {
+      const sav = kornyeken(forras, "max-w-[1440px]")
+      expect(sav).toContain("small:px-16")
+      expect(sav).toContain("px-4")
+      expect(sav).not.toContain("small:px-[56px]")
+    }
+  })
+
+  it("a pénztár címe a kezdőlap betűjével, normál vastagsággal", () => {
+    const cim = kornyeken(oldal, 'checkoutPage.title")}')
+    expect(cim).toContain("font-kiemelt")
+    expect(cim).toContain("font-normal")
+    expect(cim).toContain("tracking-[-0.01em]")
+    expect(cim).not.toContain("font-light")
+  })
+
+  it("a felső sáv ugyanazt az oldalszélet viszi, nem a 24 pixeles content-containert", () => {
+    const sav = kornyeken(kiosztas, "<nav")
+    expect(sav).toContain("small:px-16")
+    expect(sav).not.toContain("content-container")
+  })
+})

@@ -73,6 +73,25 @@ describe("a pénztár oldalsávja", () => {
     )
   })
 
+  /**
+   * A PENZTAR A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet", mint a kosar es a kategorialap): az oldalsav
+   * cime a kezdolap szerif betuje, normal vastagsaggal. MI PIROSIT: ha a cim a vilagos talpatlan marad.
+   */
+  it("a fejléc a kezdőlap szerif betűjével, normál vastagsággal", () => {
+    render(
+      <CheckoutSummaryView
+        cart={kosar}
+        countryCode="hu"
+        szallitasiOsztaly={{ split_line_ids: [] }}
+      />,
+    )
+    const cim = screen.getByText("A kosaradban").className
+    expect(cim).toContain("font-kiemelt")
+    expect(cim).toContain("font-normal")
+    expect(cim).toContain("tracking-[-0.01em]")
+    expect(cim).not.toContain("font-light")
+  })
+
   it("a sáv nélkül a háttér nem nevezett bolti sort", () => {
     render(
       <CheckoutSummaryView

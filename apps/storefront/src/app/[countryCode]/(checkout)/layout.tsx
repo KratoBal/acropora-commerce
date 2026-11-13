@@ -17,7 +17,7 @@ export default async function CheckoutLayout({
   return (
     <div className="relative w-full bg-acr-shell font-acr-sans small:min-h-screen">
       <div className="h-16 border-b border-acr-line bg-acr-white">
-        <nav className="content-container flex h-full items-center justify-between">
+        <nav className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-4 small:px-16">
           <LocalizedClientLink
             href="/cart"
             className="flex flex-1 basis-0 items-center gap-x-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
