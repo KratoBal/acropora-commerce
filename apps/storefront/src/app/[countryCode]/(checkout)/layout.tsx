@@ -43,12 +43,13 @@ export default async function CheckoutLayout({
             <LocalizedClientLink
               href="/"
               className="flex shrink-0 items-center"
+              aria-label={STORE_NAME}
               data-testid="store-link"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/acropora-logo.svg"
-                alt={STORE_NAME}
+                alt=""
                 className="block h-[40px] w-auto"
                 data-testid="penztar-logo"
               />
