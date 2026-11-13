@@ -38,6 +38,21 @@ describe("a gyarto adagolasa olvashatoan", () => {
     expect(sor("1 drop/1 L/day", "en")).toBe("1 drop / 1 litre, daily")
   })
 
+  /*
+    A GYARTO ADAGJA, NEM KEREKITETT (barracuda, acropora-os #2527 review). MI PIROSIT: barmilyen kerekites a mennyisegen
+    vagy a literen: a 0,125 "0,13" (tobb a gyartoi adagnal), a 0,004 "0" (nincs adag), a 2,555 "2,56".
+  */
+  it("a mennyiseget es a litert pontosan irja, ahogy a kanonikus alak tartja", () => {
+    expect(sor("0.125 ml/100 L/day", "hu")).toBe(
+      "0,125 ml / 100 liter, naponta",
+    )
+    expect(sor("0.004 ml/1 L/day", "hu")).toBe("0,004 ml / 1 liter, naponta")
+    expect(sor("2.555 ml/0.375 L/week", "hu")).toBe(
+      "2,555 ml / 0,375 liter, hetente",
+    )
+    expect(sor("0.125 ml/100 L/day", "en")).toBe("0.125 ml / 100 litres, daily")
+  })
+
   it("a tizedes es az ezres tagolas a lap nyelven", () => {
     expect(adagSzoveg(12.5, "ml", hu, "hu")).toBe("12,5 ml")
     expect(adagSzoveg(12.5, "ml", en, "en")).toBe("12.5 ml")

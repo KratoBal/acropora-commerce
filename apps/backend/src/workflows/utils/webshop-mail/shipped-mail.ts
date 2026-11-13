@@ -35,11 +35,21 @@ export type ShippedMailFacts = {
   /** A GLS point's kind (parcel-shop / parcel-locker), for the logo's alt text. */
   gls_point_type?: string | null
   /**
-   * V3.3 S3 (card 69b5f2ef): per product of the parcel with an approved usage guide, its name, the guide's first paragraph
-   * and its product page. OPTIONAL: the OS reads it tolerantly (acropora-os #2373), so the version stays 1 and the two sides
-   * deploy in either order. Missing when no product has a guide.
+   * V3.3 (card 69b5f2ef, korall's spec): per product of the parcel, its name, the "Mire való" excerpt of its approved guide,
+   * its manufacturer's dose, whether it is a treatment, and its product page (`shippedUsageGuides`). OPTIONAL: the OS reads it
+   * tolerantly (acropora-os #2373, #2527), so the version stays 1 and the two sides deploy in either order. Missing when no
+   * product has an excerpt or a dose.
    */
-  usage_guides?: { title: string; excerpt: string; url: string | null }[]
+  usage_guides?: {
+    title: string
+    /** Empty in cases C and D. */
+    excerpt: string
+    /** The manufacturer's dose, OS canonical form; missing: none. */
+    dosing?: string[]
+    /** A treatment: with neither excerpt nor dose it still gets the fallback sentence (case D). */
+    fallback_scope?: boolean
+    url: string | null
+  }[]
 }
 
 export const SHOP_CONTACT = "webshop@acropora.hu"
