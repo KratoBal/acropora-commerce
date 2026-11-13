@@ -37,9 +37,10 @@ describe("a legkisebb betumeret es a lebego cimke", () => {
     // a megjegyzesek nelkul (a magyarazat maga is leirja a regi szelektort)
     const css = read("styles/globals.css").replace(/\/\*[\s\S]*?\*\//g, "")
     // semmi `input... ~ label` nem allhat `.floating-field` nelkul
-    const selectors = [...css.matchAll(/([^{},]*input[^{},]*~\s*label)/g)].map(
-      (m) => m[1]!.trim(),
-    )
+    const selectors: string[] = []
+    const pattern = /([^{},]*input[^{},]*~\s*label)/g
+    for (let m = pattern.exec(css); m; m = pattern.exec(css))
+      selectors.push(m[1]!.trim())
     expect(selectors.length).toBeGreaterThan(0)
     for (const selector of selectors)
       expect(selector).toMatch(/^\.floating-field\s/)
