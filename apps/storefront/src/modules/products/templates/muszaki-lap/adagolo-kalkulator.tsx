@@ -34,6 +34,7 @@ export function AdagoloKalkulator({
   const mezoId = useId()
   const [beirt, setBeirt] = useState("")
   const eredmenyRef = useRef<HTMLDivElement>(null)
+  const hibaRef = useRef<HTMLParagraphElement>(null)
   /*
     AZ EREDMENY NE A RAGADOS KOSAR-SAV ALATT ALLJON (acrobot 50206, a teszt kirakat 390 pixeles kepe, 2026-11-13). Mobilon a
     sav a nezet aljan tapad, az eredmeny a liter-mezo ALATT van: ha a mezo eppen a sav folott all, a bongeszo nem gorget (a
@@ -42,7 +43,9 @@ export function AdagoloKalkulator({
   */
   useEffect(() => {
     if (beirt !== "")
-      eredmenyRef.current?.scrollIntoView?.({ block: "nearest" })
+      (eredmenyRef.current ?? hibaRef.current)?.scrollIntoView?.({
+        block: "nearest",
+      })
   }, [beirt])
   const adag = adagOlvas(ertek)
   if (!adag) return null
@@ -99,9 +102,12 @@ export function AdagoloKalkulator({
       ) : null}
       {hiba ? (
         <p
+          // the error stands under the field just like the result (barracuda 50230; the test storefront, 390 px: 20 px
+          // under the sticky bar): the same scroll, the same margin; the two are never shown at once
+          ref={hibaRef}
           data-testid="adagolo-hiba"
           role="alert"
-          className="text-small-regular"
+          className="text-small-regular max-lg:scroll-mb-28"
         >
           {hiba}
         </p>
