@@ -60,6 +60,23 @@ describe("a termék-tudás blokk", () => {
     expect(screen.queryByTestId("adagolo-kalkulator")).toBeNull()
   })
 
+  /*
+    THE STREAMED SWAP (acrobot 50250): the page shows the technical sheet as the Suspense fallback first, and the real one
+    replaces it; what was typed into the fallback's field is lost. WHAT TURNS THIS RED: the fallback's field typeable, or the
+    real page's field disabled (the default must stay typeable).
+  */
+  it("a Suspense tartalekaban a kalkulator mezoje letiltott, a valodi lapon gepelheto", () => {
+    const tudas: TermekTudas = {
+      ...KZ,
+      facts: [teny("dosing", "5 ml/100 L/day", "VERIFIED")],
+    }
+    const { unmount } = render(<TermekTudasBlokk tudas={tudas} tartalek />)
+    expect(screen.getByTestId("adagolo-liter")).toBeDisabled()
+    unmount()
+    render(<TermekTudasBlokk tudas={tudas} />)
+    expect(screen.getByTestId("adagolo-liter")).toBeEnabled()
+  })
+
   // barracuda, #682 b: a projection sends one fact per field, and a conflict is that fact's status, so the
   // calculator never reads a dose the page shows as disputed
   it("az ütköző adagolás mellett nincs kalkulátor", () => {

@@ -201,7 +201,7 @@ const MuszakiLap = ({
     tartalom.fulek = (
       <>
         {tartalom.fulek}
-        <TermekTudasBlokk tudas={tudas!} locale={locale} />
+        <TermekTudasBlokk tudas={tudas!} locale={locale} tartalek={tartalek} />
       </>
     )
   /*

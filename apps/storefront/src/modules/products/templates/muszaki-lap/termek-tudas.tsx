@@ -181,10 +181,13 @@ export function vanTudas(tudas: TermekTudas | null | undefined): boolean {
 export function TermekTudasBlokk({
   tudas,
   locale = DEFAULT_LOCALE,
+  tartalek = false,
 }: {
   tudas: TermekTudas | null
   /** A lap nyelve; alapertek magyar. */
   locale?: Locale
+  /** A Suspense tartaleka-e (a `MuszakiLap`-tol): ott a kalkulator mezoje letiltott. */
+  tartalek?: boolean
 }) {
   if (!tudas || !vanTudas(tudas)) return null
   const t = translator(locale)
@@ -214,7 +217,11 @@ export function TermekTudasBlokk({
           <h3 className="text-base-semi">{cimke}</h3>
           <Ertek m={m!} t={t} />
           {mezo === "dosing" && kalkulator ? (
-            <AdagoloKalkulator ertek={kalkulator} locale={locale} />
+            <AdagoloKalkulator
+              ertek={kalkulator}
+              locale={locale}
+              letiltva={tartalek}
+            />
           ) : null}
         </div>
       ))}

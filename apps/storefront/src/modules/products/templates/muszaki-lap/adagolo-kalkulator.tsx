@@ -25,10 +25,16 @@ import React, { useEffect, useId, useRef, useState } from "react"
 export function AdagoloKalkulator({
   ertek,
   locale = DEFAULT_LOCALE,
+  letiltva = false,
 }: {
   /** a dosing teny erteke, ahogy a vetites hozza */
   ertek: string
   locale?: Locale
+  /**
+   * A LAP SUSPENSE-TARTALEKABAN ALLO PELDANY (acrobot 50250): a streamelt csere elott a tartalek mar latszik, de a csere
+   * lecsereli, es ami bele van irva, elveszik. Ott a mezo letiltott; a valodi peldany a csere utan gepelheto.
+   */
+  letiltva?: boolean
 }) {
   const t = translator(locale)
   const mezoId = useId()
@@ -89,6 +95,7 @@ export function AdagoloKalkulator({
           inputMode="decimal"
           autoComplete="off"
           value={beirt}
+          disabled={letiltva}
           placeholder={t("product.doseCalc.volumePlaceholder")}
           onChange={(event) => setBeirt(event.target.value)}
           className="w-32 rounded-md border border-[var(--terv-vonal,#e5e7eb)] px-3 py-2"
