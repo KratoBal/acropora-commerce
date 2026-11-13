@@ -61,6 +61,13 @@ export default async function CheckoutLayout({
         </div>
       </div>
       <Footer countryCode={countryCode} />
+      {/*
+      A RAGADO FIZETESI SAV HELYE A LABLEC ALATT (barracuda, #754): mobilon a fizetesi lepes `stripe-cta-sav` savja a
+      kepernyo aljara ragad (`fixed bottom-0`, ~76 px), es a helyfoglaloja az osszesitoben all, amely eddig a dokumentum alja
+      volt. A lablec most utana jon, ezert a sav az utolso lablec-sort (a copyright es a suti-beallitas gomb) fedne: ez a
+      helyfoglalo a lablec UTAN adja vissza a 76 pixelt, de CSAK ha a sav ott van (`penztar-lablec-hely`, globals.css).
+    */}
+      <div aria-hidden="true" className="penztar-lablec-hely small:hidden" />
     </>
   )
 }

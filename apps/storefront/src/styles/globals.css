@@ -932,6 +932,14 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
 }
 
 @layer components {
+  /* A pénztár lábléce utáni hely a mobil ragadó fizetési sávnak (#754): csak ott van, ahol a sáv is. */
+  .penztar-lablec-hely {
+    height: 0;
+  }
+  body:has([data-testid="stripe-cta-sav"]) .penztar-lablec-hely {
+    height: 76px;
+  }
+
   .content-container {
     @apply max-w-[1440px] w-full mx-auto px-6;
   }
