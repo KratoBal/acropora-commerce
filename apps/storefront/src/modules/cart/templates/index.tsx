@@ -51,7 +51,7 @@ const CartTemplate = ({
   return (
     <div className="bg-acr-shell font-acr-sans" data-testid="cart-page">
       <div
-        className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]"
+        className="mx-auto max-w-[1440px] px-4 py-8 small:px-16 small:py-[52px]"
         data-testid="cart-container"
       >
         {/*

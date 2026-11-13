@@ -37,7 +37,7 @@ const EmptyCartMessage = ({ countryCode }: { countryCode: string }) => {
         <span className="text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate">
           {t("cartPage.emptyLabel")}
         </span>
-        <h1 className="text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
+        <h1 className="font-kiemelt text-[40px] font-normal leading-[44px] tracking-[-0.01em] text-acr-ink small:text-[58px] small:leading-[62px]">
           {t("cartPage.emptyHeading")}
         </h1>
         <p className="text-[18px] leading-[30px] text-acr-slate">
