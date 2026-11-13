@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
-import { TAP_AREA, TAP_AREA_TIGHT } from "./tap-area"
+import { TAP_AREA, TAP_AREA_TIGHT } from "@modules/common/components/tap-area"
 
 /**
  * AZ ÉRINTÉSI TERÜLET (stage 390 px, 2026-11-13). MI PIROSIT: ha a kosár törlő ikonja, a "Kedvezménykód hozzáadása", a "Vásárlás
@@ -13,7 +13,36 @@ import { TAP_AREA, TAP_AREA_TIGHT } from "./tap-area"
 const SRC = join(process.cwd(), "src")
 const read = (path: string): string => readFileSync(join(SRC, path), "utf8")
 
+/** A `content` globok a tailwind.config.js-bol: az osztalyokat csak az innen olvasott fajlokbol adja ki a Tailwind 3. */
+const contentGlobs = (): string[] => {
+  const config = readFileSync(join(process.cwd(), "tailwind.config.js"), "utf8")
+  const block = /content:\s*\[([^\]]*)\]/.exec(config)
+  expect(block).not.toBeNull()
+  const globs: string[] = []
+  const pattern = /"([^"]+)"/g
+  for (let m = pattern.exec(block![1]!); m; m = pattern.exec(block![1]!))
+    globs.push(m[1]!)
+  return globs
+}
+const scannedByTailwind = (file: string): boolean =>
+  contentGlobs().some((glob) => {
+    const base = glob.split("/**")[0]!.replace(/^\.\//, "")
+    return file.startsWith(`${base}/`) && /\.(?:js|ts|jsx|tsx)$/.test(file)
+  })
+
 describe("a kis vezérlők érintési területe", () => {
+  it("az osztályokat tartalmazó fájlt a Tailwind beolvassa (különben nincs CSS, és a terület nem működik)", () => {
+    // KONTROLL: a helytelen hely (a korábbi `src/lib/util/tap-area.ts`) nincs a globok alatt, a mai hely igen
+    expect(scannedByTailwind("src/lib/util/tap-area.ts")).toBe(false)
+    expect(
+      scannedByTailwind("src/modules/common/components/tap-area/index.ts"),
+    ).toBe(true)
+    // és a fájl valóban ott áll, és tartalmazza az osztályokat
+    expect(read("modules/common/components/tap-area/index.ts")).toContain(
+      "after:-inset-y-3",
+    )
+  })
+
   it("a közös osztály átlátszó `::after` területet ad, a szülő `relative`", () => {
     expect(TAP_AREA).toContain("relative")
     expect(TAP_AREA).toContain("after:absolute")
@@ -38,7 +67,7 @@ describe("a kis vezérlők érintési területe", () => {
     ["app/[countryCode]/(checkout)/layout.tsx", "${TAP_AREA}"],
   ])("%s használja a közös osztályt", (path, usage) => {
     const source = read(path)
-    expect(source).toContain('from "@lib/util/tap-area"')
+    expect(source).toContain('from "@modules/common/components/tap-area"')
     expect(source).toContain(usage)
   })
 })
