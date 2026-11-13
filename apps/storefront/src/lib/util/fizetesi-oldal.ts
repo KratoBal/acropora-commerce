@@ -92,11 +92,15 @@ export type SzallitasiCsoport = {
  * "Szállítási csoportok": a kiszallitando resz a kosar szallitasi modjaval, es
  * vegyes kosarnal az elo allatos resz szemelyes atvetellel (a split-sorok
  * azonositoi a hattertol jonnek: `split_line_ids`).
+ *
+ * SZEMELYES ATVETELNEL (`szemelyesAtvetel`: a kosar szallitasi modja `pickup` tipusu, acrobot 49701) a csoport cimkeje
+ * "Atvetel", nem "Kiszallitas", es a hova a bolt cime, nem a vevo hazcime.
  */
 export function szallitasiCsoportok(
   kosar: Kosar,
   boltiTetelek: ReadonlySet<string>,
   t: Translate = translator("hu"),
+  szemelyesAtvetel = false,
 ): SzallitasiCsoport[] {
   const mod = kosar.shipping_methods?.at(-1)
   const tetelek = kosar.items ?? []
@@ -109,14 +113,19 @@ export function szallitasiCsoportok(
   const szallitott = tetelek.filter((t) => !boltiTetelek.has(t.id))
   if (mod && szallitott.length) {
     csoportok.push({
-      cimke: t("checkoutPayment.groupDelivery"),
+      cimke: t(
+        szemelyesAtvetel
+          ? "checkoutPayment.groupPickup"
+          : "checkoutPayment.groupDelivery",
+      ),
       mod: mod.name ?? "",
       osszeg: Number(mod.total ?? mod.amount ?? 0),
       tetelek: szallitott.map(tetelSor),
-      hova:
-        pont("foxpost_pickup_point") ||
-        pont("gls_pickup_point") ||
-        cimSor(kosar.shipping_address),
+      hova: szemelyesAtvetel
+        ? SHOP_ADDRESS
+        : pont("foxpost_pickup_point") ||
+          pont("gls_pickup_point") ||
+          cimSor(kosar.shipping_address),
     })
   }
   const bolti = tetelek.filter((t) => boltiTetelek.has(t.id))

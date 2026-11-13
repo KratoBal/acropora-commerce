@@ -7,6 +7,9 @@ let orszagKod = "hu"
 vi.mock("next/navigation", () => ({
   useParams: () => ({ countryCode: orszagKod }),
 }))
+vi.mock("@lib/data/fulfillment", () => ({
+  listCartShippingMethods: vi.fn(async () => null),
+}))
 vi.mock("@lib/data/cart", () => ({
   retrieveCartShippingClass: vi.fn(async () => osztaly),
 }))
