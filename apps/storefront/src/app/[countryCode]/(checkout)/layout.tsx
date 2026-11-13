@@ -1,3 +1,4 @@
+import { TAP_AREA } from "@lib/util/tap-area"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { STORE_NAME } from "@lib/store"
@@ -29,7 +30,7 @@ export default async function CheckoutLayout({
           <nav className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-4 small:px-16">
             <LocalizedClientLink
               href="/cart"
-              className="flex flex-1 basis-0 items-center gap-x-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink"
+              className={`flex flex-1 basis-0 items-center gap-x-2 text-[14px] leading-[22px] text-acr-slate hover:text-acr-ink ${TAP_AREA}`}
               data-testid="back-to-cart-link"
             >
               <ChevronDown className="rotate-90" size={16} />
