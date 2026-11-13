@@ -10,7 +10,7 @@ import {
   literAllapot,
   szam,
 } from "@lib/util/adagolas-szoveg"
-import React, { useId, useState } from "react"
+import React, { useEffect, useId, useRef, useState } from "react"
 
 /**
  * AZ ADAGOLO-KALKULATOR A MUSZAKI LAPON (V3.1, kartya 7fdbb15d). A muszaki lap
@@ -33,6 +33,17 @@ export function AdagoloKalkulator({
   const t = translator(locale)
   const mezoId = useId()
   const [beirt, setBeirt] = useState("")
+  const eredmenyRef = useRef<HTMLDivElement>(null)
+  /*
+    AZ EREDMENY NE A RAGADOS KOSAR-SAV ALATT ALLJON (acrobot 50206, a teszt kirakat 390 pixeles kepe, 2026-11-13). Mobilon a
+    sav a nezet aljan tapad, az eredmeny a liter-mezo ALATT van: ha a mezo eppen a sav folott all, a bongeszo nem gorget (a
+    mezo latszik), es az eredmeny a sav moge kerul. Minden beiraskor a legkozelebbi helyre gorgetjuk, a `scroll-margin`
+    pedig a sav magassagat hagyja alatta; ha az eredmeny mar latszik, a lap nem mozdul.
+  */
+  useEffect(() => {
+    if (beirt !== "")
+      eredmenyRef.current?.scrollIntoView?.({ block: "nearest" })
+  }, [beirt])
   const adag = adagOlvas(ertek)
   if (!adag) return null
 
@@ -96,7 +107,12 @@ export function AdagoloKalkulator({
         </p>
       ) : null}
       {szamolt && allapot && "liter" in allapot ? (
-        <div data-testid="adagolo-eredmeny" aria-live="polite">
+        <div
+          ref={eredmenyRef}
+          data-testid="adagolo-eredmeny"
+          aria-live="polite"
+          className="max-lg:scroll-mb-28"
+        >
           {allapot.szokatlan ? (
             <p className="text-small-regular">
               {t("product.doseCalc.warnLarge")}
