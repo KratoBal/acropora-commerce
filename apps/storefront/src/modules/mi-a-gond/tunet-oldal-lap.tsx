@@ -98,7 +98,9 @@ export default function TunetOldalLap({
     .filter((k) => k.kaphato.length > 0)
   const vanTermekSzakasz =
     meroeszkozok.length > 0 ||
-    t.egyebEszkoz !== "" ||
+    t.meroSzoveg !== "" ||
+    t.meroTovabba !== "" ||
+    t.eszkozMondat !== "" ||
     t.ovatossag.length > 0 ||
     kezelok.length > 0 ||
     t.utolso.length > 0
@@ -171,7 +173,10 @@ export default function TunetOldalLap({
                 {mondat}
               </p>
             ))}
-            {meroeszkozok.length > 0 || t.egyebEszkoz !== "" ? (
+            {meroeszkozok.length > 0 ||
+            t.meroSzoveg !== "" ||
+            t.meroTovabba !== "" ||
+            t.eszkozMondat !== "" ? (
               <div
                 className="flex flex-col gap-2"
                 data-testid="tunet-meroeszkozok"
@@ -179,27 +184,44 @@ export default function TunetOldalLap({
                 <h3 className="text-[17px] font-medium text-acr-ink">
                   Mérőeszközök
                 </h3>
-                {t.egyebEszkoz !== "" ? (
-                  <p className="text-[13px] text-acr-slate">
-                    Továbbá: {t.egyebEszkoz}.
+                {t.meroSzoveg !== "" ? (
+                  <p className="text-[15px] text-acr-ink">{t.meroSzoveg}</p>
+                ) : null}
+                {meroeszkozok.length > 0 ? (
+                  <ul className="flex flex-col gap-2">
+                    {meroeszkozok.map((x) => (
+                      <li
+                        key={x.handle}
+                        className="border border-acr-line bg-acr-white px-5 py-3"
+                      >
+                        <LocalizedClientLink
+                          href={`/termek/${x.handle}`}
+                          className="text-[15px] underline"
+                          data-testid="tunet-termek"
+                        >
+                          {termekek[x.handle]}
+                        </LocalizedClientLink>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {t.meroTovabba !== "" ? (
+                  <p
+                    className="text-[15px] text-acr-ink"
+                    data-testid="tunet-mero-tovabba"
+                  >
+                    {meroeszkozok.length > 0 ? "Továbbá" : "Mérőeszközök"}:{" "}
+                    {t.meroTovabba}.
                   </p>
                 ) : null}
-                <ul className="flex flex-col gap-2">
-                  {meroeszkozok.map((x) => (
-                    <li
-                      key={x.handle}
-                      className="border border-acr-line bg-acr-white px-5 py-3"
-                    >
-                      <LocalizedClientLink
-                        href={`/termek/${x.handle}`}
-                        className="text-[15px] underline"
-                        data-testid="tunet-termek"
-                      >
-                        {termekek[x.handle]}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
+                {t.eszkozMondat !== "" ? (
+                  <p
+                    className="text-[15px] text-acr-ink"
+                    data-testid="tunet-eszkoz"
+                  >
+                    {t.eszkozMondat}
+                  </p>
+                ) : null}
               </div>
             ) : null}
             {kezelok.length > 0 ? (
