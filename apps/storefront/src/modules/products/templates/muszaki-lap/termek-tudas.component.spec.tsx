@@ -166,7 +166,7 @@ describe("a használati útmutató (V3.3)", () => {
     expect(vanTudas(csakUtmutato)).toBe(true)
     render(<TermekTudasBlokk tudas={csakUtmutato} />)
     const szakasz = screen.getByTestId("tudas-hasznalati-utmutato")
-    expect(szakasz.querySelector("h3")?.textContent).toBe("Használati útmutató")
+    expect(szakasz.querySelector("h2")?.textContent).toBe("Használati útmutató")
     expect(szakasz.querySelectorAll("p")).toHaveLength(3)
     expect(szakasz.textContent).toContain("1. Rázd fel.\n2. Mérd ki")
   })
@@ -258,5 +258,42 @@ describe("a műszaki lap", () => {
     ).container.innerHTML
     expect(ures).toBe(ma)
     expect(ma).not.toContain("termek-tudas")
+  })
+})
+
+/*
+  A FEJLECREND (2026-11-14, CI verify a #765 fejen): az akadalymentesseg-futas (axe) a teszt bolt egy GTIN nelkuli
+  termeketen `heading-order: 1x h3`-t talalt, mert a tudas-blokk fejlecei h3-asok voltak, kozvetlenul a termek h1-e
+  utan (h2 nelkul); az adagolo-kalkulator cime h4 volt, azaz a h3 ala kerulve megint ugrott volna. MI PIROSIT: ha a
+  blokk elso fejlecze nem h2, vagy egy fejlec tobb szintet ugrik az elozohoz kepest (a teljes blokkban, kalkulatorral).
+*/
+describe("a termék-tudás blokk fejlécrendje", () => {
+  const szintek = (gyoker: HTMLElement) =>
+    Array.from(gyoker.querySelectorAll("h1,h2,h3,h4,h5,h6")).map((h) =>
+      Number(h.tagName.slice(1)),
+    )
+
+  it("az első fejléc h2, és semelyik nem ugrik két szintet (kalkulátorral és útmutatóval)", () => {
+    const tudas: TermekTudas = {
+      product_id: "prod_1",
+      facts: [
+        teny("dosing", "5 ml/100 L/day"),
+        teny("application", "korallok aminosav-pótlása"),
+      ],
+      copy: [
+        { block: "usage", body: "1. Rázd fel.\n2. Mérd ki.", revision: 1 },
+      ],
+    }
+    render(<TermekTudasBlokk tudas={tudas} />)
+    const blokk = screen.getByTestId("termek-tudas")
+    // pozitív kontroll: a kalkulátor és az útmutató is ott van, különben üres fán mérnénk
+    expect(screen.getByTestId("adagolo-kalkulator")).toBeInTheDocument()
+    expect(screen.getByTestId("tudas-hasznalati-utmutato")).toBeInTheDocument()
+    const sorrend = szintek(blokk)
+    expect(sorrend.length).toBeGreaterThanOrEqual(3)
+    expect(sorrend[0]).toBe(2)
+    sorrend.slice(1).forEach((szint, i) => {
+      expect(szint - sorrend[i]).toBeLessThanOrEqual(1)
+    })
   })
 })
