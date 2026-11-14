@@ -30,3 +30,27 @@ export async function shortLinesAt(
   }
   return short
 }
+
+/** One shipping option as the cart listing returns it: only what the pickup-location check reads. */
+export type CartOptionFacts = {
+  service_zone?: {
+    fulfillment_set?: {
+      type?: string | null
+      location?: { id?: string | null } | null
+    } | null
+  } | null
+}
+
+/**
+ * THE LOCATION MUST BE ONE OF THE CART'S OWN PICKUP LOCATIONS (barracuda, #766). The route answers, line by line, "has stock /
+ * has none" for a stock location; left open it would answer for ANY location, and a shopper changing the quantity in the cart
+ * could read a shelf's exact stock off the answers. So the location is accepted only when it belongs to a PICKUP-type
+ * fulfillment set of the options the cart itself is offered (the same listing `GET /store/shipping-options` returns): a foreign
+ * location, and the location of a delivery option, are refused.
+ */
+export function isCartPickupLocation(options: readonly CartOptionFacts[], locationId: string): boolean {
+  return options.some((option) => {
+    const set = option.service_zone?.fulfillment_set
+    return set?.type === "pickup" && set.location?.id === locationId
+  })
+}
