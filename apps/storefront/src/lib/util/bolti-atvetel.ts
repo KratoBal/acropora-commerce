@@ -27,12 +27,21 @@ const atvetelOpciok = <T extends BoltiOpcio>(
     (o) => o.service_zone?.fulfillment_set?.type === "pickup",
   )
 
-/** Az elso letiltott bolti atvetel raktara; `null`, ha egyik sincs letiltva (vagy a raktar ismeretlen). */
+/**
+ * A letiltott bolti atvetel(ek) KOZOS raktara; `null`, ha egyik sincs letiltva, ha valamelyik raktara ismeretlen, vagy ha
+ * a letiltottak TOBB kulonbozo raktarra mutatnak. Az utolso ket eset azert null: a nevek egy raktar keszletebol jonnek, es
+ * a sorok mindegyike alatt ugyanaz a lista all, tehat tobb raktarnal a masodik bolt soraban az ELSO bolt hianyzo tetelet
+ * neveznenk meg, ami ott lehet, hogy van keszleten (hamis allitas a vevonek; barracuda, #766). Null eseten az altalanos
+ * mondat all, ami igaz mindegyik sorra.
+ */
 export function letiltottAtvetelRaktara(
   opciok: readonly BoltiOpcio[] | null | undefined,
 ): string | null {
-  const letiltott = atvetelOpciok(opciok).find((o) => o.insufficient_inventory)
-  return letiltott?.service_zone?.fulfillment_set?.location?.id ?? null
+  const raktarak = atvetelOpciok(opciok)
+    .filter((o) => o.insufficient_inventory)
+    .map((o) => o.service_zone?.fulfillment_set?.location?.id ?? null)
+  const kulonbozo = new Set(raktarak)
+  return raktarak.length > 0 && kulonbozo.size === 1 ? raktarak[0] : null
 }
 
 /** Minden bolti atvetel letiltott: ilyenkor a mod kartyaja sem valaszthato. Nincs atvetel = nincs mit letiltani. */

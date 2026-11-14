@@ -44,6 +44,36 @@ describe("letiltottAtvetelRaktara / mindenAtvetelLetiltott", () => {
     expect(letiltottAtvetelRaktara([opcio("pickup", true)])).toBeNull()
   })
 
+  // barracuda, #766: ket letiltott bolt, ket raktar: a nevek egyik sor alatt sem allhatnak (a masik bolt keszleten lehet)
+  it("BA-TOBB-RAKTAR: tobb kulonbozo letiltott raktar, vagy egy ismeretlen raktaru letiltott: nincs raktar (altalanos mondat)", () => {
+    expect(
+      letiltottAtvetelRaktara([
+        opcio("pickup", true, "sloc_a"),
+        opcio("pickup", true, "sloc_b"),
+      ]),
+    ).toBeNull()
+    expect(
+      letiltottAtvetelRaktara([
+        opcio("pickup", true, "sloc_a"),
+        opcio("pickup", true),
+      ]),
+    ).toBeNull()
+    // ugyanaz a raktar ket opciora: egy lista igaz mindketto sorara
+    expect(
+      letiltottAtvetelRaktara([
+        opcio("pickup", true, "sloc_a"),
+        opcio("pickup", true, "sloc_a"),
+      ]),
+    ).toBe("sloc_a")
+    // egy letiltott es egy elerheto masik bolt: a letiltotte
+    expect(
+      letiltottAtvetelRaktara([
+        opcio("pickup", true, "sloc_a"),
+        opcio("pickup", false, "sloc_b"),
+      ]),
+    ).toBe("sloc_a")
+  })
+
   it("BA-MIND: a mod kartyaja csak akkor tiltott, ha MINDEN atvetel letiltott (es van atvetel)", () => {
     expect(mindenAtvetelLetiltott([opcio("pickup", true, "a")])).toBe(true)
     expect(
