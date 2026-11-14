@@ -36,6 +36,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "kezdolap-elonezet",
   "marka",
   "order",
+  "reef-inditas",
   "rendeles-fizetese",
   "rendeles-megtekintese",
   "store",
