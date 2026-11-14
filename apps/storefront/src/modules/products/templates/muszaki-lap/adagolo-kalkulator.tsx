@@ -84,7 +84,7 @@ export function AdagoloKalkulator({
       data-testid="adagolo-kalkulator"
       className="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--terv-vonal,#e5e7eb)] p-4"
     >
-      <h4 className="text-base-semi">{t("product.doseCalc.title")}</h4>
+      <h3 className="text-base-semi">{t("product.doseCalc.title")}</h3>
       <label htmlFor={mezoId} className="text-small-regular">
         {t("product.doseCalc.volumeLabel")}
       </label>
