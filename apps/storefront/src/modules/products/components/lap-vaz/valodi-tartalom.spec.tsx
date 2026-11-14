@@ -1779,14 +1779,20 @@ describe("a terméknév címsora", () => {
         .map((c) => `<h3>${c}</h3><p>x</p>`)
         .join("")
     const { container } = render(
-      <LapVaz tartalom={vazTartalom({ ...TERMEK, description: leiras })} />,
+      <LapVaz
+        tartalom={vazTartalom({
+          ...(TERMEK as object),
+          description: leiras,
+        } as never)}
+      />,
     )
     const h1 = container.querySelectorAll("h1")
     expect(h1).toHaveLength(1)
     expect(h1[0]?.textContent).toBe(TERMEK_NEVE)
     const leirasban = container.querySelector(".leiras-tartalom") ?? container
-    const szintek = [...leirasban.querySelectorAll("h2,h3,h4,h5,h6")].map((h) =>
-      h.tagName.toLowerCase(),
+    const szintek = Array.from(
+      leirasban.querySelectorAll("h2,h3,h4,h5,h6"),
+      (h) => h.tagName.toLowerCase(),
     )
     // a leírás saját fejléce: a H1 H2 lett, az öt H3 öt H4 (a sorrend megmaradt)
     expect(szintek.join(",")).toContain("h2,h4,h4,h4,h4,h4")

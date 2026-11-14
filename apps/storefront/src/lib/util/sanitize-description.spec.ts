@@ -358,12 +358,12 @@ describe("leírás-tisztítás: a fejlécek egy szinttel lejjebb", () => {
     const hosszu =
       "<h3>Használati irányelvek</h3><h3>Emlékeztetők</h3><h3>Adagolás</h3><h3>Záró megjegyzések</h3>"
     const szintek = (html: string) =>
-      [...sanitizeDescription(html).matchAll(/<(h[1-6])\b/gi)].map((m) =>
-        m[1]!.toLowerCase(),
+      ((sanitizeDescription(html) ?? "").match(/<h[1-6]\b/gi) ?? []).map(
+        (tag) => tag.slice(1).toLowerCase(),
       )
     expect(szintek(rovid)).toEqual(["h2", "h4", "h4", "h4", "h4", "h4"])
     expect(szintek(hosszu)).toEqual(["h4", "h4", "h4", "h4"])
-    expect(sanitizeDescription(rovid)).not.toMatch(/<h1/i)
+    expect(sanitizeDescription(rovid) ?? "").not.toMatch(/<h1/i)
   })
 
   it("nagybetűs és attribútumos h1 sem marad h1, a stílusa megmarad", () => {
