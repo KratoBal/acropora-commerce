@@ -1758,6 +1758,41 @@ describe("a terméknév címsora", () => {
     cleanup()
   })
 
+  /*
+    A KÉT MÉRT TERMÉK (kártya 4ea3d5cf, 8a743a38; nautilus mérése 2026-09-08): a Modern Reef Reef Elixir 60 és 120 ml
+    leírásának rövid mezője H1-gyel kezdődik, utána öt H3 követi, hosszú mezője négy H3. A fejlécek SZERKEZETE a
+    2026-09-09-i UNAS-kivonatból (SKU reefelixir60 és reefelixir120), a címek rövidítve. MI PIROSÍT: ha a leírás H1-e a
+    lapon marad (két H1), ha a leírás fejlécei sorrendet vesztenek, vagy ha a leírás saját H1-ét a lap saját címe
+    elnyeli. A leíráson belüli szintugrás (H2 után H4) ismert és nem hiba: ezen a szinten csak a H1 egyedisége a
+    követelmény (acrobot, 2026-11-14).
+  */
+  it("a Reef Elixir leírása H1-gyel kezdődik: a lapon egy H1 marad (a terméknév), a leírás fejlécei egy szinttel lejjebb", () => {
+    const leiras =
+      "<h1>REEF ELIXIR: THE ULTIMATE CORAL BOOSTER</h1><p>a</p>" +
+      [
+        "A Reef Elixir legfontosabb előnyei",
+        "Fontos használati irányelvek",
+        "Kritikus emlékeztetők",
+        "Adagolási útmutató",
+        "Záró megjegyzések szakembereknek",
+      ]
+        .map((c) => `<h3>${c}</h3><p>x</p>`)
+        .join("")
+    const { container } = render(
+      <LapVaz tartalom={vazTartalom({ ...TERMEK, description: leiras })} />,
+    )
+    const h1 = container.querySelectorAll("h1")
+    expect(h1).toHaveLength(1)
+    expect(h1[0]?.textContent).toBe(TERMEK_NEVE)
+    const leirasban = container.querySelector(".leiras-tartalom") ?? container
+    const szintek = [...leirasban.querySelectorAll("h2,h3,h4,h5,h6")].map((h) =>
+      h.tagName.toLowerCase(),
+    )
+    // a leírás saját fejléce: a H1 H2 lett, az öt H3 öt H4 (a sorrend megmaradt)
+    expect(szintek.join(",")).toContain("h2,h4,h4,h4,h4,h4")
+    cleanup()
+  })
+
   it("a tartalék ugyanazt a nevet mutatja, de nem H1-ként", () => {
     const { container } = render(
       <LapVaz
