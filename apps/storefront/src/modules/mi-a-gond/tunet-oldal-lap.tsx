@@ -181,9 +181,11 @@ export default function TunetOldalLap({
                 className="flex flex-col gap-2"
                 data-testid="tunet-meroeszkozok"
               >
-                <h3 className="text-[17px] font-medium text-acr-ink">
-                  Mérőeszközök
-                </h3>
+                {meroeszkozok.length > 0 && t.meroSzoveg === "" ? (
+                  <h3 className="text-[17px] font-medium text-acr-ink">
+                    Mérőeszközök
+                  </h3>
+                ) : null}
                 {t.meroSzoveg !== "" ? (
                   <p className="text-[15px] text-acr-ink">{t.meroSzoveg}</p>
                 ) : null}

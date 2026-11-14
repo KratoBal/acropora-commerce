@@ -123,6 +123,34 @@ describe("egy tünet oldala", () => {
     )
   })
 
+  // barracuda 52002: nincs ures csoport-cim, es a szo nem szerepel ketszer egymas alatt
+  it("TO-CIM: a 'Mérőeszközök' cím csak lista mellett és mérő-szöveg nélkül áll; eszköz-mondat egyedül cím nélkül; a 8. és 9. oldalon nincs duplán", () => {
+    const hatos = tunetOldal("feheredo-korall")!
+    render(<TunetOldalLap oldal={hatos} termekek={mind(hatos)} />)
+    expect(
+      within(screen.getByTestId("tunet-meroeszkozok")).getByRole("heading", {
+        name: "Mérőeszközök",
+      }),
+    ).toBeTruthy()
+    cleanup()
+    const termeknelkul = tunetOldal("kovaalga")!
+    render(<TunetOldalLap oldal={termeknelkul} termekek={{}} />)
+    expect(screen.queryByRole("heading", { name: "Mérőeszközök" })).toBeNull()
+    expect(screen.getByTestId("tunet-eszkoz").textContent).toBe(
+      "Eszköz a teendőkhöz: szifon.",
+    )
+    cleanup()
+    const nyolcadik = tunetOldal("feher-pottyok-halon")!
+    render(<TunetOldalLap oldal={nyolcadik} termekek={{}} />)
+    expect(screen.queryByRole("heading", { name: "Mérőeszközök" })).toBeNull()
+    expect(screen.getAllByText(/Mérőeszközök/)).toHaveLength(1)
+    cleanup()
+    const kilencedik = tunetOldal("ingadozo-ertekek")!
+    render(<TunetOldalLap oldal={kilencedik} termekek={mind(kilencedik)} />)
+    expect(screen.queryByRole("heading", { name: "Mérőeszközök" })).toBeNull()
+    expect(screen.getAllByText(/Mérőeszközök \(/)).toHaveLength(1)
+  })
+
   it("TO-TERMEKEK: a bolt adta termékek linkelnek a bolti címmel; amit a bolt nem adott, nem jelenik meg, az üres csoport címe sem", () => {
     const oldal = tunetOldal("cianobakterium")!
     const teljes = mind(oldal)
