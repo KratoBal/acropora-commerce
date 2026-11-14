@@ -1032,6 +1032,10 @@ export const hu = {
     toPayment: "Tovább a fizetéshez",
     summaryMode: "Mód",
     foxpostBlocked: "Ez a tétel nem küldhető automatába: {item}.",
+    pickupBlocked:
+      "Üzletben ezt nem tudod átvenni, mert elfogyott, vagy nincs az üzletben: {item}.",
+    pickupBlockedUnknown:
+      "Üzletben most nem tudod átvenni a rendelést: a kosarad egyik tétele elfogyott, vagy nincs az üzletben.",
     modeFoxpostText: "FOXPOST automata vagy átvételi pont · 1–2 munkanap",
     modeGlsPoint: "GLS csomagpont",
     modeGlsPointText: "GLS ParcelShop vagy automata · 1–2 munkanap",

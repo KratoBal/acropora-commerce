@@ -998,6 +998,10 @@ export const en: Dictionary = {
     toPayment: "Continue to payment",
     summaryMode: "Method",
     foxpostBlocked: "This item cannot be sent to a parcel locker: {item}.",
+    pickupBlocked:
+      "You cannot pick this up in the store, because it is sold out or not in the store: {item}.",
+    pickupBlockedUnknown:
+      "You cannot pick up this order in the store right now: one item in your cart is sold out or not in the store.",
     modeFoxpostText: "FOXPOST locker or pickup point · 1–2 working days",
     modeGlsPoint: "GLS pickup point",
     modeGlsPointText: "GLS ParcelShop or locker · 1–2 working days",

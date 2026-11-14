@@ -26,6 +26,7 @@ import {
 } from "./store/payment-options/validators";
 import { StoreGetShippingClassParams } from "./store/shipping-class/validators";
 import { StoreGetCartHoldsParams } from "./store/cart-holds/validators";
+import { StoreGetPickupShortageParams } from "./store/pickup-shortage/validators";
 import { AdminPutProductKnowledge } from "./admin/product-knowledge/validators";
 import {
   AdminPutBrand,
@@ -518,6 +519,12 @@ export default defineMiddlewares({
       matcher: "/store/cart-holds",
       method: "GET",
       middlewares: [validateAndTransformQuery(StoreGetCartHoldsParams, {})],
+    },
+    {
+      // V2.5 slice B: which cart line has no stock at the pickup location, for the shipping step
+      matcher: "/store/pickup-shortage",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(StoreGetPickupShortageParams, {})],
     },
   ],
 });

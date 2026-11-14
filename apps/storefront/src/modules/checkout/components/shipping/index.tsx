@@ -15,6 +15,10 @@ import {
 } from "@lib/util/csomagpont"
 import type { Locale } from "@lib/i18n/locale"
 import { useLocale, useTranslate } from "@lib/i18n/use-translate"
+import {
+  boltiAtvetelTiltvaSzoveg,
+  mindenAtvetelLetiltott,
+} from "@lib/util/bolti-atvetel"
 import { GLS_LOGO, szallitasiSor } from "@lib/util/gls"
 import { megjegyzesekKosarbol, megjegyzesValtozas } from "@lib/util/megjegyzes"
 import { arSzoveg } from "@lib/util/ar-szoveg"
@@ -72,6 +76,11 @@ type ShippingProps = {
    * `csakCsomagboltOsztaly`): egy tetele nem fer automataba.
    */
   csakCsomagbolt?: boolean
+  /**
+   * V2.5 B: a tetelek neve, amelyekbol nincs keszlet a bolti atvetel helyen
+   * (`GET /store/pickup-shortage`); `null`, ha nem tudjuk megnevezni.
+   */
+  boltiHiany?: string[] | null
 }
 
 /** Egy csomagpontos mod: kinel, hogyan keres, es milyen adatot kuld a modhoz. */
@@ -107,6 +116,7 @@ const Shipping: React.FC<ShippingProps> = ({
   glsHomeOptions = [],
   foxpostTiltottTetel = null,
   csakCsomagbolt = false,
+  boltiHiany = null,
 }) => {
   const t = useTranslate()
   const locale = useLocale()
@@ -181,6 +191,8 @@ const Shipping: React.FC<ShippingProps> = ({
   )
 
   const hasPickupOptions = !!_pickupMethods?.length
+  // V2.5 B: ha a Medusa minden bolti atvetelt letiltott, a mod kartyaja sem valaszthato, es megmondja, miert
+  const atvetelLetiltva = mindenAtvetelLetiltott(availableShippingMethods)
   // az üzleti átvétel sora a legolcsóbb üzlet árát mutatja (ha egyiknek sincs ára, semmit)
   const raktarArak = (_pickupMethods ?? [])
     .map((m) => m.amount)
@@ -429,12 +441,14 @@ const Shipping: React.FC<ShippingProps> = ({
                   >
                     <Radio
                       value={PICKUP_OPTION_ON}
+                      disabled={atvetelLetiltva}
                       data-testid="delivery-option-radio"
                       className={clx(
                         MOD_KARTYA,
                         showPickupOptions === PICKUP_OPTION_ON
                           ? KIJELOLT_KARTYA
                           : KARTYA_KERET,
+                        { "cursor-not-allowed opacity-60": atvetelLetiltva },
                       )}
                     >
                       <div className="flex items-center gap-x-4">
@@ -449,6 +463,14 @@ const Shipping: React.FC<ShippingProps> = ({
                         {raktarAr === null ? "" : arSzovegIde(raktarAr)}
                       </span>
                     </Radio>
+                    {atvetelLetiltva && (
+                      <span
+                        className="mb-2 block text-[13px] leading-[18px] text-acr-ink"
+                        data-testid="bolti-atvetel-tiltva"
+                      >
+                        {boltiAtvetelTiltvaSzoveg(boltiHiany, t)}
+                      </span>
+                    )}
                   </RadioGroup>
                 )}
                 <RadioGroup
@@ -669,6 +691,14 @@ const Shipping: React.FC<ShippingProps> = ({
                                   locale,
                                 )}
                               </span>
+                              {option.insufficient_inventory && (
+                                <span
+                                  className="mt-1 text-[13px] leading-[18px] text-acr-ink"
+                                  data-testid="bolti-atvetel-lista-tiltva"
+                                >
+                                  {boltiAtvetelTiltvaSzoveg(boltiHiany, t)}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <span className="justify-self-end text-[14px] leading-[22px] text-acr-ink">
