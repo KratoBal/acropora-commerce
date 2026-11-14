@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@modules/common/components/localized-client-link", () => ({
@@ -77,6 +77,50 @@ describe("egy tünet oldala", () => {
     expect(sz.filter((s) => s === 1)).toHaveLength(1)
     sz.slice(1).forEach((s, i) => expect(s - sz[i]!).toBeLessThanOrEqual(1))
     expect(screen.getByText(MIAGOND_FIGYELMEZTETES)).toBeTruthy()
+  })
+
+  // korall 51978: a szifon, kefe, csipesz nem merőeszkoz: kulon mondat a Merőeszkozok lista UTAN
+  it("TO-ESZKOZ: a csoport cime 'Mérőeszközök', az 'Eszköz a teendőkhöz' mondat a lista UTAN all, kulon mondatban", () => {
+    const kovaalga = tunetOldal("kovaalga")!
+    render(<TunetOldalLap oldal={kovaalga} termekek={mind(kovaalga)} />)
+    const doboz = screen.getByTestId("tunet-meroeszkozok")
+    expect(
+      within(doboz).getByRole("heading", { name: "Mérőeszközök" }),
+    ).toBeTruthy()
+    const lista = doboz.querySelector("ul")!
+    const sor = screen.getByTestId("tunet-eszkoz")
+    expect(sor.textContent).toBe("Eszköz a teendőkhöz: szifon.")
+    expect(
+      lista.compareDocumentPosition(sor) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    cleanup()
+    const darakor = tunetOldal("feher-pottyok-halon")!
+    render(<TunetOldalLap oldal={darakor} termekek={{}} />)
+    expect(screen.getByTestId("tunet-mero-tovabba").textContent).toBe(
+      "Mérőeszközök: hőmérő, refraktométer, ammónia- és nitrit-teszt.",
+    )
+    expect(screen.queryByTestId("tunet-eszkoz")).toBeNull()
+    expect(
+      screen.getByTestId("tunet-meroeszkozok").querySelector("ul"),
+    ).toBeNull()
+  })
+
+  it("TO-ESZKOZ-10: a 9. oldal mero-szovege a lista elott, az eszkoz a lista utan; a 10. oldal 'Szűrőanyag a teendőkhöz.'", () => {
+    const hatodik = tunetOldal("ingadozo-ertekek")!
+    render(<TunetOldalLap oldal={hatodik} termekek={mind(hatodik)} />)
+    const doboz = screen.getByTestId("tunet-meroeszkozok")
+    expect(doboz.textContent).toContain(
+      "Mérőeszközök (KH, kalcium, magnézium, pH teszt, kalibráló oldat).",
+    )
+    expect(screen.getByTestId("tunet-eszkoz").textContent).toBe(
+      "Eszköz a teendőkhöz: adagolópumpa.",
+    )
+    cleanup()
+    const tizedik = tunetOldal("magas-nitrat-foszfat")!
+    render(<TunetOldalLap oldal={tizedik} termekek={{}} />)
+    expect(screen.getByTestId("tunet-eszkoz").textContent).toBe(
+      "Szűrőanyag a teendőkhöz.",
+    )
   })
 
   it("TO-TERMEKEK: a bolt adta termékek linkelnek a bolti címmel; amit a bolt nem adott, nem jelenik meg, az üres csoport címe sem", () => {

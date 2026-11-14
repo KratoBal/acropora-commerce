@@ -41,7 +41,12 @@ export type TunetOldal = {
   segitseg: readonly string[]
   termekek: {
     meroeszkozok: readonly TunetTermek[]
-    egyebEszkoz: string
+    /** a mero-szoveg a lista ELOTT (pl. mit mérj), vagy ures */
+    meroSzoveg: string
+    /** tovabbi merőeszkoz-nevek cikkszam nelkul (a lista utan "Továbbá: ...", lista nelkul "Mérőeszközök: ..."), vagy ures */
+    meroTovabba: string
+    /** a nem merőeszkoz a teendokhoz (szifon, kefe...), KULON mondatban a lista utan (korall 51978), vagy ures */
+    eszkozMondat: string
     ovatossag: readonly string[]
     bevezeto: string | null
     kezelok: readonly TunetKezelo[]
@@ -107,7 +112,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-si-szilikat-teszt",
         },
       ],
-      egyebEszkoz: "szifon",
+      meroSzoveg: "",
+      meroTovabba: "",
+      eszkozMondat: "Eszköz a teendőkhöz: szifon.",
       ovatossag: [
         "Kezelő termék csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -185,7 +192,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz: "szifon, áramoltató",
+      meroSzoveg: "",
+      meroTovabba: "",
+      eszkozMondat: "Eszközök a teendőkhöz: szifon, áramoltató.",
       ovatossag: [
         "Kezelő termék csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -302,7 +311,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz: "szifon",
+      meroSzoveg: "",
+      meroTovabba: "",
+      eszkozMondat: "Eszköz a teendőkhöz: szifon.",
       ovatossag: [
         "Kezelő termék csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -395,7 +406,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz: "kefe, szifon",
+      meroSzoveg: "",
+      meroTovabba: "",
+      eszkozMondat: "Eszközök a teendőkhöz: kefe, szifon.",
       ovatossag: [
         "Kezelő termék csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -471,7 +484,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz: "csipesz",
+      meroSzoveg: "",
+      meroTovabba: "",
+      eszkozMondat: "Eszköz a teendőkhöz: csipesz.",
       ovatossag: [
         "A bolti szövegek egyik vegyszere sem nevezi meg a hólyagos algát, ezért vegyszert nem ajánlok.",
       ],
@@ -534,7 +549,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz: "hőmérő",
+      meroSzoveg: "",
+      meroTovabba: "hőmérő",
+      eszkozMondat: "",
       ovatossag: [],
       bevezeto: null,
       kezelok: [],
@@ -590,7 +607,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz: "ammónia- és nitrit-teszt",
+      meroSzoveg: "",
+      meroTovabba: "ammónia- és nitrit-teszt",
+      eszkozMondat: "",
       ovatossag: [
         "Szűrőanyag és kezelő termék csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -675,7 +694,9 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
     segitseg: ["Azonnal, amint a tünetet észreveszed."],
     termekek: {
       meroeszkozok: [],
-      egyebEszkoz: "hőmérő, refraktométer, ammónia- és nitrit-teszt",
+      meroSzoveg: "",
+      meroTovabba: "hőmérő, refraktométer, ammónia- és nitrit-teszt",
+      eszkozMondat: "",
       ovatossag: ["Gyógyszer csak szakember tanácsa után."],
       bevezeto: null,
       kezelok: [],
@@ -705,7 +726,7 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
     ],
     teendok: [
       "Mérd meg újra, mielőtt beavatkozol.",
-      "A magnéziumot rendezd a kalcium és a lúgosság módosítása előtt (több gyártó adatlapja ezt írja: AquaForest termékek).",
+      "A magnéziumot rendezd a kalcium és a lúgosság módosítása előtt (az AquaForest termékek adatlapja ezt írja).",
       "Állítsd be az adagolást egyenletesre, lehetőleg adagolópumpával vagy rendszeres időközönként.",
       "Az értékeket lassan told a kívánt irányba. A termékek gyártói napi emelési határát ne lépd túl (a termék leírása adja meg).",
       "Írd fel az eredményeket, hogy lásd a trendet.",
@@ -733,8 +754,10 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-magnezium-teszt",
         },
       ],
-      egyebEszkoz:
-        "KH, kalcium, magnézium, pH teszt, kalibráló oldat, adagolópumpa",
+      meroSzoveg:
+        "Mérőeszközök (KH, kalcium, magnézium, pH teszt, kalibráló oldat).",
+      meroTovabba: "",
+      eszkozMondat: "Eszköz a teendőkhöz: adagolópumpa.",
       ovatossag: [
         "A korrekciós termékek csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -786,7 +809,7 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
     slug: "magas-nitrat-foszfat",
     cim: "Magas nitrát vagy foszfát",
     kinez: [
-      "A mért nitrát vagy foszfát a jóváhagyott tartomány fölött van. Gyakran alga és halvány korall kíséri, de lehet, hogy semmi nem látszik rajta.",
+      "A mért nitrát vagy foszfát a korallos akváriumban megfelelő tartomány fölött van. Ez a tartomány alacsony, de nem nulla; a pontos célértékeket a boltban kérdezd meg. Gyakran alga és halvány korall kíséri, de lehet, hogy semmi nem látszik rajta.",
     ],
     lasdMeg: [
       "a lerakódások és algák: 1. oldal (kovaalga), 2. oldal (cianobaktérium), 3. oldal (dinoflagellata gyanú), 4. oldal (fonalas alga), 5. oldal (bubble algae). A zavaros víz a 7. oldal, a halványuló korall a 6. oldal.",
@@ -829,8 +852,10 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           handle: "salifert-foszfat-teszt",
         },
       ],
-      egyebEszkoz:
-        "nitrát, foszfát teszt, vezetőképesség-mérő az ozmózisvízhez, szűrőanyag",
+      meroSzoveg:
+        "Mérőeszközök (nitrát, foszfát teszt, vezetőképesség-mérő az ozmózisvízhez).",
+      meroTovabba: "",
+      eszkozMondat: "Szűrőanyag a teendőkhöz.",
       ovatossag: [
         "A tápanyagcsökkentő termékek csak a mérések és a teendők után, és kérdezz minket előtte.",
       ],
@@ -885,9 +910,7 @@ export const TUNET_OLDALAK: readonly TunetOldal[] = [
           megjegyzes: "Foszfátmegkötők (adszorbensek).",
         },
       ],
-      utolso: [
-        "A Xepta és a Red Sea termék szövege a zooxanthellák számának csökkentéséről is beszél: ezért fehéredő korallnál ezek nem ajánlottak (lásd a 6. oldalt). Ne vidd nullára a tápanyagot.",
-      ],
+      utolso: ["Ne vidd nullára a tápanyagot."],
     },
   },
 ]
