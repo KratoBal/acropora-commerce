@@ -347,6 +347,25 @@ describe("leírás-tisztítás: a fejlécek egy szinttel lejjebb", () => {
     ).toBe("<h2>A</h2><h3>B</h3><h4>C</h4><h5>D</h5><h6>E</h6><h6>F</h6>")
   })
 
+  /*
+    A KÉT MÉRT TERMÉK LEÍRÁSÁNAK SZERKEZETE (kártya 4ea3d5cf, 8a743a38; SKU reefelixir60 és reefelixir120, a 2026-09-09-i UNAS-
+    kivonatból, a címek rövidítve): a rövid mező H1 + öt H3, a hosszú mező négy H3. A H1 H2 lesz, a H3-ak H4-ek; H1 nem marad.
+  */
+  it("a Reef Elixir rövid és hosszú leírása: nincs h1, h2 és h4-ek, a sorrend megmarad", () => {
+    const rovid =
+      "<h1>REEF ELIXIR: THE ULTIMATE CORAL BOOSTER</h1><p>a</p>" +
+      "<h3>Előnyök</h3><h3>Használati irányelvek</h3><h3>Emlékeztetők</h3><h3>Adagolás</h3><h3>Záró megjegyzések</h3>"
+    const hosszu =
+      "<h3>Használati irányelvek</h3><h3>Emlékeztetők</h3><h3>Adagolás</h3><h3>Záró megjegyzések</h3>"
+    const szintek = (html: string) =>
+      ((sanitizeDescription(html) ?? "").match(/<h[1-6]\b/gi) ?? []).map(
+        (tag) => tag.slice(1).toLowerCase(),
+      )
+    expect(szintek(rovid)).toEqual(["h2", "h4", "h4", "h4", "h4", "h4"])
+    expect(szintek(hosszu)).toEqual(["h4", "h4", "h4", "h4"])
+    expect(sanitizeDescription(rovid) ?? "").not.toMatch(/<h1/i)
+  })
+
   it("nagybetűs és attribútumos h1 sem marad h1, a stílusa megmarad", () => {
     const ki = sanitizeDescription(
       '<H1 style="text-align:center" class="cim">Nagy cím</H1><p>szöveg</p>',
