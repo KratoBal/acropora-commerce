@@ -35,6 +35,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "jogi",
   "kezdolap-elonezet",
   "marka",
+  "mi-a-gond",
   "order",
   "reef-inditas",
   "rendeles-fizetese",
