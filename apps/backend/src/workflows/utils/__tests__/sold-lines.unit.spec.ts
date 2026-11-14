@@ -43,6 +43,19 @@ describe("isInsufficientInventory", () => {
         new MedusaError(MedusaError.Types.NOT_ALLOWED, "Some variant does not have the required inventory")
       )
     ).toBe(true)
+    // the inventory module's own sentence, as the test shop answered it (2026-11-14), with no code
+    expect(
+      isInsufficientInventory(
+        new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          "Not enough stock available for item iitem_01M1YBNKDXZZ43B5NYDB1HH0TN at location sloc_01M0K2F9Q23AJN6CFWQCY7CC05"
+        )
+      )
+    ).toBe(true)
+    // the same sentence under another error type is not a shortage answer
+    expect(
+      isInsufficientInventory(new MedusaError(MedusaError.Types.INVALID_DATA, "Not enough stock available for item x at location y"))
+    ).toBe(false)
     expect(isInsufficientInventory(new MedusaError(MedusaError.Types.NOT_ALLOWED, "cart is not ready"))).toBe(false)
     expect(isInsufficientInventory(new MedusaError(MedusaError.Types.INVALID_DATA, "bad"))).toBe(false)
     expect(isInsufficientInventory(new Error("boom"))).toBe(false)
