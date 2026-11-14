@@ -999,9 +999,9 @@ export const en: Dictionary = {
     summaryMode: "Method",
     foxpostBlocked: "This item cannot be sent to a parcel locker: {item}.",
     pickupBlocked:
-      "You cannot pick this up in the store, because it is sold out or not in the store: {item}.",
+      "Not in stock at the shop right now, so it can't be picked up there: {item}.",
     pickupBlockedUnknown:
-      "You cannot pick up this order in the store right now: one item in your cart is sold out or not in the store.",
+      "One item in your cart is not in stock at the shop right now, so it can't be picked up there.",
     modeFoxpostText: "FOXPOST locker or pickup point · 1–2 working days",
     modeGlsPoint: "GLS pickup point",
     modeGlsPointText: "GLS ParcelShop or locker · 1–2 working days",
