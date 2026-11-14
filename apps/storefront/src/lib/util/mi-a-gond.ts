@@ -51,7 +51,7 @@ export type TunetOldal = {
 
 export const MIAGOND_CIM = "Mi a gond a medencéddel?"
 export const MIAGOND_BEVEZETO =
-  "Válaszd ki, mit látsz a medencédben. Minden oldal méréssel kezdődik, és a termék csak a végén jön, a mérések és a teendők után."
+  "Válaszd ki, mit látsz a medencédben. Minden oldal méréssel kezdődik, utána jönnek a teendők, és ha kell termék, az csak a végén szerepel."
 export const MIAGOND_FIGYELMEZTETES =
   "Ez általános útmutató, nem helyettesíti a medence mérését és szakember tanácsát."
 
