@@ -1789,13 +1789,16 @@ describe("a terméknév címsora", () => {
     const h1 = container.querySelectorAll("h1")
     expect(h1).toHaveLength(1)
     expect(h1[0]?.textContent).toBe(TERMEK_NEVE)
-    const leirasban = container.querySelector(".leiras-tartalom") ?? container
+    // a doboz KÖTELEZŐ, tartalék nélkül: ha egyszer átnevezik az osztályt, a teszt pirosodik, és nem esik vissza az egész
+    // lapra, ahol a váz saját fejlécei zölden tartanák (barracuda, #773)
+    const doboz = container.querySelector(".leiras-tartalom")
+    expect(doboz).not.toBeNull()
     const szintek = Array.from(
-      leirasban.querySelectorAll("h2,h3,h4,h5,h6"),
+      doboz!.querySelectorAll("h1,h2,h3,h4,h5,h6"),
       (h) => h.tagName.toLowerCase(),
     )
-    // a leírás saját fejléce: a H1 H2 lett, az öt H3 öt H4 (a sorrend megmaradt)
-    expect(szintek.join(",")).toContain("h2,h4,h4,h4,h4,h4")
+    // a leírás saját fejléce: a H1 H2 lett, az öt H3 öt H4 (a sorrend megmaradt), és semmi más a dobozban
+    expect(szintek).toEqual(["h2", "h4", "h4", "h4", "h4", "h4"])
     cleanup()
   })
 
