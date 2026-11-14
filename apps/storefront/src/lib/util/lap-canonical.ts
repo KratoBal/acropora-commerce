@@ -156,3 +156,10 @@ export function valogatasCanonical(
 ): string {
   return `/${countryCode}/valogatas/${handle}`
 }
+
+/** A "MI A GOND A MEDENCEDDEL?" BELEPO KANONIKUS CIME (`/hu/mi-a-gond`, V4.3). */
+export function miAGondCanonical(countryCode: string, slug?: string): string {
+  return slug
+    ? `/${countryCode}/mi-a-gond/${slug}`
+    : `/${countryCode}/mi-a-gond`
+}
