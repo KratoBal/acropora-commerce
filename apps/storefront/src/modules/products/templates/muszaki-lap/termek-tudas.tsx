@@ -181,10 +181,13 @@ export function vanTudas(tudas: TermekTudas | null | undefined): boolean {
 export function TermekTudasBlokk({
   tudas,
   locale = DEFAULT_LOCALE,
+  tartalek = false,
 }: {
   tudas: TermekTudas | null
   /** A lap nyelve; alapertek magyar. */
   locale?: Locale
+  /** A Suspense tartaleka-e (a `MuszakiLap`-tol): ott a kalkulator mezoje letiltott. */
+  tartalek?: boolean
 }) {
   if (!tudas || !vanTudas(tudas)) return null
   const t = translator(locale)
@@ -211,16 +214,20 @@ export function TermekTudasBlokk({
       ) : null}
       {szakaszok.map(([mezo, cimke, m]) => (
         <div key={mezo} data-testid={`tudas-${mezo}`}>
-          <h3 className="text-base-semi">{cimke}</h3>
+          <h2 className="text-base-semi">{cimke}</h2>
           <Ertek m={m!} t={t} />
           {mezo === "dosing" && kalkulator ? (
-            <AdagoloKalkulator ertek={kalkulator} locale={locale} />
+            <AdagoloKalkulator
+              ertek={kalkulator}
+              locale={locale}
+              letiltva={tartalek}
+            />
           ) : null}
         </div>
       ))}
       {utmutato.length ? (
         <div data-testid="tudas-hasznalati-utmutato">
-          <h3 className="text-base-semi">{t("product.knowledgeUsageGuide")}</h3>
+          <h2 className="text-base-semi">{t("product.knowledgeUsageGuide")}</h2>
           {utmutato.map((bekezdes, i) => (
             <p key={i} className="mt-2 whitespace-pre-line">
               {bekezdes}

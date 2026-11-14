@@ -1,10 +1,12 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
+import { boltiHianyLekerdezes } from "@lib/data/bolti-hiany"
 import { retrieveFoxpostOption, retrieveGlsModok } from "@lib/data/csomagpont"
 import {
   csakCsomagboltOsztaly,
   foxpostTiltottTetel,
 } from "@lib/util/csomagpont"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
+import { letiltottAtvetelRaktara } from "@lib/util/bolti-atvetel"
 import {
   getCartPaymentOptions,
   listCartPaymentMethods,
@@ -54,6 +56,12 @@ export default async function CheckoutForm({
     return null
   }
 
+  // V2.5 B: ha a Medusa letiltotta a bolti atvetelt, megkerdezzuk, MELYIK tetel hianyzik ott
+  const letiltottRaktar = letiltottAtvetelRaktara(shippingMethods)
+  const boltiHiany = letiltottRaktar
+    ? await boltiHianyLekerdezes(cart.id, letiltottRaktar)
+    : null
+
   return (
     <div className="w-full grid grid-cols-1 gap-y-8">
       <Addresses cart={cart} customer={customer} />
@@ -69,6 +77,7 @@ export default async function CheckoutForm({
           szallitasiOsztaly,
         )}
         csakCsomagbolt={csakCsomagboltOsztaly(szallitasiOsztaly)}
+        boltiHiany={boltiHiany}
       />
 
       <Payment

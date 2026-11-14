@@ -13,15 +13,23 @@ import PenztarKartya from "@modules/checkout/components/penztar-kartya"
 export default function SzallitasiCsoportok({
   cart,
   boltiTetelek,
+  szemelyesAtvetel = false,
   countryCode,
 }: {
   cart: HttpTypes.StoreCart
   boltiTetelek: readonly string[]
+  /** a kosar szallitasi modja személyes átvétel (`pickup` tipusu szallitasi opcio): a csoport "Atvetel" */
+  szemelyesAtvetel?: boolean
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
 }) {
   const t = translator(localeOf(countryCode))
-  const csoportok = szallitasiCsoportok(cart, new Set(boltiTetelek), t)
+  const csoportok = szallitasiCsoportok(
+    cart,
+    new Set(boltiTetelek),
+    t,
+    szemelyesAtvetel,
+  )
   if (!csoportok.length) return null
   return (
     <PenztarKartya

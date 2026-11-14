@@ -96,8 +96,8 @@ export default function EloAllatKartya({
             <span
               className={
                 m(
-                  "absolute left-2 top-2 z-10 inline-flex h-[22px] items-center px-2 text-[9.5px] font-medium uppercase tracking-[1px] small:left-3 small:top-3 small:h-[28px] small:px-3 small:text-[10px] small:tracking-[1.8px] ",
-                  "absolute left-3 top-3 z-10 inline-flex h-[28px] items-center px-3 text-[10px] font-medium uppercase tracking-[1.8px] ",
+                  "absolute left-2 top-2 z-10 inline-flex h-[22px] items-center px-2 text-[12px] font-medium uppercase tracking-[1px] small:left-3 small:top-3 small:h-[28px] small:px-3 small:text-[12px] small:tracking-[1.8px] ",
+                  "absolute left-3 top-3 z-10 inline-flex h-[28px] items-center px-3 text-[12px] font-medium uppercase tracking-[1.8px] ",
                 ) +
                 (eladva
                   ? "bg-acr-white text-acr-ink"

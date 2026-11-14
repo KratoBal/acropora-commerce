@@ -27,12 +27,25 @@ export function szam(ertek: number, locale: Locale): string {
   }).format(ertek)
 }
 
-/** "12,5 ml", "3 csepp", "1 drop", "3 drops". */
+/**
+ * A GYARTO SZAMA PONTOSAN, KEREKITES NELKUL (barracuda, acropora-os #2527 review): a "gyarto szerint" sor nem irhat
+ * mast, mint a gyarto. Ket tizedesre kerekitve a 0,125 ml "0,13" lenne (tobb a gyartoi adagnal), a 0,004 ml "0". A
+ * kanonikus ertek pontos tizedes, a Number roundtrip-alakja visszaadja; 20 tizedesig nem kerekit.
+ */
+export function pontosSzam(ertek: number, locale: Locale): string {
+  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    maximumFractionDigits: 20,
+    ...MINDIG_TAGOL,
+  }).format(ertek)
+}
+
+/** "12,5 ml", "3 csepp", "1 drop", "3 drops". `pontos`: a gyarto mennyisege, kerekites nelkul. */
 export function adagSzoveg(
   mennyiseg: number,
   egyseg: Adag["egyseg"],
   t: Translate,
   locale: Locale,
+  pontos = false,
 ): string {
   const nev =
     egyseg === "ml"
@@ -40,7 +53,7 @@ export function adagSzoveg(
       : mennyiseg === 1
         ? t("product.doseCalc.dropOne")
         : t("product.doseCalc.dropMany")
-  return `${szam(mennyiseg, locale)} ${nev}`
+  return `${(pontos ? pontosSzam : szam)(mennyiseg, locale)} ${nev}`
 }
 
 /**
@@ -84,7 +97,7 @@ export function gyartoiAdagSzoveg(
     adag.literre === 1
       ? t("product.doseCalc.litreOne")
       : t("product.doseCalc.litreMany")
-  return `${adagSzoveg(adag.mennyiseg, adag.egyseg, t, locale)} / ${szam(adag.literre, locale)} ${liter}, ${gyakorisagSzoveg(adag, t, true)}`
+  return `${adagSzoveg(adag.mennyiseg, adag.egyseg, t, locale, true)} / ${pontosSzam(adag.literre, locale)} ${liter}, ${gyakorisagSzoveg(adag, t, true)}`
 }
 
 /** Ennyi liter folott a kalkulator figyelmeztet (de szamol); a literOlvas 100 000 folott nem fogad el. */

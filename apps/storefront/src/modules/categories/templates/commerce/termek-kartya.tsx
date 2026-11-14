@@ -112,8 +112,8 @@ export default function CommerceTermekKartya({
         {akcios && cheapestPrice?.percentage_diff ? (
           <span
             className={m(
-              "inline-flex h-[20px] items-center bg-acr-heritage px-[6px] text-[9.5px] font-medium tracking-[1px] text-acr-white small:h-[28px] small:px-2 small:text-[10px] small:tracking-[1.8px]",
-              "inline-flex h-[28px] items-center bg-acr-heritage px-2 text-[10px] font-medium tracking-[1.8px] text-acr-white",
+              "inline-flex h-[20px] items-center bg-acr-heritage px-[6px] text-[12px] font-medium tracking-[1px] text-acr-white small:h-[28px] small:px-2 small:text-[12px] small:tracking-[1.8px]",
+              "inline-flex h-[28px] items-center bg-acr-heritage px-2 text-[12px] font-medium tracking-[1.8px] text-acr-white",
             )}
             data-testid="kartya-akcio"
           >
@@ -146,7 +146,7 @@ export default function CommerceTermekKartya({
           >
             {marka ? (
               <p
-                className="text-[10px] font-medium uppercase leading-[12px] tracking-[1.8px] text-acr-slate"
+                className="text-[12px] font-medium uppercase leading-[14px] tracking-[1.8px] text-acr-slate"
                 data-testid="kartya-marka"
               >
                 {marka}
@@ -206,7 +206,7 @@ export default function CommerceTermekKartya({
             ) : null}
             <p
               className={m(
-                "flex items-center gap-[6px] text-[11.2px] leading-[15px] text-acr-ink small:gap-2 small:text-[13px] small:leading-[18px]",
+                "flex items-center gap-[6px] text-[12px] leading-[16px] text-acr-ink small:gap-2 small:text-[13px] small:leading-[18px]",
                 "flex items-center gap-2 text-[13px] leading-[18px] text-acr-ink",
               )}
               data-testid="kartya-keszlet"

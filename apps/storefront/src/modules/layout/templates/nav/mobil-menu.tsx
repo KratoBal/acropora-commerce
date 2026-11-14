@@ -1,5 +1,6 @@
 "use client"
 
+import { TAP_AREA } from "@modules/common/components/tap-area"
 import { HttpTypes } from "@medusajs/types"
 import { useTranslate } from "@lib/i18n/use-translate"
 import { FejlecMenuPont } from "@lib/util/fejlec-menu-pontok"
@@ -53,7 +54,7 @@ export const MobilMenu = ({
     <div className="small:hidden">
       <button
         type="button"
-        className="flex h-[32px] w-[20px] flex-col items-start justify-center gap-[4px]"
+        className={`flex h-[32px] w-[20px] flex-col items-start justify-center gap-[4px] ${TAP_AREA}`}
         aria-expanded={nyitva}
         aria-controls={panelId}
         aria-label={

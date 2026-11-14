@@ -2,6 +2,7 @@ import { deleteLineItem } from "@lib/data/cart"
 import { Spinner, Trash } from "@medusajs/icons"
 import { clx } from "@modules/common/components/ui"
 import { useState } from "react"
+import { TAP_AREA } from "@modules/common/components/tap-area"
 import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
 /**
@@ -56,7 +57,10 @@ const DeleteButton = ({
         egy nev nelkuli gombot olvasott fel. Ha van felirat, az a nev.
       */}
       <button
-        className="flex gap-x-1 text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer"
+        className={clx(
+          "flex gap-x-1 text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer",
+          TAP_AREA,
+        )}
         onClick={() => handleDelete(id)}
         data-testid={dataTestid}
         aria-label={children ? undefined : (ariaLabel ?? "Tétel törlése")}

@@ -46,7 +46,7 @@ export function TartasiBlokk({
       data-testid="tartasi-blokk"
       className="mt-6 flex flex-col gap-4 text-small-regular text-[var(--terv-szoveg-halvany)]"
     >
-      <h3 className="text-base-semi">{t("product.husbandryTitle")}</h3>
+      <h2 className="text-base-semi">{t("product.husbandryTitle")}</h2>
       {/*
         A CSIPES VAGY MEREG ELSOKENT ES JOL LATHATOAN (barracuda 46247, acrobot 46248): a blokk tetejen, a nehezseg elott,
         a kezelesi figyelmeztetessel. A figyelmeztetes nelkul talalt veszelyt sem rejti el (murena 46232): akkor a

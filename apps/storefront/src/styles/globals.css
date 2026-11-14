@@ -899,12 +899,17 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
     scrollbar-width: none; /* Firefox */
   }
 
-  input:focus ~ label,
-  input:not(:placeholder-shown) ~ label {
+  /*
+    A LEBEGO CIMKE CSAK A SAJAT MEZOJEN (`.floating-field`, modules/common/components/input). Eddig a szelektor `input ~ label` volt,
+    ezert MINDEN <label>-re ramutatott, ami egy input utan allt: a kategoria "Szurok" gombjara (a rejtett jelolonegyzet utan) es a
+    hirlevel hozzajarulasara is, es azokat 10 px-re es 8 px-szel feljebb vitte (stage 390 px, 2026-11-13).
+  */
+  .floating-field input:focus ~ label,
+  .floating-field input:not(:placeholder-shown) ~ label {
     @apply -translate-y-2 text-xsmall-regular;
   }
 
-  input:focus ~ label {
+  .floating-field input:focus ~ label {
     @apply left-0;
   }
 
@@ -932,6 +937,14 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
 }
 
 @layer components {
+  /* A pénztár lábléce utáni hely a mobil ragadó fizetési sávnak (#754): csak ott van, ahol a sáv is. */
+  .penztar-lablec-hely {
+    height: 0;
+  }
+  body:has([data-testid="stripe-cta-sav"]) .penztar-lablec-hely {
+    height: 76px;
+  }
+
   .content-container {
     @apply max-w-[1440px] w-full mx-auto px-6;
   }
@@ -941,7 +954,7 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
   }
 
   .text-xsmall-regular {
-    @apply text-[10px] leading-4 font-normal;
+    @apply text-[12px] leading-4 font-normal;
   }
 
   .text-small-regular {

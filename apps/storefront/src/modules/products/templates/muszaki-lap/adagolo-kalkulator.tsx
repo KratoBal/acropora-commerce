@@ -10,7 +10,7 @@ import {
   literAllapot,
   szam,
 } from "@lib/util/adagolas-szoveg"
-import React, { useId, useState } from "react"
+import React, { useEffect, useId, useRef, useState } from "react"
 
 /**
  * AZ ADAGOLO-KALKULATOR A MUSZAKI LAPON (V3.1, kartya 7fdbb15d). A muszaki lap
@@ -25,14 +25,34 @@ import React, { useId, useState } from "react"
 export function AdagoloKalkulator({
   ertek,
   locale = DEFAULT_LOCALE,
+  letiltva = false,
 }: {
   /** a dosing teny erteke, ahogy a vetites hozza */
   ertek: string
   locale?: Locale
+  /**
+   * A LAP SUSPENSE-TARTALEKABAN ALLO PELDANY (acrobot 50250): a streamelt csere elott a tartalek mar latszik, de a csere
+   * lecsereli, es ami bele van irva, elveszik. Ott a mezo letiltott; a valodi peldany a csere utan gepelheto.
+   */
+  letiltva?: boolean
 }) {
   const t = translator(locale)
   const mezoId = useId()
   const [beirt, setBeirt] = useState("")
+  const eredmenyRef = useRef<HTMLDivElement>(null)
+  const hibaRef = useRef<HTMLParagraphElement>(null)
+  /*
+    AZ EREDMENY NE A RAGADOS KOSAR-SAV ALATT ALLJON (acrobot 50206, a teszt kirakat 390 pixeles kepe, 2026-11-13). Mobilon a
+    sav a nezet aljan tapad, az eredmeny a liter-mezo ALATT van: ha a mezo eppen a sav folott all, a bongeszo nem gorget (a
+    mezo latszik), es az eredmeny a sav moge kerul. Minden beiraskor a legkozelebbi helyre gorgetjuk, a `scroll-margin`
+    pedig a sav magassagat hagyja alatta; ha az eredmeny mar latszik, a lap nem mozdul.
+  */
+  useEffect(() => {
+    if (beirt !== "")
+      (eredmenyRef.current ?? hibaRef.current)?.scrollIntoView?.({
+        block: "nearest",
+      })
+  }, [beirt])
   const adag = adagOlvas(ertek)
   if (!adag) return null
 
@@ -64,7 +84,7 @@ export function AdagoloKalkulator({
       data-testid="adagolo-kalkulator"
       className="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--terv-vonal,#e5e7eb)] p-4"
     >
-      <h4 className="text-base-semi">{t("product.doseCalc.title")}</h4>
+      <h3 className="text-base-semi">{t("product.doseCalc.title")}</h3>
       <label htmlFor={mezoId} className="text-small-regular">
         {t("product.doseCalc.volumeLabel")}
       </label>
@@ -75,6 +95,7 @@ export function AdagoloKalkulator({
           inputMode="decimal"
           autoComplete="off"
           value={beirt}
+          disabled={letiltva}
           placeholder={t("product.doseCalc.volumePlaceholder")}
           onChange={(event) => setBeirt(event.target.value)}
           className="w-32 rounded-md border border-[var(--terv-vonal,#e5e7eb)] px-3 py-2"
@@ -88,15 +109,23 @@ export function AdagoloKalkulator({
       ) : null}
       {hiba ? (
         <p
+          // the error stands under the field just like the result (barracuda 50230; the test storefront, 390 px: 20 px
+          // under the sticky bar): the same scroll, the same margin; the two are never shown at once
+          ref={hibaRef}
           data-testid="adagolo-hiba"
           role="alert"
-          className="text-small-regular"
+          className="text-small-regular max-lg:scroll-mb-28"
         >
           {hiba}
         </p>
       ) : null}
       {szamolt && allapot && "liter" in allapot ? (
-        <div data-testid="adagolo-eredmeny" aria-live="polite">
+        <div
+          ref={eredmenyRef}
+          data-testid="adagolo-eredmeny"
+          aria-live="polite"
+          className="max-lg:scroll-mb-28"
+        >
           {allapot.szokatlan ? (
             <p className="text-small-regular">
               {t("product.doseCalc.warnLarge")}

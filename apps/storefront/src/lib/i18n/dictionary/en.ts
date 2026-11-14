@@ -999,6 +999,10 @@ export const en: Dictionary = {
     toPayment: "Continue to payment",
     summaryMode: "Method",
     foxpostBlocked: "This item cannot be sent to a parcel locker: {item}.",
+    pickupBlocked:
+      "Not in stock at the shop right now, so it can't be picked up there: {item}.",
+    pickupBlockedUnknown:
+      "One item in your cart is not in stock at the shop right now, so it can't be picked up there.",
     modeFoxpostText: "FOXPOST locker or pickup point · 1–2 working days",
     modeGlsPoint: "GLS pickup point",
     modeGlsPointText: "GLS ParcelShop or locker · 1–2 working days",
@@ -1078,6 +1082,7 @@ export const en: Dictionary = {
     cardGroups: "Shipping groups",
     groupsLead: "The shipping methods can no longer be changed at this step.",
     groupDelivery: "Delivery",
+    groupPickup: "Pickup",
     groupLive: "Live animals",
     groupStore: "Pickup in the store",
     yourOrder: "Your order",

@@ -23,6 +23,17 @@ export default defineConfig({
     environment: "jsdom",
     globals: false,
     setupFiles: ["./vitest.setup.ts"],
+    /*
+      A FUTAS SAJAT KORNYEZETE, NEM AZ ELO SHELLE (2026-11-12, murena merese).
+      A vitest csak akkor allitja `NODE_ENV=test`-re, ha a valtozo meg NINCS beallitva. Egy fejlesztoi
+      shell vagy egy agens-kornyezet, ahol `NODE_ENV=development` all, ezt eltolja: a `next/image`
+      alapertelmezett betoltoje a kulso kep gazdagepet `test` alatt NEM ellenorzi, mashol igen, ezert a
+      teljes sor 82 hibaval bukott (`hostname "shop.example.test" is not configured`), a CI (nincs
+      beallitva) viszont zold volt. Ugyanaz a sor ugyanazon a main-en: 82 piros kontra 365 fajl zold,
+      egyetlen kornyezeti valtozotol fuggoen. Itt kimondva a `test`, igy a futas nem fugg attol,
+      honnan indul.
+    */
+    env: { NODE_ENV: "test" },
   },
   // A Next az automatikus JSX-futtatot hasznalja; a vitest sajat forditoja nem
   // veszi at ezt a beallitast, ezert kell kimondani. Enelkul minden komponens-

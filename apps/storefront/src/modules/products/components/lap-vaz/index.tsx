@@ -476,27 +476,12 @@ export const MUSZAKI_LAP_SZAKASZAI: VazSzakasz[] = [
     oszlop: "jobb",
   },
   /*
-    EZ A KET DOBOZ ADAT HIANYABAN MARAD URES, NEM HIBA MIATT -- ES EZERT ALL ITT.
-
-    A kapcsolat-lanc mind a harom fokan megmerve (acrobot merese, 2026-09-08
-    este; a szamok tole valok, nem sajat meresbol):
-
-      UNAS          1310 termek visel hasonlot, 1007 kiegeszitot
-      Acropora OS      7 termek, 48 kapcsolat, KIEGESZITO nulla
-      teszt bolt       1 termek
-
-    Vagyis az OS-ben ma nincs mit kivinni: a lanc a FORRASNAL szakad, nem itt.
-    Amig az import meg nem tortenik, ez a ket doboz akkor is ures marad, ha a
-    kirakat oldalan minden helyes -- barmit epitunk ra.
-
-    AMIERT A KODBAN ALL ES NEM CSAK A KARTYAN: aki azt latja, hogy a doboz nem
-    jelenik meg, eloszor a kodban fogja keresni az okot. Ez a megjegyzes epp azt
-    a kort sporolja meg. A ket kartya: d2dd5557 (az import) es a71496e4 (a
-    hianyzo idobelyeg).
-
-    HA EZ A MEGJEGYZES ELAVUL (megjott az adat), TOROLNI KELL: egy megjegyzes,
-    ami egy mar megszunt hianyt ir le, ugyanugy felrevezet, mint egy elavult
-    korlat -- csak epp senki nem meri ujra.
+    A "hasonlo" ES A "kiegeszitok" DOBOZ ADATA MEGVAN (2026-11-12, murena merese, a teszt bolt store API-jan): 1501
+    termekbol 1049 visel `unas_similar_ids` es 801 `unas_accessory_ids` kulcsot (az UNAS-forras aranyai: kb. 70 es 53
+    szazalek). A hivatkozott azonositok 83 (hasonlo) es 86 (kiegeszito) szazaleka publikalt termek, a tobbi nincs
+    kint a boltban. Ahol egy termeknek nincs kiegeszitoje, ott az ures szakasz a VEVO ELOTT nem all ott (acrobot,
+    2026-09-10: `jelzesek = process.env.NODE_ENV !== "production"`, lentebb); a `varakozo` szoveg ("Ide jonnek a
+    tartozekok") csak fejlesztoi futasban latszik. (A 2026-11-12-i helyi renderem `next dev` volt, ezert mutatta.)
   */
   {
     kulcs: "kiegeszitok",

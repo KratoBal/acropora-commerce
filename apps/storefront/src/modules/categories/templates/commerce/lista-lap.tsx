@@ -49,6 +49,14 @@ export type ListaLapProps = {
    * (all products) passes false and chooses the card per product.
    */
   eloAllat: boolean
+  /**
+   * THE HOME PAGE LOOK (2026-11-12, Balazs 11-10 "C mehet": the category page only): the 64 px
+   * side margin of the shared header and footer on every band, and the home page serif title on
+   * both branches. Default false: the store, collection, brand and selection pages keep their
+   * margins (80 on the breadcrumb, 56 elsewhere) and the light title. Balazs's 10-26 word about
+   * "every sub page" covered the header and the footer, not these lists (acrobot 49265).
+   */
+  kezdolapStilus?: boolean
   /** The quick chips; "all" first when `osszes`, the active chip filled. */
   sav: { osszes: boolean; elemek: ListaSavElem[] }
   count: number
@@ -110,6 +118,7 @@ export default function ListaLap({
   leiras,
   leirasSortoressel = false,
   eloAllat,
+  kezdolapStilus = false,
   sav,
   count,
   page,
@@ -134,13 +143,16 @@ export default function ListaLap({
   const markaNev = new Map(markaLista.map((sor) => [sor.id, sor.nev]))
   const eddig = Math.min(page * LAP_MERET, count)
   const elso = count === 0 ? 0 : (page - 1) * LAP_MERET + 1
+  // the side margin of the bands; the breadcrumb's old one was wider (80)
+  const szel = kezdolapStilus ? "small:px-16" : "small:px-[56px]"
+  const morzsaSzel = kezdolapStilus ? "small:px-16" : "small:px-[80px]"
 
   return (
     <div className="bg-acr-shell font-acr-sans" data-testid={testId}>
       {/* MORZSAMENU (117:42): nagybetus, 14 px, a szovegszinben. */}
       <nav
         aria-label={t("category.breadcrumbLabel")}
-        className="mx-auto flex min-h-[58px] max-w-[1440px] items-center px-4 small:px-[80px]"
+        className={`mx-auto flex min-h-[58px] max-w-[1440px] items-center px-4 ${morzsaSzel}`}
       >
         <ol className="flex flex-wrap items-center gap-x-2 text-[14px] uppercase leading-[22px] text-acr-slate">
           {morzsa.map((elem) =>
@@ -166,11 +178,13 @@ export default function ListaLap({
       {/* BEVEZETO (117:44). A felulcim, a leiras es a "Rendszerem beállítása"
           seged adat es funkcio hijan nem jelenik meg; a leiras, ha egyszer
           lesz, igen. */}
-      <header className="mx-auto max-w-[1440px] px-4 pb-10 pt-8 small:px-[56px] small:pb-[44px] small:pt-[52px]">
+      <header
+        className={`mx-auto max-w-[1440px] px-4 pb-10 pt-8 ${szel} small:pb-[44px] small:pt-[52px]`}
+      >
         <h1
           className={
             "text-[40px] leading-[44px] text-acr-ink small:text-[58px] small:leading-[62px] " +
-            (eloAllat
+            (eloAllat || kezdolapStilus
               ? "font-kiemelt font-normal tracking-[-0.01em]"
               : "font-light tracking-[-1px]")
           }
@@ -195,7 +209,7 @@ export default function ListaLap({
             className="mt-6 max-w-[560px] border border-acr-line bg-acr-white px-5 py-4"
             data-testid="category-helper-livestock"
           >
-            <p className="text-[10px] font-medium uppercase leading-[12px] tracking-[1.8px] text-acr-slate">
+            <p className="text-[12px] font-medium uppercase leading-[14px] tracking-[1.8px] text-acr-slate">
               {t("category.pickupEyebrow")}
             </p>
             <h2 className="mt-2 text-[18px] font-bold leading-[22px] tracking-[-0.2px] text-acr-ink">
@@ -210,7 +224,9 @@ export default function ListaLap({
 
       {/* GYORS-KATEGORIAK ES RENDEZES (117:55), a `mist` savon. */}
       <div className="bg-acr-mist">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between small:px-[56px]">
+        <div
+          className={`mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-[18px] small:flex-row small:items-center small:justify-between ${szel}`}
+        >
           {sav.osszes || sav.elemek.length > 0 ? (
             <ul
               className="flex min-w-0 gap-2 overflow-x-auto"
@@ -270,7 +286,7 @@ export default function ListaLap({
       {/* SZUROK ES TALALATOK (117:74). */}
       <div
         className={
-          "mx-auto max-w-[1440px] px-4 pb-16 pt-8 small:px-[56px] " +
+          `mx-auto max-w-[1440px] px-4 pb-16 pt-8 ${szel} ` +
           (szuro ? "grid gap-7 small:grid-cols-[250px_minmax(0,1fr)]" : "")
         }
       >

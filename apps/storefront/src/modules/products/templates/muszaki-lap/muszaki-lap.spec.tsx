@@ -573,3 +573,25 @@ describe("a morzsamenü átadása a váznak", () => {
     expect(forras.match(/className="content-container pt-6"/g)).toHaveLength(1)
   })
 })
+
+/**
+ * A TARTALEK JELZESE ELJUT A KALKULATORIG (acrobot 50250, kartya 7fdbb15d).
+ *
+ * A Suspense tartalekaban allo kalkulator mezoje letiltott (`TermekTudasBlokk` -> `AdagoloKalkulator`, a komponens-teszt
+ * meri). Ez itt a lanc elso szeme: a `MuszakiLap` adja-e tovabb a `tartalek`-ot. Nelkule a tartalek mezoje gepelheto
+ * marad, a streamelt csere pedig elviszi, amit a vevo beirt; es egyetlen komponens-teszt sem pirosodna, mert a
+ * `MuszakiLap`-ot itt senki nem rajzolja ki (mert kalibracio, 2026-11-13: a sor kivetele utan 87/87 zold volt).
+ */
+describe("a muszaki lap a tartalek jelzeset a tudas-blokknak", () => {
+  it("minden TermekTudasBlokk-hivas atadja a tartalek-ot", () => {
+    const forras = readFileSync(join(__dirname, "index.tsx"), "utf-8")
+    const hivasok = forras.match(/<TermekTudasBlokk\b[^>]*\/>/g) ?? []
+
+    /** ISMERT POZITIV KONTROLL: tenyleg talalunk hivast, nem ures a halmaz. */
+    expect(hivasok.length).toBeGreaterThan(0)
+
+    expect(
+      hivasok.filter((h) => /\btartalek=\{tartalek\}/.test(h)),
+    ).toHaveLength(hivasok.length)
+  })
+})

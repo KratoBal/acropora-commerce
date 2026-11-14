@@ -99,14 +99,14 @@ export default async function Checkout(props: {
   const t = translator(localeOf(countryCode))
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
+    <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-16 small:py-[52px]">
       <div className="pb-4">
         <StepIndicator
           active={lepesjelzoAllas(step)}
           countryCode={countryCode}
         />
       </div>
-      <h1 className="pb-8 text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
+      <h1 className="pb-8 font-kiemelt text-[40px] font-normal leading-[44px] tracking-[-0.01em] text-acr-ink small:text-[58px] small:leading-[62px]">
         {t("checkoutPage.title")}
       </h1>
       <div className="grid grid-cols-1 gap-y-8 small:grid-cols-[minmax(0,1fr)_452px] small:items-start small:gap-x-[44px]">

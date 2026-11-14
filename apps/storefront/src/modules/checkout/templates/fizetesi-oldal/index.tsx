@@ -1,4 +1,5 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
+import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
   listCartPaymentMethods,
@@ -47,6 +48,7 @@ export function FizetesiOldalNezet({
   paymentMethods,
   lehetosegek,
   osztaly,
+  szemelyesAtvetel = false,
 }: {
   cart: HttpTypes.StoreCart
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
@@ -54,19 +56,21 @@ export function FizetesiOldalNezet({
   paymentMethods: { id: string }[] | null
   lehetosegek: Lehetosegek
   osztaly: Osztaly
+  /** a kosar szallitasi modja személyes átvétel (a szallitasi opcio `pickup` tipusu): a csoport cimkeje "Atvetel" */
+  szemelyesAtvetel?: boolean
 }) {
   const t = translator(localeOf(countryCode))
 
   return (
     <AszfProvider>
-      <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-[56px] small:py-[52px]">
+      <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-16 small:py-[52px]">
         <div className="pb-4">
           <StepIndicator active={2} countryCode={countryCode} />
         </div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-acr-heritage">
           {t("checkoutPage.title")}
         </p>
-        <h1 className="mt-1 text-[34px] font-normal leading-[40px] text-acr-ink small:text-[44px] small:leading-[52px]">
+        <h1 className="mt-1 font-kiemelt text-[34px] font-normal leading-[40px] tracking-[-0.01em] text-acr-ink small:text-[44px] small:leading-[52px]">
           {t("cartPage.stepPayment")}
         </h1>
         <p className="mt-2 text-[14px] text-acr-slate">
@@ -93,6 +97,7 @@ export function FizetesiOldalNezet({
             <SzallitasiCsoportok
               cart={cart}
               boltiTetelek={osztaly?.split_line_ids ?? []}
+              szemelyesAtvetel={szemelyesAtvetel}
               countryCode={countryCode}
             />
             <PenztarKartya
@@ -137,6 +142,15 @@ export default async function FizetesiOldal({
   const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
   const lehetosegek = await getCartPaymentOptions(cart.id)
   const osztaly = await retrieveCartShippingClass()
+  // a kosar szallitasi modja személyes átvétel-e: a valasztott opcio fulfillment halmazanak tipusa `pickup` (ugyanaz a jel,
+  // amit a szallitasi lepes hasznal), nem kovetkeztetes a nevebol
+  const valasztottOpcio = cart.shipping_methods?.at(-1)?.shipping_option_id
+  const opciok = valasztottOpcio ? await listCartShippingMethods(cart.id) : null
+  const szemelyesAtvetel =
+    (
+      opciok?.find((opcio) => opcio.id === valasztottOpcio) as
+        { service_zone?: { fulfillment_set?: { type?: string } } } | undefined
+    )?.service_zone?.fulfillment_set?.type === "pickup"
 
   return (
     <FizetesiOldalNezet
@@ -145,6 +159,7 @@ export default async function FizetesiOldal({
       paymentMethods={paymentMethods}
       lehetosegek={lehetosegek}
       osztaly={osztaly}
+      szemelyesAtvetel={szemelyesAtvetel}
     />
   )
 }

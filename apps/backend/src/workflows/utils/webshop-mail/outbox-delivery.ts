@@ -1,3 +1,4 @@
+import type { LegalUrls } from "./legal-links"
 import {
   WEBSHOP_MAIL_FACTS_VERSION,
   type WebshopMailFactsOf,
@@ -22,7 +23,7 @@ import type { MailToSend } from "./prepare"
 export type MailRenderFacts = {
   [T in WebshopMailTemplate]: {
     template: T
-    facts: Omit<WebshopMailFactsOf[T], "customer_name" | "order_created_at" | "locale" | "order_view_url">
+    facts: Omit<WebshopMailFactsOf[T], "customer_name" | "order_created_at" | "locale" | "order_view_url" | "legal_urls">
   }
 }[WebshopMailTemplate]
 
@@ -32,6 +33,8 @@ export type MailCommonFacts = {
   order_created_at: string | null
   locale: OrderLocale
   order_view_url: string | null
+  /** The ASZF and privacy-notice pages' addresses behind the Fogyasztóbarát switch (`legal-links.ts`); optional like the facts. */
+  legal_urls?: LegalUrls | null
 }
 
 export type OutboxRow = {

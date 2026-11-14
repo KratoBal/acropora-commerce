@@ -1,3 +1,4 @@
+import { TAP_AREA } from "@modules/common/components/tap-area"
 import repeat from "@lib/util/repeat"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
@@ -29,7 +30,7 @@ const ItemsTemplate = ({ cart, countryCode }: ItemsTemplateProps) => {
           valodi adatbol jon -- nem diszites. A lap egyetlen H1-e (axe
           `page-has-heading-one`).
         */}
-        <h1 className="text-[40px] font-light leading-[44px] tracking-[-1px] text-acr-ink small:text-[58px] small:leading-[62px]">
+        <h1 className="font-kiemelt text-[40px] font-normal leading-[44px] tracking-[-0.01em] text-acr-ink small:text-[58px] small:leading-[62px]">
           {t("cartPage.title")}
         </h1>
         {items?.length ? (
@@ -91,7 +92,7 @@ const ItemsTemplate = ({ cart, countryCode }: ItemsTemplateProps) => {
       <div className="flex flex-col gap-2 border-t border-acr-line pt-6">
         <LocalizedClientLink
           href="/store"
-          className="w-fit text-[14px] text-acr-ocean underline"
+          className={`w-fit text-[14px] text-acr-ocean underline ${TAP_AREA}`}
           data-testid="continue-shopping-link"
         >
           {t("cartPage.continueShopping")}

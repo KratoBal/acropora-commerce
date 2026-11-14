@@ -253,13 +253,13 @@ export const Cimsor = ({
                 data-cikkszam={sku ?? undefined}
               >
                 <span
-                  className="text-[10.5px] font-medium tracking-[1.2px] text-acr-heritage lg:hidden"
+                  className="text-[12px] font-medium tracking-[1.2px] text-acr-heritage lg:hidden"
                   data-testid="vaz-eyebrow-mobil"
                 >
                   {mobil.join(" · ")}
                 </span>
                 <span
-                  className="hidden text-[11px] font-semibold tracking-[1.4px] lg:inline"
+                  className="hidden text-[12px] font-semibold tracking-[1.4px] lg:inline"
                   style={{ color: "var(--terv-kiemel-tinta)" }}
                   data-testid="vaz-eyebrow-asztali"
                 >

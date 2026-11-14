@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { WEBSHOP_MAIL_OUTBOX_MODULE } from "../../../modules/webshop-mail-outbox"
 import { orderLocaleOf } from "../order-locale"
+import { legalUrls } from "./legal-links"
 import { orderViewUrl } from "./order-view-url"
 import { customerNameOf } from "./facts"
 import { osMailRenderConfig, renderWithOs, webshopMailEnglish, webshopMailRenderer } from "./os-mail-render"
@@ -59,6 +60,9 @@ export const outboxOperations = (
         locale,
         // the address of the guest order page in that language (null without the storefront's https address)
         order_view_url: orderViewUrl(env, locale),
+        // the ASZF and privacy-notice pages in that language, behind the Fogyasztóbarát switch; the key is absent otherwise,
+        // so with the switch off the request to the OS is byte for byte what it was
+        ...(legalUrls(env, locale) ? { legal_urls: legalUrls(env, locale) } : {}),
       }
     },
     render: (request) => renderWithOs(request, osMailRenderConfig(env)),

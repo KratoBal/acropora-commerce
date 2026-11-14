@@ -135,3 +135,47 @@ describe("a kosár rácsa", () => {
     expect(racsSor).not.toContain("gap-x-6")
   })
 })
+
+/**
+ * A KOSAR A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet"; mint a kategorialap, #748): a sav oldalszele a
+ * 64 pixeles kezdolapi szel (a fejlec es a lablec is ennyi), a cimek a kezdolap szerif betujevel, normal vastagsaggal.
+ * MI PIROSIT: ha a kosar sav oldalszele a regi 56 marad; ha a fo cim, az ures kosar cime vagy az osszegzes cime a vilagos
+ * talpatlan (`font-light`) marad. A mobil oldalszel (16) valtozatlan.
+ *
+ * MIERT A FORRASBOL: a sablon szerver-komponens, jsdom-ban nem renderelheto (mert); az ures kosar cimet egy renderelt teszt is
+ * nezi (`empty-cart-message.component.spec.tsx`).
+ */
+describe("a kosár a kezdőlap stílusában", () => {
+  const olvas = (ut: string) => readFileSync(join(KOSAR, ut), "utf-8")
+  const sorEleje = (forras: string, jel: string) => {
+    const i = forras.indexOf(jel)
+    expect(i, `${jel} hiányzik`).toBeGreaterThan(-1)
+    return forras.slice(Math.max(0, i - 220), i + 220)
+  }
+
+  it("a sav oldalszele a 64 pixeles kezdőlapi szél, a mobil 16 marad", () => {
+    const sav = sorEleje(
+      olvas("templates/index.tsx"),
+      'data-testid="cart-container"',
+    )
+    expect(sav).toContain("small:px-16")
+    expect(sav).toContain("px-4")
+    expect(sav).not.toContain("small:px-[56px]")
+  })
+
+  it.each([
+    ["a fő cím", "templates/items.tsx", "cartPage.title"],
+    [
+      "az üres kosár címe",
+      "components/empty-cart-message/index.tsx",
+      "cartPage.emptyHeading",
+    ],
+    ["az összegzés címe", "templates/summary.tsx", "cartPage.summaryHeading"],
+  ])("%s a kezdőlap betűjével, normál vastagsággal", (_nev, ut, kulcs) => {
+    const cim = sorEleje(olvas(ut), kulcs)
+    expect(cim).toContain("font-kiemelt")
+    expect(cim).toContain("font-normal")
+    expect(cim).toContain("tracking-[-0.01em]")
+    expect(cim).not.toContain("font-light")
+  })
+})

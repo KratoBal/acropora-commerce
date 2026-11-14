@@ -2,12 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { soldUniqueLines, type CartLineFacts, type SoldLine } from "./sold-lines"
-
-type VariantRow = {
-  manage_inventory?: boolean | null
-  allow_backorder?: boolean | null
-  inventory_items?: { inventory_item_id: string; required_quantity?: number | null }[]
-}
+import { variantHasStock } from "./variant-stock"
 
 type CartRow = {
   sales_channel_id: string | null
@@ -61,21 +56,9 @@ export async function soldUniqueLinesOfCart(scope: MedusaContainer, cartId: stri
       (location) => location.id
     )
     const inventory = scope.resolve(Modules.INVENTORY)
-    return await soldUniqueLines(lines, async (line) => {
-      const { data: variants } = await query.graph({
-        entity: "variant",
-        filters: { id: variantIds.get(line)! },
-        fields: ["id", "manage_inventory", "allow_backorder", "inventory_items.inventory_item_id", "inventory_items.required_quantity"],
-      })
-      const variant = (variants as VariantRow[])[0]
-      // a variant that does not manage inventory, allows backorder or has no inventory item cannot be "out of stock"
-      if (!variant || !variant.manage_inventory || variant.allow_backorder) return true
-      for (const link of variant.inventory_items ?? []) {
-        const wanted = line.quantity * Number(link.required_quantity ?? 1)
-        if (!(await inventory.confirmInventory(link.inventory_item_id, locationIds, wanted))) return false
-      }
-      return true
-    })
+    return await soldUniqueLines(lines, (line) =>
+      variantHasStock(query, inventory, variantIds.get(line)!, line.quantity, locationIds)
+    )
   } catch {
     return []
   }
