@@ -214,7 +214,7 @@ export function TermekTudasBlokk({
       ) : null}
       {szakaszok.map(([mezo, cimke, m]) => (
         <div key={mezo} data-testid={`tudas-${mezo}`}>
-          <h3 className="text-base-semi">{cimke}</h3>
+          <h2 className="text-base-semi">{cimke}</h2>
           <Ertek m={m!} t={t} />
           {mezo === "dosing" && kalkulator ? (
             <AdagoloKalkulator
@@ -227,7 +227,7 @@ export function TermekTudasBlokk({
       ))}
       {utmutato.length ? (
         <div data-testid="tudas-hasznalati-utmutato">
-          <h3 className="text-base-semi">{t("product.knowledgeUsageGuide")}</h3>
+          <h2 className="text-base-semi">{t("product.knowledgeUsageGuide")}</h2>
           {utmutato.map((bekezdes, i) => (
             <p key={i} className="mt-2 whitespace-pre-line">
               {bekezdes}

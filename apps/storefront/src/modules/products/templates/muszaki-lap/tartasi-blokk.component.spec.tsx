@@ -307,3 +307,13 @@ describe("a műszaki lap", () => {
     expect(screen.queryByTestId("tartasi-blokk")).toBeNull()
   })
 })
+
+describe("a tartási blokk fejléce", () => {
+  // axe heading-order (2026-11-14): a blokk cime a termek h1-e utan all, tehat h2, nem h3
+  it("a cím h2", () => {
+    render(<TartasiBlokk metadata={{}} />)
+    expect(
+      screen.getByRole("heading", { name: "Tartási adatok", level: 2 }),
+    ).toBeTruthy()
+  })
+})
