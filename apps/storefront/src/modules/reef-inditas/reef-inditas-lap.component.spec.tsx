@@ -94,4 +94,20 @@ describe("az indítsd el a korallos akváriumodat lap", () => {
     expect(szoveg).not.toMatch(/\d\s?Ft/)
     expect(szoveg).not.toMatch(/készlet:/i)
   })
+
+  // barracuda 51900/1 (V4.4): a gyartoi-allitas sor csak ott all, ahol a bolti idezet is (nem a meroeszkoz-csoportnal)
+  it("RL-MEGJEGYZES: a 'gyártói állítás' sor csak a megjegyzéssel (bolti idézettel) rendelkező csoportnál áll", () => {
+    render(<ReefInditasLap termekek={mind} />)
+    const csoportok = screen.getAllByTestId("reef-csoport")
+    const sotartalom = csoportok.find((c) =>
+      c.textContent?.startsWith("Sótartalom mérése"),
+    )!
+    expect(within(sotartalom).queryByTestId("reef-megjegyzes")).toBeNull()
+    const tds = csoportok.find((c) =>
+      c.textContent?.startsWith("TDS mérő az RO/DI víz ellenőrzéséhez"),
+    )!
+    expect(within(tds).getByTestId("reef-megjegyzes").textContent).toContain(
+      "a hatás gyártói állítás, nem garancia",
+    )
+  })
 })

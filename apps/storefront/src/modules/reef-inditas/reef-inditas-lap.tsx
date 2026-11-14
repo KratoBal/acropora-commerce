@@ -76,10 +76,14 @@ export default function ReefInditasLap({
                   <h3 className="text-[17px] font-medium text-acr-ink">
                     {csoport.cim}
                   </h3>
-                  <p className="text-[13px] text-acr-slate">
-                    {csoport.megjegyzes ? `${csoport.megjegyzes} ` : ""}
-                    {REEF_TERMEK_MEGJEGYZES}
-                  </p>
+                  {csoport.megjegyzes ? (
+                    <p
+                      className="text-[13px] text-acr-slate"
+                      data-testid="reef-megjegyzes"
+                    >
+                      {csoport.megjegyzes} {REEF_TERMEK_MEGJEGYZES}
+                    </p>
+                  ) : null}
                   <ul className="flex flex-col gap-2">
                     {csoport.kaphato.map((termek) => (
                       <li
