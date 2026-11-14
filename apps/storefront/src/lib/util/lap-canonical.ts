@@ -125,6 +125,11 @@ export function erkezoAllatokCanonical(countryCode: string): string {
   return `/${countryCode}/erkezo-allatok`
 }
 
+/** AZ "INDITSD EL A KOROLLOS AKVARIUMODAT" OLDAL KANONIKUS CIME (`/hu/reef-inditas`, V4.4). */
+export function reefInditasCanonical(countryCode: string): string {
+  return `/${countryCode}/reef-inditas`
+}
+
 /** A FIZETES OLDALANAK KANONIKUS CIME (`/hu/fizetes`, commerce-audit-p1, lablec). */
 export function fizetesCanonical(countryCode: string): string {
   return `/${countryCode}/fizetes`
