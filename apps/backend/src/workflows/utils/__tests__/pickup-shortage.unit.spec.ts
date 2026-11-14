@@ -1,4 +1,4 @@
-import { shortLinesAt, type PickupLineFacts } from "../pickup-shortage"
+import { isCartPickupLocation, shortLinesAt, type CartOptionFacts, type PickupLineFacts } from "../pickup-shortage"
 import { variantHasStock } from "../variant-stock"
 
 const line = (title: string, quantity = 1, handle: string | null = title.toLowerCase()): PickupLineFacts => ({
@@ -87,5 +87,26 @@ describe("variantHasStock", () => {
     ]) {
       expect(await variantHasStock(queryOf(variant) as never, inventory as never, "variant_1", 1, ["l"])).toBe(true)
     }
+  })
+})
+
+const option = (type: string, locationId?: string): CartOptionFacts => ({
+  service_zone: { fulfillment_set: { type, location: locationId ? { id: locationId } : null } },
+})
+
+/** What must fail: a foreign location accepted, a delivery option's location accepted, an option without a location matched. */
+describe("isCartPickupLocation", () => {
+  it("PL-OWN: only a PICKUP option's location of the cart's own listing is accepted", () => {
+    const options = [option("shipping", "sloc_delivery"), option("pickup", "sloc_shop"), option("pickup")]
+    expect(isCartPickupLocation(options, "sloc_shop")).toBe(true)
+    expect(isCartPickupLocation(options, "sloc_foreign")).toBe(false)
+    expect(isCartPickupLocation(options, "sloc_delivery")).toBe(false)
+  })
+
+  it("PL-EMPTY: no options, or options with no set at all, accept nothing", () => {
+    expect(isCartPickupLocation([], "sloc_shop")).toBe(false)
+    expect(isCartPickupLocation([{}, { service_zone: null }, { service_zone: { fulfillment_set: null } }], "sloc_shop")).toBe(
+      false
+    )
   })
 })

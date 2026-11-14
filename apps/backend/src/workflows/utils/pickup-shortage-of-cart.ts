@@ -1,7 +1,14 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { listShippingOptionsForCartWorkflow } from "@medusajs/medusa/core-flows"
 
-import { shortLinesAt, type PickupLineFacts, type PickupShortLine } from "./pickup-shortage"
+import {
+  isCartPickupLocation,
+  shortLinesAt,
+  type CartOptionFacts,
+  type PickupLineFacts,
+  type PickupShortLine,
+} from "./pickup-shortage"
 import { variantHasStock } from "./variant-stock"
 
 type CartRow = {
@@ -15,6 +22,7 @@ type CartRow = {
 
 /**
  * The cart lines that have no stock at ONE stock location (the pickup option's), the thin Medusa wiring around `shortLinesAt`.
+ * The location must be one of the cart's own pickup locations (`isCartPickupLocation`), otherwise the answer is an empty list.
  * Unlike `soldUniqueLinesOfCart` a failure is NOT swallowed: the route answers 503 and the storefront then names nothing, it
  * does not guess.
  */
@@ -23,6 +31,15 @@ export async function pickupShortLinesOfCart(
   cartId: string,
   locationId: string
 ): Promise<PickupShortLine[]> {
+  // only the cart's OWN pickup locations may be asked about: any other location answers an empty list (nothing to read off it)
+  const { result: options } = await listShippingOptionsForCartWorkflow(scope).run({
+    input: {
+      cart_id: cartId,
+      is_return: false,
+      fields: ["id", "service_zone.fulfillment_set.type", "service_zone.fulfillment_set.location.id"],
+    },
+  })
+  if (!isCartPickupLocation(options as CartOptionFacts[], locationId)) return []
   const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "cart",
