@@ -92,3 +92,17 @@ export function groupedByKind(
     animals: animals.filter((a) => a.kind === kind),
   })).filter((group) => group.animals.length > 0)
 }
+
+/**
+ * Kell-e a sorhoz feliratkozas ("Értesíts, ha megérkezik", a FAJRA; S4c-2): csak a kotetlen sornal (a kotottnek a termeklapja
+ * van, ott a termek-feliratkozas all), csak ha a nev fajt nevez, csak ha a fajnak most nincs megveheto termeke (kulonben az
+ * ertesites sosem szolna, murena 45613), es csak a kapcsolo mogott (a hivo adja).
+ */
+export const arrivalSignUpOffered = (
+  animal: ArrivingAnimal,
+  switchedOn: boolean,
+): boolean =>
+  switchedOn &&
+  animal.productId === null &&
+  animal.speciesKey !== null &&
+  !animal.speciesBuyable

@@ -178,6 +178,7 @@ export const hu = {
     empty: "Most nincs úton lévő állat, amit itt meg tudnánk mutatni.",
     kind: { FISH: "Halak", INVERTEBRATE: "Gerinctelenek", CORAL: "Korallok" },
     viewProduct: "Megnézem a termék oldalát",
+    notify: "Értesíts, ha megérkezik",
   },
   hamarosan: {
     eyebrow: "Hamarosan",

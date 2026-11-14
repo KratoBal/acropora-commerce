@@ -1,5 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
+
+vi.mock("@lib/data/szolj-hasonlo", () => ({
+  szoljFeliratkozasAkcio: vi.fn(async () => ({ allapot: "kesz" })),
+}))
 
 vi.mock("@modules/common/components/localized-client-link", () => ({
   default: ({
@@ -129,5 +133,69 @@ describe("ErkezoAllatokLap", () => {
     expect(screen.getByTestId("erkezo-link").textContent).toBe(
       "View the product page",
     )
+  })
+})
+
+describe("ErkezoAllatokLap: the species sign-up (S4c-2)", () => {
+  it("only on a free row naming a species that cannot be bought now, with the switch; it sends the ROW's id, never a product", () => {
+    render(
+      <ErkezoAllatokLap
+        animals={[
+          animal({
+            id: "la_free",
+            label: "Amphiprion ocellaris",
+            speciesKey: "amphiprion ocellaris",
+          }),
+          animal({
+            id: "la_bound",
+            label: "Acropora tenuis",
+            speciesKey: "acropora tenuis",
+            productId: "prod_1",
+            kind: "CORAL",
+          }),
+          animal({
+            id: "la_buyable",
+            label: "Zebrasoma flavescens",
+            speciesKey: "zebrasoma flavescens",
+            speciesBuyable: true,
+          }),
+          animal({
+            id: "la_group",
+            label: "Zoanthus",
+            speciesKey: null,
+            kind: "CORAL",
+          }),
+        ]}
+        handles={{}}
+        ma="2026-11-10"
+        feliratkozas
+      />,
+    )
+    const forms = screen.getAllByTestId("erkezes-feliratkozas")
+    expect(forms).toHaveLength(1)
+    const form = forms[0]!
+    expect(
+      (form.querySelector('input[name="arrival_id"]') as HTMLInputElement)
+        .value,
+    ).toBe("la_free")
+    expect(
+      (form.querySelector('input[name="kind"]') as HTMLInputElement).value,
+    ).toBe("species")
+    expect(form.querySelector('input[name="product_id"]')).toBeNull()
+    const row = screen
+      .getAllByTestId("erkezo-sor")
+      .find((r) => within(r).queryByText("Amphiprion ocellaris"))!
+    expect(within(row).getByTestId("erkezes-feliratkozas")).toBeTruthy()
+  })
+
+  it("no sign-up without the switch", () => {
+    render(
+      <ErkezoAllatokLap
+        animals={[animal({ speciesKey: "acanthurus japonicus" })]}
+        handles={{}}
+        ma="2026-11-10"
+      />,
+    )
+    expect(screen.queryByTestId("erkezes-feliratkozas")).toBeNull()
   })
 })

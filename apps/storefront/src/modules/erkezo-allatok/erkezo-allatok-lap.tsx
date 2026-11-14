@@ -2,10 +2,12 @@ import { translator } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { arrivalDayText, arrivalIsLate } from "@lib/util/livestock-arrival"
 import {
+  arrivalSignUpOffered,
   groupedByKind,
   type ArrivingAnimal,
 } from "@lib/util/livestock-arrivals"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ErkezesFeliratkozas from "./erkezes-feliratkozas"
 
 /**
  * AZ "ÉRKEZŐ ÁLLATOK" LAP (V2.6 S4c, kartya f4e4832b): az uton levo elo allatok fajtankent, a nevvel, a varhato nappal es
@@ -13,8 +15,9 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * semmit, es nem igeri tobbnek a napot, mint amennyi: egy elmult nap nem datum a multban, hanem "az erkezes kesik".
  *
  * A KOTOTT ERKEZES (mar van bolti termeke) linket kap a termek lapjara, ha a bolt megadja a termek kezeloejet; link nelkul
- * is megall a sor. A FELIRATKOZAS ("Ertesits, ha megerkezik") kulon szelet (S4c-2): a kapcsolo es a hozzajarulas szovege
- * jogi ellenorzesen all.
+ * is megall a sor. A FELIRATKOZAS ("Ertesits, ha megerkezik", S4c-2) a kotetlen, fajt nevezo sornal all, ha a fajnak most
+ * nincs megveheto termeke (`arrivalSignUpOffered`), a kapcsolo mogott (`feliratkozas`, a hivo adja): a sor azonositojat
+ * kuldi, a fajt a bolt a sor nevebol olvassa. A kapcsolo es a hozzajarulas szovege jogi ellenorzesen all.
  *
  * `ma` a bolt napja (Budapest), a hivo adja, hogy a komponens ne a sajat orajara tamaszkodjon.
  */
@@ -22,12 +25,15 @@ export default function ErkezoAllatokLap({
   animals,
   handles,
   ma,
+  feliratkozas = false,
   locale = "hu",
 }: {
   animals: readonly ArrivingAnimal[]
   /** bolti termek azonosito -> kezelo, a kotott erkezesek linkjehez */
   handles: Readonly<Record<string, string>>
   ma: string
+  /** a feliratkozas kapcsoloja (`szoljBekapcsolva`), a hivo adja */
+  feliratkozas?: boolean
   locale?: Locale
 }) {
   const t = translator(locale)
@@ -110,6 +116,12 @@ export default function ErkezoAllatokLap({
                         >
                           {t("arrivingAnimals.viewProduct")}
                         </LocalizedClientLink>
+                      ) : null}
+                      {arrivalSignUpOffered(animal, feliratkozas) ? (
+                        <ErkezesFeliratkozas
+                          erkezesId={animal.id}
+                          locale={locale}
+                        />
                       ) : null}
                     </li>
                   )

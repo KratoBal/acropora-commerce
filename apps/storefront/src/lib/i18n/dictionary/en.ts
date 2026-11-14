@@ -174,6 +174,7 @@ export const en: Dictionary = {
     empty: "There are no animals on their way that we can show here right now.",
     kind: { FISH: "Fish", INVERTEBRATE: "Invertebrates", CORAL: "Corals" },
     viewProduct: "View the product page",
+    notify: "Notify me when it arrives",
   },
   hamarosan: {
     eyebrow: "Coming soon",
