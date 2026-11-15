@@ -18,7 +18,14 @@ export const medusaNumber = (value: unknown, what: string): number => {
   if (value === undefined || value === null) {
     throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `${what} was not loaded`)
   }
-  const converted = MathBN.convert(value as Parameters<typeof MathBN.convert>[0])
+  let converted: ReturnType<typeof MathBN.convert>
+  try {
+    converted = MathBN.convert(value as Parameters<typeof MathBN.convert>[0])
+  } catch {
+    // Medusa 2.22 (bignumber.js 11) THROWS "[BigNumber Error] Not a number" for a non-numeric string,
+    // where 2.20 returned a NaN BigNumber: both end here as the same named error.
+    throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `${what} is not a number`)
+  }
   if (!converted.isFinite()) {
     throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, `${what} is not a number`)
   }

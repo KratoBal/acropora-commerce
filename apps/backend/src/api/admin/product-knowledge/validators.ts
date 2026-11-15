@@ -67,10 +67,14 @@ export const AdminPutProductKnowledge = z
   .object({
     facts: z
       .array(Fact)
-      .refine(unique((f) => f.field), { message: "A field appears twice" }),
+      .refine(unique<z.infer<typeof Fact>>((f) => f.field), {
+        message: "A field appears twice",
+      }),
     copy: z
       .array(Copy)
-      .refine(unique((c) => c.block), { message: "A block appears twice" }),
+      .refine(unique<z.infer<typeof Copy>>((c) => c.block), {
+        message: "A block appears twice",
+      }),
   })
   .strict()
 
