@@ -1,5 +1,11 @@
 # P2: the Commerce category page
 
+> **Status, 2026-11-15.** This document was written for the technical (Commerce) categories on 2026-09-29. Since then the
+> same page also draws the live-animal branch (coral, fish, invertebrate; 2026-11-01), carries the husbandry filter (V2.2 S5,
+> 2026-11-10) and is the frame of the other list pages. The sections "The live-animal variant", "The husbandry filter" and
+> "Measured on the test storefront" below describe that; the sections written in September are kept as they were, except
+> "Which pages", which no longer held.
+
 Scope: P2, without the homepage (Balázs, 2026-09-29 06:42 UTC: "A kezdőlapot még ne, a többi jöhet"). This is the first of four P2 PRs:
 
 1. the Commerce category page (this document);
@@ -29,7 +35,14 @@ The frame's header (`117:31`, 88 px) is older than the canonical header. The hea
 
 ## Which pages
 
-Only the **technical (Commerce) categories** get the new page: the Termékek branch and the other light roots. The coral, fish and invertebrate category pages are P3 and stay on the old template. `categoryPageKind` decides, the same function as before.
+**Every category page** takes this template, technical and live-animal alike. `categoryPageKind` (`category-page-data.ts`) decides
+between `technical` and `livestock` from the three livestock roots (Korallok, Halak, Gerinctelenek) of the product page's world
+(`ELO_ALLAT_GYOKEREK`); `kind` changes the card, adds the pickup note and enables the husbandry filter (see below). The September
+plan kept the live-animal branch on the old template as "P3"; it moved over on 2026-11-01 (#623) and the old template, its token set
+and its 12-item pager are gone.
+
+The same list frame (`ListaLap`, `commerce/lista-lap.tsx`) also renders the all-products list (`/store`), the brand page (a Medusa
+collection) and the curated selection page, so a change to the frame reaches all of them; the category page only supplies its data.
 
 ## What was built
 
@@ -100,9 +113,51 @@ A brand is the product's Medusa collection; on stage all 65 collections are bran
 
 Checked live against the stage backend: selecting Fauna Marin on Termékek gives 109 products, every card on the page shows Fauna Marin, the chip appears, and the next-page link keeps the brand.
 
+## The live-animal variant (`kind = "livestock"`)
+
+The same frame, with three differences:
+
+- **The card** is `EloAllatKartya`, not the technical card. The badge on the photo says "Sold" (a unique piece that is gone), "1 pc · Unique piece" or "{n} left" at exactly two pieces; the subtitle is the Latin name in italics, not a brand line; there is no quick add to cart, because a live animal is bought on its page, where the pickup promise is. The button is "Details", or "Find a similar one" for a sold piece. A sold piece stays on the list, dimmed, with the price struck through.
+- **The pickup note** ("ÉLŐ ÁLLAT / Személyes átvétel") sits under the title.
+- **On a phone** the list is two columns with a compact card (one column of square cards is about 5000 px for eight animals). A list that mixes both worlds (all products) keeps one column and the technical sizes (`tomor = false`).
+
+The header's mode (`data-acr-mod`, from the path of names) is read by the header only; the body does not depend on it.
+
+Texts are keys in the i18n dictionary (`hu`, `en`); the page's language is its path segment's (`hu`, `en-hu`).
+
+## The husbandry filter (V2.2 S5)
+
+Card d2fc06e7, merged 2026-11-10 and 2026-11-11 (#730, #736, #740, #743). Only the live-animal branch has it; the technical page does not read it.
+
+- **Facts:** the product's `metadata.husbandry`, a JSON string the OS projects (only live animals, only verified blocks). The filter reads three of its facts: difficulty, "kept with corals" and the minimum tank. The Store API cannot filter on a metadata key, so the shop counts the matches next to the database (`GET /store/husbandry-filter?category_id=...`) and returns the matching product ids and the facet counts. The page hands the ids to `/store/products` as its `id` filter, next to brand, option and sort.
+- **In the filter column:** up to three sections, "Tartási nehézség", "Korallos akváriumban tartható" and "Minimális medence" (three bands: 0-100, 101-300, 301- litres, a proposal that is not yet a decision). A section appears only when the category has an animal it fits; the number is the facet count.
+- **In the address:** `?nehezseg=KONNYU&korallos=1&medence=101-300`, so a selection can be shared and is rendered on the server. Brand, sort and paging keep it.
+- **Nothing is dropped silently:** an animal whose block lacks the fact ("ellenőrzés alatt") is not in the filtered list, but its number is shown above the list with a link to the list without the filter. If the shop does not answer, or the category is too large for the answer (`complete: false`), there is no husbandry section and an active filter is replaced by one sentence. More than 300 matching ids (`AZONOSITO_HATAR`; the address length is limited) and the filter does not apply, and one sentence says so.
+- **No data, no section:** with no animal that carries the facts, the filter column shows none of the three sections. That is the intended behaviour, not a failure.
+- **On a phone** the filter box is collapsed behind a button (it works without JavaScript: a checkbox label); it opens by itself when a brand or husbandry value is active. The Kategória section is hidden on a phone, as before.
+
+The product page's "Tartási adatok" block is a separate piece (`husbandry*` keys, product page) and is not described here.
+
+## Measured on the test storefront (2026-11-15)
+
+Four pages at 1440 and 390 px, read-only (`agents/murena/meres/kategoria-lap-meres`, run with the test shop's basic-auth credentials):
+
+| Page | HTTP | Cards on page 1 | Notes |
+|---|---|---|---|
+| Halak | 200 | 18 of 126 | quick bar with child categories, "További termékek betöltése" |
+| Korallok | 200 | 8 of 8 | one child ("WYSIWYG") in the quick bar, no paging |
+| Gerinctelenek | 200 | 18 | "További termékek betöltése" |
+| Koralltápok (technical) | 200 | 18 | the technical card |
+
+One H1 on every page. No husbandry word (difficulty, tank) appeared on any page, because of the data below.
+
+The husbandry filter's data on the test Medusa, the same day: `GET /store/husbandry-filter` answers `complete: true` with zero in every band for Halak, Korallok and Gerinctelenek. 12 of the 161 live animals carry a `husbandry` block (8 fish, 4 corals, 0 invertebrates); those blocks hold feeding, light, flow and similar facts, and none holds difficulty, "kept with corals" or a minimum tank. So the filter is built and answers, but shows nothing until those three facts reach the products. They are in a draft that waits for the owner's decisions; the numbers above are the state of that day.
+
+The measurement script reports the requests the browser aborted (`requestfailed`); on all four pages these were the page's own address and the header's cart and account links. They come from the router's prefetch being cancelled when the page settles, not from the category page; the script does not record the failure text, so this reading is an inference, not a measurement.
+
 ## Left out, and why
 
-The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories and 65 collections.
+The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories and 65 collections. The table is the September state for the technical page; the last row is added on 2026-11-15.
 
 | Frame element | Why it is not built |
 |---|---|
@@ -113,6 +168,7 @@ The catalogue was measured on stage on 2026-09-29: 1492 products, 219 categories
 | Card: technical line ("SPS / LPS · 95 W") | metadata holds only `unas_*` fields |
 | Card: "AJÁNLOTT", "ÚJ" | no data or rule behind them |
 | Card: favourite (♡), compare (⇄); the compare helper | no feature behind them |
+| Live-animal card: a husbandry summary (difficulty, tank) | the card shows no facts from `metadata.husbandry` yet; the data for difficulty and tank is not on the products (see the measurement above) |
 | "Ajánlott sorrend" | no curated order exists; the default is "Legújabbak" |
 
 ## Deviations
