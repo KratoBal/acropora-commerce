@@ -274,6 +274,32 @@ export const listProductsWithSort = async ({
 const AZONOSITO_CSOMAG = 100
 
 /**
+ * Egyszerre legfeljebb ennyi csomag-lekeres fut (barracuda #778 review, 2026-11-15): az ar szerinti ag egy OLDALNYITAS
+ * alatt a talalatszam/100 lekerest indit (a 3000-es hataron 30-at), es a kereso nyilvanos: minden UJ keresoszo es regio
+ * egy friss legyezot jelentene. A gyorsitotar a MASODIK ugyanilyen kerest viszi el, az elsot nem.
+ */
+const PARHUZAMOS_CSOMAG = 4
+
+/** A feladatokat legfeljebb `korlat` egyszerre futtatja, az eredmeny a feladatok SORRENDJEBEN jon. */
+async function korlattalFuttat<T>(
+  feladatok: Array<() => Promise<T>>,
+  korlat: number,
+): Promise<T[]> {
+  const eredmenyek: T[] = new Array(feladatok.length)
+  let kovetkezo = 0
+  const dolgozo = async () => {
+    while (kovetkezo < feladatok.length) {
+      const i = kovetkezo++
+      eredmenyek[i] = await feladatok[i]()
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(korlat, feladatok.length) }, dolgozo),
+  )
+  return eredmenyek
+}
+
+/**
  * HOSSZU `id` LISTA, RENDEZESSEL ES LAPOZASSAL, A TELJES HALMAZON (kartya 30b376de).
  *
  * === MIERT KELL KULON AG ===
@@ -347,14 +373,16 @@ async function listProductsAzonositokkal({
   for (let i = 0; i < azonositok.length; i += AZONOSITO_CSOMAG) {
     csomagok.push(azonositok.slice(i, i + AZONOSITO_CSOMAG))
   }
-  const valaszok = await Promise.all(
-    csomagok.map((csomag) =>
-      listProducts({
-        pageParam: 1,
-        queryParams: { ...kozosParams, id: csomag, limit: csomag.length },
-        countryCode,
-      }),
+  const valaszok = await korlattalFuttat(
+    csomagok.map(
+      (csomag) => () =>
+        listProducts({
+          pageParam: 1,
+          queryParams: { ...kozosParams, id: csomag, limit: csomag.length },
+          countryCode,
+        }),
     ),
+    PARHUZAMOS_CSOMAG,
   )
   const mind = valaszok.flatMap((v) => v.response.products)
   const rendezett = sortProducts(mind, sortBy)
