@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { gyokerekKetSzintel, megjelenitendoNevek } from "./kategoria-fa"
+import {
+  gyermekCimkek,
+  gyokerekKetSzintel,
+  megjelenitendoNevek,
+} from "./kategoria-fa"
 
 /**
  * A MENU PANELJENEK HAROM SZINT KELL, ES A HARMADIK KONNYEN ELMARAD.
@@ -158,5 +162,89 @@ describe("a megjelenítendő nevek ütközés-tudatosak", () => {
     ])
 
     expect(nevek.size).toBe(2)
+  })
+})
+
+/**
+ * A GYEREK-CIMKE A SZULO SAJAT OLDALAN (task t-20261115-kategoria-gyerek-cimke). MI PIROSIT: a vagas olyan nevet is vag, amely
+ * MAS szulo nevet visel; ket testver vagas utan egyforma lesz, es mindketto megkapja a rovid alakot (ketertelmuseg); a kis/nagybetu
+ * eltereset a vagas nem veszi eszre; a szulo masik alakja (nyers nev) nem vag; egy nev, amelyben nincs vegzodes, megvaltozik.
+ */
+describe("gyermekCimkek", () => {
+  const gyerekek = [
+    { id: "v", nev: "Vitalis - Koralltápok" },
+    { id: "r", nev: "Red Sea - Koralltápok" },
+    { id: "p", nev: "Polyp Lab" },
+  ]
+
+  it("a szülő neve a végződésből elmarad, ha a testvérek utána egyediek; a vég nélküli név változatlan", () => {
+    const cimkek = gyermekCimkek(["Koralltápok"], gyerekek)
+
+    expect([...cimkek]).toEqual([
+      ["v", "Vitalis"],
+      ["r", "Red Sea"],
+      ["p", "Polyp Lab"],
+    ])
+  })
+
+  it("két testvér vágás után egyforma: mindkettő a SAJÁT teljes nevét tartja meg (a vágás nem hoz létre kétértelműséget)", () => {
+    const cimkek = gyermekCimkek(
+      ["Koralltápok"],
+      [
+        { id: "a", nev: "Vitalis - Koralltápok" },
+        { id: "b", nev: "Vitalis" },
+        { id: "c", nev: "Red Sea - Koralltápok" },
+      ],
+    )
+
+    expect(cimkek.get("a")).toBe("Vitalis - Koralltápok")
+    expect(cimkek.get("b")).toBe("Vitalis")
+    // a harmadik nem ütközik: vág
+    expect(cimkek.get("c")).toBe("Red Sea")
+  })
+
+  it("az ütközést a kis- és nagybetűtől függetlenül veszi észre", () => {
+    const cimkek = gyermekCimkek(
+      ["Szülő"],
+      [
+        { id: "a", nev: "Alfa - Szülő" },
+        { id: "b", nev: "ALFA" },
+      ],
+    )
+
+    expect(cimkek.get("a")).toBe("Alfa - Szülő")
+    expect(cimkek.get("b")).toBe("ALFA")
+  })
+
+  it("csak a SAJÁT szülő nevét vágja: egy másik szülő végződése marad", () => {
+    const cimkek = gyermekCimkek(
+      ["Koralltápok"],
+      [
+        { id: "a", nev: "Vitalis - Haleledelek" },
+        { id: "b", nev: "Red Sea - Koralltápok" },
+      ],
+    )
+
+    expect(cimkek.get("a")).toBe("Vitalis - Haleledelek")
+    expect(cimkek.get("b")).toBe("Red Sea")
+  })
+
+  it("a szülő több alakját fogadja (megjelenített és nyers név): az első, amelyik a végén áll, vág", () => {
+    const cimkek = gyermekCimkek(
+      ["Rövid", "Teljes Szülő"],
+      [
+        { id: "a", nev: "Alfa - Teljes Szülő" },
+        { id: "b", nev: "Béta - Rövid" },
+      ],
+    )
+
+    expect(cimkek.get("a")).toBe("Alfa")
+    expect(cimkek.get("b")).toBe("Béta")
+  })
+
+  it("üres lista és üres szülőnév nem dob, és nem változtat semmin", () => {
+    expect(gyermekCimkek(["Koralltápok"], []).size).toBe(0)
+    const cimkek = gyermekCimkek([""], [{ id: "a", nev: "Alfa - Szülő" }])
+    expect(cimkek.get("a")).toBe("Alfa - Szülő")
   })
 })

@@ -4,6 +4,7 @@ import { listCategories } from "@lib/data/categories"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { listProducts, listProductsWithSort } from "@lib/data/products"
+import { gyermekCimkek } from "@lib/util/kategoria-fa"
 import {
   MarkaSor,
   markaSorok,
@@ -305,6 +306,23 @@ export default async function CommerceKategoriaLap({
     termekkel). Ahol a szamlalas nem sikerult, a gyerek marad, szam nelkul.
   */
   const sav = savElemek(category, gyerekek, testverLista, szamok)
+  /*
+    A GYEREK-CIMKE A SZULO SAJAT OLDALAN: a gyorssav es a Kategoria-szuro a gyerekeket mutatja, a szulo neve a H1-ben all, tehat a
+    `NEV - SZULO` vegzodes ott zaj (task t-20261115-kategoria-gyerek-cimke). CSAK `gyerekek` modban (a level-kategoria sava a
+    testvereket mutatja, ott a szulo nem a cim), es csak ha a testverek a vagas utan egyediek. A `nev()` maga valtozatlan: a
+    menu, a morzsa es minden mas hely a megjelenitendo neveket kapja (Balazs 09-04-i dontese).
+  */
+  const gyerekCimke =
+    sav.mod === "gyerekek"
+      ? gyermekCimkek(
+          [nev(category), (category.name ?? "").trim()],
+          gyerekek.flatMap((gyerek) =>
+            gyerek.id ? [{ id: gyerek.id, nev: nev(gyerek) }] : [],
+          ),
+        )
+      : null
+  const cimke = (elem: { id?: string | null; name?: string | null }) =>
+    (elem.id ? gyerekCimke?.get(elem.id) : undefined) ?? nev(elem)
   const lathatoGyerekek =
     sav.mod === "gyerekek"
       ? sav.elemek.map(({ kategoria, szam }) => ({ gyerek: kategoria, szam }))
@@ -331,7 +349,7 @@ export default async function CommerceKategoriaLap({
         osszes: sav.mod === "gyerekek",
         elemek: sav.elemek.map(({ kategoria, aktiv }) => ({
           id: kategoria.id,
-          nev: nev(kategoria),
+          nev: cimke(kategoria),
           href: `/categories/${kategoria.handle}`,
           aktiv,
         })),
@@ -350,7 +368,7 @@ export default async function CommerceKategoriaLap({
       keresoAction={`/${countryCode}/store`}
       kategoriak={lathatoGyerekek.map(({ gyerek, szam }) => ({
         id: gyerek.id,
-        nev: nev(gyerek),
+        nev: cimke(gyerek),
         href: `/categories/${gyerek.handle}`,
         szam,
       }))}

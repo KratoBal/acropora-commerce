@@ -48,6 +48,10 @@ const SZAMOK: Record<string, number | Error> = {
   jelen: 0,
   ures: 0,
   hibas: new Error("halozati hiba"),
+  vit: 4,
+  red: 2,
+  polyp: 5,
+  vit2: 3,
 }
 
 const termekek = (n: number) =>
@@ -324,6 +328,121 @@ describe("a Commerce kategórialap", () => {
  * lapon (a szotarbol kimaradt kulcs vagy egy beegetett szoveg); az angol szoveg a magyar lapon jelenik meg; az angol lap
  * mas szamot vagy mas sorrendet mutat, mint a magyar (a felirat cserelodik, a lap nem).
  */
+/**
+ * A GYEREK-CIMKE A SZULO SAJAT OLDALAN (task t-20261115-kategoria-gyerek-cimke). MI PIROSIT: a gyorssav vagy a Kategoria-szuro
+ * megtartja a ` - <szulo>` vegzodest a szulo oldalan; a levag olyat, ami a testverek kozott ketertelmuseget hozna; a level-kategoria
+ * savja (testverek) is vag, pedig ott a szulo nem a H1; a cim (a szulo neve) valtozik; a nevek MAS helyen (a megjelenitendo nevek
+ * terkepe) valtoznak.
+ */
+describe("a gyerek-címke a szülő saját oldalán", () => {
+  const SZULO = kat("koralltapok", "Koralltápok", {
+    parent_category: kat("eledelek", "Eledelek"),
+    category_children: [
+      kat("vit", "Vitalis - Koralltápok"),
+      kat("red", "Red Sea - Koralltápok"),
+      kat("polyp", "Polyp Lab"),
+    ],
+  })
+
+  it("a gyorssáv és a Kategória-szűrő a szülő nevét elhagyja, a cím és a darabszámok maradnak", async () => {
+    await lap({ category: SZULO })
+
+    const sav = screen.getByTestId("gyors-kategoriak")
+    expect(
+      within(sav)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["Összes", "Vitalis", "Red Sea", "Polyp Lab"])
+    const szuro = screen.getByTestId("szuro-kategoriak")
+    expect(
+      within(szuro)
+        .getAllByRole("link")
+        .map((a) => a.textContent),
+    ).toEqual(["Vitalis4", "Red Sea2", "Polyp Lab5"])
+    expect(screen.getByTestId("category-page-title").textContent).toBe(
+      "Koralltápok",
+    )
+    // a link célja a teljes kategória, nem a cimke
+    expect(within(szuro).getAllByRole("link")[0]!.getAttribute("href")).toBe(
+      "/hu/categories/vit",
+    )
+  })
+
+  it("két testvér vágás után egyforma: a gyorssávban és a szűrőben is a teljes név marad", async () => {
+    await lap({
+      category: kat("koralltapok", "Koralltápok", {
+        category_children: [
+          kat("vit", "Vitalis - Koralltápok"),
+          kat("vit2", "Vitalis"),
+          kat("red", "Red Sea - Koralltápok"),
+        ],
+      }),
+    })
+
+    const sav = screen.getByTestId("gyors-kategoriak")
+    expect(
+      within(sav)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["Összes", "Vitalis - Koralltápok", "Vitalis", "Red Sea"])
+    expect(
+      within(screen.getByTestId("szuro-kategoriak"))
+        .getAllByRole("link")
+        .map((a) => a.textContent),
+    ).toEqual(["Vitalis - Koralltápok4", "Vitalis3", "Red Sea2"])
+  })
+
+  it("a levél-kategória sávja (testvérek) VÁLTOZATLAN: ott a szülő nem a cím, a teljes nevek állnak", async () => {
+    katAdat.listCategories.mockResolvedValue([
+      kat("vit", "Vitalis - Koralltápok"),
+      kat("red", "Red Sea - Koralltápok"),
+    ])
+
+    await lap({
+      category: kat("red", "Red Sea - Koralltápok", {
+        parent_category: kat("koralltapok", "Koralltápok"),
+        category_children: [],
+      }),
+    })
+
+    expect(
+      within(screen.getByTestId("gyors-kategoriak"))
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["Vitalis - Koralltápok", "Red Sea - Koralltápok"])
+  })
+
+  it("a gyerekek neve a szülő NYERS nevét viseli akkor is, ha a szülő megjelenített neve rövidebb: a nyers névvel is vág", async () => {
+    await lap({
+      category: SZULO,
+      // a szülő megjelenített neve a térképből "Korall", a gyerekek végződése viszont a nyers "Koralltápok"
+      nevek: new Map([["koralltapok", "Korall"]]),
+    })
+
+    expect(
+      within(screen.getByTestId("gyors-kategoriak"))
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["Összes", "Vitalis", "Red Sea", "Polyp Lab"])
+  })
+
+  it("a megjelenítendő nevek térképe a vágás ELŐTT is érvényes: a térkép neve a bemenet, a címke abból lesz", async () => {
+    await lap({
+      category: SZULO,
+      nevek: new Map([
+        ["vit", "Vitalis - Koralltápok"],
+        ["red", "Red Sea"],
+      ]),
+    })
+
+    expect(
+      within(screen.getByTestId("gyors-kategoriak"))
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["Összes", "Vitalis", "Red Sea", "Polyp Lab"])
+  })
+})
+
 describe("a kategorialap angolul", () => {
   const MAGYAR = [
     "Morzsamenü",
