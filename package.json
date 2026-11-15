@@ -27,8 +27,8 @@
     "@medusajs/eslint-plugin": "2.20.1",
     "eslint": "^9.39.4",
     "jiti": "^2.7.0",
-    "prettier": "^3.2.5",
-    "turbo": "^2.0.14",
+    "prettier": "^3.9.10",
+    "turbo": "^2.11.10",
     "ajv": "^8.13.0"
   },
   "overrides": {
