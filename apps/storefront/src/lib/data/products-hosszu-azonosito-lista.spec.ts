@@ -15,13 +15,15 @@ vi.mock("./regions", () => ({
 }))
 vi.mock("./cookies", () => ({ getPublicCacheOptions: vi.fn(async () => ({})) }))
 
+import { RENDEZO_KOR_MEZOK } from "@lib/util/termeklista-mezok"
+
 import { listProductsWithSort } from "./products"
 
 /** 250 azonosito, a 201. (a 200-as index) a LEGOLCSOBB termek. */
 const IDS = Array.from({ length: 250 }, (_, i) => `p${i}`)
 const ar = (id: string) => (id === "p200" ? 1 : 1000 + Number(id.slice(1)))
 
-type Lekerdezes = { id: string[]; limit: number }
+type Lekerdezes = { id: string[]; limit: number; fields?: string }
 
 beforeEach(() => {
   sdk.client.fetch.mockReset()
@@ -96,12 +98,17 @@ describe("listProductsWithSort, hosszu azonosito-lista", () => {
 
     expect(response.products[0].id).toBe("p200")
     expect(response.count).toBe(250)
-    // csomagok, nem egyetlen 250 azonositos cim: 100 + 100 + 50
-    expect(
-      lekerdezesek()
-        .map((q) => q.id.length)
-        .sort((a, b) => b - a),
-    ).toEqual([100, 100, 50])
+    // csomagok, nem egyetlen 250 azonositos cim: 100 + 100 + 50, a rendezo kor szuk mezoivel
+    const rendezoKor = lekerdezesek().filter(
+      (q) => q.fields === RENDEZO_KOR_MEZOK,
+    )
+    expect(rendezoKor.map((q) => q.id.length).sort((a, b) => b - a)).toEqual([
+      100, 100, 50,
+    ])
+    // a megjeleno 18 termek egy KULON lekeresben, nem a rendezo kor mezoivel (task t-20261115-ar-rendezes-szukites)
+    const lap = lekerdezesek().filter((q) => q.fields !== RENDEZO_KOR_MEZOK)
+    expect(lap).toHaveLength(1)
+    expect(lap[0].id).toHaveLength(18)
     expect(
       Math.max(...lekerdezesek().map((q) => q.id.length)),
     ).toBeLessThanOrEqual(100)
@@ -158,7 +165,11 @@ describe("listProductsWithSort, hosszu azonosito-lista", () => {
     })
 
     // 7 csomag (6 x 100 + 50), egyszerre legfeljebb 4 -- de tenyleg parhuzamosan (nem egyesevel)
-    expect(lekerdezesek()).toHaveLength(7)
+    expect(
+      lekerdezesek().filter((q) => q.fields === RENDEZO_KOR_MEZOK),
+    ).toHaveLength(7)
+    // + a megjeleno lap egy kulon lekerese (task t-20261115-ar-rendezes-szukites)
+    expect(lekerdezesek()).toHaveLength(8)
     expect(legtobb).toBe(4)
     expect(response.count).toBe(650)
     expect(response.products[0].id).toBe("p200")
