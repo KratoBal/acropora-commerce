@@ -180,7 +180,7 @@ describe("gyermekCimkek", () => {
   it("a szülő neve a végződésből elmarad, ha a testvérek utána egyediek; a vég nélküli név változatlan", () => {
     const cimkek = gyermekCimkek(["Koralltápok"], gyerekek)
 
-    expect([...cimkek]).toEqual([
+    expect(Array.from(cimkek)).toEqual([
       ["v", "Vitalis"],
       ["r", "Red Sea"],
       ["p", "Polyp Lab"],
