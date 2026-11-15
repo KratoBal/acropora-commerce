@@ -127,6 +127,43 @@ describe("listProductsWithSort, hosszu azonosito-lista", () => {
     expect(utolso.response.products.at(-1)?.id).toBe("p200")
   })
 
+  // barracuda #778 review: egy ar szerinti oldalnyitas a talalatszam/100 lekerest inditana EGYSZERRE (3000 talalatnal 30-at).
+  // MI PIROSIT: ha a csomag-lekeresek korlat nelkul futnak egyszerre (Promise.all), vagy ha a korlat az eredmenyt is elveszti.
+  it("ar szerint legfeljebb negy csomag fut egyszerre, es az eredmeny teljes: a 650 azonositobol minden megerkezik", async () => {
+    const sok = Array.from({ length: 650 }, (_, i) => `p${i}`)
+    let fut = 0
+    let legtobb = 0
+    sdk.client.fetch.mockImplementation(
+      async (_ut: string, opciok: { query: Lekerdezes }) => {
+        fut++
+        legtobb = Math.max(legtobb, fut)
+        await new Promise((kesz) => setTimeout(kesz, 5))
+        fut--
+        return {
+          products: opciok.query.id.map((id) => ({
+            id,
+            created_at: "2026-01-01T00:00:00Z",
+            variants: [{ calculated_price: { calculated_amount: ar(id) } }],
+          })),
+          count: opciok.query.id.length,
+        }
+      },
+    )
+
+    const { response } = await listProductsWithSort({
+      page: 1,
+      queryParams: { id: sok, limit: 18 },
+      sortBy: "price_asc",
+      countryCode: "hu",
+    })
+
+    // 7 csomag (6 x 100 + 50), egyszerre legfeljebb 4 -- de tenyleg parhuzamosan (nem egyesevel)
+    expect(lekerdezesek()).toHaveLength(7)
+    expect(legtobb).toBe(4)
+    expect(response.count).toBe(650)
+    expect(response.products[0].id).toBe("p200")
+  })
+
   it("a rovid lista (szaz azonosito vagy kevesebb) a MAI uton megy: egy lekerdezes, szerver-oldali rendezes", async () => {
     const rovid = IDS.slice(0, 100)
     await listProductsWithSort({
