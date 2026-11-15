@@ -73,6 +73,50 @@ export const rovidNev = (
 }
 
 /**
+ * A GYEREK-CIMKEK A SZULO SAJAT OLDALAN: A SZULO NEVE ELMARAD, HA A TESTVEREK UTANA EGYEDIEK (task t-20261115-kategoria-gyerek-cimke).
+ *
+ * A szulo OLDALAN a gyorssav es a Kategoria-szuro a szulo gyerekeit mutatja, a szulo neve pedig a cimben (H1) all: a `NEV - SZULO`
+ * alaku cimke ott ugyanazt a kontextust ismetli (a teszt bolton 213 szulos kategoriabol 72-nek ilyen a neve, a Koralltapok oldalan
+ * "Vitalis - Koralltapok", mellette a "Polyp Lab" vegzodes nelkul: egyenetlen es zajos).
+ *
+ * NEM ERINTI A MEGJELENITENDO NEVEK DONTESET (Balazs, 2026-09-04): a lista, a menu, a kereses es a morzsa ott a szulo a
+ * MEGKULONBOZTETES, es a `megjelenitendoNevek` valtozatlan. Ez a fuggveny CSAK a szulo sajat oldalan, ket helyen hivando
+ * (gyorssav, Kategoria-szuro), ahol a szulo a H1-ben latszik.
+ *
+ * A VAGAS FELTETELE: a levagott alak egyedi a TESTVEREK levagott alakjai kozott (kis/nagybetutol fuggetlenul), es nem ures. Ha ket
+ * testver vagas utan egyforma lenne, mindketto a SAJAT (teljes) nevet tartja meg: a vagas nem hozhat letre ketertelmuseget.
+ * A `szuloNevek` tobb alakot is fogad (a szulo megjelenitett es nyers neve): az elso, amelyik ` - ` elotaggal a nev vegen all, vag.
+ */
+export const gyermekCimkek = (
+  szuloNevek: readonly string[],
+  gyerekek: readonly { id: string; nev: string }[],
+): Map<string, string> => {
+  const vagott = gyerekek.map(({ id, nev }) => {
+    const tiszta = nev.trim()
+    let kimenet = tiszta
+    for (const szulo of szuloNevek) {
+      const rovid = rovidNev(tiszta, szulo.trim() || null)
+      if (rovid !== tiszta) {
+        kimenet = rovid
+        break
+      }
+    }
+    return { id, tiszta, vagott: kimenet }
+  })
+  const darab = new Map<string, number>()
+  for (const { vagott: v } of vagott) {
+    const kulcs = v.toLowerCase()
+    darab.set(kulcs, (darab.get(kulcs) ?? 0) + 1)
+  }
+  return new Map(
+    vagott.map(({ id, tiszta, vagott: v }) => [
+      id,
+      v.length > 0 && darab.get(v.toLowerCase()) === 1 ? v : tiszta,
+    ]),
+  )
+}
+
+/**
  * EGY OS-LANC ROVID NEVEI, A GYOKERTOL LEFELE.
  *
  * Ugyanaz a levezetes, mint a `besorolasUt` belsejeben -- de az a TERMEK
