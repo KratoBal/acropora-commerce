@@ -22,3 +22,13 @@ export const termeklistaMezok = `${TERMEKLISTA_MEZOK}*collection,*categories`
  * hizlalunk vele). A `+` a metaadatot hozzaadja, nem felulirja.
  */
 export const VASARLAS_KERET_MEZOK = `${TERMEKLISTA_MEZOK}+variants.metadata`
+
+/**
+ * A RENDEZO KOR MEZOI (task t-20261115-ar-rendezes-szukites). Az ar szerinti rendezes (a Store API nem tud arra rendezni)
+ * a teljes halmazt lehivja, es a `sortProducts` CSAK ezt olvassa: az azonositot, a letrehozas idejet es a valtozatok
+ * `calculated_price`-at. A teljes mezokeszlet (kepek, opciok, metaadat, cimkek) ehhez folosleges: merve 2026-11-15 a
+ * teszt Medusan, az osszes termek (1344) ar szerinti rendezesenel 8,9 MB / 3,1 s volt, csak ezekkel 1,0 MB / 1,5 s, es az
+ * arral rendelkezo termekek szama azonos (1343/1344). A megjeleno lap termekei egy KULON lekeresben kapjak a teljes
+ * mezoket. A `created_at` azert van itt, mert a `sortProducts` idorendi aga is olvassa.
+ */
+export const RENDEZO_KOR_MEZOK = "id,created_at,*variants.calculated_price,"

@@ -1,7 +1,10 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { TERMEKLISTA_MEZOK } from "@lib/util/termeklista-mezok"
+import {
+  RENDEZO_KOR_MEZOK,
+  TERMEKLISTA_MEZOK,
+} from "@lib/util/termeklista-mezok"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
@@ -106,6 +109,46 @@ export const listProducts = async ({
         queryParams,
       }
     })
+}
+
+/**
+ * A RENDEZETT LAP TELJES TERMEKEI (task t-20261115-ar-rendezes-szukites). A rendezo kor (`RENDEZO_KOR_MEZOK`) csak az arat
+ * es az azonositot hozta le; a megjeleno lap termekei egy KULON, kis lekeresben kapjak a hivo mezoit (a `queryParams.fields`,
+ * vagy a lista alapmezoi), a rendezett sorrendben. Ures lapnal nincs lekeres.
+ *
+ * A lekeres a hivo SZURESEIT is viszi (kategoria, opcio, ...): ugyanarra a halmazra szol, mint a rendezo kor, csak a
+ * `id` szukiti. Ha egy termek kozben eltunik, a lap rovidebb, a darabszam a rendezo korbol jon.
+ */
+async function rendezettLapTermekei({
+  rendezett,
+  kezdet,
+  limit,
+  kozosParams,
+  countryCode,
+}: {
+  rendezett: HttpTypes.StoreProduct[]
+  kezdet: number
+  limit: number
+  kozosParams: ProductListQueryParams
+  countryCode: string
+}): Promise<HttpTypes.StoreProduct[]> {
+  const lapAzonositok = rendezett.slice(kezdet, kezdet + limit).map((p) => p.id)
+  if (lapAzonositok.length === 0) return []
+  const {
+    response: { products },
+  } = await listProducts({
+    pageParam: 1,
+    queryParams: {
+      ...kozosParams,
+      id: lapAzonositok,
+      limit: lapAzonositok.length,
+    },
+    countryCode,
+  })
+  const sorrend = new Map(lapAzonositok.map((id, i) => [id, i]))
+  return [...products].sort(
+    (a, b) => (sorrend.get(a.id) ?? 0) - (sorrend.get(b.id) ?? 0),
+  )
 }
 
 /**
@@ -245,7 +288,12 @@ export const listProductsWithSort = async ({
       response: { products, count },
     } = await listProducts({
       pageParam: lap,
-      queryParams: { ...kozosParams, limit: LAP_MERET },
+      // csak a rendezeshez kello mezok: a teljes lap kulon lekeresbol jon (`rendezettLapTermekei`)
+      queryParams: {
+        ...kozosParams,
+        limit: LAP_MERET,
+        fields: RENDEZO_KOR_MEZOK,
+      },
       countryCode,
     })
     osszesen = count
@@ -258,7 +306,13 @@ export const listProductsWithSort = async ({
 
   return {
     response: {
-      products: rendezett.slice(kezdet, kezdet + limit),
+      products: await rendezettLapTermekei({
+        rendezett,
+        kezdet,
+        limit,
+        kozosParams,
+        countryCode,
+      }),
       // A VALODI darabszam, nem a lehivott liste hossza: ebbol szamol a lapozo.
       count: osszesen,
     },
@@ -378,7 +432,12 @@ async function listProductsAzonositokkal({
       (csomag) => () =>
         listProducts({
           pageParam: 1,
-          queryParams: { ...kozosParams, id: csomag, limit: csomag.length },
+          queryParams: {
+            ...kozosParams,
+            id: csomag,
+            limit: csomag.length,
+            fields: RENDEZO_KOR_MEZOK,
+          },
           countryCode,
         }),
     ),
@@ -389,7 +448,13 @@ async function listProductsAzonositokkal({
 
   return {
     response: {
-      products: rendezett.slice(kezdet, kezdet + limit),
+      products: await rendezettLapTermekei({
+        rendezett,
+        kezdet,
+        limit,
+        kozosParams,
+        countryCode,
+      }),
       // a VALODI darabszam: amennyi termek a csomagokbol megerkezett
       count: mind.length,
     },
