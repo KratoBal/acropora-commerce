@@ -21,6 +21,13 @@
     "overrides": {
       "@types/react": "19.0.5",
       "@types/react-dom": "19.0.5"
+    },
+    "packageExtensions": {
+      "@medusajs/caching-redis": {
+        "dependencies": {
+          "awilix": "^13.0.5"
+        }
+      }
     }
   },
   "devDependencies": {
