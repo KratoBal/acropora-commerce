@@ -112,6 +112,8 @@ export default async function KeresesLap({
         },
         sortBy,
         countryCode,
+        // a vegpont `created_at DESC` sorrendben adja az azonositokat: a lap csak a sajatjait kerdezi le
+        azonositokIdorendben: true,
       })
     : null
   // the catalogue resolves a leaf's root (as on the product page); a failure
@@ -228,9 +230,9 @@ export default async function KeresesLap({
           })}
         </p>
         {/*
-          A CSONKOLAS KIMONDVA (a #379 atvetele): a vegpont legfeljebb 200
-          azonositot ad, `created_at` szerint csokkenoen, es a valaszban
-          jelzi, ha levagott. A szam a valaszbol jon, nem egy beirt 200-bol.
+          A CSONKOLAS KIMONDVA (a #379 atvetele): a vegpont legfeljebb 3000
+          azonositot ad (a kartya 30b376de elott 200-at), `created_at` szerint csokkenoen, es a valaszban
+          jelzi, ha levagott. A szam a valaszbol jon, nem egy beirt hatarbol.
         */}
         {talalat.csonkolt ? (
           <p

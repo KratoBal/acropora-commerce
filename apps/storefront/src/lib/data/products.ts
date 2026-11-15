@@ -157,12 +157,18 @@ export const listProductsWithSort = async ({
   sortBy = "created_at",
   countryCode,
   optionValueIds,
+  azonositokIdorendben = false,
 }: {
   page?: number
   queryParams?: ProductListQueryParams
   sortBy?: SortOptions
   countryCode: string
   optionValueIds?: OptionValueIds
+  /**
+   * Igaz, ha a `queryParams.id` lista MAR `created_at` szerint csokkeno (a kereses vegpontja ilyen sorrendben adja).
+   * Hosszu azonosito-listanal, idorendi rendezesnel ez engedi, hogy a lap csak a SAJAT azonositoit kerje le.
+   */
+  azonositokIdorendben?: boolean
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }
   nextPage: number | null
@@ -179,6 +185,20 @@ export const listProductsWithSort = async ({
   }
 
   const oldal = Math.max(page, 1)
+
+  // HOSSZU AZONOSITO-LISTA (a kereses talalatai): lasd `listProductsAzonositokkal`.
+  const azonositok = Array.isArray(kozosParams.id) ? kozosParams.id : null
+  if (azonositok && azonositok.length > AZONOSITO_CSOMAG) {
+    return listProductsAzonositokkal({
+      azonositok,
+      kozosParams,
+      oldal,
+      limit,
+      sortBy,
+      countryCode,
+      azonositokIdorendben,
+    })
+  }
 
   // IDORENDI RENDEZES: a szerver rendez es lapoz.
   if (sortBy === "created_at") {
@@ -244,5 +264,107 @@ export const listProductsWithSort = async ({
     },
     nextPage: osszesen > oldal * limit ? oldal + 1 : null,
     queryParams,
+  }
+}
+
+/**
+ * Egy lekerdezesbe ennyi `id` megy (egy azonosito nagyjabol harminc karakter a cimben, szaz tehat nagyjabol harom
+ * kilobajt, a szokasos nyolc kilobajtos korlat alatt).
+ */
+const AZONOSITO_CSOMAG = 100
+
+/**
+ * HOSSZU `id` LISTA, RENDEZESSEL ES LAPOZASSAL, A TELJES HALMAZON (kartya 30b376de).
+ *
+ * === MIERT KELL KULON AG ===
+ *
+ * Az `id` szuro a lekerdezes CIMEBE megy, es 200 azonositonal tobb mar nem fer el egy lekerdezesben. A kereses
+ * azert vagta le a talalatokat 200-nal (a regebbiek kiestek, az ar szerinti rendezes csak a 200 legujabbat
+ * rendezte). Itt a lista csomagokra oszlik, es a lap a TELJES halmazbol szamol.
+ *
+ * Ket ut, mert a ket rendezes mas koltsegu:
+ *   - idorendben, ha a lista mar idorendben van (`azonositokIdorendben`): a lap csak a SAJAT azonositoit kerdezi
+ *     le (legfeljebb `limit` darab, egyetlen kis lekerdezes), es a lista sorrendjeben adja vissza. A darabszam az
+ *     azonositok szama.
+ *   - minden mas (ar szerint, vagy ismeretlen sorrend): minden csomagot lehiv, a kliensen rendez, es szeletel.
+ *     Egy csomag szaz termek, a lekeres a Next gyorsitotarabol jon.
+ */
+async function listProductsAzonositokkal({
+  azonositok,
+  kozosParams,
+  oldal,
+  limit,
+  sortBy,
+  countryCode,
+  azonositokIdorendben,
+}: {
+  azonositok: string[]
+  kozosParams: ProductListQueryParams
+  oldal: number
+  limit: number
+  sortBy: SortOptions
+  countryCode: string
+  azonositokIdorendben: boolean
+}): Promise<{
+  response: { products: HttpTypes.StoreProduct[]; count: number }
+  nextPage: number | null
+  queryParams?: ProductListQueryParams
+}> {
+  const kezdet = (oldal - 1) * limit
+
+  if (sortBy === "created_at" && azonositokIdorendben) {
+    const lapAzonositok = azonositok.slice(kezdet, kezdet + limit)
+    if (lapAzonositok.length === 0) {
+      return {
+        response: { products: [], count: azonositok.length },
+        nextPage: null,
+      }
+    }
+    const {
+      response: { products },
+    } = await listProducts({
+      pageParam: 1,
+      queryParams: {
+        ...kozosParams,
+        id: lapAzonositok,
+        limit: lapAzonositok.length,
+      },
+      countryCode,
+    })
+    const sorrend = new Map(lapAzonositok.map((id, i) => [id, i]))
+    return {
+      response: {
+        products: [...products].sort(
+          (a, b) => (sorrend.get(a.id) ?? 0) - (sorrend.get(b.id) ?? 0),
+        ),
+        count: azonositok.length,
+      },
+      nextPage: azonositok.length > oldal * limit ? oldal + 1 : null,
+    }
+  }
+
+  const csomagok: string[][] = []
+  for (let i = 0; i < azonositok.length; i += AZONOSITO_CSOMAG) {
+    csomagok.push(azonositok.slice(i, i + AZONOSITO_CSOMAG))
+  }
+  const valaszok = await Promise.all(
+    csomagok.map((csomag) =>
+      listProducts({
+        pageParam: 1,
+        queryParams: { ...kozosParams, id: csomag, limit: csomag.length },
+        countryCode,
+      }),
+    ),
+  )
+  const mind = valaszok.flatMap((v) => v.response.products)
+  const rendezett = sortProducts(mind, sortBy)
+
+  return {
+    response: {
+      products: rendezett.slice(kezdet, kezdet + limit),
+      // a VALODI darabszam: amennyi termek a csomagokbol megerkezett
+      count: mind.length,
+    },
+    nextPage: mind.length > oldal * limit ? oldal + 1 : null,
   }
 }

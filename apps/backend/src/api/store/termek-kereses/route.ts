@@ -53,19 +53,23 @@ import { keresesiTerv } from "./kereses-terv";
  * kulon szokent, es a gyakori magyar toldalek lekerul (lehabzók -> lehabz). Az
  * SQL-t a `kereses-sql.ts` epiti, ugyanazokra a mezokre.
  *
- * === A FELSO HATAR, ES AMI ROSSZ LENNE NELKULE ===
+ * === A FELSO HATAR, ES AMI KOZBEN VALTOZOTT (kartya 30b376de, 2026-11-15) ===
  *
- * A talalati lista a kirakatba mint `id` szuro megy vissza, vagyis a
- * lekerdezes CIMEBE. Egy tulsagosan hosszu cim a kiszolgalonal elhasalna --
- * ezert a lista korlatos, es a valasz KIMONDJA, ha levagtuk (`csonkolt`).
- * A hatar nem izles: 200 azonosito nagyjabol hat kilobajt cim, ami a szokasos
- * nyolc kilobajtos korlat alatt marad.
+ * A talalati lista a kirakatba azonositokent megy vissza, es a kirakat a
+ * termekeket KICSI csomagokban kerdezi le `id` szuroval (egy kereses egy csomagja
+ * legfeljebb szaz azonosito, a lap pedig csak a sajat tizennyolc termekeit kerdezi), tehat az
+ * azonositok SZAMA nem jut egy hosszu lekerdezes cimebe. Ezert a hatar nem ket-
+ * szaz: egy VEDELEM a valasz merete ellen (3000 azonosito nagyjabol 100 KB JSON), nem a cim hossza.
  *
- * ES A CSONKOLAS NEM NEMA -- A VALASZBAN. A `csonkolt` mezo ott van; a kirakat
- * ma NEM rajzolja ki, es a vevo fele igy a levagas NEMA MARAD. Merve a
- * kitelepites utan: a `szűrő` kereses 241-252 talalatrol 193-204-re esett, azaz
- * pontosan 200 azonositora -- a vevo legalabb 41 termeket nem lat, es a lapozo
- * egyszeruen 17 lapot mutat.
+ * Korabban EGYETLEN `id` szuro vitte az osszes azonositot a lekerdezes cimebe
+ * (200 azonosito nagyjabol hat kilobajt, a szokasos nyolc kilobajtos korlat alatt), es ezert
+ * volt a hatar 200. A kovetkezmeny: a regebbi talalatok kiestek, es az ar szerinti rendezes
+ * csak a 200 LEGUJABBAT rendezte. Merve a teszt boltban a javitas elott (2026-11-15): `q=szűrő` 200,
+ * `q=só` 200 azonositot adott vissza (a valodi talalatszam 241 vagy tobb).
+ *
+ * A VALASZ KIMONDJA, HA MEGIS LEVAGTUK (`csonkolt`), es a kirakat ezt kiirja a
+ * vevonek. A mai katalogus 1501 termek, tehat a 3000 nem egy kereses talalatszama,
+ * hanem a hatar, amit egy katalogus-novekedes ervenytelenit.
  *
  * === KET DOLOG, AMIT SZANDEKOSAN NEM JAVITUNK, ES EZERT ALL ITT ===
  *
@@ -86,7 +90,7 @@ import { keresesiTerv } from "./kereses-terv";
  *    EZT AZERT IRJUK LE, hogy ha egyszer lassu lesz, senki ne toltson egy
  *    delelottot egy indexszel, ami nem segit.
  */
-const FELSO_HATAR = 200;
+const FELSO_HATAR = 3000;
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const nyers = (req.query.q ?? "") as string | string[];

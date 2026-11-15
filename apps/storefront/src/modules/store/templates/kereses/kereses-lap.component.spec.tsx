@@ -168,6 +168,26 @@ describe("a keresési találatok lapja", () => {
     )
   })
 
+  // kártya 30b376de: a 200-as vágás megszűnt, a lista a TELJES találathalmazon fut (a 201. találatot is látja).
+  // MI PIROSÍT: a lap levág a rendezés előtt, vagy nem jelöli időrendinek az azonosítókat (akkor minden lap minden csomagot lehívna).
+  it("a lista a teljes találathalmazon fut: 250 azonosító egyben megy a rendezéshez, időrendiként jelölve", async () => {
+    const sok = Array.from({ length: 250 }, (_, i) => `p${i}`)
+    kereses.keresesTalalatok.mockResolvedValue({
+      ids: sok,
+      count: 250,
+      csonkolt: false,
+    })
+    await lap()
+    const hivas = adat.listProductsWithSort.mock.calls[0][0]
+    expect(hivas.queryParams.id).toEqual(sok)
+    expect(hivas.queryParams.id).toContain("p200")
+    expect(hivas.azonositokIdorendben).toBe(true)
+    // a besorolás is mind a 250-re: 100 + 100 + 50
+    expect(
+      adat.listProducts.mock.calls.map(([h]) => h.queryParams.id.length),
+    ).toEqual([100, 100, 50])
+  })
+
   it("a fülek a találatok gyökerei, darabszámmal; az Összes az aktív", async () => {
     await lap()
     const fulek = within(screen.getByTestId("kereses-gyokerek")).getAllByRole(
