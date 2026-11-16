@@ -23,6 +23,7 @@ vi.mock("./regions", () => ({
 vi.mock("./cookies", () => ({ getPublicCacheOptions: vi.fn(async () => ({})) }))
 
 import {
+  KATALOGUS_KOR_MEZOK,
   RENDEZO_KOR_MEZOK,
   TERMEKLISTA_MEZOK,
   termeklistaMezok,
@@ -64,6 +65,7 @@ type Lekerdezes = {
   id?: string | string[]
   order?: string
   category_id?: string[]
+  collection_id?: string[]
 }
 
 beforeEach(() => {
@@ -79,7 +81,8 @@ beforeEach(() => {
         halmaz = [...halmaz].reverse()
       }
       const lap = halmaz.slice(q.offset, q.offset + q.limit)
-      const szuk = q.fields === RENDEZO_KOR_MEZOK
+      const szuk =
+        q.fields === RENDEZO_KOR_MEZOK || q.fields === KATALOGUS_KOR_MEZOK
       return {
         products: szuk
           ? lap.map((t) => ({
@@ -100,10 +103,15 @@ const lekerdezesek = () =>
   sdk.client.fetch.mock.calls.map(
     (hivas: unknown[]) => (hivas[1] as { query: Lekerdezes }).query,
   )
+/** A rendezo kor lekeresei, barmelyik szuk mezokeszlettel (a kozos kor vagy a szuro melletti, soros kor). */
 const rendezoKor = () =>
-  lekerdezesek().filter((q) => q.fields === RENDEZO_KOR_MEZOK)
+  lekerdezesek().filter(
+    (q) => q.fields === RENDEZO_KOR_MEZOK || q.fields === KATALOGUS_KOR_MEZOK,
+  )
 const lapLekeresek = () =>
-  lekerdezesek().filter((q) => q.fields !== RENDEZO_KOR_MEZOK)
+  lekerdezesek().filter(
+    (q) => q.fields !== RENDEZO_KOR_MEZOK && q.fields !== KATALOGUS_KOR_MEZOK,
+  )
 
 const KATEGORIA = { category_id: ["pcat_1"] }
 
@@ -117,8 +125,16 @@ describe("listProductsWithSort, ar szerinti rendezes szuk rendezo korrel", () =>
     })
 
     // 250 termek: harom szazas lap, mind a szuk mezokkel
-    expect(rendezoKor().map((q) => q.offset)).toEqual([0, 100, 200])
+    // az egyszeru halmaz (csak kategoria): a KOZOS kor (a marka-szamlalo is ebbol szamol), az elso lap utan parhuzamosan
+    expect(
+      rendezoKor()
+        .map((q) => q.offset)
+        .sort((a, b) => a - b),
+    ).toEqual([0, 100, 200])
     expect(rendezoKor().every((q) => q.limit === 100)).toBe(true)
+    expect(rendezoKor().every((q) => q.fields === KATALOGUS_KOR_MEZOK)).toBe(
+      true,
+    )
     // a szuro (kategoria) a rendezo korben is ott van
     expect(rendezoKor().every((q) => q.category_id?.[0] === "pcat_1")).toBe(
       true,
@@ -198,6 +214,39 @@ describe("listProductsWithSort, ar szerinti rendezes szuk rendezo korrel", () =>
     expect(tul.nextPage).toBeNull()
     expect(lapLekeresek()).toHaveLength(0)
     expect(rendezoKor()).toHaveLength(3)
+  })
+
+  it("marka-szuro mellett a halmaz NEM egyszeru: a regi, soros, szuk kor fut (a marka-szamlalo az egesz kategoriat szamolja, nem ezt a halmazt)", async () => {
+    await listProductsWithSort({
+      page: 1,
+      queryParams: { ...KATEGORIA, collection_id: ["col_1"], limit: 12 },
+      sortBy: "price_asc",
+      countryCode: "hu",
+    })
+
+    expect(rendezoKor().map((q) => q.offset)).toEqual([0, 100, 200])
+    expect(rendezoKor().every((q) => q.fields === RENDEZO_KOR_MEZOK)).toBe(true)
+    expect(rendezoKor().every((q) => q.collection_id?.[0] === "col_1")).toBe(
+      true,
+    )
+  })
+
+  it("a bolt mind (kategoria nelkul) is a kozos kort kapja, es a kozos kor a markat is hozza", async () => {
+    const { response } = await listProductsWithSort({
+      page: 1,
+      queryParams: { limit: 12 },
+      sortBy: "price_desc",
+      countryCode: "hu",
+    })
+
+    expect(rendezoKor()).toHaveLength(3)
+    expect(rendezoKor().every((q) => q.fields === KATALOGUS_KOR_MEZOK)).toBe(
+      true,
+    )
+    expect(rendezoKor().every((q) => q.category_id === undefined)).toBe(true)
+    expect(response.count).toBe(DARAB)
+    expect(KATALOGUS_KOR_MEZOK).toContain("collection.id")
+    expect(KATALOGUS_KOR_MEZOK).toContain("collection.title")
   })
 
   it("az idorendi ag VALTOZATLAN: egy lekeres, szerver-oldali rendezes, nincs rendezo kor", async () => {

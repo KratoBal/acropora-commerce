@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({
 const adat = vi.hoisted(() => ({
   listProducts: vi.fn(),
   listProductsWithSort: vi.fn(),
+  katalogusKorLista: vi.fn(),
 }))
 vi.mock("@lib/data/products", () => adat)
 const katAdat = vi.hoisted(() => ({ listCategories: vi.fn() }))
@@ -104,6 +105,19 @@ beforeEach(() => {
   adat.listProductsWithSort.mockResolvedValue({
     response: { products: termekek(LAP_MERET), count: 40 },
     nextPage: 2,
+  })
+  // a KOZOS kor (ar szerinti rendezes, szuro nelkul): a termekek markaval, mint a szuk marka-kor 150 termeke
+  adat.katalogusKorLista.mockResolvedValue({
+    products: Array.from({ length: 150 }, (_, i) => ({
+      id: `k${i}`,
+      collection:
+        i % 5 === 0
+          ? null
+          : i % 2 === 0
+            ? { id: "pcol_ati", title: "ATI" }
+            : { id: "pcol_dd", title: "D-D" },
+    })),
+    count: 150,
   })
 })
 afterEach(() => {
@@ -282,6 +296,52 @@ describe("a Commerce kategórialap", () => {
         .map((a) => a.textContent)
       // 150 termek, ebbol 30 marka nelkul: 120, fele-fele.
       expect(sorok).toEqual(["ATI60", "D-D60"])
+    })
+
+    /*
+      A KOZOS KOR (task t-20261116-gyoker-ar-rendezes): ar szerinti rendezesnel, szuro nelkul a rendezo kor es a marka-szamlalo
+      ugyanazt a halmazt olvasna, egyszerre. MI PIROSIT: a marka-szamlalo ilyenkor is a SAJAT szuk lapjait kerdezi (a Medusa a
+      ketszeres terhelest nem birja); szuronel vagy idorendnel a marka-szamlalo mégis a kozos korbol szamol (a halmaz mas).
+    */
+    it("ár szerint, szűrő nélkül a márkák a KÖZÖS körből jönnek, a saját szűk márka-kör nem fut", async () => {
+      await lap({ sortBy: "price_asc" })
+      expect(adat.katalogusKorLista).toHaveBeenCalledWith("termekek", "hu")
+      const szukMarkaHivasok = adat.listProducts.mock.calls
+        .map(([h]) => h)
+        .filter((h) => String(h.queryParams.fields).startsWith("id,collection"))
+      expect(szukMarkaHivasok).toHaveLength(0)
+      const sorok = within(screen.getByTestId("szuro-markak"))
+        .getAllByRole("link")
+        .map((a) => a.textContent)
+      expect(sorok).toEqual(["ATI60", "D-D60"])
+    })
+
+    it("márka-szűrővel, idő szerint vagy opcióval a márka-számláló a SAJÁT szűk körét kérdezi, a közös kör nem fut", async () => {
+      for (const props of [
+        { sortBy: "price_asc", markak: ["pcol_ati"] },
+        { sortBy: "created_at" },
+        {},
+        { sortBy: "price_desc", optionValueIds: ["o1"] },
+      ]) {
+        adat.katalogusKorLista.mockClear()
+        adat.listProducts.mockClear()
+        cleanup()
+        await lap(props)
+        expect(adat.katalogusKorLista).not.toHaveBeenCalled()
+        expect(
+          adat.listProducts.mock.calls
+            .map(([h]) => h)
+            .filter((h) =>
+              String(h.queryParams.fields).startsWith("id,collection"),
+            ),
+        ).toHaveLength(2)
+      }
+    })
+
+    it("ha a közös kör elbukik, a lap áll, Márka szakasz nélkül", async () => {
+      adat.katalogusKorLista.mockRejectedValue(new Error("hálózat"))
+      await lap({ sortBy: "price_asc" })
+      expect(screen.queryByTestId("szuro-markak")).toBeNull()
     })
 
     it("a kiválasztott márka szűri a listát, csíkot kap, és levehető", async () => {

@@ -2,6 +2,7 @@ import { listNonEmptyRootCategories } from "@lib/data/categories"
 import { getRegion } from "@lib/data/regions"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
+import { korMegosztott } from "@lib/util/katalogus-kor-egyseru"
 import { markaValtas, szuroCim, type MarkaSor } from "@lib/util/marka-szuro"
 import type { OptionValueIds } from "@lib/util/product-option-filters"
 import {
@@ -65,7 +66,11 @@ export default async function StoreListaLap({
       szuro: { collection_id: markak },
     }),
     listNonEmptyRootCategories(region.id),
-    kategoriaMarkai(undefined, countryCode),
+    kategoriaMarkai(
+      undefined,
+      countryCode,
+      korMegosztott({ sortBy, markak, optionValueIds }),
+    ),
   ])
 
   const nev = (elem: { id: string; name?: string | null }) =>
