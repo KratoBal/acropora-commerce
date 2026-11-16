@@ -66,3 +66,30 @@ export const calculatePriceForShippingOption = async (
       return null
     })
 }
+
+/**
+ * A KOSAR SZALLITASI OPCIOI A KOSAR LAPNAK, FRISSEN (task t-20261116-kosar-dobozok). A penztari lista (`listCartShippingMethods`) a
+ * `fulfillment` cimkevel gyorsitotarazott, es egy kosarhoz tartozik: a kosar lap tartalma viszont tetelenkent valtozik (egy elo allat
+ * kikerul, az opciok szama megvaltozik), ezert itt NINCS gyorsitotar. Hiba eseten `null`: a doboz akkor nem jelenik meg, nem allit
+ * olyat, amit nem tudunk.
+ */
+export const listCartShippingOptionsFresh = async (
+  cartId: string,
+): Promise<HttpTypes.StoreCartShippingOption[] | null> => {
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  return sdk.client
+    .fetch<HttpTypes.StoreShippingOptionListResponse>(
+      `/store/shipping-options`,
+      {
+        method: "GET",
+        query: { cart_id: cartId },
+        headers,
+        cache: "no-store",
+      },
+    )
+    .then(({ shipping_options }) => shipping_options)
+    .catch(() => null)
+}

@@ -916,6 +916,13 @@ export const en: Dictionary = {
     signInHeading: "Already have an account?",
     signInText: "Sign in and finish faster.",
     signInButton: "Sign in",
+    atvetelTitle: "Receiving the order",
+    atvetelArCimUtan: "The price shows once you enter the address",
+    atvetelLabjegyzet:
+      "You choose how to receive the order in the checkout, where you enter the address.",
+    fizetesTitle: "Payment",
+    fizetesSzoveg:
+      "You choose the payment method in the checkout. What is offered depends on how you receive the order.",
     pickupTitle: "Live animal in the cart",
     pickupLead: "We hand this order over in the shop.",
     pickupReason:
