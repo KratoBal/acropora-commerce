@@ -1,7 +1,6 @@
 import { translator, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import {
-  ELO_ALLAT_FIGYELMEZTETES,
   FELIRATOK,
   HIANYZO_ADAT,
   KORALLOS_FELIRAT,
@@ -160,9 +159,7 @@ export function TartasiBlokk({
           ) : null}
         </>
       )}
-      <p data-testid="tartas-elo-allat" className="font-semibold">
-        {ELO_ALLAT_FIGYELMEZTETES}
-      </p>
+      {/* az élő állat bolti átvételi mondata a készlet-dobozban áll (egy helyen: acrobot 53811), nem itt */}
     </section>
   )
 }
