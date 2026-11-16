@@ -33,6 +33,7 @@ import { KepBlokk } from "../image-gallery/kep-blokk"
 import UniquePieceBadge, {
   UniquePiecePromise,
 } from "@modules/products/components/unique-piece-badge"
+import { ELO_ALLAT_FIGYELMEZTETES } from "@lib/util/tartasi-adat"
 import { vilagaTermeknek } from "./vilag-valto"
 
 /**
@@ -830,9 +831,21 @@ export function vazTartalom(
    * ele (nincs keret es nem foglal helyet), tehat az uresseg nem latszik
    * hianynak.
    */
-  if (rendelesiMondat || typeof keszlet === "number") {
+  /*
+    AZ ELO ALLAT LAPJAN A DOBOZ A MAR DONTOTT BOLTI ATVETELI MONDATOT IS MUTATJA (task t-20261116-keszletdoboz-eloallat, acrobot 53793). Az
+    `eloAllat` jelzo a harom elo allat gyokerbol jon (a `vilagaTermeknek`), ugyanabbol a haromnevu szabalybol, amelyik az OS-ben a
+    `pickup_only` szarmaztatasat adja (lasd a `vilag-valto.ts` "negy hely, ket repo" blokkjat), tehat ahol ez a sor all, ott a
+    termek az OS szerint is bolti atveteles. A szoveg ugyanaz a konstans, mint a tartasi blokk aljan: nem allhat ket helyen.
+    Az elo allat lapjan a doboz ettol sosem marad ures (a vilagos lapokon a tobbseg ures marad, azt ez nem erinti).
+  */
+  const eloAllatMondat = eloAllat ? ELO_ALLAT_FIGYELMEZTETES : null
+  if (rendelesiMondat || typeof keszlet === "number" || eloAllatMondat) {
     tartalom.elerhetoseg = (
-      <ElerhetosegDoboz rendelesiMondat={rendelesiMondat} keszlet={keszlet} />
+      <ElerhetosegDoboz
+        rendelesiMondat={rendelesiMondat}
+        keszlet={keszlet}
+        eloAllatMondat={eloAllatMondat}
+      />
     )
   }
 

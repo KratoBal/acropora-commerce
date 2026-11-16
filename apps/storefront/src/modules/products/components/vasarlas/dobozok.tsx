@@ -134,7 +134,16 @@ export function OmnibusSor({
 export function ElerhetosegDoboz({
   rendelesiMondat,
   keszlet,
+  eloAllatMondat,
 }: {
+  /**
+   * AZ ELO ALLAT BOLTI ATVETELI MONDATA (task t-20261116-keszletdoboz-eloallat, acrobot 53793): a terv harmadik soranak ("Bolti atvetel")
+   * a MAR DONTOTT tenye az elo allat lapjan (Balazs, 2026-09-29: elo allat csak bolti atvetellel), ugyanabbol a konstansbol,
+   * amelyik a tartasi blokk aljan all (`ELO_ALLAT_FIGYELMEZTETES`): a szoveg nem allhat ket helyen. A hivo adja at, ez a doboz csak
+   * kirajzolja (tiszta megjelenites), es ures/hianyzo ertekre nincs sor. NEM cimke-ertek par: a mondatnak nincs cimkeje, mint a
+   * rendelesi mondatnak, es kitalalt cimke kitalalt szoveg lenne.
+   */
+  eloAllatMondat?: string | null
   rendelesiMondat?: string | null
   /**
    * A SZUKOSSEG SZAMA, VAGY `null`. A dontest a hivo hozza
@@ -188,7 +197,16 @@ export function ElerhetosegDoboz({
     van -- es a hivo oldali dontes (`scarcityCountOf`) hiaba lenne helyes.
     Ezt a sajat doboz-szintu allitasom fogta meg, nem a fuggveny harom zoldje.
   */
-  if (!minimumSor && typeof keszlet !== "number") return null
+  const eloAllatSor = eloAllatMondat ? (
+    <p
+      className="text-[13.5px]"
+      style={{ color: "var(--terv-szoveg-halvany)" }}
+      data-testid="vaz-eloallat-atvetel"
+    >
+      {eloAllatMondat}
+    </p>
+  ) : null
+  if (!minimumSor && !eloAllatSor && typeof keszlet !== "number") return null
 
   /**
    * A DOBOZ MELYEDES A PANELEN BELUL, ES EZ A TERVBOL MERT ALAK (2026-09-08).
@@ -293,6 +311,7 @@ export function ElerhetosegDoboz({
           </span>
         </div>
       ) : null}
+      {eloAllatSor}
       {minimumSor}
     </div>
   )

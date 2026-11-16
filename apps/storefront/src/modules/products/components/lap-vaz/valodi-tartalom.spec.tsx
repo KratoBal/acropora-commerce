@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { ELO_ALLAT_FIGYELMEZTETES } from "@lib/util/tartasi-adat"
+
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
 import {
   besorolasLanc,
@@ -852,6 +854,58 @@ describe("a váz valódi tartalma", () => {
     const doboz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
 
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+  })
+
+  /**
+   * AZ ELO ALLAT LAPJAN A REKESZ A MAR DONTOTT BOLTI ATVETELI MONDATOT MUTATJA (task t-20261116-keszletdoboz-eloallat, acrobot 53793).
+   * MI PIROSIT: a mondat nem jelenik meg a sotet (elo allat) lapon, vagy a vilagos lapon is megjelenik (a vilagos lapon a rekesz
+   * tovabbra is ures, ha csak kiszereles van); a mondat nem a kozos konstans; a rekesz az elo allat lapjan ures marad.
+   */
+  it("az élő állat lapján az elérhetőség-rekesz a közös konstans mondatát mutatja, a világos lapon nem", () => {
+    const KORALL = [
+      { id: "k1", name: "Korallok", mpath: "k1", parent_category_id: null },
+    ]
+    const { unmount } = render(
+      <LapVaz
+        vilag="sotet"
+        tartalom={vazTartalom(
+          { ...(TERMEK as object), categories: KORALL } as never,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KORALL as never,
+        )}
+      />,
+    )
+    const doboz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    expect(screen.getByTestId("vaz-eloallat-atvetel").textContent).toBe(
+      ELO_ALLAT_FIGYELMEZTETES,
+    )
+    unmount()
+
+    // a vilagos lap: a fixtura csak kiszerelest visel, a rekesz ures, a mondat nincs
+    render(
+      <LapVaz
+        tartalom={vazTartalom(
+          TERMEK,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          KATEGORIAK,
+        )}
+      />,
+    )
+    expect(
+      document
+        .querySelector('[data-vaz-szakasz="elerhetoseg"]')
+        ?.getAttribute("data-vaz-ures"),
+    ).toBe("igen")
+    expect(screen.queryByTestId("vaz-eloallat-atvetel")).toBeNull()
   })
 
   /**

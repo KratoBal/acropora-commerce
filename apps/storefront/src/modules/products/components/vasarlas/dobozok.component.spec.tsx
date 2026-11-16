@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { ELO_ALLAT_FIGYELMEZTETES } from "@lib/util/tartasi-adat"
 import {
   ArAlattiSor,
   ElerhetosegDoboz,
@@ -328,5 +329,67 @@ describe("az Omnibus-sor", () => {
     expect(szoveg).not.toMatch(/kapható/)
     expect(szoveg).toContain("2026. 10. 25.")
     expect(szoveg).toMatch(/1\s500\sFt$/)
+  })
+})
+
+/**
+ * AZ ELO ALLAT BOLTI ATVETELI MONDATA A DOBOZBAN (task t-20261116-keszletdoboz-eloallat, acrobot 53793). MI PIROSIT: a mondat nem a
+ * kozos konstansbol jon (ket helyen allna a szoveg); a doboz a mondat mellett is `null`, ha csak ez a sor van; a sor cimkevel jelenik
+ * meg (kitalalt cimke); a 13,5 pixeles meret elmozdul; mondat nelkul is megjelenik valami.
+ */
+describe("az elérhetőség-doboz élő állat sora", () => {
+  it("a mondat a közös konstansból jön, és a doboz csak ettől is megjelenik", () => {
+    render(<ElerhetosegDoboz eloAllatMondat={ELO_ALLAT_FIGYELMEZTETES} />)
+
+    const sor = screen.getByTestId("vaz-eloallat-atvetel")
+
+    expect(sor.textContent).toBe(ELO_ALLAT_FIGYELMEZTETES)
+    expect(screen.getByTestId("elerhetoseg-melyedes")).toBeTruthy()
+  })
+
+  it("a sor 13.5 pixelen áll, a halvány szöveg tokenjén, és nincs cimkéje", () => {
+    render(<ElerhetosegDoboz eloAllatMondat={ELO_ALLAT_FIGYELMEZTETES} />)
+
+    const sor = screen.getByTestId("vaz-eloallat-atvetel")
+
+    expect(sor.className).toContain("text-[13.5px]")
+    expect(sor.style.color).toBe("var(--terv-szoveg-halvany)")
+    // a mondat az egyetlen szoveg a melyedesben: nincs mellette cimke
+    expect(screen.getByTestId("elerhetoseg-melyedes").textContent).toBe(
+      ELO_ALLAT_FIGYELMEZTETES,
+    )
+  })
+
+  it("mondat nélkül (üres vagy hiányzó) nincs sor, és semmi más sem miatta jelenik meg", () => {
+    for (const ures of [undefined, null, ""]) {
+      const { container, unmount } = render(
+        <ElerhetosegDoboz eloAllatMondat={ures} />,
+      )
+      expect(container.innerHTML).toBe("")
+      unmount()
+    }
+
+    render(<ElerhetosegDoboz keszlet={3} />)
+    expect(screen.queryByTestId("vaz-eloallat-atvetel")).toBeNull()
+  })
+
+  it("a készlet-sor után áll, a rendelési mondat előtt", () => {
+    render(
+      <ElerhetosegDoboz
+        keszlet={2}
+        eloAllatMondat={ELO_ALLAT_FIGYELMEZTETES}
+        rendelesiMondat="Legalább 2 darab rendelhető."
+      />,
+    )
+
+    const sorrend = Array.from(
+      screen.getByTestId("elerhetoseg-melyedes").children,
+    ).map((elem) => elem.getAttribute("data-testid"))
+
+    expect(sorrend).toEqual([
+      "vaz-keszlet",
+      "vaz-eloallat-atvetel",
+      "vaz-rendelesi-mondat",
+    ])
   })
 })
