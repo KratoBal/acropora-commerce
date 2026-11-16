@@ -11,6 +11,11 @@ import { atvetelSorok, type SzallitasiOpcioBemenet } from "./atvetel-sorok"
  * ÁTVÉTEL: a bolt saját opciói (név, fix ár vagy "a cím után"), a bolt válaszából (`atvetel-sorok.ts`). Ha a bolt nem válaszolt
  * (`null`) vagy nincs opció, az ÁTVÉTEL rész és vele a doboz NEM jelenik meg: nem állítunk olyat, amit nem tudunk.
  *
+ * A BOLTI ÁTVÉTEL FELIRATA UGYANAZ, MINT A PÉNZTÁRBAN (acrobot 54117, a böngészős végigjáráson a kosár "Bolti átvétel", a pénztár "Átvétel üzletben"
+ * volt): a pénztár a bolti átvételt a szótár felirata alatt mutatja (`checkoutShipping.storePickup`), a futár-módokat a bolt opció-nevén. A doboz
+ * ugyanezt a szabályt követi: a bolt válasza dönti el, MELYIK opció bolti átvétel (`service_zone.fulfillment_set.type === "pickup"`, mérve a
+ * teszt Medusán 2026-11-16-án, mező-kérés nélkül is benne van a válaszban), és annak a feliratát a szótár adja, hu és en nyelven.
+ *
  * VEGYES KOSÁR (élő állat + kiszállítható tétel): a bolt a kiszállítható rendelés opcióit adja (mérve a teszt Medusán, 2026-11-16:
  * bolti átvétel + GLS + Foxpost, `shipping_class: NORMAL` és a `split_line_ids` az élő állat sorát nevezi), a `SplitNotice` pedig
  * két rendelést mond. A doboz ilyenkor kimondja, hogy a futár-módok csak a kiszállítandó rendelésre vonatkoznak (barracuda, #787).
@@ -51,7 +56,9 @@ export default function AtvetelFizetes({
               className="flex flex-wrap justify-between gap-x-4"
               data-testid="atvetel-sor"
             >
-              <span>{sor.nev}</span>
+              <span>
+                {sor.bolti ? t("checkoutShipping.storePickup") : sor.nev}
+              </span>
               <span className="text-acr-slate">
                 {sor.ar.tipus === "fix"
                   ? convertToLocale({
