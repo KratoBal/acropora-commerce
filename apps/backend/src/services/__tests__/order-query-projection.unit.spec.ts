@@ -79,6 +79,7 @@ describe("order query projection", () => {
           shipping_methods: [
             {
               name: "GLS csomagpont",
+              shipping_option_id: "so_gls_point",
               data: { gls_pickup_point: { id: "HU-123", name: "GLS Mammut", type: "parcel-shop" } },
             },
           ],
@@ -110,6 +111,7 @@ describe("order query projection", () => {
       currency_code: shipped.currency_code,
       customer_name: shipped.customer_name,
       phone: shipped.phone,
+      shipping_option_id: shipped.shipping_option_id,
       pickup_point: shipped.pickup_point,
       payment: shipped.payment,
       related_order: shipped.related_order,
@@ -117,6 +119,7 @@ describe("order query projection", () => {
       currency_code: "huf",
       customer_name: "Nagy Emese",
       phone: "+36 30 555 0137",
+      shipping_option_id: "so_gls_point",
       pickup_point: { id: "HU-123", name: "GLS Mammut", type: "parcel-shop" },
       payment: {
         provider_id: "pp_stripe_stripe",
@@ -128,6 +131,8 @@ describe("order query projection", () => {
       },
       related_order: { id: "order_pick", role: "pickup" },
     })
+    // an order without a shipping method (the pair of a mixed cart here) has no option id: null, not undefined
+    expect(guest.shipping_option_id).toBeNull()
     expect([guest.customer_name, guest.phone, guest.payment, guest.related_order]).toEqual([
       "Vendég",
       null,

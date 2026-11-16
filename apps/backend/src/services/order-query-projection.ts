@@ -29,6 +29,7 @@ type QueryOrder = {
   billing_address?: QueryAddress
   shipping_methods?: {
     name: string
+    shipping_option_id?: string | null
     data?: {
       foxpost_pickup_point?: QueryPickupPoint
       gls_pickup_point?: QueryPickupPoint
@@ -76,6 +77,11 @@ export type OrderQueryRow = {
     changed_at: Date | null
   }
   shipping_method: string | null
+  /**
+   * The id of the shipping option behind `shipping_method`. The name is a snapshot an admin can rename, the id is not; the
+   * OS decides "store pickup" on it (acropora-os #2637). Null when the order has no shipping method.
+   */
+  shipping_option_id: string | null
   payment_method: string | null
   invoice_status: null
   /** The OS list (acropora-os "Rendelések"): who, where to, how it is paid, and its pair. */
@@ -255,6 +261,7 @@ export const projectOrderQueryRows = ({
         changed_at: latestHistory?.created_at ?? null,
       },
       shipping_method: order.shipping_methods?.[0]?.name ?? null,
+      shipping_option_id: order.shipping_methods?.[0]?.shipping_option_id ?? null,
       payment_method: providerIdOf(order.payment_collections?.[0]),
       invoice_status: null,
       currency_code: order.currency_code ?? null,
