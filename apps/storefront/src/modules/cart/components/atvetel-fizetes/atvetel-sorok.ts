@@ -14,6 +14,8 @@ export interface SzallitasiOpcioBemenet {
   name?: string | null
   price_type?: string | null
   amount?: number | null
+  /** a bolt valasza megmondja, melyik opcio a bolti atvetel: a teljesitesi halmaz tipusa (`pickup`), a penztar is ebbol dont */
+  service_zone?: { fulfillment_set?: { type?: string | null } | null } | null
 }
 
 export type AtvetelAr = { tipus: "fix"; osszeg: number } | { tipus: "cim-utan" }
@@ -21,6 +23,8 @@ export type AtvetelAr = { tipus: "fix"; osszeg: number } | { tipus: "cim-utan" }
 export interface AtvetelSor {
   azonosito: string
   nev: string
+  /** a bolti atvetel: a penztar is a sajat (szotar-) felirataval mutatja, nem a bolt opcio-nevevel (task t-20261116-kosar-atvetel-nev) */
+  bolti: boolean
   ar: AtvetelAr
 }
 
@@ -41,6 +45,7 @@ export function atvetelSorok(
       {
         azonosito: opcio.id ?? `opcio-${index}`,
         nev,
+        bolti: opcio.service_zone?.fulfillment_set?.type === "pickup",
         ar: fix
           ? { tipus: "fix" as const, osszeg: opcio.amount as number }
           : { tipus: "cim-utan" as const },

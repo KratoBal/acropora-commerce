@@ -6,9 +6,25 @@ import AtvetelFizetes from "./index"
 afterEach(cleanup)
 
 const OPCIOK = [
-  { id: "so_1", name: "Bolti átvétel", price_type: "flat", amount: 0 },
-  { id: "so_2", name: "GLS házhozszállítás", price_type: "calculated" },
-  { id: "so_3", name: "Foxpost csomagpont", price_type: "calculated" },
+  {
+    id: "so_1",
+    name: "Bolti átvétel",
+    price_type: "flat",
+    amount: 0,
+    service_zone: { fulfillment_set: { type: "pickup" } },
+  },
+  {
+    id: "so_2",
+    name: "GLS házhozszállítás",
+    price_type: "calculated",
+    service_zone: { fulfillment_set: { type: "shipping" } },
+  },
+  {
+    id: "so_3",
+    name: "Foxpost csomagpont",
+    price_type: "calculated",
+    service_zone: { fulfillment_set: { type: "shipping" } },
+  },
 ]
 
 /*
@@ -24,7 +40,9 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
 
     const sorok = screen.getAllByTestId("atvetel-sor")
     expect(sorok).toHaveLength(3)
-    expect(sorok[0]).toHaveTextContent("Bolti átvétel")
+    // a bolti átvétel a PÉNZTÁR felirata alatt áll, nem a bolt opció-nevén (acrobot 54117)
+    expect(sorok[0]).toHaveTextContent("Átvétel üzletben")
+    expect(sorok[0]).not.toHaveTextContent("Bolti átvétel")
     expect(sorok[0]).toHaveTextContent(/0\s?Ft/)
     expect(sorok[1]).toHaveTextContent("GLS házhozszállítás")
     expect(sorok[1]).toHaveTextContent("Az ár a cím megadása után látszik")
@@ -106,6 +124,15 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     expect(screen.getByTestId("atvetel-futar-resz")).toHaveTextContent(
       "The courier options apply only to the order that is delivered",
     )
+  })
+
+  it("a bolti átvétel felirata a szótárból jön: az angol oldalon az angol, és a futár-mód neve marad a bolt neve", () => {
+    render(
+      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="en-hu" />,
+    )
+    const sorok = screen.getAllByTestId("atvetel-sor")
+    expect(sorok[0]).toHaveTextContent("Pickup in the store")
+    expect(sorok[1]).toHaveTextContent("GLS házhozszállítás")
   })
 
   it("az angol oldal angol címeket kap, az opciók nevei a bolt válaszából jönnek", () => {

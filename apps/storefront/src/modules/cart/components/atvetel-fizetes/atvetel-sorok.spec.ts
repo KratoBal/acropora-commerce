@@ -26,6 +26,26 @@ describe("atvetelSorok", () => {
       expect(sor.ar).toEqual({ tipus: "cim-utan" })
   })
 
+  it("a bolti átvételt a teljesítési halmaz típusa jelöli (a bolt válasza), a futár-módok nem", () => {
+    const sorok = atvetelSorok([
+      {
+        id: "so_1",
+        name: "Bolti átvétel",
+        price_type: "flat",
+        amount: 0,
+        service_zone: { fulfillment_set: { type: "pickup" } },
+      },
+      {
+        id: "so_2",
+        name: "GLS házhozszállítás",
+        price_type: "calculated",
+        service_zone: { fulfillment_set: { type: "shipping" } },
+      },
+      { id: "so_3", name: "Névtelen típus", price_type: "calculated" },
+    ])
+    expect(sorok.map((sor) => sor.bolti)).toEqual([true, false, false])
+  })
+
   it("egy fix opció hiányzó összege nem nulla: a cím után látszik", () => {
     const sorok = atvetelSorok([
       { id: "so_1", name: "Bolti átvétel", price_type: "flat" },
