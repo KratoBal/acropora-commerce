@@ -352,6 +352,26 @@ const Shipping: React.FC<ShippingProps> = ({
           aktivPontMod.adatKulcs
         ] as FoxpostKivalasztott | undefined)
       : undefined
+  // Egy atveteli hely eseten a kosarban allo atvetel adatai (a lezart lepes osszegzesehez): az opcio a kinalatbol jon,
+  // mert a kosar modja csak a nevet hordozza, a bolt cimet nem.
+  const egyAtvetelAdatai =
+    _pickupMethods?.length === 1 &&
+    kosarMod?.shipping_option_id === _pickupMethods[0].id
+      ? {
+          cim: formatAddress(
+            (
+              _pickupMethods[0] as unknown as {
+                service_zone?: {
+                  fulfillment_set?: {
+                    location?: { address: HttpTypes.StoreCartAddress }
+                  }
+                }
+              }
+            ).service_zone?.fulfillment_set?.location?.address,
+            locale,
+          ),
+        }
+      : null
   const foxpostAktiv = !!foxpostOptionId && shippingMethodId === foxpostOptionId
   const glsPontAktiv = glsOptions.find((o) => o.option_id === shippingMethodId)
 
@@ -757,10 +777,27 @@ const Shipping: React.FC<ShippingProps> = ({
               <p className="mb-1 text-[12px] font-medium uppercase leading-[16px] tracking-[1.8px] text-acr-slate">
                 {t("checkoutShipping.summaryMode")}
               </p>
-              <p className="text-[14px] leading-[22px] text-acr-ink">
-                {cart.shipping_methods!.at(-1)!.name}{" "}
+              <p
+                className="text-[14px] leading-[22px] text-acr-ink"
+                data-testid="delivery-summary-mode"
+              >
+                {/*
+                  A LEZART LEPES UGYANAZT MONDJA, MINT A KARTYA: egy atveteli helynel az uzlet neve (`orderConfirmed.shopName`) es a
+                  cime all, nem az opcio neve. Tobb helynel az opcio neve marad (az mondja meg, melyik uzlet).
+                */}
+                {egyAtvetelAdatai
+                  ? t("orderConfirmed.shopName")
+                  : kosarMod?.name}{" "}
                 {arSzovegIde(cart.shipping_methods!.at(-1)!.amount!)}
               </p>
+              {egyAtvetelAdatai?.cim ? (
+                <p
+                  className="break-words text-[14px] leading-[22px] text-acr-ink"
+                  data-testid="delivery-summary-address"
+                >
+                  {egyAtvetelAdatai.cim}
+                </p>
+              ) : null}
               {kosarPont?.name ? (
                 // a valasztott pont a lezart lepesben is latszik (Foxpost-prompt 4. pont)
                 <p
