@@ -671,8 +671,19 @@ const Shipping: React.FC<ShippingProps> = ({
                               kijelolt={option.id === shippingMethodId}
                             />
                             <div className="flex flex-col">
-                              <span className="text-[14px] leading-[22px] text-acr-ink">
-                                {option.name}
+                              <span
+                                className="text-[14px] leading-[22px] text-acr-ink"
+                                data-testid="uzlet-kartya-nev"
+                              >
+                                {/*
+                                  EGY ATVETELI HELYNEL A KARTYA CIME AZ UZLET NEVE, nem az opcio neve: az opcio neve ("Bolti átvétel") ugyanaz
+                                  a szo, mint a mod-kartya felirata ("Átvétel üzletben"), es egy uzlet mellett ketszer olvasodott egymas alatt.
+                                  Tobb atveteli helynel az opcio neve marad (az mondja meg, melyik uzlet). A nev ugyanaz a szotar-kulcs, mint a
+                                  visszaigazolon (`orderConfirmed.shopName`).
+                                */}
+                                {_pickupMethods?.length === 1
+                                  ? t("orderConfirmed.shopName")
+                                  : option.name}
                               </span>
                               <span className="text-[12px] leading-[18px] text-acr-slate">
                                 {formatAddress(

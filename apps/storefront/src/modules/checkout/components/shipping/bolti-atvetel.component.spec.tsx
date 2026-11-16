@@ -120,3 +120,49 @@ describe("a letiltott bolti atvetel mondata", () => {
     expect(kartyak[0].hasAttribute("data-disabled")).toBe(false)
   })
 })
+
+/**
+ * AZ UZLET-KARTYA CIME A PENZTARBAN (task t-20261116-penztar-uzlet-kartya). A mod-kartya felirata "Átvétel üzletben", es az uzlet-kartya cime eddig az
+ * opcio neve volt ("Bolti átvétel"): egy uzlet mellett ugyanaz a ket sor ketszer. MI PIROSIT: egy atveteli helynel az opcio neve all a cimben;
+ * tobb atveteli helynel az uzlet neve all mindegyikben (az opcio neve mondana meg, melyik); a cim (a bolt cime) elvesz.
+ */
+describe("az üzlet-kártya címe a pénztárban", () => {
+  const masikBolt = () =>
+    ({
+      ...atvetel("so-bolt-2", false),
+      name: "Acropora raktár",
+    }) as unknown as HttpTypes.StoreCartShippingOption
+
+  it("egy átvételi helynél az üzlet neve áll, a cím megmarad, az opció neve nem", () => {
+    render(
+      <Shipping
+        cart={kosar("so-bolt")}
+        availableShippingMethods={[haz(), atvetel("so-bolt", false)]}
+        boltiHiany={null}
+      />,
+    )
+    const cim = screen.getAllByTestId("uzlet-kartya-nev")
+    expect(cim).toHaveLength(1)
+    expect(cim[0].textContent).toBe("Acropora üzlet")
+    const kartya = cim[0].closest('[data-testid="delivery-option-radio"]')
+    expect(kartya?.textContent).toContain("Minta utca 1")
+    expect(kartya?.textContent).not.toContain("Bolti átvétel")
+  })
+
+  it("több átvételi helynél mindegyik a saját opciója nevét viseli", () => {
+    render(
+      <Shipping
+        cart={kosar("so-bolt")}
+        availableShippingMethods={[
+          haz(),
+          atvetel("so-bolt", false),
+          masikBolt(),
+        ]}
+        boltiHiany={null}
+      />,
+    )
+    expect(
+      screen.getAllByTestId("uzlet-kartya-nev").map((e) => e.textContent),
+    ).toEqual(["Bolti átvétel", "Acropora raktár"])
+  })
+})
