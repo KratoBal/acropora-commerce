@@ -9,7 +9,8 @@
  * A `szabaly` az axe szabaly-azonositoja, vagy a billentyuzetes bejaras sajat
  * ellenorzese (`bill:` elotaggal). A `lap` a `LAPOK` kulcsa.
  *
- * A PENZTAR HIBAI CSAK JELENTVE (acrobot 27450, 2026-10-07): a penztar
+ * A PENZTAR HIBAI 2026-10-07-en CSAK JELENTVE voltak (acrobot 27450); azota a penztar atrajzolhato (2026-11-02), es a hibak sorra
+ * javulnak (lasd lent). Az eredeti szoveg: a penztar
  * atrajzolasara nincs engedely, tehat ott a javitas nem ennek a PR-nek a resze.
  * A marka-szin kontrasztja design-dontes (a Figma tokenje), nem kod-hiba.
  */
@@ -20,7 +21,6 @@ export type A11yVarhato = {
   ok: string
 }
 
-const PENZTAR = "pénztár: csak jelentve, az átrajzolásra nincs engedély"
 const MARKASZIN =
   "a márkaszín (#d5782f) kontrasztja fehéren 3,09:1, a határ 4,5:1: design-döntés (Figma token)"
 
@@ -50,21 +50,17 @@ const LAPOK_KOZOS = [
  * - (JAVITVA a #523-ban, barracuda atvetele: a szallitasi es fizetesi mod
  *   radiojanak belso, nev nelkuli gombja jelzo lett, nem vezerlo; a `button-name`
  *   kritikus volt, es kritikus hiba nem allhat ezen a listan);
- * - az osszesito egy termek-linkje nev nelkul (`bill:nev`);
+ * - (JAVITVA 2026-11-16, task t-20261116-penztar-link-nev: az osszesito termek-kepenek linkje `aria-label`-t kapott a termek nevebol;
+ *   a CI-naplo a nevtelen allomast `a#flex.w-full`-ként mondta meg; a penztar-cim es penztar-szallitas lapnak igy nincs varhato hibaja);
  * - (JAVITVA a #754-ben, 2026-11-13: a `color-contrast` mindharom penztar-lapon eltunt, mert a Kedvezmenykod link a Medusa
  *   alapertelmezett elenk kekje helyett a kirakat sotetkek, alahuzott link-stilusat viseli (`text-acr-ocean`); a CI mondta:
  *   "mar nincs a lapon, vedd ki"; a penztar-fizetes lapnak igy nincs varhato hibaja).
  */
-const penztar = (lap: string, szabalyok: string[]): A11yVarhato[] =>
-  szabalyok.map((szabaly) => ({ lap, szabaly, gazda: "jelentve", ok: PENZTAR }))
-
 export const A11Y_VARHATO: readonly A11yVarhato[] = [
   ...LAPOK_KOZOS.flatMap((lap) => [
     { lap, szabaly: "nested-interactive", gazda: "FE-7", ok: FEJLEC_KOSAR },
     { lap, szabaly: "color-contrast", gazda: "design", ok: MARKASZIN },
   ]),
-  ...penztar("penztar-cim", ["bill:nev"]),
-  ...penztar("penztar-szallitas", ["bill:nev"]),
 ]
 
 export function a11yVarhato(lap: string, szabaly: string): A11yVarhato | null {
