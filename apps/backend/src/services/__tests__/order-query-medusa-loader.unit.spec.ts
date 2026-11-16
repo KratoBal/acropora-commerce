@@ -41,6 +41,8 @@ describe("medusaOrderQueryLoader", () => {
 
     expect(graph.mock.calls[0][0].fields).toEqual(
       expect.arrayContaining([
+        // the OS decides "store pickup" on the option id, not on the renamable name
+        "shipping_methods.shipping_option_id",
         "payment_collections.payments.amount",
         "payment_collections.payments.created_at",
         "payment_collections.payments.canceled_at",

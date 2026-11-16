@@ -27,6 +27,7 @@ export const ORDER_OVERVIEW_FIELDS = [
   "billing_address.last_name",
   "billing_address.phone",
   "shipping_methods.name",
+  "shipping_methods.shipping_option_id",
   "shipping_methods.data",
   "payment_collections.status",
   "payment_collections.amount",
