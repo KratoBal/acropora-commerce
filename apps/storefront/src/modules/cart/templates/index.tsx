@@ -6,6 +6,8 @@ import {
 import SplitNotice from "../components/pickup-notice/split-notice"
 import ElkeltErtesites from "../components/elkelt-ertesites"
 import FoglalasSorok from "../components/foglalas-sorok"
+import AtvetelFizetes from "../components/atvetel-fizetes"
+import type { SzallitasiOpcioBemenet } from "../components/atvetel-fizetes/atvetel-sorok"
 import type { FoglalasValasz } from "@lib/util/kosar-foglalas"
 import { elkeltATetelek } from "@lib/util/elkelt-darab"
 import ItemsTemplate from "./items"
@@ -21,7 +23,10 @@ const CartTemplate = ({
   countryCode,
   elkeltKezelok = [],
   foglalasok = null,
+  szallitasiOpciok = null,
 }: {
+  /** A bolt szállítási opciói a kosárhoz (az ÁTVÉTEL doboz tájékoztatója); `null`: a bolt nem válaszolt, nincs doboz */
+  szallitasiOpciok?: readonly SzallitasiOpcioBemenet[] | null
   /** V2.3 S2b: a bolt valasza a kosar darabjainak foglalasarol (`null`: nincs valasz, nincs sor) */
   foglalasok?: FoglalasValasz | null
   cart: HttpTypes.StoreCart | null
@@ -115,6 +120,16 @@ const CartTemplate = ({
             </div>
             <div className="relative mt-8 small:mt-0">
               <div className="sticky top-12 flex flex-col gap-y-8">
+                {cart && (
+                  <AtvetelFizetes
+                    opciok={szallitasiOpciok}
+                    currencyCode={cart.currency_code}
+                    countryCode={countryCode}
+                    szetvalasztott={
+                      (shippingClass?.split_line_ids?.length ?? 0) > 0
+                    }
+                  />
+                )}
                 {cart && cart.region && <Summary cart={cart} />}
               </div>
             </div>

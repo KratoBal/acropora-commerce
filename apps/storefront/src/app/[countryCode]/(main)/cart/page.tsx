@@ -3,6 +3,7 @@ import { localeOf } from "@lib/i18n/locale"
 import { retrieveCart, retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import { kosarFoglalasai } from "@lib/data/kosar-foglalas"
+import { listCartShippingOptionsFresh } from "@lib/data/fulfillment"
 import { ELKELT_PARAM, elkeltKezelok } from "@lib/util/elkelt-darab"
 import CartTemplate from "@modules/cart/templates"
 import { Metadata } from "next"
@@ -53,8 +54,15 @@ export default async function Cart(props: {
       ).catch(() => null)
     : null
 
+  /** Az ÁTVÉTEL doboz (tájékoztató): a bolt szállítási opciói a kosárhoz; a hiba itt sem állítja meg a lapot (`null`: nincs doboz). */
+  const szallitasiOpciok =
+    cart?.id && cart.items?.length
+      ? await listCartShippingOptionsFresh(cart.id)
+      : null
+
   return (
     <CartTemplate
+      szallitasiOpciok={szallitasiOpciok}
       cart={cart}
       customer={customer}
       shippingClass={shippingClass}

@@ -954,6 +954,15 @@ export const hu = {
     signInHeading: "Van már fiókod?",
     signInText: "Jelentkezz be, és gyorsabban végzel.",
     signInButton: "Bejelentkezés",
+    atvetelTitle: "Átvétel",
+    atvetelArCimUtan: "Az ár a cím megadása után látszik",
+    atvetelLabjegyzet:
+      "Az átvétel módját a pénztárban választod ki, ott adod meg a címet.",
+    atvetelFutarResz:
+      "A futár-módok csak a kiszállítandó rendelésre vonatkoznak; az élő állatot a boltban veszed át.",
+    fizetesTitle: "Fizetés",
+    fizetesSzoveg:
+      "A fizetési módot a pénztárban választod ki. Hogy mi választható, az attól függ, hogyan veszed át a rendelést.",
     pickupTitle: "Élő állat a kosárban",
     pickupLead: "Ezt a rendelést a boltban adjuk át.",
     pickupReason:
