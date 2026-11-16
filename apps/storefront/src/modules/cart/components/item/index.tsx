@@ -178,9 +178,15 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             : "row-span-2 small:w-24 small:py-4 small:pr-4"
         }
       >
+        {/*
+          A KEP LINKJE NEVET KAP A TERMEK NEVEBOL (task t-20261116-penztar-link-nev). A kep `alt`-ja a termek neve, DE egy kep nelkuli
+          terméknél a Thumbnail diszito (`alt=""`) helykitoltot rajzol, es akkor a link neve ures lenne: a CI akadalymentessegi
+          merese a penztar cim- es szallitas-lapjan ezt latta ("bill:nev", `a#flex.w-full`, 2026-11-16 CI-naplo).
+        */}
         <LocalizedClientLink
           href={`/termek/${item.product_handle}`}
           className="flex w-full border border-acr-line"
+          aria-label={item.product_title ?? item.title ?? undefined}
         >
           <Thumbnail
             alt={item.product_title ?? item.title ?? ""}
