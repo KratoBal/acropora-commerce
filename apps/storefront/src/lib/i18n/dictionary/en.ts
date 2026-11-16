@@ -1192,6 +1192,8 @@ export const en: Dictionary = {
       "We pack your parcel. The tracking number appears when we have dispatched the parcel.",
     nextStepGls:
       "We pack your parcel. The GLS tracking number appears when we have dispatched the parcel.",
+    pickupWhere: "Pick-up location: {name}, {address}.",
+    pickupPayAtStore: "Available for pick-up in the store. Payment at pick-up.",
     summary: "Order summary",
     orderNumber: "Order number",
     payment: "Payment",

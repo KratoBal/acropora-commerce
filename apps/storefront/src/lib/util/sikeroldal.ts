@@ -1,7 +1,7 @@
 import { translator, type Translate } from "@lib/i18n/dictionary"
 import { foxpostPontTipus } from "./csomagpont"
 import { GLS_LOGO, glsNyitvatartas, glsTipusFelirat, glsTipusLogo } from "./gls"
-import { isStripeLike } from "@lib/constants"
+import { isManual, isStripeLike } from "@lib/constants"
 import { SHOP_ADDRESS } from "@modules/cart/components/pickup-notice/pickup-notice"
 import { rendelesSzam } from "@lib/util/rendelesek"
 
@@ -87,6 +87,12 @@ export type Teljesites = {
   kezelesiDij: number | null
   /** A szolgaltato logoja a `public/images` alatt (GLS); a FOXPOST-e kulon komponens. */
   logo?: string
+  /**
+   * HOGYAN FIZET A VEVO, CSAK AMIT BIZONYOSAN TUDUNK: "bolti" (pp_system_default, atvetelkor), "elore-utalas"
+   * (pp_acropora_transfer), kulonben null (kartya, utanvet, ismeretlen szolgaltato). A bolti atvetel "Mi tortenik ezutan?"
+   * doboza ebbol ir fizetesi sort; null eseten nem allit semmit.
+   */
+  fizetesMod: "bolti" | "elore-utalas" | null
 }
 
 /**
@@ -187,11 +193,19 @@ export function teljesites(
   )
   const utanvet =
     szolgaltato(rendeles) === UTANVET ? Number(rendeles.total ?? 0) : null
+  const szolg = szolgaltato(rendeles)
+  const fizetesMod: Teljesites["fizetesMod"] =
+    szolg === ELORE_UTALAS
+      ? "elore-utalas"
+      : isManual(szolg ?? undefined)
+        ? "bolti"
+        : null
   const alap = {
     tetelek,
     szallitasiDij: dij,
     atvetelkorFizetendo: utanvet,
     kezelesiDij,
+    fizetesMod,
   }
 
   /*
@@ -254,6 +268,27 @@ export function teljesites(
       .join(", "),
     ...(glsHaz ? { logo: GLS_LOGO.altalanos } : {}),
   }
+}
+
+/**
+ * A BOLTI ATVETEL "MI TORTENIK EZUTAN?" SORAI (acrobot 54187): az uzlet neve es cime, majd a fizetesi mod szerinti egy sor.
+ * CSAK IGAZ ALLITAS: e-mailes igeret ("jelzunk", "kuldunk") nincs benne, amig a webshop-levelezes ki van kapcsolva, es nyitvatartas
+ * sincs, mert az nem adatbol jon. Nem bolti teljesitesnek nincs ilyen sora (azt a csomag mondata viszi).
+ */
+export function boltiLepesek(
+  tj: Pick<Teljesites, "szallito" | "hely" | "cim" | "fizetesMod">,
+  t: Translate = translator("hu"),
+): string[] {
+  if (tj.szallito !== "bolt") return []
+  const sorok = [
+    t("orderConfirmed.pickupWhere", { name: tj.hely, address: tj.cim }),
+  ]
+  if (tj.fizetesMod === "bolti")
+    sorok.push(t("orderConfirmed.pickupPayAtStore"))
+  // az utalas sora a fizetesi lepes SAJAT mondata (ugyanaz a kulcs, hogy a ket oldal ne csusszon el); acrobot 54189
+  if (tj.fizetesMod === "elore-utalas")
+    sorok.push(`${t("checkoutPayment.modeTransferText")}.`)
+  return sorok
 }
 
 /**

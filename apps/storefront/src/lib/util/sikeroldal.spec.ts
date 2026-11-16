@@ -4,6 +4,7 @@ import { translator } from "@lib/i18n/dictionary"
 import {
   GLS_KOVETKEZO_LEPES,
   KOVETKEZO_LEPES,
+  boltiLepesek,
   fizetesCimke,
   sikeroldal,
 } from "./sikeroldal"
@@ -69,6 +70,7 @@ describe("a visszaigazoló lap", () => {
         szallitasiDij: 1150,
         atvetelkorFizetendo: null,
         kezelesiDij: null,
+        fizetesMod: null,
       },
     ])
   })
@@ -391,5 +393,68 @@ describe("a szállítás típusa és helye a díjat hordozó módból jön", () 
     ).teljesitesek[0]!
     expect(t.szallito).toBe("foxpost")
     expect(t.hely).toBe("Minta automata")
+  })
+})
+
+/**
+ * A BOLTI ATVETEL "MI TORTENIK EZUTAN?" SORAI (acrobot 54187 es 54189). MI PIROSIT: a fizetesi sor a rossz szolgaltatohoz; kartyas, utanvetes vagy
+ * ismeretlen szolgaltatonal fizetesi sor jelenne meg (csak amit biztosan tudunk); nem bolti teljesitesnek bolti sora lenne; az utalas sora nem a
+ * fizetesi lepes sajat mondata; angol oldalon magyar sor; e-mailes igeret vagy nyitvatartas a sorok kozott.
+ */
+describe("a bolti átvétel következő lépése", () => {
+  const boltiProvider = (provider: string | null) => ({
+    ...boltiRendeles,
+    payment_collections: provider
+      ? [{ payments: [{ provider_id: provider }] }]
+      : [],
+  })
+  const sorok = (provider: string | null, t = translator("hu")) =>
+    boltiLepesek(
+      sikeroldal(boltiProvider(provider), null, false, t).teljesitesek[0],
+      t,
+    )
+  const HELY =
+    "Az átvétel helye: Acropora üzlet, 1106 Budapest, Pesti Gábor utca 35."
+
+  it("átvételkori fizetés: az üzlet, és hogy átvehető és fizetés átvételkor", () => {
+    expect(sorok("pp_system_default")).toEqual([
+      HELY,
+      "Az üzletben átvehető. Fizetés átvételkor.",
+    ])
+  })
+
+  it("előre utalás: az üzlet és a fizetési lépés saját mondata", () => {
+    expect(sorok("pp_acropora_transfer")).toEqual([
+      HELY,
+      "Díjbekérő emailben, 8 napos fizetési határidővel.",
+    ])
+  })
+
+  it("kártya, utánvét vagy ismeretlen szolgáltató: csak az üzlet, fizetési sor nélkül", () => {
+    expect(sorok("pp_stripe_stripe")).toEqual([HELY])
+    expect(sorok("pp_acropora_cod")).toEqual([HELY])
+    expect(sorok(null)).toEqual([HELY])
+  })
+
+  it("nem bolti teljesítésnek nincs bolti sora", () => {
+    const lap = sikeroldal(foxpostRendeles, null, false)
+    expect(boltiLepesek(lap.teljesitesek[0])).toEqual([])
+  })
+
+  it("az angol oldalon angol a két sor, és a magyar mondat nem szivárog át", () => {
+    const en = translator("en")
+    expect(sorok("pp_system_default", en)).toEqual([
+      "Pick-up location: Acropora store, 1106 Budapest, Pesti Gábor utca 35.",
+      "Available for pick-up in the store. Payment at pick-up.",
+    ])
+  })
+
+  it("a fizetési mód a vegyes kosár bolti felének rendeléséből jön", () => {
+    const lap = sikeroldal(
+      foxpostRendeles,
+      boltiProvider("pp_system_default"),
+      true,
+    )
+    expect(lap.teljesitesek.map((tj) => tj.fizetesMod)).toEqual([null, "bolti"])
   })
 })
