@@ -74,6 +74,14 @@ describe("a tétel képének linkje a kosárban és a pénztár oldalsávjában"
     expect(link).not.toHaveAccessibleName("Kicsi")
   })
 
+  it("egy ÜRES termék-név sem hagyja névtelenül a linket: a sor címe a tartalék (barracuda, #788)", () => {
+    rajzol(sor({ product_title: "", title: "Tartalék cím" }))
+    const link = screen
+      .getAllByRole("link")
+      .find((a) => a.getAttribute("href")?.endsWith("/termek/proba-termek"))!
+    expect(link).toHaveAccessibleName("Tartalék cím")
+  })
+
   it("a termék neve nélkül a sor címe a tartalék", () => {
     rajzol(sor({ product_title: null, title: "Tartalék cím" }))
     const link = screen

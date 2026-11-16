@@ -186,7 +186,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         <LocalizedClientLink
           href={`/termek/${item.product_handle}`}
           className="flex w-full border border-acr-line"
-          aria-label={item.product_title ?? item.title ?? undefined}
+          aria-label={item.product_title || item.title || undefined}
         >
           <Thumbnail
             alt={item.product_title ?? item.title ?? ""}
