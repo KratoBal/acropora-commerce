@@ -3,8 +3,13 @@ import { HttpTypes } from "@medusajs/types"
 import { listCategories } from "@lib/data/categories"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
-import { listProducts, listProductsWithSort } from "@lib/data/products"
+import {
+  katalogusKorLista,
+  listProducts,
+  listProductsWithSort,
+} from "@lib/data/products"
 import { gyermekCimkek } from "@lib/util/kategoria-fa"
+import { korMegosztott } from "@lib/util/katalogus-kor-egyseru"
 import {
   MarkaSor,
   markaSorok,
@@ -76,7 +81,23 @@ const MARKA_MAX_LAP = 30
 export async function kategoriaMarkai(
   categoryId: string | undefined,
   countryCode: string,
+  /**
+   * Igaz, ha a lista ugyanennek a halmaznak a rendezo korat is lehivja (ar szerinti rendezes, szuro nelkul): akkor egy kozos
+   * kor ad adatot mindkettonek (task t-20261116-gyoker-ar-rendezes). Egyebkent a marka-szamlalo a SAJAT szuk lapjait kerdezi.
+   */
+  megosztott = false,
 ): Promise<MarkaSor[]> {
+  if (megosztott) {
+    try {
+      const { products } = await katalogusKorLista(
+        categoryId ?? "",
+        countryCode,
+      )
+      return markaSorok(products)
+    } catch {
+      return []
+    }
+  }
   const lap = (pageParam: number) =>
     listProducts({
       pageParam,
@@ -266,7 +287,11 @@ export default async function CommerceKategoriaLap({
         countryCode,
       ),
     })),
-    kategoriaMarkai(category.id, countryCode),
+    kategoriaMarkai(
+      category.id,
+      countryCode,
+      korMegosztott({ sortBy, markak, optionValueIds, tartasIdk }),
+    ),
   ])
   const markaLink = (id: string) =>
     szuroCim({

@@ -32,3 +32,10 @@ export const VASARLAS_KERET_MEZOK = `${TERMEKLISTA_MEZOK}+variants.metadata`
  * mezoket. A `created_at` azert van itt, mert a `sortProducts` idorendi aga is olvassa.
  */
 export const RENDEZO_KOR_MEZOK = "id,created_at,*variants.calculated_price,"
+
+/**
+ * A KOZOS KOR MEZOI (task t-20261116-gyoker-ar-rendezes): a rendezes mezoi es a marka (gyujtemeny) azonositoja, neve. A gyoker es
+ * a kategoria lista ar szerint a rendezo kort ES a marka-szamlalot egyszerre futtatja, es mindketto a teljes halmazt olvassa; egy
+ * kozos kor mindket mezovel a Medusa-terhelest felezi (lasd `katalogusKorLista` a `lib/data/products.ts`-ben).
+ */
+export const KATALOGUS_KOR_MEZOK = `${RENDEZO_KOR_MEZOK}collection.id,collection.title`

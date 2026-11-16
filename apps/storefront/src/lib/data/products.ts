@@ -2,12 +2,16 @@
 
 import { sdk } from "@lib/config"
 import {
+  KATALOGUS_KOR_MEZOK,
   RENDEZO_KOR_MEZOK,
   TERMEKLISTA_MEZOK,
 } from "@lib/util/termeklista-mezok"
+import { korlattalFuttat } from "@lib/util/korlattal-futtat"
+import { katalogusKorEgyseru } from "@lib/util/katalogus-kor-egyseru"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
+import { cache } from "react"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getPublicCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
@@ -110,6 +114,62 @@ export const listProducts = async ({
       }
     })
 }
+
+/** A kozos kor lapmerete, az egyszerre futo lapok szama es a vedelmi felso hatar (30 lap, 3000 termek, mint a marka-szamlalonal). */
+const KOR_LAP_MERET = 100
+const KOR_PARHUZAMOS_LAP = 7
+const KOR_LAPOK_FELSO_HATARA = 30
+
+/**
+ * A KATALOGUS EGY KORE A RENDEZESNEK ES A MARKA-SZAMLALONAK (task t-20261116-gyoker-ar-rendezes).
+ *
+ * A `cache` egy KERESEN BELUL azonos argumentumra ugyanazt az igeretet adja, tehat a rendezo kor es a marka-szamlalo egy lekerest
+ * oszt meg. A visszaadott lista kozos: aki rendez, masolatot rendezzen (`sortProducts` helyben rendez). A memo NEM exportalt: egy
+ * "use server" fajlbol csak async fuggveny mehet ki, azt a `katalogusKorLista` adja.
+ */
+const katalogusKorMemo = cache(
+  async (
+    kategoriaId: string,
+    countryCode: string,
+  ): Promise<{ products: HttpTypes.StoreProduct[]; count: number }> => {
+    const lap = (pageParam: number) =>
+      listProducts({
+        pageParam,
+        queryParams: {
+          ...(kategoriaId ? { category_id: [kategoriaId] } : {}),
+          limit: KOR_LAP_MERET,
+          fields: KATALOGUS_KOR_MEZOK,
+        },
+        countryCode,
+      })
+    const elso = await lap(1)
+    const count = elso.response.count
+    const lapok = Math.min(
+      Math.ceil(count / KOR_LAP_MERET),
+      KOR_LAPOK_FELSO_HATARA,
+    )
+    const tobbi = await korlattalFuttat(
+      Array.from(
+        { length: Math.max(lapok - 1, 0) },
+        (_, i) => () => lap(i + 2),
+      ),
+      KOR_PARHUZAMOS_LAP,
+    )
+    return {
+      products: [
+        ...elso.response.products,
+        ...tobbi.flatMap(({ response }) => response.products),
+      ],
+      count,
+    }
+  },
+)
+
+export const katalogusKorLista = async (
+  kategoriaId: string,
+  countryCode: string,
+): Promise<{ products: HttpTypes.StoreProduct[]; count: number }> =>
+  katalogusKorMemo(kategoriaId, countryCode)
 
 /**
  * A RENDEZETT LAP TELJES TERMEKEI (task t-20261115-ar-rendezes-szukites). A rendezo kor (`RENDEZO_KOR_MEZOK`) csak az arat
@@ -283,6 +343,36 @@ export const listProductsWithSort = async ({
   const mind: HttpTypes.StoreProduct[] = []
   let osszesen = 0
 
+  /*
+    EGY KOR A RENDEZESNEK ES A MARKA-SZAMLALONAK IS (task t-20261116-gyoker-ar-rendezes). A gyoker es a kategoria lista a
+    rendezo kort ES a marka-szamlalot EGYSZERRE futtatja (`Promise.all`), es mindketto a teljes halmazt olvassa: a Medusa a
+    ketszeres, egyidejű kereset nem birja (modellezve 2026-11-16 a teszt Medusan: kulon 1,6 s es 1,1 s, egyutt 2,8-3,0 s, ez a
+    kirakat hideg 3,0 s-a; egy kozos kor 1,4-1,5 s). Ha a halmaz az EGYSZERU kategoria/gyoker halmaz (nincs marka-, opcio-
+    vagy azonosito-szuro), a kort a `katalogusKor` adja, kerelemenkent egyszer, es a marka-szamlalo ugyanazt kapja.
+  */
+  if (katalogusKorEgyseru(kozosParams)) {
+    const kor = await katalogusKorLista(
+      kozosParams.category_id?.[0] ?? "",
+      countryCode,
+    )
+    const rendezett = sortProducts([...kor.products], sortBy)
+    const kezdet = (oldal - 1) * limit
+    return {
+      response: {
+        products: await rendezettLapTermekei({
+          rendezett,
+          kezdet,
+          limit,
+          kozosParams,
+          countryCode,
+        }),
+        count: kor.count,
+      },
+      nextPage: kor.count > oldal * limit ? oldal + 1 : null,
+      queryParams,
+    }
+  }
+
   for (let lap = 1; lap <= LAPOK_FELSO_HATARA; lap++) {
     const {
       response: { products, count },
@@ -333,25 +423,6 @@ const AZONOSITO_CSOMAG = 100
  * egy friss legyezot jelentene. A gyorsitotar a MASODIK ugyanilyen kerest viszi el, az elsot nem.
  */
 const PARHUZAMOS_CSOMAG = 4
-
-/** A feladatokat legfeljebb `korlat` egyszerre futtatja, az eredmeny a feladatok SORRENDJEBEN jon. */
-async function korlattalFuttat<T>(
-  feladatok: Array<() => Promise<T>>,
-  korlat: number,
-): Promise<T[]> {
-  const eredmenyek: T[] = new Array(feladatok.length)
-  let kovetkezo = 0
-  const dolgozo = async () => {
-    while (kovetkezo < feladatok.length) {
-      const i = kovetkezo++
-      eredmenyek[i] = await feladatok[i]()
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(korlat, feladatok.length) }, dolgozo),
-  )
-  return eredmenyek
-}
 
 /**
  * HOSSZU `id` LISTA, RENDEZESSEL ES LAPOZASSAL, A TELJES HALMAZON (kartya 30b376de).
