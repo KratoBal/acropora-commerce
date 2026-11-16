@@ -1228,6 +1228,8 @@ export const hu = {
       "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
     nextStepGls:
       "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
+    pickupWhere: "Az átvétel helye: {name}, {address}.",
+    pickupPayAtStore: "Az üzletben átvehető. Fizetés átvételkor.",
     summary: "Rendelés összesítő",
     orderNumber: "Rendelésszám",
     payment: "Fizetés",

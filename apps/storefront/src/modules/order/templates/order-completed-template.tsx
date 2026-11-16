@@ -4,7 +4,7 @@ import { HttpTypes } from "@medusajs/types"
 
 import { arSzoveg } from "@lib/util/ar-szoveg"
 import { convertToLocale } from "@lib/util/money"
-import { type Teljesites, sikeroldal } from "@lib/util/sikeroldal"
+import { type Teljesites, boltiLepesek, sikeroldal } from "@lib/util/sikeroldal"
 import FoxpostLogo from "@modules/checkout/components/foxpost-logo"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { clx } from "@modules/common/components/ui"
@@ -43,6 +43,7 @@ export default async function OrderCompletedTemplate({
 }: OrderCompletedTemplateProps) {
   const t = translator(localeOf(countryCode))
   const lap = sikeroldal(order, par, parBolti, t)
+  const boltiSorok = lap.teljesitesek.flatMap((tj) => boltiLepesek(tj, t))
   const penz = (amount: number) =>
     convertToLocale({ amount, currency_code: order.currency_code })
 
@@ -107,7 +108,8 @@ export default async function OrderCompletedTemplate({
                   {t("orderConfirmed.twoFulfilments")}
                 </p>
               ) : null}
-              {lap.teljesitesek.some((tj) => tj.szallito !== "bolt") ? (
+              {lap.teljesitesek.some((tj) => tj.szallito !== "bolt") ||
+              boltiSorok.length ? (
                 <div
                   className="bg-acr-mist px-4 py-4"
                   data-testid="mi-tortenik"
@@ -115,11 +117,22 @@ export default async function OrderCompletedTemplate({
                   <p className="text-[14px] font-medium text-acr-ink">
                     {t("orderConfirmed.whatNext")}
                   </p>
-                  <p className="mt-1 text-[13px] text-acr-slate">
-                    {lap.teljesitesek.some((tj) => tj.szallito === "gls")
-                      ? t("orderConfirmed.nextStepGls")
-                      : t("orderConfirmed.nextStep")}
-                  </p>
+                  {lap.teljesitesek.some((tj) => tj.szallito !== "bolt") ? (
+                    <p className="mt-1 text-[13px] text-acr-slate">
+                      {lap.teljesitesek.some((tj) => tj.szallito === "gls")
+                        ? t("orderConfirmed.nextStepGls")
+                        : t("orderConfirmed.nextStep")}
+                    </p>
+                  ) : null}
+                  {boltiSorok.map((sor) => (
+                    <p
+                      key={sor}
+                      className="mt-1 text-[13px] text-acr-slate"
+                      data-testid="bolti-lepes"
+                    >
+                      {sor}
+                    </p>
+                  ))}
                 </div>
               ) : null}
             </div>

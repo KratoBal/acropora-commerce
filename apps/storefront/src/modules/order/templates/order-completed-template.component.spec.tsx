@@ -102,6 +102,82 @@ describe("a sikeroldal GLS-rendelésnél", () => {
 })
 
 /*
+  A BOLTI ATVETEL "MI TORTENIK EZUTAN?" DOBOZA (acrobot 54187 es 54189).
+  MI PIROSIT: egy tiszta bolti rendelesen nincs doboz; az atvetelkori fizetes sora kartyas rendelesen is megjelenik; az utalasnal nem a fizetesi lepes
+  mondata all; egy futaros rendelesen megjelenik a bolti sor; a vegyes kosarban eltunik a csomag mondata a bolti sor mellol.
+*/
+describe("a bolti átvétel doboza a visszaigazoló oldalon", () => {
+  const bolti = (provider: string) =>
+    ({
+      id: "order_60",
+      display_id: 60,
+      email: "vevo@example.test",
+      total: 3000,
+      currency_code: "huf",
+      items: [
+        { id: "i1", product_title: "Phytoplankton 1000 ml", quantity: 1 },
+      ],
+      shipping_methods: [{ name: "Bolti átvétel", total: 0, data: {} }],
+      payment_collections: [{ payments: [{ provider_id: provider }] }],
+    }) as never
+  const doboz = async (provider: string) => {
+    render(
+      await OrderCompletedTemplate({
+        order: bolti(provider),
+        countryCode: "hu",
+      }),
+    )
+    return screen.queryByTestId("mi-tortenik")
+  }
+
+  it("átvételkori fizetés: az üzlet és a két mondat", async () => {
+    const d = await doboz("pp_system_default")
+    expect(d?.textContent).toContain("Mi történik ezután?")
+    expect(d?.textContent).toContain(
+      "Az átvétel helye: Acropora üzlet, 1106 Budapest, Pesti Gábor utca 35.",
+    )
+    expect(d?.textContent).toContain(
+      "Az üzletben átvehető. Fizetés átvételkor.",
+    )
+    expect(d?.textContent).not.toContain("követési")
+  })
+
+  it("előre utalás: a fizetési lépés saját mondata", async () => {
+    const d = await doboz("pp_acropora_transfer")
+    expect(d?.textContent).toContain(
+      "Díjbekérő emailben, 8 napos fizetési határidővel.",
+    )
+    expect(d?.textContent).not.toContain("Fizetés átvételkor")
+  })
+
+  it("bankkártya: az üzlet, de fizetési sor nincs", async () => {
+    const d = await doboz("pp_stripe_stripe")
+    expect(screen.getAllByTestId("bolti-lepes")).toHaveLength(1)
+    expect(d?.textContent).not.toContain("Fizetés átvételkor")
+    expect(d?.textContent).not.toContain("Díjbekérő")
+  })
+
+  it("egy futáros rendelésen nincs bolti sor", async () => {
+    await lap({ name: "GLS házhozszállítás", total: 3500, data: {} })
+    expect(screen.queryByTestId("bolti-lepes")).toBeNull()
+  })
+
+  it("vegyes kosár: a csomag mondata és a bolti sor együtt áll", async () => {
+    render(
+      await OrderCompletedTemplate({
+        order: rendeles({ name: "GLS házhozszállítás", total: 3500, data: {} }),
+        par: bolti("pp_stripe_stripe"),
+        parBolti: true,
+        countryCode: "hu",
+      }),
+    )
+    const d = screen.getByTestId("mi-tortenik")
+    expect(d.textContent).toContain("Összekészítjük a csomagot.")
+    expect(d.textContent).toContain("Az átvétel helye:")
+  })
+})
+
+/*
   A VENDEG BEJARATA A VISSZAIGAZOLO OLDALON (a "Rendelesem" oldal hianylistaja, 2026-11-05).
   MI PIROSIT: a bejelentkezetlen latogato nem kap hivatkozast a vendeg lapra; a bejelentkezett kap egyet (neki a
   fiok rendelesei a bejarat); a hivatkozas masra visz; a felirat nem a szotarbol jon (angol oldalon is magyar).
