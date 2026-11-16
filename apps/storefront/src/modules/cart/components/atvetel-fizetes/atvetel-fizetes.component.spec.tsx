@@ -79,6 +79,35 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     expect(screen.queryByText("GLS házhozszállítás")).toBeNull()
   })
 
+  it("vegyes kosárnál kimondja, hogy a futár-módok csak a kiszállítandó rendelésre vonatkoznak; másképp nem mondja", () => {
+    const { rerender } = render(
+      <AtvetelFizetes
+        opciok={OPCIOK}
+        currencyCode="huf"
+        countryCode="hu"
+        szetvalasztott
+      />,
+    )
+    expect(screen.getByTestId("atvetel-futar-resz")).toHaveTextContent(
+      "A futár-módok csak a kiszállítandó rendelésre vonatkoznak",
+    )
+    rerender(
+      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+    )
+    expect(screen.queryByTestId("atvetel-futar-resz")).toBeNull()
+    rerender(
+      <AtvetelFizetes
+        opciok={OPCIOK}
+        currencyCode="huf"
+        countryCode="en-hu"
+        szetvalasztott
+      />,
+    )
+    expect(screen.getByTestId("atvetel-futar-resz")).toHaveTextContent(
+      "The courier options apply only to the order that is delivered",
+    )
+  })
+
   it("az angol oldal angol címeket kap, az opciók nevei a bolt válaszából jönnek", () => {
     render(
       <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="en-hu" />,

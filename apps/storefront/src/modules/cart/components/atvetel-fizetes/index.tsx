@@ -11,6 +11,10 @@ import { atvetelSorok, type SzallitasiOpcioBemenet } from "./atvetel-sorok"
  * ÁTVÉTEL: a bolt saját opciói (név, fix ár vagy "a cím után"), a bolt válaszából (`atvetel-sorok.ts`). Ha a bolt nem válaszolt
  * (`null`) vagy nincs opció, az ÁTVÉTEL rész és vele a doboz NEM jelenik meg: nem állítunk olyat, amit nem tudunk.
  *
+ * VEGYES KOSÁR (élő állat + kiszállítható tétel): a bolt a kiszállítható rendelés opcióit adja (mérve a teszt Medusán, 2026-11-16:
+ * bolti átvétel + GLS + Foxpost, `shipping_class: NORMAL` és a `split_line_ids` az élő állat sorát nevezi), a `SplitNotice` pedig
+ * két rendelést mond. A doboz ilyenkor kimondja, hogy a futár-módok csak a kiszállítandó rendelésre vonatkoznak (barracuda, #787).
+ *
  * FIZETÉS: EGY MONDAT, mód- és számlista nélkül. Mérve a teszt Medusán (2026-11-16): a `GET /store/payment-options` cím és
  * szállítási választás nélküli kosárra üres listát ad (a backend a választott szállítási opcióból dönti el, mi engedett), tehát a
  * kosár lap módokat NEM tud adatból felsorolni, és kitalálni sem szabad.
@@ -19,7 +23,10 @@ export default function AtvetelFizetes({
   opciok,
   currencyCode,
   countryCode,
+  szetvalasztott = false,
 }: {
+  /** a vegyes kosar (elo allat + kiszallithato) ket rendelesre bomlik: a futar-modok csak a kiszallitando reszre vonatkoznak */
+  szetvalasztott?: boolean
   opciok: readonly SzallitasiOpcioBemenet[] | null | undefined
   currencyCode: string
   countryCode: string
@@ -56,6 +63,14 @@ export default function AtvetelFizetes({
             </li>
           ))}
         </ul>
+        {szetvalasztott && (
+          <p
+            className="text-[13px] leading-[20px] text-acr-slate"
+            data-testid="atvetel-futar-resz"
+          >
+            {t("cartPage.atvetelFutarResz")}
+          </p>
+        )}
         <p className="text-[13px] leading-[20px] text-acr-slate">
           {t("cartPage.atvetelLabjegyzet")}
         </p>

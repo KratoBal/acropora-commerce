@@ -125,6 +125,9 @@ const CartTemplate = ({
                     opciok={szallitasiOpciok}
                     currencyCode={cart.currency_code}
                     countryCode={countryCode}
+                    szetvalasztott={
+                      (shippingClass?.split_line_ids?.length ?? 0) > 0
+                    }
                   />
                 )}
                 {cart && cart.region && <Summary cart={cart} />}

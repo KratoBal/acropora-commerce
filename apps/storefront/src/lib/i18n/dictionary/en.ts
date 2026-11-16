@@ -920,6 +920,8 @@ export const en: Dictionary = {
     atvetelArCimUtan: "The price shows once you enter the address",
     atvetelLabjegyzet:
       "You choose how to receive the order in the checkout, where you enter the address.",
+    atvetelFutarResz:
+      "The courier options apply only to the order that is delivered; you collect the live animal in the shop.",
     fizetesTitle: "Payment",
     fizetesSzoveg:
       "You choose the payment method in the checkout. What is offered depends on how you receive the order.",
