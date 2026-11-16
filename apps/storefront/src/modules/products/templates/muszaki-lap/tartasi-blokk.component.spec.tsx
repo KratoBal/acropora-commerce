@@ -9,19 +9,18 @@ afterEach(cleanup)
 /*
   A TARTASI BLOKK (V2.2 S4, kartya d2fc06e7). MI PIROSIT: adat nelkul ures blokk vagy kitalalt ertek; egy hianyzo teny ures
   cellakent; a 3. es 4. fokozat fix mondata hianyzik, vagy az 1-2. fokozatnal megjelenik; a "Kinek nem ajanljuk" kitalalt
-  szoveget kap; az elo allat figyelmeztetes elmarad; a blokk muszaki termeken is megjelenik, vagy elo allaton nem.
+  szoveget kap; az elo allat bolti atveteli mondata ujra megjelenik ebben a blokkban (a keszlet-dobozban all, egy helyen); a blokk muszaki termeken is megjelenik, vagy elo allaton nem.
 */
 const MISSING = "Ellenőrzés alatt. Érdeklődj a boltban vásárlás előtt."
 const meta = (o: unknown) => ({ husbandry: JSON.stringify(o) })
 
 describe("a tartási blokk", () => {
-  it("adat nélkül: a cím, az ellenőrzés alatt mondat és az élő állat figyelmeztetés, semmi kitalált", () => {
+  it("adat nélkül: a cím és az ellenőrzés alatt mondat, semmi kitalált; az élő állat bolti átvételi mondata NEM itt áll (a készlet-dobozban, egy helyen)", () => {
     render(<TartasiBlokk metadata={{}} />)
     expect(screen.getByRole("heading", { name: "Tartási adatok" })).toBeTruthy()
     expect(screen.getByTestId("tartas-hianyzik").textContent).toBe(MISSING)
-    expect(screen.getByTestId("tartas-elo-allat").textContent).toMatch(
-      /csak bolti átvétellel/,
-    )
+    expect(screen.queryByTestId("tartas-elo-allat")).toBeNull()
+    expect(document.body.textContent).not.toMatch(/csak bolti átvétellel/)
     expect(screen.queryByTestId("tartas-osszefoglalo")).toBeNull()
   })
 

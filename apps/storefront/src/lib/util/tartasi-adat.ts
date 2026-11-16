@@ -291,7 +291,9 @@ export const FELIRATOK = {
 } as const
 
 /**
- * Az elo allat figyelmeztetes a blokk aljan (a spec 3. pontja; Balazs 2026-09-29: elo allat csak bolti atvetellel). A spec
+ * Az elo allat bolti atveteli mondata. 2026-11-16 ota a termek KESZLET-DOBOZABAN all (`ElerhetosegDoboz`, acrobot 53793 es 53811), a
+ * tartasi blokk aljarol KIKERULT: a szoveg egy forrasbol jon es egy helyen latszik. (Korabban a blokk aljan allt, a spec 3. pontja;
+ * Balazs 2026-09-29: elo allat csak bolti atvetellel.) A spec
  * szerint a szallitasi profilbol jonne; SZANDEKOS ROVIDITES, hogy fix szoveg: amig minden elo allat bolti atveteles, a ketto
  * ugyanazt mondja. Ha egyszer lesz szallithato elo allat, ez a mondat a profilbol kell jojjon (barracuda, #729).
  */
