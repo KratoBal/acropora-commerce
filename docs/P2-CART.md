@@ -47,7 +47,7 @@ String search found no occurrence of these (so each is absent or worded differen
 | Design piece | Why it is not built |
 | --- | --- |
 | Eyebrow "ÉLŐ ÁLLAT A KOSÁRBAN" above the header box | the live-animal rule changed (above); the notice has its own wording |
-| The "ÁTVÉTEL" and "FIZETÉS" boxes | `components/placeholder-section` holds their place (Balázs, 2026-09-07: build the layout as designed even if the function is not there yet), but **nothing renders it**: the cart template draws the items, the two notices, the sign-in prompt and the summary only. The boxes are absent, not empty. The prices are live data (below) |
+| The "ÁTVÉTEL" and "FIZETÉS" boxes (before the pieces below) | `components/placeholder-section` holds their place (Balázs, 2026-09-07: build the layout as designed even if the function is not there yet), but **nothing renders it**: the cart template draws the items, the two notices, the sign-in prompt and the summary only. The boxes are absent, not empty. The prices are live data (below) |
 | 3b stock-change state ("KÉSZLET VÁLTOZÁS": "Utánpótlás úton", "Raktáron helyette", "Értesíts, ha megjött", "nincs beszámítva") | until the stock-take, zero stock does not mean sold out (card 193926e2), so "an item ran out" cannot be decided; no replacement rule and no restock date exist |
 | 3b "A szállítás újra nyitva" | its premise is gone (above) |
 | Loyalty bar ("+3 930 hűségpont jár erre a rendelésre") | there is no loyalty data in the storefront (only the account menu's points) |
@@ -65,9 +65,22 @@ nothing was ordered.
 
 So the cart page can show the shop pick-up (0 Ft) and name the carriers, but **cannot show a carrier price before the address step**: only "az ár a cím megadása után látszik".
 
+## What the test Medusa answers for the payment box (measured 2026-11-16, same two carts)
+
+`GET /store/payment-options?cart_id=...` answers **200 with nothing allowed** for both carts: `allowed_payment_roles: []`, `allowed_payment_providers: []`,
+`selected_payment_role: null`, `cash_on_delivery_fee: 0`. The backend decides the allowed methods from the shipping option the buyer picked
+(`fizetesi-modok.ts`: "the shipping option decides it, and the decision is Balázs's"), and a cart page cart has none yet. So the cart page cannot list
+payment methods from data; it can only say that they are chosen in the checkout and depend on the way of receiving.
+
 ## Next pieces, in this order
 
-1. The ÁTVÉTEL and FIZETÉS boxes as INFORMATION (not radio buttons: the choice stays in the checkout, where the address exists): pick-up 0 Ft, the carriers with "price after the address", the Foxpost locker marked when a large item is in the cart; the payment methods from `GET /store/payment-options` (bank card through Stripe, cash on delivery with its fee). Decision still open: Balázs or acrobot to confirm that an informational box is what the design's radio buttons should become.
-2. Everything else in "Not built" waits for its data or decision.
+1. The ÁTVÉTEL box as INFORMATION (not radio buttons: the choice stays in the checkout, where the address exists), driven by `GET /store/shipping-options`
+   for the cart, not by names written into the storefront: each option the backend lists, its name, and "price after the address" for a calculated
+   one (the shop pick-up shows 0). A live-animal cart lists only the pick-up, as measured above. NOT built because no data exists for it: naming the
+   large item that keeps a cart out of the Foxpost locker (the cart does not mark large items today).
+2. The FIZETÉS box as ONE SENTENCE with no method list and no figure ("you choose the payment in the checkout; what is offered depends on how you receive
+   the order"), because the backend has no answer before the shipping choice.
+3. Everything else in "Not built" waits for its data or decision. Decided by acrobot on 2026-11-16: the box is informational, the choice stays in the
+   checkout; "Legutóbb megnézted" (cookie and consent) and the loyalty bar stay out.
 
 Not measured here: the page in a browser (the test shop's basic-auth credentials are not readable by the fleet agent that wrote this).
