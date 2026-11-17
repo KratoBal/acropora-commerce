@@ -144,6 +144,15 @@ class ReadAnswer(unittest.TestCase):
         self.assertIsNone(helper.parse_answer('{"other": 1}'))
         self.assertIsNone(helper.parse_answer(log_line("list", {"orders": []})))
 
+    def test_text_after_the_json_is_ignored_like_a_curl_status_line(self):
+        saved = "\n  " + self.answer(self.state([payment("pay_1", captured=1000, refunded=100)])) + "\nHTTP 200\n"
+        sections = helper.parse_answer(saved)
+        self.assertEqual([name for name, _ in sections], ["state"])
+        self.assertNotIn("FAIL", "\n".join(helper.read_log(saved)))
+
+    def test_text_BEFORE_the_json_is_still_not_an_answer(self):
+        self.assertIsNone(helper.parse_answer("HTTP 200\n" + self.answer({"order_id": "o"})))
+
     def test_a_good_state_with_a_booked_refund_has_no_failure(self):
         text = "\n".join(helper.read_log(self.answer(self.state([payment("pay_1", captured=1000, refunded=100)]))))
         self.assertIn("STATE order order_01TEST", text)
