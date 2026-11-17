@@ -27,8 +27,11 @@ printed. A difference arises for any order whose total goes above its hold after
 ## Running it (acrobot runs it: the admin key is read from its file, by environment variable)
 
 ```bash
-# 1. the public keys, once (the storefront sits behind basic auth; the file is user on line 1, password on line 2)
-cd <repository root> && STAGE_BASIC_AUTH="$(sed -n 1p /home/marveen/marveen/store/.stage-basic-auth):$(sed -n 2p /home/marveen/marveen/store/.stage-basic-auth)" python3 scripts/two-payment-measure.py keys
+# 1. the public keys, once. The storefront sits behind basic auth (the file is user on line 1, password on line 2). With the admin key in the
+#    environment too, the Medusa key is found through the admin API (all pages of the listing, then proven through the Store API: regions and a
+#    buyable catalog answer under it); the title never decides, the stage lists 20+ keys that are mostly "Default Publishable API Key".
+#    The admin key goes to the backend host only, the storefront login to the storefront host only.
+cd <repository root> && MEDUSA_STAGE_ADMIN_KEY="$(cat /home/marveen/marveen/store/.medusa-stage-admin-key)" STAGE_BASIC_AUTH="$(sed -n 1p /home/marveen/marveen/store/.stage-basic-auth):$(sed -n 2p /home/marveen/marveen/store/.stage-basic-auth)" python3 scripts/two-payment-measure.py keys
 
 # 2. the settings of the next calls (the two public keys come from step 1)
 export MEDUSA_STAGE_ADMIN_KEY="$(cat /home/marveen/marveen/store/.medusa-stage-admin-key)"
@@ -58,3 +61,15 @@ A write job without `--execute` only says what it would do. Every line is `OK`, 
 - The tests use a fake network written from the routes' code, so they prove the script's own rules, not the real answers.
 
 Tests: `cd <repository root> && python3 -m unittest scripts/test_two_payment_measure.py` (by hand, like the refund helper's; the CI does not run them).
+
+## The Stripe test publishable key: where it can and cannot be found (read from the code, NOT measured on the stage)
+
+`keys` scans the HTML and the scripts the pages `/hu`, `/hu/cart` and `/hu/checkout` list. The Stripe key is inlined from `NEXT_PUBLIC_STRIPE_KEY` (or
+`NEXT_PUBLIC_MEDUSA_PAYMENTS_PUBLISHABLE_KEY`) by `apps/storefront/src/lib/util/stripe-kulcs.ts` into the card field's client code (`payment-wrapper`), which only the
+checkout and the "Rendelés fizetése" pages load. Two things in the repository make "none found" the expected answer:
+
+- `/hu/checkout` answers 307 without a cart (first real run), so its scripts are not listed;
+- `apps/storefront/Dockerfile` and `infra/docker-compose.yml` declare `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` as a build argument and NOT `NEXT_PUBLIC_STRIPE_KEY`: a build from
+  these files carries no Stripe key at all, unless the Coolify build injects it. Whether it does is a Coolify setting this script cannot read.
+
+So the Stripe `pk_test_...` is taken from where it lives (the Coolify environment of the storefront, or the Stripe test dashboard) and exported as `STRIPE_PUBLISHABLE_KEY`.
