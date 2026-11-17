@@ -435,7 +435,7 @@ def step_keys(http: Any, env: dict[str, str], storefront: str) -> bool:
     if ":" not in login:
         raise MeasureError("STAGE_BASIC_AUTH must be user:password")
     head = {"authorization": "Basic " + base64.b64encode(login.encode()).decode()}
-    base = f"https://{STOREFRONT_HOST}"
+    base = f"https://{parts.hostname}"  # the validated host: the check above is what keeps the credential on the storefront
     texts: list[str] = []
     paths: set[str] = set()
     for page in ("/hu", "/hu/cart", "/hu/checkout"):
