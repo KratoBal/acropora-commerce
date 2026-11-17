@@ -70,7 +70,8 @@ def refund_input(mode: str, order_id: str, amount: int, payment_id: str | None =
 def parse_answer(text: str) -> list[tuple[str, dict[str, Any]]] | None:
     """The sections of the route's JSON answer (`{"sections":[{"section":...,"value":{...}}]}`), or None when the text is not such an answer."""
     try:
-        body = json.loads(text)
+        # one JSON value, then whatever follows it is ignored: `curl -w "HTTP %{http_code}"` appends a status line to a saved answer
+        body, _end = json.JSONDecoder().raw_decode(text.lstrip())
     except ValueError:
         return None
     if not isinstance(body, dict) or not isinstance(body.get("sections"), list):
