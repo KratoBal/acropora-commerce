@@ -25,11 +25,11 @@ cd /home/marveen/marveen && printf '%s' '{"mode":"list","limit":5}' | base64 -w0
 
 ## Three steps, three runs
 
-| step | JSON | writes |
-| --- | --- | --- |
-| 1. pick an order | `{"mode":"list","limit":5}` | nothing |
-| 2. plan | `{"mode":"plan","order_id":"order_01...","amount":100}` | nothing |
-| 3. book | `{"mode":"apply","order_id":"order_01...","amount":100,"confirm_order_id":"order_01..."}` | one refund |
+| step             | JSON                                                                                      | writes     |
+| ---------------- | ----------------------------------------------------------------------------------------- | ---------- |
+| 1. pick an order | `{"mode":"list","limit":5}`                                                               | nothing    |
+| 2. plan          | `{"mode":"plan","order_id":"order_01...","amount":100}`                                   | nothing    |
+| 3. book          | `{"mode":"apply","order_id":"order_01...","amount":100,"confirm_order_id":"order_01..."}` | one refund |
 
 - **list**: the latest orders with a captured Stripe payment: order id, total, per payment captured and refunded, `refunds_field`
   (`missing` = the field is not resolved; `empty` = resolved, none booked).
@@ -40,8 +40,34 @@ cd /home/marveen/marveen && printf '%s' '{"mode":"list","limit":5}' | base64 -w0
   there are several), then prints `readout_after`, `loadSide`'s own reading (`other_captured`), and the refunds Stripe lists for the intent
   (`stripe_refunds`: status, amount in the smallest unit and in forints).
 
-What decides the #615 question is in `readout_after`: `refunds_field: "present"`, each refund `type`/`finite`, `findings: []`, and
-`other_captured` equal to captured minus refunded. A refund cannot be un-booked: pick a small amount (100 Ft is enough).
+What decides the #615 question is in `readout_after`: `refunds_field: "present"`, each refund `type`/`finite` (a number `Number()` takes), and
+`findings: []`. A refund cannot be un-booked: pick a small amount (100 Ft is enough).
+
+**`other_captured` is evidence only on an order with TWO live payments** (the hold and a difference paid through a link; correction of the
+first version of this file). `loadSide` takes the hold (the uncaptured, earlier payment, else the first live one) as the order's own
+payment and sums what the OTHER live payments still cover (captures minus refunds). On an order with ONE live payment `other_captured`
+is 0 whatever is refunded: that is by design, not a failure, and it does not test the refund subtraction. There the shape checks above
+are the whole decision. To see the subtraction itself, refund the difference payment of a two-payment order (name it as `payment_id`):
+`other_captured` must then equal what that payment still covers (captured minus refunded).
+
+## Ready commands and reading the log (`scripts/refund-measure-helper.py`)
+
+Python 3 standard library, no install, writes and sends nothing. It builds the task commands and reads a task log; it repeats the backend's
+input rules, so a typo is refused before a Coolify run is spent on it.
+
+```bash
+cd <repository root> && python3 scripts/refund-measure-helper.py inputs
+cd <repository root> && python3 scripts/refund-measure-helper.py inputs --order order_01... --amount 100 [--payment pay_01...]
+cd <repository root> && python3 scripts/refund-measure-helper.py read task.log      # or: ... read - < task.log
+```
+
+`inputs` prints the three commands; the list command needs no order, the plan and apply commands need the order id the list found. `read` prints, per section:
+the list with the orders that carry two live payments marked, the plan with every reason against booking, and for `after` a line per check
+(`OK` / `FAIL`, and a `NOTE` where a number proves nothing, as `other_captured` on a one-payment order). A marker line the log viewer cut
+or wrapped is counted and warned about, never skipped silently: a partial log is not a result.
+
+Tests: `cd <repository root> && python3 -m unittest scripts/test_refund_measure_helper.py`. They run by hand, not
+in the CI (the workflow file is not editable by the fleet key).
 
 ## What it does NOT do
 
