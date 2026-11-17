@@ -68,7 +68,8 @@ class Fake:
         if method == "GET" and path.startswith("/admin/refund-measure?order_id"):
             return self.reply(200, {"sections": [{"section": "state", "value": self.state()}]})
         if method == "GET" and path == "/store/regions":
-            return self.reply(200, {"regions": [{"id": "reg_1", "countries": [{"iso_2": "hu"}]}]})
+            region = {"countries": [{"iso_2": "hu"}]} if self.flags.get("region_no_id") else {"id": "reg_1", "countries": [{"iso_2": "hu"}]}
+            return self.reply(200, {"regions": [region]})
         if method == "GET" and path.startswith("/store/products"):
             variants = [{"id": "var_1", "manage_inventory": True, "inventory_quantity": 5, "calculated_price": {"calculated_amount": 4000}},
                         {"id": "var_2", "manage_inventory": False, "calculated_price": {"calculated_amount": 5000}}]
@@ -333,6 +334,14 @@ class Flow(unittest.TestCase):
         self.assertIn("--aszf-version", err)
         self.assertNotIn("ORDER", out)
 
+    def test_a_region_without_an_id_stops_the_run_with_a_message_before_any_write(self):
+        fake = Fake(region_no_id=True)
+        code, _out, err = run(["hold", "--execute"], http=fake)
+        self.assertEqual(code, 1)
+        self.assertIn("region has no id", err)
+        self.assertNotIn("Traceback", err)
+        self.assertEqual(fake.writes(), [])
+
     def test_a_backend_without_a_test_key_stops_before_the_first_write(self):
         for job in (["hold", "--execute"], ["all", "--execute"]):
             fake = Fake(live_key=True)
@@ -472,6 +481,8 @@ class AdminKeys(unittest.TestCase):
             if key not in self.working:
                 return tp.Reply(400, {"message": "publishable key required"}, "{}")
             if path == "/store/regions":
+                if key in getattr(self, "no_region_id", ()):
+                    return tp.Reply(200, {"regions": [{"countries": [{"iso_2": "hu"}]}]}, "{}")
                 body = {"regions": [{"id": "reg_1", "countries": [{"iso_2": "hu"}]}]}
                 return tp.Reply(200, body, json.dumps(body))
             if path.startswith("/store/products"):
@@ -504,6 +515,17 @@ class AdminKeys(unittest.TestCase):
         self.assertIn(f"MEDUSA_PUBLISHABLE_KEY={self.GOOD}", out)
         self.assertIn("6 publishable keys listed, 3 not revoked", out)
         self.assertIn("1 older key(s) bound to the same channel(s)", out)
+
+    def test_a_region_without_an_id_is_a_skip_with_a_reason_not_a_traceback(self):
+        # barracuda on #798: region_list[0]['id'] would raise KeyError, not a MeasureError, on a region that carries no id
+        rows = [self.row(self.WORKS_NOT, created="2026-11-17T09:00:00Z"), self.row(self.GOOD, created="2026-11-13T09:00:00Z")]
+        net = self.Net(rows, working={self.GOOD, self.WORKS_NOT}, scan=f'x="{STRIPE_PK}"')
+        net.no_region_id = {self.WORKS_NOT}
+        code, out, err = self.keys(net)
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("a region without an id", out)
+        self.assertIn(f"MEDUSA_PUBLISHABLE_KEY={self.GOOD}", out)
+        self.assertNotIn("Traceback", err)
 
     def test_every_page_of_the_listing_is_read(self):
         rows = [self.row("pk_" + f"{i:064d}", created=f"2026-11-{10 + i:02d}T09:00:00Z") for i in range(5)]
