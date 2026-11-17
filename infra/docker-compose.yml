@@ -113,6 +113,8 @@ services:
         NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://commerce-stage.acropora.hu
         NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY:?a kirakat publikalhato kulcsa nincs beallitva}
         NEXT_PUBLIC_DEFAULT_REGION: hu
+        # A Stripe publikus kulcsa a kartyamezonek: opcionalis, ures = nincs kartyas mod (lasd az apps/storefront/Dockerfile megjegyzeset).
+        NEXT_PUBLIC_STRIPE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
         NEXT_PUBLIC_BASE_URL: https://${STOREFRONT_HOST:?a kirakat cime nincs beallitva}
         GIT_SHA: ${GIT_SHA:-unknown}
     image: acropora-commerce-storefront:stage
