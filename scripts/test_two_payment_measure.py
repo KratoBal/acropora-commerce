@@ -64,7 +64,7 @@ class Fake:
             return self.reply(200, {"status": "requires_capture"})
         path = url[len(BASE):]
         if method == "GET" and path.startswith("/admin/refund-measure?limit"):
-            return self.reply(200, {"sections": [{"section": "list", "value": {"test_key": True, "orders": []}}]})
+            return self.reply(200, {"sections": [{"section": "list", "value": {"test_key": not self.flags.get("live_key"), "orders": []}}]})
         if method == "GET" and path.startswith("/admin/refund-measure?order_id"):
             return self.reply(200, {"sections": [{"section": "state", "value": self.state()}]})
         if method == "GET" and path == "/store/regions":
@@ -333,6 +333,14 @@ class Flow(unittest.TestCase):
         self.assertIn("--aszf-version", err)
         self.assertNotIn("ORDER", out)
 
+    def test_a_backend_without_a_test_key_stops_before_the_first_write(self):
+        for job in (["hold", "--execute"], ["all", "--execute"]):
+            fake = Fake(live_key=True)
+            code, _out, err = run(job, http=fake)
+            self.assertEqual(code, 1, job)
+            self.assertIn("TEST key", err)
+            self.assertEqual(fake.writes(), [], job)
+
     def test_two_orders_stop_the_run(self):
         fake = Fake(two_orders=True)
         code, _out, err = run(["all", "--execute"], http=fake)
@@ -424,6 +432,136 @@ class Keys(unittest.TestCase):
         code, out, _ = run(["keys"], env={"STAGE_BASIC_AUTH": "user:pass"}, http=Empty())
         self.assertEqual(code, 1)
         self.assertIn("none found", out)
+
+
+class AdminKeys(unittest.TestCase):
+    """`keys` with an admin key: the Medusa publishable key is found through the admin API and PROVEN through the Store API, never picked by name.
+
+    WHAT TURNS RED: a key chosen by its title; a revoked key, a key without a sales channel or a Stripe-shaped token chosen; the listing read
+    only to its first page (Medusa 2.20.1 lists 20 a page); the admin key sent to the storefront host or into the output; the storefront login
+    sent to the backend; a choice made when no key sees a buyable catalog."""
+
+    GOOD = "pk_" + "1" * 64
+    WORKS_NOT = "pk_" + "2" * 64
+    NO_CHANNEL = "pk_" + "3" * 64
+    REVOKED = "pk_" + "4" * 64
+    OLD_GOOD = "pk_" + "5" * 64
+
+    class Net:
+        def __init__(self, rows, working, page_size=50, scan=""):
+            self.rows, self.working, self.page_size, self.scan = rows, set(working), page_size, scan
+            self.calls = []
+
+        def request(self, method, url, headers=None, json_body=None, form=None):
+            headers = dict(headers or {})
+            self.calls.append((method, url, headers))
+            if url.startswith("https://shop-staging.acropora.hu"):
+                if url.endswith("/hu"):
+                    return tp.Reply(200, None, '<script src="/_next/static/chunks/app.js"></script>')
+                if url.endswith("/app.js"):
+                    return tp.Reply(200, None, self.scan)
+                return tp.Reply(404, None, "")
+            path = url[len(BASE):]
+            if path.startswith("/admin/api-keys"):
+                query = dict(part.split("=") for part in path.split("?")[1].split("&"))
+                offset, limit = int(query["offset"]), int(query["limit"])
+                page = self.rows[offset : offset + min(limit, self.page_size)]
+                body = {"api_keys": page, "count": len(self.rows), "offset": offset, "limit": limit}
+                return tp.Reply(200, body, json.dumps(body))
+            key = headers.get("x-publishable-api-key")
+            if key not in self.working:
+                return tp.Reply(400, {"message": "publishable key required"}, "{}")
+            if path == "/store/regions":
+                body = {"regions": [{"id": "reg_1", "countries": [{"iso_2": "hu"}]}]}
+                return tp.Reply(200, body, json.dumps(body))
+            if path.startswith("/store/products"):
+                body = {"products": [{"variants": [{"id": "var_1", "calculated_price": {"calculated_amount": 1500}, "manage_inventory": False}]}]}
+                return tp.Reply(200, body, json.dumps(body))
+            return tp.Reply(404, None, "")
+
+    def row(self, token, title="Default Publishable API Key", channels=("sc_1",), revoked=None, created="2026-11-10T10:00:00Z", kind="publishable"):
+        return {"id": "apk_" + token[3:6] + created[8:10], "title": title, "token": token, "type": kind, "revoked_at": revoked, "created_at": created,
+                "sales_channels": [{"id": c, "name": "x"} for c in channels]}
+
+    def keys(self, net, env=None, extra=()):
+        base_env = {"STAGE_BASIC_AUTH": "user:pass", "MEDUSA_STAGE_ADMIN_KEY": ADMIN}
+        return run(["keys", *extra], env=base_env if env is None else env, http=net)
+
+    def test_the_choice_is_made_by_what_the_store_api_answers_not_by_the_name(self):
+        rows = [
+            self.row(self.WORKS_NOT, created="2026-11-17T09:00:00Z"),  # newest, the default name, but the store refuses it
+            self.row(self.NO_CHANNEL, channels=(), created="2026-11-16T09:00:00Z"),
+            self.row(self.REVOKED, revoked="2026-11-01T00:00:00Z", created="2026-11-15T09:00:00Z"),
+            self.row("pk_test_" + "6" * 40, created="2026-11-14T09:00:00Z"),  # a Stripe-shaped token in the list
+            self.row(self.GOOD, title="Acrobot Publish Test", created="2026-11-13T09:00:00Z"),
+            self.row(self.OLD_GOOD, created="2026-11-12T09:00:00Z"),
+        ]
+        # every key but the first would be ANSWERED by the store: only the listing's own rules (revoked, no channel, shape) keep them out
+        working = {self.GOOD, self.OLD_GOOD, self.REVOKED, self.NO_CHANNEL, "pk_test_" + "6" * 40}
+        net = self.Net(rows, working=working, scan=f'x="{STRIPE_PK}"')
+        code, out, _ = self.keys(net)
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"MEDUSA_PUBLISHABLE_KEY={self.GOOD}", out)
+        self.assertIn("6 publishable keys listed, 3 not revoked", out)
+        self.assertIn("1 older key(s) bound to the same channel(s)", out)
+
+    def test_every_page_of_the_listing_is_read(self):
+        rows = [self.row("pk_" + f"{i:064d}", created=f"2026-11-{10 + i:02d}T09:00:00Z") for i in range(5)]
+        rows.append(self.row(self.GOOD, created="2026-11-01T09:00:00Z"))  # the oldest: on the last page
+        net = self.Net(rows, working={self.GOOD}, page_size=2, scan=f'x="{STRIPE_PK}"')
+        old = tp.KEY_PAGE
+        tp.KEY_PAGE = 2
+        try:
+            code, out, _ = self.keys(net)
+        finally:
+            tp.KEY_PAGE = old
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"MEDUSA_PUBLISHABLE_KEY={self.GOOD}", out)
+        self.assertIn("6 publishable keys listed", out)
+
+    def test_the_admin_key_goes_to_the_backend_only_and_the_login_to_the_storefront_only(self):
+        net = self.Net([self.row(self.GOOD)], working={self.GOOD}, scan=f'x="{STRIPE_PK}"')
+        code, out, err = self.keys(net)
+        self.assertEqual(code, 0, out)
+        for _method, url, headers in net.calls:
+            sent = " ".join(headers.values())
+            if url.startswith("https://shop-staging.acropora.hu"):
+                self.assertNotIn(base64_of(ADMIN + ":"), sent)
+            else:
+                self.assertTrue(url.startswith(BASE))
+                self.assertNotIn(base64_of("user:pass"), sent)
+        self.assertNotIn(ADMIN, out + err)
+
+    def test_no_working_key_is_not_a_pass_and_chooses_nothing(self):
+        net = self.Net([self.row(self.WORKS_NOT)], working=set(), scan=f'x="{STRIPE_PK}"')
+        code, out, _ = self.keys(net)
+        self.assertEqual(code, 1)
+        self.assertIn("no listed key sees a buyable catalog", out)
+        self.assertNotIn("MEDUSA_PUBLISHABLE_KEY=", out)
+
+    def test_a_different_key_in_the_storefront_files_is_named(self):
+        net = self.Net([self.row(self.GOOD)], working={self.GOOD}, scan=f'x="{STRIPE_PK}";y="{MEDUSA_PK}"')
+        code, out, _ = self.keys(net)
+        self.assertEqual(code, 0, out)
+        self.assertIn("carry a different Medusa key", out)
+
+    def test_another_backend_host_is_refused_before_any_call(self):
+        net = self.Net([self.row(self.GOOD)], working={self.GOOD})
+        code, _out, _err = self.keys(net, extra=("--base", "https://evil.example"))
+        self.assertEqual((code, net.calls), (2, []))
+
+    def test_without_an_admin_key_the_scan_alone_decides_as_before(self):
+        net = self.Net([self.row(self.GOOD)], working={self.GOOD}, scan=f'x="{STRIPE_PK}"')
+        code, out, _ = self.keys(net, env={"STAGE_BASIC_AUTH": "user:pass"})
+        self.assertEqual(code, 1)
+        self.assertTrue(all(url.startswith("https://shop-staging.acropora.hu/") for _m, url, _h in net.calls))
+        self.assertIn("no admin key in the environment", out)
+
+
+def base64_of(text):
+    import base64
+
+    return base64.b64encode(text.encode()).decode()
 
 
 if __name__ == "__main__":

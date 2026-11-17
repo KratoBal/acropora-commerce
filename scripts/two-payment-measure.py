@@ -6,7 +6,8 @@ It measures what the one-payment refund test (docs/TEST-REFUND-MEASUREMENT.md) c
 (captures minus refunds), and that is 0 on an order with one live payment. Standard library only. Every call goes to the test showcase's own
 routes and to the Stripe TEST API; no browser, no Coolify task, no new endpoint.
 
-  python3 scripts/two-payment-measure.py keys                         public keys from the test storefront (needs STAGE_BASIC_AUTH)
+  python3 scripts/two-payment-measure.py keys                         public keys from the test storefront (needs STAGE_BASIC_AUTH); with
+                                                                      MEDUSA_STAGE_ADMIN_KEY also the Medusa key through the admin API
   python3 scripts/two-payment-measure.py plan                         reads only (plus one probe that cannot write): says what would run
   python3 scripts/two-payment-measure.py hold       --execute         step 1-2: cart, ASZF record, card hold, order            -> order id
   python3 scripts/two-payment-measure.py difference --execute --order order_01...   step 3-6: edit above the hold, link, pay the difference
@@ -19,6 +20,7 @@ Settings come from the ENVIRONMENT, never from arguments (an argument shows in t
   MEDUSA_PUBLISHABLE_KEY     the Store API publishable key (public: it is in the storefront's bundle)
   STRIPE_PUBLISHABLE_KEY     the Stripe TEST publishable key, pk_test_... (public: it is in the storefront's bundle)
   STAGE_BASIC_AUTH           user:password of the storefront's HTTP basic auth (only `keys`, only to the storefront host)
+  (`keys` needs only STAGE_BASIC_AUTH, and MEDUSA_STAGE_ADMIN_KEY if the Medusa key is to be found through the admin API: that key goes to the backend host only)
 
 REFUSALS, before anything is written: a backend that is not the test showcase host; a Stripe key that is not pk_test_; a Medusa publishable key that
 looks like a Stripe key; a missing admin key; a write command without --execute (it prints what it WOULD do). No redirect is followed, so a
@@ -220,6 +222,21 @@ def extract_keys(texts: list[str]) -> dict[str, list[str]]:
     }
 
 
+def key_candidates(listed: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The listed API keys that could be the storefront's Medusa publishable key: publishable, not revoked, a key-shaped token, at least one
+    sales channel (a key with none sees no catalog). Newest first, then by id: the order is the same on every run."""
+    out = []
+    for key in listed:
+        token = key.get("token")
+        channels = [c.get("id") for c in key.get("sales_channels") or [] if isinstance(c, dict) and c.get("id")]
+        if key.get("type") != "publishable" or key.get("revoked_at") or not channels:
+            continue
+        if not isinstance(token, str) or token.startswith("pk_test_") or not MEDUSA_PK.match(token):
+            continue
+        out.append({"id": key.get("id"), "title": key.get("title"), "token": token, "channels": sorted(channels), "created_at": str(key.get("created_at") or "")})
+    return sorted(out, key=lambda k: (k["created_at"], str(k["id"])), reverse=True)
+
+
 def script_paths(html: str) -> list[str]:
     return sorted(set(re.findall(r"[\"'](/_next/static/[^\"'\\ ]+\.js)[\"']", html)))
 
@@ -248,6 +265,10 @@ class Shop:
     def store(self, method: str, path: str, what: str, body: Any = None, ok: tuple[int, ...] = (200, 201)) -> Reply:
         reply = self.http.request(method, self.base + path, {"x-publishable-api-key": self.s["publishable"]}, json_body=body)
         return self._check(reply, what, ok)
+
+    def store_under(self, key: str, path: str) -> Reply:
+        """A Store API read under a candidate key, WITHOUT raising: a key that does not work is an answer here, not a failure."""
+        return self.http.request("GET", self.base + path, {"x-publishable-api-key": key})
 
     def admin(self, method: str, path: str, what: str, body: Any = None, ok: tuple[int, ...] = (200, 201)) -> Reply:
         auth = "Basic " + base64.b64encode((self.s["admin"] + ":").encode()).decode()
@@ -301,12 +322,23 @@ def catalog(shop: Shop) -> tuple[str, dict[str, Any], dict[str, Any]]:
     return region["id"], hold, edit
 
 
+def backend_test_key(shop: Shop) -> Any:
+    """What the read-only route says about the backend's Stripe key (`test_key`): True only for a test key. It also proves the admin key works."""
+    listed = shop.admin("GET", "/admin/refund-measure?limit=1", "admin key and Stripe test key check")
+    sections = helper.parse_answer(listed.text) or []
+    return next((v.get("test_key") for n, v in sections if n == "list"), None)
+
+
+def require_backend_test_key(shop: Shop) -> None:
+    """Before the FIRST write: a backend that does not hold a Stripe TEST key stops the run here, not at Stripe."""
+    if backend_test_key(shop) is not True:
+        raise MeasureError("the backend does not report a Stripe TEST key (test_key is not true): nothing is written")
+
+
 def step_plan(shop: Shop) -> bool:
     ok = True
     say("PLAN (reads, plus one probe that cannot write: a payment link for an order that does not exist)")
-    listed = shop.admin("GET", "/admin/refund-measure?limit=1", "admin key and Stripe test key check")
-    sections = helper.parse_answer(listed.text) or []
-    test_key = next((v.get("test_key") for n, v in sections if n == "list"), None)
+    test_key = backend_test_key(shop)
     ok &= show([("OK" if test_key is True else "FAIL", f"admin key works; the backend holds a Stripe TEST key: {test_key}")])
     _region, hold, edit = catalog(shop)
     ok &= show([("OK", f"hold variant {hold['id']} price {hold['price']}; edit variant {edit['id']} price {edit['price']}")])
@@ -347,6 +379,7 @@ def build_cart(shop: Shop, region_id: str, variant: dict[str, Any], aszf: tuple[
 
 def step_hold(shop: Shop, aszf: tuple[str, ...]) -> str:
     say("STEP 1-2: cart, card hold, order")
+    require_backend_test_key(shop)
     region_id, hold, _edit = catalog(shop)
     cart_id = build_cart(shop, region_id, hold, aszf)
     started = shop.store("POST", f"/store/carts/{cart_id}/stripe-start", "start the card payment").body
@@ -427,7 +460,61 @@ def step_state(shop: Shop, order_id: str) -> bool:
     return show(judge(shop.state(order_id)))
 
 
-def step_keys(http: Any, env: dict[str, str], storefront: str) -> bool:
+KEY_PAGE = 50
+KEY_PAGES_MAX = 20
+
+
+def list_publishable_keys(shop: Shop) -> list[dict[str, Any]]:
+    """EVERY publishable key, page by page. Medusa 2.20.1 lists 20 a page unless `limit` is given (validators.js of the admin api-keys route), which is
+    why a first look saw "20+" keys: that was the page, not the count. The default fields already carry the token and the sales channels."""
+    listed: list[dict[str, Any]] = []
+    for page in range(KEY_PAGES_MAX):
+        body = shop.admin("GET", f"/admin/api-keys?type=publishable&limit={KEY_PAGE}&offset={page * KEY_PAGE}", "list the publishable keys").body
+        rows = body.get("api_keys") if isinstance(body, dict) else None
+        if not isinstance(rows, list) or not rows:
+            break
+        listed.extend(r for r in rows if isinstance(r, dict))
+        count = body.get("count")
+        if isinstance(count, int) and len(listed) >= count:
+            break
+    else:
+        raise MeasureError(f"more than {KEY_PAGES_MAX * KEY_PAGE} publishable keys listed: the list is not read to the end")
+    return listed
+
+
+def works_for_the_catalog(shop: Shop, key: str) -> str | None:
+    """None when the key sees a buyable catalog, otherwise why not. The name never decides: the shop's own Store API does."""
+    regions = shop.store_under(key, "/store/regions")
+    region_list = regions.body.get("regions") if isinstance(regions.body, dict) else None
+    if regions.status != 200 or not region_list:
+        return f"/store/regions HTTP {regions.status}"
+    query = f"limit=200&region_id={region_list[0]['id']}&order=handle&fields=handle,*variants,*variants.calculated_price,%2Bvariants.inventory_quantity"
+    products = shop.store_under(key, f"/store/products?{query}")
+    items = products.body.get("products") if isinstance(products.body, dict) else None
+    if products.status != 200:
+        return f"/store/products HTTP {products.status}"
+    return None if candidates(items or []) else "no buyable variant with a price under this key"
+
+
+def step_medusa_key(shop: Shop) -> str | None:
+    """The Medusa publishable key to use, found through the admin API and proven through the Store API (reads only)."""
+    listed = list_publishable_keys(shop)
+    cands = key_candidates(listed)
+    say(f"MEDUSA KEY via the admin API: {len(listed)} publishable keys listed, {len(cands)} not revoked, key-shaped and bound to a sales channel")
+    for number, cand in enumerate(cands):
+        why = works_for_the_catalog(shop, cand["token"])
+        if why is not None:
+            say(f"  skip {cand['id']} ({cand['title']}): {why}")
+            continue
+        same = [c for c in cands[number + 1 :] if c["channels"] == cand["channels"]]
+        say(f"  OK   {cand['id']} ({cand['title']}), sales channel(s) {', '.join(cand['channels'])}: regions and a buyable catalog answer under it")
+        say(f"  {len(same)} older key(s) bound to the same channel(s): equivalent for the Store API (not checked one by one)")
+        return cand["token"]
+    say("  no listed key sees a buyable catalog")
+    return None
+
+
+def step_keys(http: Any, env: dict[str, str], storefront: str, backend: str | None = None) -> bool:
     parts = urllib.parse.urlsplit(storefront)
     if parts.scheme != "https" or parts.hostname != STOREFRONT_HOST or parts.port or parts.path.strip("/"):
         raise MeasureError(f"the credential goes only to https://{STOREFRONT_HOST}")
@@ -454,7 +541,20 @@ def step_keys(http: Any, env: dict[str, str], storefront: str) -> bool:
     say("  Stripe test publishable key(s): " + (", ".join(found["stripe"]) or "none found"))
     say("  Medusa publishable key(s):      " + (", ".join(found["medusa"]) or "none found"))
     say("  (both are public: they ship in the storefront's code)")
-    return bool(found["stripe"]) and bool(found["medusa"])
+    chosen = None
+    admin = env.get("MEDUSA_STAGE_ADMIN_KEY", "").strip()
+    if admin and backend:
+        if re.search(r"\s", admin):
+            raise MeasureError("MEDUSA_STAGE_ADMIN_KEY has white space in it")
+        # the admin key goes to the backend host only (`backend` passed check_base; `base` above is the STOREFRONT's and must never reach here)
+        chosen = step_medusa_key(Shop(http, backend, {"admin": admin, "publishable": "", "stripe": ""}))
+        if chosen:
+            say(f"  MEDUSA_PUBLISHABLE_KEY={chosen}  (public; found through the admin API, proven through the Store API)")
+            if found["medusa"] and chosen not in found["medusa"]:
+                say("  NOTE the storefront's own files carry a different Medusa key than this one")
+    elif not found["medusa"]:
+        say("  NOTE no admin key in the environment: the Medusa key can also be found through the admin API (MEDUSA_STAGE_ADMIN_KEY)")
+    return bool(found["stripe"]) and (bool(found["medusa"]) or chosen is not None)
 
 
 def main(argv: list[str], env: dict[str, str] | None = None, http: Any = None) -> int:
@@ -472,7 +572,8 @@ def main(argv: list[str], env: dict[str, str] | None = None, http: Any = None) -
     writes = args.job in ("hold", "difference", "refund", "all")
     try:
         if args.job == "keys":
-            return 0 if step_keys(http, env, args.storefront) else 1
+            keys_base = check_base(args.base) if env.get("MEDUSA_STAGE_ADMIN_KEY", "").strip() else None
+            return 0 if step_keys(http, env, args.storefront, keys_base) else 1
         base = check_base(args.base)
         settings = check_settings(env)
         if args.job in ("difference", "refund", "state") and not ORDER_ID.match(args.order or ""):
