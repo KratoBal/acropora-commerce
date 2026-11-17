@@ -167,10 +167,11 @@ class Guards(unittest.TestCase):
 
     def test_refusal_exit_code_and_no_call(self):
         fake = Fake()
-        code, _out, err = run(["plan", "--base", "https://localhost:9000"], http=fake)
-        self.assertEqual(code, 2)
-        self.assertIn("refused", err)
-        self.assertEqual(fake.calls, [])
+        for bad in ("https://localhost", "https://shop-staging.acropora.hu"):  # no port or path: only the host check can refuse these
+            code, _out, err = run(["plan", "--base", bad], http=fake)
+            self.assertEqual(code, 2, bad)
+            self.assertIn("refused", err)
+            self.assertEqual(fake.calls, [], bad)
         code, _out, _err = run(["plan"], env={**ENV, "STRIPE_PUBLISHABLE_KEY": "pk_live_" + "d" * 24}, http=fake)
         self.assertEqual((code, fake.calls), (2, []))
 
