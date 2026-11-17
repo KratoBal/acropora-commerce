@@ -2,9 +2,9 @@ import { ExecArgs } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { refundPaymentWorkflow } from "@medusajs/medusa/core-flows"
 
-import { smallestUnit } from "../modules/stripe-capture/smallest-unit"
 import { orderReadout } from "../workflows/utils/order-payment/readout"
 import { applyRefusal, decodeInput, isStripeTestKey, planRefund } from "../workflows/utils/order-payment/refund-measure"
+import { intentIdOf, listMeasureOrders, readIntent, readStripeRefunds, sideOf } from "../workflows/utils/order-payment/refund-measure-read"
 import { loadSide, ORDER_FIELDS } from "../workflows/utils/shared-stripe-capture-operations"
 
 /**
@@ -12,7 +12,7 @@ import { loadSide, ORDER_FIELDS } from "../workflows/utils/shared-stripe-capture
  * (commerce cards 0cca8305 and 04b6010e; acrobot 54480). It is the only writer of the measurement, and it writes ONLY with
  * `mode: "apply"` AND a `confirm_order_id` that repeats the order id.
  *
- *   medusa exec ./src/scripts/book-test-refund.ts --input <base64 of the JSON below>
+ *   medusa exec ./src/scripts/book-test-refund.ts <base64 of the JSON below>      (a bare word: the Medusa CLI refuses `--input`, see `inputArgument`)
  *
  *   {"mode":"list","limit":5}                                    the latest orders with a captured Stripe payment (read only)
  *   {"mode":"plan","order_id":"order_01...","amount":500}        what would be booked and why not, if not (read only; default mode)
@@ -30,11 +30,6 @@ const out = (section: string, value: unknown) => {
   console.log(`MEASURE-RESULT ${section} ${JSON.stringify(value)}`)
 }
 
-const stripeGet = async (key: string, path: string): Promise<{ status: number; body: any }> => {
-  const response = await fetch(`https://api.stripe.com/v1/${path}`, { headers: { authorization: `Bearer ${key}` } })
-  return { status: response.status, body: await response.json().catch(() => null) }
-}
-
 export default async function bookTestRefund({ container, args }: ExecArgs) {
   const input = decodeInput(args ?? [])
   const key = process.env.STRIPE_API_KEY?.trim() ?? ""
@@ -42,26 +37,7 @@ export default async function bookTestRefund({ container, args }: ExecArgs) {
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
 
   if (input.mode === "list") {
-    const { data } = await query.graph({
-      entity: "order",
-      fields: [...ORDER_FIELDS, "created_at", "display_id"],
-      pagination: { take: 50, order: { created_at: "DESC" } },
-    })
-    const rows = (data ?? [])
-      .map((order: any) => ({ order, readout: orderReadout(order) }))
-      .filter(({ readout }) => readout.collections.some((c) => c.payments.some((p) => p.provider_id === "pp_stripe_stripe" && !p.canceled && p.captured_total > 0)))
-      .slice(0, input.limit)
-      .map(({ order, readout }) => ({
-        order_id: order.id,
-        display_id: order.display_id ?? null,
-        created_at: order.created_at ?? null,
-        currency: order.currency_code ?? null,
-        total: order.total ?? null,
-        payments: readout.collections.flatMap((c) =>
-          c.payments.map((p) => ({ payment_id: p.id, provider: p.provider_id, canceled: p.canceled, captured: p.captured_total, refunded: p.refunded_total, refunds_field: p.refunds_field }))
-        ),
-      }))
-    out("list", { test_key: testKey, orders: rows })
+    out("list", { test_key: testKey, orders: await listMeasureOrders(query, input.limit) })
     return
   }
 
@@ -73,17 +49,13 @@ export default async function bookTestRefund({ container, args }: ExecArgs) {
   // Stripe's own word on the intent: livemode and amount (the intent id stays inside this process)
   const first = planRefund({ readout: before, amount: input.amount, paymentId: input.payment_id, testKey, intentLive: null })
   const rawPayment = (order.payment_collections ?? []).flatMap((c: any) => c.payments ?? []).find((p: any) => p?.id === first.payment_id)
-  const intentId: string | null = typeof rawPayment?.data?.id === "string" ? rawPayment.data.id : null
+  const intentId = intentIdOf(rawPayment)
   let intentLive: boolean | null = null
   let intentRead: Record<string, unknown> | null = null
   if (testKey && intentId) {
-    const intent = await stripeGet(key, `payment_intents/${encodeURIComponent(intentId)}`)
-    if (intent.status === 200 && intent.body) {
-      intentLive = intent.body.livemode === true
-      intentRead = { status: intent.body.status, livemode: intent.body.livemode, amount: intent.body.amount, currency: intent.body.currency, amount_received: intent.body.amount_received }
-    } else {
-      intentRead = { http_status: intent.status }
-    }
+    const intent = await readIntent(key, intentId)
+    intentLive = intent.live
+    intentRead = intent.read
   }
   const plan = planRefund({ readout: before, amount: input.amount, paymentId: input.payment_id, testKey, intentLive })
   out("plan", { mode: input.mode, order_id: input.order_id, amount: input.amount, plan, stripe_intent: intentRead, readout_before: before })
@@ -104,16 +76,10 @@ export default async function bookTestRefund({ container, args }: ExecArgs) {
     payment_id: plan.payment_id,
     readout_after: after,
     // `loadSide`'s own reading: what a paid difference counts for once the refund is booked
-    side: side && { total: side.total, currency_code: side.currency_code, other_captured: side.other_captured, payment_canceled: side.payment_canceled },
+    side: sideOf(side),
   })
 
   if (intentId) {
-    const refunds = await stripeGet(key, `refunds?payment_intent=${encodeURIComponent(intentId)}&limit=20`)
-    const currency = String(intentRead?.currency ?? order.currency_code ?? "huf")
-    const unit = smallestUnit(1, currency)
-    out("stripe_refunds", {
-      http_status: refunds.status,
-      refunds: (refunds.body?.data ?? []).map((r: any) => ({ status: r.status, amount_smallest_unit: r.amount, amount: r.amount / unit, currency: r.currency })),
-    })
+    out("stripe_refunds", await readStripeRefunds(key, intentId, String(intentRead?.currency ?? order.currency_code ?? "huf")))
   }
 }
