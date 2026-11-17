@@ -55,7 +55,17 @@ STRIPE_OK = {"http_status": 200, "refunds": [{"status": "succeeded", "amount_sma
 class Inputs(unittest.TestCase):
     def test_list_command_is_the_documented_base64(self):
         self.assertEqual(helper.encode(helper.list_input(5)), "eyJtb2RlIjoibGlzdCIsImxpbWl0Ijo1fQ==")
-        self.assertTrue(helper.command(helper.list_input(5)).startswith("cd /app && npx medusa exec ./src/scripts/book-test-refund.js --input "))
+        self.assertEqual(
+            helper.command(helper.list_input(5)),
+            "cd /app && npx medusa exec ./src/scripts/book-test-refund.js eyJtb2RlIjoibGlzdCIsImxpbWl0Ijo1fQ== || true",
+        )
+
+    def test_the_task_command_never_uses_the_input_option_the_medusa_cli_refuses_and_always_exits_zero(self):
+        for payload in (helper.list_input(5), helper.refund_input("apply", "order_01ABC", 100)):
+            line = helper.command(payload)
+            self.assertNotIn("--input", line)
+            self.assertTrue(line.endswith(" || true"))
+            self.assertEqual(len(line.split(" || true")[0].split(" ")), 8)  # cd, /app, &&, npx, medusa, exec, <file>, <b64>: the input is ONE word
 
     def test_apply_repeats_the_order_id_as_confirmation(self):
         payload = json.loads(base64.b64decode(helper.encode(helper.refund_input("apply", "order_01ABC", 100))))
@@ -86,7 +96,9 @@ class Inputs(unittest.TestCase):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             self.assertEqual(helper.main(["inputs", "--order", "order_01ABC"]), 0)
-        self.assertEqual(len(out.getvalue().strip().splitlines()), 3)
+        self.assertEqual(len(out.getvalue().strip().splitlines()), 5)
+        self.assertIn("/admin/refund-measure?order_id=order_01ABC", out.getvalue())
+        self.assertIn("/admin/refund-measure?limit=5", out.getvalue())
         out = io.StringIO()
         err = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
@@ -109,7 +121,65 @@ class ParseLog(unittest.TestCase):
         self.assertIn("WARN 1 MEASURE-RESULT", "\n".join(helper.read_log(text)))
 
     def test_a_log_without_a_marker_says_so(self):
-        self.assertIn("no readable MEASURE-RESULT", helper.read_log("nothing here")[0])
+        self.assertIn("no readable answer or MEASURE-RESULT", helper.read_log("nothing here")[0])
+
+
+class ReadAnswer(unittest.TestCase):
+    """The route's JSON answer: {"sections":[{"section":"state","value":{...}}]}."""
+
+    def state(self, payments, other=0, findings=None, stripe=None):
+        return {
+            "order_id": "order_01TEST",
+            "readout": readout(payments, findings),
+            "side": {"total": 1000, "currency_code": "huf", "other_captured": other, "payment_canceled": False},
+            "payments": [{"payment_id": p["id"], "stripe_intent": {"status": "succeeded", "livemode": False}, "stripe_refunds": (stripe if stripe is not None else STRIPE_OK)} for p in payments],
+        }
+
+    def answer(self, state):
+        return json.dumps({"sections": [{"section": "state", "value": state}]})
+
+    def test_a_json_answer_is_read_as_sections_and_a_log_is_not_mistaken_for_one(self):
+        self.assertEqual(helper.parse_answer(self.answer({"order_id": "o"}))[0][0], "state")
+        self.assertIsNone(helper.parse_answer("not json"))
+        self.assertIsNone(helper.parse_answer('{"other": 1}'))
+        self.assertIsNone(helper.parse_answer(log_line("list", {"orders": []})))
+
+    def test_a_good_state_with_a_booked_refund_has_no_failure(self):
+        text = "\n".join(helper.read_log(self.answer(self.state([payment("pay_1", captured=1000, refunded=100)]))))
+        self.assertIn("STATE order order_01TEST", text)
+        self.assertNotIn("FAIL", text)
+        self.assertIn("ONE live payment", text)
+
+    def test_a_state_before_any_refund_is_a_note_not_a_failure(self):
+        text = "\n".join(helper.read_log(self.answer(self.state([payment("pay_1", captured=1000)]))))
+        self.assertIn("no refund booked on this payment yet", text)
+        self.assertNotIn("FAIL", text)
+
+    def test_a_state_with_the_refunds_field_missing_fails_even_without_a_refund(self):
+        bad = payment("pay_1", captured=1000, refunds=[], field="missing")
+        self.assertIn("FAIL refunds field is missing", "\n".join(helper.read_log(self.answer(self.state([bad])))))
+
+    def test_a_state_with_a_refund_amount_that_is_not_a_number_fails(self):
+        bad = payment("pay_1", captured=1000, refunds=[amount("x", "object")])
+        text = "\n".join(helper.read_log(self.answer(self.state([bad], findings=["a refund amount is object"]))))
+        self.assertIn("FAIL refund amounts", text)
+        self.assertIn("FAIL findings", text)
+
+    def test_a_pending_stripe_refund_fails_in_a_state(self):
+        pending = {"http_status": 200, "refunds": [{"status": "pending", "amount": 100, "currency": "huf"}]}
+        text = "\n".join(helper.read_log(self.answer(self.state([payment("pay_1", captured=1000, refunded=100)], stripe=pending))))
+        self.assertIn("FAIL Stripe refunds", text)
+
+    def test_two_payments_in_a_state_check_other_captured_per_payment_tag(self):
+        pays = [payment("pay_hold", captured=0), payment("pay_diff", captured=300, refunded=100)]
+        good = "\n".join(helper.read_log(self.answer(self.state(pays, other=200))))
+        self.assertIn("OK   other_captured 200, expected 200", good)
+        bad = "\n".join(helper.read_log(self.answer(self.state(pays, other=300))))
+        self.assertIn("FAIL other_captured 300, expected 200", bad)
+
+    def test_a_state_without_a_live_payment_fails_in_words(self):
+        text = "\n".join(helper.read_log(self.answer(self.state([payment("pay_x", captured=10, canceled=True)]))))
+        self.assertIn("FAIL the order has no live payment in the readout", text)
 
 
 class ReadList(unittest.TestCase):
@@ -190,7 +260,7 @@ class VerdictAfter(unittest.TestCase):
         log = "\n".join([log_line("plan", plan_section), log_line("after", self.one_payment()), log_line("stripe_refunds", STRIPE_OK)])
         text = "\n".join(helper.read_log(log))
         self.assertIn("PLAN order order_01TEST amount 100 mode apply: OK", text)
-        self.assertIn("AFTER order order_01TEST", text)
+        self.assertIn("STATE order order_01TEST payment pay_1", text)
         self.assertNotIn("FAIL", text)
 
 

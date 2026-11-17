@@ -19,8 +19,16 @@ describe("inputArgument and decodeInput", () => {
   it("takes the value after --input, in both spellings, and nothing without it", () => {
     expect(inputArgument(["--input", "abc"])).toBe("abc")
     expect(inputArgument(["x", "--input=abc"])).toBe("abc")
-    expect(inputArgument(["order_01"])).toBeNull()
-    expect(() => decodeInput([])).toThrow("no --input")
+    expect(inputArgument([])).toBeNull()
+    expect(inputArgument(["--input"])).toBeNull()
+    expect(() => decodeInput([])).toThrow("no input in the command")
+  })
+
+  it("takes the ONE positional word, the form `medusa exec` really passes (it refuses --input as an unknown argument), and not two words", () => {
+    expect(inputArgument(["abc"])).toBe("abc")
+    expect(inputArgument(["abc", "def"])).toBeNull()
+    expect(decodeInput([b64({ mode: "list" })])).toEqual({ mode: "list", limit: 5 })
+    expect(() => decodeInput([b64({ mode: "list" }), "extra"])).toThrow("no input in the command")
   })
 
   it("decodes a list, a plan and an apply input and fills the defaults", () => {

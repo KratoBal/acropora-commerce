@@ -3,12 +3,15 @@
 
 Two jobs, standard library only, nothing is sent anywhere and nothing is written:
 
-  inputs  prints the ready Coolify task commands (the base64 input of list / plan / apply)
-  read    reads a task log (a file, or stdin) and prints what its MEASURE-RESULT lines say, with the verdict of the measurement
+  inputs  prints the ready Coolify task commands (the base64 input of list / plan / apply, as ONE bare word: the Medusa CLI refuses
+          `--input`) and the URLs of the read-only route GET /admin/refund-measure
+  read    reads the route's JSON answer, or a task log (a file, or stdin), and prints what it says with the verdict of the measurement
 
   python3 scripts/refund-measure-helper.py inputs
   python3 scripts/refund-measure-helper.py inputs --order order_01ABC --amount 100 [--payment pay_01ABC]
-  python3 scripts/refund-measure-helper.py read task.log      (or: ... read - < task.log)
+  python3 scripts/refund-measure-helper.py read answer.json      (or: ... read - < answer.json; a task log works the same)
+
+The EVIDENCE is the state read over HTTP (the Coolify task API gives no log, so a task's output cannot be read): book with the apply task, then read.
 
 The input rules repeat `decodeInput` of `apps/backend/src/workflows/utils/order-payment/refund-measure.ts`: the script refuses here what the
 backend would refuse there, so a typo is found before a Coolify run is spent on it.
@@ -23,7 +26,8 @@ import re
 import sys
 from typing import Any
 
-SCRIPT_COMMAND = "cd /app && npx medusa exec ./src/scripts/book-test-refund.js --input"
+SCRIPT_COMMAND = "cd /app && npx medusa exec ./src/scripts/book-test-refund.js"
+DEFAULT_BASE = "https://commerce-stage.acropora.hu"
 ORDER_ID = re.compile(r"^order_[A-Za-z0-9]+$")
 PAYMENT_ID = re.compile(r"^pay_[A-Za-z0-9]+$")
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
@@ -36,7 +40,8 @@ def encode(payload: dict[str, Any]) -> str:
 
 
 def command(payload: dict[str, Any]) -> str:
-    return f"{SCRIPT_COMMAND} {encode(payload)}"
+    """The task command: the input is one bare word, and `|| true` makes the task always exit 0 (a failed task notifies the owner's Discord)."""
+    return f"{SCRIPT_COMMAND} {encode(payload)} || true"
 
 
 def list_input(limit: int = 5) -> dict[str, Any]:
@@ -60,6 +65,17 @@ def refund_input(mode: str, order_id: str, amount: int, payment_id: str | None =
     if mode == "apply":
         payload["confirm_order_id"] = order_id
     return payload
+
+
+def parse_answer(text: str) -> list[tuple[str, dict[str, Any]]] | None:
+    """The sections of the route's JSON answer (`{"sections":[{"section":...,"value":{...}}]}`), or None when the text is not such an answer."""
+    try:
+        body = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(body, dict) or not isinstance(body.get("sections"), list):
+        return None
+    return [(str(item.get("section")), item.get("value") or {}) for item in body["sections"] if isinstance(item, dict)]
 
 
 def parse_log(text: str) -> tuple[list[tuple[str, dict[str, Any]]], int]:
@@ -132,32 +148,50 @@ def payment_of(readout: dict[str, Any] | None, payment_id: str | None) -> dict[s
     return None
 
 
-def verdict_after(after: dict[str, Any], plan: dict[str, Any] | None, stripe: dict[str, Any] | None) -> list[str]:
-    """What the run decides about #615. `plan` and `stripe` are the other sections of the same log (None when absent)."""
-    readout = after.get("readout_after") or {}
-    payment = payment_of(readout, after.get("payment_id"))
-    lines = [f"AFTER order {after.get('order_id')} payment {after.get('payment_id')}"]
-    if payment is None:
-        return lines + ["  FAIL the refunded payment is not in readout_after: nothing can be read"]
+def verdict_state(state: dict[str, Any], plan: dict[str, Any] | None = None, focus: str | None = None) -> list[str]:
+    """What the state says about #615. `focus` names the payment that was just refunded (it MUST carry a refund then); `plan` is the plan section of
+    the same apply log (None when absent)."""
+    readout = state.get("readout") or {}
+    live = live_payments(readout)
+    chosen = [p for p in live if focus is None or p.get("id") == focus]
+    lines = [f"STATE order {state.get('order_id')}" + (f" payment {focus}" if focus else "")]
 
     def check(ok: bool, text: str) -> None:
         lines.append(f"  {'OK  ' if ok else 'FAIL'} {text}")
 
-    refunds = payment.get("refunds") or []
-    check(payment.get("refunds_field") == "present", f"refunds field is {payment.get('refunds_field')} (present = Medusa resolves the refunds)")
-    check(
-        bool(refunds) and all(r.get("finite") for r in refunds),
-        "refund amounts: " + (", ".join(f"{r.get('type')} {json.dumps(r.get('value'))}" + ("" if r.get("finite") else " (Number() is NaN)") for r in refunds) or "none"),
-    )
+    if not chosen:
+        return lines + ["  FAIL the " + ("refunded payment is not in readout_after" if focus else "order has no live payment in the readout") + ": nothing can be read"]
+    stripe = {p.get("payment_id"): p.get("stripe_refunds") for p in state.get("payments") or []}
+    for payment in chosen:
+        pid = payment.get("id")
+        tag = f"{pid}: " if len(chosen) > 1 else ""
+        refunds = payment.get("refunds") or []
+        if focus:
+            check(payment.get("refunds_field") == "present", f"{tag}refunds field is {payment.get('refunds_field')} (present = Medusa resolves the refunds)")
+        elif payment.get("refunds_field") == "missing":
+            check(False, f"{tag}refunds field is missing (the field is not resolved: loadSide would never subtract a refund)")
+        elif not refunds:
+            lines.append(f"  NOTE {tag}no refund booked on this payment yet (refunds field {payment.get('refunds_field')})")
+            continue
+        check(
+            bool(refunds) and all(r.get("finite") for r in refunds),
+            f"{tag}refund amounts: " + (", ".join(f"{r.get('type')} {json.dumps(r.get('value'))}" + ("" if r.get("finite") else " (Number() is NaN)") for r in refunds) or "none"),
+        )
+        if plan is not None and focus:
+            before = payment_of(plan.get("readout_before"), pid)
+            if before is not None and isinstance(plan.get("amount"), (int, float)):
+                delta = (payment.get("refunded_total") or 0) - (before.get("refunded_total") or 0)
+                check(delta == plan["amount"], f"refunded total grew by {delta}, the booked amount is {plan['amount']}")
+        reading = stripe.get(pid)
+        if reading is None:
+            lines.append(f"  NOTE {tag}no stripe_refunds section for this payment (no Stripe reading in this answer)")
+        else:
+            stripe_refunds = reading.get("refunds") or []
+            text = ", ".join(f"{r.get('status')} {r.get('amount')} {r.get('currency')}" for r in stripe_refunds) or "none"
+            check(bool(stripe_refunds) and all(r.get("status") == "succeeded" for r in stripe_refunds), f"{tag}Stripe refunds: {text}")
     findings = readout.get("findings") or []
     check(not findings, "findings: " + ("none" if not findings else "; ".join(findings)))
-    if plan is not None:
-        before = payment_of(plan.get("readout_before"), after.get("payment_id"))
-        if before is not None and isinstance(plan.get("amount"), (int, float)):
-            delta = (payment.get("refunded_total") or 0) - (before.get("refunded_total") or 0)
-            check(delta == plan["amount"], f"refunded total grew by {delta}, the booked amount is {plan['amount']}")
-    live = live_payments(readout)
-    other = (after.get("side") or {}).get("other_captured")
+    other = (state.get("side") or {}).get("other_captured")
     if len(live) <= 1:
         lines.append(
             f"  NOTE other_captured is {other}: with ONE live payment it is 0 by design (that payment is the order's own payment), "
@@ -171,20 +205,27 @@ def verdict_after(after: dict[str, Any], plan: dict[str, Any] | None, stripe: di
         else:
             expected = sum(p.get("covered") or 0 for p in live if p is not hold)
             check(other == expected, f"other_captured {other}, expected {expected} (covered of every live payment except the hold {hold.get('id')})")
-    if stripe is not None:
-        stripe_refunds = stripe.get("refunds") or []
-        text = ", ".join(f"{r.get('status')} {r.get('amount')} {r.get('currency')}" for r in stripe_refunds) or "none"
-        check(bool(stripe_refunds) and all(r.get("status") == "succeeded" for r in stripe_refunds), f"Stripe refunds: {text}")
-    else:
-        lines.append("  NOTE no stripe_refunds section in the log")
     return lines
 
 
+def verdict_after(after: dict[str, Any], plan: dict[str, Any] | None, stripe: dict[str, Any] | None) -> list[str]:
+    """The `after` section of an apply task log, read as a state of the refunded payment (`stripe` is its stripe_refunds section, or None)."""
+    pid = after.get("payment_id")
+    state = {
+        "order_id": after.get("order_id"),
+        "readout": after.get("readout_after"),
+        "side": after.get("side"),
+        "payments": [{"payment_id": pid, "stripe_refunds": stripe}],
+    }
+    return verdict_state(state, plan, focus=pid)
+
+
 def read_log(text: str) -> list[str]:
-    sections, unreadable = parse_log(text)
+    answer = parse_answer(text)
+    sections, unreadable = (answer, 0) if answer is not None else parse_log(text)
     lines: list[str] = []
     if not sections:
-        return [f"no readable MEASURE-RESULT line in the log ({unreadable} unreadable marker lines): the run did not print one, or the log viewer cut the long line"]
+        return [f"no readable answer or MEASURE-RESULT line ({unreadable} unreadable marker lines): not the route's JSON, and the run printed none or the log viewer cut the long line"]
     plan = next((s for name, s in sections if name == "plan"), None)
     stripe = next((s for name, s in sections if name == "stripe_refunds"), None)
     for name, section in sections:
@@ -194,6 +235,8 @@ def read_log(text: str) -> list[str]:
             lines += read_plan(section)
         elif name == "after":
             lines += verdict_after(section, plan, stripe)
+        elif name == "state":
+            lines += verdict_state(section)
         elif name == "stripe_refunds":
             continue
         else:
@@ -211,6 +254,7 @@ def main(argv: list[str], stdin: str | None = None) -> int:
     inputs.add_argument("--order")
     inputs.add_argument("--amount", type=int, default=100)
     inputs.add_argument("--payment")
+    inputs.add_argument("--base", default=DEFAULT_BASE, help="the test showcase base URL of the read-only route")
     read = sub.add_parser("read", help="read a task log")
     read.add_argument("log", nargs="?", default="-")
     args = parser.parse_args(argv)
@@ -222,6 +266,9 @@ def main(argv: list[str], stdin: str | None = None) -> int:
                 out.append(f"3. apply  {command(refund_input('apply', args.order, args.amount, args.payment))}")
             else:
                 out.append("2. plan and 3. apply need an order id from the list: rerun with --order order_01... [--amount 100] [--payment pay_01...]")
+            base = args.base.rstrip("/")
+            out.append(f"read the state (admin secret API key, GET): {base}/admin/refund-measure" + (f"?order_id={args.order}" if args.order else "?order_id=order_01..."))
+            out.append(f"read the list (GET): {base}/admin/refund-measure?limit={args.limit}")
             print("\n".join(out))
             return 0
         text = stdin if stdin is not None else (sys.stdin.read() if args.log == "-" else open(args.log, encoding="utf-8", errors="replace").read())

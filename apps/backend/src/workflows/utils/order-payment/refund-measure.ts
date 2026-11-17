@@ -12,7 +12,7 @@ import type { OrderReadout, PaymentReadout } from "./readout"
  * look at the Stripe dashboard). The refund now goes through the same workflow the admin route runs, from inside the container,
  * and the Stripe side is read with the test key over its API.
  *
- * THE INPUT TRAVELS IN THE COMMAND, as base64 JSON after `--input`: the environment of a Coolify task does not reach the run
+ * THE INPUT TRAVELS IN THE COMMAND, as base64 JSON, the one word after the script path: the environment of a Coolify task does not reach the run
  * (measured 2026-11-14), the command line does.
  */
 export type MeasureInput =
@@ -30,20 +30,29 @@ export type MeasureInput =
 
 const MODES = ["list", "plan", "apply"] as const
 
-/** The value after `--input` (`--input <b64>` or `--input=<b64>`), or null. */
+/**
+ * The input word: the one word after the script path (`medusa exec ./x.js <base64>`), or the value after `--input` (`--input <b64>` or
+ * `--input=<b64>`), or null.
+ *
+ * WHY THE POSITIONAL WORD IS THE REAL FORM: the Medusa CLI runs in yargs strict mode and its `exec [file] [args..]` declares no options, so
+ * `medusa exec ./x.js --input <b64>` is refused as `Unknown argument: input` before the script loads (exit 1, measured 2026-11-17 on the
+ * test showcase, reproduced locally). Only positional words reach the script's `args`. The `--input` spellings stay accepted for a run
+ * that does not go through the Medusa CLI.
+ */
 export const inputArgument = (args: readonly string[]): string | null => {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
     if (arg === "--input") return args[i + 1] ?? null
     if (arg.startsWith("--input=")) return arg.slice("--input=".length)
   }
-  return null
+  const words = args.filter((arg) => !arg.startsWith("--"))
+  return words.length === 1 ? words[0] : null
 }
 
 /** Decodes and validates the input. Throws a MedusaError (INVALID_DATA) that names what is wrong (never echoes the whole input back). */
 export const decodeInput = (args: readonly string[]): MeasureInput => {
   const raw = inputArgument(args)
-  if (!raw) throw new MedusaError(MedusaError.Types.INVALID_DATA, "no --input <base64 of a JSON object> in the command")
+  if (!raw) throw new MedusaError(MedusaError.Types.INVALID_DATA, "no input in the command: the base64 of a JSON object as the one word after the script path")
   let json: unknown
   try {
     json = JSON.parse(Buffer.from(raw, "base64").toString("utf8"))
