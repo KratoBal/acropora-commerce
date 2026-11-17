@@ -82,6 +82,12 @@ ENV NEXT_PUBLIC_LEGAL_GATE_MODE=$NEXT_PUBLIC_LEGAL_GATE_MODE
 # level szovege jovahagyasra var. A buildbe eg: a valtas uj buildet ker.
 ARG NEXT_PUBLIC_STOCK_ALERT=
 ENV NEXT_PUBLIC_STOCK_ALERT=$NEXT_PUBLIC_STOCK_ALERT
+# A Stripe PUBLIKUS kulcsa a kartyamezonek (`src/lib/util/stripe-kulcs.ts`): NEM titok, de a `next build` egeti a kliens-kodba (a
+# kartyamezo csak a fizetesi oldal darabjaban van), ARG nelkul a build nem latja akkor sem, ha a Coolify --build-arg-kent atadja.
+# ALAPBOL URES (= a kartyas mod nem jelenik meg, mint eddig). Csak ebben a szakaszban kell: a futasideju szakasz csak a `next.config.js`
+# ellenorzesenek valtozoit olvassa, a kulcsot nem, es az ertek mar a buildben benne van. A teszt kirakaton `pk_test_`, eleshez `pk_live_`.
+ARG NEXT_PUBLIC_STRIPE_KEY=
+ENV NEXT_PUBLIC_STRIPE_KEY=$NEXT_PUBLIC_STRIPE_KEY
 
 RUN pnpm --filter @dtc/storefront build
 
