@@ -316,6 +316,8 @@ def catalog(shop: Shop) -> tuple[str, dict[str, Any], dict[str, Any]]:
     region = next((r for r in regions if any(c.get("iso_2") == "hu" for c in r.get("countries") or [])), regions[0] if regions else None)
     if not region:
         raise MeasureError("the shop has no region")
+    if not isinstance(region.get("id"), str) or not region["id"]:
+        raise MeasureError("the shop's region has no id")
     query = f"limit=200&region_id={region['id']}&order=handle&fields=handle,*variants,*variants.calculated_price,%2Bvariants.inventory_quantity"
     products = shop.store("GET", f"/store/products?{query}", "products").body.get("products") or []
     hold, edit = choose_variants(candidates(products))
@@ -488,7 +490,10 @@ def works_for_the_catalog(shop: Shop, key: str) -> str | None:
     region_list = regions.body.get("regions") if isinstance(regions.body, dict) else None
     if regions.status != 200 or not region_list:
         return f"/store/regions HTTP {regions.status}"
-    query = f"limit=200&region_id={region_list[0]['id']}&order=handle&fields=handle,*variants,*variants.calculated_price,%2Bvariants.inventory_quantity"
+    region_id = region_list[0].get("id") if isinstance(region_list[0], dict) else None
+    if not isinstance(region_id, str) or not region_id:
+        return "/store/regions answered a region without an id"
+    query = f"limit=200&region_id={region_id}&order=handle&fields=handle,*variants,*variants.calculated_price,%2Bvariants.inventory_quantity"
     products = shop.store_under(key, f"/store/products?{query}")
     items = products.body.get("products") if isinstance(products.body, dict) else None
     if products.status != 200:
