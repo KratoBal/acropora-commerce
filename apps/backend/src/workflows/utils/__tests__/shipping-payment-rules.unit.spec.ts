@@ -1,7 +1,6 @@
-import {
-  Migration20261118220000,
-  ROWS_INSERTED_HERE,
-} from "../../../modules/commerce-settings/migrations/Migration20261118220000"
+import { Migration20261118220000 } from "../../../modules/commerce-settings/migrations/Migration20261118220000"
+
+const ROWS_INSERTED_HERE = Migration20261118220000.ROWS_INSERTED_HERE
 import { SHIPPING_OPTION_ROLES } from "../shipping-eligibility"
 import {
   SHIPPING_PAYMENT_RULE_READ_LIMIT,
