@@ -61,9 +61,10 @@ export const ordersByIntent = async (
     })
     const page = (data ?? []) as any[]
     for (const order of page) {
-      const intents = new Set(
-        (order.payment_collections ?? []).flatMap((collection: any) => (collection.payments ?? []).map(intentOfPayment)).filter((id: string | null): id is string => !!id && wanted.has(id)),
+      const ids: (string | null)[] = (order.payment_collections ?? []).flatMap((collection: any) =>
+        (collection.payments ?? []).map(intentOfPayment),
       )
+      const intents = new Set<string>(ids.filter((id): id is string => !!id && wanted.has(id)))
       for (const intent of intents) {
         const list = found.get(intent) ?? []
         list.push({
