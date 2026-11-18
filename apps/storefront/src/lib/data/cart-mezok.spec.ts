@@ -27,6 +27,17 @@ afterEach(() => vi.clearAllMocks())
  * 2026-09-29).
  */
 describe("a kosár lekérése", () => {
+  it("a címek metaadatát is kéri: a céges vásárlás adószáma ott áll (c977aed2)", async () => {
+    await retrieveCart("cart_1")
+    const [, opciok] = sdk.client.fetch.mock.calls[0] as unknown as [
+      string,
+      { query: { fields: string } },
+    ]
+    const mezok = opciok.query.fields.split(",").map((f) => f.trim())
+    expect(mezok).toContain("+shipping_address.metadata")
+    expect(mezok).toContain("+billing_address.metadata")
+  })
+
   it("a szállítási mód adatát is kéri", async () => {
     await retrieveCart("cart_1")
     const [, opciok] = sdk.client.fetch.mock.calls[0] as unknown as [
