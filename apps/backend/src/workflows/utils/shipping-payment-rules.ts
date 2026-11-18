@@ -44,8 +44,9 @@ const isPaymentRole = (value: string): value is PaymentRole =>
  *
  * The louder failure is not the safer one here. SINCE THE TABLE IS THE SOURCE
  * (card e0e2378b) the build no longer catches such a rename: the rows live in the
- * database, so renaming a role needs a data migration of its own, and the Admin
- * endpoint that writes the table accepts known roles only.
+ * database, so renaming a role needs a data migration of its own. The Admin
+ * endpoint that is to write the table (the second half of card e0e2378b) must
+ * accept known roles only.
  */
 export const toShippingRolePayments = (
   rows: ShippingPaymentRuleRow[],
