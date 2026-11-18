@@ -15,6 +15,7 @@ import {
   AdminUpdateCommerceSetting,
   AdminUpsertCommerceSetting,
 } from "./admin/commerce-settings/validators";
+import { AdminPutShippingPaymentRules } from "./admin/shipping-payment-rules/validators";
 import {
   AdminGetShippingAttributesParams,
   AdminShippingAttributeFlags,
@@ -167,6 +168,12 @@ export default defineMiddlewares({
       matcher: "/admin/commerce-settings/:key",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminUpdateCommerceSetting)],
+    },
+    {
+      // the payment matrix, whole (card e0e2378b)
+      matcher: "/admin/shipping-payment-rules",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutShippingPaymentRules)],
     },
     {
       // Medusa's cancel swallows a failed refund; the captured money is refunded first,
