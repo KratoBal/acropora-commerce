@@ -12,6 +12,8 @@
  *
  * The key is in the `authorization` header only: not in the URL, not in an error text.
  */
+import { MedusaError } from "@medusajs/framework/utils"
+
 export const STRIPE_READ_PATHS: readonly RegExp[] = [
   /^balance_transactions$/,
   /^payouts$/,
@@ -47,18 +49,32 @@ export const stripeQueryString = (query: StripeQuery | undefined): string => {
   return pairs.join("&")
 }
 
+/** How long one Stripe request may take. A slow Stripe must not hold the admin request open (barracuda, #803 review). */
+export const STRIPE_READ_TIMEOUT_MS = 15_000
+
 export type StripeResponse = { status: number; body: any }
 export type StripeReader = (path: string, query?: StripeQuery) => Promise<StripeResponse>
 
 export const createStripeReader =
-  (key: string, fetchImpl: typeof fetch = fetch): StripeReader =>
+  (key: string, fetchImpl: typeof fetch = fetch, timeoutMs: number = STRIPE_READ_TIMEOUT_MS): StripeReader =>
   async (path, query) => {
     if (!STRIPE_READ_PATHS.some((allowed) => allowed.test(path))) throw new StripeReadRefusedError(path)
     const qs = stripeQueryString(query)
-    const response = await fetchImpl(`https://api.stripe.com/v1/${path}${qs ? `?${qs}` : ""}`, {
-      method: "GET",
-      headers: { authorization: `Bearer ${key}` },
-    })
+    let response: Response
+    try {
+      response = await fetchImpl(`https://api.stripe.com/v1/${path}${qs ? `?${qs}` : ""}`, {
+        method: "GET",
+        headers: { authorization: `Bearer ${key}` },
+        signal: AbortSignal.timeout(timeoutMs),
+      })
+    } catch (error) {
+      // the text of a network error can carry the URL; only the fact goes on
+      const timedOut = (error as { name?: string })?.name === "TimeoutError" || (error as { name?: string })?.name === "AbortError"
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        timedOut ? `stripe did not answer ${path} within ${Math.round(timeoutMs / 1000)} s` : `stripe could not be reached for ${path}`,
+      )
+    }
     const text = await response.text()
     let body: any = null
     try {

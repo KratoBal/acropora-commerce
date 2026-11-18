@@ -1,3 +1,4 @@
+import { MedusaError } from "@medusajs/framework/utils"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
@@ -57,6 +58,29 @@ describe("the Stripe reader is read-only", () => {
     const { calls, impl } = fakeFetch()
     await expect(createStripeReader(KEY, impl)(path)).rejects.toBeInstanceOf(StripeReadRefusedError)
     expect(calls).toHaveLength(0)
+  })
+
+  it("gives every request a time limit", async () => {
+    const { calls, impl } = fakeFetch()
+    await createStripeReader(KEY, impl)("payouts")
+    expect(calls[0].init.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it.each(["TimeoutError", "AbortError"])("a %s becomes an error that names the fact, not the URL or the key", async (name) => {
+    const impl = (async () => {
+      throw Object.assign(new Error(`The operation was aborted: https://api.stripe.com/v1/payouts ${KEY}`), { name })
+    }) as unknown as typeof fetch
+    const error = await createStripeReader(KEY, impl, 1000)("payouts").catch((e: Error) => e)
+    expect(error).toBeInstanceOf(MedusaError)
+    expect((error as Error).message).toBe("stripe did not answer payouts within 1 s")
+  })
+
+  it("any other network failure says only that Stripe could not be reached", async () => {
+    const impl = (async () => {
+      throw new Error(`getaddrinfo ENOTFOUND api.stripe.com ${KEY}`)
+    }) as unknown as typeof fetch
+    const error = await createStripeReader(KEY, impl)("payouts").catch((e: Error) => e)
+    expect((error as Error).message).toBe("stripe could not be reached for payouts")
   })
 
   it("never puts the key into the refusal text", async () => {
