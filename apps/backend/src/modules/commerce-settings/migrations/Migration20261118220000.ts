@@ -1,27 +1,6 @@
 import { Migration } from "@medusajs/framework/mikro-orm/migrations"
 
 /**
- * THE ROWS THIS MIGRATION INSERTS, WRITTEN OUT ON PURPOSE. A migration that has
- * run never runs again, so it must not import `SHIPPING_PAYMENT_RULE_SEED`: a
- * later edit of that constant would silently not reach a database that already
- * ran this file. A unit test holds this list and the constant equal.
- */
-export const ROWS_INSERTED_HERE = [
-  { shipping_role: "PICKUP", payment_role: "ONLINE_CARD", position: 1 },
-  { shipping_role: "PICKUP", payment_role: "PAY_AT_STORE", position: 2 },
-  { shipping_role: "PICKUP", payment_role: "BANK_TRANSFER", position: 3 },
-  { shipping_role: "GLS_NORMAL", payment_role: "ONLINE_CARD", position: 1 },
-  { shipping_role: "GLS_NORMAL", payment_role: "COD", position: 2 },
-  { shipping_role: "GLS_NORMAL", payment_role: "BANK_TRANSFER", position: 3 },
-  { shipping_role: "GLS_HEAVY", payment_role: "ONLINE_CARD", position: 1 },
-  { shipping_role: "GLS_HEAVY", payment_role: "COD", position: 2 },
-  { shipping_role: "GLS_HEAVY", payment_role: "BANK_TRANSFER", position: 3 },
-  { shipping_role: "FOXPOST", payment_role: "ONLINE_CARD", position: 1 },
-  { shipping_role: "FOXPOST", payment_role: "COD", position: 2 },
-  { shipping_role: "FOXPOST", payment_role: "BANK_TRANSFER", position: 3 },
-] as const
-
-/**
  * THE TABLE TAKES OVER FROM THE CODE MATRIX (card e0e2378b). Until now the
  * checkout read the payment matrix from a constant and nothing read this table;
  * from this release the table is the only source, so it must hold today's
@@ -36,8 +15,33 @@ export const ROWS_INSERTED_HERE = [
  * SQL text directly.
  */
 export class Migration20261118220000 extends Migration {
+  /**
+   * THE ROWS THIS MIGRATION INSERTS, WRITTEN OUT ON PURPOSE. A migration that has run never runs again, so it must not
+   * import `SHIPPING_PAYMENT_RULE_SEED`: a later edit of that constant would silently not reach a database that already
+   * ran this file. A unit test holds this list and the constant equal.
+   *
+   * A STATIC FIELD, NOT A SECOND EXPORT: Medusa's migrator takes the module's FIRST export as the migration class
+   * (`Object.values(module)[0]`, @medusajs/utils custom-db-migrator), and in the compiled file a second export came
+   * first - "MigrationClass is not a constructor", and the test shop's server stopped starting (#802 on stage,
+   * 2026-11-18). A guard test keeps every migration file at exactly one export.
+   */
+  static readonly ROWS_INSERTED_HERE = [
+  { shipping_role: "PICKUP", payment_role: "ONLINE_CARD", position: 1 },
+  { shipping_role: "PICKUP", payment_role: "PAY_AT_STORE", position: 2 },
+  { shipping_role: "PICKUP", payment_role: "BANK_TRANSFER", position: 3 },
+  { shipping_role: "GLS_NORMAL", payment_role: "ONLINE_CARD", position: 1 },
+  { shipping_role: "GLS_NORMAL", payment_role: "COD", position: 2 },
+  { shipping_role: "GLS_NORMAL", payment_role: "BANK_TRANSFER", position: 3 },
+  { shipping_role: "GLS_HEAVY", payment_role: "ONLINE_CARD", position: 1 },
+  { shipping_role: "GLS_HEAVY", payment_role: "COD", position: 2 },
+  { shipping_role: "GLS_HEAVY", payment_role: "BANK_TRANSFER", position: 3 },
+  { shipping_role: "FOXPOST", payment_role: "ONLINE_CARD", position: 1 },
+  { shipping_role: "FOXPOST", payment_role: "COD", position: 2 },
+  { shipping_role: "FOXPOST", payment_role: "BANK_TRANSFER", position: 3 },
+] as const
+
   override async up(): Promise<void> {
-    const values = ROWS_INSERTED_HERE.map((row) => {
+    const values = Migration20261118220000.ROWS_INSERTED_HERE.map((row) => {
       if (
         !/^[A-Z_]+$/.test(row.shipping_role) ||
         !/^[A-Z_]+$/.test(row.payment_role) ||
