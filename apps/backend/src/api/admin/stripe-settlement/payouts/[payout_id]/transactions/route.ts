@@ -1,8 +1,9 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
 
 import { listPayoutTransactions } from "../../../../../../workflows/utils/stripe-settlement/feed"
+import { attachOrders } from "../../../../../../workflows/utils/stripe-settlement/orders"
 import { createStripeReader } from "../../../../../../workflows/utils/stripe-settlement/reader"
 
 /**
@@ -10,8 +11,8 @@ import { createStripeReader } from "../../../../../../workflows/utils/stripe-set
  *
  *   GET /admin/stripe-settlement/payouts/po_.../transactions?starting_after=txn_...&limit=100
  *
- * Per row: type, amount, fee, net (Stripe's unit and the major unit), and the PaymentIntent, charge and refund ids the OS pairs to
- * an order. Stripe lists transactions for AUTOMATIC payouts only; a manual payout answers 400 and that is passed on as
+ * Per row: type, amount, fee, net (Stripe's unit and the major unit), the PaymentIntent, charge and refund ids, and `orders`: the
+ * shop orders that intent paid (`id`, `display_id`, `total`; two for a mixed cart's shared payment, none if no order carries it). Stripe lists transactions for AUTOMATIC payouts only; a manual payout answers 400 and that is passed on as
  * such. Read only, like its sibling (see `../../route.ts`): this module exports GET and nothing else.
  */
 export const AdminGetStripePayoutTransactionsParams = z
@@ -33,11 +34,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   const key = process.env.STRIPE_API_KEY?.trim() ?? ""
   if (!key) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "STRIPE_API_KEY is not set: there is nothing to read")
-  res.json(
-    await listPayoutTransactions(createStripeReader(key), {
-      payoutId,
-      startingAfter: parsed.data.starting_after,
-      limit: parsed.data.limit,
-    }),
-  )
+  const page = await listPayoutTransactions(createStripeReader(key), {
+    payoutId,
+    startingAfter: parsed.data.starting_after,
+    limit: parsed.data.limit,
+  })
+  res.json(await attachOrders(req.scope.resolve(ContainerRegistrationKeys.QUERY), page))
 }
