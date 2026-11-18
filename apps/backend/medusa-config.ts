@@ -177,6 +177,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/order-withdrawal",
     },
+    // the loyalty ledger: one row per movement of a customer's points (card dfb79916)
+    {
+      resolve: "./src/modules/loyalty",
+    },
     // the shop's mails on their way to the OS renderer (Levélsablonok)
     {
       resolve: "./src/modules/webshop-mail-outbox",

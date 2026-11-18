@@ -48,6 +48,8 @@ import { StorePostNewsletterSubscription, StorePostNewsletterToken } from "./sto
 import { StorePostStockAlert, StorePostStockAlertToken } from "./store/stock-alerts/validators";
 import { AdminPutLivestockArrivals } from "./admin/livestock-arrivals/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
+import { AdminGetLoyaltyParams, AdminPostLoyaltyAdjustment } from "./admin/loyalty/validators";
+import { StoreGetLoyaltyParams } from "./store/customers/me/loyalty/validators";
 import {
   AdminGetOrderPickupPointsParams,
   AdminPostOrderPickupPoint,
@@ -485,6 +487,23 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/password",
       method: "POST",
       middlewares: [validateAndTransformBody(StoreChangePassword)],
+    },
+    {
+      // the loyalty ledger (card dfb79916): a manual credit or debit from the OS, and the two reads
+      matcher: "/admin/loyalty/adjustments",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostLoyaltyAdjustment)],
+    },
+    {
+      matcher: "/admin/loyalty/:customer_id",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(AdminGetLoyaltyParams, {})],
+    },
+    {
+      // the customer's own points; the stock /store/customers/me* middleware requires the session
+      matcher: "/store/customers/me/loyalty",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(StoreGetLoyaltyParams, {})],
     },
     {
       matcher: "/store/foxpost/pickup-points",

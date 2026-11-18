@@ -201,3 +201,40 @@ nincs döntés, ott ez is ki van írva: a `FOXPOST` sor az eredeti építésből
 Balázst **soha nem kérdeztük meg róla**. Nem döntésként szerepel, hanem megerősítetlenként.
 
 *(2026-11-18, kártya e0e2378b: a mátrix azóta a `shipping_payment_rule` táblában él, az Adminból állítható; a `SHIPPING_ROLE_PAYMENTS` konstans megszűnt. A sorok döntőit a `SHIPPING_PAYMENT_RULE_SEED` őrzi, a tábla kezdő állapotaként.)*
+
+## D-2026-11-19-01: A hűségpont főkönyve a Medusa saját moduljában él
+
+**Döntés:** Balázs 2026-11-18 21:30 UTC: a hűségpont kell, és a vevőnél kézzel is jóírható (kártya
+`dfb79916`). A szállításra is beváltható (2026-10-06; a kupon nem). Az irányt acrobot 2026-11-19
+00:33-kor jóváhagyta: a `loyalty` modul a Medusában, fő-könyvvel; az OS a modul admin útjain írja a
+kézi jóírást.
+
+**Mi ez:** a `loyalty_entry` tábla, soronként egy pontmozgás (`accrual`, `redemption`,
+`adjustment`, `reversal`), előjeles egész ponttal. **Nincs egyenleg-oszlop:** az egyenleg a vevő
+sorainak összege, tehát nem csúszhat el attól, ami megmagyarázza. Sor nem módosul; egy téves
+jóírást ellenkező előjelű második sor javít. A `reference` egyedi, amíg ki van töltve: az újraküldött
+mozgás egyszer tárolódik.
+
+**Miért nem az OS-ben:** a beváltás a pénztáron, a kosár tranzakciójában kell (egyenleg-ellenőrzés,
+foglalás), és az OS→Medusa irány már létezik. A fordított (Medusa→OS) hívás új, kívülről hívható OS
+végpont lenne, ami a biztonsági irány miatt most nem épül.
+
+**Miért nem promóció:** a promóció `order`/`items` célja csak a tételekre megy, a `shipping_methods`
+célt a `refuse-shipping-discount.ts` őrző tiltja (a kedvezmény nem vonható a szállításból). A pont
+viszont a szállítást is fedezi. A Medusa 2.22.4-ben erre a kosár- és rendelés-szintű *credit line*
+való (az adó után vonódik le a végösszegből, tételhez nem kötött); a beváltás a következő PR-ok dolga.
+
+**Ebben a PR-ban (1/n):** a modul, a migráció, az egyenleg olvasása (`GET /store/customers/me/loyalty`
+a vevőnek, `GET /admin/loyalty/:customer_id` az OS-nek) és a kézi jóírás/levonás
+(`POST /admin/loyalty/adjustments`). Kosár, beváltás és gyűjtés **nincs**. A vevő nézete nem hordoz
+indokot és végrehajtót (egy kézi jóírás indoka belső jegyzet).
+
+**Ami nyitott, és ezt nem találtuk ki:** (A) a gyűjtési arány és a pont értéke; (B) az ÁFA-kezelés:
+a pont-levonás árcsökkentés (a számla alapja csökken) vagy fizetési eszköz (a teljes összegről szól
+a számla, a pont fizeti). Az arány **beállítás lesz** (`commerce-settings`), nem kódkonstans, amikor
+a gyűjtés elkészül; addig semmi nem olvassa. Öröklött szabály: meghiúsult utánvétes rendelésnél a
+jóírt pont visszavonandó (`D-2026-08-23-25`, 6. pont): ez a `reversal` fajta dolga lesz.
+
+**Ismert határ:** a levonás-ellenőrzés és a sor beszúrása egy tranzakcióban van, de a vevőt nem
+zárolja: két egyszerre érkező levonás együtt a nulla alá vihet. Kézi levonást ember ad, ritkán; a
+negatív egyenleg látszik. Sorzárral zárható, **nincs lemérve**.
