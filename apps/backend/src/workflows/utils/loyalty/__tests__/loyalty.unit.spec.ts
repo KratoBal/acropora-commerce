@@ -4,6 +4,7 @@ import {
   adjustLoyalty,
   adminEntryView,
   readLoyalty,
+  RECENT_ORDER,
   storeEntryView,
   type LoyaltyOperations,
 } from "../loyalty"
@@ -125,6 +126,15 @@ describe("adjustLoyalty", () => {
     const broken: LoyaltyOperations = { ...ops, addEntryChecked: async () => Promise.reject(new Error("db down")) }
     await expect(adjustLoyalty(broken, credit(5, { reference: "os-3" }), "user_1")).rejects.toThrow("db down")
     await expect(adjustLoyalty(broken, credit(5), "user_1")).rejects.toThrow("db down")
+  })
+})
+
+describe("the order of the newest rows", () => {
+  it("is newest first, with the id as the tie-breaker", () => {
+    expect(Object.entries(RECENT_ORDER)).toEqual([
+      ["created_at", "DESC"],
+      ["id", "DESC"],
+    ])
   })
 })
 

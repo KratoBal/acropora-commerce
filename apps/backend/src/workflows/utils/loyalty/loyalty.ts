@@ -137,6 +137,9 @@ export const readLoyalty = async (
   return { status: "ok", balance, entries }
 }
 
+/** The newest first; the id breaks a tie, so two rows stored in the same instant always come in the same order. */
+export const RECENT_ORDER = { created_at: "DESC", id: "DESC" } as const
+
 /** The binding to the module and the customer module: the only code here that touches the container. */
 export const loyaltyOperations = (scope: MedusaContainer): LoyaltyOperations => {
   const loyalty = (): LoyaltyModuleService => scope.resolve(LOYALTY_MODULE)
@@ -151,7 +154,7 @@ export const loyaltyOperations = (scope: MedusaContainer): LoyaltyOperations => 
     async recent(customerId, limit) {
       return (await loyalty().listLoyaltyEntries(
         { customer_id: customerId },
-        { take: limit, order: { created_at: "DESC" } },
+        { take: limit, order: { ...RECENT_ORDER } },
       )) as LoyaltyEntryRow[]
     },
     async findByReference(reference) {
