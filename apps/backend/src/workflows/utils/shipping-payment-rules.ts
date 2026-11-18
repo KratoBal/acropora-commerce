@@ -42,9 +42,10 @@ const isPaymentRole = (value: string): value is PaymentRole =>
  * one pair no longer resolves. Skipping loses that one pair, which shows up as
  * a payment method missing from a list someone is looking at.
  *
- * The louder failure is not the safer one here, and the drift that would cause
- * it is caught earlier anyway: `SHIPPING_PAYMENT_RULE_SEED` is asserted against
- * the code matrix in the unit tests, so a rename breaks the build, not the shop.
+ * The louder failure is not the safer one here. SINCE THE TABLE IS THE SOURCE
+ * (card e0e2378b) the build no longer catches such a rename: the rows live in the
+ * database, so renaming a role needs a data migration of its own, and the Admin
+ * endpoint that writes the table accepts known roles only.
  */
 export const toShippingRolePayments = (
   rows: ShippingPaymentRuleRow[],
