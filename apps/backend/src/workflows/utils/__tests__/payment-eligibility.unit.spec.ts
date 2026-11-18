@@ -1,6 +1,5 @@
 import {
   PAYMENT_ROLES,
-  SHIPPING_ROLE_PAYMENTS,
   allowedPaymentRolesFor,
   isPaymentRoleAllowedFor,
 } from "../payment-eligibility"
@@ -14,10 +13,17 @@ import {
   resolveShippingRoles,
 } from "../resolve-cart-payment-context"
 import { buildProviderRoleMap } from "../payment-providers"
+import {
+  SHIPPING_PAYMENT_RULE_SEED,
+  toShippingRolePayments,
+} from "../shipping-payment-rules"
+
+/** The matrix the table starts with (the migration that took over from the code matrix inserted these rows). */
+const SEED_MATRIX = toShippingRolePayments(SHIPPING_PAYMENT_RULE_SEED)
 
 describe("payment eligibility by selected shipping option", () => {
   it("pickup allows online card and pay at store", () => {
-    expect(allowedPaymentRolesFor(["PICKUP"])).toEqual([
+    expect(allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "PAY_AT_STORE",
       "BANK_TRANSFER",
@@ -25,11 +31,11 @@ describe("payment eligibility by selected shipping option", () => {
   })
 
   it("pickup rejects cash on delivery", () => {
-    expect(isPaymentRoleAllowedFor("COD", ["PICKUP"])).toBe(false)
+    expect(isPaymentRoleAllowedFor("COD", ["PICKUP"], SEED_MATRIX)).toBe(false)
   })
 
   it("normal GLS allows online card and cash on delivery", () => {
-    expect(allowedPaymentRolesFor(["GLS_NORMAL"])).toEqual([
+    expect(allowedPaymentRolesFor(["GLS_NORMAL"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "COD",
       "BANK_TRANSFER",
@@ -39,21 +45,21 @@ describe("payment eligibility by selected shipping option", () => {
   it("heavy GLS allows online card and cash on delivery", () => {
     // Balázs, 2026-09-01: "Legyen utánvét". Before that this row read card
     // only, and nothing recorded whether that was deliberate.
-    expect(allowedPaymentRolesFor(["GLS_HEAVY"])).toEqual([
+    expect(allowedPaymentRolesFor(["GLS_HEAVY"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "COD",
       "BANK_TRANSFER",
     ])
-    expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(true)
-    expect(isPaymentRoleAllowedFor("PAY_AT_STORE", ["GLS_HEAVY"])).toBe(false)
+    expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"], SEED_MATRIX)).toBe(true)
+    expect(isPaymentRoleAllowedFor("PAY_AT_STORE", ["GLS_HEAVY"], SEED_MATRIX)).toBe(false)
   })
 
   it("still refuses cash on delivery on store pickup", () => {
     // The counterpart of the change above, and the reason it is a separate
     // assertion: switching the heavy row on everywhere would satisfy the test
     // before this one and break the shop. There is no delivery to collect on.
-    expect(isPaymentRoleAllowedFor("COD", ["PICKUP"])).toBe(false)
-    expect(allowedPaymentRolesFor(["PICKUP"])).toEqual([
+    expect(isPaymentRoleAllowedFor("COD", ["PICKUP"], SEED_MATRIX)).toBe(false)
+    expect(allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "PAY_AT_STORE",
       "BANK_TRANSFER",
@@ -61,7 +67,7 @@ describe("payment eligibility by selected shipping option", () => {
   })
 
   it("Foxpost allows online card and cash on delivery", () => {
-    expect(allowedPaymentRolesFor(["FOXPOST"])).toEqual([
+    expect(allowedPaymentRolesFor(["FOXPOST"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "COD",
       "BANK_TRANSFER",
@@ -70,7 +76,7 @@ describe("payment eligibility by selected shipping option", () => {
 
   it("pay at store is offered for pickup and for nothing else", () => {
     for (const role of SHIPPING_OPTION_ROLES) {
-      expect(isPaymentRoleAllowedFor("PAY_AT_STORE", [role])).toBe(
+      expect(isPaymentRoleAllowedFor("PAY_AT_STORE", [role], SEED_MATRIX)).toBe(
         role === "PICKUP"
       )
     }
@@ -79,18 +85,18 @@ describe("payment eligibility by selected shipping option", () => {
   it("prepayment by bank transfer is offered for every shipping option (bb3a6bd5)", () => {
     // Balázs, 2026-10-06: "Elore utalas kell"; every method on the approved proposal
     for (const role of SHIPPING_OPTION_ROLES) {
-      expect(isPaymentRoleAllowedFor("BANK_TRANSFER", [role])).toBe(true)
+      expect(isPaymentRoleAllowedFor("BANK_TRANSFER", [role], SEED_MATRIX)).toBe(true)
     }
   })
 
   it("online card is offered for every shipping option", () => {
     for (const role of SHIPPING_OPTION_ROLES) {
-      expect(isPaymentRoleAllowedFor("ONLINE_CARD", [role])).toBe(true)
+      expect(isPaymentRoleAllowedFor("ONLINE_CARD", [role], SEED_MATRIX)).toBe(true)
     }
   })
 
   it("offers nothing when no shipping method is selected yet", () => {
-    expect(allowedPaymentRolesFor([])).toEqual([])
+    expect(allowedPaymentRolesFor([], SEED_MATRIX)).toEqual([])
   })
 
   it("takes the intersection across several selected shipping methods", () => {
@@ -102,39 +108,59 @@ describe("payment eligibility by selected shipping option", () => {
     // 2026-09-01 - which would have quietly turned this into a test where
     // intersection and union give the same answer, and it would have gone on
     // passing while proving nothing.
-    expect(allowedPaymentRolesFor(["PICKUP", "GLS_NORMAL"])).toEqual([
+    expect(allowedPaymentRolesFor(["PICKUP", "GLS_NORMAL"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "BANK_TRANSFER",
     ])
-    expect(allowedPaymentRolesFor(["GLS_NORMAL", "GLS_HEAVY"])).toEqual([
+    expect(allowedPaymentRolesFor(["GLS_NORMAL", "GLS_HEAVY"], SEED_MATRIX)).toEqual([
       "ONLINE_CARD",
       "COD",
       "BANK_TRANSFER",
     ])
   })
 
+  it("follows the matrix it is given, in the first shipping method's order: the table, not a constant, decides", () => {
+    // the Admin's change (card e0e2378b): transfer first for pickup, and cash on delivery taken off Foxpost
+    const edited = {
+      ...SEED_MATRIX,
+      PICKUP: ["BANK_TRANSFER", "PAY_AT_STORE", "ONLINE_CARD"],
+      FOXPOST: ["ONLINE_CARD", "BANK_TRANSFER"],
+    } as typeof SEED_MATRIX
+    expect(allowedPaymentRolesFor(["PICKUP"], edited)).toEqual([
+      "BANK_TRANSFER",
+      "PAY_AT_STORE",
+      "ONLINE_CARD",
+    ])
+    expect(isPaymentRoleAllowedFor("COD", ["FOXPOST"], edited)).toBe(false)
+    // the intersection keeps the FIRST method's order
+    expect(allowedPaymentRolesFor(["PICKUP", "GLS_NORMAL"], edited)).toEqual([
+      "BANK_TRANSFER",
+      "ONLINE_CARD",
+    ])
+  })
+
   it("every shipping role can be paid somehow", () => {
     for (const role of SHIPPING_OPTION_ROLES) {
-      expect(SHIPPING_ROLE_PAYMENTS[role].length).toBeGreaterThan(0)
+      expect(SEED_MATRIX[role].length).toBeGreaterThan(0)
     }
   })
 
   describe("invalidation when shipping changes", () => {
     it("normal GLS to store pickup invalidates cash on delivery", () => {
-      expect(isPaymentRoleAllowedFor("COD", ["GLS_NORMAL"])).toBe(true)
-      expect(isPaymentRoleAllowedFor("COD", ["PICKUP"])).toBe(false)
+      expect(isPaymentRoleAllowedFor("COD", ["GLS_NORMAL"], SEED_MATRIX)).toBe(true)
+      expect(isPaymentRoleAllowedFor("COD", ["PICKUP"], SEED_MATRIX)).toBe(false)
     })
 
     it("normal GLS to heavy GLS no longer invalidates it", () => {
       // Kept as an assertion rather than deleted: this transition used to
       // remove the fee from a cart, and the hook that does the removing is
       // still there. If the heavy row is ever narrowed again, this says so.
-      expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"])).toBe(true)
+      expect(isPaymentRoleAllowedFor("COD", ["GLS_HEAVY"], SEED_MATRIX)).toBe(true)
     })
 
     it("Foxpost to pickup invalidates cash on delivery", () => {
-      expect(isPaymentRoleAllowedFor("COD", ["FOXPOST"])).toBe(true)
-      expect(isPaymentRoleAllowedFor("COD", ["PICKUP"])).toBe(false)
+      expect(isPaymentRoleAllowedFor("COD", ["FOXPOST"], SEED_MATRIX)).toBe(true)
+      expect(isPaymentRoleAllowedFor("COD", ["PICKUP"], SEED_MATRIX)).toBe(false)
     })
   })
 })
@@ -168,7 +194,7 @@ describe("resolving roles from a cart", () => {
       { shipping_methods: [{ shipping_option_id: "so_demo_standard" }] },
       roleMap
     )
-    expect(allowedPaymentRolesFor(roles)).toEqual([])
+    expect(allowedPaymentRolesFor(roles, SEED_MATRIX)).toEqual([])
   })
 
   it("survives null entries and missing ids", () => {

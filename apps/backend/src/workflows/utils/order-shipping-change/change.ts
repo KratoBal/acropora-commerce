@@ -3,6 +3,7 @@ import type { OrderBusinessStatus } from "../../../modules/order-business-status
 import type { ShippingClass } from "../compute-shipping-class"
 import type { PaymentRole } from "../payment-eligibility"
 import { SPLITTABLE_STATUSES } from "../order-split/plan"
+import type { ShippingRolePayments } from "../shipping-payment-rules"
 import { buildShippingOptionRoleMap } from "../shipping-option-roles"
 import { type CourierOption, courierOptions } from "./options"
 
@@ -60,6 +61,8 @@ export type ChangeOperations = {
   shippingClass(orderId: string): Promise<ShippingClass>
   goodsTotal(orderId: string): Promise<number>
   settings(): Promise<ShippingPricingSettings>
+  /** The payment matrix from the `shipping_payment_rule` table. */
+  rolePayments(): Promise<ShippingRolePayments>
   /** The courier options' names, by id. */
   optionNames(): Promise<Record<string, string>>
   /**
@@ -114,16 +117,17 @@ export const listChangeOptions = async (
   if (!order) return { status: "not_found" }
   const block = changeBlock(order, env)
   if (block) return { status: "blocked", reason: block }
-  const [names, shippingClass, goodsTotalHuf, settings] = await Promise.all([
+  const [names, shippingClass, goodsTotalHuf, settings, rolePayments] = await Promise.all([
     ops.optionNames(),
     ops.shippingClass(orderId),
     ops.goodsTotal(orderId),
     ops.settings(),
+    ops.rolePayments(),
   ])
   return {
     status: "ok",
     current_option_id: order.method?.shipping_option_id ?? null,
-    options: courierOptions({ shippingClass, paymentRole: order.payment_role, goodsTotalHuf, settings, names, env }),
+    options: courierOptions({ shippingClass, paymentRole: order.payment_role, rolePayments, goodsTotalHuf, settings, names, env }),
   }
 }
 

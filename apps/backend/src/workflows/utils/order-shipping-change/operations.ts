@@ -13,6 +13,7 @@ import { buildProviderRoleMap } from "../payment-providers"
 import { resolveCartShippingClass } from "../resolve-cart-shipping-class"
 import { runOrderEdit } from "../run-order-edit"
 import { resolveShippingOptionRoleBindings } from "../shipping-option-roles"
+import { loadShippingRolePayments } from "../shipping-payment-rules"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import type { ChangeOperations, ChangeOrder } from "./change"
 
@@ -181,6 +182,7 @@ export const shippingChangeOperations = (container: MedusaContainer): ChangeOper
   },
   goodsTotal: async (orderId) => calculateGoodsTotal(await loadItems(container, orderId)),
   settings: () => getShippingPricingSettings(container.resolve("commerce_settings")),
+  rolePayments: () => loadShippingRolePayments(container.resolve("commerce_settings")),
   optionNames: async () => {
     const ids = resolveShippingOptionRoleBindings().map((binding) => binding.id)
     const { data } = await query(container).graph({ entity: "shipping_option", filters: { id: ids }, fields: ["id", "name"] })
