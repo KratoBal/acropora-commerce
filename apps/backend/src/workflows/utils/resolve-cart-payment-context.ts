@@ -15,6 +15,7 @@ import {
   resolveCashOnDeliveryFeeAmount,
 } from "./cod-fee"
 import { COMMERCE_SETTINGS_MODULE } from "../../modules/commerce-settings"
+import { loadShippingRolePayments } from "./shipping-payment-rules"
 
 export type CartPaymentContext = {
   shipping_roles: ShippingOptionRole[]
@@ -104,7 +105,14 @@ export const resolveCartPaymentContext = async (
     cart,
     buildShippingOptionRoleMap(env)
   )
-  const allowed_payment_roles = allowedPaymentRolesFor(shipping_roles)
+  const commerceSettings = container.resolve(COMMERCE_SETTINGS_MODULE)
+  // the matrix from the table (card e0e2378b): the Admin's order and pairs
+  const allowed_payment_roles = shipping_roles.length
+    ? allowedPaymentRolesFor(
+        shipping_roles,
+        await loadShippingRolePayments(commerceSettings)
+      )
+    : []
   const providerRoles = buildProviderRoleMap(env)
   const allowed_payment_providers = allowedPaymentProvidersFor(
     allowed_payment_roles,
@@ -115,7 +123,7 @@ export const resolveCartPaymentContext = async (
   // Only read the setting when it can actually matter.
   const feeHuf =
     selected_payment_role === "COD" && allowed_payment_roles.includes("COD")
-      ? await getCashOnDeliveryFee(container.resolve(COMMERCE_SETTINGS_MODULE))
+      ? await getCashOnDeliveryFee(commerceSettings)
       : 0
 
   return {
