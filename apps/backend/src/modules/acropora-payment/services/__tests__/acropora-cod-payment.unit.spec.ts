@@ -23,6 +23,13 @@ import {
   buildProviderRoleMap,
   resolvePaymentRole,
 } from "../../../../workflows/utils/payment-providers"
+import {
+  SHIPPING_PAYMENT_RULE_SEED,
+  toShippingRolePayments,
+} from "../../../../workflows/utils/shipping-payment-rules"
+
+/** The matrix the table starts with (the migration that took over from the code matrix inserted these rows). */
+const SEED_MATRIX = toShippingRolePayments(SHIPPING_PAYMENT_RULE_SEED)
 
 const provider = () => new AcroporaCashOnDeliveryService({}, {})
 
@@ -61,7 +68,7 @@ const feeDueFor = (providerId: string | null, role: "GLS_NORMAL" | "PICKUP") =>
       providerId,
       buildProviderRoleMap(envWithCodProvider)
     ),
-    allowedPaymentRoles: allowedPaymentRolesFor([role]),
+    allowedPaymentRoles: allowedPaymentRolesFor([role], SEED_MATRIX),
     feeHuf: 450,
   })
 

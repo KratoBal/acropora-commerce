@@ -1,6 +1,10 @@
 import { resolveShippingOptionRoleBindings } from "../../shipping-option-roles"
 import { type ChangeOperations, type ChangeOrder, changeBlock, changeShippingMethod, listChangeOptions } from "../change"
 import { courierOptions } from "../options"
+import { SHIPPING_PAYMENT_RULE_SEED, toShippingRolePayments } from "../../shipping-payment-rules"
+
+/** The matrix the table starts with (card e0e2378b). */
+const SEED_MATRIX = toShippingRolePayments(SHIPPING_PAYMENT_RULE_SEED)
 
 const so = (env: string) => resolveShippingOptionRoleBindings().find((b) => b.env === env)!.id
 const PICKUP = so("ACROPORA_SO_PICKUP")
@@ -24,32 +28,32 @@ describe("courierOptions", () => {
   const ids = (o: { id: string }[]) => o.map((x) => x.id)
 
   it("offers the checkout's courier methods for the class, never in-store pickup", () => {
-    const normal = courierOptions({ shippingClass: "NORMAL", paymentRole: "ONLINE_CARD", goodsTotalHuf: 10000, settings, names })
+    const normal = courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "NORMAL", paymentRole: "ONLINE_CARD", goodsTotalHuf: 10000, settings, names })
     expect(ids(normal)).toEqual([GLS_HOME, GLS_POINT, FOXPOST])
-    expect(ids(courierOptions({ shippingClass: "HEAVY", paymentRole: "COD", goodsTotalHuf: 10000, settings, names }))).toEqual([
+    expect(ids(courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "HEAVY", paymentRole: "COD", goodsTotalHuf: 10000, settings, names }))).toEqual([
       GLS_HEAVY_HOME,
       GLS_HEAVY_POINT,
     ])
-    expect(ids(courierOptions({ shippingClass: "NO_FOXPOST", paymentRole: "COD", goodsTotalHuf: 1, settings, names }))).toEqual([
+    expect(ids(courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "NO_FOXPOST", paymentRole: "COD", goodsTotalHuf: 1, settings, names }))).toEqual([
       GLS_HOME,
       GLS_POINT,
     ])
-    expect(courierOptions({ shippingClass: "PICKUP_ONLY", paymentRole: "COD", goodsTotalHuf: 1, settings, names })).toEqual([])
+    expect(courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "PICKUP_ONLY", paymentRole: "COD", goodsTotalHuf: 1, settings, names })).toEqual([])
     // pay at the shop is no courier's payment
-    expect(courierOptions({ shippingClass: "NORMAL", paymentRole: "PAY_AT_STORE", goodsTotalHuf: 1, settings, names })).toEqual([])
+    expect(courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "NORMAL", paymentRole: "PAY_AT_STORE", goodsTotalHuf: 1, settings, names })).toEqual([])
   })
 
   it("prices each with the checkout's calculator, the free threshold included, and says what it needs", () => {
-    const below = courierOptions({ shippingClass: "NORMAL", paymentRole: "COD", goodsTotalHuf: 10000, settings, names })
+    const below = courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "NORMAL", paymentRole: "COD", goodsTotalHuf: 10000, settings, names })
     expect(below).toEqual([
       { id: GLS_HOME, name: "GLS házhozszállítás", amount: 1990, carrier: "gls", needs_point: false, heavy: false },
       { id: GLS_POINT, name: "GLS csomagpont", amount: 1990, carrier: "gls", needs_point: true, heavy: false },
       { id: FOXPOST, name: "Foxpost csomagpont", amount: 1290, carrier: "foxpost", needs_point: true, heavy: false },
     ])
-    expect(courierOptions({ shippingClass: "NORMAL", paymentRole: "COD", goodsTotalHuf: 30000, settings, names }).map((o) => o.amount)).toEqual([
+    expect(courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "NORMAL", paymentRole: "COD", goodsTotalHuf: 30000, settings, names }).map((o) => o.amount)).toEqual([
       0, 0, 0,
     ])
-    const heavy = courierOptions({ shippingClass: "HEAVY", paymentRole: "COD", goodsTotalHuf: 50000, settings, names })
+    const heavy = courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "HEAVY", paymentRole: "COD", goodsTotalHuf: 50000, settings, names })
     expect(heavy.map((o) => [o.amount, o.heavy, o.needs_point])).toEqual([
       [4990, true, false],
       [4990, true, true],
@@ -58,7 +62,7 @@ describe("courierOptions", () => {
 
   it("an option the shop has no name for is not offered", () => {
     const { [FOXPOST]: _gone, ...without } = names
-    expect(ids(courierOptions({ shippingClass: "NORMAL", paymentRole: "COD", goodsTotalHuf: 1, settings, names: without }))).not.toContain(FOXPOST)
+    expect(ids(courierOptions({ rolePayments: SEED_MATRIX, shippingClass: "NORMAL", paymentRole: "COD", goodsTotalHuf: 1, settings, names: without }))).not.toContain(FOXPOST)
   })
 })
 
@@ -83,6 +87,7 @@ const fakeOps = (start: ChangeOrder, opts: { payment?: { state: string; differen
     shippingClass: async () => "NORMAL",
     goodsTotal: async () => 10000,
     settings: async () => settings,
+    rolePayments: async () => SEED_MATRIX,
     optionNames: async () => names,
     validatePoint: jest.fn(async (_o, carrier, pointId) => ({
       ok: true as const,

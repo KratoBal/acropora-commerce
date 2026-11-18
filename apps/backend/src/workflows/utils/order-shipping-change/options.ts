@@ -1,15 +1,15 @@
 import type { ShippingPricingSettings } from "../../../modules/commerce-settings/accessor"
 import type { ShippingClass } from "../compute-shipping-class"
 import type { PaymentRole } from "../payment-eligibility"
-import { SHIPPING_ROLE_PAYMENTS } from "../payment-eligibility"
 import { isRoleAllowedFor } from "../shipping-eligibility"
 import { calculateShippingPrice } from "../shipping-pricing"
+import type { ShippingRolePayments } from "../shipping-payment-rules"
 import { glsPointOptionOf, resolveShippingOptionRoleBindings } from "../shipping-option-roles"
 
 /**
  * THE COURIER METHODS A PLACED ORDER MAY CHANGE TO (card 0a14f739, C/2), by
  * the checkout's own rules: the order's shipping class (`ROLE_ELIGIBILITY`),
- * its payment (`SHIPPING_ROLE_PAYMENTS`: cash on delivery only where allowed),
+ * its payment (the `shipping_payment_rule` matrix: cash on delivery only where allowed),
  * and the checkout's price calculator (role, goods total, the settings, the
  * free-shipping threshold). In-store pickup is not offered in this round: it
  * would make a different kind of order (its payments, its mails).
@@ -27,6 +27,8 @@ export type CourierOption = {
 export const courierOptions = (input: {
   shippingClass: ShippingClass
   paymentRole: PaymentRole | null
+  /** The payment matrix from the table (`loadShippingRolePayments`). */
+  rolePayments: ShippingRolePayments
   goodsTotalHuf: number
   settings: ShippingPricingSettings
   /** The options' names as the shop shows them, by id; an option without a name is not offered. */
@@ -37,7 +39,7 @@ export const courierOptions = (input: {
   return resolveShippingOptionRoleBindings(env)
     .filter((binding) => binding.role !== "PICKUP")
     .filter((binding) => isRoleAllowedFor(binding.role, input.shippingClass))
-    .filter((binding) => !input.paymentRole || SHIPPING_ROLE_PAYMENTS[binding.role].includes(input.paymentRole))
+    .filter((binding) => !input.paymentRole || (input.rolePayments[binding.role] ?? []).includes(input.paymentRole))
     .filter((binding) => typeof input.names[binding.id] === "string")
     .map((binding) => {
       const glsPoint = glsPointOptionOf(binding.id, env)
