@@ -15,7 +15,8 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30, nem 20: a Chromium-telepites egy ujraprobalasa (4 + 8 perc) is belefer. A leghosszabb zold futas 15,6 perc volt (2026-11-15 merese).
+    timeout-minutes: 30
 
     # A KIRAKAT PUBLIKALHATO KULCSA, EGY HELYEN, MERT KET LEPESNEK KELL.
     #
@@ -339,6 +340,11 @@ jobs:
       - name: Kirakat tesztek
         run: pnpm --filter @dtc/storefront test
 
+      # A VISSZATERITESI MERES SEGEDJE PYTHON (scripts/refund-measure-helper.py, #795, #796), ES A TESZTJE EGYIK FENTI
+      # LEPESBEN SEM FUT: barracuda javaslata (#795 review). Csak a standard konyvtarat hasznalja, nincs telepites. Gyokerbol fut.
+      - name: Visszateritesi segedo tesztjei (python3)
+        run: python3 -m unittest scripts/test_refund_measure_helper.py
+
       - name: Build
         run: pnpm run build
 
@@ -363,7 +369,20 @@ jobs:
       # CSS-bol all. A penztar lepeseihez a teszt egy kosarat hoz letre a TESZT
       # boltban (`teszt-kosar.ts`; mas hosztra nem ir). Az ismert hibak listaja
       # az `a11y-varhato.ts`-ben all, ugyanazzal a ket iranyu kotessel.
+      #
+      # A TELEPITES MEGAKADHAT, ES EGYSZER ujra kell probalni (merve a b537e37a kartyan, 2026-11-15): a `--with-deps` az aptot
+      # futtatja, es az azure.archive.ubuntu.com letoltese idonkent percekig all (a lepes rendesen 0,2-0,5 perc, a lassu futasokban
+      # 2-10 perc; 2026-10-20 ota 589 jobbol 36-ban tartott 2 percnel tovabb, 12 futast a 20 perces job-korlat vagott le). Az elso
+      # kiserlet 4 percet kap, es buktathatja a lepest a job nelkul; a masodik csak akkor fut, ha az elso nem sikerult, 8 percet kap.
       - name: Fej nelkuli Chromium (akadalymentesseg)
+        id: chromium_first
+        timeout-minutes: 4
+        continue-on-error: true
+        run: pnpm --filter @dtc/storefront exec playwright-core install --with-deps chromium-headless-shell
+
+      - name: Fej nelkuli Chromium (masodik kiserlet, az elso nem sikerult)
+        if: steps.chromium_first.outcome != 'success'
+        timeout-minutes: 8
         run: pnpm --filter @dtc/storefront exec playwright-core install --with-deps chromium-headless-shell
 
       - name: SEO HTML-szerzodes
