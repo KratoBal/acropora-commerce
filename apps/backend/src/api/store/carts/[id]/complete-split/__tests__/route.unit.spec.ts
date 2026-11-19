@@ -14,6 +14,11 @@ jest.mock("../../../../../../workflows/utils/sold-lines-of-cart", () => ({
   soldUniqueLinesOfCart: (...args: unknown[]) => soldUniqueLinesOfCart(...args),
 }))
 
+const resolveCartShippingClass = jest.fn(async () => ({ split_line_ids: [] as string[] }))
+jest.mock("../../../../../../workflows/utils/resolve-cart-shipping-class", () => ({
+  resolveCartShippingClass: (...args: unknown[]) => (resolveCartShippingClass as any)(...args),
+}))
+
 import { MedusaError } from "@medusajs/framework/utils"
 
 import { POST } from "../route"
@@ -55,6 +60,48 @@ beforeEach(() => {
 })
 
 describe("POST /store/carts/:id/complete-split", () => {
+  /*
+    A GIFT CARD ON A MIXED CART (card 495c0007; acrobot 56682): refused before anything is completed, also when the
+    cart became mixed after the code was applied. WHAT TURNS RED: the split running anyway; a cart with no gift card,
+    or one that is not mixed, refused.
+  */
+  describe("a gift card on a mixed cart", () => {
+    const withCart = (credit_lines: unknown[]) => {
+      process.env.ACROPORA_SO_PICKUP = "so_bolti"
+      const graph = jest.fn(async () => ({
+        data: [{ id: "cart_1", credit_lines, items: [{ id: "item_1", variant_id: "v1", requires_shipping: true }] }],
+      }))
+      return POST(
+        { params: { id: "cart_1" }, scope: { resolve: () => ({ graph }) } } as never,
+        { json: jest.fn() } as never
+      ).then(
+        () => null,
+        (error: unknown) => error as MedusaError
+      )
+    }
+    const giftCard = { id: "cl_1", amount: 5000, reference: "gift_card", reference_id: "gcard_1" }
+
+    it("is refused before the split runs", async () => {
+      resolveCartShippingClass.mockResolvedValueOnce({ split_line_ids: ["item_live"] })
+      const error = await withCart([giftCard])
+      expect(error).toBeInstanceOf(MedusaError)
+      expect(error!.message).toMatch(/ajándékkártya .* egyelőre nem használható/)
+      expect(completeSplitCart).not.toHaveBeenCalled()
+    })
+
+    it("a mixed cart without a gift card, and a gift card on a cart that is not mixed, go on", async () => {
+      completeSplitCart.mockRejectedValue(new Error("reached the split"))
+      resolveCartShippingClass.mockClear()
+      // mixed, but no gift card: the class is not even asked
+      resolveCartShippingClass.mockResolvedValue({ split_line_ids: ["item_live"] })
+      expect((await withCart([{ ...giftCard, reference: "loyalty" }]))!.message).toBe("reached the split")
+      expect(resolveCartShippingClass).not.toHaveBeenCalled()
+      // a gift card, not mixed
+      resolveCartShippingClass.mockResolvedValue({ split_line_ids: [] })
+      expect((await withCart([giftCard]))!.message).toBe("reached the split")
+    })
+  })
+
   it("passes the store pickup option and the pay-in-shop provider, and lists both orders in order", async () => {
     completeSplitCart.mockResolvedValue({
       order_ids: ["order_1", "order_2"],
@@ -115,7 +162,8 @@ describe("POST /store/carts/:id/complete-split", () => {
     const attempt = async () => {
       process.env.ACROPORA_SO_PICKUP = "so_bolti"
       return POST(
-        { params: { id: "cart_1" }, scope: { resolve: () => ({ graph: jest.fn() }) } } as never,
+        // the gift card check reads the cart first: here a cart with no gift card
+        { params: { id: "cart_1" }, scope: { resolve: () => ({ graph: jest.fn(async () => ({ data: [] })) }) } } as never,
         { json: jest.fn() } as never
       ).then(
         () => null,

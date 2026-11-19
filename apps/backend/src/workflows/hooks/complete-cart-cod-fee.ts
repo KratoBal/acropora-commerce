@@ -1,4 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils"
+import { StepResponse } from "@medusajs/framework/workflows-sdk"
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
 import { guardAszf } from "../utils/aszf-guard"
@@ -7,6 +8,11 @@ import { assertCartPointsFitLocker } from "../utils/locker-rule"
 import { assertCardShare } from "../utils/assert-card-share"
 import { assertNoForeignHold } from "../utils/cart-hold"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
+import {
+  redeemCartGiftCard,
+  voidCartGiftCardRedemption,
+  type CartGiftCardRedemption,
+} from "../utils/redeem-cart-gift-card"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
 
 /**
@@ -67,4 +73,12 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
     dueHuf: context.cash_on_delivery_fee,
     items: cart?.items,
   })
+
+  // LAST, after every check that can still refuse for free (card 495c0007): the gift card's share comes off the card.
+  // If a later step of the completion fails, the compensation below gives it back, so a retry can take it again.
+  const redemption = await redeemCartGiftCard(cart as never, container as never)
+  return new StepResponse(undefined, redemption)
+},
+async (redemption: CartGiftCardRedemption | undefined, { container }) => {
+  await voidCartGiftCardRedemption(redemption, container as never)
 })
