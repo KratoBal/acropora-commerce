@@ -64,5 +64,7 @@ describe("a sor ára", () => {
       screen.getByTestId("product-unit-original-price").textContent,
     ).toMatch(/100\s000/)
     expect(van.container.textContent).toContain("-8%")
+    expect(van.container.textContent).toContain("Korábbi legalacsonyabb ár")
+    expect(van.container.textContent).not.toContain("Original")
   })
 })
