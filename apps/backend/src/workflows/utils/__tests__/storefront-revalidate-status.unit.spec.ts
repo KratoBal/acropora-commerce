@@ -103,6 +103,32 @@ describe("the attempts", () => {
     expect(JSON.stringify(storefrontRevalidateStatus({} as never))).not.toContain("titok-123")
   })
 
+  // barracuda #820: the REAL fetch (undici) refuses an address with credentials and names the whole address in its TypeError
+  it("an address with credentials: the real fetch's error text, cut to the host, carries no user or password anywhere", async () => {
+    const log = logger()
+    await sendStorefrontRevalidate(
+      { url: "http://user:hunter2@storefront-internal:8000/api/revalidate?x=1", secret: "titok-123" },
+      log,
+      fetch
+    )
+    const error = String(last()?.error)
+    expect(error).toContain("http://storefront-internal:8000")
+    for (const leak of ["hunter2", "user:", "user@", "/api/revalidate", "x=1"]) expect(error).not.toContain(leak)
+    for (const call of log.warn.mock.calls) for (const leak of ["hunter2", "user:"]) expect(String(call[0])).not.toContain(leak)
+    expect(JSON.stringify(storefrontRevalidateStatus({} as never))).not.toContain("hunter2")
+  })
+
+  it("every address inside an error text is cut to scheme and host, and the rest of the text stays", async () => {
+    await sendStorefrontRevalidate(
+      cfg,
+      logger(),
+      (async () => {
+        throw new Error("connect failed: https://a:b@h1.test:9/p?q#f and http://h2.test/x")
+      }) as never
+    )
+    expect(last()?.error).toBe("connect failed: https://h1.test:9 and http://h2.test")
+  })
+
   it("the next attempt replaces the last one", async () => {
     await sendStorefrontRevalidate(cfg, logger(), (async () => ({ ok: false, status: 500 })) as never)
     await sendStorefrontRevalidate(cfg, logger(), (async () => ({ ok: true, status: 200 })) as never)

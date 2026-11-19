@@ -137,8 +137,10 @@ const describeError = (error: unknown, secret: string): string => {
   const cause = (error as { cause?: { code?: unknown; message?: unknown } } | null)?.cause;
   const detail = typeof cause?.code === "string" ? cause.code : typeof cause?.message === "string" ? cause.message : "";
   const text = detail ? `${base} (${detail})` : base;
-  // a secret never leaves in an error text, whatever put it there
-  return (secret ? text.split(secret).join("***") : text).slice(0, 300);
+  // a secret never leaves in an error text, whatever put it there; and an address inside it is cut to scheme and host: undici's
+  // own TypeError for an address with credentials names the WHOLE address, password included
+  const withoutSecret = secret ? text.split(secret).join("***") : text;
+  return withoutSecret.replace(/(https?:\/\/)(?:[^\s/@]*@)?([^\s/?#]+)[^\s]*/gi, "$1$2").slice(0, 300);
 };
 
 /**
