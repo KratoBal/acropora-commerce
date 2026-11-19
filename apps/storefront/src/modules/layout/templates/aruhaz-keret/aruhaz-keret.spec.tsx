@@ -87,8 +87,8 @@ describe("a kirakat kerete", () => {
   */
   it("az angol szegmens angol fejléc-szövegeket és a szegmenst a láblécnek adja, a magyar magyart", async () => {
     for (const [szegmens, savSzoveg] of [
-      ["en-hu", "Open today 10:00–19:00"],
-      ["hu", "Nyitva ma 10–19 óráig"],
+      ["en-hu", "Open: Tue–Fri 10:00–18:00, Sat 10:00–14:00"],
+      ["hu", "Nyitva: Kedd-Péntek 10-18, Szombat 10-14"],
     ] as const) {
       const fa = bejar(
         await AruhazKeret({ children: "x", countryCode: szegmens }),

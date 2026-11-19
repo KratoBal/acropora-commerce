@@ -20,3 +20,12 @@ export const CEG = {
   email: "webshop@acropora.hu",
   nyitvatartas: ["Kedd-Péntek 10-18", "Szombat 10-14", "Vasárnap-Hétfő Zárva"],
 } as const
+
+/**
+ * A NYITVATARTAS A NYITOTT NAPOKKAL, "Zarva" nelkul: a fejlec info-savja ezt mondja ki ("Nyitva: Kedd-Pentek
+ * 10-18, Szombat 10-14"), a lablec pedig mindent, a zarva napokkal egyutt. EGY forrasbol, hogy a ketto ne
+ * mondhasson mast.
+ */
+export const CEG_NYITVA: readonly string[] = CEG.nyitvatartas.filter(
+  (nap) => !/zárva/i.test(nap),
+)

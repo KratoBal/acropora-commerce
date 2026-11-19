@@ -148,9 +148,9 @@ describe("az ismert szöveg keresése", () => {
     expect(knownText("hu", "footerText", "Oldaltérkép")).toBeUndefined()
     expect(knownText("en", "footerText", "Oldaltérkép")).toBe("Sitemap")
     expect(knownText("en", "footerText", "Blog")).toBeUndefined()
-    expect(knownText("en", "headerText", "Nyitva ma 10–19 óráig")).toBe(
-      "Open today 10:00–19:00",
-    )
+    expect(
+      knownText("en", "headerText", "Nyitva: Kedd-Péntek 10-18, Szombat 10-14"),
+    ).toBe("Open: Tue–Fri 10:00–18:00, Sat 10:00–14:00")
     // egy szöveg a MÁSIK csoportban nem találat
     expect(knownText("en", "headerText", "Oldaltérkép")).toBeUndefined()
   })

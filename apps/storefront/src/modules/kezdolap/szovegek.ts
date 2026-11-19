@@ -1,3 +1,4 @@
+import { CEG, CEG_NYITVA } from "@lib/ceg"
 import { knownText, translator, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 
@@ -73,19 +74,19 @@ const FEJLEC: KezdolapSzoveg[] = [
     "Fejléc: info-sáv",
     "fejlec.sav.2",
     "Bal oldal, második",
-    "Technika és vegyszer: házhozszállítás 2–3 munkanap alatt",
+    "Technika és vegyszer: Foxpost csomagpont és GLS házhozszállítás",
   ),
   sor(
     "Fejléc: info-sáv",
     "fejlec.sav.3",
     "Jobb oldal, első",
-    "Nyitva ma 10–19 óráig",
+    `Nyitva: ${CEG_NYITVA.join(", ")}`,
   ),
   sor(
     "Fejléc: info-sáv",
     "fejlec.sav.4",
     "Jobb oldal, második",
-    "Tanácsadás: +36 1 234 5678",
+    `Tanácsadás: ${CEG.telefon}`,
   ),
   sor(
     "Fejléc",
@@ -618,7 +619,7 @@ const NYERS: readonly KezdolapSzoveg[] = [
  * kap jelzot, es a teszt ugyanezt a listat veti ossze a lappal.
  */
 const MINTA_MINTA =
-  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.sav\.[1-4]$|fejlec\.1\.kartya\.szoveg$|korall\.szoveg$|korall\.[123]\.|korall\.gomb\.felirat$)/
+  /^(hero\.tenyek\.3\.|velemenyek\.|markak\.\d$|bolt\.(cim|nyitva)_ertek$|halado\.[13]\.szoveg$|fejlec\.1\.kartya\.szoveg$|korall\.szoveg$|korall\.[123]\.|korall\.gomb\.felirat$)/
 
 export const KEZDOLAP_SZOVEGEK: readonly KezdolapSzoveg[] = NYERS.map((sor) =>
   MINTA_MINTA.test(sor.kulcs) ? { ...sor, minta: true } : sor,
