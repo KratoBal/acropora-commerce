@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+const oldal = vi.hoisted(() => ({ szegmens: "hu" }))
+
 const sorrend = vi.hoisted(() => ({ log: [] as string[] }))
 const stripe = vi.hoisted(() => ({ confirmPayment: vi.fn() }))
 const mezo = vi.hoisted(() => ({ update: vi.fn() }))
@@ -21,7 +23,7 @@ vi.mock("@stripe/react-stripe-js", () => ({
   useElements: () => elements,
 }))
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
+  useParams: () => ({ countryCode: oldal.szegmens }),
   unstable_rethrow: () => {},
 }))
 vi.mock("@lib/data/cart", () => ({
@@ -52,6 +54,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   sorrend.log.length = 0
+  oldal.szegmens = "hu"
 })
 
 const kosar = {
@@ -80,6 +83,18 @@ const lead = () => {
  * kártya után a kosár bontva és a zárolás rajta marad.
  */
 describe("StripeKozosGomb", () => {
+  // A NYELV A LEADASSAL UTAZIK (angol nezet, 2026-11-19): az angol oldal szegmense eljut a szerver-muveletig, kulonben a visszaigazolas magyarul nyilna
+  it("a leadás megkapja az oldal szegmensét (angol oldalon `en-hu`)", async () => {
+    oldal.szegmens = "en-hu"
+    elements.submit.mockImplementation(async () => ({}))
+    stripe.confirmPayment.mockResolvedValue({
+      paymentIntent: { status: "requires_capture" },
+    })
+    lead()
+    await waitFor(() => expect(placeOrder).toHaveBeenCalled())
+    expect(placeOrder).toHaveBeenCalledWith(undefined, "en-hu")
+  })
+
   it("ellenőriz, bont és közös intentet kér, a titkával erősít meg, aztán lead", async () => {
     elements.submit.mockImplementation(async () => {
       sorrend.log.push("submit")

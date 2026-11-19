@@ -29,3 +29,29 @@ export const CEG = {
 export const CEG_NYITVA: readonly string[] = CEG.nyitvatartas.filter(
   (nap) => !/zárva/i.test(nap),
 )
+
+/**
+ * A NYITVATARTAS A VENDEG NYELVEN (a kirakat angol nezete, 2026-11-19): a lablec az angol oldalon is a magyar napneveket irta ("Kedd-Péntek
+ * 10-18", "Vasárnap-Hétfő Zárva"), mikozben a fejlec info-savja angolul mondta. A napnevek es a "Zárva" szava fordul, a szamok es a kotojel
+ * maradnak, EGY forrasbol (`CEG.nyitvatartas`): ha a bolt uj napneveket ir be, amit itt nem ismerunk, az nem fordul, es a teszt megmondja.
+ */
+const NAPOK_ANGOLUL: Record<string, string> = {
+  Hétfő: "Mon",
+  Kedd: "Tue",
+  Szerda: "Wed",
+  Csütörtök: "Thu",
+  Péntek: "Fri",
+  Szombat: "Sat",
+  Vasárnap: "Sun",
+  Zárva: "Closed",
+}
+
+export const nyitvatartasNyelven = (locale: "hu" | "en"): readonly string[] =>
+  locale === "en"
+    ? CEG.nyitvatartas.map((sor) =>
+        sor.replace(
+          /[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű]+/g,
+          (szo) => NAPOK_ANGOLUL[szo] ?? szo,
+        ),
+      )
+    : CEG.nyitvatartas

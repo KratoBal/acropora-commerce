@@ -8,6 +8,7 @@ import {
   otherSegment,
   parseSegment,
   segmentFor,
+  segmentInLanguageOf,
 } from "./locale"
 
 /**
@@ -61,5 +62,37 @@ describe("parseSegment", () => {
     expect(localeOf("en-hu")).toBe("en")
     expect(countryOf("en-hu")).toBe("hu")
     expect(countryOf("hu")).toBe("hu")
+  })
+})
+
+/**
+ * THE CHECKOUT KEEPS THE LANGUAGE (card, 2026-11-19: the English checkout's first step redirected to `/hu/checkout`). What must fail: the page's
+ * language dropped (`en-hu` page, `hu` address country -> `hu`); the address's COUNTRY replaced by the page's (the region follows the address); a
+ * missing, unknown or odd page segment (a value from a form is user input) turning into anything but the default language.
+ */
+describe("segmentInLanguageOf", () => {
+  it("puts the address's country in the language of the page", () => {
+    expect(segmentInLanguageOf("hu", "en-hu")).toBe("en-hu")
+    expect(segmentInLanguageOf("hu", "hu")).toBe("hu")
+  })
+
+  it("keeps the ADDRESS's country, not the page's", () => {
+    expect(segmentInLanguageOf("de", "en-hu")).toBe("en-de")
+    expect(segmentInLanguageOf("HU", "en-hu")).toBe("en-hu")
+  })
+
+  it("a missing, unknown or odd page segment is the default language", () => {
+    for (const odd of [
+      undefined,
+      null,
+      "",
+      "de-hu",
+      "xx",
+      "en-hu/x",
+      "../evil",
+      7,
+      {},
+    ])
+      expect(segmentInLanguageOf("hu", odd), String(odd)).toBe("hu")
   })
 })

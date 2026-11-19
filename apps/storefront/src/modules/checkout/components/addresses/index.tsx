@@ -7,7 +7,12 @@ import { orszagNev, teljesNev, varosSor } from "@lib/util/penztar-cim"
 import { CheckCircleSolid } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import Spinner from "@modules/common/icons/spinner"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import { useActionState, useState } from "react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
@@ -30,6 +35,7 @@ const Addresses = ({
 }) => {
   const t = useTranslate()
   const locale = useLocale()
+  const { countryCode } = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -73,6 +79,12 @@ const Addresses = ({
       </div>
       {isOpen ? (
         <form action={formAction}>
+          {/* the page's own segment (`en-hu`): the action redirects to the next step in the same language */}
+          <input
+            type="hidden"
+            name="page_segment"
+            value={String(countryCode ?? "hu")}
+          />
           <ShippingAddress
             customer={customer}
             checked={sameAsBilling}

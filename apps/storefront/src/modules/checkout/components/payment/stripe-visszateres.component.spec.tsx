@@ -3,9 +3,10 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const kereso = vi.hoisted(() => ({ ertek: "step=payment&ellenorzes=1" }))
+const oldal = vi.hoisted(() => ({ szegmens: "hu" }))
 const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }))
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
+  useParams: () => ({ countryCode: oldal.szegmens }),
   usePathname: () => "/hu/checkout",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(kereso.ertek),
@@ -39,6 +40,7 @@ import Payment from "./index"
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  oldal.szegmens = "hu"
 })
 
 const STRIPE = "pp_stripe_stripe"
@@ -84,6 +86,16 @@ describe("a fizetési lépés a 3DS után", () => {
     expect(screen.getByRole("button", { name: "Ellenőrzés…" })).toBeDisabled()
     await waitFor(() => expect(placeOrder).toHaveBeenCalledTimes(1))
     expect(screen.queryByTestId("submit-payment-button")).toBeNull()
+  })
+
+  // A NYELV A LEADASSAL UTAZIK (angol nezet, 2026-11-19): az angol oldal szegmense eljut a szerver-muveletig, kulonben a visszaigazolas magyarul nyilna
+  it("a leadás megkapja az oldal szegmensét (angol oldalon `en-hu`)", async () => {
+    kereso.ertek = "step=payment&ellenorzes=1"
+    oldal.szegmens = "en-hu"
+    vi.mocked(placeOrder).mockReturnValue(new Promise(() => {}))
+    rajzol()
+    await waitFor(() => expect(placeOrder).toHaveBeenCalledTimes(1))
+    expect(placeOrder).toHaveBeenCalledWith(undefined, "en-hu")
   })
 
   it("ha a leadás nem sikerül, az ellenőrzés nem ragad be, és a hiba látszik", async () => {
