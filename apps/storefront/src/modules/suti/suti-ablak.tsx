@@ -12,6 +12,7 @@ import {
   consentJelek,
   olvasDontes,
   SUTI_BEALLITAS_ESEMENY,
+  SUTI_DONTES_ESEMENY,
   SUTI_HOZZAJARULAS_VERZIO,
   sutiSor,
   type SutiDontes,
@@ -78,6 +79,8 @@ export default function SutiAblak() {
     document.cookie = sutiSor(dontes, window.location.protocol === "https:")
     const gtag = (window as { gtag?: (...a: unknown[]) => void }).gtag
     gtag?.("consent", "update", consentJelek(dontes))
+    // a merokodok innen tudjak, hogy a hozzajarulas valtozott (megadas ES visszavonas)
+    window.dispatchEvent(new CustomEvent(SUTI_DONTES_ESEMENY))
     setStatisztika(valasz.statisztika)
     setMarketing(valasz.marketing)
     setNezet("zarva")

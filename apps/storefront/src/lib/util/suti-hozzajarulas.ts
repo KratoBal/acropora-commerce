@@ -32,6 +32,12 @@ export const SUTI_ELETTARTAM_MP = 180 * 24 * 60 * 60
 /** A lablec gombja ezzel az esemennyel nyitja ujra az ablakot. */
 export const SUTI_BEALLITAS_ESEMENY = "acropora:suti-beallitasok"
 
+/**
+ * A DONTES MENTESE UTAN EZT AZ ESEMENYT KULDI AZ ABLAK (`window`-on): a merokodok (`modules/suti/merokodok.tsx`) ebbol
+ * tudjak meg, hogy a hozzajarulas valtozott (megadas vagy visszavonas), a sutit ujraolvassak.
+ */
+export const SUTI_DONTES_ESEMENY = "acropora:suti-dontes"
+
 export type SutiDontes = {
   verzio: string
   /** ISO idopont, a vevo bongeszojebol. */
