@@ -16,6 +16,7 @@ import {
   giftCardCredits,
   type CreditLineRow,
 } from "../../../../../workflows/utils/gift-card-credit"
+import { LOYALTY_WITH_GIFT_CARD_MESSAGE, loyaltyCredits } from "../../../../../workflows/utils/loyalty/loyalty-credit"
 import { resolveCartShippingClass } from "../../../../../workflows/utils/resolve-cart-shipping-class"
 import type { StorePostCartGiftCardType } from "./validators"
 
@@ -87,6 +88,12 @@ export const POST = async (req: MedusaRequest<StorePostCartGiftCardType>, res: M
   const { split_line_ids } = await resolveCartShippingClass(cart, req.scope)
   if (split_line_ids.length) {
     res.status(409).json({ code: "gift_card_mixed_cart", message: GIFT_CARD_MIXED_CART_MESSAGE })
+    return
+  }
+
+  // points and a gift card do not share a cart (card dfb79916): two credit lines would each cap against the whole total
+  if (loyaltyCredits(cart.credit_lines).length) {
+    res.status(409).json({ code: "gift_card_with_loyalty", message: LOYALTY_WITH_GIFT_CARD_MESSAGE })
     return
   }
 

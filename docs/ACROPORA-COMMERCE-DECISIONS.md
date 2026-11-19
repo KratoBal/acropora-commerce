@@ -201,3 +201,85 @@ nincs döntés, ott ez is ki van írva: a `FOXPOST` sor az eredeti építésből
 Balázst **soha nem kérdeztük meg róla**. Nem döntésként szerepel, hanem megerősítetlenként.
 
 *(2026-11-18, kártya e0e2378b: a mátrix azóta a `shipping_payment_rule` táblában él, az Adminból állítható; a `SHIPPING_ROLE_PAYMENTS` konstans megszűnt. A sorok döntőit a `SHIPPING_PAYMENT_RULE_SEED` őrzi, a tábla kezdő állapotaként.)*
+
+## D-2026-11-19-01: A hűségpont főkönyve a Medusa saját moduljában él
+
+**Döntés:** Balázs 2026-11-18 21:30 UTC: a hűségpont kell, és a vevőnél kézzel is jóírható (kártya
+`dfb79916`). A szállításra is beváltható (2026-10-06; a kupon nem). Az irányt acrobot 2026-11-19
+00:33-kor jóváhagyta: a `loyalty` modul a Medusában, fő-könyvvel; az OS a modul admin útjain írja a
+kézi jóírást.
+
+**Mi ez:** a `loyalty_entry` tábla, soronként egy pontmozgás (`accrual`, `redemption`,
+`adjustment`, `reversal`), előjeles egész ponttal. **Nincs egyenleg-oszlop:** az egyenleg a vevő
+sorainak összege, tehát nem csúszhat el attól, ami megmagyarázza. Sor nem módosul; egy téves
+jóírást ellenkező előjelű második sor javít. A `reference` egyedi, amíg ki van töltve: az újraküldött
+mozgás egyszer tárolódik.
+
+**Miért nem az OS-ben:** a beváltás a pénztáron, a kosár tranzakciójában kell (egyenleg-ellenőrzés,
+foglalás), és az OS→Medusa irány már létezik. A fordított (Medusa→OS) hívás új, kívülről hívható OS
+végpont lenne, ami a biztonsági irány miatt most nem épül.
+
+**Miért nem promóció:** a promóció `order`/`items` célja csak a tételekre megy, a `shipping_methods`
+célt a `refuse-shipping-discount.ts` őrző tiltja (a kedvezmény nem vonható a szállításból). A pont
+viszont a szállítást is fedezi. A Medusa 2.22.4-ben erre a kosár- és rendelés-szintű *credit line*
+való (az adó után vonódik le a végösszegből, tételhez nem kötött); a beváltás a következő PR-ok dolga.
+
+**Ebben a PR-ban (1/n):** a modul, a migráció, az egyenleg olvasása (`GET /store/customers/me/loyalty`
+a vevőnek, `GET /admin/loyalty/:customer_id` az OS-nek) és a kézi jóírás/levonás
+(`POST /admin/loyalty/adjustments`). Kosár, beváltás és gyűjtés **nincs**. A vevő nézete nem hordoz
+indokot és végrehajtót (egy kézi jóírás indoka belső jegyzet).
+
+**Ami nyitott, és ezt nem találtuk ki:** (A) a gyűjtési arány és a pont értéke; (B) az ÁFA-kezelés:
+a pont-levonás árcsökkentés (a számla alapja csökken) vagy fizetési eszköz (a teljes összegről szól
+a számla, a pont fizeti). Az arány **beállítás lesz** (`commerce-settings`), nem kódkonstans, amikor
+a gyűjtés elkészül; addig semmi nem olvassa. Öröklött szabály: meghiúsult utánvétes rendelésnél a
+jóírt pont visszavonandó (`D-2026-08-23-25`, 6. pont): ez a `reversal` fajta dolga lesz.
+
+**Ismert határ:** a levonás-ellenőrzés és a sor beszúrása egy tranzakcióban van, de a vevőt nem
+zárolja: két egyszerre érkező levonás együtt a nulla alá vihet. Kézi levonást ember ad, ritkán; a
+negatív egyenleg látszik. Sorzárral zárható, **nincs lemérve**.
+
+## D-2026-11-19-02: A hűségpont beváltása a pénztáron (2/n): a mai UNAS-szabályok, beállításként
+
+**Döntés:** acrobot 2026-11-19 09:49 (Balázs 2026-08-22-i UNAS-képernyőképe,
+`docs/husegpont-mai-szabalyok-unas.md`, és az egy eltérés: Balázs 2026-11-18 21:30 UTC, kártya `790da0cd`):
+a pont a **szállításra is** beváltható. A szabályok **beállítások, nem kód**, ezekkel az alapértékekkel:
+
+| Beállítás | Környezeti változó | Alap |
+|---|---|---|
+| beváltás bekapcsolva | `LOYALTY_REDEMPTION_ENABLED` | **ki** (a teszt kirakaton bekapcsolva megy) |
+| 1 pont értéke forintban | `LOYALTY_POINT_VALUE_HUF` | 1 |
+| a rendelés legalább (Ft, a hitelek előtti végösszeg, szállítással) | `LOYALTY_MIN_ORDER_HUF` | 30 000 |
+| legalább ennyi pont egyszerre | `LOYALTY_MIN_POINTS` | 100 |
+| a végösszeg hány százaléka fizethető pontból | `LOYALTY_MAX_PERCENT` | 100 |
+
+Hibás, nulla, negatív vagy tört érték az **alapértéket** adja, soha nem találgatást; csak a pontos `true`
+kapcsolja be a beváltást. A gyűjtés (3 százalék, akciós tétel után nincs, jóváírás a rendelés „lezárva"
+státuszakor), a regisztrációért és a hírlevélért járó pont **nincs ebben a PR-ban**.
+
+**Mi ez:** a pont a kosáron *credit line* (`reference = loyalty_points`, `reference_id` a vevő,
+`metadata.points`), az ajándékkártyáéval azonos mechanikával (nautilus #818): fizetési eszköz-szerű, a
+szállítást és az utánvét díjat is fedezi, a fizetési gyűjtemény frissül, a nulla Ft-os végösszeg útja már
+megvan. Az **ÁFA (B kérdés) nyitott**: ez az olvasat „a teljes összegről szól a számla, a pont fizeti". Ha
+árcsökkentés kell (a számla alapja csökken), azt a könyvelővel az OS-számla oldalán kell eldönteni, és a
+credit line helyett más út kell.
+
+**Folyamat:** `POST/DELETE/GET /store/carts/:id/loyalty-points` (belépett vevő, saját kosár; a kosár más vevőjé
+úgy válaszol, mint a hiányzó): a pont a főkönyvhöz **nem nyúl**, csak a credit line készül; a főkönyvbe a
+`complete-cart` ellenőrző horog veszi be, **utolsóként**, `redemption` sorral (`reference = redeem:<kosár>`), és
+visszavonja, ha a befejezés elhasal (kompenzáció: a sor törlődik, a kulcs felszabadul). A kosár frissítése
+plafonozza a hitelt (egész pontra lefelé, a minimum alatt lekerül). A rendelés lemondása egy `reversal` sorral
+visszaadja a pontot (`reference = reverse:<kosár>`, egyszer). **A visszatérített rendelés pontja tehát
+visszajár**: ez eltérés a mai UNAS-tól (ott bent marad), és Balázs dönti (acrobot jelzi).
+
+**Kizárások:** ajándékkártya és pont egy kosárban nem lehet (két hitel egymás plafonját is bonyolítaná; a
+nautilus-féle ajándékkártya-végpont is elutasítja a pontot hordozó kosarat); vegyes (két rendelésre bomló)
+kosárnál nincs beváltás, mint az ajándékkártyánál.
+
+**Zárolás:** minden mozgás a vevő kulcsán `pg_advisory_xact_lock`-ot vesz (nincs egyenleg-sor, amit zárolni
+lehetne): a kosárból jövő levonások nem vihetnek együtt a nulla alá. A kézi levonás (`addEntryChecked`) még
+nem zárol: a fenti „ismert határ" arra áll.
+
+**NINCS LEMÉRVE valódi Postgresen:** a zár, a `softDelete`, a tranzakció-kezelés (helyi Postgres nincs). A
+szabályok egy memóriabeli főkönyvön vannak mérve; a stage-en HTTP-vel mérendő: pont jóírása, beváltás,
+rendelés, lemondás, hibás befejezés utáni visszaadás.
