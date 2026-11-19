@@ -184,6 +184,7 @@ export async function loadMerchantItems(
     now: env.now ?? new Date(),
     keepBackorder: env.keepBackorder === true,
     excludedCategoryHandles: new Set(env.excludedCategoryHandles ?? []),
+    exclusionCategories: await exclusionTree(query, env.excludedCategoryHandles ?? []),
   }
   const left = products.filter((product) => inExcludedCategory(product, context))
   if (left.length)
@@ -247,6 +248,33 @@ export async function brandNames(
     if (name) names[link.product_id] = name
   }
   return names
+}
+
+/**
+ * THE WHOLE TREE FOR THE EXCLUSION (barracuda, #832): internal and inactive categories too, so a live animal under a
+ * hidden sub-category is still caught. And every excluded handle must exist in it: a renamed or mistyped root would
+ * otherwise empty the exclusion silently and send the live animals out, so it stops the feed as a configuration error
+ * (503) instead. Not read when nothing is excluded.
+ */
+async function exclusionTree(
+  query: Query,
+  handles: readonly string[]
+): Promise<MerchantFeedContext["exclusionCategories"]> {
+  if (!handles.length) return undefined
+  const { data } = await query.graph({
+    entity: "product_category",
+    fields: ["id", "handle", "parent_category_id"],
+  })
+  const tree: NonNullable<MerchantFeedContext["exclusionCategories"]> = {}
+  for (const row of data as { id: string; handle?: string | null; parent_category_id: string | null }[])
+    tree[row.id] = { parentId: row.parent_category_id, ...(row.handle ? { handle: row.handle } : {}) }
+  const known = new Set(Object.values(tree).map((row) => row.handle))
+  const unknown = handles.filter((handle) => !known.has(handle))
+  if (unknown.length)
+    throw new MerchantFeedConfigError(
+      `MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES names categories the shop does not have (${unknown.join(", ")}): the feed would not leave them out.`
+    )
+  return tree
 }
 
 async function categoryTree(

@@ -405,6 +405,61 @@ describe("loadMerchantItems", () => {
     expect(logged).toEqual(["merchant feed: 1 products left out by the excluded categories (halak)"])
   })
 
+  /** A shop whose fish sits only under a HIDDEN sub-category of "Halak": the buyer-facing tree does not show it. */
+  const hiddenFishQuery = () => ({
+    graph: async (args: { entity: string; filters?: Record<string, unknown>; pagination?: { skip: number } }) => {
+      if (args.entity === "store")
+        return { data: [{ default_region_id: "reg_hu", default_sales_channel_id: "sc_shop" }] }
+      if (args.entity === "region") return { data: [{ id: "reg_hu", currency_code: "huf" }] }
+      if (args.entity === "product_category") {
+        const visible = [
+          { id: "cat_child", name: "Nyomelemek", handle: "nyomelemek", parent_category_id: null },
+          { id: "cat_fish", name: "Halak", handle: "halak", parent_category_id: null },
+        ]
+        const hidden = [{ id: "cat_hidden", name: "Rejtett", handle: "rejtett", parent_category_id: "cat_fish" }]
+        // the buyer-facing read filters internal and inactive out; the exclusion's read does not
+        return { data: args.filters?.is_internal === false ? visible : [...visible, ...hidden] }
+      }
+      if (args.entity === "product")
+        return {
+          data:
+            (args.pagination?.skip ?? 0) === 0
+              ? [
+                  { ...product(), sales_channels: [{ id: "sc_shop" }] },
+                  {
+                    ...product({ id: "prod_fish", categories: [{ id: "cat_hidden" }], variants: [variant({ id: "variant_f", sku: "FISH" })] }),
+                    sales_channels: [{ id: "sc_shop" }],
+                  },
+                ]
+              : [],
+        }
+      return { data: [] }
+    },
+  })
+
+  it("MF-EXCLUDE-HIDDEN: a fish under a hidden sub-category of an excluded root is still left out (barracuda, #832)", async () => {
+    const items = await loadMerchantItems(
+      { query: hiddenFishQuery() as never, brands, settings: noSettings },
+      { storefrontUrl: "https://teszt.acropora.example", excludedCategoryHandles: ["halak"] }
+    )
+    expect(items.map((i) => i.id)).toEqual(["KZ-AMINO-100"])
+  })
+
+  it("MF-EXCLUDE-UNKNOWN: an excluded handle the shop does not have stops the feed, not the exclusion", async () => {
+    await expect(
+      loadMerchantItems(
+        { query: hiddenFishQuery() as never, brands, settings: noSettings },
+        { storefrontUrl: "https://teszt.acropora.example", excludedCategoryHandles: ["halak", "korralok"] }
+      )
+    ).rejects.toThrow(MerchantFeedConfigError)
+    await expect(
+      loadMerchantItems(
+        { query: hiddenFishQuery() as never, brands, settings: noSettings },
+        { storefrontUrl: "https://teszt.acropora.example", excludedCategoryHandles: ["korralok"] }
+      )
+    ).rejects.toThrow(/korralok/)
+  })
+
   it("MF-ORDER: paging has a total order, the id breaking created_at ties", async () => {
     const { query, calls } = fakeQuery([])
     await loadMerchantItems(

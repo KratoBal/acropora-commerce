@@ -64,6 +64,11 @@ export type MerchantFeedContext = {
    */
   excludedCategoryHandles?: ReadonlySet<string>
   /**
+   * The WHOLE category tree for the exclusion only, internal and inactive categories included (barracuda, #832): a fish
+   * under a hidden sub-category is still under "Halak". The path above keeps the buyer-facing tree.
+   */
+  exclusionCategories?: Record<string, { parentId: string | null; handle?: string }>
+  /**
    * The restock lead time in days (`feed_backorder_lead_time_days`), or null when it is not set: a
    * backorderable item at zero stock then goes as `out_of_stock` (card 69d18bff).
    */
@@ -184,16 +189,17 @@ export function toMerchantItem(
  */
 export function inExcludedCategory(
   product: Pick<MerchantFeedProduct, "categories">,
-  context: Pick<MerchantFeedContext, "categories" | "excludedCategoryHandles">
+  context: Pick<MerchantFeedContext, "categories" | "excludedCategoryHandles" | "exclusionCategories">
 ): boolean {
   const excluded = context.excludedCategoryHandles
   if (!excluded?.size) return false
+  const tree = context.exclusionCategories ?? context.categories
   for (const { id } of product.categories ?? []) {
     const seen = new Set<string>()
     let currentId: string | null = id
     while (currentId && !seen.has(currentId)) {
       seen.add(currentId)
-      const current: MerchantFeedContext["categories"][string] | undefined = context.categories[currentId]
+      const current: { parentId: string | null; handle?: string } | undefined = tree[currentId]
       if (!current) break
       if (current.handle && excluded.has(current.handle)) return true
       currentId = current.parentId
