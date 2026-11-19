@@ -2,7 +2,7 @@ import { PROBLEM_KINDS, type ProblemKind } from "../../../modules/order-problem-
 
 /**
  * THE PROBLEM REPORT'S RULES (V1.2), PURE. The photo limits are DECIDED, a technical choice (acrobot, 2026-11-04:
- * 5 pictures, 5 MB; the [KITÖLTENDŐ] marks came off on 2026-11-19, acrobot's brief). What stays [KITÖLTENDŐ] in the
+ * 5 pictures, 5 MB; the [KITÖLTENDŐ] marks came off on 2026-11-19: acrobot's msg 56874 called it a technical decision, confirmed final in msg 56896). What stays [KITÖLTENDŐ] in the
  * customer texts is the owner's and the lawyer's: the deadline to report, whether a photo is compulsory (and when), and
  * the reply time. Nothing here decides them.
  *
