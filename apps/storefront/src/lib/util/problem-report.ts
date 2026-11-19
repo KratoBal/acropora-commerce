@@ -1,9 +1,9 @@
 import type { Key } from "@lib/i18n/dictionary"
 
 /**
- * THE PROBLEM REPORT FORM'S RULES (V1.2, slice 3), PURE. The limits are TEMPORARY values for the test shop and
- * mirror the backend's (`workflows/utils/problem-report/rules.ts`); the owner fills in the real ones
- * ([KITÖLTENDŐ]): the deadline to report, whether a photo is compulsory (and when), the reply time.
+ * THE PROBLEM REPORT FORM'S RULES (V1.2, slice 3), PURE. The photo limits (5 pictures, 5 MB) are decided and mirror the
+ * backend's (`workflows/utils/problem-report/rules.ts`); what the owner still fills in ([KITÖLTENDŐ], in the texts): the
+ * deadline to report, whether a photo is compulsory (and when), the reply time.
  */
 export const MAX_PHOTOS = 5
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024

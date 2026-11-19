@@ -1,3 +1,4 @@
+import { CEG } from "@lib/ceg"
 import type { Dictionary } from "./index"
 
 /** The English dictionary. The type makes a missing or an extra key a compile error (the shape is the Hungarian one). */
@@ -1245,11 +1246,15 @@ export const en: Dictionary = {
     errorEmail: "Please check the e-mail address, something is missing.",
     errorNumber: "The order number consists of digits only.",
     errorNotFound:
-      "We could not find the order with these details. Please check the order number and the e-mail address, or write to us: [TO BE FILLED IN: customer service contact].",
+      "We could not find the order with these details. Please check the order number and the e-mail address, or write to us: " +
+      CEG.email +
+      ".",
     errorTooMany:
-      "There were too many unsuccessful attempts. Please try again in [TO BE FILLED IN: waiting time], or write to us.",
+      "There were too many unsuccessful attempts. Please try again in 15 minutes, or write to us.",
     errorUnavailable:
-      "We cannot show the order right now. Please try again a little later, or write to us: [TO BE FILLED IN: customer service contact].",
+      "We cannot show the order right now. Please try again a little later, or write to us: " +
+      CEG.email +
+      ".",
     splitNotice:
       "This purchase consists of two orders, because it included live animals. One is delivered to you; the live animals can be collected in the store.",
     blockShipped: "Products to be delivered",
@@ -1349,11 +1354,10 @@ export const en: Dictionary = {
       addPhoto: "Add a photo",
       removePhoto: "Remove",
       photoErrorSize:
-        "This file is too large. The largest allowed size is 5 MB. [TO BE FILLED IN: size]",
+        "This file is too large. The largest allowed size is 5 MB.",
       photoErrorType:
         "This file type is not supported. Use a JPG or PNG picture.",
-      photoErrorCount:
-        "You can attach at most 5 pictures. [TO BE FILLED IN: number]",
+      photoErrorCount: "You can attach at most 5 pictures.",
       photoErrorUpload: "We could not upload the picture {name}.",
       submit: "Send the report",
       sending: "Sending…",
@@ -1366,7 +1370,9 @@ export const en: Dictionary = {
       errorDuplicate:
         'You have already reported this problem. You can find its case reference under your order, in "Reports you have already filed".',
       errorSend:
-        "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: [TO BE FILLED IN: contact].",
+        "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: " +
+        CEG.email +
+        ".",
       reportsTitle: "Reports you have already filed",
       reportRef: "Case reference: {id}",
       stageReceived: "Received",
@@ -1395,9 +1401,13 @@ export const en: Dictionary = {
       errorDuplicate:
         "There is already a withdrawal declaration for the products you marked. You will find its reference under your order, in the “Withdrawal declarations you have already made” section.",
       errorUnknown:
-        "Something went wrong while sending the withdrawal declaration, and we do not know whether it arrived. Look under your order at “Withdrawal declarations you have already made”: if it is listed there, there is nothing more to do. If not, try again or write to us: [TO BE FILLED IN: contact].",
+        "Something went wrong while sending the withdrawal declaration, and we do not know whether it arrived. Look under your order at “Withdrawal declarations you have already made”: if it is listed there, there is nothing more to do. If not, try again or write to us: " +
+        CEG.email +
+        ".",
       errorSend:
-        "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: [TO BE FILLED IN: contact].",
+        "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: " +
+        CEG.email +
+        ".",
       done: "We have received your withdrawal declaration. Its reference is {id}. [TO BE FILLED IN: next steps and deadlines]",
       donePartial:
         "You have already made a declaration for these products, so they were not recorded again: {items}",

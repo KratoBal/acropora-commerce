@@ -1,0 +1,63 @@
+import { describe, expect, it } from "vitest"
+
+import { CEG } from "@lib/ceg"
+import { en } from "./en"
+import { hu } from "./hu"
+
+/**
+ * A KODBOL KITOLTHETO HELYORZOK (2026-11-19, barracuda bontasa): az elerhetoseg a
+ * lablec es az Elerhetosegek lap KOZOS adata (`CEG`), a varakozas ideje a szerver
+ * korlatja (15 perc, a backend tesztje tartja), a fotok szama es merete dontott
+ * (5 db, 5 MB). MI PIROSIT: ha egy szoveg ujra helyorzot tartalmaz; ha az
+ * elerhetoseg elter a lablec adatatol (nem egy forrasbol jon); ha a "15 perc"
+ * eltunik; ha a fotokorlat szovege mas szamot mond, mint a kod konstansa.
+ */
+const KONTAKT = [
+  hu.guestOrder.errorNotFound,
+  hu.guestOrder.errorUnavailable,
+  hu.guestOrder.problem.errorSend,
+  hu.guestOrder.withdrawal.errorUnknown,
+  hu.guestOrder.withdrawal.errorSend,
+]
+const KONTAKT_EN = [
+  en.guestOrder.errorNotFound,
+  en.guestOrder.errorUnavailable,
+  en.guestOrder.problem.errorSend,
+  en.guestOrder.withdrawal.errorUnknown,
+  en.guestOrder.withdrawal.errorSend,
+]
+
+describe("a kodbol kitoltott szovegek", () => {
+  it("az elerhetoseg a lablec es az Elerhetosegek lap kozos adata", () => {
+    for (const szoveg of [...KONTAKT, ...KONTAKT_EN]) {
+      expect(szoveg).toContain(CEG.email)
+      expect(szoveg).not.toMatch(/KITÖLTENDŐ|TO BE FILLED/)
+    }
+  })
+
+  it("a varakozas ideje: 15 perc, mindket nyelven", () => {
+    expect(hu.guestOrder.errorTooMany).toContain("15 perc")
+    expect(en.guestOrder.errorTooMany).toContain("15 minutes")
+    expect(hu.guestOrder.errorTooMany).not.toMatch(/KITÖLTENDŐ/)
+    expect(en.guestOrder.errorTooMany).not.toMatch(/TO BE FILLED/)
+  })
+
+  it("a fotokorlat szovege a kod konstansait mondja, helyorzo nelkul", async () => {
+    const { MAX_PHOTOS, MAX_PHOTO_BYTES } =
+      await import("@lib/util/problem-report")
+    const mb = String(MAX_PHOTO_BYTES / (1024 * 1024))
+    for (const d of [hu.guestOrder.problem, en.guestOrder.problem]) {
+      expect(d.photoErrorSize).toContain(`${mb} MB`)
+      expect(d.photoErrorCount).toContain(String(MAX_PHOTOS))
+      expect(d.photoErrorSize + d.photoErrorCount).not.toMatch(
+        /KITÖLTENDŐ|TO BE FILLED/,
+      )
+    }
+  })
+
+  it("a jogi szovegek helyorzoi MARADNAK (Balazs dontese): nem tuntek el vele egyutt", () => {
+    expect(hu.guestOrder.splitNotice + JSON.stringify(hu.guestOrder)).toMatch(
+      /KITÖLTENDŐ: (jogi ellenőrzés|válaszidő|jogi szöveg élő állatra)/,
+    )
+  })
+})

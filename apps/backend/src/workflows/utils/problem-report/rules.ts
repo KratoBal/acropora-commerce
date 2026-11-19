@@ -1,15 +1,16 @@
 import { PROBLEM_KINDS, type ProblemKind } from "../../../modules/order-problem-report/types"
 
 /**
- * THE PROBLEM REPORT'S RULES (V1.2), PURE. The limits are TEMPORARY values, marked [KITÖLTENDŐ] for the owner
- * (acrobot, 2026-11-04: 5 pictures, 5 MB): the deadline to report, whether a photo is compulsory (and when), and
- * the reply time are the owner's and the lawyer's, and nothing here decides them.
+ * THE PROBLEM REPORT'S RULES (V1.2), PURE. The photo limits are DECIDED, a technical choice (acrobot, 2026-11-04:
+ * 5 pictures, 5 MB; the [KITÖLTENDŐ] marks came off on 2026-11-19, acrobot's brief). What stays [KITÖLTENDŐ] in the
+ * customer texts is the owner's and the lawyer's: the deadline to report, whether a photo is compulsory (and when), and
+ * the reply time. Nothing here decides them.
  *
  * WHAT A PHOTO IS. It is read from its first bytes, not from the type the browser names: a JPEG or a PNG, and
  * nothing else (no SVG, no HTML, nothing a browser could run), at most `MAX_PHOTO_BYTES`.
  */
-export const MAX_PHOTOS = 5 // [KITÖLTENDŐ]
-export const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // [KITÖLTENDŐ]
+export const MAX_PHOTOS = 5
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 export const MAX_DESCRIPTION = 2000
 export const MAX_ITEMS = 50
 
