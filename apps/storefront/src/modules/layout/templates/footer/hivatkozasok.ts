@@ -311,9 +311,14 @@ export function fizetesiLogok(
 export function lablecLinkekHoszton(
   host: string,
   fogyasztobarat: boolean = fogyasztobaratBekapcsolva(),
+  rekordLinkek: readonly { cimke: string; cim: string }[] = [],
 ): { cimke: string; cim: string }[] {
   const mind: { cimke: string; cim: string }[] = [
     ...REGI_BOLT_HIVATKOZASOK.map((h) => ({ cimke: h.cimke, cim: h.cim })),
+    // A LABLEC, AHOGY A LAP TENYLEG RAJZOLJA: az OS rekordjanak linkjei is. A kod
+    // listaja egyedul nullat mondott akkor is, amikor a teszt OS rekordja ot linket
+    // vitt a regi boltba (2026-11-19, murena merese).
+    ...rekordLinkek.map((h) => ({ cimke: h.cimke, cim: h.cim })),
     // bekapcsolt Fogyasztobaratnal az ASZF es az adatkezeles a sajat oldalon all
     ...(fogyasztobarat
       ? []
@@ -321,7 +326,9 @@ export function lablecLinkekHoszton(
           d.maiBoltCim ? [{ cimke: d.cim, cim: d.maiBoltCim }] : [],
         )),
   ]
-  return mind.filter((h) => {
+  const egyedi = new Map<string, { cimke: string; cim: string }>()
+  for (const h of mind) egyedi.set(`${h.cimke}\u0000${h.cim}`, h)
+  return Array.from(egyedi.values()).filter((h) => {
     try {
       return new URL(h.cim).host.toLowerCase() === host.toLowerCase()
     } catch {
