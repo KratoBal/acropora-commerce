@@ -30,7 +30,7 @@ export default async function priceListBoundaryRevalidate(container: MedusaConta
     state,
     new Date(),
   )
-  if (outcome === "purged" || outcome === "purged-first")
+  if (outcome === "purged" || outcome === "purged-first" || outcome === "purged-again")
     logger.info(`Price list boundary: storefront cache emptied (${outcome}).`)
 }
 

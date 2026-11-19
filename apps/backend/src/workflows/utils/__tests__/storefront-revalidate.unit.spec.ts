@@ -40,6 +40,30 @@ describe("the storefront revalidate settings", () => {
     expect(storefrontRevalidateConfig({ ACROPORA_STOREFRONT_URL: "https://x.test" } as never)).toBeNull()
     expect(storefrontRevalidateConfig({ STOREFRONT_REVALIDATE_SECRET: "t" } as never)).toBeNull()
   })
+
+  it("calls STOREFRONT_REVALIDATE_URL when it is set, else the public address (the test shop's is behind Basic authentication)", () => {
+    const secret = "titok"
+    expect(
+      storefrontRevalidateConfig({
+        ACROPORA_STOREFRONT_URL: "https://shop.example.test",
+        STOREFRONT_REVALIDATE_URL: " http://storefront-internal:8000/ ",
+        STOREFRONT_REVALIDATE_SECRET: secret,
+      } as never)
+    ).toEqual({ url: "http://storefront-internal:8000/api/revalidate", secret })
+    // blank means "not set": the public address is used
+    expect(
+      storefrontRevalidateConfig({
+        ACROPORA_STOREFRONT_URL: "https://shop.example.test",
+        STOREFRONT_REVALIDATE_URL: "   ",
+        STOREFRONT_REVALIDATE_SECRET: secret,
+      } as never)
+    ).toEqual({ url: "https://shop.example.test/api/revalidate", secret })
+    // the internal address alone is enough, and the secret is still needed
+    expect(
+      storefrontRevalidateConfig({ STOREFRONT_REVALIDATE_URL: "http://storefront-internal:8000", STOREFRONT_REVALIDATE_SECRET: secret } as never)
+    ).toEqual({ url: "http://storefront-internal:8000/api/revalidate", secret })
+    expect(storefrontRevalidateConfig({ STOREFRONT_REVALIDATE_URL: "http://storefront-internal:8000" } as never)).toBeNull()
+  })
 })
 
 describe("sending the revalidate", () => {

@@ -70,6 +70,30 @@ describe("runBoundaryTick", () => {
     expect(await runBoundaryTick(working.deps, state, at("2026-11-19T10:02:00Z"))).toBe("purged")
   })
 
+  it("empties once more on the tick after a boundary (clock skew), and then is idle again", async () => {
+    const state: BoundaryRunState = { last: at("2026-11-19T10:00:00Z") }
+    const crossing = deps([sale("2026-11-19T10:00:30Z", null)])
+    expect(await runBoundaryTick(crossing.deps, state, at("2026-11-19T10:01:00Z"))).toBe("purged")
+    const next = deps([sale("2026-11-19T10:00:30Z", null)])
+    expect(await runBoundaryTick(next.deps, state, at("2026-11-19T10:02:00Z"))).toBe("purged-again")
+    expect(next.send).toHaveBeenCalledTimes(1)
+    const after = deps([sale("2026-11-19T10:00:30Z", null)])
+    expect(await runBoundaryTick(after.deps, state, at("2026-11-19T10:03:00Z"))).toBe("idle")
+    expect(after.send).not.toHaveBeenCalled()
+  })
+
+  it("keeps the follow-up owed when its call fails, and a new boundary on the follow-up tick is one purge that arms the next", async () => {
+    const state: BoundaryRunState = { last: at("2026-11-19T10:01:00Z"), again: true }
+    const failing = deps([], false)
+    expect(await runBoundaryTick(failing.deps, state, at("2026-11-19T10:02:00Z"))).toBe("failed")
+    expect(state.again).toBe(true)
+    expect(state.last).toEqual(at("2026-11-19T10:01:00Z"))
+    const both = deps([sale("2026-11-19T10:02:30Z", null)])
+    expect(await runBoundaryTick(both.deps, state, at("2026-11-19T10:03:00Z"))).toBe("purged")
+    expect(both.send).toHaveBeenCalledTimes(1)
+    expect(state.again).toBe(true)
+  })
+
   it("does not take the first tick as done when its call fails", async () => {
     const state: BoundaryRunState = { last: null }
     expect(await runBoundaryTick(deps([], false).deps, state, at("2026-11-19T10:00:00Z"))).toBe("failed")

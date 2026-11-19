@@ -31,7 +31,8 @@ export const crossedBoundary = (lists: readonly PriceListWindow[], since: Date, 
   )
 }
 
-export type BoundaryRunState = { last: Date | null }
+/** `again`: a boundary purge was made on the previous tick, and the follow-up purge is still owed (see `runBoundaryTick`). */
+export type BoundaryRunState = { last: Date | null; again?: boolean }
 
 export type BoundaryRunDeps = {
   /** the ACTIVE price lists' windows (a draft list is never switched on by the clock) */
@@ -45,23 +46,29 @@ export type BoundaryRunDeps = {
  * is the process's, so a boundary that fell while the worker was down would otherwise be missed for good. A later tick
  * empties it only when a boundary was crossed. A FAILED CALL DOES NOT ADVANCE THE CLOCK: the same boundary is still inside
  * the window next minute, and the call is tried again until it goes through.
+ *
+ * A BOUNDARY PURGE IS FOLLOWED BY ONE MORE ON THE NEXT TICK (barracuda, #810 review). The job reads the Node clock and
+ * Medusa switches by the database's: a few seconds apart, the purge right after the boundary can be refilled by a
+ * request that still gets the old price, and the cache would then keep it until the next boundary. The follow-up a minute
+ * later is the cheap cover; a boundary on that same tick is served by the one purge and arms the next follow-up.
  */
 export const runBoundaryTick = async (
   deps: BoundaryRunDeps,
   state: BoundaryRunState,
   now: Date,
-): Promise<"purged-first" | "purged" | "idle" | "failed"> => {
+): Promise<"purged-first" | "purged" | "purged-again" | "idle" | "failed"> => {
   if (state.last === null) {
     if (!(await deps.send())) return "failed"
     state.last = now
     return "purged-first"
   }
-  const windows = await deps.activeWindows()
-  if (!crossedBoundary(windows, state.last, now)) {
+  const crossing = crossedBoundary(await deps.activeWindows(), state.last, now)
+  if (!crossing && !state.again) {
     state.last = now
     return "idle"
   }
   if (!(await deps.send())) return "failed"
   state.last = now
-  return "purged"
+  state.again = crossing
+  return crossing ? "purged" : "purged-again"
 }
