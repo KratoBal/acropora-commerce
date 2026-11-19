@@ -51,3 +51,20 @@ export const localeOf = (segment: string): Locale =>
 /** The country (region) part of a path segment. */
 export const countryOf = (segment: string): string =>
   parseSegment(segment).country
+
+/**
+ * A COUNTRY'S SEGMENT IN THE LANGUAGE OF THE PAGE THE VISITOR IS ON: `hu` and the page `en-hu` give `en-hu`. The checkout builds its
+ * next address from the COUNTRY of the shipping address (the region can change with it) and used to write only that, so the first
+ * step of an English checkout landed on `/hu/checkout` and the rest of the checkout, and the order confirmation, were Hungarian
+ * (measured on the test shop, 2026-11-19). The language is the page's: a missing or unknown page segment is the default language.
+ */
+export const segmentInLanguageOf = (
+  country: string,
+  pageSegment: unknown,
+): string =>
+  segmentFor(
+    // the country is a form field too (the address's `country_code`): only two letters can be a country, anything else (a path, a host, a
+    // slash) is not put into the redirect's path (barracuda #841); the cart update refuses the same value for the address
+    /^[a-z]{2}$/i.test(country) ? country : "hu",
+    typeof pageSegment === "string" ? localeOf(pageSegment) : DEFAULT_LOCALE,
+  )

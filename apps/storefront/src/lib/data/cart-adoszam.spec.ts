@@ -15,7 +15,8 @@ vi.mock("./cookies", () => ({
 }))
 vi.mock("./regions", () => ({ getRegion: vi.fn() }))
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
+const nav = vi.hoisted(() => ({ redirect: vi.fn() }))
+vi.mock("next/navigation", () => nav)
 
 import { setAddresses } from "./cart"
 import { torzsszamRendben } from "../util/szamlazas"
@@ -129,5 +130,34 @@ describe("setAddresses: a céges vásárlás adószáma", () => {
     )
     expect(uzenet).toMatch(/cég/i)
     expect(sdk.store.cart.update).not.toHaveBeenCalled()
+  })
+})
+
+/*
+  A CIM LEPES A NYELVEN MARAD (a kirakat angol nezete, 2026-11-19): az angol penztar cim-lepese a MAGYAR szallitas lepesre vitt. MI PIROSIT: ha az
+  urlap oldal-szegmense nem jut el az atiranyitasig; ha az ORSZAG a szegmensbol jon (a cim orszaga dont: a regio azt koveti); ha hianyzo vagy
+  furcsa szegmensnel nem a magyar ut marad.
+*/
+describe("setAddresses: a következő lépés ugyanazon a nyelven nyílik", () => {
+  it("az angol oldalról az angol szállítás lépésre visz", async () => {
+    await setAddresses(null, urlap({ page_segment: "en-hu" }))
+    expect(nav.redirect).toHaveBeenCalledWith("/en-hu/checkout?step=delivery")
+  })
+
+  it("a magyar oldalról, vagy szegmens nélkül a magyarra visz", async () => {
+    await setAddresses(null, urlap({ page_segment: "hu" }))
+    expect(nav.redirect).toHaveBeenLastCalledWith("/hu/checkout?step=delivery")
+    await setAddresses(null, urlap({}))
+    expect(nav.redirect).toHaveBeenLastCalledWith("/hu/checkout?step=delivery")
+    await setAddresses(null, urlap({ page_segment: "../x" }))
+    expect(nav.redirect).toHaveBeenLastCalledWith("/hu/checkout?step=delivery")
+  })
+
+  it("az ország a cím országa marad, a nyelv az oldalé", async () => {
+    await setAddresses(
+      null,
+      urlap({ page_segment: "en-hu", "shipping_address.country_code": "de" }),
+    )
+    expect(nav.redirect).toHaveBeenCalledWith("/en-de/checkout?step=delivery")
   })
 })

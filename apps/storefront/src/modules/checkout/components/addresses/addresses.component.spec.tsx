@@ -96,6 +96,23 @@ describe("a cím lépés nyitva", () => {
     ).toEqual(["shipping_address.first_name", "shipping_address.last_name"])
   })
 
+  /*
+    A NYELV AZ URLAPPAL UTAZIK (a kirakat angol nezete, 2026-11-19): a szerver-muvelet innen tudja, melyik nyelvu lepesre visz tovabb.
+    MI PIROSIT: ha az urlap nem viszi az oldal sajat szegmenset; ha az angol oldalon `hu`-t visz (a magyar penztarra ugrana).
+  */
+  it("az űrlap az oldal saját szegmensét viszi a szerver-műveletnek", () => {
+    const mezo = (container: HTMLElement) =>
+      new FormData(container.querySelector("form") as HTMLFormElement).get(
+        "page_segment",
+      )
+    const magyar = render(<Addresses cart={kosar} customer={null} />)
+    expect(mezo(magyar.container)).toBe("hu")
+    cleanup()
+    orszagKod = "en-hu"
+    const angol = render(<Addresses cart={kosar} customer={null} />)
+    expect(mezo(angol.container)).toBe("en-hu")
+  })
+
   it("a számlázási pipa `on` értéket küld, amit a setAddresses vár", () => {
     const { container } = render(<Addresses cart={kosar} customer={null} />)
     const urlap = container.querySelector("form") as HTMLFormElement

@@ -8,7 +8,7 @@ import {
 } from "@lib/util/elkelt-darab"
 import { sdk } from "@lib/config"
 import { translator, type Key } from "@lib/i18n/dictionary"
-import { localeOf, type Locale } from "@lib/i18n/locale"
+import { localeOf, segmentInLanguageOf, type Locale } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
 import {
   hibaAllapota,
@@ -716,8 +716,12 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     return e instanceof Error ? e.message : String(e)
   }
 
+  // THE LANGUAGE STAYS (the form carries the page's own segment: `en-hu` on the English checkout); the country is the address's, as before
   redirect(
-    `/${formData.get("shipping_address.country_code")}/checkout?step=delivery`,
+    `/${segmentInLanguageOf(
+      String(formData.get("shipping_address.country_code")),
+      formData.get("page_segment"),
+    )}/checkout?step=delivery`,
   )
 }
 
@@ -857,7 +861,11 @@ export async function mentsRendelesiNyelvet(
   }
 }
 
-export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
+export async function placeOrder(
+  cartId?: string,
+  // the page's own first path segment (`en-hu` on the English checkout): the language of the pages this redirects to
+  oldalSzegmens?: string,
+): Promise<PenztarEredmeny> {
   const id = cartId || (await getCartId())
 
   if (!id) {
@@ -909,7 +917,7 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
     )
     if (elkeltek)
       redirect(
-        `/${orszag ?? "hu"}/cart?${ELKELT_PARAM}=${encodeURIComponent(elkeltParam(elkeltek))}`,
+        `/${segmentInLanguageOf(orszag ?? "hu", oldalSzegmens)}/cart?${ELKELT_PARAM}=${encodeURIComponent(elkeltParam(elkeltek))}`,
       )
     return {
       ok: false,
@@ -949,7 +957,9 @@ export async function placeOrder(cartId?: string): Promise<PenztarEredmeny> {
     }
 
     removeCartId()
-    redirect(`/${orszag ?? "hu"}/order/${elso.id}/confirmed`)
+    redirect(
+      `/${segmentInLanguageOf(orszag ?? "hu", oldalSzegmens)}/order/${elso.id}/confirmed`,
+    )
   }
 
   /*

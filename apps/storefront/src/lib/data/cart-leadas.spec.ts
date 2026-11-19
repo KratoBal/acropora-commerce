@@ -58,6 +58,34 @@ describe("a rendelés leadása", () => {
     expect(nav.redirect).toHaveBeenCalledWith("/hu/order/order_1/confirmed")
   })
 
+  /*
+    A NYELV MEGMARAD (a kirakat angol nézete, 2026-11-19): az angol pénztár leadása a MAGYAR visszaigazoló lapra vitt. MI PIROSIT: ha az oldal
+    szegmense nem jut el az átirányításig; ha az ország a szegmensből jön (a cím országa dönt); ha hiányzó vagy furcsa szegmensnél nem a
+    magyar út marad.
+  */
+  it("az angol pénztár leadása az angol visszaigazoló lapra visz", async () => {
+    valaszok({
+      orders: [{ id: "order_1", display_id: 12 }],
+      pending_pickup_cart_id: null,
+    })
+    await placeOrder("cart_1", "en-hu")
+    expect(nav.redirect).toHaveBeenCalledWith("/en-hu/order/order_1/confirmed")
+  })
+
+  it("szegmens nélkül vagy furcsa szegmensnél a magyar út marad", async () => {
+    for (const szegmens of [undefined, "", "xx-yy", "../x"]) {
+      nav.redirect.mockClear()
+      valaszok({
+        orders: [{ id: "order_1", display_id: 12 }],
+        pending_pickup_cart_id: null,
+      })
+      await placeOrder("cart_1", szegmens)
+      expect(nav.redirect, String(szegmens)).toHaveBeenCalledWith(
+        "/hu/order/order_1/confirmed",
+      )
+    }
+  })
+
   it("függő bolti rendelésnél is a meglévő rendelésre visz", async () => {
     valaszok({
       orders: [{ id: "order_1", display_id: 12 }],
@@ -83,6 +111,18 @@ describe("a rendelés leadása", () => {
     await placeOrder("cart_1")
     expect(nav.redirect).toHaveBeenCalledWith(
       "/hu/cart?elkelt=wysiwyg-acropora",
+    )
+  })
+
+  it("az angol pénztárról az elkelt darab az angol kosárhoz visz", async () => {
+    valaszok(
+      new Error(
+        'unique_piece_sold:[{"title":"WYSIWYG Acropora","handle":"wysiwyg-acropora"}]',
+      ),
+    )
+    await placeOrder("cart_1", "en-hu")
+    expect(nav.redirect).toHaveBeenCalledWith(
+      "/en-hu/cart?elkelt=wysiwyg-acropora",
     )
   })
 

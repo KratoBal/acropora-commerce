@@ -221,7 +221,7 @@ export const StripeKozosGomb = ({
 
   const lead = async () => {
     try {
-      const eredmeny = await placeOrder()
+      const eredmeny = await placeOrder(undefined, String(countryCode))
       if (!eredmeny.ok) {
         setErrorMessage(hibaSzoveg(t, eredmeny))
         jelez("alap")
@@ -382,7 +382,7 @@ export const StripePaymentButton = ({
   */
   const onPaymentCompleted = async () => {
     try {
-      const eredmeny = await placeOrder()
+      const eredmeny = await placeOrder(undefined, String(countryCode))
 
       if (!eredmeny.ok) {
         setErrorMessage(hibaSzoveg(t, eredmeny))
@@ -500,6 +500,7 @@ export const StripePaymentButton = ({
 
 const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
   const t = useTranslate()
+  const { countryCode } = useParams()
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -515,7 +516,7 @@ const KozvetlenRendelesGomb = ({ notReady }: { notReady: boolean }) => {
   */
   const onPaymentCompleted = async () => {
     try {
-      const eredmeny = await placeOrder()
+      const eredmeny = await placeOrder(undefined, String(countryCode))
 
       if (!eredmeny.ok) {
         setErrorMessage(hibaSzoveg(t, eredmeny))

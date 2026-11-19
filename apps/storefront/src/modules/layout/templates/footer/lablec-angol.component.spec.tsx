@@ -121,6 +121,31 @@ describe("az angol lábléc kirajzolva", () => {
     )
   })
 
+  /*
+    A NYITVATARTAS ANGOLUL IS ANGOL (kirakat angol nezete, 2026-11-19): a lablec az angol oldalon magyar napneveket irt ("Kedd-Péntek 10-18",
+    "Vasárnap-Hétfő Zárva"), a fejlec info-sav angolul. MI PIROSIT: ha az angol nyitvatartas magyar betut vagy magyar napnevet tartalmaz;
+    ha a magyar lablec nyitvatartasa barmiben mas lesz; ha a napok szama vagy a szamok elvesznek a fordításban.
+  */
+  it("a nyitvatartás sorai angolul angol napnevek, magyarul a bolt szavai", () => {
+    const sorok = (nyelv: "hu" | "en") => {
+      cleanup()
+      render(<LablecKeret lablec={lablecAdat(null, nyelv)} locale={nyelv} />)
+      return Array.from(
+        screen.getByTestId("footer-nyitvatartas").querySelectorAll("span"),
+      ).map((e) => e.textContent ?? "")
+    }
+    const en = sorok("en")
+    expect(en).toEqual([
+      "Opening hours: Tue-Fri 10-18",
+      "Sat 10-14",
+      "Sun-Mon Closed",
+    ])
+    expect(en.join(" ")).not.toMatch(MAGYAR_BETU)
+    expect(sorok("hu").join(" ")).toMatch(
+      /Kedd-Péntek 10-18.*Szombat 10-14.*Vasárnap-Hétfő Zárva/,
+    )
+  })
+
   it("a hírlevél-sor angol: a mezők, a gomb, a hozzájárulás linkje", () => {
     render(<LablecKeret lablec={lablecAdat(null, "en")} locale="en" />)
     const sor = screen.getByTestId("lablec-hirlevel")

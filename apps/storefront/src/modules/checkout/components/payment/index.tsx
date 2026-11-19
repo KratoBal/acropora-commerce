@@ -38,6 +38,7 @@ import { Button, clx } from "@modules/common/components/ui"
 import { HttpTypes } from "@medusajs/types"
 import {
   unstable_rethrow,
+  useParams,
   usePathname,
   useRouter,
   useSearchParams,
@@ -84,6 +85,7 @@ const Payment = ({
 }) => {
   const t = useTranslate()
   const locale = useLocale()
+  const { countryCode } = useParams()
   /*
     A FIZETES INDITASA ELOTT KET DOLOG A KOSARRA KERUL: a vevo nyelve (a
     levelek ezen mennek; hiba eseten nem allitja meg a fizetest, a rendeles
@@ -375,7 +377,7 @@ const Payment = ({
       return
     }
     ellenorzesFut.current = true
-    placeOrder()
+    placeOrder(undefined, String(countryCode))
       .then((eredmeny) => {
         if (!eredmeny.ok) {
           setError(hibaSzoveg(t, eredmeny))
