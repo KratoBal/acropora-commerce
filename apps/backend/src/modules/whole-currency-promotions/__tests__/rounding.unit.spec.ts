@@ -40,6 +40,42 @@ describe("roundAdjustmentActions", () => {
       { action: "campaignBudgetExceeded", code: "K" },
     ])
   })
+
+  it("a code's lines add up to its rounded whole: a 1 000 Ft coupon over three lines is 1 000, not 999", () => {
+    const third = 1000 / 3
+    const rounded = roundAdjustmentActions(
+      [
+        { action: "addItemAdjustment", item_id: "i1", amount: third, code: "FIX1000" },
+        { action: "addItemAdjustment", item_id: "i2", amount: third, code: "FIX1000" },
+        { action: "addItemAdjustment", item_id: "i3", amount: third, code: "FIX1000" },
+      ],
+      "huf"
+    )
+    expect(rounded.map((a) => a.amount)).toEqual([334, 333, 333])
+    expect(rounded.reduce((sum, a) => sum + a.amount, 0)).toBe(1000)
+  })
+
+  it("the largest fractions take the units left over, and each code is rounded on its own", () => {
+    const rounded = roundAdjustmentActions(
+      [
+        // 15% of 2 999, 3 333 and 1 001: 449.85 + 499.95 + 150.15 = 1 099.95 -> 1 100
+        { action: "addItemAdjustment", item_id: "i1", amount: 449.85, code: "P15" },
+        { action: "addItemAdjustment", item_id: "i2", amount: 499.95, code: "P15" },
+        { action: "addItemAdjustment", item_id: "i3", amount: 150.15, code: "P15" },
+        // another code on the same lines: its own whole (2 x 0.5 = 1), not mixed with P15
+        { action: "addItemAdjustment", item_id: "i1", amount: 0.5, code: "EGYEDI" },
+        { action: "addItemAdjustment", item_id: "i2", amount: 0.5, code: "EGYEDI" },
+      ],
+      "huf"
+    )
+    expect(rounded.map((a) => [a.code, a.amount])).toEqual([
+      ["P15", 450],
+      ["P15", 500],
+      ["P15", 150],
+      ["EGYEDI", 1],
+      ["EGYEDI", 0],
+    ])
+  })
 })
 
 describe("installWholeCurrencyRounding", () => {
@@ -56,6 +92,23 @@ describe("installWholeCurrencyRounding", () => {
     const result = await new FakePromotionService().computeActions(["K"], { currency_code: "huf", items: [] }, {})
     expect(result).toEqual([{ action: "addItemAdjustment", item_id: "i1", amount: 4499, code: "K" }])
     expect(seen).toEqual([[["K"], { currency_code: "huf", items: [] }, {}]])
+  })
+
+  it("a context without a currency is said, not rounded silently wrong", async () => {
+    class FakePromotionService {
+      async computeActions() {
+        return [{ action: "addItemAdjustment", item_id: "i1", amount: 4498.5, code: "K" }]
+      }
+    }
+    const missing = jest.fn()
+    installWholeCurrencyRounding(FakePromotionService, missing)
+    const service = new FakePromotionService()
+    expect(await service.computeActions(["K"], { items: [] }, {})).toEqual([
+      { action: "addItemAdjustment", item_id: "i1", amount: 4498.5, code: "K" },
+    ])
+    expect(missing).toHaveBeenCalledTimes(1)
+    await service.computeActions(["K"], { currency_code: "huf", items: [] }, {})
+    expect(missing).toHaveBeenCalledTimes(1)
   })
 
   it("the class Medusa loads is found from @medusajs/medusa's place and still has computeActions", () => {

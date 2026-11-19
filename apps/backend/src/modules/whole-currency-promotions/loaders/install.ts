@@ -17,7 +17,14 @@ export function medusaPromotionService() {
 
 export default async ({ logger }: LoaderOptions) => {
   const log = logger ?? console
-  const installed = installWholeCurrencyRounding(medusaPromotionService())
+  let warned = false
+  const installed = installWholeCurrencyRounding(medusaPromotionService(), () => {
+    if (warned) return
+    warned = true
+    log.warn(
+      "[whole-currency-promotions] computeActions was called without a currency_code in its context: the discounts are NOT rounded"
+    )
+  })
   log.info(
     installed
       ? "[whole-currency-promotions] promotion adjustments are rounded to whole currency units"
