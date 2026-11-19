@@ -3,6 +3,7 @@ import { localeOf } from "@lib/i18n/locale"
 import { retrieveCart, retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import { kosarFoglalasai } from "@lib/data/kosar-foglalas"
+import { retrieveFoxpostOption, retrieveGlsModok } from "@lib/data/csomagpont"
 import { listCartShippingOptionsFresh } from "@lib/data/fulfillment"
 import { ELKELT_PARAM, elkeltKezelok } from "@lib/util/elkelt-darab"
 import CartTemplate from "@modules/cart/templates"
@@ -60,9 +61,24 @@ export default async function Cart(props: {
       ? await listCartShippingOptionsFresh(cart.id)
       : null
 
+  /**
+   * A MOD NEVE A SZOTARBOL (a kirakat angol nezete, 2026-11-19): a pénztár a Foxpost és a GLS módokat az opció-azonosítójuk szerint ismeri fel, és a
+   * nevüket a lap nyelvén a szótárból veszi; a kosár doboza ugyanazt az osztályozást kapja. Nincs opció, nincs lekérdezés; a hiba itt sem állítja meg a lapot.
+   */
+  const szallitasiOsztaly = szallitasiOpciok?.length
+    ? await Promise.all([retrieveFoxpostOption(), retrieveGlsModok()])
+        .then(([foxpost, gls]) => ({
+          foxpostOptionId: foxpost?.option_id ?? null,
+          glsPont: gls.pont,
+          glsHaz: gls.haz,
+        }))
+        .catch(() => null)
+    : null
+
   return (
     <CartTemplate
       szallitasiOpciok={szallitasiOpciok}
+      szallitasiOsztaly={szallitasiOsztaly}
       cart={cart}
       customer={customer}
       shippingClass={shippingClass}
