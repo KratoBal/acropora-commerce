@@ -63,10 +63,58 @@ function origin(cim) {
   }
 }
 
+/**
+ * A MEROKODOK HOSZTJAI (dc8cabd2), CSAK ha az azonosito be van allitva: azonosito nelkul a kirakat semmit nem toltene be,
+ * tehat a szabalyban sem all ezekre forras. Ez jelento mod: a lista a Google es a Meta dokumentalt hosztjai, az erveny-
+ * esito CSP elott valodi bongeszon kell mernie.
+ */
+function merokodForrasok(env) {
+  const van = (nev) => (env[nev] ?? "").trim() !== ""
+  const google =
+    van("NEXT_PUBLIC_GA_MEASUREMENT_ID") || van("NEXT_PUBLIC_GOOGLE_ADS_ID")
+  const ads = van("NEXT_PUBLIC_GOOGLE_ADS_ID")
+  const meta = van("NEXT_PUBLIC_META_PIXEL_ID")
+  return {
+    script: [
+      ...(google ? ["https://www.googletagmanager.com"] : []),
+      ...(meta ? ["https://connect.facebook.net"] : []),
+    ],
+    connect: [
+      ...(google
+        ? [
+            "https://*.google-analytics.com",
+            "https://*.analytics.google.com",
+            "https://*.googletagmanager.com",
+          ]
+        : []),
+      ...(ads
+        ? [
+            "https://www.googleadservices.com",
+            "https://googleads.g.doubleclick.net",
+            "https://www.google.com",
+          ]
+        : []),
+      ...(meta
+        ? ["https://www.facebook.com", "https://connect.facebook.net"]
+        : []),
+    ],
+    img: [
+      ...(google
+        ? ["https://*.google-analytics.com", "https://*.googletagmanager.com"]
+        : []),
+      ...(ads
+        ? ["https://googleads.g.doubleclick.net", "https://www.google.com"]
+        : []),
+      ...(meta ? ["https://www.facebook.com"] : []),
+    ],
+  }
+}
+
 /** A teljes szabaly, CSAK jelento modban. */
 function jelentoCsp(env) {
   const hatter = origin(env.NEXT_PUBLIC_MEDUSA_BACKEND_URL)
   const sajat = hatter ? [hatter] : []
+  const mero = merokodForrasok(env)
   const irany = (nev, ...forrasok) => [nev, ...forrasok].join(" ")
   return [
     irany("default-src", "'self'"),
@@ -76,6 +124,7 @@ function jelentoCsp(env) {
       "'unsafe-inline'",
       "https://js.stripe.com",
       "https://admin.fogyasztobarat.hu",
+      ...mero.script,
     ),
     irany(
       "style-src",
@@ -92,6 +141,7 @@ function jelentoCsp(env) {
       ...sajat,
       FOXPOST,
       "https://*.stripe.com",
+      ...mero.img,
     ),
     irany(
       "connect-src",
@@ -99,6 +149,7 @@ function jelentoCsp(env) {
       ...sajat,
       "https://api.stripe.com",
       "https://admin.fogyasztobarat.hu",
+      ...mero.connect,
     ),
     irany(
       "frame-src",

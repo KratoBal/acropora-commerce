@@ -2,8 +2,10 @@ import { getBaseURL } from "@lib/util/env"
 import { szervezetLd, webhelyLd } from "@lib/seo/strukturalt-adat"
 import JsonLd from "@modules/common/components/json-ld"
 import RumJelento from "@modules/common/components/rum-jelento"
+import { merokodAzonositok } from "@lib/util/merokodok"
 import { consentAlapSzkript } from "@lib/util/suti-hozzajarulas"
 import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
+import Merokodok from "@modules/suti/merokodok"
 import SutiAblak from "@modules/suti/suti-ablak"
 import { Metadata } from "next"
 import localFont from "next/font/local"
@@ -154,6 +156,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <RumJelento />
         {/* a suti-hozzajarulas ablaka minden lapon (d5515c7d) */}
         <SutiAblak />
+        {/* a merokodok (GA4, Ads, Meta pixel) CSAK hozzajarulassal es csak beallitott azonositoval (dc8cabd2) */}
+        <Merokodok {...merokodAzonositok(process.env)} />
       </body>
     </html>
   )
