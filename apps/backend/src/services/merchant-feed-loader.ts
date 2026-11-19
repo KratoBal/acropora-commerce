@@ -95,7 +95,7 @@ export class MerchantFeedConfigError extends Error {}
  */
 export async function loadMerchantItems(
   deps: { query: Query; brands: BrandReader; settings: FeedSettingsReader },
-  env: { storefrontUrl?: string; now?: Date }
+  env: { storefrontUrl?: string; now?: Date; keepBackorder?: boolean }
 ): Promise<MerchantItem[]> {
   const storefrontUrl = env.storefrontUrl?.trim().replace(/\/+$/, "") ?? ""
   if (!/^https?:\/\//.test(storefrontUrl))
@@ -171,6 +171,7 @@ export async function loadMerchantItems(
     categories: await categoryTree(query),
     backorderLeadTimeDays: await backorderLeadTimeDays(deps.settings),
     now: env.now ?? new Date(),
+    keepBackorder: env.keepBackorder === true,
   }
   return products.flatMap((product) =>
     (product.variants ?? [])

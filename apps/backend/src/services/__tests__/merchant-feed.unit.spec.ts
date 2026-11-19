@@ -15,6 +15,7 @@ import {
 } from "../merchant-feed-loader"
 import { feedCache } from "../merchant-feed-cache"
 import { escapeXml, merchantFeedXml } from "../merchant-feed-xml"
+import { toMetaCatalogItem } from "../meta-catalog-item"
 
 /*
   THE MERCHANT FEED (SEO P1-13). What turns these red: a feed item claiming
@@ -413,3 +414,47 @@ describe("feedCache", () => {
     expect(await cached(build)).toBe("feed-3")
   })
 })
+
+describe("toMetaCatalogItem", () => {
+  /*
+    THE META CATALOG (card 87f351a3). WHAT TURNS RED: Meta gets Google's underscore values; a backorderable item at
+    zero stock goes to Meta as out of stock (the page sells it, and until the stocktake a zero is not sold out); a
+    Google-only field reaches Meta; the Google feed loses its own rule when the Meta one is added.
+  */
+  const zero = context({ availability: { variant_1: 0 } })
+  const backorderable = variant({ allow_backorder: true })
+
+  it("MF-META-AVAIL: Meta's words, and a backorderable zero is available for order", () => {
+    expect(toMetaCatalogItem(toMerchantItem(product(), variant(), context())!).availability).toBe("in stock")
+    expect(toMetaCatalogItem(toMerchantItem(product(), variant(), zero)!).availability).toBe("out of stock")
+    const kept = toMerchantItem(product(), backorderable, { ...zero, keepBackorder: true })!
+    expect([kept.availability, kept.availability_date]).toEqual(["backorder", undefined])
+    expect(toMetaCatalogItem(kept).availability).toBe("available for order")
+    // the Google feed keeps its rule: without a lead time the same item is out of stock there
+    expect(toMerchantItem(product(), backorderable, zero)!.availability).toBe("out_of_stock")
+  })
+
+  it("MF-META-FIELDS: the page's price, sale price, brand and gtin go; the Google-only fields do not", () => {
+    const item = toMerchantItem(
+      product({ collection: null }),
+      variant({
+        ean: "4011130379627",
+        weight: 250,
+        calculated_price: { calculated_amount: 8600, original_amount: 9990, currency_code: "huf" },
+      }),
+      context({ brands: { prod_1: "Modern Reef" } })
+    )!
+    const meta = toMetaCatalogItem(item)
+    expect([meta.price, meta.sale_price, meta.brand, meta.gtin]).toEqual([
+      "9990.00 HUF",
+      "8600.00 HUF",
+      "Modern Reef",
+      "4011130379627",
+    ])
+    const xml = merchantFeedXml([meta], { title: "t", link: "l", description: "d" })
+    expect(xml).toContain("<g:availability>in stock</g:availability>")
+    for (const google of ["availability_date", "identifier_exists", "unit_pricing_measure", "shipping_weight"])
+      expect(xml).not.toContain(`<g:${google}>`)
+  })
+})
+

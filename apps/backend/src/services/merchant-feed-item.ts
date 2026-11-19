@@ -65,6 +65,11 @@ export type MerchantFeedContext = {
   backorderLeadTimeDays: number | null
   /** When the feed is built: the base of a backorder item's `availability_date`. */
   now: Date
+  /**
+   * Keep a backorderable item at zero stock as `backorder` without a date (the Meta catalog, card 87f351a3): Meta
+   * names it "available for order" and asks for no ship day, so the Google rule above does not apply there.
+   */
+  keepBackorder?: boolean
 }
 
 export type MerchantItem = {
@@ -179,9 +184,10 @@ export function toMerchantItem(
  */
 export function feedAvailability(
   availability: MerchantItem["availability"],
-  context: Pick<MerchantFeedContext, "backorderLeadTimeDays" | "now">
+  context: Pick<MerchantFeedContext, "backorderLeadTimeDays" | "now" | "keepBackorder">
 ): Pick<MerchantItem, "availability" | "availability_date"> {
   if (availability !== "backorder") return { availability }
+  if (context.keepBackorder) return { availability }
   const days = context.backorderLeadTimeDays
   if (!days) return { availability: "out_of_stock" }
   const day = new Date(context.now.getTime() + days * 24 * 60 * 60 * 1000)
