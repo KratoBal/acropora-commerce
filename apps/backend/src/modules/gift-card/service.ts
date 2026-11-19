@@ -30,6 +30,16 @@ export type GiftCardMovement = {
   reference: string
 }
 
+export type GiftCardRefund = GiftCardMovement & {
+  /** The refund event's own key (a return id, a cancellation): the same event repeated refunds once. */
+  key: string
+}
+
+const wholePositive = (amount: number) => {
+  if (!Number.isInteger(amount) || amount < 1)
+    throw new MedusaError(MedusaError.Types.INVALID_DATA, "A gift card movement is a whole number, at least 1.")
+}
+
 type Knex = {
   raw(sql: string, bindings?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>
 }
@@ -38,10 +48,10 @@ type Knex = {
  * GIFT CARDS (card 495c0007): issue, look up by code, redeem at a cart's completion, refund to it, disable.
  *
  * A BALANCE ONLY MOVES IN ONE SQL STATEMENT, with its ledger row, in the caller's transaction:
- * `balance = balance - amount ... where balance >= amount and active and not expired`. Two checkouts spending one
- * card cannot both pass, and no ORM entity holds a stale balance to flush back (#811: the ORM wrote an insert before
- * an update in one transaction). A redeem or refund repeated for the same cart finds its ledger row and does
- * nothing a second time.
+ * `balance = balance - amount ... where balance >= amount and active and not expired`, after the card's row is
+ * locked. Two checkouts spending one card cannot both pass, and no ORM entity holds a stale balance to flush back
+ * (#811: the ORM wrote an insert before an update in one transaction). A redeem repeated for the same cart, or a
+ * refund repeated under the same key, finds its ledger row and does nothing a second time.
  */
 class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransaction }) {
   /** Issues a card; the answer is the ONLY place its full code appears. */
@@ -97,72 +107,156 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
   /** Takes `amount` off the card for the cart being completed; refused when the card cannot pay it. Once per card and cart. */
   @InjectManager()
   async redeemGiftCard(input: GiftCardMovement, @MedusaContext() sharedContext: Context = {}) {
-    return await this.moveBalance_("redeem", input, sharedContext)
+    return await this.redeem_(input, sharedContext)
   }
 
-  /** Puts `amount` back on the card for that cart's order (a return, a cancellation). Once per card and cart. */
+  /**
+   * Puts `amount` back on the card for a cart it paid (a return, a cancellation). Tied to that redemption: refused
+   * without one on the same card and cart, and refused when the refunds together would exceed it, so a refund
+   * cannot make money (barracuda, #813). `key` names the refund event: the same event repeated refunds once, a
+   * second partial return refunds again.
+   */
   @InjectManager()
-  async refundGiftCard(input: GiftCardMovement, @MedusaContext() sharedContext: Context = {}) {
-    return await this.moveBalance_("refund", input, sharedContext)
+  async refundGiftCard(input: GiftCardRefund, @MedusaContext() sharedContext: Context = {}) {
+    return await this.refund_(input, sharedContext)
   }
 
-  @InjectTransactionManager()
-  protected async moveBalance_(
-    kind: "redeem" | "refund",
-    input: GiftCardMovement,
-    @MedusaContext() sharedContext: Context = {}
-  ): Promise<{ balance: number; repeated: boolean }> {
-    if (!Number.isInteger(input.amount) || input.amount < 1)
-      throw new MedusaError(MedusaError.Types.INVALID_DATA, "A gift card movement is a whole number, at least 1.")
+  /** The caller's transaction, with the card's row locked: one balance move per card at a time. */
+  private async lockedCard(id: string, transactionManager: unknown): Promise<Knex> {
     const knex = (
-      sharedContext.transactionManager as { getTransactionContext(): Knex | undefined } | undefined
+      transactionManager as { getTransactionContext(): Knex | undefined } | undefined
     )?.getTransactionContext()
     if (!knex)
       throw new MedusaError(
         MedusaError.Types.UNEXPECTED_STATE,
         "A gift card balance moves only inside a transaction."
       )
+    const card = await knex.raw(
+      `select id from gift_card where id = ? and deleted_at is null for update`,
+      [id]
+    )
+    if (!card.rows.length)
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Nincs ilyen ajándékkártya.")
+    return knex
+  }
+
+  @InjectTransactionManager()
+  protected async redeem_(
+    input: GiftCardMovement,
+    @MedusaContext() sharedContext: Context = {}
+  ): Promise<{ balance: number; repeated: boolean }> {
+    wholePositive(input.amount)
+    const knex = await this.lockedCard(input.gift_card_id, sharedContext.transactionManager)
     const done = await knex.raw(
-      `select balance_after from gift_card_transaction where gift_card_id = ? and kind = ? and reference = ? and deleted_at is null`,
-      [input.gift_card_id, kind, input.reference]
+      `select balance_after from gift_card_transaction
+       where gift_card_id = ? and kind = 'redeem' and reference = ? and deleted_at is null`,
+      [input.gift_card_id, input.reference]
     )
     if (done.rows.length) return { balance: Number(done.rows[0]!.balance_after), repeated: true }
-    const updated =
-      kind === "redeem"
-        ? await knex.raw(
-            `update gift_card set balance = balance - ?, updated_at = now()
-             where id = ? and deleted_at is null and status = 'active' and balance >= ?
-               and (expires_at is null or expires_at > now())
-             returning balance`,
-            [input.amount, input.gift_card_id, input.amount]
-          )
-        : await knex.raw(
-            `update gift_card set balance = balance + ?, updated_at = now()
-             where id = ? and deleted_at is null
-             returning balance`,
-            [input.amount, input.gift_card_id]
-          )
+    const updated = await knex.raw(
+      `update gift_card set balance = balance - ?, updated_at = now()
+       where id = ? and deleted_at is null and status = 'active' and balance >= ?
+         and (expires_at is null or expires_at > now())
+       returning balance`,
+      [input.amount, input.gift_card_id, input.amount]
+    )
     if (!updated.rows.length)
       throw new MedusaError(
         MedusaError.Types.NOT_ALLOWED,
-        kind === "redeem"
-          ? "Az ajándékkártya nem fedezi ezt az összeget, nem aktív, vagy lejárt."
-          : "Nincs ilyen ajándékkártya."
+        "Az ajándékkártya nem fedezi ezt az összeget, nem aktív, vagy lejárt."
       )
     const balance = Number(updated.rows[0]!.balance)
+    await this.ledger(knex, {
+      gift_card_id: input.gift_card_id,
+      kind: "redeem",
+      amount: -input.amount,
+      balance_after: balance,
+      reference: input.reference,
+      idempotency_key: null,
+    })
+    return { balance, repeated: false }
+  }
+
+  @InjectTransactionManager()
+  protected async refund_(
+    input: GiftCardRefund,
+    @MedusaContext() sharedContext: Context = {}
+  ): Promise<{ balance: number; repeated: boolean }> {
+    wholePositive(input.amount)
+    if (!input.key?.trim())
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, "A refund needs its own key.")
+    const knex = await this.lockedCard(input.gift_card_id, sharedContext.transactionManager)
+    const done = await knex.raw(
+      `select gift_card_id, balance_after from gift_card_transaction where idempotency_key = ? and deleted_at is null`,
+      [input.key]
+    )
+    if (done.rows.length) {
+      if (done.rows[0]!.gift_card_id !== input.gift_card_id)
+        throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Ez a visszatérítés-kulcs egy másik kártyához tartozik.")
+      return { balance: Number(done.rows[0]!.balance_after), repeated: true }
+    }
+    const redeemed = await knex.raw(
+      `select -amount as amount from gift_card_transaction
+       where gift_card_id = ? and kind = 'redeem' and reference = ? and deleted_at is null`,
+      [input.gift_card_id, input.reference]
+    )
+    if (!redeemed.rows.length)
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Erről a kártyáról erre a kosárra nem volt beváltás, nincs mit visszatéríteni."
+      )
+    const refunded = await knex.raw(
+      `select coalesce(sum(amount), 0) as amount from gift_card_transaction
+       where gift_card_id = ? and kind = 'refund' and reference = ? and deleted_at is null`,
+      [input.gift_card_id, input.reference]
+    )
+    const left = Number(redeemed.rows[0]!.amount) - Number(refunded.rows[0]!.amount)
+    if (input.amount > left)
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `A visszatérítés több lenne, mint ami a beváltásból még visszajár (${left}).`
+      )
+    const updated = await knex.raw(
+      `update gift_card set balance = balance + ?, updated_at = now() where id = ? returning balance`,
+      [input.amount, input.gift_card_id]
+    )
+    const balance = Number(updated.rows[0]!.balance)
+    await this.ledger(knex, {
+      gift_card_id: input.gift_card_id,
+      kind: "refund",
+      amount: input.amount,
+      balance_after: balance,
+      reference: input.reference,
+      idempotency_key: input.key,
+    })
+    return { balance, repeated: false }
+  }
+
+  private async ledger(
+    knex: Knex,
+    row: {
+      gift_card_id: string
+      kind: "redeem" | "refund"
+      amount: number
+      balance_after: number
+      reference: string
+      idempotency_key: string | null
+    }
+  ) {
     await knex.raw(
-      `insert into gift_card_transaction (id, gift_card_id, kind, amount, balance_after, reference, created_at, updated_at)
-       values (?, ?, ?, ?, ?, ?, now(), now())`,
+      `insert into gift_card_transaction
+         (id, gift_card_id, kind, amount, balance_after, reference, idempotency_key, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, now(), now())`,
       [
         generateEntityId(undefined, "gctx"),
-        input.gift_card_id,
-        kind,
-        kind === "redeem" ? -input.amount : input.amount,
-        balance,
-        input.reference,
+        row.gift_card_id,
+        row.kind,
+        row.amount,
+        row.balance_after,
+        row.reference,
+        row.idempotency_key,
       ]
     )
-    return { balance, repeated: false }
   }
 
   /** A disabled card cannot pay; its balance and ledger stay. */
