@@ -1,4 +1,4 @@
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { GET as storeList } from "../../../store/brands/route"
 import { GET as storeOne } from "../../../store/brands/[handle]/route"
@@ -51,14 +51,23 @@ describe("store brand routes", () => {
   const scope = (data: {
     brands: (ReturnType<typeof record> & { os_brand_id: string })[]
     links: { os_brand_id: string }[]
-    collections?: { handle: string; external_id: string }[]
+    collections?: { handle: string; external_id: string | null }[]
   }) => ({
     resolve: (key: string) =>
-      key === Modules.PRODUCT
+      key === ContainerRegistrationKeys.LOGGER
+        ? { warn: () => undefined }
+        : key === Modules.PRODUCT
         ? {
-            listProductCollections: async (filter: { external_id: string }) =>
-              (data.collections ?? []).filter(
-                (c) => c.external_id === filter.external_id
+            listProductCollections: async (filter: {
+              external_id?: string
+              handle?: string
+            }) =>
+              (data.collections ?? []).filter((c) =>
+                filter.external_id !== undefined
+                  ? c.external_id === filter.external_id
+                  : filter.handle !== undefined
+                    ? c.handle === filter.handle
+                    : true
               ),
           }
         : brandService(data),
@@ -91,6 +100,8 @@ describe("store brand routes", () => {
       { ...record({ handle: "ures", name: "Üres" }), os_brand_id: "os_2" },
     ],
     links: [{ os_brand_id: "os_1" }, { os_brand_id: "os_1" }],
+    // paired by the brand's own handle (the storefront's fallback pairing)
+    collections: [{ handle: "aquaforest", external_id: null }],
   }
 
   it("lists only brands with a product, without the OS id", async () => {
@@ -118,6 +129,9 @@ describe("store brand routes", () => {
       {
         scope: {
           resolve: () => ({
+            warn: () => undefined,
+            listProductCollections: async () =>
+              many.map((b) => ({ handle: b.handle, external_id: null })),
             listProductBrands: async (_: unknown, config: unknown) => {
               configs.push(config)
               return many.map((b) => ({ os_brand_id: b.os_brand_id }))
@@ -196,15 +210,20 @@ describe("store brand routes", () => {
     ).toBe("aquaforest-regi")
   })
 
-  it("says null when no collection carries the OS id", async () => {
-    const res = response()
-    await storeOne(
-      { scope: scope(data), params: { handle: "aquaforest" } } as never,
-      res as never
-    )
-    expect(
-      (res.body as { brand: { collection_handle: string | null } }).brand
-        .collection_handle
-    ).toBeNull()
+  /*
+    2026-11-19 (test shop: 45 of 105 listed brands answered 404 on the page): the
+    page lists from the collection, so a brand with products and no collection
+    is a 404 here, and the list does not offer it (see `store/brands/__tests__`).
+  */
+  it("a brand whose collection is missing is a 404, not a null handle", async () => {
+    await expect(
+      storeOne(
+        {
+          scope: scope({ ...data, collections: [] }),
+          params: { handle: "aquaforest" },
+        } as never,
+        response() as never
+      )
+    ).rejects.toThrow(/has no collection/)
   })
 })
