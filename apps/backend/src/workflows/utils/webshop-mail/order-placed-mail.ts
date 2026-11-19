@@ -1,5 +1,6 @@
 import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
 import type { PaymentRole } from "../payment-eligibility"
+import { type BuyerCompany, buyerCompanySentence } from "./buyer-company"
 import { escapeHtml, forint, htmlDocument, SHOP_NAME } from "./format"
 
 /**
@@ -63,7 +64,7 @@ const paymentSentence = (role: PaymentRole | null): string | null => {
 const orderTitle = (order: MailOrder) =>
   `Rendelés #${order.display_id}${order.pickup ? " (átvétel a boltban)" : ""}`
 
-export const renderOrderPlacedMail = (orders: MailOrder[]): MailContent => {
+export const renderOrderPlacedMail = (orders: MailOrder[], company: BuyerCompany | null = null): MailContent => {
   if (!orders.length) throw new Error("An order confirmation needs at least one order")
 
   const mixed = orders.length > 1
@@ -104,6 +105,9 @@ export const renderOrderPlacedMail = (orders: MailOrder[]): MailContent => {
     outro.push("Az élő állatos rendelést a boltban veszed át.")
   }
 
+  // a company purchase names its company and tax number after the orders (card aba7120c); a private one adds nothing
+  const companyLines = company ? [buyerCompanySentence(company)] : []
+
   const text = [
     intro.join(" "),
     ...sections.map((section) =>
@@ -111,6 +115,7 @@ export const renderOrderPlacedMail = (orders: MailOrder[]): MailContent => {
         "\n"
       )
     ),
+    ...companyLines,
     ...outro,
     SHOP_NAME,
   ].join("\n\n")
@@ -126,6 +131,7 @@ export const renderOrderPlacedMail = (orders: MailOrder[]): MailContent => {
             .join("")}</ul>` +
           (section.sentence ? `<p>${escapeHtml(section.sentence)}</p>` : "")
       ),
+      ...companyLines.map((line) => `<p>${escapeHtml(line)}</p>`),
       ...outro.map((line) => `<p>${escapeHtml(line)}</p>`),
     ].join("\n")
   )
