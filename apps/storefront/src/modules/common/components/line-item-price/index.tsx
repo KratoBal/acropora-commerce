@@ -1,5 +1,6 @@
-import { getPercentageDiff } from "@lib/util/get-percentage-diff"
+import { sorCsokkentes } from "@lib/util/omnibus"
 import { convertToLocale } from "@lib/util/money"
+import { hu } from "@lib/i18n/dictionary/hu"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@modules/common/components/ui"
 
@@ -14,10 +15,10 @@ const LineItemPrice = ({
   style = "default",
   currencyCode,
 }: LineItemPriceProps) => {
-  const { total, original_total } = item
-  const originalPrice = original_total ?? 0
-  const currentPrice = total ?? 0
-  const hasReducedPrice = currentPrice < originalPrice
+  const currentPrice = item.total ?? 0
+  // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz: lasd `sorCsokkentes`
+  const csokkentes = sorCsokkentes(item, currencyCode)
+  const hasReducedPrice = csokkentes !== null
 
   return (
     <div className="flex flex-col gap-x-2 text-ui-fg-subtle items-end">
@@ -26,21 +27,23 @@ const LineItemPrice = ({
           <>
             <p>
               {style === "default" && (
-                <span className="text-ui-fg-subtle">Original: </span>
+                <span className="text-ui-fg-subtle">
+                  {hu.product.originalPrice}{" "}
+                </span>
               )}
               <span
                 className="line-through text-ui-fg-muted"
                 data-testid="product-original-price"
               >
                 {convertToLocale({
-                  amount: originalPrice,
+                  amount: csokkentes.lineReference,
                   currency_code: currencyCode,
                 })}
               </span>
             </p>
             {style === "default" && (
               <span className="text-ui-fg-interactive">
-                -{getPercentageDiff(originalPrice, currentPrice || 0)}%
+                -{csokkentes.percentage}%
               </span>
             )}
           </>

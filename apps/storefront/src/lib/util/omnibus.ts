@@ -19,6 +19,8 @@
  *    that disagrees with its own days is inconsistent: both read as no line. A misleading
  *    reference price is worse than none.
  */
+import { getPercentageDiff } from "./get-percentage-diff"
+
 export const OMNIBUS_METADATA_KEY = "omnibus_lowest_price_30d"
 
 export interface OmnibusReference {
@@ -87,4 +89,57 @@ export function omnibusReferenceOf(
     complete: p.complete,
     historyBegins: p.history_begins,
   }
+}
+
+/**
+ * A VALODI ARCSOKKENTES, EGY HELYEN (Omnibus 2/A., acrobot 2026-11-19: ugyanaz a jogi feltetel a termeklapon, a listakon es a
+ * kosarban, ezert EGY fuggveny dont): a korabbi ar a 30 napos legalacsonyabb ar (`omnibusReferenceOf`), es athuzas meg szazalek
+ * CSAK akkor all, ha az ismert ES nagyobb a fizetendo aranal. A szazalek ahhoz viszonyit. `null`: nincs athuzas, nincs szazalek
+ * (a metaadat hianya is ez: egy arcsokkentest, amit nem tudunk igazolni, nem allitunk).
+ */
+export interface ValodiCsokkentes {
+  /** a 30 napos legalacsonyabb ar, egesz fo egysegben, ahogy a bolt mutatja */
+  referenceAmount: number
+  /** a szazalek a referenciahoz, egesz szamra kerekitve (szovegkent) */
+  percentage: string
+}
+
+export function valodiCsokkentes(
+  metadata: Record<string, unknown> | null | undefined,
+  shown: { amount: number; currencyCode: string } | null,
+): ValodiCsokkentes | null {
+  const referencia = omnibusReferenceOf(metadata, shown)
+  if (!referencia || !shown) return null
+  return {
+    referenceAmount: referencia.amount,
+    percentage: getPercentageDiff(referencia.amount, shown.amount),
+  }
+}
+
+/**
+ * A KOSAR- ES RENDELES-SOR ARCSOKKENTESE: a sor valtozatanak metaadataval (`*items.variant`, a kosar mezoi kozott van), a fizetendo
+ * EGYSEGAR a sor osszege a darabszammal osztva. Ha a sorhoz nincs metaadat (a lekeres nem hozta, a rendeles sora, ami a valtozatot
+ * nem tartalmazza), a sor NEM huz at: csak a fizetendo ar latszik.
+ */
+export function sorCsokkentes(
+  item: {
+    total?: number | null
+    quantity?: number | null
+    variant?: { metadata?: Record<string, unknown> | null } | null
+  },
+  currencyCode: string,
+): { unitReference: number; lineReference: number; percentage: string } | null {
+  const quantity = item.quantity && item.quantity > 0 ? item.quantity : 1
+  const unit = (item.total ?? 0) / quantity
+  const csokkentes = valodiCsokkentes(item.variant?.metadata, {
+    amount: unit,
+    currencyCode,
+  })
+  return csokkentes
+    ? {
+        unitReference: csokkentes.referenceAmount,
+        lineReference: csokkentes.referenceAmount * quantity,
+        percentage: csokkentes.percentage,
+      }
+    : null
 }

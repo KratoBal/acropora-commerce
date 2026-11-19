@@ -1,7 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { getPercentageDiff } from "./get-percentage-diff"
 import { convertToLocale } from "./money"
-import { omnibusReferenceOf } from "./omnibus"
+import { valodiCsokkentes } from "./omnibus"
 
 type VariantWithPrice = HttpTypes.StoreProductVariant & {
   calculated_price?: {
@@ -28,7 +28,7 @@ export const getPricesForVariant = (variant: VariantWithPrice) => {
    */
   const referencia =
     variant.calculated_price.calculated_price.price_list_type === "sale"
-      ? omnibusReferenceOf(
+      ? valodiCsokkentes(
           (variant as { metadata?: Record<string, unknown> | null }).metadata,
           {
             amount: variant.calculated_price.calculated_amount,
@@ -56,15 +56,12 @@ export const getPricesForVariant = (variant: VariantWithPrice) => {
     ),
     reduction: referencia
       ? {
-          reference_price_number: referencia.amount,
+          reference_price_number: referencia.referenceAmount,
           reference_price: convertToLocale({
-            amount: referencia.amount,
+            amount: referencia.referenceAmount,
             currency_code: variant.calculated_price.currency_code,
           }),
-          percentage_diff: getPercentageDiff(
-            referencia.amount,
-            variant.calculated_price.calculated_amount,
-          ),
+          percentage_diff: referencia.percentage,
         }
       : null,
   }
