@@ -17,6 +17,7 @@ import {
   type CreditLineRow,
 } from "../../../../../workflows/utils/gift-card-credit"
 import { resolveCartShippingClass } from "../../../../../workflows/utils/resolve-cart-shipping-class"
+import { voidCartGiftCardRedemptionsWorkflow } from "../../../../../workflows/void-cart-gift-card-redemptions"
 import type { StorePostCartGiftCardType } from "./validators"
 
 type CartRow = {
@@ -127,7 +128,12 @@ export const POST = async (req: MedusaRequest<StorePostCartGiftCardType>, res: M
   res.json(answer((await loadCart(req.scope, cart.id))!))
 }
 
-/** DELETE /store/carts/:id/gift-card: takes the gift card off the cart (nothing was taken from the card yet). */
+/**
+ * DELETE /store/carts/:id/gift-card: takes the gift card off the cart. Normally nothing was taken from the card yet;
+ * but if a completion took its share and died before its compensation, that redemption is given back here
+ * (`voidGiftCardRedemption`, a no-op when there is none), so a customer who then orders without the card does not
+ * lose it (barracuda, #818 v2).
+ */
 export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
   const cart = await loadCart(req.scope, req.params.id)
   if (!cart) {
@@ -138,6 +144,13 @@ export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
     res.status(409).json({ message: "Ebből a kosárból már rendelés lett." })
     return
   }
+  const cardIds = giftCardCredits(cart.credit_lines)
+    .map((line) => line.reference_id)
+    .filter((id): id is string => !!id)
+  if (cardIds.length)
+    await voidCartGiftCardRedemptionsWorkflow(req.scope).run({
+      input: { cart_id: cart.id, gift_card_ids: cardIds },
+    })
   await removeGiftCardCredits(req.scope, cart)
   await refreshPaymentCollectionForCartWorkflow(req.scope).run({ input: { cart_id: cart.id } })
   res.json(answer((await loadCart(req.scope, cart.id))!))

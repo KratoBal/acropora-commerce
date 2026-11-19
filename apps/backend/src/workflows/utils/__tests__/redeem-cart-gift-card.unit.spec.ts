@@ -15,32 +15,43 @@ const credit = (amount: number) => ({
   metadata: { cart_id: "cart_1" },
 })
 
-const container = () => {
+/** The gift card service, and the query that reads the cart's totals now (not the hook's cart). */
+const container = (cartRow: Record<string, unknown> | null) => {
   const redeemGiftCard = jest.fn(async () => ({ balance: 0, repeated: false }))
-  return { redeemGiftCard, container: { resolve: () => ({ redeemGiftCard }) } as never }
+  const graph = jest.fn(async () => ({ data: cartRow ? [cartRow] : [] }))
+  return {
+    redeemGiftCard,
+    container: { resolve: (key: string) => (key === "query" ? { graph } : { redeemGiftCard }) } as never,
+  }
 }
 
 describe("redeemCartGiftCard", () => {
+  it("refuses when the cart's total cannot be read, instead of reading it as 0", async () => {
+    for (const row of [null, { total: null, credit_line_total: 6000 }]) {
+      const { redeemGiftCard, container: c } = container(row)
+      await expect(redeemCartGiftCard({ id: "cart_1", credit_lines: [credit(6000)] }, c)).rejects.toThrow(
+        /could not be read/
+      )
+      expect(redeemGiftCard).not.toHaveBeenCalled()
+    }
+  })
+
   it("refuses a credit larger than the cart pays before credits, before taking anything", async () => {
-    const { redeemGiftCard, container: c } = container()
     // the cart pays 5 000 before credits (total -1 000 with the 6 000 credit): the cap was skipped
-    await expect(
-      redeemCartGiftCard({ id: "cart_1", total: -1000, credit_lines: [credit(6000)] }, c)
-    ).rejects.toThrow(MedusaError)
+    const { redeemGiftCard, container: c } = container({ total: -1000, credit_line_total: 6000 })
+    await expect(redeemCartGiftCard({ id: "cart_1", credit_lines: [credit(6000)] }, c)).rejects.toThrow(MedusaError)
     expect(redeemGiftCard).not.toHaveBeenCalled()
   })
 
   it("takes a credit that fits, keyed by the cart", async () => {
-    const { redeemGiftCard, container: c } = container()
-    await expect(
-      redeemCartGiftCard({ id: "cart_1", total: 700, credit_lines: [credit(6000)] }, c)
-    ).resolves.toEqual({ gift_card_id: "gcard_1", reference: "cart_1", amount: 6000, repeated: false })
+    const { redeemGiftCard, container: c } = container({ total: 700, credit_line_total: 6000 })
+    await expect(redeemCartGiftCard({ id: "cart_1", credit_lines: [credit(6000)] }, c)).resolves.toEqual({ gift_card_id: "gcard_1", reference: "cart_1", amount: 6000, repeated: false })
     expect(redeemGiftCard).toHaveBeenCalledWith({ gift_card_id: "gcard_1", amount: 6000, reference: "cart_1" })
   })
 
   it("does nothing for a cart without a gift card", async () => {
-    const { redeemGiftCard, container: c } = container()
-    expect(await redeemCartGiftCard({ id: "cart_1", total: 5000, credit_lines: [] }, c)).toBeNull()
+    const { redeemGiftCard, container: c } = container({ total: 5000, credit_line_total: 0 })
+    expect(await redeemCartGiftCard({ id: "cart_1", credit_lines: [] }, c)).toBeNull()
     expect(redeemGiftCard).not.toHaveBeenCalled()
   })
 })

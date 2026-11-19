@@ -1,4 +1,4 @@
-import { MedusaError } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 
 import { GIFT_CARD_MODULE } from "../../modules/gift-card"
 import type GiftCardModuleService from "../../modules/gift-card/service"
@@ -22,7 +22,7 @@ export type CartGiftCardRedemption = {
  * Keyed by the cart: a repeated completion takes nothing a second time.
  */
 export async function redeemCartGiftCard(
-  cart: { id: string; total?: unknown; credit_lines?: (CreditLineRow | null)[] | null },
+  cart: { id: string; credit_lines?: (CreditLineRow | null)[] | null },
   container: Container
 ): Promise<CartGiftCardRedemption> {
   const credits = giftCardCredits(cart.credit_lines)
@@ -35,10 +35,10 @@ export async function redeemCartGiftCard(
   const amount = amountOf(line.amount)
   // NEVER MORE THAN THE CART PAYS (barracuda, #818): the store route and the refresh hook cap the credit, but the hook
   // only logs what it cannot repair, and a path that lowers the total without a refresh would skip it. Here the hook
-  // may not change the cart, but it may refuse: the customer applies the card again, and it is capped then.
-  const before =
-    amountOf(cart.total) +
-    (cart.credit_lines ?? []).reduce((sum, credit) => sum + amountOf(credit?.amount), 0)
+  // may not change the cart, but it may refuse: the customer applies the card again, and it is capped then. The total
+  // is READ here (as assertCardShare reads it), not taken from the hook's cart: a missing field there would read 0 and
+  // the guard would never fire (barracuda, #818 v2).
+  const before = await totalBeforeCredits(cart.id, container)
   if (amount > before)
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
@@ -48,6 +48,25 @@ export async function redeemCartGiftCard(
     .resolve<GiftCardModuleService>(GIFT_CARD_MODULE)
     .redeemGiftCard({ gift_card_id: line.reference_id, amount, reference: cart.id })
   return { gift_card_id: line.reference_id, reference: cart.id, amount, repeated: result.repeated }
+}
+
+/** What the cart pays before its credit lines, read now; a cart that cannot be read is refused, not let through. */
+async function totalBeforeCredits(cartId: string, container: Container): Promise<number> {
+  const query = container.resolve<{
+    graph: (input: Record<string, unknown>) => Promise<{ data: Record<string, unknown>[] }>
+  }>(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "cart",
+    fields: ["id", "total", "credit_line_total"],
+    filters: { id: cartId },
+  })
+  const row = data?.[0] as { total?: unknown; credit_line_total?: unknown } | undefined
+  if (!row || row.total === null || row.total === undefined)
+    throw new MedusaError(
+      MedusaError.Types.UNEXPECTED_STATE,
+      `The total of cart ${cartId} could not be read; the gift card is not charged without it.`
+    )
+  return amountOf(row.total) + amountOf(row.credit_line_total)
 }
 
 /** The compensation: a completion rolled back gives the card's share back, so a retry can take it again. */
