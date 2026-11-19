@@ -1,3 +1,4 @@
+import { CEG, CEG_NYITVA } from "@lib/ceg"
 import { knownText, translator, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 
@@ -79,13 +80,13 @@ const FEJLEC: KezdolapSzoveg[] = [
     "Fejléc: info-sáv",
     "fejlec.sav.3",
     "Jobb oldal, első",
-    "Nyitva: Kedd-Péntek 10-18, Szombat 10-14",
+    `Nyitva: ${CEG_NYITVA.join(", ")}`,
   ),
   sor(
     "Fejléc: info-sáv",
     "fejlec.sav.4",
     "Jobb oldal, második",
-    "Tanácsadás: +36-20/267-6801",
+    `Tanácsadás: ${CEG.telefon}`,
   ),
   sor(
     "Fejléc",

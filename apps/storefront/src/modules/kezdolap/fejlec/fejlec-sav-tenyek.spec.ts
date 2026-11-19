@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
-import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
+import { CEG } from "@lib/ceg"
 import { KEZDOLAP_SZOVEGEK, maradtMinta } from "../szovegek"
 
 /**
@@ -47,5 +47,40 @@ describe("a fejléc info-sávja a lábléc adata", () => {
     expect(sav(2).alap).toMatch(/Foxpost/)
     expect(sav(2).alap).toMatch(/GLS/)
     expect(sav(2).alap).not.toMatch(/\d\s*[–-]\s*\d\s*munkanap/)
+  })
+
+  /*
+    A SAV A LABLEC ADATABOL SZARMAZIK, NEM EGY MASOLATBOL. A fenti allitasok egy beegetett masolatra is
+    zoldek volnak (ma ugyanazt a szamot irja mindketto), ezert itt a `CEG` MAS ERTEKEKKEL jon vissza, es a
+    sav szoveget ugyanazokkal a kulcsokkal kell megkapni: egy masolat a REGI szamot mutatna.
+  */
+  it("a CEG adatainak megvaltozasa a savba is atmegy (a magyar es az angol szotar, a katalogus)", async () => {
+    vi.resetModules()
+    vi.doMock("@lib/ceg", () => ({
+      CEG: {
+        nev: "Teszt Kft.",
+        cim: "1111 Teszt",
+        telefon: "+36-1/000-0000",
+        email: "teszt@example.test",
+        nyitvatartas: ["Hétfő 8-9", "Vasárnap Zárva"],
+      },
+      CEG_NYITVA: ["Hétfő 8-9"],
+    }))
+    try {
+      const { KEZDOLAP_SZOVEGEK: katalogus } = await import("../szovegek")
+      const { hu } = await import("@lib/i18n/dictionary/hu")
+      const { en } = await import("@lib/i18n/dictionary/en")
+      const alap = (n: number) =>
+        katalogus.find((s) => s.kulcs === `fejlec.sav.${n}`)!.alap
+      expect(alap(4)).toContain("+36-1/000-0000")
+      expect(alap(3)).toContain("Hétfő 8-9")
+      expect(alap(3)).not.toContain("Kedd")
+      expect(hu.headerText.bar4).toContain("+36-1/000-0000")
+      expect(hu.headerText.bar3).toContain("Hétfő 8-9")
+      expect(en.headerText.bar4).toContain("+36-1/000-0000")
+    } finally {
+      vi.doUnmock("@lib/ceg")
+      vi.resetModules()
+    }
   })
 })

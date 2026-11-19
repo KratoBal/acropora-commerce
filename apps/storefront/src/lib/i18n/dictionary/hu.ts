@@ -1,4 +1,4 @@
-import { CEG } from "@lib/ceg"
+import { CEG, CEG_NYITVA } from "@lib/ceg"
 import { STORE_DESCRIPTION } from "@lib/store"
 
 /**
@@ -421,8 +421,8 @@ export const hu = {
   headerText: {
     bar1: "Élőállat kizárólag személyes átvétellel, a budapesti boltban",
     bar2: "Technika és vegyszer: Foxpost csomagpont és GLS házhozszállítás",
-    bar3: "Nyitva: Kedd-Péntek 10-18, Szombat 10-14",
-    bar4: "Tanácsadás: +36-20/267-6801",
+    bar3: `Nyitva: ${CEG_NYITVA.join(", ")}`,
+    bar4: `Tanácsadás: ${CEG.telefon}`,
     search: "Keresés: korall, tengeri só, LED-lámpa…",
     menuLive: "Élőállat",
     menuTech: "Technika",

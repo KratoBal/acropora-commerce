@@ -416,7 +416,7 @@ export const en: Dictionary = {
     bar1: "Livestock for in-store pickup only, at our Budapest shop",
     bar2: "Equipment and chemicals: Foxpost parcel points and GLS home delivery",
     bar3: "Open: Tue–Fri 10:00–18:00, Sat 10:00–14:00",
-    bar4: "Advice: +36-20/267-6801",
+    bar4: `Advice: ${CEG.telefon}`,
     search: "Search: coral, sea salt, LED light…",
     menuLive: "Livestock",
     menuTech: "Equipment",
