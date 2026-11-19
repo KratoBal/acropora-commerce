@@ -2,6 +2,7 @@ import type { ICartModuleService, Logger } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { refreshCartItemsWorkflow } from "@medusajs/medusa/core-flows"
 
+import { capGiftCardCredit } from "../utils/cap-gift-card-credit"
 import { loadCartCashOnDeliveryFeeState } from "../utils/load-cart-cod-fee-state"
 
 /**
@@ -40,68 +41,74 @@ refreshCartItemsWorkflow.hooks.beforeRefreshingPaymentCollection(
       return
     }
 
-    try {
-      const state = await loadCartCashOnDeliveryFeeState(cartId, container)
+    // the cash-on-delivery fee first: its early returns end only this block, not the gift card's below
+    await (async () => {
+      try {
+        const state = await loadCartCashOnDeliveryFeeState(cartId, container)
 
-      if (!state) {
-        return
-      }
+        if (!state) {
+          return
+        }
 
-      const { plan } = state
+        const { plan } = state
 
-      if (plan.action === "remove") {
-        /*
-          A TIPUS ITT ALL, ES NEM A KIKOVETKEZTETESRE BIZZUK.
+        if (plan.action === "remove") {
+          /*
+            A TIPUS ITT ALL, ES NEM A KIKOVETKEZTETESRE BIZZUK.
 
-          A `MedusaContainer` ket tulterhelest ad: az elso a `Cradle`
-          kulcsaira szol, a masodik egy sima sztring-kulcsra. A `Cradle`
-          alapertelmezese a `ModuleImplementations`, ami a `@medusajs/types`-ban
-          URES interfesz -- a sajat kommentje szerint "acts as a bucket that
-          other modules can fill using declaration merging". A feltoltest a
-          GENERALT `.medusa/types/augmentation-refs.d.ts` vegzi
-          (`/// <reference types="@medusajs/medusa/cart" />` es tarsai).
+            A `MedusaContainer` ket tulterhelest ad: az elso a `Cradle`
+            kulcsaira szol, a masodik egy sima sztring-kulcsra. A `Cradle`
+            alapertelmezese a `ModuleImplementations`, ami a `@medusajs/types`-ban
+            URES interfesz -- a sajat kommentje szerint "acts as a bucket that
+            other modules can fill using declaration merging". A feltoltest a
+            GENERALT `.medusa/types/augmentation-refs.d.ts` vegzi
+            (`/// <reference types="@medusajs/medusa/cart" />` es tarsai).
 
-          Az a fajl a CI-ben NINCS -- ezt a `verify` sajat mereseszkoze irja ki
-          minden futason. Ha az augmentacio nincs a programban, a kulcs nem
-          `keyof Cradle`, a masodik tulterheles all be, es a tipus `unknown`
-          lesz. Pontosan ezt a hibat adta a CI ezen a soron: TS2571,
-          2026-09-10 06:14.
+            Az a fajl a CI-ben NINCS -- ezt a `verify` sajat mereseszkoze irja ki
+            minden futason. Ha az augmentacio nincs a programban, a kulcs nem
+            `keyof Cradle`, a masodik tulterheles all be, es a tipus `unknown`
+            lesz. Pontosan ezt a hibat adta a CI ezen a soron: TS2571,
+            2026-09-10 06:14.
 
-          A TIPUS FORRASA, hogy ne talalgatas legyen: a `@medusajs/types`
-          `dist/cart/service.d.ts`-ben all az `ICartModuleService`, es rajta
-          `deleteLineItems(ids: string[], sharedContext?: Context)` -- pont az
-          a hivas, amit itt teszunk.
-        */
-        await container
-          .resolve<ICartModuleService>(Modules.CART)
-          .deleteLineItems(plan.removeIds)
+            A TIPUS FORRASA, hogy ne talalgatas legyen: a `@medusajs/types`
+            `dist/cart/service.d.ts`-ben all az `ICartModuleService`, es rajta
+            `deleteLineItems(ids: string[], sharedContext?: Context)` -- pont az
+            a hivas, amit itt teszunk.
+          */
+          await container
+            .resolve<ICartModuleService>(Modules.CART)
+            .deleteLineItems(plan.removeIds)
 
-        logger.info(
-          `Cart ${cartId}: removed ${plan.removeIds.length} cash-on-delivery fee line(s). ${plan.reason}`
+          logger.info(
+            `Cart ${cartId}: removed ${plan.removeIds.length} cash-on-delivery fee line(s). ${plan.reason}`
+          )
+
+          return
+        }
+
+        if (plan.action === "add") {
+          logger.warn(
+            `Cart ${cartId}: pays cash on delivery but carries no handling fee. ${plan.reason} The fee is added when the payment options are refreshed for the cart.`
+          )
+
+          return
+        }
+
+        if (plan.staleAmount) {
+          logger.warn(
+            `Cart ${cartId}: carries a cash-on-delivery fee of ${plan.staleAmount.current} while ${plan.staleAmount.configured} is configured. The charged amount is kept.`
+          )
+        }
+      } catch (error) {
+        logger.error(
+          `Cart ${cartId}: could not reconcile the cash-on-delivery fee. ${
+            error instanceof Error ? error.message : String(error)
+          }`
         )
-
-        return
       }
+    })()
 
-      if (plan.action === "add") {
-        logger.warn(
-          `Cart ${cartId}: pays cash on delivery but carries no handling fee. ${plan.reason} The fee is added when the payment options are refreshed for the cart.`
-        )
-
-        return
-      }
-
-      if (plan.staleAmount) {
-        logger.warn(
-          `Cart ${cartId}: carries a cash-on-delivery fee of ${plan.staleAmount.current} while ${plan.staleAmount.configured} is configured. The charged amount is kept.`
-        )
-      }
-    } catch (error) {
-      logger.error(
-        `Cart ${cartId}: could not reconcile the cash-on-delivery fee. ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      )
-    }
+    // then the gift card credit (card 495c0007): never more than what is left to pay, never throwing
+    await capGiftCardCredit(cartId, container, logger)
   }
 )

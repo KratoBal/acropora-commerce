@@ -90,6 +90,7 @@ import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/valida
 import { StorePostCustomerWithdrawal } from "./store/customers/me/orders/[order_id]/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
+import { StorePostCartGiftCard } from "./store/carts/[id]/gift-card/validators";
 import { StorePostSutiHozzajarulas } from "./store/customers/me/suti-hozzajarulas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
@@ -218,6 +219,12 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/aszf-elfogadas",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    {
+      // a gift card on the cart (card 495c0007): the code is the only input
+      matcher: "/store/carts/:id/gift-card",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostCartGiftCard)],
     },
     {
       // The registration's ÁSZF record is the server's (customer-aszf-record.ts; audit A4, customer twin).

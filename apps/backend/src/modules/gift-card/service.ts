@@ -121,6 +121,61 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
     return await this.refund_(input, sharedContext)
   }
 
+  /**
+   * UNDOES A REDEMPTION whose cart completion was rolled back (the complete-cart hook's compensation): the amount goes
+   * back and the redeem row is soft-deleted, so a retry of the same cart can redeem again; a `void` ledger row keeps
+   * the history. A refund would not do here: it leaves the redeem row, and the retry would find it, take nothing, and
+   * let the cart's credit line pay with money the card no longer gave. Nothing to undo is a no-op; a redemption with
+   * refunds against it is not voided (that order exists).
+   */
+  @InjectManager()
+  async voidGiftCardRedemption(
+    input: { gift_card_id: string; reference: string },
+    @MedusaContext() sharedContext: Context = {}
+  ) {
+    return await this.void_(input, sharedContext)
+  }
+
+  @InjectTransactionManager()
+  protected async void_(
+    input: { gift_card_id: string; reference: string },
+    @MedusaContext() sharedContext: Context = {}
+  ): Promise<{ balance: number | null; voided: boolean }> {
+    const knex = await this.lockedCard(input.gift_card_id, sharedContext.transactionManager)
+    const redeemed = await knex.raw(
+      `select id, -amount as amount from gift_card_transaction
+       where gift_card_id = ? and kind = 'redeem' and reference = ? and deleted_at is null`,
+      [input.gift_card_id, input.reference]
+    )
+    if (!redeemed.rows.length) return { balance: null, voided: false }
+    const refunded = await knex.raw(
+      `select count(*) as n from gift_card_transaction
+       where gift_card_id = ? and kind = 'refund' and reference = ? and deleted_at is null`,
+      [input.gift_card_id, input.reference]
+    )
+    if (Number(refunded.rows[0]!.n) > 0)
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Ez a beváltás már részben visszatérült, nem vonható vissza."
+      )
+    const amount = Number(redeemed.rows[0]!.amount)
+    const updated = await knex.raw(
+      `update gift_card set balance = balance + ?, updated_at = now() where id = ? returning balance`,
+      [amount, input.gift_card_id]
+    )
+    await knex.raw(`update gift_card_transaction set deleted_at = now() where id = ?`, [redeemed.rows[0]!.id])
+    const balance = Number(updated.rows[0]!.balance)
+    await this.ledger(knex, {
+      gift_card_id: input.gift_card_id,
+      kind: "void",
+      amount,
+      balance_after: balance,
+      reference: input.reference,
+      idempotency_key: null,
+    })
+    return { balance, voided: true }
+  }
+
   /** The caller's transaction, with the card's row locked: one balance move per card at a time. */
   private async lockedCard(id: string, transactionManager: unknown): Promise<Knex> {
     const knex = (
@@ -236,7 +291,7 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
     knex: Knex,
     row: {
       gift_card_id: string
-      kind: "redeem" | "refund"
+      kind: "redeem" | "refund" | "void"
       amount: number
       balance_after: number
       reference: string
