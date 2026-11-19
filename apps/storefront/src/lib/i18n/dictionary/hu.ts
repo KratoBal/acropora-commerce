@@ -1236,6 +1236,8 @@ export const hu = {
       "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
     nextStepGls:
       "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
+    nextStepTransfer:
+      "A díjbekérőt e-mailben küldjük, 8 napos fizetési határidővel. A csomagot a befizetés beérkezése után állítjuk össze; a követési szám akkor jelenik meg, amikor feladtuk.",
     pickupWhere: "Az átvétel helye: {name}, {address}.",
     pickupPayAtStore: "Az üzletben átvehető. Fizetés átvételkor.",
     summary: "Rendelés összesítő",
@@ -1243,6 +1245,8 @@ export const hu = {
     payment: "Fizetés",
     total: "Végösszeg",
     orders: "Rendelések",
+    company: "Cég",
+    taxId: "Adószám",
     ordersCount: "{count} db",
     shippingFee: "Szállítás: {amount}",
     codFee: "Utánvét kezelési díj: {amount}",

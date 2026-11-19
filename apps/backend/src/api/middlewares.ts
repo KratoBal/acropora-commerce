@@ -16,6 +16,7 @@ import {
   AdminUpsertCommerceSetting,
 } from "./admin/commerce-settings/validators";
 import { AdminPutShippingPaymentRules } from "./admin/shipping-payment-rules/validators";
+import { AdminStorefrontRevalidate } from "./admin/storefront-revalidate/validators";
 import { AdminIssueGiftCard } from "./admin/gift-cards/validators";
 import {
   AdminGetShippingAttributesParams,
@@ -176,6 +177,12 @@ export default defineMiddlewares({
       matcher: "/admin/shipping-payment-rules",
       method: "PUT",
       middlewares: [validateAndTransformBody(AdminPutShippingPaymentRules)],
+    },
+    {
+      // one storefront revalidation by hand (card 54bb3779)
+      matcher: "/admin/storefront-revalidate",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminStorefrontRevalidate)],
     },
     {
       // issuing a gift card (card 495c0007)
