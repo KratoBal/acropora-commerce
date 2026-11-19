@@ -43,6 +43,9 @@ describe("a szállítási csoport címkéje", () => {
     )
     expect(csoport().textContent).toContain("1. Átvétel")
     expect(csoport().textContent).not.toContain("Kiszállítás")
+    // a bolt neve áll, nem a Medusa opció neve (acrobot 56833)
+    expect(csoport().textContent).toContain("Acropora üzlet")
+    expect(csoport().textContent).not.toContain("Átvétel a boltban")
     expect(csoport().textContent).toContain("Pesti Gábor utca 35")
     expect(csoport().textContent).not.toContain("Minta utca")
   })
@@ -65,5 +68,6 @@ describe("a szállítási csoport címkéje", () => {
       />,
     )
     expect(csoport().textContent).toContain("1. Pickup")
+    expect(csoport().textContent).toContain("Acropora store")
   })
 })

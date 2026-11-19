@@ -2,7 +2,8 @@ import { model } from "@medusajs/framework/utils"
 
 /**
  * A GIFT CARD'S LEDGER (card 495c0007): every change of a balance, signed, with what it left. `issue` and `refund`
- * add, `redeem` takes away, `adjust` is a hand correction either way.
+ * add, `redeem` takes away, `void` gives back a redemption whose cart completion was rolled back (its redeem row is
+ * then soft-deleted, so the cart can redeem again), `adjust` is a hand correction either way.
  *
  * `reference` is the CART a redemption completed (the amount comes off before the order exists, so the cart is the
  * key that is there both times), and a refund names the same cart. One `redeem` per card and cart: a repeated cart
@@ -15,7 +16,7 @@ export const GiftCardTransaction = model
   .define("gift_card_transaction", {
     id: model.id({ prefix: "gctx" }).primaryKey(),
     gift_card_id: model.text(),
-    /** `issue`, `redeem`, `refund` or `adjust` (`GIFT_CARD_TRANSACTION_KINDS`). */
+    /** `issue`, `redeem`, `refund`, `void` or `adjust`. */
     kind: model.text(),
     /** Signed, whole units: + for issue and refund, - for redeem. */
     amount: model.number(),

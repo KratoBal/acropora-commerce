@@ -152,14 +152,16 @@ describe("a szállítási csoportok", () => {
     const [atvetel] = szallitasiCsoportok(kosar, new Set(), undefined, true)
     expect(atvetel).toEqual({
       cimke: "1. Átvétel",
-      mod: "Átvétel a boltban",
+      // a bolt neve, nem a Medusa opció neve (acrobot 56833)
+      mod: "Acropora üzlet",
       osszeg: 0,
       tetelek: ["Reef LED 160 Pro", "Aquaforest Reef Salt × 2"],
       hova: "1106 Budapest, Pesti Gábor utca 35",
     })
-    // az alapértelmezés (nem átvétel) a kiszállítás, a vevő címével
+    // az alapértelmezés (nem átvétel) a kiszállítás, a vevő címével, és ott a mód neve marad
     const [kiszallitas] = szallitasiCsoportok(kosar, new Set())
     expect(kiszallitas?.cimke).toBe("1. Kiszállítás")
+    expect(kiszallitas?.mod).toBe("Átvétel a boltban")
     expect(kiszallitas?.hova).toBe("1111 Budapest, Minta utca 12.")
   })
 

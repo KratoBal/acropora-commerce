@@ -10,7 +10,12 @@ import { sdk } from "@lib/config"
 import { translator, type Key } from "@lib/i18n/dictionary"
 import { localeOf, type Locale } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
-import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
+import {
+  hibaAllapota,
+  kedvezmenyHibaUzenet,
+  kedvezmenyUzenet,
+} from "@lib/util/kedvezmeny-uzenet"
+import { ajandekkartyaUzenet } from "@lib/util/ajandekkartya"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
   kosarbaElutasitasMondat,
@@ -65,7 +70,7 @@ export async function retrieveCart(cartId?: string, fields?: string) {
   // penztar ezert nem tudta kiirni a kivalasztott pontot). +*_address.metadata:
   // a ceges vasarlas adoszama a cim metadata.tax_id kulcsan all (c977aed2).
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +shipping_methods.data, +shipping_address.metadata, +billing_address.metadata"
+    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +shipping_methods.data, +shipping_address.metadata, +billing_address.metadata, *credit_lines, +credit_line_total"
 
   if (!id) {
     return null
@@ -539,7 +544,7 @@ export async function applyPromotions(
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: kedvezmenyUzenet(allapot) }
+    return { ok: false, uzenet: kedvezmenyHibaUzenet(hiba) }
   }
 
   const cartCacheTag = await getCacheTag("carts")
@@ -552,20 +557,51 @@ export async function applyPromotions(
 }
 
 /*
- * ITT HAROM FUGGVENY ALLT -- applyGiftCard, removeDiscount, removeGiftCard --,
- * es MIND A HAROM TORZSE teljes egeszeben ki volt kommentelve a starterben.
- * Ures fuggvenyek voltak: meghivva sem csinaltak semmit.
- *
- * A cart.ts-en KIVUL egyetlen fajl sem hivta oket (merve 2026-09-07: nulla
- * talalat a forrasban), tehat a torlesuk nem valtoztat viselkedest.
- *
- * ES AMIERT NEM ELEG ANNYI, HOGY "halott kod": a hasznalatlan parametereik
- * miatt a `next lint` OT HIBAT adott rajuk, es a CI a gyokerbol futtatja a
- * lintet. Vagyis ez a harom ures fuggveny egymaga pirosra vitte volna a kaput.
- *
- * Ha az utalvany-kezeles egyszer kell, uj kodkent kerul ide, nem egy
- * kikommentelt torzs felelesztesevel.
+ * AZ AJANDEKKARTYA (kartya 495c0007), UJ KODKENT, ahogy az itt allt jegyzet kerte: a starter harom ures, kikommentelt
+ * fuggvenye (applyGiftCard, removeDiscount, removeGiftCard) 2026-09-07-en torlodott, mert a parametereik miatt a lint
+ * pirosra vitte volna a kaput. Ezek a webshop sajat vegpontjat hivjak (/store/carts/:id/gift-card): a kod
+ * kosar-joviras lesz, a kartyarol a webshop csak a rendeles leadasakor von le. Nem dobnak, mint az applyPromotions:
+ * eredmenyt adnak vissza, a vevonek szant mondattal (`ajandekkartyaUzenet`).
  */
+export async function applyGiftCard(code: string): Promise<KedvezmenyEredmeny> {
+  return giftCardRequest("POST", { code })
+}
+
+export async function removeGiftCard(): Promise<KedvezmenyEredmeny> {
+  return giftCardRequest("DELETE")
+}
+
+async function giftCardRequest(
+  method: "POST" | "DELETE",
+  body?: { code: string },
+): Promise<KedvezmenyEredmeny> {
+  const cartId = await getCartId()
+  if (!cartId) return { ok: false, uzenet: ajandekkartyaUzenet(undefined) }
+  const headers = { ...(await getAuthHeaders()) }
+  try {
+    await sdk.client.fetch(`/store/carts/${cartId}/gift-card`, {
+      method,
+      headers,
+      ...(body ? { body } : {}),
+    })
+  } catch (hiba) {
+    const allapot = hibaAllapota(hiba)
+    console.error(
+      "Az ajándékkártya kezelése nem sikerült:",
+      allapot ?? "(nincs állapotkód)",
+      hiba instanceof Error ? hiba.message : String(hiba),
+    )
+    return {
+      ok: false,
+      uzenet: ajandekkartyaUzenet(
+        allapot,
+        hiba instanceof Error ? hiba.message : undefined,
+      ),
+    }
+  }
+  revalidateTag(await getCacheTag("carts"))
+  return { ok: true }
+}
 
 /**
  * A `useActionState` alaku burkolat a kedvezmenykod urlapjahoz.

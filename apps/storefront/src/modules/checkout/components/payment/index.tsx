@@ -1,6 +1,7 @@
 "use client"
 import { RadioGroup } from "@headlessui/react"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
+import { ajandekkartyavalFizetve } from "@lib/util/ajandekkartya"
 import {
   type EngedelyezettFizetesiMod,
   engedelyezettFizetesiModok,
@@ -269,12 +270,8 @@ const Payment = ({
     ),
   }
 
-  const paidByGiftcard = !!(
-    (cart as unknown as Record<string, unknown>)?.gift_cards &&
-    ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
-      ?.length > 0 &&
-    cart?.total === 0
-  )
+  // a kártya mindent fizet: nincs fizetési lépés (495c0007; a starter `gift_cards` mezője a Medusa 2-ben nincs)
+  const paidByGiftcard = ajandekkartyavalFizetve(cart)
 
   const paymentReady =
     (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||

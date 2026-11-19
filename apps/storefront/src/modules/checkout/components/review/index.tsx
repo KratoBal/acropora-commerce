@@ -1,6 +1,7 @@
 "use client"
 
 import { useTranslate } from "@lib/i18n/use-translate"
+import { ajandekkartyavalFizetve } from "@lib/util/ajandekkartya"
 import { clx } from "@modules/common/components/ui"
 
 import PaymentButton from "../payment-button"
@@ -27,12 +28,8 @@ const Review = ({
 
   const isOpen = searchParams.get("step") === "review"
 
-  const paidByGiftcard = !!(
-    (cart as unknown as Record<string, unknown>)?.gift_cards &&
-    ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
-      ?.length > 0 &&
-    cart?.total === 0
-  )
+  // a kártya mindent fizet: nincs fizetési lépés (495c0007; a starter `gift_cards` mezője a Medusa 2-ben nincs)
+  const paidByGiftcard = ajandekkartyavalFizetve(cart)
 
   const previousStepsCompleted =
     cart.shipping_address &&

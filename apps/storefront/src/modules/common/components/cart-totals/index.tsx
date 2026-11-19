@@ -58,6 +58,14 @@ const CartTotals: React.FC<CartTotalsProps> = ({ totals }) => {
             </span>
           </div>
         )}
+        {!!o.giftCard && (
+          <div className="flex items-center justify-between">
+            <span>{t("cartPage.giftCard")}</span>
+            <span data-testid="cart-gift-card" data-value={o.giftCard}>
+              - {penz(o.giftCard)}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <span>{t("cartPage.vat")}</span>
           <span data-testid="cart-taxes" data-value={o.tax}>

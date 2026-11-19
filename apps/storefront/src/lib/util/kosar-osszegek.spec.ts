@@ -47,8 +47,21 @@ describe("a kosár összegei", () => {
       itemGross: 0,
       shippingGross: 0,
       discount: 0,
+      giftCard: 0,
       tax: 0,
       total: 0,
     })
+  })
+
+  it("az ajándékkártya külön sor, és a fizetendő a total marad (495c0007)", () => {
+    // 12 700 a termékek, 6 000 az ajándékkártya: a Medusa total-ja már nélküle áll
+    const o = kosarOsszegek({
+      currency_code: "huf",
+      item_subtotal: 10000,
+      item_tax_total: 2700,
+      credit_line_total: 6000,
+      total: 6700,
+    })
+    expect([o.itemGross, o.giftCard, o.total]).toEqual([12700, 6000, 6700])
   })
 })
