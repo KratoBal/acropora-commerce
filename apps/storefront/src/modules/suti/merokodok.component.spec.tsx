@@ -72,8 +72,15 @@ beforeEach(() => {
     return elem
   }) as never)
 })
+const referrerBe = (ertek: string) =>
+  Object.defineProperty(document, "referrer", {
+    value: ertek,
+    configurable: true,
+  })
 afterEach(() => {
   cleanup()
+  referrerBe("")
+  window.history.pushState({}, "", "/")
   scriptSpy.mockRestore()
   torolMindent()
   delete (window as { fbq?: unknown }).fbq
@@ -306,5 +313,131 @@ describe("az oldalmegtekintes", () => {
     expect(esemeny.page_path).toBe("/hu/store")
     expect(esemeny.page_location).toBe(`${window.location.origin}/hu/store`)
     window.history.pushState({}, "", "/")
+  })
+})
+
+describe("amit a merofelek maguk olvasnak: a valodi cim es a referrer", () => {
+  const pixelNezetek = () =>
+    fbq.mock.calls.filter((h) => h[0] === "track" && h[1] === "PageView")
+
+  it("a Meta pixel nem kap esemenyt tokenes lekerdezesu lapon, a GA4 viszont igen (utvonal-alapon)", () => {
+    window.history.pushState({}, "", "/hu/jelszo-visszaallitas?token=titok-77")
+    ;(window as { fbq?: unknown }).fbq = fbq
+    dontes(true, true)
+    utvonal = "/hu/jelszo-visszaallitas"
+    render(<Merokodok {...JO} />)
+    expect(pixelNezetek()).toHaveLength(0)
+    expect(esemenyek("event").length).toBeGreaterThan(0)
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("titok-77")
+  })
+
+  it("kampany-parameterrel a pixel megkapja (a hirdetes-hozzarendeleshez kell), keveredve masikkal nem", () => {
+    ;(window as { fbq?: unknown }).fbq = fbq
+    dontes(true, true)
+    window.history.pushState({}, "", "/hu/store?utm_source=fb&fbclid=abc")
+    utvonal = "/hu/store"
+    render(<Merokodok {...JO} />)
+    expect(pixelNezetek()).toHaveLength(1)
+    cleanup()
+    fbq.mockReset()
+    window.history.pushState({}, "", "/hu/store?utm_source=fb&token=titok-77")
+    render(<Merokodok {...JO} />)
+    expect(pixelNezetek()).toHaveLength(0)
+  })
+
+  it("kivonatos cimen a pixel nem kap esemenyt", () => {
+    ;(window as { fbq?: unknown }).fbq = fbq
+    dontes(true, true)
+    window.history.pushState({}, "", "/hu/store#access_token=titok-77")
+    utvonal = "/hu/store"
+    render(<Merokodok {...JO} />)
+    expect(pixelNezetek()).toHaveLength(0)
+  })
+
+  it("sajat tokenes lapbol erkezo referrerrel a pixel nem kap esemenyt, idegen referrerrel igen", () => {
+    ;(window as { fbq?: unknown }).fbq = fbq
+    dontes(true, true)
+    utvonal = "/hu/store"
+    referrerBe(
+      `${window.location.origin}/hu/rendeles-fizetese/titkos-token-123`,
+    )
+    render(<Merokodok {...JO} />)
+    expect(pixelNezetek()).toHaveLength(0)
+    cleanup()
+    fbq.mockReset()
+    referrerBe("https://www.google.com/search?q=korall")
+    render(<Merokodok {...JO} />)
+    expect(pixelNezetek()).toHaveLength(1)
+  })
+
+  it("a GA4 page_referrer az elso lapon a megtisztitott referrer: a tokenes sajat cim altalanos, idegen hoszt csak origin", () => {
+    dontes(true, false)
+    utvonal = "/hu/store"
+    referrerBe(
+      `${window.location.origin}/hu/rendeles-fizetese/titkos-token-123`,
+    )
+    render(<Merokodok {...JO} />)
+    expect(esemenyek("event")[0]![2].page_referrer).toBe(
+      `${window.location.origin}/hu/rendeles`,
+    )
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("titkos-token-123")
+    cleanup()
+    gtag.mockReset()
+    referrerBe("https://www.google.com/search?q=titok-kereses")
+    render(<Merokodok {...JO} />)
+    expect(esemenyek("event")[0]![2].page_referrer).toBe(
+      "https://www.google.com",
+    )
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("titok-kereses")
+  })
+
+  it("ures referrernel nincs page_referrer (a mero script a sajat ures ertekebol dolgozik)", () => {
+    dontes(true, false)
+    utvonal = "/hu/store"
+    render(<Merokodok {...JO} />)
+    expect("page_referrer" in esemenyek("event")[0]![2]).toBe(false)
+  })
+
+  it("lapvaltasnal a page_referrer az elozo lap LATSZO cime: a tokenes rendeles-lapot nem tudja", () => {
+    dontes(true, false)
+    utvonal = "/hu/rendeles-fizetese/titkos-token-123"
+    const { rerender } = render(<Merokodok {...JO} />)
+    expect(esemenyek("event")).toEqual([])
+    utvonal = "/hu/store"
+    rerender(<Merokodok {...JO} />)
+    expect(esemenyek("event")[0]![2].page_referrer).toBe(
+      `${window.location.origin}/hu/rendeles`,
+    )
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("titkos-token-123")
+    // a mero script automatikus esemenyei is a latszo elozo lapot kapjak (a `set` hordozza)
+    expect(esemenyek("set").at(-1)![1].page_referrer).toBe(
+      `${window.location.origin}/hu/rendeles`,
+    )
+    utvonal = "/hu/termek/valami"
+    rerender(<Merokodok {...JO} />)
+    expect(esemenyek("event")[1]![2].page_referrer).toBe(
+      `${window.location.origin}/hu/store`,
+    )
+  })
+
+  it("a page_location megtartja a kampany-parametereket, a tobbit nem", () => {
+    window.history.pushState(
+      {},
+      "",
+      "/hu/store?utm_source=fb&gclid=abc&token=titok-77&q=kereses",
+    )
+    dontes(true, false)
+    utvonal = "/hu/store"
+    render(<Merokodok {...JO} />)
+    const esemeny = esemenyek("event")[0]![2] as {
+      page_location: string
+      page_path: string
+    }
+    expect(esemeny.page_location).toBe(
+      `${window.location.origin}/hu/store?utm_source=fb&gclid=abc`,
+    )
+    expect(esemeny.page_path).toBe("/hu/store")
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("titok-77")
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("kereses")
   })
 })

@@ -5,9 +5,12 @@ import { useEffect, useRef, useState } from "react"
 
 import {
   gtagScriptCim,
+  kampanyLekerdezes,
   lathatoUtvonal,
+  latszoReferrer,
   merheto,
   META_SCRIPT_CIM,
+  metaMerheto,
   mitToltsunk,
   sutiDomainek,
   torlendoSutik,
@@ -99,6 +102,8 @@ export default function Merokodok(props: {
     // az utolso lap, amelyiknek az oldalmegtekintese az adott eszkoznek mar kiment (eszkozonkent: egy ujonnan megadott
     // kategoria a mar latott lapot is megkapja, a mar kapott eszkoz nem kap duplat)
     utolso: { ga4: "", ads: "", meta: "" },
+    // a latszo elozo lap (`page_referrer`): az elso lapon a megtisztitott `document.referrer`, utana az elozo lap LATSZO cime
+    lapok: { jelenlegi: "", elozo: null as string | null },
   })
 
   useEffect(() => {
@@ -178,14 +183,31 @@ export default function Merokodok(props: {
       a.meta = true
     }
 
+    // --- a latszo elozo lap: lapvaltasonkent egyszer, a merokod betoltesetol fuggetlenul (a hozzajarulas kesobb is johet)
+    const sajatOrigin = window.location.origin
+    if (a.lapok.jelenlegi !== pathname) {
+      a.lapok.elozo = a.lapok.jelenlegi
+        ? sajatOrigin + lathatoUtvonal(a.lapok.jelenlegi)
+        : latszoReferrer(document.referrer, sajatOrigin)
+      a.lapok.jelenlegi = pathname
+    }
+
     // --- oldalmegtekintes (egyszer lapvaltasonkent), csak ahol van mit mondani
     if (a.ga4 || a.ads || a.meta) {
       const latszo = lathatoUtvonal(pathname)
+      // a latszo cim: az utvonal, es a lekerdezesbol CSAK a kampany-parameterek (a hirdetes-hozzarendelesnek kellenek);
+      // az altalanos (rendeles, fiok) utvonalnak nincs lekerdezese
+      const latszoCim =
+        sajatOrigin +
+        latszo +
+        (merheto(pathname) ? kampanyLekerdezes(window.location.search) : "")
+      const elozo = a.lapok.elozo ? { page_referrer: a.lapok.elozo } : {}
       if (ablak.gtag && (a.ga4 || a.ads)) {
         // a mero script automatikus esemenyei is ezt az utat latjak, nem az igazi cimet
         ablak.gtag("set", {
-          page_location: window.location.origin + latszo,
+          page_location: latszoCim,
           page_path: latszo,
+          ...elozo,
         })
       }
       if (merheto(pathname)) {
@@ -201,13 +223,24 @@ export default function Merokodok(props: {
         if (cel.length && ablak.gtag)
           ablak.gtag("event", "page_view", {
             send_to: cel,
-            page_location: window.location.origin + latszo,
+            page_location: latszoCim,
             page_path: latszo,
             page_title: document.title,
+            ...elozo,
           })
         if (a.meta && a.utolso.meta !== pathname) {
           a.utolso.meta = pathname
-          ablak.fbq?.("track", "PageView")
+          // a pixel a valodi cimet es a valodi referrert olvassa (nem irhato felul): csak tiszta cimen es tiszta referrerrel megy
+          if (
+            metaMerheto(
+              pathname,
+              window.location.search,
+              window.location.hash,
+              document.referrer,
+              sajatOrigin,
+            )
+          )
+            ablak.fbq?.("track", "PageView")
         }
       }
     }

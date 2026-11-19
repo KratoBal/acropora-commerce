@@ -118,6 +118,81 @@ export function lathatoUtvonal(utvonal: string): string {
 }
 
 /**
+ * A KAMPANY-PARAMETEREK, AMIKET A MEROFEL LATHAT (a hirdetes-hozzarendeleshez kellenek: a GA4 a forrast az `utm_*`-bol, a Google Ads a
+ * `gclid`-bol, a Meta az `fbclid`-bol veszi). MINDEN MAS lekerdezes-kulcs (token, e-mail, kereso-szoveg, szuro) tilos: a Meta pixel a
+ * `document.location`-t a lekerdezessel egyutt kuldi, es a GA4 is abbol dolgozik, tehat ami nincs a listan, az nem mehet ki.
+ */
+const KAMPANY_PARAMETER =
+  /^(utm_(source|medium|campaign|term|content|id)|fbclid|gclid|gbraid|wbraid|msclkid)$/i
+
+/** A lekerdezesbol CSAK a kampany-parameterek (`?utm_source=x`), vagy ures szoveg. */
+export function kampanyLekerdezes(lekerdezes: string): string {
+  const resz = new URLSearchParams(lekerdezes)
+  const tiszta = new URLSearchParams()
+  resz.forEach((ertek, kulcs) => {
+    if (KAMPANY_PARAMETER.test(kulcs)) tiszta.append(kulcs, ertek)
+  })
+  const szoveg = tiszta.toString()
+  return szoveg ? `?${szoveg}` : ""
+}
+
+/** Tiszta-e a cim a Meta pixel szamara: a lekerdezesben csak kampany-parameter van, es nincs kivonat (`#...`). */
+export function tisztaCim(lekerdezes: string, kivonat: string): boolean {
+  if (kivonat && kivonat !== "#") return false
+  let tiszta = true
+  new URLSearchParams(lekerdezes).forEach((_ertek, kulcs) => {
+    if (!KAMPANY_PARAMETER.test(kulcs)) tiszta = false
+  })
+  return tiszta
+}
+
+/**
+ * A `page_referrer` ERTEKE. A GA4 az elozo lapot a `document.referrer`-bol veszi, az pedig egy sajat lapon a TELJES cimet hordozza
+ * (a fizetesi token is benne lehet). A sajat host: a latszo utvonal (a rendeles es a fiok altalanos utvonalra cserelve, lekerdezes
+ * nelkul); idegen host: csak az origin; ures vagy ertelmezhetetlen: `null` (ilyenkor nincs mit kuldeni).
+ */
+export function latszoReferrer(
+  referrer: string,
+  sajatOrigin: string,
+): string | null {
+  if (!referrer) return null
+  let cim: URL
+  try {
+    cim = new URL(referrer)
+  } catch {
+    return null
+  }
+  if (cim.protocol !== "http:" && cim.protocol !== "https:") return null
+  if (cim.origin !== sajatOrigin) return cim.origin
+  return sajatOrigin + lathatoUtvonal(cim.pathname)
+}
+
+/**
+ * MEHET-E A META PAGEVIEW. A pixel a `document.location`-t (lekerdezessel) es a `document.referrer`-t magatol olvassa, es a
+ * `fbq` ezt nem teszi felulirhatova: ezert a pixel csak akkor kap esemenyt, ha MAGA A CIM tiszta (merheto laptipus, csak
+ * kampany-parameter, nincs kivonat), ES a sajat hostrol erkezo referrer is az. Idegen referrer nem akadaly (azt a bongeszo
+ * mar az origin-re vagja, es nem a mi tokenunk).
+ */
+export function metaMerheto(
+  utvonal: string,
+  lekerdezes: string,
+  kivonat: string,
+  referrer: string,
+  sajatOrigin: string,
+): boolean {
+  if (merheto(utvonal) === null || !tisztaCim(lekerdezes, kivonat)) return false
+  if (!referrer) return true
+  let cim: URL
+  try {
+    cim = new URL(referrer)
+  } catch {
+    return false
+  }
+  if (cim.origin !== sajatOrigin) return true
+  return merheto(cim.pathname) !== null && tisztaCim(cim.search, cim.hash)
+}
+
+/**
  * A SUTIK TORLESENEK DOMAINJEI. A merokodok a suti-domain tobb alakjat is hasznalhatjak (`shop.acropora.hu`, `.acropora.hu`), a
  * torles csak az egyezo domainre hat: a lista a hosztot es minden szulo-domainjet (legalabb ket cimke) adja, a domain nelkuli
  * alakkal egyutt (`undefined`).

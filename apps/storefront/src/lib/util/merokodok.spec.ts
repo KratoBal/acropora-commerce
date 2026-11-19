@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest"
 
 import {
   gtagScriptCim,
+  kampanyLekerdezes,
   lathatoUtvonal,
+  latszoReferrer,
   merheto,
+  metaMerheto,
   merokodAzonositok,
   mitToltsunk,
   sutiDomainek,
+  tisztaCim,
   torlendoSutik,
   vanMerokod,
 } from "./merokodok"
@@ -187,5 +191,71 @@ describe("sutiDomainek", () => {
       ".acropora.hu",
     ])
     expect(sutiDomainek("localhost")).toEqual([undefined, "localhost"])
+  })
+})
+
+const ORIGIN = "https://shop.acropora.hu"
+
+describe("a cim, amit a merofelek maguk olvasnak", () => {
+  it("a kampany-lekerdezes csak a hirdetes-hozzarendelesi kulcsokat tartja meg", () => {
+    expect(kampanyLekerdezes("")).toBe("")
+    expect(kampanyLekerdezes("?utm_source=fb&utm_campaign=tel")).toBe(
+      "?utm_source=fb&utm_campaign=tel",
+    )
+    expect(kampanyLekerdezes("?fbclid=abc&gclid=def")).toBe(
+      "?fbclid=abc&gclid=def",
+    )
+    expect(kampanyLekerdezes("?token=titok&q=kereses")).toBe("")
+    expect(kampanyLekerdezes("?utm_source=fb&token=titok&email=a%40b.hu")).toBe(
+      "?utm_source=fb",
+    )
+    // egy kampany-szeru nev, ami nem a listan van, nem megy ki
+    expect(kampanyLekerdezes("?utm_token=titok&utmsource=x")).toBe("")
+  })
+
+  it("tiszta cim: csak kampany-parameter, kivonat nelkul", () => {
+    expect(tisztaCim("", "")).toBe(true)
+    expect(tisztaCim("?utm_source=fb&fbclid=x", "")).toBe(true)
+    expect(tisztaCim("?token=titok", "")).toBe(false)
+    expect(tisztaCim("?utm_source=fb&token=titok", "")).toBe(false)
+    expect(tisztaCim("", "#access_token=titok")).toBe(false)
+  })
+
+  it("a latszo referrer: sajat hoszton altalanos utvonal, idegenen az origin, ureset nem kuldunk", () => {
+    expect(latszoReferrer("", ORIGIN)).toBeNull()
+    expect(latszoReferrer("nem url", ORIGIN)).toBeNull()
+    expect(latszoReferrer("javascript:alert(1)", ORIGIN)).toBeNull()
+    expect(
+      latszoReferrer(`${ORIGIN}/hu/rendeles-fizetese/titkos-token?x=1`, ORIGIN),
+    ).toBe(`${ORIGIN}/hu/rendeles`)
+    expect(latszoReferrer(`${ORIGIN}/hu/store?q=titok#r`, ORIGIN)).toBe(
+      `${ORIGIN}/hu/store`,
+    )
+    expect(
+      latszoReferrer("https://www.google.com/search?q=titok", ORIGIN),
+    ).toBe("https://www.google.com")
+  })
+
+  it("a Meta pixel csak tiszta cimmel es tiszta referrerrel kap esemenyt", () => {
+    const mehet = (u: string, q = "", h = "", r = "") =>
+      metaMerheto(u, q, h, r, ORIGIN)
+    expect(mehet("/hu/store")).toBe(true)
+    expect(mehet("/hu/store", "?utm_source=fb&fbclid=x")).toBe(true)
+    expect(mehet("/hu/store", "?token=titok")).toBe(false)
+    expect(mehet("/hu/store", "?utm_source=fb&token=titok")).toBe(false)
+    expect(mehet("/hu/store", "", "#access_token=t")).toBe(false)
+    expect(mehet("/hu/rendeles-fizetese/titkos-token")).toBe(false)
+    // referrer: idegen host nem akadaly; sajat hoszton a tokenes lap vagy a lekerdezes igen
+    expect(mehet("/hu/store", "", "", "https://www.google.com/x?q=a")).toBe(
+      true,
+    )
+    expect(mehet("/hu/store", "", "", `${ORIGIN}/hu/termek/a`)).toBe(true)
+    expect(
+      mehet("/hu/store", "", "", `${ORIGIN}/hu/rendeles-fizetese/titkos-token`),
+    ).toBe(false)
+    expect(mehet("/hu/store", "", "", `${ORIGIN}/hu/store?token=titok`)).toBe(
+      false,
+    )
+    expect(mehet("/hu/store", "", "", "nem url")).toBe(false)
   })
 })
