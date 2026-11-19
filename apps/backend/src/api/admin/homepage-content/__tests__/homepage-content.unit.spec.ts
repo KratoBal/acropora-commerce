@@ -1,5 +1,7 @@
 import { PUT as adminPut } from "../route"
-import HomepageContentModuleService from "../../../../modules/homepage-content/service"
+import HomepageContentModuleService, {
+  removedTextKeys,
+} from "../../../../modules/homepage-content/service"
 import { GET as storeGet } from "../../../store/homepage-content/route"
 import { AdminPutHomepageContent } from "../validators"
 
@@ -407,15 +409,50 @@ describe("admin homepage content PUT route", () => {
 describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
   const fake = () => {
     let row: Record<string, unknown> | null = null
+    let created = 0
+    const calls: string[] = []
     const methods = {
+      // the decorators' manager source: the real one hands out a transaction manager, a fake one only has to exist
+      baseRepository_: {
+        getFreshManager: () => ({}),
+        transaction: async (work: (manager: unknown) => unknown) => work({}),
+      },
+      // the transactional half of the upsert, called by the public method on `this`
+      upsertMainHomepageContent_: (
+        HomepageContentModuleService.prototype as unknown as Record<
+          string,
+          unknown
+        >
+      ).upsertMainHomepageContent_,
       listHomepageContents: async () => (row ? [row] : []),
       createHomepageContents: async ([data]: Record<string, unknown>[]) => {
-        row = { id: "hpc_1", ...data }
+        calls.push("create")
+        created += 1
+        row = { id: `hpc_${created}`, ...data }
         return [row]
       },
       updateHomepageContents: async ([data]: Record<string, unknown>[]) => {
-        row = { ...row, ...data }
+        calls.push("update")
+        // THE REAL UPDATE MERGES AN OBJECT FIELD (the ORM's `mergeObjectProperties: true`, @medusajs/utils dal/mikro-orm): a key not in
+        // the data stays. A fake that replaced `texts` hid the removed-key defect (card 2ef36b38) from every test.
+        row = {
+          ...row,
+          ...data,
+          ...(data.texts
+            ? {
+                texts: {
+                  ...((row?.texts as object | undefined) ?? {}),
+                  ...(data.texts as object),
+                },
+              }
+            : {}),
+        }
         return [row]
+      },
+      softDeleteHomepageContents: async () => {
+        calls.push("softDelete")
+        row = null
+        return {}
       },
     }
     const save = (input: Record<string, unknown>) =>
@@ -423,7 +460,7 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
         methods as never,
         input as never
       )
-    return { save, stored: () => row }
+    return { save, stored: () => row, calls }
   }
   const base = { texts: {}, slides: null }
 
@@ -510,5 +547,71 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     const { save, stored } = fake()
     await save(base)
     expect(stored()?.featured_handles).toBeUndefined()
+  })
+
+  /*
+    A TEXT KEY LEFT OUT OF THE SAVE LEAVES THE RECORD (card 2ef36b38). MI PIROSÍT: ha egy elhagyott kulcs a tárolt rekordban marad (az
+    OS "Alapérték" visszaállítása nem érné el a boltot); ha a csere elveszi a nem küldött listákat, blokkokat, láblécet; ha a sima mentés
+    (nincs elhagyott kulcs) is törlést és újraírást csinál; ha a csere nem egy lépésben (törlés + létrehozás) megy.
+  */
+  it("HPC-SVC-REMOVED-KEY: a text key the save no longer carries is gone from the stored record, and the lists, blocks and footer the save did not send stay", async () => {
+    const { save, stored, calls } = fake()
+    const list = BLOCK_KEYS.map((key) => ({ key, visible: true }))
+    await save({
+      ...base,
+      texts: { "fejlec.sav.1": "Régi", "mit.cim": "Cím" },
+      featured_handles: ["k-1"],
+      featured_brand_handles: ["triton"],
+      blocks: list,
+      footer: footer(),
+    })
+    calls.length = 0
+    await save({ ...base, texts: { "mit.cim": "Cím" } })
+    expect(stored()?.texts).toEqual({ "mit.cim": "Cím" })
+    expect(stored()?.featured_handles).toEqual(["k-1"])
+    expect(stored()?.featured_brand_handles).toEqual(["triton"])
+    expect(stored()?.blocks).toEqual(list)
+    expect(stored()?.footer).toEqual(footer())
+    expect(calls).toEqual(["softDelete", "create"])
+  })
+
+  it("HPC-SVC-REMOVED-KEY-EXPLICIT: what the save sends wins over what the old row held, even when a key was removed in the same save", async () => {
+    const { save, stored } = fake()
+    await save({
+      ...base,
+      texts: { a: "1", b: "2" },
+      featured_handles: ["k-1"],
+      blocks: BLOCK_KEYS.map((key) => ({ key, visible: true })),
+    })
+    await save({
+      ...base,
+      texts: { b: "3" },
+      featured_handles: null,
+      blocks: BLOCK_KEYS.map((key) => ({ key, visible: false })),
+    })
+    expect(stored()?.texts).toEqual({ b: "3" })
+    expect(stored()?.featured_handles).toBeNull()
+    expect(
+      (stored()?.blocks as Array<{ visible: boolean }>).every((b) => !b.visible)
+    ).toBe(true)
+  })
+
+  it("HPC-SVC-NO-REMOVED-KEY: a save that only adds or changes keys stays one plain update, no delete and no new row", async () => {
+    const { save, stored, calls } = fake()
+    await save({ ...base, texts: { a: "1" } })
+    calls.length = 0
+    await save({ ...base, texts: { a: "2", b: "3" } })
+    expect(calls).toEqual(["update"])
+    expect(stored()?.texts).toEqual({ a: "2", b: "3" })
+  })
+
+  it("HPC-SVC-REMOVED-KEY-PURE: removedTextKeys names exactly the stored keys the save left out", () => {
+    expect(removedTextKeys({ a: "1", b: "2" }, { a: "x" })).toEqual(["b"])
+    expect(removedTextKeys({ a: "1" }, { a: "x", c: "y" })).toEqual([])
+    expect(removedTextKeys({ a: "1" }, {})).toEqual(["a"])
+    expect(removedTextKeys(null, { a: "1" })).toEqual([])
+    expect(removedTextKeys(undefined, {})).toEqual([])
+    // an empty-string value is still a sent key: an editor's deliberate empty text is not a removal
+    expect(removedTextKeys({ a: "1" }, { a: "" })).toEqual([])
   })
 })

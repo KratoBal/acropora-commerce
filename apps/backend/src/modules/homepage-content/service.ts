@@ -1,4 +1,10 @@
-import { MedusaService } from "@medusajs/framework/utils"
+import { Context } from "@medusajs/framework/types"
+import {
+  InjectManager,
+  InjectTransactionManager,
+  MedusaContext,
+  MedusaService,
+} from "@medusajs/framework/utils"
 
 import HomepageContent from "./models/homepage-content"
 
@@ -57,12 +63,41 @@ export type HomepageContentInput = {
   newsletter?: HomepageNewsletter | null
 }
 
+/**
+ * THE TEXT KEYS A SAVE NO LONGER CARRIES (card 2ef36b38). The ORM merges an object field on update (`mergeObjectProperties: true`,
+ * @medusajs/utils dal/mikro-orm), so a key the OS left out of `texts` (its "Alapérték" reset drops the override) would stay in the
+ * stored record with its last value and the storefront would keep showing it. A non-empty answer means the record has to be
+ * REPLACED, not updated.
+ */
+export function removedTextKeys(
+  stored: unknown,
+  sent: Record<string, string>
+): string[] {
+  if (!stored || typeof stored !== "object" || Array.isArray(stored)) return []
+  return Object.keys(stored as Record<string, unknown>).filter(
+    (key) => !Object.prototype.hasOwnProperty.call(sent, key)
+  )
+}
+
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
   /** The whole record, written by the OS. The unique index on `key` is the real guard. */
-  async upsertMainHomepageContent(input: HomepageContentInput) {
+  @InjectManager()
+  async upsertMainHomepageContent(
+    input: HomepageContentInput,
+    @MedusaContext() sharedContext: Context = {}
+  ) {
+    return await this.upsertMainHomepageContent_(input, sharedContext)
+  }
+
+  @InjectTransactionManager()
+  protected async upsertMainHomepageContent_(
+    input: HomepageContentInput,
+    @MedusaContext() sharedContext: Context = {}
+  ) {
     const [existing] = await this.listHomepageContents(
       { key: MAIN_HOMEPAGE_KEY },
-      { take: 1 }
+      { take: 1 },
+      sharedContext
     )
     // `model.json()` is typed as an object, and `slides` is an array. The
     // column is jsonb and stores an array as is; the validator guarantees the
@@ -118,14 +153,41 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
           }),
     }
     if (!existing) {
-      const [created] = await this.createHomepageContents([
-        { key: MAIN_HOMEPAGE_KEY, ...body },
-      ])
+      const [created] = await this.createHomepageContents(
+        [{ key: MAIN_HOMEPAGE_KEY, ...body }],
+        sharedContext
+      )
       return created
     }
-    const [updated] = await this.updateHomepageContents([
-      { id: existing.id, ...body },
-    ])
+    /*
+      A TEXT KEY LEFT OUT OF THE SAVE HAS TO LEAVE THE RECORD (card 2ef36b38). An update merges `texts`, so the record is replaced
+      instead: the old row is soft-deleted and a new one created in the same transaction (the unique index is partial, `deleted_at IS
+      NULL`, as the payment matrix's replace does). What an absent field means, "keeps the stored value", is carried over from the old row
+      into the new one; `slides` and `texts` are always sent.
+    */
+    if (removedTextKeys(existing.texts, input.texts).length) {
+      const kept = Object.fromEntries(
+        (
+          [
+            "featured_handles",
+            "featured_brand_handles",
+            "blocks",
+            "footer",
+            "newsletter",
+          ] as const
+        ).map((field) => [field, existing[field] ?? null])
+      )
+      await this.softDeleteHomepageContents([existing.id], {}, sharedContext)
+      const [replaced] = await this.createHomepageContents(
+        [{ key: MAIN_HOMEPAGE_KEY, ...kept, ...body }],
+        sharedContext
+      )
+      return replaced
+    }
+    const [updated] = await this.updateHomepageContents(
+      [{ id: existing.id, ...body }],
+      sharedContext
+    )
     return updated
   }
 
