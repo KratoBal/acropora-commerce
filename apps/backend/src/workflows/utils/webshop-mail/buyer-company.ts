@@ -12,13 +12,20 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
  */
 export type BuyerCompany = { name: string; tax_number: string | null }
 
+/** The OS's limits (`safeBuyerCompany` in `webshop-mail.ts` there): beyond them it sends no sentence, so neither does the shop's own text. */
+const MAX_NAME = 200
+const MAX_TAX_NUMBER = 40
+
 export const buyerCompanyOf = (
   address: { company?: string | null; metadata?: Record<string, unknown> | null } | null | undefined
 ): BuyerCompany | null => {
   const name = (address?.company ?? "").trim()
-  if (!name) return null
+  // the same limits as the OS's reading (`safeBuyerCompany`), so the two renderers fall silent at the same place: a name over
+  // 200 characters is no company, a tax number over 40 is dropped and the name stays
+  if (!name || name.length > MAX_NAME) return null
   const tax = address?.metadata?.tax_id
-  return { name, tax_number: typeof tax === "string" && tax.trim() ? tax.trim() : null }
+  const taxNumber = typeof tax === "string" ? tax.trim() : ""
+  return { name, tax_number: taxNumber && taxNumber.length <= MAX_TAX_NUMBER ? taxNumber : null }
 }
 
 export const buyerCompanyOfOrder = async (container: MedusaContainer, orderId: string): Promise<BuyerCompany | null> => {

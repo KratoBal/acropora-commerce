@@ -24,6 +24,17 @@ describe("buyerCompanyOf", () => {
   })
 })
 
+describe("the OS's limits (barracuda #821)", () => {
+  it("a name over 200 characters is no company; 200 passes", () => {
+    expect(buyerCompanyOf({ company: "x".repeat(201), metadata: { tax_id: "12345676-2-13" } })).toBeNull()
+    expect(buyerCompanyOf({ company: "x".repeat(200), metadata: null })).toEqual({ name: "x".repeat(200), tax_number: null })
+  })
+  it("a tax number over 40 characters is dropped and the name stays; 40 passes", () => {
+    expect(buyerCompanyOf({ company: "Teszt Kft.", metadata: { tax_id: "1".repeat(41) } })).toEqual({ name: "Teszt Kft.", tax_number: null })
+    expect(buyerCompanyOf({ company: "Teszt Kft.", metadata: { tax_id: "1".repeat(40) } })).toEqual({ name: "Teszt Kft.", tax_number: "1".repeat(40) })
+  })
+})
+
 describe("buyerCompanySentence", () => {
   it("names the company and the tax number, or the company alone", () => {
     expect(buyerCompanySentence({ name: "Teszt Kft.", tax_number: "12345676-2-13" })).toBe(
