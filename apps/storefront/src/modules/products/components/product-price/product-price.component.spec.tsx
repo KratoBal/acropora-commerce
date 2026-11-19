@@ -246,6 +246,27 @@ describe("az akciós ár", () => {
     ).not.toContain("font-bold")
   })
 
+  it("lefele kerekitett szazalek: 33,5 % -> -33%; a nullara kerekitett csokkentesnel az athuzott ar marad, a szazalek-jelzo nincs", () => {
+    const termek = (ar: number, hivatkozas: string) => {
+      const t = akciosTermek(hivatkozas) as unknown as {
+        variants: { calculated_price: { calculated_amount: number } }[]
+      }
+      t.variants[0]!.calculated_price.calculated_amount = ar
+      return t as never
+    }
+    const { rerender } = render(
+      <ProductPrice product={termek(6650, "10000")} />,
+    )
+    expect(screen.getByTestId("product-price-szazalek").textContent).toBe(
+      "-33%",
+    )
+    rerender(<ProductPrice product={termek(9960, "10000")} />)
+    expect(
+      screen.getByTestId("original-product-price").getAttribute("data-value"),
+    ).toBe("10000")
+    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
+  })
+
   it("hivatkozasi ar nelkul az akcios arlista sem hoz athuzott arat", () => {
     const termek = akciosTermek() as unknown as {
       variants: { metadata?: unknown }[]

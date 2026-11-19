@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { arCsokkentesOf, getPricesForVariant } from "./get-product-price"
+import {
+  arCsokkentesOf,
+  getPricesForVariant,
+  szazalekLefele,
+} from "./get-product-price"
 
 /*
   AZ ARCSOKKENTES KOZLESE A 30 NAPOS LEGALACSONYABB AR ALAPJAN (card 54bb3779, acrobot 2026-11-19). MI PIROSIT: az athuzott "korabbi
@@ -130,6 +134,42 @@ describe("arCsokkentesOf", () => {
         arCsokkentesOf(valtozat({ tipus: tipus as never })),
         String(tipus),
       ).toBeNull()
+  })
+
+  /*
+    A SZAZALEK LEFELE KEREKITVE (barracuda #824). MI PIROSIT: a szazalek a legkozelebbi egeszre kerekit (a 33,5 % -> 34); a nullara
+    kerekitett csokkentes "0"-t ad, ami igaz erteku szoveg, tehat -0% jelzo jelenne meg; a nulla szazalek elveszi az athuzott arat is.
+  */
+  it("a szazalek lefele kerekit: 10 000 hivatkozas, 6 650 ar: 33,5 % -> 33", () => {
+    expect(szazalekLefele(10000, 6650)).toBe("33")
+    const csokkentes = arCsokkentesOf(
+      valtozat({
+        calculated: 6650,
+        metadata: { omnibus_lowest_price_30d: referencia({ amount: "10000" }) },
+      }),
+    )
+    expect(csokkentes?.percentage_diff).toBe("33")
+    // a pontos ertek is marad: 20,0 %
+    expect(szazalekLefele(100, 80)).toBe("20")
+    // a felfele kerekites hatara: 33,4 % es 33,6 % is 33
+    expect(szazalekLefele(1000, 666)).toBe("33")
+    expect(szazalekLefele(1000, 664)).toBe("33")
+  })
+
+  it('a nullara kerekitett csokkentes nem kap szazalekot (nem "-0%"), az athuzott ar marad', () => {
+    expect(szazalekLefele(10000, 9960)).toBeNull()
+    expect(szazalekLefele(10000, 9999)).toBeNull()
+    const csokkentes = arCsokkentesOf(
+      valtozat({
+        calculated: 9960,
+        metadata: { omnibus_lowest_price_30d: referencia({ amount: "10000" }) },
+      }),
+    )
+    expect(csokkentes).not.toBeNull()
+    expect(csokkentes?.percentage_diff).toBeNull()
+    expect(csokkentes?.reference_number).toBe(10000)
+    // egy egesz szazalek mar jelzot kap
+    expect(szazalekLefele(10000, 9900)).toBe("1")
   })
 
   it("ar nelkul nincs semmi", () => {

@@ -190,6 +190,32 @@ describe("a Commerce termékkártya", () => {
     )
     expect(screen.queryByTestId("kartya-akcio")).toBeNull()
     expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
+    // lefele kerekites: 33,5 % -> -33%; a nullara kerekitettnek nincs jelzoje, az athuzott ar marad
+    rerender(
+      <CommerceTermekKartya
+        product={termek([
+          {
+            ...raktaron(2),
+            metadata: referencia("10000"),
+            calculated_price: ar(6650, 10000, "sale"),
+          },
+        ])}
+      />,
+    )
+    expect(screen.getByTestId("kartya-akcio").textContent).toBe("-33%")
+    rerender(
+      <CommerceTermekKartya
+        product={termek([
+          {
+            ...raktaron(2),
+            metadata: referencia("10000"),
+            calculated_price: ar(9960, 10000, "sale"),
+          },
+        ])}
+      />,
+    )
+    expect(screen.queryByTestId("kartya-akcio")).toBeNull()
+    expect(screen.getByTestId("kartya-regi-ar")).toBeTruthy()
     // hivatkozas nelkul az akcios arlista sem hoz jelzot
     rerender(
       <CommerceTermekKartya

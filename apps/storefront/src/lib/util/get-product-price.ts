@@ -27,7 +27,22 @@ type VariantWithPrice = HttpTypes.StoreProductVariant & {
 export type ArCsokkentes = {
   reference_number: number
   reference: string
-  percentage_diff: string
+  /** LEFELE kerekitve, es `null`, ha 0 (barracuda #824): a kozolt csokkentes nem lehet nagyobb a valodinal; nulla szazaleknak nincs jelzo. */
+  percentage_diff: string | null
+}
+
+/**
+ * A SZAZALEK LEFELE KEREKITVE (barracuda #824): a `getPercentageDiff` a legkozelebbi egeszre kerekit, tehat felfele is (10 000-es
+ * hivatkozas, 6 650-es ar: valodi csokkentes 33,5 %, a kartyan -34% allt). A kozolt arcsokkentes nem lehet nagyobb a valodinal, es
+ * ez az a szam, amit a 30 napos legalacsonyabb arhoz merunk. Ha a lefele kerekitett ertek 0, nincs szazalek-jelzo (`null`); az
+ * athuzott ar marad. (A `getPercentageDiff` a tobbi hivo miatt valtozatlan.)
+ */
+export const szazalekLefele = (
+  reference: number,
+  ar: number,
+): string | null => {
+  const szazalek = Math.floor(((reference - ar) / reference) * 100)
+  return szazalek > 0 ? String(szazalek) : null
 }
 
 export const arCsokkentesOf = (
@@ -47,10 +62,7 @@ export const arCsokkentesOf = (
       amount: reference.amount,
       currency_code: price.currency_code,
     }),
-    percentage_diff: getPercentageDiff(
-      reference.amount,
-      price.calculated_amount,
-    ),
+    percentage_diff: szazalekLefele(reference.amount, price.calculated_amount),
   }
 }
 

@@ -188,12 +188,14 @@ export default function ProductPrice({
             HA PICASSO TUL CSENDESNEK TALALJA, egyetlen sor cserel:
             var(--terv-szoveg-halvany) helyett var(--terv-kiemel-tinta).
           */}
-          <span
-            data-testid="product-price-szazalek"
-            style={{ color: "var(--terv-szoveg-halvany)" }}
-          >
-            -{selectedPrice.reduction.percentage_diff}%
-          </span>
+          {selectedPrice.reduction.percentage_diff ? (
+            <span
+              data-testid="product-price-szazalek"
+              style={{ color: "var(--terv-szoveg-halvany)" }}
+            >
+              -{selectedPrice.reduction.percentage_diff}%
+            </span>
+          ) : null}
         </>
       )}
     </div>

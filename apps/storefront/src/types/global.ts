@@ -19,7 +19,8 @@ export type VariantPrice = {
   reduction: {
     reference_number: number
     reference: string
-    percentage_diff: string
+    /** Rounded DOWN; null when that is 0: no percentage badge. */
+    percentage_diff: string | null
   } | null
 }
 
