@@ -42,6 +42,16 @@ describe("az áthúzott ár forrása", () => {
     expect(talalat).toEqual([])
   })
 
+  it("a kosár és a rendelés sorai sem az original_total mezőből húznak át (a listaár / kupon előtti összeg nem korábbi ár)", () => {
+    const talalat = mind
+      .filter(
+        (f) =>
+          f.ut.startsWith("modules/") && /\.original_total\b/.test(f.forras),
+      )
+      .map((f) => f.ut)
+    expect(talalat).toEqual([])
+  })
+
   it("pozitív kontroll: a négy megjelenítő a reduction referencia-árát használja", () => {
     const hasznalok = mind
       .filter(

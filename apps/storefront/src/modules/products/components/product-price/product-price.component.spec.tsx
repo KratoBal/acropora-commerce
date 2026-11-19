@@ -286,7 +286,7 @@ describe("az akciós ár", () => {
     const { container } = render(<ProductPrice product={akciosTermek()} />)
 
     expect(container.textContent).not.toContain("Original")
-    expect(container.textContent).toContain("Eredeti ár")
+    expect(container.textContent).toContain("Korábbi legalacsonyabb ár")
   })
 
   /*

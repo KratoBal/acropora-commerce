@@ -1,5 +1,6 @@
 "use client"
 
+import { sorCsokkentes } from "@lib/util/omnibus"
 import { updateLineItem } from "@lib/data/cart"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
@@ -159,10 +160,17 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
    * (azok a pénztár és a rendelés oldalán is állnak, és azok külön kör).
    */
   const sorOsszeg = item.total ?? 0
-  const sorEredeti = item.original_total ?? 0
-  const kedvezmenyes = sorOsszeg < sorEredeti
+  /*
+    ATHUZAS CSAK VALODI ARCSOKKENTESNEL (Omnibus 2/A., acrobot 2026-11-19): a sor eredeti osszege (`original_total`) a listaar, nem
+    egy korabbi eladasi ar, es egy kuponos kedvezmeny sem arcsokkentes. A kosar akkor huz at, ha a sor valtozatanak metaadata
+    (`*items.variant`) ismeri a 30 napos legalacsonyabb arat ES az nagyobb a fizetendo aranal (`sorCsokkentes`, ugyanaz a
+    fuggveny, mint a termeklapon); adat nelkul csak a fizetendo ar latszik.
+  */
+  const csokkentes = sorCsokkentes(item, currencyCode)
+  const kedvezmenyes = csokkentes !== null
+  const sorEredeti = csokkentes?.lineReference ?? 0
   const egysegAr = sorOsszeg / (item.quantity || 1)
-  const egysegEredeti = sorEredeti / (item.quantity || 1)
+  const egysegEredeti = csokkentes?.unitReference ?? 0
   const penz = (amount: number) =>
     convertToLocale({ amount, currency_code: currencyCode })
 

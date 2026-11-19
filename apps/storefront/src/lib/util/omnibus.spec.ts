@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { OMNIBUS_METADATA_KEY, omnibusReferenceOf } from "./omnibus"
+import {
+  OMNIBUS_METADATA_KEY,
+  omnibusReferenceOf,
+  sorCsokkentes,
+  valodiCsokkentes,
+} from "./omnibus"
 
 /*
   WHAT TURNS THIS RED (V0.2, slice 3). A line shown without a reduction (the paid price is not below the
@@ -145,5 +150,71 @@ describe("omnibusReferenceOf, the days decide", () => {
     expect(omnibusReferenceOf(at(true, "2026-12-12"), shown)).toBeNull()
     expect(omnibusReferenceOf(at(false, "2026-12-12"), shown)).not.toBeNull()
     expect(omnibusReferenceOf(at(false, "2026-12-11"), shown)).toBeNull()
+  })
+})
+
+/*
+  A VALODI ARCSOKKENTES EGY FUGGVENYBEN, A TERMEKLAPON ES A KOSARBAN (Omnibus 2/A., acrobot 2026-11-19). MI PIROSIT: ha a szazalek nem a
+  referenciahoz viszonyit; ha metaadat nelkul, nem kisebb fizetendo arral vagy idegen penznemmel mégis van csokkentes; ha a
+  kosar-sor a darabszammal nem szorozza a referenciat, vagy az egysegarat a darabszam nelkul szamolja.
+*/
+describe("valodiCsokkentes", () => {
+  it("a referencia osszege es a szazalek ahhoz kepest (egesz szamra kerekitve)", () => {
+    expect(
+      valodiCsokkentes(meta(text({ amount: "1500" })), {
+        amount: 1000,
+        currencyCode: "huf",
+      }),
+    ).toEqual({ referenceAmount: 1500, percentage: "33" })
+  })
+
+  it("nincs csokkentes: metaadat nelkul, nem kisebb fizetendo arral, idegen penznemmel, serult szoveggel", () => {
+    const esetek: [
+      Record<string, unknown> | null | undefined,
+      { amount: number; currencyCode: string } | null,
+    ][] = [
+      [null, shown],
+      [undefined, shown],
+      [{}, shown],
+      [meta(text({ amount: "1000" })), shown],
+      [meta(text({ amount: "900" })), shown],
+      [meta(text({ currency: "EUR" })), shown],
+      [meta("nem json"), shown],
+      [meta(text()), null],
+    ]
+    for (const [metadata, ar] of esetek)
+      expect(valodiCsokkentes(metadata, ar)).toBeNull()
+  })
+})
+
+describe("sorCsokkentes", () => {
+  const sor = (over: Record<string, unknown> = {}) =>
+    ({
+      quantity: 2,
+      total: 2000,
+      variant: { metadata: meta(text({ amount: "1500" })) },
+      ...over,
+    }) as never
+
+  it("az egysegar a darabszammal osztott sorosszeg, a sor referenciaja a darabszammal szorzott referencia", () => {
+    expect(sorCsokkentes(sor(), "huf")).toEqual({
+      unitReference: 1500,
+      lineReference: 3000,
+      percentage: "33",
+    })
+  })
+
+  it("adat nelkul nincs: se valtozat, se metaadat, se kisebb fizetendo ar", () => {
+    expect(sorCsokkentes(sor({ variant: null }), "huf")).toBeNull()
+    expect(sorCsokkentes(sor({ variant: {} }), "huf")).toBeNull()
+    expect(sorCsokkentes(sor({ total: 3000 }), "huf")).toBeNull()
+    expect(sorCsokkentes(sor({ total: 3200 }), "huf")).toBeNull()
+  })
+
+  it("darabszam nelkul egy darabbal szamol", () => {
+    expect(
+      sorCsokkentes(sor({ quantity: undefined, total: 1000 }), "huf")
+        ?.lineReference,
+    ).toBe(1500)
   })
 })

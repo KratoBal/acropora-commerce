@@ -1,4 +1,6 @@
 import { convertToLocale } from "@lib/util/money"
+import { sorCsokkentes } from "@lib/util/omnibus"
+import { hu } from "@lib/i18n/dictionary/hu"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@modules/common/components/ui"
 
@@ -14,12 +16,9 @@ const LineItemUnitPrice = ({
   currencyCode,
 }: LineItemUnitPriceProps) => {
   const total = item.total ?? 0
-  const original_total = item.original_total ?? 0
-  const hasReducedPrice = total < original_total
-
-  const percentage_diff = Math.round(
-    ((original_total - total) / original_total) * 100,
-  )
+  // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz: lasd `sorCsokkentes`
+  const csokkentes = sorCsokkentes(item, currencyCode)
+  const hasReducedPrice = csokkentes !== null
 
   return (
     <div className="flex flex-col text-ui-fg-muted justify-center h-full">
@@ -27,20 +26,24 @@ const LineItemUnitPrice = ({
         <>
           <p>
             {style === "default" && (
-              <span className="text-ui-fg-muted">Original: </span>
+              <span className="text-ui-fg-muted">
+                {hu.product.originalPrice}{" "}
+              </span>
             )}
             <span
               className="line-through"
               data-testid="product-unit-original-price"
             >
               {convertToLocale({
-                amount: original_total / item.quantity,
+                amount: csokkentes.unitReference,
                 currency_code: currencyCode,
               })}
             </span>
           </p>
           {style === "default" && (
-            <span className="text-ui-fg-interactive">-{percentage_diff}%</span>
+            <span className="text-ui-fg-interactive">
+              -{csokkentes.percentage}%
+            </span>
           )}
         </>
       )}
