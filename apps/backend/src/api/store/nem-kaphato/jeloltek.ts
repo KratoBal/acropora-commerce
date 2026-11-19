@@ -64,20 +64,67 @@ export function explicitAzonositok(
   return [...latott];
 }
 
-export type Kategoria = { id: string; name: string; handle: string };
+export type Kategoria = {
+  id: string;
+  name: string;
+  handle: string;
+  parent_category_id?: string | null;
+  is_active?: boolean | null;
+  is_internal?: boolean | null;
+};
+
+/** A buyer may see it: active and not internal (what the Store API hands the storefront; barracuda, #834). */
+const lathato = (k: Kategoria) => k.is_active !== false && k.is_internal !== true;
 
 /**
  * Az elsodleges kategoria: a vetites altal kiirt `primary_category_id`, ha a
- * termek kategoriai kozott van; kulonben nincs (a sorrendre nem tippelunk: a
- * Medusa kategoria-listaja nem rendezett).
+ * termek kategoriai kozott van.
+ *
+ * HA NINCS, A LEGMELYEBB SAJAT KATEGORIA (A6 meres, 2026-11-19: a teszten mind a 11 helyettesito nelkuli kifutott
+ * termeknel ures volt a jelzo, mert a vetito csak az Acropora-fan allo termekre irja ki, a kifutottak pedig UNAS-
+ * gazdajuak; igy a "Vissza a kategoriahoz" link es a gepi hasonlo termek sehol nem jelent meg). A sorrendre most
+ * sem tippelunk (a Medusa listaja nem rendezett): a termek kategoriai kozul az a lanc nyer, amelyik a sajat
+ * kategoriain belul a leghosszabb (a kirakat `besorolasUt` szabalya), egyenlosegnel a handle ABC-rendje dont, tehat
+ * ugyanarra a termekre mindig ugyanaz. Csak a vevonek lathato (aktiv, nem belso) kategoria szamit, a primary is.
  */
 export function elsodlegesKategoria(
   metadata: Record<string, unknown> | null | undefined,
   kategoriak: readonly Kategoria[] | null | undefined,
 ): Kategoria | null {
+  // only a category the buyer can open: a hidden one is a dead "Vissza a kategóriához" link and a hidden pool of
+  // similar products (barracuda, #834); the primary is held to the same rule
+  const lista = (kategoriak ?? []).filter(lathato);
   const id = metadata?.[ELSODLEGES_KATEGORIA_KULCS];
-  if (typeof id !== "string" || !id) return null;
-  return kategoriak?.find((k) => k.id === id) ?? null;
+  const jelolt =
+    typeof id === "string" && id ? lista.find((k) => k.id === id) : undefined;
+  if (jelolt) return jelolt;
+  return legmelyebbKategoria(lista);
+}
+
+function legmelyebbKategoria(kategoriak: readonly Kategoria[]): Kategoria | null {
+  const sajat = new Map(kategoriak.map((k) => [k.id, k]));
+  const melyseg = (k: Kategoria) => {
+    let n = 1;
+    const latott = new Set([k.id]);
+    let szulo = k.parent_category_id ? sajat.get(k.parent_category_id) : undefined;
+    while (szulo && !latott.has(szulo.id)) {
+      latott.add(szulo.id);
+      n += 1;
+      szulo = szulo.parent_category_id ? sajat.get(szulo.parent_category_id) : undefined;
+    }
+    return n;
+  };
+  let legjobb: { k: Kategoria; m: number } | null = null;
+  for (const k of kategoriak) {
+    const m = melyseg(k);
+    if (
+      !legjobb ||
+      m > legjobb.m ||
+      (m === legjobb.m && k.handle.localeCompare(legjobb.k.handle) < 0)
+    )
+      legjobb = { k, m };
+  }
+  return legjobb?.k ?? null;
 }
 
 /**
