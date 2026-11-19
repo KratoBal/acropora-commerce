@@ -1,4 +1,4 @@
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { GET as storeList } from "../../../store/brands/route"
 import { GET as storeOne } from "../../../store/brands/[handle]/route"
@@ -54,7 +54,9 @@ describe("store brand routes", () => {
     collections?: { handle: string; external_id: string | null }[]
   }) => ({
     resolve: (key: string) =>
-      key === Modules.PRODUCT
+      key === ContainerRegistrationKeys.LOGGER
+        ? { warn: () => undefined }
+        : key === Modules.PRODUCT
         ? {
             listProductCollections: async (filter: {
               external_id?: string
@@ -127,6 +129,7 @@ describe("store brand routes", () => {
       {
         scope: {
           resolve: () => ({
+            warn: () => undefined,
             listProductCollections: async () =>
               many.map((b) => ({ handle: b.handle, external_id: null })),
             listProductBrands: async (_: unknown, config: unknown) => {

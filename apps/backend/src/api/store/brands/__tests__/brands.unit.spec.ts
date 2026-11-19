@@ -50,21 +50,27 @@ const service = (withProducts: string[]) => ({
     ),
 })
 
+const warns: string[] = []
+const logger = { warn: (m: string) => warns.push(m) }
+
 const scope = (collections: Coll[]) =>
   ({
-    resolve: () => ({
-      listProductCollections: async (filter: {
-        external_id?: string
-        handle?: string
-      }) =>
-        collections.filter((c) =>
-          filter.external_id
-            ? c.external_id === filter.external_id
-            : filter.handle
-              ? c.handle === filter.handle
-              : true
-        ),
-    }),
+    resolve: (key: string) =>
+      key === "logger"
+        ? logger
+        : {
+            listProductCollections: async (filter: {
+              external_id?: string
+              handle?: string
+            }) =>
+              collections.filter((c) =>
+                filter.external_id
+                  ? c.external_id === filter.external_id
+                  : filter.handle
+                    ? c.handle === filter.handle
+                    : true
+              ),
+          },
   }) as never
 
 const listed = async (collections: Coll[] = COLLECTIONS) => {
@@ -88,6 +94,7 @@ const record = async (handle: string, collections: Coll[] = COLLECTIONS) => {
 }
 
 beforeEach(() => {
+  warns.length = 0
   resolveService.mockReset()
   resolveService.mockReturnValue(service(["b-id", "b-handle", "b-none"]))
 })
@@ -108,6 +115,21 @@ describe("GET /store/brands", () => {
         { handle: "hobby", external_id: "b-noprod" },
       ])
     ).not.toContain("hobby")
+  })
+
+  it("logs the brands that dropped out for want of a collection, with the count", async () => {
+    await listed()
+    expect(warns).toHaveLength(1)
+    expect(warns[0]).toContain("1 brand(s) with products have no collection")
+    expect(warns[0]).toContain("sera")
+    // only the brand that really dropped out: not the listed ones, not the one without products
+    expect(warns[0]).not.toContain("amtra")
+    expect(warns[0]).not.toContain("hobby")
+  })
+
+  it("logs nothing when every brand with products has a collection", async () => {
+    await listed([...COLLECTIONS, { handle: "sera", external_id: null }])
+    expect(warns).toEqual([])
   })
 
   it("no brand has a collection: an empty list, not an error", async () => {

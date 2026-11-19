@@ -1,5 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { Modules } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { forStore, resolveBrandService } from "../../admin/brands/helpers"
 import { brandCollectionHandles } from "./collections"
@@ -38,5 +38,19 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const brands = withProductBrands.filter((b) =>
     withCollection.has(b.os_brand_id)
   )
+  // A brand that has products but no collection drops out of the list, and
+  // the cause is DATA (the projection never created its collection), which the
+  // shortened list hides: the count and the first handles go to the log, so the
+  // gap stays visible (barracuda review #828, 2026-11-19).
+  const left = withProductBrands.filter(
+    (b) => !withCollection.has(b.os_brand_id)
+  )
+  if (left.length)
+    req.scope.resolve(ContainerRegistrationKeys.LOGGER).warn(
+      `[store/brands] ${left.length} brand(s) with products have no collection and are not offered: ${left
+        .slice(0, 10)
+        .map((b) => b.handle)
+        .join(", ")}${left.length > 10 ? ", ..." : ""}`
+    )
   res.json({ brands: brands.map(forStore) })
 }
