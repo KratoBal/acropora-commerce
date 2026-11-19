@@ -1,5 +1,6 @@
 "use server"
 
+import { cegesAdatok, cimMetadata } from "@lib/util/penztar-adoszam"
 import {
   ELKELT_PARAM,
   elkeltDarabokAzUzenetbol,
@@ -61,9 +62,10 @@ export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
   // +shipping_methods.data: a Foxpost-csomagpont a szallitasi mod adataban all,
   // es a Medusa bolti kosar-mezoi kozott nincs benne (merve 2026-09-29: a
-  // penztar ezert nem tudta kiirni a kivalasztott pontot).
+  // penztar ezert nem tudta kiirni a kivalasztott pontot). +*_address.metadata:
+  // a ceges vasarlas adoszama a cim metadata.tax_id kulcsan all (c977aed2).
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +shipping_methods.data"
+    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, +shipping_methods.data, +shipping_address.metadata, +billing_address.metadata"
 
   if (!id) {
     return null
@@ -653,6 +655,23 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         // az a penztar munkaja. Amig az nincs meg, ez a sor ugyanazt az
         // allitast teszi, mint a szallitasi cim -- se tobbet, se kevesebbet.
       } as unknown as NonNullable<HttpTypes.StoreUpdateCart["billing_address"]>
+
+    /*
+      A CEGES VASARLAS ADOSZAMA (kartya c977aed2): a cim `metadata.tax_id` kulcsara kerul, ezt olvassa az OS a szamlazashoz.
+      Magananszemelynel `tax_id: null`, hogy egy korabbi kitoltes ne maradjon a cimen. A hiba az urlap hibasora (a bongeszo a
+      mezon nyelvfuggo szoveget mutat, ez a szerver vedelme).
+    */
+    const ceges = cegesAdatok(formData)
+    if (!ceges.ok) return ceges.uzenet
+    const metadata = cimMetadata(ceges.adoszam)
+    data.shipping_address = {
+      ...(data.shipping_address as object),
+      metadata,
+    } as NonNullable<HttpTypes.StoreUpdateCart["shipping_address"]>
+    data.billing_address = {
+      ...(data.billing_address as object),
+      metadata,
+    } as NonNullable<HttpTypes.StoreUpdateCart["billing_address"]>
     await updateCart(data)
   } catch (e) {
     // `unknown`, nem `any`: egy nem-Error dobasnal a `.message` eddig

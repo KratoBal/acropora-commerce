@@ -1030,6 +1030,14 @@ export const hu = {
     emailInvalid: "Adj meg érvényes e-mail-címet.",
     phone: "Telefonszám",
     sameAsBilling: "A számlázási cím megegyezik a szállítási címmel",
+    companyPurchase: "Céges vásárlás: a számlát cégre kérem",
+    companyPurchaseLead:
+      "A cég nevét a cégnév mezőben add meg, és add meg az adószámot is.",
+    taxId: "Adószám",
+    taxIdHint: "Magyar adószám, például 12345678-1-23",
+    taxIdInvalid:
+      "Adj meg érvényes magyar adószámot: 11 számjegy, például 12345678-1-23.",
+    taxIdSummary: "Adószám",
   },
   checkoutShipping: {
     heading: "Szállítás",

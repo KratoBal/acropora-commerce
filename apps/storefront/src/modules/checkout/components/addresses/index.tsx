@@ -8,11 +8,11 @@ import { CheckCircleSolid } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import { PenztarGomb } from "../penztar-mezo"
-import ShippingAddress from "../shipping-address"
+import ShippingAddress, { elotoltottAdoszam } from "../shipping-address"
 
 const CIM_CIM =
   "flex flex-row items-center gap-x-2 text-[22px] font-normal leading-[28px] text-acr-ink small:text-[26px] small:leading-[32px]"
@@ -40,6 +40,12 @@ const Addresses = ({
     cart?.shipping_address && cart?.billing_address
       ? compareAddresses(cart?.shipping_address, cart?.billing_address)
       : true,
+  )
+
+  // CEGES VASARLAS (c977aed2): a pipa allapota a ket urlap-resznek kozos (a szallitasi cim resze rajzolja, a kulon szamlazasi cim
+  // cegneve ettol kotelezo); ha a kosaron mar van adoszam, kezdetben be van jelolve
+  const [ceges, setCeges] = useState(
+    () => elotoltottAdoszam(cart, customer).length > 0,
   )
 
   const handleEdit = () => {
@@ -71,6 +77,8 @@ const Addresses = ({
             customer={customer}
             checked={sameAsBilling}
             onChange={toggleSameAsBilling}
+            ceges={ceges}
+            onCegesChange={() => setCeges((elozo) => !elozo)}
             cart={cart}
           />
 
@@ -80,7 +88,7 @@ const Addresses = ({
                 {t("checkoutPage.billingAddress")}
               </h2>
 
-              <BillingAddress cart={cart} />
+              <BillingAddress cart={cart} cegesKotelezo={ceges} />
             </div>
           )}
           <PenztarGomb className="mt-6" data-testid="submit-address-button">
@@ -122,6 +130,17 @@ const Addresses = ({
 
           <div data-testid="billing-address-summary">
             <p className={KICSI_CIM}>{t("checkoutPage.billingAddress")}</p>
+            {cart.billing_address?.company ? (
+              <p className={SOR} data-testid="szamlazasi-cegnev">
+                {cart.billing_address.company}
+              </p>
+            ) : null}
+            {elotoltottAdoszam(cart, null) ? (
+              <p className={SOR} data-testid="szamlazasi-adoszam">
+                {t("checkoutPage.taxIdSummary")}:{" "}
+                {elotoltottAdoszam(cart, null)}
+              </p>
+            ) : null}
             {sameAsBilling ? (
               <p className={SOR}>{t("checkoutPage.sameAddress")}</p>
             ) : (

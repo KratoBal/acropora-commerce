@@ -3,22 +3,47 @@ import { HttpTypes } from "@medusajs/types"
 import { mapKeys } from "lodash"
 import React, { useEffect, useId, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
+import { ADOSZAM_MEZO, CEGES_MEZO } from "@lib/util/penztar-adoszam"
 import { PenztarMezo, PenztarOrszag } from "../penztar-mezo"
+
+/** A mar megadott adoszam: a kosar szamlazasi (vagy szallitasi) cimen, vagy a fiok alapertelmezett szamlazasi cimen. */
+export const elotoltottAdoszam = (
+  cart: HttpTypes.StoreCart | null,
+  customer: HttpTypes.StoreCustomer | null,
+): string => {
+  const ertek = (
+    cim?: { metadata?: Record<string, unknown> | null } | null,
+  ) => {
+    const adoszam = cim?.metadata?.tax_id
+    return typeof adoszam === "string" ? adoszam : ""
+  }
+  return (
+    ertek(cart?.billing_address) ||
+    ertek(cart?.shipping_address) ||
+    ertek(customer?.addresses?.find((a) => a.is_default_billing))
+  )
+}
 
 const ShippingAddress = ({
   customer,
   cart,
   checked,
   onChange,
+  ceges,
+  onCegesChange,
 }: {
   customer: HttpTypes.StoreCustomer | null
   cart: HttpTypes.StoreCart | null
   checked: boolean
   onChange: () => void
+  /** Ceges vasarlas (c977aed2): a szamlat cegre kerik, adoszam kell. */
+  ceges: boolean
+  onCegesChange: () => void
 }) => {
   const t = useTranslate()
   const locale = useLocale()
   const pipaId = useId()
+  const cegesPipaId = useId()
   const [formData, setFormData] = useState<Record<string, string>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -30,6 +55,8 @@ const ShippingAddress = ({
     "shipping_address.province": cart?.shipping_address?.province || "",
     "shipping_address.phone": cart?.shipping_address?.phone || "",
     email: cart?.email || "",
+    // a kosaron mar megadott adoszam, vagy a fiok alapertelmezett szamlazasi cimen mentett
+    tax_id: elotoltottAdoszam(cart, customer),
   })
 
   const countriesInRegion = useMemo(
@@ -177,6 +204,7 @@ const ShippingAddress = ({
           value={formData["shipping_address.company"]}
           onChange={handleChange}
           autoComplete="organization"
+          required={ceges && checked}
           data-testid="shipping-company-input"
         />
         <PenztarMezo
@@ -214,6 +242,45 @@ const ShippingAddress = ({
           onChange={handleChange}
           data-testid="shipping-province-input"
         />
+      </div>
+      <div className="mt-6">
+        <label
+          htmlFor={cegesPipaId}
+          className="flex items-center gap-3 text-[14px] leading-[22px] text-acr-ink"
+        >
+          <input
+            id={cegesPipaId}
+            type="checkbox"
+            name={CEGES_MEZO}
+            checked={ceges}
+            onChange={onCegesChange}
+            className="h-[18px] w-[18px] accent-[var(--acr-color-navy)]"
+            data-testid="ceges-vasarlas-pipa"
+          />
+          {t("checkoutPage.companyPurchase")}
+        </label>
+        {ceges && (
+          <div className="mt-4 grid grid-cols-1 gap-4 small:grid-cols-2">
+            <p className="text-[14px] leading-[22px] text-acr-slate small:col-span-2">
+              {t("checkoutPage.companyPurchaseLead")}
+            </p>
+            <PenztarMezo
+              label={t("checkoutPage.taxId")}
+              name={ADOSZAM_MEZO}
+              value={formData.tax_id}
+              onChange={handleChange}
+              required
+              inputMode="numeric"
+              autoComplete="off"
+              pattern="\d{8}[\s\-]*[1-5][\s\-]*\d{2}"
+              title={t("checkoutPage.taxIdInvalid")}
+              data-testid="adoszam-mezo"
+            />
+            <p className="self-end pb-3 text-[12px] leading-[16px] text-acr-slate">
+              {t("checkoutPage.taxIdHint")}
+            </p>
+          </div>
+        )}
       </div>
       <div className="my-6">
         <label
