@@ -1,4 +1,11 @@
-import { MedusaService } from "@medusajs/framework/utils"
+import { Context } from "@medusajs/framework/types"
+import {
+  InjectManager,
+  InjectTransactionManager,
+  MedusaContext,
+  MedusaError,
+  MedusaService,
+} from "@medusajs/framework/utils"
 
 import HomepageContent from "./models/homepage-content"
 
@@ -57,12 +64,41 @@ export type HomepageContentInput = {
   newsletter?: HomepageNewsletter | null
 }
 
+/**
+ * THE TEXT KEYS A SAVE NO LONGER CARRIES (card 2ef36b38). The ORM merges an object field on update (`mergeObjectProperties: true`,
+ * @medusajs/utils dal/mikro-orm), so a key the OS left out of `texts` (its "Alapérték" reset drops the override) would stay in the
+ * stored record with its last value and the storefront would keep showing it. A non-empty answer means the record has to be
+ * REPLACED, not updated.
+ */
+export function removedTextKeys(
+  stored: unknown,
+  sent: Record<string, string>
+): string[] {
+  if (!stored || typeof stored !== "object" || Array.isArray(stored)) return []
+  return Object.keys(stored as Record<string, unknown>).filter(
+    (key) => !Object.prototype.hasOwnProperty.call(sent, key)
+  )
+}
+
 class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
   /** The whole record, written by the OS. The unique index on `key` is the real guard. */
-  async upsertMainHomepageContent(input: HomepageContentInput) {
+  @InjectManager()
+  async upsertMainHomepageContent(
+    input: HomepageContentInput,
+    @MedusaContext() sharedContext: Context = {}
+  ) {
+    return await this.upsertMainHomepageContent_(input, sharedContext)
+  }
+
+  @InjectTransactionManager()
+  protected async upsertMainHomepageContent_(
+    input: HomepageContentInput,
+    @MedusaContext() sharedContext: Context = {}
+  ) {
     const [existing] = await this.listHomepageContents(
       { key: MAIN_HOMEPAGE_KEY },
-      { take: 1 }
+      { take: 1 },
+      sharedContext
     )
     // `model.json()` is typed as an object, and `slides` is an array. The
     // column is jsonb and stores an array as is; the validator guarantees the
@@ -118,15 +154,68 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
           }),
     }
     if (!existing) {
-      const [created] = await this.createHomepageContents([
-        { key: MAIN_HOMEPAGE_KEY, ...body },
-      ])
+      const [created] = await this.createHomepageContents(
+        [{ key: MAIN_HOMEPAGE_KEY, ...body }],
+        sharedContext
+      )
       return created
     }
-    const [updated] = await this.updateHomepageContents([
-      { id: existing.id, ...body },
-    ])
-    return updated
+    /*
+      A TEXT KEY LEFT OUT OF THE SAVE HAS TO LEAVE THE RECORD (card 2ef36b38). An update merges `texts` (the ORM assigns with
+      `mergeObjectProperties: true`), so the texts are written by ONE raw UPDATE on the transaction's connection: no ORM merge, and no
+      delete-and-create of the same `key` against the partial unique index (the ORM can put the insert before the update in one unit of
+      work, which refused every save on a real database in #804; the payment matrix, the points ledger and the gift cards write raw for
+      the same reason). The id does not change. Every other field keeps the plain update, and the ORM update does not carry `texts` in
+      this case, so nothing stale is flushed over the raw write.
+    */
+    const removed = removedTextKeys(existing.texts, input.texts).length > 0
+    const { texts, ...others } = body
+    const [updated] = await this.updateHomepageContents(
+      [{ id: existing.id, ...(removed ? others : body) }],
+      sharedContext
+    )
+    if (!removed) return updated
+    await this.knexOf(sharedContext).raw(
+      "update homepage_content set texts = ?::jsonb, updated_at = now() where id = ? and deleted_at is null",
+      [JSON.stringify(texts), existing.id]
+    )
+    /*
+      THE ANSWER IS READ BACK BY A RAW SELECT on the same connection (barracuda #839): a read through the module goes by the ORM's identity
+      map, which can hand back the entity loaded at the top of this call, with the old `texts` (the removed key still in it). An editor that
+      refreshed its form from that answer would write the key back on its next save.
+    */
+    const read = await this.knexOf(sharedContext).raw(
+      "select * from homepage_content where id = ? and deleted_at is null",
+      [existing.id]
+    )
+    return read.rows[0]
+  }
+
+  /** The transaction's connection, or a refusal: the texts are replaced only inside one. */
+  private knexOf(sharedContext: Context): {
+    raw(
+      sql: string,
+      bindings: unknown[]
+    ): Promise<{ rows: Record<string, unknown>[] }>
+  } {
+    const knex = (
+      sharedContext.transactionManager as
+        | {
+            getTransactionContext(): {
+              raw(
+                sql: string,
+                bindings: unknown[]
+              ): Promise<{ rows: Record<string, unknown>[] }>
+            } | undefined
+          }
+        | undefined
+    )?.getTransactionContext()
+    if (!knex)
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "The home page texts are replaced only inside a transaction."
+      )
+    return knex
   }
 
   async retrieveMainHomepageContent() {
