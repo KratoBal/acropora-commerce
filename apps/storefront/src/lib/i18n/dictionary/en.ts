@@ -1204,6 +1204,8 @@ export const en: Dictionary = {
       "We pack your parcel. The tracking number appears when we have dispatched the parcel.",
     nextStepGls:
       "We pack your parcel. The GLS tracking number appears when we have dispatched the parcel.",
+    nextStepTransfer:
+      "We send the proforma invoice by e-mail, with an 8-day payment deadline. We pack your parcel once the payment has arrived; the tracking number appears when we have dispatched it.",
     pickupWhere: "Pick-up location: {name}, {address}.",
     pickupPayAtStore: "Available for pick-up in the store. Payment at pick-up.",
     summary: "Order summary",
@@ -1211,6 +1213,8 @@ export const en: Dictionary = {
     payment: "Payment",
     total: "Total",
     orders: "Orders",
+    company: "Company",
+    taxId: "Tax number",
     ordersCount: "{count}",
     shippingFee: "Shipping: {amount}",
     codFee: "Cash on delivery fee: {amount}",
