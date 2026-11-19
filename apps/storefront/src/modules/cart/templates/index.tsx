@@ -7,7 +7,10 @@ import SplitNotice from "../components/pickup-notice/split-notice"
 import ElkeltErtesites from "../components/elkelt-ertesites"
 import FoglalasSorok from "../components/foglalas-sorok"
 import AtvetelFizetes from "../components/atvetel-fizetes"
-import type { SzallitasiOpcioBemenet } from "../components/atvetel-fizetes/atvetel-sorok"
+import type {
+  SzallitasiOpcioBemenet,
+  SzallitasiOsztaly,
+} from "../components/atvetel-fizetes/atvetel-sorok"
 import type { FoglalasValasz } from "@lib/util/kosar-foglalas"
 import { elkeltATetelek } from "@lib/util/elkelt-darab"
 import ItemsTemplate from "./items"
@@ -24,9 +27,12 @@ const CartTemplate = ({
   elkeltKezelok = [],
   foglalasok = null,
   szallitasiOpciok = null,
+  szallitasiOsztaly = null,
 }: {
   /** A bolt szállítási opciói a kosárhoz (az ÁTVÉTEL doboz tájékoztatója); `null`: a bolt nem válaszolt, nincs doboz */
   szallitasiOpciok?: readonly SzallitasiOpcioBemenet[] | null
+  /** a penztar osztalyozasa (Foxpost, GLS pont es haz): a doboz a mod nevet ebbol a szotarbol veszi; `null`: a bolt neve */
+  szallitasiOsztaly?: SzallitasiOsztaly | null
   /** V2.3 S2b: a bolt valasza a kosar darabjainak foglalasarol (`null`: nincs valasz, nincs sor) */
   foglalasok?: FoglalasValasz | null
   cart: HttpTypes.StoreCart | null
@@ -123,6 +129,7 @@ const CartTemplate = ({
                 {cart && (
                   <AtvetelFizetes
                     opciok={szallitasiOpciok}
+                    osztaly={szallitasiOsztaly}
                     currencyCode={cart.currency_code}
                     countryCode={countryCode}
                     szetvalasztott={
