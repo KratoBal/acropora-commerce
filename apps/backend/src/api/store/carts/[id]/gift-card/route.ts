@@ -17,7 +17,6 @@ import {
   type CreditLineRow,
 } from "../../../../../workflows/utils/gift-card-credit"
 import { resolveCartShippingClass } from "../../../../../workflows/utils/resolve-cart-shipping-class"
-import { voidCartGiftCardRedemptionsWorkflow } from "../../../../../workflows/void-cart-gift-card-redemptions"
 import type { StorePostCartGiftCardType } from "./validators"
 
 type CartRow = {
@@ -129,10 +128,13 @@ export const POST = async (req: MedusaRequest<StorePostCartGiftCardType>, res: M
 }
 
 /**
- * DELETE /store/carts/:id/gift-card: takes the gift card off the cart. Normally nothing was taken from the card yet;
- * but if a completion took its share and died before its compensation, that redemption is given back here
- * (`voidGiftCardRedemption`, a no-op when there is none), so a customer who then orders without the card does not
- * lose it (barracuda, #818 v2).
+ * DELETE /store/carts/:id/gift-card: takes the gift card off the cart; nothing was taken from the card yet.
+ *
+ * IT DOES NOT GIVE BACK A REDEMPTION, on purpose (barracuda, #818 v3): `completed_at` is still empty while a completion
+ * runs, so a DELETE in the middle of one (after the hook took the share, before the order exists) would void it while
+ * the order is still made with the credit it loaded: money made, and the cart id is the customer's, so scriptable. A
+ * completion that took the share and died before its compensation is a rare stop; its redemption stays, keyed by the
+ * cart and named in the ledger, for a reconciliation by hand.
  */
 export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
   const cart = await loadCart(req.scope, req.params.id)
@@ -144,13 +146,6 @@ export const DELETE = async (req: MedusaRequest, res: MedusaResponse) => {
     res.status(409).json({ message: "Ebből a kosárból már rendelés lett." })
     return
   }
-  const cardIds = giftCardCredits(cart.credit_lines)
-    .map((line) => line.reference_id)
-    .filter((id): id is string => !!id)
-  if (cardIds.length)
-    await voidCartGiftCardRedemptionsWorkflow(req.scope).run({
-      input: { cart_id: cart.id, gift_card_ids: cardIds },
-    })
   await removeGiftCardCredits(req.scope, cart)
   await refreshPaymentCollectionForCartWorkflow(req.scope).run({ input: { cart_id: cart.id } })
   res.json(answer((await loadCart(req.scope, cart.id))!))
