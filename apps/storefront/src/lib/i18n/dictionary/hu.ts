@@ -419,9 +419,9 @@ export const hu = {
    */
   headerText: {
     bar1: "Élőállat kizárólag személyes átvétellel, a budapesti boltban",
-    bar2: "Technika és vegyszer: házhozszállítás 2–3 munkanap alatt",
-    bar3: "Nyitva ma 10–19 óráig",
-    bar4: "Tanácsadás: +36 1 234 5678",
+    bar2: "Technika és vegyszer: Foxpost csomagpont és GLS házhozszállítás",
+    bar3: "Nyitva: Kedd-Péntek 10-18, Szombat 10-14",
+    bar4: "Tanácsadás: +36-20/267-6801",
     search: "Keresés: korall, tengeri só, LED-lámpa…",
     menuLive: "Élőállat",
     menuTech: "Technika",
