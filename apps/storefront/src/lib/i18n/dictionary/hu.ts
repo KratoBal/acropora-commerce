@@ -1007,6 +1007,8 @@ export const hu = {
     giftCardApply: "Beváltás",
     giftCard: "Ajándékkártya",
     giftCardRemove: "Ajándékkártya levétele a rendelésről",
+    giftCardRestNote:
+      "A fennmaradó összeghez a fizetési módot a kártya beváltása után válaszd ki.",
   },
   checkoutPage: {
     title: "Pénztár",

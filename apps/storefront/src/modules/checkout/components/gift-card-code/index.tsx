@@ -74,7 +74,17 @@ const GiftCardCode: React.FC<{
             <span className="sr-only">{t("cartPage.giftCardRemove")}</span>
           </button>
         </div>
-      ) : (
+      ) : null}
+      {jovairas && (cart.total ?? 0) > 0 ? (
+        /* a jovairas utan a webshop a fizetesi munkamenetet eldobja (a vegosszeg valtozott): a maradekhoz ujra kell valasztani */
+        <Text
+          className="txt-small text-acr-slate mb-2"
+          data-testid="gift-card-rest-note"
+        >
+          {t("cartPage.giftCardRestNote")}
+        </Text>
+      ) : null}
+      {jovairas ? null : (
         <form action={(a) => bevalt(a)} className="w-full mb-5">
           <Label className="flex gap-x-1 my-2 items-center">
             <button

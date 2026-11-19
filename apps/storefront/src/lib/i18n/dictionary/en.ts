@@ -972,6 +972,8 @@ export const en: Dictionary = {
     giftCardApply: "Redeem",
     giftCard: "Gift card",
     giftCardRemove: "Remove the gift card from the order",
+    giftCardRestNote:
+      "Choose the payment method for the rest after redeeming the card.",
   },
   checkoutPage: {
     title: "Checkout",

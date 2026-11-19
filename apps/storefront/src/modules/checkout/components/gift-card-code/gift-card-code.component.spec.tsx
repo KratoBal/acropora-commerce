@@ -79,6 +79,41 @@ describe("GiftCardCode", () => {
     await waitFor(() => expect(removeGiftCard).toHaveBeenCalled())
   })
 
+  it("részleges fedezésnél megmondja, hogy a maradékhoz újra kell fizetési módot választani; teljesnél nem", () => {
+    const sor = {
+      amount: 6000,
+      reference: "gift_card",
+      metadata: { code_last4: "H4BW" },
+    }
+    const { unmount } = render(
+      <GiftCardCode
+        cart={
+          {
+            id: "cart-1",
+            currency_code: "huf",
+            total: 6700,
+            credit_lines: [sor],
+          } as never
+        }
+      />,
+    )
+    expect(screen.getByTestId("gift-card-rest-note")).toBeTruthy()
+    unmount()
+    render(
+      <GiftCardCode
+        cart={
+          {
+            id: "cart-1",
+            currency_code: "huf",
+            total: 0,
+            credit_lines: [sor],
+          } as never
+        }
+      />,
+    )
+    expect(screen.queryByTestId("gift-card-rest-note")).toBeNull()
+  })
+
   it("egy másik jóváírás nem ajándékkártya: a mező beváltásra kész", () => {
     render(
       <GiftCardCode cart={kosar([{ amount: 100, reference: "loyalty" }])} />,
