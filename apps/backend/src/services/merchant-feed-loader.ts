@@ -6,6 +6,11 @@ import {
 } from "@medusajs/framework/utils"
 
 import { resolveBrandService } from "../api/admin/brands/helpers"
+import { COMMERCE_SETTINGS_MODULE } from "../modules/commerce-settings"
+import {
+  FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
+  normalizeCommerceSettingValue,
+} from "../modules/commerce-settings/definitions"
 import {
   toMerchantItem,
   type MerchantFeedContext,
@@ -23,6 +28,27 @@ export type BrandReader = {
     filters: { os_brand_id: string[] },
     config: { take: number | null }
   ): Promise<{ os_brand_id: string; name: string }[]>
+}
+
+/** The feed reads one setting: the restock lead time (card 69d18bff). */
+export type FeedSettingsReader = {
+  listCommerceSettings(
+    filters: { key: string },
+    config: { take: number }
+  ): Promise<{ key: string; value: unknown }[]>
+}
+
+/** The lead time in days, or null when it is not set (no default, on purpose). */
+export async function backorderLeadTimeDays(
+  settings: FeedSettingsReader
+): Promise<number | null> {
+  const [row] = await settings.listCommerceSettings(
+    { key: FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY },
+    { take: 1 }
+  )
+  return row
+    ? normalizeCommerceSettingValue(FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY, row.value)
+    : null
 }
 
 const PAGE = 200
@@ -59,8 +85,8 @@ export class MerchantFeedConfigError extends Error {}
  * record, the same ones the storefront sells in, so no new setting is needed.
  */
 export async function loadMerchantItems(
-  deps: { query: Query; brands: BrandReader },
-  env: { storefrontUrl?: string }
+  deps: { query: Query; brands: BrandReader; settings: FeedSettingsReader },
+  env: { storefrontUrl?: string; now?: Date }
 ): Promise<MerchantItem[]> {
   const storefrontUrl = env.storefrontUrl?.trim().replace(/\/+$/, "") ?? ""
   if (!/^https?:\/\//.test(storefrontUrl))
@@ -134,6 +160,8 @@ export async function loadMerchantItems(
       products.map((p) => p.id)
     ),
     categories: await categoryTree(query),
+    backorderLeadTimeDays: await backorderLeadTimeDays(deps.settings),
+    now: env.now ?? new Date(),
   }
   return products.flatMap((product) =>
     (product.variants ?? [])
@@ -147,6 +175,7 @@ export function merchantFeedDeps(scope: MedusaContainer) {
   return {
     query: scope.resolve(ContainerRegistrationKeys.QUERY) as Query,
     brands: resolveBrandService(scope) as unknown as BrandReader,
+    settings: scope.resolve(COMMERCE_SETTINGS_MODULE) as FeedSettingsReader,
   }
 }
 
