@@ -63,6 +63,8 @@ export const segmentInLanguageOf = (
   pageSegment: unknown,
 ): string =>
   segmentFor(
-    country,
+    // the country is a form field too (the address's `country_code`): only two letters can be a country, anything else (a path, a host, a
+    // slash) is not put into the redirect's path (barracuda #841); the cart update refuses the same value for the address
+    /^[a-z]{2}$/i.test(country) ? country : "hu",
     typeof pageSegment === "string" ? localeOf(pageSegment) : DEFAULT_LOCALE,
   )

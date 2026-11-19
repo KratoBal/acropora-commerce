@@ -81,6 +81,30 @@ describe("segmentInLanguageOf", () => {
     expect(segmentInLanguageOf("HU", "en-hu")).toBe("en-hu")
   })
 
+  /*
+    THE COUNTRY IS USER INPUT TOO (barracuda #841): the address form's `country_code` goes into the redirect's path. What must fail: a value that is
+    not two letters (a path, a host, a slash, an empty or "null" string) reaching the path; the valid ones (`hu`, `de`, any case) not passing.
+  */
+  it("a country that is not two letters never reaches the path", () => {
+    for (const odd of [
+      "/evil.example",
+      "/",
+      "//x",
+      "../x",
+      "",
+      "null",
+      "hu/x",
+      "hun",
+      "h",
+      " hu",
+      "h1",
+    ]) {
+      expect(segmentInLanguageOf(odd, "hu"), odd).toBe("hu")
+      expect(segmentInLanguageOf(odd, "en-hu"), odd).toBe("en-hu")
+    }
+    expect(segmentInLanguageOf("DE", "en-hu")).toBe("en-de")
+  })
+
   it("a missing, unknown or odd page segment is the default language", () => {
     for (const odd of [
       undefined,
