@@ -787,7 +787,7 @@ export const hu = {
     sku: "Cikkszám {sku}",
     uniqueNote: "Egyedi példány, nem pótolható",
     priceFrom: "{price}-tól",
-    originalPrice: "Eredeti ár:",
+    originalPrice: "Korábbi ár:",
     omnibusLine: "Az árcsökkentés előtti 30 nap legalacsonyabb ára: {price}",
     omnibusLineShort:
       "Az árcsökkentés előtti legalacsonyabb ár {since} óta: {price}",

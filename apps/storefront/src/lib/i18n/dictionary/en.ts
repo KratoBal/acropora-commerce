@@ -753,7 +753,7 @@ export const en: Dictionary = {
     sku: "Item no. {sku}",
     uniqueNote: "One-of-a-kind piece, cannot be replaced",
     priceFrom: "from {price}",
-    originalPrice: "Original price:",
+    originalPrice: "Previous price:",
     omnibusLine:
       "Lowest price in the 30 days before the price reduction: {price}",
     omnibusLineShort:

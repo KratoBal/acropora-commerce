@@ -309,6 +309,8 @@ describe("az akciós ár", () => {
     const { container } = render(<ProductPrice product={akciosTermek()} />)
 
     expect(container.textContent).not.toContain("Original")
-    expect(container.textContent).toContain("Eredeti ár")
+    expect(container.textContent).toContain("Korábbi ár")
+    // a felirat NEM "Eredeti ár": az áthúzott szám a 30 napos legalacsonyabb ár, nem egy eredeti (alap)ár (acrobot 2026-11-19)
+    expect(container.textContent).not.toContain("Eredeti")
   })
 })
