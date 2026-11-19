@@ -1,3 +1,4 @@
+import { CEG } from "@lib/ceg"
 import { STORE_DESCRIPTION } from "@lib/store"
 
 /**
@@ -1283,11 +1284,15 @@ export const hu = {
     errorEmail: "Ellenőrizd az e-mail címet, valami hiányzik belőle.",
     errorNumber: "A rendelésszám csak számjegyekből áll.",
     errorNotFound:
-      "Nem találtuk a rendelést ezekkel az adatokkal. Ellenőrizd a rendelésszámot és az e-mail címet, vagy írj nekünk: [KITÖLTENDŐ: ügyfélszolgálat elérhetősége].",
+      "Nem találtuk a rendelést ezekkel az adatokkal. Ellenőrizd a rendelésszámot és az e-mail címet, vagy írj nekünk: " +
+      CEG.email +
+      ".",
     errorTooMany:
-      "Túl sok sikertelen próbálkozás történt. Próbáld újra [KITÖLTENDŐ: várakozási idő] múlva, vagy írj nekünk.",
+      "Túl sok sikertelen próbálkozás történt. Próbáld újra 15 perc múlva, vagy írj nekünk.",
     errorUnavailable:
-      "Most nem tudjuk megmutatni a rendelést. Próbáld újra kicsit később, vagy írj nekünk: [KITÖLTENDŐ: ügyfélszolgálat elérhetősége].",
+      "Most nem tudjuk megmutatni a rendelést. Próbáld újra kicsit később, vagy írj nekünk: " +
+      CEG.email +
+      ".",
     splitNotice:
       "Ez a vásárlás két rendelésből áll, mert élő állat is volt benne. Az egyiket kiszállítjuk, a másik élő állatokat a boltban veheted át.",
     blockShipped: "Kiszállítandó termékek",
@@ -1395,11 +1400,10 @@ export const hu = {
       addPhoto: "Kép hozzáadása",
       removePhoto: "Eltávolítás",
       photoErrorSize:
-        "Ez a fájl túl nagy. A legnagyobb engedélyezett méret: 5 MB. [KITÖLTENDŐ: méret]",
+        "Ez a fájl túl nagy. A legnagyobb engedélyezett méret: 5 MB.",
       photoErrorType:
         "Ez a fájltípus nem támogatott. Használj JPG vagy PNG képet.",
-      photoErrorCount:
-        "Legfeljebb 5 képet csatolhatsz. [KITÖLTENDŐ: darabszám]",
+      photoErrorCount: "Legfeljebb 5 képet csatolhatsz.",
       photoErrorUpload: "A(z) {name} képet nem tudtuk feltölteni.",
       submit: "Bejelentés elküldése",
       sending: "Küldés…",
@@ -1412,7 +1416,9 @@ export const hu = {
       errorDuplicate:
         "Erről a problémáról már van bejelentésed. Az ügy azonosítóját a rendelésed alatt, a „Már leadott bejelentéseid” részben találod.",
       errorSend:
-        "A bejelentést most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
+        "A bejelentést most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: " +
+        CEG.email +
+        ".",
       reportsTitle: "Már leadott bejelentéseid",
       reportRef: "Ügy azonosítója: {id}",
       stageReceived: "Beérkezett",
@@ -1441,9 +1447,13 @@ export const hu = {
       errorDuplicate:
         "A kijelölt tételekről már van elállási nyilatkozatod. Az azonosítóját a rendelésed alatt, a „Már leadott elállási nyilatkozataid” részben találod.",
       errorUnknown:
-        "Az elállási nyilatkozat elküldése közben hiba történt, és nem tudjuk, megérkezett-e. Nézd meg a rendelésed alatt a „Már leadott elállási nyilatkozataid” részt: ha ott megjelenik, nincs több teendőd. Ha nem, próbáld újra, vagy írj nekünk: [KITÖLTENDŐ: elérhetőség].",
+        "Az elállási nyilatkozat elküldése közben hiba történt, és nem tudjuk, megérkezett-e. Nézd meg a rendelésed alatt a „Már leadott elállási nyilatkozataid” részt: ha ott megjelenik, nincs több teendőd. Ha nem, próbáld újra, vagy írj nekünk: " +
+        CEG.email +
+        ".",
       errorSend:
-        "Az elállási nyilatkozatot most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: [KITÖLTENDŐ: elérhetőség].",
+        "Az elállási nyilatkozatot most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: " +
+        CEG.email +
+        ".",
       done: "Megkaptuk az elállási nyilatkozatodat. Az azonosítója: {id}. [KITÖLTENDŐ: további teendők és határidők]",
       donePartial:
         "Ezekről a tételekről korábban már leadtál nyilatkozatot, ezeket nem rögzítettük újra: {items}",
