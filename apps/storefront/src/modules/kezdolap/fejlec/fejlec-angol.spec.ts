@@ -26,7 +26,9 @@ describe("a fejléc szövegei", () => {
       MAGYAR_BETU.test(s.szoveg(sor.kulcs)),
     ).map((sor) => sor.kulcs)
     expect(magyar).toEqual([])
-    expect(s.szoveg("fejlec.sav.3")).toBe("Open today 10:00–19:00")
+    expect(s.szoveg("fejlec.sav.3")).toBe(
+      "Open: Tue–Fri 10:00–18:00, Sat 10:00–14:00",
+    )
     expect(s.szoveg("fejlec.kereso")).toMatch(/^Search:/)
   })
 

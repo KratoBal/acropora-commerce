@@ -57,10 +57,24 @@ const LAPOK_KOZOS = [
  *   "mar nincs a lapon, vedd ki"; a penztar-fizetes lapnak igy nincs varhato hibaja).
  */
 export const A11Y_VARHATO: readonly A11yVarhato[] = [
-  ...LAPOK_KOZOS.flatMap((lap) => [
-    { lap, szabaly: "nested-interactive", gazda: "FE-7", ok: FEJLEC_KOSAR },
-    { lap, szabaly: "color-contrast", gazda: "design", ok: MARKASZIN },
-  ]),
+  ...LAPOK_KOZOS.map((lap) => ({
+    lap,
+    szabaly: "nested-interactive",
+    gazda: "FE-7",
+    ok: FEJLEC_KOSAR,
+  })),
+  /*
+    A `color-contrast` CSAK A KEZDOLAPON MARADT ISMERT (2026-11-19, a #831 CI-ja mondta: "mar nincs a lapon, vedd ki" az otodik lapon: termek,
+    kategoria, marka, kereses, kosar). A forras minden lapon a fejlec info-savjanak "MINTA ADAT" jelzoje volt (`.inline-flex.px-2.py-1`,
+    a marka-szin fehéren): a #831 a sav szovegeit a lablec valodi adatara (CEG) allitotta, tehat a sav mar nem minta, a jelzo nem jelenik meg,
+    es vele a kontraszt-hiba sem. A kezdolapon tovabbra is minta-jelzok allnak (velemenyek, markak ...), ott a hiba marad.
+  */
+  {
+    lap: "kezdolap",
+    szabaly: "color-contrast",
+    gazda: "design",
+    ok: MARKASZIN,
+  },
 ]
 
 export function a11yVarhato(lap: string, szabaly: string): A11yVarhato | null {
