@@ -22,7 +22,7 @@ export type CartGiftCardRedemption = {
  * Keyed by the cart: a repeated completion takes nothing a second time.
  */
 export async function redeemCartGiftCard(
-  cart: { id: string; credit_lines?: (CreditLineRow | null)[] | null },
+  cart: { id: string; total?: unknown; credit_lines?: (CreditLineRow | null)[] | null },
   container: Container
 ): Promise<CartGiftCardRedemption> {
   const credits = giftCardCredits(cart.credit_lines)
@@ -33,6 +33,17 @@ export async function redeemCartGiftCard(
   if (!line.reference_id)
     throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "Az ajándékkártya-jóváírás nem nevezi meg a kártyát.")
   const amount = amountOf(line.amount)
+  // NEVER MORE THAN THE CART PAYS (barracuda, #818): the store route and the refresh hook cap the credit, but the hook
+  // only logs what it cannot repair, and a path that lowers the total without a refresh would skip it. Here the hook
+  // may not change the cart, but it may refuse: the customer applies the card again, and it is capped then.
+  const before =
+    amountOf(cart.total) +
+    (cart.credit_lines ?? []).reduce((sum, credit) => sum + amountOf(credit?.amount), 0)
+  if (amount > before)
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Az ajándékkártya-jóváírás több, mint amit a rendelés fizet. Vedd le, és add meg újra a kártyát."
+    )
   const result = await container
     .resolve<GiftCardModuleService>(GIFT_CARD_MODULE)
     .redeemGiftCard({ gift_card_id: line.reference_id, amount, reference: cart.id })

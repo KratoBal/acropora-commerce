@@ -203,11 +203,42 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
     wholePositive(input.amount)
     const knex = await this.lockedCard(input.gift_card_id, sharedContext.transactionManager)
     const done = await knex.raw(
-      `select balance_after from gift_card_transaction
+      `select id, -amount as amount, balance_after from gift_card_transaction
        where gift_card_id = ? and kind = 'redeem' and reference = ? and deleted_at is null`,
       [input.gift_card_id, input.reference]
     )
-    if (done.rows.length) return { balance: Number(done.rows[0]!.balance_after), repeated: true }
+    if (done.rows.length) {
+      const earlier = done.rows[0]!
+      if (Number(earlier.amount) === input.amount)
+        return { balance: Number(earlier.balance_after), repeated: true }
+      // AN EARLIER REDEMPTION OF ANOTHER AMOUNT for the same cart (barracuda, #818): a completion took X, died before its
+      // compensation, and the cart's credit was capped to Y since. Taking nothing now would let the order carry Y while
+      // X left the card, and a cancellation would give back only Y. Under the lock: give X back (the void), then take Y.
+      // Not once a refund was made against it: that order exists.
+      const refunded = await knex.raw(
+        `select count(*) as n from gift_card_transaction
+         where gift_card_id = ? and kind = 'refund' and reference = ? and deleted_at is null`,
+        [input.gift_card_id, input.reference]
+      )
+      if (Number(refunded.rows[0]!.n) > 0)
+        throw new MedusaError(
+          MedusaError.Types.NOT_ALLOWED,
+          "Erre a kosárra már volt visszatérített beváltás, más összeggel nem váltható be újra."
+        )
+      const back = await knex.raw(
+        `update gift_card set balance = balance + ?, updated_at = now() where id = ? returning balance`,
+        [Number(earlier.amount), input.gift_card_id]
+      )
+      await knex.raw(`update gift_card_transaction set deleted_at = now() where id = ?`, [earlier.id])
+      await this.ledger(knex, {
+        gift_card_id: input.gift_card_id,
+        kind: "void",
+        amount: Number(earlier.amount),
+        balance_after: Number(back.rows[0]!.balance),
+        reference: input.reference,
+        idempotency_key: null,
+      })
+    }
     const updated = await knex.raw(
       `update gift_card set balance = balance - ?, updated_at = now()
        where id = ? and deleted_at is null and status = 'active' and balance >= ?
