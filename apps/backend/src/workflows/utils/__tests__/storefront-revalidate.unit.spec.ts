@@ -40,6 +40,30 @@ describe("the storefront revalidate settings", () => {
     expect(storefrontRevalidateConfig({ ACROPORA_STOREFRONT_URL: "https://x.test" } as never)).toBeNull()
     expect(storefrontRevalidateConfig({ STOREFRONT_REVALIDATE_SECRET: "t" } as never)).toBeNull()
   })
+
+  it("calls STOREFRONT_REVALIDATE_URL when it is set, else the public address (the test shop's is behind Basic authentication)", () => {
+    const secret = "titok"
+    expect(
+      storefrontRevalidateConfig({
+        ACROPORA_STOREFRONT_URL: "https://shop.example.test",
+        STOREFRONT_REVALIDATE_URL: " http://storefront-internal:8000/ ",
+        STOREFRONT_REVALIDATE_SECRET: secret,
+      } as never)
+    ).toEqual({ url: "http://storefront-internal:8000/api/revalidate", secret })
+    // blank means "not set": the public address is used
+    expect(
+      storefrontRevalidateConfig({
+        ACROPORA_STOREFRONT_URL: "https://shop.example.test",
+        STOREFRONT_REVALIDATE_URL: "   ",
+        STOREFRONT_REVALIDATE_SECRET: secret,
+      } as never)
+    ).toEqual({ url: "https://shop.example.test/api/revalidate", secret })
+    // the internal address alone is enough, and the secret is still needed
+    expect(
+      storefrontRevalidateConfig({ STOREFRONT_REVALIDATE_URL: "http://storefront-internal:8000", STOREFRONT_REVALIDATE_SECRET: secret } as never)
+    ).toEqual({ url: "http://storefront-internal:8000/api/revalidate", secret })
+    expect(storefrontRevalidateConfig({ STOREFRONT_REVALIDATE_URL: "http://storefront-internal:8000" } as never)).toBeNull()
+  })
 })
 
 describe("sending the revalidate", () => {
@@ -93,12 +117,15 @@ describe("one call per window", () => {
 })
 
 describe("the subscriber", () => {
-  it("listens to the pricing module's price events, and does nothing without the settings", async () => {
+  it("listens to the pricing module's price and price list events, and does nothing without the settings", async () => {
     expect(config.event).toEqual([...PRICE_CHANGE_EVENTS])
     expect(PRICE_CHANGE_EVENTS).toEqual([
       "pricing.price.created",
       "pricing.price.updated",
       "pricing.price.deleted",
+      "pricing.price-list.created",
+      "pricing.price-list.updated",
+      "pricing.price-list.deleted",
     ])
     const resolve = jest.fn()
     const saved = { ...process.env }

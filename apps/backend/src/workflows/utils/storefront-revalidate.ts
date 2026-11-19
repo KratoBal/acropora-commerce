@@ -19,6 +19,15 @@ export const PRICE_CHANGE_EVENTS = [
   "pricing.price.created",
   "pricing.price.updated",
   "pricing.price.deleted",
+  /*
+    A PRICE LIST CHANGED (card 54bb3779): a sale price list is created, moved or removed. Its prices are price rows, so
+    most of this also fires the `price` events above; the list's own events cover a window moved or a status switched,
+    which touch no price row. THE START AND THE END OF A WINDOW FIRE NOTHING: Medusa switches by the clock. That is the
+    boundary job's work (`jobs/price-list-boundary-revalidate.ts`).
+  */
+  "pricing.price-list.created",
+  "pricing.price-list.updated",
+  "pricing.price-list.deleted",
 ] as const;
 
 /**
@@ -61,11 +70,24 @@ export const PRODUCT_CHANGE_EVENTS = [
 
 export type StorefrontRevalidateConfig = { url: string; secret: string };
 
-/** Off (null) without both: the storefront's address and the shared secret. */
+/**
+ * Off (null) without both: the address to call and the shared secret.
+ *
+ * THE ADDRESS IS `STOREFRONT_REVALIDATE_URL` WHEN SET, ELSE `ACROPORA_STOREFRONT_URL` (card 54bb3779, acrobot). Two
+ * addresses because the storefront has two meanings here. `ACROPORA_STOREFRONT_URL` is the shop's PUBLIC address: the
+ * legal gate reads the mode from its host, the Google Merchant feed and the payment and order links point to it. The
+ * test shop's public address sits behind Basic authentication (Traefik), which stops this call with a 401 before the app
+ * sees it (measured 2026-11-19: no cache was ever emptied). The call may therefore go to an internal address (the
+ * storefront's name on the Coolify network) without changing any of those links. Production needs no second address.
+ */
 export const storefrontRevalidateConfig = (
   env: NodeJS.ProcessEnv,
 ): StorefrontRevalidateConfig | null => {
-  const base = env.ACROPORA_STOREFRONT_URL?.trim().replace(/\/+$/, "") ?? "";
+  const base = (
+    env.STOREFRONT_REVALIDATE_URL?.trim() ||
+    env.ACROPORA_STOREFRONT_URL?.trim() ||
+    ""
+  ).replace(/\/+$/, "");
   const secret = env.STOREFRONT_REVALIDATE_SECRET?.trim() ?? "";
   return base && secret ? { url: `${base}/api/revalidate`, secret } : null;
 };
