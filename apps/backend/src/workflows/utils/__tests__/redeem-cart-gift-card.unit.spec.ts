@@ -49,6 +49,16 @@ describe("redeemCartGiftCard", () => {
     expect(redeemGiftCard).toHaveBeenCalledWith({ gift_card_id: "gcard_1", amount: 6000, reference: "cart_1" })
   })
 
+  it("takes nothing from an already completed cart: a second completion of a finished cart reaches the hook too", async () => {
+    const { redeemGiftCard, container: c } = container({
+      completed_at: "2026-11-19T04:00:00Z",
+      total: 700,
+      credit_line_total: 6000,
+    })
+    expect(await redeemCartGiftCard({ id: "cart_1", credit_lines: [credit(4000)] }, c)).toBeNull()
+    expect(redeemGiftCard).not.toHaveBeenCalled()
+  })
+
   it("does nothing for a cart without a gift card", async () => {
     const { redeemGiftCard, container: c } = container({ total: 5000, credit_line_total: 0 })
     expect(await redeemCartGiftCard({ id: "cart_1", credit_lines: [] }, c)).toBeNull()

@@ -38,7 +38,14 @@ export async function redeemCartGiftCard(
   // may not change the cart, but it may refuse: the customer applies the card again, and it is capped then. The total
   // is READ here (as assertCardShare reads it), not taken from the hook's cart: a missing field there would read 0 and
   // the guard would never fire (barracuda, #818 v2).
-  const before = await totalBeforeCredits(cart.id, container)
+  const now = await cartNow(cart.id, container)
+  // AN ALREADY COMPLETED CART TAKES NOTHING (barracuda, #818 v4). Medusa's complete-cart runs the validate hook BEFORE
+  // its `when("create-order", !orderId)` (core-flows 2.22.4, cart/workflows/complete-cart.js), so a second completion
+  // of a finished cart reaches here too, after the lock (`acquireLockStep({ key: input.id })`) let it in. If the credit
+  // was changed in between (a POST while the first one ran), the B branch would void what the order carries and take
+  // another amount. The order exists: its redemption is the one that stands.
+  if (now.completed) return null
+  const before = now.beforeCredits
   if (amount > before)
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
@@ -50,23 +57,34 @@ export async function redeemCartGiftCard(
   return { gift_card_id: line.reference_id, reference: cart.id, amount, repeated: result.repeated }
 }
 
-/** What the cart pays before its credit lines, read now; a cart that cannot be read is refused, not let through. */
-async function totalBeforeCredits(cartId: string, container: Container): Promise<number> {
+/**
+ * The cart as it is now: whether it is completed, and what it pays before its credit lines. A cart that cannot be read
+ * is refused, not let through.
+ */
+async function cartNow(
+  cartId: string,
+  container: Container
+): Promise<{ completed: boolean; beforeCredits: number }> {
   const query = container.resolve<{
     graph: (input: Record<string, unknown>) => Promise<{ data: Record<string, unknown>[] }>
   }>(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
     entity: "cart",
-    fields: ["id", "total", "credit_line_total"],
+    fields: ["id", "completed_at", "total", "credit_line_total"],
     filters: { id: cartId },
   })
-  const row = data?.[0] as { total?: unknown; credit_line_total?: unknown } | undefined
+  const row = data?.[0] as
+    | { completed_at?: unknown; total?: unknown; credit_line_total?: unknown }
+    | undefined
   if (!row || row.total === null || row.total === undefined)
     throw new MedusaError(
       MedusaError.Types.UNEXPECTED_STATE,
       `The total of cart ${cartId} could not be read; the gift card is not charged without it.`
     )
-  return amountOf(row.total) + amountOf(row.credit_line_total)
+  return {
+    completed: !!row.completed_at,
+    beforeCredits: amountOf(row.total) + amountOf(row.credit_line_total),
+  }
 }
 
 /** The compensation: a completion rolled back gives the card's share back, so a retry can take it again. */
