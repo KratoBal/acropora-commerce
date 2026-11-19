@@ -85,7 +85,22 @@ export type BoltKapcsolat = {
   orszag: string
   /** tesztben kicserelheto */
   fetch?: typeof fetch
+  /** tesztben kicserelheto: a ket probalkozas kozotti varakozas */
+  varakozas?: (ms: number) => Promise<void>
 }
+
+/*
+  A TESZT WEBSHOP UJRAINDULASA NEM TESZTHIBA (acrobot 56659). Minden stage-
+  telepites alatt a teszt Store API nehany percig 502, 503 vagy 504 valaszt ad,
+  es eddig az eppen futo PR-ok CI-je ezen bukott, teszthiba nelkul (a #807 es a
+  #813 2026-11-19-en). Ezekre, ES CSAK EZEKRE, a lekeres ujraprobal, felso
+  korlattal; minden mas statusz (400, 401, 404, 500) es minden valodi teszthiba
+  azonnal bukik. A naploba kiirja, hanyadik probalkozas.
+*/
+const UJRAPROBALHATO = new Set([502, 503, 504])
+export const PROBALKOZASOK = 10
+export const VARAKOZAS_MS = 20_000
+const alszik = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 /** a lapozo lapmerete a kategorian (`category-products.tsx`) */
 const LAPMERET = 12
@@ -105,17 +120,27 @@ const mindKaphato = (t: Termek) =>
 const handleSzerint = <T extends { handle: string }>(a: T, b: T) =>
   a.handle.localeCompare(b.handle)
 
-async function lekeres<T>(
+export async function lekeres<T>(
   b: BoltKapcsolat,
   ut: string,
   q: Record<string, string>,
 ): Promise<T> {
   const f = b.fetch ?? fetch
-  const valasz = await f(`${b.backend}${ut}?${new URLSearchParams(q)}`, {
-    headers: { "x-publishable-api-key": b.kulcs },
-  })
-  if (!valasz.ok) throw new Error(`Store API ${ut}: ${valasz.status}`)
-  return (await valasz.json()) as T
+  const varj = b.varakozas ?? alszik
+  for (let proba = 1; ; proba++) {
+    const valasz = await f(`${b.backend}${ut}?${new URLSearchParams(q)}`, {
+      headers: { "x-publishable-api-key": b.kulcs },
+    })
+    if (valasz.ok) return (await valasz.json()) as T
+    if (!UJRAPROBALHATO.has(valasz.status) || proba >= PROBALKOZASOK)
+      throw new Error(
+        `Store API ${ut}: ${valasz.status}${proba > 1 ? ` (${proba}. probalkozas utan)` : ""}`,
+      )
+    console.warn(
+      `Store API ${ut}: ${valasz.status}, a teszt webshop valoszinuleg ujraindul; ${proba}/${PROBALKOZASOK}. probalkozas, ujra ${VARAKOZAS_MS / 1000} mp mulva`,
+    )
+    await varj(VARAKOZAS_MS)
+  }
 }
 
 async function mindenTermek(
