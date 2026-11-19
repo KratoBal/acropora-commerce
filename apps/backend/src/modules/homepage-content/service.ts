@@ -3,6 +3,7 @@ import {
   InjectManager,
   InjectTransactionManager,
   MedusaContext,
+  MedusaError,
   MedusaService,
 } from "@medusajs/framework/utils"
 
@@ -160,35 +161,52 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
       return created
     }
     /*
-      A TEXT KEY LEFT OUT OF THE SAVE HAS TO LEAVE THE RECORD (card 2ef36b38). An update merges `texts`, so the record is replaced
-      instead: the old row is soft-deleted and a new one created in the same transaction (the unique index is partial, `deleted_at IS
-      NULL`, as the payment matrix's replace does). What an absent field means, "keeps the stored value", is carried over from the old row
-      into the new one; `slides` and `texts` are always sent.
+      A TEXT KEY LEFT OUT OF THE SAVE HAS TO LEAVE THE RECORD (card 2ef36b38). An update merges `texts` (the ORM assigns with
+      `mergeObjectProperties: true`), so the texts are written by ONE raw UPDATE on the transaction's connection: no ORM merge, and no
+      delete-and-create of the same `key` against the partial unique index (the ORM can put the insert before the update in one unit of
+      work, which refused every save on a real database in #804; the payment matrix, the points ledger and the gift cards write raw for
+      the same reason). The id does not change. Every other field keeps the plain update, and the ORM update does not carry `texts` in
+      this case, so nothing stale is flushed over the raw write.
     */
-    if (removedTextKeys(existing.texts, input.texts).length) {
-      const kept = Object.fromEntries(
-        (
-          [
-            "featured_handles",
-            "featured_brand_handles",
-            "blocks",
-            "footer",
-            "newsletter",
-          ] as const
-        ).map((field) => [field, existing[field] ?? null])
-      )
-      await this.softDeleteHomepageContents([existing.id], {}, sharedContext)
-      const [replaced] = await this.createHomepageContents(
-        [{ key: MAIN_HOMEPAGE_KEY, ...kept, ...body }],
-        sharedContext
-      )
-      return replaced
-    }
+    const removed = removedTextKeys(existing.texts, input.texts).length > 0
+    const { texts, ...others } = body
     const [updated] = await this.updateHomepageContents(
-      [{ id: existing.id, ...body }],
+      [{ id: existing.id, ...(removed ? others : body) }],
       sharedContext
     )
-    return updated
+    if (!removed) return updated
+    await this.knexOf(sharedContext).raw(
+      "update homepage_content set texts = ?::jsonb, updated_at = now() where id = ? and deleted_at is null",
+      [JSON.stringify(texts), existing.id]
+    )
+    // the reads query the database each time, in this transaction: the stored record, not the pre-write entity
+    const [stored] = await this.listHomepageContents(
+      { id: existing.id },
+      { take: 1 },
+      sharedContext
+    )
+    return stored
+  }
+
+  /** The transaction's connection, or a refusal: the texts are replaced only inside one. */
+  private knexOf(sharedContext: Context): {
+    raw(sql: string, bindings: unknown[]): Promise<unknown>
+  } {
+    const knex = (
+      sharedContext.transactionManager as
+        | {
+            getTransactionContext(): {
+              raw(sql: string, bindings: unknown[]): Promise<unknown>
+            } | undefined
+          }
+        | undefined
+    )?.getTransactionContext()
+    if (!knex)
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        "The home page texts are replaced only inside a transaction."
+      )
+    return knex
   }
 
   async retrieveMainHomepageContent() {

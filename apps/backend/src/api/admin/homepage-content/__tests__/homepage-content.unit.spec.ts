@@ -411,11 +411,25 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     let row: Record<string, unknown> | null = null
     let created = 0
     const calls: string[] = []
+    const rawStatements: Array<{ sql: string; bindings: unknown[] }> = []
+    const updates: Array<Record<string, unknown>> = []
     const methods = {
-      // the decorators' manager source: the real one hands out a transaction manager, a fake one only has to exist
+      // the decorators' manager source: the real one hands out a transaction manager whose connection runs the raw statement
       baseRepository_: {
         getFreshManager: () => ({}),
-        transaction: async (work: (manager: unknown) => unknown) => work({}),
+        transaction: async (work: (manager: unknown) => unknown) =>
+          work({
+            getTransactionContext: () => ({
+              raw: async (sql: string, bindings: unknown[]) => {
+                calls.push("raw")
+                rawStatements.push({ sql, bindings })
+                // the one statement the service writes: the texts of one live row, set exactly (no merge)
+                if (row && bindings[1] === row.id)
+                  row = { ...row, texts: JSON.parse(bindings[0] as string) }
+                return { rows: [] }
+              },
+            }),
+          }),
       },
       // the transactional half of the upsert, called by the public method on `this`
       upsertMainHomepageContent_: (
@@ -424,6 +438,12 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
           unknown
         >
       ).upsertMainHomepageContent_,
+      knexOf: (
+        HomepageContentModuleService.prototype as unknown as Record<
+          string,
+          unknown
+        >
+      ).knexOf,
       listHomepageContents: async () => (row ? [row] : []),
       createHomepageContents: async ([data]: Record<string, unknown>[]) => {
         calls.push("create")
@@ -433,6 +453,7 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
       },
       updateHomepageContents: async ([data]: Record<string, unknown>[]) => {
         calls.push("update")
+        updates.push(data)
         // THE REAL UPDATE MERGES AN OBJECT FIELD (the ORM's `mergeObjectProperties: true`, @medusajs/utils dal/mikro-orm): a key not in
         // the data stays. A fake that replaced `texts` hid the removed-key defect (card 2ef36b38) from every test.
         row = {
@@ -449,18 +470,13 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
         }
         return [row]
       },
-      softDeleteHomepageContents: async () => {
-        calls.push("softDelete")
-        row = null
-        return {}
-      },
     }
     const save = (input: Record<string, unknown>) =>
       HomepageContentModuleService.prototype.upsertMainHomepageContent.call(
         methods as never,
         input as never
       )
-    return { save, stored: () => row, calls }
+    return { save, stored: () => row, calls, rawStatements, updates }
   }
   const base = { texts: {}, slides: null }
 
@@ -554,7 +570,7 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     OS "Alapérték" visszaállítása nem érné el a boltot); ha a csere elveszi a nem küldött listákat, blokkokat, láblécet; ha a sima mentés
     (nincs elhagyott kulcs) is törlést és újraírást csinál; ha a csere nem egy lépésben (törlés + létrehozás) megy.
   */
-  it("HPC-SVC-REMOVED-KEY: a text key the save no longer carries is gone from the stored record, and the lists, blocks and footer the save did not send stay", async () => {
+  it("HPC-SVC-REMOVED-KEY: a text key the save no longer carries is gone from the stored record, the id is the same, and the lists, blocks and footer the save did not send stay", async () => {
     const { save, stored, calls } = fake()
     const list = BLOCK_KEYS.map((key) => ({ key, visible: true }))
     await save({
@@ -565,14 +581,32 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
       blocks: list,
       footer: footer(),
     })
+    const idBefore = stored()?.id
     calls.length = 0
     await save({ ...base, texts: { "mit.cim": "Cím" } })
     expect(stored()?.texts).toEqual({ "mit.cim": "Cím" })
+    expect(stored()?.id).toBe(idBefore)
     expect(stored()?.featured_handles).toEqual(["k-1"])
     expect(stored()?.featured_brand_handles).toEqual(["triton"])
     expect(stored()?.blocks).toEqual(list)
     expect(stored()?.footer).toEqual(footer())
-    expect(calls).toEqual(["softDelete", "create"])
+    // never a delete-and-create of the same key (the partial unique index, #804): one update, then one raw statement
+    expect(calls).toEqual(["update", "raw"])
+  })
+
+  it("HPC-SVC-REMOVED-KEY-RAW: the texts are written by ONE raw UPDATE of the one live row by id, and the ORM update does not carry them", async () => {
+    const { save, stored, rawStatements, updates } = fake()
+    await save({ ...base, texts: { a: "1", b: "2" } })
+    updates.length = 0
+    await save({ ...base, texts: { b: "2" } })
+    expect(rawStatements).toHaveLength(1)
+    const [{ sql, bindings }] = rawStatements
+    expect(sql).toMatch(/^update homepage_content set texts = \?::jsonb/)
+    expect(sql).toMatch(/where id = \? and deleted_at is null$/)
+    expect(bindings).toEqual([JSON.stringify({ b: "2" }), stored()?.id])
+    // the ORM update would merge the object field: the texts do not go through it in this case
+    expect(updates).toHaveLength(1)
+    expect("texts" in updates[0]).toBe(false)
   })
 
   it("HPC-SVC-REMOVED-KEY-EXPLICIT: what the save sends wins over what the old row held, even when a key was removed in the same save", async () => {
