@@ -1,5 +1,6 @@
 import {
   availabilityOf,
+  feedAvailability,
   toMerchantItem,
   validGtin,
   variantGtin,
@@ -9,6 +10,7 @@ import {
 } from "../merchant-feed-item"
 import {
   MerchantFeedConfigError,
+  backorderLeadTimeDays,
   loadMerchantItems,
 } from "../merchant-feed-loader"
 import { feedCache } from "../merchant-feed-cache"
@@ -65,6 +67,8 @@ const context = (over: Partial<MerchantFeedContext> = {}): MerchantFeedContext =
     cat_used_pumps: { name: "Szivattyúk", parentId: "cat_used" },
     cat_used_pumps_dc: { name: "DC szivattyúk", parentId: "cat_used_pumps" },
   },
+  backorderLeadTimeDays: null,
+  now: new Date("2026-11-19T01:00:00Z"),
   ...over,
 })
 
@@ -235,6 +239,54 @@ describe("availabilityOf", () => {
   })
 })
 
+describe("feedAvailability", () => {
+  /*
+    A BACKORDERABLE ITEM IN THE FEED (card 69d18bff). WHAT TURNS RED: a `backorder` without the
+    `availability_date` Google requires; an unset lead time inventing a date; in stock or out of stock touched.
+  */
+  const now = new Date("2026-11-19T01:00:00Z")
+  it("MF-BACKORDER: without a lead time a backorderable item is out of stock, with one it is a backorder and its day", () => {
+    expect(feedAvailability("backorder", { backorderLeadTimeDays: null, now })).toEqual({
+      availability: "out_of_stock",
+    })
+    expect(feedAvailability("backorder", { backorderLeadTimeDays: 7, now })).toEqual({
+      availability: "backorder",
+      availability_date: "2026-11-26T00:00Z",
+    })
+    expect(feedAvailability("in_stock", { backorderLeadTimeDays: 7, now })).toEqual({
+      availability: "in_stock",
+    })
+    expect(feedAvailability("out_of_stock", { backorderLeadTimeDays: 7, now })).toEqual({
+      availability: "out_of_stock",
+    })
+  })
+
+  it("MF-BACKORDER-ITEM: the item carries it, and the XML writes the date", () => {
+    const zero = context({ availability: { variant_1: 0 } })
+    const backorderable = variant({ allow_backorder: true })
+    expect(toMerchantItem(product(), backorderable, zero)?.availability).toBe("out_of_stock")
+    expect(toMerchantItem(product(), backorderable, zero)?.availability_date).toBeUndefined()
+    const set = toMerchantItem(product(), backorderable, { ...zero, backorderLeadTimeDays: 7 })!
+    expect([set.availability, set.availability_date]).toEqual(["backorder", "2026-11-26T00:00Z"])
+    expect(merchantFeedXml([set], { title: "t", link: "l", description: "d" })).toContain(
+      "<g:availability_date>2026-11-26T00:00Z</g:availability_date>"
+    )
+  })
+
+  it("MF-LEADTIME: the setting read as days, unset as null, a bad stored value refused", async () => {
+    const reader = (value: unknown) => ({
+      listCommerceSettings: async (filters: { key: string }) =>
+        filters.key === "feed_backorder_lead_time_days"
+          ? [{ key: filters.key, value }]
+          : [],
+    })
+    expect(await backorderLeadTimeDays({ listCommerceSettings: async () => [] })).toBeNull()
+    expect(await backorderLeadTimeDays(reader("7"))).toBe(7)
+    await expect(backorderLeadTimeDays(reader("0"))).rejects.toThrow(/1 to 365/)
+    await expect(backorderLeadTimeDays(reader("2.5"))).rejects.toThrow(/1 to 365/)
+  })
+})
+
 describe("validGtin", () => {
   it("MF-CHECKDIGIT: the GS1 check digit on 8, 12, 13 and 14 digits", () => {
     for (const code of ["96385074", "036000291452", "4006381333931", "10012345678902"])
@@ -291,6 +343,7 @@ describe("loadMerchantItems", () => {
     listProductBrands: async () => [{ product_id: "prod_1", os_brand_id: "os_kz" }],
     listBrands: async () => [{ os_brand_id: "os_kz", name: "KZ" }],
   }
+  const noSettings = { listCommerceSettings: async () => [] }
 
   it("MF-LOAD: only the default channel's products, priced, with the brand module's name", async () => {
     const { query, calls } = fakeQuery([
@@ -298,7 +351,7 @@ describe("loadMerchantItems", () => {
       { ...product({ id: "prod_2", variants: [variant({ id: "variant_9", sku: "OTHER" })] }), sales_channels: [{ id: "sc_pos" }] },
     ])
     const items = await loadMerchantItems(
-      { query: query as never, brands },
+      { query: query as never, brands, settings: noSettings },
       { storefrontUrl: "https://teszt.acropora.example/" }
     )
     expect(items.map((i) => i.id)).toEqual(["KZ-AMINO-100"])
@@ -310,7 +363,7 @@ describe("loadMerchantItems", () => {
   it("MF-ORDER: paging has a total order, the id breaking created_at ties", async () => {
     const { query, calls } = fakeQuery([])
     await loadMerchantItems(
-      { query: query as never, brands },
+      { query: query as never, brands, settings: noSettings },
       { storefrontUrl: "https://teszt.acropora.example" }
     )
     expect(calls.find((c) => c.entity === "product")?.pagination).toEqual({
@@ -323,7 +376,7 @@ describe("loadMerchantItems", () => {
   it("MF-CATEGORIES: only active, public categories, as the Store API gives them", async () => {
     const { query, calls } = fakeQuery([])
     await loadMerchantItems(
-      { query: query as never, brands },
+      { query: query as never, brands, settings: noSettings },
       { storefrontUrl: "https://teszt.acropora.example" }
     )
     expect(calls.find((c) => c.entity === "product_category")?.filters).toEqual({
@@ -335,7 +388,7 @@ describe("loadMerchantItems", () => {
   it("MF-NOURL: without a storefront URL the feed refuses instead of relative links", async () => {
     const { query } = fakeQuery([])
     await expect(
-      loadMerchantItems({ query: query as never, brands }, { storefrontUrl: "" })
+      loadMerchantItems({ query: query as never, brands, settings: noSettings }, { storefrontUrl: "" })
     ).rejects.toBeInstanceOf(MerchantFeedConfigError)
   })
 })
