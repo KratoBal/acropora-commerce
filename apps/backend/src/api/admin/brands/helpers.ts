@@ -63,7 +63,7 @@ export const requestBrandsRevalidate = (
   if (!config) return
   const logger = scope.resolve(ContainerRegistrationKeys.LOGGER)
   brandsCoalescer ??= revalidateCoalescer(
-    () => sendStorefrontRevalidate(config, logger, undefined, ["brands"]),
+    () => sendStorefrontRevalidate(config, logger, undefined, ["brands"], "brands"),
     BRANDS_REVALIDATE_WINDOW_MS
   )
   brandsCoalescer.request()

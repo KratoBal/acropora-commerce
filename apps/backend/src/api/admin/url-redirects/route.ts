@@ -33,6 +33,7 @@ export const PUT = async (
       req.scope.resolve(ContainerRegistrationKeys.LOGGER),
       fetch,
       ["redirects"],
+      "url-redirects",
     );
   res.json({ url_redirects: await redirectListOf(req.scope) });
 };

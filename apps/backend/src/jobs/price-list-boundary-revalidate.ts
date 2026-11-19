@@ -25,7 +25,7 @@ export default async function priceListBoundaryRevalidate(container: MedusaConta
   const outcome = await runBoundaryTick(
     {
       activeWindows: () => pricing.listPriceLists({ status: ["active"] }, { select: ["starts_at", "ends_at"], take: null }),
-      send: () => sendStorefrontRevalidate(config, logger),
+      send: () => sendStorefrontRevalidate(config, logger, undefined, undefined, "boundary-job"),
     },
     state,
     new Date(),
