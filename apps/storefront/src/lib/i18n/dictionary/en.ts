@@ -996,6 +996,14 @@ export const en: Dictionary = {
     emailInvalid: "Enter a valid email address.",
     phone: "Phone number",
     sameAsBilling: "The billing address is the same as the delivery address",
+    companyPurchase: "Company purchase: please invoice the company",
+    companyPurchaseLead:
+      "Enter the company name in the company field, and the tax number.",
+    taxId: "Tax number",
+    taxIdHint: "Hungarian tax number, for example 12345678-1-23",
+    taxIdInvalid:
+      "Enter a valid Hungarian tax number: 11 digits, for example 12345678-1-23.",
+    taxIdSummary: "Tax number",
   },
   checkoutShipping: {
     heading: "Shipping",
@@ -1192,6 +1200,8 @@ export const en: Dictionary = {
       "We pack your parcel. The tracking number appears when we have dispatched the parcel.",
     nextStepGls:
       "We pack your parcel. The GLS tracking number appears when we have dispatched the parcel.",
+    nextStepTransfer:
+      "We send the proforma invoice by e-mail, with an 8-day payment deadline. We pack your parcel once the payment has arrived; the tracking number appears when we have dispatched it.",
     pickupWhere: "Pick-up location: {name}, {address}.",
     pickupPayAtStore: "Available for pick-up in the store. Payment at pick-up.",
     summary: "Order summary",
@@ -1199,6 +1209,8 @@ export const en: Dictionary = {
     payment: "Payment",
     total: "Total",
     orders: "Orders",
+    company: "Company",
+    taxId: "Tax number",
     ordersCount: "{count}",
     shippingFee: "Shipping: {amount}",
     codFee: "Cash on delivery fee: {amount}",

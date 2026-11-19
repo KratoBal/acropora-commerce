@@ -7,6 +7,7 @@ import { consentAlapSzkript } from "@lib/util/suti-hozzajarulas"
 import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
 import Merokodok from "@modules/suti/merokodok"
 import SutiAblak from "@modules/suti/suti-ablak"
+import YoutubeBetolto from "@modules/common/components/youtube-betolto"
 import { Metadata } from "next"
 import localFont from "next/font/local"
 import "styles/globals.css"
@@ -158,6 +159,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <SutiAblak />
         {/* a merokodok (GA4, Ads, Meta pixel) CSAK hozzajarulassal es csak beallitott azonositoval (dc8cabd2) */}
         <Merokodok {...merokodAzonositok(process.env)} />
+        {/* a leirasokba agyazott YouTube-videok kattintasra toltodnek (dc8cabd2) */}
+        <YoutubeBetolto />
       </body>
     </html>
   )

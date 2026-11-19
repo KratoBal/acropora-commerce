@@ -5,6 +5,7 @@ import {
   GLS_KOVETKEZO_LEPES,
   KOVETKEZO_LEPES,
   boltiLepesek,
+  cegAdatok,
   fizetesCimke,
   sikeroldal,
 } from "./sikeroldal"
@@ -456,5 +457,51 @@ describe("a bolti átvétel következő lépése", () => {
       true,
     )
     expect(lap.teljesitesek.map((tj) => tj.fizetesMod)).toEqual([null, "bolti"])
+  })
+})
+
+/*
+  A CEGES VASARLAS ADATAI AZ OSSZESITOHOZ (A15). MI PIROSIT: a cegnev nelkuli (magan) rendelesen megjelenik egy "ceg"; a
+  cegnev eltunik, ha nincs adoszam; az adoszam a cim metadata-janak MAS kulcsabol jon; egy ures szoveg adoszamnak szamit;
+  a mezok szokozei bennmaradnak.
+*/
+describe("a ceges vasarlas adatai", () => {
+  const cim = (
+    company: string | null,
+    metadata: Record<string, unknown> | null,
+  ) => ({ billing_address: { company, metadata } }) as never
+
+  it("cegnev es adoszam, szokoz nelkul", () => {
+    expect(
+      cegAdatok(cim("  Teszt Kft. ", { tax_id: " 12345676-2-13 " })),
+    ).toEqual({
+      nev: "Teszt Kft.",
+      adoszam: "12345676-2-13",
+    })
+  })
+
+  it("adoszam nelkul a cegnev egyedul all, adoszam kulcs nelkul is, ures szoveggel is", () => {
+    expect(cegAdatok(cim("Teszt Kft.", null))).toEqual({
+      nev: "Teszt Kft.",
+      adoszam: null,
+    })
+    expect(cegAdatok(cim("Teszt Kft.", { tax_id: null }))).toEqual({
+      nev: "Teszt Kft.",
+      adoszam: null,
+    })
+    expect(cegAdatok(cim("Teszt Kft.", { tax_id: "  " }))).toEqual({
+      nev: "Teszt Kft.",
+      adoszam: null,
+    })
+    expect(cegAdatok(cim("Teszt Kft.", { adoszam: "12345676-2-13" }))).toEqual({
+      nev: "Teszt Kft.",
+      adoszam: null,
+    })
+  })
+
+  it("cegnev nelkul (maganszemely, vagy nincs szamlazasi cim) nincs ceg, az adoszam sem szamit", () => {
+    expect(cegAdatok(cim(null, { tax_id: "12345676-2-13" }))).toBeNull()
+    expect(cegAdatok(cim("   ", null))).toBeNull()
+    expect(cegAdatok({} as never)).toBeNull()
   })
 })

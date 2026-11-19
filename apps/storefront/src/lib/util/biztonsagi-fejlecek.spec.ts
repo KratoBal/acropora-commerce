@@ -99,6 +99,11 @@ describe("a CSP", () => {
     expect(jelento).toContain("frame-ancestors 'self'")
     // a Stripe nelkul a kartyas fizetes jelentene mindent
     expect(jelento).toContain("https://js.stripe.com")
+    // a leirasokba agyazott videok a nocookie domainrol, kattintasra toltodnek (dc8cabd2): a sima youtube.com nem forras
+    expect(jelento).toMatch(
+      /frame-src [^;]*https:\/\/www\.youtube-nocookie\.com/,
+    )
+    expect(jelento).not.toMatch(/frame-src [^;]*https:\/\/www\.youtube\.com/)
     // a hatter hosztja a kep- es a kapcsolat-forrasban
     expect(jelento).toMatch(
       /img-src [^;]*https:\/\/commerce-stage\.example\.test/,

@@ -14,7 +14,7 @@
  * - A CSP TELJES SZABALYA csak JELENTO uzemmodban megy
  *   (`Content-Security-Policy-Report-Only`): a Next beagyazott szkriptjei miatt
  *   `'unsafe-inline'` kell, a harmadik felek (Fogyasztobarat, Stripe, Foxpost,
- *   GLS, YouTube) tenyleges forrasait pedig csak egy valodi bongeszo mutatja
+ *   GLS, YouTube: a youtube-nocookie.com, kattintasra, lasd `lib/util/youtube-helyorzo.ts`) tenyleges forrasait pedig csak egy valodi bongeszo mutatja
  *   meg. A jelentes ma a bongeszo konzoljaban latszik, gyujto vegpont nincs;
  *   az ervenyesito CSP a gyujtes UTAN kovetkezik. Az audit is ezt kerte
  *   („CSP eloszor Report-Only modban”).
@@ -155,7 +155,7 @@ function jelentoCsp(env) {
       "frame-src",
       "https://js.stripe.com",
       "https://hooks.stripe.com",
-      "https://www.youtube.com",
+      "https://www.youtube-nocookie.com",
       FOXPOST,
       "https://map.gls-hungary.com",
     ),
