@@ -6,6 +6,7 @@ import { tetelSor } from "@lib/util/fizetesi-oldal"
 import { arSzoveg } from "@lib/util/ar-szoveg"
 import { convertToLocale } from "@lib/util/money"
 import DiscountCode from "@modules/checkout/components/discount-code"
+import GiftCardCode from "@modules/checkout/components/gift-card-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /** A cselekvo gomb helye az osszesitoben: a fizetesi resz ide rajzolja (portal). */
@@ -41,6 +42,9 @@ export default function Rendelesed({
   // ugyanaz a mezo, amit a kosar-osszegzo olvas (a Store tipus nem nevezi meg)
   const kedvezmeny =
     (cart as { discount_subtotal?: number | null }).discount_subtotal ?? 0
+  // az ajándékkártya fizetőeszköz: külön sor, a `total` már nélküle áll (495c0007)
+  const ajandekkartya =
+    (cart as { credit_line_total?: number | null }).credit_line_total ?? 0
 
   return (
     <section
@@ -71,6 +75,7 @@ export default function Rendelesed({
       </ul>
       <div className="mt-4">
         <DiscountCode cart={cart} />
+        <GiftCardCode cart={cart} />
       </div>
       <div className="my-4 h-px bg-acr-line" />
       <dl className="flex flex-col gap-3 text-[13px] text-acr-slate">
@@ -88,6 +93,15 @@ export default function Rendelesed({
           <div className="flex justify-between">
             <dt>{t("checkoutPayment.discount")}</dt>
             <dd className="text-acr-ink">- {penz(kedvezmeny)}</dd>
+          </div>
+        ) : null}
+        {ajandekkartya > 0 ? (
+          <div
+            className="flex justify-between"
+            data-testid="rendelesed-ajandekkartya"
+          >
+            <dt>{t("cartPage.giftCard")}</dt>
+            <dd className="text-acr-ink">- {penz(ajandekkartya)}</dd>
           </div>
         ) : null}
       </dl>
