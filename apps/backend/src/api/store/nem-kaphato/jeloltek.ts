@@ -69,7 +69,12 @@ export type Kategoria = {
   name: string;
   handle: string;
   parent_category_id?: string | null;
+  is_active?: boolean | null;
+  is_internal?: boolean | null;
 };
+
+/** A buyer may see it: active and not internal (what the Store API hands the storefront; barracuda, #834). */
+const lathato = (k: Kategoria) => k.is_active !== false && k.is_internal !== true;
 
 /**
  * Az elsodleges kategoria: a vetites altal kiirt `primary_category_id`, ha a
@@ -80,13 +85,15 @@ export type Kategoria = {
  * gazdajuak; igy a "Vissza a kategoriahoz" link es a gepi hasonlo termek sehol nem jelent meg). A sorrendre most
  * sem tippelunk (a Medusa listaja nem rendezett): a termek kategoriai kozul az a lanc nyer, amelyik a sajat
  * kategoriain belul a leghosszabb (a kirakat `besorolasUt` szabalya), egyenlosegnel a handle ABC-rendje dont, tehat
- * ugyanarra a termekre mindig ugyanaz.
+ * ugyanarra a termekre mindig ugyanaz. Csak a vevonek lathato (aktiv, nem belso) kategoria szamit, a primary is.
  */
 export function elsodlegesKategoria(
   metadata: Record<string, unknown> | null | undefined,
   kategoriak: readonly Kategoria[] | null | undefined,
 ): Kategoria | null {
-  const lista = kategoriak ?? [];
+  // only a category the buyer can open: a hidden one is a dead "Vissza a kategóriához" link and a hidden pool of
+  // similar products (barracuda, #834); the primary is held to the same rule
+  const lista = (kategoriak ?? []).filter(lathato);
   const id = metadata?.[ELSODLEGES_KATEGORIA_KULCS];
   const jelolt =
     typeof id === "string" && id ? lista.find((k) => k.id === id) : undefined;

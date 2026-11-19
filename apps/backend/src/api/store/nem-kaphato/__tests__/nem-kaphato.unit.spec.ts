@@ -80,6 +80,34 @@ describe("a jeloltek tiszta dontese", () => {
     expect(elsodlegesKategoria({}, [a, b])?.handle).toBe("aramoltatok");
   });
 
+  /*
+    CSAK A VEVONEK LATHATO KATEGORIA (barracuda, #834). MI PIROSIT: egy melyebb belso vagy inaktiv kategoria nyer (a
+    link 404-re vinne, a hasonlo termekek rejtett kategoriabol jonnenek); egy belso primary nyer a nyilvanos felett.
+  */
+  it("a melyebb rejtett kategoria helyett a nyilvanos, a primary is csak lathato lehet", () => {
+    const gyoker = { id: "pcat_root", name: "Termékek", handle: "termekek", parent_category_id: null };
+    const nyilvanos = { id: "pcat_pub", name: "Eszközök", handle: "eszkozok", parent_category_id: "pcat_root" };
+    const belso = {
+      id: "pcat_int",
+      name: "Belső",
+      handle: "belso",
+      parent_category_id: "pcat_pub",
+      is_internal: true,
+    };
+    const inaktiv = {
+      id: "pcat_off",
+      name: "Régi",
+      handle: "regi",
+      parent_category_id: "pcat_pub",
+      is_active: false,
+    };
+    expect(elsodlegesKategoria({}, [gyoker, nyilvanos, belso, inaktiv])?.handle).toBe("eszkozok");
+    expect(
+      elsodlegesKategoria({ primary_category_id: "pcat_int" }, [gyoker, nyilvanos, belso])?.handle,
+    ).toBe("eszkozok");
+    expect(elsodlegesKategoria({}, [belso, inaktiv])).toBeNull();
+  });
+
   it("ket kulon lista, csak megveheto termekkel, a sajat termek nelkul, hatarral", () => {
     const explicit = ["sajat", "a", "b", "vazlat"];
     const kategoriaMarkas = ["b", "c", "d"];
