@@ -996,6 +996,14 @@ export const en: Dictionary = {
     emailInvalid: "Enter a valid email address.",
     phone: "Phone number",
     sameAsBilling: "The billing address is the same as the delivery address",
+    companyPurchase: "Company purchase: please invoice the company",
+    companyPurchaseLead:
+      "Enter the company name in the company field, and the tax number.",
+    taxId: "Tax number",
+    taxIdHint: "Hungarian tax number, for example 12345678-1-23",
+    taxIdInvalid:
+      "Enter a valid Hungarian tax number: 11 digits, for example 12345678-1-23.",
+    taxIdSummary: "Tax number",
   },
   checkoutShipping: {
     heading: "Shipping",

@@ -3,7 +3,14 @@ import { HttpTypes } from "@medusajs/types"
 import React, { useState } from "react"
 import { PenztarMezo, PenztarOrszag } from "../penztar-mezo"
 
-const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
+const BillingAddress = ({
+  cart,
+  cegesKotelezo = false,
+}: {
+  cart: HttpTypes.StoreCart | null
+  /** Ceges vasarlasnal a szamlazasi cim cegneve kotelezo (c977aed2). */
+  cegesKotelezo?: boolean
+}) => {
   const t = useTranslate()
   const locale = useLocale()
   const [formData, setFormData] = useState<Record<string, string>>({
@@ -91,6 +98,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           value={formData["billing_address.company"]}
           onChange={handleChange}
           autoComplete="organization"
+          required={cegesKotelezo}
           data-testid="billing-company-input"
         />
         <PenztarMezo
