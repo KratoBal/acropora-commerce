@@ -5,6 +5,7 @@ import RumJelento from "@modules/common/components/rum-jelento"
 import { consentAlapSzkript } from "@lib/util/suti-hozzajarulas"
 import FogyasztobaratWidget from "@modules/jogi/fogyasztobarat-widget"
 import SutiAblak from "@modules/suti/suti-ablak"
+import YoutubeBetolto from "@modules/common/components/youtube-betolto"
 import { Metadata } from "next"
 import localFont from "next/font/local"
 import "styles/globals.css"
@@ -154,6 +155,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <RumJelento />
         {/* a suti-hozzajarulas ablaka minden lapon (d5515c7d) */}
         <SutiAblak />
+        {/* a leirasokba agyazott YouTube-videok kattintasra toltodnek (dc8cabd2) */}
+        <YoutubeBetolto />
       </body>
     </html>
   )
