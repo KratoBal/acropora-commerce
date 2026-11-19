@@ -13,7 +13,8 @@ import { describe, expect, it } from "vitest"
  * fájlban görgető őse (`overflow-x-auto`, `overflow-auto`, `overflow-x-scroll`), vagy a saját osztálya telefonon blokká
  * teszi, és csak egy töréspont fölött táblázat (`block … small:table`, mint a kosár). A KIVÉTELEK névvel és okkal állnak.
  * MI PIROSIT: egy új vagy áthelyezett táblázat doboz nélkül. A HATÁR: forrást olvas; a valódi bizonyíték a hibakör 390 px-es
- * kilógás-mérése (`kirakat-hibakor.mjs`).
+ * kilógás-mérése (`kirakat-hibakor.mjs`). AMIT NEM LÁT: a termékleírások UNAS-ból jövő HTML-táblázatait (nem JSX, a
+ * `dangerouslySetInnerHTML` adja); azokat a `.leiras-tartalom { overflow-x: auto }` szabály fedi (#840, globals.css).
  */
 const SRC = join(__dirname, "..")
 const KIVETEL: Record<string, string> = {
