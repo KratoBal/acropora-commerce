@@ -52,6 +52,15 @@ describe("a fejléc info-sávja", () => {
     expect(savElem.querySelectorAll("span")).toHaveLength(2)
   })
 
+  it("a kiürített első és negyedik sor sem hagy üres elemet", () => {
+    render(
+      <InfoSav s={sav({ ...MIND, "fejlec.sav.1": "", "fejlec.sav.4": "" })} />,
+    )
+    const savElem = screen.getByTestId("kl-info-sav")
+    expect(savElem.textContent).toBe("KettőHárom")
+    expect(savElem.querySelectorAll("span")).toHaveLength(2)
+  })
+
   it("ha mind a négy üres (vagy csak szóköz), a sáv sincs", () => {
     render(
       <InfoSav
