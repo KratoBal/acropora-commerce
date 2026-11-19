@@ -15,16 +15,54 @@ export type ShippingPaymentRuleRowInput = {
   position: number
 }
 
+type LiveShippingPaymentRule = ShippingPaymentRuleRowInput & { id: string }
+
+const pairOf = (row: ShippingPaymentRuleRowInput) =>
+  `${row.shipping_role}|${row.payment_role}`
+
+/**
+ * WHAT A MATRIX SAVE CHANGES, pair by pair: a pair that stays only moves (its
+ * position), a pair that is gone is removed, a new pair is created. A live pair
+ * is never created a second time, so the partial unique index on the pair (live
+ * rows only) has nothing to refuse.
+ *
+ * Why not "soft-delete everything, create everything" (the first version, #804):
+ * in one transaction the inserts reached the database before the soft-delete,
+ * and every save, an unchanged one too, was refused with "Shipping payment rule
+ * ... already exists" (measured on the test shop, acrobot 56585, and reproduced
+ * on a built server with a fresh database).
+ */
+export function planShippingPaymentRuleReplace(
+  live: LiveShippingPaymentRule[],
+  rows: ShippingPaymentRuleRowInput[]
+): {
+  removed: string[]
+  moved: { id: string; position: number }[]
+  created: ShippingPaymentRuleRowInput[]
+} {
+  const wanted = new Map(rows.map((row) => [pairOf(row), row]))
+  const kept = new Set(live.map(pairOf))
+  return {
+    removed: live.filter((row) => !wanted.has(pairOf(row))).map((row) => row.id),
+    moved: live.flatMap((row) => {
+      const next = wanted.get(pairOf(row))
+      return next && next.position !== row.position
+        ? [{ id: row.id, position: next.position }]
+        : []
+    }),
+    created: rows.filter((row) => !kept.has(pairOf(row))),
+  }
+}
+
 class CommerceSettingsModuleService extends MedusaService({
   CommerceSetting,
   ShippingPaymentRule,
 }) {
   /**
-   * THE WHOLE PAYMENT MATRIX AT ONCE, in one transaction (card e0e2378b): the
-   * live rows are soft-deleted and the new ones created, so the checkout never
-   * reads half of an edit, and the soft-deleted rows keep the history of who
-   * offered what before. The partial unique index (live rows only) lets the old
-   * and the new pair exist side by side. The caller validates (`matrixToRows`).
+   * THE WHOLE PAYMENT MATRIX AT ONCE, in one transaction (card e0e2378b), so the
+   * checkout never reads half of an edit: the pairs that stay move, the pairs
+   * that are gone are soft-deleted (their history kept), the new ones created
+   * (`planShippingPaymentRuleReplace`). The caller validates (`matrixToRows`).
    */
   @InjectManager()
   async replaceShippingPaymentRules(
@@ -42,16 +80,19 @@ class CommerceSettingsModuleService extends MedusaService({
     // `take: null`: a generated list returns one page (15) by default, and the matrix holds up to 16 pairs
     const live = await this.listShippingPaymentRules(
       {},
-      { select: ["id"], take: null },
+      {
+        select: ["id", "shipping_role", "payment_role", "position"],
+        take: null,
+      },
       sharedContext
     )
-    if (live.length)
-      await this.softDeleteShippingPaymentRules(
-        live.map((row) => row.id),
-        {},
-        sharedContext
-      )
-    if (rows.length) await this.createShippingPaymentRules(rows, sharedContext)
+    const plan = planShippingPaymentRuleReplace(live, rows)
+    if (plan.removed.length)
+      await this.softDeleteShippingPaymentRules(plan.removed, {}, sharedContext)
+    if (plan.moved.length)
+      await this.updateShippingPaymentRules(plan.moved, sharedContext)
+    if (plan.created.length)
+      await this.createShippingPaymentRules(plan.created, sharedContext)
   }
 }
 
