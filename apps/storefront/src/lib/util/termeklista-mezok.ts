@@ -5,7 +5,7 @@
  * fajlban all, mert az `"use server"` modul, abbol csak async fuggveny mehet ki.
  */
 export const TERMEKLISTA_MEZOK =
-  "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,"
+  "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+variants.metadata,+metadata,+tags,"
 
 /**
  * A TERMEKLISTA-KARTYAK MEZOI: az alap mezok, a marka es a kategoriak. A
@@ -16,12 +16,15 @@ export const TERMEKLISTA_MEZOK =
 export const termeklistaMezok = `${TERMEKLISTA_MEZOK}*collection,*categories`
 
 /**
- * A VASARLASI KERET MEZOI: az alap mezok plusz a VALTOZAT METAADATA. Az Omnibus hivatkozasi ar a
- * valtozat `omnibus_lowest_price_30d` kulcsan all (az OS irja), es CSAK a termeklapon kell: a
- * listak kartyai nem mutatjak, tehat a listak mezoihez nem kerul (egy 1492 termekes valaszt nem
- * hizlalunk vele). A `+` a metaadatot hozzaadja, nem felulirja.
+ * A VASARLASI KERET MEZOI: az alap mezok. A valtozat metaadata (`+variants.metadata`) az alap mezok KOZT van 2026-11-19 ota: az
+ * Omnibus hivatkozasi ar a valtozat `omnibus_lowest_price_30d` kulcsan all (az OS irja), es nem csak a termeklapnak kell, hanem
+ * a LISTAK KARTYAINAK is: az athuzott ar es a szazalek csak valodi arcsokkentesnel allhat (Omnibus 2/A., acrobot eles-kiadasi
+ * feltetel 2), az pedig a referencia nelkul nem igazolhato. Egy kihagyott mezo ugyanugy nez ki, mint egy ures (a kartyak
+ * akciojelzese csendben eltunne), ezert a spec orzi. A keszlet NEM hizlalodik: a lapozott lista egy oldala (a teszten 24
+ * termek, a valaszmeret valtozatlan, mert a legtobb valtozatnak nincs metaadata); a teljes halmazt lehivo kor (rendezes,
+ * kategoria-szamlalo) a sajat, szuk mezoit hasznalja (`RENDEZO_KOR_MEZOK`, `KATALOGUS_KOR_MEZOK`).
  */
-export const VASARLAS_KERET_MEZOK = `${TERMEKLISTA_MEZOK}+variants.metadata`
+export const VASARLAS_KERET_MEZOK = TERMEKLISTA_MEZOK
 
 /**
  * A RENDEZO KOR MEZOI (task t-20261115-ar-rendezes-szukites). Az ar szerinti rendezes (a Store API nem tud arra rendezni)

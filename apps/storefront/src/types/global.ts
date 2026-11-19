@@ -15,6 +15,13 @@ export type VariantPrice = {
   currency_code: string
   price_type: string
   percentage_diff: string
+  /** The announced price reduction (the 30-day lowest price as the reference), or null: no struck price, no percentage. */
+  reduction: {
+    reference_number: number
+    reference: string
+    /** Rounded DOWN; null when that is 0: no percentage badge. */
+    percentage_diff: string | null
+  } | null
 }
 
 export type StoreFreeShippingPrice = StorePrice & {
