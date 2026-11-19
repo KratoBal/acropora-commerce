@@ -875,6 +875,21 @@ body:has([data-vilag="sotet"]) footer[data-testid="lablec-sik"] {
   border-collapse: collapse;
 }
 
+/*
+  A SZELES TABLAZAT A DOBOZON BELUL GORDUL, NEM A LAPOT TOLJA KI (kirakat hibakor, 2026-11-19, exchange/kirakat-hibakor-2026-11-19).
+
+  A UNAS-szerkeszto a leiras tablazatanak cellaira rogzitett szelesseget irt (peldaul 113,7 es 229,3 px, `style="width: ..."`),
+  es a fenti 10-10 px-es cella-terkoz ezt 383 px-re noveli. 390 px-es telefonon a tablazat 392 px-ig ert, es az EGESZ lap
+  oldalra gordult (Conomurex luhuanus, elo allat lap). A doboz `overflow-x: auto`-t kap: ami szelesebb nala, az benne gordul,
+  a lap nem. Asztalon nincs tullogas, tehat ott semmi nem valtozik.
+
+  A tablazat SAJAT meretezesehez (a rogzitett szelessegek felulirasa vagy a tisztitoban valo eldobasa) nem nyulunk: az az
+  asztali megjelenest is atrendezne minden leirasban, es az nem hiba, hanem dontes lenne.
+*/
+.leiras-tartalom {
+  overflow-x: auto;
+}
+
 .leiras-tartalom :is(td, th) {
   padding: 6px 10px;
   vertical-align: top;

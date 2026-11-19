@@ -58,6 +58,17 @@ describe("a leiras-tablazat savja", () => {
   })
 
   /**
+   * A SZELES TABLAZAT A DOBOZON BELUL GORDUL (kirakat hibakor 2026-11-19): a rogzitett cellaszelessegu UNAS-tablazat 390 px-en
+   * az egesz lapot oldalra tolta. MI PIROSIT: a szabaly eltunik, vagy nem a doboz SAJAT szabalyaban all (egy `table`-re tett
+   * gorgetes az asztali meretet is atrendezne, mert a tablazat inline szelessege akkor a gorgeto dobozra vonatkozna). A HATAR:
+   * forrast olvas; hogy a bongeszo tenyleg nem gordul, azt a `kirakat-hibakor.mjs` 390 px-es kilogas-merese mondja meg.
+   */
+  it("a leiras doboza maga gordul vizszintesen, nem a lap", () => {
+    const blokk = CSS.match(/(?:^|\n)\.leiras-tartalom \{([^}]*)\}/)
+    expect(blokk?.[1]).toMatch(/overflow-x:\s*auto/)
+  })
+
+  /**
    * A SZAMOLAS ALAKJA, ES MIERT IGY: minden `dangerouslySetInnerHTML` egy
    * kirajzolt leiras (merve 2026-09-14: a kirakat forrasaban osszesen harom
    * ilyen hely all, mind a harom leiras). Ha egy uj hely keletkezik horog
