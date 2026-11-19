@@ -92,10 +92,10 @@ const MobileActions: React.FC<MobileActionsProps> = ({
               <span>—</span>
               {selectedPrice ? (
                 <div className="flex items-end gap-x-2 text-ui-fg-base">
-                  {selectedPrice.price_type === "sale" && (
+                  {selectedPrice.reduction && (
                     <p>
                       <span className="line-through text-small-regular">
-                        {selectedPrice.original_price}
+                        {selectedPrice.reduction.reference_price}
                       </span>
                     </p>
                   )}

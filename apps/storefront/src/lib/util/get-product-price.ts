@@ -1,6 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { getPercentageDiff } from "./get-percentage-diff"
 import { convertToLocale } from "./money"
+import { omnibusReferenceOf } from "./omnibus"
 
 type VariantWithPrice = HttpTypes.StoreProductVariant & {
   calculated_price?: {
@@ -17,6 +18,24 @@ export const getPricesForVariant = (variant: VariantWithPrice) => {
   if (!variant?.calculated_price?.calculated_amount) {
     return null
   }
+
+  /**
+   * AZ ATHUZAS ES A SZAZALEK CSAK VALODI ARCSOKKENTESNEL ALLHAT (acrobot, eles-kiadasi feltetel 2, 2026-11-19): a sale arlista
+   * `original_amount`-ja a LISTAAR (a UNAS-ra fagyott alapar), nem egy korabbi eladasi ar. Az Omnibus-szabaly szerinti elozo
+   * ar a 30 napos legalacsonyabb ar, amit az OS a valtozat metaadatara ir, es amit az `omnibusReferenceOf` szigoruan olvas:
+   * csak ha a fizetendo ar KISEBB nala. Metaadat nelkul (a lekeres nem hozta, az OS nem irta, serult az alakja) nincs athuzas
+   * es nincs szazalek: egy arcsokkentest, amit nem tudunk igazolni, nem allitunk. A szazalek a referenciahoz viszonyit.
+   */
+  const referencia =
+    variant.calculated_price.calculated_price.price_list_type === "sale"
+      ? omnibusReferenceOf(
+          (variant as { metadata?: Record<string, unknown> | null }).metadata,
+          {
+            amount: variant.calculated_price.calculated_amount,
+            currencyCode: variant.calculated_price.currency_code,
+          },
+        )
+      : null
 
   return {
     calculated_price_number: variant.calculated_price.calculated_amount,
@@ -35,6 +54,19 @@ export const getPricesForVariant = (variant: VariantWithPrice) => {
       variant.calculated_price.original_amount,
       variant.calculated_price.calculated_amount,
     ),
+    reduction: referencia
+      ? {
+          reference_price_number: referencia.amount,
+          reference_price: convertToLocale({
+            amount: referencia.amount,
+            currency_code: variant.calculated_price.currency_code,
+          }),
+          percentage_diff: getPercentageDiff(
+            referencia.amount,
+            variant.calculated_price.calculated_amount,
+          ),
+        }
+      : null,
   }
 }
 

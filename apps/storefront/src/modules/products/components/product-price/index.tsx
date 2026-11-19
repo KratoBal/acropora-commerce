@@ -153,7 +153,7 @@ export default function ProductPrice({
           <span data-testid="product-price-tol">{tolUtana}</span>
         ) : null}
       </span>
-      {selectedPrice.price_type === "sale" && (
+      {selectedPrice.reduction && (
         <>
           <p>
             {/*
@@ -169,9 +169,9 @@ export default function ProductPrice({
             <span
               className="line-through"
               data-testid="original-product-price"
-              data-value={selectedPrice.original_price_number}
+              data-value={selectedPrice.reduction.reference_price_number}
             >
-              {selectedPrice.original_price}
+              {selectedPrice.reduction.reference_price}
             </span>
           </p>
           {/*
@@ -192,7 +192,7 @@ export default function ProductPrice({
             data-testid="product-price-szazalek"
             style={{ color: "var(--terv-szoveg-halvany)" }}
           >
-            -{selectedPrice.percentage_diff}%
+            -{selectedPrice.reduction.percentage_diff}%
           </span>
         </>
       )}

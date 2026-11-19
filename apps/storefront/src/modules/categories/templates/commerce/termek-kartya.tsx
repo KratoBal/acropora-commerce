@@ -84,7 +84,8 @@ export default function CommerceTermekKartya({
   const m = (tomorOsztaly: string, rendes: string) =>
     tomor ? tomorOsztaly : rendes
   const { cheapestPrice } = getProductPrice({ product })
-  const akcios = cheapestPrice?.price_type === "sale"
+  // a jelolo es az athuzott ar csak valodi arcsokkentesnel (Omnibus 2/A.): lasd `getPricesForVariant`
+  const csokkentes = cheapestPrice?.reduction ?? null
   // az egysegar, ugyanabbol a nevbol es arbol, mint a termeklapon (barracuda 7b): tobbvaltozatu termeken valasztott
   // valtozat nelkul nincs, mert nem tudni, melyik kiszerelesre vonatkozna
   const egysegar = egysegarVaz(product)
@@ -109,7 +110,7 @@ export default function CommerceTermekKartya({
           "flex h-[30px] items-center",
         )}
       >
-        {akcios && cheapestPrice?.percentage_diff ? (
+        {csokkentes?.percentage_diff ? (
           <span
             className={m(
               "inline-flex h-[20px] items-center bg-acr-heritage px-[6px] text-[12px] font-medium tracking-[1px] text-acr-white small:h-[28px] small:px-2 small:text-[12px] small:tracking-[1.8px]",
@@ -117,7 +118,7 @@ export default function CommerceTermekKartya({
             )}
             data-testid="kartya-akcio"
           >
-            -{cheapestPrice.percentage_diff}%
+            -{csokkentes.percentage_diff}%
           </span>
         ) : null}
       </div>
@@ -177,12 +178,12 @@ export default function CommerceTermekKartya({
                 >
                   {cheapestPrice.calculated_price}
                 </span>
-                {akcios ? (
+                {csokkentes ? (
                   <span
                     className="text-[13px] leading-[18px] text-acr-slate line-through"
                     data-testid="kartya-regi-ar"
                   >
-                    {cheapestPrice.original_price}
+                    {csokkentes.reference_price}
                   </span>
                 ) : null}
               </p>

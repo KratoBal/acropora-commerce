@@ -12,6 +12,7 @@ vi.mock("@lib/data/cart", () => kosar)
 import CommerceTermekKartya, { gyorsKosar, keszletSor } from "./termek-kartya"
 
 type Valtozat = {
+  metadata?: Record<string, unknown> | null
   manage_inventory?: boolean | null
   allow_backorder?: boolean | null
   inventory_quantity?: number | null
@@ -120,22 +121,66 @@ describe("a Commerce termékkártya", () => {
     )
   })
 
-  it("akciós árnál jelölő és áthúzott régi ár, különben egyik sem", () => {
+  /*
+    AZ ATHUZAS ES A JELOLO CSAK VALODI ARCSOKKENTESNEL (Omnibus 2/A., acrobot eles-kiadasi feltetel 2, 2026-11-19): az akcios ar
+    kisebb a 30 napos legalacsonyabbnal (az OS a valtozat metaadatara irja), es az athuzott ar es a szazalek ahhoz viszonyit.
+    MI PIROSIT: ha a jelolo a listaarbol szamol; ha metaadat nelkul, vagy nem kisebb akcios arral is megjelenik.
+  */
+  const omnibus = (amount: string) => ({
+    omnibus_lowest_price_30d: JSON.stringify({
+      amount,
+      currency: "huf",
+      complete: true,
+      history_begins: "2026-09-01",
+      reduction_start: "2026-11-10",
+    }),
+  })
+
+  it("valódi árcsökkentésnél jelölő és áthúzott ár a 30 napos legalacsonyabbhoz, különben egyik sem", () => {
+    // listaar 250 000, 30 napos legalacsonyabb 220 000, akcios 200 000: -9%
     const akcios = {
       ...raktaron(2),
+      metadata: omnibus("220000"),
       calculated_price: ar(200000, 250000, "sale"),
     }
     const { rerender } = render(
       <CommerceTermekKartya product={termek([akcios])} />,
     )
-    expect(screen.getByTestId("kartya-akcio").textContent).toBe("-20%")
+    expect(screen.getByTestId("kartya-akcio").textContent).toBe("-9%")
     expect(screen.getByTestId("kartya-regi-ar").className).toContain(
       "line-through",
     )
+    expect(screen.getByTestId("kartya-regi-ar").textContent).toMatch(/220\s000/)
 
     rerender(<CommerceTermekKartya product={termek([raktaron(2)])} />)
     expect(screen.queryByTestId("kartya-akcio")).toBeNull()
     expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
+  })
+
+  it("akciós ár metaadat nélkül, vagy ha nem kisebb a 30 napos legalacsonyabbnál: se jelölő, se áthúzás", () => {
+    const esetek = [
+      { calculated_price: ar(200000, 250000, "sale") },
+      {
+        metadata: omnibus("200000"),
+        calculated_price: ar(200000, 250000, "sale"),
+      },
+      {
+        metadata: omnibus("150000"),
+        calculated_price: ar(200000, 250000, "sale"),
+      },
+    ]
+    for (const eset of esetek) {
+      const { unmount } = render(
+        <CommerceTermekKartya
+          product={termek([{ ...raktaron(2), ...eset }])}
+        />,
+      )
+      expect(screen.queryByTestId("kartya-akcio")).toBeNull()
+      expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
+      // a fizetendo ar megmarad
+      expect(screen.getByTestId("kartya-ar").textContent).toMatch(/200\s000/)
+      unmount()
+    }
   })
 
   describe("a gyors kosárba tétel döntése", () => {
