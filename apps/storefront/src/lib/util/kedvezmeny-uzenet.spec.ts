@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import {
   hibaAllapota,
+  kedvezmenyHibaUzenet,
   kedvezmenyUzenet,
   KOD_NEM_ERVENYES,
   MOST_NEM_ELLENORIZHETO,
+  SAJAT_KEDVEZMENY_MELLETT_NINCS_KUPON,
 } from "./kedvezmeny-uzenet"
 
 /**
@@ -106,5 +108,36 @@ describe("a hiba állapotkódjának kiolvasása", () => {
   /** Egy nem szám `status` nem szám: `NaN`-ból nem lesz döntés. */
   it("a nem szám státusz nem számít kódnak", () => {
     expect(hibaAllapota({ status: "nem-szam" })).toBeUndefined()
+  })
+})
+
+/*
+  A SAJÁT KEDVEZMÉNY MELLETT NINCS KUPON (20713f62, Balázs 2026-11-19: „ki kell írni hogy ezt a kupont te nem tudod
+  felhasználni"). MI PIROSÍT: a háttér elutasítása a kódbeíráskor az általános "nem érvényes" mondatot kapja; minden más
+  hiba nem a mai vágást kapja.
+*/
+describe("a kódbeírás hibájának mondata", () => {
+  it("a saját kedvezmény kódjára a saját mondata, a kupon szavával", () => {
+    const hiba = Object.assign(
+      new Error(
+        "personal_discount_coupon: a customer with an own discount cannot use a coupon (TAVASZ10)",
+      ),
+      { status: 400 },
+    )
+    expect(kedvezmenyHibaUzenet(hiba)).toBe(
+      SAJAT_KEDVEZMENY_MELLETT_NINCS_KUPON,
+    )
+    expect(SAJAT_KEDVEZMENY_MELLETT_NINCS_KUPON).toMatch(
+      /nem tudod felhasználni/,
+    )
+  })
+
+  it("minden más hibára a mai vágás marad", () => {
+    expect(
+      kedvezmenyHibaUzenet(Object.assign(new Error("x"), { status: 400 })),
+    ).toBe(KOD_NEM_ERVENYES)
+    expect(kedvezmenyHibaUzenet(new Error("network"))).toBe(
+      MOST_NEM_ELLENORIZHETO,
+    )
   })
 })

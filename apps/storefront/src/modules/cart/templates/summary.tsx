@@ -6,6 +6,7 @@ import { kosarOsszegek } from "@lib/util/kosar-osszegek"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import DiscountCode from "@modules/checkout/components/discount-code"
+import GiftCardCode from "@modules/checkout/components/gift-card-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useParams } from "next/navigation"
 
@@ -44,6 +45,7 @@ const Summary = ({ cart }: SummaryProps) => {
         {t("cartPage.summaryHeading")}
       </h2>
       <DiscountCode cart={cart} />
+      <GiftCardCode cart={cart} />
       <div className="flex flex-col gap-y-2 border-t border-acr-line pt-4 text-[14px] leading-[22px] text-acr-slate">
         <div className="flex items-center justify-between">
           <span>{t("cartPage.subtotal")}</span>
@@ -66,6 +68,14 @@ const Summary = ({ cart }: SummaryProps) => {
               data-value={o.discount}
             >
               - {penz(o.discount)}
+            </span>
+          </div>
+        )}
+        {!!o.giftCard && (
+          <div className="flex items-center justify-between">
+            <span>{t("cartPage.giftCard")}</span>
+            <span data-testid="cart-gift-card" data-value={o.giftCard}>
+              - {penz(o.giftCard)}
             </span>
           </div>
         )}

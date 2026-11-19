@@ -1,4 +1,5 @@
 import { MedusaError } from "@medusajs/framework/utils"
+import { StepResponse } from "@medusajs/framework/workflows-sdk"
 import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
 import { guardAszf } from "../utils/aszf-guard"
@@ -6,7 +7,13 @@ import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
 import { assertCartPointsFitLocker } from "../utils/locker-rule"
 import { assertCardShare } from "../utils/assert-card-share"
 import { assertNoForeignHold } from "../utils/cart-hold"
+import { assertCartHasNoCouponWithPersonalDiscount } from "../utils/personal-discount-coupon"
 import { assertCashOnDeliveryFeeMatchesPayment } from "../utils/cod-fee-reconciliation"
+import {
+  redeemCartGiftCard,
+  voidCartGiftCardRedemption,
+  type CartGiftCardRedemption,
+} from "../utils/redeem-cart-gift-card"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
 
 /**
@@ -49,6 +56,8 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
   // A workflow hook takes one handler, so the P4-2 check lives here too: a
   // mixed cart is completed as two orders, never as one.
   await assertCartNotMixed(cart, container)
+  // a coupon put on before the customer logged in reaches the cart without a code change: the own discount stops it here (20713f62)
+  await assertCartHasNoCouponWithPersonalDiscount(container as never, cart.id)
   // a82ed229: an item that does not fit a parcel locker never completes on one
   await assertCartPointsFitLocker(cart as never, container)
   // And the P4-3c one: a card payment covers exactly this cart, or this cart
@@ -67,4 +76,12 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
     dueHuf: context.cash_on_delivery_fee,
     items: cart?.items,
   })
+
+  // LAST, after every check that can still refuse for free (card 495c0007): the gift card's share comes off the card.
+  // If a later step of the completion fails, the compensation below gives it back, so a retry can take it again.
+  const redemption = await redeemCartGiftCard(cart as never, container as never)
+  return new StepResponse(undefined, redemption)
+},
+async (redemption: CartGiftCardRedemption | undefined, { container }) => {
+  await voidCartGiftCardRedemption(redemption, container as never)
 })

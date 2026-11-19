@@ -53,3 +53,21 @@ export function kedvezmenyUzenet(allapot: number | undefined): string {
     ? KOD_NEM_ERVENYES
     : MOST_NEM_ELLENORIZHETO
 }
+
+/**
+ * A SAJÁT KEDVEZMÉNY MELLETT NINCS KUPON (kártya 20713f62; Balázs 2026-11-19: „ki kell írni hogy ezt a kupont te nem
+ * tudod felhasználni"). A háttér ezzel a kóddal utasítja el (`personal-discount-coupon.ts`); a Medusa SDK csak az
+ * üzenetet adja át, ezért a kód a szövegben áll, mint a `split_discount_changed`-nél.
+ */
+export const SAJAT_KEDVEZMENY_KUPON_KOD = "personal_discount_coupon"
+
+export const SAJAT_KEDVEZMENY_MELLETT_NINCS_KUPON =
+  "Ezt a kupont nem tudod felhasználni, mert saját kedvezményed van."
+
+/** A vevőnek szánt mondat a hibából: a saját kedvezmény a maga mondatát kapja, minden más a mai vágást. */
+export function kedvezmenyHibaUzenet(hiba: unknown): string {
+  const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
+  return szoveg.includes(SAJAT_KEDVEZMENY_KUPON_KOD)
+    ? SAJAT_KEDVEZMENY_MELLETT_NINCS_KUPON
+    : kedvezmenyUzenet(hibaAllapota(hiba))
+}

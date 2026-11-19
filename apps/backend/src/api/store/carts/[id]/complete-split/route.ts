@@ -10,6 +10,31 @@ import { splitCompletionOperations } from "../../../../../workflows/utils/split-
 import { isInsufficientInventory, soldMessage } from "../../../../../workflows/utils/sold-lines"
 import { soldUniqueLinesOfCart } from "../../../../../workflows/utils/sold-lines-of-cart"
 import { resolveShippingOptionRoleBindings } from "../../../../../workflows/utils/shipping-option-roles"
+import {
+  GIFT_CARD_MIXED_CART_MESSAGE,
+  giftCardCredits,
+  type CreditLineRow,
+} from "../../../../../workflows/utils/gift-card-credit"
+import { resolveCartShippingClass } from "../../../../../workflows/utils/resolve-cart-shipping-class"
+
+/** A cart that would split in two and carries a gift card (card 495c0007; acrobot 56682: not in this version). */
+async function mixedCartWithGiftCard(scope: MedusaRequest["scope"], cartId: string): Promise<boolean> {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "cart",
+    fields: ["id", "credit_lines.*", "items.id", "items.variant_id", "items.requires_shipping"],
+    filters: { id: cartId },
+  })
+  const cart = data[0] as
+    | {
+        credit_lines?: CreditLineRow[] | null
+        items?: { id?: string | null; variant_id?: string | null; requires_shipping?: boolean | null }[] | null
+      }
+    | undefined
+  if (!cart || !giftCardCredits(cart.credit_lines).length) return false
+  const { split_line_ids } = await resolveCartShippingClass(cart, scope)
+  return split_line_ids.length > 0
+}
 
 /**
  * POST /store/carts/:id/complete-split
@@ -37,6 +62,11 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
       "The store pickup option is not bound"
     )
   }
+
+  // a gift card does not pay a mixed cart in this first version (acrobot 56682): the store route refuses the code on
+  // one, and this refuses a cart that became mixed after the code was applied
+  if (await mixedCartWithGiftCard(req.scope, cartId))
+    throw new MedusaError(MedusaError.Types.NOT_ALLOWED, GIFT_CARD_MIXED_CART_MESSAGE)
 
   let result: Awaited<ReturnType<typeof completeSplitCart>>
   try {

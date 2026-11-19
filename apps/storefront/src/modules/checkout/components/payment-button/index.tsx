@@ -8,6 +8,7 @@ import {
   stripeVisszarendezes,
 } from "@lib/data/stripe"
 import { useTranslate } from "@lib/i18n/use-translate"
+import { ajandekkartyavalFizetve } from "@lib/util/ajandekkartya"
 import { hibaSzoveg } from "@lib/util/penztar-hiba"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -55,6 +56,17 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
 
   switch (true) {
+    /*
+      A KARTYA MINDENT FIZET (495c0007; barracuda, #822): a vegosszeg nulla, a jovairas egy ajandekkartyae, es fizetesi
+      munkamenet nincs (a jovairas utani frissites a regit eldobta). Nincs mit beszedni: a rendeles leadodik, mint a
+      bolti fizetesnel, a webshop a lezaraskor vonja le a kartyarol. Munkamenet nelkul a lenti agak mind a default-ra
+      esnenek, es a vevo nem tudna rendelni. Helyben merve a hatteren: egy nulla vegosszegu, kartyaval fedezett kosar
+      fizetesi gyujtemeny nelkul is rendelesse valik.
+    */
+    case ajandekkartyavalFizetve(cart):
+      return (
+        <KozvetlenRendelesGomb notReady={notReady} data-testid={dataTestId} />
+      )
     case !!stripeKozos:
       return (
         <StripeKozosGomb

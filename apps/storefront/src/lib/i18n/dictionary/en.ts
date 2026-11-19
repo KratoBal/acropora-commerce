@@ -968,6 +968,12 @@ export const en: Dictionary = {
     discountAdd: "Add a discount code",
     discountApply: "Apply",
     discountApplied: "Applied discounts:",
+    giftCardAdd: "Redeem a gift card",
+    giftCardApply: "Redeem",
+    giftCard: "Gift card",
+    giftCardRemove: "Remove the gift card from the order",
+    giftCardRestNote:
+      "Choose the payment method for the rest after redeeming the card.",
   },
   checkoutPage: {
     title: "Checkout",
@@ -1174,6 +1180,8 @@ export const en: Dictionary = {
       "Placing the order failed just now. Before you try again, check your orders to see whether it arrived.",
     errPieceHeld:
       "A unique piece in your cart is held in another buyer's cart right now. When their hold ends it may be yours: please try again later.",
+    errPersonalDiscountCoupon:
+      "You cannot use this coupon, because you have your own discount. Remove the coupon from the cart and try again.",
     errSplitDiscount:
       "Because of the live animal your cart splits into two orders, and the discount cannot apply the same way. Order the live animal in a separate cart, or remove the coupon, and try again.",
     errLegalMissing:
