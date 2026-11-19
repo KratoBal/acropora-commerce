@@ -38,7 +38,11 @@ export type FeedSettingsReader = {
   ): Promise<{ key: string; value: unknown }[]>
 }
 
-/** The lead time in days, or null when it is not set (no default, on purpose). */
+/**
+ * The lead time in days, or null when it is not set (no default, on purpose). A stored value that is not one (a hand
+ * write past the Admin's validator) stops the feed as a configuration error, a 503 that names the setting, not a bare
+ * 500 (barracuda, #812).
+ */
 export async function backorderLeadTimeDays(
   settings: FeedSettingsReader
 ): Promise<number | null> {
@@ -46,9 +50,14 @@ export async function backorderLeadTimeDays(
     { key: FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY },
     { take: 1 }
   )
-  return row
-    ? normalizeCommerceSettingValue(FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY, row.value)
-    : null
+  if (!row) return null
+  try {
+    return normalizeCommerceSettingValue(FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY, row.value)
+  } catch (error) {
+    throw new MerchantFeedConfigError(
+      `The stored ${FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY} is not usable: ${(error as Error).message}`
+    )
+  }
 }
 
 const PAGE = 200

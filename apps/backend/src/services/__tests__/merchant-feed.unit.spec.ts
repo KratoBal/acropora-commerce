@@ -282,8 +282,12 @@ describe("feedAvailability", () => {
     })
     expect(await backorderLeadTimeDays({ listCommerceSettings: async () => [] })).toBeNull()
     expect(await backorderLeadTimeDays(reader("7"))).toBe(7)
-    await expect(backorderLeadTimeDays(reader("0"))).rejects.toThrow(/1 to 365/)
-    await expect(backorderLeadTimeDays(reader("2.5"))).rejects.toThrow(/1 to 365/)
+    // a bad stored value is a configuration error (the route's 503, naming the setting), not a bare 500
+    await expect(backorderLeadTimeDays(reader("0"))).rejects.toThrow(MerchantFeedConfigError)
+    await expect(backorderLeadTimeDays(reader("0"))).rejects.toThrow(
+      /feed_backorder_lead_time_days is not usable: .*1 to 365/
+    )
+    await expect(backorderLeadTimeDays(reader("2.5"))).rejects.toThrow(MerchantFeedConfigError)
   })
 })
 
