@@ -10,7 +10,11 @@ import { sdk } from "@lib/config"
 import { translator, type Key } from "@lib/i18n/dictionary"
 import { localeOf, type Locale } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
-import { hibaAllapota, kedvezmenyUzenet } from "@lib/util/kedvezmeny-uzenet"
+import {
+  hibaAllapota,
+  kedvezmenyHibaUzenet,
+  kedvezmenyUzenet,
+} from "@lib/util/kedvezmeny-uzenet"
 import { ajandekkartyaUzenet } from "@lib/util/ajandekkartya"
 import { kosarUzenet } from "@lib/util/kosar-uzenet"
 import {
@@ -540,7 +544,7 @@ export async function applyPromotions(
       allapot ?? "(nincs állapotkód)",
       hiba instanceof Error ? hiba.message : String(hiba),
     )
-    return { ok: false, uzenet: kedvezmenyUzenet(allapot) }
+    return { ok: false, uzenet: kedvezmenyHibaUzenet(hiba) }
   }
 
   const cartCacheTag = await getCacheTag("carts")
