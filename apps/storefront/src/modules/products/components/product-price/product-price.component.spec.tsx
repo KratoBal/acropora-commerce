@@ -193,12 +193,23 @@ describe("az ár színe", () => {
  * kielegit -- csak itt nem ures a vilag, hanem a fixtura nem er el az egyik
  * ágába.
  */
-const akciosTermek = () =>
+const referencia = (osszeg: string) =>
+  JSON.stringify({
+    amount: osszeg,
+    currency: "HUF",
+    history_begins: "2026-11-05",
+    complete: false,
+    reduction_start: "2026-11-19",
+  })
+
+// az arcsokkentes kozlese a 30 napos legalacsonyabb arra epul (`arCsokkentesOf`): a fixturanak hivatkozasi ar kell
+const akciosTermek = (hivatkozas = "100000") =>
   ({
     id: "prod_akcios",
     variants: [
       {
         id: "v1",
+        metadata: { omnibus_lowest_price_30d: referencia(hivatkozas) },
         calculated_price: {
           calculated_amount: 92000,
           original_amount: 100000,
@@ -210,6 +221,41 @@ const akciosTermek = () =>
   }) as never
 
 describe("az akciós ár", () => {
+  /*
+    AZ ARCSOKKENTES KOZLESE A 30 NAPOS LEGALACSONYABB AR ALAPJAN (card 54bb3779). MI PIROSIT: az athuzott ar a Medusa alapara, nem a
+    hivatkozasi ar; a szazalek az alapárhoz jar; a mert eset (referencia = fizetendo, alapar magasabb) is athuzott arat mutat;
+    hivatkozasi ar nelkul akcios arlista is athuzast hoz.
+  */
+  it("az athuzott ar a hivatkozasi ar, a szazalek hozza jar, nem az alapárhoz", () => {
+    render(<ProductPrice product={akciosTermek("95000")} />)
+    const regi = screen.getByTestId("original-product-price")
+    expect(regi.getAttribute("data-value")).toBe("95000")
+    expect(regi.textContent).toContain("95")
+    expect(regi.textContent).not.toContain("100")
+    expect(screen.getByTestId("product-price-szazalek").textContent).toBe("-3%")
+  })
+
+  it("a mert eset (ai-nero-3): a hivatkozas nem magasabb a fizetendonel: nincs athuzott ar, nincs szazalek, nincs felkover", () => {
+    // fizetendo 92 000, alapar 100 000, a 30 napos legalacsonyabb 92 000
+    render(<ProductPrice product={akciosTermek("92000")} />)
+    expect(screen.queryByTestId("original-product-price")).toBeNull()
+    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
+    expect(screen.getByTestId("product-price").textContent).toContain("92")
+    expect(
+      screen.getByTestId("product-price").parentElement?.className,
+    ).not.toContain("font-bold")
+  })
+
+  it("hivatkozasi ar nelkul az akcios arlista sem hoz athuzott arat", () => {
+    const termek = akciosTermek() as unknown as {
+      variants: { metadata?: unknown }[]
+    }
+    delete termek.variants[0]!.metadata
+    render(<ProductPrice product={termek as never} />)
+    expect(screen.queryByTestId("original-product-price")).toBeNull()
+    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
+  })
+
   /**
    * ISMERT POZITIV KONTROLL, ES ITT EZ A LEGFONTOSABB ALLITAS A HAROM KOZUL.
    *

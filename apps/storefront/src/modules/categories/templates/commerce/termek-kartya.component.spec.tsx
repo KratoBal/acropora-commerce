@@ -16,6 +16,7 @@ type Valtozat = {
   allow_backorder?: boolean | null
   inventory_quantity?: number | null
   calculated_price?: unknown
+  metadata?: Record<string, unknown> | null
 }
 
 const ar = (calculated: number, original: number, tipus = "default") => ({
@@ -123,6 +124,16 @@ describe("a Commerce termékkártya", () => {
   it("akciós árnál jelölő és áthúzott régi ár, különben egyik sem", () => {
     const akcios = {
       ...raktaron(2),
+      // az arcsokkentes kozlese a 30 napos legalacsonyabb arra epul: a referencia 250 000
+      metadata: {
+        omnibus_lowest_price_30d: JSON.stringify({
+          amount: "250000",
+          currency: "HUF",
+          history_begins: "2026-11-05",
+          complete: false,
+          reduction_start: "2026-11-19",
+        }),
+      },
       calculated_price: ar(200000, 250000, "sale"),
     }
     const { rerender } = render(
@@ -134,6 +145,59 @@ describe("a Commerce termékkártya", () => {
     )
 
     rerender(<CommerceTermekKartya product={termek([raktaron(2)])} />)
+    expect(screen.queryByTestId("kartya-akcio")).toBeNull()
+    expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
+  })
+
+  it("az athuzott ar es a szazalek a hivatkozasi arra epul, es a mert esetben (referencia = fizetendo) nincs egyik sem", () => {
+    const referencia = (osszeg: string) => ({
+      omnibus_lowest_price_30d: JSON.stringify({
+        amount: osszeg,
+        currency: "HUF",
+        history_begins: "2026-11-05",
+        complete: false,
+        reduction_start: "2026-11-19",
+      }),
+    })
+    // alapar 250 000, hivatkozas 220 000, fizetendo 200 000: -9% a hivatkozashoz, nem -20% az alapárhoz
+    const { rerender } = render(
+      <CommerceTermekKartya
+        product={termek([
+          {
+            ...raktaron(2),
+            metadata: referencia("220000"),
+            calculated_price: ar(200000, 250000, "sale"),
+          },
+        ])}
+      />,
+    )
+    expect(screen.getByTestId("kartya-akcio").textContent).toBe("-9%")
+    expect(screen.getByTestId("kartya-regi-ar").textContent).toContain("220")
+    expect(screen.getByTestId("kartya-regi-ar").textContent).not.toContain(
+      "250",
+    )
+    // a mert eset: a hivatkozas = a fizetendo
+    rerender(
+      <CommerceTermekKartya
+        product={termek([
+          {
+            ...raktaron(2),
+            metadata: referencia("200000"),
+            calculated_price: ar(200000, 250000, "sale"),
+          },
+        ])}
+      />,
+    )
+    expect(screen.queryByTestId("kartya-akcio")).toBeNull()
+    expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
+    // hivatkozas nelkul az akcios arlista sem hoz jelzot
+    rerender(
+      <CommerceTermekKartya
+        product={termek([
+          { ...raktaron(2), calculated_price: ar(200000, 250000, "sale") },
+        ])}
+      />,
+    )
     expect(screen.queryByTestId("kartya-akcio")).toBeNull()
     expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
   })
