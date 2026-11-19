@@ -1,5 +1,7 @@
 import sanitizeHtml from "sanitize-html"
 
+import { helyorzokraCsereli, youtubeAzonosito } from "./youtube-helyorzo"
+
 /**
  * The product descriptions come from the old shop, where people edit them by
  * hand. They arrive as HTML, so the product page must render them as HTML --
@@ -121,6 +123,8 @@ const OPTIONS: sanitizeHtml.IOptions = {
   // itself is a migration question and is tracked separately.
   allowedAttributes: {
     "*": ["style", "class"],
+    // the YouTube placeholder marker (see youtube-helyorzo.ts): an id of exactly 11 safe characters or nothing
+    div: ["data-yt-embed"],
     a: ["href", "title", "target", "rel"],
     img: ["src", "alt", "title", "width", "height"],
     iframe: [
@@ -154,6 +158,28 @@ const OPTIONS: sanitizeHtml.IOptions = {
   // A description is not trusted content, so outbound links do not get to reach
   // back into the page that opened them.
   transformTags: {
+    // A YOUTUBE EMBED BECOMES A PLACEHOLDER (card dc8cabd2): the iframe itself would call YouTube and Google's ad hosts and set
+    // five cookies before any consent (measured). A valid embed keeps only its video id, an invalid one stays an iframe with no
+    // src, which the filter below drops. Anything not on the YouTube hosts is untouched here and dropped by the host check.
+    iframe: (tagName, attribs) => {
+      const host = (() => {
+        try {
+          return new URL(
+            attribs.src?.startsWith("//")
+              ? `https:${attribs.src}`
+              : (attribs.src ?? ""),
+          ).hostname
+        } catch {
+          return ""
+        }
+      })()
+      if (!/(^|\.)youtube(-nocookie)?\.com$/.test(host))
+        return { tagName, attribs }
+      const azonosito = youtubeAzonosito(attribs.src)
+      return azonosito
+        ? { tagName: "div", attribs: { "data-yt-embed": azonosito } }
+        : { tagName, attribs: {} }
+    },
     a: sanitizeHtml.simpleTransform("a", {
       rel: "noopener noreferrer nofollow",
     }),
@@ -170,8 +196,12 @@ const OPTIONS: sanitizeHtml.IOptions = {
   // on a synthetic foreign-host iframe: without this the output kept
   // `<iframe></iframe>`. A link keeps its text, because there the text is the
   // content; for these two the src IS the content.
+  // `frame.tag` is the tag AS WRITTEN: a YouTube iframe rewritten to the placeholder div is still "iframe" here, and it has no
+  // `src` by design, so it is told apart by the marker (an invalid embed keeps no marker and goes).
   exclusiveFilter: (frame) =>
-    (frame.tag === "iframe" || frame.tag === "img") && !frame.attribs.src,
+    (frame.tag === "iframe" || frame.tag === "img") &&
+    !frame.attribs.src &&
+    !frame.attribs["data-yt-embed"],
 }
 
 /**
@@ -261,7 +291,9 @@ export function sanitizeDescription(
     return null
   }
 
-  const clean = dropUnreadableColors(sanitizeHtml(description, OPTIONS)).trim()
+  const clean = helyorzokraCsereli(
+    dropUnreadableColors(sanitizeHtml(description, OPTIONS)),
+  ).trim()
 
   if (!clean) {
     return null

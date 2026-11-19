@@ -199,3 +199,5 @@ viszont közben működik. A kettőt csak az különbözteti meg, hogy le van-e 
 **Ezért a `SHIPPING_ROLE_PAYMENTS` minden sora mostantól megnevezi a döntőjét**, és ahol
 nincs döntés, ott ez is ki van írva: a `FOXPOST` sor az eredeti építésből maradt, és
 Balázst **soha nem kérdeztük meg róla**. Nem döntésként szerepel, hanem megerősítetlenként.
+
+*(2026-11-18, kártya e0e2378b: a mátrix azóta a `shipping_payment_rule` táblában él, az Adminból állítható; a `SHIPPING_ROLE_PAYMENTS` konstans megszűnt. A sorok döntőit a `SHIPPING_PAYMENT_RULE_SEED` őrzi, a tábla kezdő állapotaként.)*

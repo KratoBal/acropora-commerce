@@ -188,6 +188,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/url-redirect",
     },
+    // every discount in whole currency units (forint: 0 decimals): Medusa's promotion math leaves fractions (acrobot 56524)
+    {
+      resolve: "./src/modules/whole-currency-promotions",
+    },
     // the attempt limits' shared count (card d707cf5f, item 5); without REDIS_URL each process counts in memory
     {
       resolve: "./src/modules/rate-limit",

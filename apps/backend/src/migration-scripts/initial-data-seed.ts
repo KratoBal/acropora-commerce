@@ -39,22 +39,11 @@ import {
  * repository, and this repository is public - see `scripts/scan-secrets.mjs`
  * for what that costs.
  *
- * IT WRITES NO `shipping_payment_rule` ROWS, AND THE REASON WRITTEN HERE FIRST
- * WAS WRONG. It said the pairings were "a separate decision". Measured
- * afterwards: they are decided. `SHIPPING_PAYMENT_RULE_SEED` in
- * `workflows/utils/shipping-payment-rules.ts` holds all eight pairs, and a unit
- * test asserts them against the code matrix.
- *
- * WHAT IS ACTUALLY TRUE IS NARROWER, AND IT IS WHY THE ROWS STILL DO NOT BELONG
- * HERE YET: the table has no reader. `toShippingRolePayments` is called by
- * nothing but its own test, and no production code queries the table - the
- * eligibility rules run from the code matrix. Seeding rows today would store a
- * second copy of a decision nothing consults, in a table whose first consumer
- * arrives later; at that moment there would be two sources, one of them written
- * months earlier by a seed and never looked at since.
- *
- * So the rows belong in the change that wires the reader, together with
- * retiring the code matrix - one change, one source. Not before.
+ * IT WRITES NO `shipping_payment_rule` ROWS, AND SINCE CARD e0e2378b THERE IS NO
+ * NEED: the table is the checkout's only source of the payment matrix, and the
+ * module's own migration (`Migration20261118220000`) fills an empty table with
+ * the recorded pairs (`SHIPPING_PAYMENT_RULE_SEED`). Writing them here too would
+ * be a second writer of the same decision.
  *
  * IT ATTACHES NO SHIPPING RULES. The `shipping_class` rules are applied by
  * `src/scripts/configure-shipping-rules.ts`, which reads the role bindings and

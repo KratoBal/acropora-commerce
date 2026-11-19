@@ -1,4 +1,5 @@
 import { ShippingOptionRole } from "./shipping-eligibility"
+import type { ShippingRolePayments } from "./shipping-payment-rules"
 
 /**
  * Payment eligibility is decided by the SELECTED SHIPPING OPTION, not by the
@@ -19,45 +20,12 @@ export const PAYMENT_ROLES = [
 export type PaymentRole = (typeof PAYMENT_ROLES)[number]
 
 /**
- * The single source of truth for payment eligibility.
- *
- * EVERY ROW HERE IS A BUSINESS DECISION, so each one says whose it was. The
- * table used to carry the decisions without recording them, and that is how a
- * live rule went a week without anyone knowing it was deliberate.
- *
- * `PICKUP` (Balázs, 2026-08-31): card or paying in the shop. No cash on
- * delivery - there is no delivery to collect on.
- *
- * `GLS_NORMAL` (Balázs, 2026-08-31): card or cash on delivery. This role also
- * covers the GLS parcel point, not only home delivery.
- *
- * `GLS_HEAVY` (Balázs, 2026-09-01, "Legyen utánvét"): card or cash on
- * delivery. Until that day this row read card only, and nothing said whether
- * that was a decision or an omission. It was an omission. The role covers BOTH
- * heavy options - home delivery and the heavy parcel point - so the answer
- * applies to both.
- *
- * `FOXPOST` (inherited from the original build, never separately confirmed):
- * card or cash on delivery. Balázs has not been asked about this one; it is
- * recorded as unconfirmed rather than presented as decided.
- *
- * `BANK_TRANSFER` on EVERY shipping method (Balázs, 2026-10-06 16:31 UTC:
- * "Elore utalas kell. Leadja a rendelest es mi kuldjuk neki gombbal a
- * dijbekerot"; offered with every method on murena's proposal, approved by
- * acrobot 2026-10-06 18:34, card bb3a6bd5). It is a prepayment: the order
- * waits for the money, so no shipping method carries a risk with it. Balázs
- * did not name the methods one by one; the list is the proposal, not his.
- */
-export const SHIPPING_ROLE_PAYMENTS: Record<ShippingOptionRole, PaymentRole[]> =
-  {
-    PICKUP: ["ONLINE_CARD", "PAY_AT_STORE", "BANK_TRANSFER"],
-    GLS_NORMAL: ["ONLINE_CARD", "COD", "BANK_TRANSFER"],
-    GLS_HEAVY: ["ONLINE_CARD", "COD", "BANK_TRANSFER"],
-    FOXPOST: ["ONLINE_CARD", "COD", "BANK_TRANSFER"],
-  }
-
-/**
- * The payment methods allowed for a set of selected shipping roles.
+ * The payment methods allowed for a set of selected shipping roles, from the
+ * matrix the `shipping_payment_rule` table holds (`loadShippingRolePayments`;
+ * the decisions behind the starting rows are recorded at
+ * `SHIPPING_PAYMENT_RULE_SEED`). The table is the only source since card
+ * e0e2378b: the code matrix that used to be here is gone, so the Admin's change
+ * is the one the checkout follows.
  *
  * The INTERSECTION is deliberate. A cart can carry one shipping method per
  * shipping profile, and although Acropora runs a single profile today, a payment
@@ -65,23 +33,29 @@ export const SHIPPING_ROLE_PAYMENTS: Record<ShippingOptionRole, PaymentRole[]> =
  * them. Taking the union would let a heavy delivery be paid cash on delivery
  * because some other method allowed it.
  *
+ * THE ORDER is the first selected shipping method's own order (its rows'
+ * `position`): that is the list the customer reads, and the Admin sets it.
+ *
  * No selected shipping method means no decision yet, so nothing is offered.
  */
 export const allowedPaymentRolesFor = (
-  shippingRoles: ShippingOptionRole[]
+  shippingRoles: ShippingOptionRole[],
+  rolePayments: ShippingRolePayments
 ): PaymentRole[] => {
   if (!shippingRoles.length) {
     return []
   }
 
-  return PAYMENT_ROLES.filter((paymentRole) =>
+  return (rolePayments[shippingRoles[0]] ?? []).filter((paymentRole) =>
     shippingRoles.every((shippingRole) =>
-      SHIPPING_ROLE_PAYMENTS[shippingRole].includes(paymentRole)
+      (rolePayments[shippingRole] ?? []).includes(paymentRole)
     )
   )
 }
 
 export const isPaymentRoleAllowedFor = (
   paymentRole: PaymentRole,
-  shippingRoles: ShippingOptionRole[]
-): boolean => allowedPaymentRolesFor(shippingRoles).includes(paymentRole)
+  shippingRoles: ShippingOptionRole[],
+  rolePayments: ShippingRolePayments
+): boolean =>
+  allowedPaymentRolesFor(shippingRoles, rolePayments).includes(paymentRole)
