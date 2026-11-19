@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { CEG_NYITVA } from "@lib/ceg"
 import { ELO_ALLAT_FIGYELMEZTETES } from "@lib/util/tartasi-adat"
 import {
   ArAlattiSor,
@@ -388,6 +389,61 @@ describe("az elérhetőség-doboz élő állat sora", () => {
 
     expect(sorrend).toEqual([
       "vaz-keszlet",
+      "vaz-eloallat-atvetel",
+      "vaz-rendelesi-mondat",
+    ])
+  })
+})
+
+/**
+ * A BOLTI ATVETEL SORA A DOBOZBAN (kartya 5b558e4c, acrobot 57460). MI PIROSIT: a sor cimke-ertek par helyett mas alakot kap; a
+ * nyitvatartas nem a `ceg.ts`-bol jon; a sor azonnali atvetelt iger; a doboz csak ettol a sortol `null`; a sor jelzo nelkul is
+ * megjelenik; a sorrend elmozdul (keszlet, bolti atvetel, elo allat, rendelesi mondat).
+ */
+describe("az elérhetőség-doboz bolti átvétel sora", () => {
+  it("címke és érték, alatta a cég nyitvatartása, ígéret nélkül; a doboz csak ettől is megjelenik", () => {
+    render(<ElerhetosegDoboz boltiAtvetel />)
+
+    const sor = screen.getByTestId("vaz-bolti-atvetel")
+    const [fo, nyitva] = Array.from(sor.children)
+
+    expect(Array.from(fo!.children).map((e) => e.textContent)).toEqual([
+      "Bolti átvétel",
+      "Ingyenes, nyitvatartási időben",
+    ])
+    expect(nyitva!.textContent).toBe(`Nyitva: ${CEG_NYITVA.join(", ")}`)
+    expect(sor.textContent).not.toMatch(/\bMa\b|-ig\b/)
+    expect(sor.className).toContain("text-[13.5px]")
+    expect(screen.getByTestId("elerhetoseg-melyedes")).toBeTruthy()
+  })
+
+  it("jelző nélkül nincs sor, és a doboz sem jelenik meg miatta", () => {
+    for (const nincs of [undefined, false]) {
+      const { container, unmount } = render(
+        <ElerhetosegDoboz boltiAtvetel={nincs} />,
+      )
+      expect(container.innerHTML).toBe("")
+      unmount()
+    }
+  })
+
+  it("a készlet-sor után áll, az élő állat mondata és a rendelési mondat előtt", () => {
+    render(
+      <ElerhetosegDoboz
+        keszlet={2}
+        boltiAtvetel
+        eloAllatMondat={ELO_ALLAT_FIGYELMEZTETES}
+        rendelesiMondat="Legalább 2 darab rendelhető."
+      />,
+    )
+
+    const sorrend = Array.from(
+      screen.getByTestId("elerhetoseg-melyedes").children,
+    ).map((elem) => elem.getAttribute("data-testid"))
+
+    expect(sorrend).toEqual([
+      "vaz-keszlet",
+      "vaz-bolti-atvetel",
       "vaz-eloallat-atvetel",
       "vaz-rendelesi-mondat",
     ])

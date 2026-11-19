@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { CEG_NYITVA } from "@lib/ceg"
 import { ELO_ALLAT_FIGYELMEZTETES } from "@lib/util/tartasi-adat"
 
 import LapVaz, { MUSZAKI_LAP_SZAKASZAI } from "./index"
@@ -80,6 +81,20 @@ const TERMEK = {
   options: [
     { id: "o1", title: "Kivitel", values: [{ id: "ov1", value: "Alap" }] },
   ],
+} as never
+
+/** A TERMEK valtozata, nem megveheto alakban: kezelt keszlet, nulla darab, utanrendeles nelkul (a hatter itt a bolti atvetelt sem engedi). */
+const ELFOGYOTT_VALTOZAT = {
+  id: "v1",
+  sku: "8023222196186",
+  options: [],
+  manage_inventory: true,
+  allow_backorder: false,
+  inventory_quantity: 0,
+}
+const ELFOGYOTT = {
+  ...(TERMEK as object),
+  variants: [ELFOGYOTT_VALTOZAT],
 } as never
 
 /**
@@ -832,12 +847,43 @@ describe("a váz valódi tartalma", () => {
    * valtozatra, ami a rekeszt SOHA nem tolti fel. Az ures allapot csak akkor
    * lelet, ha a teli allapot is merve van.
    */
-  it("az elérhetőség-rekesz üres, ha csak kiszerelés van", () => {
-    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+  it("az elérhetőség-rekesz üres, ha csak kiszerelés van, és a termék nem vehető meg", () => {
+    render(<LapVaz tartalom={vazTartalom(ELFOGYOTT)} />)
 
     const doboz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
 
     expect(doboz?.getAttribute("data-vaz-ures")).toBe("igen")
+    expect(screen.queryByTestId("vaz-bolti-atvetel")).toBeNull()
+  })
+
+  /**
+   * A BOLTI ATVETEL SORA (kartya 5b558e4c): a megveheto termeken all, ugyanazon a feltetelen, amin a hatter a bolti atvetelt
+   * engedi. MI PIROSIT: a sor a megveheto termeken hianyzik; a nem megveheton (kezelt keszlet, nulla, utanrendeles nelkul) megjelenik;
+   * a nyitvatartas nem a `ceg.ts`-bol jon; a sor azonnali atvetelt iger ("Ma", "-ig").
+   */
+  it("a megvehető terméken a rekesz a bolti átvétel sorát mutatja, ígéret nélkül, a cég nyitvatartásával", () => {
+    render(<LapVaz tartalom={vazTartalom(TERMEK)} />)
+
+    const doboz = document.querySelector('[data-vaz-szakasz="elerhetoseg"]')
+    expect(doboz?.getAttribute("data-vaz-ures")).toBe("nem")
+    const sor = screen.getByTestId("vaz-bolti-atvetel").textContent ?? ""
+    expect(sor).toBe(
+      `Bolti átvételIngyenes, nyitvatartási időbenNyitva: ${CEG_NYITVA.join(", ")}`,
+    )
+    expect(sor).not.toMatch(/\bMa\b|-ig\b/)
+  })
+
+  it("utánrendelhető termék is a bolti átvétel sorát kapja (a háttér ott is engedi)", () => {
+    render(
+      <LapVaz
+        tartalom={vazTartalom({
+          ...(ELFOGYOTT as object),
+          variants: [{ ...ELFOGYOTT_VALTOZAT, allow_backorder: true }],
+        } as never)}
+      />,
+    )
+
+    expect(screen.getByTestId("vaz-bolti-atvetel")).toBeTruthy()
   })
 
   it("az elérhetőség-rekesz NEM üres, ha valódi elérhetőségi adat van", () => {
@@ -886,11 +932,11 @@ describe("a váz valódi tartalma", () => {
     )
     unmount()
 
-    // a vilagos lap: a fixtura csak kiszerelest visel, a rekesz ures, a mondat nincs
+    // a vilagos lap: a fixtura csak kiszerelest visel es nem veheto meg, a rekesz ures, a mondat nincs
     render(
       <LapVaz
         tartalom={vazTartalom(
-          TERMEK,
+          ELFOGYOTT,
           undefined,
           undefined,
           undefined,

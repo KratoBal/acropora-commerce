@@ -26,7 +26,11 @@ import {
   orderQuantityHint,
   orderQuantityStep,
 } from "../product-actions/minimum-order-quantity"
-import { scarcityCountOf, uniquePieceOf } from "../stock-state/availability"
+import {
+  anyVariantPurchasable,
+  scarcityCountOf,
+  uniquePieceOf,
+} from "../stock-state/availability"
 import { vanValaszthatoOpcio } from "@modules/products/components/product-actions/valaszthato-opciok"
 import { kepAltok } from "../image-gallery/kep-alt"
 import { KepBlokk } from "../image-gallery/kep-blokk"
@@ -839,12 +843,24 @@ export function vazTartalom(
     Az elo allat lapjan a doboz ettol sosem marad ures (a vilagos lapokon a tobbseg ures marad, azt ez nem erinti).
   */
   const eloAllatMondat = eloAllat ? ELO_ALLAT_FIGYELMEZTETES : null
-  if (rendelesiMondat || typeof keszlet === "number" || eloAllatMondat) {
+  /*
+    A BOLTI ATVETEL SORA (kartya 5b558e4c): ott all, ahol a termek megveheto, mert a hatter a bolti atvetelt ugyanezen a
+    feltetelen engedi (egy raktarhely, `variantHasStock`). Ettol a doboz a megveheto lapokon nem marad ures: a terv 1b es
+    2a lapjan is ott all a sor.
+  */
+  const boltiAtvetel = anyVariantPurchasable(termek)
+  if (
+    rendelesiMondat ||
+    typeof keszlet === "number" ||
+    eloAllatMondat ||
+    boltiAtvetel
+  ) {
     tartalom.elerhetoseg = (
       <ElerhetosegDoboz
         rendelesiMondat={rendelesiMondat}
         keszlet={keszlet}
         eloAllatMondat={eloAllatMondat}
+        boltiAtvetel={boltiAtvetel}
       />
     )
   }
