@@ -412,6 +412,7 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     let created = 0
     const calls: string[] = []
     const rawStatements: Array<{ sql: string; bindings: unknown[] }> = []
+    const staleRead: { on: boolean; copy: Record<string, unknown> | null } = { on: false, copy: null }
     const updates: Array<Record<string, unknown>> = []
     const methods = {
       // the decorators' manager source: the real one hands out a transaction manager whose connection runs the raw statement
@@ -423,9 +424,16 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
               raw: async (sql: string, bindings: unknown[]) => {
                 calls.push("raw")
                 rawStatements.push({ sql, bindings })
-                // the one statement the service writes: the texts of one live row, set exactly (no merge)
-                if (row && bindings[1] === row.id)
-                  row = { ...row, texts: JSON.parse(bindings[0] as string) }
+                // the texts of one live row, set exactly (no merge)
+                if (/^update homepage_content set texts/.test(sql)) {
+                  if (row && bindings[1] === row.id)
+                    row = { ...row, texts: JSON.parse(bindings[0] as string) }
+                  return { rows: [] }
+                }
+                // the read-back: the row as the database holds it NOW, not an entity loaded earlier (the stale identity-map copy is what
+                // staleRead simulates for the ORM list below)
+                if (/^select \* from homepage_content where id = \?/.test(sql))
+                  return { rows: row && bindings[0] === row.id ? [row] : [] }
                 return { rows: [] }
               },
             }),
@@ -444,7 +452,12 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
           unknown
         >
       ).knexOf,
-      listHomepageContents: async () => (row ? [row] : []),
+      listHomepageContents: async () => {
+        if (!row) return []
+        // an ORM read after the first load can answer from its identity map: the entity as it was loaded, with the old texts
+        if (staleRead.on) return [staleRead.copy ?? (staleRead.copy = structuredClone(row))]
+        return [row]
+      },
       createHomepageContents: async ([data]: Record<string, unknown>[]) => {
         calls.push("create")
         created += 1
@@ -476,7 +489,7 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
         methods as never,
         input as never
       )
-    return { save, stored: () => row, calls, rawStatements, updates }
+    return { save, stored: () => row, calls, rawStatements, updates, staleRead }
   }
   const base = { texts: {}, slides: null }
 
@@ -590,8 +603,8 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     expect(stored()?.featured_brand_handles).toEqual(["triton"])
     expect(stored()?.blocks).toEqual(list)
     expect(stored()?.footer).toEqual(footer())
-    // never a delete-and-create of the same key (the partial unique index, #804): one update, then one raw statement
-    expect(calls).toEqual(["update", "raw"])
+    // never a delete-and-create of the same key (the partial unique index, #804): one update, the raw texts write, the raw read-back
+    expect(calls).toEqual(["update", "raw", "raw"])
   })
 
   it("HPC-SVC-REMOVED-KEY-RAW: the texts are written by ONE raw UPDATE of the one live row by id, and the ORM update does not carry them", async () => {
@@ -599,14 +612,36 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     await save({ ...base, texts: { a: "1", b: "2" } })
     updates.length = 0
     await save({ ...base, texts: { b: "2" } })
-    expect(rawStatements).toHaveLength(1)
+    expect(rawStatements).toHaveLength(2)
     const [{ sql, bindings }] = rawStatements
     expect(sql).toMatch(/^update homepage_content set texts = \?::jsonb/)
     expect(sql).toMatch(/where id = \? and deleted_at is null$/)
     expect(bindings).toEqual([JSON.stringify({ b: "2" }), stored()?.id])
+    // the read-back is a raw select of the same live row by id, never an ORM read (its identity map can answer with the old texts)
+    expect(rawStatements[1].sql).toMatch(/^select \* from homepage_content where id = \? and deleted_at is null$/)
+    expect(rawStatements[1].bindings).toEqual([stored()?.id])
     // the ORM update would merge the object field: the texts do not go through it in this case
     expect(updates).toHaveLength(1)
     expect("texts" in updates[0]).toBe(false)
+  })
+
+  it("HPC-SVC-REMOVED-KEY-ANSWER: the answer is the row as the database holds it, not the entity loaded at the top (a stale identity-map copy would carry the removed key), twice in a row", async () => {
+    const { save, staleRead } = fake()
+    const answerOf = async (texts: Record<string, string>) => {
+      staleRead.copy = null
+      return (await save({ ...base, texts })) as unknown as {
+        id: string
+        texts: Record<string, string>
+      }
+    }
+    await answerOf({ a: "1", b: "2" })
+    staleRead.on = true
+    const first = await answerOf({ b: "2" })
+    expect(first.texts).toEqual({ b: "2" })
+    await answerOf({ b: "2", c: "3" })
+    const second = await answerOf({ b: "2" })
+    expect(second.texts).toEqual({ b: "2" })
+    expect(second.id).toBe(first.id)
   })
 
   it("HPC-SVC-REMOVED-KEY-EXPLICIT: what the save sends wins over what the old row held, even when a key was removed in the same save", async () => {

@@ -179,24 +179,33 @@ class HomepageContentModuleService extends MedusaService({ HomepageContent }) {
       "update homepage_content set texts = ?::jsonb, updated_at = now() where id = ? and deleted_at is null",
       [JSON.stringify(texts), existing.id]
     )
-    // the reads query the database each time, in this transaction: the stored record, not the pre-write entity
-    const [stored] = await this.listHomepageContents(
-      { id: existing.id },
-      { take: 1 },
-      sharedContext
+    /*
+      THE ANSWER IS READ BACK BY A RAW SELECT on the same connection (barracuda #839): a read through the module goes by the ORM's identity
+      map, which can hand back the entity loaded at the top of this call, with the old `texts` (the removed key still in it). An editor that
+      refreshed its form from that answer would write the key back on its next save.
+    */
+    const read = await this.knexOf(sharedContext).raw(
+      "select * from homepage_content where id = ? and deleted_at is null",
+      [existing.id]
     )
-    return stored
+    return read.rows[0]
   }
 
   /** The transaction's connection, or a refusal: the texts are replaced only inside one. */
   private knexOf(sharedContext: Context): {
-    raw(sql: string, bindings: unknown[]): Promise<unknown>
+    raw(
+      sql: string,
+      bindings: unknown[]
+    ): Promise<{ rows: Record<string, unknown>[] }>
   } {
     const knex = (
       sharedContext.transactionManager as
         | {
             getTransactionContext(): {
-              raw(sql: string, bindings: unknown[]): Promise<unknown>
+              raw(
+                sql: string,
+                bindings: unknown[]
+              ): Promise<{ rows: Record<string, unknown>[] }>
             } | undefined
           }
         | undefined
