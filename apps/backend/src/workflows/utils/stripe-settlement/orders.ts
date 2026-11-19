@@ -8,7 +8,12 @@ import { STRIPE_PROVIDER_ID } from "../stripe-config"
  * Several orders for one intent are returned as several, never picked from: the OS decides (by the sum of the totals).
  *
  * Read only. The orders are read from `created_at` on: an intent's balance transaction is created at the CAPTURE, which can come
- * a week or more after the order (the hold), so the window starts well before the transactions it serves.
+ * a week or more after the order (the hold), so the window starts well before the transactions it serves, and ends just after the
+ * latest of them (the order comes before the charge).
+ *
+ * THE WINDOW'S LIMIT, stated (barracuda #823): the window starts `ORDER_LOOKBACK_DAYS` (45) days before the EARLIEST transaction on the
+ * page. A refund's transaction is created on the refund's day, so a refund of an order older than that is not found: its `orders` is
+ * an empty list, for the OS to review. That errs the right way (it never invents an order) and the OS shows it as unmatched.
  */
 export type IntentOrder = {
   id: string
@@ -19,6 +24,13 @@ export type IntentOrder = {
 }
 
 export const ORDER_LOOKBACK_DAYS = 45
+/**
+ * THE UPPER END OF THE WINDOW (barracuda #823): an order exists BEFORE its charge (the hold is taken at the order, the charge at
+ * the latest with it), so no order made after the LATEST transaction on the page can have paid it. Without this end the scan ran from
+ * the earliest transaction's window up to today, and for an older payout the cap was spent on orders made after it, so lines
+ * that did have an order came back `ORDERS_NOT_READ`. The margin only absorbs clocks that differ between Stripe and the shop.
+ */
+export const ORDER_UPPER_MARGIN_MINUTES = 60
 const PAGE = 200
 /** At most this many orders are read per request; past it the answer says it was cut (`orders_truncated`). */
 export const ORDER_SCAN_CAP = 3000
@@ -46,17 +58,22 @@ export const ordersByIntent = async (
   query: { graph(input: Record<string, unknown>): Promise<{ data?: unknown[] }> },
   wanted: ReadonlySet<string>,
   earliestTransactionUnix: number,
+  latestTransactionUnix: number = Number.POSITIVE_INFINITY,
 ): Promise<{ orders: Map<string, IntentOrder[]>; truncated: boolean }> => {
   const found = new Map<string, IntentOrder[]>()
   if (wanted.size === 0) return { orders: found, truncated: false }
   const since = new Date(earliestTransactionUnix * 1000 - ORDER_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  // no upper end without a known latest transaction (the old call shape): the scan then runs to the present, as before
+  const createdAt: { $gte: string; $lte?: string } = { $gte: since }
+  if (Number.isFinite(latestTransactionUnix))
+    createdAt.$lte = new Date(latestTransactionUnix * 1000 + ORDER_UPPER_MARGIN_MINUTES * 60 * 1000).toISOString()
   let scanned = 0
   let truncated = false
   for (let skip = 0; ; skip += PAGE) {
     const { data } = await query.graph({
       entity: "order",
       fields: ORDER_INTENT_FIELDS,
-      filters: { created_at: { $gte: since } },
+      filters: { created_at: createdAt },
       pagination: { skip, take: PAGE, order: { created_at: "ASC" } },
     })
     const page = (data ?? []) as any[]
@@ -97,7 +114,13 @@ export const attachOrders = async <T extends { transactions: { payment_intent: s
 ): Promise<Omit<T, "transactions"> & { transactions: (T["transactions"][number] & { orders: IntentOrder[] })[]; orders_truncated: boolean }> => {
   const wanted = new Set(page.transactions.map((txn) => txn.payment_intent).filter((id): id is string => !!id))
   const earliest = page.transactions.reduce((min, txn) => Math.min(min, txn.created), Number.POSITIVE_INFINITY)
-  const { orders, truncated } = await ordersByIntent(query, wanted, Number.isFinite(earliest) ? earliest : 0)
+  const latest = page.transactions.reduce((max, txn) => Math.max(max, txn.created), Number.NEGATIVE_INFINITY)
+  const { orders, truncated } = await ordersByIntent(
+    query,
+    wanted,
+    Number.isFinite(earliest) ? earliest : 0,
+    Number.isFinite(latest) ? latest : Number.POSITIVE_INFINITY,
+  )
   return {
     ...page,
     transactions: page.transactions.map((txn) => ({ ...txn, orders: txn.payment_intent ? (orders.get(txn.payment_intent) ?? []) : [] })),

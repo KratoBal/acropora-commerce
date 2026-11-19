@@ -1,4 +1,11 @@
-import { attachOrders, intentOfPayment, ordersByIntent, ORDER_LOOKBACK_DAYS, ORDER_SCAN_CAP } from "../orders"
+import {
+  attachOrders,
+  intentOfPayment,
+  ordersByIntent,
+  ORDER_LOOKBACK_DAYS,
+  ORDER_SCAN_CAP,
+  ORDER_UPPER_MARGIN_MINUTES,
+} from "../orders"
 
 const stripePayment = (data: unknown) => ({ provider_id: "pp_stripe_stripe", data })
 const order = (id: string, display_id: number | null, total: number, payments: unknown[]) => ({
@@ -68,6 +75,15 @@ describe("ordersByIntent", () => {
     await ordersByIntent(query, new Set(["pi_A"]), 1_800_000_000)
     const since = new Date(1_800_000_000 * 1000 - ORDER_LOOKBACK_DAYS * 86_400_000).toISOString()
     expect(query.calls[0]).toMatchObject({ entity: "order", filters: { created_at: { $gte: since } }, pagination: { skip: 0, take: 200, order: { created_at: "ASC" } } })
+    // without a known latest transaction there is no upper end (the old call shape)
+    expect(query.calls[0].filters.created_at.$lte).toBeUndefined()
+  })
+
+  it("the window ends an hour after the latest transaction: an order made later cannot have paid it", async () => {
+    const query = fakeQuery([[]])
+    await ordersByIntent(query, new Set(["pi_A"]), 1_800_000_000, 1_800_086_400)
+    expect(query.calls[0].filters.created_at.$lte).toBe(new Date((1_800_086_400 + ORDER_UPPER_MARGIN_MINUTES * 60) * 1000).toISOString())
+    expect(query.calls[0].filters.created_at.$gte).toBe(new Date(1_800_000_000 * 1000 - ORDER_LOOKBACK_DAYS * 86_400_000).toISOString())
   })
 
   it("nothing wanted: no query at all", async () => {
@@ -108,6 +124,21 @@ describe("attachOrders", () => {
     expect(answer.orders_truncated).toBe(false)
     // the window starts from the EARLIEST transaction
     expect(query.calls[0].filters.created_at.$gte).toBe(new Date(1_800_000_000 * 1000 - ORDER_LOOKBACK_DAYS * 86_400_000).toISOString())
+    // and ends after the LATEST one (txn_3, 1_800_000_200), not the first or the last in the list by accident
+    expect(query.calls[0].filters.created_at.$lte).toBe(new Date((1_800_000_200 + ORDER_UPPER_MARGIN_MINUTES * 60) * 1000).toISOString())
+  })
+
+  it("the window ends after the latest transaction whatever the page's order (newest first as well)", async () => {
+    const query = fakeQuery([[]])
+    await attachOrders(query, {
+      transactions: [
+        { payment_intent: "pi_A", created: 1_800_000_900 },
+        { payment_intent: "pi_B", created: 1_800_000_100 },
+        { payment_intent: "pi_C", created: 1_800_000_500 },
+      ],
+    })
+    expect(query.calls[0].filters.created_at.$lte).toBe(new Date((1_800_000_900 + ORDER_UPPER_MARGIN_MINUTES * 60) * 1000).toISOString())
+    expect(query.calls[0].filters.created_at.$gte).toBe(new Date(1_800_000_100 * 1000 - ORDER_LOOKBACK_DAYS * 86_400_000).toISOString())
   })
 
   it("a page with no intent reads no orders", async () => {
