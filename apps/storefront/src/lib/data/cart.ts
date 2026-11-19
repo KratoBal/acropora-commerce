@@ -589,7 +589,10 @@ async function giftCardRequest(
     )
     return {
       ok: false,
-      uzenet: ajandekkartyaUzenet(allapot, hiba instanceof Error ? hiba.message : undefined),
+      uzenet: ajandekkartyaUzenet(
+        allapot,
+        hiba instanceof Error ? hiba.message : undefined,
+      ),
     }
   }
   revalidateTag(await getCacheTag("carts"))
