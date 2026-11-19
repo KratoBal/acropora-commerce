@@ -53,12 +53,16 @@ describe("the settlement feed routes", () => {
   it("transactions: expands the source and answers the intent", async () => {
     const fetchMock = stripeAnswer({ has_more: false, data: [{ id: "txn_1", type: "charge", currency: "huf", amount: 470000, fee: 21150, net: 448850, source: { object: "charge", id: "ch_1", payment_intent: "pi_1" } }] })
     const { sent, res } = respond()
-    await TRANSACTIONS({ params: { payout_id: "po_1" }, query: {}, scope: {} } as any, res)
+    const graph = jest.fn(async () => ({ data: [{ id: "order_1", display_id: 72, total: 4700, currency_code: "huf", payment_collections: [{ payments: [{ provider_id: "pp_stripe_stripe", data: { id: "pi_1" } }] }] }] }))
+    await TRANSACTIONS({ params: { payout_id: "po_1" }, query: {}, scope: { resolve: () => ({ graph }) } } as any, res)
+    expect(graph).toHaveBeenCalledTimes(1)
     const [url] = fetchMock.mock.calls[0] as [string]
     expect(url).toContain("balance_transactions?")
     expect(url).toContain("payout=po_1")
     expect(url).toContain("expand[]=data.source")
     expect(sent[0].transactions[0]).toMatchObject({ payment_intent: "pi_1", amount: 4700, fee: 211.5, net: 4488.5 })
+    expect(sent[0].transactions[0].orders).toEqual([{ id: "order_1", display_id: 72, total: 4700, currency_code: "huf" }])
+    expect(sent[0].orders_truncated).toBe(false)
   })
 
   it("a query that is not in the list is refused (strict)", async () => {
