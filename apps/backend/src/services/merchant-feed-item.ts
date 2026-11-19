@@ -58,6 +58,13 @@ export type MerchantFeedContext = {
   brands: Record<string, string>
   /** Every category by id, to build the path up to the root. */
   categories: Record<string, { name: string; parentId: string | null }>
+  /**
+   * The restock lead time in days (`feed_backorder_lead_time_days`), or null when it is not set: a
+   * backorderable item at zero stock then goes as `out_of_stock` (card 69d18bff).
+   */
+  backorderLeadTimeDays: number | null
+  /** When the feed is built: the base of a backorder item's `availability_date`. */
+  now: Date
 }
 
 export type MerchantItem = {
@@ -71,6 +78,8 @@ export type MerchantItem = {
   price: string
   sale_price?: string
   availability: "in_stock" | "out_of_stock" | "backorder"
+  /** Required by Google with `backorder`: the day it ships. Only with a set lead time. */
+  availability_date?: string
   condition: "new" | "used"
   brand?: string
   gtin?: string
@@ -142,7 +151,10 @@ export function toMerchantItem(
     additional_image_link: images.slice(1, 1 + ADDITIONAL_IMAGES_MAX),
     price: money(onSale ? original : amount, currency),
     ...(onSale ? { sale_price: money(amount, currency) } : {}),
-    availability: availabilityOf(variant, context.availability[variant.id] ?? 0),
+    ...feedAvailability(
+      availabilityOf(variant, context.availability[variant.id] ?? 0),
+      context
+    ),
     condition: path.some((name) => /haszn[aá]lt/i.test(name)) ? "used" : "new",
     ...(brand ? { brand } : {}),
     ...(gtin ? { gtin } : { identifier_exists: "no" as const }),
@@ -159,6 +171,26 @@ export function toMerchantItem(
  * sellable when its stock is not managed, when it has stock, or when it may
  * be ordered without stock. The last one is a backorder in Merchant terms.
  */
+/**
+ * WHAT THE FEED MAY SAY ABOUT A BACKORDERABLE ITEM (card 69d18bff; acrobot 56624). Google requires an
+ * `availability_date` with `backorder` (support.google.com/merchants/answer/6324448), and the OS holds no lead
+ * time anyone reads. So without the setting the item is `out_of_stock`; with it, `backorder` and the day that
+ * many days after the feed is built, as an ISO 8601 date at midnight UTC.
+ */
+export function feedAvailability(
+  availability: MerchantItem["availability"],
+  context: Pick<MerchantFeedContext, "backorderLeadTimeDays" | "now">
+): Pick<MerchantItem, "availability" | "availability_date"> {
+  if (availability !== "backorder") return { availability }
+  const days = context.backorderLeadTimeDays
+  if (!days) return { availability: "out_of_stock" }
+  const day = new Date(context.now.getTime() + days * 24 * 60 * 60 * 1000)
+  return {
+    availability: "backorder",
+    availability_date: `${day.toISOString().slice(0, 10)}T00:00Z`,
+  }
+}
+
 export function availabilityOf(
   variant: Pick<MerchantFeedVariant, "manage_inventory" | "allow_backorder">,
   quantity: number

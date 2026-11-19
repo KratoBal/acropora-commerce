@@ -35,13 +35,60 @@ describe("leírás-tisztítás: a valódi katalógus alakjai", () => {
   })
 
   /**
-   * Szűk és MÉRT engedmény: az exportban 27 termék ágyaz be videót, és mind a
-   * 27 forrása a www.youtube.com. Nem általános iframe-engedély.
+   * A YOUTUBE-BEÁGYAZÁS HELYŐRZŐVÉ ÍRÓDIK (kártya dc8cabd2). A mért ok: a beágyazott iframe a lap megnyitásakor, hozzájárulás
+   * ELŐTT 19 hívást tett a youtube.com és a doubleclick.net felé, és öt sütit írt. A helyőrző csak a videó azonosítóját tartja meg.
    */
-  it("a youtube-beágyazás megmarad", () => {
+  it("a youtube-beágyazásból helyőrző lesz: nincs iframe, nincs youtube-cím, a videó azonosítója megmarad", () => {
     const ki = sanitizeDescription(fixtura("iframe-youtube"))!
-    expect(ki).toContain("<iframe")
-    expect(ki).toContain("www.youtube.com/embed")
+    expect(ki).not.toContain("<iframe")
+    expect(ki).not.toMatch(/youtube(-nocookie)?\.com\/embed/)
+    const azonosito = /data-yt-embed="([A-Za-z0-9_-]{11})"/.exec(ki)?.[1]
+    expect(azonosito).toBeTruthy()
+    expect(ki).toContain(`data-yt-betolt="${azonosito}"`)
+    expect(ki).toContain("Videó betöltése")
+    expect(ki).toContain(`href="https://www.youtube.com/watch?v=${azonosito}"`)
+    // a helyőrző maga nem hív semmit: nincs kép, nincs szkript, nincs keret
+    expect(ki).not.toMatch(/<(img|script|iframe)\b/i)
+  })
+
+  it("a protokoll-relatív és a nocookie cím is helyőrző, a lekérdezés (si=) elesik", () => {
+    const ki = sanitizeDescription(
+      '<p>a</p><iframe src="//www.youtube.com/embed/xDhs3jEA6oA?si=h1oHvHAB0VRLqke6&amp;t=5" width="560"></iframe>' +
+        '<iframe src="https://www.youtube-nocookie.com/embed/c1BvXRULiSM"></iframe>',
+    )!
+    expect(ki).not.toContain("<iframe")
+    expect(ki).toContain('data-yt-embed="xDhs3jEA6oA"')
+    expect(ki).toContain('data-yt-embed="c1BvXRULiSM"')
+    expect(ki).not.toContain("si=")
+    expect(ki).not.toContain("h1oHvHAB0VRLqke6")
+  })
+
+  it("érvénytelen azonosító, nem /embed/ út, hasonló hoszt és idegen hoszt: semmi sem marad (se iframe, se helyőrző)", () => {
+    for (const src of [
+      "https://www.youtube.com/embed/rovid",
+      "https://www.youtube.com/embed/xDhs3jEA6oAtulhosszu",
+      "https://www.youtube.com/embed/xDhs3jEA6o!",
+      "https://www.youtube.com/watch?v=xDhs3jEA6oA",
+      "https://www.youtube.com.evil.example/embed/xDhs3jEA6oA",
+      "https://evilyoutube.com/embed/xDhs3jEA6oA",
+      "http://www.youtube.com/embed/xDhs3jEA6oA",
+      'https://www.youtube.com/embed/xDhs3jEA6oA" onload="x',
+    ]) {
+      const ki = sanitizeDescription(
+        `<p>elotte</p><iframe src='${src}'></iframe>`,
+      )!
+      expect(ki, src).not.toContain("<iframe")
+      expect(ki, src).not.toContain("data-yt-")
+      expect(ki, src).not.toContain("onload")
+    }
+  })
+
+  it("a csak videót tartalmazó leírás nem üres lap (a helyőrzőnek szövege van)", () => {
+    expect(
+      sanitizeDescription(
+        '<iframe src="https://www.youtube.com/embed/xDhs3jEA6oA"></iframe>',
+      ),
+    ).not.toBeNull()
   })
 
   /**

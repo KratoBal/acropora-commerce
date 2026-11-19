@@ -15,6 +15,9 @@ import {
   AdminUpdateCommerceSetting,
   AdminUpsertCommerceSetting,
 } from "./admin/commerce-settings/validators";
+import { AdminPutShippingPaymentRules } from "./admin/shipping-payment-rules/validators";
+import { AdminStorefrontRevalidate } from "./admin/storefront-revalidate/validators";
+import { AdminIssueGiftCard } from "./admin/gift-cards/validators";
 import {
   AdminGetShippingAttributesParams,
   AdminShippingAttributeFlags,
@@ -88,6 +91,7 @@ import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/valida
 import { StorePostCustomerWithdrawal } from "./store/customers/me/orders/[order_id]/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
+import { StorePostCartGiftCard } from "./store/carts/[id]/gift-card/validators";
 import { StorePostSutiHozzajarulas } from "./store/customers/me/suti-hozzajarulas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
@@ -169,6 +173,24 @@ export default defineMiddlewares({
       middlewares: [validateAndTransformBody(AdminUpdateCommerceSetting)],
     },
     {
+      // the payment matrix, whole (card e0e2378b)
+      matcher: "/admin/shipping-payment-rules",
+      method: "PUT",
+      middlewares: [validateAndTransformBody(AdminPutShippingPaymentRules)],
+    },
+    {
+      // one storefront revalidation by hand (card 54bb3779)
+      matcher: "/admin/storefront-revalidate",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminStorefrontRevalidate)],
+    },
+    {
+      // issuing a gift card (card 495c0007)
+      matcher: "/admin/gift-cards",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminIssueGiftCard)],
+    },
+    {
       // Medusa's cancel swallows a failed refund; the captured money is refunded first,
       // loudly, and a mixed cart's shipped order waits for its pickup order.
       matcher: "/admin/orders/:id/cancel",
@@ -204,6 +226,12 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/aszf-elfogadas",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    {
+      // a gift card on the cart (card 495c0007): the code is the only input
+      matcher: "/store/carts/:id/gift-card",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostCartGiftCard)],
     },
     {
       // The registration's ÁSZF record is the server's (customer-aszf-record.ts; audit A4, customer twin).

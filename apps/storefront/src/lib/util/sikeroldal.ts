@@ -57,6 +57,11 @@ type Rendeles = {
     city?: string | null
     address_1?: string | null
   } | null
+  /** A SZAMLAZASI CIM: a ceges vasarlas cegneve es adoszama (`metadata.tax_id`, a penztar irja). */
+  billing_address?: {
+    company?: string | null
+    metadata?: Record<string, unknown> | null
+  } | null
   shipping_methods?:
     | {
         name?: string | null
@@ -292,6 +297,25 @@ export function boltiLepesek(
 }
 
 /**
+ * A CEGES VASARLAS ADATAI AZ OSSZESITOHOZ (A15): a szamlazasi cim cegneve es adoszama, mert a vevo ezt adta meg, es a szamla
+ * ezzel keszul. Magankent vasarolt rendelesen nincs ilyen (cegnev nelkul `null`); adoszam nelkul a cegnev egyedul all.
+ */
+export function cegAdatok(rendeles: Rendeles): {
+  nev: string
+  adoszam: string | null
+} | null {
+  const cim = rendeles.billing_address
+  const nev = (cim?.company ?? "").trim()
+  if (!nev) return null
+  const adoszam = cim?.metadata?.tax_id
+  return {
+    nev,
+    adoszam:
+      typeof adoszam === "string" && adoszam.trim() ? adoszam.trim() : null,
+  }
+}
+
+/**
  * A LAP: egy rendeles, vagy egy vegyes kosar ket rendelese (a kiszallitott
  * elol), az osszesitovel. `parBolti`: a par a bolti atveteles-e (a jelen
  * rendeles a kiszallitott), vagy forditva.
@@ -321,6 +345,7 @@ export function sikeroldal(
       teljesites(r, bolti, i + 1, t),
     ),
     fizetes: fizetesCimke(fo, t),
+    ceg: cegAdatok(rendeles) ?? cegAdatok(fo),
     vegosszeg: sorrend.reduce((s, { r }) => s + Number(r.total ?? 0), 0),
     rendelesekSzama: sorrend.length,
   }

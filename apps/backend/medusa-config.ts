@@ -155,6 +155,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/stock-alert",
     },
+    // gift cards and their ledger (card 495c0007): a means of payment, redeemed as a cart credit line
+    {
+      resolve: "./src/modules/gift-card",
+    },
     // V2.6 S4a: the live animals on their way, written by the Acropora OS
     {
       resolve: "./src/modules/livestock-arrival",
@@ -187,6 +191,10 @@ module.exports = defineConfig({
     // the shop's 301 list, projected from the OS (SEO P0 PR 7a)
     {
       resolve: "./src/modules/url-redirect",
+    },
+    // every discount in whole currency units (forint: 0 decimals): Medusa's promotion math leaves fractions (acrobot 56524)
+    {
+      resolve: "./src/modules/whole-currency-promotions",
     },
     // the attempt limits' shared count (card d707cf5f, item 5); without REDIS_URL each process counts in memory
     {

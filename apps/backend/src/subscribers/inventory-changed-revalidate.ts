@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import {
   INVENTORY_CHANGE_EVENTS,
+  noteRevalidateRequest,
   revalidateCoalescer,
   sendStorefrontRevalidate,
   storefrontRevalidateConfig,
@@ -23,11 +24,12 @@ let coalescer: ReturnType<typeof revalidateCoalescer> | null = null
 export default async function inventoryChangedRevalidate({
   container,
 }: SubscriberArgs<{ id: string }>) {
+  noteRevalidateRequest("inventory-changed")
   const config = storefrontRevalidateConfig(process.env)
   if (!config) return
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   coalescer ??= revalidateCoalescer(
-    () => sendStorefrontRevalidate(config, logger),
+    () => sendStorefrontRevalidate(config, logger, undefined, undefined, "inventory-changed"),
     REVALIDATE_WINDOW_MS
   )
   coalescer.request()

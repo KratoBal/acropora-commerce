@@ -34,7 +34,8 @@ export const PUT = async (
       config,
       req.scope.resolve(ContainerRegistrationKeys.LOGGER),
       fetch,
-      ["homepage-content"]
+      ["homepage-content"],
+      "homepage-content"
     )
   res.json({ homepage_content })
 }

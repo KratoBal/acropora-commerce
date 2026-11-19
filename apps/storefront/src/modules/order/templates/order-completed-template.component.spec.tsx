@@ -217,3 +217,128 @@ describe("a vendég bejárata a rendelés-visszaigazoló oldalon", () => {
     )
   })
 })
+
+/*
+  AZ ELORE UTALAS ES A CEGES VASARLAS A VISSZAIGAZOLO LAPON (A15). MI PIROSIT: az utalasos, kiszallitott rendeles
+  "Osszekeszitjuk a csomagot" mondatot kap (a csomag a befizetes utan keszul); a dijbekero es a 8 nap nem all ott; a kartyas
+  rendelesre is az utalas mondata kerul; a bolti atvetel utalasa ketszer mondana az utalast; a ceges vasarlas cege vagy
+  adoszama nem latszik az osszesitoben, vagy a magan vasarlas kap ilyen sort.
+*/
+describe("előre utalás és céges vásárlás a visszaigazoló lapon", () => {
+  const rend = (provider: string, billing?: Record<string, unknown>) =>
+    ({
+      id: "order_60",
+      display_id: 60,
+      email: "vevo@example.test",
+      total: 4700,
+      currency_code: "huf",
+      items: [{ id: "i1", product_title: "Teszt termék", quantity: 1 }],
+      shipping_address: {
+        postal_code: "1051",
+        city: "Budapest",
+        address_1: "Teszt utca 1.",
+      },
+      ...(billing ? { billing_address: billing } : {}),
+      shipping_methods: [
+        { name: "GLS házhozszállítás", total: 3500, data: {} },
+      ],
+      payment_collections: [{ payments: [{ provider_id: provider }] }],
+    }) as never
+  const oldal = async (order: never) =>
+    render(await OrderCompletedTemplate({ order, countryCode: "hu" }))
+
+  it("a kiszállított előre utalásos rendelés a díjbekérőt és a befizetés utáni összekészítést mondja", async () => {
+    await oldal(rend("pp_acropora_transfer"))
+    const d = screen.getByTestId("mi-tortenik").textContent ?? ""
+    expect(d).toContain(
+      "A díjbekérőt e-mailben küldjük, 8 napos fizetési határidővel.",
+    )
+    expect(d).toContain("A csomagot a befizetés beérkezése után állítjuk össze")
+    expect(d).not.toContain("Összekészítjük a csomagot.")
+    expect(d).not.toContain("GLS követési szám")
+  })
+
+  it("vegyes kosár: a kártyás kiszállítás mondata marad, az utalásos bolti rész nem veszi át", async () => {
+    const bolti = {
+      ...(rend("pp_acropora_transfer") as object),
+      id: "order_61",
+      display_id: 61,
+      shipping_methods: [{ name: "Bolti átvétel", total: 0, data: {} }],
+    } as never
+    render(
+      await OrderCompletedTemplate({
+        order: rend("pp_stripe_stripe"),
+        par: bolti,
+        parBolti: true,
+        countryCode: "hu",
+      }),
+    )
+    const d = screen.getByTestId("mi-tortenik").textContent ?? ""
+    expect(d).toContain("Összekészítjük a csomagot.")
+    expect(d).not.toContain("befizetés beérkezése után állítjuk össze")
+  })
+
+  it("kártyás és utánvétes rendelésen marad a régi mondat", async () => {
+    await oldal(rend("pp_stripe_stripe"))
+    expect(screen.getByTestId("mi-tortenik").textContent).toContain(
+      "Összekészítjük a csomagot.",
+    )
+    expect(screen.getByTestId("mi-tortenik").textContent).not.toContain(
+      "díjbekérő",
+    )
+    cleanup()
+    await oldal(rend("pp_acropora_cod"))
+    expect(screen.getByTestId("mi-tortenik").textContent).not.toContain(
+      "díjbekérő",
+    )
+  })
+
+  it("az összesítőben a cég neve és az adószám látszik, magánvásárláson nem", async () => {
+    await oldal(
+      rend("pp_acropora_transfer", {
+        company: "Teszt Kft.",
+        metadata: { tax_id: "12345676-2-13" },
+      }),
+    )
+    const o = screen.getByTestId("rendeles-osszesito").textContent ?? ""
+    expect(o).toContain("CégTeszt Kft.")
+    expect(o).toContain("Adószám12345676-2-13")
+    cleanup()
+    await oldal(
+      rend("pp_acropora_transfer", {
+        company: "",
+        metadata: { tax_id: "12345676-2-13" },
+      }),
+    )
+    const m = screen.getByTestId("rendeles-osszesito").textContent ?? ""
+    expect(m).not.toContain("Adószám")
+    expect(m).not.toContain("Cég")
+  })
+
+  it("cég adószám nélkül: a cégnév egyedül áll", async () => {
+    await oldal(
+      rend("pp_stripe_stripe", { company: "Teszt Kft.", metadata: null }),
+    )
+    const o = screen.getByTestId("rendeles-osszesito").textContent ?? ""
+    expect(o).toContain("CégTeszt Kft.")
+    expect(o).not.toContain("Adószám")
+  })
+
+  it("angol oldalon a három új szöveg angol", async () => {
+    render(
+      await OrderCompletedTemplate({
+        order: rend("pp_acropora_transfer", {
+          company: "Teszt Kft.",
+          metadata: { tax_id: "12345676-2-13" },
+        }),
+        countryCode: "en-hu",
+      }),
+    )
+    expect(screen.getByTestId("mi-tortenik").textContent).toContain(
+      "We send the proforma invoice by e-mail",
+    )
+    const o = screen.getByTestId("rendeles-osszesito").textContent ?? ""
+    expect(o).toContain("CompanyTeszt Kft.")
+    expect(o).toContain("Tax number12345676-2-13")
+  })
+})

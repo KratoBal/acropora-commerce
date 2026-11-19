@@ -20,6 +20,16 @@ export const FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY =
   "free_shipping_threshold_foxpost_huf" as const
 
 /**
+ * THE MERCHANT FEED'S RESTOCK LEAD TIME, in days (card 69d18bff; acrobot 56624). Google requires an
+ * `availability_date` for a `backorder` item, and today nothing in the OS holds a supplier lead time that
+ * is read anywhere (`SupplierProduct.leadTimeDays` exists, unwritten). Unset (no default, on purpose): a
+ * product at zero stock that may be backordered goes to the feed as `out_of_stock`. Set: as `backorder`,
+ * available that many days from the day the feed is built. A business number, set, not coded.
+ */
+export const FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY =
+  "feed_backorder_lead_time_days" as const
+
+/**
  * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
  * the accessor and cannot be removed from the Admin (the settings list shows it
  * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
@@ -38,6 +48,7 @@ export const COMMERCE_SETTING_KEYS = [
   SHIPPING_FOXPOST_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+  FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
 ] as const
 
 export type CommerceSettingKey = (typeof COMMERCE_SETTING_KEYS)[number]
@@ -99,6 +110,24 @@ const hufDefinition = (
   ...(defaultValue === undefined ? {} : { defaultValue }),
 })
 
+export const FEED_BACKORDER_LEAD_TIME_DAYS_MAX = 365
+
+/** A lead time: whole days, 1 to 365 (0 would promise delivery today; more than a year is a typo). */
+export const normalizeLeadTimeDays = (raw: unknown, key: string): number => {
+  const value = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > FEED_BACKORDER_LEAD_TIME_DAYS_MAX
+  )
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `${key} must be a whole number of days from 1 to ${FEED_BACKORDER_LEAD_TIME_DAYS_MAX}, received ${JSON.stringify(raw)}`
+    )
+  return value
+}
+
 /** Single source of truth for keys, descriptions, validation and defaults. */
 export const COMMERCE_SETTING_DEFINITIONS: Record<
   CommerceSettingKey,
@@ -131,6 +160,13 @@ export const COMMERCE_SETTING_DEFINITIONS: Record<
     "Az ingyenes Foxpost szállítás áruérték-küszöbe, forintban.",
     DEFAULT_FREE_SHIPPING_THRESHOLD_FOXPOST_HUF
   ),
+  [FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY]: {
+    key: FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
+    description:
+      "Utánrendelhető, nulla készletű termék beszerzési átfutása napokban a termék-feedhez (Google, Meta). Üresen a feed az ilyen terméket nincs készleten-ként adja.",
+    normalize: (raw) =>
+      normalizeLeadTimeDays(raw, FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY),
+  },
 }
 
 export const isCommerceSettingKey = (key: string): key is CommerceSettingKey =>

@@ -6,6 +6,7 @@ import {
   CASH_ON_DELIVERY_FEE_SETTING_KEY,
   COMMERCE_SETTING_DEFINITIONS,
   FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+  FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   normalizeCommerceSettingValue,
   SHIPPING_FOXPOST_SETTING_KEY,
@@ -33,6 +34,8 @@ describe("commerce setting definitions", () => {
         SHIPPING_FOXPOST_SETTING_KEY,
         FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
         FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
+        // the merchant feed's restock lead time (card 69d18bff): days, not forints, and no default
+        FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
       ].sort(),
     )
   })

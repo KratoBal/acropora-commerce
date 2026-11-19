@@ -1030,6 +1030,14 @@ export const hu = {
     emailInvalid: "Adj meg érvényes e-mail-címet.",
     phone: "Telefonszám",
     sameAsBilling: "A számlázási cím megegyezik a szállítási címmel",
+    companyPurchase: "Céges vásárlás: a számlát cégre kérem",
+    companyPurchaseLead:
+      "A cég nevét a cégnév mezőben add meg, és add meg az adószámot is.",
+    taxId: "Adószám",
+    taxIdHint: "Magyar adószám, például 12345678-1-23",
+    taxIdInvalid:
+      "Adj meg érvényes magyar adószámot: 11 számjegy, például 12345678-1-23.",
+    taxIdSummary: "Adószám",
   },
   checkoutShipping: {
     heading: "Szállítás",
@@ -1228,6 +1236,8 @@ export const hu = {
       "Összekészítjük a csomagot. A követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
     nextStepGls:
       "Összekészítjük a csomagot. A GLS követési szám akkor jelenik meg, amikor a csomagot feladtuk.",
+    nextStepTransfer:
+      "A díjbekérőt e-mailben küldjük, 8 napos fizetési határidővel. A csomagot a befizetés beérkezése után állítjuk össze; a követési szám akkor jelenik meg, amikor feladtuk.",
     pickupWhere: "Az átvétel helye: {name}, {address}.",
     pickupPayAtStore: "Az üzletben átvehető. Fizetés átvételkor.",
     summary: "Rendelés összesítő",
@@ -1235,6 +1245,8 @@ export const hu = {
     payment: "Fizetés",
     total: "Végösszeg",
     orders: "Rendelések",
+    company: "Cég",
+    taxId: "Adószám",
     ordersCount: "{count} db",
     shippingFee: "Szállítás: {amount}",
     codFee: "Utánvét kezelési díj: {amount}",

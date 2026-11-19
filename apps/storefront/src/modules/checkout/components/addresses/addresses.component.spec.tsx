@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 let lepes = "address"
@@ -102,6 +102,133 @@ describe("a cím lépés nyitva", () => {
     expect(new FormData(urlap).get("same_as_billing")).toBe("on")
     // a pipa az egyetlen név szerinti jelölő: a számlázási mezők nincsenek az űrlapon
     expect(container.querySelector('[name^="billing_address"]')).toBeNull()
+  })
+})
+
+/**
+ * A CEGES VASARLAS A CIM LEPESEN (kartya c977aed2). MI PIROSIT: ha a pipa nem `company_purchase` nevu (a szerver-muvelet onnan
+ * olvas); ha a pipa nelkul adoszam-mezo latszik, vagy pipaval nem kotelezo / nem a `tax_id` nevu; ha ceges vasarlasnal a cegnev
+ * nem kotelezo; ha a kosaron mar levo adoszam nem tolti elo a mezot es nem jelol be a pipat; ha az osszefoglalo nem mutatja az
+ * adoszamot.
+ */
+describe("céges vásárlás a cím lépésen", () => {
+  it("a pipa nélkül nincs adószám-mező, és a cégnév nem kötelező", () => {
+    render(<Addresses cart={kosar} customer={null} />)
+    const pipa = screen.getByTestId("ceges-vasarlas-pipa") as HTMLInputElement
+    expect(pipa.getAttribute("name")).toBe("company_purchase")
+    expect(pipa.checked).toBe(false)
+    expect(screen.queryByTestId("adoszam-mezo")).toBeNull()
+    expect(screen.getByTestId("shipping-company-input")).not.toBeRequired()
+  })
+
+  it("a pipával kötelező adószám-mező jelenik meg, és a cégnév is kötelező", () => {
+    render(<Addresses cart={kosar} customer={null} />)
+    fireEvent.click(screen.getByTestId("ceges-vasarlas-pipa"))
+    const mezo = screen.getByTestId("adoszam-mezo") as HTMLInputElement
+    expect(mezo.getAttribute("name")).toBe("tax_id")
+    expect(mezo).toBeRequired()
+    expect(mezo.getAttribute("pattern")).toBe(
+      "\\d{8}[\\s\\-]*[1-5][\\s\\-]*\\d{2}",
+    )
+    expect(mezo.getAttribute("title")).toMatch(/magyar adószámot/)
+    expect(screen.getByTestId("shipping-company-input")).toBeRequired()
+  })
+
+  it("a bejegyzett cég adószáma megy az űrlapon a pipával együtt", () => {
+    const { container } = render(<Addresses cart={kosar} customer={null} />)
+    fireEvent.click(screen.getByTestId("ceges-vasarlas-pipa"))
+    fireEvent.change(screen.getByTestId("adoszam-mezo"), {
+      target: { value: "12345678-2-41" },
+    })
+    const adat = new FormData(
+      container.querySelector("form") as HTMLFormElement,
+    )
+    expect(adat.get("company_purchase")).toBe("on")
+    expect(adat.get("tax_id")).toBe("12345678-2-41")
+  })
+
+  it("külön számlázási címnél a számlázási cégnév kötelező, a szállítási nem", () => {
+    const { container } = render(<Addresses cart={kosar} customer={null} />)
+    fireEvent.click(screen.getByTestId("ceges-vasarlas-pipa"))
+    fireEvent.click(screen.getByTestId("billing-address-checkbox"))
+    expect(screen.getByTestId("billing-company-input")).toBeRequired()
+    expect(screen.getByTestId("shipping-company-input")).not.toBeRequired()
+    expect(container.querySelector('[name="tax_id"]')).not.toBeNull()
+  })
+
+  it("a kosáron már meglévő adószám bejelöli a pipát és kitölti a mezőt", () => {
+    const adoszamosKosar = {
+      ...(kosar as object),
+      billing_address: {
+        ...(kosar as { shipping_address: object }).shipping_address,
+        company: "Minta Kft.",
+        metadata: { tax_id: "12345678-2-41" },
+      },
+    } as never
+    render(<Addresses cart={adoszamosKosar} customer={null} />)
+    expect(
+      (screen.getByTestId("ceges-vasarlas-pipa") as HTMLInputElement).checked,
+    ).toBe(true)
+    expect((screen.getByTestId("adoszam-mezo") as HTMLInputElement).value).toBe(
+      "12345678-2-41",
+    )
+  })
+
+  it("a fiók alapértelmezett számlázási címének adószáma előtölti a mezőt", () => {
+    const fiok = {
+      addresses: [
+        {
+          id: "a1",
+          is_default_billing: true,
+          metadata: { tax_id: "87654321-2-41" },
+          country_code: "hu",
+        },
+      ],
+    } as never
+    render(<Addresses cart={kosar} customer={fiok} />)
+    expect(
+      (screen.getByTestId("ceges-vasarlas-pipa") as HTMLInputElement).checked,
+    ).toBe(true)
+    expect((screen.getByTestId("adoszam-mezo") as HTMLInputElement).value).toBe(
+      "87654321-2-41",
+    )
+  })
+
+  it("angolul angol címkék, ugyanazok a nevek", () => {
+    orszagKod = "en-hu"
+    render(<Addresses cart={kosar} customer={null} />)
+    expect(screen.getByText(/Company purchase/)).toBeTruthy()
+    fireEvent.click(screen.getByTestId("ceges-vasarlas-pipa"))
+    expect(screen.getByLabelText(/Tax number/).getAttribute("name")).toBe(
+      "tax_id",
+    )
+    expect(screen.queryByText("Adószám")).toBeNull()
+  })
+
+  it("zárt állapotban az összefoglaló mutatja a cégnevet és az adószámot", () => {
+    lepes = "delivery"
+    const adoszamosKosar = {
+      ...(kosar as object),
+      billing_address: {
+        ...(kosar as { shipping_address: object }).shipping_address,
+        company: "Minta Kft.",
+        metadata: { tax_id: "12345678-2-41" },
+      },
+    } as never
+    render(<Addresses cart={adoszamosKosar} customer={null} />)
+    expect(screen.getByTestId("szamlazasi-cegnev").textContent).toBe(
+      "Minta Kft.",
+    )
+    expect(screen.getByTestId("szamlazasi-adoszam").textContent).toBe(
+      "Adószám: 12345678-2-41",
+    )
+  })
+
+  it("magánszemélynél az összefoglalóban nincs cégnév és adószám sor", () => {
+    lepes = "delivery"
+    render(<Addresses cart={kosar} customer={null} />)
+    expect(screen.queryByTestId("szamlazasi-adoszam")).toBeNull()
+    expect(screen.queryByTestId("szamlazasi-cegnev")).toBeNull()
   })
 })
 

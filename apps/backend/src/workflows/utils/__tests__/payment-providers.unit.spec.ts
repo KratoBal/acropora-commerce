@@ -5,6 +5,13 @@ import {
   providersForMixedCart,
 } from "../payment-providers"
 import { allowedPaymentRolesFor } from "../payment-eligibility"
+import {
+  SHIPPING_PAYMENT_RULE_SEED,
+  toShippingRolePayments,
+} from "../shipping-payment-rules"
+
+/** The matrix the table starts with (the migration that took over from the code matrix inserted these rows). */
+const SEED_MATRIX = toShippingRolePayments(SHIPPING_PAYMENT_RULE_SEED)
 
 /**
  * The environment of an installation without STRIPE_API_KEY: cash on delivery
@@ -17,7 +24,7 @@ const ELES_KORNYEZET = {
 
 describe("which providers a cart may pay with", () => {
   it("a heavy delivery offers cash on delivery, and nothing else that is mapped", () => {
-    const roles = allowedPaymentRolesFor(["GLS_HEAVY"])
+    const roles = allowedPaymentRolesFor(["GLS_HEAVY"], SEED_MATRIX)
 
     expect(roles).toEqual(["ONLINE_CARD", "COD", "BANK_TRANSFER"])
     expect(
@@ -32,7 +39,7 @@ describe("which providers a cart may pay with", () => {
    * cash-on-delivery provider.
    */
   it("store pickup offers paying in the shop, and NOT cash on delivery", () => {
-    const roles = allowedPaymentRolesFor(["PICKUP"])
+    const roles = allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX)
 
     expect(roles).toEqual(["ONLINE_CARD", "PAY_AT_STORE", "BANK_TRANSFER"])
     expect(
@@ -52,13 +59,13 @@ describe("which providers a cart may pay with", () => {
     } as NodeJS.ProcessEnv
     const map = buildProviderRoleMap(env)
     expect(
-      allowedPaymentProvidersFor(allowedPaymentRolesFor(["PICKUP"]), map)
+      allowedPaymentProvidersFor(allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX), map)
     ).toEqual([
       { id: "pp_system_default", role: "PAY_AT_STORE" },
       { id: "pp_acropora_transfer", role: "BANK_TRANSFER" },
     ])
     expect(
-      allowedPaymentProvidersFor(allowedPaymentRolesFor(["FOXPOST"]), map)
+      allowedPaymentProvidersFor(allowedPaymentRolesFor(["FOXPOST"], SEED_MATRIX), map)
     ).toEqual([
       { id: "pp_acropora_cod", role: "COD" },
       { id: "pp_acropora_transfer", role: "BANK_TRANSFER" },
@@ -68,7 +75,7 @@ describe("which providers a cart may pay with", () => {
   it("a cart with no shipping method chosen may pay with nothing", () => {
     expect(
       allowedPaymentProvidersFor(
-        allowedPaymentRolesFor([]),
+        allowedPaymentRolesFor([], SEED_MATRIX),
         buildProviderRoleMap(ELES_KORNYEZET)
       )
     ).toEqual([])
@@ -81,7 +88,7 @@ describe("which providers a cart may pay with", () => {
    * truth about a cart whose only allowed role is online card today.
    */
   it("an allowed role with no provider yields no entry", () => {
-    const roles = allowedPaymentRolesFor(["GLS_HEAVY"])
+    const roles = allowedPaymentRolesFor(["GLS_HEAVY"], SEED_MATRIX)
 
     expect(roles).toContain("ONLINE_CARD")
     expect(allowedPaymentProvidersFor(roles, buildProviderRoleMap({}))).toEqual(
@@ -128,7 +135,7 @@ describe("the card provider", () => {
     expect(onlineCardProviderIds(KARTYA)).toEqual(["pp_stripe_stripe", "pp_masik_kartya"])
     expect(
       allowedPaymentProvidersFor(
-        allowedPaymentRolesFor(["PICKUP"]),
+        allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX),
         buildProviderRoleMap(KARTYA)
       )
     ).toEqual([
@@ -140,7 +147,7 @@ describe("the card provider", () => {
 
   it("a mixed cart gets Stripe only with the lock open, and never another card", () => {
     const offer = allowedPaymentProvidersFor(
-      allowedPaymentRolesFor(["PICKUP"]),
+      allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX),
       buildProviderRoleMap(KARTYA)
     )
 

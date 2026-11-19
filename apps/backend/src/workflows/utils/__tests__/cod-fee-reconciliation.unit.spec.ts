@@ -17,6 +17,13 @@ import {
 import { PaymentRole, allowedPaymentRolesFor } from "../payment-eligibility"
 import { ShippingOptionRole } from "../shipping-eligibility"
 import { calculateShippingPrice } from "../shipping-pricing"
+import {
+  SHIPPING_PAYMENT_RULE_SEED,
+  toShippingRolePayments,
+} from "../shipping-payment-rules"
+
+/** The matrix the table starts with (the migration that took over from the code matrix inserted these rows). */
+const SEED_MATRIX = toShippingRolePayments(SHIPPING_PAYMENT_RULE_SEED)
 
 const feeLine = (id: string, unit_price: number): ReconcilableLineItem => ({
   id,
@@ -225,7 +232,7 @@ describe("checkout arithmetic", () => {
       })
       const due = resolveCashOnDeliveryFeeAmount({
         selectedPaymentRole: paymentRole,
-        allowedPaymentRoles: allowedPaymentRolesFor([role]),
+        allowedPaymentRoles: allowedPaymentRolesFor([role], SEED_MATRIX),
         feeHuf: FEE_HUF,
       })
       const plan = planCashOnDeliveryFee({ dueHuf: due, items })
@@ -353,7 +360,7 @@ describe("checkout arithmetic", () => {
 
     subject.settle({ role: "GLS_NORMAL", paymentRole: "COD" })
 
-    expect(allowedPaymentRolesFor(["PICKUP"])).not.toContain("COD")
+    expect(allowedPaymentRolesFor(["PICKUP"], SEED_MATRIX)).not.toContain("COD")
 
     const afterPickup = subject.settle({
       role: "PICKUP",

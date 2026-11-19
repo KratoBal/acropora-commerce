@@ -5,6 +5,15 @@ import {
 } from "./shipping-eligibility"
 
 /**
+ * The payment methods each shipping method allows, in the order they are
+ * offered. THE ONLY SOURCE of payment eligibility since card e0e2378b: the
+ * checkout, the cash-on-delivery fee and an order's shipping change read it from
+ * the `shipping_payment_rule` table (`loadShippingRolePayments`). The code matrix
+ * that used to decide it (`SHIPPING_ROLE_PAYMENTS`) is gone.
+ */
+export type ShippingRolePayments = Record<ShippingOptionRole, PaymentRole[]>
+
+/**
  * The stored form of "which payment methods may this shipping method use, and
  * in what order".
  *
@@ -33,14 +42,16 @@ const isPaymentRole = (value: string): value is PaymentRole =>
  * one pair no longer resolves. Skipping loses that one pair, which shows up as
  * a payment method missing from a list someone is looking at.
  *
- * The louder failure is not the safer one here, and the drift that would cause
- * it is caught earlier anyway: `SHIPPING_PAYMENT_RULE_SEED` is asserted against
- * the code matrix in the unit tests, so a rename breaks the build, not the shop.
+ * The louder failure is not the safer one here. SINCE THE TABLE IS THE SOURCE
+ * (card e0e2378b) the build no longer catches such a rename: the rows live in the
+ * database, so renaming a role needs a data migration of its own. The Admin
+ * endpoint that is to write the table (the second half of card e0e2378b) must
+ * accept known roles only.
  */
 export const toShippingRolePayments = (
   rows: ShippingPaymentRuleRow[],
-): Record<ShippingOptionRole, PaymentRole[]> => {
-  const byShippingRole = {} as Record<ShippingOptionRole, PaymentRole[]>
+): ShippingRolePayments => {
+  const byShippingRole = {} as ShippingRolePayments
 
   for (const role of SHIPPING_OPTION_ROLES) {
     byShippingRole[role] = []
@@ -63,21 +74,31 @@ export const toShippingRolePayments = (
 }
 
 /**
- * The rows that reproduce today's behaviour exactly.
+ * THE DECISIONS BEHIND THE ROWS, as they stood when the table took over from the
+ * code matrix (card e0e2378b). The migration `Migration20261118220000` inserted
+ * exactly these rows (a unit test holds the two equal); from then on the Admin
+ * changes them, and this constant is the record of the starting point, not a
+ * second source. Every row is a business decision, so each says whose it was:
  *
- * This is the seed, not the runtime source: nothing reads the table yet. It
- * exists here, next to the code matrix, so the two are compared by a test
- * rather than by whoever remembers to look. When the table becomes the runtime
- * source, this constant is what the first migration inserts.
+ * `PICKUP` (Balázs, 2026-08-31): card or paying in the shop. No cash on
+ * delivery - there is no delivery to collect on.
+ *
+ * `GLS_NORMAL` (Balázs, 2026-08-31): card or cash on delivery. This role also
+ * covers the GLS parcel point, not only home delivery.
+ *
+ * `GLS_HEAVY` (Balázs, 2026-09-01, "Legyen utánvét"): card or cash on delivery,
+ * for both heavy options (home delivery and the heavy parcel point).
+ *
+ * `FOXPOST` (inherited from the original build, never separately confirmed):
+ * card or cash on delivery.
+ *
+ * `BANK_TRANSFER` on EVERY shipping method (Balázs, 2026-10-06 16:31 UTC:
+ * "Elore utalas kell. Leadja a rendelest es mi kuldjuk neki gombbal a
+ * dijbekerot"; offered with every method on murena's proposal, approved by
+ * acrobot 2026-10-06 18:34, card bb3a6bd5).
  *
  * The positions are the order the methods are offered in, per shipping method.
  * Card first, because it is the one every shipping method allows.
- *
- * THE HEAVY ROW GAINED CASH ON DELIVERY ON 2026-09-01 (Balázs, "Legyen
- * utánvét"), and the drift test is how this file learned about it: the code
- * matrix moved on a separate branch, and the assertion went red the moment the
- * two met. That is the whole reason the assertion exists, so it is worth
- * recording that it worked rather than quietly fixing the row.
  */
 export const SHIPPING_PAYMENT_RULE_SEED: ShippingPaymentRuleRow[] = [
   { shipping_role: "PICKUP", payment_role: "ONLINE_CARD", position: 1 },
@@ -93,3 +114,31 @@ export const SHIPPING_PAYMENT_RULE_SEED: ShippingPaymentRuleRow[] = [
   { shipping_role: "FOXPOST", payment_role: "COD", position: 2 },
   { shipping_role: "FOXPOST", payment_role: "BANK_TRANSFER", position: 3 },
 ]
+
+/** More than the matrix can ever hold (four shipping roles times four payment roles, one row per pair). */
+export const SHIPPING_PAYMENT_RULE_READ_LIMIT = 1000
+
+export type ShippingPaymentRuleReader = {
+  listShippingPaymentRules: (
+    filters: Record<string, never>,
+    config: { take: number },
+  ) => Promise<ShippingPaymentRuleRow[]>
+}
+
+/**
+ * Reads the matrix from the table. THE `take` IS NOT OPTIONAL: a generated
+ * `list...` method returns 15 rows when none is given, and the full matrix has
+ * up to 16 - the sixteenth pair would vanish without an error.
+ *
+ * An empty table offers no payment method anywhere: that fails closed, and the
+ * migration that took over from the code matrix filled it.
+ */
+export const loadShippingRolePayments = async (
+  service: ShippingPaymentRuleReader,
+): Promise<ShippingRolePayments> =>
+  toShippingRolePayments(
+    await service.listShippingPaymentRules(
+      {},
+      { take: SHIPPING_PAYMENT_RULE_READ_LIMIT },
+    ),
+  )
