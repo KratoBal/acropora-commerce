@@ -71,7 +71,7 @@ class LoyaltyModuleService extends MedusaService({ LoyaltyEntry }) {
       const balance = sumPoints(rows)
       if (balance + input.points < 0) return { status: "overdraw", balance }
     }
-    const entry = (await this.createLoyaltyEntries(
+    const created = (await this.createLoyaltyEntries(
       {
         customer_id: input.customer_id,
         kind: input.kind,
@@ -83,7 +83,13 @@ class LoyaltyModuleService extends MedusaService({ LoyaltyEntry }) {
       },
       sharedContext,
     )) as LoyaltyEntryRow
-    return { status: "ok", entry }
+    /*
+      READ BACK, IN THIS TRANSACTION (2026-11-19, measured on a real Postgres): the create answers only the fields it was
+      given, without `created_at`, so the admin route's view of the new row threw "Invalid time value" AFTER the write and
+      every manual credit and debit answered 500 while it was stored. The stored row is the answer.
+    */
+    const [entry] = (await this.listLoyaltyEntries({ id: created.id }, { take: 1 }, sharedContext)) as LoyaltyEntryRow[]
+    return { status: "ok", entry: entry ?? created }
   }
 
   /**
