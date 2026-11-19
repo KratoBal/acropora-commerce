@@ -9,7 +9,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const transactions = await service.listGiftCardTransactions(
     { gift_card_id: card.id },
     {
-      select: ["id", "kind", "amount", "balance_after", "order_id", "note", "created_at"],
+      select: ["id", "kind", "amount", "balance_after", "reference", "note", "created_at"],
       take: null,
       order: { created_at: "ASC" },
     }

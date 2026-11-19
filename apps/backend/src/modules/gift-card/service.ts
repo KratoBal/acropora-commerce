@@ -26,7 +26,8 @@ export type GiftCardMovement = {
   gift_card_id: string
   /** Whole units, positive: the direction is the method's. */
   amount: number
-  order_id: string
+  /** The cart the redemption completed; a refund names the same cart. */
+  reference: string
 }
 
 type Knex = {
@@ -34,12 +35,12 @@ type Knex = {
 }
 
 /**
- * GIFT CARDS (card 495c0007): issue, look up by code, redeem against an order, refund to it, disable.
+ * GIFT CARDS (card 495c0007): issue, look up by code, redeem at a cart's completion, refund to it, disable.
  *
  * A BALANCE ONLY MOVES IN ONE SQL STATEMENT, with its ledger row, in the caller's transaction:
  * `balance = balance - amount ... where balance >= amount and active and not expired`. Two checkouts spending one
  * card cannot both pass, and no ORM entity holds a stale balance to flush back (#811: the ORM wrote an insert before
- * an update in one transaction). A redeem or refund repeated for the same order finds its ledger row and does
+ * an update in one transaction). A redeem or refund repeated for the same cart finds its ledger row and does
  * nothing a second time.
  */
 class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransaction }) {
@@ -76,7 +77,7 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
         kind: "issue",
         amount: input.amount,
         balance_after: input.amount,
-        order_id: null,
+        reference: null,
         note: input.note ?? null,
       },
       sharedContext
@@ -93,13 +94,13 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
     return card ?? null
   }
 
-  /** Takes `amount` off the card for the order; refused when the card cannot pay it. Once per card and order. */
+  /** Takes `amount` off the card for the cart being completed; refused when the card cannot pay it. Once per card and cart. */
   @InjectManager()
   async redeemGiftCard(input: GiftCardMovement, @MedusaContext() sharedContext: Context = {}) {
     return await this.moveBalance_("redeem", input, sharedContext)
   }
 
-  /** Puts `amount` back on the card for the order (a return, a cancellation). Once per card and order. */
+  /** Puts `amount` back on the card for that cart's order (a return, a cancellation). Once per card and cart. */
   @InjectManager()
   async refundGiftCard(input: GiftCardMovement, @MedusaContext() sharedContext: Context = {}) {
     return await this.moveBalance_("refund", input, sharedContext)
@@ -122,8 +123,8 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
         "A gift card balance moves only inside a transaction."
       )
     const done = await knex.raw(
-      `select balance_after from gift_card_transaction where gift_card_id = ? and kind = ? and order_id = ? and deleted_at is null`,
-      [input.gift_card_id, kind, input.order_id]
+      `select balance_after from gift_card_transaction where gift_card_id = ? and kind = ? and reference = ? and deleted_at is null`,
+      [input.gift_card_id, kind, input.reference]
     )
     if (done.rows.length) return { balance: Number(done.rows[0]!.balance_after), repeated: true }
     const updated =
@@ -150,7 +151,7 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
       )
     const balance = Number(updated.rows[0]!.balance)
     await knex.raw(
-      `insert into gift_card_transaction (id, gift_card_id, kind, amount, balance_after, order_id, created_at, updated_at)
+      `insert into gift_card_transaction (id, gift_card_id, kind, amount, balance_after, reference, created_at, updated_at)
        values (?, ?, ?, ?, ?, ?, now(), now())`,
       [
         generateEntityId(undefined, "gctx"),
@@ -158,7 +159,7 @@ class GiftCardModuleService extends MedusaService({ GiftCard, GiftCardTransactio
         kind,
         kind === "redeem" ? -input.amount : input.amount,
         balance,
-        input.order_id,
+        input.reference,
       ]
     )
     return { balance, repeated: false }
