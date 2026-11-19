@@ -155,6 +155,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/stock-alert",
     },
+    // gift cards and their ledger (card 495c0007): a means of payment, redeemed as a cart credit line
+    {
+      resolve: "./src/modules/gift-card",
+    },
     // V2.6 S4a: the live animals on their way, written by the Acropora OS
     {
       resolve: "./src/modules/livestock-arrival",
