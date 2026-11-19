@@ -95,14 +95,13 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   {selectedPrice.reduction && (
                     <p>
                       <span className="line-through text-small-regular">
-                        {selectedPrice.reduction.reference_price}
+                        {selectedPrice.reduction.reference}
                       </span>
                     </p>
                   )}
                   <span
                     className={clx({
-                      "text-ui-fg-interactive":
-                        selectedPrice.price_type === "sale",
+                      "text-ui-fg-interactive": !!selectedPrice.reduction,
                     })}
                   >
                     {selectedPrice.calculated_price}

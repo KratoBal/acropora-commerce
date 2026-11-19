@@ -1,7 +1,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { getPercentageDiff } from "./get-percentage-diff"
 import { convertToLocale } from "./money"
-import { valodiCsokkentes } from "./omnibus"
+import { omnibusReferenceOf } from "./omnibus"
 
 type VariantWithPrice = HttpTypes.StoreProductVariant & {
   calculated_price?: {
@@ -14,30 +14,117 @@ type VariantWithPrice = HttpTypes.StoreProductVariant & {
   }
 }
 
+/**
+ * AZ ARCSOKKENTES KOZLESE: ATHUZOTT "ELOZO AR" ES SZAZALEK CSAK A 30 NAPOS LEGALACSONYABB AR ALAPJAN (card 54bb3779, acrobot
+ * 2026-11-19; 4/2009. (III. 31.) rendelet 2/A. §, az Omnibus-iranyelv). Ha a bolt arcsokkentest kozol, a "korabbi ar" az
+ * arcsokkentes elotti 30 nap LEGALACSONYABB ara, nem a Medusa alapara: egy fagyott UNAS-alapar (vagy egy korabbi akcio-sorozat
+ * utan a regi ar) nem valodi korabbi eladasi ar. A hivatkozasi ar az OS-tol jon, a valtozat `omnibus_lowest_price_30d` metaadatabol
+ * (`omnibusReferenceOf`); a kozles CSAK akkor all, ha
+ *   - az ar akcios (`sale` arlista), ES
+ *   - van ervenyes hivatkozasi ar, ES a vevo ara KISEBB nala.
+ * Egyebkent nincs athuzott ar, nincs szazalek, nincs kiemeles: az ar egyszeruen az ara. A szazalek a hivatkozasi arhoz jar.
+ */
+export type ArCsokkentes = {
+  reference_number: number
+  reference: string
+  /** LEFELE kerekitve, es `null`, ha 0 (barracuda #824): a kozolt csokkentes nem lehet nagyobb a valodinal; nulla szazaleknak nincs jelzo. */
+  percentage_diff: string | null
+}
+
+/**
+ * A SZAZALEK LEFELE KEREKITVE (barracuda #824): a `getPercentageDiff` a legkozelebbi egeszre kerekit, tehat felfele is (10 000-es
+ * hivatkozas, 6 650-es ar: valodi csokkentes 33,5 %, a kartyan -34% allt). A kozolt arcsokkentes nem lehet nagyobb a valodinal, es
+ * ez az a szam, amit a 30 napos legalacsonyabb arhoz merunk. Ha a lefele kerekitett ertek 0, nincs szazalek-jelzo (`null`); az
+ * athuzott ar marad. (A `getPercentageDiff` a tobbi hivo miatt valtozatlan.)
+ */
+export const szazalekLefele = (
+  reference: number,
+  ar: number,
+): string | null => {
+  const szazalek = Math.floor(((reference - ar) / reference) * 100)
+  return szazalek > 0 ? String(szazalek) : null
+}
+
+/**
+ * A KOZLES MAGJA, EGY HELYEN (acrobot 57134 es 57179): a termeklapon, a kartyan, a ragados savban, az elonezetben ES a kosarban/rendelesben
+ * ugyanaz a fuggveny dont. A fizetendo EGYSEGAR es a valtozat metaadata (a 30 napos legalacsonyabb ar) kell hozza: kozles csak akkor van,
+ * ha a hivatkozasi ar ervenyes ES nagyobb az aranal (`omnibusReferenceOf`); a szazalek a hivatkozasi arhoz jar, lefele kerekitve.
+ */
+export const arCsokkentesAr = (
+  metadata: Record<string, unknown> | null | undefined,
+  amount: number,
+  currencyCode: string,
+): ArCsokkentes | null => {
+  const reference = omnibusReferenceOf(metadata, { amount, currencyCode })
+  if (!reference) return null
+  return {
+    reference_number: reference.amount,
+    reference: convertToLocale({
+      amount: reference.amount,
+      currency_code: currencyCode,
+    }),
+    percentage_diff: szazalekLefele(reference.amount, amount),
+  }
+}
+
+export const arCsokkentesOf = (
+  variant: VariantWithPrice | undefined | null,
+): ArCsokkentes | null => {
+  const price = variant?.calculated_price
+  if (!price?.calculated_amount) return null
+  if (price.calculated_price?.price_list_type !== "sale") return null
+  return arCsokkentesAr(
+    variant?.metadata,
+    price.calculated_amount,
+    price.currency_code,
+  )
+}
+
+/**
+ * A KOSAR- ES RENDELES-SOR KOZLESE (acrobot 57134 es 57179, barracuda 57178): ugyanaz a fuggveny (`arCsokkentesAr`), a sor EGYSEGARA a
+ * KEDVEZMENY ELOTTI egysegar (`unit_price`, a Medusa sorarat az arlista utan, de a kupon es a tobbi kosar-kedvezmeny ELOTT adja), NEM
+ * a `total / quantity`: a kupon nem arcsokkentes, nem huzhat at es nem adhat szazalekot, es egy akcios sor szazaleka nem fugg a kupontol.
+ * A hivatkozasi ar a sor valtozatanak metaadatabol jon (`*items.variant`, a kosar mezoi kozott van). Adat nelkul (nincs valtozat, nincs
+ * metaadat, nincs `unit_price`) a sor NEM huz at: csak a fizetendo ar latszik.
+ */
+export type SorCsokkentes = {
+  unit_reference_number: number
+  line_reference_number: number
+  /** lefele kerekitve, `null` ha 0: az athuzas marad, szazalek-jelzo nincs */
+  percentage_diff: string | null
+}
+
+export const sorCsokkentes = (
+  item: {
+    unit_price?: number | null
+    quantity?: number | null
+    variant?: { metadata?: Record<string, unknown> | null } | null
+  },
+  currencyCode: string,
+): SorCsokkentes | null => {
+  if (!item.unit_price || item.unit_price <= 0) return null
+  const quantity = item.quantity && item.quantity > 0 ? item.quantity : 1
+  const csokkentes = arCsokkentesAr(
+    item.variant?.metadata,
+    item.unit_price,
+    currencyCode,
+  )
+  return csokkentes
+    ? {
+        unit_reference_number: csokkentes.reference_number,
+        line_reference_number: csokkentes.reference_number * quantity,
+        percentage_diff: csokkentes.percentage_diff,
+      }
+    : null
+}
+
 export const getPricesForVariant = (variant: VariantWithPrice) => {
   if (!variant?.calculated_price?.calculated_amount) {
     return null
   }
 
-  /**
-   * AZ ATHUZAS ES A SZAZALEK CSAK VALODI ARCSOKKENTESNEL ALLHAT (acrobot, eles-kiadasi feltetel 2, 2026-11-19): a sale arlista
-   * `original_amount`-ja a LISTAAR (a UNAS-ra fagyott alapar), nem egy korabbi eladasi ar. Az Omnibus-szabaly szerinti elozo
-   * ar a 30 napos legalacsonyabb ar, amit az OS a valtozat metaadatara ir, es amit az `omnibusReferenceOf` szigoruan olvas:
-   * csak ha a fizetendo ar KISEBB nala. Metaadat nelkul (a lekeres nem hozta, az OS nem irta, serult az alakja) nincs athuzas
-   * es nincs szazalek: egy arcsokkentest, amit nem tudunk igazolni, nem allitunk. A szazalek a referenciahoz viszonyit.
-   */
-  const referencia =
-    variant.calculated_price.calculated_price.price_list_type === "sale"
-      ? valodiCsokkentes(
-          (variant as { metadata?: Record<string, unknown> | null }).metadata,
-          {
-            amount: variant.calculated_price.calculated_amount,
-            currencyCode: variant.calculated_price.currency_code,
-          },
-        )
-      : null
-
   return {
+    reduction: arCsokkentesOf(variant),
     calculated_price_number: variant.calculated_price.calculated_amount,
     calculated_price: convertToLocale({
       amount: variant.calculated_price.calculated_amount,
@@ -54,16 +141,6 @@ export const getPricesForVariant = (variant: VariantWithPrice) => {
       variant.calculated_price.original_amount,
       variant.calculated_price.calculated_amount,
     ),
-    reduction: referencia
-      ? {
-          reference_price_number: referencia.referenceAmount,
-          reference_price: convertToLocale({
-            amount: referencia.referenceAmount,
-            currency_code: variant.calculated_price.currency_code,
-          }),
-          percentage_diff: referencia.percentage,
-        }
-      : null,
   }
 }
 

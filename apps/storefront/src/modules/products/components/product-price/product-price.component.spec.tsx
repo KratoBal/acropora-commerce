@@ -193,46 +193,90 @@ describe("az ár színe", () => {
  * kielegit -- csak itt nem ures a vilag, hanem a fixtura nem er el az egyik
  * ágába.
  */
-/**
- * AZ OMNIBUS HIVATKOZASI AR, ahogy az OS a valtozat metaadatara irja (`omnibus_lowest_price_30d`): a 30 napos legalacsonyabb ar
- * az arcsokkentes elott. A fixtura napjai kovetkezetesek (teljes elozmeny: az elso nap az ablak kezdete elott).
- */
-const omnibus = (amount: string, extra: Record<string, unknown> = {}) => ({
-  omnibus_lowest_price_30d: JSON.stringify({
-    amount,
-    currency: "huf",
-    complete: true,
-    history_begins: "2026-09-01",
-    reduction_start: "2026-11-10",
-    ...extra,
-  }),
-})
+const referencia = (osszeg: string) =>
+  JSON.stringify({
+    amount: osszeg,
+    currency: "HUF",
+    history_begins: "2026-11-05",
+    complete: false,
+    reduction_start: "2026-11-19",
+  })
 
-const akciosTermek = (
-  over: {
-    calculated?: number
-    original?: number
-    tipus?: string
-    metadata?: Record<string, unknown> | null
-  } = {},
-) =>
+// az arcsokkentes kozlese a 30 napos legalacsonyabb arra epul (`arCsokkentesOf`): a fixturanak hivatkozasi ar kell
+const akciosTermek = (hivatkozas = "100000") =>
   ({
     id: "prod_akcios",
     variants: [
       {
         id: "v1",
-        metadata: "metadata" in over ? over.metadata : omnibus("100000"),
+        metadata: { omnibus_lowest_price_30d: referencia(hivatkozas) },
         calculated_price: {
-          calculated_amount: over.calculated ?? 92000,
-          original_amount: over.original ?? 100000,
+          calculated_amount: 92000,
+          original_amount: 100000,
           currency_code: "huf",
-          calculated_price: { price_list_type: over.tipus ?? "sale" },
+          calculated_price: { price_list_type: "sale" },
         },
       },
     ],
   }) as never
 
 describe("az akciós ár", () => {
+  /*
+    AZ ARCSOKKENTES KOZLESE A 30 NAPOS LEGALACSONYABB AR ALAPJAN (card 54bb3779). MI PIROSIT: az athuzott ar a Medusa alapara, nem a
+    hivatkozasi ar; a szazalek az alapárhoz jar; a mert eset (referencia = fizetendo, alapar magasabb) is athuzott arat mutat;
+    hivatkozasi ar nelkul akcios arlista is athuzast hoz.
+  */
+  it("az athuzott ar a hivatkozasi ar, a szazalek hozza jar, nem az alapárhoz", () => {
+    render(<ProductPrice product={akciosTermek("95000")} />)
+    const regi = screen.getByTestId("original-product-price")
+    expect(regi.getAttribute("data-value")).toBe("95000")
+    expect(regi.textContent).toContain("95")
+    expect(regi.textContent).not.toContain("100")
+    expect(screen.getByTestId("product-price-szazalek").textContent).toBe("-3%")
+  })
+
+  it("a mert eset (ai-nero-3): a hivatkozas nem magasabb a fizetendonel: nincs athuzott ar, nincs szazalek, nincs felkover", () => {
+    // fizetendo 92 000, alapar 100 000, a 30 napos legalacsonyabb 92 000
+    render(<ProductPrice product={akciosTermek("92000")} />)
+    expect(screen.queryByTestId("original-product-price")).toBeNull()
+    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
+    expect(screen.getByTestId("product-price").textContent).toContain("92")
+    expect(
+      screen.getByTestId("product-price").parentElement?.className,
+    ).not.toContain("font-bold")
+  })
+
+  it("lefele kerekitett szazalek: 33,5 % -> -33%; a nullara kerekitett csokkentesnel az athuzott ar marad, a szazalek-jelzo nincs", () => {
+    const termek = (ar: number, hivatkozas: string) => {
+      const t = akciosTermek(hivatkozas) as unknown as {
+        variants: { calculated_price: { calculated_amount: number } }[]
+      }
+      t.variants[0]!.calculated_price.calculated_amount = ar
+      return t as never
+    }
+    const { rerender } = render(
+      <ProductPrice product={termek(6650, "10000")} />,
+    )
+    expect(screen.getByTestId("product-price-szazalek").textContent).toBe(
+      "-33%",
+    )
+    rerender(<ProductPrice product={termek(9960, "10000")} />)
+    expect(
+      screen.getByTestId("original-product-price").getAttribute("data-value"),
+    ).toBe("10000")
+    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
+  })
+
+  it("hivatkozasi ar nelkul az akcios arlista sem hoz athuzott arat", () => {
+    const termek = akciosTermek() as unknown as {
+      variants: { metadata?: unknown }[]
+    }
+    delete termek.variants[0]!.metadata
+    render(<ProductPrice product={termek as never} />)
+    expect(screen.queryByTestId("original-product-price")).toBeNull()
+    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
+  })
+
   /**
    * ISMERT POZITIV KONTROLL, ES ITT EZ A LEGFONTOSABB ALLITAS A HAROM KOZUL.
    *
@@ -287,83 +331,7 @@ describe("az akciós ár", () => {
 
     expect(container.textContent).not.toContain("Original")
     expect(container.textContent).toContain("Korábbi legalacsonyabb ár")
-  })
-
-  /*
-    A VALODI ARCSOKKENTES (Omnibus 2/A., acrobot eles-kiadasi feltetel 2, 2026-11-19). A teszt kirakaton a sale arlista `original_amount`-ja
-    (87 000) a UNAS-ra fagyott LISTAAR volt, a 30 napos legalacsonyabb ar viszont 69 600, tehat az akcios ar (69 600) nem volt
-    alacsonyabb nala, a kirakat mégis athuzott 87 000-et es -20%-ot mutatott. MI PIROSIT: ha az athuzas es a szazalek a
-    listaarat vagy a metaadat nelkuli akciot is mutatja; ha a szazalek a listaarhoz viszonyit a referencia helyett; ha az egyenlo
-    vagy magasabb akcios ar is athuz; ha serult metaadattal, rossz penznemmel vagy nem-akcios arral athuz.
-  */
-  it("az athuzott ar a 30 napos legalacsonyabb ar, a szazalek ahhoz kepest szamol (nem a listaarhoz)", () => {
-    // listaar 150 000, 30 napos legalacsonyabb 100 000, akcios 92 000: -8%, nem -39%
-    render(<ProductPrice product={akciosTermek({ original: 150000 })} />)
-    expect(screen.getByTestId("original-product-price").textContent).toMatch(
-      /^100\s000\sFt$/,
-    )
-    expect(
-      screen.getByTestId("original-product-price").getAttribute("data-value"),
-    ).toBe("100000")
-    expect(screen.getByTestId("product-price-szazalek").textContent).toBe("-8%")
-  })
-
-  it("metaadat nélkül az akciós árnál sincs áthúzás és százalék (nem igazolható)", () => {
-    for (const metadata of [null, undefined, {}]) {
-      const { unmount } = render(
-        <ProductPrice product={akciosTermek({ metadata })} />,
-      )
-      expect(screen.queryByTestId("original-product-price")).toBeNull()
-      expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
-      // az akciós ár maga megmarad
-      expect(screen.getByTestId("product-price").textContent).toMatch(/92\s000/)
-      unmount()
-    }
-  })
-
-  it("ha az akciós ár nem kisebb a 30 napos legalacsonyabbnál, nincs áthúzás és százalék (a mért teszt-eset)", () => {
-    // a mert eset: referencia 69 600, akcios 69 600, listaar 87 000
-    const egyenlo = render(
-      <ProductPrice
-        product={akciosTermek({
-          calculated: 69600,
-          original: 87000,
-          metadata: omnibus("69600"),
-        })}
-      />,
-    )
-    expect(screen.queryByTestId("original-product-price")).toBeNull()
-    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
-    egyenlo.unmount()
-    render(
-      <ProductPrice
-        product={akciosTermek({
-          calculated: 69600,
-          original: 87000,
-          metadata: omnibus("60000"),
-        })}
-      />,
-    )
-    expect(screen.queryByTestId("original-product-price")).toBeNull()
-    expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
-  })
-
-  it("serült metaadattal, rossz pénznemmel és nem-akciós árral nincs áthúzás", () => {
-    const esetek = [
-      { metadata: { omnibus_lowest_price_30d: "nem json" } },
-      { metadata: omnibus("100000", { currency: "eur" }) },
-      { metadata: omnibus("-5") },
-      { metadata: omnibus("100000", { complete: "igen" }) },
-      { tipus: "default" },
-    ]
-    for (const eset of esetek) {
-      const { unmount } = render(<ProductPrice product={akciosTermek(eset)} />)
-      expect(
-        screen.queryByTestId("original-product-price"),
-        JSON.stringify(eset),
-      ).toBeNull()
-      expect(screen.queryByTestId("product-price-szazalek")).toBeNull()
-      unmount()
-    }
+    // a felirat NEM "Eredeti ár": az áthúzott szám a 30 napos legalacsonyabb ár, nem egy eredeti (alap)ár (acrobot 2026-11-19)
+    expect(container.textContent).not.toContain("Eredeti")
   })
 })

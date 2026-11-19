@@ -15,15 +15,12 @@ export type VariantPrice = {
   currency_code: string
   price_type: string
   percentage_diff: string
-  /**
-   * A VALODI ARCSOKKENTES (Omnibus 2/A., 4/2009 NGM rendelet; acrobot, eles-kiadasi feltetel 2, 2026-11-19): CSAK akkor van,
-   * ha az akcios ar kisebb a 30 napos legalacsonyabb ARNAL (az OS irja a valtozat metaadatara), es az ELOZO AR ES A SZAZALEK
-   * AHHOZ viszonyit, nem a listaarhoz (`original_price`). `null`: nincs athuzas, nincs szazalek.
-   */
+  /** The announced price reduction (the 30-day lowest price as the reference), or null: no struck price, no percentage. */
   reduction: {
-    reference_price_number: number
-    reference_price: string
-    percentage_diff: string
+    reference_number: number
+    reference: string
+    /** Rounded DOWN; null when that is 0: no percentage badge. */
+    percentage_diff: string | null
   } | null
 }
 

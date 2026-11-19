@@ -137,7 +137,7 @@ export default function ProductPrice({
           jelolojere kotve. A sotet (2a) lap a P3-ig valtozatlan.
         */
         className={clx("termeklap-ar text-xl-semi", {
-          "font-bold": selectedPrice.price_type === "sale",
+          "font-bold": !!selectedPrice.reduction,
         })}
       >
         {tolAlak && tolElotte ? (
@@ -169,9 +169,9 @@ export default function ProductPrice({
             <span
               className="line-through"
               data-testid="original-product-price"
-              data-value={selectedPrice.reduction.reference_price_number}
+              data-value={selectedPrice.reduction.reference_number}
             >
-              {selectedPrice.reduction.reference_price}
+              {selectedPrice.reduction.reference}
             </span>
           </p>
           {/*
@@ -188,12 +188,14 @@ export default function ProductPrice({
             HA PICASSO TUL CSENDESNEK TALALJA, egyetlen sor cserel:
             var(--terv-szoveg-halvany) helyett var(--terv-kiemel-tinta).
           */}
-          <span
-            data-testid="product-price-szazalek"
-            style={{ color: "var(--terv-szoveg-halvany)" }}
-          >
-            -{selectedPrice.reduction.percentage_diff}%
-          </span>
+          {selectedPrice.reduction.percentage_diff ? (
+            <span
+              data-testid="product-price-szazalek"
+              style={{ color: "var(--terv-szoveg-halvany)" }}
+            >
+              -{selectedPrice.reduction.percentage_diff}%
+            </span>
+          ) : null}
         </>
       )}
     </div>

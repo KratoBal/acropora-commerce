@@ -13,12 +13,12 @@ export default async function PreviewPrice({ price }: { price: VariantPrice }) {
           className="line-through text-ui-fg-muted"
           data-testid="original-price"
         >
-          {price.reduction.reference_price}
+          {price.reduction.reference}
         </Text>
       )}
       <Text
         className={clx("text-ui-fg-muted", {
-          "text-ui-fg-interactive": price.price_type === "sale",
+          "text-ui-fg-interactive": !!price.reduction,
         })}
         data-testid="price"
       >

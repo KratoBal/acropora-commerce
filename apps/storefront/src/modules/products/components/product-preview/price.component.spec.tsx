@@ -26,8 +26,8 @@ describe("az előnézeti ár", () => {
     render(
       await PreviewPrice({
         price: ar({
-          reference_price_number: 100000,
-          reference_price: "100 000 Ft",
+          reference_number: 100000,
+          reference: "100 000 Ft",
           percentage_diff: "8",
         }),
       }),

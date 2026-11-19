@@ -1,6 +1,6 @@
 "use client"
 
-import { sorCsokkentes } from "@lib/util/omnibus"
+import { sorCsokkentes } from "@lib/util/get-product-price"
 import { updateLineItem } from "@lib/data/cart"
 import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
@@ -168,9 +168,9 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   */
   const csokkentes = sorCsokkentes(item, currencyCode)
   const kedvezmenyes = csokkentes !== null
-  const sorEredeti = csokkentes?.lineReference ?? 0
+  const sorEredeti = csokkentes?.line_reference_number ?? 0
   const egysegAr = sorOsszeg / (item.quantity || 1)
-  const egysegEredeti = csokkentes?.unitReference ?? 0
+  const egysegEredeti = csokkentes?.unit_reference_number ?? 0
   const penz = (amount: number) =>
     convertToLocale({ amount, currency_code: currencyCode })
 

@@ -1,4 +1,4 @@
-import { sorCsokkentes } from "@lib/util/omnibus"
+import { sorCsokkentes } from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
 import { hu } from "@lib/i18n/dictionary/hu"
 import { HttpTypes } from "@medusajs/types"
@@ -16,7 +16,7 @@ const LineItemPrice = ({
   currencyCode,
 }: LineItemPriceProps) => {
   const currentPrice = item.total ?? 0
-  // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz: lasd `sorCsokkentes`
+  // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz, a kupon elotti egysegarral: lasd `sorCsokkentes`
   const csokkentes = sorCsokkentes(item, currencyCode)
   const hasReducedPrice = csokkentes !== null
 
@@ -36,14 +36,14 @@ const LineItemPrice = ({
                 data-testid="product-original-price"
               >
                 {convertToLocale({
-                  amount: csokkentes.lineReference,
+                  amount: csokkentes.line_reference_number,
                   currency_code: currencyCode,
                 })}
               </span>
             </p>
-            {style === "default" && (
+            {style === "default" && csokkentes.percentage_diff && (
               <span className="text-ui-fg-interactive">
-                -{csokkentes.percentage}%
+                -{csokkentes.percentage_diff}%
               </span>
             )}
           </>

@@ -84,7 +84,7 @@ export default function CommerceTermekKartya({
   const m = (tomorOsztaly: string, rendes: string) =>
     tomor ? tomorOsztaly : rendes
   const { cheapestPrice } = getProductPrice({ product })
-  // a jelolo es az athuzott ar csak valodi arcsokkentesnel (Omnibus 2/A.): lasd `getPricesForVariant`
+  // csak a kozolt arcsokkentes (a 30 napos legalacsonyabb ar alapjan, `arCsokkentesOf`) kap jelzot es athuzott arat
   const csokkentes = cheapestPrice?.reduction ?? null
   // az egysegar, ugyanabbol a nevbol es arbol, mint a termeklapon (barracuda 7b): tobbvaltozatu termeken valasztott
   // valtozat nelkul nincs, mert nem tudni, melyik kiszerelesre vonatkozna
@@ -183,7 +183,7 @@ export default function CommerceTermekKartya({
                     className="text-[13px] leading-[18px] text-acr-slate line-through"
                     data-testid="kartya-regi-ar"
                   >
-                    {csokkentes.reference_price}
+                    {csokkentes.reference}
                   </span>
                 ) : null}
               </p>

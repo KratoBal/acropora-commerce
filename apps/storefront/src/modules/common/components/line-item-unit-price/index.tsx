@@ -1,5 +1,5 @@
 import { convertToLocale } from "@lib/util/money"
-import { sorCsokkentes } from "@lib/util/omnibus"
+import { sorCsokkentes } from "@lib/util/get-product-price"
 import { hu } from "@lib/i18n/dictionary/hu"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@modules/common/components/ui"
@@ -16,7 +16,7 @@ const LineItemUnitPrice = ({
   currencyCode,
 }: LineItemUnitPriceProps) => {
   const total = item.total ?? 0
-  // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz: lasd `sorCsokkentes`
+  // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz, a kupon elotti egysegarral: lasd `sorCsokkentes`
   const csokkentes = sorCsokkentes(item, currencyCode)
   const hasReducedPrice = csokkentes !== null
 
@@ -35,14 +35,14 @@ const LineItemUnitPrice = ({
               data-testid="product-unit-original-price"
             >
               {convertToLocale({
-                amount: csokkentes.unitReference,
+                amount: csokkentes.unit_reference_number,
                 currency_code: currencyCode,
               })}
             </span>
           </p>
-          {style === "default" && (
+          {style === "default" && csokkentes.percentage_diff && (
             <span className="text-ui-fg-interactive">
-              -{csokkentes.percentage}%
+              -{csokkentes.percentage_diff}%
             </span>
           )}
         </>
