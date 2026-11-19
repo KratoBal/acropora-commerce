@@ -16,6 +16,7 @@ import {
   AdminUpsertCommerceSetting,
 } from "./admin/commerce-settings/validators";
 import { AdminPutShippingPaymentRules } from "./admin/shipping-payment-rules/validators";
+import { AdminIssueGiftCard } from "./admin/gift-cards/validators";
 import {
   AdminGetShippingAttributesParams,
   AdminShippingAttributeFlags,
@@ -176,6 +177,12 @@ export default defineMiddlewares({
       matcher: "/admin/shipping-payment-rules",
       method: "PUT",
       middlewares: [validateAndTransformBody(AdminPutShippingPaymentRules)],
+    },
+    {
+      // issuing a gift card (card 495c0007)
+      matcher: "/admin/gift-cards",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminIssueGiftCard)],
     },
     {
       // Medusa's cancel swallows a failed refund; the captured money is refunded first,
