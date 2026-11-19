@@ -592,7 +592,8 @@ const BOLT: KezdolapSzoveg[] = [
     "A boltunk",
     "bolt.nyitva_ertek",
     "Nyitvatartás: érték (sortöréssel)",
-    "Hétfő–péntek 10–19\nSzombat 9–14",
+    // the footer's hours (hivatkozasok.ts `nyitvatartas`), which the shop keeps; the old sample (Mon–Fri 10–19, Sat 9–14) said otherwise
+    "Kedd–péntek 10–18\nSzombat 10–14\nVasárnap–hétfő zárva",
   ),
   sor("A boltunk", "bolt.gomb.felirat", "Gomb: felirat", "Útvonaltervezés"),
   sor("A boltunk", "bolt.gomb.link", "Gomb: cél (térkép)", "", "link"),
