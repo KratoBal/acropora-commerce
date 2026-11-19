@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { KEZDOLAP_SZOVEGEK, szovegKereso, szovegek } from "./szovegek"
 import { ALAP_DIAK, kezdolapAdat } from "./tartalom"
+import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
 
 /**
  * A SZERKESZTHETO KEZDOLAP-SZOVEGEK SZERZODESE.
@@ -170,5 +171,19 @@ describe("a hero diái", () => {
     for (const dia of ALAP_DIAK)
       for (const href of [dia.cta_href, dia.cta2_href])
         if (href !== null) expect(href).toMatch(BOLTI_UT)
+  })
+})
+
+/*
+  A BOLT NYITVATARTÁSA EGY HELYEN (acrobot 56921, murena lelete): az "A boltunk" blokk mintaszövege hétfő–péntek 10–19,
+  szombat 9–14 volt, a lábléc kedd–péntek 10–18, szombat 10–14. MI PIROSÍT: a két kezdőérték megint elcsúszik.
+*/
+describe("a bolt nyitvatartása", () => {
+  it("az A boltunk kezdőértéke a lábléc nyitvatartása, soronként", () => {
+    const alak = (sor: string) => sor.replace(/[–-]/g, "-").toLowerCase().trim()
+    const kezdo = KEZDOLAP_SZOVEGEK.find(
+      (sor) => sor.kulcs === "bolt.nyitva_ertek",
+    )!.alap
+    expect(kezdo.split("\n").map(alak)).toEqual(CEG.nyitvatartas.map(alak))
   })
 })

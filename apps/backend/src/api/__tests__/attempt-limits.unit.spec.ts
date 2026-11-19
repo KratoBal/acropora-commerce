@@ -217,3 +217,18 @@ describe("the wiring", () => {
     expect(route?.middlewares).toContain(guard)
   })
 })
+
+/**
+ * THE CUSTOMER TEXT NAMES THE WAIT (2026-11-19): the storefront's "too many attempts" message says "try again in 15
+ * minutes" (`guestOrder.errorTooMany`, used by the lookup, the problem report and the withdrawal). That sentence is
+ * true only while every guest limit's window is fifteen minutes. What must fail: a guest limit moved to another window
+ * without the text following.
+ */
+describe("the guest limits' window is the one the customer text names", () => {
+  it("every guest limit is counted in fifteen minutes", () => {
+    const guest = Object.entries(ATTEMPT_LIMITS).filter(([name]) => name.startsWith("guest"))
+    expect(guest.length).toBeGreaterThanOrEqual(8)
+    for (const [name, rule] of guest) expect([name, rule.windowMs]).toEqual([name, 15 * 60 * 1000])
+  })
+})
+

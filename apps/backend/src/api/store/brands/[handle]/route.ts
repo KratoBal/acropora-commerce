@@ -2,6 +2,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 
 import { forStore, resolveBrandService } from "../../../admin/brands/helpers"
+import { brandCollectionHandle } from "../collections"
 
 /**
  * The brand page's record by its handle (`/hu/marka/{handle}`).
@@ -10,7 +11,9 @@ import { forStore, resolveBrandService } from "../../../admin/brands/helpers"
  * list (barracuda #1678 B, t11): a switched-off or archived brand keeps its
  * record here (the OS takes its products' links away but does not delete the
  * record), and without this rule its page, and the old collection page's
- * canonical pointing at it, would live on.
+ * canonical pointing at it, would live on. So is a brand with products but no
+ * collection (2026-11-19): the page lists from the collection, and the list
+ * (`../route.ts`) does not offer such a brand either.
  */
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const service = resolveBrandService(req.scope)
@@ -29,17 +32,17 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       MedusaError.Types.NOT_FOUND,
       `Brand with handle ${req.params.handle} was not found`
     )
-  // The page lists its products from the brand's collection. The collection
-  // is paired by the OS id (`collection.external_id`), not by handle: a
-  // collection created before a slug change keeps its old handle (measured on
-  // the test shop, 2026-10-30: `aqua-medic` against the brand `aquamedic`).
-  const [collection] = await req.scope
-    .resolve(Modules.PRODUCT)
-    .listProductCollections(
-      { external_id: brand.os_brand_id } as never,
-      { select: ["handle"], take: 1 }
+  // The page lists its products from the brand's collection; the pairing is
+  // one rule for the list and this record (`../collections.ts`).
+  const collectionHandle = brand
+    ? await brandCollectionHandle(req.scope.resolve(Modules.PRODUCT), brand)
+    : null
+  if (!collectionHandle)
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      `Brand with handle ${req.params.handle} has no collection`
     )
   res.json({
-    brand: { ...forStore(brand), collection_handle: collection?.handle ?? null },
+    brand: { ...forStore(brand), collection_handle: collectionHandle },
   })
 }

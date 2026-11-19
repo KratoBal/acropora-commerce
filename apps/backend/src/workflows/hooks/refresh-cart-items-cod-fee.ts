@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { refreshCartItemsWorkflow } from "@medusajs/medusa/core-flows"
 
 import { capGiftCardCredit } from "../utils/cap-gift-card-credit"
+import { capLoyaltyCredit } from "../utils/cap-loyalty-credit"
 import { loadCartCashOnDeliveryFeeState } from "../utils/load-cart-cod-fee-state"
 
 /**
@@ -110,5 +111,7 @@ refreshCartItemsWorkflow.hooks.beforeRefreshingPaymentCollection(
 
     // then the gift card credit (card 495c0007): never more than what is left to pay, never throwing
     await capGiftCardCredit(cartId, container, logger)
+    // and the points credit (card dfb79916): the same, and whole points
+    await capLoyaltyCredit(cartId, container, logger)
   }
 )

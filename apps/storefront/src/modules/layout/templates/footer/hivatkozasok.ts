@@ -208,28 +208,8 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
  */
 export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = []
 
-/**
- * A CEG ADATAI, a bolt lablecebol betuere, EGY TUDATOS ELTERESSEL.
- *
- * A boltban "Nyitvatarás" all, egy hianyzo `t` betuvel. Itt javitva. Ez nem
- * elirás-javitas, hanem dontes, ezert all ki: a SAJAT cegunk sajat lablece,
- * nem idezet. Husegel a jogi szovegnek es az arnak tartozunk, ott az elteres
- * komoly. Egy hianyzo betu a nyitvatartas szoban nem az. (acrobot, 2026-09-08.)
- *
- * A TELEFONSZAM ALAKJA A BOLTE (`+36-20/267-6801`). A tervfajl ugyanezt a
- * szamot `+36 20 267 6801` alakban irja, a "Kerdezd a boltot" dobozban. Ugyanaz
- * a szam, ket irasmod -- a lablec forrasa a bolt, tehat a bolte all itt.
- *
- * A LABLECBEN FIX (Balazs, 2026-10-27, kirakat-lablec-kep): az OS nem irja
- * felul; "ha valtozik, mi irjuk at" -- itt, ebben a fajlban.
- */
-export const CEG = {
-  nev: "Acropora Kft.",
-  cim: "1106 Budapest, Pesti Gábor utca 35",
-  telefon: "+36-20/267-6801",
-  email: "webshop@acropora.hu",
-  nyitvatartas: ["Kedd-Péntek 10-18", "Szombat 10-14", "Vasárnap-Hétfő Zárva"],
-} as const
+// `CEG` (the shop's own company data) lives in `@lib/ceg`: the dictionary reads it too, and this file imports the dictionary.
+export { CEG } from "@lib/ceg"
 
 /**
  * A "FIZETESI OPCIOK:" KEP AZ ALSO SORBAN (Balazs, 2026-10-27,
@@ -331,9 +311,14 @@ export function fizetesiLogok(
 export function lablecLinkekHoszton(
   host: string,
   fogyasztobarat: boolean = fogyasztobaratBekapcsolva(),
+  rekordLinkek: readonly { cimke: string; cim: string }[] = [],
 ): { cimke: string; cim: string }[] {
   const mind: { cimke: string; cim: string }[] = [
     ...REGI_BOLT_HIVATKOZASOK.map((h) => ({ cimke: h.cimke, cim: h.cim })),
+    // A LABLEC, AHOGY A LAP TENYLEG RAJZOLJA: az OS rekordjanak linkjei is. A kod
+    // listaja egyedul nullat mondott akkor is, amikor a teszt OS rekordja ot linket
+    // vitt a regi boltba (2026-11-19, murena merese).
+    ...rekordLinkek.map((h) => ({ cimke: h.cimke, cim: h.cim })),
     // bekapcsolt Fogyasztobaratnal az ASZF es az adatkezeles a sajat oldalon all
     ...(fogyasztobarat
       ? []
@@ -341,7 +326,9 @@ export function lablecLinkekHoszton(
           d.maiBoltCim ? [{ cimke: d.cim, cim: d.maiBoltCim }] : [],
         )),
   ]
-  return mind.filter((h) => {
+  const egyedi = new Map<string, { cimke: string; cim: string }>()
+  for (const h of mind) egyedi.set(`${h.cimke}\u0000${h.cim}`, h)
+  return Array.from(egyedi.values()).filter((h) => {
     try {
       return new URL(h.cim).host.toLowerCase() === host.toLowerCase()
     } catch {
