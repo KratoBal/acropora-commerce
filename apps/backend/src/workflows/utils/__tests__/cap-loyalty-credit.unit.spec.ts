@@ -65,6 +65,15 @@ describe("capLoyaltyCredit", () => {
     expect(s.createCreditLines).not.toHaveBeenCalled()
   })
 
+  it("a gift card's credit takes its share first: the points credit that no longer fits is removed", async () => {
+    const gift = { id: "cl_g", amount: 35_000, reference: "gift_card", reference_id: "gc", metadata: {} }
+    const s = setup({ total: 0, credit_line_total: 40_000, credit_lines: [credit(5_000), gift] })
+    await capLoyaltyCredit("cart_1", s.container, logger())
+    // only the points line goes: the gift card's is not this function's
+    expect(s.deleteCreditLines).toHaveBeenCalledWith(["cl_1"])
+    expect(s.createCreditLines).not.toHaveBeenCalled()
+  })
+
   it("never raises a credit when the cart got dearer", async () => {
     const s = setup({ total: 90_000, credit_line_total: 10_000, credit_lines: [credit(10_000)] })
     await capLoyaltyCredit("cart_1", s.container, logger())

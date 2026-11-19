@@ -95,7 +95,7 @@ export function loyaltyCreditPlan(input: {
   const first = input.credits[0]!
   const carried = pointsOfCredit(first)
   const room = maxPoints({ beforeCredits: before, balance: Number.MAX_SAFE_INTEGER, settings: input.settings })
-  if (room < 1 || carried < 1) return { action: "remove", removeIds: ids }
+  if (carried < 1) return { action: "remove", removeIds: ids }
   const credited = input.credits.reduce((sum, line) => sum + amountOf(line.amount), 0)
   if (input.credits.length === 1 && carried <= room && credited <= before) return { action: "keep" }
   const points = Math.min(room, carried)
