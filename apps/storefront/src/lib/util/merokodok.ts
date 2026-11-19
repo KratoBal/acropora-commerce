@@ -32,11 +32,9 @@ const tiszta = (
 }
 
 /** A kornyezeti valtozok ellenorzott alakja; ami nem illeszkedik, `null`. */
-export function merokodAzonositok(env: {
-  NEXT_PUBLIC_GA_MEASUREMENT_ID?: string
-  NEXT_PUBLIC_GOOGLE_ADS_ID?: string
-  NEXT_PUBLIC_META_PIXEL_ID?: string
-}): MerokodAzonositok {
+export function merokodAzonositok(
+  env: Record<string, string | undefined>,
+): MerokodAzonositok {
   return {
     ga4: tiszta(env.NEXT_PUBLIC_GA_MEASUREMENT_ID, GA4_MINTA),
     ads: tiszta(env.NEXT_PUBLIC_GOOGLE_ADS_ID, ADS_MINTA),
