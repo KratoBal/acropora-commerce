@@ -1216,6 +1216,8 @@ export const hu = {
       "A rendelés leadása most nem sikerült. Mielőtt újra próbálod, nézd meg a rendeléseid között, hogy megérkezett-e.",
     errPieceHeld:
       "Egy egyedi darabot most más vevő kosara tart. Ha a foglalása lejár, újra a tiéd lehet: próbáld újra később.",
+    errPersonalDiscountCoupon:
+      "Ezt a kupont nem tudod felhasználni, mert saját kedvezményed van. Vedd le a kupont a kosárból, és próbáld újra.",
     errSplitDiscount:
       "Az élő állat miatt a kosarad két rendelésre bomlik, és így a kedvezmény nem érvényesíthető ugyanúgy. Add le az élő állatot külön kosárban, vagy távolítsd el a kupont, és próbáld újra.",
     errLegalMissing:

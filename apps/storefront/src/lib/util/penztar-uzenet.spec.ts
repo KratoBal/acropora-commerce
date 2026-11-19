@@ -24,6 +24,7 @@ import {
   fizetesHibaUzenet,
   fizetesUzenet,
   RENDELES_KEDVEZMENY_BONTAS,
+  RENDELES_SAJAT_KEDVEZMENY_KUPON,
   rendelesHibaUzenet,
   rendelesUzenet,
   szallitasUzenet,
@@ -258,5 +259,39 @@ describe("a fizetés és a rendelés hibájának szótár-kulcsa", () => {
       "checkoutPayment.errPaymentRejected",
     )
     expect(fizetesHibaKod(undefined)).toBe("checkoutPayment.errPaymentFailed")
+  })
+})
+
+/*
+  A SAJÁT KEDVEZMÉNY MELLETT NINCS KUPON (20713f62, Balázs 2026-11-19). MI PIROSÍT: a belépés előtt felvett kupon a
+  lezáráson az általános "nézd át a kosarat" mondatot kapja; a szótár mondata elcsúszik a konstanstól; a kód eltér a
+  háttér kódjától.
+*/
+describe("a saját kedvezmény kuponja a lezáráson", () => {
+  const hiba = new Error(
+    "personal_discount_coupon: a customer with an own discount cannot use a coupon (TAVASZ10)",
+  )
+
+  it("a saját mondatát kapja, és a szótár-kulcsa az övé", () => {
+    expect(rendelesHibaUzenet(hiba)).toBe(RENDELES_SAJAT_KEDVEZMENY_KUPON)
+    expect(rendelesHibaKod(hiba)).toBe(
+      "checkoutPayment.errPersonalDiscountCoupon",
+    )
+    expect(translator("hu")("checkoutPayment.errPersonalDiscountCoupon")).toBe(
+      RENDELES_SAJAT_KEDVEZMENY_KUPON,
+    )
+  })
+
+  it("a kód azonos a háttér kódjával", () => {
+    const hatter = readFileSync(
+      resolve(
+        __dirname,
+        "../../../../backend/src/workflows/utils/personal-discount-coupon.ts",
+      ),
+      "utf8",
+    )
+    expect(hatter).toContain(
+      'PERSONAL_DISCOUNT_COUPON = "personal_discount_coupon"',
+    )
   })
 })
