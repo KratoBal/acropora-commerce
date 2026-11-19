@@ -118,7 +118,12 @@ export function szallitasiCsoportok(
           ? "checkoutPayment.groupPickup"
           : "checkoutPayment.groupDelivery",
       ),
-      mod: mod.name ?? "",
+      /*
+        SZEMELYES ATVETELNEL A BOLT NEVE, NEM AZ OPCIO NEVE (acrobot 56833, a teszt kirakat 2026-11-19-i kepe: "Bolti átvétel ·
+        Ingyenes" allt itt). Ugyanaz a szotar-kulcs, mint a szallitasi lepes uzlet-kartyajan (#792) es a visszaigazolon; a cim
+        itt is a `SHOP_ADDRESS`, tehat a csoport egy uzletet feltetelez, mint a kartya egy atveteli helynel.
+      */
+      mod: szemelyesAtvetel ? t("orderConfirmed.shopName") : (mod.name ?? ""),
       osszeg: Number(mod.total ?? mod.amount ?? 0),
       tetelek: szallitott.map(tetelSor),
       hova: szemelyesAtvetel
