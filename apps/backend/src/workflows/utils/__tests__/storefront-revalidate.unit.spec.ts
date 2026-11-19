@@ -93,12 +93,15 @@ describe("one call per window", () => {
 })
 
 describe("the subscriber", () => {
-  it("listens to the pricing module's price events, and does nothing without the settings", async () => {
+  it("listens to the pricing module's price and price list events, and does nothing without the settings", async () => {
     expect(config.event).toEqual([...PRICE_CHANGE_EVENTS])
     expect(PRICE_CHANGE_EVENTS).toEqual([
       "pricing.price.created",
       "pricing.price.updated",
       "pricing.price.deleted",
+      "pricing.price-list.created",
+      "pricing.price-list.updated",
+      "pricing.price-list.deleted",
     ])
     const resolve = jest.fn()
     const saved = { ...process.env }

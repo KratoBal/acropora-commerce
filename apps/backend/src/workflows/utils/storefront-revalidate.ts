@@ -19,6 +19,15 @@ export const PRICE_CHANGE_EVENTS = [
   "pricing.price.created",
   "pricing.price.updated",
   "pricing.price.deleted",
+  /*
+    A PRICE LIST CHANGED (card 54bb3779): a sale price list is created, moved or removed. Its prices are price rows, so
+    most of this also fires the `price` events above; the list's own events cover a window moved or a status switched,
+    which touch no price row. THE START AND THE END OF A WINDOW FIRE NOTHING: Medusa switches by the clock. That is the
+    boundary job's work (`jobs/price-list-boundary-revalidate.ts`).
+  */
+  "pricing.price-list.created",
+  "pricing.price-list.updated",
+  "pricing.price-list.deleted",
 ] as const;
 
 /**
