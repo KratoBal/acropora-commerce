@@ -968,6 +968,10 @@ export const en: Dictionary = {
     discountAdd: "Add a discount code",
     discountApply: "Apply",
     discountApplied: "Applied discounts:",
+    giftCardAdd: "Redeem a gift card",
+    giftCardApply: "Redeem",
+    giftCard: "Gift card",
+    giftCardRemove: "Remove the gift card from the order",
   },
   checkoutPage: {
     title: "Checkout",

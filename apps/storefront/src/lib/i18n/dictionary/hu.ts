@@ -1003,6 +1003,10 @@ export const hu = {
     discountAdd: "Kedvezménykód hozzáadása",
     discountApply: "Alkalmazás",
     discountApplied: "Alkalmazott kedvezmények:",
+    giftCardAdd: "Ajándékkártya beváltása",
+    giftCardApply: "Beváltás",
+    giftCard: "Ajándékkártya",
+    giftCardRemove: "Ajándékkártya levétele a rendelésről",
   },
   checkoutPage: {
     title: "Pénztár",
