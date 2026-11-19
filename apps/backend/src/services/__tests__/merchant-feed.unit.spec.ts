@@ -9,8 +9,10 @@ import {
   type MerchantFeedVariant,
 } from "../merchant-feed-item"
 import {
+  DEFAULT_FEED_EXCLUDED_CATEGORY_HANDLES,
   MerchantFeedConfigError,
   backorderLeadTimeDays,
+  excludedCategoryHandlesFrom,
   loadMerchantItems,
 } from "../merchant-feed-loader"
 import { feedCache } from "../merchant-feed-cache"
@@ -365,6 +367,44 @@ describe("loadMerchantItems", () => {
     expect(calls.find((c) => c.entity === "product")?.filters).toEqual({ status: "published" })
   })
 
+  it("MF-LOAD-EXCLUDE: the tree's handles reach the rule, and the left-out count goes to the log", async () => {
+    const query = {
+      graph: async (args: { entity: string; pagination?: { skip: number } }) => {
+        if (args.entity === "store")
+          return { data: [{ default_region_id: "reg_hu", default_sales_channel_id: "sc_shop" }] }
+        if (args.entity === "region") return { data: [{ id: "reg_hu", currency_code: "huf" }] }
+        if (args.entity === "product_category")
+          return {
+            data: [
+              { id: "cat_child", name: "Nyomelemek", handle: "nyomelemek", parent_category_id: null },
+              { id: "cat_fish", name: "Halak", handle: "halak", parent_category_id: null },
+            ],
+          }
+        if (args.entity === "product")
+          return {
+            data:
+              (args.pagination?.skip ?? 0) === 0
+                ? [
+                    { ...product(), sales_channels: [{ id: "sc_shop" }] },
+                    {
+                      ...product({ id: "prod_fish", categories: [{ id: "cat_fish" }], variants: [variant({ id: "variant_f", sku: "FISH" })] }),
+                      sales_channels: [{ id: "sc_shop" }],
+                    },
+                  ]
+                : [],
+          }
+        return { data: [] }
+      },
+    }
+    const logged: string[] = []
+    const items = await loadMerchantItems(
+      { query: query as never, brands, settings: noSettings, logger: { info: (m: string) => logged.push(m) } },
+      { storefrontUrl: "https://teszt.acropora.example", excludedCategoryHandles: ["halak"] }
+    )
+    expect(items.map((i) => i.id)).toEqual(["KZ-AMINO-100"])
+    expect(logged).toEqual(["merchant feed: 1 products left out by the excluded categories (halak)"])
+  })
+
   it("MF-ORDER: paging has a total order, the id breaking created_at ties", async () => {
     const { query, calls } = fakeQuery([])
     await loadMerchantItems(
@@ -455,6 +495,48 @@ describe("toMetaCatalogItem", () => {
     expect(xml).toContain("<g:availability>in stock</g:availability>")
     for (const google of ["availability_date", "identifier_exists", "unit_pricing_measure", "shipping_weight"])
       expect(xml).not.toContain(`<g:${google}>`)
+  })
+})
+
+describe("the excluded categories", () => {
+  /*
+    THE LIVE ANIMALS STAY OUT OF BOTH FEEDS (card 87f351a3; acrobot 56923). WHAT TURNS RED: a fish filed only under a
+    sub-category goes out; a product outside the excluded tree is left out; the default is not the three livestock
+    roots; "none" does not switch it off; an override is not read.
+  */
+  const tree = context({
+    categories: {
+      cat_fish: { name: "Halak", parentId: null, handle: "halak" },
+      cat_clown: { name: "Bohóchalak", parentId: "cat_fish", handle: "bohochalak" },
+      cat_root: { name: "Vegyszerek", parentId: null, handle: "vegyszerek" },
+      cat_child: { name: "Nyomelemek", parentId: "cat_root", handle: "nyomelemek" },
+    },
+    excludedCategoryHandles: new Set(DEFAULT_FEED_EXCLUDED_CATEGORY_HANDLES),
+  })
+
+  it("MF-EXCLUDE: a product under an excluded root, at any depth, is left out; the rest goes", () => {
+    expect(toMerchantItem(product({ categories: [{ id: "cat_clown" }] }), variant(), tree)).toBeNull()
+    expect(toMerchantItem(product({ categories: [{ id: "cat_child" }] }), variant(), tree)?.id).toBe("KZ-AMINO-100")
+    // one excluded category among several is enough
+    expect(toMerchantItem(product({ categories: [{ id: "cat_child" }, { id: "cat_fish" }] }), variant(), tree)).toBeNull()
+    // without the setting nothing is left out for its category
+    expect(
+      toMerchantItem(product({ categories: [{ id: "cat_clown" }] }), variant(), { ...tree, excludedCategoryHandles: undefined })?.id
+    ).toBe("KZ-AMINO-100")
+  })
+
+  it("MF-EXCLUDE-SETTING: the three livestock roots by default, an override, and none", () => {
+    expect(excludedCategoryHandlesFrom({})).toEqual(["halak", "korallok", "gerinctelenek"])
+    expect(excludedCategoryHandlesFrom({ MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES: "  " })).toEqual([
+      "halak",
+      "korallok",
+      "gerinctelenek",
+    ])
+    expect(excludedCategoryHandlesFrom({ MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES: " halak , korallok" })).toEqual([
+      "halak",
+      "korallok",
+    ])
+    expect(excludedCategoryHandlesFrom({ MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES: "None" })).toEqual([])
   })
 })
 

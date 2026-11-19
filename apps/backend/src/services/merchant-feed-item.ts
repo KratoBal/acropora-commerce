@@ -57,7 +57,12 @@ export type MerchantFeedContext = {
   /** The brand name per product id, from the brand module. */
   brands: Record<string, string>
   /** Every category by id, to build the path up to the root. */
-  categories: Record<string, { name: string; parentId: string | null }>
+  categories: Record<string, { name: string; parentId: string | null; handle?: string }>
+  /**
+   * Category handles whose products stay out of the feed, with everything under them (card 87f351a3: the live
+   * animals; `excludedCategoryHandlesFrom`). Empty or absent: nothing is left out for its category.
+   */
+  excludedCategoryHandles?: ReadonlySet<string>
   /**
    * The restock lead time in days (`feed_backorder_lead_time_days`), or null when it is not set: a
    * backorderable item at zero stock then goes as `out_of_stock` (card 69d18bff).
@@ -126,6 +131,7 @@ export function toMerchantItem(
   context: MerchantFeedContext
 ): MerchantItem | null {
   if (productIsNoindex(product)) return null
+  if (inExcludedCategory(product, context)) return null
   const id = variant.sku?.trim()
   if (!id) return null
   const images = imagesOf(product)
@@ -169,6 +175,31 @@ export function toMerchantItem(
       : {}),
     ...(measure ? { unit_pricing_measure: measure } : {}),
   }
+}
+
+/**
+ * WHETHER THE PRODUCT SITS UNDER AN EXCLUDED CATEGORY (card 87f351a3; acrobot 56923: the live animals, fish, corals and
+ * invertebrates, stay out of both the Google and the Meta feed until someone reads both policies). Any of its categories
+ * counts, at any depth: a fish filed only under "Bohóchalak" is still under "Halak".
+ */
+export function inExcludedCategory(
+  product: Pick<MerchantFeedProduct, "categories">,
+  context: Pick<MerchantFeedContext, "categories" | "excludedCategoryHandles">
+): boolean {
+  const excluded = context.excludedCategoryHandles
+  if (!excluded?.size) return false
+  for (const { id } of product.categories ?? []) {
+    const seen = new Set<string>()
+    let currentId: string | null = id
+    while (currentId && !seen.has(currentId)) {
+      seen.add(currentId)
+      const current: MerchantFeedContext["categories"][string] | undefined = context.categories[currentId]
+      if (!current) break
+      if (current.handle && excluded.has(current.handle)) return true
+      currentId = current.parentId
+    }
+  }
+  return false
 }
 
 /**

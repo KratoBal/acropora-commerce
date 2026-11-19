@@ -3,6 +3,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { feedCache } from "../../../services/merchant-feed-cache"
 import {
   MerchantFeedConfigError,
+  excludedCategoryHandlesFrom,
   loadMerchantItems,
   merchantFeedDeps,
 } from "../../../services/merchant-feed-loader"
@@ -23,6 +24,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     body = await cached(async () => {
       const items = await loadMerchantItems(merchantFeedDeps(req.scope), {
         storefrontUrl,
+        excludedCategoryHandles: excludedCategoryHandlesFrom(process.env),
         keepBackorder: true,
       })
       const base = storefrontUrl!.trim().replace(/\/+$/, "")
