@@ -6,6 +6,7 @@ import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-
 import SplitNotice from "@modules/cart/components/pickup-notice/split-notice"
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
+import GiftCardCode from "@modules/checkout/components/gift-card-code"
 import CartTotals from "@modules/common/components/cart-totals"
 
 /**
@@ -44,6 +45,7 @@ export function CheckoutSummaryView({
         </h2>
         <ItemsPreviewTemplate cart={cart} />
         <DiscountCode cart={cart} />
+        <GiftCardCode cart={cart} />
         <CartTotals totals={cart} />
       </div>
       {savMutat ? (

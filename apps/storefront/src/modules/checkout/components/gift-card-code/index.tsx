@@ -8,7 +8,10 @@ import { useParams } from "next/navigation"
 import React from "react"
 
 import { applyGiftCard, removeGiftCard } from "@lib/data/cart"
-import { ajandekkartyaJovairas, type KosarJovairassal } from "@lib/util/ajandekkartya"
+import {
+  ajandekkartyaJovairas,
+  type KosarJovairassal,
+} from "@lib/util/ajandekkartya"
 import { convertToLocale } from "@lib/util/money"
 import Trash from "@modules/common/icons/trash"
 import ErrorMessage from "../error-message"
@@ -19,7 +22,9 @@ import { SubmitButton } from "../submit-button"
  * kedvezmény (a webshop kosár-jóváírásként viszi, a végösszegből vonja le). A kártyáról a webshop csak a rendelés
  * leadásakor von le; amíg a kosárban áll, bármikor levehető. A hibát kiírja (a kedvezménykód-mező szabálya).
  */
-const GiftCardCode: React.FC<{ cart: KosarJovairassal & { currency_code: string } }> = ({ cart }) => {
+const GiftCardCode: React.FC<{
+  cart: KosarJovairassal & { currency_code: string }
+}> = ({ cart }) => {
   const { countryCode } = useParams() as { countryCode: string }
   const t = translator(localeOf(countryCode))
   const [isOpen, setIsOpen] = React.useState(false)
@@ -32,7 +37,9 @@ const GiftCardCode: React.FC<{ cart: KosarJovairassal & { currency_code: string 
     if (!code) return
     const eredmeny = await applyGiftCard(code)
     if (!eredmeny.ok) setErrorMessage(eredmeny.uzenet)
-    const input = document.getElementById("gift-card-input") as HTMLInputElement | null
+    const input = document.getElementById(
+      "gift-card-input",
+    ) as HTMLInputElement | null
     if (input && eredmeny.ok) input.value = ""
   }
 
@@ -45,11 +52,17 @@ const GiftCardCode: React.FC<{ cart: KosarJovairassal & { currency_code: string 
   return (
     <div className="w-full flex flex-col txt-medium">
       {jovairas ? (
-        <div className="flex items-center justify-between w-full mb-2" data-testid="gift-card-row">
+        <div
+          className="flex items-center justify-between w-full mb-2"
+          data-testid="gift-card-row"
+        >
           <Text className="txt-small-plus">
             {t("cartPage.giftCard")}
             {jovairas.utolso4 ? ` (…${jovairas.utolso4})` : ""}: -{" "}
-            {convertToLocale({ amount: jovairas.osszeg, currency_code: cart.currency_code })}
+            {convertToLocale({
+              amount: jovairas.osszeg,
+              currency_code: cart.currency_code,
+            })}
           </Text>
           <button
             type="button"
@@ -83,14 +96,20 @@ const GiftCardCode: React.FC<{ cart: KosarJovairassal & { currency_code: string 
                 autoComplete="off"
                 data-testid="gift-card-input"
               />
-              <SubmitButton variant="secondary" data-testid="gift-card-apply-button">
+              <SubmitButton
+                variant="secondary"
+                data-testid="gift-card-apply-button"
+              >
                 {t("cartPage.giftCardApply")}
               </SubmitButton>
             </div>
           )}
         </form>
       )}
-      <ErrorMessage error={errorMessage} data-testid="gift-card-error-message" />
+      <ErrorMessage
+        error={errorMessage}
+        data-testid="gift-card-error-message"
+      />
     </div>
   )
 }

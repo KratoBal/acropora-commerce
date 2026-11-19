@@ -20,15 +20,24 @@ export type KosarJovairassal = {
 export type AjandekkartyaJovairas = { osszeg: number; utolso4: string | null }
 
 /** A kosáron álló ajándékkártya-jóváírás, vagy null. Egy kosáron egy kártya áll (a webshop cseréli). */
-export function ajandekkartyaJovairas(kosar: KosarJovairassal | null | undefined): AjandekkartyaJovairas | null {
-  const sor = (kosar?.credit_lines ?? []).find((s) => s?.reference === "gift_card")
+export function ajandekkartyaJovairas(
+  kosar: KosarJovairassal | null | undefined,
+): AjandekkartyaJovairas | null {
+  const sor = (kosar?.credit_lines ?? []).find(
+    (s) => s?.reference === "gift_card",
+  )
   if (!sor) return null
   const utolso4 = sor.metadata?.code_last4
-  return { osszeg: Number(sor.amount ?? 0), utolso4: typeof utolso4 === "string" ? utolso4 : null }
+  return {
+    osszeg: Number(sor.amount ?? 0),
+    utolso4: typeof utolso4 === "string" ? utolso4 : null,
+  }
 }
 
 /** A kártya mindent fizet: nincs fizetési lépés (a starter `paidByGiftcard` ága). */
-export function ajandekkartyavalFizetve(kosar: KosarJovairassal | null | undefined): boolean {
+export function ajandekkartyavalFizetve(
+  kosar: KosarJovairassal | null | undefined,
+): boolean {
   return !!ajandekkartyaJovairas(kosar) && (kosar?.total ?? 0) === 0
 }
 
@@ -43,7 +52,10 @@ export const KARTYA_MOST_NEM_ELLENORIZHETO =
  * felel). 409: a webshop saját mondata (vegyes kosár, nincs fizetendő, már rendelés lett). Minden más (5xx, hálózat):
  * NEM a kód a baj, tehát nem mondjuk azt, hogy rossz.
  */
-export function ajandekkartyaUzenet(allapot: number | undefined, szerverUzenet?: string): string {
+export function ajandekkartyaUzenet(
+  allapot: number | undefined,
+  szerverUzenet?: string,
+): string {
   if (allapot === 400) return KARTYA_NEM_HASZNALHATO
   if (allapot === 409 && szerverUzenet?.trim()) return szerverUzenet.trim()
   return KARTYA_MOST_NEM_ELLENORIZHETO

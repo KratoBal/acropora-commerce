@@ -9,6 +9,7 @@
  * - a részösszeg a tételek BRUTTÓ összege (nettó + adó),
  * - a szállítás is bruttó (nettó + adó),
  * - az áfa INFORMÁCIÓS sor ("ebből"), nem összeadandó tétel,
+ * - az ajándékkártya (kosár-jóváírás, `credit_line_total`) fizetőeszköz: külön sor, a `total` már nélküle áll,
  * - a fizetendő mindig a `total`.
  *
  * A hiányzó adó-érték nem nulla, de a kiírás nem tud mást tenni, mint a nettót
@@ -23,6 +24,7 @@ export type KosarOsszegekBemenet = {
   shipping_subtotal?: number | null
   shipping_tax_total?: number | null
   discount_subtotal?: number | null
+  credit_line_total?: number | null
 }
 
 export type KosarOsszegek = {
@@ -33,6 +35,8 @@ export type KosarOsszegek = {
   shippingGross: number
   /** a kedvezmény, 0 ha nincs */
   discount: number
+  /** az ajándékkártyával fizetett rész, 0 ha nincs */
+  giftCard: number
   /** az áfa összege, 0 ha nincs */
   tax: number
   /** a fizetendő */
@@ -46,6 +50,7 @@ export function kosarOsszegek(totals: KosarOsszegekBemenet): KosarOsszegek {
     shippingGross:
       (totals.shipping_subtotal ?? 0) + (totals.shipping_tax_total ?? 0),
     discount: totals.discount_subtotal ?? 0,
+    giftCard: totals.credit_line_total ?? 0,
     tax: totals.tax_total ?? 0,
     total: totals.total ?? 0,
   }
