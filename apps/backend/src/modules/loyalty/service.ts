@@ -1,5 +1,6 @@
 import type { Context } from "@medusajs/framework/types"
 import {
+  generateEntityId,
   InjectManager,
   InjectTransactionManager,
   MedusaContext,
@@ -45,9 +46,8 @@ class LoyaltyModuleService extends MedusaService({ LoyaltyEntry }) {
   /**
    * THE BALANCE CHECK AND THE ROW IN ONE TRANSACTION. A debit that would take the balance below zero is refused
    * (`overdraw`), and the answer carries the balance it was measured against. KNOWN LIMIT, NOT CLOSED HERE: the
-   * transaction does not lock the customer, so two debits sent at the same instant can each pass the check and
-   * together overdraw. Manual debits are rare and made by a person; an overdrawn balance shows as negative, and the
-   * later redemption path refuses a customer who has no points. A row lock would close it, and it was not measured.
+   * debit takes the customer's advisory lock first (the cart-time movements take the same one), so a manual debit and a
+   * checkout redemption cannot together overdraw.
    */
   @InjectManager()
   async addEntryChecked(
@@ -63,6 +63,10 @@ class LoyaltyModuleService extends MedusaService({ LoyaltyEntry }) {
     @MedusaContext() sharedContext: Context = {},
   ): Promise<{ status: "ok"; entry: LoyaltyEntryRow } | { status: "overdraw"; balance: number }> {
     if (input.points < 0) {
+      // THE CUSTOMER'S LOCK, the one the cart-time movements take (barracuda, #808 B): a manual debit and a checkout
+      // redemption sent at the same instant would each pass the balance check and together go below zero, and a point
+      // is a forint. Same key, same advisory lock, held to the end of the transaction.
+      await this.lockCustomer(sharedContext, input.customer_id)
       const rows = (await this.listLoyaltyEntries({ customer_id: input.customer_id }, { take: null }, sharedContext)) as LoyaltyEntryRow[]
       const balance = sumPoints(rows)
       if (balance + input.points < 0) return { status: "overdraw", balance }
@@ -131,40 +135,63 @@ class LoyaltyModuleService extends MedusaService({ LoyaltyEntry }) {
     return await reverseRule(this.txOf(sharedContext), input)
   }
 
-  /** The module's rows and the lock, as the rules see them, inside the caller's transaction. */
-  private txOf(sharedContext: Context): LedgerTx {
+  /** The transaction's connection, or a refusal: the ledger moves only inside one. */
+  private knexOf(sharedContext: Context): { raw(sql: string, bindings: unknown[]): Promise<{ rows: unknown[] }> } {
     const knex = (
       sharedContext.transactionManager as
-        | { getTransactionContext(): { raw(sql: string, bindings: unknown[]): Promise<unknown> } | undefined }
+        | { getTransactionContext(): { raw(sql: string, bindings: unknown[]): Promise<{ rows: unknown[] }> } | undefined }
         | undefined
     )?.getTransactionContext()
     if (!knex)
       throw new MedusaError(MedusaError.Types.UNEXPECTED_STATE, "The points ledger moves only inside a transaction.")
+    return knex
+  }
+
+  /** Serializes one customer's movements for the rest of the transaction (there is no balance row to lock). */
+  private async lockCustomer(sharedContext: Context, customerId: string): Promise<void> {
+    await this.knexOf(sharedContext).raw("select pg_advisory_xact_lock(hashtext(?))", [`loyalty:${customerId}`])
+  }
+
+  /**
+   * The module's rows and the lock, as the rules see them, inside the caller's transaction.
+   *
+   * THE WRITES ARE RAW SQL ON THE TRANSACTION'S CONNECTION, IN THE RULES' ORDER (barracuda, #808 A, the trap of #804): the
+   * redemption of other points for the same cart soft-deletes the row and creates the next one under the SAME reference,
+   * against the partial unique index. The ORM puts an insert before an update in one unit of work, which on a real
+   * database refused every such save; the gift card service writes raw for the same reason. Two statements, one after the
+   * other, in the order written. The reads stay on the module (they query the database each time, in this transaction).
+   */
+  private txOf(sharedContext: Context): LedgerTx {
+    const knex = this.knexOf(sharedContext)
     return {
-      lock: async (customerId) => {
-        await knex.raw("select pg_advisory_xact_lock(hashtext(?))", [`loyalty:${customerId}`])
-      },
+      lock: (customerId) => this.lockCustomer(sharedContext, customerId),
       rows: async (customerId) =>
         (await this.listLoyaltyEntries({ customer_id: customerId }, { take: null }, sharedContext)) as LoyaltyEntryRow[],
       byReference: async (reference) => {
         const [row] = (await this.listLoyaltyEntries({ reference }, { take: 1 }, sharedContext)) as LoyaltyEntryRow[]
         return row ?? null
       },
-      create: async (input) =>
-        (await this.createLoyaltyEntries(
-          {
-            customer_id: input.customer_id,
-            kind: input.kind,
-            points: input.points,
-            order_id: input.order_id ?? null,
-            reference: input.reference ?? null,
-            reason: input.reason,
-            actor: input.actor,
-          },
-          sharedContext,
-        )) as LoyaltyEntryRow,
+      create: async (input) => {
+        const id = generateEntityId(undefined, "loyent")
+        const result = await knex.raw(
+          `insert into loyalty_entry (id, customer_id, kind, points, order_id, reference, reason, actor, created_at, updated_at)
+           values (?, ?, ?, ?, ?, ?, ?, ?, now(), now())
+           returning id, customer_id, kind, points, order_id, reference, reason, actor, created_at`,
+          [
+            id,
+            input.customer_id,
+            input.kind,
+            input.points,
+            input.order_id ?? null,
+            input.reference ?? null,
+            input.reason,
+            input.actor,
+          ],
+        )
+        return result.rows[0] as LoyaltyEntryRow
+      },
       remove: async (id) => {
-        await this.softDeleteLoyaltyEntries(id, {}, sharedContext)
+        await knex.raw(`update loyalty_entry set deleted_at = now(), updated_at = now() where id = ? and deleted_at is null`, [id])
       },
     }
   }
