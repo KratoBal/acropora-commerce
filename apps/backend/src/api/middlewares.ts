@@ -93,7 +93,8 @@ import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/valida
 import { StorePostCustomerWithdrawal } from "./store/customers/me/orders/[order_id]/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
-import { StorePostCartGiftCard } from "./store/carts/[id]/gift-card/validators";
+import { StorePostCartGiftCard } from "./store/carts/[id]/gift-card/validators"
+import { StorePostCartLoyaltyPoints } from "./store/carts/[id]/loyalty-points/validators";
 import { StorePostSutiHozzajarulas } from "./store/customers/me/suti-hozzajarulas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
@@ -234,6 +235,20 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/gift-card",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostCartGiftCard)],
+    },
+    {
+      // the signed-in customer's points on their own cart (card dfb79916): the customer is the session's, never the body's
+      matcher: "/store/carts/:id/loyalty-points",
+      method: ["GET", "DELETE"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
+    {
+      matcher: "/store/carts/:id/loyalty-points",
+      method: "POST",
+      middlewares: [
+        authenticate("customer", ["session", "bearer"]),
+        validateAndTransformBody(StorePostCartLoyaltyPoints),
+      ],
     },
     {
       // The registration's ÁSZF record is the server's (customer-aszf-record.ts; audit A4, customer twin).

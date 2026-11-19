@@ -14,6 +14,11 @@ import {
   voidCartGiftCardRedemption,
   type CartGiftCardRedemption,
 } from "../utils/redeem-cart-gift-card"
+import {
+  redeemCartLoyalty,
+  voidCartLoyaltyRedemption,
+  type CartLoyaltyRedemption,
+} from "../utils/redeem-cart-loyalty"
 import { resolveCartPaymentContext } from "../utils/resolve-cart-payment-context"
 
 /**
@@ -77,11 +82,24 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
     items: cart?.items,
   })
 
-  // LAST, after every check that can still refuse for free (card 495c0007): the gift card's share comes off the card.
-  // If a later step of the completion fails, the compensation below gives it back, so a retry can take it again.
-  const redemption = await redeemCartGiftCard(cart as never, container as never)
-  return new StepResponse(undefined, redemption)
+  // LAST, after every check that can still refuse for free (card 495c0007, dfb79916): the gift card's share comes off the
+  // card, or the points off the ledger. If a later step of the completion fails, the compensation below gives them back,
+  // so a retry can take them again. The points go first (they also refuse a cart that carries both); if the gift card
+  // then refuses, the points just taken are given back here, because a handler that throws has no compensation of its own.
+  const loyalty = await redeemCartLoyalty(cart as never, container as never)
+  let gift: CartGiftCardRedemption | undefined
+  try {
+    gift = await redeemCartGiftCard(cart as never, container as never)
+  } catch (error) {
+    await voidCartLoyaltyRedemption(loyalty, container as never)
+    throw error
+  }
+  return new StepResponse(undefined, { gift, loyalty } as CompletionRedemptions)
 },
-async (redemption: CartGiftCardRedemption | undefined, { container }) => {
-  await voidCartGiftCardRedemption(redemption, container as never)
+async (redemptions: CompletionRedemptions | undefined, { container }) => {
+  await voidCartGiftCardRedemption(redemptions?.gift, container as never)
+  await voidCartLoyaltyRedemption(redemptions?.loyalty, container as never)
 })
+
+/** What the completion took, for the compensation: the gift card's share and the points. */
+type CompletionRedemptions = { gift: CartGiftCardRedemption | undefined; loyalty: CartLoyaltyRedemption }

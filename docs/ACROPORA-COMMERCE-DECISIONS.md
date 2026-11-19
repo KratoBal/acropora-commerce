@@ -238,3 +238,48 @@ jóírt pont visszavonandó (`D-2026-08-23-25`, 6. pont): ez a `reversal` fajta 
 **Ismert határ:** a levonás-ellenőrzés és a sor beszúrása egy tranzakcióban van, de a vevőt nem
 zárolja: két egyszerre érkező levonás együtt a nulla alá vihet. Kézi levonást ember ad, ritkán; a
 negatív egyenleg látszik. Sorzárral zárható, **nincs lemérve**.
+
+## D-2026-11-19-02: A hűségpont beváltása a pénztáron (2/n): a mai UNAS-szabályok, beállításként
+
+**Döntés:** acrobot 2026-11-19 09:49 (Balázs 2026-08-22-i UNAS-képernyőképe,
+`docs/husegpont-mai-szabalyok-unas.md`, és az egy eltérés: Balázs 2026-11-18 21:30 UTC, kártya `790da0cd`):
+a pont a **szállításra is** beváltható. A szabályok **beállítások, nem kód**, ezekkel az alapértékekkel:
+
+| Beállítás | Környezeti változó | Alap |
+|---|---|---|
+| beváltás bekapcsolva | `LOYALTY_REDEMPTION_ENABLED` | **ki** (a teszt kirakaton bekapcsolva megy) |
+| 1 pont értéke forintban | `LOYALTY_POINT_VALUE_HUF` | 1 |
+| a rendelés legalább (Ft, a hitelek előtti végösszeg, szállítással) | `LOYALTY_MIN_ORDER_HUF` | 30 000 |
+| legalább ennyi pont egyszerre | `LOYALTY_MIN_POINTS` | 100 |
+| a végösszeg hány százaléka fizethető pontból | `LOYALTY_MAX_PERCENT` | 100 |
+
+Hibás, nulla, negatív vagy tört érték az **alapértéket** adja, soha nem találgatást; csak a pontos `true`
+kapcsolja be a beváltást. A gyűjtés (3 százalék, akciós tétel után nincs, jóváírás a rendelés „lezárva"
+státuszakor), a regisztrációért és a hírlevélért járó pont **nincs ebben a PR-ban**.
+
+**Mi ez:** a pont a kosáron *credit line* (`reference = loyalty_points`, `reference_id` a vevő,
+`metadata.points`), az ajándékkártyáéval azonos mechanikával (nautilus #818): fizetési eszköz-szerű, a
+szállítást és az utánvét díjat is fedezi, a fizetési gyűjtemény frissül, a nulla Ft-os végösszeg útja már
+megvan. Az **ÁFA (B kérdés) nyitott**: ez az olvasat „a teljes összegről szól a számla, a pont fizeti". Ha
+árcsökkentés kell (a számla alapja csökken), azt a könyvelővel az OS-számla oldalán kell eldönteni, és a
+credit line helyett más út kell.
+
+**Folyamat:** `POST/DELETE/GET /store/carts/:id/loyalty-points` (belépett vevő, saját kosár; a kosár más vevőjé
+úgy válaszol, mint a hiányzó): a pont a főkönyvhöz **nem nyúl**, csak a credit line készül; a főkönyvbe a
+`complete-cart` ellenőrző horog veszi be, **utolsóként**, `redemption` sorral (`reference = redeem:<kosár>`), és
+visszavonja, ha a befejezés elhasal (kompenzáció: a sor törlődik, a kulcs felszabadul). A kosár frissítése
+plafonozza a hitelt (egész pontra lefelé, a minimum alatt lekerül). A rendelés lemondása egy `reversal` sorral
+visszaadja a pontot (`reference = reverse:<kosár>`, egyszer). **A visszatérített rendelés pontja tehát
+visszajár**: ez eltérés a mai UNAS-tól (ott bent marad), és Balázs dönti (acrobot jelzi).
+
+**Kizárások:** ajándékkártya és pont egy kosárban nem lehet (két hitel egymás plafonját is bonyolítaná; a
+nautilus-féle ajándékkártya-végpont is elutasítja a pontot hordozó kosarat); vegyes (két rendelésre bomló)
+kosárnál nincs beváltás, mint az ajándékkártyánál.
+
+**Zárolás:** minden mozgás a vevő kulcsán `pg_advisory_xact_lock`-ot vesz (nincs egyenleg-sor, amit zárolni
+lehetne): a kosárból jövő levonások nem vihetnek együtt a nulla alá. A kézi levonás (`addEntryChecked`) még
+nem zárol: a fenti „ismert határ" arra áll.
+
+**NINCS LEMÉRVE valódi Postgresen:** a zár, a `softDelete`, a tranzakció-kezelés (helyi Postgres nincs). A
+szabályok egy memóriabeli főkönyvön vannak mérve; a stage-en HTTP-vel mérendő: pont jóírása, beváltás,
+rendelés, lemondás, hibás befejezés utáni visszaadás.
