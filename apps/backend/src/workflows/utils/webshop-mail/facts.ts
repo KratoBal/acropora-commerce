@@ -1,3 +1,4 @@
+import type { BuyerCompany } from "./buyer-company"
 import type { LegalUrls } from "./legal-links"
 import type { OrderLocale } from "../order-locale"
 import type { MailLine, MailOrder } from "./order-placed-mail"
@@ -110,7 +111,13 @@ export type WebshopMailFactsOf = {
    * OS reads the facts key by key and ignores one it does not know, so an older
    * OS renders the mail as before, without the legal part.
    */
-  "order-placed": CommonFacts & { orders: MailOrder[]; legal_version: string | null }
+  /**
+   * `buyer_company` (card aba7120c, A15): the company and tax number of a company purchase (the billing address's `company` and
+   * its `metadata.tax_id`), for the confirmation's billing sentence. ABSENT for a private purchase, so its request is what it
+   * was. ADDED WITHOUT RAISING THE VERSION: the OS reads the facts key by key and ignores one it does not know, so the OS and this
+   * shop deploy in either order (an older OS renders the confirmation without the sentence).
+   */
+  "order-placed": CommonFacts & { orders: MailOrder[]; legal_version: string | null; buyer_company?: BuyerCompany }
   "order-status-confirmed": CommonFacts & { order: LoadedOrder }
   "order-status-out_for_delivery": CommonFacts & { order: LoadedOrder }
   "order-status-ready_for_pickup": CommonFacts & { order: LoadedOrder }

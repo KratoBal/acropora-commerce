@@ -13,6 +13,7 @@ import type { OrderSplitMailDeps } from "./order-split-mail"
 import type { PaymentDelayedDeps } from "./payment-delayed-mail"
 import type { PaymentLinkMailDeps } from "./payment-link-mail"
 import type { StatusMailDeps } from "./status-mail"
+import { buyerCompanyOfOrder } from "./buyer-company"
 import { livestockKindsOfOrder } from "./livestock-kinds"
 import { PRODUCT_KNOWLEDGE_MODULE } from "../../../modules/product-knowledge"
 import type ProductKnowledgeModuleService from "../../../modules/product-knowledge/service"
@@ -59,6 +60,7 @@ export const orderMailOperations = (container: MedusaContainer): OrderMailDeps =
   cartOf: (orderId) => cartOfOrder(container, orderId),
   completeSplit: (cartId) => completeSplitForCart(container, cartId),
   livestockKinds: (orderId) => livestockKindsOfOrder(container, orderId),
+  buyerCompany: (orderId) => buyerCompanyOfOrder(container, orderId),
   loadOrder: async (orderId): Promise<LoadedOrder | null> => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const { data } = await query.graph({ entity: "order", filters: { id: orderId }, fields: ORDER_FIELDS })

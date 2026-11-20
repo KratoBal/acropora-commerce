@@ -1,4 +1,5 @@
 import type { LivestockKind } from "../../../modules/shipping-attributes/livestock-kind"
+import type { BuyerCompany } from "./buyer-company"
 import type { MailCommonFacts, MailRenderFacts } from "./outbox-delivery"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
 import { ASZF_METADATA_KEY, PARENT_CART_METADATA_KEY, PICKUP_CART_METADATA_KEY } from "../split-completion"
@@ -69,6 +70,11 @@ export type OrderMailDeps = {
    * that fails gives none, so the confirmation is never held back by it.
    */
   livestockKinds?(orderId: string): Promise<LivestockKind[]>
+  /**
+   * The company of a company purchase (card aba7120c), for the confirmation's billing sentence; null for a private purchase.
+   * Never rejects, like `livestockKinds`: a failed read sends the confirmation without the sentence.
+   */
+  buyerCompany?(orderId: string): Promise<BuyerCompany | null>
 }
 
 /**
@@ -119,6 +125,8 @@ export const prepareOrderPlacedMail = async (
   if (!to) return { action: "skip", reason: "no_email" }
 
   const kinds = await Promise.all(orders.map((order) => (deps.livestockKinds ? deps.livestockKinds(order.id) : null)))
+  // the billing address is the cart's: both halves of a mixed cart carry the same company, the main order's is read
+  const company = deps.buyerCompany ? await deps.buyerCompany(orderId) : null
   const mailOrders = orders.map(({ id, email: _email, ...order }, index) => ({
     ...order,
     pickup: id !== orderId,
@@ -131,8 +139,16 @@ export const prepareOrderPlacedMail = async (
       template: "order-placed",
       idempotency_key: orderPlacedKey(orderId, resendAt),
       resource_id: orderId,
-      content: renderOrderPlacedMail(mailOrders),
-      render: { template: "order-placed", facts: { orders: mailOrders, legal_version: legalVersionOf(cart?.metadata) } },
+      content: renderOrderPlacedMail(mailOrders, company),
+      render: {
+        template: "order-placed",
+        // `buyer_company` is absent for a private purchase: the request to the OS is then what it was
+        facts: {
+          orders: mailOrders,
+          legal_version: legalVersionOf(cart?.metadata),
+          ...(company ? { buyer_company: company } : {}),
+        },
+      },
     },
   }
 }

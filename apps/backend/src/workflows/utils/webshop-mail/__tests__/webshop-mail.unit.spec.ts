@@ -208,6 +208,67 @@ describe("when the order confirmation goes", () => {
   })
 
   /*
+    A15 (card aba7120c): A CEGES VASARLAS CEGE ES ADOSZAMA A LEVELBEN. MI PIROSIT: egy magan vasarlas kerese kap `buyer_company` kulcsot
+    (a kerese mar nem az, ami volt); a ceges nem kapja meg; a bolt sajat szovege nem nevezi a cegat es az adoszamot; a ket szoveg
+    (bolt, OS) mondata elter; a levelet visszatartja egy hibas olvasas; az adoszam nelkuli ceg "adoszam: null"-t ir.
+  */
+  describe("the company of a company purchase (A15)", () => {
+    const withCompany = (company: { name: string; tax_number: string | null } | null | "throws") => {
+      const { deps: d } = deps(null)
+      return {
+        ...d,
+        buyerCompany: async () => {
+          if (company === "throws") throw new Error("read failed")
+          return company
+        },
+      }
+    }
+    const factsOf = (result: Awaited<ReturnType<typeof prepareOrderPlacedMail>>) =>
+      (result as { mail: { render: { facts: Record<string, unknown> } } }).mail.render.facts
+    const textOf = (result: Awaited<ReturnType<typeof prepareOrderPlacedMail>>) =>
+      (result as { mail: { content: { text: string; html: string } } }).mail.content
+
+    it("a company purchase: the key in the request, the sentence in the built-in text and html", async () => {
+      const result = await prepareOrderPlacedMail("order_1", withCompany({ name: "Teszt Kft.", tax_number: "12345676-2-13" }))
+      expect(factsOf(result).buyer_company).toEqual({ name: "Teszt Kft.", tax_number: "12345676-2-13" })
+      expect(textOf(result).text).toContain("Számlázási adatok: Teszt Kft., adószám: 12345676-2-13.")
+      expect(textOf(result).html).toContain("Számlázási adatok: Teszt Kft., adószám: 12345676-2-13.")
+    })
+
+    it("a private purchase: no key at all (the request is what it was) and no sentence", async () => {
+      const result = await prepareOrderPlacedMail("order_1", withCompany(null))
+      expect("buyer_company" in factsOf(result)).toBe(false)
+      expect(textOf(result).text).not.toContain("Számlázási adatok")
+      // and without the dependency (an older caller), the same
+      const plain = await prepareOrderPlacedMail("order_1", deps(null).deps)
+      expect("buyer_company" in factsOf(plain)).toBe(false)
+    })
+
+    it("a company without a tax number: the name alone", async () => {
+      const result = await prepareOrderPlacedMail("order_1", withCompany({ name: "Teszt Kft.", tax_number: null }))
+      expect(textOf(result).text).toContain("Számlázási adatok: Teszt Kft.\n")
+      expect(textOf(result).text).not.toContain("adószám")
+    })
+
+    it("the company's name is escaped in the html", async () => {
+      const result = await prepareOrderPlacedMail("order_1", withCompany({ name: "A <b>&</b> Kft.", tax_number: null }))
+      expect(textOf(result).html).toContain("Számlázási adatok: A &lt;b&gt;&amp;&lt;/b&gt; Kft.")
+      expect(textOf(result).html).not.toContain("<b>&</b>")
+    })
+
+    it("a mixed cart names the company once, after both orders", async () => {
+      const { deps: d } = deps({ [PICKUP_CART_METADATA_KEY]: "cart_2" }, ["order_pick", "order_ship"])
+      const result = await prepareOrderPlacedMail("order_ship", { ...d, buyerCompany: async () => ({ name: "Teszt Kft.", tax_number: "12345676-2-13" }) })
+      const text = textOf(result).text
+      expect(text.match(/Számlázási adatok/g)).toHaveLength(1)
+      expect(text.indexOf("Rendelés #38")).toBeLessThan(text.indexOf("Számlázási adatok"))
+      // after the orders, BEFORE the closing sentences (the next step and the pickup line)
+      expect(text.indexOf("Számlázási adatok")).toBeLessThan(text.indexOf("Összekészítjük a rendelésedet"))
+      expect(text.indexOf("Számlázási adatok")).toBeLessThan(text.indexOf("Az élő állatos rendelést a boltban veszed át."))
+    })
+  })
+
+  /*
     V2.6 (f4e4832b): az OS a rendeles elo allat fajtaibol epiti az akklimatizacios
     szakaszt. MI PIROSIT: ha a fajtak nem jutnak el a renderelesi keresig; ha a
     beepitett (nem OS-renderelt) szoveg a fajtak miatt megvaltozik.
