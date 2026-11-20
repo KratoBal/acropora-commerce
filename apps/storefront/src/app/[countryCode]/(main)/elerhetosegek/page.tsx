@@ -1,14 +1,12 @@
 import { Metadata } from "next"
 
+import { translator } from "@lib/i18n/dictionary"
+import { localeOf } from "@lib/i18n/locale"
 import { indexelhetoRobots, lapCim, openGraph } from "@lib/seo/oldal-metaadat"
 import { elerhetosegekCanonical } from "@lib/util/lap-canonical"
 import { ElerhetosegekLap } from "@modules/elerhetosegek/elerhetosegek-lap"
 
 type Props = { params: Promise<{ countryCode: string }> }
-
-const CIM = "Elérhetőségek"
-const LEIRAS =
-  "Az Acropora Kft. elérhetőségei: cím, telefonszám, e-mail-cím és nyitvatartás."
 
 /**
  * AZ ELERHETOSEGEK OLDALA (`/hu/elerhetosegek`, commerce-audit-p1, P1/11): a
@@ -18,12 +16,16 @@ const LEIRAS =
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
   const canonical = elerhetosegekCanonical(countryCode)
+  // a lap cime es leirasa a lap nyelvén (a kirakat angol nezete, 2026-11-19)
+  const t = translator(localeOf(countryCode))
+  const cim = t("contactPage.title")
+  const leiras = t("contactPage.metaDescription")
   return {
-    title: lapCim(CIM),
-    description: LEIRAS,
+    title: lapCim(cim),
+    description: leiras,
     robots: indexelhetoRobots(),
     alternates: { canonical },
-    openGraph: openGraph({ cim: lapCim(CIM), leiras: LEIRAS, url: canonical }),
+    openGraph: openGraph({ cim: lapCim(cim), leiras, url: canonical }),
   }
 }
 
@@ -34,6 +36,7 @@ export async function generateStaticParams() {
   return []
 }
 
-export default function ElerhetosegekOldal() {
-  return <ElerhetosegekLap cim={CIM} />
+export default async function ElerhetosegekOldal(props: Props) {
+  const { countryCode } = await props.params
+  return <ElerhetosegekLap locale={localeOf(countryCode)} />
 }

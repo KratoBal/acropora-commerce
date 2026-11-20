@@ -1,3 +1,6 @@
+import { nyitvatartasNyelven } from "@lib/ceg"
+import { translator } from "@lib/i18n/dictionary"
+import type { Locale } from "@lib/i18n/locale"
 import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
 
 /**
@@ -14,7 +17,9 @@ import { CEG } from "@modules/layout/templates/footer/hivatkozasok"
 export const telHref = (telefon: string) =>
   `tel:${telefon.replace(/[^\d+]/g, "")}`
 
-export function ElerhetosegekLap({ cim }: { cim: string }) {
+export function ElerhetosegekLap({ locale = "hu" }: { locale?: Locale }) {
+  const t = translator(locale)
+  const nyitvatartas = nyitvatartasNyelven(locale)
   return (
     <div className="min-h-[calc(100vh-64px)] bg-acr-mist py-10 small:py-14">
       <div
@@ -22,7 +27,7 @@ export function ElerhetosegekLap({ cim }: { cim: string }) {
         data-testid="elerhetosegek"
       >
         <h1 className="text-[30px] font-normal leading-[36px] text-acr-ink small:text-[38px] small:leading-[46px]">
-          {cim}
+          {t("contactPage.title")}
         </h1>
         <section className="border border-acr-line bg-acr-white px-5 py-6 small:px-8 small:py-8">
           <h2 className="mb-4 text-[22px] font-normal text-acr-ink">
@@ -30,11 +35,15 @@ export function ElerhetosegekLap({ cim }: { cim: string }) {
           </h2>
           <dl className="flex flex-col gap-5 text-[15px] text-acr-ink">
             <div>
-              <dt className="text-[13px] text-acr-slate">Cím</dt>
+              <dt className="text-[13px] text-acr-slate">
+                {t("contactPage.address")}
+              </dt>
               <dd data-testid="elerhetoseg-cim">{CEG.cim}</dd>
             </div>
             <div>
-              <dt className="text-[13px] text-acr-slate">Telefon</dt>
+              <dt className="text-[13px] text-acr-slate">
+                {t("contactPage.phone")}
+              </dt>
               <dd>
                 <a
                   href={telHref(CEG.telefon)}
@@ -46,7 +55,9 @@ export function ElerhetosegekLap({ cim }: { cim: string }) {
               </dd>
             </div>
             <div>
-              <dt className="text-[13px] text-acr-slate">E-mail</dt>
+              <dt className="text-[13px] text-acr-slate">
+                {t("contactPage.email")}
+              </dt>
               <dd>
                 <a
                   href={`mailto:${CEG.email}`}
@@ -58,13 +69,15 @@ export function ElerhetosegekLap({ cim }: { cim: string }) {
               </dd>
             </div>
             <div>
-              <dt className="text-[13px] text-acr-slate">Nyitvatartás</dt>
+              <dt className="text-[13px] text-acr-slate">
+                {t("contactPage.openingHours")}
+              </dt>
               <dd>
                 <ul
                   className="flex flex-col gap-1"
                   data-testid="elerhetoseg-nyitvatartas"
                 >
-                  {CEG.nyitvatartas.map((sor) => (
+                  {nyitvatartas.map((sor) => (
                     <li key={sor}>{sor}</li>
                   ))}
                 </ul>

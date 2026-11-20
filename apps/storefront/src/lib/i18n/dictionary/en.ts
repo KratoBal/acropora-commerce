@@ -458,6 +458,15 @@ export const en: Dictionary = {
     legalWarranty: "Information on warranty rights",
     legalCookies: "Cookie notice",
   },
+  contactPage: {
+    title: "Contact",
+    metaDescription:
+      "Contact details of Acropora Kft.: address, phone number, e-mail address and opening hours.",
+    address: "Address",
+    phone: "Phone",
+    email: "Email",
+    openingHours: "Opening hours",
+  },
   footer: {
     openingHours: "Opening hours:",
     rights: "© {year} {name}. All rights reserved.",

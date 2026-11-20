@@ -468,6 +468,16 @@ export const hu = {
     legalWarranty: "Tájékoztató a szavatossági jogokról",
     legalCookies: "Süti tájékoztató",
   },
+  /** Az Elérhetőségek oldal (a lábléc "Contact" linkje): a címkék és a lap címe; a cég adatai (`CEG`) nem szótár-szövegek. */
+  contactPage: {
+    title: "Elérhetőségek",
+    metaDescription:
+      "Az Acropora Kft. elérhetőségei: cím, telefonszám, e-mail-cím és nyitvatartás.",
+    address: "Cím",
+    phone: "Telefon",
+    email: "E-mail",
+    openingHours: "Nyitvatartás",
+  },
   footer: {
     openingHours: "Nyitvatartás:",
     rights: "© {year} {name}. Minden jog fenntartva.",

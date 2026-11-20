@@ -20,7 +20,7 @@ afterEach(cleanup)
  */
 describe("az Elérhetőségek oldal", () => {
   it("a lábléc céges adatait mutatja, kattintható telefonnal és e-maillel", () => {
-    render(<ElerhetosegekLap cim="Elérhetőségek" />)
+    render(<ElerhetosegekLap />)
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Elérhetőségek",
     )
@@ -50,5 +50,44 @@ describe("az Elérhetőségek oldal", () => {
     expect(
       REGI_BOLT_HIVATKOZASOK.some((h) => h.cimke === "Elérhetőségek"),
     ).toBe(false)
+  })
+
+  /*
+    AZ ELERHETOSEGEK OLDALA ANGOLUL IS ANGOL (kirakat angol nezete, 2026-11-19): a cimke es a lap cime magyar maradt az angol oldalon, a
+    nyitvatartas magyar napnevekkel. MI PIROSIT: ha az angol oldal magyar cimkét vagy címet kap; ha a nyitvatartas az angol oldalon magyar
+    napneveket ir; ha a magyar oldal valtozik; ha a ceg adata (cim, telefon, e-mail) fordulna (az adat marad).
+  */
+  it("angolul a címkék, a lap címe és a nyitvatartás angol, a cég adatai maradnak", () => {
+    render(<ElerhetosegekLap locale="en" />)
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "Contact",
+    )
+    const szoveg = document.body.textContent ?? ""
+    for (const cimke of ["Address", "Phone", "Email", "Opening hours"])
+      expect(szoveg).toContain(cimke)
+    expect(
+      Array.from(
+        screen.getByTestId("elerhetoseg-nyitvatartas").querySelectorAll("li"),
+      ).map((s) => s.textContent),
+    ).toEqual(["Tue-Fri 10-18", "Sat 10-14", "Sun-Mon Closed"])
+    // az adat marad: a cím, a telefon és az e-mail ugyanaz, mint magyarul
+    expect(screen.getByTestId("elerhetoseg-cim").textContent).toBe(CEG.cim)
+    expect(screen.getByTestId("elerhetoseg-telefon").textContent).toBe(
+      CEG.telefon,
+    )
+    // a cég címén (Pesti Gábor utca) kívül nincs magyar betű az oldalon
+    expect(szoveg.replace(CEG.cim, "").replace(CEG.nev, "")).not.toMatch(
+      /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/,
+    )
+  })
+
+  it("magyarul a címkék és a nyitvatartás a régiek", () => {
+    render(<ElerhetosegekLap locale="hu" />)
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "Elérhetőségek",
+    )
+    const szoveg = document.body.textContent ?? ""
+    for (const cimke of ["Cím", "Telefon", "E-mail", "Nyitvatartás"])
+      expect(szoveg).toContain(cimke)
   })
 })
