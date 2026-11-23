@@ -136,14 +136,14 @@ importers:
         specifier: ^2.2.0
         version: 2.2.10(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
       '@medusajs/icons':
-        specifier: 2.22.7
-        version: 2.22.7(react@19.0.5)
+        specifier: 2.23.0
+        version: 2.23.0(react@19.0.5)
       '@medusajs/js-sdk':
-        specifier: 2.22.7
-        version: 2.22.7
+        specifier: 2.23.0
+        version: 2.23.0
       '@medusajs/ui-preset':
-        specifier: 2.22.7
-        version: 2.22.7(tailwindcss@3.4.19(yaml@2.9.0))
+        specifier: 2.23.0
+        version: 2.23.0(tailwindcss@3.4.19(yaml@2.9.0))
       '@radix-ui/react-accordion':
         specifier: ^1.3.1
         version: 1.3.1(@types/react-dom@19.0.5(@types/react@19.0.5))(@types/react@19.0.5)(react-dom@19.0.5(react@19.0.5))(react@19.0.5)
@@ -188,8 +188,8 @@ importers:
         version: 2.9.0
     devDependencies:
       '@medusajs/types':
-        specifier: 2.22.7
-        version: 2.22.7(express@4.22.2)(ioredis@5.11.1)(vite@7.3.8(@types/node@17.0.21)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))
+        specifier: 2.23.0
+        version: 2.23.0(vite@7.3.8(@types/node@17.0.21)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))
       '@testing-library/dom':
         specifier: ^10.4.2
         version: 10.4.2
@@ -1931,6 +1931,11 @@ packages:
     peerDependencies:
       react: ^18.3.1 || ^19.0.0
 
+  '@medusajs/icons@2.23.0':
+    resolution: {integrity: sha512-j393Ef3fLggGGifoLUV82IOKYPQAxsPaUP4St5t9rzGVOVD56KQauDjm6qdz96gEmXnDjLtD92dNsogB7K3Icw==}
+    peerDependencies:
+      react: ^18.3.1 || ^19.0.0
+
   '@medusajs/index@2.22.7':
     resolution: {integrity: sha512-sklPeKQP8flW9ojK6Pw5yqVl7sc4sEGUhdSIcXqFDArOh2jRI2xD91S5wP+532Gno+NTB70AU1W2Wxz+YrLT1g==}
     engines: {node: '>=22.22.0'}
@@ -1945,6 +1950,10 @@ packages:
 
   '@medusajs/js-sdk@2.22.7':
     resolution: {integrity: sha512-YPPtYAM17ZOCJkCFkZVAXnIsGNAPYUwzdIktlR20UFvU5hNrhLMzvBQk+L+VmT4fmYe42GVTcR+jm8LN36mOTw==}
+    engines: {node: '>=22.22.0'}
+
+  '@medusajs/js-sdk@2.23.0':
+    resolution: {integrity: sha512-OMYC2uYMHcK3/sQk1+5hNi6HE6+NUKYp2VKFI6NUjKBxVyftKPKwKtQW1mca649MSNK7CBbd2ZXOq6QwvbZtDg==}
     engines: {node: '>=22.22.0'}
 
   '@medusajs/link-modules@2.22.7':
@@ -2153,8 +2162,23 @@ packages:
       vite:
         optional: true
 
-  '@medusajs/ui-preset@2.22.7':
-    resolution: {integrity: sha512-g058iLq6ww4MdteBV3l2Ob8uWc1Xt4TaLM/tQBdICE5X9Dnehrqd+vXjmshHlY5sLr4+TY8zQH+xYVHv615fCg==}
+  '@medusajs/types@2.23.0':
+    resolution: {integrity: sha512-3lw+AlkgE0JKrkBlBr1nH667lTt0zIAtzXP7TA6pExWu75aRTqKvpxFbu3xPbJz+FTEm/iTIbpQ5+fI4gFF4OA==}
+    engines: {node: '>=22.22.0'}
+    peerDependencies:
+      express: ^5.3.0
+      redis: ^6.3.0
+      vite: '>=5'
+    peerDependenciesMeta:
+      express:
+        optional: true
+      redis:
+        optional: true
+      vite:
+        optional: true
+
+  '@medusajs/ui-preset@2.23.0':
+    resolution: {integrity: sha512-ZtP6+T4K0RB8sKt+pesY2ZLg8/3DeqTdhqecmZy5R/XCNc+L7bvILdhi+5+cTsJi1/9mu8tqVrW/WblFHViKpQ==}
     peerDependencies:
       tailwindcss: ^3.4.3 || ^4.0.0
 
@@ -10545,7 +10569,7 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  '@medusajs/icons@2.22.7(react@19.0.5)':
+  '@medusajs/icons@2.23.0(react@19.0.5)':
     dependencies:
       react: 19.0.5
 
@@ -10558,6 +10582,11 @@ snapshots:
       '@medusajs/framework': 2.22.7(@medusajs/cli@2.22.7(@types/node@20.19.43))(@types/node@20.19.43)(ioredis@5.11.1)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))(zod@4.6.7)
 
   '@medusajs/js-sdk@2.22.7':
+    dependencies:
+      fetch-event-stream: 0.1.6
+      qs: 6.17.1
+
+  '@medusajs/js-sdk@2.23.0':
     dependencies:
       fetch-event-stream: 0.1.6
       qs: 6.17.1
@@ -10899,15 +10928,13 @@ snapshots:
       ioredis: 5.11.1
       vite: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
 
-  '@medusajs/types@2.22.7(express@4.22.2)(ioredis@5.11.1)(vite@7.3.8(@types/node@17.0.21)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))':
+  '@medusajs/types@2.23.0(vite@7.3.8(@types/node@17.0.21)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))':
     dependencies:
       bignumber.js: 11.1.5
     optionalDependencies:
-      express: 4.22.2
-      ioredis: 5.11.1
       vite: 7.3.8(@types/node@17.0.21)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
 
-  '@medusajs/ui-preset@2.22.7(tailwindcss@3.4.19(yaml@2.9.0))':
+  '@medusajs/ui-preset@2.23.0(tailwindcss@3.4.19(yaml@2.9.0))':
     dependencies:
       tailwindcss: 3.4.19(yaml@2.9.0)
       tailwindcss-animate: 1.0.7(tailwindcss@3.4.19(yaml@2.9.0))
