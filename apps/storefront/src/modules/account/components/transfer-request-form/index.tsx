@@ -3,26 +3,25 @@ import { createTransferRequest } from "@lib/data/orders"
 import { useTranslate } from "@lib/i18n/use-translate"
 import { CheckCircleMiniSolid, XCircleSolid } from "@medusajs/icons"
 import { Heading, IconButton, Input, Text } from "@modules/common/components/ui"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 // TODO: Re-add Toaster component when needed
 import { SubmitButton } from "@modules/checkout/components/submit-button"
-import { useEffect, useState } from "react"
 
 export default function TransferRequestForm() {
   const t = useTranslate()
-  const [showSuccess, setShowSuccess] = useState(false)
-
   const [state, formAction] = useActionState(createTransferRequest, {
     success: false,
     error: null,
     order: null,
   })
 
-  useEffect(() => {
-    if (state.success && state.order) {
-      setShowSuccess(true)
-    }
-  }, [state.success, state.order])
+  // The success box mirrors the LAST submission: a failed one after a success
+  // takes it away (it used to stick, with an empty order id, next to the error).
+  // Closing remembers WHICH result was closed, so the next success shows again.
+  const [bezartEredmeny, setBezartEredmeny] = useState<typeof state | null>(
+    null,
+  )
+  const showSuccess = state.success && !!state.order && bezartEredmeny !== state
 
   return (
     <div className="flex flex-col gap-y-4 w-full">
@@ -93,7 +92,10 @@ export default function TransferRequestForm() {
               </Text>
             </div>
           </div>
-          <IconButton className="h-fit" onClick={() => setShowSuccess(false)}>
+          <IconButton
+            className="h-fit"
+            onClick={() => setBezartEredmeny(state)}
+          >
             <XCircleSolid className="w-4 h-4 text-neutral-500" />
           </IconButton>
         </div>
