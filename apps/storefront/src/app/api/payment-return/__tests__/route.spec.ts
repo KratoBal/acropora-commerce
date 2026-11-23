@@ -72,9 +72,73 @@ describe("GET /api/payment-return", () => {
     expect(stripeVisszarendezesHivas).not.toHaveBeenCalled()
     expect(revalidateTag).not.toHaveBeenCalled()
     expect(placeOrder).not.toHaveBeenCalled()
-    const cel = new URL(valasz.headers.get("location") ?? "")
+    const cel = new URL(
+      valasz.headers.get("location") ?? "",
+      "https://shop.example",
+    )
     expect(cel.pathname).toBe("/hu/checkout")
     expect(cel.searchParams.get("step")).toBe("payment")
     expect(cel.searchParams.get("ellenorzes")).toBe("1")
+  })
+
+  /*
+    A LOCATION A PROXY MOGOTT IS A VEVO HOSZTJARA MUTAT (kartya a9813f18). A route handlerben a `req.nextUrl.origin` a kontener sajat cime (`https://localhost:8000`
+    a teszt kirakaton), ezert az abszolut atiranyitas a vevot oda kuldte. MI PIROSIT: egy ag abszolut Location-t ad, vagy a Location a kontener cimet tartalmazza; a
+    country_code egy `//evil.example` alaku ertekkel protokoll-relativ (nyilt) atiranyitast csinal.
+  */
+  const proxyMogotti = (
+    status: string | null,
+    kulcs = "cart_id=cart-1&payment_intent=pi_1&payment_intent_client_secret=cs_1",
+    orszag = "hu",
+  ) =>
+    new NextRequest(
+      `https://localhost:8000/api/payment-return?${kulcs}&country_code=${encodeURIComponent(orszag)}${status ? `&redirect_status=${status}` : ""}`,
+      {
+        headers: {
+          host: "localhost:8000",
+          "x-forwarded-host": "shop.example.test",
+          "x-forwarded-proto": "https",
+        },
+      },
+    )
+
+  it("proxy mogott mind a harom atiranyitas RELATIV Location, a kontener cimet nem tartalmazza", async () => {
+    const elutasitott = await GET(
+      proxyMogotti(
+        "failed",
+        "payment_intent=pi_1&payment_intent_client_secret=cs_1",
+      ),
+    ) // cart_id nelkul
+    const sikertelen = await GET(proxyMogotti("failed"))
+    const sikeres = await GET(proxyMogotti("succeeded"))
+    for (const valasz of [elutasitott, sikertelen, sikeres]) {
+      expect(valasz.status).toBe(307)
+      const cel = valasz.headers.get("location") ?? ""
+      expect(cel.startsWith("/hu/"), cel).toBe(true)
+      expect(cel, cel).not.toMatch(/localhost|:\/\//)
+    }
+    expect(elutasitott.headers.get("location")).toBe(
+      "/hu/cart?error=payment_failed",
+    )
+    expect(sikertelen.headers.get("location")).toContain(
+      "/hu/checkout?step=payment",
+    )
+  })
+
+  it("a country_code csak ket kisbetu lehet: egy //evil.example alaku ertek nem lesz protokoll-relativ atiranyitas", async () => {
+    for (const rossz of [
+      "//evil.example",
+      "/evil.example",
+      "\\\\evil.example",
+      "hu/../..",
+      "HU",
+      "hun",
+      "",
+    ]) {
+      const valasz = await GET(proxyMogotti("failed", undefined, rossz))
+      const cel = valasz.headers.get("location") ?? ""
+      expect(cel, rossz).not.toMatch(/^\/\/|^\/\\|evil/)
+      expect(cel.startsWith("/checkout?"), `${rossz} -> ${cel}`).toBe(true)
+    }
   })
 })
