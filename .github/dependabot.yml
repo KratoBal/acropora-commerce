@@ -50,6 +50,14 @@ updates:
       - dependency-name: "@medusajs/*"
         update-types:
           - "version-update:semver-minor"
+    # THE STOREFRONT STAYS ON VITE 7 (2026-11-23, #861). The backend's admin moved to vite 8 with Medusa 2.23, the storefront keeps vite 7 as an
+    # explicit devDependency: with vite 8 its vitest parsed with vite 8's compiler, which ignores the esbuild jsx option, and 183 spec files
+    # failed. Dependabot's #854 (vite 7.3.6 to 8.3.8) had nothing left against main after #861, and a new one would move the storefront.
+    # An ignore entry names a package for the whole workspace ("/" is one entry), so this also holds the backend's next vite major: a major
+    # stays a human decision here anyway. REMOVE THIS ENTRY when the storefront's specs pass under vite 8 (vitest with vite 8 in one PR).
+      - dependency-name: "vite"
+        update-types:
+          - "version-update:semver-major"
     groups:
       medusa:
         patterns:
