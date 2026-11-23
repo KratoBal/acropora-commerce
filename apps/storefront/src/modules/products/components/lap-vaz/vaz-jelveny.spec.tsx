@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
  */
 vi.mock("next/image", () => ({
   default: (props: Record<string, unknown>) => (
+    // eslint-disable-next-line @next/next/no-img-element -- a stand-in for next/image in a test
     <img alt={String(props.alt ?? "")} src={String(props.src ?? "")} />
   ),
   // FE-3: a belyegsor `getImageProps`-szal epul; ugyanaz az atengedo alak

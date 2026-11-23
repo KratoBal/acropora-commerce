@@ -29,6 +29,7 @@ export default function KapcsolatKartya({
       <div className="aspect-[32/30] w-full overflow-hidden bg-acr-white">
         {/* termekkep, tehat a neve az alt-ja (Balazs 2026-10-07, 5. pont) */}
         {kep ? (
+          // eslint-disable-next-line @next/next/no-img-element -- the attributes come from getImageProps (Next's documented route to a plain <img>), so the image is optimised
           <img
             // FE-3: a Next optimalizaloja; az arany a doboze (32/30)
             {...getImageProps({
