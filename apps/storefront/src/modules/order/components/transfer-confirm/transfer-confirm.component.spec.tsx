@@ -88,6 +88,26 @@ describe("TransferConfirm", () => {
     expect(adat.elfogad).toHaveBeenCalledTimes(2)
   })
 
+  it("ha maga a szerver-akcio hivasa dob (halozati hiba), a vevo hibat lat, es ujra probalhatja", async () => {
+    adat.elfogad
+      .mockRejectedValueOnce(new Error("Failed to fetch"))
+      .mockResolvedValueOnce({ success: true, error: null })
+    render(<TransferConfirm id="order_1" token="tok_1" mode="accept" />)
+    fireEvent.click(screen.getByTestId("transfer-gomb"))
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Az átadás elfogadása nem sikerült/),
+      ).toBeInTheDocument(),
+    )
+    expect(screen.getByText(/Nem kaptunk választ/)).toBeInTheDocument()
+    expect(screen.getByTestId("transfer-gomb")).not.toBeDisabled()
+    fireEvent.click(screen.getByTestId("transfer-gomb"))
+    await waitFor(() =>
+      expect(screen.getByTestId("transfer-kesz")).toBeInTheDocument(),
+    )
+    expect(adat.elfogad).toHaveBeenCalledTimes(2)
+  })
+
   it("folyamatban levo hivas alatt a masodik kattintas nem hiv ujra", async () => {
     let tovabb!: (v: { success: boolean; error: null }) => void
     adat.elfogad.mockReturnValue(
