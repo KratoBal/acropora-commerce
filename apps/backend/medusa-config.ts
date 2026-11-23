@@ -42,6 +42,16 @@ module.exports = defineConfig({
     disable: process.env.DISABLE_MEDUSA_ADMIN === "true",
   },
 
+  plugins: [
+    // @medusajs/cloud (in every project since 2.22.7) makes the SERVER fetch
+    // https://api.prod.medusajs.cloud/v1/announcements when an admin screen asks for the
+    // "What's new" list: a call to a third party we did not make before. It is switched off:
+    // defineConfig takes the plugin out of the list when `disabled` is set (its admin widgets,
+    // routes and module are then not loaded). Measured in @medusajs/utils define-config.js and
+    // @medusajs/cloud's service.js (2026-11-23); a spec reads this file.
+    { resolve: "@medusajs/cloud", options: { disabled: true } },
+  ],
+
   modules: [
     {
       resolve: "@medusajs/medusa/fulfillment",
