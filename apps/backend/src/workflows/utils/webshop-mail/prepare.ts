@@ -67,13 +67,14 @@ export type OrderMailDeps = {
   /**
    * The kinds of live animal in an order (V2.6), for the OS's acclimatisation
    * section. Only the order confirmation asks for them. Never rejects: a read
-   * that fails gives none, so the confirmation is never held back by it.
+   * that fails gives none, so the confirmation is never held back by it. A
+   * rejection or a throw is caught in prepare as well (`optionalRead`).
    */
   livestockKinds?(orderId: string): Promise<LivestockKind[]>
   /**
    * The company of a company purchase (card aba7120c), for the confirmation's billing sentence; null for a private purchase.
-   * Never rejects, like `livestockKinds`: a failed read sends the confirmation without the sentence. A rejection is caught below
-   * as well, so the confirmation does not depend on that promise.
+   * Never rejects, like `livestockKinds`: a failed read sends the confirmation without the sentence. A rejection or a throw is
+   * caught in prepare as well (`optionalRead`), so the confirmation does not depend on that promise.
    */
   buyerCompany?(orderId: string): Promise<BuyerCompany | null>
 }
@@ -100,6 +101,19 @@ export const legalVersionOf = (metadata: Record<string, unknown> | null | undefi
   return version || null
 }
 
+/**
+ * A READ THE CONFIRMATION NEVER WAITS ON (barracuda, #821 and #865). "Never rejects" is the real dependency's promise, not
+ * prepare's: a rejection, or a throw before any promise is returned, becomes null, and the confirmation goes without that
+ * part. prepare has no logger, so the reason goes to the console, with the order id.
+ */
+const optionalRead = <T>(orderId: string, what: string, read: () => Promise<T>): Promise<T | null> =>
+  Promise.resolve()
+    .then(read)
+    .catch((error: unknown) => {
+      console.warn(`Order ${orderId}: the ${what} read failed, the confirmation goes without it (${error instanceof Error ? error.message : String(error)})`)
+      return null
+    })
+
 export const prepareOrderPlacedMail = async (
   orderId: string,
   deps: OrderMailDeps,
@@ -125,16 +139,12 @@ export const prepareOrderPlacedMail = async (
   const to = orders[0].email?.trim()
   if (!to) return { action: "skip", reason: "no_email" }
 
-  const kinds = await Promise.all(orders.map((order) => (deps.livestockKinds ? deps.livestockKinds(order.id) : null)))
+  const { livestockKinds, buyerCompany } = deps
+  const kinds = await Promise.all(
+    orders.map((order) => (livestockKinds ? optionalRead(order.id, "livestock kinds", () => livestockKinds(order.id)) : null))
+  )
   // the billing address is the cart's: both halves of a mixed cart carry the same company, the main order's is read
-  // guarded here too (barracuda, #821): "never rejects" is the real dependency's promise, not this function's; a company read
-  // that throws sends the confirmation without the billing sentence. prepare has no logger, so the reason goes to the console.
-  const company = deps.buyerCompany
-    ? await deps.buyerCompany(orderId).catch((error: unknown) => {
-        console.warn(`Order ${orderId}: the buyer company read failed, the confirmation goes without it (${error instanceof Error ? error.message : String(error)})`)
-        return null
-      })
-    : null
+  const company = buyerCompany ? await optionalRead(orderId, "buyer company", () => buyerCompany(orderId)) : null
   const mailOrders = orders.map(({ id, email: _email, ...order }, index) => ({
     ...order,
     pickup: id !== orderId,
