@@ -51,7 +51,7 @@ describe("PaymentWrapper, vegyes kosár", () => {
         amount: 2_195_000,
         currency: "huf",
         captureMethod: "manual",
-        paymentMethodTypes: ["card"],
+        allowedPaymentMethodTypes: ["card"],
         // a Foundations megjelenés, magyarul (`stripe-megjelenes.ts`)
         ...stripeElementsBeallitas("commerce"),
       },

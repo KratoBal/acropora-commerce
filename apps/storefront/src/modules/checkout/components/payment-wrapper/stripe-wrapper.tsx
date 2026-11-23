@@ -75,7 +75,7 @@ export default StripeWrapper
 
 /**
  * A HALASZTOTT KÁRTYAMEZŐ: Elements PaymentIntent nélkül (a `@stripe/stripe-js`
- * 8.11 `StripeElementsOptionsMode` alakja). Az intent a leadáskor készül
+ * 10.3 `StripeElementsOptionsMode` alakja). Az intent a leadáskor készül
  * (`stripe-start`), ugyanerre az összegre, csak kártyára, kézi levonással;
  * a megerősítés a `clientSecret`-tel megy (`StripeKozosGomb`).
  */
@@ -97,7 +97,7 @@ export const StripeHalasztott: React.FC<{
           currency: penznem.toLowerCase(),
           captureMethod: "manual",
           // a kartya: az Apple Pay es a Google Pay is ezen a tipuson fut
-          paymentMethodTypes: ["card"],
+          allowedPaymentMethodTypes: ["card"],
           ...stripeElementsBeallitas(vilag, locale),
         }}
       >
