@@ -50,6 +50,33 @@ describe("a függőség-figyelés konfigja", () => {
     expect(konfig()).not.toMatch(/"major"/)
   })
 
+  it("a TypeScript fő verziója ki van zárva (a 7-es natív fordítót a Next és a Medusa CLI nem ismeri)", () => {
+    const k = konfig()
+    const ignore = k.slice(k.indexOf("ignore:"), k.indexOf("groups:"))
+    expect(k.indexOf("ignore:")).toBeGreaterThan(-1)
+    expect(ignore).toMatch(/dependency-name:\s*"typescript"/)
+    expect(ignore).toMatch(/"version-update:semver-major"/)
+  })
+
+  it("a Medusa-csomagok minor frissítése ki van zárva (a 2.23.0 tervezett, külön mért frissítés; a patch marad)", () => {
+    const k = konfig()
+    const ignore = k.slice(k.indexOf("ignore:"), k.indexOf("groups:"))
+    const bejegyzes = ignore.slice(
+      ignore.indexOf('dependency-name: "@medusajs/*"'),
+    )
+    expect(ignore).toMatch(/dependency-name:\s*"@medusajs\/\*"/)
+    expect(bejegyzes).toMatch(/"version-update:semver-minor"/)
+    expect(bejegyzes).not.toMatch(/"version-update:semver-patch"/)
+  })
+
+  it("a vite fő verziója ki van zárva (a kirakat vite 7-en marad: vite 8 alatt a specjei nem fordulnak)", () => {
+    const k = konfig()
+    const ignore = k.slice(k.indexOf("ignore:"), k.indexOf("groups:"))
+    const bejegyzes = ignore.slice(ignore.indexOf('dependency-name: "vite"'))
+    expect(ignore).toMatch(/dependency-name:\s*"vite"/)
+    expect(bejegyzes).toMatch(/"version-update:semver-major"/)
+  })
+
   it("az audit-szkript a gyökér package.json-ban áll", () => {
     const csomag = JSON.parse(
       readFileSync(join(GYOKER, "package.json"), "utf8"),

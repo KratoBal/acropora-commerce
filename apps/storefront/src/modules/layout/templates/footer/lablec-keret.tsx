@@ -1,5 +1,6 @@
 import Image from "next/image"
 
+import { nyitvatartasNyelven } from "@lib/ceg"
 import { translator } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { STORE_NAME } from "@lib/store"
@@ -61,6 +62,7 @@ const ALSO_LOGOK = [
  */
 export function LablecKeret({ lablec, locale = "hu" }: LablecKeretProps) {
   const t = translator(locale)
+  const nyitvatartas = nyitvatartasNyelven(locale)
   return (
     /*
       A LABLEC SIKJA A TERV TOKENJEN ALL, NEM A STARTER OSZTALYAN.
@@ -244,9 +246,9 @@ export function LablecKeret({ lablec, locale = "hu" }: LablecKeretProps) {
               data-testid="footer-nyitvatartas"
             >
               <span>
-                {t("footer.openingHours")} {CEG.nyitvatartas[0]}
+                {t("footer.openingHours")} {nyitvatartas[0]}
               </span>
-              {CEG.nyitvatartas.slice(1).map((sor) => (
+              {nyitvatartas.slice(1).map((sor) => (
                 <span key={sor}>{sor}</span>
               ))}
             </div>

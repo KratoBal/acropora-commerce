@@ -10,17 +10,10 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import CartButton from "@modules/layout/components/cart-button"
 import { KosarLink } from "@modules/layout/components/cart-dropdown/kosar-link"
 import { MobilMenu } from "@modules/layout/templates/nav/mobil-menu"
-import MintaJelzo from "@modules/kezdolap/components/minta-jelzo"
+import { InfoSav } from "./info-sav"
 import type { Szovegek } from "@modules/kezdolap/szovegek"
 import { feloldatlanKategoriak, menuPontok } from "./menu-adat"
 import { KezdolapMenu } from "./menu"
-
-const SAV_KULCSOK = [
-  "fejlec.sav.1",
-  "fejlec.sav.2",
-  "fejlec.sav.3",
-  "fejlec.sav.4",
-]
 
 /**
  * A KEZDOLAP FEJLECE A CLAUDE DESIGN TERV SZERINT (Balazs, 2026-10-20: "a menu
@@ -59,7 +52,6 @@ export default async function KezdolapFejlec({
   const locale = localeOf(countryCode)
   const t = translator(locale)
   const mobilPontok = fejlecMenuPontok(menuAdat.gyokerek, t)
-  const mintaSav = SAV_KULCSOK.some((k) => s.minta(k))
   const kereso = s.szoveg("fejlec.kereso")
 
   return (
@@ -72,28 +64,7 @@ export default async function KezdolapFejlec({
         style={{ color: "var(--kl-szoveg)", background: "var(--kl-lap)" }}
         data-testid="kl-fejlec"
       >
-        <div
-          className="hidden text-[13px] tracking-[0.01em] small:block"
-          style={{ background: "var(--kl-navy-mely)", color: "#DCE7EF" }}
-          data-testid="kl-info-sav"
-        >
-          <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-6 px-16 py-[10px]">
-            <div className="flex gap-7">
-              <span>{s.szoveg("fejlec.sav.1")}</span>
-              <span>{s.szoveg("fejlec.sav.2")}</span>
-            </div>
-            <div className="flex items-center gap-6">
-              <span>{s.szoveg("fejlec.sav.3")}</span>
-              <span
-                className="font-semibold"
-                style={{ color: "var(--kl-lap)" }}
-              >
-                {s.szoveg("fejlec.sav.4")}
-              </span>
-              {mintaSav ? <MintaJelzo mit="infoBar" /> : null}
-            </div>
-          </div>
-        </div>
+        <InfoSav s={s} />
 
         <div className="border-b" style={{ borderColor: "var(--kl-keret)" }}>
           <div className="mx-auto flex h-[84px] w-full max-w-[1440px] items-stretch gap-6 px-4 small:gap-12 small:px-16">

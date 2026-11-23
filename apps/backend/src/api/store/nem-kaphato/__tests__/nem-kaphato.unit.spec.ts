@@ -46,10 +46,66 @@ describe("a jeloltek tiszta dontese", () => {
     expect(
       elsodlegesKategoria({ primary_category_id: "pcat_1" }, [masik, KAT]),
     ).toEqual(KAT);
-    expect(elsodlegesKategoria({}, [KAT])).toBeNull();
+    // without a usable primary the deepest own category stands in (A6, 2026-11-19); with none at all, none
+    expect(elsodlegesKategoria({}, [KAT])).toEqual(KAT);
     expect(
       elsodlegesKategoria({ primary_category_id: "pcat_9" }, [KAT]),
-    ).toBeNull();
+    ).toEqual(KAT);
+    expect(elsodlegesKategoria({}, [])).toBeNull();
+  });
+
+  /*
+    A KIFUTOTT UNAS-TERMEKNEK NINCS primary_category_id (A6 meres, 2026-11-19: mind a 11-nel ures). MI PIROSIT: a
+    gyoker ("Termékek") nyer a melyebb sajat kategoria ellen; a lista sorrendje dont; egyenlo melysegnel nem a handle.
+  */
+  it("elsodleges nelkul a legmelyebb sajat kategoria, sorrendtol fuggetlenul", () => {
+    const gyoker = { id: "pcat_root", name: "Termékek", handle: "termekek", parent_category_id: null };
+    const karbantartas = {
+      id: "pcat_kb",
+      name: "Akváriumkarbantartás, eszközök",
+      handle: "akvariumkarbantartas-eszkozok",
+      parent_category_id: "pcat_root",
+    };
+    const tisztito = { id: "pcat_t", name: "Tisztítók", handle: "tisztitok", parent_category_id: "pcat_kb" };
+    for (const lista of [
+      [gyoker, karbantartas, tisztito],
+      [tisztito, gyoker, karbantartas],
+      [karbantartas, tisztito, gyoker],
+    ])
+      expect(elsodlegesKategoria({}, lista)?.handle).toBe("tisztitok");
+    // equal depth: the handle's alphabetical order decides, whatever the list order
+    const a = { id: "pcat_a", name: "A", handle: "aramoltatok", parent_category_id: null };
+    const b = { id: "pcat_b", name: "B", handle: "csillagok", parent_category_id: null };
+    expect(elsodlegesKategoria({}, [b, a])?.handle).toBe("aramoltatok");
+    expect(elsodlegesKategoria({}, [a, b])?.handle).toBe("aramoltatok");
+  });
+
+  /*
+    CSAK A VEVONEK LATHATO KATEGORIA (barracuda, #834). MI PIROSIT: egy melyebb belso vagy inaktiv kategoria nyer (a
+    link 404-re vinne, a hasonlo termekek rejtett kategoriabol jonnenek); egy belso primary nyer a nyilvanos felett.
+  */
+  it("a melyebb rejtett kategoria helyett a nyilvanos, a primary is csak lathato lehet", () => {
+    const gyoker = { id: "pcat_root", name: "Termékek", handle: "termekek", parent_category_id: null };
+    const nyilvanos = { id: "pcat_pub", name: "Eszközök", handle: "eszkozok", parent_category_id: "pcat_root" };
+    const belso = {
+      id: "pcat_int",
+      name: "Belső",
+      handle: "belso",
+      parent_category_id: "pcat_pub",
+      is_internal: true,
+    };
+    const inaktiv = {
+      id: "pcat_off",
+      name: "Régi",
+      handle: "regi",
+      parent_category_id: "pcat_pub",
+      is_active: false,
+    };
+    expect(elsodlegesKategoria({}, [gyoker, nyilvanos, belso, inaktiv])?.handle).toBe("eszkozok");
+    expect(
+      elsodlegesKategoria({ primary_category_id: "pcat_int" }, [gyoker, nyilvanos, belso])?.handle,
+    ).toBe("eszkozok");
+    expect(elsodlegesKategoria({}, [belso, inaktiv])).toBeNull();
   });
 
   it("ket kulon lista, csak megveheto termekkel, a sajat termek nelkul, hatarral", () => {

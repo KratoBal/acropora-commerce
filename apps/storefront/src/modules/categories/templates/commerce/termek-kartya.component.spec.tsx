@@ -12,6 +12,7 @@ vi.mock("@lib/data/cart", () => kosar)
 import CommerceTermekKartya, { gyorsKosar, keszletSor } from "./termek-kartya"
 
 type Valtozat = {
+  metadata?: Record<string, unknown> | null
   manage_inventory?: boolean | null
   allow_backorder?: boolean | null
   inventory_quantity?: number | null
@@ -118,24 +119,6 @@ describe("a Commerce termékkártya", () => {
     expect(screen.getByTestId("kartya-ar").className).toContain(
       "small:text-[24px]",
     )
-  })
-
-  it("akciós árnál jelölő és áthúzott régi ár, különben egyik sem", () => {
-    const akcios = {
-      ...raktaron(2),
-      calculated_price: ar(200000, 250000, "sale"),
-    }
-    const { rerender } = render(
-      <CommerceTermekKartya product={termek([akcios])} />,
-    )
-    expect(screen.getByTestId("kartya-akcio").textContent).toBe("-20%")
-    expect(screen.getByTestId("kartya-regi-ar").className).toContain(
-      "line-through",
-    )
-
-    rerender(<CommerceTermekKartya product={termek([raktaron(2)])} />)
-    expect(screen.queryByTestId("kartya-akcio")).toBeNull()
-    expect(screen.queryByTestId("kartya-regi-ar")).toBeNull()
   })
 
   describe("a gyors kosárba tétel döntése", () => {

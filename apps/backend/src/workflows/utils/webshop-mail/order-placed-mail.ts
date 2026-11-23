@@ -98,8 +98,16 @@ export const renderOrderPlacedMail = (orders: MailOrder[], company: BuyerCompany
   if (mixed) {
     outro.push(`Összesen: ${forint(orders.reduce((sum, order) => sum + order.total, 0))}`)
   }
-  if (orders.some((order) => !order.pickup)) {
-    outro.push("Összekészítjük a rendelésedet. Követési szám csak a csomag feladása után lesz.")
+  const shipped = orders.filter((order) => !order.pickup)
+  if (shipped.length) {
+    // an advance bank transfer is packed only after the money has arrived: "we pack your order" would promise it too early
+    const transfer = shipped.filter((order) => order.payment === "BANK_TRANSFER")
+    outro.push(
+      transfer.length === shipped.length
+        ? "A rendelésedet a befizetés beérkezése után állítjuk össze. Követési szám csak a csomag feladása után lesz."
+        : "Összekészítjük a rendelésedet. Követési szám csak a csomag feladása után lesz." +
+            (transfer.length ? " Az előre utalással fizetett rendelést a befizetés beérkezése után állítjuk össze." : "")
+    )
   }
   if (orders.some((order) => order.pickup)) {
     outro.push("Az élő állatos rendelést a boltban veszed át.")

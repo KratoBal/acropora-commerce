@@ -95,6 +95,79 @@ export const storefrontRevalidateConfig = (
 type Logger = { info(message: string): void; warn(message: string): void };
 
 /**
+ * THE REVALIDATION MADE MEASURABLE (card 54bb3779, A4 on the test shop, 2026-11-19). A call that fails is only logged, and the
+ * test shop's run log cannot be read from outside, so "the cache did not empty" had three possible causes with no way to tell them
+ * apart: no event reached the subscriber, the call failed (a name that does not resolve, a wrong secret), or it succeeded and the
+ * storefront did not empty. The process keeps the last REQUEST (an event reached a subscriber) and the last ATTEMPT (a call went
+ * out, with its outcome: the HTTP status, or the error and its cause code). In memory only: a restart forgets them, and a table
+ * is not worth a diagnostic. The secret never enters it.
+ */
+export type RevalidateRequest = { at: string; source: string; configured: boolean };
+export type RevalidateAttempt = {
+  at: string;
+  trigger: string;
+  tags: string[];
+  ok: boolean;
+  http_status: number | null;
+  error: string | null;
+};
+
+const memory: { lastRequest: RevalidateRequest | null; lastAttempt: RevalidateAttempt | null } = {
+  lastRequest: null,
+  lastAttempt: null,
+};
+
+/** A subscriber received an event that asks for a revalidation (before the window, and whether or not it is configured). */
+export const noteRevalidateRequest = (
+  source: string,
+  env: NodeJS.ProcessEnv = process.env,
+  now: Date = new Date(),
+): void => {
+  memory.lastRequest = { at: now.toISOString(), source, configured: storefrontRevalidateConfig(env) !== null };
+};
+
+/** Test seam: the memory is the process's. */
+export const resetRevalidateMemory = (): void => {
+  memory.lastRequest = null;
+  memory.lastAttempt = null;
+};
+
+const describeError = (error: unknown, secret: string): string => {
+  const base = error instanceof Error ? error.message : String(error);
+  const cause = (error as { cause?: { code?: unknown; message?: unknown } } | null)?.cause;
+  const detail = typeof cause?.code === "string" ? cause.code : typeof cause?.message === "string" ? cause.message : "";
+  const text = detail ? `${base} (${detail})` : base;
+  // a secret never leaves in an error text, whatever put it there; and an address inside it is cut to scheme and host: undici's
+  // own TypeError for an address with credentials names the WHOLE address, password included
+  const withoutSecret = secret ? text.split(secret).join("***") : text;
+  return withoutSecret.replace(/(https?:\/\/)(?:[^\s/@]*@)?([^\s/?#]+)[^\s]*/gi, "$1$2").slice(0, 300);
+};
+
+/**
+ * WHAT THE ADMIN READS: whether the revalidation is switched on, which variable gave the address, the target's HOST (never its
+ * path, never the secret), and the two memories. `secret_set` says only that the secret exists.
+ */
+export const storefrontRevalidateStatus = (env: NodeJS.ProcessEnv = process.env) => {
+  const own = env.STOREFRONT_REVALIDATE_URL?.trim() ?? "";
+  const publicUrl = env.ACROPORA_STOREFRONT_URL?.trim() ?? "";
+  const base = own || publicUrl;
+  let host: string | null = null;
+  try {
+    host = base ? new URL(base).host : null;
+  } catch {
+    host = null;
+  }
+  return {
+    configured: storefrontRevalidateConfig(env) !== null,
+    url_source: own ? "STOREFRONT_REVALIDATE_URL" : publicUrl ? "ACROPORA_STOREFRONT_URL" : null,
+    target_host: host,
+    secret_set: Boolean(env.STOREFRONT_REVALIDATE_SECRET?.trim()),
+    last_request: memory.lastRequest,
+    last_attempt: memory.lastAttempt,
+  };
+};
+
+/**
  * `tags`: what to empty. `products` by default (prices, stock); the redirect
  * list's route sends `redirects` (SEO P0 PR 7a), which the storefront accepts
  * from PR 7c on (until then it answers 400, and the call is only logged).
@@ -104,7 +177,12 @@ export async function sendStorefrontRevalidate(
   logger: Logger,
   fetchImpl: typeof fetch = fetch,
   tags: readonly string[] = ["products"],
+  trigger: string = "unknown",
 ): Promise<boolean> {
+  const attempt = (ok: boolean, httpStatus: number | null, error: string | null) => {
+    memory.lastAttempt = { at: new Date().toISOString(), trigger, tags: [...tags], ok, http_status: httpStatus, error };
+    return ok;
+  };
   try {
     const response = await fetchImpl(config.url, {
       method: "POST",
@@ -119,17 +197,14 @@ export async function sendStorefrontRevalidate(
       logger.warn(
         `Storefront revalidate (${tags.join(", ")}) failed: HTTP ${response.status}.`,
       );
-      return false;
+      return attempt(false, response.status, null);
     }
     logger.info(`Storefront cache emptied (${tags.join(", ")}).`);
-    return true;
+    return attempt(true, response.status, null);
   } catch (error) {
-    logger.warn(
-      `Storefront revalidate (${tags.join(", ")}) failed: ${
-        error instanceof Error ? error.message : String(error)
-      }.`,
-    );
-    return false;
+    const text = describeError(error, config.secret);
+    logger.warn(`Storefront revalidate (${tags.join(", ")}) failed: ${text}.`);
+    return attempt(false, null, text);
   }
 }
 

@@ -459,7 +459,7 @@ describe("a fizetési jelvények", () => {
     ])
   })
 
-  it("mind az öt megvan: a jelvények a lista sorrendjében, egyforma magasan, a tartalék kép nélkül", () => {
+  it("mind a négy megvan: a jelvények a lista sorrendjében, egyforma magasan, a tartalék kép nélkül", () => {
     const ot = FIZETESI_JELVENYEK.map((j) => ({
       ...j,
       src: `/images/fizetes/${j.kulcs}.svg`,
@@ -470,12 +470,13 @@ describe("a fizetési jelvények", () => {
       ["Google Pay", "h-8"],
       ["Apple Pay", "h-8"],
       ["Mastercard", "h-8"],
-      ["Maestro", "h-8"],
       ["Visa", "h-8"],
     ])
   })
 
-  it("minden beállított jelvény-fájl létezik a public alatt, és a mai lista a Google Pay", () => {
+  // 2026-11-23 (acrobot 59625, 59629): az Apple Pay es a Mastercard hivatalos fajlja Balazs letoltesebol; a Visa forrasa nem
+  // jon at az egress-kapun, ezert a lablec meg a tartalek kepet mutatja (a fenti "amig egy is hianyzik" eset)
+  it("minden beállított jelvény-fájl létezik a public alatt, és a mai lista a Google Pay, az Apple Pay és a Mastercard", () => {
     const beallitott = FIZETESI_JELVENYEK.filter((j) => j.src !== null)
     for (const j of beallitott) {
       const fajl = readFileSync(
@@ -483,6 +484,12 @@ describe("a fizetési jelvények", () => {
       )
       expect(fajl.length, j.kulcs).toBeGreaterThan(0)
     }
-    expect(beallitott.map((j) => j.kulcs)).toEqual(["google-pay"])
+    expect(beallitott.map((j) => j.kulcs)).toEqual([
+      "google-pay",
+      "apple-pay",
+      "mastercard",
+    ])
+    // ma a lablec meg a tartalek kepet mutatja: a Visa hianyzik
+    expect(fizetesiLogok()).toEqual([{ ...FIZETESI_OPCIOK_KEP, mag: "h-12" }])
   })
 })

@@ -1,6 +1,7 @@
 "use client"
 import { RadioGroup } from "@headlessui/react"
 import { isStripeLike, paymentInfoMap } from "@lib/constants"
+import { ajandekkartyavalFizetve } from "@lib/util/ajandekkartya"
 import {
   type EngedelyezettFizetesiMod,
   engedelyezettFizetesiModok,
@@ -37,6 +38,7 @@ import { Button, clx } from "@modules/common/components/ui"
 import { HttpTypes } from "@medusajs/types"
 import {
   unstable_rethrow,
+  useParams,
   usePathname,
   useRouter,
   useSearchParams,
@@ -83,6 +85,7 @@ const Payment = ({
 }) => {
   const t = useTranslate()
   const locale = useLocale()
+  const { countryCode } = useParams()
   /*
     A FIZETES INDITASA ELOTT KET DOLOG A KOSARRA KERUL: a vevo nyelve (a
     levelek ezen mennek; hiba eseten nem allitja meg a fizetest, a rendeles
@@ -269,12 +272,8 @@ const Payment = ({
     ),
   }
 
-  const paidByGiftcard = !!(
-    (cart as unknown as Record<string, unknown>)?.gift_cards &&
-    ((cart as unknown as Record<string, unknown>)?.gift_cards as unknown[])
-      ?.length > 0 &&
-    cart?.total === 0
-  )
+  // a kártya mindent fizet: nincs fizetési lépés (495c0007; a starter `gift_cards` mezője a Medusa 2-ben nincs)
+  const paidByGiftcard = ajandekkartyavalFizetve(cart)
 
   const paymentReady =
     (activeSession && (cart?.shipping_methods?.length ?? 0) !== 0) ||
@@ -378,7 +377,7 @@ const Payment = ({
       return
     }
     ellenorzesFut.current = true
-    placeOrder()
+    placeOrder(undefined, String(countryCode))
       .then((eredmeny) => {
         if (!eredmeny.ok) {
           setError(hibaSzoveg(t, eredmeny))

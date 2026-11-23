@@ -12,6 +12,7 @@ import {
   normalizeCommerceSettingValue,
 } from "../modules/commerce-settings/definitions"
 import {
+  inExcludedCategory,
   toMerchantItem,
   type MerchantFeedContext,
   type MerchantFeedProduct,
@@ -94,8 +95,18 @@ export class MerchantFeedConfigError extends Error {}
  * record, the same ones the storefront sells in, so no new setting is needed.
  */
 export async function loadMerchantItems(
-  deps: { query: Query; brands: BrandReader; settings: FeedSettingsReader },
-  env: { storefrontUrl?: string; now?: Date }
+  deps: {
+    query: Query
+    brands: BrandReader
+    settings: FeedSettingsReader
+    logger?: { info(message: string): void }
+  },
+  env: {
+    storefrontUrl?: string
+    now?: Date
+    keepBackorder?: boolean
+    excludedCategoryHandles?: readonly string[]
+  }
 ): Promise<MerchantItem[]> {
   const storefrontUrl = env.storefrontUrl?.trim().replace(/\/+$/, "") ?? ""
   if (!/^https?:\/\//.test(storefrontUrl))
@@ -171,12 +182,39 @@ export async function loadMerchantItems(
     categories: await categoryTree(query),
     backorderLeadTimeDays: await backorderLeadTimeDays(deps.settings),
     now: env.now ?? new Date(),
+    keepBackorder: env.keepBackorder === true,
+    excludedCategoryHandles: new Set(env.excludedCategoryHandles ?? []),
+    exclusionCategories: await exclusionTree(query, env.excludedCategoryHandles ?? []),
   }
+  const left = products.filter((product) => inExcludedCategory(product, context))
+  if (left.length)
+    deps.logger?.info(
+      `merchant feed: ${left.length} products left out by the excluded categories (${[
+        ...context.excludedCategoryHandles!,
+      ].join(", ")})`
+    )
   return products.flatMap((product) =>
     (product.variants ?? [])
       .map((variant) => toMerchantItem(product, variant, context))
       .filter((item): item is MerchantItem => item !== null)
   )
+}
+
+/**
+ * THE FEEDS' EXCLUDED CATEGORIES (card 87f351a3; acrobot 56923). The live animals by default: the three roots of the
+ * shop's livestock tree. `MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES` overrides it (comma-separated handles), and `none`
+ * leaves nothing out, so a policy reading that says otherwise is a setting, not a code change.
+ */
+export const DEFAULT_FEED_EXCLUDED_CATEGORY_HANDLES = ["halak", "korallok", "gerinctelenek"] as const
+
+export function excludedCategoryHandlesFrom(env: Record<string, string | undefined>): string[] {
+  const raw = env.MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES?.trim()
+  if (!raw) return [...DEFAULT_FEED_EXCLUDED_CATEGORY_HANDLES]
+  if (raw.toLowerCase() === "none") return []
+  return raw
+    .split(",")
+    .map((handle) => handle.trim())
+    .filter(Boolean)
 }
 
 /** The default dependencies from the request scope. */
@@ -185,6 +223,7 @@ export function merchantFeedDeps(scope: MedusaContainer) {
     query: scope.resolve(ContainerRegistrationKeys.QUERY) as Query,
     brands: resolveBrandService(scope) as unknown as BrandReader,
     settings: scope.resolve(COMMERCE_SETTINGS_MODULE) as FeedSettingsReader,
+    logger: scope.resolve(ContainerRegistrationKeys.LOGGER) as { info(message: string): void },
   }
 }
 
@@ -211,12 +250,39 @@ export async function brandNames(
   return names
 }
 
+/**
+ * THE WHOLE TREE FOR THE EXCLUSION (barracuda, #832): internal and inactive categories too, so a live animal under a
+ * hidden sub-category is still caught. And every excluded handle must exist in it: a renamed or mistyped root would
+ * otherwise empty the exclusion silently and send the live animals out, so it stops the feed as a configuration error
+ * (503) instead. Not read when nothing is excluded.
+ */
+async function exclusionTree(
+  query: Query,
+  handles: readonly string[]
+): Promise<MerchantFeedContext["exclusionCategories"]> {
+  if (!handles.length) return undefined
+  const { data } = await query.graph({
+    entity: "product_category",
+    fields: ["id", "handle", "parent_category_id"],
+  })
+  const tree: NonNullable<MerchantFeedContext["exclusionCategories"]> = {}
+  for (const row of data as { id: string; handle?: string | null; parent_category_id: string | null }[])
+    tree[row.id] = { parentId: row.parent_category_id, ...(row.handle ? { handle: row.handle } : {}) }
+  const known = new Set(Object.values(tree).map((row) => row.handle))
+  const unknown = handles.filter((handle) => !known.has(handle))
+  if (unknown.length)
+    throw new MerchantFeedConfigError(
+      `MERCHANT_FEED_EXCLUDED_CATEGORY_HANDLES names categories the shop does not have (${unknown.join(", ")}): the feed would not leave them out.`
+    )
+  return tree
+}
+
 async function categoryTree(
   query: Query
 ): Promise<MerchantFeedContext["categories"]> {
   const { data } = await query.graph({
     entity: "product_category",
-    fields: ["id", "name", "parent_category_id"],
+    fields: ["id", "name", "handle", "parent_category_id"],
     // what the Store API hands the storefront: an internal or inactive
     // category's name is not for buyers (barracuda, #539)
     filters: { is_active: true, is_internal: false },
@@ -225,8 +291,13 @@ async function categoryTree(
   for (const row of data as {
     id: string
     name: string
+    handle?: string | null
     parent_category_id: string | null
   }[])
-    tree[row.id] = { name: row.name, parentId: row.parent_category_id }
+    tree[row.id] = {
+      name: row.name,
+      parentId: row.parent_category_id,
+      ...(row.handle ? { handle: row.handle } : {}),
+    }
   return tree
 }

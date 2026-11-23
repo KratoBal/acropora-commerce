@@ -208,28 +208,8 @@ export const SAJAT_HIVATKOZASOK: readonly LablecHivatkozas[] = [
  */
 export const REGI_BOLT_HIVATKOZASOK: readonly LablecHivatkozas[] = []
 
-/**
- * A CEG ADATAI, a bolt lablecebol betuere, EGY TUDATOS ELTERESSEL.
- *
- * A boltban "Nyitvatarás" all, egy hianyzo `t` betuvel. Itt javitva. Ez nem
- * elirás-javitas, hanem dontes, ezert all ki: a SAJAT cegunk sajat lablece,
- * nem idezet. Husegel a jogi szovegnek es az arnak tartozunk, ott az elteres
- * komoly. Egy hianyzo betu a nyitvatartas szoban nem az. (acrobot, 2026-09-08.)
- *
- * A TELEFONSZAM ALAKJA A BOLTE (`+36-20/267-6801`). A tervfajl ugyanezt a
- * szamot `+36 20 267 6801` alakban irja, a "Kerdezd a boltot" dobozban. Ugyanaz
- * a szam, ket irasmod -- a lablec forrasa a bolt, tehat a bolte all itt.
- *
- * A LABLECBEN FIX (Balazs, 2026-10-27, kirakat-lablec-kep): az OS nem irja
- * felul; "ha valtozik, mi irjuk at" -- itt, ebben a fajlban.
- */
-export const CEG = {
-  nev: "Acropora Kft.",
-  cim: "1106 Budapest, Pesti Gábor utca 35",
-  telefon: "+36-20/267-6801",
-  email: "webshop@acropora.hu",
-  nyitvatartas: ["Kedd-Péntek 10-18", "Szombat 10-14", "Vasárnap-Hétfő Zárva"],
-} as const
+// `CEG` (the shop's own company data) lives in `@lib/ceg`: the dictionary reads it too, and this file imports the dictionary.
+export { CEG } from "@lib/ceg"
 
 /**
  * A "FIZETESI OPCIOK:" KEP AZ ALSO SORBAN (Balazs, 2026-10-27,
@@ -250,12 +230,12 @@ export const FIZETESI_OPCIOK_KEP = {
 
 /**
  * A KARTYATARSASAGOK HIVATALOS JELVENYEI (d707cf5f; Balazs 2026-10-27: Google Pay, Apple Pay, Mastercard, Maestro,
- * Visa). A penztar mind az otot tudja: a kartyakat a Stripe, az Apple Payt es a Google Payt a Stripe Express Checkout
+ * Visa; 2026-11-23: a Maestro kimarad, acrobot 59629, 59642). A penztar mind a negyet tudja: a kartyakat a Stripe, az Apple Payt es a Google Payt a Stripe Express Checkout
  * (`applePay`, `googlePay`: "auto").
  *
  * EGY JELVENY CSAK HIVATALOS FAJLBOL KERUL IDE, a marka sajat oldalarol, a mellette allo kommentben a forras, a
  * licencsor es a marka meret- es szabad-ter szabalya. Ahol a letoltes feltetel-elfogadassal jar (Apple Pay, Mastercard,
- * Maestro, Visa), az Balazs dontese (acrobot 47495, 47497): addig a `src` null. AMIG NINCS MEG MIND AZ OT, a lablec a
+ * Maestro, Visa), az Balazs dontese (acrobot 47495, 47497): addig a `src` null. AMIG NINCS MEG MIND A NEGY, a lablec a
  * tartalek kepet mutatja (`FIZETESI_OPCIOK_KEP`), mert egy hianyos sor azt mondana a vevonek, hogy a hianyzo kartyat
  * nem fogadjuk el (acrobot 47497).
  */
@@ -287,16 +267,46 @@ export const FIZETESI_JELVENYEK: readonly FizetesiJelveny[] = [
     w: 1094,
     h: 742,
   },
-  { kulcs: "apple-pay", alt: "Apple Pay", src: null, w: 0, h: 0 },
-  { kulcs: "mastercard", alt: "Mastercard", src: null, w: 0, h: 0 },
-  { kulcs: "maestro", alt: "Maestro", src: null, w: 0, h: 0 },
-  // VISA: a Visa markaoldalai (visa.com, visa.co.uk) nincsenek a karanten-olvaso engedelyezett listajan (2026-11-11);
-  // forras nelkul nem kerul ide fajl
+  /*
+    APPLE PAY: az Apple hivatalos Apple Pay mark fajlja (Apple_Pay_Mark_RGB_041619.svg, viewBox 165.52107 x 105.9651,
+    sha256 66baf110b86c1f1a...), Balazs toltotte le 2026-11-23-an, a feltetel-elfogadassal (acrobot 59625); a repoba
+    bajtra valtozatlanul (csak svg, g, path elem, script es kulso hivatkozas nelkul). A szabalyok a
+    developer.apple.com/apple-pay/marketing/ oldalrol (a karanten-olvasoval atnezve 2026-11-23): csak az Apple grafikaja,
+    modositas, nyujtas, sarokradiusz-, arnyek-, forgatas- es szinvaltoztatas nelkul; a szabad ter legalabb a mark
+    magassaganak negyede; nem lehet kisebb, mint a hasonlo formatumu tobbi fizetesi azonosito; a "Pay" szo nem fordithato.
+    Az oldal "csak ha a kozlemeny fo temaja az Apple Pay" mondata a hirdetesi kozlemenyre szol; a lablec a tobbi kartya
+    melletti elfogadasi jelzes, amire a "nem kisebb a tobbinel" sor vonatkozik (ertelmezes, a d707cf5f PR-ban kimondva).
+  */
+  {
+    kulcs: "apple-pay",
+    alt: "Apple Pay",
+    src: "/images/fizetes/apple-pay-mark.svg",
+    w: 166,
+    h: 106,
+  },
+  /*
+    MASTERCARD: a Mastercard Symbol hivatalos SVG-je (Mastercard Symbol - SVG/Artwork/ma_symbol.svg, viewBox 152.4 x 108,
+    sha256 05df092590d7d56d...), Balazs toltotte le 2026-11-23-an a brand.mastercard.com Brand Centerbol (acrobot 59629);
+    bajtra valtozatlanul (svg, g, path, rect es egy belso style a szinekhez; script es kulso hivatkozas nelkul). A szabalyok
+    a csomag ket PDF-jebol (karanten-olvaso): a web-artwork quick reference guide szerint SVG-kent, img elemmel, tetszoleges
+    meretben hasznalhato; a szinkodokat, a minimalis meretet es a vedoteret a brand.mastercard.com teljes iranyelve adja
+    (READ-ME, 2020.09.28), ami innen nem olvashato. A MAESTRO kimarad (Balazs rabolintott, acrobot 59629).
+  */
+  {
+    kulcs: "mastercard",
+    alt: "Mastercard",
+    src: "/images/fizetes/mastercard-symbol.svg",
+    w: 152,
+    h: 108,
+  },
+  // VISA: a Visa markaoldalai (www.visa.com, corporate.visa.com, www.visa.co.uk) es a docs.stripe.com az egress-kapun
+  // nem jonnek at (merve 2026-11-23, karanten-olvaso --url), a Balazs-csomagban Visa fajl nincs: forras nelkul nem kerul
+  // ide fajl. Amig a src null, a lablec a tartalek kepet mutatja (fizetesiLogok)
   { kulcs: "visa", alt: "Visa", src: null, w: 0, h: 0 },
 ]
 
 /**
- * A lablec fizetesi logoi: ha mind az ot hivatalos jelveny megvan, azok a lista sorrendjeben, egysegesen `h-8` magasan
+ * A lablec fizetesi logoi: ha mind a negy hivatalos jelveny megvan, azok a lista sorrendjeben, egysegesen `h-8` magasan
  * (a marka sajat szabalya a fajl melletti kommentben); amig barmelyik hianyzik, a tartalek kep.
  */
 export function fizetesiLogok(
@@ -331,9 +341,14 @@ export function fizetesiLogok(
 export function lablecLinkekHoszton(
   host: string,
   fogyasztobarat: boolean = fogyasztobaratBekapcsolva(),
+  rekordLinkek: readonly { cimke: string; cim: string }[] = [],
 ): { cimke: string; cim: string }[] {
   const mind: { cimke: string; cim: string }[] = [
     ...REGI_BOLT_HIVATKOZASOK.map((h) => ({ cimke: h.cimke, cim: h.cim })),
+    // A LABLEC, AHOGY A LAP TENYLEG RAJZOLJA: az OS rekordjanak linkjei is. A kod
+    // listaja egyedul nullat mondott akkor is, amikor a teszt OS rekordja ot linket
+    // vitt a regi boltba (2026-11-19, murena merese).
+    ...rekordLinkek.map((h) => ({ cimke: h.cimke, cim: h.cim })),
     // bekapcsolt Fogyasztobaratnal az ASZF es az adatkezeles a sajat oldalon all
     ...(fogyasztobarat
       ? []
@@ -341,7 +356,9 @@ export function lablecLinkekHoszton(
           d.maiBoltCim ? [{ cimke: d.cim, cim: d.maiBoltCim }] : [],
         )),
   ]
-  return mind.filter((h) => {
+  const egyedi = new Map<string, { cimke: string; cim: string }>()
+  for (const h of mind) egyedi.set(`${h.cimke}\u0000${h.cim}`, h)
+  return Array.from(egyedi.values()).filter((h) => {
     try {
       return new URL(h.cim).host.toLowerCase() === host.toLowerCase()
     } catch {

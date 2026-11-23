@@ -8,6 +8,7 @@ import {
   otherSegment,
   parseSegment,
   segmentFor,
+  segmentInLanguageOf,
 } from "./locale"
 
 /**
@@ -61,5 +62,61 @@ describe("parseSegment", () => {
     expect(localeOf("en-hu")).toBe("en")
     expect(countryOf("en-hu")).toBe("hu")
     expect(countryOf("hu")).toBe("hu")
+  })
+})
+
+/**
+ * THE CHECKOUT KEEPS THE LANGUAGE (card, 2026-11-19: the English checkout's first step redirected to `/hu/checkout`). What must fail: the page's
+ * language dropped (`en-hu` page, `hu` address country -> `hu`); the address's COUNTRY replaced by the page's (the region follows the address); a
+ * missing, unknown or odd page segment (a value from a form is user input) turning into anything but the default language.
+ */
+describe("segmentInLanguageOf", () => {
+  it("puts the address's country in the language of the page", () => {
+    expect(segmentInLanguageOf("hu", "en-hu")).toBe("en-hu")
+    expect(segmentInLanguageOf("hu", "hu")).toBe("hu")
+  })
+
+  it("keeps the ADDRESS's country, not the page's", () => {
+    expect(segmentInLanguageOf("de", "en-hu")).toBe("en-de")
+    expect(segmentInLanguageOf("HU", "en-hu")).toBe("en-hu")
+  })
+
+  /*
+    THE COUNTRY IS USER INPUT TOO (barracuda #841): the address form's `country_code` goes into the redirect's path. What must fail: a value that is
+    not two letters (a path, a host, a slash, an empty or "null" string) reaching the path; the valid ones (`hu`, `de`, any case) not passing.
+  */
+  it("a country that is not two letters never reaches the path", () => {
+    for (const odd of [
+      "/evil.example",
+      "/",
+      "//x",
+      "../x",
+      "",
+      "null",
+      "hu/x",
+      "hun",
+      "h",
+      " hu",
+      "h1",
+    ]) {
+      expect(segmentInLanguageOf(odd, "hu"), odd).toBe("hu")
+      expect(segmentInLanguageOf(odd, "en-hu"), odd).toBe("en-hu")
+    }
+    expect(segmentInLanguageOf("DE", "en-hu")).toBe("en-de")
+  })
+
+  it("a missing, unknown or odd page segment is the default language", () => {
+    for (const odd of [
+      undefined,
+      null,
+      "",
+      "de-hu",
+      "xx",
+      "en-hu/x",
+      "../evil",
+      7,
+      {},
+    ])
+      expect(segmentInLanguageOf("hu", odd), String(odd)).toBe("hu")
   })
 })

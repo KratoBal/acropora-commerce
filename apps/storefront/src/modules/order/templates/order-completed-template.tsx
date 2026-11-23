@@ -119,9 +119,15 @@ export default async function OrderCompletedTemplate({
                   </p>
                   {lap.teljesitesek.some((tj) => tj.szallito !== "bolt") ? (
                     <p className="mt-1 text-[13px] text-acr-slate">
-                      {lap.teljesitesek.some((tj) => tj.szallito === "gls")
-                        ? t("orderConfirmed.nextStepGls")
-                        : t("orderConfirmed.nextStep")}
+                      {lap.teljesitesek.some(
+                        (tj) =>
+                          tj.szallito !== "bolt" &&
+                          tj.fizetesMod === "elore-utalas",
+                      )
+                        ? t("orderConfirmed.nextStepTransfer")
+                        : lap.teljesitesek.some((tj) => tj.szallito === "gls")
+                          ? t("orderConfirmed.nextStepGls")
+                          : t("orderConfirmed.nextStep")}
                     </p>
                   ) : null}
                   {boltiSorok.map((sor) => (
@@ -151,6 +157,15 @@ export default async function OrderCompletedTemplate({
                 ertek={lap.rendelesszam}
               />
               <Sor cimke={t("orderConfirmed.payment")} ertek={lap.fizetes} />
+              {lap.ceg ? (
+                <Sor cimke={t("orderConfirmed.company")} ertek={lap.ceg.nev} />
+              ) : null}
+              {lap.ceg?.adoszam ? (
+                <Sor
+                  cimke={t("orderConfirmed.taxId")}
+                  ertek={lap.ceg.adoszam}
+                />
+              ) : null}
               <Sor
                 cimke={t("orderConfirmed.total")}
                 ertek={penz(lap.vegosszeg)}

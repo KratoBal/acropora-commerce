@@ -2,7 +2,13 @@ import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { convertToLocale } from "@lib/util/money"
 
-import { atvetelSorok, type SzallitasiOpcioBemenet } from "./atvetel-sorok"
+import { szallitasiSor } from "@lib/util/gls"
+
+import {
+  atvetelSorok,
+  type SzallitasiOpcioBemenet,
+  type SzallitasiOsztaly,
+} from "./atvetel-sorok"
 
 /**
  * AZ ÁTVÉTEL ÉS A FIZETÉS DOBOZA A KOSÁR LAP JOBB OSZLOPÁBAN (a terv: egy doboz, alatta az összesítő; task
@@ -29,14 +35,17 @@ export default function AtvetelFizetes({
   currencyCode,
   countryCode,
   szetvalasztott = false,
+  osztaly = null,
 }: {
+  /** a penztar osztalyozasa (Foxpost, GLS pont es haz): ebbol a szotar adja a mod nevet; `null`: a bolt neve */
+  osztaly?: SzallitasiOsztaly | null
   /** a vegyes kosar (elo allat + kiszallithato) ket rendelesre bomlik: a futar-modok csak a kiszallitando reszre vonatkoznak */
   szetvalasztott?: boolean
   opciok: readonly SzallitasiOpcioBemenet[] | null | undefined
   currencyCode: string
   countryCode: string
 }) {
-  const sorok = atvetelSorok(opciok)
+  const sorok = atvetelSorok(opciok, osztaly)
   if (sorok.length === 0) return null
   const t = translator(localeOf(countryCode))
 
@@ -57,7 +66,11 @@ export default function AtvetelFizetes({
               data-testid="atvetel-sor"
             >
               <span>
-                {sor.bolti ? t("checkoutShipping.storePickup") : sor.nev}
+                {sor.bolti
+                  ? t("checkoutShipping.storePickup")
+                  : sor.fajta
+                    ? szallitasiSor(sor.fajta, t).nev
+                    : sor.nev}
               </span>
               <span className="text-acr-slate">
                 {sor.ar.tipus === "fix"

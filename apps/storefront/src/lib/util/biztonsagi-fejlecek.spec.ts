@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { elonezetiUt } from "@lib/util/kezdolap-elonezet"
+import { STRIPE_BETUK } from "@lib/util/stripe-megjelenes"
 
 /*
   A KIRAKAT BIZTONSAGI FEJLECEI (commerce-audit-p0, B1, P0). MI PIROSIT: ha
@@ -111,6 +112,84 @@ describe("a CSP", () => {
     expect(jelento).toMatch(
       /connect-src [^;]*https:\/\/commerce-stage\.example\.test/,
     )
+  })
+
+  /*
+    A MEROKODOK HOSZTJAI CSAK AZONOSITOVAL (dc8cabd2): azonosito nelkul a kirakat semmit nem tolt be, tehat a szabalyban sem
+    allhat rajuk forras. MI PIROSIT: a Google vagy a Meta hosztja azonosito nelkul is ott van; az Ads hosztjai csak GA4-gyel
+    megjelennek; a pixel hosztjai Google-azonositoval; az iranyelvek kozt elcsusznak.
+  */
+  const jelentoCspEnv = (env: Record<string, string>) =>
+    modul
+      .biztonsagiFejlecek({
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: "https://commerce-stage.example.test",
+        ...env,
+      })
+      .flatMap((s) => s.headers)
+      .find((h) => h.key === "Content-Security-Policy-Report-Only")!.value
+  const irany = (csp: string, nev: string) =>
+    csp.split("; ").find((r) => r.startsWith(`${nev} `)) ?? ""
+
+  /*
+    A STRIPE BETU-STILUSLAPJA A KAPCSOLAT-FORRASBAN (2026-11-23): a fizetesi mezo megjeleneseben nevezett betu stiluslapjat (STRIPE_BETUK)
+    a Stripe a lapon at kerdezi le, es azt a connect-src-nek kell engednie. MI PIROSIT: a stiluslap hosztja kiesik a connect-src-bol, vagy
+    a betu forrasa mashova koltozik, es a szabaly nem koveti.
+  */
+  it("a Stripe fizetesi mezo betu-stiluslapjanak hosztja a connect-src-ben van", () => {
+    const csp = jelentoCspEnv({})
+    for (const betu of STRIPE_BETUK)
+      expect(irany(csp, "connect-src")).toContain(new URL(betu.cssSrc).origin)
+  })
+
+  it("azonosito nelkul nincs Google- vagy Meta-forras", () => {
+    const csp = jelentoCspEnv({})
+    for (const host of [
+      "googletagmanager",
+      "google-analytics",
+      "doubleclick",
+      "googleadservices",
+      "facebook",
+    ])
+      expect(csp, host).not.toContain(host)
+  })
+
+  it("a GA4 azonositoval a Google script- es kapcsolat-forrasa jelenik meg, az Ads es a Meta hosztja nem", () => {
+    const csp = jelentoCspEnv({ NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-ABCDE12345" })
+    expect(irany(csp, "script-src")).toContain(
+      "https://www.googletagmanager.com",
+    )
+    expect(irany(csp, "connect-src")).toContain(
+      "https://*.google-analytics.com",
+    )
+    expect(csp).not.toContain("googleadservices")
+    expect(csp).not.toContain("doubleclick")
+    expect(csp).not.toContain("facebook")
+  })
+
+  it("az Ads azonositoval az Ads hosztjai, a Meta azonositoval a Meta hosztjai jelennek meg, a megfelelo iranyelvben", () => {
+    const ads = jelentoCspEnv({ NEXT_PUBLIC_GOOGLE_ADS_ID: "AW-123456789" })
+    expect(irany(ads, "connect-src")).toContain(
+      "https://www.googleadservices.com",
+    )
+    expect(irany(ads, "img-src")).toContain(
+      "https://googleads.g.doubleclick.net",
+    )
+    expect(ads).not.toContain("facebook")
+    const meta = jelentoCspEnv({
+      NEXT_PUBLIC_META_PIXEL_ID: "1234567890123456",
+    })
+    expect(irany(meta, "script-src")).toContain("https://connect.facebook.net")
+    expect(irany(meta, "img-src")).toContain("https://www.facebook.com")
+    expect(meta).not.toContain("googletagmanager")
+  })
+
+  it("üres vagy szóközös azonosító nem számít beállítottnak", () => {
+    expect(
+      jelentoCspEnv({
+        NEXT_PUBLIC_GA_MEASUREMENT_ID: "  ",
+        NEXT_PUBLIC_META_PIXEL_ID: "",
+      }),
+    ).not.toMatch(/googletagmanager|facebook/)
   })
 
   it("érvénytelen háttércímből nem lesz forrás (nem 'undefined')", () => {

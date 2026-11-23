@@ -89,7 +89,7 @@ export default function ExpressFizetes({
 
   const lead = async () => {
     try {
-      const eredmeny = await placeOrder()
+      const eredmeny = await placeOrder(undefined, String(countryCode))
       if (!eredmeny.ok) {
         onHiba(hibaSzoveg(t, eredmeny))
         onAllapot("alap")

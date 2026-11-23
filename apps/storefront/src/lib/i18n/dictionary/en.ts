@@ -1,3 +1,4 @@
+import { CEG } from "@lib/ceg"
 import type { Dictionary } from "./index"
 
 /** The English dictionary. The type makes a missing or an extra key a compile error (the shape is the Hungarian one). */
@@ -413,9 +414,9 @@ export const en: Dictionary = {
   },
   headerText: {
     bar1: "Livestock for in-store pickup only, at our Budapest shop",
-    bar2: "Equipment and chemicals: home delivery in 2–3 working days",
-    bar3: "Open today 10:00–19:00",
-    bar4: "Advice: +36 1 234 5678",
+    bar2: "Equipment and chemicals: Foxpost parcel points and GLS home delivery",
+    bar3: "Open: Tue–Fri 10:00–18:00, Sat 10:00–14:00",
+    bar4: `Advice: ${CEG.telefon}`,
     search: "Search: coral, sea salt, LED light…",
     menuLive: "Livestock",
     menuTech: "Equipment",
@@ -456,6 +457,15 @@ export const en: Dictionary = {
     legalWithdrawalForm: "Withdrawal form (sample)",
     legalWarranty: "Information on warranty rights",
     legalCookies: "Cookie notice",
+  },
+  contactPage: {
+    title: "Contact",
+    metaDescription:
+      "Contact details of Acropora Kft.: address, phone number, e-mail address and opening hours.",
+    address: "Address",
+    phone: "Phone",
+    email: "Email",
+    openingHours: "Opening hours",
   },
   footer: {
     openingHours: "Opening hours:",
@@ -741,6 +751,9 @@ export const en: Dictionary = {
     unavailable: "Not available",
     stockLabel: "Stock",
     lastOne: "1 pc · the last one",
+    pickupLabel: "Shop pickup",
+    pickupValue: "Free, during opening hours",
+    pickupHours: "Open: Tue–Fri 10:00–18:00, Sat 10:00–14:00",
     pieces: "{count} pcs",
     chooseVariant: "Choose a variant",
     qtyDecrease: "Decrease the quantity",
@@ -753,7 +766,7 @@ export const en: Dictionary = {
     sku: "Item no. {sku}",
     uniqueNote: "One-of-a-kind piece, cannot be replaced",
     priceFrom: "from {price}",
-    originalPrice: "Original price:",
+    originalPrice: "Lowest price before:",
     omnibusLine:
       "Lowest price in the 30 days before the price reduction: {price}",
     omnibusLineShort:
@@ -968,6 +981,12 @@ export const en: Dictionary = {
     discountAdd: "Add a discount code",
     discountApply: "Apply",
     discountApplied: "Applied discounts:",
+    giftCardAdd: "Redeem a gift card",
+    giftCardApply: "Redeem",
+    giftCard: "Gift card",
+    giftCardRemove: "Remove the gift card from the order",
+    giftCardRestNote:
+      "Choose the payment method for the rest after redeeming the card.",
   },
   checkoutPage: {
     title: "Checkout",
@@ -1174,6 +1193,8 @@ export const en: Dictionary = {
       "Placing the order failed just now. Before you try again, check your orders to see whether it arrived.",
     errPieceHeld:
       "A unique piece in your cart is held in another buyer's cart right now. When their hold ends it may be yours: please try again later.",
+    errPersonalDiscountCoupon:
+      "You cannot use this coupon, because you have your own discount. Remove the coupon from the cart and try again.",
     errSplitDiscount:
       "Because of the live animal your cart splits into two orders, and the discount cannot apply the same way. Order the live animal in a separate cart, or remove the coupon, and try again.",
     errLegalMissing:
@@ -1200,6 +1221,8 @@ export const en: Dictionary = {
       "We pack your parcel. The tracking number appears when we have dispatched the parcel.",
     nextStepGls:
       "We pack your parcel. The GLS tracking number appears when we have dispatched the parcel.",
+    nextStepTransfer:
+      "We send the proforma invoice by e-mail, with an 8-day payment deadline. We pack your parcel once the payment has arrived; the tracking number appears when we have dispatched it.",
     pickupWhere: "Pick-up location: {name}, {address}.",
     pickupPayAtStore: "Available for pick-up in the store. Payment at pick-up.",
     summary: "Order summary",
@@ -1207,6 +1230,8 @@ export const en: Dictionary = {
     payment: "Payment",
     total: "Total",
     orders: "Orders",
+    company: "Company",
+    taxId: "Tax number",
     ordersCount: "{count}",
     shippingFee: "Shipping: {amount}",
     codFee: "Cash on delivery fee: {amount}",
@@ -1235,11 +1260,15 @@ export const en: Dictionary = {
     errorEmail: "Please check the e-mail address, something is missing.",
     errorNumber: "The order number consists of digits only.",
     errorNotFound:
-      "We could not find the order with these details. Please check the order number and the e-mail address, or write to us: [TO BE FILLED IN: customer service contact].",
+      "We could not find the order with these details. Please check the order number and the e-mail address, or write to us: " +
+      CEG.email +
+      ".",
     errorTooMany:
-      "There were too many unsuccessful attempts. Please try again in [TO BE FILLED IN: waiting time], or write to us.",
+      "There were too many unsuccessful attempts. Please try again in 15 minutes, or write to us.",
     errorUnavailable:
-      "We cannot show the order right now. Please try again a little later, or write to us: [TO BE FILLED IN: customer service contact].",
+      "We cannot show the order right now. Please try again a little later, or write to us: " +
+      CEG.email +
+      ".",
     splitNotice:
       "This purchase consists of two orders, because it included live animals. One is delivered to you; the live animals can be collected in the store.",
     blockShipped: "Products to be delivered",
@@ -1339,11 +1368,10 @@ export const en: Dictionary = {
       addPhoto: "Add a photo",
       removePhoto: "Remove",
       photoErrorSize:
-        "This file is too large. The largest allowed size is 5 MB. [TO BE FILLED IN: size]",
+        "This file is too large. The largest allowed size is 5 MB.",
       photoErrorType:
         "This file type is not supported. Use a JPG or PNG picture.",
-      photoErrorCount:
-        "You can attach at most 5 pictures. [TO BE FILLED IN: number]",
+      photoErrorCount: "You can attach at most 5 pictures.",
       photoErrorUpload: "We could not upload the picture {name}.",
       submit: "Send the report",
       sending: "Sending…",
@@ -1356,7 +1384,9 @@ export const en: Dictionary = {
       errorDuplicate:
         'You have already reported this problem. You can find its case reference under your order, in "Reports you have already filed".',
       errorSend:
-        "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: [TO BE FILLED IN: contact].",
+        "We could not send the report right now. What you entered is kept, please try again. If it still does not work, write to us: " +
+        CEG.email +
+        ".",
       reportsTitle: "Reports you have already filed",
       reportRef: "Case reference: {id}",
       stageReceived: "Received",
@@ -1385,9 +1415,13 @@ export const en: Dictionary = {
       errorDuplicate:
         "There is already a withdrawal declaration for the products you marked. You will find its reference under your order, in the “Withdrawal declarations you have already made” section.",
       errorUnknown:
-        "Something went wrong while sending the withdrawal declaration, and we do not know whether it arrived. Look under your order at “Withdrawal declarations you have already made”: if it is listed there, there is nothing more to do. If not, try again or write to us: [TO BE FILLED IN: contact].",
+        "Something went wrong while sending the withdrawal declaration, and we do not know whether it arrived. Look under your order at “Withdrawal declarations you have already made”: if it is listed there, there is nothing more to do. If not, try again or write to us: " +
+        CEG.email +
+        ".",
       errorSend:
-        "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: [TO BE FILLED IN: contact].",
+        "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: " +
+        CEG.email +
+        ".",
       done: "We have received your withdrawal declaration. Its reference is {id}. [TO BE FILLED IN: next steps and deadlines]",
       donePartial:
         "You have already made a declaration for these products, so they were not recorded again: {items}",

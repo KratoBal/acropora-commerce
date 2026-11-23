@@ -29,6 +29,35 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+    # TYPESCRIPT 7 IS NOT ADOPTABLE YET (2026-11-23). Its native compiler has no JavaScript compiler API, and two tools of ours need that API:
+    # the storefront's lint stops with "TypeScript 7.0.2 is not supported by this version of Next.js", and `medusa lint` (@medusajs/cli, ts-node)
+    # stops with "Cannot read properties of undefined (reading 'fileExists')" (CI log of #603, 2026-11-15). Neither is fixable in our code.
+    # REMOVE THIS ENTRY when both the Next.js and the Medusa CLI release notes say TypeScript 7 is supported, then try it in one PR.
+    # The entry ignores every MAJOR TypeScript update (6.x as well as 7.x): a major version stays a human decision here, as for every other
+    # package. Moving to 6.x is a separate question, not decided by this entry.
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
+    # MEDUSA 2.23.0 IS A PLANNED UPDATE OF ITS OWN, NOT A PATCH (2026-11-23). Its release notes list: Express 5 (a route written like /:id? throws at
+    # startup), BullMQ 6 and ioredis 6 ("deploy all instances together, do not downgrade after startup"), the Redis session store moved to
+    # connect-redis v11 with a node-redis client (ioredis-shaped redisOptions keys are silently ignored), and React 19.3.1 and Tailwind 4 for the
+    # admin. Dependabot rewrote #845 from 2.22.7 to 2.23.0 while it was under review. The Medusa group keeps its PATCH updates (2.22.x); every
+    # MINOR update of a @medusajs package waits for a planned PR with its own test-deploy measurements. The entry STAYS after the 2.23 upgrade
+    # (decided 2026-11-23): it only stops Dependabot from opening minor PRs, a planned upgrade does not depend on it, and 2.24 and later are
+    # planned the same way.
+    # (The `versions: ["2.23.x"]` form was not used: its exact pattern syntax is not checked here; update-types is the documented form.)
+      - dependency-name: "@medusajs/*"
+        update-types:
+          - "version-update:semver-minor"
+    # THE STOREFRONT STAYS ON VITE 7 (2026-11-23, #861). The backend's admin moved to vite 8 with Medusa 2.23, the storefront keeps vite 7 as an
+    # explicit devDependency: with vite 8 its vitest parsed with vite 8's compiler, which ignores the esbuild jsx option, and 183 spec files
+    # failed. Dependabot's #854 (vite 7.3.6 to 8.3.8) had nothing left against main after #861, and a new one would move the storefront.
+    # An ignore entry names a package for the whole workspace ("/" is one entry), so this also holds the backend's next vite major: a major
+    # stays a human decision here anyway. REMOVE THIS ENTRY when the storefront's specs pass under vite 8 (vitest with vite 8 in one PR).
+      - dependency-name: "vite"
+        update-types:
+          - "version-update:semver-major"
     groups:
       medusa:
         patterns:

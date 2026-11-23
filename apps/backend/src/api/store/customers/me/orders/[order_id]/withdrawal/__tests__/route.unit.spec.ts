@@ -265,8 +265,9 @@ describe("the route's wiring", () => {
   })
 
   it("sits under the stock customer authentication of /store/customers/me*", () => {
+    // Medusa 2.23 (Express 5) writes the stock matcher as `me{*splat}`; it covers the same paths `me*` did
     const guard = storeCustomerRoutesMiddlewares.find(
-      (route) => route.matcher === "/store/customers/me*" && route.method === "ALL",
+      (route) => route.matcher === "/store/customers/me{*splat}" && route.method === "ALL",
     )
     expect(String(guard?.middlewares?.[0])).toContain("authenticate")
   })

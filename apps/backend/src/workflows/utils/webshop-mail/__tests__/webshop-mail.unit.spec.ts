@@ -58,6 +58,22 @@ describe("the order confirmation", () => {
     expect(mail.text).not.toMatch(/követési szám(ot)? (küld|elküld)|nyomon követheted|tracking/i)
   })
 
+  // A15: "we pack your order" would promise the parcel before the money has arrived
+  it("a shipped order paid by bank transfer is packed after the payment, not at once", () => {
+    const text = renderOrderPlacedMail([{ ...shipped, payment: "BANK_TRANSFER" }]).text
+    expect(text).toContain("A rendelésedet a befizetés beérkezése után állítjuk össze. Követési szám csak a csomag feladása után lesz.")
+    expect(text).not.toContain("Összekészítjük a rendelésedet.")
+  })
+
+  it("a transfer order alongside a card order: the generic sentence plus the transfer one; a pickup transfer order changes nothing", () => {
+    const both = renderOrderPlacedMail([shipped, { ...shipped, display_id: 39, payment: "BANK_TRANSFER" }]).text
+    expect(both).toContain("Összekészítjük a rendelésedet. Követési szám csak a csomag feladása után lesz.")
+    expect(both).toContain("Az előre utalással fizetett rendelést a befizetés beérkezése után állítjuk össze.")
+    const pickupTransfer = renderOrderPlacedMail([shipped, { ...pickup, payment: "BANK_TRANSFER" }]).text
+    expect(pickupTransfer).toContain("Összekészítjük a rendelésedet. Követési szám csak a csomag feladása után lesz.")
+    expect(pickupTransfer).not.toContain("a befizetés beérkezése után állítjuk össze")
+  })
+
   it("a mixed cart: one mail, both orders, the shipped one first, the sum", () => {
     const mail = renderOrderPlacedMail([shipped, pickup])
     expect(mail.subject).toBe("Rendeléseid visszaigazolása (#37 és #38)")

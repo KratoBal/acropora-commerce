@@ -1,4 +1,5 @@
 import type { MerchantItem } from "./merchant-feed-item"
+import type { MetaCatalogItem } from "./meta-catalog-item"
 
 /**
  * THE XML TRANSPORT (SEO P1-13, plan C11): the mapper's items as a Google
@@ -6,7 +7,7 @@ import type { MerchantItem } from "./merchant-feed-item"
  * nothing else: what an item says is decided in `merchant-feed-item.ts`.
  */
 export function merchantFeedXml(
-  items: readonly MerchantItem[],
+  items: readonly (MerchantItem | MetaCatalogItem)[],
   channel: { title: string; link: string; description: string }
 ): string {
   const lines = [

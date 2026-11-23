@@ -10,9 +10,10 @@ vi.mock("@lib/data/stripe", () => ({
 }))
 
 const placeOrder = vi.fn()
+const oldal = vi.hoisted(() => ({ szegmens: "hu" }))
 
 vi.mock("next/navigation", () => ({
-  useParams: () => ({ countryCode: "hu" }),
+  useParams: () => ({ countryCode: oldal.szegmens }),
   unstable_rethrow: () => undefined,
 }))
 
@@ -34,6 +35,7 @@ import {
 afterEach(cleanup)
 beforeEach(() => {
   placeOrder.mockReset()
+  oldal.szegmens = "hu"
 })
 
 /**
@@ -103,6 +105,16 @@ describe("a rendelés gomb hibaüzenete", () => {
     const gomb = screen.getByTestId("submit-order-button")
     expect(gomb.tagName).toBe("BUTTON")
     expect((gomb as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  // A NYELV A LEADASSAL UTAZIK (angol nezet, 2026-11-19): az angol oldal szegmense eljut a szerver-muveletig, kulonben a visszaigazolas magyarul nyilna
+  it("a leadás megkapja az oldal szegmensét (angol oldalon `en-hu`)", async () => {
+    oldal.szegmens = "en-hu"
+    placeOrder.mockResolvedValue({ ok: true })
+    gombotRajzol()
+    fireEvent.click(screen.getByTestId("submit-order-button"))
+    await waitFor(() => expect(placeOrder).toHaveBeenCalled())
+    expect(placeOrder).toHaveBeenCalledWith(undefined, "en-hu")
   })
 
   it("siker esetén nem ír ki hibát", async () => {

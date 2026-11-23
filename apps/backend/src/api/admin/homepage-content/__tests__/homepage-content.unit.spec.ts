@@ -1,5 +1,7 @@
 import { PUT as adminPut } from "../route"
-import HomepageContentModuleService from "../../../../modules/homepage-content/service"
+import HomepageContentModuleService, {
+  removedTextKeys,
+} from "../../../../modules/homepage-content/service"
 import { GET as storeGet } from "../../../store/homepage-content/route"
 import { AdminPutHomepageContent } from "../validators"
 
@@ -407,14 +409,78 @@ describe("admin homepage content PUT route", () => {
 describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
   const fake = () => {
     let row: Record<string, unknown> | null = null
+    let created = 0
+    const calls: string[] = []
+    const rawStatements: Array<{ sql: string; bindings: unknown[] }> = []
+    const staleRead: { on: boolean; copy: Record<string, unknown> | null } = { on: false, copy: null }
+    const updates: Array<Record<string, unknown>> = []
     const methods = {
-      listHomepageContents: async () => (row ? [row] : []),
+      // the decorators' manager source: the real one hands out a transaction manager whose connection runs the raw statement
+      baseRepository_: {
+        getFreshManager: () => ({}),
+        transaction: async (work: (manager: unknown) => unknown) =>
+          work({
+            getTransactionContext: () => ({
+              raw: async (sql: string, bindings: unknown[]) => {
+                calls.push("raw")
+                rawStatements.push({ sql, bindings })
+                // the texts of one live row, set exactly (no merge)
+                if (/^update homepage_content set texts/.test(sql)) {
+                  if (row && bindings[1] === row.id)
+                    row = { ...row, texts: JSON.parse(bindings[0] as string) }
+                  return { rows: [] }
+                }
+                // the read-back: the row as the database holds it NOW, not an entity loaded earlier (the stale identity-map copy is what
+                // staleRead simulates for the ORM list below)
+                if (/^select \* from homepage_content where id = \?/.test(sql))
+                  return { rows: row && bindings[0] === row.id ? [row] : [] }
+                return { rows: [] }
+              },
+            }),
+          }),
+      },
+      // the transactional half of the upsert, called by the public method on `this`
+      upsertMainHomepageContent_: (
+        HomepageContentModuleService.prototype as unknown as Record<
+          string,
+          unknown
+        >
+      ).upsertMainHomepageContent_,
+      knexOf: (
+        HomepageContentModuleService.prototype as unknown as Record<
+          string,
+          unknown
+        >
+      ).knexOf,
+      listHomepageContents: async () => {
+        if (!row) return []
+        // an ORM read after the first load can answer from its identity map: the entity as it was loaded, with the old texts
+        if (staleRead.on) return [staleRead.copy ?? (staleRead.copy = structuredClone(row))]
+        return [row]
+      },
       createHomepageContents: async ([data]: Record<string, unknown>[]) => {
-        row = { id: "hpc_1", ...data }
+        calls.push("create")
+        created += 1
+        row = { id: `hpc_${created}`, ...data }
         return [row]
       },
       updateHomepageContents: async ([data]: Record<string, unknown>[]) => {
-        row = { ...row, ...data }
+        calls.push("update")
+        updates.push(data)
+        // THE REAL UPDATE MERGES AN OBJECT FIELD (the ORM's `mergeObjectProperties: true`, @medusajs/utils dal/mikro-orm): a key not in
+        // the data stays. A fake that replaced `texts` hid the removed-key defect (card 2ef36b38) from every test.
+        row = {
+          ...row,
+          ...data,
+          ...(data.texts
+            ? {
+                texts: {
+                  ...((row?.texts as object | undefined) ?? {}),
+                  ...(data.texts as object),
+                },
+              }
+            : {}),
+        }
         return [row]
       },
     }
@@ -423,7 +489,7 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
         methods as never,
         input as never
       )
-    return { save, stored: () => row }
+    return { save, stored: () => row, calls, rawStatements, updates, staleRead }
   }
   const base = { texts: {}, slides: null }
 
@@ -510,5 +576,111 @@ describe("HomepageContentModuleService.upsertMainHomepageContent", () => {
     const { save, stored } = fake()
     await save(base)
     expect(stored()?.featured_handles).toBeUndefined()
+  })
+
+  /*
+    A TEXT KEY LEFT OUT OF THE SAVE LEAVES THE RECORD (card 2ef36b38). MI PIROSÍT: ha egy elhagyott kulcs a tárolt rekordban marad (az
+    OS "Alapérték" visszaállítása nem érné el a boltot); ha a csere elveszi a nem küldött listákat, blokkokat, láblécet; ha a sima mentés
+    (nincs elhagyott kulcs) is törlést és újraírást csinál; ha a csere nem egy lépésben (törlés + létrehozás) megy.
+  */
+  it("HPC-SVC-REMOVED-KEY: a text key the save no longer carries is gone from the stored record, the id is the same, and the lists, blocks and footer the save did not send stay", async () => {
+    const { save, stored, calls } = fake()
+    const list = BLOCK_KEYS.map((key) => ({ key, visible: true }))
+    await save({
+      ...base,
+      texts: { "fejlec.sav.1": "Régi", "mit.cim": "Cím" },
+      featured_handles: ["k-1"],
+      featured_brand_handles: ["triton"],
+      blocks: list,
+      footer: footer(),
+    })
+    const idBefore = stored()?.id
+    calls.length = 0
+    await save({ ...base, texts: { "mit.cim": "Cím" } })
+    expect(stored()?.texts).toEqual({ "mit.cim": "Cím" })
+    expect(stored()?.id).toBe(idBefore)
+    expect(stored()?.featured_handles).toEqual(["k-1"])
+    expect(stored()?.featured_brand_handles).toEqual(["triton"])
+    expect(stored()?.blocks).toEqual(list)
+    expect(stored()?.footer).toEqual(footer())
+    // never a delete-and-create of the same key (the partial unique index, #804): one update, the raw texts write, the raw read-back
+    expect(calls).toEqual(["update", "raw", "raw"])
+  })
+
+  it("HPC-SVC-REMOVED-KEY-RAW: the texts are written by ONE raw UPDATE of the one live row by id, and the ORM update does not carry them", async () => {
+    const { save, stored, rawStatements, updates } = fake()
+    await save({ ...base, texts: { a: "1", b: "2" } })
+    updates.length = 0
+    await save({ ...base, texts: { b: "2" } })
+    expect(rawStatements).toHaveLength(2)
+    const [{ sql, bindings }] = rawStatements
+    expect(sql).toMatch(/^update homepage_content set texts = \?::jsonb/)
+    expect(sql).toMatch(/where id = \? and deleted_at is null$/)
+    expect(bindings).toEqual([JSON.stringify({ b: "2" }), stored()?.id])
+    // the read-back is a raw select of the same live row by id, never an ORM read (its identity map can answer with the old texts)
+    expect(rawStatements[1].sql).toMatch(/^select \* from homepage_content where id = \? and deleted_at is null$/)
+    expect(rawStatements[1].bindings).toEqual([stored()?.id])
+    // the ORM update would merge the object field: the texts do not go through it in this case
+    expect(updates).toHaveLength(1)
+    expect("texts" in updates[0]).toBe(false)
+  })
+
+  it("HPC-SVC-REMOVED-KEY-ANSWER: the answer is the row as the database holds it, not the entity loaded at the top (a stale identity-map copy would carry the removed key), twice in a row", async () => {
+    const { save, staleRead } = fake()
+    const answerOf = async (texts: Record<string, string>) => {
+      staleRead.copy = null
+      return (await save({ ...base, texts })) as unknown as {
+        id: string
+        texts: Record<string, string>
+      }
+    }
+    await answerOf({ a: "1", b: "2" })
+    staleRead.on = true
+    const first = await answerOf({ b: "2" })
+    expect(first.texts).toEqual({ b: "2" })
+    await answerOf({ b: "2", c: "3" })
+    const second = await answerOf({ b: "2" })
+    expect(second.texts).toEqual({ b: "2" })
+    expect(second.id).toBe(first.id)
+  })
+
+  it("HPC-SVC-REMOVED-KEY-EXPLICIT: what the save sends wins over what the old row held, even when a key was removed in the same save", async () => {
+    const { save, stored } = fake()
+    await save({
+      ...base,
+      texts: { a: "1", b: "2" },
+      featured_handles: ["k-1"],
+      blocks: BLOCK_KEYS.map((key) => ({ key, visible: true })),
+    })
+    await save({
+      ...base,
+      texts: { b: "3" },
+      featured_handles: null,
+      blocks: BLOCK_KEYS.map((key) => ({ key, visible: false })),
+    })
+    expect(stored()?.texts).toEqual({ b: "3" })
+    expect(stored()?.featured_handles).toBeNull()
+    expect(
+      (stored()?.blocks as Array<{ visible: boolean }>).every((b) => !b.visible)
+    ).toBe(true)
+  })
+
+  it("HPC-SVC-NO-REMOVED-KEY: a save that only adds or changes keys stays one plain update, no delete and no new row", async () => {
+    const { save, stored, calls } = fake()
+    await save({ ...base, texts: { a: "1" } })
+    calls.length = 0
+    await save({ ...base, texts: { a: "2", b: "3" } })
+    expect(calls).toEqual(["update"])
+    expect(stored()?.texts).toEqual({ a: "2", b: "3" })
+  })
+
+  it("HPC-SVC-REMOVED-KEY-PURE: removedTextKeys names exactly the stored keys the save left out", () => {
+    expect(removedTextKeys({ a: "1", b: "2" }, { a: "x" })).toEqual(["b"])
+    expect(removedTextKeys({ a: "1" }, { a: "x", c: "y" })).toEqual([])
+    expect(removedTextKeys({ a: "1" }, {})).toEqual(["a"])
+    expect(removedTextKeys(null, { a: "1" })).toEqual([])
+    expect(removedTextKeys(undefined, {})).toEqual([])
+    // an empty-string value is still a sent key: an editor's deliberate empty text is not a removal
+    expect(removedTextKeys({ a: "1" }, { a: "" })).toEqual([])
   })
 })

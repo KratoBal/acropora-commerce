@@ -16,6 +16,7 @@ import {
   AdminUpsertCommerceSetting,
 } from "./admin/commerce-settings/validators";
 import { AdminPutShippingPaymentRules } from "./admin/shipping-payment-rules/validators";
+import { AdminStorefrontRevalidate } from "./admin/storefront-revalidate/validators";
 import { AdminIssueGiftCard } from "./admin/gift-cards/validators";
 import {
   AdminGetShippingAttributesParams,
@@ -49,6 +50,8 @@ import { StorePostNewsletterSubscription, StorePostNewsletterToken } from "./sto
 import { StorePostStockAlert, StorePostStockAlertToken } from "./store/stock-alerts/validators";
 import { AdminPutLivestockArrivals } from "./admin/livestock-arrivals/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
+import { AdminGetLoyaltyParams, AdminPostLoyaltyAdjustment } from "./admin/loyalty/validators";
+import { StoreGetLoyaltyParams } from "./store/customers/me/loyalty/validators";
 import {
   AdminGetOrderPickupPointsParams,
   AdminPostOrderPickupPoint,
@@ -90,6 +93,8 @@ import { StorePostGuestWithdrawal } from "./store/guest-orders/withdrawal/valida
 import { StorePostCustomerWithdrawal } from "./store/customers/me/orders/[order_id]/withdrawal/validators";
 import { requireLongPassword } from "./password-rules";
 import { StorePostAszfElfogadas } from "./store/carts/[id]/aszf-elfogadas/validators";
+import { StorePostCartGiftCard } from "./store/carts/[id]/gift-card/validators"
+import { StorePostCartLoyaltyPoints } from "./store/carts/[id]/loyalty-points/validators";
 import { StorePostSutiHozzajarulas } from "./store/customers/me/suti-hozzajarulas/validators";
 import { refuseShippingDiscount } from "./refuse-shipping-discount";
 import { orderEditConfirmKeepsHold } from "./order-edit-confirm-keeps-hold";
@@ -177,6 +182,12 @@ export default defineMiddlewares({
       middlewares: [validateAndTransformBody(AdminPutShippingPaymentRules)],
     },
     {
+      // one storefront revalidation by hand (card 54bb3779)
+      matcher: "/admin/storefront-revalidate",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminStorefrontRevalidate)],
+    },
+    {
       // issuing a gift card (card 495c0007)
       matcher: "/admin/gift-cards",
       method: "POST",
@@ -218,6 +229,26 @@ export default defineMiddlewares({
       matcher: "/store/carts/:id/aszf-elfogadas",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostAszfElfogadas)],
+    },
+    {
+      // a gift card on the cart (card 495c0007): the code is the only input
+      matcher: "/store/carts/:id/gift-card",
+      method: "POST",
+      middlewares: [validateAndTransformBody(StorePostCartGiftCard)],
+    },
+    {
+      // the signed-in customer's points on their own cart (card dfb79916): the customer is the session's, never the body's
+      matcher: "/store/carts/:id/loyalty-points",
+      method: ["GET", "DELETE"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
+    },
+    {
+      matcher: "/store/carts/:id/loyalty-points",
+      method: "POST",
+      middlewares: [
+        authenticate("customer", ["session", "bearer"]),
+        validateAndTransformBody(StorePostCartLoyaltyPoints),
+      ],
     },
     {
       // The registration's ÁSZF record is the server's (customer-aszf-record.ts; audit A4, customer twin).
@@ -492,6 +523,23 @@ export default defineMiddlewares({
       matcher: "/store/customers/me/password",
       method: "POST",
       middlewares: [validateAndTransformBody(StoreChangePassword)],
+    },
+    {
+      // the loyalty ledger (card dfb79916): a manual credit or debit from the OS, and the two reads
+      matcher: "/admin/loyalty/adjustments",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostLoyaltyAdjustment)],
+    },
+    {
+      matcher: "/admin/loyalty/:customer_id",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(AdminGetLoyaltyParams, {})],
+    },
+    {
+      // the customer's own points; the stock /store/customers/me* middleware requires the session
+      matcher: "/store/customers/me/loyalty",
+      method: "GET",
+      middlewares: [validateAndTransformQuery(StoreGetLoyaltyParams, {})],
     },
     {
       matcher: "/store/foxpost/pickup-points",

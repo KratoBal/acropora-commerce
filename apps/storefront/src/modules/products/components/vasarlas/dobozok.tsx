@@ -135,7 +135,17 @@ export function ElerhetosegDoboz({
   rendelesiMondat,
   keszlet,
   eloAllatMondat,
+  boltiAtvetel,
 }: {
+  /**
+   * A BOLTI ATVETEL SORA, IGERET NELKUL (kartya 5b558e4c, acrobot 57460). A terv harmadik sora ("Bolti atvetel: Ma
+   * 18:00-ig") azonnali atvetelt igerne, es azt a kirakat nem tudja (egy raktarhelyre vetitunk, nem tudjuk, a boltban van-e
+   * a darab): az a dontes Balazse. Ami ma igaz: az atvetel ingyenes, nyitvatartasi idoben, a nyitvatartas a `ceg.ts`-bol. A
+   * hivo dont (`anyVariantPurchasable`): ugyanaz a feltetel, amin a hatter a bolti atvetelt engedi (`variantHasStock`: nem
+   * kezelt keszlet, utanrendeles vagy van darab), tehat ahol ez a sor all, ott a penztar is felkinalja. Az eloallat-szallitas
+   * sora NEM kerul ide, amig Balazs nem dont rola.
+   */
+  boltiAtvetel?: boolean
   /**
    * AZ ELO ALLAT BOLTI ATVETELI MONDATA (task t-20261116-keszletdoboz-eloallat, acrobot 53793): a terv harmadik soranak ("Bolti atvetel")
    * a MAR DONTOTT tenye az elo allat lapjan (Balazs, 2026-09-29: elo allat csak bolti atvetellel), ugyanabbol a konstansbol,
@@ -206,7 +216,24 @@ export function ElerhetosegDoboz({
       {eloAllatMondat}
     </p>
   ) : null
-  if (!minimumSor && !eloAllatSor && typeof keszlet !== "number") return null
+  const atvetelSor = boltiAtvetel ? (
+    <div
+      className="flex flex-col gap-[2px] text-[13.5px]"
+      data-testid="vaz-bolti-atvetel"
+    >
+      <div className="flex items-baseline justify-between gap-4">
+        <span style={{ color: "var(--terv-szoveg-halvany)" }}>
+          {t("product.pickupLabel")}
+        </span>
+        <span>{t("product.pickupValue")}</span>
+      </div>
+      <span style={{ color: "var(--terv-szoveg-halvany)" }}>
+        {t("product.pickupHours")}
+      </span>
+    </div>
+  ) : null
+  if (!minimumSor && !eloAllatSor && !atvetelSor && typeof keszlet !== "number")
+    return null
 
   /**
    * A DOBOZ MELYEDES A PANELEN BELUL, ES EZ A TERVBOL MERT ALAK (2026-09-08).
@@ -311,6 +338,7 @@ export function ElerhetosegDoboz({
           </span>
         </div>
       ) : null}
+      {atvetelSor}
       {eloAllatSor}
       {minimumSor}
     </div>

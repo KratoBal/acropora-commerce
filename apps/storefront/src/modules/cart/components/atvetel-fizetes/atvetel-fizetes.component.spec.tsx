@@ -126,7 +126,7 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     )
   })
 
-  it("a bolti átvétel felirata a szótárból jön: az angol oldalon az angol, és a futár-mód neve marad a bolt neve", () => {
+  it("a bolti átvétel felirata a szótárból jön: az angol oldalon az angol, és osztályozás nélkül a futár-mód neve marad a bolt neve", () => {
     render(
       <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="en-hu" />,
     )
@@ -146,5 +146,100 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     expect(screen.getAllByTestId("atvetel-sor")[1]).toHaveTextContent(
       "The price shows once you enter the address",
     )
+  })
+
+  /*
+    A MOD NEVE A SZOTARBOL (a kirakat angol nezete, 2026-11-19): a kosar doboza a bolt magyar nevet irta az angol oldalra. MI PIROSIT: ha a
+    pénztár által ismert mód (Foxpost, GLS pont és ház, a nehézáru is) neve az angol oldalon magyar marad; ha a magyar oldal neve elvész;
+    ha az ismeretlen opció neve is a szótárból jönne (a bolt neve marad); ha az osztályozás hiánya a neveket elrontja.
+  */
+  const OSZTALY = {
+    foxpostOptionId: "so_3",
+    glsPont: [{ option_id: "so_4", heavy: false }],
+    glsHaz: [
+      { option_id: "so_2", heavy: false },
+      { option_id: "so_5", heavy: true },
+    ],
+  }
+  const OPCIOK_SOK = [
+    ...OPCIOK,
+    {
+      id: "so_4",
+      name: "GLS csomagpont",
+      price_type: "calculated",
+      service_zone: { fulfillment_set: { type: "shipping" } },
+    },
+    {
+      id: "so_5",
+      name: "GLS nehézáru házhozszállítás",
+      price_type: "calculated",
+      service_zone: { fulfillment_set: { type: "shipping" } },
+    },
+    {
+      id: "so_6",
+      name: "Valami új bolti mód",
+      price_type: "calculated",
+      service_zone: { fulfillment_set: { type: "shipping" } },
+    },
+  ]
+  const nevek = () =>
+    screen
+      .getAllByTestId("atvetel-sor")
+      .map((sor) => sor.querySelector("span")?.textContent)
+
+  it("az angol oldalon a pénztár által ismert módok neve angol, az ismeretlené marad a bolt neve", () => {
+    render(
+      <AtvetelFizetes
+        opciok={OPCIOK_SOK}
+        osztaly={OSZTALY}
+        currencyCode="huf"
+        countryCode="en-hu"
+      />,
+    )
+    expect(nevek()).toEqual([
+      "Pickup in the store",
+      "GLS home delivery",
+      "FOXPOST",
+      "GLS pickup point",
+      "GLS heavy-goods home delivery",
+      "Valami új bolti mód",
+    ])
+  })
+
+  it("a magyar oldalon ugyanazok a módok a szótár magyar nevén állnak", () => {
+    render(
+      <AtvetelFizetes
+        opciok={OPCIOK_SOK}
+        osztaly={OSZTALY}
+        currencyCode="huf"
+        countryCode="hu"
+      />,
+    )
+    expect(nevek()).toEqual([
+      "Átvétel üzletben",
+      "GLS házhozszállítás",
+      "FOXPOST",
+      "GLS csomagpont",
+      "GLS nehézáru házhozszállítás",
+      "Valami új bolti mód",
+    ])
+  })
+
+  it("osztályozás nélkül a bolt nevei maradnak", () => {
+    render(
+      <AtvetelFizetes
+        opciok={OPCIOK_SOK}
+        osztaly={null}
+        currencyCode="huf"
+        countryCode="en-hu"
+      />,
+    )
+    expect(nevek()?.slice(1)).toEqual([
+      "GLS házhozszállítás",
+      "Foxpost csomagpont",
+      "GLS csomagpont",
+      "GLS nehézáru házhozszállítás",
+      "Valami új bolti mód",
+    ])
   })
 })

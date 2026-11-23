@@ -16,6 +16,7 @@ jest.mock("../../utils/resolve-cart-payment-context", () => ({
   resolveCartPaymentContext: async () => ({ cash_on_delivery_fee: 0 }),
 }))
 jest.mock("../../utils/cod-fee-reconciliation", () => ({ assertCashOnDeliveryFeeMatchesPayment: () => undefined }))
+jest.mock("../../utils/personal-discount-coupon", () => ({ assertCartHasNoCouponWithPersonalDiscount: async () => undefined }))
 
 const asked: unknown[] = []
 jest.mock("../../utils/cart-hold", () => ({

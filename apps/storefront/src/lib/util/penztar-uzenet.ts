@@ -1,5 +1,5 @@
 import type { Key } from "@lib/i18n/dictionary"
-import { hibaAllapota } from "./kedvezmeny-uzenet"
+import { hibaAllapota, SAJAT_KEDVEZMENY_KUPON_KOD } from "./kedvezmeny-uzenet"
 import { FOGLALT_KOD } from "./kosar-foglalas"
 
 /**
@@ -138,6 +138,10 @@ export const RENDELES_KEDVEZMENY_BONTAS =
  */
 export const JOGI_DOKUMENTUM_HIANY_KOD = "legal_documents_missing"
 
+/** A lezáráson megakadt kupon (20713f62): a kódmező mondata, és hogy mit tehet a vevő (a szótár `errPersonalDiscountCoupon` kulcsa). */
+export const RENDELES_SAJAT_KEDVEZMENY_KUPON =
+  "Ezt a kupont nem tudod felhasználni, mert saját kedvezményed van. Vedd le a kupont a kosárból, és próbáld újra."
+
 export const RENDELES_JOGI_HIANY =
   "A rendelést most nem tudjuk fogadni: az ÁSZF és az adatkezelési tájékoztató még nincs közzétéve."
 
@@ -157,6 +161,9 @@ export const RENDELES_DARAB_FOGLALT =
 export function rendelesHibaUzenet(hiba: unknown): string {
   const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
   if (szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD)) return RENDELES_JOGI_HIANY
+  // a belépés előtt felvett kupon a lezáráson akad meg (20713f62): ugyanaz a mondat, mint a kódmezőnél
+  if (szoveg.includes(SAJAT_KEDVEZMENY_KUPON_KOD))
+    return RENDELES_SAJAT_KEDVEZMENY_KUPON
   if (szoveg.includes(`${FOGLALT_KOD}:`)) return RENDELES_DARAB_FOGLALT
   return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
     ? RENDELES_KEDVEZMENY_BONTAS
@@ -175,6 +182,8 @@ export function rendelesHibaKod(hiba: unknown): Key {
   const szoveg = hiba instanceof Error ? hiba.message : String(hiba ?? "")
   if (szoveg.includes(JOGI_DOKUMENTUM_HIANY_KOD))
     return "checkoutPayment.errLegalMissing"
+  if (szoveg.includes(SAJAT_KEDVEZMENY_KUPON_KOD))
+    return "checkoutPayment.errPersonalDiscountCoupon"
   if (szoveg.includes(`${FOGLALT_KOD}:`)) return "checkoutPayment.errPieceHeld"
   return szoveg.includes(BONTAS_KEDVEZMENY_KOD)
     ? "checkoutPayment.errSplitDiscount"
