@@ -23,7 +23,7 @@ vi.mock("./cookies", () => ({
 vi.mock("./regions", () => ({
   getRegion: vi.fn(async () => ({ id: "reg_1" })),
 }))
-vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
+vi.mock("next/cache", () => ({ updateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 
 import { MENNYISEG_ELUTASITVA } from "@lib/util/kosar-uzenet"

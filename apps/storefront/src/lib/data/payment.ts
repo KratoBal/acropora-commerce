@@ -2,7 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { getAuthHeaders, getCacheOptions, getCacheTag } from "./cookies"
-import { revalidateTag } from "next/cache"
+import { updateTag } from "next/cache"
 import type { Key } from "@lib/i18n/dictionary"
 import {
   FIZETES_MOST_NEM_SIKERULT,
@@ -130,7 +130,7 @@ export const egyeztesdAzUtanvetDijat = async (
     })
 
     const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    updateTag(cartCacheTag)
 
     return {
       ok: true,

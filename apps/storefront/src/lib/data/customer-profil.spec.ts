@@ -9,7 +9,7 @@ vi.mock("./cookies", () => ({
   getCacheTag: vi.fn(async () => "customers"),
   getCacheOptions: vi.fn(async () => ({})),
 }))
-vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
+vi.mock("next/cache", () => ({ updateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 
 import { saveProfile } from "./customer"

@@ -23,7 +23,7 @@ vi.mock("./cookies", () => ({
 vi.mock("./regions", () => ({
   getRegion: vi.fn(async () => ({ id: "reg_1" })),
 }))
-vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
+vi.mock("next/cache", () => ({ updateTag: vi.fn() }))
 
 import { translator } from "@lib/i18n/dictionary"
 import { LATOGATO_FOGLALAS_KORLAT } from "@lib/util/kosar-foglalas"

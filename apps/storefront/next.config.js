@@ -72,9 +72,6 @@ const nextConfig = {
       fullUrl: true,
     },
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -110,6 +107,13 @@ const nextConfig = {
      * A `localhost` csak fejlesztesben marad; a Medusa Cloud S3 csak pontos
      * hoszttal es uttal (env-bol). A lista rogzitve: `next-config-kepek.spec.ts`.
      */
+    /*
+     * CSAK A SAJAT KEP-MAPPA A HELYI KEPEKNEK (Next 16, acrobot 59929; barracuda 59862). Minden helyi kep a `public/images/` alatt all. Egy mas helyi utvonal
+     * (`/_next/image?url=/logo.png`) a Next 15-ben 400-at adott, a Next 16-ban 500-at ("internal response is invalid": a middleware a hianyzo utat az orszag-elotagos
+     * cimre iranyitja, 307, a kepoptimalizalo azt kapja). A `localPatterns` ezt a kerest elozetesen utasitja el, 400-zal ("url parameter is not allowed"), a naplo
+     * tehat nem kap szerverhibat egy rossz kepcimre; a minta rogzitve: `next-config-kepek.spec.ts`.
+     */
+    localPatterns: [{ pathname: "/images/**" }],
     remotePatterns: [
       ...(MEDUSA_KEPHOSZT ? [MEDUSA_KEPHOSZT] : []),
       ...(process.env.NODE_ENV === "production"

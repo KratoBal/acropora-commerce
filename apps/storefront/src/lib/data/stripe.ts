@@ -9,8 +9,9 @@ import {
   rendelesHibaKod,
   rendelesHibaUzenet,
 } from "@lib/util/penztar-uzenet"
-import { revalidateTag } from "next/cache"
+import { updateTag } from "next/cache"
 import { getAuthHeaders, getCacheTag } from "./cookies"
+import { stripeVisszarendezesHivas } from "./stripe-visszarendezes"
 
 /**
  * A VEGYES KOSÁR KÁRTYÁS FIZETÉSÉNEK VÁLASZTÁSA: a fizetési lépés „Tovább”
@@ -40,7 +41,7 @@ export async function valasszKartyatVegyesKosarra(
     }
   }
 
-  revalidateTag(await getCacheTag("carts"))
+  updateTag(await getCacheTag("carts"))
   return { ok: true }
 }
 
@@ -92,19 +93,12 @@ export async function inditsStripeKozosFizetest(
  * A KÖZÖS STRIPE-FIZETÉS NEM JÖTT LÉTRE (elutasított kártya, megszakítás): a
  * sorok visszakerülnek egy kosárba, és a zárolás felszabadul
  * (`stripe-rejoin`). Utána bármelyik fizetési mód újra választható.
+ * SZERVER-AKCIÓ: a cache-érvénytelenítés `updateTag`; a route handler (`api/payment-return`) a `stripeVisszarendezesHivas`-t hívja, és maga érvénytelenít.
  */
 export async function stripeVisszarendezes(cartId: string): Promise<void> {
   try {
-    await sdk.client.fetch(`/store/carts/${cartId}/stripe-rejoin`, {
-      method: "POST",
-      headers: { ...(await getAuthHeaders()) },
-    })
-  } catch (hiba) {
-    console.error(
-      "A kosár visszarendezése nem sikerült:",
-      hibaAllapota(hiba) ?? "(nincs állapotkód)",
-    )
+    await stripeVisszarendezesHivas(cartId)
   } finally {
-    revalidateTag(await getCacheTag("carts"))
+    updateTag(await getCacheTag("carts"))
   }
 }
