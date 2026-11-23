@@ -72,8 +72,12 @@ const nextConfig = {
       fullUrl: true,
     },
   },
+  // A BUILD ELLENORZI A TIPUSOKAT (acrobot 60049): eddig `ignoreBuildErrors: true` allt itt, es egy tipushiba
+  // a buildet (a Coolify-telepitest is) atengedte; a #873-ban a `tsc --noEmit` fogta meg, a build nem. Merve
+  // 2026-11-23, a CI build env-vel, tiszta .next-tel: a TypeScript lepes 13-18 mp, a build 49-60 mp volt
+  // nelkule es 53-60 mp vele; a Dockerfile szurt telepitesevel (`--filter "@dtc/storefront..."`) is hibatlan.
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     /*
