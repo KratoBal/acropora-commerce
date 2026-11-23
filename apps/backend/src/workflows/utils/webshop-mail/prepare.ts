@@ -72,7 +72,8 @@ export type OrderMailDeps = {
   livestockKinds?(orderId: string): Promise<LivestockKind[]>
   /**
    * The company of a company purchase (card aba7120c), for the confirmation's billing sentence; null for a private purchase.
-   * Never rejects, like `livestockKinds`: a failed read sends the confirmation without the sentence.
+   * Never rejects, like `livestockKinds`: a failed read sends the confirmation without the sentence. A rejection is caught below
+   * as well, so the confirmation does not depend on that promise.
    */
   buyerCompany?(orderId: string): Promise<BuyerCompany | null>
 }
@@ -126,7 +127,14 @@ export const prepareOrderPlacedMail = async (
 
   const kinds = await Promise.all(orders.map((order) => (deps.livestockKinds ? deps.livestockKinds(order.id) : null)))
   // the billing address is the cart's: both halves of a mixed cart carry the same company, the main order's is read
-  const company = deps.buyerCompany ? await deps.buyerCompany(orderId) : null
+  // guarded here too (barracuda, #821): "never rejects" is the real dependency's promise, not this function's; a company read
+  // that throws sends the confirmation without the billing sentence. prepare has no logger, so the reason goes to the console.
+  const company = deps.buyerCompany
+    ? await deps.buyerCompany(orderId).catch((error: unknown) => {
+        console.warn(`Order ${orderId}: the buyer company read failed, the confirmation goes without it (${error instanceof Error ? error.message : String(error)})`)
+        return null
+      })
+    : null
   const mailOrders = orders.map(({ id, email: _email, ...order }, index) => ({
     ...order,
     pickup: id !== orderId,
