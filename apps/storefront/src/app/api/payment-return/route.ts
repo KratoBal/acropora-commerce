@@ -6,7 +6,7 @@ import { revalidateTag } from "next/cache"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest) {
-  const { origin, searchParams } = req.nextUrl
+  const { searchParams } = req.nextUrl
 
   const cartId = searchParams.get("cart_id")
   const countryCode = searchParams.get("country_code")
@@ -17,10 +17,22 @@ export async function GET(req: NextRequest) {
   const redirectStatus = searchParams.get("redirect_status")
 
   // Without a country code the middleware resolves the customer's region and
-  // prefixes it; either way every redirect below stays on this origin.
-  const prefix = countryCode ? `/${countryCode}` : ""
-  const rejected = () =>
-    NextResponse.redirect(`${origin}${prefix}/cart?error=payment_failed`)
+  // prefixes it. The country code comes from the query, so it is checked: two
+  // lower-case letters or nothing. With a relative Location (below) a value
+  // such as "//evil.example" would otherwise become a protocol-relative URL.
+  const prefix =
+    countryCode && /^[a-z]{2}$/.test(countryCode) ? `/${countryCode}` : ""
+
+  // RELATIVE Location, on purpose (card a9813f18): behind the reverse proxy
+  // `req.nextUrl.origin` is the container's own address (`https://localhost:8000`
+  // on the test storefront), so an absolute redirect sent the customer there.
+  // A relative Location stays on whatever host the customer came from, with no
+  // host to guess and no host header to trust, the same as the middleware's
+  // redirects. NextResponse.redirect needs an absolute URL, hence the plain
+  // response; 307 is its default status.
+  const redirectTo = (path: string) =>
+    new NextResponse(null, { status: 307, headers: { Location: path } })
+  const rejected = () => redirectTo(`${prefix}/cart?error=payment_failed`)
 
   if (!cartId || !paymentIntent || !paymentIntentClientSecret) {
     return rejected()
@@ -77,7 +89,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.redirect(`${origin}${prefix}/checkout?${params}`)
+    return redirectTo(`${prefix}/checkout?${params}`)
   }
 
   /*
@@ -88,8 +100,8 @@ export async function GET(req: NextRequest) {
     fent megtortent; a leadast (`placeOrder`) a fizetesi lepes inditja, es
     sikernel ugyanugy a visszaigazolo lapra visz.
   */
-  return NextResponse.redirect(
-    `${origin}${prefix}/checkout?${new URLSearchParams({
+  return redirectTo(
+    `${prefix}/checkout?${new URLSearchParams({
       step: "payment",
       ellenorzes: "1",
     })}`,
