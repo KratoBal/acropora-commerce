@@ -50,6 +50,14 @@ describe("a függőség-figyelés konfigja", () => {
     expect(konfig()).not.toMatch(/"major"/)
   })
 
+  it("a TypeScript fő verziója ki van zárva (a 7-es natív fordítót a Next és a Medusa CLI nem ismeri)", () => {
+    const k = konfig()
+    const ignore = k.slice(k.indexOf("ignore:"), k.indexOf("groups:"))
+    expect(k.indexOf("ignore:")).toBeGreaterThan(-1)
+    expect(ignore).toMatch(/dependency-name:\s*"typescript"/)
+    expect(ignore).toMatch(/"version-update:semver-major"/)
+  })
+
   it("az audit-szkript a gyökér package.json-ban áll", () => {
     const csomag = JSON.parse(
       readFileSync(join(GYOKER, "package.json"), "utf8"),
