@@ -1,7 +1,10 @@
 import { getRendelesMegtekintes } from "@lib/data/cookies"
 import { retrieveCustomer } from "@lib/data/customer"
 import { retrieveOrder } from "@lib/data/orders"
-import { megtekintesEngedelyezett } from "@lib/util/rendeles-megtekintes"
+import {
+  megtekintesEngedelyezett,
+  sutiPar,
+} from "@lib/util/rendeles-megtekintes"
 import { kapcsoltRendeles } from "@lib/util/rendelesek"
 import OrderCompletedMinimal from "@modules/order/templates/order-completed-minimal"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
@@ -58,8 +61,10 @@ export default async function OrderConfirmedPage(props: Props) {
   }
 
   // P4-2: egy vegyes kosár két rendelés lett; a visszaigazolás megnevezi a párt.
-  // A pár is csak akkor, ha az is a látogatóé.
-  const par = kapcsoltRendeles(order.metadata)
+  // A pár is csak akkor, ha az is a látogatóé. A metadata-kulcs a háttérből ma
+  // nem jön vissza (kártya d0d177a6, `sutiPar`): ilyenkor a leadáskor kapott
+  // aláírt süti nevezi meg a párt.
+  const par = kapcsoltRendeles(order.metadata) ?? sutiPar(suti, order.id)
   const talaltPar = par ? await retrieveOrder(par.id).catch(() => null) : null
   const parRendeles = talaltPar && sajat(talaltPar) ? talaltPar : null
 

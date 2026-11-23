@@ -946,7 +946,9 @@ export async function placeOrder(
 
     // A visszaigazolo lap reszleteit csak ez a bongeszo lathatja (audit P1/5):
     // alairt, egy oras suti a most leadott rendelesekrol. Ha nem sikerul, a
-    // rendeles ettol meg leadott, a lap a minimalis alakot mutatja.
+    // rendeles ettol meg leadott, a lap a minimalis alakot mutatja. A SORREND
+    // SZAMIT: a hatter valaszaban elol a kiszallitott, utana a bolti, es a lap
+    // ebbol tudja meg a vegyes kosar parjat (`sutiPar`, kartya d0d177a6).
     try {
       await setRendelesMegtekintes(valasz.orders.map((rendeles) => rendeles.id))
     } catch (hiba) {
