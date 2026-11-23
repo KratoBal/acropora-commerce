@@ -190,10 +190,12 @@ describe("GET /store/customers/me/order-business-statuses", () => {
 describe("the customer session in front of these routes", () => {
   it("is required by Medusa's own middleware for every /store/customers/me* route", () => {
     // these routes rely on it instead of repeating it: if a Medusa upgrade
-    // drops or narrows it, this turns red
+    // drops or narrows it, this turns red. Medusa 2.23 (Express 5) writes the
+    // matcher as `me{*splat}`; it covers the same paths `me*` did
     const guard = storeCustomerRoutesMiddlewares.find(
       (route) =>
-        route.matcher === "/store/customers/me*" && route.method === "ALL",
+        route.matcher === "/store/customers/me{*splat}" &&
+        route.method === "ALL",
     )
     expect(guard?.middlewares).toHaveLength(1)
     expect(String(guard?.middlewares?.[0])).toContain("authenticate")
