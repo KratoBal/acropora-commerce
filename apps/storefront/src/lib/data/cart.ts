@@ -43,7 +43,7 @@ import {
 } from "@lib/util/penztar-uzenet"
 import { aszfElfogadasTorzs } from "@lib/util/aszf"
 import { HttpTypes } from "@medusajs/types"
-import { revalidateTag } from "next/cache"
+import { updateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { headers as keresFejlecek } from "next/headers"
 import { foglalasLekerdezes } from "./kosar-foglalas-lekerdezes"
@@ -125,13 +125,13 @@ export async function getOrSetCart(countryCode: string) {
     await setCartId(cart.id)
 
     const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    updateTag(cartCacheTag)
   }
 
   if (cart && cart?.region_id !== region.id) {
     await sdk.store.cart.update(cart.id, { region_id: region.id }, {}, headers)
     const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    updateTag(cartCacheTag)
   }
 
   return cart
@@ -152,10 +152,10 @@ export async function updateCart(data: HttpTypes.StoreUpdateCart) {
     .update(cartId, data, {}, headers)
     .then(async ({ cart }: { cart: HttpTypes.StoreCart }) => {
       const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+      updateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
+      updateTag(fulfillmentCacheTag)
 
       return cart
     })
@@ -259,10 +259,10 @@ export async function addToCart({
   }
 
   const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  updateTag(cartCacheTag)
 
   const fulfillmentCacheTag = await getCacheTag("fulfillment")
-  revalidateTag(fulfillmentCacheTag)
+  updateTag(fulfillmentCacheTag)
 
   return tetel.kind === "vagott"
     ? { ok: true, megjegyzes: tetel.megjegyzes }
@@ -330,10 +330,10 @@ export async function updateLineItem({
   }
 
   const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  updateTag(cartCacheTag)
 
   const fulfillmentCacheTag = await getCacheTag("fulfillment")
-  revalidateTag(fulfillmentCacheTag)
+  updateTag(fulfillmentCacheTag)
 
   return { ok: true }
 }
@@ -357,10 +357,10 @@ export async function deleteLineItem(lineId: string) {
     .deleteLineItem(cartId, lineId, {}, headers)
     .then(async () => {
       const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+      updateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
+      updateTag(fulfillmentCacheTag)
     })
     .catch(medusaError)
 }
@@ -424,7 +424,7 @@ export async function setShippingMethod({
   }
 
   const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  updateTag(cartCacheTag)
 
   return { ok: true }
 }
@@ -462,7 +462,7 @@ export async function initiatePaymentSession(
   }
 
   const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  updateTag(cartCacheTag)
 
   return { ok: true }
 }
@@ -548,10 +548,10 @@ export async function applyPromotions(
   }
 
   const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  updateTag(cartCacheTag)
 
   const fulfillmentCacheTag = await getCacheTag("fulfillment")
-  revalidateTag(fulfillmentCacheTag)
+  updateTag(fulfillmentCacheTag)
 
   return { ok: true }
 }
@@ -599,7 +599,7 @@ async function giftCardRequest(
       ),
     }
   }
-  revalidateTag(await getCacheTag("carts"))
+  updateTag(await getCacheTag("carts"))
   return { ok: true }
 }
 
@@ -791,7 +791,7 @@ export async function rogzitsAszfElfogadast(
       body: aszfElfogadasTorzs(),
       headers: { ...(await getAuthHeaders()) },
     })
-    revalidateTag(await getCacheTag("carts"))
+    updateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
     return {
@@ -818,7 +818,7 @@ export async function mentsMegjegyzeseket(
       body: torzs,
       headers: { ...(await getAuthHeaders()) },
     })
-    revalidateTag(await getCacheTag("carts"))
+    updateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
     return {
@@ -851,7 +851,7 @@ export async function mentsRendelesiNyelvet(
       body: { locale },
       headers: { ...(await getAuthHeaders()) },
     })
-    revalidateTag(await getCacheTag("carts"))
+    updateTag(await getCacheTag("carts"))
     return { ok: true }
   } catch {
     // NEM NEMA: ha egy angol vevo emiatt kap magyar levelet, a naplobol latszik
@@ -927,7 +927,7 @@ export async function placeOrder(
   }
 
   const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  updateTag(cartCacheTag)
 
   const elso = valasz?.orders?.[0]
 
@@ -942,7 +942,7 @@ export async function placeOrder(
     }
 
     const orderCacheTag = await getCacheTag("orders")
-    revalidateTag(orderCacheTag)
+    updateTag(orderCacheTag)
 
     // A visszaigazolo lap reszleteit csak ez a bongeszo lathatja (audit P1/5):
     // alairt, egy oras suti a most leadott rendelesekrol. Ha nem sikerul, a
@@ -993,14 +993,14 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   if (cartId) {
     await updateCart({ region_id: region.id })
     const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    updateTag(cartCacheTag)
   }
 
   const regionCacheTag = await getCacheTag("regions")
-  revalidateTag(regionCacheTag)
+  updateTag(regionCacheTag)
 
   const productsCacheTag = await getCacheTag("products")
-  revalidateTag(productsCacheTag)
+  updateTag(productsCacheTag)
 
   redirect(`/${countryCode}${currentPath}`)
 }

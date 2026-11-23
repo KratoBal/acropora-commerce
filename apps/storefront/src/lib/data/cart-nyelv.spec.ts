@@ -11,7 +11,7 @@ vi.mock("./cookies", () => ({
   setCartId: vi.fn(),
 }))
 vi.mock("./regions", () => ({ getRegion: vi.fn() }))
-vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
+vi.mock("next/cache", () => ({ updateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 
 import { mentsRendelesiNyelvet } from "./cart"

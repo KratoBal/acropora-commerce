@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     )
 
-  for (const cimke of cimkek) revalidateTag(cimke)
+  // route handler: az `updateTag` csak szerver-akcióban él; az azonnali lejárat (`expire: 0`) a Next 15 egyargumentumú `revalidateTag`-jének viselkedése
+  for (const cimke of cimkek) revalidateTag(cimke, { expire: 0 })
   return NextResponse.json({ revalidated: cimkek })
 }

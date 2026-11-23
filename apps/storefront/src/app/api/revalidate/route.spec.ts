@@ -58,14 +58,18 @@ describe("POST /api/revalidate", () => {
     const valasz = await POST(keres("a-helyes-titok", { tags: ["products"] }))
     expect(valasz.status).toBe(200)
     expect(await valasz.json()).toEqual({ revalidated: ["products"] })
-    expect(cache.revalidateTag.mock.calls).toEqual([["products"]])
+    expect(cache.revalidateTag.mock.calls).toEqual([
+      ["products", { expire: 0 }],
+    ])
   })
 
   it("a régi címek listája (SEO P0 PR 7c) a redirects címkét üríti", async () => {
     vi.stubEnv("STOREFRONT_REVALIDATE_SECRET", "a-helyes-titok")
     const valasz = await POST(keres("a-helyes-titok", { tags: ["redirects"] }))
     expect(valasz.status).toBe(200)
-    expect(cache.revalidateTag.mock.calls).toEqual([["redirects"]])
+    expect(cache.revalidateTag.mock.calls).toEqual([
+      ["redirects", { expire: 0 }],
+    ])
   })
 
   it("a kezdőlap tartalma (a backend az OS mentésekor hívja) a homepage-content címkét üríti", async () => {
@@ -74,7 +78,9 @@ describe("POST /api/revalidate", () => {
       keres("a-helyes-titok", { tags: ["homepage-content"] }),
     )
     expect(valasz.status).toBe(200)
-    expect(cache.revalidateTag.mock.calls).toEqual([["homepage-content"]])
+    expect(cache.revalidateTag.mock.calls).toEqual([
+      ["homepage-content", { expire: 0 }],
+    ])
   })
 
   it("a márka-írás (a backend a márka és a termék-márka kötés után hívja) a brands címkét üríti", async () => {
@@ -82,6 +88,6 @@ describe("POST /api/revalidate", () => {
     const valasz = await POST(keres("a-helyes-titok", { tags: ["brands"] }))
     expect(valasz.status).toBe(200)
     expect(await valasz.json()).toEqual({ revalidated: ["brands"] })
-    expect(cache.revalidateTag.mock.calls).toEqual([["brands"]])
+    expect(cache.revalidateTag.mock.calls).toEqual([["brands", { expire: 0 }]])
   })
 })

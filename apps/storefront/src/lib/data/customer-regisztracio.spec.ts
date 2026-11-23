@@ -26,7 +26,7 @@ const suti = vi.hoisted(() => {
   }
 })
 vi.mock("./cookies", () => suti)
-vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
+vi.mock("next/cache", () => ({ updateTag: vi.fn() }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
 import { login, signup } from "./customer"
 

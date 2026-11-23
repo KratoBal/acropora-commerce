@@ -9,7 +9,7 @@ import {
   rendelesHibaKod,
   rendelesHibaUzenet,
 } from "@lib/util/penztar-uzenet"
-import { revalidateTag } from "next/cache"
+import { updateTag } from "next/cache"
 import { getAuthHeaders, getCacheTag } from "./cookies"
 
 /**
@@ -40,7 +40,7 @@ export async function valasszKartyatVegyesKosarra(
     }
   }
 
-  revalidateTag(await getCacheTag("carts"))
+  updateTag(await getCacheTag("carts"))
   return { ok: true }
 }
 
@@ -105,6 +105,6 @@ export async function stripeVisszarendezes(cartId: string): Promise<void> {
       hibaAllapota(hiba) ?? "(nincs állapotkód)",
     )
   } finally {
-    revalidateTag(await getCacheTag("carts"))
+    updateTag(await getCacheTag("carts"))
   }
 }

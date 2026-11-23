@@ -1,4 +1,3 @@
-const path = require("path")
 // A Figma Foundations tokenek (P1a): minden kulcs `acr` elotagu, lasd a fajlt.
 const acr = require("./tailwind-acropora")
 

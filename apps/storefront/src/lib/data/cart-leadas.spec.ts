@@ -13,7 +13,7 @@ vi.mock("./cookies", () => ({
   setCartId: vi.fn(),
 }))
 vi.mock("./regions", () => ({ getRegion: vi.fn() }))
-vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }))
+vi.mock("next/cache", () => ({ updateTag: vi.fn() }))
 
 import { RENDELES_KEDVEZMENY_BONTAS } from "@lib/util/penztar-uzenet"
 
