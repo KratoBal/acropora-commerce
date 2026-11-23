@@ -1,4 +1,10 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const adat = vi.hoisted(() => ({
@@ -31,7 +37,7 @@ import TransferPage from "./page"
 /**
  * A HARMAS ATVITEL-OLDAL A `params`-OT PROMISE-KENT OLVASSA. A Next 15-ben a szinkron `params` (egy sima objektum) meg mukodott, a Next 16-ban a `params` KIZAROLAG
  * Promise, es egy szinkron olvasas nem hibat dob: az oldal HTTP 200-zal renderel, de az order-szam es a token UKES (merve 2026-11-23, helyi Next 16.4.6 szerveren: "Transfer
- * request for order  "). Az accept es a decline oldal a renderelesben HIVJA az atvitelt, tehat ures azonositoval hivna. Ami pirosit: egy oldal a Promise-t objektumkent olvassa
+ * request for order  "). Az accept es a decline oldal ELOBB a renderelesben hivta az atvitelt (egy GET allapotot valtoztatott, kartya b9912381); mostantol a render nem hiv mutaciot, az atvitel a gombnyomasra megy. Ami pirosit: egy oldal a Promise-t objektumkent olvassa
  * (az id nem jelenik meg az oldalon, a data-fuggveny nem a kapott id-t es tokent kapja).
  */
 const params = () =>
@@ -53,15 +59,29 @@ describe("az atvitel-oldalak a params Promise-t olvassak", () => {
     expect(gombok.getAttribute("data-token")).toBe("tok_TESZT")
   })
 
-  it("az elfogadas a kapott id-vel es tokennel hivja az atvitelt, es az oldal megnevezi a rendelest", async () => {
+  it("az elfogadas oldala a RENDERELESKOR nem hiv mutaciot, megnevezi a rendelest, es egy gombot mutat a kapott id-vel es tokennel", async () => {
     render(await AcceptPage({ params: params() }))
-    expect(adat.elfogad).toHaveBeenCalledWith("order_01TESZT", "tok_TESZT")
+    expect(adat.elfogad).not.toHaveBeenCalled()
+    expect(adat.elutasit).not.toHaveBeenCalled()
     expect(screen.getByText(/order_01TESZT/)).toBeInTheDocument()
+    expect(screen.getByTestId("transfer-gomb")).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId("transfer-gomb"))
+    await waitFor(() =>
+      expect(adat.elfogad).toHaveBeenCalledWith("order_01TESZT", "tok_TESZT"),
+    )
+    expect(adat.elutasit).not.toHaveBeenCalled()
   })
 
-  it("az elutasitas a kapott id-vel es tokennel hivja az atvitelt, es az oldal megnevezi a rendelest", async () => {
+  it("az elutasitas oldala a RENDERELESKOR nem hiv mutaciot, megnevezi a rendelest, es egy gombot mutat a kapott id-vel es tokennel", async () => {
     render(await DeclinePage({ params: params() }))
-    expect(adat.elutasit).toHaveBeenCalledWith("order_01TESZT", "tok_TESZT")
+    expect(adat.elfogad).not.toHaveBeenCalled()
+    expect(adat.elutasit).not.toHaveBeenCalled()
     expect(screen.getByText(/order_01TESZT/)).toBeInTheDocument()
+    expect(screen.getByTestId("transfer-gomb")).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId("transfer-gomb"))
+    await waitFor(() =>
+      expect(adat.elutasit).toHaveBeenCalledWith("order_01TESZT", "tok_TESZT"),
+    )
+    expect(adat.elfogad).not.toHaveBeenCalled()
   })
 })
