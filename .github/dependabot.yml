@@ -43,7 +43,9 @@ updates:
     # startup), BullMQ 6 and ioredis 6 ("deploy all instances together, do not downgrade after startup"), the Redis session store moved to
     # connect-redis v11 with a node-redis client (ioredis-shaped redisOptions keys are silently ignored), and React 19.3.1 and Tailwind 4 for the
     # admin. Dependabot rewrote #845 from 2.22.7 to 2.23.0 while it was under review. The Medusa group keeps its PATCH updates (2.22.x); every
-    # MINOR update of a @medusajs package waits for a planned PR with its own test-deploy measurements. REMOVE THIS ENTRY in that PR.
+    # MINOR update of a @medusajs package waits for a planned PR with its own test-deploy measurements. The entry STAYS after the 2.23 upgrade
+    # (decided 2026-11-23): it only stops Dependabot from opening minor PRs, a planned upgrade does not depend on it, and 2.24 and later are
+    # planned the same way.
     # (The `versions: ["2.23.x"]` form was not used: its exact pattern syntax is not checked here; update-types is the documented form.)
       - dependency-name: "@medusajs/*"
         update-types:

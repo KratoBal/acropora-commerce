@@ -1,5 +1,12 @@
 FROM node:22-bookworm-slim AS builder
 
+# Medusa 2.23 needs node >=22.22.0 (engines of @medusajs/medusa, framework and
+# cli). `node:22-bookworm-slim` is a moving tag, and a builder with an old cached
+# copy of it would build on an older 22.x without a word: pnpm only warns on an
+# engines mismatch. This line stops the build instead, and prints the version
+# into the build log either way. The runner uses the same tag in the same build.
+RUN node -e "const [a,b]=process.versions.node.split('.').map(Number); console.log('node', process.version); if (a<22||(a===22&&b<22)) { console.error('node >=22.22.0 is required (Medusa 2.23)'); process.exit(1) }"
+
 WORKDIR /app
 
 # A PNPM A REPO CSOMAGKEZELOJE (a gyokeri package.json `packageManager` mezoje),
