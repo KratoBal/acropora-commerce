@@ -29,6 +29,16 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+    # TYPESCRIPT 7 IS NOT ADOPTABLE YET (2026-11-23). Its native compiler has no JavaScript compiler API, and two tools of ours need that API:
+    # the storefront's lint stops with "TypeScript 7.0.2 is not supported by this version of Next.js", and `medusa lint` (@medusajs/cli, ts-node)
+    # stops with "Cannot read properties of undefined (reading 'fileExists')" (CI log of #603, 2026-11-15). Neither is fixable in our code.
+    # REMOVE THIS ENTRY when both the Next.js and the Medusa CLI release notes say TypeScript 7 is supported, then try it in one PR.
+    # The entry ignores every MAJOR TypeScript update (6.x as well as 7.x): a major version stays a human decision here, as for every other
+    # package. Moving to 6.x is a separate question, not decided by this entry.
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
     groups:
       medusa:
         patterns:
