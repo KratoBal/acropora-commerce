@@ -36,15 +36,18 @@ vi.mock("@modules/order/templates/order-completed-template", () => ({
   default: ({
     order,
     par,
+    parBolti,
     vendeg,
   }: {
     order: { email: string }
     par: { id: string } | null
+    parBolti?: boolean
     vendeg?: boolean
   }) => (
     <div
       data-testid="reszletes"
       data-par={par?.id ?? ""}
+      data-par-bolti={String(parBolti ?? false)}
       data-vendeg={String(vendeg ?? false)}
     >
       {order.email}
@@ -161,6 +164,33 @@ describe("a rendelés-visszaigazoló lap", () => {
     adat.suti = alairtMegtekintesSuti(["order_A"])!
     await lap("order_A")
     expect(screen.getByTestId("reszletes").getAttribute("data-par")).toBe("")
+  })
+
+  // KÁRTYA d0d177a6: a valódi háttér a vendég rendelésolvasásában a `metadata`-t NEM adja vissza (2026-11-23, #109/#110), a
+  // fenti teszt-dupla viszont adta, ezért nem bukott. MI PIROSIT: metadata nélkül, a leadáskor kapott sütivel a vegyes kosár
+  // lapja nem kapja meg a párt (a kiszállított lap a boltit, a bolti a kiszállítottat), vagy rossz fajtát kap.
+  it("metadata nélkül a süti nevezi meg a vegyes kosár párját, mindkét lapon", async () => {
+    process.env.ORDER_VIEW_SECRET = "proba-titok-nem-valodi"
+    adat.rendelesek = {
+      order_SHIP: rendeles("order_SHIP"),
+      order_PICK: rendeles("order_PICK"),
+    }
+    adat.suti = alairtMegtekintesSuti(["order_SHIP", "order_PICK"])!
+    await lap("order_SHIP")
+    expect(screen.getByTestId("reszletes").getAttribute("data-par")).toBe(
+      "order_PICK",
+    )
+    expect(screen.getByTestId("reszletes").getAttribute("data-par-bolti")).toBe(
+      "true",
+    )
+    cleanup()
+    await lap("order_PICK")
+    expect(screen.getByTestId("reszletes").getAttribute("data-par")).toBe(
+      "order_SHIP",
+    )
+    expect(screen.getByTestId("reszletes").getAttribute("data-par-bolti")).toBe(
+      "false",
+    )
   })
 
   it("a háttér 404-e (idegen vagy nem létező rendelés) ugyanazt a számtalan minimális oldalt adja", async () => {

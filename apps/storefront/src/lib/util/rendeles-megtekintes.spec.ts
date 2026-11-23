@@ -4,6 +4,7 @@ import {
   MEGTEKINTES_ELETTARTAM_MP,
   alairtMegtekintesSuti,
   megtekintesEngedelyezett,
+  sutiPar,
 } from "./rendeles-megtekintes"
 
 /**
@@ -101,5 +102,49 @@ describe("a megtekintési süti", () => {
   it("üres vagy furcsa azonosítóból nem lesz süti (a pont és a vessző elválasztó)", () => {
     expect(alairtMegtekintesSuti([], MOST, KULCS)).toBeNull()
     expect(alairtMegtekintesSuti(["a.b", "x,y", ""], MOST, KULCS)).toBeNull()
+  })
+})
+
+/**
+ * A VEGYES KOSAR PARJA A SUTIBOL (kartya d0d177a6). MI PIROSIT: ha a kiszallitott
+ * rendeles lapja nem a bolti part kapja (vagy forditva); ha egy rendeles parja
+ * egy olyan sutibol jon, ami nem ket rendelest nevez meg, ami nem nevezi meg ezt
+ * a rendelest, ami lejart, vagy amit nem ez a kulcs irt alá.
+ */
+describe("a vegyes kosár párja a sütiből", () => {
+  const ket = () =>
+    alairtMegtekintesSuti(["order_SHIP", "order_PICK"], MOST, KULCS)!
+
+  it("a kiszállított rendelés párja a bolti, a boltié a kiszállított", () => {
+    expect(sutiPar(ket(), "order_SHIP", MOST, KULCS)).toEqual({
+      id: "order_PICK",
+      bolti: true,
+    })
+    expect(sutiPar(ket(), "order_PICK", MOST, KULCS)).toEqual({
+      id: "order_SHIP",
+      bolti: false,
+    })
+  })
+
+  it("egy rendelés, idegen rendelés, lejárt vagy más kulccsal írt süti: nincs pár", () => {
+    expect(
+      sutiPar(
+        alairtMegtekintesSuti(["order_SHIP"], MOST, KULCS),
+        "order_SHIP",
+        MOST,
+        KULCS,
+      ),
+    ).toBeNull()
+    expect(sutiPar(ket(), "order_MASIK", MOST, KULCS)).toBeNull()
+    expect(
+      sutiPar(
+        ket(),
+        "order_SHIP",
+        KESOBB(MEGTEKINTES_ELETTARTAM_MP + 1),
+        KULCS,
+      ),
+    ).toBeNull()
+    expect(sutiPar(ket(), "order_SHIP", MOST, "masik-kulcs")).toBeNull()
+    expect(sutiPar(undefined, "order_SHIP", MOST, KULCS)).toBeNull()
   })
 })
