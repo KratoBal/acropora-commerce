@@ -76,13 +76,47 @@ export function megtekintesEngedelyezett(
   most: Date = new Date(),
   kulcs: string | null = titok(),
 ): boolean {
-  if (!suti || !kulcs || !rendelesId) return false
+  if (!rendelesId) return false
+  return megtekinthetoRendelesek(suti, most, kulcs).includes(rendelesId)
+}
+
+/** Az ervenyes, le nem jart suti rendelesei a leadas sorrendjeben; ures lista minden mas esetben. */
+export function megtekinthetoRendelesek(
+  suti: string | undefined | null,
+  most: Date = new Date(),
+  kulcs: string | null = titok(),
+): string[] {
+  if (!suti || !kulcs) return []
   const resz = suti.split(".")
-  if (resz.length !== 3) return false
+  if (resz.length !== 3) return []
   const [lejaratSzoveg, idk, kapott] = resz as [string, string, string]
-  if (!egyezik(alairas(kulcs, `${lejaratSzoveg}.${idk}`), kapott)) return false
+  if (!egyezik(alairas(kulcs, `${lejaratSzoveg}.${idk}`), kapott)) return []
   const lejarat = Number(lejaratSzoveg)
   if (!Number.isFinite(lejarat) || lejarat < Math.floor(most.getTime() / 1000))
-    return false
-  return idk.split(",").includes(rendelesId)
+    return []
+  return idk.split(",").filter(Boolean)
+}
+
+/**
+ * A VEGYES KOSAR PARJA A SUTIBOL (kartya d0d177a6). A Medusa a vendeg
+ * rendelesolvasasaban (`GET /store/orders/:id`) a `metadata`-t nem adja vissza
+ * (a 2.23 retrieve mezolistaja; merve 2026-11-23 a teszt kirakaton, #109 es
+ * #110), tehat a rendelesek egymasra mutato metadata-kulcsa a lapig nem jut el.
+ * Az alairt suti viszont pontosan az egy leadasbol lett rendeleseket nevezi meg,
+ * a `complete-split` sorrendjeben: elol a kiszallitott, utana a bolti
+ * (`placeOrder`, cart.ts). Ket rendelesnel, ha ez az egyik, a masik a par; a
+ * `bolti` azt mondja meg, hogy a PAR a bolti atveteles-e.
+ */
+export function sutiPar(
+  suti: string | undefined | null,
+  rendelesId: string,
+  most: Date = new Date(),
+  kulcs: string | null = titok(),
+): { id: string; bolti: boolean } | null {
+  const idk = megtekinthetoRendelesek(suti, most, kulcs)
+  if (idk.length !== 2 || !idk.includes(rendelesId)) return null
+  const [kiszallitott, bolti] = idk as [string, string]
+  return rendelesId === kiszallitott
+    ? { id: bolti, bolti: true }
+    : { id: kiszallitott, bolti: false }
 }
