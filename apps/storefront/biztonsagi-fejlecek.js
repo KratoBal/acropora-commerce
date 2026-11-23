@@ -148,6 +148,9 @@ function jelentoCsp(env) {
       "'self'",
       ...sajat,
       "https://api.stripe.com",
+      // a Stripe fizetesi mezo a megjelenes `fonts.cssSrc` stiluslapjat a lapon at kerdezi le (stripe-megjelenes.ts, STRIPE_BETUK):
+      // a jelento mod ezt connect-src serteskent jelentette, clover es endive Stripe.js vonalon egyarant (2026-11-23)
+      "https://fonts.googleapis.com",
       "https://admin.fogyasztobarat.hu",
       ...mero.connect,
     ),

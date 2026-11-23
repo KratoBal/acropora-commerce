@@ -5,6 +5,7 @@ import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { elonezetiUt } from "@lib/util/kezdolap-elonezet"
+import { STRIPE_BETUK } from "@lib/util/stripe-megjelenes"
 
 /*
   A KIRAKAT BIZTONSAGI FEJLECEI (commerce-audit-p0, B1, P0). MI PIROSIT: ha
@@ -128,6 +129,17 @@ describe("a CSP", () => {
       .find((h) => h.key === "Content-Security-Policy-Report-Only")!.value
   const irany = (csp: string, nev: string) =>
     csp.split("; ").find((r) => r.startsWith(`${nev} `)) ?? ""
+
+  /*
+    A STRIPE BETU-STILUSLAPJA A KAPCSOLAT-FORRASBAN (2026-11-23): a fizetesi mezo megjeleneseben nevezett betu stiluslapjat (STRIPE_BETUK)
+    a Stripe a lapon at kerdezi le, es azt a connect-src-nek kell engednie. MI PIROSIT: a stiluslap hosztja kiesik a connect-src-bol, vagy
+    a betu forrasa mashova koltozik, es a szabaly nem koveti.
+  */
+  it("a Stripe fizetesi mezo betu-stiluslapjanak hosztja a connect-src-ben van", () => {
+    const csp = jelentoCspEnv({})
+    for (const betu of STRIPE_BETUK)
+      expect(irany(csp, "connect-src")).toContain(new URL(betu.cssSrc).origin)
+  })
 
   it("azonosito nelkul nincs Google- vagy Meta-forras", () => {
     const csp = jelentoCspEnv({})
