@@ -230,12 +230,12 @@ export const FIZETESI_OPCIOK_KEP = {
 
 /**
  * A KARTYATARSASAGOK HIVATALOS JELVENYEI (d707cf5f; Balazs 2026-10-27: Google Pay, Apple Pay, Mastercard, Maestro,
- * Visa). A penztar mind az otot tudja: a kartyakat a Stripe, az Apple Payt es a Google Payt a Stripe Express Checkout
+ * Visa; 2026-11-23: a Maestro kimarad, acrobot 59629, 59642). A penztar mind a negyet tudja: a kartyakat a Stripe, az Apple Payt es a Google Payt a Stripe Express Checkout
  * (`applePay`, `googlePay`: "auto").
  *
  * EGY JELVENY CSAK HIVATALOS FAJLBOL KERUL IDE, a marka sajat oldalarol, a mellette allo kommentben a forras, a
  * licencsor es a marka meret- es szabad-ter szabalya. Ahol a letoltes feltetel-elfogadassal jar (Apple Pay, Mastercard,
- * Maestro, Visa), az Balazs dontese (acrobot 47495, 47497): addig a `src` null. AMIG NINCS MEG MIND AZ OT, a lablec a
+ * Maestro, Visa), az Balazs dontese (acrobot 47495, 47497): addig a `src` null. AMIG NINCS MEG MIND A NEGY, a lablec a
  * tartalek kepet mutatja (`FIZETESI_OPCIOK_KEP`), mert egy hianyos sor azt mondana a vevonek, hogy a hianyzo kartyat
  * nem fogadjuk el (acrobot 47497).
  */
@@ -267,16 +267,46 @@ export const FIZETESI_JELVENYEK: readonly FizetesiJelveny[] = [
     w: 1094,
     h: 742,
   },
-  { kulcs: "apple-pay", alt: "Apple Pay", src: null, w: 0, h: 0 },
-  { kulcs: "mastercard", alt: "Mastercard", src: null, w: 0, h: 0 },
-  { kulcs: "maestro", alt: "Maestro", src: null, w: 0, h: 0 },
-  // VISA: a Visa markaoldalai (visa.com, visa.co.uk) nincsenek a karanten-olvaso engedelyezett listajan (2026-11-11);
-  // forras nelkul nem kerul ide fajl
+  /*
+    APPLE PAY: az Apple hivatalos Apple Pay mark fajlja (Apple_Pay_Mark_RGB_041619.svg, viewBox 165.52107 x 105.9651,
+    sha256 66baf110b86c1f1a...), Balazs toltotte le 2026-11-23-an, a feltetel-elfogadassal (acrobot 59625); a repoba
+    bajtra valtozatlanul (csak svg, g, path elem, script es kulso hivatkozas nelkul). A szabalyok a
+    developer.apple.com/apple-pay/marketing/ oldalrol (a karanten-olvasoval atnezve 2026-11-23): csak az Apple grafikaja,
+    modositas, nyujtas, sarokradiusz-, arnyek-, forgatas- es szinvaltoztatas nelkul; a szabad ter legalabb a mark
+    magassaganak negyede; nem lehet kisebb, mint a hasonlo formatumu tobbi fizetesi azonosito; a "Pay" szo nem fordithato.
+    Az oldal "csak ha a kozlemeny fo temaja az Apple Pay" mondata a hirdetesi kozlemenyre szol; a lablec a tobbi kartya
+    melletti elfogadasi jelzes, amire a "nem kisebb a tobbinel" sor vonatkozik (ertelmezes, a d707cf5f PR-ban kimondva).
+  */
+  {
+    kulcs: "apple-pay",
+    alt: "Apple Pay",
+    src: "/images/fizetes/apple-pay-mark.svg",
+    w: 166,
+    h: 106,
+  },
+  /*
+    MASTERCARD: a Mastercard Symbol hivatalos SVG-je (Mastercard Symbol - SVG/Artwork/ma_symbol.svg, viewBox 152.4 x 108,
+    sha256 05df092590d7d56d...), Balazs toltotte le 2026-11-23-an a brand.mastercard.com Brand Centerbol (acrobot 59629);
+    bajtra valtozatlanul (svg, g, path, rect es egy belso style a szinekhez; script es kulso hivatkozas nelkul). A szabalyok
+    a csomag ket PDF-jebol (karanten-olvaso): a web-artwork quick reference guide szerint SVG-kent, img elemmel, tetszoleges
+    meretben hasznalhato; a szinkodokat, a minimalis meretet es a vedoteret a brand.mastercard.com teljes iranyelve adja
+    (READ-ME, 2020.09.28), ami innen nem olvashato. A MAESTRO kimarad (Balazs rabolintott, acrobot 59629).
+  */
+  {
+    kulcs: "mastercard",
+    alt: "Mastercard",
+    src: "/images/fizetes/mastercard-symbol.svg",
+    w: 152,
+    h: 108,
+  },
+  // VISA: a Visa markaoldalai (www.visa.com, corporate.visa.com, www.visa.co.uk) es a docs.stripe.com az egress-kapun
+  // nem jonnek at (merve 2026-11-23, karanten-olvaso --url), a Balazs-csomagban Visa fajl nincs: forras nelkul nem kerul
+  // ide fajl. Amig a src null, a lablec a tartalek kepet mutatja (fizetesiLogok)
   { kulcs: "visa", alt: "Visa", src: null, w: 0, h: 0 },
 ]
 
 /**
- * A lablec fizetesi logoi: ha mind az ot hivatalos jelveny megvan, azok a lista sorrendjeben, egysegesen `h-8` magasan
+ * A lablec fizetesi logoi: ha mind a negy hivatalos jelveny megvan, azok a lista sorrendjeben, egysegesen `h-8` magasan
  * (a marka sajat szabalya a fajl melletti kommentben); amig barmelyik hianyzik, a tartalek kep.
  */
 export function fizetesiLogok(
