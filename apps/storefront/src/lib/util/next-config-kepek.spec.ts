@@ -25,6 +25,7 @@ const konfig = (env: Record<string, string | undefined>) => {
   delete betolt.cache[betolt.resolve("./check-env-variables")]
   return betolt(ut).images as {
     remotePatterns: Record<string, string>[]
+    localPatterns?: Record<string, string>[]
     qualities?: number[]
   }
 }
@@ -97,5 +98,39 @@ describe("a komponensek a megengedett minőséget kérik", () => {
     // pozitiv kontroll: a listakep 50-et ker
     expect(kert).toContain(50)
     for (const q of kert) expect([50, 75]).toContain(q)
+  })
+})
+
+/*
+  A HELYI KEPEK CSAK A `/images/` ALATT (Next 16, acrobot 59929). MI PIROSIT: a `localPatterns` kiesik vagy tagabb lesz a `/images/**`-nal (egy rossz helyi kepcim ismet a
+  middleware-en at 500-at adna); a forrasban egy `/images/...` hivatkozas olyan fajlra mutat, ami nincs a `public/images/` alatt (a kep 400-zal vagy 404-gyel esne ki).
+*/
+describe("a helyi képek engedélye", () => {
+  it("csak a /images/ alatti utak", () => {
+    expect(konfig({ ...ALAP, NODE_ENV: "production" }).localPatterns).toEqual([
+      { pathname: "/images/**" },
+    ])
+  })
+
+  it("minden /images/ hivatkozás a forrásban létező fájl a public/images alatt", () => {
+    const fajlok = (mappa: string): string[] =>
+      readdirSync(mappa).flatMap((nev) => {
+        const ut = join(mappa, nev)
+        if (statSync(ut).isDirectory()) return fajlok(ut)
+        return /\.(ts|tsx)$/.test(nev) && !/\.(spec|test)\./.test(nev)
+          ? [ut]
+          : []
+      })
+    const hivatkozasok = new Set<string>()
+    for (const ut of fajlok(join(GYOKER, "src")))
+      for (const m of Array.from(
+        readFileSync(ut, "utf8").matchAll(
+          /["'](\/images\/[A-Za-z0-9._/-]+\.(?:png|svg|jpg|jpeg|webp|gif))["']/g,
+        ),
+      ))
+        hivatkozasok.add(m[1])
+    expect(hivatkozasok.size, "van helyi kep hivatkozas").toBeGreaterThan(5)
+    for (const h of Array.from(hivatkozasok))
+      expect(() => statSync(join(GYOKER, "public", h)), h).not.toThrow()
   })
 })
