@@ -902,3 +902,43 @@ describe("the pickup cart's metadata", () => {
     expect(pickupCartMetadata("cart_1", { storefront_locale: "de" })).toEqual({ acropora_parent_cart_id: "cart_1" })
   })
 })
+
+/**
+ * THE ORDER OF order_ids IS A CONTRACT (barracuda, #869 review). The storefront keeps the ids in this order in its signed
+ * view cookie, and the confirmation page takes the first as the shipped order and the second as the pickup one (`sutiPar`).
+ * What must fail: a two-order answer whose first id is not the shipped (parent) cart's order, in any branch that gives two.
+ * The ids are mapped back to the carts that made them, so the fake's own numbering cannot pass for the order.
+ */
+describe("the order of order_ids: the shipped order first, the pickup one second", () => {
+  const cartsOf = (shop: ReturnType<typeof vegyes>, ids: string[]) =>
+    ids.map((id) => [...shop.carts.values()].find((c) => c.order_id === id)?.id ?? null)
+
+  it("the first completion", async () => {
+    const shop = vegyes()
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+    expect(cartsOf(shop, result.order_ids)).toEqual(["cart_1", "cart_pickup_1"])
+  })
+
+  it("the pickup finished on a second call", async () => {
+    const shop = vegyes()
+    shop.failOn.add("complete cart_pickup_1")
+    await completeSplitCart("cart_1", shop.ops, config)
+    shop.failOn.clear()
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+    expect(cartsOf(shop, result.order_ids)).toEqual(["cart_1", "cart_pickup_1"])
+  })
+
+  it("a call after both orders exist", async () => {
+    const shop = vegyes()
+    await completeSplitCart("cart_1", shop.ops, config)
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+    expect(cartsOf(shop, result.order_ids)).toEqual(["cart_1", "cart_pickup_1"])
+  })
+
+  it("a split paid together by card", async () => {
+    const shop = vegyes()
+    await startCardPayment("cart_1", shop.ops, CARD)
+    const result = await completeSplitCart("cart_1", shop.ops, config)
+    expect(cartsOf(shop, result.order_ids)).toEqual(["cart_1", "cart_pickup_1"])
+  })
+})
