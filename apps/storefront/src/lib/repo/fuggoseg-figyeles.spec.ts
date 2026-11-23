@@ -58,6 +58,17 @@ describe("a függőség-figyelés konfigja", () => {
     expect(ignore).toMatch(/"version-update:semver-major"/)
   })
 
+  it("a Medusa-csomagok minor frissítése ki van zárva (a 2.23.0 tervezett, külön mért frissítés; a patch marad)", () => {
+    const k = konfig()
+    const ignore = k.slice(k.indexOf("ignore:"), k.indexOf("groups:"))
+    const bejegyzes = ignore.slice(
+      ignore.indexOf('dependency-name: "@medusajs/*"'),
+    )
+    expect(ignore).toMatch(/dependency-name:\s*"@medusajs\/\*"/)
+    expect(bejegyzes).toMatch(/"version-update:semver-minor"/)
+    expect(bejegyzes).not.toMatch(/"version-update:semver-patch"/)
+  })
+
   it("az audit-szkript a gyökér package.json-ban áll", () => {
     const csomag = JSON.parse(
       readFileSync(join(GYOKER, "package.json"), "utf8"),

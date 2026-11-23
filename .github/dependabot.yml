@@ -39,6 +39,15 @@ updates:
       - dependency-name: "typescript"
         update-types:
           - "version-update:semver-major"
+    # MEDUSA 2.23.0 IS A PLANNED UPDATE OF ITS OWN, NOT A PATCH (2026-11-23). Its release notes list: Express 5 (a route written like /:id? throws at
+    # startup), BullMQ 6 and ioredis 6 ("deploy all instances together, do not downgrade after startup"), the Redis session store moved to
+    # connect-redis v11 with a node-redis client (ioredis-shaped redisOptions keys are silently ignored), and React 19.3.1 and Tailwind 4 for the
+    # admin. Dependabot rewrote #845 from 2.22.7 to 2.23.0 while it was under review. The Medusa group keeps its PATCH updates (2.22.x); every
+    # MINOR update of a @medusajs package waits for a planned PR with its own test-deploy measurements. REMOVE THIS ENTRY in that PR.
+    # (The `versions: ["2.23.x"]` form was not used: its exact pattern syntax is not checked here; update-types is the documented form.)
+      - dependency-name: "@medusajs/*"
+        update-types:
+          - "version-update:semver-minor"
     groups:
       medusa:
         patterns:
