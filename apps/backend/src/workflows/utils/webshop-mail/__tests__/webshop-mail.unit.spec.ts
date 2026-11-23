@@ -244,6 +244,19 @@ describe("when the order confirmation goes", () => {
       expect("buyer_company" in factsOf(plain)).toBe(false)
     })
 
+    it("a company read that throws does not hold the mail back: the confirmation goes, without the key and the sentence", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {})
+      try {
+        const result = await prepareOrderPlacedMail("order_1", withCompany("throws"))
+        expect((result as { action: string }).action).toBe("send")
+        expect("buyer_company" in factsOf(result)).toBe(false)
+        expect(textOf(result).text).not.toContain("Számlázási adatok")
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("order_1"))
+      } finally {
+        warn.mockRestore()
+      }
+    })
+
     it("a company without a tax number: the name alone", async () => {
       const result = await prepareOrderPlacedMail("order_1", withCompany({ name: "Teszt Kft.", tax_number: null }))
       expect(textOf(result).text).toContain("Számlázási adatok: Teszt Kft.\n")
