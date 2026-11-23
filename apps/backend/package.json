@@ -33,7 +33,7 @@
     "@medusajs/medusa": "2.22.7",
     "@medusajs/types": "2.22.7",
     "@medusajs/ui": "4.2.14",
-    "@tanstack/react-query": "5.108.1",
+    "@tanstack/react-query": "5.108.2",
     "awilix": "13.0.7",
     "ioredis": "5.11.1",
     "react-i18next": "13.5.0",
