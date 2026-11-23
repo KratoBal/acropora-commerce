@@ -69,6 +69,14 @@ describe("a függőség-figyelés konfigja", () => {
     expect(bejegyzes).not.toMatch(/"version-update:semver-patch"/)
   })
 
+  it("a vite fő verziója ki van zárva (a kirakat vite 7-en marad: vite 8 alatt a specjei nem fordulnak)", () => {
+    const k = konfig()
+    const ignore = k.slice(k.indexOf("ignore:"), k.indexOf("groups:"))
+    const bejegyzes = ignore.slice(ignore.indexOf('dependency-name: "vite"'))
+    expect(ignore).toMatch(/dependency-name:\s*"vite"/)
+    expect(bejegyzes).toMatch(/"version-update:semver-major"/)
+  })
+
   it("az audit-szkript a gyökér package.json-ban áll", () => {
     const csomag = JSON.parse(
       readFileSync(join(GYOKER, "package.json"), "utf8"),
