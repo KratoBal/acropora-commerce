@@ -186,6 +186,7 @@ export const TovabbiKepek = ({
           sizes: "(min-width: 1024px) 126px, 33vw",
         })
         const kepElem = (
+          // eslint-disable-next-line @next/next/no-img-element -- the attributes come from getImageProps (Next's documented route to a plain <img>), so the image is optimised
           <img
             {...csempe}
             alt=""

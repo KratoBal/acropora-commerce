@@ -178,12 +178,12 @@ const useStripeAllapot = (
   kezdoAllapot: StripeAllapot | undefined,
 ) => {
   const [allapot, setAllapot] = useState<StripeAllapot>(kezdoAllapot ?? "alap")
-  const fut = useRef(false)
+  const futRef = useRef(false)
   const jelez = (uj: StripeAllapot) => {
     setAllapot(uj)
     onAllapot?.(uj)
   }
-  return { allapot, jelez, fut }
+  return { allapot, jelez, futRef }
 }
 
 /**
@@ -214,7 +214,7 @@ export const StripeKozosGomb = ({
 }: StripeGombProps) => {
   const t = useTranslate()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
+  const { allapot, jelez, futRef } = useStripeAllapot(onAllapot, kezdoAllapot)
   const stripe = useStripe()
   const elements = useElements()
   const { countryCode } = useParams()
@@ -244,11 +244,11 @@ export const StripeKozosGomb = ({
   }
 
   const handlePayment = async () => {
-    if (!stripe || !elements || fut.current) {
+    if (!stripe || !elements || futRef.current) {
       return
     }
 
-    fut.current = true
+    futRef.current = true
     setErrorMessage(null)
     jelez("feldolgozas")
     mezoZarolasa(elements, true)
@@ -320,7 +320,7 @@ export const StripeKozosGomb = ({
       await stripeVisszarendezes(cart.id)
       elutasitva()
     } finally {
-      fut.current = false
+      futRef.current = false
       mezoZarolasa(elements, false)
     }
   }
@@ -368,7 +368,7 @@ export const StripePaymentButton = ({
 }: StripeGombProps) => {
   const t = useTranslate()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { allapot, jelez, fut } = useStripeAllapot(onAllapot, kezdoAllapot)
+  const { allapot, jelez, futRef } = useStripeAllapot(onAllapot, kezdoAllapot)
 
   /*
     A HIBA A MUVELET VALASZABOL JON, NEM A KIVETELBOL.
@@ -405,11 +405,11 @@ export const StripePaymentButton = ({
   const { countryCode } = useParams()
 
   const handlePayment = async () => {
-    if (!stripe || !elements || !cart || fut.current) {
+    if (!stripe || !elements || !cart || futRef.current) {
       return
     }
 
-    fut.current = true
+    futRef.current = true
     setErrorMessage(null)
     jelez("feldolgozas")
     mezoZarolasa(elements, true)
@@ -466,7 +466,7 @@ export const StripePaymentButton = ({
 
       jelez("alap")
     } finally {
-      fut.current = false
+      futRef.current = false
       mezoZarolasa(elements, false)
     }
   }

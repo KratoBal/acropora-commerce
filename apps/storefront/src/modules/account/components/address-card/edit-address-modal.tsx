@@ -32,8 +32,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
 }) => {
   const t = useTranslate()
   const [removing, setRemoving] = useState(false)
-  const [successState, setSuccessState] = useState(false)
-  const { state, open, close: closeModal } = useToggleState(false)
+  const { state, open, close } = useToggleState(false)
 
   const [formState, formAction] = useActionState(updateCustomerAddress, {
     success: false,
@@ -43,22 +42,12 @@ const EditAddress: React.FC<EditAddressProps> = ({
   // (React 19 resets the form after the action).
   const beirt = formState.error ? formState.ertekek : undefined
 
-  const close = () => {
-    setSuccessState(false)
-    closeModal()
-  }
-
+  // A successful save closes the modal in the same commit that shows the new form state.
   useEffect(() => {
-    if (successState) {
+    if (formState.success) {
       close()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [successState])
-
-  useEffect(() => {
-    if (formState.success) {
-      setSuccessState(true)
-    }
   }, [formState])
 
   const removeAddress = async () => {

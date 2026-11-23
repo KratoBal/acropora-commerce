@@ -93,6 +93,7 @@ export const KepBlokk = ({
 
   return (
     <div className="flex flex-col gap-2" data-testid="vaz-foto-blokk">
+      {/* eslint-disable-next-line @next/next/no-img-element -- the attributes come from getImageProps (Next's documented route to a plain <img>), so the image is optimised */}
       <img
         {...nagyKep}
         alt={nagyAlt}

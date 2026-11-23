@@ -126,6 +126,7 @@ const ZaroSor = ({ kepUrl, nev, cimke, ar, cselekves }: ZaroSorProps) => {
         data-testid="zarosor-belyeg"
       >
         {kepUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- the attributes come from getImageProps (Next's documented route to a plain <img>), so the image is optimised
           <img
             // FE-3: a Next optimalizaloja, a 48 px-es belyeg ketszeres felbontasban
             {...getImageProps({

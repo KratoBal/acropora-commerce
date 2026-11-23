@@ -22,7 +22,6 @@ vi.mock("@lib/data/csomagpont", () => ({
 import Shipping from "./index"
 
 declare global {
-  // eslint-disable-next-line no-var
   var __lepes: string | undefined
 }
 

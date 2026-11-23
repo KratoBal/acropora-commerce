@@ -389,7 +389,7 @@ const Payment = ({
         setError(t("checkoutPayment.errOrderFailed"))
         setStripeAllapot("alap")
       })
-  }, [stripeAllapot, t])
+  }, [stripeAllapot, t, countryCode])
 
   /** Az "Egy fizetés" sor: mindig a kosar teljes fizetendo osszege. */
   const egyFizetes = t(
