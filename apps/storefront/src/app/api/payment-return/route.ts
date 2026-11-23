@@ -1,7 +1,8 @@
 import { sdk } from "@lib/config"
-import { getAuthHeaders, setCartId } from "@lib/data/cookies"
-import { stripeVisszarendezes } from "@lib/data/stripe"
+import { getAuthHeaders, getCacheTag, setCartId } from "@lib/data/cookies"
+import { stripeVisszarendezesHivas } from "@lib/data/stripe-visszarendezes"
 import { HttpTypes } from "@medusajs/types"
+import { revalidateTag } from "next/cache"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest) {
@@ -57,7 +58,9 @@ export async function GET(req: NextRequest) {
       a háttér visszarendezi a kosarat, és elengedi a zárolást. Egy nem bontott
       kosárnál a hívás nem mozdít semmit.
     */
-    await stripeVisszarendezes(cartId)
+    await stripeVisszarendezesHivas(cartId)
+    // route handler: az `updateTag` itt hibat dobna (csak szerver-akcioban el); az azonnali lejarat a Next 15 egyargumentumu `revalidateTag`-jenek viselkedese
+    revalidateTag(await getCacheTag("carts"), { expire: 0 })
     const params = new URLSearchParams({ step: "payment" })
 
     // Forward Stripe's own return parameters so the checkout step can tell how
