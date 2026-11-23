@@ -34,9 +34,10 @@ const CartDropdown = ({
 }) => {
   const locale = useLocale()
   const t = translator(locale)
-  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(
-    undefined,
-  )
+  // what setTimeout returns where it runs: @types/node 22's Timer is no longer a clearTimeout argument
+  const [activeTimer, setActiveTimer] = useState<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined)
   const [cartDropdownOpen, setCartDropdownOpen] = useState(false)
 
   const open = () => setCartDropdownOpen(true)
