@@ -257,6 +257,24 @@ describe("when the order confirmation goes", () => {
       }
     })
 
+    it("a company read that throws before returning a promise does not hold the mail back either", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {})
+      try {
+        const { deps: d } = deps(null)
+        const result = await prepareOrderPlacedMail("order_1", {
+          ...d,
+          buyerCompany: (() => {
+            throw new Error("read failed before a promise")
+          }) as unknown as () => Promise<null>,
+        })
+        expect((result as { action: string }).action).toBe("send")
+        expect("buyer_company" in factsOf(result)).toBe(false)
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("order_1: the buyer company read failed"))
+      } finally {
+        warn.mockRestore()
+      }
+    })
+
     it("a company without a tax number: the name alone", async () => {
       const result = await prepareOrderPlacedMail("order_1", withCompany({ name: "Teszt Kft.", tax_number: null }))
       expect(textOf(result).text).toContain("Számlázási adatok: Teszt Kft.\n")
@@ -304,6 +322,56 @@ describe("when the order confirmation goes", () => {
     // a webshop without the dependency (and an OS that has not asked for it) sends no key at all
     expect("livestock_kinds" in mailOf(plain).render.facts.orders[0]).toBe(false)
     expect(mailOf(kinds).content).toEqual(mailOf(plain).content)
+  })
+
+  // MI PIROSÍT: ha egy hibás fajta-olvasás (elutasító promise VAGY a promise előtti szinkron dobás) visszatartja a
+  // visszaigazolót (barracuda, #865): a levél megy, a hibás rendelés fajtái nélkül, a többi rendelésé megmarad
+  it("a livestock-kinds read that throws does not hold the mail back, async or sync", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {})
+    try {
+      const { deps: base } = deps(null)
+      const kindsOfMail = (result: unknown) =>
+        (result as { mail: { render: { facts: { orders: { livestock_kinds?: string[] }[] } } } }).mail.render.facts.orders
+      const rejects = await prepareOrderPlacedMail("order_1", { ...base, livestockKinds: async () => Promise.reject(new Error("read failed")) })
+      expect(rejects.action).toBe("send")
+      expect("livestock_kinds" in kindsOfMail(rejects)[0]).toBe(false)
+      const throwsSync = await prepareOrderPlacedMail("order_1", {
+        ...base,
+        livestockKinds: (() => {
+          throw new Error("read failed before a promise")
+        }) as unknown as () => Promise<("FISH" | "CORAL")[]>,
+      })
+      expect(throwsSync.action).toBe("send")
+      expect("livestock_kinds" in kindsOfMail(throwsSync)[0]).toBe(false)
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("order_1: the livestock kinds read failed"))
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it("a split: one order's failed kinds read leaves the other order's kinds in the mail", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {})
+    try {
+      const d = {
+        cartOf: async () => ({ id: "cart_1", metadata: { [PICKUP_CART_METADATA_KEY]: "cart_2" } as Record<string, unknown> }),
+        completeSplit: async () => ({ order_ids: ["order_pick"] }),
+        loadOrder: async (id: string) => (id === "order_pick" ? order("order_pick", 38) : order("order_ship", 37)),
+        livestockKinds: async (id: string) => {
+          if (id === "order_ship") throw new Error("read failed")
+          return ["CORAL"] as "CORAL"[]
+        },
+      }
+      const result = await prepareOrderPlacedMail("order_ship", d)
+      expect(result.action).toBe("send")
+      const orders = (result as { mail: { render: { facts: { orders: { display_id: number; livestock_kinds?: string[] }[] } } } }).mail.render
+        .facts.orders
+      expect(orders.map((o) => [o.display_id, o.livestock_kinds])).toEqual([
+        [37, undefined],
+        [38, ["CORAL"]],
+      ])
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   // MI PIROSÍT: ha a vegyes kosár bolti fele a szállított fél fajtáit kapná (két rendelés, két külön lista)
