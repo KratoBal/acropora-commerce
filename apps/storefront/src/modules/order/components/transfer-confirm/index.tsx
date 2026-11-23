@@ -28,6 +28,10 @@ const SZOVEG = {
   },
 } as const
 
+/** A szerver-akció hívása elbukott: nem tudjuk, megtörtént-e az átadás, ezt mondjuk ki. */
+const HALOZATI_HIBA =
+  "Nem kaptunk választ, az átadás nem biztos, hogy megtörtént. Töltsd újra az oldalt, vagy próbáld meg újra."
+
 type Allapot = "var" | "folyamatban" | "kesz" | "hiba"
 
 export default function TransferConfirm({
@@ -49,7 +53,14 @@ export default function TransferConfirm({
     setHiba(null)
     const kerelem =
       mode === "accept" ? acceptTransferRequest : declineTransferRequest
-    const { success, error } = await kerelem(id, token)
+    // a szerver-akció HÍVÁSA is dobhat (hálózati hiba, telepítés utáni régi akció-azonosító): enélkül az állapot „folyamatban” maradna, a gomb örökre letiltva, hiba nélkül
+    let success = false
+    let error: string | null = null
+    try {
+      ;({ success, error } = await kerelem(id, token))
+    } catch {
+      error = HALOZATI_HIBA
+    }
     if (success) {
       setAllapot("kesz")
       return
