@@ -20,6 +20,7 @@ import { sharedCaptureOperations } from "./utils/shared-stripe-capture-operation
 import { creditOrderLoyaltyAccrual } from "./utils/loyalty/credit-order-accrual"
 import { cancelOnUnsuccessfulClose } from "./utils/cancel-on-unsuccessful-close"
 import { orderCancelOperations } from "./utils/order-cancel-guard-operations"
+import { giveBackGiftCardShare, giveBackLoyaltyPoints } from "./utils/give-back-order-credits"
 
 export const transitionOrderBusinessStatusStep = createStep(
   "transition-order-business-status",
@@ -78,14 +79,18 @@ export const cancelOrderOnUnsuccessfulCloseStep = createStep(
         cancel: async (orderId) => {
           await cancelOrderWorkflow(container).run({ input: { order_id: orderId } })
         },
+        giveBackCredits: async (orderId) => {
+          await giveBackLoyaltyPoints(container, orderId, "closed unsuccessfully (not cancelled)")
+          await giveBackGiftCardShare(container, orderId, "closed unsuccessfully (not cancelled)")
+        },
       },
       () => service.assertTransitionAllowed(input),
     )
-    if (result.action === "left_open")
+    if (result.action === "credits_given_back")
       container
         .resolve<{ warn(message: string): void }>(ContainerRegistrationKeys.LOGGER)
         .warn(
-          `Order ${input.order_id} closed unsuccessfully WITHOUT a cancel (${result.reason}): its points and gift card credit were not given back; put them back by hand.`,
+          `Order ${input.order_id} closed unsuccessfully WITHOUT a cancel (${result.reason}): its points and gift card share were given back directly; a captured card payment was NOT refunded and nothing was freed in the shop.`,
         )
     return new StepResponse({ action: result.action })
   },

@@ -5,8 +5,9 @@ import type { CancelOrderFacts } from "../order-cancel-guard"
  * WHAT TURNS THIS RED (card dfb79916; measured on the test shop 2026-11-24: an order closed unsuccessfully kept the customer's
  * 400 points, they came back only through the admin cancel): the unsuccessful close not canceling the order; the cancel
  * running for a move the status table refuses, or before the captured money is refunded; a refused refund or a refused cancel
- * letting the status change go on; another status canceling anything; a shipped order (an open fulfillment), a completed or an
- * already canceled one being canceled again or blocking the close.
+ * letting the status change go on; another status canceling anything; a shipped order (an open fulfillment: the MAIN case, a
+ * returned parcel) or a completed one not giving its points and card back directly, or being cancelled, or blocking the close;
+ * an already canceled one being canceled again or giving back twice.
  */
 const order = (over: Partial<CancelOrderFacts> = {}): CancelOrderFacts => ({
   id: "order_1",
@@ -28,6 +29,7 @@ const setup = (facts: CancelOrderFacts | null, opts: { refundFails?: string; can
       calls.push(`cancel ${id}`)
       if (opts.cancelFails) throw new Error(opts.cancelFails)
     },
+    giveBackCredits: async (id) => void calls.push(`give back ${id}`),
   }
   const assertAllowed = async () => {
     calls.push("assert")
@@ -74,18 +76,25 @@ describe("cancelOnUnsuccessfulClose", () => {
     await expect(run()).rejects.toThrow(/nincs lemondva, ezért nem is zárható le sikertelenül: payment cannot be canceled\. Ami addig visszatérült \(22600\)/)
   })
 
-  it("an already canceled order goes on to the status with nothing done (a repeat, or the admin got there first)", async () => {
+  it("an already canceled order goes on to the status with nothing done (a repeat, or the admin got there first): no second give-back", async () => {
     const { calls, run } = setup(order({ status: "canceled" }))
     expect(await run()).toEqual({ action: "already_canceled" })
     expect(calls).toEqual(["assert"])
   })
 
-  it("a shipped order (an open fulfillment) and a completed one are left as they always were, and the result says so", async () => {
+  it("a shipped order (an open fulfillment) and a completed one cannot be canceled: the close goes on and the credits are given back DIRECTLY", async () => {
     const shipped = setup(order({ openFulfillments: 1 }))
-    expect(await shipped.run()).toEqual({ action: "left_open", reason: "open_fulfillments" })
-    expect(shipped.calls).toEqual(["assert"])
+    expect(await shipped.run()).toEqual({ action: "credits_given_back", reason: "open_fulfillments" })
+    expect(shipped.calls).toEqual(["assert", "give back order_1"])
     const done = setup(order({ status: "completed" }))
-    expect(await done.run()).toEqual({ action: "left_open", reason: "completed" })
+    expect(await done.run()).toEqual({ action: "credits_given_back", reason: "completed" })
+    expect(done.calls).toEqual(["assert", "give back order_1"])
+  })
+
+  it("a shipped order with a captured card payment gets nothing refunded: that stays a hand job", async () => {
+    const { calls, run } = setup(order({ openFulfillments: 1, payments: paid.payments }))
+    await run()
+    expect(calls.some((c) => c.startsWith("refund"))).toBe(false)
   })
 
   it("an unknown order is left to the status step to answer", async () => {

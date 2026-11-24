@@ -8,6 +8,8 @@ jest.mock("@medusajs/medusa/core-flows", () => ({
   refundPaymentWorkflow: jest.fn(() => ({ run: refundRun })),
 }))
 
+import { GIFT_CARD_MODULE } from "../../modules/gift-card"
+import { LOYALTY_MODULE } from "../../modules/loyalty"
 import { ORDER_BUSINESS_STATUS_MODULE } from "../../modules/order-business-status"
 import { transitionOrderBusinessStatusWorkflow } from "../transition-order-business-status"
 
@@ -29,6 +31,8 @@ const run = async (to: string, order: Record<string, unknown> | null, opts: { ca
     return { result: {} }
   })
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() }
+  const reverse = jest.fn(async () => ({ balance: 400, points: 400, repeated: false }))
+  const refundCard = jest.fn(async () => ({ repeated: false }))
   const container = createContainer()
   container.register({
     logger: asValue(logger),
@@ -40,11 +44,13 @@ const run = async (to: string, order: Record<string, unknown> | null, opts: { ca
       },
     }),
     query: asValue({ graph: async () => ({ data: order ? [order] : [] }) }),
+    [LOYALTY_MODULE]: asValue({ reversePointsRedemption: reverse }),
+    [GIFT_CARD_MODULE]: asValue({ refundGiftCard: refundCard }),
   })
   const attempt = transitionOrderBusinessStatusWorkflow(container as never).run({
     input: { order_id: "order_1", to: to as never, actor: "admin", source: "admin" },
   })
-  return { attempt, calls, logger }
+  return { attempt, calls, logger, reverse, refundCard }
 }
 /* the workflow engine rejects with the step's error as a plain object (`message`), not an Error: read the message, and fail if it did not reject */
 const failureOf = (attempt: Promise<unknown>) =>
@@ -52,7 +58,11 @@ const failureOf = (attempt: Promise<unknown>) =>
     () => "DID NOT REJECT",
     (error: { message?: string }) => String(error?.message ?? error),
   )
-const unpaid = { id: "order_1", status: "pending", metadata: {}, fulfillments: [], payment_collections: [] }
+const credit_lines = [
+  { id: "cl_p", amount: 400, reference: "loyalty_points", reference_id: "cus_1", metadata: { points: 400, cart_id: "cart_1" } },
+  { id: "cl_g", amount: 5000, reference: "gift_card", reference_id: "gc_1", metadata: { cart_id: "cart_1" } },
+]
+const unpaid = { id: "order_1", status: "pending", metadata: {}, fulfillments: [], payment_collections: [], credit_lines }
 const paid = {
   ...unpaid,
   payment_collections: [{ payments: [{ id: "pay_1", data: {}, canceled_at: null, captures: [{ amount: 500 }], refunds: [] }] }],
@@ -92,11 +102,27 @@ describe("transitionOrderBusinessStatusWorkflow cancels the order on an unsucces
     expect(calls).toContain("transition")
   })
 
-  it("a shipped order still closes, with no cancel and a warning that names what to do by hand", async () => {
-    const { attempt, calls, logger } = await run("closed_unsuccessfully", { ...unpaid, fulfillments: [{ canceled_at: null }] })
+  it("a shipped order (the returned parcel, the MAIN case) still closes: no cancel, the points and the card share given back directly", async () => {
+    const { attempt, calls, logger, reverse, refundCard } = await run("closed_unsuccessfully", { ...unpaid, fulfillments: [{ canceled_at: null }] })
     await attempt
     expect(calls).not.toContain("cancel")
     expect(calls).toContain("transition")
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("put them back by hand"))
+    expect(reverse).toHaveBeenCalledWith({ customer_id: "cus_1", cart_id: "cart_1", order_id: "order_1" })
+    expect(refundCard).toHaveBeenCalledWith({ gift_card_id: "gc_1", amount: 5000, reference: "cart_1", key: "cancel:order_1:cl_g" })
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("given back directly"))
+  })
+
+  it("the cancelable order's credits are NOT given back here: the order.canceled subscribers do it once, from the cancel", async () => {
+    const { attempt, reverse, refundCard } = await run("closed_unsuccessfully", unpaid)
+    await attempt
+    expect(reverse).not.toHaveBeenCalled()
+    expect(refundCard).not.toHaveBeenCalled()
+  })
+
+  it("a give-back that fails does not stop the close, and is logged with what to put back by hand", async () => {
+    const { attempt, logger, reverse } = await run("closed_unsuccessfully", { ...unpaid, fulfillments: [{ canceled_at: null }] })
+    reverse.mockRejectedValueOnce(new Error("ledger down"))
+    expect(await attempt).toMatchObject({ result: { status: "closed_unsuccessfully" } })
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("Put them back by hand"))
   })
 })

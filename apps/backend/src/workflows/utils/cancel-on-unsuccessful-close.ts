@@ -21,23 +21,30 @@ import { prepareOrderCancel, type OrderCancelOperations } from "./order-cancel-g
  * The sentence is the refund guard's own. If the status step fails AFTER the cancel, the next try finds the order already
  * canceled and goes on to the status.
  *
- * WHAT IT LEAVES ALONE, and says so (the result names it): an order that is already canceled (a repeat, or the admin got
- * there first), a completed order, and an order with a fulfillment that was not canceled (a parcel was shipped: Medusa
- * refuses to cancel those itself, and a delivery that failed must still be closeable). For those the move goes on as it
- * always did and the points are NOT given back; that stays a hand job until the parcel's fulfillment is canceled.
+ * THE ORDER MEDUSA CANNOT CANCEL (acrobot 60868: this is the MAIN case, a refused or uncollected parcel that came back, not a
+ * rare one): Medusa refuses to cancel an order with a fulfillment that was not canceled, a shipped fulfillment cannot be
+ * canceled at all, and a completed order cannot be canceled. The close must still go through (the returned parcel has to be
+ * closeable), and the points and the gift card share are given back DIRECTLY, with the same ledger movements the
+ * `order.canceled` subscribers make (`give-back-order-credits.ts`), keyed so that a later real cancel gives nothing back twice.
+ * What this does NOT do for such an order: refund a captured card payment or free anything in Medusa; that stays a hand job
+ * (a returned cash-on-delivery parcel has no captured payment at all).
+ *
+ * AN ORDER THAT IS ALREADY CANCELED goes on to the status with nothing done (a repeat, or the admin got there first).
  */
 export const CANCEL_ON_STATUS = "closed_unsuccessfully"
 
 export type CancelOnCloseOperations = OrderCancelOperations & {
   /** Medusa's own cancel (it raises `order.canceled`). */
   cancel(orderId: string): Promise<void>
+  /** The points and the gift card share, given back with the cancel subscribers' ledger movements (idempotent, never throws). */
+  giveBackCredits(orderId: string): Promise<void>
 }
 
 export type CancelOnCloseResult =
   | { action: "other_status" }
   | { action: "unknown_order" }
   | { action: "already_canceled" }
-  | { action: "left_open"; reason: "completed" | "open_fulfillments" }
+  | { action: "credits_given_back"; reason: "completed" | "open_fulfillments" }
   | { action: "canceled"; refunded: { paymentId: string; amount: number }[] }
 
 export const cancelOnUnsuccessfulClose = async (
@@ -53,8 +60,12 @@ export const cancelOnUnsuccessfulClose = async (
   // an unknown order: the status step answers it
   if (!facts) return { action: "unknown_order" }
   if (facts.status === "canceled") return { action: "already_canceled" }
-  if (facts.status === "completed") return { action: "left_open", reason: "completed" }
-  if (facts.openFulfillments > 0) return { action: "left_open", reason: "open_fulfillments" }
+  const cannotCancel: "completed" | "open_fulfillments" | null =
+    facts.status === "completed" ? "completed" : facts.openFulfillments > 0 ? "open_fulfillments" : null
+  if (cannotCancel) {
+    await ops.giveBackCredits(input.order_id)
+    return { action: "credits_given_back", reason: cannotCancel }
+  }
 
   const prepared = await prepareOrderCancel(input.order_id, ops)
   if (prepared.action === "refuse") throw new MedusaError(MedusaError.Types.NOT_ALLOWED, prepared.message)
