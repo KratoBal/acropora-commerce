@@ -68,6 +68,13 @@ export const ATTEMPT_LIMITS = {
    * address as `identifier`, not `email`.
    */
   adminResetPerAddress: { max: 3, windowMs: 15 * MINUTES },
+  /**
+   * The CUSTOMER's password-reset REQUEST (`/auth/customer/emailpass/reset-password`, card 7bfca4eb): each try can mail a reset link to
+   * one inbox (and a stream of valid tokens), so the same three per address in fifteen minutes as the admin's. Counted apart from the
+   * admin's and from the sign-in: a person who forgot a password must not use up the sign-in allowance, nor the reverse. The body
+   * names the address as `identifier`. The refusal is the same 429 whether or not the address has an account: the count is by address.
+   */
+  customerResetPerAddress: { max: 3, windowMs: 15 * MINUTES },
   /** Sign-up: five per address in fifteen minutes. */
   signUpPerAddress: { max: 5, windowMs: 15 * MINUTES },
   signUpOverall: { max: 100, windowMs: 10 * MINUTES },
@@ -180,6 +187,11 @@ export const adminSignInAttempts = limitAttempts({
 
 export const adminResetAttempts = limitAttempts({
   perKey: limiter("adminResetPerAddress"),
+  keyOf: (req) => identifierKeyOf(req.body),
+})
+
+export const customerResetAttempts = limitAttempts({
+  perKey: limiter("customerResetPerAddress"),
   keyOf: (req) => identifierKeyOf(req.body),
 })
 

@@ -1,6 +1,7 @@
 import {
   ATTEMPT_LIMITS,
   adminResetAttempts,
+  customerResetAttempts,
   adminSignInAttempts,
   TOO_MANY_ATTEMPTS,
   addressKeyOf,
@@ -232,3 +233,30 @@ describe("the guest limits' window is the one the customer text names", () => {
   })
 })
 
+
+describe("the customer's reset request limit (card 7bfca4eb)", () => {
+  const body = (identifier: string) => ({ body: { identifier } })
+
+  it("allows three requests per address and refuses the fourth with 429, keyed by the identifier, the same for any address", async () => {
+    for (let i = 0; i < ATTEMPT_LIMITS.customerResetPerAddress.max; i++) {
+      expect((await call(customerResetAttempts, body("elfelejtett-a@example.hu"))).next).toHaveBeenCalledTimes(1)
+    }
+    const refused = await call(customerResetAttempts, body(" Elfelejtett-A@example.hu"))
+    expect(refused.res.statusCode).toBe(429)
+    expect(refused.res.sent).toEqual(TOO_MANY_ATTEMPTS)
+    expect(refused.next).not.toHaveBeenCalled()
+    expect((await call(customerResetAttempts, body("elfelejtett-b@example.hu"))).next).toHaveBeenCalledTimes(1)
+  })
+
+  it("is counted apart from the admin's reset and from the sign-in: one does not use up the other", async () => {
+    for (let i = 0; i < ATTEMPT_LIMITS.customerResetPerAddress.max; i++) await call(customerResetAttempts, body("megosztott@example.hu"))
+    expect((await call(adminResetAttempts, body("megosztott@example.hu"))).next).toHaveBeenCalledTimes(1)
+    expect((await call(signInAttempts, { body: { email: "megosztott@example.hu" } })).next).toHaveBeenCalledTimes(1)
+  })
+
+  it("a body with no identifier is left to the route's own validation", async () => {
+    for (const request of [{ body: {} }, { body: { identifier: 42 } }, { body: { email: "x@y.hu" } }]) {
+      expect((await call(customerResetAttempts, request)).next).toHaveBeenCalledTimes(1)
+    }
+  })
+})

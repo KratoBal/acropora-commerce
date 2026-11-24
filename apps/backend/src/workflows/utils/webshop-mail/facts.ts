@@ -55,6 +55,9 @@ export const WEBSHOP_MAIL_TEMPLATES = [
   // the sixteenth (V2.4, card 0c1265d2): the stock alert's arrival, one mail to a confirmed row when a piece of its subject
   // becomes buyable (`arrival.ts`); no order behind it either. An older OS answers 422 and the mail waits.
   "stock-alert-arrival",
+  // the seventeenth (card 7bfca4eb): the customer's password-reset link (Medusa's `auth.password_reset`); no order behind it, its
+  // common facts come from the account (the name, the language the request was made in). An older OS answers 422 and the mail waits.
+  "password-reset",
 ] as const
 export type WebshopMailTemplate = (typeof WEBSHOP_MAIL_TEMPLATES)[number]
 
@@ -178,6 +181,15 @@ export type WebshopMailFactsOf = {
     product_title: string
     product_url: string
     unsubscribe_url: string
+  }
+  /**
+   * The customer's password-reset link (`auth.password_reset`, card 7bfca4eb): the link to the storefront's new-password page with the
+   * token in the query (it works ONCE and for `valid_minutes` minutes: Medusa's fixed 15), and how long it lives, so the mail can say it.
+   * `customer_name` is the account's name when it has one; `order_created_at` and `order_view_url` are null (there is no order).
+   */
+  "password-reset": CommonFacts & {
+    reset_url: string
+    valid_minutes: number
   }
 }
 
