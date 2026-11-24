@@ -1,7 +1,7 @@
 import { GET } from "../../../api/admin/newsletter-diagnostics/route"
 import { NEWSLETTER_MODULE } from "../../../modules/newsletter"
 import { WEBSHOP_MAIL_OUTBOX_MODULE } from "../../../modules/webshop-mail-outbox"
-import { maskAddress, newsletterDiagnostics } from "../newsletter-diagnostics"
+import { maskAddress, maskAddressesIn, newsletterDiagnostics } from "../newsletter-diagnostics"
 
 /*
   WHAT TURNS THIS RED (task hirlevel-diagnose-20261124; measured on the test shop 2026-11-24: four sign-ups, no mail, no notification, no
@@ -75,6 +75,15 @@ describe("maskAddress", () => {
   })
 })
 
+describe("maskAddressesIn", () => {
+  it("masks every address inside an error text and leaves the rest of it", () => {
+    expect(maskAddressesIn("Gmail: Invalid To header 'anna.kiss@example.test' and bob+x@mail.example.hu rejected")).toBe(
+      "Gmail: Invalid To header 'a***@example.test' and b***@mail.example.hu rejected"
+    )
+    expect(maskAddressesIn("OS 503")).toBe("OS 503")
+  })
+})
+
 describe("newsletterDiagnostics", () => {
   it("shows every sign-up, and a row with NO result shows as null (the absence is the answer)", async () => {
     const w = world({ signUps: [signUp(), signUp({ id: "nlsub_2", confirmation_mail_result: "sent", confirmation_mail_result_at: new Date("2026-11-24T18:02:00.000Z") })] })
@@ -105,8 +114,8 @@ describe("newsletterDiagnostics", () => {
     ])
   })
 
-  it("carries no full address, no token, no token hash and no environment value", async () => {
-    const w = world({ signUps: [signUp()], outbox: [outboxRow()] })
+  it("carries no full address, no token, no token hash and no environment value, also not inside an outbox row's error text", async () => {
+    const w = world({ signUps: [signUp()], outbox: [outboxRow({ last_error: "A levél küldése nem sikerült: Invalid To header vevo@example.test" })] })
     const text = JSON.stringify(await newsletterDiagnostics(w.container, 20, ON))
     for (const secret of ["vevo@example.test", "TTT", "a".repeat(64), "u".repeat(43), "secret-id-value", "secret-value", "secret-refresh", "kirakat.example.test", "Kiss Anna", "szöveg"])
       expect([secret, text.includes(secret)]).toEqual([secret, false])

@@ -16,8 +16,10 @@ import { operationsOrSkip } from "./webshop-mail/send"
  * in the mail outbox with what became of them, and the four preconditions the sender checks, as true or false, from THE PROCESS THAT
  * ANSWERS (the one that handles the sign-up), so a switch that exists on the worker and not on the server shows.
  *
- * NO SECRET AND NO FULL ADDRESS: the address is masked (first letter and the domain), no token or hash is returned, and the environment
- * is reported as booleans, never as values. Read only; a failed read is the answer (it propagates as an error, which is the point).
+ * NO SECRET AND NO FULL ADDRESS: the address is masked (first letter and the domain), also inside an outbox row's `last_error` (a provider's
+ * message may carry the recipient), no token or hash is returned, and the environment is reported as booleans, never as values.
+ * THE PRECONDITIONS ARE THE SERVER PROCESS'S: the sign-up route runs there and decides there; if the sending ever moves to the worker, this
+ * read measures the wrong process. Read only; a failed read is the answer (it propagates as an error, which is the point).
  */
 export type NewsletterDiagnostics = {
   generated_at: string
@@ -44,6 +46,13 @@ export type NewsletterDiagnostics = {
 }
 
 const iso = (value: Date | string | null | undefined) => (value ? new Date(value).toISOString() : null)
+
+/**
+ * An error text with every address in it masked: a provider's message (the Gmail API) may carry the recipient's full address, so the
+ * `last_error` of an outbox row goes through this, and the "no full address" promise holds for it too (barracuda 60990).
+ */
+export const maskAddressesIn = (text: string): string =>
+  text.replace(/[A-Za-z0-9._%+-][A-Za-z0-9._%+'-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, (match) => maskAddress(match))
 
 /** `a***@example.test`: the first letter and the domain, nothing else. */
 export const maskAddress = (email: string): string => {
@@ -90,7 +99,7 @@ export const newsletterDiagnostics = async (
       sent_at: iso(row.sent_at as Date | string | null),
       attempts: typeof row.attempts === "number" ? row.attempts : null,
       failure_kind: (row.failure_kind as string | null | undefined) ?? null,
-      last_error: (row.last_error as string | null | undefined) ?? null,
+      last_error: typeof row.last_error === "string" ? maskAddressesIn(row.last_error) : null,
       next_attempt_at: iso(row.next_attempt_at as Date | string | null),
     })),
   }
