@@ -145,13 +145,14 @@ describe("a single order", () => {
     )
   })
 
-  it("the placeholders for the legal texts stand as they are (they are the owner's to fill in)", () => {
+  it("an unpaid order says what happens to a bank transfer, without a placeholder (murena's sheet, item 3, variant b)", () => {
     render(
       <GuestOrderView orders={[{ ...base, payment_status: "not_paid" }]} />,
     )
-    expect(screen.getByTestId("guest-order-payment").textContent).toContain(
-      "[KITÖLTENDŐ: határidő és mi történik lejáratkor]",
-    )
+    const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+    expect(text).toContain("Előre utalásnál")
+    expect(text).toContain("felvesszük veled a kapcsolatot")
+    expect(text).not.toMatch(/KITÖLTENDŐ/)
   })
 })
 

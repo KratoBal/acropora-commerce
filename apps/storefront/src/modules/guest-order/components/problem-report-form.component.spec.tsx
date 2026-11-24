@@ -209,7 +209,7 @@ describe("the problem report form", () => {
     await submit()
     const done = await screen.findByTestId("problem-done")
     expect(done.textContent).toContain("Az ügy azonosítója: ordprb_01ABC.")
-    expect(done.textContent).toContain("[KITÖLTENDŐ: válaszidő]")
+    expect(done.textContent).toContain("2 munkanapon belül jelentkezünk.")
     fireEvent.click(screen.getByText("Bezárás"))
     expect(onClose).toHaveBeenCalledTimes(1)
   })

@@ -1310,28 +1310,28 @@ export const en: Dictionary = {
       closed: { label: "Received by you", text: "The order is closed." },
       closedUnsuccessfully: {
         label: "Closed unsuccessfully",
-        text: "The order could not be fulfilled. [TO BE FILLED IN: how and when the refund is made]",
+        text: "The order could not be fulfilled. We will refund what you paid by the same payment method within 14 days.",
       },
     },
     payment: {
       awaiting: {
         label: "Awaiting payment",
-        text: "The payment has not arrived yet. [TO BE FILLED IN: deadline and what happens when it passes]",
+        text: "The payment has not arrived yet. For a bank transfer, we wait for the amount until the due date on the payment request (8 days); if it has not arrived by then, we will contact you.",
       },
       paid: { label: "Paid", text: "The payment has arrived." },
       refunded: {
         label: "Refunded",
-        text: "The refund has been made. [TO BE FILLED IN: when it reaches your account]",
+        text: "The refund has been made. When your bank credits it to your account depends on your bank.",
       },
       partiallyRefunded: {
         label: "Partly refunded",
-        text: "Part of the refund has been made. [TO BE FILLED IN: when it reaches your account]",
+        text: "Part of the refund has been made. When your bank credits it to your account depends on your bank.",
       },
     },
     invoice: {
       button: "Download invoice",
       searching: "Looking for the invoice…",
-      none: "The invoice is not ready yet. You will be able to download it here as soon as it is.",
+      none: "The invoice is not ready yet. We issue it when the parcel is dispatched, or when the payment arrives for a bank transfer. You will be able to download it here as soon as it is.",
       error:
         "We cannot download the invoice right now. Please try again later, or write to us.",
       typeInvoice: "Invoice",
@@ -1391,7 +1391,7 @@ export const en: Dictionary = {
       reportRef: "Case reference: {id}",
       stageReceived: "Received",
       stageInProgress: "Taken over by our team",
-      done: "We have received your report. The case reference is {id}. We will get back to you within [TO BE FILLED IN: response time].",
+      done: "We have received your report. The case reference is {id}. We will get back to you within 2 working days.",
     },
     withdrawal: {
       openButton: "Withdraw from the contract",
