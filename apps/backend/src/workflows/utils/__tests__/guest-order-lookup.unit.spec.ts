@@ -10,6 +10,7 @@ import {
   type GuestOrderStatus,
 } from "../guest-order/lookup"
 import { TRACKING_CARRIER_KEY, TRACKING_NUMBER_KEY, TRACKING_URL_KEY } from "../order-tracking"
+import { orderPaymentStatus } from "../guest-order/payment-status"
 
 /*
   WHAT TURNS THIS RED (V1.1, the guest order lookup). A wrong address, an unknown number or a malformed
@@ -182,6 +183,22 @@ describe("guestOrderView: only named fields leave", () => {
     expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state: "paid" } } })).toBe("card")
     expect(kind({ payment_role: null })).toBeNull()
     expect(kind({})).toBeNull()
+  })
+
+  it("a released hold as the shop leaves it: its only collection canceled, the kind card_released (barracuda on #891 v2)", () => {
+    // release-hold.ts cancels the collection; the link's new one comes only with the link
+    const view = guestOrderView(
+      source({
+        id: "o",
+        display_id: 1,
+        payment_status: orderPaymentStatus([{ status: "canceled", amount: 15000, captured_amount: 0, refunded_amount: 0 }]),
+        payment_role: "ONLINE_CARD",
+        metadata: { acropora_payment: { state: "awaiting_payment", kind: "release" } },
+      }),
+      null,
+    )
+    expect(view.payment_status).toBe("canceled")
+    expect(view.payment_kind).toBe("card_released")
   })
 
   it("the tracking comes from the order's own three keys, with the link only when one was stored", () => {

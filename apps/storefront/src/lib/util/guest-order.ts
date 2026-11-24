@@ -133,6 +133,13 @@ const AWAITING_KEY: Record<GuestPaymentKind, string | null> = {
   card: null,
 }
 
+/**
+ * A RELEASED HOLD READS `canceled` (barracuda on #891 v2): releasing the hold cancels the order's only collection
+ * (`release-hold.ts`), and the link's new collection comes only with the link. So the released card order waits with every
+ * collection canceled, and its sentence follows the kind there too. Any OTHER canceled order (a withdrawn one) keeps no line.
+ */
+const RELEASED_STATES = new Set(["canceled", "not_paid", "awaiting"])
+
 export const paymentTextKeys = (
   state: string | null,
   kind: GuestPaymentKind | null = null,
@@ -140,7 +147,12 @@ export const paymentTextKeys = (
   const general = state
     ? (PAYMENT_KEY as Record<string, string | undefined>)[state]
     : undefined
-  const key = general === "awaiting" && kind ? AWAITING_KEY[kind] : general
+  const key =
+    kind === "card_released" && state && RELEASED_STATES.has(state)
+      ? AWAITING_KEY.card_released
+      : general === "awaiting" && kind
+        ? AWAITING_KEY[kind]
+        : general
   return key
     ? {
         label: `guestOrder.payment.${key}.label` as Key,

@@ -111,6 +111,24 @@ describe("the status and payment texts", () => {
     expect(paymentTextKeys("captured", "cod")?.text).toBe(
       "guestOrder.payment.paid.text",
     )
+    // the released hold as the shop really has it: every collection canceled (release-hold.ts; barracuda on #891 v2)
+    expect(paymentTextKeys("canceled", "card_released")?.text).toBe(
+      "guestOrder.payment.awaitingRelease.text",
+    )
+    // any other canceled order keeps no line
+    for (const kind of [
+      "card",
+      "card_link",
+      "cod",
+      "store",
+      "transfer",
+      null,
+    ] as const)
+      expect(paymentTextKeys("canceled", kind)).toBeNull()
+    // a released card order that was paid after all shows the payment, not the waiting
+    expect(paymentTextKeys("captured", "card_released")?.text).toBe(
+      "guestOrder.payment.paid.text",
+    )
     for (const dictionary of [hu, en])
       for (const key of [
         "guestOrder.payment.awaitingLink.text",

@@ -177,6 +177,26 @@ describe("a single order", () => {
   })
 })
 
+describe("a released card hold, as the shop really has it", () => {
+  it("every collection canceled and the kind card_released: the released hold's sentence, no link and no deadline (barracuda on #891 v2)", () => {
+    render(
+      <GuestOrderView
+        orders={[
+          {
+            ...base,
+            payment_status: "canceled",
+            payment_kind: "card_released",
+          },
+        ]}
+      />,
+    )
+    const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+    expect(text).toContain("feloldottuk")
+    expect(text).not.toContain("6 napig")
+    expect(text).not.toContain("lezárjuk")
+  })
+})
+
 describe("a mixed cart's two orders", () => {
   const pickup: GuestOrder = {
     ...base,
