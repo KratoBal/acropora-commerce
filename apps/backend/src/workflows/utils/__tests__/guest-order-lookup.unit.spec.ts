@@ -165,15 +165,19 @@ describe("guestOrderView: only named fields leave", () => {
     paid by the link reads as a plain card order (it would get no sentence, or the bank transfer's); an expired link still reads
     as a link to pay; the role does not reach the view; an unknown role guesses.
   */
-  it("the payment kind: the role, and a card order in a link state is card_link (not after the link expired)", () => {
+  it("the payment kind: the role; a card order in a link state is card_link, a released hold card_released, an expired link card", () => {
     const kind = (over: Partial<GuestOrderSource>) =>
       guestOrderView(source({ id: "o", display_id: 1, ...over }), null).payment_kind
     expect(kind({ payment_role: "BANK_TRANSFER" })).toBe("transfer")
     expect(kind({ payment_role: "COD" })).toBe("cod")
     expect(kind({ payment_role: "PAY_AT_STORE" })).toBe("store")
     expect(kind({ payment_role: "ONLINE_CARD" })).toBe("card")
-    for (const state of ["awaiting_payment", "link_sent", "reminded"])
+    for (const state of ["link_sent", "reminded"])
       expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state } } })).toBe("card_link")
+    // the hold released, no link yet (barracuda on #891): no link and no deadline may be claimed
+    expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state: "awaiting_payment" } } })).toBe(
+      "card_released",
+    )
     expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state: "expired" } } })).toBe("card")
     expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state: "paid" } } })).toBe("card")
     expect(kind({ payment_role: null })).toBeNull()

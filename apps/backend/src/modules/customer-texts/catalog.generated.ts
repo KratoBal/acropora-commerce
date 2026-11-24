@@ -3662,6 +3662,18 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "en": "The payment has not arrived yet. For a bank transfer, we wait for the amount until the due date on the payment request (8 days); if it has not arrived by then, we will contact you."
   },
   {
+    "key": "guestOrder.payment.awaitingRelease.label",
+    "group": "rendeles-allapota",
+    "hu": "Fizetésre vár",
+    "en": "Awaiting payment"
+  },
+  {
+    "key": "guestOrder.payment.awaitingRelease.text",
+    "group": "rendeles-allapota",
+    "hu": "A kártyádon zárolt összeget feloldottuk, mert a termék később érkezik. Amikor megérkezik, e-mailben küldünk egy fizetési linket, azon tudod kifizetni a rendelést.",
+    "en": "We released the amount held on your card, because the product arrives later. When it arrives, we will send you a payment link by e-mail to pay for the order."
+  },
+  {
     "key": "guestOrder.payment.awaitingLink.label",
     "group": "rendeles-allapota",
     "hu": "Fizetésre vár",

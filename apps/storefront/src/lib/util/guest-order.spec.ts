@@ -98,6 +98,10 @@ describe("the status and payment texts", () => {
       expect(paymentTextKeys(state, "card_link")?.text).toBe(
         "guestOrder.payment.awaitingLink.text",
       )
+      // the hold released, no link yet: its own sentence, never the link's (barracuda on #891)
+      expect(paymentTextKeys(state, "card_released")?.text).toBe(
+        "guestOrder.payment.awaitingRelease.text",
+      )
       for (const kind of ["cod", "store", "card"] as const)
         expect(paymentTextKeys(state, kind)).toBeNull()
       expect(paymentTextKeys(state, null)?.text).toBe(
@@ -108,9 +112,11 @@ describe("the status and payment texts", () => {
       "guestOrder.payment.paid.text",
     )
     for (const dictionary of [hu, en])
-      expect(
-        typeof dig(dictionary, "guestOrder.payment.awaitingLink.text"),
-      ).toBe("string")
+      for (const key of [
+        "guestOrder.payment.awaitingLink.text",
+        "guestOrder.payment.awaitingRelease.text",
+      ])
+        expect(typeof dig(dictionary, key)).toBe("string")
   })
 
   it("a payment state a customer would not understand has no line", () => {

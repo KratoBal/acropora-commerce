@@ -85,8 +85,9 @@ export type GuestOrderView = {
   payment_status: string | null
   /**
    * HOW THE ORDER IS PAID, for the sentence under its payment status (barracuda on #886, acrobot 60734): the waiting differs by
-   * the method. `card_link` is a card order paid through the payment link (the hold released, or a split-off order): the link
-   * lives 6 days, with a reminder on day 3. `null` when the method is not known: the page keeps its general sentence.
+   * the method. `card_released`: a card order whose hold the shop released, before the payment link (it goes when the goods
+   * arrive). `card_link`: the link went out (it lives 6 days, with a reminder on day 3). `null` when the method is not known:
+   * the page keeps its general sentence.
    */
   payment_kind: GuestPaymentKind | null
   business_status: GuestOrderStatus | null
@@ -110,7 +111,7 @@ export type GuestOrderView = {
   live_animal: boolean
 }
 
-export type GuestPaymentKind = "card" | "card_link" | "cod" | "store" | "transfer"
+export type GuestPaymentKind = "card" | "card_released" | "card_link" | "cod" | "store" | "transfer"
 
 const KIND_OF_ROLE: Record<PaymentRole, GuestPaymentKind> = {
   ONLINE_CARD: "card",
@@ -120,19 +121,21 @@ const KIND_OF_ROLE: Record<PaymentRole, GuestPaymentKind> = {
 }
 
 /**
- * The payment-link states the shop writes on the order (`order-payment/state.ts`) while the customer can still pay by the link:
- * the hold released, the link sent, the reminder sent; a split-off order is in the same states. NOT `expired`: the order is
- * then closed, and a sentence about a link to pay would be false.
+ * The payment-link states the shop writes on the order (`order-payment/state.ts`) while the customer can pay by the link: the
+ * link sent, the reminder sent (a split-off order is in the same states). NOT `awaiting_payment`: the hold is released but no
+ * link went out yet, it goes when the goods arrive, so no link and no deadline may be claimed (barracuda on #891). NOT
+ * `expired`: the order is then closed.
  */
-const LINK_STATES = new Set(["awaiting_payment", "link_sent", "reminded"])
+const LINK_STATES = new Set(["link_sent", "reminded"])
 
 /**
- * The kind of payment the customer is waiting on. A card order in a link state is `card_link`, whatever the role reads: the link
- * is what the customer pays with now.
+ * The kind of payment the customer is waiting on. A card order in a link state is `card_link`, one whose hold was released and
+ * whose link is still to come is `card_released`, whatever the role reads.
  */
 export const guestPaymentKind = (source: GuestOrderSource): GuestPaymentKind | null => {
   const stored = storedOrderPaymentOf(source.metadata)
   if (stored && LINK_STATES.has(stored.state)) return "card_link"
+  if (stored?.state === "awaiting_payment") return "card_released"
   return source.payment_role ? KIND_OF_ROLE[source.payment_role] : null
 }
 

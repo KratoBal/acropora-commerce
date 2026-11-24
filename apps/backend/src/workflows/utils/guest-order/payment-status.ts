@@ -16,10 +16,26 @@ export type PaymentCollectionFacts = {
   refunded_amount: number | null
 }
 
-/** Half a unit of the smallest coin: forint has no decimals, so 0.5 (Medusa's `getEpsilonFromDecimalPrecision(0)`). */
+/**
+ * Half a unit of the smallest coin: forint has no decimals, so 0.5 (Medusa's `getEpsilonFromDecimalPrecision(0)`). Medusa takes
+ * it per currency; this shop sells in forint only, and another currency would need its own.
+ */
 const EPSILON = 0.5
 
-export const orderPaymentStatus = (collections: readonly PaymentCollectionFacts[]): string => {
+/**
+ * The status, or `null` when an amount could not be read as a number: a `NaN` would fall through every check to `not_paid`, and
+ * a paid order would show "Fizetésre vár" (barracuda on #891). With `null` the page shows no payment line, which says nothing
+ * false.
+ */
+export const orderPaymentStatus = (collections: readonly PaymentCollectionFacts[]): string | null => {
+  const unreadable = (value: number | null) => value !== null && !Number.isFinite(value)
+  if (
+    collections.some(
+      (collection) =>
+        unreadable(collection.amount) || unreadable(collection.captured_amount) || unreadable(collection.refunded_amount),
+    )
+  )
+    return null
   const count: Record<string, number> = {}
   const add = (status: string, by = 1) => (count[status] = (count[status] ?? 0) + by)
   for (const collection of collections) {

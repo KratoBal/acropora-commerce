@@ -36,6 +36,11 @@ describe("the order payment status, as Medusa computes it", () => {
     ).toBe("partially_refunded")
   })
 
+  it("an amount that is not a number gives no status, not not_paid (a paid order would read Fizetésre vár)", () => {
+    expect(orderPaymentStatus([c({ status: "completed", captured_amount: Number.NaN })])).toBeNull()
+    expect(orderPaymentStatus([c({ status: "completed", amount: Number.NaN, captured_amount: 10000 })])).toBeNull()
+  })
+
   it("Medusa's order of checks: requires_action first; canceled only when every collection is", () => {
     expect(orderPaymentStatus([c({ status: "requires_action", captured_amount: 10000 })])).toBe("requires_action")
     expect(orderPaymentStatus([c({ status: "canceled" })])).toBe("canceled")

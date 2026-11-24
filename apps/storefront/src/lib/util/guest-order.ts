@@ -42,7 +42,7 @@ export type GuestWithdrawal = {
 }
 
 export type GuestPaymentKind =
-  "card" | "card_link" | "cod" | "store" | "transfer"
+  "card" | "card_released" | "card_link" | "cod" | "store" | "transfer"
 
 export type GuestOrder = {
   display_id: number | string
@@ -120,12 +120,14 @@ export const statusTextKeys = (
  * THE WAITING SENTENCE BY THE PAYMENT METHOD (barracuda on #886, acrobot 60734). "Fizetésre vár" says something different for
  * each method: the bank transfer waits for the transfer until the payment request's deadline (`awaiting`, the sentence as it
  * was); a card order paid through the payment link has the link's own rule (6 days, a reminder on day 3, then the order closes:
- * `awaitingLink`). Cash on delivery and paying in the store are paid at handover, and a plain card order is held, not waited
+ * `awaitingLink`); a card order whose hold was released waits for the goods, and its link comes then (`awaitingRelease`: no link
+ * and no deadline is claimed, barracuda on #891). Cash on delivery and paying in the store are paid at handover, and a plain card order is held, not waited
  * on: no line, as for any state that tells the customer nothing. A method the shop did not send keeps the general line.
  */
 const AWAITING_KEY: Record<GuestPaymentKind, string | null> = {
   transfer: "awaiting",
   card_link: "awaitingLink",
+  card_released: "awaitingRelease",
   cod: null,
   store: null,
   card: null,
