@@ -66,6 +66,14 @@ describe("resolveLoyaltySettings", () => {
     expect(sources).toEqual({ enabled: "row_invalid", value: "row_invalid", minOrder: "row_invalid", minPoints: "row_invalid", maxPercent: "row_invalid" })
   })
 
+  it("a BROKEN stored switch row is OFF even when the environment says on (barracuda, #881)", () => {
+    const { settings, sources } = resolveLoyaltySettings([{ key: "loyalty_redemption_enabled", value: "2" }], {
+      LOYALTY_REDEMPTION_ENABLED: "true",
+    })
+    expect(settings.enabled).toBe(false)
+    expect(sources.enabled).toBe("row_invalid")
+  })
+
   it("the order minimum may be stored as 0 (no minimum), which the environment could not say", () => {
     expect(resolveLoyaltySettings([{ key: "loyalty_min_order_huf", value: "0" }], {}).settings.minOrder).toBe(0)
     expect(resolveLoyaltySettings([], { LOYALTY_MIN_ORDER_HUF: "0" }).settings.minOrder).toBe(30_000)
