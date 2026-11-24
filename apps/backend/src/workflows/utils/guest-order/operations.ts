@@ -11,6 +11,7 @@ import type OrderBusinessStatusModuleService from "../../../modules/order-busine
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
 import { buildProviderRoleMap, orderPaymentRoleOf } from "../payment-providers"
+import { orderPaymentStatus } from "./payment-status"
 import { isStorePickupOption } from "../shipping-option-roles"
 import { livestockKindsOfOrder } from "../webshop-mail/livestock-kinds"
 import { lineTitle } from "../webshop-mail/operations"
@@ -37,8 +38,11 @@ const ORDER_FIELDS = [
   "created_at",
   "total",
   "currency_code",
-  "payment_status",
   "metadata",
+  "payment_collections.status",
+  "payment_collections.amount",
+  "payment_collections.captured_amount",
+  "payment_collections.refunded_amount",
   "payment_collections.payments.provider_id",
   "payment_collections.payments.canceled_at",
   "payment_collections.payment_sessions.provider_id",
@@ -65,7 +69,15 @@ const sourceOf = (order: any): GuestOrderSource => {
     created_at: order.created_at ?? null,
     total: medusaNumber(order.total, `The total of order ${order.id}`),
     currency_code: String(order.currency_code ?? "huf"),
-    payment_status: typeof order.payment_status === "string" ? order.payment_status : null,
+    // computed, not read: query.graph has no order payment status (payment-status.ts)
+    payment_status: orderPaymentStatus(
+      (order.payment_collections ?? []).filter(Boolean).map((collection: any) => ({
+        status: typeof collection.status === "string" ? collection.status : null,
+        amount: collection.amount == null ? null : Number(collection.amount),
+        captured_amount: collection.captured_amount == null ? null : Number(collection.captured_amount),
+        refunded_amount: collection.refunded_amount == null ? null : Number(collection.refunded_amount),
+      })),
+    ),
     payment_role: orderPaymentRoleOf(order, buildProviderRoleMap()),
     items: (order.items ?? []).filter(Boolean).map((item: any) => ({
       id: String(item.id),

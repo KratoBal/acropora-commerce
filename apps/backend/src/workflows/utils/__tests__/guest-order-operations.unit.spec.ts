@@ -90,6 +90,26 @@ const container = (calls: { entity: string; filters: Record<string, unknown>; fi
         if (q.entity === "order_cart" && q.filters.cart_id) return { data: [{ order_id: "o_1" }, { order_id: "o_2" }] }
         if (q.entity === "order" && q.filters.display_id === 1042)
           return { data: [order("o_1", 1042, "so_other", "Bolti átvétel")] }
+        if (q.entity === "order" && q.filters.display_id === 2001)
+          // a cash on delivery order as query.graph gives it: NO payment_status field, a pending collection
+          return {
+            data: [
+              {
+                ...order("o_9", 2001, "so_other"),
+                payment_status: undefined,
+                payment_collections: [
+                  {
+                    status: "awaiting",
+                    amount: 1000,
+                    captured_amount: 0,
+                    refunded_amount: 0,
+                    payments: [],
+                    payment_sessions: [{ provider_id: "pp_acropora_cod" }],
+                  },
+                ],
+              },
+            ],
+          }
         if (q.entity === "order" && Array.isArray(q.filters.id))
           return { data: [order("o_2", 1043, pickupId, "Átvétel")] }
         return { data: [] }
@@ -116,6 +136,23 @@ describe("guestOrderOperations", () => {
     expect(calls[1]).toMatchObject({ entity: "order_cart", filters: { cart_id: "cart_1" } })
     expect(calls[2]).toMatchObject({ entity: "order", filters: { id: ["o_2"] } })
     expect(mates.map((m) => m.id)).toEqual(["o_2"])
+  })
+
+  it("computes the payment status from the collections (query.graph has none) and reads the role (acrobot 60746)", async () => {
+    const previous = process.env.ACROPORA_PP_COD
+    process.env.ACROPORA_PP_COD = "pp_acropora_cod"
+    try {
+      const calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[] = []
+      const source = await guestOrderOperations(container(calls)).findByDisplayId(2001)
+      expect(source?.payment_status).toBe("awaiting")
+      expect(source?.payment_role).toBe("COD")
+      const fields = calls.find((call) => call.entity === "order")!.fields
+      expect(fields).toEqual(expect.arrayContaining(["payment_collections.status", "payment_collections.captured_amount"]))
+      expect(fields).not.toContain("payment_status")
+    } finally {
+      if (previous === undefined) delete process.env.ACROPORA_PP_COD
+      else process.env.ACROPORA_PP_COD = previous
+    }
   })
 
   it("asks for NO address, name or phone field", async () => {
