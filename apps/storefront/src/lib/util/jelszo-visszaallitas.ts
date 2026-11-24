@@ -18,6 +18,19 @@ import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 export const JELSZO_KERES_UT = "/auth/customer/emailpass/reset-password"
 export const UJ_JELSZO_UT = "/auth/customer/emailpass/update"
 
+/**
+ * A KERES BEALLITASAI A BOLTHOZ (mert a bolt valasza NEM JSON). A Medusa `reset-password` utja `201 Created`-et ad, szoveges torzzsel
+ * ("Created"); a js-sdk `fetch`-e viszont alapbol `accept: application/json`-t kuld, es ilyenkor a valaszt JSON-kent olvassa: a szoveges
+ * torzs `SyntaxError`, vagyis egy SIKERES kerest hibanak latott (merve a teszt kirakaton 2026-11-24: az oldal "Nem sikerult"-et mondott,
+ * mikozben a bolt elfogadta a kerest). A fejlec az `accept`-et felulirja, a valaszt nyersen kapjuk, es csak az allapota szamit.
+ */
+export const jelszoKeresBeallitas = (torzs: unknown) => ({
+  method: "POST" as const,
+  body: torzs as Record<string, unknown>,
+  headers: { accept: "*/*" },
+  cache: "no-store" as const,
+})
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** A bolt visszaallito tokenje egy JWT: harom base64url resz. Mas alaku tokent el sem kuldunk. */

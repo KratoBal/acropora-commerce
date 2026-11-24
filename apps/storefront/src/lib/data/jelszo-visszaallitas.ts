@@ -8,6 +8,7 @@ import { sebessegKorlat } from "@lib/util/hirlevel-feliratkozas"
 import {
   JELSZO_KERES_UT,
   UJ_JELSZO_UT,
+  jelszoKeresBeallitas,
   jelszoVisszaallitasKeres,
   ujJelszoBeallit,
   type JelszoKeresAllapot,
@@ -35,11 +36,7 @@ export async function jelszoVisszaallitasAkcio(
     {
       korlat,
       kuld: (torzs) =>
-        sdk.client.fetch(JELSZO_KERES_UT, {
-          method: "POST",
-          body: torzs,
-          cache: "no-store",
-        }),
+        sdk.client.fetch(JELSZO_KERES_UT, jelszoKeresBeallitas(torzs)),
     },
   )
 }
