@@ -38,6 +38,7 @@ import {
 import { AdminPutUrlRedirects } from "./admin/url-redirects/validators";
 import { AdminPutLandingPage } from "./admin/landing-pages/validators";
 import { AdminPutHomepageContent } from "./admin/homepage-content/validators";
+import { AdminPostCustomerText } from "./admin/customer-texts/validators";
 import {
   AdminResendOrderStatusNotification,
   AdminTransitionOrderBusinessStatus,
@@ -144,6 +145,11 @@ export default defineMiddlewares({
       matcher: "/admin/homepage-content",
       method: "PUT",
       middlewares: [validateAndTransformBody(AdminPutHomepageContent)],
+    },
+    {
+      matcher: "/admin/customer-texts",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostCustomerText)],
     },
     {
       matcher: "/admin/product-knowledge/:product_id",
