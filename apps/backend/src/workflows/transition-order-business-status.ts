@@ -65,8 +65,9 @@ export const captureSharedStripePaymentStep = createStep(
 export const creditLoyaltyAccrualOnClosedStep = createStep(
   "credit-loyalty-accrual-on-closed",
   async (input: TransitionOrderBusinessStatusInput, { container }) => {
-    if (input.to !== "closed") return new StepResponse({ status: "not_closed" as const })
-    return new StepResponse(await creditOrderLoyaltyAccrual(container, input.order_id))
+    const outcome: { status: string } =
+      input.to === "closed" ? await creditOrderLoyaltyAccrual(container, input.order_id) : { status: "not_closed" }
+    return new StepResponse(outcome)
   },
 )
 
