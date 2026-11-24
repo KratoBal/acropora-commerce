@@ -21,9 +21,59 @@ export const NEWSLETTER_CONFIRM_TTL_MS = 7 * 24 * 60 * 60 * 1000
  */
 export const NEWSLETTER_CONFIRM_COOLDOWN_MS = 30 * 60 * 1000
 
-/** Whether a pending row's last confirmation mail is recent enough that no new one may go at `now`. */
-export const confirmationCoolingDown = (sentAt: Date | string | null | undefined, now: Date): boolean =>
-  !!sentAt && now.getTime() - new Date(sentAt).getTime() < NEWSLETTER_CONFIRM_COOLDOWN_MS
+/**
+ * WHAT BECAME OF THE CONFIRMATION MAIL, kept on the row (measured on the test shop 2026-11-24: a sign-up whose mail did not go
+ * - the switch was off - still started the thirty minutes, so the next sign-up answered 200 and mailed nothing, and nobody could
+ * see why). `sent` and `queued` (waiting in the outbox) are mails that exist; the rest are mails that were NOT sent.
+ */
+export const NEWSLETTER_MAIL_RESULTS = [
+  "sent",
+  "queued",
+  "switch_off",
+  "mail_off",
+  "os_renderer_off",
+  "no_storefront_url",
+  "failed",
+] as const
+export type NewsletterMailResult = (typeof NEWSLETTER_MAIL_RESULTS)[number]
+
+/** The results that mean no mail left and none is waiting. */
+export const NEWSLETTER_MAIL_NOT_SENT: readonly NewsletterMailResult[] = [
+  "switch_off",
+  "mail_off",
+  "os_renderer_off",
+  "no_storefront_url",
+  "failed",
+]
+
+/**
+ * THE RESULTS THAT RELEASE THE THIRTY MINUTES (barracuda 60924): only the configuration reasons, where nothing was mailed for
+ * certain (a switch, the mail or the renderer off, no https address). `failed` does NOT: the sender answers `failed` for any
+ * exception, also one that comes after the mail already reached the outbox or left, so releasing on it could mail an address twice
+ * in a row, and the cooldown exists to protect the mailbox. A failed row stays in the OS list and cools down.
+ */
+export const NEWSLETTER_MAIL_RELEASES_COOLDOWN: readonly NewsletterMailResult[] = [
+  "switch_off",
+  "mail_off",
+  "os_renderer_off",
+  "no_storefront_url",
+]
+
+export const newsletterMailReleasesCooldown = (result: string | null | undefined): boolean =>
+  !!result && (NEWSLETTER_MAIL_RELEASES_COOLDOWN as readonly string[]).includes(result)
+
+/**
+ * Whether a pending row's last confirmation mail is recent enough that no new one may go at `now`. A mail that certainly was NOT
+ * sent for a configuration reason (`result`, see `NEWSLETTER_MAIL_RELEASES_COOLDOWN`) starts no cooldown: there is nothing to
+ * protect an address from, and the next sign-up must be able to mail. `sent`, `queued`, `failed` and a row with no recorded result
+ * (one from before the result was kept) cool down as they always did.
+ */
+export const confirmationCoolingDown = (
+  sentAt: Date | string | null | undefined,
+  now: Date,
+  result?: string | null
+): boolean =>
+  !newsletterMailReleasesCooldown(result) && !!sentAt && now.getTime() - new Date(sentAt).getTime() < NEWSLETTER_CONFIRM_COOLDOWN_MS
 
 /** A link's token: 32 random bytes, base64url (43 characters). */
 export const newNewsletterToken = (): string => randomBytes(32).toString("base64url")

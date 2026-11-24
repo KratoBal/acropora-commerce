@@ -15,6 +15,7 @@ import {
   deliverThroughOutbox,
   runOutbox,
 } from "./outbox-delivery"
+import { unsentNewsletterConfirmations } from "./newsletter-unsent"
 import { isStuck } from "./outbox-policy"
 import type { MailToSend } from "./prepare"
 import { sendShopMail } from "./send"
@@ -182,10 +183,16 @@ export const stuckWebshopMails = async (
   page: { limit: number; offset: number },
   now: Date = new Date()
 ): Promise<{ items: StuckMail[]; count: number }> => {
-  const stuck = (await unsent(container)).filter((row) => isStuck(row, now)).reverse()
+  const stuck = (await unsent(container)).filter((row) => isStuck(row, now)).reverse().map(stuckMailOf)
+  // the newsletter confirmations that never reached the outbox (switch off, mail off, ...): newest first, merged by time
+  const skipped = await unsentNewsletterConfirmations(container, now)
+  const all = skipped.items.length
+    ? [...stuck, ...skipped.items].sort((a, b) => b.created_at.localeCompare(a.created_at))
+    : stuck
   return {
-    count: stuck.length,
-    items: stuck.slice(page.offset, page.offset + page.limit).map(stuckMailOf),
+    // the count is the true one even when the newsletter rows listed one by one were capped
+    count: stuck.length + skipped.total,
+    items: all.slice(page.offset, page.offset + page.limit),
   }
 }
 

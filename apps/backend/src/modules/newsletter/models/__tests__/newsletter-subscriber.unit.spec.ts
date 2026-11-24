@@ -8,6 +8,8 @@ describe("newsletter subscriber model", () => {
   it("NL-MODEL: the address, the name and the consent as given, unique by address among the live rows", () => {
     const parsed = NewsletterSubscriber.parse()
     expect(Object.keys(parsed.schema).sort()).toEqual([
+      "confirmation_mail_result",
+      "confirmation_mail_result_at",
       "confirmation_sent_at",
       "confirmation_token_hash",
       "confirmed_at",
@@ -64,5 +66,14 @@ describe("newsletter subscriber model", () => {
       )
       expect([index, found?.unique]).toEqual([index, true])
     }
+  })
+
+  it("NL-MODEL-MAILRESULT: what became of the confirmation mail is two nullable columns in a migration, so the rows before it stay valid", () => {
+    const dir = join(__dirname, "../../migrations")
+    const sql = readdirSync(dir)
+      .map((f) => readFileSync(join(dir, f), "utf-8"))
+      .join("\n")
+    for (const column of ["confirmation_mail_result", "confirmation_mail_result_at"])
+      expect([column, new RegExp(`add column if not exists "${column}" (text|timestamptz) null`).test(sql)]).toEqual([column, true])
   })
 })
