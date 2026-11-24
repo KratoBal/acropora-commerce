@@ -19,6 +19,23 @@ import { GET as getList } from "../route"
 
 const ORDERS: Record<string, string> = { ord_a: "cus_a", ord_b: "cus_b" }
 
+/**
+ * The orders as the payment kind reads them (commerce #891, #894): ord_a a card order whose hold was released (no link yet),
+ * ord_b a plain card order. Asked by id, after the ownership filter.
+ */
+const PAYMENT: Record<string, Record<string, unknown>> = {
+  ord_a: {
+    status: "pending",
+    metadata: { acropora_payment: { state: "awaiting_payment", kind: "release" } },
+    payment_collections: [{ payments: [], payment_sessions: [{ provider_id: "pp_stripe_stripe" }] }],
+  },
+  ord_b: {
+    status: "pending",
+    metadata: null,
+    payment_collections: [{ payments: [{ provider_id: "pp_stripe_stripe", canceled_at: null }], payment_sessions: [] }],
+  },
+}
+
 function request(customerId: string | undefined, orderId?: string) {
   const asked: string[] = []
   const graphFilters: unknown[] = []
@@ -37,9 +54,16 @@ function request(customerId: string | undefined, orderId?: string) {
             graph: async ({
               filters,
             }: {
-              filters: { customer_id: string; id?: string }
+              filters: { customer_id?: string; id?: string | string[] }
             }) => {
               graphFilters.push(filters)
+              // the payment kind's read: by the own ids the ownership filter already gave
+              if (Array.isArray(filters.id))
+                return {
+                  data: filters.id
+                    .filter((id) => PAYMENT[id])
+                    .map((id) => ({ id, ...PAYMENT[id] })),
+                }
               return {
                 data: Object.entries(ORDERS)
                   .filter(
@@ -115,6 +139,7 @@ describe("GET /store/customers/me/order-business-statuses/:order_id", () => {
         status: "confirmed",
         label: "Visszaigazolva",
         updated_at: "2026-09-29T10:00:00.000Z",
+        payment_kind: "card_released",
         history: [
           {
             from_status: null,
@@ -172,7 +197,7 @@ describe("GET /store/customers/me/order-business-statuses/:order_id", () => {
 
 describe("GET /store/customers/me/order-business-statuses", () => {
   it("lists only the customer's own orders", async () => {
-    const { res, asked } = await run(getList, "cus_b")
+    const { res, asked, graphFilters } = await run(getList, "cus_b")
     expect(res.body).toEqual({
       business_statuses: [
         {
@@ -180,10 +205,13 @@ describe("GET /store/customers/me/order-business-statuses", () => {
           status: "stocking",
           label: "Készletezés alatt",
           updated_at: "2026-09-29T10:00:00.000Z",
+          payment_kind: "card",
         },
       ],
     })
     expect(asked).toEqual(["ord_b"])
+    // the payment kind reads only the ids the session's ownership filter gave, never another customer's order
+    expect(graphFilters).toEqual([{ customer_id: "cus_b" }, { id: ["ord_b"] }])
   })
 })
 

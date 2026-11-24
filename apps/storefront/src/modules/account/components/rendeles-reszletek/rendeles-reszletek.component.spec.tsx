@@ -89,6 +89,30 @@ describe("a rendelés részletei", () => {
     expect(sor).toContain("fizetésre vár")
   })
 
+  it("a fizetési állapot a fizetés fajtája szerint: utánvét átvételkor, a feloldott zárolás nem 'fizetés törölve' (acrobot 60913)", () => {
+    const { unmount } = render(
+      <RendelesReszletek
+        rendeles={RENDELES}
+        allapot={{ ...ALLAPOT, payment_kind: "cod" }}
+      />,
+    )
+    let sor = screen.getByTestId("rendeles-fej-sor").textContent ?? ""
+    expect(sor).toContain("fizetés átvételkor")
+    expect(sor).not.toContain("fizetésre vár")
+    unmount()
+    render(
+      <RendelesReszletek
+        rendeles={
+          { ...(RENDELES as object), payment_status: "canceled" } as never
+        }
+        allapot={{ ...ALLAPOT, payment_kind: "card_released" }}
+      />,
+    )
+    sor = screen.getByTestId("rendeles-fej-sor").textContent ?? ""
+    expect(sor).toContain("fizetés az áru megérkezése után")
+    expect(sor).not.toContain("fizetés törölve")
+  })
+
   it("a Tételek a terméket mutatja, a díjat nem; a Teljesítés a szállítási módot és címet", () => {
     render(<RendelesReszletek rendeles={RENDELES} allapot={ALLAPOT} />)
     const tetelek = screen.getByTestId("rendeles-tetelek")

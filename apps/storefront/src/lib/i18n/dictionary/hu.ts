@@ -331,6 +331,9 @@ export const hu = {
       refunded: "visszatérítve",
       canceled: "fizetés törölve",
       requires_action: "fizetési teendő",
+      awaitingRelease: "fizetés az áru megérkezése után",
+      onDelivery: "fizetés átvételkor",
+      atStore: "fizetés a boltban, átvételkor",
     },
     orderDetails: {
       back: "‹ Rendeléseim",

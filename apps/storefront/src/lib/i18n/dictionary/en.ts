@@ -326,6 +326,9 @@ export const en: Dictionary = {
       refunded: "refunded",
       canceled: "payment canceled",
       requires_action: "payment action needed",
+      awaitingRelease: "payment after the goods arrive",
+      onDelivery: "pay on delivery",
+      atStore: "pay in store on pickup",
     },
     orderDetails: {
       back: "‹ My orders",

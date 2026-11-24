@@ -710,6 +710,24 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "en": "payment action needed"
   },
   {
+    "key": "account.paymentStatus.awaitingRelease",
+    "group": "fiok",
+    "hu": "fizetés az áru megérkezése után",
+    "en": "payment after the goods arrive"
+  },
+  {
+    "key": "account.paymentStatus.onDelivery",
+    "group": "fiok",
+    "hu": "fizetés átvételkor",
+    "en": "pay on delivery"
+  },
+  {
+    "key": "account.paymentStatus.atStore",
+    "group": "fiok",
+    "hu": "fizetés a boltban, átvételkor",
+    "en": "pay in store on pickup"
+  },
+  {
     "key": "account.orderDetails.back",
     "group": "fiok",
     "hu": "‹ Rendeléseim",
