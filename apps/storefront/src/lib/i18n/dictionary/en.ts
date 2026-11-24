@@ -1406,7 +1406,7 @@ export const en: Dictionary = {
       confirmText:
         "With this you declare that you withdraw from the contract for the following products of order {number}:",
       confirmName: "Name on the declaration: {name}",
-      confirmButton: "I confirm and send it",
+      confirmButton: "Confirm withdrawal",
       back: "Back to editing",
       sending: "Sending…",
       close: "Close",

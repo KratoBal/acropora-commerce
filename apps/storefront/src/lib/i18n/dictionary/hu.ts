@@ -1451,7 +1451,7 @@ export const hu = {
       confirmText:
         "Ezzel kijelented, hogy elállsz a szerződéstől a(z) {number} számú rendelés következő termékeinél:",
       confirmName: "A nyilatkozat neve: {name}",
-      confirmButton: "Megerősítem és elküldöm",
+      confirmButton: "Elállás megerősítése",
       back: "Vissza a szerkesztéshez",
       sending: "Küldés…",
       close: "Bezárás",
