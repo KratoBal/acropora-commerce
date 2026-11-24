@@ -13,6 +13,10 @@ const muveletek = vi.hoisted(() => ({
   signup: vi.fn(),
   saveProfile: vi.fn(),
 }))
+vi.mock("next/navigation", () => ({
+  useParams: () => ({ countryCode: "hu" }),
+}))
+
 vi.mock("@lib/data/customer", () => muveletek)
 
 import LoginTemplate from "@modules/account/templates/login-template"

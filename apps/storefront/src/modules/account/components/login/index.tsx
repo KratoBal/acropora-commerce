@@ -4,6 +4,8 @@ import { authHibaFelirat } from "@lib/util/auth-hiba"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import { useActionState } from "react"
 
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+
 import { AuthGomb, AuthHiba, AuthKartya, AuthMezo, AuthValto } from "../auth"
 
 type Props = {
@@ -12,8 +14,9 @@ type Props = {
 
 /**
  * BELEPES (P5, 256:3; mobilon 256:103). A keret "Emlékezz rám" es
- * "Elfelejtett jelszó" sora nem epul: az elsohoz a munkamenet hossza nem
- * allithato, a masodikhoz nincs levelkuldes (docs/P5-LEFT-OUT.md).
+ * "Elfelejtett jelszó" sora MOST epul (kartya 7bfca4eb): a bolt a levelet az OS
+ * sablonjaval kuldi. Az "Emlékezz rám" sora nem: a munkamenet hossza nem allithato
+ * (docs/P5-LEFT-OUT.md).
  */
 const Login = ({ setCurrentView }: Props) => {
   const t = useTranslate()
@@ -65,6 +68,16 @@ const Login = ({ setCurrentView }: Props) => {
           required
           data-testid="password-input"
         />
+        {/* AZ ELFELEJTETT JELSZO (kartya 7bfca4eb): a bolt a levelet az OS sablonjaval kuldi, a keret sora most epul */}
+        <p className="-mt-[6px] text-right text-[12.3px] leading-[16px] small:text-[12.5px]">
+          <LocalizedClientLink
+            href="/elfelejtett-jelszo"
+            className="font-semibold text-acr-heritage underline underline-offset-2"
+            data-testid="forgot-password-link"
+          >
+            {t("account.auth.login.forgot")}
+          </LocalizedClientLink>
+        </p>
         <AuthHiba
           hiba={
             message?.state === "error"
