@@ -87,6 +87,29 @@ describe("a kodbol kitoltott szovegek", () => {
     expect(hu.guestOrder.withdrawal.done).not.toMatch(/Korm\.|rendelet/)
   })
 
+  it("murena dontesi lapjanak ot mondata kezdoertekkent all, helyorzo nelkul (acrobot 60627, kartya 7bfca4eb)", () => {
+    const d = [hu.guestOrder, en.guestOrder]
+    for (const g of d) {
+      for (const szoveg of [
+        g.status.closedUnsuccessfully.text,
+        g.payment.awaiting.text,
+        g.payment.refunded.text,
+        g.payment.partiallyRefunded.text,
+        g.invoice.none,
+        g.problem.done,
+      ])
+        expect(szoveg).not.toMatch(/KITÖLTENDŐ|TO BE FILLED/)
+    }
+    expect(hu.guestOrder.status.closedUnsuccessfully.text).toContain(
+      "14 napon belül",
+    )
+    // a 3-as (b) valtozata: a lemondasrol Balazs meg nem dontott
+    expect(hu.guestOrder.payment.awaiting.text).toContain(
+      "felvesszük veled a kapcsolatot",
+    )
+    expect(hu.guestOrder.problem.done).toContain("2 munkanapon belül")
+  })
+
   it("a jogi szovegek helyorzoi MARADNAK (Balazs dontese): nem tuntek el vele egyutt", () => {
     expect(hu.guestOrder.splitNotice + JSON.stringify(hu.guestOrder)).toMatch(
       /KITÖLTENDŐ: (jogi ellenőrzés|válaszidő|jogi szöveg élő állatra)/,

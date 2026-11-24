@@ -1353,13 +1353,13 @@ export const hu = {
       },
       closedUnsuccessfully: {
         label: "Sikertelenül lezárt",
-        text: "A rendelés nem teljesült. [KITÖLTENDŐ: visszatérítés menete és ideje]",
+        text: "A rendelés nem teljesült. A kifizetett összeget ugyanazzal a fizetési móddal visszatérítjük, 14 napon belül.",
       },
     },
     payment: {
       awaiting: {
         label: "Fizetésre vár",
-        text: "A fizetés még nem érkezett meg. [KITÖLTENDŐ: határidő és mi történik lejáratkor]",
+        text: "A fizetés még nem érkezett meg. Előre utalásnál a díjbekérőn szereplő határidőig (8 nap) várjuk az összeget; ha addig nem érkezik meg, felvesszük veled a kapcsolatot.",
       },
       paid: {
         label: "Kifizetve",
@@ -1367,17 +1367,17 @@ export const hu = {
       },
       refunded: {
         label: "Visszatérítve",
-        text: "A visszatérítés megtörtént. [KITÖLTENDŐ: mikor kerül a számládra]",
+        text: "A visszatérítés megtörtént. Hogy a bankod mikor írja jóvá a számládon, az a banktól függ.",
       },
       partiallyRefunded: {
         label: "Részben visszatérítve",
-        text: "A visszatérítés egy része megtörtént. [KITÖLTENDŐ: mikor kerül a számládra]",
+        text: "A visszatérítés egy része megtörtént. Hogy a bankod mikor írja jóvá a számládon, az a banktól függ.",
       },
     },
     invoice: {
       button: "Számla letöltése",
       searching: "Számla keresése…",
-      none: "A számla még nem készült el. Amint elkészül, itt tölthető le. [KITÖLTENDŐ: mikor készül, pl. feladáskor]",
+      none: "A számla még nem készült el. A számlát a csomag feladásakor állítjuk ki, előre utalásnál a kifizetéskor. Amint elkészül, itt tölthető le.",
       error:
         "A számlát most nem tudjuk letölteni. Próbáld újra később, vagy írj nekünk.",
       typeInvoice: "Számla",
@@ -1436,7 +1436,7 @@ export const hu = {
       reportRef: "Ügy azonosítója: {id}",
       stageReceived: "Beérkezett",
       stageInProgress: "Átvette a csapatunk",
-      done: "Megkaptuk a bejelentésedet. Az ügy azonosítója: {id}. [KITÖLTENDŐ: válaszidő] belül jelentkezünk.",
+      done: "Megkaptuk a bejelentésedet. Az ügy azonosítója: {id}. 2 munkanapon belül jelentkezünk.",
     },
     withdrawal: {
       openButton: "Elállás a szerződéstől",
