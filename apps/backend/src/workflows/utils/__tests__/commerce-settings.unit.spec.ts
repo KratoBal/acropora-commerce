@@ -9,6 +9,7 @@ import {
   FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   normalizeCommerceSettingValue,
+  OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
   SHIPPING_FOXPOST_SETTING_KEY,
   SHIPPING_GLS_HEAVY_SETTING_KEY,
   SHIPPING_GLS_NORMAL_SETTING_KEY,
@@ -36,6 +37,8 @@ describe("commerce setting definitions", () => {
         FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
         // the merchant feed's restock lead time (card 69d18bff): days, not forints, and no default
         FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
+        // the least price history a reduction needs to be announced (card 90c54873): days, default 15
+        OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
       ].sort(),
     )
   })
@@ -163,6 +166,59 @@ describe("typed commerce setting access", () => {
       shipping_foxpost_huf: 1_490,
       free_shipping_threshold_gls_huf: 50_000,
       free_shipping_threshold_foxpost_huf: 30_000,
+    })
+  })
+
+  /*
+    THE OMNIBUS HISTORY THRESHOLD (card 90c54873; Balázs 2026-11-24: "legyen állítható, alapérték 15"). WHAT TURNS THIS RED: the
+    default no longer 15; a value under 15 (the decree's floor for a product on the market for less than 30 days) or over 30 (the
+    general rule) or a fraction or text that is no number accepted; a missing row failing instead of reading as the default.
+  */
+  describe("the Omnibus history threshold", () => {
+    it("reads as 15 days when no row was written, and the admin shows it as the default", async () => {
+      await expect(
+        getCommerceSettingValue(serviceWith([]), OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY),
+      ).resolves.toBe(15)
+      expect(defaultSetting(OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY)).toMatchObject({
+        key: "omnibus_min_history_days",
+        value: 15,
+        is_default: true,
+        is_configured: false,
+      })
+    })
+
+    it("takes whole days from 15 to 30, as a number or as numeric text", () => {
+      const read = [15, 16, 29, 30, "15", "30"].map((ok) =>
+        normalizeCommerceSettingValue(OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY, ok),
+      )
+      expect(read).toEqual([15, 16, 29, 30, 15, 30])
+    })
+
+    it("refuses 14 and under, 31 and over, fractions, zero, negatives and what is no number", () => {
+      const accepted = [14, 0, -15, 31, 100, 15.5, "14", "31", "tizenöt", "", null, undefined, NaN].filter((bad) => {
+        try {
+          normalizeCommerceSettingValue(OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY, bad)
+          return true
+        } catch {
+          return false
+        }
+      })
+      expect(accepted).toEqual([])
+    })
+
+    it("the admin validator stores it as text and refuses a value outside the bounds before a row is written", () => {
+      expect(validateSettingValue("omnibus_min_history_days", 20)).toBe("20")
+      expect(() => validateSettingValue("omnibus_min_history_days", 10)).toThrow(/from 15 to 30/)
+      expect(AdminUpsertCommerceSetting.safeParse({ key: "omnibus_min_history_days", value: 20 }).success).toBe(true)
+    })
+
+    it("a stored value that is no longer in bounds fails loudly instead of reading as the default", async () => {
+      await expect(
+        getCommerceSettingValue(
+          serviceWith([{ key: OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY, value: "7" }]),
+          OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
+        ),
+      ).rejects.toThrow(/from 15 to 30/)
     })
   })
 })

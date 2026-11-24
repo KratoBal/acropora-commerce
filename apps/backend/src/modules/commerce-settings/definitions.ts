@@ -30,6 +30,21 @@ export const FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY =
   "feed_backorder_lead_time_days" as const
 
 /**
+ * THE LEAST PRICE HISTORY, IN DAYS, A REDUCTION NEEDS TO BE ANNOUNCED (card 90c54873; Balázs, 2026-11-24 10:06 UTC, "mehet a 15",
+ * and "legyen állítható beállítás, alapérték 15"). The storefront shows a struck-out price and a "lowest price" line only for a
+ * reduction whose reference price rests on at least this many days of history; a shorter history shows only the price to pay.
+ * 15 is the floor the decree sets for a product on the market for less than 30 days (4/2009. (I. 30.) NFGM-SZMM rendelet 2/A. §
+ * (5)); 30 is the general rule, so a larger number would hide a lawful reduction for no reason the decree gives. THE OS APPLIES IT:
+ * it writes the Omnibus reference onto a variant only when the history reaches this far (the key being present is the OS's
+ * statement that a reduction runs, and the storefront trusts it), so this module only holds and bounds the number.
+ */
+export const OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY =
+  "omnibus_min_history_days" as const
+export const OMNIBUS_MIN_HISTORY_DAYS_MIN = 15
+export const OMNIBUS_MIN_HISTORY_DAYS_MAX = 30
+export const DEFAULT_OMNIBUS_MIN_HISTORY_DAYS = 15
+
+/**
  * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
  * the accessor and cannot be removed from the Admin (the settings list shows it
  * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
@@ -49,6 +64,7 @@ export const COMMERCE_SETTING_KEYS = [
   FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
   FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
+  OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
 ] as const
 
 export type CommerceSettingKey = (typeof COMMERCE_SETTING_KEYS)[number]
@@ -128,6 +144,25 @@ export const normalizeLeadTimeDays = (raw: unknown, key: string): number => {
   return value
 }
 
+/** The Omnibus history threshold: whole days from 15 (the decree's floor) to 30 (the general rule). */
+export const normalizeOmnibusMinHistoryDays = (
+  raw: unknown,
+  key: string
+): number => {
+  const value = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value < OMNIBUS_MIN_HISTORY_DAYS_MIN ||
+    value > OMNIBUS_MIN_HISTORY_DAYS_MAX
+  )
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `${key} must be a whole number of days from ${OMNIBUS_MIN_HISTORY_DAYS_MIN} to ${OMNIBUS_MIN_HISTORY_DAYS_MAX}, received ${JSON.stringify(raw)}`
+    )
+  return value
+}
+
 /** Single source of truth for keys, descriptions, validation and defaults. */
 export const COMMERCE_SETTING_DEFINITIONS: Record<
   CommerceSettingKey,
@@ -166,6 +201,14 @@ export const COMMERCE_SETTING_DEFINITIONS: Record<
       "Utánrendelhető, nulla készletű termék beszerzési átfutása napokban a termék-feedhez (Google, Meta). Üresen a feed az ilyen terméket nincs készleten-ként adja.",
     normalize: (raw) =>
       normalizeLeadTimeDays(raw, FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY),
+  },
+  [OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY]: {
+    key: OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
+    description:
+      "Hány napos ár-előzmény kell ahhoz, hogy egy árcsökkentést közöljünk (áthúzott ár és legalacsonyabb ár sor). 15 és 30 nap között; a 15 a rendelet alsó határa a 30 napnál rövidebb ideje forgalmazott termékre.",
+    normalize: (raw) =>
+      normalizeOmnibusMinHistoryDays(raw, OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY),
+    defaultValue: DEFAULT_OMNIBUS_MIN_HISTORY_DAYS,
   },
 }
 
