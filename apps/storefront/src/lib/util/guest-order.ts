@@ -1,4 +1,5 @@
 import type { Key } from "@lib/i18n/dictionary"
+import { fizetesiHelyzet, type FizetesiHelyzet } from "./fizetesi-helyzet"
 
 import type { ProblemKind } from "./problem-report"
 
@@ -117,42 +118,33 @@ export const statusTextKeys = (
 }
 
 /**
- * THE WAITING SENTENCE BY THE PAYMENT METHOD (barracuda on #886, acrobot 60734). "Fizetésre vár" says something different for
- * each method: the bank transfer waits for the transfer until the payment request's deadline (`awaiting`, the sentence as it
- * was); a card order paid through the payment link has the link's own rule (6 days, a reminder on day 3, then the order closes:
- * `awaitingLink`); a card order whose hold was released waits for the goods, and its link comes then (`awaitingRelease`: no link
- * and no deadline is claimed, barracuda on #891). Cash on delivery and paying in the store are paid at handover, and a plain card order is held, not waited
- * on: no line, as for any state that tells the customer nothing. A method the shop did not send keeps the general line.
+ * THE GUEST PAGE'S PAYMENT LINE, by the shared payment situation (`fizetesi-helyzet.ts`; barracuda on #886, #891; acrobot 60734).
+ * The bank transfer keeps its sentence (`awaiting`); a card order paid through the link has the link's rule (`awaitingLink`); a
+ * released hold its own (`awaitingRelease`: no link and no deadline is claimed). Cash on delivery and paying in the store are paid
+ * at handover, and a plain card order is held, not waited on: no line, as for any state that tells the customer nothing. A method
+ * the shop did not send keeps the general line.
  */
-const AWAITING_KEY: Record<GuestPaymentKind, string | null> = {
-  transfer: "awaiting",
-  card_link: "awaitingLink",
-  card_released: "awaitingRelease",
-  cod: null,
-  store: null,
-  card: null,
+const GUEST_KEY: Record<FizetesiHelyzet, string | null> = {
+  feloldott: "awaitingRelease",
+  linkre_var: "awaitingLink",
+  atutalasra_var: "awaiting",
+  varakozik: "awaiting",
+  kartya_var: null,
+  atvetelkor: null,
+  boltban: null,
+  lezart_zarolas: null,
 }
-
-/**
- * A RELEASED HOLD READS `canceled` (barracuda on #891 v2): releasing the hold cancels the order's only collection
- * (`release-hold.ts`), and the link's new collection comes only with the link. So the released card order waits with every
- * collection canceled, and its sentence follows the kind there too. Any OTHER canceled order (a withdrawn one) keeps no line.
- */
-const RELEASED_STATES = new Set(["canceled", "not_paid", "awaiting"])
 
 export const paymentTextKeys = (
   state: string | null,
   kind: GuestPaymentKind | null = null,
 ): { label: Key; text: Key } | null => {
-  const general = state
-    ? (PAYMENT_KEY as Record<string, string | undefined>)[state]
-    : undefined
-  const key =
-    kind === "card_released" && state && RELEASED_STATES.has(state)
-      ? AWAITING_KEY.card_released
-      : general === "awaiting" && kind
-        ? AWAITING_KEY[kind]
-        : general
+  const helyzet = fizetesiHelyzet(state, kind)
+  const key = helyzet
+    ? GUEST_KEY[helyzet]
+    : state
+      ? (PAYMENT_KEY as Record<string, string | undefined>)[state]
+      : undefined
   return key
     ? {
         label: `guestOrder.payment.${key}.label` as Key,
