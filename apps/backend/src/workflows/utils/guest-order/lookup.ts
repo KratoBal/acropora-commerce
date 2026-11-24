@@ -134,17 +134,22 @@ const LINK_STATES = new Set(["link_sent", "reminded"])
  * The kind of payment the customer is waiting on. A card order in a link state is `card_link`, one whose hold was released and
  * whose link is still to come is `card_released`, whatever the role reads.
  *
- * NOT ON AN ORDER THAT IS OVER (barracuda on #891, the follow-up): nothing clears `metadata.acropora_payment` when the shop
- * cancels an order, so a canceled order (Medusa's `canceled`) or one closed unsuccessfully would still read "we send the link
- * when the goods arrive" or "the link is valid for 6 days". There the stored state is ignored and the role's own kind stands,
- * which has no waiting line.
+ * ONLY ON AN OPEN ORDER (barracuda on #891 and #894): nothing clears `metadata.acropora_payment` when an order ends, so an order
+ * that is over would still read "we send the link when the goods arrive" or "the link is valid for 6 days". The stored state
+ * counts only while the order is open: Medusa's status is not one of the ending ones, and the business status is not one of
+ * the two closing ones (closed: the shop closed it, the customer may have paid some other way, e.g. in cash at pickup;
+ * closed_unsuccessfully). Otherwise the role's own kind stands, which has no waiting line.
  */
+const ENDED_ORDER_STATUSES = new Set(["canceled", "archived", "completed"])
+const CLOSING_BUSINESS_STATUSES = new Set(["closed", "closed_unsuccessfully"])
+
 export const guestPaymentKind = (
   source: GuestOrderSource,
   business: Pick<GuestOrderStatus, "status"> | null = null,
 ): GuestPaymentKind | null => {
-  const over = source.order_status === "canceled" || business?.status === "closed_unsuccessfully"
-  const stored = over ? null : storedOrderPaymentOf(source.metadata)
+  const open =
+    !ENDED_ORDER_STATUSES.has(source.order_status ?? "") && !CLOSING_BUSINESS_STATUSES.has(business?.status ?? "")
+  const stored = open ? storedOrderPaymentOf(source.metadata) : null
   if (stored && LINK_STATES.has(stored.state)) return "card_link"
   if (stored?.state === "awaiting_payment") return "card_released"
   return source.payment_role ? KIND_OF_ROLE[source.payment_role] : null

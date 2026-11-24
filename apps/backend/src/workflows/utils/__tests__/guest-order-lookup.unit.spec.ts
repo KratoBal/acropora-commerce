@@ -206,12 +206,13 @@ describe("guestOrderView: only named fields leave", () => {
     reads card_released or card_link from the payment state nothing cleared, and the page promises a link; a live order in the
     same state loses its kind.
   */
-  it("a canceled or unsuccessfully closed order keeps no link or release kind; a live one does", () => {
-    const closed: GuestOrderStatus = { ...status, status: "closed_unsuccessfully", label: "Sikertelenül lezárt rendelés" }
+  it("only an open order keeps a link or release kind: every ending Medusa status and both closing business statuses drop it", () => {
     for (const state of ["awaiting_payment", "link_sent", "reminded"]) {
       const base = { id: "o", display_id: 1, payment_role: "ONLINE_CARD" as const, metadata: { acropora_payment: { state } } }
-      expect(guestOrderView(source({ ...base, order_status: "canceled" }), null).payment_kind).toBe("card")
-      expect(guestOrderView(source(base), closed).payment_kind).toBe("card")
+      for (const order_status of ["canceled", "archived", "completed"])
+        expect(guestOrderView(source({ ...base, order_status }), null).payment_kind).toBe("card")
+      for (const business of ["closed", "closed_unsuccessfully"])
+        expect(guestOrderView(source(base), { ...status, status: business }).payment_kind).toBe("card")
       expect(guestOrderView(source({ ...base, order_status: "pending" }), status).payment_kind).toBe(
         state === "awaiting_payment" ? "card_released" : "card_link",
       )
