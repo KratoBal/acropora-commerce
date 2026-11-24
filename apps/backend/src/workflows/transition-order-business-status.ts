@@ -1,4 +1,4 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { cancelOrderWorkflow } from "@medusajs/medusa/core-flows"
 import {
   StepResponse,
@@ -18,7 +18,12 @@ import OrderBusinessStatusModuleService from "../modules/order-business-status/s
 import { captureOnTransition } from "./utils/shared-stripe-capture"
 import { sharedCaptureOperations } from "./utils/shared-stripe-capture-operations"
 import { creditOrderLoyaltyAccrual } from "./utils/loyalty/credit-order-accrual"
-import { cancelOnUnsuccessfulClose } from "./utils/cancel-on-unsuccessful-close"
+import {
+  cancelOnUnsuccessfulClose,
+  refuseReopenAfterMovement,
+  GIVEN_BACK_METADATA_KEY,
+  REOPEN_TO_STATUS,
+} from "./utils/cancel-on-unsuccessful-close"
 import { orderCancelOperations } from "./utils/order-cancel-guard-operations"
 import { giveBackGiftCardShare, giveBackLoyaltyPoints } from "./utils/give-back-order-credits"
 
@@ -64,7 +69,8 @@ export const captureSharedStripePaymentStep = createStep(
 /**
  * "SIKERTELENÜL LEZÁRT" CANCELS THE ORDER FIRST (card dfb79916; see `cancelOnUnsuccessfulClose`): the refund guard and
  * Medusa's cancel run BEFORE the status changes, so a refusal stops the move, and the points and the gift card come back
- * through `order.canceled`. Any other status passes.
+ * through `order.canceled`. The same step refuses the way BACK (`closed_unsuccessfully` -> `stocking`) once the close moved something
+ * (the order is canceled, or the points or the card went back): see `refuseReopenAfterMovement`. Any other status passes.
  */
 export const cancelOrderOnUnsuccessfulCloseStep = createStep(
   "cancel-order-on-unsuccessful-close",
@@ -79,18 +85,44 @@ export const cancelOrderOnUnsuccessfulCloseStep = createStep(
         cancel: async (orderId) => {
           await cancelOrderWorkflow(container).run({ input: { order_id: orderId } })
         },
-        giveBackCredits: async (orderId) => {
-          await giveBackLoyaltyPoints(container, orderId, "closed unsuccessfully (not cancelled)")
-          await giveBackGiftCardShare(container, orderId, "closed unsuccessfully (not cancelled)")
+        giveBackCredits: async (orderId) =>
+          (await giveBackLoyaltyPoints(container, orderId, "closed unsuccessfully (not cancelled)")) +
+          (await giveBackGiftCardShare(container, orderId, "closed unsuccessfully (not cancelled)")),
+        markGivenBack: async (orderId, trace) => {
+          const orders = container.resolve(Modules.ORDER) as {
+            updateOrders(data: { id: string; metadata: Record<string, unknown> }[]): Promise<unknown>
+          }
+          const { data } = await container
+            .resolve(ContainerRegistrationKeys.QUERY)
+            .graph({ entity: "order", fields: ["id", "metadata"], filters: { id: orderId } })
+          const metadata = ((data[0] as { metadata?: Record<string, unknown> | null } | undefined)?.metadata ?? {}) as Record<string, unknown>
+          await orders.updateOrders([
+            { id: orderId, metadata: { ...metadata, [GIVEN_BACK_METADATA_KEY]: { ...trace, at: new Date().toISOString() } } },
+          ])
         },
       },
       () => service.assertTransitionAllowed(input),
     )
+    // the way back: a close that moved something is not reopened (the same step, before the status changes)
+    const orderRow = async (orderId: string) =>
+      (
+        (await container.resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "order", fields: ["id", "status", "metadata"], filters: { id: orderId } })).data[0] as
+          | { status?: string; metadata?: Record<string, unknown> | null }
+          | undefined
+      ) ?? null
+    if (input.to === REOPEN_TO_STATUS) {
+      await refuseReopenAfterMovement(input, {
+        currentStatus: async (orderId) =>
+          ((await service.listOrderBusinessStatusModels({ order_id: orderId })) as { status?: string }[])[0]?.status ?? null,
+        orderStatus: async (orderId) => (await orderRow(orderId))?.status ?? null,
+        givenBackMarker: async (orderId) => !!(await orderRow(orderId))?.metadata?.[GIVEN_BACK_METADATA_KEY],
+      })
+    }
     if (result.action === "credits_given_back")
       container
         .resolve<{ warn(message: string): void }>(ContainerRegistrationKeys.LOGGER)
         .warn(
-          `Order ${input.order_id} closed unsuccessfully WITHOUT a cancel (${result.reason}): its points and gift card share were given back directly; a captured card payment was NOT refunded and nothing was freed in the shop.`,
+          `Order ${input.order_id} closed unsuccessfully WITHOUT a cancel (${result.reason}): its points and gift card share were given back directly; ${result.captured_unrefunded > 0 ? `a captured card payment of ${result.captured_unrefunded} was NOT refunded (a hand refund; the order's metadata ${GIVEN_BACK_METADATA_KEY} carries the amount)` : "no captured card payment was left"}; nothing was freed in the shop.`,
         )
     return new StepResponse({ action: result.action })
   },

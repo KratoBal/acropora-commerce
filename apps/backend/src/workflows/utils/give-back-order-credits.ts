@@ -18,7 +18,8 @@ import { loyaltyCredits, pointsOfCredit } from "./loyalty/loyalty-credit"
  * on the unsuccessful close and cancelled later gives nothing back twice.
  *
  * NEVER THROWS: a failure is logged with what to put back by hand. `cause` is only the log's word for why ("cancelled" for
- * the subscribers).
+ * the subscribers). The number returned is the credit lines that are NOW given back (done here, or already done before): 0 means
+ * nothing moved, which the unsuccessful close needs to know (it denies the reopening only when something moved).
  */
 export type GiveBackCause = "cancelled" | "closed unsuccessfully (not cancelled)"
 
@@ -26,7 +27,7 @@ export async function giveBackLoyaltyPoints(
   container: Pick<MedusaContainer, "resolve">,
   orderId: string,
   cause: GiveBackCause = "cancelled",
-): Promise<void> {
+): Promise<number> {
   const logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
@@ -35,9 +36,10 @@ export async function giveBackLoyaltyPoints(
     filters: { id: orderId },
   })
   const credits = loyaltyCredits((data[0] as { credit_lines?: CreditLineRow[] | null } | undefined)?.credit_lines)
-  if (!credits.length) return
+  if (!credits.length) return 0
 
   const loyalty = container.resolve<LoyaltyModuleService>(LOYALTY_MODULE)
+  let given = 0
   for (const line of credits) {
     const cartId = line.metadata?.cart_id
     try {
@@ -48,6 +50,7 @@ export async function giveBackLoyaltyPoints(
         cart_id: cartId,
         order_id: orderId,
       })
+      given += 1
       logger.info(
         `Order ${orderId} ${cause}: ${result.points} points back to customer ${line.reference_id}${
           result.repeated ? " (already done)" : ""
@@ -61,13 +64,14 @@ export async function giveBackLoyaltyPoints(
       )
     }
   }
+  return given
 }
 
 export async function giveBackGiftCardShare(
   container: Pick<MedusaContainer, "resolve">,
   orderId: string,
   cause: GiveBackCause = "cancelled",
-): Promise<void> {
+): Promise<number> {
   const logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data } = await query.graph({
@@ -76,9 +80,10 @@ export async function giveBackGiftCardShare(
     filters: { id: orderId },
   })
   const credits = giftCardCredits((data[0] as { credit_lines?: CreditLineRow[] | null } | undefined)?.credit_lines)
-  if (!credits.length) return
+  if (!credits.length) return 0
 
   const giftCards = container.resolve<GiftCardModuleService>(GIFT_CARD_MODULE)
+  let given = 0
   for (const line of credits) {
     const cartId = line.metadata?.cart_id
     try {
@@ -90,6 +95,7 @@ export async function giveBackGiftCardShare(
         reference: cartId,
         key: `cancel:${orderId}:${line.id}`,
       })
+      given += 1
       logger.info(
         `Order ${orderId} ${cause}: ${amountOf(line.amount)} back on gift card ${line.reference_id}${
           result.repeated ? " (already done)" : ""
@@ -103,4 +109,5 @@ export async function giveBackGiftCardShare(
       )
     }
   }
+  return given
 }

@@ -1,3 +1,4 @@
+import { Modules } from "@medusajs/framework/utils"
 import { asValue, createContainer } from "awilix"
 
 const cancelRun = jest.fn()
@@ -18,7 +19,11 @@ import { transitionOrderBusinessStatusWorkflow } from "../transition-order-busin
   "Sikertelenül lezárt" (the step dropped, or fired AFTER the status change); a refused cancel or refund letting the status
   change anyway; another status canceling; a shipped order blocking the close. Real workflow engine, stand-in container.
 */
-const run = async (to: string, order: Record<string, unknown> | null, opts: { cancelFails?: string; refundFails?: string } = {}) => {
+const run = async (
+  to: string,
+  order: Record<string, unknown> | null,
+  opts: { cancelFails?: string; refundFails?: string; current?: string } = {},
+) => {
   const calls: string[] = []
   cancelRun.mockReset().mockImplementation(async () => {
     calls.push("cancel")
@@ -31,6 +36,7 @@ const run = async (to: string, order: Record<string, unknown> | null, opts: { ca
     return { result: {} }
   })
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() }
+  const marks: Record<string, unknown>[] = []
   const reverse = jest.fn(async () => ({ balance: 400, points: 400, repeated: false }))
   const refundCard = jest.fn(async () => ({ repeated: false }))
   const container = createContainer()
@@ -38,19 +44,26 @@ const run = async (to: string, order: Record<string, unknown> | null, opts: { ca
     logger: asValue(logger),
     [ORDER_BUSINESS_STATUS_MODULE]: asValue({
       assertTransitionAllowed: async () => void calls.push("assert"),
+      listOrderBusinessStatusModels: async () => [{ status: opts.current ?? "confirmed" }],
       transitionOrderBusinessStatus: async (input: { to: string }) => {
         calls.push("transition")
         return { id: "obs_1", status: input.to }
       },
     }),
     query: asValue({ graph: async () => ({ data: order ? [order] : [] }) }),
+    [Modules.ORDER]: asValue({
+      updateOrders: async (rows: { id: string; metadata: Record<string, unknown> }[]) => {
+        calls.push("mark")
+        marks.push(rows[0].metadata)
+      },
+    }),
     [LOYALTY_MODULE]: asValue({ reversePointsRedemption: reverse }),
     [GIFT_CARD_MODULE]: asValue({ refundGiftCard: refundCard }),
   })
   const attempt = transitionOrderBusinessStatusWorkflow(container as never).run({
     input: { order_id: "order_1", to: to as never, actor: "admin", source: "admin" },
   })
-  return { attempt, calls, logger, reverse, refundCard }
+  return { attempt, calls, logger, reverse, refundCard, marks }
 }
 /* the workflow engine rejects with the step's error as a plain object (`message`), not an Error: read the message, and fail if it did not reject */
 const failureOf = (attempt: Promise<unknown>) =>
@@ -112,6 +125,16 @@ describe("transitionOrderBusinessStatusWorkflow cancels the order on an unsucces
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("given back directly"))
   })
 
+  it("the direct give-back leaves the marker on the order, with the credit lines and the hand-refund amount", async () => {
+    const { attempt, marks } = await run("closed_unsuccessfully", {
+      ...paid,
+      fulfillments: [{ canceled_at: null }],
+    })
+    await attempt
+    expect(marks).toHaveLength(1)
+    expect(marks[0]).toMatchObject({ unsuccessful_close_credits_given_back: { credit_lines: 2, captured_unrefunded: 500 } })
+  })
+
   it("the cancelable order's credits are NOT given back here: the order.canceled subscribers do it once, from the cancel", async () => {
     const { attempt, reverse, refundCard } = await run("closed_unsuccessfully", unpaid)
     await attempt
@@ -124,5 +147,32 @@ describe("transitionOrderBusinessStatusWorkflow cancels the order on an unsucces
     reverse.mockRejectedValueOnce(new Error("ledger down"))
     expect(await attempt).toMatchObject({ result: { status: "closed_unsuccessfully" } })
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("Put them back by hand"))
+  })
+
+  describe("the way back (closed_unsuccessfully -> stocking)", () => {
+    it("is refused for a canceled order, and the status does NOT change", async () => {
+      const { attempt, calls } = await run("stocking", { ...unpaid, status: "canceled" }, { current: "closed_unsuccessfully" })
+      expect(await failureOf(attempt)).toMatch(/le lett mondva.*új rendelés kell/)
+      expect(calls).not.toContain("transition")
+    })
+
+    it("is refused for an order whose close gave the points and the card back (the marker)", async () => {
+      const marked = { ...unpaid, metadata: { unsuccessful_close_credits_given_back: { credit_lines: 2, captured_unrefunded: 0 } } }
+      const { attempt, calls } = await run("stocking", marked, { current: "closed_unsuccessfully" })
+      expect(await failureOf(attempt)).toMatch(/visszajárt.*új rendelés kell/)
+      expect(calls).not.toContain("transition")
+    })
+
+    it("an order the close moved nothing on (an old label-only close) still reopens", async () => {
+      const { attempt, calls } = await run("stocking", unpaid, { current: "closed_unsuccessfully" })
+      await attempt
+      expect(calls).toContain("transition")
+    })
+
+    it("a move into Készletezés from any other status is not looked at", async () => {
+      const { attempt, calls } = await run("stocking", { ...unpaid, status: "canceled" }, { current: "confirmed" })
+      await attempt
+      expect(calls).toContain("transition")
+    })
   })
 })

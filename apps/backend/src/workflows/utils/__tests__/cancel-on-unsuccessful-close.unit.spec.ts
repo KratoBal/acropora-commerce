@@ -1,4 +1,9 @@
-import { cancelOnUnsuccessfulClose, type CancelOnCloseOperations } from "../cancel-on-unsuccessful-close"
+import {
+  cancelOnUnsuccessfulClose,
+  refuseReopenAfterMovement,
+  type CancelOnCloseOperations,
+  type ReopenOperations,
+} from "../cancel-on-unsuccessful-close"
 import type { CancelOrderFacts } from "../order-cancel-guard"
 
 /**
@@ -17,7 +22,10 @@ const order = (over: Partial<CancelOrderFacts> = {}): CancelOrderFacts => ({
   pickupPaymentLive: false,
   ...over,
 })
-const setup = (facts: CancelOrderFacts | null, opts: { refundFails?: string; cancelFails?: string; notAllowed?: boolean } = {}) => {
+const setup = (
+  facts: CancelOrderFacts | null,
+  opts: { refundFails?: string; cancelFails?: string; notAllowed?: boolean; creditLines?: number } = {}
+) => {
   const calls: string[] = []
   const ops: CancelOnCloseOperations = {
     load: async () => facts,
@@ -29,7 +37,11 @@ const setup = (facts: CancelOrderFacts | null, opts: { refundFails?: string; can
       calls.push(`cancel ${id}`)
       if (opts.cancelFails) throw new Error(opts.cancelFails)
     },
-    giveBackCredits: async (id) => void calls.push(`give back ${id}`),
+    giveBackCredits: async (id) => {
+      calls.push(`give back ${id}`)
+      return opts.creditLines ?? 2
+    },
+    markGivenBack: async (id, trace) => void calls.push(`mark ${id} ${trace.credit_lines} ${trace.captured_unrefunded}`),
   }
   const assertAllowed = async () => {
     calls.push("assert")
@@ -84,17 +96,24 @@ describe("cancelOnUnsuccessfulClose", () => {
 
   it("a shipped order (an open fulfillment) and a completed one cannot be canceled: the close goes on and the credits are given back DIRECTLY", async () => {
     const shipped = setup(order({ openFulfillments: 1 }))
-    expect(await shipped.run()).toEqual({ action: "credits_given_back", reason: "open_fulfillments" })
-    expect(shipped.calls).toEqual(["assert", "give back order_1"])
+    expect(await shipped.run()).toEqual({ action: "credits_given_back", reason: "open_fulfillments", credit_lines: 2, captured_unrefunded: 0 })
+    expect(shipped.calls).toEqual(["assert", "give back order_1", "mark order_1 2 0"])
     const done = setup(order({ status: "completed" }))
-    expect(await done.run()).toEqual({ action: "credits_given_back", reason: "completed" })
-    expect(done.calls).toEqual(["assert", "give back order_1"])
+    expect(await done.run()).toEqual({ action: "credits_given_back", reason: "completed", credit_lines: 2, captured_unrefunded: 0 })
+    expect(done.calls).toEqual(["assert", "give back order_1", "mark order_1 2 0"])
   })
 
-  it("a shipped order with a captured card payment gets nothing refunded: that stays a hand job", async () => {
+  it("a shipped order with a captured card payment gets nothing refunded: that stays a hand job, and the marker CARRIES the amount", async () => {
     const { calls, run } = setup(order({ openFulfillments: 1, payments: paid.payments }))
-    await run()
+    expect(await run()).toMatchObject({ captured_unrefunded: 22600 })
     expect(calls.some((c) => c.startsWith("refund"))).toBe(false)
+    expect(calls).toContain("mark order_1 2 22600")
+  })
+
+  it("a shipped order with NO points or card (nothing moved) is NOT marked: it stays reopenable, as before", async () => {
+    const { calls, run } = setup(order({ openFulfillments: 1 }), { creditLines: 0 })
+    expect(await run()).toMatchObject({ action: "credits_given_back", credit_lines: 0 })
+    expect(calls.some((c) => c.startsWith("mark"))).toBe(false)
   })
 
   it("an unknown order is left to the status step to answer", async () => {
@@ -110,5 +129,39 @@ describe("cancelOnUnsuccessfulClose", () => {
     )
     await expect(run()).rejects.toThrow(/vegyes kosár/)
     expect(calls).toEqual(["assert"])
+  })
+})
+
+/**
+ * WHAT TURNS THIS RED (barracuda 60883, acrobot 60885): the way back from "Sikertelenül lezárt" to "Készletezés" open after the
+ * close canceled the order or gave the points and the card back (a canceled order shipping again, earning points on closing);
+ * the refusal reaching a move that is not the reopening, or an order the close moved nothing on (an old label-only close).
+ */
+describe("refuseReopenAfterMovement", () => {
+  const reopen = (state: { status?: string | null; order?: string | null; marker?: boolean }) => {
+    const ops: ReopenOperations = {
+      currentStatus: async () => (state.status === undefined ? "closed_unsuccessfully" : state.status),
+      orderStatus: async () => (state.order === undefined ? "pending" : state.order),
+      givenBackMarker: async () => state.marker === true,
+    }
+    return (to = "stocking") => refuseReopenAfterMovement({ order_id: "order_1", to }, ops)
+  }
+
+  it("refuses the reopening of a canceled order, and says what to do", async () => {
+    await expect(reopen({ order: "canceled" })()).rejects.toThrow(/le lett mondva.*új rendelés kell/)
+  })
+
+  it("refuses the reopening of an order whose points or card went back (the marker)", async () => {
+    await expect(reopen({ marker: true })()).rejects.toThrow(/visszajárt.*új rendelés kell/)
+  })
+
+  it("an order the close moved nothing on (not canceled, no marker) can still be reopened", async () => {
+    await expect(reopen({})()).resolves.toBeUndefined()
+  })
+
+  it("only the move out of the unsuccessful close is looked at", async () => {
+    await expect(reopen({ order: "canceled", status: "confirmed" })()).resolves.toBeUndefined()
+    await expect(reopen({ order: "canceled" })("confirmed")).resolves.toBeUndefined()
+    await expect(reopen({ order: "canceled", status: null })()).resolves.toBeUndefined()
   })
 })
