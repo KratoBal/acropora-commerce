@@ -144,7 +144,7 @@ const ENDED_ORDER_STATUSES = new Set(["canceled", "archived", "completed"])
 const CLOSING_BUSINESS_STATUSES = new Set(["closed", "closed_unsuccessfully"])
 
 export const guestPaymentKind = (
-  source: GuestOrderSource,
+  source: Pick<GuestOrderSource, "metadata" | "payment_role" | "order_status">,
   business: Pick<GuestOrderStatus, "status"> | null = null,
 ): GuestPaymentKind | null => {
   const open =

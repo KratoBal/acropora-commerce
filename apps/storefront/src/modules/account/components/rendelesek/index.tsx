@@ -76,7 +76,11 @@ function NyitottKartya({
   locale: Locale
 }) {
   const { rendeles, allapot } = sor
-  const fizetes = fizetesiAllapot(rendeles.payment_status, t)
+  const fizetes = fizetesiAllapot(
+    rendeles.payment_status,
+    t,
+    allapot?.payment_kind ?? null,
+  )
   return (
     <article
       className="flex flex-col gap-[10px] border border-acr-line bg-acr-white p-[14px] small:gap-[14px] small:p-5"

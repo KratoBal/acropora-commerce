@@ -1,5 +1,6 @@
 import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
+import type { GuestPaymentKind } from "@lib/util/guest-order"
 
 /**
  * A FIOK RENDELESEI (P5, 249:3; mobilon 249:204): csoportositas, cimkek,
@@ -15,6 +16,11 @@ export type UzletiAllapot = {
   status: string
   label: string
   updated_at: string
+  /**
+   * a fizetes fajtaja a vendeg-lap szabalyaval (`guestPaymentKind`, commerce #891, #894); regi bolt-valaszbol hianyzik, akkor a
+   * nyers fizetesi allapot marad
+   */
+  payment_kind?: GuestPaymentKind | null
 }
 
 type Rendeles = { id: string; created_at?: string | Date | null }
@@ -116,12 +122,38 @@ const FIZETES: Record<string, Key> = {
   requires_action: "account.paymentStatus.requires_action",
 }
 
-/** A Medusa fizetesi allapota a lap nyelven (alapbol magyarul); ismeretlen ertekre ures. */
+/**
+ * A FIZETESI MOD SZERINTI FELIRAT, a vendeg-lap szabalyaval (commerce #891, #894; acrobot 60913). A nyers Medusa-allapot ket
+ * helyen mond mast, mint a vendeg-lap: a feloldott kartya-zarolas gyujtoje `canceled` ("fizetés törölve", pedig a vevo a linken
+ * meg fizet), az utanvet es a bolti fizetes pedig `awaiting` ("fizetésre vár", pedig az atvetelkor fizet). Minden mas allapot a
+ * nyers felirat marad.
+ */
+const VARAKOZO = new Set(["not_paid", "awaiting"])
+const modSzerint = (
+  status: string,
+  kind: GuestPaymentKind | null,
+): Key | null => {
+  if (
+    kind === "card_released" &&
+    (VARAKOZO.has(status) || status === "canceled")
+  )
+    return "account.paymentStatus.awaitingRelease"
+  if (kind === "cod" && VARAKOZO.has(status))
+    return "account.paymentStatus.onDelivery"
+  if (kind === "store" && VARAKOZO.has(status))
+    return "account.paymentStatus.atStore"
+  return null
+}
+
+/** A Medusa fizetesi allapota a lap nyelven (alapbol magyarul), a fizetes fajtaja szerint; ismeretlen ertekre ures. */
 export function fizetesiAllapot(
   status: string | null | undefined,
   t: Translate = translator(DEFAULT_LOCALE),
+  kind: GuestPaymentKind | null = null,
 ): string {
-  const kulcs = status ? FIZETES[status] : undefined
+  const kulcs = status
+    ? (modSzerint(status, kind) ?? FIZETES[status])
+    : undefined
   return kulcs ? t(kulcs) : ""
 }
 

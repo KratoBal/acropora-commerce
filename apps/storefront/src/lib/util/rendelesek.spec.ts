@@ -76,6 +76,38 @@ describe("a címke fajtája, a dátum és a szám", () => {
     expect(fizetesiAllapot("captured")).toBe("kifizetve")
     expect(fizetesiAllapot("valami_uj")).toBe("")
   })
+
+  /*
+    A FIZETES FAJTAJA SZERINT, a vendeg-lap szabalyaval (acrobot 60913). MI PIROSIT: a feloldott kartya-zarolas (a gyujto
+    canceled) "fizetés törölve" marad; az utanvet vagy a bolti fizetes "fizetésre vár"; egy MAS canceled rendeles (visszavont)
+    vagy egy kifizetett rendeles felirata megvaltozik; fajta nelkul (regi bolt) a nyers felirat elvesz.
+  */
+  it("a fizetes fajtaja szerinti felirat: feloldott zarolas, utanvet, bolti fizetes; minden mas a nyers", () => {
+    expect(fizetesiAllapot("canceled", undefined, "card_released")).toBe(
+      "fizetés az áru megérkezése után",
+    )
+    expect(fizetesiAllapot("not_paid", undefined, "card_released")).toBe(
+      "fizetés az áru megérkezése után",
+    )
+    expect(fizetesiAllapot("awaiting", undefined, "cod")).toBe(
+      "fizetés átvételkor",
+    )
+    expect(fizetesiAllapot("awaiting", undefined, "store")).toBe(
+      "fizetés a boltban, átvételkor",
+    )
+    expect(fizetesiAllapot("canceled", undefined, "card")).toBe(
+      "fizetés törölve",
+    )
+    expect(fizetesiAllapot("canceled", undefined, null)).toBe("fizetés törölve")
+    expect(fizetesiAllapot("awaiting", undefined, "transfer")).toBe(
+      "fizetésre vár",
+    )
+    expect(fizetesiAllapot("not_paid", undefined, "card_link")).toBe(
+      "fizetésre vár",
+    )
+    expect(fizetesiAllapot("captured", undefined, "cod")).toBe("kifizetve")
+    expect(fizetesiAllapot("awaiting")).toBe("fizetésre vár")
+  })
 })
 
 describe("a pár-rendelés (P4-2)", () => {

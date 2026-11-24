@@ -92,7 +92,11 @@ export default function RendelesReszletek({
       currency_code: rendeles.currency_code,
     })
   const mod = fizetesiMod(rendeles, t)
-  const fizetes = fizetesiAllapot(rendeles.payment_status, t)
+  const fizetes = fizetesiAllapot(
+    rendeles.payment_status,
+    t,
+    allapot?.payment_kind ?? null,
+  )
   const szam = rendelesSzam(rendeles.display_id)
   const tetelek = termekTetelek(rendeles)
   const szallitas = rendeles.shipping_methods?.[0]
