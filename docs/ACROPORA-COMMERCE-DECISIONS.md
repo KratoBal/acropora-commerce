@@ -291,3 +291,25 @@ nem zárol: a fenti „ismert határ" arra áll.
 **NINCS LEMÉRVE valódi Postgresen:** a zár, a `softDelete`, a tranzakció-kezelés (helyi Postgres nincs). A
 szabályok egy memóriabeli főkönyvön vannak mérve; a stage-en HTTP-vel mérendő: pont jóírása, beváltás,
 rendelés, lemondás, hibás befejezés utáni visszaadás.
+
+## D-2026-11-24-01: A hűségpont gyűjtése: a lezárt rendelés után, a mai bolt szabályával, mind állítható
+
+Balázs 2026-11-24 (kártya `dfb79916`; a mai UNAS pontgyűjtési beállítás képe, emlék 2935): 1 pont = 1 Ft, a pont a
+**bruttó ár 3 százaléka**, **akciós áron vett tételre nem jár**, a jóváírás a „Megrendelés lezárva" állapotnál történik;
+minden szám és kapcsoló adminból állítható.
+
+- **Beállítások** (commerce-beállítás kulcsok; sor, vagy az alapérték, környezeti forrás nincs): `loyalty_accrual_enabled`
+  (0/1, **alapból 0, KI**), `loyalty_accrual_percent` (0 és 100 között, alap 3), `loyalty_accrual_on_sale_items` (0/1, alap 0).
+  A forintérték ponthoz a beváltás `loyalty_point_value_huf` beállítása. Egy hibás tárolt kapcsolósor és egy sikertelen
+  beállítás-olvasás is **KI**-t jelent (a pénznél a biztonságos irány), a számnál a hibás sor az alapértéket adja; a
+  `GET /admin/loyalty-settings` az `accrual` mezőben mutatja az értékeket és a forrásukat.
+- **Az alap:** a tételek bruttó `total`-ja (az adó benne, a tétel saját kedvezménye kint), csak az olyan tételekre, amelyek nem
+  akciós áron lettek megvéve (a tételen a Medusa `compare_at_unit_price`-a a vásárláskori akciót jelzi, tehát egy későbbi
+  árváltozás nem mozgatja a már leadott rendelést), megszorozva azzal a résszel, amit pénzből fizettek (a pontból vagy
+  ajándékkártyából fizetett rész után nincs pont). Lefelé kerekítve, egész pont.
+- **A jóváírás helye:** az állapotváltó munkafolyamat (`transition-order-business-status`) a váltás UTÁN, ha az új állapot
+  `closed`. Minden út (admin, futár, fizetési út) ezen megy át. A hibája nem bukja a váltást: naplóba kerül a rendelés, a
+  vevő és a pont, kézzel pótolható (az OS kézi jóírásával). Egyszer jár rendelésenként: a főkönyv kulcsa `accrue:<rendelés>`.
+- **Nincs pont:** vendég rendelésre (nincs vevő), kikapcsolt gyűjtésnél, és ha az összeg egy pont alá kerekedik.
+- **Nyitott, nem döntöttem el:** a lezárt rendelés utólagos visszavonása (lemondás, visszáru) a pontot nem veszi vissza;
+  a regisztráció és a hírlevél 500-500 pontja külön tétel; az ÁFA-kezelés (árengedmény vagy fizetési mód) Balázs döntése.
