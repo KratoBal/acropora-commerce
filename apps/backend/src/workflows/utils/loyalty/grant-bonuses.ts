@@ -30,10 +30,18 @@ type CustomerRow = { id: string; email?: string | null; has_account?: boolean | 
  * while it was off gets no signup bonus later on its own (the registration event has passed). ONLY A CUSTOMER WITH AN ACCOUNT
  * (`has_account`): a guest checkout makes a customer record too, and nobody can spend points on it.
  *
+ * THE SIGN-UP BONUS PAYS ONLY AT THE REGISTRATION (barracuda, #887): the newsletter confirmation passes `["newsletter"]`, so a customer who registered
+ * while the accrual was off does not get the sign-up bonus later because of an unrelated newsletter confirmation.
+ *
  * NEVER THROWS (registration and the confirmation link must not fail on points): a failure is logged with the customer and the
  * points, so it can be credited by hand (the OS has the manual credit).
  */
-export async function grantLoyaltyBonuses(container: Container, customerId: string): Promise<BonusOutcomes> {
+export async function grantLoyaltyBonuses(
+  container: Container,
+  customerId: string,
+  /** which bonuses this call may pay: the registration pays both, the newsletter confirmation only its own */
+  kinds: readonly BonusKind[] = ["signup", "newsletter"],
+): Promise<BonusOutcomes> {
   let logger: Logger | undefined
   try {
     logger = container.resolve<Logger>(ContainerRegistrationKeys.LOGGER)
@@ -84,8 +92,8 @@ export async function grantLoyaltyBonuses(container: Container, customerId: stri
     }
   }
 
-  const signup = await grant("signup", settings.signupBonusPoints, async () => true)
-  const newsletter = await grant("newsletter", settings.newsletterBonusPoints, async () => {
+  const signup = await grant("signup", kinds.includes("signup") ? settings.signupBonusPoints : 0, async () => true)
+  const newsletter = await grant("newsletter", kinds.includes("newsletter") ? settings.newsletterBonusPoints : 0, async () => {
     const email = customer.email?.trim().toLowerCase()
     if (!email) return false
     const subscribers = container.resolve<{
@@ -112,7 +120,7 @@ export async function grantNewsletterBonusForEmail(container: Container, email: 
       { take: 1, select: ["id"] },
     )
     if (!customer) return null
-    return await grantLoyaltyBonuses(container, customer.id)
+    return await grantLoyaltyBonuses(container, customer.id, ["newsletter"])
   } catch {
     return null
   }

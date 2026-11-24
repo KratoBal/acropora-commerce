@@ -125,6 +125,14 @@ describe("grantNewsletterBonusForEmail", () => {
     expect(grant).toHaveBeenCalledWith({ customer_id: "cus_1", kind: "newsletter", points: 500 })
   })
 
+  it("the confirmation pays ONLY the newsletter bonus: a customer who registered while the accrual was off gets no sign-up bonus from it (barracuda, #887)", async () => {
+    const { container, grant } = make({ rows: ON, byEmail: [{ id: "cus_1" }], subscribers: [{ email: "vevo@example.hu", status: "confirmed" }] })
+    const outcome = await grantNewsletterBonusForEmail(container as never, "vevo@example.hu")
+    expect(outcome?.signup).toEqual({ status: "none_due" })
+    expect(grant).toHaveBeenCalledTimes(1)
+    expect(grant).toHaveBeenCalledWith({ customer_id: "cus_1", kind: "newsletter", points: 500 })
+  })
+
   it("an address without an account credits nobody (the registration pays it later)", async () => {
     const { container, grant } = make({ rows: ON, byEmail: [] })
     expect(await grantNewsletterBonusForEmail(container as never, "valaki@example.hu")).toBeNull()
