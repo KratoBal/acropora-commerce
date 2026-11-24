@@ -157,6 +157,10 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/homepage-content",
     },
+    // The customer texts edited in the Acropora OS, laid on the storefront dictionary (card 7bfca4eb)
+    {
+      resolve: "./src/modules/customer-texts",
+    },
     // The footer's newsletter sign-ups (test storefront; nothing is mailed)
     {
       resolve: "./src/modules/newsletter",
