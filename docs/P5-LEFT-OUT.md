@@ -8,11 +8,9 @@ The backend has no notification module: `medusa-config.ts` lists none, so no ema
 
 | Frame element | Node | Why |
 |---|---|---|
-| Password reset screen | `256:75`, `256:151` | Medusa's reset route exists, but its token has to reach the customer by email. The screen would promise "küldünk linket" and nothing would be sent. |
-| "Elfelejtett jelszó" link on sign-in | `256:32`, `256:120` | it leads to the screen above |
 | Settings: the "Értesítések" card ("Rendelési és szállítási értesítések", "Marketing e-mailek") | `257:207`, `257:335` | no emails exist, and no data model stores the choices; a marketing consent also needs a legal decision on how it is recorded |
 
-When the email provider is decided, these three come together. The order-status emails (five statuses, Visszaigazolva included) are on kanban card `ef84489d`.
+**Built 2026-11-24 (card 7bfca4eb): the password reset screens ("Elfelejtett jelszó" and "Új jelszó", `/elfelejtett-jelszo` and `/uj-jelszo`) and the "Elfelejtett jelszó" link on sign-in.** The shop now mails the link (`auth.password_reset`, the OS template `WEBSHOP_PASSWORD_RESET`), behind `ACROPORA_PASSWORD_RESET_MAIL` on the test shop. When the email provider is decided, the remaining row comes with it. The order-status emails (five statuses, Visszaigazolva included) are on kanban card `ef84489d`.
 
 ## Features that do not exist
 

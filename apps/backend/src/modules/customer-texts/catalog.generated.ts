@@ -170,6 +170,120 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "en": "Register"
   },
   {
+    "key": "account.auth.login.forgot",
+    "group": "fiok",
+    "hu": "Elfelejtett jelszó?",
+    "en": "Forgot your password?"
+  },
+  {
+    "key": "account.auth.forgot.title",
+    "group": "fiok",
+    "hu": "Elfelejtett jelszó",
+    "en": "Forgot your password"
+  },
+  {
+    "key": "account.auth.forgot.description",
+    "group": "fiok",
+    "hu": "Add meg az e-mail-címedet. Ha van fiókod ezzel a címmel, levélben küldünk egy linket, amin új jelszót állíthatsz be.",
+    "en": "Enter your e-mail address. If there is an account with this address, we will send you a link where you can set a new password."
+  },
+  {
+    "key": "account.auth.forgot.mobileDescription",
+    "group": "fiok",
+    "hu": "Add meg az e-mail-címedet, és levélben küldünk egy linket.",
+    "en": "Enter your e-mail address and we will send you a link."
+  },
+  {
+    "key": "account.auth.forgot.email",
+    "group": "fiok",
+    "hu": "E-mail",
+    "en": "Email"
+  },
+  {
+    "key": "account.auth.forgot.emailTitle",
+    "group": "fiok",
+    "hu": "Adj meg érvényes e-mail-címet.",
+    "en": "Enter a valid e-mail address."
+  },
+  {
+    "key": "account.auth.forgot.submit",
+    "group": "fiok",
+    "hu": "Link küldése",
+    "en": "Send the link"
+  },
+  {
+    "key": "account.auth.forgot.sent",
+    "group": "fiok",
+    "hu": "Megkaptuk a kérésedet. Ha ehhez a címhez tartozik fiók, hamarosan levelet küldünk rá a linkkel. A link rövid ideig érvényes, ezért érdemes hamar megnyitni. Ha pár perc múlva sem érkezik meg, nézd meg a levélszemét mappát is.",
+    "en": "We have received your request. If there is an account with this address, we will soon send a mail to it with the link. The link is valid for a short time, so it is best to open it soon. If it has not arrived in a few minutes, check your spam folder too."
+  },
+  {
+    "key": "account.auth.forgot.toLogin",
+    "group": "fiok",
+    "hu": "Vissza a bejelentkezéshez",
+    "en": "Back to sign in"
+  },
+  {
+    "key": "account.auth.reset.title",
+    "group": "fiok",
+    "hu": "Új jelszó beállítása",
+    "en": "Set a new password"
+  },
+  {
+    "key": "account.auth.reset.description",
+    "group": "fiok",
+    "hu": "Add meg az új jelszavadat. A link, amelyen idejöttél, egyszer használható.",
+    "en": "Enter your new password. The link you came here from works once."
+  },
+  {
+    "key": "account.auth.reset.mobileDescription",
+    "group": "fiok",
+    "hu": "Add meg az új jelszavadat.",
+    "en": "Enter your new password."
+  },
+  {
+    "key": "account.auth.reset.password",
+    "group": "fiok",
+    "hu": "Új jelszó",
+    "en": "New password"
+  },
+  {
+    "key": "account.auth.reset.passwordAgain",
+    "group": "fiok",
+    "hu": "Új jelszó újra",
+    "en": "New password again"
+  },
+  {
+    "key": "account.auth.reset.submit",
+    "group": "fiok",
+    "hu": "Jelszó mentése",
+    "en": "Save password"
+  },
+  {
+    "key": "account.auth.reset.done",
+    "group": "fiok",
+    "hu": "Az új jelszavad mentve. Most már beléphetsz vele.",
+    "en": "Your new password is saved. You can sign in with it now."
+  },
+  {
+    "key": "account.auth.reset.toLogin",
+    "group": "fiok",
+    "hu": "Bejelentkezés",
+    "en": "Sign in"
+  },
+  {
+    "key": "account.auth.reset.noLink",
+    "group": "fiok",
+    "hu": "Ez a link nem érvényes. Kérj újat az „Elfelejtett jelszó” oldalon.",
+    "en": "This link is not valid. Ask for a new one on the \"Forgot your password\" page."
+  },
+  {
+    "key": "account.auth.reset.askNew",
+    "group": "fiok",
+    "hu": "Új link kérése",
+    "en": "Ask for a new link"
+  },
+  {
     "key": "account.auth.register.title",
     "group": "fiok",
     "hu": "Regisztráció",
@@ -756,6 +870,24 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "group": "fiok",
     "hu": "Nem sikerült, próbáld újra. Ha újra előjön, írj nekünk.",
     "en": "That did not work, try again. If it happens again, write to us."
+  },
+  {
+    "key": "account.error.emailInvalid",
+    "group": "fiok",
+    "hu": "Adj meg érvényes e-mail-címet.",
+    "en": "Enter a valid e-mail address."
+  },
+  {
+    "key": "account.error.resetLinkInvalid",
+    "group": "fiok",
+    "hu": "Ez a link már nem érvényes (lejárt, vagy már felhasználták). Kérj újat az „Elfelejtett jelszó” oldalon.",
+    "en": "This link is no longer valid (it has expired or was already used). Ask for a new one on the \"Forgot your password\" page."
+  },
+  {
+    "key": "account.error.resetFieldsRequired",
+    "group": "fiok",
+    "hu": "Mindkét jelszó mezőt ki kell töltened.",
+    "en": "You have to fill in both password fields."
   },
   {
     "key": "account.error.aszfRequired",

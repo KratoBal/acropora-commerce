@@ -51,6 +51,7 @@ const SIGN_UP_RESOURCE: Partial<Record<MailToSend["template"], string>> = {
   "newsletter-confirm": "newsletter_subscriber",
   "stock-alert-confirm": "stock_alert_subscription",
   "stock-alert-arrival": "stock_alert_subscription",
+  "password-reset": "customer",
 }
 
 /** One mail through the email channel; the idempotency key keeps it single. */

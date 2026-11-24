@@ -9,6 +9,10 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 // A szerver-muveletek itt nem futnak; a viselkedesuket a
 // `customer-regisztracio.spec.ts` meri.
+vi.mock("next/navigation", () => ({
+  useParams: () => ({ countryCode: "hu" }),
+}))
+
 vi.mock("@lib/data/customer", () => ({
   login: vi.fn(),
   signup: vi.fn(),
@@ -23,8 +27,8 @@ afterEach(() => cleanup())
  * A BELEPES ES A REGISZTRACIO (256:3, 256:36). MI PIROSIT: ha a cim, a
  * felulcim vagy a mezok nem a keret szerint allnak; ha a regisztracio pipaja
  * nem kotelezo, vagy nem az ASZF es az adatkezelesi tajekoztato cimere visz;
- * ha a keret nem epitett sora ("Elfelejtett jelszó", "Emlékezz rám") megis
- * megjelenik, egy nem mukodo igerettel.
+ * ha a keret nem epitett sora ("Emlékezz rám") megis megjelenik, egy nem
+ * mukodo igerettel, vagy az "Elfelejtett jelszó" link nem az uj lapra visz.
  */
 describe("a belépés és a regisztráció", () => {
   it("a belépés: felülcím, cím, két mező és a gomb", () => {
@@ -43,9 +47,11 @@ describe("a belépés és a regisztráció", () => {
     )
   })
 
-  it("a belépésen nincs visszaállító link és emlékező pipa", () => {
+  it("a belépésen van elfelejtett jelszó link (a bolt a levelet küldi, kártya 7bfca4eb) az új lapra, de nincs emlékező pipa", () => {
     render(<LoginTemplate />)
-    expect(screen.queryByText("Elfelejtett jelszó")).toBeNull()
+    const link = screen.getByTestId("forgot-password-link")
+    expect(link.textContent).toBe("Elfelejtett jelszó?")
+    expect(link.getAttribute("href")).toBe("/hu/elfelejtett-jelszo")
     expect(screen.queryByText(/Emlékezz rám/)).toBeNull()
   })
 

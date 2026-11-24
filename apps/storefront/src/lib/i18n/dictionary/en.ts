@@ -211,6 +211,33 @@ export const en: Dictionary = {
         submit: "Sign in",
         noAccount: "Do not have an account yet?",
         toRegister: "Register",
+        forgot: "Forgot your password?",
+      },
+      forgot: {
+        title: "Forgot your password",
+        description:
+          "Enter your e-mail address. If there is an account with this address, we will send you a link where you can set a new password.",
+        mobileDescription:
+          "Enter your e-mail address and we will send you a link.",
+        email: "Email",
+        emailTitle: "Enter a valid e-mail address.",
+        submit: "Send the link",
+        sent: "We have received your request. If there is an account with this address, we will soon send a mail to it with the link. The link is valid for a short time, so it is best to open it soon. If it has not arrived in a few minutes, check your spam folder too.",
+        toLogin: "Back to sign in",
+      },
+      reset: {
+        title: "Set a new password",
+        description:
+          "Enter your new password. The link you came here from works once.",
+        mobileDescription: "Enter your new password.",
+        password: "New password",
+        passwordAgain: "New password again",
+        submit: "Save password",
+        done: "Your new password is saved. You can sign in with it now.",
+        toLogin: "Sign in",
+        noLink:
+          'This link is not valid. Ask for a new one on the "Forgot your password" page.',
+        askNew: "Ask for a new link",
       },
       register: {
         title: "Register",
@@ -330,6 +357,10 @@ export const en: Dictionary = {
       passwordShort: "The password must be at least {min} characters long.",
       emailTaken:
         "There is already an account with this e-mail address. Sign in.",
+      emailInvalid: "Enter a valid e-mail address.",
+      resetLinkInvalid:
+        'This link is no longer valid (it has expired or was already used). Ask for a new one on the "Forgot your password" page.',
+      resetFieldsRequired: "You have to fill in both password fields.",
       generic:
         "That did not work, try again. If it happens again, write to us.",
       aszfRequired:

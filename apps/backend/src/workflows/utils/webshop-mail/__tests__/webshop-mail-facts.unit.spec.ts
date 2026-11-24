@@ -92,6 +92,14 @@ const samples: { [T in keyof WebshopMailFactsOf]: WebshopMailFactsOf[T] } = {
     expires_at: "2026-11-16T15:00:00.000Z",
     subject_label: "Acropora abrolhosensis",
   },
+  "password-reset": {
+    customer_name: "Kiss Anna",
+    order_created_at: null,
+    locale: "hu",
+    order_view_url: null,
+    reset_url: "https://shop.example.test/hu/uj-jelszo?token=x",
+    valid_minutes: 15,
+  },
   "stock-alert-arrival": {
     customer_name: null,
     order_created_at: null,
@@ -140,6 +148,10 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
   "stock-alert-arrival": {
     "": ["customer_name", "locale", "order_created_at", "order_view_url", "product_title", "product_url", "subject_label", "unsubscribe_url"],
   },
+  // the customer's password-reset link (card 7bfca4eb): the link with the token and how long it lives; the common keys too (no order: null)
+  "password-reset": {
+    "": ["customer_name", "locale", "order_created_at", "order_view_url", "reset_url", "valid_minutes"],
+  },
   "order-split": {
     "": ["customer_name", "locale", "order", "order_created_at", "order_view_url", "payment", "split_order"],
     split_order: ["display_id", "email", "id", "items", "payment", "shipping", "total"],
@@ -148,8 +160,8 @@ const CONTRACT: Record<string, Record<string, string[]>> = {
 const ORDER_KEYS = ["display_id", "email", "id", "items", "payment", "shipping", "total"]
 
 describe("the webshop mail facts", () => {
-  it("sixteen templates (the stock alert's arrival the sixteenth), version 1", () => {
-    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(16)
+  it("seventeen templates (the password reset the seventeenth), version 1", () => {
+    expect(WEBSHOP_MAIL_TEMPLATES).toHaveLength(17)
     expect(WEBSHOP_MAIL_FACTS_VERSION).toBe(1)
     expect(Object.keys(samples).sort()).toEqual([...WEBSHOP_MAIL_TEMPLATES].sort())
     expect(isWebshopMailTemplate("order-shipped")).toBe(true)

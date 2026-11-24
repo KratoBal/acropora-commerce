@@ -33,6 +33,9 @@ export type AuthHibaKod =
   | "tax_id_format"
   | "tax_id_invalid"
   | "address_id_required"
+  | "email_invalid"
+  | "reset_link_invalid"
+  | "reset_fields_required"
 
 const ISMERT: readonly [RegExp, AuthHibaKod][] = [
   [/invalid email or password/i, "invalid_credentials"],
@@ -62,6 +65,9 @@ const KULCS: Record<AuthHibaKod, Key> = {
   tax_id_format: "account.error.taxIdFormat",
   tax_id_invalid: "account.error.taxIdInvalid",
   address_id_required: "account.error.addressIdRequired",
+  email_invalid: "account.error.emailInvalid",
+  reset_link_invalid: "account.error.resetLinkInvalid",
+  reset_fields_required: "account.error.resetFieldsRequired",
 }
 
 /** A nyers hiba kodja: ismert eset, vagy az altalanos. */

@@ -215,6 +215,33 @@ export const hu = {
         submit: "Bejelentkezés",
         noAccount: "Nincs még fiókod?",
         toRegister: "Regisztráció",
+        forgot: "Elfelejtett jelszó?",
+      },
+      forgot: {
+        title: "Elfelejtett jelszó",
+        description:
+          "Add meg az e-mail-címedet. Ha van fiókod ezzel a címmel, levélben küldünk egy linket, amin új jelszót állíthatsz be.",
+        mobileDescription:
+          "Add meg az e-mail-címedet, és levélben küldünk egy linket.",
+        email: "E-mail",
+        emailTitle: "Adj meg érvényes e-mail-címet.",
+        submit: "Link küldése",
+        sent: "Megkaptuk a kérésedet. Ha ehhez a címhez tartozik fiók, hamarosan levelet küldünk rá a linkkel. A link rövid ideig érvényes, ezért érdemes hamar megnyitni. Ha pár perc múlva sem érkezik meg, nézd meg a levélszemét mappát is.",
+        toLogin: "Vissza a bejelentkezéshez",
+      },
+      reset: {
+        title: "Új jelszó beállítása",
+        description:
+          "Add meg az új jelszavadat. A link, amelyen idejöttél, egyszer használható.",
+        mobileDescription: "Add meg az új jelszavadat.",
+        password: "Új jelszó",
+        passwordAgain: "Új jelszó újra",
+        submit: "Jelszó mentése",
+        done: "Az új jelszavad mentve. Most már beléphetsz vele.",
+        toLogin: "Bejelentkezés",
+        noLink:
+          "Ez a link nem érvényes. Kérj újat az „Elfelejtett jelszó” oldalon.",
+        askNew: "Új link kérése",
       },
       register: {
         title: "Regisztráció",
@@ -335,6 +362,10 @@ export const hu = {
       passwordShort: "A jelszó legalább {min} karakter legyen.",
       emailTaken: "Ezzel az e-mail-címmel már van fiók. Jelentkezz be.",
       generic: "Nem sikerült, próbáld újra. Ha újra előjön, írj nekünk.",
+      emailInvalid: "Adj meg érvényes e-mail-címet.",
+      resetLinkInvalid:
+        "Ez a link már nem érvényes (lejárt, vagy már felhasználták). Kérj újat az „Elfelejtett jelszó” oldalon.",
+      resetFieldsRequired: "Mindkét jelszó mezőt ki kell töltened.",
       aszfRequired:
         "A regisztrációhoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.",
       passwordsDiffer: "A két jelszó nem egyezik.",
