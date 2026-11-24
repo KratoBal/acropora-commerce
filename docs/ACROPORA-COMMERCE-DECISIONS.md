@@ -315,6 +315,8 @@ minden szám és kapcsoló adminból állítható.
   Medusa az e-mailhez `has_account = false` vevőt keres vagy hoz létre. Ezért a jóváírás a vevő rekordját kéri le, és csak
   `has_account = true` vevőnek ír jóvá (hiányzó jelző: nincs jóváírás); aki később ugyanazzal az e-maillel regisztrál, más (`true`)
   vevő lesz, a vendégként gyűjtött pont tehát nem járna neki sem.
+  **Ugyanez fordítva** (barracuda, #882): egy regisztrált vevő, aki NEM bejelentkezve rendel ugyanazzal az e-maillel, a Medusában a vendég
+  rekordra kerül, tehát arra a rendelésre nem kap pontot (a régi bolt ezt talán másképp kezelte; ha Balázs rákérdez, ez a magyarázat).
 - **Közelítés, kimondva:** a pénzből fizetett rész aránya a TELJES rendelésre számol (a szállítással együtt), az alap viszont csak a
   tételeké; ha a pont a szállítást fizette, a tételek arányos része kap kevesebb pontot.
 - **Nyitott, nem döntöttem el:** a lezárt rendelés utólagos visszavonása (lemondás, visszáru) a pontot nem veszi vissza;
