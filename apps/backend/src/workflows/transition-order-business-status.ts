@@ -1,3 +1,5 @@
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { cancelOrderWorkflow } from "@medusajs/medusa/core-flows"
 import {
   StepResponse,
   WorkflowData,
@@ -16,6 +18,8 @@ import OrderBusinessStatusModuleService from "../modules/order-business-status/s
 import { captureOnTransition } from "./utils/shared-stripe-capture"
 import { sharedCaptureOperations } from "./utils/shared-stripe-capture-operations"
 import { creditOrderLoyaltyAccrual } from "./utils/loyalty/credit-order-accrual"
+import { cancelOnUnsuccessfulClose } from "./utils/cancel-on-unsuccessful-close"
+import { orderCancelOperations } from "./utils/order-cancel-guard-operations"
 
 export const transitionOrderBusinessStatusStep = createStep(
   "transition-order-business-status",
@@ -57,6 +61,37 @@ export const captureSharedStripePaymentStep = createStep(
 )
 
 /**
+ * "SIKERTELENÜL LEZÁRT" CANCELS THE ORDER FIRST (card dfb79916; see `cancelOnUnsuccessfulClose`): the refund guard and
+ * Medusa's cancel run BEFORE the status changes, so a refusal stops the move, and the points and the gift card come back
+ * through `order.canceled`. Any other status passes.
+ */
+export const cancelOrderOnUnsuccessfulCloseStep = createStep(
+  "cancel-order-on-unsuccessful-close",
+  async (input: TransitionOrderBusinessStatusInput, { container }) => {
+    const service = container.resolve<OrderBusinessStatusModuleService>(
+      ORDER_BUSINESS_STATUS_MODULE,
+    )
+    const result = await cancelOnUnsuccessfulClose(
+      input,
+      {
+        ...orderCancelOperations(container, undefined),
+        cancel: async (orderId) => {
+          await cancelOrderWorkflow(container).run({ input: { order_id: orderId } })
+        },
+      },
+      () => service.assertTransitionAllowed(input),
+    )
+    if (result.action === "left_open")
+      container
+        .resolve<{ warn(message: string): void }>(ContainerRegistrationKeys.LOGGER)
+        .warn(
+          `Order ${input.order_id} closed unsuccessfully WITHOUT a cancel (${result.reason}): its points and gift card credit were not given back; put them back by hand.`,
+        )
+    return new StepResponse({ action: result.action })
+  },
+)
+
+/**
  * "MEGRENDELÉS LEZÁRVA" CREDITS THE ORDER'S LOYALTY POINTS (card dfb79916; the old shop credits at this status). It runs AFTER the
  * status has changed and never throws: the move stands, a failed credit is logged with what to credit by hand, and the ledger's
  * key (the order) makes a repeated move store nothing twice. Any other status does nothing here. Every way an order becomes
@@ -85,6 +120,7 @@ export const transitionOrderBusinessStatusWorkflow = createWorkflow(
     input: WorkflowData<TransitionOrderBusinessStatusInput>,
   ): WorkflowResponse<unknown> => {
     captureSharedStripePaymentStep(input)
+    cancelOrderOnUnsuccessfulCloseStep(input)
     const status = transitionOrderBusinessStatusStep(input)
     creditLoyaltyAccrualOnClosedStep(input)
 
