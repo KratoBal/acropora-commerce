@@ -4,6 +4,8 @@ import {
   LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
   LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
   LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
+  LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY,
+  LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY,
   type CommerceSettingKey,
 } from "../../../modules/commerce-settings/definitions"
 import { amountOf } from "../gift-card-credit"
@@ -25,9 +27,19 @@ export type LoyaltyAccrualSettings = {
   percent: number
   /** a line bought at a sale price earns too */
   onSaleItems: boolean
+  /** the points for registering, once per customer (0: none); under the master switch */
+  signupBonusPoints: number
+  /** the points for confirming the newsletter, once per customer (0: none); under the master switch */
+  newsletterBonusPoints: number
 }
 
-export const LOYALTY_ACCRUAL_DEFAULTS: LoyaltyAccrualSettings = { enabled: false, percent: 3, onSaleItems: false }
+export const LOYALTY_ACCRUAL_DEFAULTS: LoyaltyAccrualSettings = {
+  enabled: false,
+  percent: 3,
+  onSaleItems: false,
+  signupBonusPoints: 500,
+  newsletterBonusPoints: 500,
+}
 
 export type LoyaltyAccrualSource = "row" | "default" | "row_invalid" | "read_failed"
 export type ResolvedLoyaltyAccrualSettings = {
@@ -39,6 +51,8 @@ export const LOYALTY_ACCRUAL_SETTING_KEYS = [
   LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
   LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
   LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
+  LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY,
+  LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY,
 ] as const satisfies readonly CommerceSettingKey[]
 
 type SettingRow = { key: string; value: unknown }
@@ -64,6 +78,8 @@ export function resolveLoyaltyAccrualSettings(rows: SettingRow[], readFailed = f
   const sw = stored(LOYALTY_ACCRUAL_ENABLED_SETTING_KEY)
   const percent = stored(LOYALTY_ACCRUAL_PERCENT_SETTING_KEY)
   const onSale = stored(LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY)
+  const signup = stored(LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY)
+  const newsletter = stored(LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY)
 
   const enabled: { value: boolean; source: LoyaltyAccrualSource } = readFailed
     ? { value: false, source: "read_failed" }
@@ -78,9 +94,23 @@ export function resolveLoyaltyAccrualSettings(rows: SettingRow[], readFailed = f
       : { value: fallback, source: (value === "invalid" ? "row_invalid" : "default") as LoyaltyAccrualSource }
   const percentPick = pick(percent, LOYALTY_ACCRUAL_DEFAULTS.percent)
   const onSalePick = pick(onSale, LOYALTY_ACCRUAL_DEFAULTS.onSaleItems ? 1 : 0)
+  const signupPick = pick(signup, LOYALTY_ACCRUAL_DEFAULTS.signupBonusPoints)
+  const newsletterPick = pick(newsletter, LOYALTY_ACCRUAL_DEFAULTS.newsletterBonusPoints)
   return {
-    settings: { enabled: enabled.value, percent: percentPick.value, onSaleItems: onSalePick.value === 1 },
-    sources: { enabled: enabled.source, percent: percentPick.source, onSaleItems: onSalePick.source },
+    settings: {
+      enabled: enabled.value,
+      percent: percentPick.value,
+      onSaleItems: onSalePick.value === 1,
+      signupBonusPoints: signupPick.value,
+      newsletterBonusPoints: newsletterPick.value,
+    },
+    sources: {
+      enabled: enabled.source,
+      percent: percentPick.source,
+      onSaleItems: onSalePick.source,
+      signupBonusPoints: signupPick.source,
+      newsletterBonusPoints: newsletterPick.source,
+    },
   }
 }
 

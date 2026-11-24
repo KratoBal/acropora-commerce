@@ -71,6 +71,15 @@ export const LOYALTY_ACCRUAL_PERCENT_SETTING_KEY = "loyalty_accrual_percent" as 
 export const LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY = "loyalty_accrual_on_sale_items" as const
 
 /**
+ * THE SIGN-UP AND NEWSLETTER BONUSES (card dfb79916; the old shop's picture, emlék 2935: 500 points after registering, 500 after
+ * confirming the newsletter; Balázs 2026-11-24, emlék 2936: every number settable, the picture's values the defaults). Whole points,
+ * 0 means "no bonus". They sit UNDER the accrual's master switch (`loyalty_accrual_enabled`): while that is off, nothing is credited.
+ * Once per customer (the ledger key), the newsletter one only after the double opt-in confirmation.
+ */
+export const LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY = "loyalty_signup_bonus_points" as const
+export const LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY = "loyalty_newsletter_bonus_points" as const
+
+/**
  * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
  * the accessor and cannot be removed from the Admin (the settings list shows it
  * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
@@ -99,6 +108,8 @@ export const COMMERCE_SETTING_KEYS = [
   LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
   LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
   LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
+  LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY,
+  LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY,
 ] as const
 
 export type CommerceSettingKey = (typeof COMMERCE_SETTING_KEYS)[number]
@@ -328,6 +339,20 @@ export const COMMERCE_SETTING_DEFINITIONS: Record<
       "Jár-e pont az akciós áron vett tételre: 1 igen, 0 nem (a mai bolt: nem).",
     normalize: (raw) => normalizeSwitch(raw, LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY),
     defaultValue: 0,
+  },
+  [LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY]: {
+    key: LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY,
+    description:
+      "Hány pontot kap a vevő a regisztrációért, egyszer (a mai bolt: 500). 0: nem jár. Csak bekapcsolt pontgyűjtésnél ír jóvá.",
+    normalize: (raw) => normalizeWholeInRange(raw, LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY, 0, 1_000_000),
+    defaultValue: 500,
+  },
+  [LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY]: {
+    key: LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY,
+    description:
+      "Hány pontot kap a vevő a hírlevél-feliratkozás megerősítéséért, egyszer (a mai bolt: 500). 0: nem jár. Csak a megerősítés után, bekapcsolt pontgyűjtésnél.",
+    normalize: (raw) => normalizeWholeInRange(raw, LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY, 0, 1_000_000),
+    defaultValue: 500,
   },
 }
 

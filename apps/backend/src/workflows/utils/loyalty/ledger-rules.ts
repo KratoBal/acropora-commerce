@@ -28,6 +28,8 @@ export type LedgerTx = {
 export const redeemReference = (cartId: string) => `redeem:${cartId}`
 export const reverseReference = (cartId: string) => `reverse:${cartId}`
 export const accrueReference = (orderId: string) => `accrue:${orderId}`
+export type BonusKind = "signup" | "newsletter"
+export const bonusReference = (kind: BonusKind, customerId: string) => `bonus:${kind}:${customerId}`
 
 const wholePositive = (points: number) => {
   if (!Number.isInteger(points) || points < 1)
@@ -149,6 +151,31 @@ export async function accrueRule(
     order_id: input.order_id,
     reference: key,
     reason: `Pontgyűjtés a lezárt rendelés után (${input.order_id})`,
+    actor: "system",
+  })
+  return { balance: sumPoints(await tx.rows(input.customer_id)), points: input.points, repeated: false }
+}
+
+/**
+ * A ONE-TIME BONUS (registration, newsletter confirmation; card dfb79916): one positive row per customer and kind, keyed
+ * `bonus:<kind>:<customer>`, so a repeated event, a retry or a second confirmation stores nothing twice. The customer's lock
+ * serializes it with the other movements. `order_id` stays empty: the bonus belongs to the customer, not to an order.
+ */
+export async function bonusRule(
+  tx: LedgerTx,
+  input: { customer_id: string; kind: BonusKind; points: number },
+): Promise<{ balance: number; points: number; repeated: boolean }> {
+  wholePositive(input.points)
+  await tx.lock(input.customer_id)
+  const key = bonusReference(input.kind, input.customer_id)
+  const earlier = await tx.byReference(key)
+  if (earlier) return { balance: sumPoints(await tx.rows(input.customer_id)), points: earlier.points, repeated: true }
+  await tx.create({
+    customer_id: input.customer_id,
+    kind: "accrual",
+    points: input.points,
+    reference: key,
+    reason: input.kind === "signup" ? "Regisztrációs pont" : "Pont a hírlevél-feliratkozás megerősítéséért",
     actor: "system",
   })
   return { balance: sumPoints(await tx.rows(input.customer_id)), points: input.points, repeated: false }

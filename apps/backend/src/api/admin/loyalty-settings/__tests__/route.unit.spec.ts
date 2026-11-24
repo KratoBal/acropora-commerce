@@ -60,12 +60,20 @@ describe("GET /admin/loyalty-settings", () => {
 
   it("answers the accrual's settings too, the switch off and named by default, with its keys", async () => {
     const { body } = await call([{ key: "loyalty_accrual_percent", value: "5" }])
-    expect(body.accrual.settings).toEqual({ enabled: false, percent: 5, onSaleItems: false })
-    expect(body.accrual.sources).toEqual({ enabled: "default", percent: "row", onSaleItems: "default" })
+    expect(body.accrual.settings).toEqual({ enabled: false, percent: 5, onSaleItems: false, signupBonusPoints: 500, newsletterBonusPoints: 500 })
+    expect(body.accrual.sources).toEqual({
+      enabled: "default",
+      percent: "row",
+      onSaleItems: "default",
+      signupBonusPoints: "default",
+      newsletterBonusPoints: "default",
+    })
     expect(Object.keys(body.accrual.keys)).toEqual([
       "loyalty_accrual_enabled",
       "loyalty_accrual_percent",
       "loyalty_accrual_on_sale_items",
+      "loyalty_signup_bonus_points",
+      "loyalty_newsletter_bonus_points",
     ])
   })
 

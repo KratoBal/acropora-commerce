@@ -14,8 +14,10 @@ import {
   LOYALTY_MAX_PERCENT_SETTING_KEY,
   LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
   LOYALTY_MIN_POINTS_SETTING_KEY,
+  LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY,
   LOYALTY_POINT_VALUE_HUF_SETTING_KEY,
   LOYALTY_REDEMPTION_ENABLED_SETTING_KEY,
+  LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY,
   normalizeCommerceSettingValue,
   OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
   SHIPPING_FOXPOST_SETTING_KEY,
@@ -57,6 +59,9 @@ describe("commerce setting definitions", () => {
         LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
         LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
         LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
+        // the one-time bonuses (card dfb79916): points for registering and for confirming the newsletter, 500 each by default
+        LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY,
+        LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY,
       ].sort(),
     )
   })
@@ -319,6 +324,14 @@ describe("typed commerce setting access", () => {
       for (const key of [LOYALTY_ACCRUAL_ENABLED_SETTING_KEY, LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY])
         expect([0, 1, "1", true, false, 2, "igen", null].map((raw) => normalize(key, raw))).toEqual([
           0, 1, 1, 1, 0, "refused", "refused", "refused",
+        ])
+    })
+
+    it("the bonuses default to the old shop's 500 each; 0 is allowed (no bonus), whole points up to 1 000 000, nothing else", () => {
+      expect([LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY, LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY].map((key) => COMMERCE_SETTING_DEFINITIONS[key].defaultValue)).toEqual([500, 500])
+      for (const key of [LOYALTY_SIGNUP_BONUS_POINTS_SETTING_KEY, LOYALTY_NEWSLETTER_BONUS_POINTS_SETTING_KEY])
+        expect([-1, 0, 500, 1_000_000, 1_000_001, 2.5, "300", "x"].map((raw) => normalize(key, raw))).toEqual([
+          "refused", 0, 500, 1_000_000, "refused", "refused", 300, "refused",
         ])
     })
 
