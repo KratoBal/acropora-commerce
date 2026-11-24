@@ -45,6 +45,19 @@ export const OMNIBUS_MIN_HISTORY_DAYS_MAX = 30
 export const DEFAULT_OMNIBUS_MIN_HISTORY_DAYS = 15
 
 /**
+ * THE LOYALTY REDEMPTION'S SETTINGS (card dfb79916; Balázs 2026-11-24 10:01 UTC: "minden szám és kapcsoló adminból állítható, a kép
+ * értékei az alapértékek"): the master switch (0 or 1), what one point is worth, the order minimum, the least points at a time, and
+ * the share of the total points may pay. Until now they came from the environment (`LOYALTY_*`); a stored row wins over the
+ * environment, the environment over the default (`loyalty-credit.ts`, `resolveLoyaltySettings`). The defaults are the old shop's
+ * (docs/husegpont-mai-szabalyok-unas.md): 1 point = 1 Ft, orders from 30 000 Ft, 100 points at least, up to 100 percent, OFF.
+ */
+export const LOYALTY_REDEMPTION_ENABLED_SETTING_KEY = "loyalty_redemption_enabled" as const
+export const LOYALTY_POINT_VALUE_HUF_SETTING_KEY = "loyalty_point_value_huf" as const
+export const LOYALTY_MIN_ORDER_HUF_SETTING_KEY = "loyalty_min_order_huf" as const
+export const LOYALTY_MIN_POINTS_SETTING_KEY = "loyalty_min_points" as const
+export const LOYALTY_MAX_PERCENT_SETTING_KEY = "loyalty_max_percent" as const
+
+/**
  * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
  * the accessor and cannot be removed from the Admin (the settings list shows it
  * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
@@ -65,6 +78,11 @@ export const COMMERCE_SETTING_KEYS = [
   FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
   FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
   OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
+  LOYALTY_REDEMPTION_ENABLED_SETTING_KEY,
+  LOYALTY_POINT_VALUE_HUF_SETTING_KEY,
+  LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
+  LOYALTY_MIN_POINTS_SETTING_KEY,
+  LOYALTY_MAX_PERCENT_SETTING_KEY,
 ] as const
 
 export type CommerceSettingKey = (typeof COMMERCE_SETTING_KEYS)[number]
@@ -163,6 +181,34 @@ export const normalizeOmnibusMinHistoryDays = (
   return value
 }
 
+/** A whole number within `min`..`max`; numeric text is accepted (a stored row is text). */
+export const normalizeWholeInRange = (
+  raw: unknown,
+  key: string,
+  min: number,
+  max: number
+): number => {
+  const value = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value < min ||
+    value > max
+  )
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `${key} must be a whole number from ${min} to ${max}, received ${JSON.stringify(raw)}`
+    )
+  return value
+}
+
+/** A switch is 0 (off) or 1 (on); the texts true and false are accepted at the edge too and stored as 1 and 0. */
+export const normalizeSwitch = (raw: unknown, key: string): number => {
+  if (raw === true || raw === "true") return 1
+  if (raw === false || raw === "false") return 0
+  return normalizeWholeInRange(raw, key, 0, 1)
+}
+
 /** Single source of truth for keys, descriptions, validation and defaults. */
 export const COMMERCE_SETTING_DEFINITIONS: Record<
   CommerceSettingKey,
@@ -209,6 +255,42 @@ export const COMMERCE_SETTING_DEFINITIONS: Record<
     normalize: (raw) =>
       normalizeOmnibusMinHistoryDays(raw, OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY),
     defaultValue: DEFAULT_OMNIBUS_MIN_HISTORY_DAYS,
+  },
+  [LOYALTY_REDEMPTION_ENABLED_SETTING_KEY]: {
+    key: LOYALTY_REDEMPTION_ENABLED_SETTING_KEY,
+    description:
+      "A hűségpont beváltása a pénztárban: 1 bekapcsolva, 0 kikapcsolva. Alapból ki van kapcsolva.",
+    normalize: (raw) => normalizeSwitch(raw, LOYALTY_REDEMPTION_ENABLED_SETTING_KEY),
+    defaultValue: 0,
+  },
+  [LOYALTY_POINT_VALUE_HUF_SETTING_KEY]: {
+    key: LOYALTY_POINT_VALUE_HUF_SETTING_KEY,
+    description: "Egy hűségpont értéke forintban (a mai bolt: 1 pont = 1 Ft).",
+    normalize: (raw) =>
+      normalizeWholeInRange(raw, LOYALTY_POINT_VALUE_HUF_SETTING_KEY, 1, 1_000_000),
+    defaultValue: 1,
+  },
+  [LOYALTY_MIN_ORDER_HUF_SETTING_KEY]: {
+    key: LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
+    description:
+      "A rendelés legalább ennyi forint (a hitelek előtti végösszeg, szállítással), hogy a pont beváltható legyen. 0: nincs alsó határ.",
+    normalize: (raw) =>
+      normalizeWholeInRange(raw, LOYALTY_MIN_ORDER_HUF_SETTING_KEY, 0, 1_000_000_000),
+    defaultValue: 30_000,
+  },
+  [LOYALTY_MIN_POINTS_SETTING_KEY]: {
+    key: LOYALTY_MIN_POINTS_SETTING_KEY,
+    description: "Legalább ennyi pontot lehet egyszerre beváltani.",
+    normalize: (raw) =>
+      normalizeWholeInRange(raw, LOYALTY_MIN_POINTS_SETTING_KEY, 1, 1_000_000_000),
+    defaultValue: 100,
+  },
+  [LOYALTY_MAX_PERCENT_SETTING_KEY]: {
+    key: LOYALTY_MAX_PERCENT_SETTING_KEY,
+    description: "A végösszeg hány százalékát fizetheti a vevő pontokból (1 és 100 között).",
+    normalize: (raw) =>
+      normalizeWholeInRange(raw, LOYALTY_MAX_PERCENT_SETTING_KEY, 1, 100),
+    defaultValue: 100,
   },
 }
 

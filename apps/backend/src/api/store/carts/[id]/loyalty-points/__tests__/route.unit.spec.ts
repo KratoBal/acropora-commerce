@@ -32,7 +32,7 @@ const cartRow = (over: Record<string, unknown> = {}) => ({
 })
 const run = async (
   handler: any,
-  opts: { actor?: string | null; cart?: any; balance?: number; body?: any } = {}
+  opts: { actor?: string | null; cart?: any; balance?: number; body?: any; settingRows?: { key: string; value: unknown }[] } = {}
 ) => {
   const cart = "cart" in opts ? opts.cart : cartRow()
   const res: any = { statusCode: 200, body: undefined }
@@ -44,7 +44,11 @@ const run = async (
     auth_context: "actor" in opts ? (opts.actor ? { actor_id: opts.actor } : undefined) : { actor_id: "cus_1" },
     scope: {
       resolve: (key: string) =>
-        key === "query" ? { graph: async () => ({ data: cart ? [cart] : [] }) } : { balanceOf: async () => opts.balance ?? 20_000 },
+        key === "query"
+          ? { graph: async () => ({ data: cart ? [cart] : [] }) }
+          : key === "commerce_settings"
+            ? { listCommerceSettings: async () => opts.settingRows ?? [] }
+            : { balanceOf: async () => opts.balance ?? 20_000 },
     },
   }
   await handler(req, res)
@@ -113,6 +117,37 @@ describe("POST /store/carts/:id/loyalty-points", () => {
     expect(res.statusCode).toBe(409)
     expect(res.body.code).toBe("loyalty_off")
     expect(created).toEqual([])
+  })
+
+  // THE SETTINGS ARE THE ADMIN'S (card dfb79916; Balázs 2026-11-24): a stored row beats the environment
+  it("a stored switch beats the environment: on while the environment says off, off while it says on", async () => {
+    process.env.LOYALTY_REDEMPTION_ENABLED = "false"
+    const on = await run(POST, { balance: 20_000, settingRows: [{ key: "loyalty_redemption_enabled", value: "1" }] })
+    expect(on.statusCode).toBe(200)
+    expect(created).toHaveLength(1)
+    created.length = 0
+    process.env.LOYALTY_REDEMPTION_ENABLED = "true"
+    const off = await run(POST, { settingRows: [{ key: "loyalty_redemption_enabled", value: "0" }] })
+    expect(off.statusCode).toBe(409)
+    expect(off.body.code).toBe("loyalty_off")
+    expect(created).toEqual([])
+  })
+
+  it("stored numbers rule the cart: the order minimum, the share and the point value", async () => {
+    const minimum = await run(POST, { cart: cartRow({ total: 50_000 }), balance: 20_000, settingRows: [{ key: "loyalty_min_order_huf", value: "60000" }] })
+    expect([minimum.statusCode, minimum.body.code]).toEqual([409, "loyalty_under_minimum"])
+    const share = await run(POST, { balance: 99_999, settingRows: [{ key: "loyalty_max_percent", value: "40" }] })
+    expect(share.statusCode).toBe(200)
+    expect(created[0].amount).toBe(20_000)
+    created.length = 0
+    await run(POST, { balance: 7_000, body: { points: 5_000 }, settingRows: [{ key: "loyalty_point_value_huf", value: "3" }] })
+    expect(created[0]).toMatchObject({ amount: 15_000, metadata: { points: 5_000 } })
+  })
+
+  it("a stored row that fails its bounds does not stop the checkout: the environment answers", async () => {
+    const res = await run(POST, { balance: 20_000, settingRows: [{ key: "loyalty_max_percent", value: "250" }] })
+    expect(res.statusCode).toBe(200)
+    expect(created[0].amount).toBe(20_000)
   })
 
   it("a guest cannot", async () => {

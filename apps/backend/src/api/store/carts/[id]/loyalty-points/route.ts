@@ -17,11 +17,11 @@ import {
   LOYALTY_OFF_MESSAGE,
   LOYALTY_WITH_GIFT_CARD_MESSAGE,
   loyaltyCredits,
-  loyaltySettings,
   loyaltyUnderMinimumMessage,
   maxPoints,
   pointsOfCredit,
 } from "../../../../../workflows/utils/loyalty/loyalty-credit"
+import { loadLoyaltySettings } from "../../../../../workflows/utils/loyalty/loyalty-settings"
 import { resolveCartShippingClass } from "../../../../../workflows/utils/resolve-cart-shipping-class"
 import type { StorePostCartLoyaltyPointsType } from "./validators"
 
@@ -55,7 +55,7 @@ async function loadCart(scope: AuthenticatedMedusaRequest["scope"], id: string):
 
 /** What the customer sees: the applied points and amount, the cart's total, and the limits the cart is measured against. */
 async function answer(scope: AuthenticatedMedusaRequest["scope"], cart: CartRow, customerId: string) {
-  const settings = loyaltySettings()
+  const settings = (await loadLoyaltySettings(scope)).settings
   const credit = loyaltyCredits(cart.credit_lines)[0]
   const balance = await scope.resolve<LoyaltyModuleService>(LOYALTY_MODULE).balanceOf(customerId)
   const before = amountOf(cart.total) + amountOf(cart.credit_line_total)
@@ -78,7 +78,7 @@ type Refusal = { status: number; body: { code: string; message: string } }
 
 /** The checks every verb shares: the switch, the customer, the cart is theirs and still open. */
 async function guard(req: AuthenticatedMedusaRequest): Promise<{ cart: CartRow; customerId: string } | Refusal> {
-  if (!loyaltySettings().enabled) return { status: 409, body: { code: "loyalty_off", message: LOYALTY_OFF_MESSAGE } }
+  if (!(await loadLoyaltySettings(req.scope)).settings.enabled) return { status: 409, body: { code: "loyalty_off", message: LOYALTY_OFF_MESSAGE } }
   const customerId = req.auth_context?.actor_id
   if (!customerId) return { status: 401, body: { code: "unauthorized", message: LOYALTY_LOGIN_MESSAGE } }
   const cart = await loadCart(req.scope, req.params.id)
@@ -122,7 +122,7 @@ export const POST = async (req: AuthenticatedMedusaRequest<StorePostCartLoyaltyP
     return
   }
   const { cart, customerId } = g
-  const settings = loyaltySettings()
+  const settings = (await loadLoyaltySettings(req.scope)).settings
 
   const { split_line_ids } = await resolveCartShippingClass(cart, req.scope)
   if (split_line_ids.length) {

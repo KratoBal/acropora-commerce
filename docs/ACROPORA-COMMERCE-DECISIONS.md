@@ -253,7 +253,15 @@ a pont a **szállításra is** beváltható. A szabályok **beállítások, nem 
 | legalább ennyi pont egyszerre | `LOYALTY_MIN_POINTS` | 100 |
 | a végösszeg hány százaléka fizethető pontból | `LOYALTY_MAX_PERCENT` | 100 |
 
-Hibás, nulla, negatív vagy tört érték az **alapértéket** adja, soha nem találgatást; csak a pontos `true`
+**2026-11-24-től az admin is állítja** (Balázs: „minden szám és kapcsoló adminból állítható, a kép értékei az
+alapértékek", kártya `dfb79916`): mindegyiknek van commerce-beállítás kulcsa (`loyalty_redemption_enabled` 0/1,
+`loyalty_point_value_huf`, `loyalty_min_order_huf` (0 = nincs alsó határ), `loyalty_min_points`,
+`loyalty_max_percent`), és mezőnként **a tárolt sor nyer a környezeti változó fölött, az az alapérték fölött**. Egy
+sor, ami a határán kívül esik, nem dob (a pénztár nem állhat meg rajta): kimarad, és a környezet, majd az alapérték
+válaszol. Az OS a `GET /admin/loyalty-settings` végpontot olvassa (az értékek és a forrásuk: `row`, `env`,
+`default`), és a `POST /admin/commerce-settings` kulcsra ír.
+
+Hibás, nulla, negatív vagy tört érték **a környezeti változóban** az **alapértéket** adja, soha nem találgatást; csak a pontos `true`
 kapcsolja be a beváltást. A gyűjtés (3 százalék, akciós tétel után nincs, jóváírás a rendelés „lezárva"
 státuszakor), a regisztrációért és a hírlevélért járó pont **nincs ebben a PR-ban**.
 
