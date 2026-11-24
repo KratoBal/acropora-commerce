@@ -1,13 +1,14 @@
 "use server"
 
 import { cegesAdatok, cimMetadata } from "@lib/util/penztar-adoszam"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import {
   ELKELT_PARAM,
   elkeltDarabokAzUzenetbol,
   elkeltParam,
 } from "@lib/util/elkelt-darab"
 import { sdk } from "@lib/config"
-import { translator, type Key } from "@lib/i18n/dictionary"
+import { type Key } from "@lib/i18n/dictionary"
 import { localeOf, segmentInLanguageOf, type Locale } from "@lib/i18n/locale"
 import medusaError from "@lib/util/medusa-error"
 import {
@@ -194,7 +195,7 @@ export async function addToCart({
   }
 
   // A kosar-visszajelzesek az oldal nyelven (az elso utvonal-szegmens a countryCode-ban).
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   let tetel: KosarbaTetel = { kind: "teljes", mennyiseg: quantity }
   if (rendelesiMaximum !== null) {
     const sorok = await retrieveCart(cart.id, "id,*items")

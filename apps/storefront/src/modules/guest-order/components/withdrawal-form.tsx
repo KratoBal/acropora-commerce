@@ -1,8 +1,8 @@
 "use client"
 
 import type { WithdrawalResult } from "@lib/data/withdrawal-post"
-import { translator, type Key } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
+import { type Key } from "@lib/i18n/dictionary"
 import type { GuestWithdrawal } from "@lib/util/guest-order"
 import {
   cleanedName,
@@ -47,7 +47,7 @@ export default function WithdrawalForm({
   onFiled?: (withdrawals?: GuestWithdrawal[]) => void
 }) {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const [itemIds, setItemIds] = useState<string[]>([])
   const [name, setName] = useState("")
   const [errors, setErrors] = useState<WithdrawalFormErrors>({})

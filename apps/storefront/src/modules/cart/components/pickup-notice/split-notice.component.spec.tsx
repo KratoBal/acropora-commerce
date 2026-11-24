@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 import SplitNotice from "./split-notice"
 
 afterEach(() => cleanup())
@@ -10,8 +12,12 @@ afterEach(() => cleanup())
  * ha nem nevezi meg a bolti tételt; ha rejtve is megjelenik.
  */
 describe("a két rendelés sávja", () => {
-  it("kimondja a két rendelést, és megnevezi a bolti tételt", () => {
-    render(<SplitNotice countryCode="hu" lines={["Mithrax tarisznyarák"]} />)
+  it("kimondja a két rendelést, és megnevezi a bolti tételt", async () => {
+    render(
+      await szerverFa(
+        <SplitNotice countryCode="hu" lines={["Mithrax tarisznyarák"]} />,
+      ),
+    )
     expect(screen.getByTestId("split-notice-lead").textContent).toBe(
       "Az élő állat miatt két rendelésed keletkezik.",
     )
@@ -26,28 +32,36 @@ describe("a két rendelés sávja", () => {
    * fizeted (ott egy fizetés viszi a kettőt); ha utánvétnél egy fizetést
    * ígérne; ha választott mód nélkül csak az egyik utat írná le.
    */
-  it("a fizetés mondata a választott mód szerint", () => {
+  it("a fizetés mondata a választott mód szerint", async () => {
     const { rerender } = render(
-      <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="kartya" />,
+      await szerverFa(
+        <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="kartya" />,
+      ),
     )
     expect(screen.getByTestId("split-notice-payment").textContent).toBe(
       "Kártyás fizetésnél a két rendelést egy fizetéssel rendezed.",
     )
     rerender(
-      <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="utanvet" />,
+      await szerverFa(
+        <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="utanvet" />,
+      ),
     )
     expect(screen.getByTestId("split-notice-payment").textContent).toBe(
       "Utánvétnél a kiszállított rendelést a csomag átvételekor fizeted, az élő állatot a boltban.",
     )
-    rerender(<SplitNotice countryCode="hu" lines={["Mithrax"]} />)
+    rerender(
+      await szerverFa(<SplitNotice countryCode="hu" lines={["Mithrax"]} />),
+    )
     const nincs = screen.getByTestId("split-notice-payment").textContent ?? ""
     expect(nincs).toContain("egy fizetéssel")
     expect(nincs).toContain("utánvétnél")
   })
 
-  it("a két rendelés ténye és az átvétel helye minden módnál ott áll", () => {
+  it("a két rendelés ténye és az átvétel helye minden módnál ott áll", async () => {
     render(
-      <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="kartya" />,
+      await szerverFa(
+        <SplitNotice countryCode="hu" lines={["Mithrax"]} fizetes="kartya" />,
+      ),
     )
     const sav = screen.getByTestId("split-notice").textContent ?? ""
     expect(sav).toContain("két rendelés lesz belőle")
@@ -55,8 +69,12 @@ describe("a két rendelés sávja", () => {
     expect(sav).not.toContain("ott fizeted")
   })
 
-  it("rejtve nem jelenik meg", () => {
-    render(<SplitNotice countryCode="hu" lines={["Mithrax"]} visible={false} />)
+  it("rejtve nem jelenik meg", async () => {
+    render(
+      await szerverFa(
+        <SplitNotice countryCode="hu" lines={["Mithrax"]} visible={false} />,
+      ),
+    )
     expect(screen.queryByTestId("split-notice")).toBeNull()
   })
 })

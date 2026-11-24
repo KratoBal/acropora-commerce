@@ -1,7 +1,7 @@
 import Image from "next/image"
 
 import { nyitvatartasNyelven } from "@lib/ceg"
-import { translator } from "@lib/i18n/dictionary"
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { STORE_NAME } from "@lib/store"
 import { GLS_LOGO } from "@lib/util/gls"
@@ -20,6 +20,11 @@ export type LablecKeretProps = {
   lablec: LablecAdat
   /** A lap nyelve; alapertek magyar (az OS elonezete magyar). */
   locale?: Locale
+  /**
+   * A lap forditoja az OS-ben atirt vevoi szovegekkel (`vevoiForditas`, kartya 7bfca4eb): a kirakat lablece adja. Az OS
+   * elonezete (kliens-komponens) nem adja, ott a szotar szovege all.
+   */
+  t?: Translate
 }
 
 /**
@@ -60,8 +65,11 @@ const ALSO_LOGOK = [
  * ezzel kikerult; a bemutatkozas es a kozossegi linkek csak akkor kapnak sort,
  * ha az OS-ben ki vannak toltve.
  */
-export function LablecKeret({ lablec, locale = "hu" }: LablecKeretProps) {
-  const t = translator(locale)
+export function LablecKeret({
+  lablec,
+  locale = "hu",
+  t = translator(locale),
+}: LablecKeretProps) {
   const nyitvatartas = nyitvatartasNyelven(locale)
   return (
     /*

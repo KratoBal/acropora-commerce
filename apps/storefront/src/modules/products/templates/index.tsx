@@ -1,4 +1,5 @@
 import React, { Suspense } from "react"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 
 import ImageGallery from "@modules/products/components/image-gallery"
 import { kepAltok } from "@modules/products/components/image-gallery/kep-alt"
@@ -26,7 +27,6 @@ import ProductActionsWrapper from "./product-actions-wrapper"
 import MuszakiLap, { galeriatAdunkAt, hasznaljaVazat } from "./muszaki-lap"
 import type { TermekTudas } from "@lib/data/product-knowledge"
 import VasarlasKeret from "./vasarlas-keret"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import ProductPrice from "@modules/products/components/product-price"
 import RagadosSav from "@modules/products/components/lap-vaz/ragados-sav"
@@ -58,7 +58,7 @@ type ProductTemplateProps = {
   valtozatId?: string
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+const ProductTemplate: React.FC<ProductTemplateProps> = async ({
   product,
   region,
   countryCode,
@@ -72,7 +72,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   }
 
   const locale = localeOf(countryCode)
-  const t = translator(locale)
+  const t = await vevoiForditas(locale)
 
   /**
    * A SAV CSELEKVESE UGYANAZT AZ ALLAPOTOT KAPJA, MINT A FO OSZLOP.

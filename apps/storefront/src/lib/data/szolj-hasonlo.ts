@@ -3,6 +3,7 @@
 import { headers } from "next/headers"
 
 import { sdk } from "@lib/config"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { LOCALES } from "@lib/i18n/locale"
 import { sebessegKorlat } from "@lib/util/hirlevel-feliratkozas"
 import {
@@ -42,6 +43,7 @@ export async function szoljFeliratkozasAkcio(
     },
     {
       korlat,
+      forditas: vevoiForditas,
       kuld: (torzs) =>
         sdk.client.fetch("/store/stock-alerts", {
           method: "POST",

@@ -1,6 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 const muveletek = vi.hoisted(() => ({
   addCustomerAddress: vi.fn(),
   updateCustomerAddress: vi.fn(),
@@ -58,12 +60,14 @@ const bekuld = async () => {
     fireEvent.submit(screen.getByTestId("address-name-input").closest("form")!)
   })
 }
-const felulet = () =>
+const felulet = async () =>
   render(
-    <AddressBook
-      customer={{ id: "cus_1", addresses: [MENTETT] } as never}
-      region={REGIO}
-    />,
+    await szerverFa(
+      <AddressBook
+        customer={{ id: "cus_1", addresses: [MENTETT] } as never}
+        region={REGIO}
+      />,
+    ),
   )
 
 // a NEW state object per save, like the real action returns (mockResolvedValue would hand back one object, and the same object is no change to React)
@@ -79,7 +83,7 @@ describe("sikeres mentés után a cím-ablak bezárul", () => {
       success: true,
       error: null,
     }))
-    felulet()
+    await felulet()
     for (const kor of [1, 2]) {
       fireEvent.click(screen.getByTestId("add-address-button"))
       expect(screen.queryByTestId("add-address-modal")).not.toBeNull()
@@ -94,7 +98,7 @@ describe("sikeres mentés után a cím-ablak bezárul", () => {
       success: true,
       error: null,
     }))
-    felulet()
+    await felulet()
     for (const kor of [1, 2]) {
       fireEvent.click(screen.getByTestId("address-edit-button"))
       expect(screen.queryByTestId("edit-address-modal")).not.toBeNull()

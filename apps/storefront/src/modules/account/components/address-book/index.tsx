@@ -1,7 +1,7 @@
 import React from "react"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 
 import { HttpTypes } from "@medusajs/types"
-import { translator } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { rendezettCimek } from "@lib/util/cim"
 
@@ -23,12 +23,12 @@ type AddressBookProps = {
  * szelesseggel. Mobilon nincs fej-sor, az "Új cím" a lista alatt all, teljes
  * szelessegben. Az alapertelmezett cim elol all.
  */
-const AddressBook: React.FC<AddressBookProps> = ({
+const AddressBook: React.FC<AddressBookProps> = async ({
   customer,
   region,
   locale = DEFAULT_LOCALE,
 }) => {
-  const t = translator(locale)
+  const t = await vevoiForditas(locale)
   const cimek = rendezettCimek(customer.addresses ?? [])
   return (
     <div

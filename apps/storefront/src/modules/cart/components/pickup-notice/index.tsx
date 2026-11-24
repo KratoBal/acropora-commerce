@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 
 import {
@@ -15,7 +15,7 @@ import {
  * fejlécében állnak; itt csak a kirajzolás van: a kezdőlap és a kategórialap
  * világos stílusában (`acr-` tokenek), a szövegek szótár-kulcsok.
  */
-export default function PickupNotice({
+export default async function PickupNotice({
   lines,
   visible = true,
   countryCode,
@@ -25,7 +25,7 @@ export default function PickupNotice({
   countryCode: string
 }) {
   if (!visible) return null
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <section

@@ -1,13 +1,12 @@
 "use client"
 
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
 import {
   Popover,
   PopoverButton,
   PopoverPanel,
   Transition,
 } from "@headlessui/react"
-import { useLocale } from "@lib/i18n/use-translate"
-import { translator } from "@lib/i18n/dictionary"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/ui"
@@ -33,7 +32,7 @@ const CartDropdown = ({
   betoltve?: boolean
 }) => {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   // what setTimeout returns where it runs: @types/node 22's Timer is no longer a clearTimeout argument
   const [activeTimer, setActiveTimer] = useState<
     ReturnType<typeof setTimeout> | undefined

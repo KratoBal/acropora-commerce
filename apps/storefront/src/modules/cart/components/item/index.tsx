@@ -1,8 +1,8 @@
 "use client"
 
 import { sorCsokkentes } from "@lib/util/get-product-price"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 import { updateLineItem } from "@lib/data/cart"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { convertToLocale } from "@lib/util/money"
 import { KOSAR_MOST_NEM_SIKERULT } from "@lib/util/kosar-uzenet"
@@ -36,7 +36,7 @@ type ItemProps = {
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const { countryCode } = useParams() as { countryCode: string }
-  const t = translator(localeOf(countryCode))
+  const t = useTranslateFor(localeOf(countryCode))
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

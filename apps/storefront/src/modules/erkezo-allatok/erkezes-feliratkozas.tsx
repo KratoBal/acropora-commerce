@@ -1,9 +1,9 @@
 "use client"
 
 import { useActionState, useId } from "react"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 
 import { szoljFeliratkozasAkcio } from "@lib/data/szolj-hasonlo"
-import { translator } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { jogiOldal } from "@lib/util/fogyasztobarat"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -23,7 +23,7 @@ export default function ErkezesFeliratkozas({
   erkezesId: string
   locale?: Locale
 }) {
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const id = useId()
   const [allapot, kuld, folyamatban] = useActionState(
     szoljFeliratkozasAkcio,

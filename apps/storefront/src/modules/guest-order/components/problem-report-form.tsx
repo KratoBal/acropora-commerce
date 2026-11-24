@@ -1,8 +1,8 @@
 "use client"
 
 import { submitProblemReport } from "@lib/data/problem-report"
-import { translator, type Key } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
+import { type Key } from "@lib/i18n/dictionary"
 import type { GuestOrder, GuestProblemReport } from "@lib/util/guest-order"
 import { uploadProblemPhoto } from "@lib/util/problem-photo-upload"
 import {
@@ -56,7 +56,7 @@ export default function ProblemReportForm({
   onFiled?: (reports?: GuestProblemReport[]) => void
 }) {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const [kind, setKind] = useState<ProblemKind | "">("")
   const [itemIds, setItemIds] = useState<string[]>([])
   const [received, setReceived] = useState("")

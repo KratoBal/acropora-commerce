@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 import EmptyCartMessage from "./index"
 
 vi.mock("next/navigation", () => ({
@@ -16,8 +18,8 @@ afterEach(cleanup)
  * nem tudja, hol kezdje. Egy puszta "a kosar ures" felirat zsakutca.
  */
 describe("az üres kosár", () => {
-  it("mindhárom kiindulópont ott áll, hivatkozással", () => {
-    render(<EmptyCartMessage countryCode="hu" />)
+  it("mindhárom kiindulópont ott áll, hivatkozással", async () => {
+    render(await szerverFa(<EmptyCartMessage countryCode="hu" />))
 
     const ajanlok = screen.getAllByTestId("empty-cart-ajanlo")
     expect(ajanlok).toHaveLength(3)
@@ -34,8 +36,8 @@ describe("az üres kosár", () => {
    * EZ AZ ALLITAS TEHAT NEM A SZOVEGET VEDI, HANEM A SZABALYT: amig a szamlalo
    * lekerdezes nincs bekotve, szam NEM allhat ebben a blokkban.
    */
-  it("nem áll kitalált darabszám az ajánlókban", () => {
-    render(<EmptyCartMessage countryCode="hu" />)
+  it("nem áll kitalált darabszám az ajánlókban", async () => {
+    render(await szerverFa(<EmptyCartMessage countryCode="hu" />))
 
     for (const ajanlo of screen.getAllByTestId("empty-cart-ajanlo")) {
       expect(ajanlo.textContent ?? "").not.toMatch(/\d/)
@@ -46,8 +48,8 @@ describe("az üres kosár", () => {
    * A KOSAR A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet", mint a kategorialap, #748): a cim a kezdolap
    * szerif betuje, normal vastagsaggal. MI PIROSIT: ha a cim a vilagos talpatlan marad.
    */
-  it("a cím a kezdőlap szerif betűjével, normál vastagsággal", () => {
-    render(<EmptyCartMessage countryCode="hu" />)
+  it("a cím a kezdőlap szerif betűjével, normál vastagsággal", async () => {
+    render(await szerverFa(<EmptyCartMessage countryCode="hu" />))
 
     const cim = screen.getByRole("heading", { level: 1 }).className
     expect(cim).toContain("font-kiemelt")
@@ -56,8 +58,8 @@ describe("az üres kosár", () => {
     expect(cim).not.toContain("font-light")
   })
 
-  it("a bolt telefonszáma hívható hivatkozás", () => {
-    render(<EmptyCartMessage countryCode="hu" />)
+  it("a bolt telefonszáma hívható hivatkozás", async () => {
+    render(await szerverFa(<EmptyCartMessage countryCode="hu" />))
 
     expect(
       screen.getByRole("link", { name: /\+36 20 267 6801/ }),

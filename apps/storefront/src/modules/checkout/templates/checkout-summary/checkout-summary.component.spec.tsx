@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 let orszagKod = "hu"
 
 vi.mock("@lib/data/cart", () => ({
@@ -53,13 +55,15 @@ const kosar = {
 } as never
 
 describe("a pénztár oldalsávja", () => {
-  it("magyarul: fejléc, és a tételek a sáv ELŐTT állnak", () => {
+  it("magyarul: fejléc, és a tételek a sáv ELŐTT állnak", async () => {
     render(
-      <CheckoutSummaryView
-        cart={kosar}
-        countryCode="hu"
-        szallitasiOsztaly={{ split_line_ids: ["elo-korall"] }}
-      />,
+      await szerverFa(
+        <CheckoutSummaryView
+          cart={kosar}
+          countryCode="hu"
+          szallitasiOsztaly={{ split_line_ids: ["elo-korall"] }}
+        />,
+      ),
     )
     expect(screen.getByText("A kosaradban")).toBeTruthy()
     const sav = screen.getByTestId("split-notice")
@@ -77,13 +81,15 @@ describe("a pénztár oldalsávja", () => {
    * A PENZTAR A KEZDOLAP STILUSAT KAPJA (Balazs 2026-11-02 "mindegyik mehet", mint a kosar es a kategorialap): az oldalsav
    * cime a kezdolap szerif betuje, normal vastagsaggal. MI PIROSIT: ha a cim a vilagos talpatlan marad.
    */
-  it("a fejléc a kezdőlap szerif betűjével, normál vastagsággal", () => {
+  it("a fejléc a kezdőlap szerif betűjével, normál vastagsággal", async () => {
     render(
-      <CheckoutSummaryView
-        cart={kosar}
-        countryCode="hu"
-        szallitasiOsztaly={{ split_line_ids: [] }}
-      />,
+      await szerverFa(
+        <CheckoutSummaryView
+          cart={kosar}
+          countryCode="hu"
+          szallitasiOsztaly={{ split_line_ids: [] }}
+        />,
+      ),
     )
     const cim = screen.getByText("A kosaradban").className
     expect(cim).toContain("font-kiemelt")
@@ -92,39 +98,45 @@ describe("a pénztár oldalsávja", () => {
     expect(cim).not.toContain("font-light")
   })
 
-  it("a sáv nélkül a háttér nem nevezett bolti sort", () => {
+  it("a sáv nélkül a háttér nem nevezett bolti sort", async () => {
     render(
-      <CheckoutSummaryView
-        cart={kosar}
-        countryCode="hu"
-        szallitasiOsztaly={null}
-      />,
+      await szerverFa(
+        <CheckoutSummaryView
+          cart={kosar}
+          countryCode="hu"
+          szallitasiOsztaly={null}
+        />,
+      ),
     )
     expect(screen.queryByTestId("split-notice")).toBeNull()
   })
 
-  it("angolul a fejléc és az összegek angolok", () => {
+  it("angolul a fejléc és az összegek angolok", async () => {
     orszagKod = "en-hu"
     render(
-      <CheckoutSummaryView
-        cart={kosar}
-        countryCode="en-hu"
-        szallitasiOsztaly={null}
-      />,
+      await szerverFa(
+        <CheckoutSummaryView
+          cart={kosar}
+          countryCode="en-hu"
+          szallitasiOsztaly={null}
+        />,
+      ),
     )
     expect(screen.getByText("In your cart")).toBeTruthy()
     expect(screen.getByText("Total to pay")).toBeTruthy()
     expect(screen.queryByText("Fizetendő")).toBeNull()
   })
 
-  it("az ellenőrzés lépésben a sáv nem ismétlődik az oldalsávban (a gomb fölött áll)", () => {
+  it("az ellenőrzés lépésben a sáv nem ismétlődik az oldalsávban (a gomb fölött áll)", async () => {
     render(
-      <CheckoutSummaryView
-        cart={kosar}
-        countryCode="hu"
-        szallitasiOsztaly={{ split_line_ids: ["elo-korall"] }}
-        savMutat={false}
-      />,
+      await szerverFa(
+        <CheckoutSummaryView
+          cart={kosar}
+          countryCode="hu"
+          szallitasiOsztaly={{ split_line_ids: ["elo-korall"] }}
+          savMutat={false}
+        />,
+      ),
     )
     expect(screen.queryByTestId("split-notice")).toBeNull()
     expect(screen.getByTestId("cart-total")).toBeTruthy()

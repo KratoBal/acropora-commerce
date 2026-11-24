@@ -1,6 +1,6 @@
 "use client"
 
-import { translator } from "@lib/i18n/dictionary"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 import { localeOf } from "@lib/i18n/locale"
 import { kosarOsszegek } from "@lib/util/kosar-osszegek"
 import { convertToLocale } from "@lib/util/money"
@@ -32,7 +32,7 @@ function getCheckoutStep(cart: HttpTypes.StoreCart) {
  */
 const Summary = ({ cart }: SummaryProps) => {
   const { countryCode } = useParams() as { countryCode: string }
-  const t = translator(localeOf(countryCode))
+  const t = useTranslateFor(localeOf(countryCode))
   const step = getCheckoutStep(cart)
 
   const o = kosarOsszegek(cart)

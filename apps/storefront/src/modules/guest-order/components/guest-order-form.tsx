@@ -1,8 +1,7 @@
 "use client"
 
 import { lookupGuestOrder } from "@lib/data/guest-order"
-import { translator } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
 import {
   guestFormErrors,
   lookupErrorKey,
@@ -25,7 +24,7 @@ import GuestOrderView, {
  */
 export default function GuestOrderForm() {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const [orderNumber, setOrderNumber] = useState("")
   const [email, setEmail] = useState("")
   const [errors, setErrors] = useState<GuestFormErrors>({})

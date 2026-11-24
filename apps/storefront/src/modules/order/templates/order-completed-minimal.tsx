@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import { rendelesSzam } from "@lib/util/rendelesek"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -9,7 +9,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  * aláírt sütije, és nem a bejelentkezett tulajdonos): csak a rendelésszám és a
  * köszönet, se név, se cím, se telefonszám, se e-mail-cím.
  */
-export default function OrderCompletedMinimal({
+export default async function OrderCompletedMinimal({
   displayId,
   countryCode,
 }: {
@@ -17,7 +17,7 @@ export default function OrderCompletedMinimal({
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return (
     <div className="min-h-[calc(100vh-64px)] bg-acr-mist py-10 small:py-14">
       <div

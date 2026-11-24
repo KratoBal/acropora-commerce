@@ -1,12 +1,12 @@
 import { HttpTypes } from "@medusajs/types"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { rendelesiAdatok } from "@lib/util/fizetesi-oldal"
 import PenztarKartya from "@modules/checkout/components/penztar-kartya"
 
 /** "Rendelési adatok" (Figma 209:3): a mar rogzitett kapcsolattartas es szamlazas. */
-export default function RendelesiAdatok({
+export default async function RendelesiAdatok({
   cart,
   countryCode,
 }: {
@@ -14,7 +14,7 @@ export default function RendelesiAdatok({
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   const adat = rendelesiAdatok(cart, localeOf(countryCode))
   return (
     <PenztarKartya

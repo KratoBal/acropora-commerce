@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import GuestOrderForm from "@modules/guest-order/components/guest-order-form"
 import { Metadata } from "next"
@@ -25,7 +25,7 @@ export async function generateStaticParams() {
 
 export default async function RendelesMegtekintesePage(props: Props) {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return (
     <div
       className="content-container flex justify-center py-10 small:py-16"

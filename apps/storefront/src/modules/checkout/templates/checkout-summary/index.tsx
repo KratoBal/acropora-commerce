@@ -1,5 +1,5 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
@@ -19,7 +19,7 @@ import CartTotals from "@modules/common/components/cart-totals"
 type SzallitasiOsztaly = Parameters<typeof splitNoticeProps>[1]
 
 /** A kirajzolás: a szállítási osztályt a hívó adja (az oldal a háttértől kéri, a próba fix adatot ad). */
-export function CheckoutSummaryView({
+export async function CheckoutSummaryView({
   cart,
   countryCode,
   szallitasiOsztaly,
@@ -32,7 +32,7 @@ export function CheckoutSummaryView({
   /** A két rendelés sávja az oldalsávban; az ellenőrzés lépésben a megrendelés gomb fölött áll, ott nem ismétlődik. */
   savMutat?: boolean
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <div className="flex flex-col gap-y-6 small:sticky small:top-4 small:self-start">

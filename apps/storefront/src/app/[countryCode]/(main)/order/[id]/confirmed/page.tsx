@@ -1,4 +1,5 @@
 import { getRendelesMegtekintes } from "@lib/data/cookies"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { retrieveCustomer } from "@lib/data/customer"
 import { retrieveOrder } from "@lib/data/orders"
 import {
@@ -8,7 +9,6 @@ import {
 import { kapcsoltRendeles } from "@lib/util/rendelesek"
 import OrderCompletedMinimal from "@modules/order/templates/order-completed-minimal"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { Metadata } from "next"
 
@@ -19,7 +19,7 @@ type Props = {
 /** A lap címe és leírása a lap nyelvén (szótár-kulcsok). */
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return {
     title: t("orderConfirmed.metaTitle"),
     description: t("orderConfirmed.metaDescription"),

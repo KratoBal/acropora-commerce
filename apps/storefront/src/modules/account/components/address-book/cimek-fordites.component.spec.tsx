@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 // the language of the page is its path segment: `hu` (Hungarian) or `en-hu` (English)
 const nav = vi.hoisted(() => ({ countryCode: "hu" }))
 vi.mock("next/navigation", () => ({
@@ -43,13 +45,15 @@ const cim = (extra: Record<string, unknown> = {}) => ({
   country_code: "hu",
   ...extra,
 })
-const lista = (addresses: unknown[], locale?: "hu" | "en") =>
+const lista = async (addresses: unknown[], locale?: "hu" | "en") =>
   render(
-    <AddressBook
-      customer={{ id: "cus_1", addresses } as never}
-      region={REGIO}
-      locale={locale}
-    />,
+    await szerverFa(
+      <AddressBook
+        customer={{ id: "cus_1", addresses } as never}
+        region={REGIO}
+        locale={locale}
+      />,
+    ),
   )
 const bekuld = async (urlap: HTMLElement) => {
   await act(async () => {
@@ -63,9 +67,9 @@ const bekuld = async (urlap: HTMLElement) => {
  * nem a lap nyelven jelenik meg; ha a magyar ut szovege elmozdul.
  */
 describe("a címek a lap nyelvén", () => {
-  it("angolul a lista fejléce, az üres lista és a gomb angol", () => {
+  it("angolul a lista fejléce, az üres lista és a gomb angol", async () => {
     nav.countryCode = "en-hu"
-    lista([], "en")
+    await lista([], "en")
     expect(screen.getByText("Saved delivery addresses")).toBeTruthy()
     expect(screen.getByTestId("add-address-button").textContent).toBe(
       "New address",
@@ -75,9 +79,9 @@ describe("a címek a lap nyelvén", () => {
     )
   })
 
-  it("angolul a kártya jelölője, a gombjai és a név nélküli cím tartaléka angol", () => {
+  it("angolul a kártya jelölője, a gombjai és a név nélküli cím tartaléka angol", async () => {
     nav.countryCode = "en-hu"
-    lista([cim({ is_default_shipping: true })], "en")
+    await lista([cim({ is_default_shipping: true })], "en")
     const kartya = screen.getByTestId("address-container")
     expect(within(kartya).getByTestId("address-name").textContent).toBe(
       "Address",
@@ -93,8 +97,8 @@ describe("a címek a lap nyelvén", () => {
     ).toBe("Delete")
   })
 
-  it("magyarul a régi feliratok", () => {
-    lista([cim({ is_default_shipping: true })])
+  it("magyarul a régi feliratok", async () => {
+    await lista([cim({ is_default_shipping: true })])
     expect(screen.getByText("Mentett szállítási címek")).toBeTruthy()
     const kartya = screen.getByTestId("address-container")
     expect(within(kartya).getByTestId("address-name").textContent).toBe("Cím")
@@ -116,7 +120,7 @@ describe("a címek a lap nyelvén", () => {
       error: "generic",
       ertekek: {},
     })
-    lista([], "en")
+    await lista([], "en")
     fireEvent.click(screen.getByTestId("add-address-button"))
     expect(screen.getByText("Add an address")).toBeTruthy()
     for (const felirat of [
@@ -154,7 +158,7 @@ describe("a címek a lap nyelvén", () => {
       error: "address_id_required",
       ertekek: {},
     })
-    lista([cim()], "en")
+    await lista([cim()], "en")
     fireEvent.click(screen.getByTestId("address-edit-button"))
     expect(screen.getByText("Edit the address")).toBeTruthy()
     await bekuld(screen.getByTestId("first-name-input").closest("form")!)
@@ -167,7 +171,7 @@ describe("a címek a lap nyelvén", () => {
       error: "generic",
       ertekek: {},
     })
-    lista([])
+    await lista([])
     fireEvent.click(screen.getByTestId("add-address-button"))
     expect(screen.getByText("Cím hozzáadása")).toBeTruthy()
     await bekuld(screen.getByTestId("first-name-input").closest("form")!)

@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import {
   oraPerc,
@@ -12,7 +12,7 @@ import {
  * rendeleskor a vevoe, ha meg szabad. Csak a bolt valaszabol rajzol: valasz nelkul (hiba, kikapcsolt
  * foglalas) nincs sor, mert nem allitunk olyat, amirol nem tudunk.
  */
-export default function FoglalasSorok({
+export default async function FoglalasSorok({
   tetelek,
   foglalasok,
   countryCode,
@@ -23,7 +23,7 @@ export default function FoglalasSorok({
   countryCode: string
   most?: Date
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   const sajat = sajatFoglalasok(foglalasok, most)
   const sorok = tetelek.flatMap((tetel) => {
     const foglalas = tetel.variant_id ? sajat.get(tetel.variant_id) : undefined

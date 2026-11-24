@@ -1,9 +1,9 @@
 import { Metadata } from "next"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { notFound } from "next/navigation"
 
 import { retrieveOrder, retrieveOrderBusinessStatus } from "@lib/data/orders"
 import { retrieveOwnWithdrawalState } from "@lib/data/own-withdrawal"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import {
   kapcsoltFelirat,
@@ -25,7 +25,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 
   // the page's title and description follow its language (`hu`, `en-hu`)
-  const t = translator(localeOf(params.countryCode))
+  const t = await vevoiForditas(localeOf(params.countryCode))
   return {
     title: t("account.orderDetails.metaTitle", {
       number: rendelesSzam(order.display_id),
@@ -38,7 +38,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function OrderDetailPage(props: Props) {
   const params = await props.params
   const locale = localeOf(params.countryCode)
-  const t = translator(locale)
+  const t = await vevoiForditas(locale)
   const [order, allapot, elallas] = await Promise.all([
     retrieveOrder(params.id).catch(() => null),
     retrieveOrderBusinessStatus(params.id),

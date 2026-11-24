@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 import { translator } from "@lib/i18n/dictionary"
 
 import StepIndicator, { CART_STEPS } from "./index"
@@ -17,8 +19,8 @@ afterEach(cleanup)
  * kulonbozo lepesszam allna -- csendben, mert egyszerre csak az egyik latszik.
  */
 describe("a kosár lépés-jelzője", () => {
-  it("mindhárom lépés nevét kiírja, a tervben álló sorrendben", () => {
-    render(<StepIndicator countryCode="hu" active={0} />)
+  it("mindhárom lépés nevét kiírja, a tervben álló sorrendben", async () => {
+    render(await szerverFa(<StepIndicator countryCode="hu" active={0} />))
 
     const jelzo = screen.getByTestId("cart-step-indicator")
     for (const lepes of CART_STEPS) {
@@ -31,8 +33,8 @@ describe("a kosár lépés-jelzője", () => {
    * olvashato fel, es a kepernyoolvaso hasznaloja ugyanugy tudni akarja, hol
    * tart. Ezert erre allitunk, nem az osztalynevre.
    */
-  it("az aktív lépés meg van jelölve, és pontosan egy", () => {
-    render(<StepIndicator countryCode="hu" active={1} />)
+  it("az aktív lépés meg van jelölve, és pontosan egy", async () => {
+    render(await szerverFa(<StepIndicator countryCode="hu" active={1} />))
 
     const aktiv = screen
       .getByTestId("cart-step-indicator")
@@ -41,8 +43,8 @@ describe("a kosár lépés-jelzője", () => {
     expect(aktiv[0]?.textContent).toBe(t(CART_STEPS[1]))
   })
 
-  it("a rövid alak ugyanazt a lépést mondja, mint a teljes", () => {
-    render(<StepIndicator countryCode="hu" active={2} />)
+  it("a rövid alak ugyanazt a lépést mondja, mint a teljes", async () => {
+    render(await szerverFa(<StepIndicator countryCode="hu" active={2} />))
 
     expect(screen.getByTestId("cart-step-indicator")).toHaveTextContent(
       `3 / 3 · ${t(CART_STEPS[2])}`,

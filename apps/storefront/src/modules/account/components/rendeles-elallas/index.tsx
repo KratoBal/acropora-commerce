@@ -1,11 +1,10 @@
 "use client"
 
+import { useTranslate } from "@lib/i18n/use-translate"
 import {
   retrieveOwnWithdrawalState,
   submitOwnWithdrawal,
 } from "@lib/data/own-withdrawal"
-import { translator } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
 import type { GuestWithdrawal } from "@lib/util/guest-order"
 import { withdrawableItems } from "@lib/util/withdrawal"
 import WithdrawalForm, {
@@ -37,7 +36,7 @@ export default function RendelesElallas({
   /** the declarations the shop already holds for the order (read when the page was drawn) */
   initialWithdrawals?: GuestWithdrawal[]
 }) {
-  const t = translator(useLocale())
+  const t = useTranslate()
   const [open, setOpen] = useState(false)
   const [withdrawals, setWithdrawals] =
     useState<GuestWithdrawal[]>(initialWithdrawals)

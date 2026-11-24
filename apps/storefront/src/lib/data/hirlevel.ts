@@ -3,6 +3,7 @@
 import { headers } from "next/headers"
 
 import { sdk } from "@lib/config"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { LOCALES } from "@lib/i18n/locale"
 import {
   hirlevelFeliratkozas,
@@ -40,6 +41,7 @@ export async function hirlevelFeliratkozasAkcio(
     },
     {
       korlat,
+      forditas: vevoiForditas,
       kuld: (torzs) =>
         sdk.client.fetch("/store/newsletter-subscriptions", {
           method: "POST",

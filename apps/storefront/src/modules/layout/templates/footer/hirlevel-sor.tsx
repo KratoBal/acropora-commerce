@@ -1,9 +1,10 @@
 "use client"
 
 import { useActionState } from "react"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 
 import { hirlevelFeliratkozasAkcio } from "@lib/data/hirlevel"
-import { translator, type Translate } from "@lib/i18n/dictionary"
+import { type Translate } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { jogiOldal } from "@lib/util/fogyasztobarat"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -29,7 +30,7 @@ export function HirlevelSor({
   /** A lap nyelve; a szerveroldali akcio ugyanezen a nyelven ad hibauzenetet. */
   locale?: Locale
 }) {
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const [allapot, kuld, folyamatban] = useActionState(
     hirlevelFeliratkozasAkcio,
     null,

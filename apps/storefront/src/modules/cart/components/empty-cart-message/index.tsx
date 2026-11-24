@@ -1,4 +1,5 @@
-import { translator, type Key } from "@lib/i18n/dictionary"
+import { type Key } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -25,8 +26,8 @@ const AJANLOK: readonly { cim: Key; leiras: Key; href: string }[] = [
   },
 ]
 
-const EmptyCartMessage = ({ countryCode }: { countryCode: string }) => {
-  const t = translator(localeOf(countryCode))
+const EmptyCartMessage = async ({ countryCode }: { countryCode: string }) => {
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <div

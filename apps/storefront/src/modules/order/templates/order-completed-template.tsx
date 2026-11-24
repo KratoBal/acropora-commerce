@@ -1,4 +1,5 @@
-import { translator, type Translate } from "@lib/i18n/dictionary"
+import { type Translate } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 
@@ -41,7 +42,7 @@ export default async function OrderCompletedTemplate({
   countryCode,
   vendeg = false,
 }: OrderCompletedTemplateProps) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   const lap = sikeroldal(order, par, parBolti, t)
   const boltiSorok = lap.teljesitesek.flatMap((tj) => boltiLepesek(tj, t))
   const penz = (amount: number) =>

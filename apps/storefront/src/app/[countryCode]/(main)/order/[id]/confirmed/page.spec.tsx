@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 const adat = vi.hoisted(() => ({
   suti: undefined as string | undefined,
   vevo: null as { id: string } | null,
@@ -83,9 +85,11 @@ const rendeles = (id: string, extra: Record<string, unknown> = {}) => ({
 
 const lap = async (id: string) =>
   render(
-    await OrderConfirmedPage({
-      params: Promise.resolve({ id, countryCode: "hu" }),
-    } as never),
+    await szerverFa(
+      await OrderConfirmedPage({
+        params: Promise.resolve({ id, countryCode: "hu" }),
+      } as never),
+    ),
   )
 
 describe("a rendelés-visszaigazoló lap", () => {
@@ -210,7 +214,7 @@ describe("a rendelés-visszaigazoló lap", () => {
       "Order confirmation",
     )
     adat.rendelesek = { order_A: rendeles("order_A") }
-    render(await OrderConfirmedPage(params("en-hu")))
+    render(await szerverFa(await OrderConfirmedPage(params("en-hu"))))
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Thank you for your order!",
     )

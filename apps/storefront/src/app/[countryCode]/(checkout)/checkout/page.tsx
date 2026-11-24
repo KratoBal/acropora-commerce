@@ -1,8 +1,8 @@
 import { retrieveCart } from "@lib/data/cart"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getCartPaymentOptions } from "@lib/data/payment"
 import { isStripeLike } from "@lib/constants"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { lepesjelzoAllas } from "@lib/util/penztar-lepes"
 import StepIndicator from "@modules/cart/components/step-indicator"
@@ -18,7 +18,9 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { countryCode } = await props.params
   // A cim a bongeszo fulen latszik, tehat a vevo olvassa: szotar-kulcs, nyelvenkent.
-  return { title: translator(localeOf(countryCode))("checkoutPage.title") }
+  return {
+    title: (await vevoiForditas(localeOf(countryCode)))("checkoutPage.title"),
+  }
 }
 
 /**
@@ -96,7 +98,7 @@ export default async function Checkout(props: {
     )
   }
 
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 small:px-16 small:py-[52px]">

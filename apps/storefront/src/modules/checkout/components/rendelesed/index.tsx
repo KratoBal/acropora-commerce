@@ -1,7 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 
-import { translator } from "@lib/i18n/dictionary"
-import { localeOf } from "@lib/i18n/locale"
+import type { Translate } from "@lib/i18n/dictionary"
 import { tetelSor } from "@lib/util/fizetesi-oldal"
 import { arSzoveg } from "@lib/util/ar-szoveg"
 import { convertToLocale } from "@lib/util/money"
@@ -20,12 +19,15 @@ export const PENZTAR_CTA_HELY = "penztar-cta-hely"
  */
 export default function Rendelesed({
   cart,
-  countryCode,
+  t,
   ertesites,
 }: {
   cart: HttpTypes.StoreCart
-  /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
-  countryCode: string
+  /**
+   * the page's translator, with the customer texts edited in the OS (`vevoiForditas`, card 7bfca4eb): the payment page hands it
+   * down, because this file also sits in the client bundle (`PENZTAR_CTA_HELY`) and cannot fetch them itself
+   */
+  t: Translate
   /**
    * A TÁJÉKOZTATÓ A MEGRENDELÉS GOMB KÖZVETLEN FÖLÖTT (acrobot 40220, P4-2: „a
    * leadásnál is jól láthatóan”): a gomb helye (`PENZTAR_CTA_HELY`) közvetlenül
@@ -33,7 +35,6 @@ export default function Rendelesed({
    */
   ertesites?: React.ReactNode
 }) {
-  const t = translator(localeOf(countryCode))
   const penz = (amount: number) =>
     convertToLocale({ amount, currency_code: cart.currency_code })
   const termekek = (cart.item_subtotal ?? 0) + (cart.item_tax_total ?? 0)

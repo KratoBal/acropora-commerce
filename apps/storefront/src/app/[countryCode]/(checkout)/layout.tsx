@@ -1,5 +1,5 @@
 import { TAP_AREA } from "@modules/common/components/tap-area"
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import { STORE_NAME } from "@lib/store"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -21,7 +21,7 @@ export default async function CheckoutLayout({
   params: Promise<{ countryCode: string }>
 }) {
   const { countryCode } = await params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <>

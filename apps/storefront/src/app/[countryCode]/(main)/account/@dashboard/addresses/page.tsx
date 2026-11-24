@@ -1,9 +1,9 @@
 import { Metadata } from "next"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { notFound } from "next/navigation"
 
 import AddressBook from "@modules/account/components/address-book"
 
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { getRegion } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
@@ -13,7 +13,7 @@ type Props = { params: Promise<{ countryCode: string }> }
 // the page's title and description follow its language (`hu`, `en-hu`)
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return {
     title: t("account.addresses.metaTitle"),
     description: t("account.addresses.metaDescription"),

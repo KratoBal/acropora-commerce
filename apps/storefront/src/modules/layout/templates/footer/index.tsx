@@ -1,5 +1,6 @@
 import { kezdolapTartalom } from "@lib/data/kezdolap-tartalom"
 import { localeOf } from "@lib/i18n/locale"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 
 import { lablecAdat } from "./lablec-adat"
 import { LablecKeret } from "./lablec-keret"
@@ -22,5 +23,11 @@ export default async function Footer({
   const locale = localeOf(countryCode)
   const lablec = lablecAdat(await kezdolapTartalom(), locale)
 
-  return <LablecKeret lablec={lablec} locale={locale} />
+  return (
+    <LablecKeret
+      lablec={lablec}
+      locale={locale}
+      t={await vevoiForditas(locale)}
+    />
+  )
 }

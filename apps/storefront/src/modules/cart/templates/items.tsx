@@ -1,6 +1,6 @@
 import { TAP_AREA } from "@modules/common/components/tap-area"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import repeat from "@lib/util/repeat"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 
@@ -15,8 +15,8 @@ type ItemsTemplateProps = {
   countryCode: string
 }
 
-const ItemsTemplate = ({ cart, countryCode }: ItemsTemplateProps) => {
-  const t = translator(localeOf(countryCode))
+const ItemsTemplate = async ({ cart, countryCode }: ItemsTemplateProps) => {
+  const t = await vevoiForditas(localeOf(countryCode))
   const items = cart?.items
 
   return (

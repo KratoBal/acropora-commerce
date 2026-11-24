@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslateFor } from "@lib/i18n/use-translate"
 import {
   fejezdBeLinkFizetest,
   inditsLinkFizetest,
@@ -19,7 +20,6 @@ import { StripeHalasztott } from "@modules/checkout/components/payment-wrapper/s
 import StripeAllapotPanel from "@modules/checkout/components/stripe-allapot"
 import { Button } from "@modules/common/components/ui"
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -80,7 +80,7 @@ function LinkFizetesMezo({ token, osszeg, countryCode }: Props) {
   const stripe = useStripe()
   const elements = useElements()
   const router = useRouter()
-  const t = translator(localeOf(countryCode))
+  const t = useTranslateFor(localeOf(countryCode))
   const [allapot, setAllapot] = useState<StripeAllapot>("alap")
   const [hiba, setHiba] = useState<string | null>(null)
   const [mezoKesz, setMezoKesz] = useState(false)

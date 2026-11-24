@@ -1,7 +1,6 @@
 "use client"
 
-import { translator } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
 import type { GuestWithdrawal } from "@lib/util/guest-order"
 
 /**
@@ -18,7 +17,7 @@ export default function WithdrawalList({
   items: { id: string; title: string }[]
 }) {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   if (withdrawals.length === 0) return null
   const day = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
     timeZone: "Europe/Budapest",

@@ -7,6 +7,8 @@ import {
 } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 vi.mock("@lib/data/customer", () => ({
   addCustomerAddress: vi.fn(),
   updateCustomerAddress: vi.fn(),
@@ -31,12 +33,14 @@ const REGIO = {
   id: "reg_hu",
   countries: [{ iso_2: "hu", display_name: "Magyarország" }],
 } as never
-const lista = (addresses: unknown[]) =>
+const lista = async (addresses: unknown[]) =>
   render(
-    <AddressBook
-      customer={{ id: "cus_1", addresses } as never}
-      region={REGIO}
-    />,
+    await szerverFa(
+      <AddressBook
+        customer={{ id: "cus_1", addresses } as never}
+        region={REGIO}
+      />,
+    ),
   )
 
 /**
@@ -46,8 +50,8 @@ const lista = (addresses: unknown[]) =>
  * ablakbol hianyzik a ket uj mezo.
  */
 describe("a mentett címek listája", () => {
-  it("a kártyák: név, egy címsor, az alapértelmezett elöl és jelölve", () => {
-    lista([
+  it("a kártyák: név, egy címsor, az alapértelmezett elöl és jelölve", async () => {
+    await lista([
       cim("a", { address_name: "Munkahely" }),
       cim("b", { address_name: "Otthon", is_default_shipping: true }),
     ])
@@ -64,8 +68,8 @@ describe("a mentett címek listája", () => {
     )
   })
 
-  it("fej és Új cím gomb; üres listánál mondat", () => {
-    lista([])
+  it("fej és Új cím gomb; üres listánál mondat", async () => {
+    await lista([])
     expect(screen.getByText("Mentett szállítási címek")).toBeTruthy()
     expect(screen.getByTestId("add-address-button").textContent).toBe("Új cím")
     expect(screen.getByTestId("address-empty").textContent).toBe(
@@ -73,8 +77,10 @@ describe("a mentett címek listája", () => {
     )
   })
 
-  it("a szerkesztő ablakban ott a név és az alapértelmezés mezője", () => {
-    lista([cim("a", { address_name: "Otthon", is_default_shipping: true })])
+  it("a szerkesztő ablakban ott a név és az alapértelmezés mezője", async () => {
+    await lista([
+      cim("a", { address_name: "Otthon", is_default_shipping: true }),
+    ])
     fireEvent.click(screen.getByTestId("address-edit-button"))
     const nev = screen.getByTestId("address-name-input") as HTMLInputElement
     expect(nev.value).toBe("Otthon")
@@ -89,8 +95,8 @@ describe("a mentett címek listája", () => {
    * a felvevo ablakbol kiveve minden allitas zold maradt). Az elso cimnel a
    * pipa alapbol be van jelolve, a tobbinel nem.
    */
-  it("a felvevő ablakban is ott a két mező; az első címnél alapból alapértelmezett", () => {
-    lista([])
+  it("a felvevő ablakban is ott a két mező; az első címnél alapból alapértelmezett", async () => {
+    await lista([])
     fireEvent.click(screen.getByTestId("add-address-button"))
     expect(screen.getByTestId("address-name-input")).toBeTruthy()
     expect(
@@ -99,7 +105,7 @@ describe("a mentett címek listája", () => {
     ).toBe(true)
     cleanup()
 
-    lista([cim("a", { is_default_shipping: true })])
+    await lista([cim("a", { is_default_shipping: true })])
     fireEvent.click(screen.getByTestId("add-address-button"))
     expect(
       (screen.getByTestId("address-default-checkbox") as HTMLInputElement)

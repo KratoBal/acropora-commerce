@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 import { foglalasValaszbol } from "@lib/util/kosar-foglalas"
 
 import FoglalasSorok from "."
@@ -42,14 +44,16 @@ const tetelek = [
  * valasz nelkul barmi kirajzolodik.
  */
 describe("a kosár foglalás-sorai", () => {
-  it("a saját élő és lejárt foglalás sort kap, a többi nem", () => {
+  it("a saját élő és lejárt foglalás sort kap, a többi nem", async () => {
     render(
-      <FoglalasSorok
-        tetelek={tetelek}
-        foglalasok={valasz}
-        countryCode="hu"
-        most={MOST}
-      />,
+      await szerverFa(
+        <FoglalasSorok
+          tetelek={tetelek}
+          foglalasok={valasz}
+          countryCode="hu"
+          most={MOST}
+        />,
+      ),
     )
     expect(
       screen.getAllByTestId("cart-hold-line").map((li) => li.textContent),
@@ -59,14 +63,16 @@ describe("a kosár foglalás-sorai", () => {
     ])
   })
 
-  it("válasz nélkül nincs semmi", () => {
+  it("válasz nélkül nincs semmi", async () => {
     const { container } = render(
-      <FoglalasSorok
-        tetelek={tetelek}
-        foglalasok={null}
-        countryCode="hu"
-        most={MOST}
-      />,
+      await szerverFa(
+        <FoglalasSorok
+          tetelek={tetelek}
+          foglalasok={null}
+          countryCode="hu"
+          most={MOST}
+        />,
+      ),
     )
     expect(container.innerHTML).toBe("")
   })
