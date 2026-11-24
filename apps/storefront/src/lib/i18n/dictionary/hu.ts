@@ -1467,7 +1467,7 @@ export const hu = {
         "Az elállási nyilatkozatot most nem tudtuk elküldeni. A beírt adataid megmaradtak, próbáld újra. Ha nem sikerül, írj nekünk: " +
         CEG.email +
         ".",
-      done: "Megkaptuk az elállási nyilatkozatodat. Az azonosítója: {id}. [KITÖLTENDŐ: további teendők és határidők]",
+      done: "Megkaptuk az elállási nyilatkozatodat. Az azonosítója: {id}. Az átvételét e-mailben is visszaigazoljuk. A terméket a nyilatkozattól számított 14 napon belül küldd vissza nekünk; utánvéttel vagy portósan feladott csomagot nem tudunk átvenni. A kifizetett összeget a szállítási díjjal együtt a nyilatkozat beérkezésétől számított 14 napon belül visszautaljuk, ugyanazzal a fizetési móddal, amellyel fizettél, többletköltség nélkül. A szállítási díjat a legolcsóbb szállítási mód díjáig térítjük vissza. A visszautalást addig visszatarthatjuk, amíg a termék vissza nem érkezik hozzánk, vagy amíg nem igazolod, hogy feladtad.",
       donePartial:
         "Ezekről a tételekről korábban már leadtál nyilatkozatot, ezeket nem rögzítettük újra: {items}",
       listTitle: "Már leadott elállási nyilatkozataid",
