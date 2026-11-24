@@ -165,6 +165,21 @@ describe("unsentNewsletterConfirmations and the OS's list of mails that did not 
     expect(page.items).toEqual([expect.objectContaining({ id: "wmout_1" })])
   })
 
+  it("a failed newsletter read is LOGGED (an empty list that is really a failed read looks like 'nothing unsent': measured 2026-11-24)", async () => {
+    const warnings: string[] = []
+    const broken = {
+      resolve: (key: string) => {
+        if (key === "logger") return { warn: (message: string) => warnings.push(message), info: () => undefined }
+        if (key === NEWSLETTER_MODULE) return { listUnsentConfirmations: async () => Promise.reject(new Error("column does not exist")) }
+        return { listWebshopMailOutboxes: async () => [] }
+      },
+    } as never
+    expect(await unsentNewsletterConfirmations(broken, NOW)).toEqual({ items: [], total: 0 })
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain("could not be read")
+    expect(warnings[0]).toContain("column does not exist")
+  })
+
   it("with nothing unsent, or a newsletter read that fails, the outbox's own list is exactly what it was", async () => {
     const empty = await stuckWebshopMails(world({ outbox: [outboxRow] }).container, { limit: 50, offset: 0 }, NOW)
     expect(empty).toEqual({ count: 1, items: [expect.objectContaining({ id: "wmout_1" })] })

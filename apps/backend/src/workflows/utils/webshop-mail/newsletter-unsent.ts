@@ -1,4 +1,5 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 import { NEWSLETTER_MODULE } from "../../../modules/newsletter"
 import type { NewsletterMailResult } from "../../../modules/newsletter/double-opt-in"
@@ -59,7 +60,15 @@ export const unsentNewsletterConfirmations = async (
         alerted_at: null,
       })
     return { items, total }
-  } catch {
+  } catch (error) {
+    // not silent: an empty list that is really a failed read looks exactly like "nothing unsent" (measured 2026-11-24)
+    try {
+      container
+        .resolve<{ warn(message: string): void }>(ContainerRegistrationKeys.LOGGER)
+        .warn(`the newsletter's unsent confirmations could not be read for the OS list (${(error as Error)?.name ?? "error"}): ${(error as Error)?.message ?? error}`)
+    } catch {
+      // no logger either
+    }
     return { items: [], total: 0 }
   }
 }
