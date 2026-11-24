@@ -77,6 +77,7 @@ describe("GET /admin/order-business-status/:order_id", () => {
             { status: "ready_for_pickup", label: "Átvehető" },
             { status: "closed_unsuccessfully", label: "Sikertelenül lezárt rendelés" },
           ],
+          reopen_refused: null,
           history: [
             {
               from_status: null,

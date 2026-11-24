@@ -143,3 +143,18 @@ export const refuseReopenAfterMovement = async (input: { order_id: string; to: s
       "Ennél a rendelésnél a sikertelen lezáráskor a pont és az ajándékkártya visszajárt, ezért nem nyitható újra. Újraküldéshez új rendelés kell."
     )
 }
+
+/**
+ * THE SAME CHECK, AS A SENTENCE OR NOTHING: the admin read asks it to stop OFFERING "Készletezés" on an order the server would refuse to
+ * reopen (the OS lists the next steps from the status table, which still has the way back, so it offered a step that always answered 422).
+ * `null`: the reopening is allowed (or not a reopening at all). Only a refusal is caught; any other error propagates.
+ */
+export const reopenRefusalOf = async (orderId: string, ops: ReopenOperations): Promise<string | null> => {
+  try {
+    await refuseReopenAfterMovement({ order_id: orderId, to: REOPEN_TO_STATUS }, ops)
+    return null
+  } catch (error) {
+    if (error instanceof MedusaError && error.type === MedusaError.Types.NOT_ALLOWED) return error.message
+    throw error
+  }
+}
