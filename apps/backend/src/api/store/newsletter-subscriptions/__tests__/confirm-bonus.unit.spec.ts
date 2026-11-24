@@ -45,7 +45,8 @@ describe("POST /store/newsletter-subscriptions/confirm", () => {
 
   it("an invalid or expired link pays nothing and answers the same shape", async () => {
     for (const result of ["invalid", "expired"]) {
-      const { json, grant } = await run({ result })
+      // even a service answer that carried an address (it should not) pays nothing unless the link CONFIRMED
+      const { json, grant } = await run({ result, email: "vevo@example.hu" })
       expect(grant).not.toHaveBeenCalled()
       expect(json).toHaveBeenCalledWith({ result })
     }
