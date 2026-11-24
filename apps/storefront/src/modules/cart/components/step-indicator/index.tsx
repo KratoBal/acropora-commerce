@@ -1,4 +1,5 @@
-import { translator, type Key } from "@lib/i18n/dictionary"
+import { type Key } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 
 /** A három lépés szótár-kulcsai, sorrendben: kosár, adatok, fizetés. */
@@ -12,14 +13,14 @@ export const CART_STEPS: readonly Key[] = [
  * A LÉPÉSJELZŐ. Mobilon egy sor ("1 / 3 · Kosár"), asztalon a három lépés
  * egymás mellett; az aktuális lépés sötét, a többi halvány.
  */
-export default function StepIndicator({
+export default async function StepIndicator({
   active = 0,
   countryCode,
 }: {
   active?: number
   countryCode: string
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <div className="flex flex-col gap-1" data-testid="cart-step-indicator">

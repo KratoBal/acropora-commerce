@@ -1,6 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { szallitasiCsoportok } from "@lib/util/fizetesi-oldal"
 import { arSzoveg } from "@lib/util/ar-szoveg"
@@ -10,7 +10,7 @@ import PenztarKartya from "@modules/checkout/components/penztar-kartya"
  * "Szállítási csoportok" (Figma 209:3): ezen a lepesen mar csak megjelenik,
  * nem modosithato. Vegyes kosarnal az elo allatos resz kulon csoport.
  */
-export default function SzallitasiCsoportok({
+export default async function SzallitasiCsoportok({
   cart,
   boltiTetelek,
   szemelyesAtvetel = false,
@@ -23,7 +23,7 @@ export default function SzallitasiCsoportok({
   /** the first path segment: `hu` (Hungarian) or `en-hu` (English) */
   countryCode: string
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   const csoportok = szallitasiCsoportok(
     cart,
     new Set(boltiTetelek),

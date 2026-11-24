@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import type { Locale } from "@lib/i18n/locale"
 import { arrivalDayText, arrivalIsLate } from "@lib/util/livestock-arrival"
 import {
@@ -21,7 +21,7 @@ import ErkezesFeliratkozas from "./erkezes-feliratkozas"
  *
  * `ma` a bolt napja (Budapest), a hivo adja, hogy a komponens ne a sajat orajara tamaszkodjon.
  */
-export default function ErkezoAllatokLap({
+export default async function ErkezoAllatokLap({
   animals,
   handles,
   ma,
@@ -36,7 +36,7 @@ export default function ErkezoAllatokLap({
   feliratkozas?: boolean
   locale?: Locale
 }) {
-  const t = translator(locale)
+  const t = await vevoiForditas(locale)
   const groups = groupedByKind(animals)
   return (
     <div className="min-h-[calc(100vh-64px)] bg-acr-mist py-10 small:py-14">

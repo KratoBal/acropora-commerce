@@ -1,6 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 vi.mock("@lib/data/cart", () => ({
   retrieveCartShippingClass: vi.fn(async () => null),
 }))
@@ -52,10 +54,12 @@ afterEach(cleanup)
 describe("a fizetési oldal véglegesítése", () => {
   it("az ÁSZF-et kéri, a kártyaadatokról szóló mondat nélkül", async () => {
     render(
-      await FizetesiOldal({
-        cart: { id: "cart_1" } as never,
-        countryCode: "hu",
-      }),
+      await szerverFa(
+        await FizetesiOldal({
+          cart: { id: "cart_1" } as never,
+          countryCode: "hu",
+        }),
+      ),
     )
     const veglegesites = screen.getByTestId("veglegesites")
     expect(within(veglegesites).getByTestId("aszf")).toBeInTheDocument()
@@ -69,10 +73,12 @@ describe("a fizetési oldal véglegesítése", () => {
    */
   it("a cím a kezdőlap szerif betűjével, normál vastagsággal", async () => {
     render(
-      await FizetesiOldal({
-        cart: { id: "cart_1" } as never,
-        countryCode: "hu",
-      }),
+      await szerverFa(
+        await FizetesiOldal({
+          cart: { id: "cart_1" } as never,
+          countryCode: "hu",
+        }),
+      ),
     )
     const cim = screen.getByRole("heading", { level: 1 }).className
     expect(cim).toContain("font-kiemelt")
@@ -101,7 +107,11 @@ describe("a fizetési oldal véglegesítése", () => {
     ])("a %s tipusú opció átadott jele: %s", async (tipus, vart) => {
       csoportok.props.length = 0
       fulfillment.listCartShippingMethods.mockResolvedValue(opciok(tipus))
-      render(await FizetesiOldal({ cart: kosar("so_1"), countryCode: "hu" }))
+      render(
+        await szerverFa(
+          await FizetesiOldal({ cart: kosar("so_1"), countryCode: "hu" }),
+        ),
+      )
       expect(fulfillment.listCartShippingMethods).toHaveBeenCalledWith("cart_1")
       expect(csoportok.props.at(-1)?.szemelyesAtvetel).toBe(vart)
     })
@@ -109,7 +119,11 @@ describe("a fizetési oldal véglegesítése", () => {
     it("szállítási mód nélkül nincs lekérdezés, és nem átvétel", async () => {
       csoportok.props.length = 0
       fulfillment.listCartShippingMethods.mockClear()
-      render(await FizetesiOldal({ cart: kosar(null), countryCode: "hu" }))
+      render(
+        await szerverFa(
+          await FizetesiOldal({ cart: kosar(null), countryCode: "hu" }),
+        ),
+      )
       expect(fulfillment.listCartShippingMethods).not.toHaveBeenCalled()
       expect(csoportok.props.at(-1)?.szemelyesAtvetel).toBe(false)
     })

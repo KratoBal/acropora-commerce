@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 
 import {
@@ -16,7 +16,7 @@ import {
  * A KÉT RENDELÉS SÁVJA A KOSÁRBAN (P4-2). A mondatok és a döntések a
  * `pickup-notice.ts`-ben állnak; itt a kirajzolás van, a szövegek kulcsok.
  */
-export default function SplitNotice({
+export default async function SplitNotice({
   lines,
   visible = true,
   fizetes = null,
@@ -28,7 +28,7 @@ export default function SplitNotice({
   countryCode: string
 }) {
   if (!visible) return null
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <section

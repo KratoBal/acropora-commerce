@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 let osztaly: unknown = null
 let orszagKod = "hu"
 
@@ -72,7 +74,9 @@ const kosar = {
 
 describe("a fizetési oldal kerete", () => {
   it("magyarul a régi szavak állnak", async () => {
-    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    render(
+      await szerverFa(await FizetesiOldal({ cart: kosar, countryCode: "hu" })),
+    )
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Fizetés",
     )
@@ -82,7 +86,11 @@ describe("a fizetési oldal kerete", () => {
 
   it("angolul a keret és a kártyák szavai angolok", async () => {
     orszagKod = "en-hu"
-    render(await FizetesiOldal({ cart: kosar, countryCode: "en-hu" }))
+    render(
+      await szerverFa(
+        await FizetesiOldal({ cart: kosar, countryCode: "en-hu" }),
+      ),
+    )
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Payment",
     )
@@ -94,7 +102,9 @@ describe("a fizetési oldal kerete", () => {
 
   it("a két rendelés sávja a megrendelés gomb helye KÖZVETLEN FÖLÖTT áll", async () => {
     osztaly = { split_line_ids: ["elo"] }
-    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    render(
+      await szerverFa(await FizetesiOldal({ cart: kosar, countryCode: "hu" })),
+    )
     const sav = screen.getByTestId("split-notice")
     const gombHely = document.getElementById("penztar-cta-hely")
     expect(gombHely).not.toBeNull()
@@ -103,7 +113,9 @@ describe("a fizetési oldal kerete", () => {
   })
 
   it("bolti sor nélkül nincs sáv", async () => {
-    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    render(
+      await szerverFa(await FizetesiOldal({ cart: kosar, countryCode: "hu" })),
+    )
     expect(screen.queryByTestId("split-notice")).toBeNull()
     expect(document.getElementById("penztar-cta-hely")).not.toBeNull()
   })
@@ -114,14 +126,18 @@ describe("a fizetési oldal kerete", () => {
    * mint a kosárban.
    */
   it("a kosár lépésjelzője áll, a harmadik lépés jelölve", async () => {
-    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    render(
+      await szerverFa(await FizetesiOldal({ cart: kosar, countryCode: "hu" })),
+    )
     const jelzo = screen.getByTestId("cart-step-indicator")
     expect(jelzo.textContent).toContain("3 / 3 · Fizetés")
     expect(screen.queryByTestId("penztar-lepesek")).toBeNull()
   })
 
   it("a kedvezménykód az összesítés kártyában áll, a Fizetendő előtt", async () => {
-    render(await FizetesiOldal({ cart: kosar, countryCode: "hu" }))
+    render(
+      await szerverFa(await FizetesiOldal({ cart: kosar, countryCode: "hu" })),
+    )
     const kartya = screen.getByTestId("rendelesed")
     const kod = screen.getByTestId("kedvezmenykod")
     expect(kartya.contains(kod)).toBe(true)

@@ -1,5 +1,5 @@
 import { hasonloKaphatoTermekek } from "@lib/data/hasonlo-kaphato"
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import type { ElkeltTetel } from "@lib/util/elkelt-darab"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -21,7 +21,7 @@ export default async function ElkeltErtesites({
   /** van-e a kosarban mas tetel is az elkelteken kivul */
   maradtMas: boolean
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   const hasonlok = await hasonloKaphatoTermekek({ elkeltek, countryCode })
   const nevek = elkeltek.map((darab) => darab.title).join(", ")
   return (

@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 import SzallitasiCsoportok from "./index"
 
 afterEach(cleanup)
@@ -32,14 +34,16 @@ const kosar = {
 const csoport = () => screen.getByTestId("szallitasi-csoport")
 
 describe("a szállítási csoport címkéje", () => {
-  it("személyes átvételnél Átvétel, és a bolt címe áll", () => {
+  it("személyes átvételnél Átvétel, és a bolt címe áll", async () => {
     render(
-      <SzallitasiCsoportok
-        cart={kosar}
-        boltiTetelek={[]}
-        szemelyesAtvetel
-        countryCode="hu"
-      />,
+      await szerverFa(
+        <SzallitasiCsoportok
+          cart={kosar}
+          boltiTetelek={[]}
+          szemelyesAtvetel
+          countryCode="hu"
+        />,
+      ),
     )
     expect(csoport().textContent).toContain("1. Átvétel")
     expect(csoport().textContent).not.toContain("Kiszállítás")
@@ -50,22 +54,26 @@ describe("a szállítási csoport címkéje", () => {
     expect(csoport().textContent).not.toContain("Minta utca")
   })
 
-  it("átvétel jelzése nélkül a régi Kiszállítás áll, a vevő címével", () => {
+  it("átvétel jelzése nélkül a régi Kiszállítás áll, a vevő címével", async () => {
     render(
-      <SzallitasiCsoportok cart={kosar} boltiTetelek={[]} countryCode="hu" />,
+      await szerverFa(
+        <SzallitasiCsoportok cart={kosar} boltiTetelek={[]} countryCode="hu" />,
+      ),
     )
     expect(csoport().textContent).toContain("1. Kiszállítás")
     expect(csoport().textContent).toContain("Minta utca 12.")
   })
 
-  it("angolul a Pickup címke áll", () => {
+  it("angolul a Pickup címke áll", async () => {
     render(
-      <SzallitasiCsoportok
-        cart={kosar}
-        boltiTetelek={[]}
-        szemelyesAtvetel
-        countryCode="en-hu"
-      />,
+      await szerverFa(
+        <SzallitasiCsoportok
+          cart={kosar}
+          boltiTetelek={[]}
+          szemelyesAtvetel
+          countryCode="en-hu"
+        />,
+      ),
     )
     expect(csoport().textContent).toContain("1. Pickup")
     expect(csoport().textContent).toContain("Acropora store")

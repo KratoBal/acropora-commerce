@@ -1,8 +1,7 @@
 "use client"
 
 import { requestGuestInvoice } from "@lib/data/guest-invoice"
-import { translator } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
 import type { GuestOrder } from "@lib/util/guest-order"
 import {
   invoiceTypeKey,
@@ -32,7 +31,7 @@ export default function GuestInvoice({
   email: string
 }) {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const [result, setResult] = useState<State>({ state: "idle" })
   const [pending, startTransition] = useTransition()
 

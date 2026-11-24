@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import { retrieveCart, retrieveCartShippingClass } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
@@ -20,7 +20,7 @@ export async function generateMetadata(props: {
   params: Promise<{ countryCode: string }>
 }): Promise<Metadata> {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return {
     title: t("cartPage.title"),
     description: t("cartPage.metaDescription"),

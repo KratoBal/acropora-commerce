@@ -1,6 +1,6 @@
 import { Metadata } from "next"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import HirlevelLinkUrlap from "@modules/hirlevel/components/hirlevel-link-urlap"
 
@@ -14,7 +14,7 @@ type Props = { params: Promise<{ countryCode: string }> }
  */
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return {
     title: t("newsletterLink.leaveTitle"),
     robots: { index: false, follow: false },
@@ -31,7 +31,7 @@ export async function generateStaticParams() {
 
 export default async function HirlevelLeiratkozasPage(props: Props) {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return (
     <div
       className="content-container flex justify-center py-10 small:py-16"

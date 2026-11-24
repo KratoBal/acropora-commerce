@@ -1,9 +1,9 @@
 "use client"
 
 import { useActionState } from "react"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 
 import { szoljFeliratkozasAkcio } from "@lib/data/szolj-hasonlo"
-import { translator } from "@lib/i18n/dictionary"
 import type { Locale } from "@lib/i18n/locale"
 import { jogiOldal } from "@lib/util/fogyasztobarat"
 import type { SzoljFajta } from "@lib/util/szolj-hasonlo"
@@ -35,7 +35,7 @@ export default function SzoljHasonlo({
    */
   fajta?: SzoljFajta
 }) {
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const termekre = fajta === "product"
   const [allapot, kuld, folyamatban] = useActionState(
     szoljFeliratkozasAkcio,

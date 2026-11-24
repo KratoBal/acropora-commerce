@@ -1,10 +1,10 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 /** A bejelentkezés felajánlása a vendég kosár fölött. */
-const SignInPrompt = ({ countryCode }: { countryCode: string }) => {
-  const t = translator(localeOf(countryCode))
+const SignInPrompt = async ({ countryCode }: { countryCode: string }) => {
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 border border-acr-line bg-acr-white p-[18px]">

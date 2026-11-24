@@ -1,10 +1,11 @@
 "use client"
 
 import { useParams } from "next/navigation"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 import { useState } from "react"
 
 import { addToCart } from "@lib/data/cart"
-import { translator, type Translate } from "@lib/i18n/dictionary"
+import { type Translate } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { kosarValtozott } from "@modules/layout/components/kosar-allapot/kosar-esemeny"
 
@@ -36,7 +37,7 @@ export default function KosarbaGomb({
   rendelesiMaximum?: number | null
 }) {
   const countryCode = useParams().countryCode as string
-  const t = translator(localeOf(countryCode))
+  const t = useTranslateFor(localeOf(countryCode))
   const FELIRAT = felirat(t)
   const [allapot, setAllapot] = useState<Allapot>("kesz")
   // a rendelesi maximum miatti vagas vagy elutasitas OKA, lathatoan

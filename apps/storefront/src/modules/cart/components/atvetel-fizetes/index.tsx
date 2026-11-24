@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { localeOf } from "@lib/i18n/locale"
 import { convertToLocale } from "@lib/util/money"
 
@@ -30,7 +30,7 @@ import {
  * szállítási választás nélküli kosárra üres listát ad (a backend a választott szállítási opcióból dönti el, mi engedett), tehát a
  * kosár lap módokat NEM tud adatból felsorolni, és kitalálni sem szabad.
  */
-export default function AtvetelFizetes({
+export default async function AtvetelFizetes({
   opciok,
   currencyCode,
   countryCode,
@@ -47,7 +47,7 @@ export default function AtvetelFizetes({
 }) {
   const sorok = atvetelSorok(opciok, osztaly)
   if (sorok.length === 0) return null
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <section

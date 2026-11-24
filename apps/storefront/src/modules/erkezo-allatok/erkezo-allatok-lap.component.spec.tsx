@@ -1,6 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 vi.mock("@lib/data/szolj-hasonlo", () => ({
   szoljFeliratkozasAkcio: vi.fn(async () => ({ allapot: "kesz" })),
 }))
@@ -44,16 +46,18 @@ const animal = (over: Partial<ArrivingAnimal> = {}): ArrivingAnimal => ({
 })
 
 describe("ErkezoAllatokLap", () => {
-  it("draws the kinds under their headings in order, with the name, the day and the stage", () => {
+  it("draws the kinds under their headings in order, with the name, the day and the stage", async () => {
     render(
-      <ErkezoAllatokLap
-        animals={[
-          animal({ id: "c", kind: "CORAL", label: "Zoanthus" }),
-          animal({ id: "f", stage: "in_transit" }),
-        ]}
-        handles={{}}
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <ErkezoAllatokLap
+          animals={[
+            animal({ id: "c", kind: "CORAL", label: "Zoanthus" }),
+            animal({ id: "f", stage: "in_transit" }),
+          ]}
+          handles={{}}
+          ma="2026-11-10"
+        />,
+      ),
     )
     expect(screen.getByRole("heading", { name: "Érkező állatok" })).toBeTruthy()
     const headings = screen
@@ -70,35 +74,41 @@ describe("ErkezoAllatokLap", () => {
     ).toBe("Úton van")
   })
 
-  it("a day that has passed is not said as a date: the arrival is late", () => {
+  it("a day that has passed is not said as a date: the arrival is late", async () => {
     render(
-      <ErkezoAllatokLap animals={[animal()]} handles={{}} ma="2026-11-21" />,
+      await szerverFa(
+        <ErkezoAllatokLap animals={[animal()]} handles={{}} ma="2026-11-21" />,
+      ),
     )
     expect(screen.getByTestId("erkezo-nap").textContent).toBe(
       "Az érkezés késik, új időpontot még nem tudunk mondani.",
     )
   })
 
-  it("the day itself is still expected, not late", () => {
+  it("the day itself is still expected, not late", async () => {
     render(
-      <ErkezoAllatokLap animals={[animal()]} handles={{}} ma="2026-11-20" />,
+      await szerverFa(
+        <ErkezoAllatokLap animals={[animal()]} handles={{}} ma="2026-11-20" />,
+      ),
     )
     expect(screen.getByTestId("erkezo-nap").textContent).toMatch(
       /Várható érkezés/,
     )
   })
 
-  it("a linked arrival links to its product page when the shop gave the handle, and only then", () => {
+  it("a linked arrival links to its product page when the shop gave the handle, and only then", async () => {
     render(
-      <ErkezoAllatokLap
-        animals={[
-          animal({ id: "a", productId: "prod_1" }),
-          animal({ id: "b", productId: "prod_2", label: "Másik" }),
-          animal({ id: "c", productId: null, label: "Kötetlen" }),
-        ]}
-        handles={{ prod_1: "japan-doktorhal" }}
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <ErkezoAllatokLap
+          animals={[
+            animal({ id: "a", productId: "prod_1" }),
+            animal({ id: "b", productId: "prod_2", label: "Másik" }),
+            animal({ id: "c", productId: null, label: "Kötetlen" }),
+          ]}
+          handles={{ prod_1: "japan-doktorhal" }}
+          ma="2026-11-10"
+        />,
+      ),
     )
     const links = screen.getAllByTestId("erkezo-link")
     expect(links).toHaveLength(1)
@@ -106,22 +116,28 @@ describe("ErkezoAllatokLap", () => {
     expect(screen.getAllByTestId("erkezo-sor")).toHaveLength(3)
   })
 
-  it("says so when there is nothing on its way", () => {
-    render(<ErkezoAllatokLap animals={[]} handles={{}} ma="2026-11-10" />)
+  it("says so when there is nothing on its way", async () => {
+    render(
+      await szerverFa(
+        <ErkezoAllatokLap animals={[]} handles={{}} ma="2026-11-10" />,
+      ),
+    )
     expect(screen.getByTestId("erkezo-ures").textContent).toMatch(
       /Most nincs úton lévő állat/,
     )
     expect(screen.queryAllByTestId("erkezo-sor")).toHaveLength(0)
   })
 
-  it("speaks English on the English page, the day included", () => {
+  it("speaks English on the English page, the day included", async () => {
     render(
-      <ErkezoAllatokLap
-        animals={[animal({ productId: "prod_1" })]}
-        handles={{ prod_1: "x" }}
-        ma="2026-11-10"
-        locale="en"
-      />,
+      await szerverFa(
+        <ErkezoAllatokLap
+          animals={[animal({ productId: "prod_1" })]}
+          handles={{ prod_1: "x" }}
+          ma="2026-11-10"
+          locale="en"
+        />,
+      ),
     )
     expect(
       screen.getByRole("heading", { name: "Arriving animals" }),
@@ -137,39 +153,41 @@ describe("ErkezoAllatokLap", () => {
 })
 
 describe("ErkezoAllatokLap: the species sign-up (S4c-2)", () => {
-  it("only on a free row naming a species that cannot be bought now, with the switch; it sends the ROW's id, never a product", () => {
+  it("only on a free row naming a species that cannot be bought now, with the switch; it sends the ROW's id, never a product", async () => {
     render(
-      <ErkezoAllatokLap
-        animals={[
-          animal({
-            id: "la_free",
-            label: "Amphiprion ocellaris",
-            speciesKey: "amphiprion ocellaris",
-          }),
-          animal({
-            id: "la_bound",
-            label: "Acropora tenuis",
-            speciesKey: "acropora tenuis",
-            productId: "prod_1",
-            kind: "CORAL",
-          }),
-          animal({
-            id: "la_buyable",
-            label: "Zebrasoma flavescens",
-            speciesKey: "zebrasoma flavescens",
-            speciesBuyable: true,
-          }),
-          animal({
-            id: "la_group",
-            label: "Zoanthus",
-            speciesKey: null,
-            kind: "CORAL",
-          }),
-        ]}
-        handles={{}}
-        ma="2026-11-10"
-        feliratkozas
-      />,
+      await szerverFa(
+        <ErkezoAllatokLap
+          animals={[
+            animal({
+              id: "la_free",
+              label: "Amphiprion ocellaris",
+              speciesKey: "amphiprion ocellaris",
+            }),
+            animal({
+              id: "la_bound",
+              label: "Acropora tenuis",
+              speciesKey: "acropora tenuis",
+              productId: "prod_1",
+              kind: "CORAL",
+            }),
+            animal({
+              id: "la_buyable",
+              label: "Zebrasoma flavescens",
+              speciesKey: "zebrasoma flavescens",
+              speciesBuyable: true,
+            }),
+            animal({
+              id: "la_group",
+              label: "Zoanthus",
+              speciesKey: null,
+              kind: "CORAL",
+            }),
+          ]}
+          handles={{}}
+          ma="2026-11-10"
+          feliratkozas
+        />,
+      ),
     )
     const forms = screen.getAllByTestId("erkezes-feliratkozas")
     expect(forms).toHaveLength(1)
@@ -188,13 +206,15 @@ describe("ErkezoAllatokLap: the species sign-up (S4c-2)", () => {
     expect(within(row).getByTestId("erkezes-feliratkozas")).toBeTruthy()
   })
 
-  it("no sign-up without the switch", () => {
+  it("no sign-up without the switch", async () => {
     render(
-      <ErkezoAllatokLap
-        animals={[animal({ speciesKey: "acanthurus japonicus" })]}
-        handles={{}}
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <ErkezoAllatokLap
+          animals={[animal({ speciesKey: "acanthurus japonicus" })]}
+          handles={{}}
+          ma="2026-11-10"
+        />,
+      ),
     )
     expect(screen.queryByTestId("erkezes-feliratkozas")).toBeNull()
   })

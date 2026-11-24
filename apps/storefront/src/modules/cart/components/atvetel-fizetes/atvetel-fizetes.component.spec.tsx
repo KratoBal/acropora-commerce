@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 import AtvetelFizetes from "./index"
 
 afterEach(cleanup)
@@ -33,9 +35,11 @@ const OPCIOK = [
   cím nélkül nem ad listát); az angol oldal magyar szöveget kap.
 */
 describe("az átvétel és fizetés doboza a kosár lapon", () => {
-  it("a bolt opcióit nevesíti: a bolti átvétel 0 Ft, a futár-módok 'az ár a cím megadása után látszik'", () => {
+  it("a bolt opcióit nevesíti: a bolti átvétel 0 Ft, a futár-módok 'az ár a cím megadása után látszik'", async () => {
     render(
-      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      await szerverFa(
+        <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      ),
     )
 
     const sorok = screen.getAllByTestId("atvetel-sor")
@@ -53,9 +57,11 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     )
   })
 
-  it("a fizetés rész egy mondat: se mód, se szám (a backend cím nélkül üres listát ad)", () => {
+  it("a fizetés rész egy mondat: se mód, se szám (a backend cím nélkül üres listát ad)", async () => {
     render(
-      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      await szerverFa(
+        <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      ),
     )
 
     const resz = screen.getByTestId("fizetes-resz")
@@ -72,72 +78,100 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
       expect(resz.textContent).not.toContain(mod)
   })
 
-  it("a bolt válasza nélkül (null vagy üres lista) a doboz nem jelenik meg", () => {
+  it("a bolt válasza nélkül (null vagy üres lista) a doboz nem jelenik meg", async () => {
     const { rerender } = render(
-      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      await szerverFa(
+        <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      ),
     )
     expect(screen.getByTestId("atvetel-fizetes")).toBeInTheDocument()
     rerender(
-      <AtvetelFizetes opciok={null} currencyCode="huf" countryCode="hu" />,
+      await szerverFa(
+        <AtvetelFizetes opciok={null} currencyCode="huf" countryCode="hu" />,
+      ),
     )
     expect(screen.queryByTestId("atvetel-fizetes")).toBeNull()
-    rerender(<AtvetelFizetes opciok={[]} currencyCode="huf" countryCode="hu" />)
+    rerender(
+      await szerverFa(
+        <AtvetelFizetes opciok={[]} currencyCode="huf" countryCode="hu" />,
+      ),
+    )
     expect(screen.queryByTestId("atvetel-fizetes")).toBeNull()
   })
 
-  it("egy élő állatos kosár egyetlen sort kap, és a futár-módokat nem találja ki", () => {
+  it("egy élő állatos kosár egyetlen sort kap, és a futár-módokat nem találja ki", async () => {
     render(
-      <AtvetelFizetes
-        opciok={[OPCIOK[0]!]}
-        currencyCode="huf"
-        countryCode="hu"
-      />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={[OPCIOK[0]!]}
+          currencyCode="huf"
+          countryCode="hu"
+        />,
+      ),
     )
     expect(screen.getAllByTestId("atvetel-sor")).toHaveLength(1)
     expect(screen.queryByText("GLS házhozszállítás")).toBeNull()
   })
 
-  it("vegyes kosárnál kimondja, hogy a futár-módok csak a kiszállítandó rendelésre vonatkoznak; másképp nem mondja", () => {
+  it("vegyes kosárnál kimondja, hogy a futár-módok csak a kiszállítandó rendelésre vonatkoznak; másképp nem mondja", async () => {
     const { rerender } = render(
-      <AtvetelFizetes
-        opciok={OPCIOK}
-        currencyCode="huf"
-        countryCode="hu"
-        szetvalasztott
-      />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK}
+          currencyCode="huf"
+          countryCode="hu"
+          szetvalasztott
+        />,
+      ),
     )
     expect(screen.getByTestId("atvetel-futar-resz")).toHaveTextContent(
       "A futár-módok csak a kiszállítandó rendelésre vonatkoznak",
     )
     rerender(
-      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      await szerverFa(
+        <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="hu" />,
+      ),
     )
     expect(screen.queryByTestId("atvetel-futar-resz")).toBeNull()
     rerender(
-      <AtvetelFizetes
-        opciok={OPCIOK}
-        currencyCode="huf"
-        countryCode="en-hu"
-        szetvalasztott
-      />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK}
+          currencyCode="huf"
+          countryCode="en-hu"
+          szetvalasztott
+        />,
+      ),
     )
     expect(screen.getByTestId("atvetel-futar-resz")).toHaveTextContent(
       "The courier options apply only to the order that is delivered",
     )
   })
 
-  it("a bolti átvétel felirata a szótárból jön: az angol oldalon az angol, és osztályozás nélkül a futár-mód neve marad a bolt neve", () => {
+  it("a bolti átvétel felirata a szótárból jön: az angol oldalon az angol, és osztályozás nélkül a futár-mód neve marad a bolt neve", async () => {
     render(
-      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="en-hu" />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK}
+          currencyCode="huf"
+          countryCode="en-hu"
+        />,
+      ),
     )
     const sorok = screen.getAllByTestId("atvetel-sor")
     expect(sorok[0]).toHaveTextContent("Pickup in the store")
     expect(sorok[1]).toHaveTextContent("GLS házhozszállítás")
   })
 
-  it("az angol oldal angol címeket kap, az opciók nevei a bolt válaszából jönnek", () => {
+  it("az angol oldal angol címeket kap, az opciók nevei a bolt válaszából jönnek", async () => {
     render(
-      <AtvetelFizetes opciok={OPCIOK} currencyCode="huf" countryCode="en-hu" />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK}
+          currencyCode="huf"
+          countryCode="en-hu"
+        />,
+      ),
     )
     expect(screen.getByTestId("atvetel-resz")).toHaveTextContent(
       "Receiving the order",
@@ -187,14 +221,16 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
       .getAllByTestId("atvetel-sor")
       .map((sor) => sor.querySelector("span")?.textContent)
 
-  it("az angol oldalon a pénztár által ismert módok neve angol, az ismeretlené marad a bolt neve", () => {
+  it("az angol oldalon a pénztár által ismert módok neve angol, az ismeretlené marad a bolt neve", async () => {
     render(
-      <AtvetelFizetes
-        opciok={OPCIOK_SOK}
-        osztaly={OSZTALY}
-        currencyCode="huf"
-        countryCode="en-hu"
-      />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK_SOK}
+          osztaly={OSZTALY}
+          currencyCode="huf"
+          countryCode="en-hu"
+        />,
+      ),
     )
     expect(nevek()).toEqual([
       "Pickup in the store",
@@ -206,14 +242,16 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     ])
   })
 
-  it("a magyar oldalon ugyanazok a módok a szótár magyar nevén állnak", () => {
+  it("a magyar oldalon ugyanazok a módok a szótár magyar nevén állnak", async () => {
     render(
-      <AtvetelFizetes
-        opciok={OPCIOK_SOK}
-        osztaly={OSZTALY}
-        currencyCode="huf"
-        countryCode="hu"
-      />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK_SOK}
+          osztaly={OSZTALY}
+          currencyCode="huf"
+          countryCode="hu"
+        />,
+      ),
     )
     expect(nevek()).toEqual([
       "Átvétel üzletben",
@@ -225,14 +263,16 @@ describe("az átvétel és fizetés doboza a kosár lapon", () => {
     ])
   })
 
-  it("osztályozás nélkül a bolt nevei maradnak", () => {
+  it("osztályozás nélkül a bolt nevei maradnak", async () => {
     render(
-      <AtvetelFizetes
-        opciok={OPCIOK_SOK}
-        osztaly={null}
-        currencyCode="huf"
-        countryCode="en-hu"
-      />,
+      await szerverFa(
+        <AtvetelFizetes
+          opciok={OPCIOK_SOK}
+          osztaly={null}
+          currencyCode="huf"
+          countryCode="en-hu"
+        />,
+      ),
     )
     expect(nevek()?.slice(1)).toEqual([
       "GLS házhozszállítás",

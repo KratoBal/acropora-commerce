@@ -1,7 +1,8 @@
 import { Button } from "@modules/common/components/ui"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import { translator, type Translate } from "@lib/i18n/dictionary"
+import { type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 
 import { type Availability } from "./availability"
@@ -81,7 +82,7 @@ export default function StockState({
   /** A lap nyelve; alapertek magyar. */
   locale?: Locale
 }) {
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const felirat = allapotFelirat(t)
   /*
     AZ ELADVA NEM LETILTOTT GOMB, HANEM MÁSIK GOMB.

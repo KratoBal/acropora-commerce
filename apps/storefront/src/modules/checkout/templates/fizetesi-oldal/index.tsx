@@ -1,10 +1,10 @@
 import { retrieveCartShippingClass } from "@lib/data/cart"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import {
   getCartPaymentOptions,
   listCartPaymentMethods,
 } from "@lib/data/payment"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { HttpTypes } from "@medusajs/types"
 import { splitNoticeProps } from "@modules/cart/components/pickup-notice/pickup-notice"
@@ -42,7 +42,7 @@ type Lehetosegek = Awaited<ReturnType<typeof getCartPaymentOptions>>
 type Osztaly = Awaited<ReturnType<typeof retrieveCartShippingClass>>
 
 /** A kirajzolás: az adatokat a hívó adja (az oldal a háttértől kéri, a próba fix adatot ad). */
-export function FizetesiOldalNezet({
+export async function FizetesiOldalNezet({
   cart,
   countryCode,
   paymentMethods,
@@ -59,7 +59,7 @@ export function FizetesiOldalNezet({
   /** a kosar szallitasi modja személyes átvétel (a szallitasi opcio `pickup` tipusu): a csoport cimkeje "Atvetel" */
   szemelyesAtvetel?: boolean
 }) {
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
 
   return (
     <AszfProvider>
@@ -110,7 +110,7 @@ export function FizetesiOldalNezet({
           <aside className="flex flex-col gap-4 small:sticky small:top-4 small:self-start">
             <Rendelesed
               cart={cart}
-              countryCode={countryCode}
+              t={t}
               ertesites={
                 <SplitNotice
                   {...splitNoticeProps(

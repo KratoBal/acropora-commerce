@@ -1,8 +1,8 @@
 import { Metadata } from "next"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import { notFound } from "next/navigation"
 
 import { listOrderBusinessStatuses, listOrders } from "@lib/data/orders"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import Rendelesek from "@modules/account/components/rendelesek"
 import TransferRequestForm from "@modules/account/components/transfer-request-form"
@@ -12,7 +12,7 @@ type Props = { params: Promise<{ countryCode: string }> }
 // the page's title and description follow its language (`hu`, `en-hu`)
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { countryCode } = await props.params
-  const t = translator(localeOf(countryCode))
+  const t = await vevoiForditas(localeOf(countryCode))
   return {
     title: t("account.orders.metaTitle"),
     description: t("account.orders.metaDescription"),
@@ -27,7 +27,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function Orders(props: Props) {
   const { countryCode } = await props.params
   const locale = localeOf(countryCode)
-  const t = translator(locale)
+  const t = await vevoiForditas(locale)
   const [orders, allapotok] = await Promise.all([
     listOrders(50),
     listOrderBusinessStatuses(),

@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 vi.mock("@modules/common/components/localized-client-link", () => ({
   default: ({
     children,
@@ -60,10 +62,12 @@ const bolti = { name: "Átvétel a boltban", total: 0 }
 describe("a visszaigazoló oldal nyelve", () => {
   it("magyarul a régi szavak állnak", async () => {
     render(
-      await OrderCompletedTemplate({
-        order: rendeles("o1", 50, hazhoz),
-        countryCode: "hu",
-      }),
+      await szerverFa(
+        await OrderCompletedTemplate({
+          order: rendeles("o1", 50, hazhoz),
+          countryCode: "hu",
+        }),
+      ),
     )
     expect(screen.getByText("Rendelés sikeres")).toBeTruthy()
     expect(screen.getByText("Teljesítés")).toBeTruthy()
@@ -75,12 +79,14 @@ describe("a visszaigazoló oldal nyelve", () => {
 
   it("angolul a fejléc, a teljesítés és az összesítő angol; a vegyes rendelés két teljesítése címkézve", async () => {
     render(
-      await OrderCompletedTemplate({
-        order: rendeles("o1", 50, hazhoz),
-        par: rendeles("o2", 51, bolti, "pp_acropora_cod"),
-        parBolti: true,
-        countryCode: "en-hu",
-      }),
+      await szerverFa(
+        await OrderCompletedTemplate({
+          order: rendeles("o1", 50, hazhoz),
+          par: rendeles("o2", 51, bolti, "pp_acropora_cod"),
+          parBolti: true,
+          countryCode: "en-hu",
+        }),
+      ),
     )
     expect(screen.getByText("Order placed")).toBeTruthy()
     expect(screen.getByText("Fulfilment")).toBeTruthy()
@@ -101,26 +107,28 @@ describe("a visszaigazoló oldal nyelve", () => {
 
   it("a bolti rész nem kap szállítási sort, a kapott pontadat nem fordul", async () => {
     render(
-      await OrderCompletedTemplate({
-        order: rendeles("o1", 50, {
-          name: "GLS csomagpont",
-          total: 1490,
-          data: {
-            gls_pickup_point: {
-              id: "L1",
-              name: "GLS Automata – Allee",
-              address: "1117 Budapest, Október huszonharmadika utca 8–10.",
-              type: "parcel-locker",
-              hours: [1, 2, 3, 4, 5].map((day) => ({
-                day,
-                from: "08:00",
-                to: "20:00",
-              })),
+      await szerverFa(
+        await OrderCompletedTemplate({
+          order: rendeles("o1", 50, {
+            name: "GLS csomagpont",
+            total: 1490,
+            data: {
+              gls_pickup_point: {
+                id: "L1",
+                name: "GLS Automata – Allee",
+                address: "1117 Budapest, Október huszonharmadika utca 8–10.",
+                type: "parcel-locker",
+                hours: [1, 2, 3, 4, 5].map((day) => ({
+                  day,
+                  from: "08:00",
+                  to: "20:00",
+                })),
+              },
             },
-          },
+          }),
+          countryCode: "en-hu",
         }),
-        countryCode: "en-hu",
-      }),
+      ),
     )
     const blokk = screen.getByTestId("teljesites-blokk").textContent ?? ""
     // a GLS adata (név, cím) változatlan, a nyitvatartás napjai a lap nyelvén
@@ -133,15 +141,17 @@ describe("a visszaigazoló oldal nyelve", () => {
 
   it("az utánvétes rendelés az átvételkor fizetendőt és a díjat angolul mondja", async () => {
     render(
-      await OrderCompletedTemplate({
-        order: rendeles(
-          "o1",
-          50,
-          { name: "GLS csomagpont", total: 1490 },
-          "pp_acropora_cod",
-        ),
-        countryCode: "en-hu",
-      }),
+      await szerverFa(
+        await OrderCompletedTemplate({
+          order: rendeles(
+            "o1",
+            50,
+            { name: "GLS csomagpont", total: 1490 },
+            "pp_acropora_cod",
+          ),
+          countryCode: "en-hu",
+        }),
+      ),
     )
     expect(screen.getByTestId("atvetelkor-fizetendo").textContent).toContain(
       "To pay on receipt:",
@@ -149,15 +159,21 @@ describe("a visszaigazoló oldal nyelve", () => {
     expect(document.body.textContent).toContain("Cash on delivery")
   })
 
-  it("a minimális oldal két nyelven", () => {
+  it("a minimális oldal két nyelven", async () => {
     const { unmount } = render(
-      <OrderCompletedMinimal displayId={50} countryCode="hu" />,
+      await szerverFa(
+        <OrderCompletedMinimal displayId={50} countryCode="hu" />,
+      ),
     )
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Köszönjük a rendelésed!",
     )
     unmount()
-    render(<OrderCompletedMinimal displayId={50} countryCode="en-hu" />)
+    render(
+      await szerverFa(
+        <OrderCompletedMinimal displayId={50} countryCode="en-hu" />,
+      ),
+    )
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Thank you for your order!",
     )

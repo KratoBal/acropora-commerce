@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 vi.mock("@lib/data/szolj-hasonlo", () => ({
   szoljFeliratkozasAkcio: vi.fn(async () => ({ allapot: "kesz" })),
 }))
@@ -33,14 +35,16 @@ const ordered = { expectedOn: "2026-11-13", stage: "ordered" as const }
 const inTransit = { expectedOn: "2026-11-13", stage: "in_transit" as const }
 
 describe("Erkezik", () => {
-  it("says the expected day and the stage, and has no form without the switch", () => {
+  it("says the expected day and the stage, and has no form without the switch", async () => {
     render(
-      <Erkezik
-        erkezes={inTransit}
-        termekId="prod_1"
-        urlap={false}
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={inTransit}
+          termekId="prod_1"
+          urlap={false}
+          ma="2026-11-10"
+        />,
+      ),
     )
     expect(screen.getByRole("heading", { name: "Érkezik" })).toBeTruthy()
     expect(screen.getByTestId("erkezik-nap").textContent).toBe(
@@ -50,28 +54,32 @@ describe("Erkezik", () => {
     expect(screen.queryByTestId("szolj-hasonlo")).toBeNull()
   })
 
-  it("says Megrendelve for the ordered stage", () => {
+  it("says Megrendelve for the ordered stage", async () => {
     render(
-      <Erkezik
-        erkezes={ordered}
-        termekId="prod_1"
-        urlap={false}
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={ordered}
+          termekId="prod_1"
+          urlap={false}
+          ma="2026-11-10"
+        />,
+      ),
     )
     expect(screen.getByTestId("erkezik-allapot").textContent).toBe(
       "Megrendelve",
     )
   })
 
-  it("a day that has passed is not said as a date: the arrival is late, and no new day is promised", () => {
+  it("a day that has passed is not said as a date: the arrival is late, and no new day is promised", async () => {
     render(
-      <Erkezik
-        erkezes={ordered}
-        termekId="prod_1"
-        urlap={false}
-        ma="2026-11-14"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={ordered}
+          termekId="prod_1"
+          urlap={false}
+          ma="2026-11-14"
+        />,
+      ),
     )
     expect(screen.getByTestId("erkezik-nap").textContent).toBe(
       "Az érkezés késik, új időpontot még nem tudunk mondani.",
@@ -79,9 +87,11 @@ describe("Erkezik", () => {
     expect(screen.getByTestId("erkezik-nap").textContent).not.toMatch(/2026/)
   })
 
-  it("with the switch draws the notify form FOR THE PRODUCT: the hidden kind, the product's own texts and consent sentence", () => {
+  it("with the switch draws the notify form FOR THE PRODUCT: the hidden kind, the product's own texts and consent sentence", async () => {
     const { container } = render(
-      <Erkezik erkezes={ordered} termekId="prod_1" urlap ma="2026-11-10" />,
+      await szerverFa(
+        <Erkezik erkezes={ordered} termekId="prod_1" urlap ma="2026-11-10" />,
+      ),
     )
     const rejtett = (nev: string) =>
       container.querySelector<HTMLInputElement>(
@@ -98,27 +108,31 @@ describe("Erkezik", () => {
     expect(screen.queryByText(/erről a fajról/)).toBeNull()
   })
 
-  it("on a product that can be ordered now it says so, in the day's line, and a late arrival too", () => {
+  it("on a product that can be ordered now it says so, in the day's line, and a late arrival too", async () => {
     const { rerender } = render(
-      <Erkezik
-        erkezes={ordered}
-        termekId="prod_1"
-        urlap={false}
-        rendelheto
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={ordered}
+          termekId="prod_1"
+          urlap={false}
+          rendelheto
+          ma="2026-11-10"
+        />,
+      ),
     )
     expect(screen.getByTestId("erkezik-nap").textContent).toBe(
       "Rendelhető, várható érkezés: 2026. november 13.",
     )
     rerender(
-      <Erkezik
-        erkezes={ordered}
-        termekId="prod_1"
-        urlap={false}
-        rendelheto
-        ma="2026-11-14"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={ordered}
+          termekId="prod_1"
+          urlap={false}
+          rendelheto
+          ma="2026-11-14"
+        />,
+      ),
     )
     expect(screen.getByTestId("erkezik-nap").textContent).toBe(
       "Rendelhető, de az érkezés késik, új időpontot még nem tudunk mondani.",
@@ -126,45 +140,51 @@ describe("Erkezik", () => {
     expect(screen.getByTestId("erkezik-nap").textContent).not.toMatch(/2026/)
   })
 
-  it("the orderable wording is not the default: without the flag the line is the plain one", () => {
+  it("the orderable wording is not the default: without the flag the line is the plain one", async () => {
     render(
-      <Erkezik
-        erkezes={ordered}
-        termekId="prod_1"
-        urlap={false}
-        ma="2026-11-10"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={ordered}
+          termekId="prod_1"
+          urlap={false}
+          ma="2026-11-10"
+        />,
+      ),
     )
     expect(screen.getByTestId("erkezik-nap").textContent).not.toMatch(
       /Rendelhető/,
     )
   })
 
-  it("speaks English on the orderable line too", () => {
+  it("speaks English on the orderable line too", async () => {
     render(
-      <Erkezik
-        erkezes={ordered}
-        termekId="prod_1"
-        urlap={false}
-        rendelheto
-        ma="2026-11-10"
-        locale="en"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={ordered}
+          termekId="prod_1"
+          urlap={false}
+          rendelheto
+          ma="2026-11-10"
+          locale="en"
+        />,
+      ),
     )
     expect(screen.getByTestId("erkezik-nap").textContent).toBe(
       "Available to order, expected: 13 November 2026",
     )
   })
 
-  it("speaks English on the English page, the day included", () => {
+  it("speaks English on the English page, the day included", async () => {
     render(
-      <Erkezik
-        erkezes={inTransit}
-        termekId="prod_1"
-        urlap
-        ma="2026-11-10"
-        locale="en"
-      />,
+      await szerverFa(
+        <Erkezik
+          erkezes={inTransit}
+          termekId="prod_1"
+          urlap
+          ma="2026-11-10"
+          locale="en"
+        />,
+      ),
     )
     expect(screen.getByRole("heading", { name: "Arriving" })).toBeTruthy()
     expect(screen.getByTestId("erkezik-nap").textContent).toBe(

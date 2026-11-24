@@ -41,15 +41,28 @@ const lookup = (dictionary: Dictionary, key: string): string | undefined => {
   return typeof node === "string" ? node : undefined
 }
 
+/** The edited customer texts of one language, `{ key: text }`, as the shop stores them (`GET /store/customer-texts`, card 7bfca4eb). */
+export type Overrides = Readonly<Record<string, string>>
+
 /**
  * The translator for a language. A key the language lacks falls back to the Hungarian text, and a key neither has to the key itself:
  * a gap shows as a gap, never as an empty string. (The types make both impossible for a typed `Key`; this is for a key built at run time.)
+ *
+ * `overrides`: the customer texts edited in the OS for THIS language, laid over the dictionary. Only that language's own override
+ * counts: an English page without an English override shows the English dictionary text, not the edited Hungarian one. On the server
+ * they come from `vevoiForditas` (`lib/i18n/vevoi-forditas.ts`), in the browser from `useTranslate` (the page's provider).
  */
-export const translator = (locale: Locale): Translate => {
+export const translator = (
+  locale: Locale,
+  overrides?: Overrides,
+): Translate => {
   const dictionary = getDictionary(locale)
   return (key, params) =>
     fill(
-      lookup(dictionary, key) ??
+      (overrides && Object.hasOwn(overrides, key)
+        ? overrides[key]
+        : undefined) ??
+        lookup(dictionary, key) ??
         lookup(dictionaries[DEFAULT_LOCALE], key) ??
         key,
       params,

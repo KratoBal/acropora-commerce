@@ -1,6 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { szerverFa } from "@lib/teszt/szerver-fa"
+
 const muveletek = vi.hoisted(() => ({
   addCustomerAddress: vi.fn(),
   updateCustomerAddress: vi.fn(),
@@ -69,10 +71,12 @@ describe("hibás mentés után a cím-ablak mezői megmaradnak", () => {
       },
     })
     render(
-      <AddressBook
-        customer={{ id: "cus_1", addresses: [MENTETT] } as never}
-        region={REGIO}
-      />,
+      await szerverFa(
+        <AddressBook
+          customer={{ id: "cus_1", addresses: [MENTETT] } as never}
+          region={REGIO}
+        />,
+      ),
     )
     fireEvent.click(screen.getByTestId("address-edit-button"))
     ir("address-name-input", "Munkahely")
@@ -107,10 +111,12 @@ describe("hibás mentés után a cím-ablak mezői megmaradnak", () => {
       },
     })
     render(
-      <AddressBook
-        customer={{ id: "cus_1", addresses: [MENTETT] } as never}
-        region={REGIO}
-      />,
+      await szerverFa(
+        <AddressBook
+          customer={{ id: "cus_1", addresses: [MENTETT] } as never}
+          region={REGIO}
+        />,
+      ),
     )
     fireEvent.click(screen.getByTestId("add-address-button"))
     ir("address-name-input", "Nyaraló")

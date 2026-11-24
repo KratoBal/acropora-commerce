@@ -1,4 +1,4 @@
-import { translator, type Key } from "@lib/i18n/dictionary"
+import { translator, type Key, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { fajKulcs } from "@lib/util/eladott-darab"
 import type { SebessegKorlat } from "@lib/util/hirlevel-feliratkozas"
@@ -95,10 +95,15 @@ export async function szoljFeliratkozas(
       ) & { email: string; consent: true; locale: Locale },
     ) => Promise<unknown>
     korlat: SebessegKorlat
+    /**
+     * A nyelv forditoja az OS-ben atirt vevoi szovegekkel (`vevoiForditas`, kartya 7bfca4eb); hianyaban a szotar szovege. A
+     * szerver-akcio adja, a teszt nem.
+     */
+    forditas?: (nyelv: Locale) => Promise<Translate>
   },
 ): Promise<SzoljAllapot> {
   const nyelv = urlap.nyelv ?? DEFAULT_LOCALE
-  const t = translator(nyelv)
+  const t = (await fuggosegek.forditas?.(nyelv)) ?? translator(nyelv)
   const email = urlap.email.trim()
   const hiba = (kulcs: Key): SzoljAllapot => ({
     allapot: "hiba",

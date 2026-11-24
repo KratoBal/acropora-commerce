@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { translator, type Translate } from "@lib/i18n/dictionary"
 import { DEFAULT_LOCALE, type Locale } from "@lib/i18n/locale"
 import { hibaAllapota } from "@lib/util/kedvezmeny-uzenet"
 
@@ -61,8 +61,8 @@ export const HIRLEVEL_UZENET = {
 /** A hibauzenetek egy nyelven; a magyar a `HIRLEVEL_UZENET` (a szotar azonos szovegu, a `dictionary.spec.ts` merni). */
 export const hirlevelUzenet = (
   nyelv: Locale,
+  t: Translate = translator(nyelv),
 ): Record<keyof typeof HIRLEVEL_UZENET, string> => {
-  const t = translator(nyelv)
   return {
     hianyzik: t("newsletter.errorMissing"),
     email: t("newsletter.errorEmail"),
@@ -91,9 +91,15 @@ export async function hirlevelFeliratkozas(
       locale: Locale
     }) => Promise<unknown>
     korlat: SebessegKorlat
+    /**
+     * A nyelv forditoja az OS-ben atirt vevoi szovegekkel (`vevoiForditas`, kartya 7bfca4eb); hianyaban a szotar szovege. A
+     * szerver-akcio adja, a teszt nem.
+     */
+    forditas?: (nyelv: Locale) => Promise<Translate>
   },
 ): Promise<HirlevelAllapot> {
-  const uz = hirlevelUzenet(urlap.nyelv ?? DEFAULT_LOCALE)
+  const nyelv = urlap.nyelv ?? DEFAULT_LOCALE
+  const uz = hirlevelUzenet(nyelv, await fuggosegek.forditas?.(nyelv))
   const nev = urlap.nev.trim()
   const email = urlap.email.trim()
   const hiba = (uzenet: string): HirlevelAllapot => ({

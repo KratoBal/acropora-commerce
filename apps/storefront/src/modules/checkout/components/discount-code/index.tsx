@@ -1,6 +1,7 @@
 "use client"
 
 import { TAP_AREA_TIGHT } from "@modules/common/components/tap-area"
+import { useTranslateFor } from "@lib/i18n/use-translate"
 import {
   Badge,
   Heading,
@@ -8,7 +9,6 @@ import {
   Label,
   Text,
 } from "@modules/common/components/ui"
-import { translator } from "@lib/i18n/dictionary"
 import { localeOf } from "@lib/i18n/locale"
 import { useParams } from "next/navigation"
 import React from "react"
@@ -26,7 +26,7 @@ type DiscountCodeProps = {
 
 const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
   const { countryCode } = useParams() as { countryCode: string }
-  const t = translator(localeOf(countryCode))
+  const t = useTranslateFor(localeOf(countryCode))
   const [isOpen, setIsOpen] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState("")
 

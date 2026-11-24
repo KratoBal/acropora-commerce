@@ -1,4 +1,4 @@
-import { translator } from "@lib/i18n/dictionary"
+import { vevoiForditas } from "@lib/i18n/vevoi-forditas"
 import type { Locale } from "@lib/i18n/locale"
 import {
   arrivalDayText,
@@ -17,7 +17,7 @@ import SzoljHasonlo from "@modules/products/components/szolj-hasonlo"
  *
  * A "ma" a bolt napja (Budapest); a hivo adja, hogy a komponens ne a sajat orajara tamaszkodjon (a teszt rogzitett napot ad).
  */
-export default function Erkezik({
+export default async function Erkezik({
   erkezes,
   termekId,
   urlap,
@@ -33,7 +33,7 @@ export default function Erkezik({
   ma: string
   locale?: Locale
 }) {
-  const t = translator(locale)
+  const t = await vevoiForditas(locale)
   const kesik = arrivalIsLate(erkezes, ma)
   return (
     <>

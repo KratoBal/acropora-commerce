@@ -1,7 +1,6 @@
 "use client"
 
-import { translator } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { useLocale, useTranslateFor } from "@lib/i18n/use-translate"
 import {
   carrierName,
   isSplitPurchase,
@@ -67,7 +66,7 @@ export default function GuestOrderView({
   onWithdrawalsChanged?: WithdrawalsChanged
 }) {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const ordered = orderedForPage(orders)
   const split = isSplitPurchase(ordered)
   return (
@@ -114,7 +113,7 @@ function OrderBlock({
   onWithdrawalsChanged?: WithdrawalsChanged
 }) {
   const locale = useLocale()
-  const t = translator(locale)
+  const t = useTranslateFor(locale)
   const [reporting, setReporting] = useState(false)
   const [withdrawing, setWithdrawing] = useState(false)
   const offer = withdrawalOffer(order)

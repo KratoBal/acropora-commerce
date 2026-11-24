@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
+import { useTranslate } from "@lib/i18n/use-translate"
 
 import { hirlevelLinkKuldes } from "@lib/data/hirlevel"
 import { szoljLinkKuldes } from "@lib/data/szolj-hasonlo"
-import { translator, type Translate } from "@lib/i18n/dictionary"
-import { useLocale } from "@lib/i18n/use-translate"
+import { type Translate } from "@lib/i18n/dictionary"
 import type {
   HirlevelLinkAllapot,
   HirlevelLinkFajta,
@@ -73,7 +73,7 @@ export default function HirlevelLinkUrlap({
   fajta: HirlevelLinkFajta
   tema?: LinkTema
 }) {
-  const t = translator(useLocale())
+  const t = useTranslate()
   const cs = TEMA[tema].szoveg
   // a cimet a bongeszobol olvassa, nem `useSearchParams`-szal: a lap ISR, es azon renderkor nem szabad (statikus-lap-kereso.spec.tsx)
   const [token, setToken] = useState<string | null>(null)
