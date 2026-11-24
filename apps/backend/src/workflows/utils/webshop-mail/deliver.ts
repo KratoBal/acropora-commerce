@@ -186,11 +186,12 @@ export const stuckWebshopMails = async (
   const stuck = (await unsent(container)).filter((row) => isStuck(row, now)).reverse().map(stuckMailOf)
   // the newsletter confirmations that never reached the outbox (switch off, mail off, ...): newest first, merged by time
   const skipped = await unsentNewsletterConfirmations(container, now)
-  const all = skipped.length
-    ? [...stuck, ...skipped].sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const all = skipped.items.length
+    ? [...stuck, ...skipped.items].sort((a, b) => b.created_at.localeCompare(a.created_at))
     : stuck
   return {
-    count: all.length,
+    // the count is the true one even when the newsletter rows listed one by one were capped
+    count: stuck.length + skipped.total,
     items: all.slice(page.offset, page.offset + page.limit),
   }
 }

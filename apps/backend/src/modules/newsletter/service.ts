@@ -3,6 +3,7 @@ import { MedusaService } from "@medusajs/framework/utils"
 import {
   type NewsletterMailResult,
   type NewsletterStatus,
+  NEWSLETTER_CONFIRM_TTL_MS,
   NEWSLETTER_MAIL_NOT_SENT,
   confirmationCoolingDown,
   confirmationLinkLive,
@@ -52,6 +53,9 @@ type SubscriberRow = {
   confirmation_mail_result?: string | null
   unsubscribe_token: string | null
 }
+
+/** The most unsent confirmations listed one by one (the OS list's page is small; `total` stays true above it). */
+export const UNSENT_LIST_TAKE = 200
 
 class NewsletterModuleService extends MedusaService({ NewsletterSubscriber }) {
   /**
@@ -118,22 +122,37 @@ class NewsletterModuleService extends MedusaService({ NewsletterSubscriber }) {
     return true
   }
 
-  /** The pending sign-ups whose last confirmation mail was NOT sent and whose link would still be live (the OS list's source). */
-  async listUnsentConfirmations(now: Date = new Date()): Promise<
-    { id: string; email: string; result: NewsletterMailResult; at: Date }[]
-  > {
-    const rows = (await this.listNewsletterSubscribers(
-      { status: "pending", confirmation_mail_result: [...NEWSLETTER_MAIL_NOT_SENT] },
-      { take: 200, order: { created_at: "DESC" } }
-    )) as unknown as (SubscriberRow & { email: string; confirmation_mail_result_at?: Date | string | null })[]
-    return rows
-      .filter((row) => confirmationLinkLive(row.confirmation_sent_at, now))
-      .map((row) => ({
-        id: row.id,
-        email: row.email,
-        result: row.confirmation_mail_result as NewsletterMailResult,
-        at: new Date(row.confirmation_mail_result_at ?? row.confirmation_sent_at!),
-      }))
+  /**
+   * THE PENDING SIGN-UPS WHOSE LAST CONFIRMATION MAIL WAS NOT SENT and whose link would still be live: the OS list's source.
+   * `switch_off` is ONE summary (the switch is off by design until the text is approved, so a row each would bury the mails that
+   * are really stuck: barracuda 60924): how many, and when the latest was. The other reasons are a row each, newest first, at most
+   * `UNSENT_LIST_TAKE`; `total` counts them all (the summary as one), so the number stays true above the cap.
+   */
+  async listUnsentConfirmations(now: Date = new Date()): Promise<{
+    rows: { id: string; email: string; result: NewsletterMailResult; at: Date }[]
+    switchOff: { count: number; latest: Date | null }
+    total: number
+  }> {
+    const live = { $gte: new Date(now.getTime() - NEWSLETTER_CONFIRM_TTL_MS) }
+    type Row = SubscriberRow & { email: string; confirmation_mail_result_at?: Date | string | null }
+    const [switchRows, switchCount] = (await this.listAndCountNewsletterSubscribers(
+      { status: "pending", confirmation_mail_result: "switch_off", confirmation_sent_at: live },
+      { take: 1, order: { confirmation_sent_at: "DESC" } }
+    )) as unknown as [Row[], number]
+    const [others, otherCount] = (await this.listAndCountNewsletterSubscribers(
+      {
+        status: "pending",
+        confirmation_mail_result: NEWSLETTER_MAIL_NOT_SENT.filter((result) => result !== "switch_off"),
+        confirmation_sent_at: live,
+      },
+      { take: UNSENT_LIST_TAKE, order: { confirmation_sent_at: "DESC" } }
+    )) as unknown as [Row[], number]
+    const at = (row: Row) => new Date(row.confirmation_mail_result_at ?? row.confirmation_sent_at!)
+    return {
+      rows: others.map((row) => ({ id: row.id, email: row.email, result: row.confirmation_mail_result as NewsletterMailResult, at: at(row) })),
+      switchOff: { count: switchCount, latest: switchRows[0] ? at(switchRows[0]) : null },
+      total: otherCount + (switchCount > 0 ? 1 : 0),
+    }
   }
 
   /**

@@ -119,11 +119,24 @@ type Row = Record<string, unknown> & { id: string; email: string }
 const fakeService = () => {
   const rows: Row[] = []
   const matches = (row: Row, filters: Record<string, unknown>) =>
-    Object.entries(filters).every(([k, v]) => (Array.isArray(v) ? v.includes(row[k]) : row[k] === v))
+    Object.entries(filters).every(([k, v]) =>
+      Array.isArray(v)
+        ? v.includes(row[k])
+        : v && typeof v === "object" && "$gte" in v
+          ? new Date(row[k] as Date).getTime() >= (v as { $gte: Date }).$gte.getTime()
+          : row[k] === v
+    )
   const store = {
     listNewsletterSubscribers: jest.fn(async (filters: Record<string, unknown>) =>
       rows.filter((r) => matches(r, filters)).map((r) => ({ ...r }))
     ),
+    listAndCountNewsletterSubscribers: jest.fn(async (filters: Record<string, unknown>, config: { take?: number } = {}) => {
+      const found = rows
+        .filter((r) => matches(r, filters))
+        .sort((a, b) => new Date(b.confirmation_sent_at as Date).getTime() - new Date(a.confirmation_sent_at as Date).getTime())
+        .map((r) => ({ ...r }))
+      return [found.slice(0, config.take ?? found.length), found.length]
+    }),
     createNewsletterSubscribers: jest.fn(async (data: Record<string, unknown>[]) =>
       data.map((d) => {
         const row = { status: "pending", ...d, id: `nlsub_${rows.length + 1}` } as Row
@@ -370,8 +383,8 @@ describe("the double opt-in (card d707cf5f)", () => {
     expect(outcome).toEqual({ sent: false, reason: "switch_off" })
   })
 
-  it("NL-COOLDOWN-UNSENT: a mail that did NOT go starts no cooldown: the next sign-up mails a new link at once (measured 2026-11-24: the switch was off, the second sign-up answered 200 and mailed nothing)", async () => {
-    for (const result of ["switch_off", "mail_off", "os_renderer_off", "no_storefront_url", "failed"]) {
+  it("NL-COOLDOWN-UNSENT: a mail that certainly did NOT go for a configuration reason starts no cooldown: the next sign-up mails a new link at once (measured 2026-11-24: the switch was off, the second sign-up answered 200 and mailed nothing)", async () => {
+    for (const result of ["switch_off", "mail_off", "os_renderer_off", "no_storefront_url"]) {
       const h = harness(undefined)
       const post = createNewsletterPost(loose(), h.sendConfirm)
       await h.call(post)
@@ -385,8 +398,8 @@ describe("the double opt-in (card d707cf5f)", () => {
     }
   })
 
-  it("NL-COOLDOWN-SENT: a mail that went or waits (sent, queued), and a row with no recorded result, still cool down for thirty minutes", async () => {
-    for (const result of ["sent", "queued", null]) {
+  it("NL-COOLDOWN-SENT: a mail that went or waits (sent, queued), a FAILED one (the sender says failed for any exception, also one after the mail left: barracuda 60924) and a row with no recorded result still cool down for thirty minutes", async () => {
+    for (const result of ["sent", "queued", "failed", null]) {
       const h = harness(undefined)
       const post = createNewsletterPost(loose(), h.sendConfirm)
       await h.call(post)
@@ -410,24 +423,31 @@ describe("the double opt-in (card d707cf5f)", () => {
     expect(row.confirmation_mail_result_at).toBeInstanceOf(Date)
   })
 
-  it("NL-UNSENT-LIST: the OS's list source holds the pending sign-ups whose mail did not go and whose link is still live, and nothing else", async () => {
+  it("NL-UNSENT-LIST: the OS list's source: the switch-off ones as ONE summary, the other reasons a row each, only pending ones with a live link, and a true total", async () => {
     const { rows, service } = fakeService()
-    const base = { status: "pending", confirmation_sent_at: new Date(), confirmation_mail_result_at: new Date() }
+    const now = new Date()
+    const base = { status: "pending", confirmation_sent_at: now, confirmation_mail_result_at: now }
     rows.push(
       { ...base, id: "nlsub_a", email: "a@pelda.hu", confirmation_mail_result: "switch_off" },
+      { ...base, id: "nlsub_a2", email: "a2@pelda.hu", confirmation_mail_result: "switch_off", confirmation_sent_at: new Date(now.getTime() - 1000) },
       { ...base, id: "nlsub_b", email: "b@pelda.hu", confirmation_mail_result: "sent" },
       { ...base, id: "nlsub_c", email: "c@pelda.hu", confirmation_mail_result: null },
       { ...base, id: "nlsub_d", email: "d@pelda.hu", confirmation_mail_result: "failed", status: "confirmed" },
+      { ...base, id: "nlsub_f", email: "f@pelda.hu", confirmation_mail_result: "failed" },
       {
         ...base,
         id: "nlsub_e",
         email: "e@pelda.hu",
         confirmation_mail_result: "mail_off",
-        confirmation_sent_at: new Date(Date.now() - NEWSLETTER_CONFIRM_TTL_MS - 1000),
+        confirmation_sent_at: new Date(now.getTime() - NEWSLETTER_CONFIRM_TTL_MS - 1000),
       }
     )
-    const listed = await (service as unknown as NewsletterModuleService).listUnsentConfirmations(new Date())
-    expect(listed.map((row) => [row.id, row.result])).toEqual([["nlsub_a", "switch_off"]])
+    const listed = await (service as unknown as NewsletterModuleService).listUnsentConfirmations(now)
+    expect(listed.rows.map((row) => [row.id, row.result])).toEqual([["nlsub_f", "failed"]])
+    expect(listed.switchOff.count).toBe(2)
+    expect(listed.switchOff.latest?.getTime()).toBe(now.getTime())
+    // one summary for the two switch-off sign-ups, plus the failed row
+    expect(listed.total).toBe(2)
   })
 
   it("NL-AGAIN: after the cooldown, signing up again mails a new link and the old one stops working; the leaving token stays", async () => {

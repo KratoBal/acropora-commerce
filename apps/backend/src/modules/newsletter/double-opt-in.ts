@@ -46,20 +46,34 @@ export const NEWSLETTER_MAIL_NOT_SENT: readonly NewsletterMailResult[] = [
   "failed",
 ]
 
-export const newsletterMailNotSent = (result: string | null | undefined): boolean =>
-  !!result && (NEWSLETTER_MAIL_NOT_SENT as readonly string[]).includes(result)
+/**
+ * THE RESULTS THAT RELEASE THE THIRTY MINUTES (barracuda 60924): only the configuration reasons, where nothing was mailed for
+ * certain (a switch, the mail or the renderer off, no https address). `failed` does NOT: the sender answers `failed` for any
+ * exception, also one that comes after the mail already reached the outbox or left, so releasing on it could mail an address twice
+ * in a row, and the cooldown exists to protect the mailbox. A failed row stays in the OS list and cools down.
+ */
+export const NEWSLETTER_MAIL_RELEASES_COOLDOWN: readonly NewsletterMailResult[] = [
+  "switch_off",
+  "mail_off",
+  "os_renderer_off",
+  "no_storefront_url",
+]
+
+export const newsletterMailReleasesCooldown = (result: string | null | undefined): boolean =>
+  !!result && (NEWSLETTER_MAIL_RELEASES_COOLDOWN as readonly string[]).includes(result)
 
 /**
- * Whether a pending row's last confirmation mail is recent enough that no new one may go at `now`. A mail that was NOT sent
- * (`result`) starts no cooldown: there is nothing to protect an address from, and the next sign-up must be able to mail. A row
- * with no recorded result (one from before the result was kept) cools down as it always did.
+ * Whether a pending row's last confirmation mail is recent enough that no new one may go at `now`. A mail that certainly was NOT
+ * sent for a configuration reason (`result`, see `NEWSLETTER_MAIL_RELEASES_COOLDOWN`) starts no cooldown: there is nothing to
+ * protect an address from, and the next sign-up must be able to mail. `sent`, `queued`, `failed` and a row with no recorded result
+ * (one from before the result was kept) cool down as they always did.
  */
 export const confirmationCoolingDown = (
   sentAt: Date | string | null | undefined,
   now: Date,
   result?: string | null
 ): boolean =>
-  !newsletterMailNotSent(result) && !!sentAt && now.getTime() - new Date(sentAt).getTime() < NEWSLETTER_CONFIRM_COOLDOWN_MS
+  !newsletterMailReleasesCooldown(result) && !!sentAt && now.getTime() - new Date(sentAt).getTime() < NEWSLETTER_CONFIRM_COOLDOWN_MS
 
 /** A link's token: 32 random bytes, base64url (43 characters). */
 export const newNewsletterToken = (): string => randomBytes(32).toString("base64url")
