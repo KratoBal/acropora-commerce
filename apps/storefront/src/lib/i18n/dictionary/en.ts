@@ -1318,6 +1318,10 @@ export const en: Dictionary = {
         label: "Awaiting payment",
         text: "The payment has not arrived yet. For a bank transfer, we wait for the amount until the due date on the payment request (8 days); if it has not arrived by then, we will contact you.",
       },
+      awaitingLink: {
+        label: "Awaiting payment",
+        text: "We sent you the payment link by e-mail. The link is valid for 6 days, and we send a reminder on the third day. If the payment has not arrived by then, we close the order.",
+      },
       paid: { label: "Paid", text: "The payment has arrived." },
       refunded: {
         label: "Refunded",

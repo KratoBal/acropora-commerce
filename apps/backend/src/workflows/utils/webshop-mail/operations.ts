@@ -3,8 +3,7 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { cartOfOrder, completeSplitForCart } from "../complete-split-for-cart"
 import type { PaymentRole } from "../payment-eligibility"
-import { buildProviderRoleMap } from "../payment-providers"
-import { STRIPE_PROVIDER_ID } from "../stripe-config"
+import { buildProviderRoleMap, orderPaymentRoleOf } from "../payment-providers"
 import { isCashOnDeliveryFeeLineItem } from "../cod-fee-line-item"
 import { medusaNumber } from "../medusa-number"
 import type { LoadedOrder, LoadedPayment, OrderMailDeps, RefundMailDeps } from "./prepare"
@@ -44,17 +43,7 @@ export const lineTitle = (item: any): string => {
   return variant && variant !== product && !/^default/i.test(variant) ? `${product} (${variant})` : product
 }
 
-const roleOf = (order: any, roles: Map<string, PaymentRole>): PaymentRole | null => {
-  const collections = order.payment_collections ?? []
-  const live = collections
-    .flatMap((collection: any) => collection?.payments ?? [])
-    .find((payment: any) => payment && !payment.canceled_at)
-  const provider =
-    live?.provider_id ??
-    collections.flatMap((collection: any) => collection?.payment_sessions ?? [])[0]?.provider_id
-  if (!provider) return null
-  return roles.get(provider) ?? (provider === STRIPE_PROVIDER_ID ? "ONLINE_CARD" : null)
-}
+const roleOf = (order: any, roles: Map<string, PaymentRole>): PaymentRole | null => orderPaymentRoleOf(order, roles)
 
 export const orderMailOperations = (container: MedusaContainer): OrderMailDeps => ({
   cartOf: (orderId) => cartOfOrder(container, orderId),

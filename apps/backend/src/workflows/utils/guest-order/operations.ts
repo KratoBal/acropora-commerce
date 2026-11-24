@@ -10,6 +10,7 @@ import { ORDER_BUSINESS_STATUS_MODULE } from "../../../modules/order-business-st
 import type OrderBusinessStatusModuleService from "../../../modules/order-business-status/service"
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
+import { buildProviderRoleMap, orderPaymentRoleOf } from "../payment-providers"
 import { isStorePickupOption } from "../shipping-option-roles"
 import { livestockKindsOfOrder } from "../webshop-mail/livestock-kinds"
 import { lineTitle } from "../webshop-mail/operations"
@@ -38,6 +39,9 @@ const ORDER_FIELDS = [
   "currency_code",
   "payment_status",
   "metadata",
+  "payment_collections.payments.provider_id",
+  "payment_collections.payments.canceled_at",
+  "payment_collections.payment_sessions.provider_id",
   "items.id",
   "items.title",
   "items.product_title",
@@ -62,6 +66,7 @@ const sourceOf = (order: any): GuestOrderSource => {
     total: medusaNumber(order.total, `The total of order ${order.id}`),
     currency_code: String(order.currency_code ?? "huf"),
     payment_status: typeof order.payment_status === "string" ? order.payment_status : null,
+    payment_role: orderPaymentRoleOf(order, buildProviderRoleMap()),
     items: (order.items ?? []).filter(Boolean).map((item: any) => ({
       id: String(item.id),
       title: lineTitle(item),

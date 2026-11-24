@@ -160,6 +160,26 @@ describe("guestOrderView: only named fields leave", () => {
     )
   })
 
+  /*
+    THE PAYMENT KIND (barracuda on #886, acrobot 60734): the sentence under "Fizetésre vár" depends on it. MI PIROSÍT: a card order
+    paid by the link reads as a plain card order (it would get no sentence, or the bank transfer's); an expired link still reads
+    as a link to pay; the role does not reach the view; an unknown role guesses.
+  */
+  it("the payment kind: the role, and a card order in a link state is card_link (not after the link expired)", () => {
+    const kind = (over: Partial<GuestOrderSource>) =>
+      guestOrderView(source({ id: "o", display_id: 1, ...over }), null).payment_kind
+    expect(kind({ payment_role: "BANK_TRANSFER" })).toBe("transfer")
+    expect(kind({ payment_role: "COD" })).toBe("cod")
+    expect(kind({ payment_role: "PAY_AT_STORE" })).toBe("store")
+    expect(kind({ payment_role: "ONLINE_CARD" })).toBe("card")
+    for (const state of ["awaiting_payment", "link_sent", "reminded"])
+      expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state } } })).toBe("card_link")
+    expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state: "expired" } } })).toBe("card")
+    expect(kind({ payment_role: "ONLINE_CARD", metadata: { acropora_payment: { state: "paid" } } })).toBe("card")
+    expect(kind({ payment_role: null })).toBeNull()
+    expect(kind({})).toBeNull()
+  })
+
   it("the tracking comes from the order's own three keys, with the link only when one was stored", () => {
     const stored = guestOrderView(
       source({

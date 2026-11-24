@@ -122,7 +122,10 @@ function OrderBlock({
   const status = order.business_status
     ? statusTextKeys(order.business_status.status)
     : null
-  const payment = paymentTextKeys(order.payment_status)
+  const payment = paymentTextKeys(
+    order.payment_status,
+    order.payment_kind ?? null,
+  )
   const placed = order.created_at
     ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
         timeZone: "Europe/Budapest",

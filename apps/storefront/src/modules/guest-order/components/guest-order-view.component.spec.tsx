@@ -154,6 +154,27 @@ describe("a single order", () => {
     expect(text).toContain("felvesszük veled a kapcsolatot")
     expect(text).not.toMatch(/KITÖLTENDŐ/)
   })
+
+  it("the waiting line by the payment method: the link's own rule for a card order paid by the link, none for cash on delivery", () => {
+    const { unmount } = render(
+      <GuestOrderView
+        orders={[
+          { ...base, payment_status: "not_paid", payment_kind: "card_link" },
+        ]}
+      />,
+    )
+    const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+    expect(text).toContain("Fizetésre vár")
+    expect(text).toContain("6 napig")
+    expect(text).not.toContain("Előre utalásnál")
+    unmount()
+    render(
+      <GuestOrderView
+        orders={[{ ...base, payment_status: "awaiting", payment_kind: "cod" }]}
+      />,
+    )
+    expect(screen.queryByTestId("guest-order-payment")).toBeNull()
+  })
 })
 
 describe("a mixed cart's two orders", () => {

@@ -85,6 +85,34 @@ describe("the status and payment texts", () => {
     }
   })
 
+  /*
+    "FIZETÉSRE VÁR" BY THE PAYMENT METHOD (barracuda on #886, acrobot 60734). MI PIROSÍT: a card order paid by the link gets the
+    bank transfer's sentence; cash on delivery or paying in the store shows a waiting line; the bank transfer loses its
+    sentence; a method the shop did not send loses the general line; a paid order changes by the method.
+  */
+  it("the waiting line follows the payment method; other states do not", () => {
+    for (const state of ["not_paid", "awaiting"]) {
+      expect(paymentTextKeys(state, "transfer")?.text).toBe(
+        "guestOrder.payment.awaiting.text",
+      )
+      expect(paymentTextKeys(state, "card_link")?.text).toBe(
+        "guestOrder.payment.awaitingLink.text",
+      )
+      for (const kind of ["cod", "store", "card"] as const)
+        expect(paymentTextKeys(state, kind)).toBeNull()
+      expect(paymentTextKeys(state, null)?.text).toBe(
+        "guestOrder.payment.awaiting.text",
+      )
+    }
+    expect(paymentTextKeys("captured", "cod")?.text).toBe(
+      "guestOrder.payment.paid.text",
+    )
+    for (const dictionary of [hu, en])
+      expect(
+        typeof dig(dictionary, "guestOrder.payment.awaitingLink.text"),
+      ).toBe("string")
+  })
+
   it("a payment state a customer would not understand has no line", () => {
     for (const state of [
       "authorized",
