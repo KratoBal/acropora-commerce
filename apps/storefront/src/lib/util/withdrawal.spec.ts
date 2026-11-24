@@ -197,4 +197,20 @@ describe("the failures", () => {
       expect(typeof dig(en, key), key).toBe("string")
     }
   })
+
+  /*
+    THE CONFIRM BUTTON IS NAMED LIKE THE TERMS NAME IT (acrobot 60321, 2026-11-24). The terms of the old shop (Fogyasztóbarát, in force
+    from 2026-10-05) describe the online withdrawal as a link "Elállás a szerződéstől" and then a button "Elállás megerősítése"; the
+    form's own button said "Megerősítem és elküldöm". The opening link is the same words already. What turns this red: either label
+    drifting away from the terms' wording (whether the law fixes the wording is a legal question and not decided here).
+  */
+  it("the opening link and the confirm button carry the words the terms use", () => {
+    expect([
+      dig(hu, "guestOrder.withdrawal.openButton"),
+      dig(hu, "guestOrder.withdrawal.confirmButton"),
+    ]).toEqual(["Elállás a szerződéstől", "Elállás megerősítése"])
+    expect(dig(en, "guestOrder.withdrawal.confirmButton")).toBe(
+      "Confirm withdrawal",
+    )
+  })
 })
