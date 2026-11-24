@@ -72,6 +72,8 @@ export const captureSharedStripePaymentStep = createStep(
  * through `order.canceled`. The same step refuses the way BACK (`closed_unsuccessfully` -> `stocking`) once the close moved something
  * (the order is canceled, or the points or the card went back): see `refuseReopenAfterMovement`. Any other status passes.
  */
+type OrderQuery = { graph(args: { entity: string; fields: string[]; filters: Record<string, unknown> }): Promise<{ data: unknown[] }> }
+
 export const cancelOrderOnUnsuccessfulCloseStep = createStep(
   "cancel-order-on-unsuccessful-close",
   async (input: TransitionOrderBusinessStatusInput, { container }) => {
@@ -93,7 +95,7 @@ export const cancelOrderOnUnsuccessfulCloseStep = createStep(
             updateOrders(data: { id: string; metadata: Record<string, unknown> }[]): Promise<unknown>
           }
           const { data } = await container
-            .resolve(ContainerRegistrationKeys.QUERY)
+            .resolve<OrderQuery>(ContainerRegistrationKeys.QUERY)
             .graph({ entity: "order", fields: ["id", "metadata"], filters: { id: orderId } })
           const metadata = ((data[0] as { metadata?: Record<string, unknown> | null } | undefined)?.metadata ?? {}) as Record<string, unknown>
           await orders.updateOrders([
@@ -106,7 +108,7 @@ export const cancelOrderOnUnsuccessfulCloseStep = createStep(
     // the way back: a close that moved something is not reopened (the same step, before the status changes)
     const orderRow = async (orderId: string) =>
       (
-        (await container.resolve(ContainerRegistrationKeys.QUERY).graph({ entity: "order", fields: ["id", "status", "metadata"], filters: { id: orderId } })).data[0] as
+        (await container.resolve<OrderQuery>(ContainerRegistrationKeys.QUERY).graph({ entity: "order", fields: ["id", "status", "metadata"], filters: { id: orderId } })).data[0] as
           | { status?: string; metadata?: Record<string, unknown> | null }
           | undefined
       ) ?? null
