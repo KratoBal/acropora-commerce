@@ -248,6 +248,11 @@ describe("the customer's reset request limit (card 7bfca4eb)", () => {
     expect((await call(customerResetAttempts, body("elfelejtett-b@example.hu"))).next).toHaveBeenCalledTimes(1)
   })
 
+  it("the number is three in fifteen minutes (the same as the admin's), pinned: each request can mail a link to one inbox", () => {
+    expect(ATTEMPT_LIMITS.customerResetPerAddress).toEqual({ max: 3, windowMs: 15 * 60 * 1000 })
+    expect(ATTEMPT_LIMITS.customerResetPerAddress).toEqual(ATTEMPT_LIMITS.adminResetPerAddress)
+  })
+
   it("is counted apart from the admin's reset and from the sign-in: one does not use up the other", async () => {
     for (let i = 0; i < ATTEMPT_LIMITS.customerResetPerAddress.max; i++) await call(customerResetAttempts, body("megosztott@example.hu"))
     expect((await call(adminResetAttempts, body("megosztott@example.hu"))).next).toHaveBeenCalledTimes(1)
