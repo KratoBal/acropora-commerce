@@ -1,4 +1,4 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { LOYALTY_MODULE } from "../../../modules/loyalty"
 import type LoyaltyModuleService from "../../../modules/loyalty/service"
@@ -10,7 +10,7 @@ type Logger = { info: (message: string) => void; warn: (message: string) => void
 
 export type AccrualOutcome =
   | { status: "off" }
-  | { status: "no_customer" }
+  | { status: "no_customer" } // a guest order: no customer, or a customer without an account
   | { status: "nothing_earned" }
   | { status: "credited"; points: number; repeated: boolean }
   | { status: "failed"; message: string }
@@ -54,6 +54,18 @@ export async function creditOrderLoyaltyAccrual(container: Container, orderId: s
     if (!order) throw new Error(`order ${orderId} not found`)
     customerId = order.customer_id ?? null
     if (!customerId) return { status: "no_customer" }
+    /*
+      A GUEST ORDER HAS A CUSTOMER ID TOO (barracuda, #882; measured on the test Medusa 2026-11-24: a cart with only an email got
+      `customer_id`): Medusa finds or creates a customer with `has_account = false` for the email, and the order carries it. Points
+      go only to a customer WITH an account, who can see and spend them; a guest record nobody can reach is not credited, and an
+      email that registers later is a different customer (`has_account = true`). A customer that cannot be read is a failure
+      (logged), never a guess.
+    */
+    const customers = container.resolve<{
+      retrieveCustomer: (id: string, config: { select: string[] }) => Promise<{ has_account?: boolean | null }>
+    }>(Modules.CUSTOMER)
+    const customer = await customers.retrieveCustomer(customerId, { select: ["id", "has_account"] })
+    if (customer.has_account !== true) return { status: "no_customer" }
 
     const redemption = (await loadLoyaltySettings(container)).settings
     points = accrualPoints(order, settings, redemption.value)

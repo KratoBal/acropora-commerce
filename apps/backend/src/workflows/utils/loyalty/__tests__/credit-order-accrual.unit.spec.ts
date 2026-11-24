@@ -1,3 +1,5 @@
+import { Modules } from "@medusajs/framework/utils"
+
 import { COMMERCE_SETTINGS_MODULE } from "../../../../modules/commerce-settings"
 import { LOYALTY_MODULE } from "../../../../modules/loyalty"
 import { creditOrderLoyaltyAccrual } from "../credit-order-accrual"
@@ -22,6 +24,7 @@ const run = async (opts: {
   order?: unknown
   accrue?: jest.Mock
   settingsFail?: boolean
+  customer?: { has_account?: boolean | null } | Error
 }) => {
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() }
   const accrue = opts.accrue ?? jest.fn(async (input: { points: number }) => ({ balance: input.points, points: input.points, repeated: false }))
@@ -32,6 +35,13 @@ const run = async (opts: {
       if (key === "query") return { graph }
       if (key === COMMERCE_SETTINGS_MODULE)
         return { listCommerceSettings: async () => (opts.settingsFail ? Promise.reject(new Error("db down")) : (opts.rows ?? [])) }
+      if (key === Modules.CUSTOMER)
+        return {
+          retrieveCustomer: async () => {
+            if (opts.customer instanceof Error) throw opts.customer
+            return opts.customer ?? { has_account: true }
+          },
+        }
       if (key === LOYALTY_MODULE) return { accruePoints: accrue }
       throw new Error(`unknown ${key}`)
     },
@@ -66,6 +76,25 @@ describe("creditOrderLoyaltyAccrual", () => {
     const { outcome, accrue } = await run({ rows: ON, order: order({ customer_id: null }) })
     expect(outcome).toEqual({ status: "no_customer" })
     expect(accrue).not.toHaveBeenCalled()
+  })
+
+  it("a GUEST checkout's customer (has_account false) is credited nothing: the guest record has a customer id too", async () => {
+    const { outcome, accrue } = await run({ rows: ON, customer: { has_account: false } })
+    expect(outcome).toEqual({ status: "no_customer" })
+    expect(accrue).not.toHaveBeenCalled()
+  })
+
+  it("a customer whose account flag is missing is not credited either (the safe direction)", async () => {
+    const { outcome, accrue } = await run({ rows: ON, customer: {} })
+    expect(outcome).toEqual({ status: "no_customer" })
+    expect(accrue).not.toHaveBeenCalled()
+  })
+
+  it("a customer that cannot be read is a logged failure, not a credit and not a throw", async () => {
+    const { outcome, accrue, logger } = await run({ rows: ON, customer: new Error("customer gone") })
+    expect(outcome).toMatchObject({ status: "failed", message: "customer gone" })
+    expect(accrue).not.toHaveBeenCalled()
+    expect(logger.error).toHaveBeenCalled()
   })
 
   it("an order that earns less than a point touches nothing", async () => {

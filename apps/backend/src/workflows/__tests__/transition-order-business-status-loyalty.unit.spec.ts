@@ -1,3 +1,4 @@
+import { Modules } from "@medusajs/framework/utils"
 import { asValue, createContainer } from "awilix"
 
 import { COMMERCE_SETTINGS_MODULE } from "../../modules/commerce-settings"
@@ -31,6 +32,7 @@ const run = async (to: string, opts: { accrue?: jest.Mock; rows?: unknown[] } = 
         data: [{ id: "order_1", customer_id: "cus_1", total: 10_000, credit_line_total: 0, items: [{ total: 10_000, unit_price: 10_000 }] }],
       }),
     }),
+    [Modules.CUSTOMER]: asValue({ retrieveCustomer: async () => ({ id: "cus_1", has_account: true }) }),
     [LOYALTY_MODULE]: asValue({
       accruePoints: async (input: unknown) => {
         calls.push("accrue")

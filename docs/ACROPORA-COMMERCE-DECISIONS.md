@@ -310,6 +310,12 @@ minden szám és kapcsoló adminból állítható.
 - **A jóváírás helye:** az állapotváltó munkafolyamat (`transition-order-business-status`) a váltás UTÁN, ha az új állapot
   `closed`. Minden út (admin, futár, fizetési út) ezen megy át. A hibája nem bukja a váltást: naplóba kerül a rendelés, a
   vevő és a pont, kézzel pótolható (az OS kézi jóírásával). Egyszer jár rendelésenként: a főkönyv kulcsa `accrue:<rendelés>`.
-- **Nincs pont:** vendég rendelésre (nincs vevő), kikapcsolt gyűjtésnél, és ha az összeg egy pont alá kerekedik.
+- **Nincs pont:** vendég rendelésre, kikapcsolt gyűjtésnél, és ha az összeg egy pont alá kerekedik. **A vendég rendelésnek
+  IS van `customer_id`-ja** (mérve a teszt Medusán 2026-11-24: egy csak e-mailt kapott kosár kapott vevőt; barracuda, #882): a
+  Medusa az e-mailhez `has_account = false` vevőt keres vagy hoz létre. Ezért a jóváírás a vevő rekordját kéri le, és csak
+  `has_account = true` vevőnek ír jóvá (hiányzó jelző: nincs jóváírás); aki később ugyanazzal az e-maillel regisztrál, más (`true`)
+  vevő lesz, a vendégként gyűjtött pont tehát nem járna neki sem.
+- **Közelítés, kimondva:** a pénzből fizetett rész aránya a TELJES rendelésre számol (a szállítással együtt), az alap viszont csak a
+  tételeké; ha a pont a szállítást fizette, a tételek arányos része kap kevesebb pontot.
 - **Nyitott, nem döntöttem el:** a lezárt rendelés utólagos visszavonása (lemondás, visszáru) a pontot nem veszi vissza;
   a regisztráció és a hírlevél 500-500 pontja külön tétel; az ÁFA-kezelés (árengedmény vagy fizetési mód) Balázs döntése.
