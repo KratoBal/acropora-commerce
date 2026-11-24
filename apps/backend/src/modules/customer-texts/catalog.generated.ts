@@ -664,14 +664,14 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
   {
     "key": "account.paymentStatus.authorized",
     "group": "fiok",
-    "hu": "fizetés engedélyezve",
-    "en": "payment authorized"
+    "hu": "összeg zárolva a kártyán",
+    "en": "amount held on your card"
   },
   {
     "key": "account.paymentStatus.partially_authorized",
     "group": "fiok",
-    "hu": "részben engedélyezve",
-    "en": "partially authorized"
+    "hu": "összeg részben zárolva",
+    "en": "amount partly held"
   },
   {
     "key": "account.paymentStatus.captured",

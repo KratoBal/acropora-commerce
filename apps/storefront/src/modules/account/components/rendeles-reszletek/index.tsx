@@ -96,6 +96,7 @@ export default function RendelesReszletek({
     rendeles.payment_status,
     t,
     allapot?.payment_kind ?? null,
+    allapot?.status ?? null,
   )
   const szam = rendelesSzam(rendeles.display_id)
   const tetelek = termekTetelek(rendeles)

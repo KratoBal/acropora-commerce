@@ -108,6 +108,38 @@ describe("a címke fajtája, a dátum és a szám", () => {
     expect(fizetesiAllapot("captured", undefined, "cod")).toBe("kifizetve")
     expect(fizetesiAllapot("awaiting")).toBe("fizetésre vár")
   })
+
+  /*
+    A ZAROLAS VEVOI NYELVEN (acrobot 60944). MI PIROSIT: a kartyas zarolas "engedélyezve" marad (a level "zároltuk"-ot mond); a
+    bolti fizetes (azonnal authorized) "összeg zárolva a kártyán" lesz, pedig nincs kartya; egy lezart rendelesen zarolas-szo all;
+    egy nyitott rendelesen eltunik; egy lezart rendeles MAS fizetesi szava (kifizetve, visszaterites) eltunik.
+  */
+  it("a zarolas vevoi nyelven; a bolti fizetes nem zarolas; lezart rendelesen nincs zarolas-szo", () => {
+    expect(fizetesiAllapot("authorized", undefined, "card")).toBe(
+      "összeg zárolva a kártyán",
+    )
+    expect(fizetesiAllapot("partially_authorized", undefined, null)).toBe(
+      "összeg részben zárolva",
+    )
+    expect(fizetesiAllapot("authorized", undefined, "store")).toBe(
+      "fizetés a boltban, átvételkor",
+    )
+    for (const uzleti of ["closed", "closed_unsuccessfully"]) {
+      expect(
+        fizetesiAllapot("partially_authorized", undefined, "card", uzleti),
+      ).toBe("")
+      expect(fizetesiAllapot("authorized", undefined, null, uzleti)).toBe("")
+      expect(fizetesiAllapot("captured", undefined, "card", uzleti)).toBe(
+        "kifizetve",
+      )
+      expect(fizetesiAllapot("refunded", undefined, "card", uzleti)).toBe(
+        "visszatérítve",
+      )
+    }
+    expect(fizetesiAllapot("authorized", undefined, "card", "stocking")).toBe(
+      "összeg zárolva a kártyán",
+    )
+  })
 })
 
 describe("a pár-rendelés (P4-2)", () => {

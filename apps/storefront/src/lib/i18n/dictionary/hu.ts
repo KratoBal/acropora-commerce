@@ -323,8 +323,8 @@ export const hu = {
     paymentStatus: {
       not_paid: "fizetésre vár",
       awaiting: "fizetésre vár",
-      authorized: "fizetés engedélyezve",
-      partially_authorized: "részben engedélyezve",
+      authorized: "összeg zárolva a kártyán",
+      partially_authorized: "összeg részben zárolva",
       captured: "kifizetve",
       partially_captured: "részben kifizetve",
       partially_refunded: "részben visszatérítve",

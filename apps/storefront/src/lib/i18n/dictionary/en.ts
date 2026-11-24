@@ -318,8 +318,8 @@ export const en: Dictionary = {
     paymentStatus: {
       not_paid: "awaiting payment",
       awaiting: "awaiting payment",
-      authorized: "payment authorized",
-      partially_authorized: "partially authorized",
+      authorized: "amount held on your card",
+      partially_authorized: "amount partly held",
       captured: "paid",
       partially_captured: "partially paid",
       partially_refunded: "partially refunded",
