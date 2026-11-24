@@ -38,6 +38,8 @@ export type MailToSend = {
     | "stock-alert-confirm"
     // the stock alert's arrival, once per confirmed row (OS-rendered only: it has no built-in text)
     | "stock-alert-arrival"
+    // the customer's password-reset link (OS-rendered only: it has no built-in text)
+    | "password-reset"
   /** The notification's `trigger_type`; the template when not given. */
   trigger?: string
   idempotency_key: string
