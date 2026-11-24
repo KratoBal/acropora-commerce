@@ -38,6 +38,7 @@ const ORDER_FIELDS = [
   "created_at",
   "total",
   "currency_code",
+  "status",
   "metadata",
   "payment_collections.status",
   "payment_collections.amount",
@@ -79,6 +80,7 @@ const sourceOf = (order: any): GuestOrderSource => {
       })),
     ),
     payment_role: orderPaymentRoleOf(order, buildProviderRoleMap()),
+    order_status: typeof order.status === "string" ? order.status : null,
     items: (order.items ?? []).filter(Boolean).map((item: any) => ({
       id: String(item.id),
       title: lineTitle(item),
