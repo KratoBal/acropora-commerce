@@ -96,6 +96,7 @@ const container = (calls: { entity: string; filters: Record<string, unknown>; fi
             data: [
               {
                 ...order("o_9", 2001, "so_other"),
+                status: "canceled",
                 payment_status: undefined,
                 payment_collections: [
                   {
@@ -146,9 +147,12 @@ describe("guestOrderOperations", () => {
       const source = await guestOrderOperations(container(calls)).findByDisplayId(2001)
       expect(source?.payment_status).toBe("awaiting")
       expect(source?.payment_role).toBe("COD")
+      expect(source?.order_status).toBe("canceled")
       const fields = calls.find((call) => call.entity === "order")!.fields
       expect(fields).toEqual(expect.arrayContaining(["payment_collections.status", "payment_collections.captured_amount"]))
       expect(fields).not.toContain("payment_status")
+      // Medusa's own order status: a canceled order keeps no link or release kind (guestPaymentKind)
+      expect(fields).toContain("status")
     } finally {
       if (previous === undefined) delete process.env.ACROPORA_PP_COD
       else process.env.ACROPORA_PP_COD = previous
