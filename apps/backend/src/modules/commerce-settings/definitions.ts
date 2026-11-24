@@ -58,6 +58,19 @@ export const LOYALTY_MIN_POINTS_SETTING_KEY = "loyalty_min_points" as const
 export const LOYALTY_MAX_PERCENT_SETTING_KEY = "loyalty_max_percent" as const
 
 /**
+ * THE LOYALTY ACCRUAL'S SETTINGS (card dfb79916; Balázs 2026-11-24: every number and switch settable, the old shop's values the
+ * defaults; the old shop's rule: 3 percent of the gross price, nothing on a product that was on sale, credited when the order is
+ * closed). The switch is OFF until the owner turns it on, as the redemption's is (the picture of the old shop does not say
+ * whether the new shop starts crediting on day one). `loyalty_accrual_percent` is a whole percent of the gross amount of the
+ * lines the order paid for (a point is worth `loyalty_point_value_huf`); `loyalty_accrual_on_sale_items` 0 keeps a line that was
+ * bought at a sale price out of the base (the line carries `compare_at_unit_price` since Medusa made it, so the sale is the
+ * one the customer BOUGHT, not the one running at closing time).
+ */
+export const LOYALTY_ACCRUAL_ENABLED_SETTING_KEY = "loyalty_accrual_enabled" as const
+export const LOYALTY_ACCRUAL_PERCENT_SETTING_KEY = "loyalty_accrual_percent" as const
+export const LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY = "loyalty_accrual_on_sale_items" as const
+
+/**
  * KEYS THAT NO LONGER EXIST IN THE CODE. A row under one of them is ignored by
  * the accessor and cannot be removed from the Admin (the settings list shows it
  * as unknown), so a data migration deletes it. EACH KEY NEEDS ITS OWN MIGRATION
@@ -83,6 +96,9 @@ export const COMMERCE_SETTING_KEYS = [
   LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
   LOYALTY_MIN_POINTS_SETTING_KEY,
   LOYALTY_MAX_PERCENT_SETTING_KEY,
+  LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
+  LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
+  LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
 ] as const
 
 export type CommerceSettingKey = (typeof COMMERCE_SETTING_KEYS)[number]
@@ -291,6 +307,27 @@ export const COMMERCE_SETTING_DEFINITIONS: Record<
     normalize: (raw) =>
       normalizeWholeInRange(raw, LOYALTY_MAX_PERCENT_SETTING_KEY, 1, 100),
     defaultValue: 100,
+  },
+  [LOYALTY_ACCRUAL_ENABLED_SETTING_KEY]: {
+    key: LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
+    description:
+      "A hűségpont gyűjtése: 1 bekapcsolva, 0 kikapcsolva. Alapból ki van kapcsolva.",
+    normalize: (raw) => normalizeSwitch(raw, LOYALTY_ACCRUAL_ENABLED_SETTING_KEY),
+    defaultValue: 0,
+  },
+  [LOYALTY_ACCRUAL_PERCENT_SETTING_KEY]: {
+    key: LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
+    description:
+      "A rendelés bruttó tételeinek hány százaléka jár pontban (a mai bolt: 3). Egész százalék, 0 és 100 között.",
+    normalize: (raw) => normalizeWholeInRange(raw, LOYALTY_ACCRUAL_PERCENT_SETTING_KEY, 0, 100),
+    defaultValue: 3,
+  },
+  [LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY]: {
+    key: LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
+    description:
+      "Jár-e pont az akciós áron vett tételre: 1 igen, 0 nem (a mai bolt: nem).",
+    normalize: (raw) => normalizeSwitch(raw, LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY),
+    defaultValue: 0,
   },
 }
 

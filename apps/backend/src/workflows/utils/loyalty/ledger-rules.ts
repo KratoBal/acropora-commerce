@@ -27,6 +27,7 @@ export type LedgerTx = {
 
 export const redeemReference = (cartId: string) => `redeem:${cartId}`
 export const reverseReference = (cartId: string) => `reverse:${cartId}`
+export const accrueReference = (orderId: string) => `accrue:${orderId}`
 
 const wholePositive = (points: number) => {
   if (!Number.isInteger(points) || points < 1)
@@ -121,4 +122,34 @@ export async function reverseRule(
     actor: "system",
   })
   return { balance: sumPoints(await tx.rows(input.customer_id)), points, repeated: false }
+}
+
+/**
+ * THE POINTS AN ORDER EARNED, credited ONCE when the order is closed (card dfb79916). The key is the order (`accrue:<order>`),
+ * so a repeated event, a second "closed" move or a retry stores nothing twice. A customer other than the one the first credit
+ * named is refused: an order has one customer, and a mismatch is a data fault to see, not to overwrite.
+ */
+export async function accrueRule(
+  tx: LedgerTx,
+  input: { customer_id: string; order_id: string; points: number },
+): Promise<{ balance: number; points: number; repeated: boolean }> {
+  wholePositive(input.points)
+  await tx.lock(input.customer_id)
+  const key = accrueReference(input.order_id)
+  const earlier = await tx.byReference(key)
+  if (earlier) {
+    if (earlier.customer_id !== input.customer_id)
+      throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Erre a rendelésre más vevőnek már jóvá lettek írva a pontok.")
+    return { balance: sumPoints(await tx.rows(input.customer_id)), points: earlier.points, repeated: true }
+  }
+  await tx.create({
+    customer_id: input.customer_id,
+    kind: "accrual",
+    points: input.points,
+    order_id: input.order_id,
+    reference: key,
+    reason: `Pontgyűjtés a lezárt rendelés után (${input.order_id})`,
+    actor: "system",
+  })
+  return { balance: sumPoints(await tx.rows(input.customer_id)), points: input.points, repeated: false }
 }

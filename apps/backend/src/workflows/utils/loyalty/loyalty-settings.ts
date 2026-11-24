@@ -84,9 +84,12 @@ export function resolveLoyaltySettings(
         ? 1
         : 0
   // A FAILED READ turns the redemption OFF: the safe direction for money. The numbers keep reading as the environment and the defaults.
+  // A BROKEN STORED SWITCH ROW is OFF too (barracuda, #881): it must not fall back to an environment that says on.
   const enabled = readFailed
     ? { value: 0, source: "read_failed" as LoyaltySettingSource }
-    : pick(LOYALTY_REDEMPTION_ENABLED_SETTING_KEY, envSwitch, 0)
+    : rowNumber(rows, LOYALTY_REDEMPTION_ENABLED_SETTING_KEY) === "invalid"
+      ? { value: 0, source: "row_invalid" as LoyaltySettingSource }
+      : pick(LOYALTY_REDEMPTION_ENABLED_SETTING_KEY, envSwitch, 0)
   const value = pick(LOYALTY_POINT_VALUE_HUF_SETTING_KEY, envWhole(env.LOYALTY_POINT_VALUE_HUF, 1_000_000), LOYALTY_DEFAULTS.value)
   const minOrder = pick(LOYALTY_MIN_ORDER_HUF_SETTING_KEY, envWhole(env.LOYALTY_MIN_ORDER_HUF, 1_000_000_000), LOYALTY_DEFAULTS.minOrder)
   const minPoints = pick(LOYALTY_MIN_POINTS_SETTING_KEY, envWhole(env.LOYALTY_MIN_POINTS, 1_000_000_000), LOYALTY_DEFAULTS.minPoints)

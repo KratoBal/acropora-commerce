@@ -8,6 +8,9 @@ import {
   FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
   FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
+  LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
+  LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
+  LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
   LOYALTY_MAX_PERCENT_SETTING_KEY,
   LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
   LOYALTY_MIN_POINTS_SETTING_KEY,
@@ -50,6 +53,10 @@ describe("commerce setting definitions", () => {
         LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
         LOYALTY_MIN_POINTS_SETTING_KEY,
         LOYALTY_MAX_PERCENT_SETTING_KEY,
+        // the points accrual's switch and numbers (card dfb79916): credited when an order is closed, off by default
+        LOYALTY_ACCRUAL_ENABLED_SETTING_KEY,
+        LOYALTY_ACCRUAL_PERCENT_SETTING_KEY,
+        LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY,
       ].sort(),
     )
   })
@@ -283,6 +290,42 @@ describe("typed commerce setting access", () => {
       expect(validateSettingValue("loyalty_max_percent", 40)).toBe("40")
       expect(() => validateSettingValue("loyalty_max_percent", 101)).toThrow(/from 1 to 100/)
       expect(AdminUpsertCommerceSetting.safeParse({ key: "loyalty_min_order_huf", value: 0 }).success).toBe(true)
+    })
+  })
+  describe("the loyalty accrual settings", () => {
+    const normalize = (key: Parameters<typeof normalizeCommerceSettingValue>[0], raw: unknown) => {
+      try {
+        return normalizeCommerceSettingValue(key, raw)
+      } catch {
+        return "refused"
+      }
+    }
+
+    it("defaults are the old shop's rule (3 percent, nothing on sale lines), and the accrual is off", () => {
+      expect(
+        [LOYALTY_ACCRUAL_ENABLED_SETTING_KEY, LOYALTY_ACCRUAL_PERCENT_SETTING_KEY, LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY].map(
+          (key) => COMMERCE_SETTING_DEFINITIONS[key].defaultValue,
+        ),
+      ).toEqual([0, 3, 0])
+    })
+
+    it("the percent takes 0 to 100 (0 = nothing earned), whole, numbers or text", () => {
+      expect([-1, 0, 3, 100, 101, 2.5, "7", "x"].map((raw) => normalize(LOYALTY_ACCRUAL_PERCENT_SETTING_KEY, raw))).toEqual([
+        "refused", 0, 3, 100, "refused", "refused", 7, "refused",
+      ])
+    })
+
+    it("the two switches take 0 and 1 (and true or false), nothing else", () => {
+      for (const key of [LOYALTY_ACCRUAL_ENABLED_SETTING_KEY, LOYALTY_ACCRUAL_ON_SALE_ITEMS_SETTING_KEY])
+        expect([0, 1, "1", true, false, 2, "igen", null].map((raw) => normalize(key, raw))).toEqual([
+          0, 1, 1, 1, 0, "refused", "refused", "refused",
+        ])
+    })
+
+    it("the admin validator accepts the accrual keys", () => {
+      expect(validateSettingValue("loyalty_accrual_enabled", true)).toBe("1")
+      expect(validateSettingValue("loyalty_accrual_percent", 5)).toBe("5")
+      expect(AdminUpsertCommerceSetting.safeParse({ key: "loyalty_accrual_percent", value: 0 }).success).toBe(true)
     })
   })
 })

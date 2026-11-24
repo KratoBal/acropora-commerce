@@ -15,6 +15,7 @@ import {
 import OrderBusinessStatusModuleService from "../modules/order-business-status/service"
 import { captureOnTransition } from "./utils/shared-stripe-capture"
 import { sharedCaptureOperations } from "./utils/shared-stripe-capture-operations"
+import { creditOrderLoyaltyAccrual } from "./utils/loyalty/credit-order-accrual"
 
 export const transitionOrderBusinessStatusStep = createStep(
   "transition-order-business-status",
@@ -55,6 +56,21 @@ export const captureSharedStripePaymentStep = createStep(
   },
 )
 
+/**
+ * "MEGRENDELÉS LEZÁRVA" CREDITS THE ORDER'S LOYALTY POINTS (card dfb79916; the old shop credits at this status). It runs AFTER the
+ * status has changed and never throws: the move stands, a failed credit is logged with what to credit by hand, and the ledger's
+ * key (the order) makes a repeated move store nothing twice. Any other status does nothing here. Every way an order becomes
+ * closed (an admin, a carrier callback, the payment paths) goes through this workflow, so none of them can skip it.
+ */
+export const creditLoyaltyAccrualOnClosedStep = createStep(
+  "credit-loyalty-accrual-on-closed",
+  async (input: TransitionOrderBusinessStatusInput, { container }) => {
+    const outcome: { status: string } =
+      input.to === "closed" ? await creditOrderLoyaltyAccrual(container, input.order_id) : { status: "not_closed" }
+    return new StepResponse(outcome)
+  },
+)
+
 export const transitionOrderBusinessStatusWorkflowId =
   "transition-order-business-status"
 
@@ -70,6 +86,7 @@ export const transitionOrderBusinessStatusWorkflow = createWorkflow(
   ): WorkflowResponse<unknown> => {
     captureSharedStripePaymentStep(input)
     const status = transitionOrderBusinessStatusStep(input)
+    creditLoyaltyAccrualOnClosedStep(input)
 
     return new WorkflowResponse(status)
   },

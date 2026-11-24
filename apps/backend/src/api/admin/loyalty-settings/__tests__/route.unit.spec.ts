@@ -57,4 +57,21 @@ describe("GET /admin/loyalty-settings", () => {
     expect(body.settings.maxPercent).toBe(100)
     expect(body.sources.maxPercent).toBe("row_invalid")
   })
+
+  it("answers the accrual's settings too, the switch off and named by default, with its keys", async () => {
+    const { body } = await call([{ key: "loyalty_accrual_percent", value: "5" }])
+    expect(body.accrual.settings).toEqual({ enabled: false, percent: 5, onSaleItems: false })
+    expect(body.accrual.sources).toEqual({ enabled: "default", percent: "row", onSaleItems: "default" })
+    expect(Object.keys(body.accrual.keys)).toEqual([
+      "loyalty_accrual_enabled",
+      "loyalty_accrual_percent",
+      "loyalty_accrual_on_sale_items",
+    ])
+  })
+
+  it("a failing read turns the accrual switch off and names it", async () => {
+    const { body } = await call(new Error("db down"))
+    expect(body.accrual.settings.enabled).toBe(false)
+    expect(body.accrual.sources.enabled).toBe("read_failed")
+  })
 })

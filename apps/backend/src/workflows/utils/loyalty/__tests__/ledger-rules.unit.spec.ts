@@ -1,5 +1,5 @@
 import type { LoyaltyEntryRow, NewLoyaltyEntry } from "../../../../modules/loyalty/service"
-import { redeemReference, redeemRule, reverseReference, reverseRule, voidRule, type LedgerTx } from "../ledger-rules"
+import { accrueReference, accrueRule, redeemReference, redeemRule, reverseReference, reverseRule, voidRule, type LedgerTx } from "../ledger-rules"
 
 /**
  * THE POINTS LEDGER'S REDEMPTION RULES against an in-memory ledger (card dfb79916). What must fail: points taken from a
@@ -158,5 +158,34 @@ describe("reverseRule", () => {
     await redeemRule(l.tx, { ...A, points: 1_000, cart_id: "c" })
     await expect(reverseRule(l.tx, { customer_id: "cus_b", cart_id: "c", order_id: "o" })).rejects.toThrow(/nincs mit visszaadni/)
     expect(l.balance("cus_a")).toBe(4_000)
+  })
+})
+
+describe("accrueRule", () => {
+  it("credits the earned points as one positive row keyed by the order, under the customer's lock", async () => {
+    const l = make([{ ...A, points: 500 }])
+    expect(await accrueRule(l.tx, { ...A, order_id: "ord_1", points: 240 })).toEqual({ balance: 740, points: 240, repeated: false })
+    expect(l.rows.find((r) => r.reference === accrueReference("ord_1"))).toMatchObject({ kind: "accrual", points: 240, order_id: "ord_1" })
+    expect(l.locks).toEqual(["cus_a"])
+  })
+
+  it("a repeated closing of the same order credits nothing a second time, and answers what the first credited", async () => {
+    const l = make()
+    await accrueRule(l.tx, { ...A, order_id: "ord_1", points: 240 })
+    expect(await accrueRule(l.tx, { ...A, order_id: "ord_1", points: 999 })).toEqual({ balance: 240, points: 240, repeated: true })
+    expect(l.balance("cus_a")).toBe(240)
+  })
+
+  it("an order that was credited to one customer is not credited to another", async () => {
+    const l = make()
+    await accrueRule(l.tx, { ...A, order_id: "ord_1", points: 240 })
+    await expect(accrueRule(l.tx, { customer_id: "cus_b", order_id: "ord_1", points: 240 })).rejects.toThrow(/más vevőnek/)
+    expect(l.balance("cus_b")).toBe(0)
+  })
+
+  it("refuses zero, negative and fractional points, and writes nothing", async () => {
+    const l = make()
+    for (const points of [0, -5, 1.5]) await expect(accrueRule(l.tx, { ...A, order_id: "o", points })).rejects.toThrow(/pozitív egész/)
+    expect(l.rows).toHaveLength(0)
   })
 })
