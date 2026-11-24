@@ -27,6 +27,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "checkout",
   "collections",
   "elerhetosegek",
+  "elfelejtett-jelszo",
   "erkezo-allatok",
   "ertesites",
   "fizetes",
@@ -43,6 +44,7 @@ export const ISMERT_LAP_SZAKASZOK = [
   "store",
   "szallitas",
   "termek",
+  "uj-jelszo",
   "valogatas",
   "verify-account",
 ] as const
