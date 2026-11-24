@@ -43,6 +43,9 @@ export const NewsletterSubscriber = model
     status: model.text().default("pending"),
     confirmation_token_hash: model.text().nullable(),
     confirmation_sent_at: model.dateTime().nullable(),
+    /** What became of that mail (`NEWSLETTER_MAIL_RESULTS`); null for a row from before it was kept, or while the send is still going. */
+    confirmation_mail_result: model.text().nullable(),
+    confirmation_mail_result_at: model.dateTime().nullable(),
     confirmed_at: model.dateTime().nullable(),
     unsubscribe_token: model.text().nullable(),
     unsubscribed_at: model.dateTime().nullable(),

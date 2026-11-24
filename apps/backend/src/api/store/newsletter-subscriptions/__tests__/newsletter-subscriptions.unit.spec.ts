@@ -1,5 +1,12 @@
 import { MedusaError } from "@medusajs/framework/utils"
 
+const notifyConfirm = jest.fn()
+const recordOutcome = jest.fn()
+jest.mock("../../../../workflows/utils/webshop-mail/newsletter-confirm-mail", () => ({
+  notifyNewsletterConfirm: (...args: unknown[]) => notifyConfirm(...args),
+  recordNewsletterConfirmOutcome: (...args: unknown[]) => recordOutcome(...args),
+}))
+
 import { HOMEPAGE_CONTENT_MODULE } from "../../../../modules/homepage-content"
 import { NEWSLETTER_MODULE } from "../../../../modules/newsletter"
 import {
@@ -15,6 +22,7 @@ import {
 import NewsletterModuleService from "../../../../modules/newsletter/service"
 import { AdminPutHomepageContent } from "../../../admin/homepage-content/validators"
 import { createNewsletterPost, createNewsletterTokenPost } from "../helpers"
+import { POST as footerPost } from "../route"
 import { createRateLimiter } from "../rate-limit"
 import { StorePostNewsletterSubscription, StorePostNewsletterToken } from "../validators"
 
@@ -111,7 +119,7 @@ type Row = Record<string, unknown> & { id: string; email: string }
 const fakeService = () => {
   const rows: Row[] = []
   const matches = (row: Row, filters: Record<string, unknown>) =>
-    Object.entries(filters).every(([k, v]) => row[k] === v)
+    Object.entries(filters).every(([k, v]) => (Array.isArray(v) ? v.includes(row[k]) : row[k] === v))
   const store = {
     listNewsletterSubscribers: jest.fn(async (filters: Record<string, unknown>) =>
       rows.filter((r) => matches(r, filters)).map((r) => ({ ...r }))
@@ -137,6 +145,8 @@ const fakeService = () => {
     confirmByToken: proto.confirmByToken,
     confirmByTokenWithEmail: proto.confirmByTokenWithEmail,
     unsubscribeByToken: proto.unsubscribeByToken,
+    recordConfirmationMailResult: proto.recordConfirmationMailResult,
+    listUnsentConfirmations: proto.listUnsentConfirmations,
   }) as unknown as NewsletterModuleService & typeof store
   return { rows, service }
 }
@@ -344,6 +354,80 @@ describe("the double opt-in (card d707cf5f)", () => {
     expect(h.sendConfirm).toHaveBeenCalledTimes(1)
     expect(h.rows[0]).toMatchObject({ confirmation_token_hash: hash, name: "Teszt Elek" })
     expect((await confirm(h, h.lastMail().confirmation_token)).payload).toEqual({ result: "confirmed" })
+  })
+
+  it("NL-ROUTE-RECORDS: the real route records what became of the mail for THAT sign-up (its id and its time), whatever the sender answered, after the answer", async () => {
+    notifyConfirm.mockReset().mockResolvedValue({ sent: false, reason: "switch_off" })
+    recordOutcome.mockReset().mockResolvedValue(undefined)
+    const h = harness(undefined)
+    const response = await h.call(footerPost as never)
+    expect(response.statusCode).toBe(200)
+    // the mail is not awaited by the answer: let it finish
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(recordOutcome).toHaveBeenCalledTimes(1)
+    const [, input, outcome] = recordOutcome.mock.calls[0]!
+    expect(input).toEqual({ id: String(h.rows[0]!.id), sentAt: h.rows[0]!.confirmation_sent_at })
+    expect(outcome).toEqual({ sent: false, reason: "switch_off" })
+  })
+
+  it("NL-COOLDOWN-UNSENT: a mail that did NOT go starts no cooldown: the next sign-up mails a new link at once (measured 2026-11-24: the switch was off, the second sign-up answered 200 and mailed nothing)", async () => {
+    for (const result of ["switch_off", "mail_off", "os_renderer_off", "no_storefront_url", "failed"]) {
+      const h = harness(undefined)
+      const post = createNewsletterPost(loose(), h.sendConfirm)
+      await h.call(post)
+      const first = h.lastMail()
+      h.rows[0]!.confirmation_mail_result = result
+      await h.call(post)
+      expect([result, h.sendConfirm.mock.calls.length]).toEqual([result, 2])
+      expect(h.lastMail().confirmation_token).not.toBe(first.confirmation_token)
+      // the new sign-up wipes the old result: it says nothing about the new mail until that one is recorded
+      expect(h.rows[0]!.confirmation_mail_result).toBeNull()
+    }
+  })
+
+  it("NL-COOLDOWN-SENT: a mail that went or waits (sent, queued), and a row with no recorded result, still cool down for thirty minutes", async () => {
+    for (const result of ["sent", "queued", null]) {
+      const h = harness(undefined)
+      const post = createNewsletterPost(loose(), h.sendConfirm)
+      await h.call(post)
+      h.rows[0]!.confirmation_mail_result = result
+      await h.call(post)
+      expect([result, h.sendConfirm.mock.calls.length]).toEqual([result, 1])
+    }
+  })
+
+  it("NL-RESULT-RECORD: the result is written for THE sign-up that was mailed; one for an older send is dropped, and the unsent list shows only live pending ones", async () => {
+    const h = harness(undefined)
+    const post = createNewsletterPost(loose(), h.sendConfirm)
+    await h.call(post)
+    const row = h.rows[0]!
+    const sentAt = row.confirmation_sent_at as Date
+    const service = h.service as unknown as NewsletterModuleService
+    expect(await service.recordConfirmationMailResult(String(row.id), new Date(sentAt.getTime() - 5000), "switch_off")).toBe(false)
+    expect(row.confirmation_mail_result).toBeNull()
+    expect(await service.recordConfirmationMailResult(String(row.id), sentAt, "switch_off")).toBe(true)
+    expect(row).toMatchObject({ confirmation_mail_result: "switch_off" })
+    expect(row.confirmation_mail_result_at).toBeInstanceOf(Date)
+  })
+
+  it("NL-UNSENT-LIST: the OS's list source holds the pending sign-ups whose mail did not go and whose link is still live, and nothing else", async () => {
+    const { rows, service } = fakeService()
+    const base = { status: "pending", confirmation_sent_at: new Date(), confirmation_mail_result_at: new Date() }
+    rows.push(
+      { ...base, id: "nlsub_a", email: "a@pelda.hu", confirmation_mail_result: "switch_off" },
+      { ...base, id: "nlsub_b", email: "b@pelda.hu", confirmation_mail_result: "sent" },
+      { ...base, id: "nlsub_c", email: "c@pelda.hu", confirmation_mail_result: null },
+      { ...base, id: "nlsub_d", email: "d@pelda.hu", confirmation_mail_result: "failed", status: "confirmed" },
+      {
+        ...base,
+        id: "nlsub_e",
+        email: "e@pelda.hu",
+        confirmation_mail_result: "mail_off",
+        confirmation_sent_at: new Date(Date.now() - NEWSLETTER_CONFIRM_TTL_MS - 1000),
+      }
+    )
+    const listed = await (service as unknown as NewsletterModuleService).listUnsentConfirmations(new Date())
+    expect(listed.map((row) => [row.id, row.result])).toEqual([["nlsub_a", "switch_off"]])
   })
 
   it("NL-AGAIN: after the cooldown, signing up again mails a new link and the old one stops working; the leaving token stays", async () => {
