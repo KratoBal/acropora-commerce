@@ -73,6 +73,16 @@ describe("a kodbol kitoltott szovegek", () => {
       expect(szoveg).toContain(napok)
       expect(szoveg).toContain(visszakuldes)
     }
+    // a visszakuldes kozvetlen koltsege a vevoe, es a hatarido a feladassal teljesul (murena 60605, az ASZF szerint)
+    expect(hu.guestOrder.withdrawal.done).toContain(
+      "A visszaküldés közvetlen költségét te viseled",
+    )
+    expect(hu.guestOrder.withdrawal.done).toContain(
+      "a határidőt megtartod, ha addig feladod",
+    )
+    expect(en.guestOrder.withdrawal.done).toContain(
+      "You bear the direct cost of returning it",
+    )
     // a 45/2014. Korm. rendeletre a vevonek szolo szoveg nem hivatkozik (acrobot 60571)
     expect(hu.guestOrder.withdrawal.done).not.toMatch(/Korm\.|rendelet/)
   })
