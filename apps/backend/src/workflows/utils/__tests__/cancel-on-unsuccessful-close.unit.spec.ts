@@ -1,6 +1,7 @@
 import {
   cancelOnUnsuccessfulClose,
   refuseReopenAfterMovement,
+  reopenRefusalOf,
   type CancelOnCloseOperations,
   type ReopenOperations,
 } from "../cancel-on-unsuccessful-close"
@@ -163,5 +164,26 @@ describe("refuseReopenAfterMovement", () => {
     await expect(reopen({ order: "canceled", status: "confirmed" })()).resolves.toBeUndefined()
     await expect(reopen({ order: "canceled" })("confirmed")).resolves.toBeUndefined()
     await expect(reopen({ order: "canceled", status: null })()).resolves.toBeUndefined()
+  })
+})
+
+describe("reopenRefusalOf", () => {
+  const ops = (over: Partial<ReopenOperations> = {}): ReopenOperations => ({
+    currentStatus: async () => "closed_unsuccessfully",
+    orderStatus: async () => "pending",
+    givenBackMarker: async () => false,
+    ...over,
+  })
+
+  it("is the sentence of the refusal for a canceled order or a marked one, and null when the reopening is allowed", async () => {
+    expect(await reopenRefusalOf("order_1", ops({ orderStatus: async () => "canceled" }))).toMatch(/le lett mondva/)
+    expect(await reopenRefusalOf("order_1", ops({ givenBackMarker: async () => true }))).toMatch(/visszajárt/)
+    expect(await reopenRefusalOf("order_1", ops())).toBeNull()
+  })
+
+  it("lets any other error through: a failed read is not 'allowed'", async () => {
+    await expect(
+      reopenRefusalOf("order_1", ops({ orderStatus: async () => Promise.reject(new Error("db down")) }))
+    ).rejects.toThrow("db down")
   })
 })

@@ -8,6 +8,8 @@ import {
   ORDER_BUSINESS_STATUS_LABELS,
   OrderBusinessStatus,
 } from "../../../modules/order-business-status/types"
+import { reopenRefusalOf } from "../../../workflows/utils/cancel-on-unsuccessful-close"
+import { reopenOperations } from "../../../workflows/utils/reopen-operations"
 import { statusMailTrigger } from "../../../workflows/utils/webshop-mail/status-mail"
 
 /**
@@ -25,6 +27,11 @@ export type AdminOrderBusinessStatusDetail = {
   label: string
   changed_at: string
   next_statuses: { status: OrderBusinessStatus; label: string }[]
+  /**
+   * Why the way back from "Sikertelenül lezárt" is NOT offered (the close canceled the order or gave the points and the card back;
+   * the same sentence the transition answers), or null. Only ever set on that status.
+   */
+  reopen_refused: string | null
   history: {
     from_status: OrderBusinessStatus | null
     from_label: string | null
@@ -126,16 +133,21 @@ export async function adminStatusDetail(
     const current = status.status as OrderBusinessStatus
     const latest = history.at(-1)
     const mails = await orderNotifications(scope, orderId)
+    // the status table still has the way back (an old label-only close may be reopened); an order the close MOVED something on may not
+    const reopenRefused = current === "closed_unsuccessfully" ? await reopenRefusalOf(orderId, reopenOperations(scope)) : null
     return {
       order_id: status.order_id,
       status: current,
       label: label(current),
       // the history's last row is the change; the status row's own time is the fallback
       changed_at: iso(latest?.created_at ?? status.updated_at),
-      next_statuses: nextBusinessStatuses(current, "admin").map((to) => ({
-        status: to,
-        label: label(to),
-      })),
+      next_statuses: nextBusinessStatuses(current, "admin")
+        .filter((to) => !(reopenRefused && to === "stocking"))
+        .map((to) => ({
+          status: to,
+          label: label(to),
+        })),
+      reopen_refused: reopenRefused,
       history: history.map((row) => ({
         from_status: (row.from_status as OrderBusinessStatus | null) ?? null,
         from_label: row.from_status ? label(row.from_status) : null,

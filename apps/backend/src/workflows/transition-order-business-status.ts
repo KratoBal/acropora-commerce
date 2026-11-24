@@ -26,6 +26,7 @@ import {
 } from "./utils/cancel-on-unsuccessful-close"
 import { orderCancelOperations } from "./utils/order-cancel-guard-operations"
 import { giveBackGiftCardShare, giveBackLoyaltyPoints } from "./utils/give-back-order-credits"
+import { reopenOperations } from "./utils/reopen-operations"
 
 export const transitionOrderBusinessStatusStep = createStep(
   "transition-order-business-status",
@@ -106,19 +107,8 @@ export const cancelOrderOnUnsuccessfulCloseStep = createStep(
       () => service.assertTransitionAllowed(input),
     )
     // the way back: a close that moved something is not reopened (the same step, before the status changes)
-    const orderRow = async (orderId: string) =>
-      (
-        (await container.resolve<OrderQuery>(ContainerRegistrationKeys.QUERY).graph({ entity: "order", fields: ["id", "status", "metadata"], filters: { id: orderId } })).data[0] as
-          | { status?: string; metadata?: Record<string, unknown> | null }
-          | undefined
-      ) ?? null
     if (input.to === REOPEN_TO_STATUS) {
-      await refuseReopenAfterMovement(input, {
-        currentStatus: async (orderId) =>
-          ((await service.listOrderBusinessStatusModels({ order_id: orderId })) as { status?: string }[])[0]?.status ?? null,
-        orderStatus: async (orderId) => (await orderRow(orderId))?.status ?? null,
-        givenBackMarker: async (orderId) => !!(await orderRow(orderId))?.metadata?.[GIVEN_BACK_METADATA_KEY],
-      })
+      await refuseReopenAfterMovement(input, reopenOperations(container))
     }
     if (result.action === "credits_given_back")
       container
