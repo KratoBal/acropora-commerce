@@ -103,16 +103,29 @@ class NewsletterModuleService extends MedusaService({ NewsletterSubscriber }) {
    * `invalid` (nothing tells which addresses exist).
    */
   async confirmByToken(token: string, now: Date = new Date()): Promise<NewsletterTokenResult> {
+    const { email: _email, ...answer } = await this.confirmByTokenWithEmail(token, now)
+    return answer
+  }
+
+  /**
+   * THE SAME CONFIRMATION, and the address it confirmed when it did (loyalty bonus, card dfb79916: the route credits the points of the
+   * customer with this address). The address is for the SERVER's use only: the route answers the visitor with `{ result }` and nothing
+   * else, so nothing tells which addresses exist.
+   */
+  async confirmByTokenWithEmail(
+    token: string,
+    now: Date = new Date()
+  ): Promise<NewsletterTokenResult & { email?: string }> {
     const [row] = (await this.listNewsletterSubscribers(
       { confirmation_token_hash: newsletterTokenHash(token) },
       { take: 1 }
-    )) as unknown as SubscriberRow[]
+    )) as unknown as (SubscriberRow & { email?: string })[]
     if (!row || row.status !== "pending") return { result: "invalid" }
     if (!confirmationLinkLive(row.confirmation_sent_at, now)) return { result: "expired" }
     await this.updateNewsletterSubscribers([
       { id: row.id, status: "confirmed", confirmed_at: now, confirmation_token_hash: null },
     ])
-    return { result: "confirmed" }
+    return { result: "confirmed", email: row.email }
   }
 
   /**

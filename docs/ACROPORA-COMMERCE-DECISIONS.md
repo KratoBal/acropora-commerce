@@ -317,5 +317,14 @@ minden szám és kapcsoló adminból állítható.
   vevő lesz, a vendégként gyűjtött pont tehát nem járna neki sem.
 - **Közelítés, kimondva:** a pénzből fizetett rész aránya a TELJES rendelésre számol (a szállítással együtt), az alap viszont csak a
   tételeké; ha a pont a szállítást fizette, a tételek arányos része kap kevesebb pontot.
+- **Regisztrációs és hírlevél-bónusz** (acrobot 60622, emlék 2935 és 2936: a mai bolt képe, regisztráció után 500, hírlevél-megerősítés után 500 pont;
+  minden szám állítható): két beállítás, `loyalty_signup_bonus_points` és `loyalty_newsletter_bonus_points` (egész pont, alap 500, 0 = nem jár, legfeljebb 1 000 000),
+  a gyűjtés főkapcsolója (`loyalty_accrual_enabled`) ALATT: kikapcsolt gyűjtésnél semmi nem ír. **Egyszer vevőnként** (a főkönyv kulcsa `bonus:<fajta>:<vevő>`),
+  CSAK `has_account` vevőnek (a vendég rendelés vevő-rekordja nem kap). A regisztráció a `customer.created` eseményen jön; a hírlevél bónusz CSAK a
+  double opt-in megerősítő linkje UTÁN, a megerősítést kiszolgáló útvonalon: ha a cím megerősítése előbb volt, mint a regisztráció, a regisztráció fizeti ki
+  mindkettőt; ha később, a megerősítés. A látogató válasza továbbra is csak `{ result }`. A `GET /admin/loyalty-settings` az `accrual` mezőben mutatja a két
+  számot és a forrásukat. Akinek a gyűjtés kikapcsolt állapotában volt a regisztrációja, utólag nem kap automatikusan sem: az OS kézi jóírása pótolja.
+  **A visszaélés** (sok cím, sok regisztráció, 500 pont mindegyikre) nincs külön korlátozva: a pont csak kedvezmény a következő rendelésnél, és a beváltásnak
+  minimum rendelési összege van; ha Balázs szigorítást kér, az egy külön szabály.
 - **Nyitott, nem döntöttem el:** a lezárt rendelés utólagos visszavonása (lemondás, visszáru) a pontot nem veszi vissza;
   a regisztráció és a hírlevél 500-500 pontja külön tétel; az ÁFA-kezelés (árengedmény vagy fizetési mód) Balázs döntése.

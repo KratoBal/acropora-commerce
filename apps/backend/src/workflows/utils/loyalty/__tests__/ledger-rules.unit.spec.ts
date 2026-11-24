@@ -1,5 +1,5 @@
 import type { LoyaltyEntryRow, NewLoyaltyEntry } from "../../../../modules/loyalty/service"
-import { accrueReference, accrueRule, redeemReference, redeemRule, reverseReference, reverseRule, voidRule, type LedgerTx } from "../ledger-rules"
+import { accrueReference, accrueRule, bonusReference, bonusRule, redeemReference, redeemRule, reverseReference, reverseRule, voidRule, type LedgerTx } from "../ledger-rules"
 
 /**
  * THE POINTS LEDGER'S REDEMPTION RULES against an in-memory ledger (card dfb79916). What must fail: points taken from a
@@ -186,6 +186,38 @@ describe("accrueRule", () => {
   it("refuses zero, negative and fractional points, and writes nothing", async () => {
     const l = make()
     for (const points of [0, -5, 1.5]) await expect(accrueRule(l.tx, { ...A, order_id: "o", points })).rejects.toThrow(/pozitív egész/)
+    expect(l.rows).toHaveLength(0)
+  })
+})
+
+describe("bonusRule", () => {
+  it("credits a one-time bonus as one positive accrual row keyed by kind and customer, under the customer's lock, with no order", async () => {
+    const l = make([{ ...A, points: 100 }])
+    expect(await bonusRule(l.tx, { ...A, kind: "signup", points: 500 })).toEqual({ balance: 600, points: 500, repeated: false })
+    const row = l.rows.find((r) => r.reference === bonusReference("signup", "cus_a"))!
+    expect(row).toMatchObject({ kind: "accrual", points: 500, order_id: null, actor: "system" })
+    expect(l.locks).toEqual(["cus_a"])
+  })
+
+  it("a repeated event, a retry or a second confirmation credits nothing again, and answers what the first credited", async () => {
+    const l = make()
+    await bonusRule(l.tx, { ...A, kind: "newsletter", points: 500 })
+    expect(await bonusRule(l.tx, { ...A, kind: "newsletter", points: 900 })).toEqual({ balance: 500, points: 500, repeated: true })
+    expect(l.balance("cus_a")).toBe(500)
+  })
+
+  it("the two kinds are two keys: a customer can have both, once each; another customer has his own", async () => {
+    const l = make()
+    await bonusRule(l.tx, { ...A, kind: "signup", points: 500 })
+    await bonusRule(l.tx, { ...A, kind: "newsletter", points: 500 })
+    await bonusRule(l.tx, { customer_id: "cus_b", kind: "signup", points: 500 })
+    expect(l.balance("cus_a")).toBe(1000)
+    expect(l.balance("cus_b")).toBe(500)
+  })
+
+  it("refuses zero, negative and fractional points, and writes nothing", async () => {
+    const l = make()
+    for (const points of [0, -5, 1.5]) await expect(bonusRule(l.tx, { ...A, kind: "signup", points })).rejects.toThrow(/pozitív egész/)
     expect(l.rows).toHaveLength(0)
   })
 })

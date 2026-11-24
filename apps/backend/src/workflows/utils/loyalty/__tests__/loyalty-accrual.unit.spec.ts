@@ -17,8 +17,8 @@ const ON: LoyaltyAccrualSettings = { enabled: true, percent: 3, onSaleItems: fal
 describe("resolveLoyaltyAccrualSettings", () => {
   it("with no row: the old shop's numbers and the switch OFF, every source the default", () => {
     const { settings, sources } = resolveLoyaltyAccrualSettings([])
-    expect(settings).toEqual({ enabled: false, percent: 3, onSaleItems: false })
-    expect(Object.values(sources)).toEqual(["default", "default", "default"])
+    expect(settings).toEqual({ enabled: false, percent: 3, onSaleItems: false, signupBonusPoints: 500, newsletterBonusPoints: 500 })
+    expect(Object.values(sources)).toEqual(["default", "default", "default", "default", "default"])
   })
 
   it("stored rows win, and say so", () => {
@@ -26,18 +26,27 @@ describe("resolveLoyaltyAccrualSettings", () => {
       { key: "loyalty_accrual_enabled", value: "1" },
       { key: "loyalty_accrual_percent", value: "5" },
       { key: "loyalty_accrual_on_sale_items", value: 1 },
+      { key: "loyalty_signup_bonus_points", value: "300" },
+      { key: "loyalty_newsletter_bonus_points", value: 0 },
     ])
-    expect(settings).toEqual({ enabled: true, percent: 5, onSaleItems: true })
-    expect(Object.values(sources)).toEqual(["row", "row", "row"])
+    expect(settings).toEqual({ enabled: true, percent: 5, onSaleItems: true, signupBonusPoints: 300, newsletterBonusPoints: 0 })
+    expect(Object.values(sources)).toEqual(["row", "row", "row", "row", "row"])
   })
 
   it("a broken stored switch is OFF, a broken number is the default, and both are named", () => {
     const { settings, sources } = resolveLoyaltyAccrualSettings([
       { key: "loyalty_accrual_enabled", value: "igen" },
       { key: "loyalty_accrual_percent", value: "250" },
+      { key: "loyalty_signup_bonus_points", value: "-5" },
     ])
-    expect(settings).toEqual({ enabled: false, percent: 3, onSaleItems: false })
-    expect(sources).toEqual({ enabled: "row_invalid", percent: "row_invalid", onSaleItems: "default" })
+    expect(settings).toEqual({ enabled: false, percent: 3, onSaleItems: false, signupBonusPoints: 500, newsletterBonusPoints: 500 })
+    expect(sources).toEqual({
+      enabled: "row_invalid",
+      percent: "row_invalid",
+      onSaleItems: "default",
+      signupBonusPoints: "row_invalid",
+      newsletterBonusPoints: "default",
+    })
   })
 
   it("a failed read turns the switch OFF even with a stored 1", () => {
@@ -61,7 +70,7 @@ describe("loadLoyaltyAccrualSettings", () => {
     expect(sources.enabled).toBe("read_failed")
   })
 
-  it("reads the three keys", async () => {
+  it("reads the five keys", async () => {
     let asked: string[] = []
     const { settings } = await loadLoyaltyAccrualSettings({
       resolve: (() => ({
@@ -71,7 +80,13 @@ describe("loadLoyaltyAccrualSettings", () => {
         },
       })) as never,
     })
-    expect(asked.sort()).toEqual(["loyalty_accrual_enabled", "loyalty_accrual_on_sale_items", "loyalty_accrual_percent"])
+    expect(asked.sort()).toEqual([
+      "loyalty_accrual_enabled",
+      "loyalty_accrual_on_sale_items",
+      "loyalty_accrual_percent",
+      "loyalty_newsletter_bonus_points",
+      "loyalty_signup_bonus_points",
+    ])
     expect(settings.enabled).toBe(true)
   })
 })

@@ -135,6 +135,7 @@ const fakeService = () => {
   const service = Object.assign(store, {
     signUpByEmail: proto.signUpByEmail,
     confirmByToken: proto.confirmByToken,
+    confirmByTokenWithEmail: proto.confirmByTokenWithEmail,
     unsubscribeByToken: proto.unsubscribeByToken,
   }) as unknown as NewsletterModuleService & typeof store
   return { rows, service }

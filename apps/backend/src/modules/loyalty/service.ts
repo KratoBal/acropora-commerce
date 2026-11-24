@@ -8,7 +8,7 @@ import {
   MedusaService,
 } from "@medusajs/framework/utils"
 
-import { accrueRule, redeemRule, reverseRule, voidRule, type LedgerTx } from "../../workflows/utils/loyalty/ledger-rules"
+import { accrueRule, bonusRule, redeemRule, reverseRule, voidRule, type LedgerTx } from "../../workflows/utils/loyalty/ledger-rules"
 import { sumPoints } from "./balance"
 import LoyaltyEntry from "./models/loyalty-entry"
 import type { LoyaltyKind } from "./types"
@@ -155,6 +155,22 @@ class LoyaltyModuleService extends MedusaService({ LoyaltyEntry }) {
     @MedusaContext() sharedContext: Context = {},
   ) {
     return await accrueRule(this.txOf(sharedContext), input)
+  }
+
+  @InjectManager()
+  async grantBonus(
+    input: { customer_id: string; kind: "signup" | "newsletter"; points: number },
+    @MedusaContext() sharedContext: Context = {},
+  ) {
+    return await this.grantBonus_(input, sharedContext)
+  }
+
+  @InjectTransactionManager()
+  protected async grantBonus_(
+    input: { customer_id: string; kind: "signup" | "newsletter"; points: number },
+    @MedusaContext() sharedContext: Context = {},
+  ) {
+    return await bonusRule(this.txOf(sharedContext), input)
   }
 
   /** The transaction's connection, or a refusal: the ledger moves only inside one. */
