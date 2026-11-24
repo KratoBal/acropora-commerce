@@ -7,10 +7,10 @@ import {
   LOYALTY_OFF_MESSAGE,
   LOYALTY_WITH_GIFT_CARD_MESSAGE,
   loyaltyCredits,
-  loyaltySettings,
   maxPoints,
   pointsOfCredit,
 } from "./loyalty/loyalty-credit"
+import { loadLoyaltySettings } from "./loyalty/loyalty-settings"
 
 type Container = { resolve: <T = unknown>(key: string) => T }
 
@@ -44,7 +44,7 @@ export async function redeemCartLoyalty(
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Egy rendeléshez egyszer váltható be hűségpont.")
   if (giftCardCredits(cart.credit_lines).length)
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, LOYALTY_WITH_GIFT_CARD_MESSAGE)
-  const settings = loyaltySettings()
+  const settings = (await loadLoyaltySettings(container)).settings
   if (!settings.enabled) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, LOYALTY_OFF_MESSAGE)
 
   const line = credits[0]!

@@ -2,7 +2,8 @@ import type { Logger } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 
 import { amountOf, giftCardCredits, type CreditLineRow } from "./gift-card-credit"
-import { loyaltyCreditPlan, loyaltyCredits, loyaltySettings } from "./loyalty/loyalty-credit"
+import { loyaltyCreditPlan, loyaltyCredits } from "./loyalty/loyalty-credit"
+import { loadLoyaltySettings } from "./loyalty/loyalty-settings"
 
 type Container = { resolve: <T = unknown>(key: string) => T }
 
@@ -42,7 +43,7 @@ export async function capLoyaltyCredit(cartId: string, container: Container, log
     if (!cart) return
     const credits = loyaltyCredits(cart.credit_lines)
     if (!credits.length) return
-    const settings = loyaltySettings()
+    const settings = (await loadLoyaltySettings(container)).settings
     const plan = loyaltyCreditPlan({
       totalWithCredits: amountOf(cart.total),
       creditLineTotal: amountOf(cart.credit_line_total),

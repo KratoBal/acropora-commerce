@@ -8,6 +8,11 @@ import {
   FREE_SHIPPING_THRESHOLD_FOXPOST_SETTING_KEY,
   FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
   FREE_SHIPPING_THRESHOLD_GLS_SETTING_KEY,
+  LOYALTY_MAX_PERCENT_SETTING_KEY,
+  LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
+  LOYALTY_MIN_POINTS_SETTING_KEY,
+  LOYALTY_POINT_VALUE_HUF_SETTING_KEY,
+  LOYALTY_REDEMPTION_ENABLED_SETTING_KEY,
   normalizeCommerceSettingValue,
   OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
   SHIPPING_FOXPOST_SETTING_KEY,
@@ -39,6 +44,12 @@ describe("commerce setting definitions", () => {
         FEED_BACKORDER_LEAD_TIME_DAYS_SETTING_KEY,
         // the least price history a reduction needs to be announced (card 90c54873): days, default 15
         OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
+        // the points redemption's switch and numbers (card dfb79916): admin-settable, the old shop's values the defaults
+        LOYALTY_REDEMPTION_ENABLED_SETTING_KEY,
+        LOYALTY_POINT_VALUE_HUF_SETTING_KEY,
+        LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
+        LOYALTY_MIN_POINTS_SETTING_KEY,
+        LOYALTY_MAX_PERCENT_SETTING_KEY,
       ].sort(),
     )
   })
@@ -219,6 +230,59 @@ describe("typed commerce setting access", () => {
           OMNIBUS_MIN_HISTORY_DAYS_SETTING_KEY,
         ),
       ).rejects.toThrow(/from 15 to 30/)
+    })
+  })
+
+  /*
+    THE LOYALTY REDEMPTION'S SETTINGS (card dfb79916; Balázs 2026-11-24: every number and switch settable, the old shop's values the
+    defaults). WHAT TURNS THIS RED: a default off the old shop's (1 point = 1 Ft, orders from 30 000 Ft, 100 points at least, up to
+    100 percent, redemption OFF); the switch accepting anything but 0 and 1 (and the texts true/false, stored as 1/0); a bound let
+    through (a point worth 0, a share over 100, a minimum of 0 points, a negative order minimum); the order minimum refusing 0
+    (0 means no minimum).
+  */
+  describe("the loyalty redemption settings", () => {
+    const normalize = (key: Parameters<typeof normalizeCommerceSettingValue>[0], raw: unknown) => {
+      try {
+        return normalizeCommerceSettingValue(key, raw)
+      } catch {
+        return "refused"
+      }
+    }
+
+    it("defaults are the old shop's, and the redemption is off", () => {
+      const defaults = [
+        LOYALTY_REDEMPTION_ENABLED_SETTING_KEY,
+        LOYALTY_POINT_VALUE_HUF_SETTING_KEY,
+        LOYALTY_MIN_ORDER_HUF_SETTING_KEY,
+        LOYALTY_MIN_POINTS_SETTING_KEY,
+        LOYALTY_MAX_PERCENT_SETTING_KEY,
+      ].map((key) => COMMERCE_SETTING_DEFINITIONS[key].defaultValue)
+      expect(defaults).toEqual([0, 1, 30_000, 100, 100])
+    })
+
+    it("the switch takes 0 and 1 (numbers or text) and the texts true and false, nothing else", () => {
+      const read = [0, 1, "0", "1", true, false, "true", "false", 2, -1, "yes", "", null, 0.5].map((raw) =>
+        normalize(LOYALTY_REDEMPTION_ENABLED_SETTING_KEY, raw),
+      )
+      expect(read).toEqual([0, 1, 0, 1, 1, 0, 1, 0, "refused", "refused", "refused", "refused", "refused", "refused"])
+    })
+
+    it("the bounds: value 1..1 000 000, order minimum 0..1 000 000 000 (0 = none), minimum points from 1, share 1..100", () => {
+      expect([0, 1, 1_000_000, 1_000_001, 1.5, "2"].map((raw) => normalize(LOYALTY_POINT_VALUE_HUF_SETTING_KEY, raw))).toEqual([
+        "refused", 1, 1_000_000, "refused", "refused", 2,
+      ])
+      expect([-1, 0, 30_000, 1_000_000_000, 1_000_000_001].map((raw) => normalize(LOYALTY_MIN_ORDER_HUF_SETTING_KEY, raw))).toEqual([
+        "refused", 0, 30_000, 1_000_000_000, "refused",
+      ])
+      expect([0, 1, 100, 1_000_000_001].map((raw) => normalize(LOYALTY_MIN_POINTS_SETTING_KEY, raw))).toEqual(["refused", 1, 100, "refused"])
+      expect([0, 1, 100, 101, "50"].map((raw) => normalize(LOYALTY_MAX_PERCENT_SETTING_KEY, raw))).toEqual(["refused", 1, 100, "refused", 50])
+    })
+
+    it("the admin validator stores the switch as 1 or 0 text and refuses a value out of bounds", () => {
+      expect(validateSettingValue("loyalty_redemption_enabled", true)).toBe("1")
+      expect(validateSettingValue("loyalty_max_percent", 40)).toBe("40")
+      expect(() => validateSettingValue("loyalty_max_percent", 101)).toThrow(/from 1 to 100/)
+      expect(AdminUpsertCommerceSetting.safeParse({ key: "loyalty_min_order_huf", value: 0 }).success).toBe(true)
     })
   })
 })
