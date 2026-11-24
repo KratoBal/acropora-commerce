@@ -85,6 +85,58 @@ describe("the status and payment texts", () => {
     }
   })
 
+  /*
+    "FIZETÉSRE VÁR" BY THE PAYMENT METHOD (barracuda on #886, acrobot 60734). MI PIROSÍT: a card order paid by the link gets the
+    bank transfer's sentence; cash on delivery or paying in the store shows a waiting line; the bank transfer loses its
+    sentence; a method the shop did not send loses the general line; a paid order changes by the method.
+  */
+  it("the waiting line follows the payment method; other states do not", () => {
+    for (const state of ["not_paid", "awaiting"]) {
+      expect(paymentTextKeys(state, "transfer")?.text).toBe(
+        "guestOrder.payment.awaiting.text",
+      )
+      expect(paymentTextKeys(state, "card_link")?.text).toBe(
+        "guestOrder.payment.awaitingLink.text",
+      )
+      // the hold released, no link yet: its own sentence, never the link's (barracuda on #891)
+      expect(paymentTextKeys(state, "card_released")?.text).toBe(
+        "guestOrder.payment.awaitingRelease.text",
+      )
+      for (const kind of ["cod", "store", "card"] as const)
+        expect(paymentTextKeys(state, kind)).toBeNull()
+      expect(paymentTextKeys(state, null)?.text).toBe(
+        "guestOrder.payment.awaiting.text",
+      )
+    }
+    expect(paymentTextKeys("captured", "cod")?.text).toBe(
+      "guestOrder.payment.paid.text",
+    )
+    // the released hold as the shop really has it: every collection canceled (release-hold.ts; barracuda on #891 v2)
+    expect(paymentTextKeys("canceled", "card_released")?.text).toBe(
+      "guestOrder.payment.awaitingRelease.text",
+    )
+    // any other canceled order keeps no line
+    for (const kind of [
+      "card",
+      "card_link",
+      "cod",
+      "store",
+      "transfer",
+      null,
+    ] as const)
+      expect(paymentTextKeys("canceled", kind)).toBeNull()
+    // a released card order that was paid after all shows the payment, not the waiting
+    expect(paymentTextKeys("captured", "card_released")?.text).toBe(
+      "guestOrder.payment.paid.text",
+    )
+    for (const dictionary of [hu, en])
+      for (const key of [
+        "guestOrder.payment.awaitingLink.text",
+        "guestOrder.payment.awaitingRelease.text",
+      ])
+        expect(typeof dig(dictionary, key)).toBe("string")
+  })
+
   it("a payment state a customer would not understand has no line", () => {
     for (const state of [
       "authorized",

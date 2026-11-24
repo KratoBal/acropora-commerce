@@ -154,6 +154,47 @@ describe("a single order", () => {
     expect(text).toContain("felvesszük veled a kapcsolatot")
     expect(text).not.toMatch(/KITÖLTENDŐ/)
   })
+
+  it("the waiting line by the payment method: the link's own rule for a card order paid by the link, none for cash on delivery", () => {
+    const { unmount } = render(
+      <GuestOrderView
+        orders={[
+          { ...base, payment_status: "not_paid", payment_kind: "card_link" },
+        ]}
+      />,
+    )
+    const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+    expect(text).toContain("Fizetésre vár")
+    expect(text).toContain("6 napig")
+    expect(text).not.toContain("Előre utalásnál")
+    unmount()
+    render(
+      <GuestOrderView
+        orders={[{ ...base, payment_status: "awaiting", payment_kind: "cod" }]}
+      />,
+    )
+    expect(screen.queryByTestId("guest-order-payment")).toBeNull()
+  })
+})
+
+describe("a released card hold, as the shop really has it", () => {
+  it("every collection canceled and the kind card_released: the released hold's sentence, no link and no deadline (barracuda on #891 v2)", () => {
+    render(
+      <GuestOrderView
+        orders={[
+          {
+            ...base,
+            payment_status: "canceled",
+            payment_kind: "card_released",
+          },
+        ]}
+      />,
+    )
+    const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+    expect(text).toContain("feloldottuk")
+    expect(text).not.toContain("6 napig")
+    expect(text).not.toContain("lezárjuk")
+  })
 })
 
 describe("a mixed cart's two orders", () => {

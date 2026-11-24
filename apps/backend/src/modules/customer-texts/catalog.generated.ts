@@ -3794,6 +3794,30 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "en": "The payment has not arrived yet. For a bank transfer, we wait for the amount until the due date on the payment request (8 days); if it has not arrived by then, we will contact you."
   },
   {
+    "key": "guestOrder.payment.awaitingRelease.label",
+    "group": "rendeles-allapota",
+    "hu": "Fizetésre vár",
+    "en": "Awaiting payment"
+  },
+  {
+    "key": "guestOrder.payment.awaitingRelease.text",
+    "group": "rendeles-allapota",
+    "hu": "A kártyádon zárolt összeget feloldottuk, mert a termék később érkezik. Amikor megérkezik, e-mailben küldünk egy fizetési linket, azon tudod kifizetni a rendelést.",
+    "en": "We released the amount held on your card, because the product arrives later. When it arrives, we will send you a payment link by e-mail to pay for the order."
+  },
+  {
+    "key": "guestOrder.payment.awaitingLink.label",
+    "group": "rendeles-allapota",
+    "hu": "Fizetésre vár",
+    "en": "Awaiting payment"
+  },
+  {
+    "key": "guestOrder.payment.awaitingLink.text",
+    "group": "rendeles-allapota",
+    "hu": "A fizetési linket e-mailben küldtük el. A link 6 napig érvényes, a harmadik napon emlékeztetőt küldünk. Ha addig nem érkezik meg a fizetés, a rendelést lezárjuk.",
+    "en": "We sent you the payment link by e-mail. The link is valid for 6 days, and we send a reminder on the third day. If the payment has not arrived by then, we close the order."
+  },
+  {
     "key": "guestOrder.payment.paid.label",
     "group": "rendeles-allapota",
     "hu": "Kifizetve",

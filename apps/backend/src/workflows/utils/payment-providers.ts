@@ -134,3 +134,23 @@ export const providersForMixedCart = (
  */
 export const stripeMixedCartEnabled = (env: NodeJS.ProcessEnv = process.env): boolean =>
   env.ACROPORA_STRIPE_MIXED_CART?.trim() === "true"
+
+/**
+ * THE PAYMENT ROLE AN ORDER WAS PLACED WITH: the provider of its live (not canceled) payment, or before any payment, of its first
+ * session, through the role map. Stripe stays the online card even where the environment does not name it. `null` when the
+ * order carries no provider the map knows. The mails and the guest order page read the role the same way.
+ */
+export const orderPaymentRoleOf = (
+  order: any,
+  roles: Map<string, PaymentRole> = buildProviderRoleMap()
+): PaymentRole | null => {
+  const collections = order?.payment_collections ?? []
+  const live = collections
+    .flatMap((collection: any) => collection?.payments ?? [])
+    .find((payment: any) => payment && !payment.canceled_at)
+  const provider =
+    live?.provider_id ??
+    collections.flatMap((collection: any) => collection?.payment_sessions ?? [])[0]?.provider_id
+  if (!provider) return null
+  return roles.get(provider) ?? (provider === STRIPE_PROVIDER_ID ? "ONLINE_CARD" : null)
+}

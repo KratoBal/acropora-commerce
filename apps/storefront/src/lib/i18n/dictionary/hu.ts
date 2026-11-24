@@ -1392,6 +1392,14 @@ export const hu = {
         label: "Fizetésre vár",
         text: "A fizetés még nem érkezett meg. Előre utalásnál a díjbekérőn szereplő határidőig (8 nap) várjuk az összeget; ha addig nem érkezik meg, felvesszük veled a kapcsolatot.",
       },
+      awaitingRelease: {
+        label: "Fizetésre vár",
+        text: "A kártyádon zárolt összeget feloldottuk, mert a termék később érkezik. Amikor megérkezik, e-mailben küldünk egy fizetési linket, azon tudod kifizetni a rendelést.",
+      },
+      awaitingLink: {
+        label: "Fizetésre vár",
+        text: "A fizetési linket e-mailben küldtük el. A link 6 napig érvényes, a harmadik napon emlékeztetőt küldünk. Ha addig nem érkezik meg a fizetés, a rendelést lezárjuk.",
+      },
       paid: {
         label: "Kifizetve",
         text: "A fizetés megérkezett.",
