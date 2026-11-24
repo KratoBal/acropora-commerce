@@ -55,6 +55,28 @@ describe("a kodbol kitoltott szovegek", () => {
     }
   })
 
+  it("az elallas utani teendok az ASZF szerint, helyorzo nelkul (acrobot 60571; murena Fogyasztobarat-felmerese)", () => {
+    for (const [szoveg, napok, visszakuldes] of [
+      [
+        hu.guestOrder.withdrawal.done,
+        "14 napon belül küldd vissza",
+        "14 napon belül visszautaljuk",
+      ],
+      [
+        en.guestOrder.withdrawal.done,
+        "within 14 days of your declaration",
+        "within 14 days of receiving your declaration",
+      ],
+    ] as const) {
+      expect(szoveg).not.toMatch(/KITÖLTENDŐ|TO BE FILLED/)
+      expect(szoveg).toContain("{id}")
+      expect(szoveg).toContain(napok)
+      expect(szoveg).toContain(visszakuldes)
+    }
+    // a 45/2014. Korm. rendeletre a vevonek szolo szoveg nem hivatkozik (acrobot 60571)
+    expect(hu.guestOrder.withdrawal.done).not.toMatch(/Korm\.|rendelet/)
+  })
+
   it("a jogi szovegek helyorzoi MARADNAK (Balazs dontese): nem tuntek el vele egyutt", () => {
     expect(hu.guestOrder.splitNotice + JSON.stringify(hu.guestOrder)).toMatch(
       /KITÖLTENDŐ: (jogi ellenőrzés|válaszidő|jogi szöveg élő állatra)/,

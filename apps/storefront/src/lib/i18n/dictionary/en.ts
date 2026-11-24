@@ -1422,7 +1422,7 @@ export const en: Dictionary = {
         "We could not send the withdrawal declaration just now. What you typed has been kept, please try again. If it still fails, write to us: " +
         CEG.email +
         ".",
-      done: "We have received your withdrawal declaration. Its reference is {id}. [TO BE FILLED IN: next steps and deadlines]",
+      done: "We have received your withdrawal declaration. Its reference is {id}. We will also confirm its receipt by e-mail. Please send the product back to us within 14 days of your declaration; we cannot accept a parcel sent cash on delivery or with postage due. We will refund what you paid, including the delivery fee, within 14 days of receiving your declaration, by the payment method you used, at no extra cost. The delivery fee is refunded up to the fee of the cheapest delivery option. We may withhold the refund until the product is back with us or you show that you have sent it.",
       donePartial:
         "You have already made a declaration for these products, so they were not recorded again: {items}",
       listTitle: "Withdrawal declarations you have already made",
