@@ -80,6 +80,7 @@ function NyitottKartya({
     rendeles.payment_status,
     t,
     allapot?.payment_kind ?? null,
+    allapot?.status ?? null,
   )
   return (
     <article

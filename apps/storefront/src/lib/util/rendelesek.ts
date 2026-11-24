@@ -140,20 +140,31 @@ const modSzerint = (
     return "account.paymentStatus.awaitingRelease"
   if (kind === "cod" && VARAKOZO.has(status))
     return "account.paymentStatus.onDelivery"
-  if (kind === "store" && VARAKOZO.has(status))
+  // paying in the store authorizes at once (the system provider): it is no card hold, the customer pays at pickup
+  if (kind === "store" && (VARAKOZO.has(status) || status === "authorized"))
     return "account.paymentStatus.atStore"
   return null
 }
 
-/** A Medusa fizetesi allapota a lap nyelven (alapbol magyarul), a fizetes fajtaja szerint; ismeretlen ertekre ures. */
+/** A zarolas szavai: egy lezart rendelesen (closed, closed_unsuccessfully) nincs elo zarolas, a szo ott nem all. */
+const ZAROLAS = new Set(["authorized", "partially_authorized"])
+const LEZARO = new Set(["closed", "closed_unsuccessfully"])
+
+/**
+ * A Medusa fizetesi allapota a lap nyelven (alapbol magyarul), a fizetes fajtaja szerint; ismeretlen ertekre ures. `uzleti`: a
+ * rendeles uzleti allapota; lezart rendelesen a zarolas-szo (authorized, partially_authorized) nem jelenik meg, mert a
+ * zarolas ott mar nem el (acrobot 60944: a stage ket lejart linkes, sikertelenul lezart rendelese partially_authorized).
+ */
 export function fizetesiAllapot(
   status: string | null | undefined,
   t: Translate = translator(DEFAULT_LOCALE),
   kind: GuestPaymentKind | null = null,
+  uzleti: string | null = null,
 ): string {
-  const kulcs = status
-    ? (modSzerint(status, kind) ?? FIZETES[status])
-    : undefined
+  const mod = status ? modSzerint(status, kind) : null
+  if (!mod && status && ZAROLAS.has(status) && uzleti && LEZARO.has(uzleti))
+    return ""
+  const kulcs = status ? (mod ?? FIZETES[status]) : undefined
   return kulcs ? t(kulcs) : ""
 }
 
