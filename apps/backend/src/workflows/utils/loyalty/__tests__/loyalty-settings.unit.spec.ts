@@ -62,7 +62,8 @@ describe("resolveLoyaltySettings", () => {
       { LOYALTY_MAX_PERCENT: "60" },
     )
     expect(settings).toEqual({ enabled: false, value: 1, minOrder: 30_000, minPoints: 100, maxPercent: 60 })
-    expect(sources).toEqual({ enabled: "default", value: "default", minOrder: "default", minPoints: "default", maxPercent: "env" })
+    // the ignored rows are NAMED (barracuda, #881): the OS shows a value that is not what was stored, instead of "nobody set it"
+    expect(sources).toEqual({ enabled: "row_invalid", value: "row_invalid", minOrder: "row_invalid", minPoints: "row_invalid", maxPercent: "row_invalid" })
   })
 
   it("the order minimum may be stored as 0 (no minimum), which the environment could not say", () => {
@@ -101,8 +102,15 @@ describe("loadLoyaltySettings", () => {
   it("a container without the module, or a read that fails, never throws: the environment and the defaults answer", async () => {
     const noModule = { resolve: () => { throw new Error("not registered") } }
     expect((await loadLoyaltySettings(noModule, { LOYALTY_MIN_POINTS: "250" })).settings.minPoints).toBe(250)
-    const failing = containerWith({ listCommerceSettings: jest.fn().mockRejectedValue(new Error("db down")) })
-    expect((await loadLoyaltySettings(failing, {})).settings).toEqual(DEFAULTS)
     expect((await loadLoyaltySettings(containerWith(undefined), {})).settings).toEqual(DEFAULTS)
+    expect((await loadLoyaltySettings(containerWith({}), { LOYALTY_REDEMPTION_ENABLED: "true" })).settings.enabled).toBe(true)
+  })
+
+  it("a read that FAILS on a module that is there turns the master switch OFF, whatever the environment says; the numbers stay the environment's and the defaults", async () => {
+    const failing = containerWith({ listCommerceSettings: jest.fn().mockRejectedValue(new Error("db down")) })
+    const { settings, sources } = await loadLoyaltySettings(failing, { LOYALTY_REDEMPTION_ENABLED: "true", LOYALTY_MIN_POINTS: "250" })
+    expect(settings).toEqual({ ...DEFAULTS, enabled: false, minPoints: 250 })
+    expect(sources.enabled).toBe("read_failed")
+    expect(sources.minPoints).toBe("env")
   })
 })

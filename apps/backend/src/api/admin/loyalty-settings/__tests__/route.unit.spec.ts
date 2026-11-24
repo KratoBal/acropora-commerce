@@ -44,10 +44,17 @@ describe("GET /admin/loyalty-settings", () => {
     for (const entry of Object.values(body.keys) as { description: string }[]) expect(entry.description.length).toBeGreaterThan(10)
   })
 
-  it("a failing read still answers (the environment and the defaults)", async () => {
-    delete process.env.LOYALTY_REDEMPTION_ENABLED
+  it("a failing read still answers: the switch off and named, the numbers the environment's and the defaults", async () => {
+    process.env.LOYALTY_REDEMPTION_ENABLED = "true"
     const { body } = await call(new Error("db down"))
     expect(body.settings.enabled).toBe(false)
-    expect(Object.values(body.sources)).toEqual(["default", "default", "default", "default", "default"])
+    expect(Object.values(body.sources)).toEqual(["read_failed", "default", "default", "default", "default"])
+  })
+
+  it("a stored row outside its bounds is named row_invalid, with the value actually in use", async () => {
+    delete process.env.LOYALTY_MAX_PERCENT
+    const { body } = await call([{ key: "loyalty_max_percent", value: "250" }])
+    expect(body.settings.maxPercent).toBe(100)
+    expect(body.sources.maxPercent).toBe("row_invalid")
   })
 })
