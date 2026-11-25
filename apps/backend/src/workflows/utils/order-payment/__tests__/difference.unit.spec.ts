@@ -10,6 +10,7 @@ import {
   orderPaymentView,
   refuseWhileAwaitingPayment,
 } from "../state"
+import { metadataStore } from "./merged-metadata"
 
 /**
  * AN ITEM ADDED OVER THE HOLD (Balázs 2026-10-05 18:01 UTC; plan section 5):
@@ -131,7 +132,9 @@ const side = (metadata: Record<string, unknown> = {}, payments = [hold()], total
 describe("sendPaymentLink for a difference", () => {
   const opsFor = (pair: { primary: ReleaseSide; pickup: ReleaseSide | null }) => {
     const log: string[] = []
-    const written = new Map<string, Record<string, unknown>>()
+    // the order module merges what is written into what is stored (card d35290f2)
+    const store = metadataStore([pair.primary, pair.pickup])
+    const written = store.written
     const ops: PaymentLinkOperations = {
       loadPair: async () => pair,
       ensureCollection: async () => {
@@ -142,7 +145,7 @@ describe("sendPaymentLink for a difference", () => {
         log.push(`open ${orderId} ${amount}`)
         return { id: "col_diff", amount }
       },
-      setMetadata: async (id, metadata) => void written.set(id, metadata),
+      setMetadata: async (id, metadata) => store.write(id, metadata),
     }
     return { ops, log, written }
   }

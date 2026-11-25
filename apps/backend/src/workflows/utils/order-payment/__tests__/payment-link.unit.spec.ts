@@ -5,6 +5,7 @@ import { verifyPaymentLink } from "../link-token"
 import { type PaymentLinkOperations, sendPaymentLink } from "../payment-link"
 import type { ReleaseSide } from "../release-hold"
 import { ORDER_PAYMENT_METADATA_KEY } from "../state"
+import { metadataStore } from "./merged-metadata"
 
 /**
  * "FIZETÉSI LINK KÜLDÉSE" (brief, point 4). What must fail:
@@ -50,16 +51,29 @@ const opsFor = (
   pair: { primary: ReleaseSide; pickup: ReleaseSide | null } | null,
   collections: Record<string, { id: string; amount: number } | null>
 ) => {
-  const written = new Map<string, Record<string, unknown>>()
+  // the order module merges what is written into what is stored (card d35290f2)
+  const store = metadataStore([pair?.primary, pair?.pickup])
+  const written = store.written
   const ops: PaymentLinkOperations = {
     loadPair: async () => pair,
     ensureCollection: async (orderId) => collections[orderId] ?? null,
-    setMetadata: async (id, metadata) => void written.set(id, metadata),
+    setMetadata: async (id, metadata) => store.write(id, metadata),
   }
-  return { ops, written }
+  return { ops, written, store }
 }
 
 describe("sendPaymentLink", () => {
+  // card d35290f2: only the own key is written; the other keys are the order module's merge, not a load-time copy
+  it("writes only its own key", async () => {
+    const { ops, store } = opsFor(
+      { primary: order("order_1", 48, released(11650)), pickup: null },
+      { order_1: { id: "col_new", amount: 9800 } }
+    )
+    await sendPaymentLink("order_1", ops, CONFIG, () => NOW)
+    expect(store.writes.length).toBeGreaterThan(0)
+    expect(store.writes.every((w) => w.keys.join() === ORDER_PAYMENT_METADATA_KEY)).toBe(true)
+  })
+
   it("a released order: a link for its current total, 6 days, the state link_sent", async () => {
     const { ops, written } = opsFor(
       { primary: order("order_1", 48, released(11650)), pickup: null },

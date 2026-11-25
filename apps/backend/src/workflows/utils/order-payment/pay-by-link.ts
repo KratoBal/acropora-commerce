@@ -63,7 +63,8 @@ export type PayByLinkOperations = {
    * 5). The order's hold beside it stays for Kiszállítás.
    */
   captureCollection(collectionId: string): Promise<void>
-  setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
+  /** These keys written; the order module merges them, every other key stays (card d35290f2). */
+  setMetadata(orderId: string, keys: Record<string, unknown>): Promise<void>
 }
 
 export type ResolvedLink = {
@@ -214,8 +215,8 @@ export const completeLinkPayment = async (
       : [resolved.pair.primary, ...(resolved.pair.pickup ? [resolved.pair.pickup] : [])]
   for (const side of paidSides) {
     const own = storedOrderPaymentOf(side.metadata) ?? resolved.stored!
+    // only the own key (card d35290f2): the order module merges it
     await ops.setMetadata(side.order_id, {
-      ...(side.metadata ?? {}),
       [ORDER_PAYMENT_METADATA_KEY]: { ...own, state: "paid", paid_at: paidAt } satisfies StoredOrderPayment,
     })
   }

@@ -10,6 +10,7 @@ import {
 } from "../pay-by-link"
 import type { ReleaseSide } from "../release-hold"
 import { ORDER_PAYMENT_METADATA_KEY } from "../state"
+import { metadataStore } from "./merged-metadata"
 
 /**
  * THE CUSTOMER PAYS THROUGH THE LINK (plan 2.2). What must fail:
@@ -73,7 +74,9 @@ const opsFor = (
   authorize: (sessionId: string) => boolean | Error = () => true
 ) => {
   const log: string[] = []
-  const written = new Map<string, Record<string, unknown>>()
+  // the order module merges what is written into what is stored (card d35290f2)
+  const store = metadataStore([pair?.primary, pair?.pickup])
+  const written = store.written
   const ops: PayByLinkOperations = {
     loadPair: async () => pair,
     collection: async (id) => collections[id] ?? null,
@@ -94,10 +97,10 @@ const opsFor = (
     capture: async (id) => void log.push(`capture ${id}`),
     setMetadata: async (id, metadata) => {
       log.push(`state ${id}`)
-      written.set(id, metadata)
+      store.write(id, metadata)
     },
   }
-  return { ops, log, written }
+  return { ops, log, written, store }
 }
 
 const plainPair = (state: Record<string, unknown> | null = linked()) => ({ primary: order("order_1", state), pickup: null })
@@ -173,13 +176,15 @@ describe("startLinkSession", () => {
 
 describe("completeLinkPayment", () => {
   it("authorizes, captures, then marks the order paid", async () => {
-    const { ops, log, written } = opsFor(plainPair(), {
+    const { ops, log, written, store } = opsFor(plainPair(), {
       col_ship: collection("col_ship", 9800, [{ status: "canceled" }, {}]),
     })
     expect(await completeLinkPayment(tokenFor(), ops, SECRET, NOW)).toEqual({
       state: "paid",
       paid_at: NOW().toISOString(),
     })
+    // card d35290f2: only the own key is written
+    expect(store.writes.every((w) => w.keys.join() === ORDER_PAYMENT_METADATA_KEY)).toBe(true)
     // the newest session is the one the card was confirmed on
     expect(log).toEqual(["authorize ps_col_ship_1 true", "capture order_1", "state order_1"])
     expect(written.get("order_1")).toEqual({

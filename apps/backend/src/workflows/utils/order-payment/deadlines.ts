@@ -46,7 +46,8 @@ export type DeadlineOperations = {
   /** Orders changed since `since`: a link sent or reminded writes the order, so every live one is among them. */
   candidates(since: Date): Promise<ReleaseSide[]>
   loadPair(orderId: string): Promise<{ primary: ReleaseSide; pickup: ReleaseSide | null } | null>
-  setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
+  /** These keys written; the order module merges them, every other key stays (card d35290f2). */
+  setMetadata(orderId: string, keys: Record<string, unknown>): Promise<void>
   /** The reminder mail (`order-payment-reminder`), from the shipped order. */
   remind(input: {
     orderId: string
@@ -66,8 +67,8 @@ export type DeadlineReport = { reminded: string[]; expired: string[]; closed: st
 /** How far back the job looks: the link's life with room for a job that did not run for a while. */
 export const LOOK_BACK_DAYS = 14
 
-const withState = (side: ReleaseSide, state: StoredOrderPayment) => ({
-  ...(side.metadata ?? {}),
+// only the own key (card d35290f2): the order module merges it, the other keys stay as they are now
+const withState = (_side: ReleaseSide, state: StoredOrderPayment) => ({
   [ORDER_PAYMENT_METADATA_KEY]: state,
 })
 

@@ -52,8 +52,8 @@ export type ReleaseHoldOperations = {
   cancelPayment(paymentId: string): Promise<void>
   /** The collection marked canceled, as Medusa's order cancel does. */
   cancelCollection(collectionId: string): Promise<void>
-  /** The order's metadata replaced by this (the caller keeps the other keys). */
-  setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
+  /** These keys written; the order module merges them, every other key stays (card d35290f2). An empty string removes a key. */
+  setMetadata(orderId: string, keys: Record<string, unknown>): Promise<void>
 }
 
 export type ReleaseHoldResult = {
@@ -128,8 +128,8 @@ export const releaseHold = async (
     nothing was released, and the state is taken back.
   */
   const releasingAt = stored?.releasing_at ?? now().toISOString()
-  const metadataOf = (side: ReleaseSide, state: StoredOrderPayment) => ({
-    ...(side.metadata ?? {}),
+  // ONLY THE OWN KEY (card d35290f2): the order module merges it, the other keys stay as they are now, not as they were loaded
+  const metadataOf = (_side: ReleaseSide, state: StoredOrderPayment) => ({
     [ORDER_PAYMENT_METADATA_KEY]: state,
   })
   const partOf = (side: ReleaseSide) =>
@@ -151,7 +151,9 @@ export const releaseHold = async (
       await ops.cancelPayment(payment.id)
     } catch (error) {
       if (index === 0 && !resuming) {
-        for (const side of sides) await ops.setMetadata(side.order_id, side.metadata ?? {})
+        // the own key back as it was; an empty string removes it (`mergeMetadata`), when there was none
+        for (const side of sides)
+          await ops.setMetadata(side.order_id, { [ORDER_PAYMENT_METADATA_KEY]: side.metadata?.[ORDER_PAYMENT_METADATA_KEY] ?? "" })
       }
       throw error
     }
