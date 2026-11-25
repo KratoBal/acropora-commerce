@@ -159,8 +159,18 @@ export const providerIdOf = (
   return live?.provider_id ?? null
 }
 
+/**
+ * THE ORDER'S PAYMENT COLLECTION FOR THE LIST: the first one that is not canceled. An order switched to bank transfer keeps its
+ * canceled card or cash-on-delivery collection first (card d31a66a3); with every collection canceled (a released card hold) the
+ * first, as before.
+ */
+const primaryCollectionOf = (order: QueryOrder) => {
+  const collections = order.payment_collections ?? []
+  return collections.find((c) => c?.status !== "canceled") ?? collections[0]
+}
+
 const paymentOf = (order: QueryOrder): OrderQueryRow["payment"] => {
-  const collection = order.payment_collections?.[0]
+  const collection = primaryCollectionOf(order)
   if (!collection) return null
   return {
     provider_id: providerIdOf(collection),
@@ -262,7 +272,7 @@ export const projectOrderQueryRows = ({
       },
       shipping_method: order.shipping_methods?.[0]?.name ?? null,
       shipping_option_id: order.shipping_methods?.[0]?.shipping_option_id ?? null,
-      payment_method: providerIdOf(order.payment_collections?.[0]),
+      payment_method: providerIdOf(primaryCollectionOf(order)),
       invoice_status: null,
       currency_code: order.currency_code ?? null,
       customer_name: nameOf(order.shipping_address) ?? nameOf(order.billing_address),
