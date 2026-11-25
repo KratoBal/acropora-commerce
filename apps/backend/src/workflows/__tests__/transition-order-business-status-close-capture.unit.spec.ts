@@ -89,6 +89,8 @@ describe("closing a plain card order captures it first", () => {
     container.register({
       // the order's payment lock (card efcd5add): one run here, so it only passes the job through
       locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
+    // the lock reads the order's pair link first (`paymentOwnerOf`): a plain order, no pair
+    query: asValue({ graph: async () => ({ data: [{ id: "order_1", metadata: null }] }) }),
       logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
       [ORDER_BUSINESS_STATUS_MODULE]: asValue({
         assertTransitionAllowed: async () => void calls.push("assert"),
@@ -116,6 +118,8 @@ describe("closing a plain card order captures it first", () => {
     container.register({
       // the order's payment lock (card efcd5add): one run here, so it only passes the job through
       locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
+    // the lock reads the order's pair link first (`paymentOwnerOf`): a plain order, no pair
+    query: asValue({ graph: async () => ({ data: [{ id: "order_1", metadata: null }] }) }),
       logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
       [ORDER_BUSINESS_STATUS_MODULE]: asValue({
         assertTransitionAllowed: async () => void calls.push("assert"),
@@ -156,6 +160,8 @@ describe("closing a plain card order captures it first", () => {
     container.register({
       // the order's payment lock (card efcd5add): one run here, so it only passes the job through
       locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
+    // the lock reads the order's pair link first (`paymentOwnerOf`): a plain order, no pair
+    query: asValue({ graph: async () => ({ data: [{ id: "order_1", metadata: null }] }) }),
       logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
       [ORDER_BUSINESS_STATUS_MODULE]: asValue({
         assertTransitionAllowed: async () => {
