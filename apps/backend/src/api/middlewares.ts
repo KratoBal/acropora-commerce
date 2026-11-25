@@ -64,6 +64,7 @@ import {
   AdminRecordTransferReceipt,
   AdminReleaseOrderPaymentHold,
   AdminSendOrderPaymentLink,
+  AdminSwitchOrderToTransfer,
 } from "./admin/order-payment/validators";
 import { StoreOrderPaymentEmptyBody } from "./store/order-payment/validators";
 import { StoreChangePassword } from "./store/customers/me/password/validators";
@@ -388,6 +389,12 @@ export default defineMiddlewares({
       matcher: "/admin/order-payment/:order_id/payment-link",
       method: "POST",
       middlewares: [validateAndTransformBody(AdminSendOrderPaymentLink)],
+    },
+    {
+      // "Átállítás előre utalásra" (card d31a66a3): a placed order switched to bank transfer for a deposit.
+      matcher: "/admin/order-payment/:order_id/switch-to-transfer",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminSwitchOrderToTransfer)],
     },
     {
       // The payment page's Stripe session; the token in the path is all it takes.

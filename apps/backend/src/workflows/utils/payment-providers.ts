@@ -137,8 +137,14 @@ export const stripeMixedCartEnabled = (env: NodeJS.ProcessEnv = process.env): bo
 
 /**
  * THE PAYMENT ROLE AN ORDER WAS PLACED WITH: the provider of its live (not canceled) payment, or before any payment, of its first
- * session, through the role map. Stripe stays the online card even where the environment does not name it. `null` when the
- * order carries no provider the map knows. The mails and the guest order page read the role the same way.
+ * session in a collection that is not canceled, through the role map. Stripe stays the online card even where the environment
+ * does not name it. `null` when the order carries no provider the map knows. The mails and the guest order page read the role the
+ * same way.
+ *
+ * A COLLECTION THAT IS NOT CANCELED COMES FIRST (card d31a66a3): an order switched to bank transfer keeps its first, canceled
+ * card or cash-on-delivery collection, and its new transfer collection comes after it. When every collection is canceled (a
+ * released card hold before its link) the first session of any collection stands, as before. A caller that does not ask for the
+ * collection's status reads every collection as before.
  */
 export const orderPaymentRoleOf = (
   order: any,
@@ -148,9 +154,11 @@ export const orderPaymentRoleOf = (
   const live = collections
     .flatMap((collection: any) => collection?.payments ?? [])
     .find((payment: any) => payment && !payment.canceled_at)
+  const firstSession = (list: any[]) => list.flatMap((collection: any) => collection?.payment_sessions ?? [])[0]?.provider_id
   const provider =
     live?.provider_id ??
-    collections.flatMap((collection: any) => collection?.payment_sessions ?? [])[0]?.provider_id
+    firstSession(collections.filter((collection: any) => collection?.status !== "canceled")) ??
+    firstSession(collections)
   if (!provider) return null
   return roles.get(provider) ?? (provider === STRIPE_PROVIDER_ID ? "ONLINE_CARD" : null)
 }

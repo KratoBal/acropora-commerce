@@ -196,6 +196,28 @@ describe("order query projection", () => {
     expect(recorded.payment_method).toBe("pp_stripe_stripe")
   })
 
+  it("an order switched to bank transfer reads its open transfer collection, not the canceled one before it (card d31a66a3)", () => {
+    const rows = (collections: Record<string, unknown>[]) =>
+      projectOrderQueryRows({
+        pageOrders: [{ ...order("order_switched", null), payment_collections: collections }] as never,
+        customerOrders: [],
+        statuses: [],
+        history: [],
+      })[0]
+    const switched = rows([
+      { status: "canceled", amount: 1590, payments: [], payment_sessions: [{ provider_id: "pp_acropora_cod", status: "pending_authorization" }] },
+      { status: "not_paid", amount: 1000, payments: [], payment_sessions: [{ provider_id: "pp_acropora_transfer", status: "pending_authorization" }] },
+    ])
+    expect(switched.payment?.provider_id).toBe("pp_acropora_transfer")
+    expect(switched.payment?.amount).toBe(1000)
+    expect(switched.payment_method).toBe("pp_acropora_transfer")
+    // every collection canceled (a released card hold): the first, as before
+    const released = rows([
+      { status: "canceled", amount: 1000, payments: [{ provider_id: "pp_stripe_stripe", amount: 1000, captures: [], canceled_at: "x" }], payment_sessions: [] },
+    ])
+    expect(released.payment_method).toBe("pp_stripe_stripe")
+  })
+
   it("gives hold_expires_at only for a live, uncaptured card hold", () => {
     const withPayments = (payments: Record<string, unknown>[], metadata: Record<string, unknown> | null = null) =>
       projectOrderQueryRows({
