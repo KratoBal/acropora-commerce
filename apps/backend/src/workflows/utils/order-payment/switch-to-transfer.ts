@@ -29,8 +29,18 @@ import { ORDER_PAYMENT_METADATA_KEY } from "./state"
  * WHAT IS REFUSED (409, in Hungarian, as the OS shows it): an order paid already (any captured amount); one shipped or closed; a
  * mixed cart's pair (the two orders share one card payment; first round); an order whose payment method is not known.
  * Switching an order that is already on bank transfer is not an error: it reports `switched: false`.
+ *
+ * ONE RUN AT A TIME PER ORDER (barracuda on #905): a double press, the OS's retry, or a hand retry under the first would both read
+ * the unmarked order, both cancel the payments, and both open a transfer collection (two proforma-ready collections, the receipt
+ * settles one). So the whole run is under the order's lock, and reads the order inside it.
+ *
+ * ONLY OUR OWN KEYS ARE WRITTEN (barracuda on #905): the order module MERGES metadata (`mergeMetadata`), so writing the whole object
+ * back would put every key's load-time value back, over whatever the deadlines job (or anything else) wrote meanwhile.
  */
 export const ORDER_PAYMENT_SWITCH_METADATA_KEY = "acropora_payment_switch"
+
+/** The order's payment lock: the switch takes it; anything else that changes the order's payment may take it too. */
+export const ORDER_PAYMENT_LOCK_KEY = (orderId: string) => `order-payment:${orderId}`
 
 export type SwitchOrder = {
   id: string
@@ -56,7 +66,10 @@ export type SwitchToTransferOperations = {
   openCollection(orderId: string, amount: number): Promise<{ id: string; amount: number }>
   /** A bank-transfer session on the collection, authorized as checkout leaves it; the session's status afterwards. */
   startTransferSession(collectionId: string): Promise<{ id: string; status: string | null }>
-  setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
+  /** Writes THESE keys; the order module merges them, every other key stays as it is. */
+  setMetadata(orderId: string, keys: Record<string, unknown>): Promise<void>
+  /** The job under the order's payment lock (`ORDER_PAYMENT_LOCK_KEY`); a run that cannot get it answers a 409. */
+  withLock<T>(orderId: string, job: () => Promise<T>): Promise<T>
 }
 
 export type SwitchToTransferResult = {
@@ -95,11 +108,18 @@ const waitingTransferSession = (order: SwitchOrder) =>
     .flatMap((c) => c.payment_sessions)
     .find((s) => s.provider_id === BANK_TRANSFER_PROVIDER_ID && s.status === "pending_authorization")
 
-export const switchToBankTransfer = async (
+export const switchToBankTransfer = (
   orderId: string,
   input: { actor: string },
   ops: SwitchToTransferOperations,
   now: () => Date = () => new Date()
+): Promise<SwitchToTransferResult> => ops.withLock(orderId, () => switchLocked(orderId, input, ops, now))
+
+const switchLocked = async (
+  orderId: string,
+  input: { actor: string },
+  ops: SwitchToTransferOperations,
+  now: () => Date
 ): Promise<SwitchToTransferResult> => {
   const order = await ops.load(orderId)
   if (!order) throw new MedusaError(MedusaError.Types.NOT_FOUND, `Order ${orderId} was not found`)
@@ -124,14 +144,14 @@ export const switchToBankTransfer = async (
   }
 
   const started: SwitchMark = mark?.state === "switching" ? mark : { state: "switching", from, started_at: now().toISOString(), by: input.actor }
-  await ops.setMetadata(orderId, { ...(order.metadata ?? {}), [ORDER_PAYMENT_SWITCH_METADATA_KEY]: started })
+  await ops.setMetadata(orderId, { [ORDER_PAYMENT_SWITCH_METADATA_KEY]: started })
 
   // the cash-on-delivery fee leaves with cash on delivery
   const fees = findCashOnDeliveryFeeLineItems(order.items).filter((item) => item.quantity > 0)
   if (fees.length) {
     await ops.removeLines(orderId, fees.map((item) => item.id), input.actor)
     started.removed_cod_fee = true
-    await ops.setMetadata(orderId, { ...(order.metadata ?? {}), [ORDER_PAYMENT_SWITCH_METADATA_KEY]: started })
+    await ops.setMetadata(orderId, { [ORDER_PAYMENT_SWITCH_METADATA_KEY]: started })
   }
 
   // every live payment (card hold, the store's authorization) and every open collection go
@@ -161,10 +181,10 @@ export const switchToBankTransfer = async (
     done_at: now().toISOString(),
     removed_cod_fee: started.removed_cod_fee === true,
   }
-  const metadata: Record<string, unknown> = { ...(after.metadata ?? {}), [ORDER_PAYMENT_SWITCH_METADATA_KEY]: done }
+  const keys: Record<string, unknown> = { [ORDER_PAYMENT_SWITCH_METADATA_KEY]: done }
   // a card order's payment state (hold, link) no longer applies: the guest page and the deadlines job must not read it
-  if (ORDER_PAYMENT_METADATA_KEY in metadata) metadata[ORDER_PAYMENT_METADATA_KEY] = null
-  await ops.setMetadata(orderId, metadata)
+  if (after.metadata && ORDER_PAYMENT_METADATA_KEY in after.metadata) keys[ORDER_PAYMENT_METADATA_KEY] = null
+  await ops.setMetadata(orderId, keys)
 
   return { switched: true, from, amount: after.total, collection_id: collectionId, removed_cod_fee: done.removed_cod_fee === true }
 }

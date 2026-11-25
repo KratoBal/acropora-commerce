@@ -31,17 +31,25 @@ const ROLES = new Map<string, PaymentRole>([
 // the fee line's own marker, from the same constants the shop sets it with
 const COD_FEE = { [ACROPORA_LINE_ITEM_KIND_METADATA_KEY]: "fee", [ACROPORA_FEE_TYPE_METADATA_KEY]: CASH_ON_DELIVERY_FEE_TYPE }
 
-function shop(order: SwitchOrder, options: { failOpen?: boolean } = {}) {
+function shop(order: SwitchOrder, options: { failOpen?: boolean; onRemove?: (order: SwitchOrder) => void } = {}) {
   const calls: string[] = []
+  const written: Record<string, unknown>[] = []
   let collections = 0
+  let held: Promise<unknown> = Promise.resolve()
   const state = { order: structuredClone(order) }
   const ops: SwitchToTransferOperations = {
-    load: async () => structuredClone(state.order),
+    // the snapshot is taken at the call and handed back a little later, so two runs side by side both read before either writes
+    load: async () => {
+      const snapshot = structuredClone(state.order)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      return snapshot
+    },
     roles: () => ROLES,
     removeLines: async (_id, ids) => {
       calls.push(`remove:${ids.join(",")}`)
       for (const item of state.order.items) if (ids.includes(item.id)) item.quantity = 0
       state.order.total -= 590
+      options.onRemove?.(state.order)
     },
     cancelPayment: async (id) => {
       calls.push(`cancelPayment:${id}`)
@@ -64,12 +72,20 @@ function shop(order: SwitchOrder, options: { failOpen?: boolean } = {}) {
       c.payment_sessions.push({ id: "payses_transfer", provider_id: BANK_TRANSFER_PROVIDER_ID, status: "pending_authorization" })
       return { id: "payses_transfer", status: "pending_authorization" }
     },
-    setMetadata: async (_id, metadata) => {
+    // the order module MERGES the keys (`mergeMetadata`), as the real one
+    setMetadata: async (_id, keys) => {
       calls.push("metadata")
-      state.order.metadata = metadata
+      written.push(keys)
+      state.order.metadata = { ...(state.order.metadata ?? {}), ...keys }
+    },
+    // one run at a time, as the locking module
+    withLock: (_id, job) => {
+      const run = held.catch(() => undefined).then(job)
+      held = run
+      return run
     },
   }
-  return { ops, calls, state }
+  return { ops, calls, state, written }
 }
 
 const order = (over: Partial<SwitchOrder>): SwitchOrder => ({
@@ -198,6 +214,30 @@ describe("switching a placed order to bank transfer", () => {
     const result = await switchToBankTransfer("order_1", { actor: "Teszt Elek" }, resumed.ops)
     expect(result).toMatchObject({ switched: true, from: "COD", amount: 120000, removed_cod_fee: true })
     expect(resumed.calls).not.toContain("remove:item_fee")
+  })
+
+  it("two runs side by side (a double press, the OS's retry): one switches, the other finds it done; one transfer collection", async () => {
+    const { ops, calls, state } = shop(codOrder())
+    const results = await Promise.all([
+      switchToBankTransfer("order_1", { actor: "Teszt Elek" }, ops),
+      switchToBankTransfer("order_1", { actor: "Teszt Elek" }, ops),
+    ])
+    expect(results.map((r) => r.switched).sort()).toEqual([false, true])
+    expect(calls.filter((c) => c.startsWith("open:"))).toEqual(["open:120000"])
+    expect(calls.filter((c) => c.startsWith("remove:"))).toEqual(["remove:item_fee"])
+    const waiting = state.order.payment_collections.filter((c) => c.status !== "canceled")
+    expect(waiting).toHaveLength(1)
+  })
+
+  it("writes only its own keys: another key changed during the run keeps its new value", async () => {
+    const { ops, state, written } = shop(
+      { ...codOrder(), metadata: { acropora_note: "régi" } },
+      // the deadlines job (or anything else) writes while the switch runs
+      { onRemove: (o) => void (o.metadata = { ...(o.metadata ?? {}), acropora_note: "új" }) },
+    )
+    await switchToBankTransfer("order_1", { actor: "Teszt Elek" }, ops)
+    expect(state.order.metadata?.acropora_note).toBe("új")
+    for (const keys of written) expect(Object.keys(keys).every((k) => k.startsWith("acropora_payment"))).toBe(true)
   })
 
   it("refuses a paid, a shipped or closed, a mixed-pair and an unknown-method order, without touching it", async () => {

@@ -12,7 +12,8 @@ import type OrderBusinessStatusModuleService from "../../../modules/order-busine
 import { medusaNumber } from "../medusa-number"
 import { buildProviderRoleMap } from "../payment-providers"
 import { runOrderEdit } from "../run-order-edit"
-import type { SwitchOrder, SwitchToTransferOperations } from "./switch-to-transfer"
+import { isLockTimeout } from "../cart-hold"
+import { ORDER_PAYMENT_LOCK_KEY, type SwitchOrder, type SwitchToTransferOperations } from "./switch-to-transfer"
 
 /**
  * The Medusa side of `switchToBankTransfer`. `items.detail.quantity` is asked beside `items.quantity`: with the latter alone the
@@ -126,7 +127,23 @@ export const switchToTransferOperations = (container: MedusaContainer): SwitchTo
     return { id: sessionId, status: ((data?.[0] as any)?.status as string | undefined) ?? null }
   },
 
-  setMetadata: async (orderId, metadata) => {
-    await container.resolve(Modules.ORDER).updateOrders([{ id: orderId, metadata }])
+  // the order module merges these keys into the order's metadata (`mergeMetadata`): the others stay
+  setMetadata: async (orderId, keys) => {
+    await container.resolve(Modules.ORDER).updateOrders([{ id: orderId, metadata: keys }])
+  },
+
+  // Redis-backed on stage (medusa-config: locking-redis), as the split's lock. A second run waits up to a minute; the lock also
+  // expires after a minute, so a crashed run cannot hold the order for good
+  withLock: async (orderId, job) => {
+    try {
+      return await container.resolve(Modules.LOCKING).execute(ORDER_PAYMENT_LOCK_KEY(orderId), job, { timeout: 60 })
+    } catch (error) {
+      if (isLockTimeout(error))
+        throw new MedusaError(
+          MedusaError.Types.CONFLICT,
+          "Ezen a rendelésen épp fut egy átállítás: várd meg, és töltsd újra a rendelést."
+        )
+      throw error
+    }
   },
 })
