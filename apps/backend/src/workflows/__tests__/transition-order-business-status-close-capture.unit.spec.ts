@@ -78,6 +78,31 @@ describe("closing a plain card order captures it first", () => {
     expect(calls.some((line) => line.startsWith("capture"))).toBe(false)
   })
 
+  it("a capture the card provider refuses stops the close with the next-step sentence, and the status does NOT change (card 23ebb2a2)", async () => {
+    const calls: string[] = []
+    ops.loadPair.mockReset().mockResolvedValue({ shipped: side(), pickup: null })
+    ops.setPaymentData.mockReset().mockResolvedValue(undefined)
+    ops.capture.mockReset().mockRejectedValue(new Error("This PaymentIntent could not be captured because it has already expired."))
+    const container = createContainer()
+    container.register({
+      logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
+      [ORDER_BUSINESS_STATUS_MODULE]: asValue({
+        assertTransitionAllowed: async () => void calls.push("assert"),
+        listOrderBusinessStatusModels: async () => [],
+        transitionOrderBusinessStatus: async () => void calls.push("transition"),
+      }),
+    })
+    const message = await failureOf(
+      transitionOrderBusinessStatusWorkflow(container as never).run({
+        input: { order_id: "order_1", to: "closed" as never, actor: "admin", source: "admin" },
+      })
+    )
+    expect(message).toContain("A kártyáról nem sikerült levonni a 14000 Ft-ot")
+    expect(message).toContain("has already expired")
+    expect(message).toMatch(/fizetési linket/)
+    expect(calls).not.toContain("transition")
+  })
+
   it("an order already captured (it went out through Kiszállítás) is closed with no second capture", async () => {
     const { attempt, calls } = await run("closed", side({}, { captured: 14000 }))
     await attempt

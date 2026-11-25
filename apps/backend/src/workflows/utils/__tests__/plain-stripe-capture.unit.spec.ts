@@ -36,7 +36,7 @@ const order = (
         },
 })
 
-const opsFor = (side: CapturePaymentSide | null) => {
+const opsFor = (side: CapturePaymentSide | null, captureFails?: string) => {
   const log: string[] = []
   const ops: SharedCaptureOperations = {
     loadPair: async () => (side ? { shipped: side, pickup: null } : null),
@@ -45,6 +45,7 @@ const opsFor = (side: CapturePaymentSide | null) => {
     },
     capture: async (id, amount) => {
       log.push(`capture ${id} ${amount}`)
+      if (captureFails !== undefined) throw new Error(captureFails)
     },
   }
   return { ops, log }
@@ -63,7 +64,7 @@ describe("capturePlainStripePayment", () => {
     for (const [total, message] of [
       // an item added over the hold, its difference not paid (plan section 5)
       [15000, /^Fizetésre vár: a rendelés többe kerül, mint a kártyán zárolt összeg/],
-      [0, /nincs mit levonni/],
+      [0, /nincs mit levonni.*nem kiszállítani és nem lezárni/],
     ] as const) {
       const { ops, log } = opsFor(order(total))
       await expect(capturePlainStripePayment("order_plain", ops)).rejects.toThrow(message)
@@ -202,5 +203,50 @@ describe("captureOnTransition to closed, a plain card order", () => {
       captureOnTransition({ order_id: "order_plain", to: "out_for_delivery" }, shipping.ops, allowed)
     ).rejects.toThrow()
     expect(shipping.log).toEqual([])
+  })
+})
+
+/*
+  THE PROVIDER'S ERROR IS NOT THE OPERATOR'S ANSWER (card 23ebb2a2; barracuda 61115). What must fail: a hold that ran out or a card that was
+  refused coming back as the raw Stripe text with no next step; the provider's words lost (they say which of the two it was); the status-
+  independent claim "a rendelés állapota nem változott" missing; the sentence leaking more than a short, one-line reason; and any other
+  failure (the amount rules, a payment already captured) changing.
+*/
+describe("a refused capture says what to do next", () => {
+  it("names the amount, keeps the provider's words, says the status did not change and the two ways on", async () => {
+    const { ops } = opsFor(order(14000), "Your card was declined.\n  Code: card_declined")
+    const message = await capturePlainStripePayment("order_plain", ops).then(
+      () => "DID NOT REJECT",
+      (error: Error) => error.message
+    )
+    expect(message).toContain("A kártyáról nem sikerült levonni a 14000 Ft-ot")
+    expect(message).toContain("a rendelés állapota nem változott")
+    expect(message).toContain("Your card was declined. Code: card_declined")
+    expect(message).toMatch(/fizetési linket/)
+    expect(message).toMatch(/másik kártyával/)
+  })
+
+  it("the provider's text is one short line: no line breaks, at most 200 characters of it", async () => {
+    const { ops } = opsFor(order(14000), "x".repeat(900))
+    const message = await capturePlainStripePayment("order_plain", ops).then(
+      () => "",
+      (error: Error) => error.message
+    )
+    expect(message).not.toMatch(/\n/)
+    expect(message.match(/x+/)![0].length).toBe(200)
+  })
+
+  it("an empty provider text still gives the sentence", async () => {
+    const { ops } = opsFor(order(14000), "")
+    await expect(capturePlainStripePayment("order_plain", ops)).rejects.toThrow(/A szolgáltató válasza: nincs\./)
+  })
+
+  it("a successful capture, and the amount-rule refusals, are as before", async () => {
+    const { ops, log } = opsFor(order(14000))
+    expect(await capturePlainStripePayment("order_plain", ops)).toEqual({ captured: true, amount: 14000 })
+    expect(log).toEqual(["capture pay_plain 14000"])
+    const unpaid = opsFor(order(20000, { amount: 14000 }))
+    await expect(capturePlainStripePayment("order_plain", unpaid.ops)).rejects.not.toThrow(/A kártyáról nem sikerült levonni/)
+    expect(unpaid.log).toEqual([])
   })
 })

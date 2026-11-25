@@ -64,7 +64,7 @@ export const capturePlainStripePayment = async (
   if (!(owed > 0)) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      `A rendelés végösszege ${order.total} Ft, nincs mit levonni a kártyáról. Ha a rendelés üres, törölni kell, nem kiszállítani.`
+      `A rendelés végösszege ${order.total} Ft, nincs mit levonni a kártyáról. Ha a rendelés üres, törölni kell, nem kiszállítani és nem lezárni.`
     )
   }
 
@@ -85,6 +85,20 @@ export const capturePlainStripePayment = async (
     throw new MedusaError(MedusaError.Types.NOT_ALLOWED, verdict.message)
   }
 
-  await ops.capture(payment.id, owed)
+  try {
+    await ops.capture(payment.id, owed)
+  } catch (error) {
+    /*
+      THE PROVIDER'S ERROR IS NOT THE OPERATOR'S ANSWER (barracuda 61115; card 23ebb2a2). A hold that ran out or a card that was refused came
+      back as the raw Stripe text; the operator needs the next step. The provider's words stay in the sentence (they say which of the two it
+      was), the status did not change (this runs before it), and the ways on are the two this order has: a payment link, or the customer's
+      other card. Both the close and Kiszállítás reach this.
+    */
+    const reason = (error instanceof Error ? error.message : String(error)).replace(/\s+/g, " ").trim().slice(0, 200)
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      `A kártyáról nem sikerült levonni a ${owed} Ft-ot, a rendelés állapota nem változott. A szolgáltató válasza: ${reason || "nincs"}. Ha a zárolás lejárt, küldj a rendelés oldalán fizetési linket; ha a kártyát elutasították, kérd a vevőt, hogy másik kártyával fizessen.`
+    )
+  }
   return { captured: true, amount: owed }
 }
