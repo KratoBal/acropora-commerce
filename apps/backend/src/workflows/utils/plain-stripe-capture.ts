@@ -18,15 +18,16 @@ import { STRIPE_PROVIDER_ID } from "./stripe-config"
  *
  * and for EVERYTHING ELSE the sentence says the truth: we do not know whether the amount came off, look at the payment in Stripe (named by its
  * PaymentIntent) BEFORE asking for money again. The provider's words stay in every case, as one short line (line breaks collapsed, at most 200
- * characters). The status did not change in any of them (the capture runs before the status step).
+ * characters). THE HEAD IS NEUTRAL ("hibát jelzett"): "the levonás nem történt meg" stands only in the two known branches, where it is true
+ * (barracuda 61130). The status did not change in any of them (the capture runs before the status step).
  */
 export const captureRefusalSentence = (input: { owed: number; reason: string; paymentIntentId: string | null }): string => {
   const reason = input.reason.replace(/\s+/g, " ").trim().slice(0, 200)
-  const head = `A kártyáról nem sikerült levonni a ${input.owed} Ft-ot, a rendelés állapota nem változott. A szolgáltató válasza: ${reason || "nincs"}.`
+  const head = `A kártyás levonás (${input.owed} Ft) hibát jelzett, a rendelés állapota nem változott. A szolgáltató válasza: ${reason || "nincs"}.`
   if (/charge_expired_for_capture|has already expired|expired for capture/i.test(input.reason))
-    return `${head} A zárolás lejárt: küldj a rendelés oldalán fizetési linket.`
+    return `${head} A zárolás lejárt, a levonás nem történt meg: küldj a rendelés oldalán fizetési linket.`
   if (/card_declined|was declined/i.test(input.reason))
-    return `${head} A kártyát elutasították: kérd a vevőt, hogy másik kártyával fizessen.`
+    return `${head} A kártyát elutasították, a levonás nem történt meg: kérd a vevőt, hogy másik kártyával fizessen.`
   return `${head} Nem tudjuk, hogy az összeg a vevő kártyájáról lejött-e (a hiba a szolgáltató sikere UTÁN is jöhetett): nézd meg a Stripe-ban a fizetést${
     input.paymentIntentId ? ` (${input.paymentIntentId})` : ""
   }, MIELŐTT újra pénzt kérnél vagy fizetési linket küldenél.`

@@ -97,7 +97,7 @@ describe("closing a plain card order captures it first", () => {
         input: { order_id: "order_1", to: "closed" as never, actor: "admin", source: "admin" },
       })
     )
-    expect(message).toContain("A kártyáról nem sikerült levonni a 14000 Ft-ot")
+    expect(message).toContain("A kártyás levonás (14000 Ft) hibát jelzett")
     expect(message).toContain("has already expired")
     expect(message).toMatch(/fizetési linket/)
     expect(calls).not.toContain("transition")

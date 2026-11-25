@@ -234,6 +234,7 @@ describe("a failed capture says only what is known", () => {
       const { message } = await refusal(reason)
       expect([reason, /fizetési linket/.test(message), /másik kártyával/.test(message)]).toEqual([reason, true, false])
       expect(message).toContain("a rendelés állapota nem változott")
+      expect(message).toContain("a levonás nem történt meg")
       expect(message).toContain(reason.slice(0, 40))
     }
   })
@@ -246,6 +247,7 @@ describe("a failed capture says only what is known", () => {
         true,
         false,
       ])
+      expect(message).toContain("a levonás nem történt meg")
     }
   })
 
@@ -264,6 +266,8 @@ describe("a failed capture says only what is known", () => {
         false,
         false,
       ])
+      // the head is neutral: "did not come off" would contradict the sentence that follows (barracuda 61130)
+      expect([reason, /nem sikerült levonni|nem történt meg/.test(message)]).toEqual([reason, false])
       expect(message).toContain("Nem tudjuk, hogy az összeg a vevő kártyájáról lejött-e")
       expect(message).toContain("nézd meg a Stripe-ban a fizetést (pi_plain)")
       expect(message).toContain("MIELŐTT újra pénzt kérnél")
@@ -289,7 +293,7 @@ describe("a failed capture says only what is known", () => {
     expect(await capturePlainStripePayment("order_plain", ops)).toEqual({ captured: true, amount: 14000 })
     expect(log).toEqual(["capture pay_plain 14000"])
     const unpaid = opsFor(order(20000, { amount: 14000 }))
-    await expect(capturePlainStripePayment("order_plain", unpaid.ops)).rejects.not.toThrow(/A kártyáról nem sikerült levonni/)
+    await expect(capturePlainStripePayment("order_plain", unpaid.ops)).rejects.not.toThrow(/A kártyás levonás \(/)
     expect(unpaid.log).toEqual([])
   })
 })
