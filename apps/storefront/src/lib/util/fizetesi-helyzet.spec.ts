@@ -48,6 +48,11 @@ describe("a fizetesi helyzet", () => {
     expect(fizetesiHelyzet("canceled", "card")).toBeNull()
     expect(fizetesiHelyzet("captured", "cod")).toBeNull()
     expect(fizetesiHelyzet(null, "cod")).toBeNull()
+    // an advance by transfer (2b): its own situation; any other method's partial capture keeps the raw status
+    expect(fizetesiHelyzet("partially_captured", "transfer")).toBe(
+      "eloleg_beerkezett",
+    )
+    expect(fizetesiHelyzet("partially_captured", "card")).toBeNull()
   })
 })
 
@@ -56,17 +61,21 @@ describe("a vendeg-lap es a fiok ugyanazt mondja", () => {
     const text = paymentTextKeys(state, kind)?.text ?? ""
     return text.endsWith("awaitingRelease.text")
       ? "feloldva"
-      : /\.awaiting(Link)?\.text$/.test(text)
-        ? "fizetesre_var"
-        : "mas"
+      : text.endsWith("advanceReceived.text")
+        ? "eloleg"
+        : /\.awaiting(Link)?\.text$/.test(text)
+          ? "fizetesre_var"
+          : "mas"
   }
   const fiok = (state: string | null, kind: GuestPaymentKind | null) => {
     const szo = fizetesiAllapot(state, undefined, kind)
     return szo === "fizetés az áru megérkezése után"
       ? "feloldva"
-      : szo === "fizetésre vár"
-        ? "fizetesre_var"
-        : "mas"
+      : szo === "előleg beérkezett"
+        ? "eloleg"
+        : szo === "fizetésre vár"
+          ? "fizetesre_var"
+          : "mas"
   }
 
   it("minden allapot x fajta eseten: feloldott ugyanott, es ahol a vendeg-lap fizetesre varast mond, ott a fiok is", () => {

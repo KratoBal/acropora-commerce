@@ -329,6 +329,7 @@ export const en: Dictionary = {
       awaitingRelease: "payment after the goods arrive",
       onDelivery: "pay on delivery",
       atStore: "pay in store on pickup",
+      advanceReceived: "advance received",
     },
     orderDetails: {
       back: "‹ My orders",
@@ -1361,6 +1362,10 @@ export const en: Dictionary = {
         text: "We sent you the payment link by e-mail. The link is valid for 6 days, and we send a reminder on the third day. If the payment has not arrived by then, we close the order.",
       },
       paid: { label: "Paid", text: "The payment has arrived." },
+      advanceReceived: {
+        label: "Advance received",
+        text: "Balance due: {amount}",
+      },
       refunded: {
         label: "Refunded",
         text: "The refund has been made. When your bank credits it to your account depends on your bank.",

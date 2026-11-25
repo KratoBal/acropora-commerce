@@ -45,6 +45,9 @@ export type WithdrawalsChanged = (
  * NOTHING HERE IS BUILT BY THE SHOP: the tracking button is the link the carrier gave, and without
  * one the page says so and shows the number only.
  */
+/** The payment line that carries the balance after an advance (`guestOrder.payment.advanceReceived`). */
+const ADVANCE_TEXT = "guestOrder.payment.advanceReceived.text"
+
 export default function GuestOrderView({
   orders,
   email,
@@ -185,7 +188,19 @@ function OrderBlock({
           <p className="text-[16px] font-semibold text-acr-ink">
             {t(payment.label)}
           </p>
-          <p className="text-[14px] text-acr-ink">{t(payment.text)}</p>
+          {payment.text === ADVANCE_TEXT ? (
+            // after an advance (card d31a66a3, 2b; acrobot 61267): the balance, or no line when the shop sent none
+            order.outstanding != null && (
+              <p
+                className="text-[14px] text-acr-ink"
+                data-testid="guest-order-outstanding"
+              >
+                {t(payment.text, { amount: money(order.outstanding) })}
+              </p>
+            )
+          ) : (
+            <p className="text-[14px] text-acr-ink">{t(payment.text)}</p>
+          )}
         </div>
       )}
 

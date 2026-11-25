@@ -177,6 +177,52 @@ describe("a single order", () => {
   })
 })
 
+/*
+  AN ADVANCE BY TRANSFER (card d31a66a3, 2b; acrobot 61267). MI PIROSÍT: a partly paid transfer order says "Kifizetve" (or
+  "részben kifizetve") instead of "Előleg beérkezett"; the balance is missing or not the shop's; a balance line shows "0" or a
+  placeholder when the shop sent none.
+*/
+describe("an advance received by transfer", () => {
+  it("says Előleg beérkezett, with the balance under it", () => {
+    render(
+      <GuestOrderView
+        orders={[
+          {
+            ...base,
+            payment_status: "partially_captured",
+            payment_kind: "transfer",
+            outstanding: 2880,
+          },
+        ]}
+      />,
+    )
+    const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+    expect(text).toContain("Előleg beérkezett")
+    expect(text).not.toContain("Kifizetve")
+    expect(screen.getByTestId("guest-order-outstanding").textContent).toMatch(
+      /^Hátralék: 2\s?880\sFt$/,
+    )
+  })
+
+  it("without the balance from the shop: the label stands, and no balance line", () => {
+    render(
+      <GuestOrderView
+        orders={[
+          {
+            ...base,
+            payment_status: "partially_captured",
+            payment_kind: "transfer",
+          },
+        ]}
+      />,
+    )
+    expect(screen.getByTestId("guest-order-payment").textContent).toContain(
+      "Előleg beérkezett",
+    )
+    expect(screen.queryByTestId("guest-order-outstanding")).toBeNull()
+  })
+})
+
 describe("a released card hold, as the shop really has it", () => {
   it("every collection canceled and the kind card_released: the released hold's sentence, no link and no deadline (barracuda on #891 v2)", () => {
     render(

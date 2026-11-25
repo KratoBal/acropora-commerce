@@ -334,6 +334,7 @@ export const hu = {
       awaitingRelease: "fizetés az áru megérkezése után",
       onDelivery: "fizetés átvételkor",
       atStore: "fizetés a boltban, átvételkor",
+      advanceReceived: "előleg beérkezett",
     },
     orderDetails: {
       back: "‹ Rendeléseim",
@@ -1406,6 +1407,10 @@ export const hu = {
       paid: {
         label: "Kifizetve",
         text: "A fizetés megérkezett.",
+      },
+      advanceReceived: {
+        label: "Előleg beérkezett",
+        text: "Hátralék: {amount}",
       },
       refunded: {
         label: "Visszatérítve",

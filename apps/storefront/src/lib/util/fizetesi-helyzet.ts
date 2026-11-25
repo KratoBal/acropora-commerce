@@ -15,6 +15,7 @@ import type { GuestPaymentKind } from "./guest-order"
  *   atvetelkor      utanvet: atvetelkor fizet, nincs mire varni
  *   boltban         bolti fizetes: a boltban, atvetelkor fizet (a system provider azonnal authorized)
  *   lezart_zarolas  zarolas-allapot egy lezart rendelesen: a zarolas mar nem el
+ *   eloleg_beerkezett  eloreutalas, az eloleg megjott, a hatralek meg nem (kartya d31a66a3, 2b; acrobot 61267): nem "kifizetve"
  *   null            a fajta nem mond semmi kulont: a nyers allapot beszel (kifizetve, visszateritve, ...)
  */
 export type FizetesiHelyzet =
@@ -26,6 +27,7 @@ export type FizetesiHelyzet =
   | "atvetelkor"
   | "boltban"
   | "lezart_zarolas"
+  | "eloleg_beerkezett"
 
 const VARAKOZO = new Set(["not_paid", "awaiting"])
 const ZAROLAS = new Set(["authorized", "partially_authorized"])
@@ -54,6 +56,9 @@ export function fizetesiHelyzet(
     if (kind === "card") return "kartya_var"
     return "varakozik"
   }
+  // an advance by transfer arrived, the balance not yet: the raw status would say "részben kifizetve" or "Kifizetve"
+  if (state === "partially_captured" && kind === "transfer")
+    return "eloleg_beerkezett"
   if (ZAROLAS.has(state) && uzleti && LEZARO.has(uzleti))
     return "lezart_zarolas"
   return null
