@@ -7,6 +7,7 @@ import {
 } from "../../modules/stripe-capture/share"
 import { smallestUnit } from "../../modules/stripe-capture/smallest-unit"
 import { refuseWhileEditing } from "./order-edit-hold"
+import type { OrderPaymentLock } from "./order-payment/lock"
 import { DIFFERENCE_UNPAID, differenceOverpaid, refuseWhileAwaitingPayment } from "./order-payment/state"
 import {
   capturePlainStripePayment,
@@ -233,3 +234,18 @@ export const captureOnTransition = async (
   }
   return shared
 }
+
+/**
+ * THE CAPTURE UNDER THE ORDER'S PAYMENT LOCK (card efcd5add): Kiszállítás and the close take money, so they take the lock the switch
+ * to bank transfer and the hold's release take (`order-payment/lock.ts`), and run one at a time with them on the order. Any other
+ * status takes no money and no lock.
+ */
+export const captureOnTransitionUnderLock = (
+  input: { order_id: string; to: string },
+  ops: SharedCaptureOperations,
+  assertAllowed: () => Promise<void>,
+  lock: OrderPaymentLock
+): Promise<SharedCaptureResult | PlainCaptureResult | null> =>
+  input.to === CAPTURE_ON_STATUS || input.to === CLOSE_STATUS
+    ? lock(input.order_id, () => captureOnTransition(input, ops, assertAllowed))
+    : captureOnTransition(input, ops, assertAllowed)

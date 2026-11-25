@@ -1,7 +1,8 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
 import { releaseHoldOperations } from "../../../../../workflows/utils/order-payment/operations"
-import { releaseHold } from "../../../../../workflows/utils/order-payment/release-hold"
+import { orderPaymentLock } from "../../../../../workflows/utils/order-payment/lock"
+import { releaseHold, releaseHoldUnderLock } from "../../../../../workflows/utils/order-payment/release-hold"
 import { notifyHoldReleased, type PaymentNotification } from "../../../../../workflows/utils/webshop-mail/payment-notify"
 import { answerRefusal } from "../../../../refusal"
 import type { AdminReleaseOrderPaymentHoldType } from "../../validators"
@@ -22,7 +23,8 @@ export const POST = async (req: MedusaRequest<AdminReleaseOrderPaymentHoldType>,
 
   let result: Awaited<ReturnType<typeof releaseHold>>
   try {
-    result = await releaseHold(order_id, releaseHoldOperations(req.scope))
+    // under the order's payment lock, one at a time with the switch to bank transfer and the capture (card efcd5add)
+    result = await releaseHoldUnderLock(order_id, releaseHoldOperations(req.scope), orderPaymentLock(req.scope))
   } catch (error) {
     if (answerRefusal(res, error)) return
     throw error
