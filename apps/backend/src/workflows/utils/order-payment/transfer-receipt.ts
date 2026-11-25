@@ -24,7 +24,7 @@ import { BANK_TRANSFER_RECEIPT_KEY, readBankTransferReceipt } from "../../../mod
  * A second call after the capture is not an error: it reports what is there.
  *
  * AN ADVANCE, THEN THE BALANCE (card d31a66a3, 2b; Balázs 2026-11-25 10:19 UTC): for a high-value product the proforma asks for an
- * advance, so the first transfer can be LESS than the session. Then the receipt is marked partial, the provider answers
+ * advance, so the first transfer can be LESS than the session, when the OS marks it as the advance proforma's (`advance`). Then the receipt is marked partial, the provider answers
  * AUTHORIZED (a payment for the whole order, nothing captured), and the advance's amount is captured on it: the order reads
  * partially paid. The balance is the next transfer: exactly what is still uncaptured, captured on the same payment, and the order
  * reads paid. The same advance sent again (its reference) is no second capture; one that stopped between the authorize and the
@@ -64,6 +64,11 @@ export type TransferReceiptInput = {
   received_at: string
   /** What the OS paired, in the order's currency. */
   amount: number
+  /**
+   * The OS issued an ADVANCE proforma, and this is its transfer (2b): only then is an amount below the order an advance. Without
+   * it a smaller amount is refused as before: a full proforma underpaid (a typo, a bank fee) must not read as an advance.
+   */
+  advance?: boolean
 }
 
 export type TransferReceiptResult = {
@@ -98,12 +103,12 @@ export const recordTransferReceipt = async (
   const waiting = transfer.filter((s) => s.status === "pending_authorization")
   if (waiting.length !== 1) refuse("A rendelés előre utalásos fizetése nem vár befizetésre.")
   const session = waiting[0]!
-  if (cents(input.amount) > cents(session.amount))
+  // less than the order is an advance only when the OS says it is one (barracuda on #908): any other difference is refused
+  const partial = input.advance === true && cents(input.amount) < cents(session.amount)
+  if (cents(input.amount) !== cents(session.amount) && !partial)
     refuse(
       `Az összeg eltér: a rendelés ${session.amount} ${session.currency_code.toUpperCase()}, a beérkezés ${input.amount}.`
     )
-  // less than the order: an advance (2b)
-  const partial = cents(input.amount) < cents(session.amount)
 
   await ops.updateSession({
     id: session.id,

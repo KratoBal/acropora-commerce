@@ -108,7 +108,11 @@ describe("recording a received bank transfer in Medusa", () => {
   it("an advance: the receipt is partial, the provider authorizes, and only the advance is captured", async () => {
     const { operations, calls, updates } = ops([transfer()])
     await expect(
-      recordTransferReceipt("order_55", { reference: "ELO-1", received_at: "2026-11-26", amount: 1920 }, operations)
+      recordTransferReceipt(
+        "order_55",
+        { reference: "ELO-1", received_at: "2026-11-26", amount: 1920, advance: true },
+        operations
+      )
     ).resolves.toEqual({ recorded: true, payment_id: "pay_1", captured: 1920, outstanding: 2880 })
     expect(calls).toEqual(["update payses_1", "authorize payses_1", "provider authorized", "capture pay_1 1920"])
     expect(updates[0]!.data[BANK_TRANSFER_RECEIPT_KEY]).toEqual({
@@ -117,6 +121,15 @@ describe("recording a received bank transfer in Medusa", () => {
       partial: true,
       amount: 1920,
     })
+  })
+
+  // barracuda on #908: a full proforma underpaid (a typo, a bank fee) must not turn into an advance
+  it("a smaller transfer without the advance mark is refused, as before, and nothing is written", async () => {
+    const { operations, calls } = ops([transfer()])
+    await expect(
+      recordTransferReceipt("order_55", { reference: "OTP 0013", received_at: "2026-10-07", amount: 4300 }, operations)
+    ).rejects.toMatchObject({ type: "conflict", message: expect.stringMatching(/Az összeg eltér/) })
+    expect(calls).toEqual([])
   })
 
   const afterAdvance = (captured: number) =>
@@ -176,11 +189,13 @@ describe("the route's body", () => {
     const matcher = "/admin/order-payment/:order_id/transfer-receipt"
     expect((middlewares.routes ?? []).find((r) => r.matcher === matcher)?.middlewares).toHaveLength(1)
     expect(AdminRecordTransferReceipt.safeParse(input).success).toBe(true)
+    expect(AdminRecordTransferReceipt.safeParse({ ...input, advance: true }).success).toBe(true)
     for (const bad of [
       { ...input, reference: "  " },
       { ...input, received_at: "2026.10.07" },
       { ...input, amount: 0 },
       { ...input, captured: true },
+      { ...input, advance: "yes" },
     ])
       expect(AdminRecordTransferReceipt.safeParse(bad).success).toBe(false)
   })
