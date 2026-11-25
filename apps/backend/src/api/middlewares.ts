@@ -51,6 +51,7 @@ import { StorePostNewsletterSubscription, StorePostNewsletterToken } from "./sto
 import { StorePostStockAlert, StorePostStockAlertToken } from "./store/stock-alerts/validators";
 import { AdminPutLivestockArrivals } from "./admin/livestock-arrivals/validators";
 import { AdminPostOrderNotes } from "./admin/order-notes/validators";
+import { AdminPostManualRefundSettle } from "./admin/order-manual-refund/validators";
 import { AdminGetLoyaltyParams, AdminPostLoyaltyAdjustment } from "./admin/loyalty/validators";
 import { StoreGetLoyaltyParams } from "./store/customers/me/loyalty/validators";
 import {
@@ -484,6 +485,12 @@ export default defineMiddlewares({
       matcher: "/store/stock-alerts/unsubscribe",
       method: "POST",
       middlewares: [validateAndTransformBody(StorePostStockAlertToken)],
+    },
+    {
+      // the hand refund settled by a person: who and when, on the mark of the unsuccessful close (card abf3f8f4)
+      matcher: "/admin/order-manual-refund/:order_id/settle",
+      method: "POST",
+      middlewares: [validateAndTransformBody(AdminPostManualRefundSettle)],
     },
     {
       // the order page's two note pencils (card d3b54954)
