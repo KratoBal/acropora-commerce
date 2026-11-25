@@ -44,6 +44,7 @@ const PAYMENT_KIND_FIELDS = [
   "id",
   "status",
   "metadata",
+  "payment_collections.status",
   "payment_collections.payments.provider_id",
   "payment_collections.payments.canceled_at",
   "payment_collections.payment_sessions.provider_id",

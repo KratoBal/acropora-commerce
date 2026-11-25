@@ -37,3 +37,15 @@ export const AdminRecordTransferReceipt = z
   .strict()
 
 export type AdminRecordTransferReceiptType = z.infer<typeof AdminRecordTransferReceipt>
+
+/**
+ * "Átállítás előre utalásra" (card d31a66a3): who pressed it in the OS (the order's edit and the switch mark carry the name).
+ * Nothing else: the amount is the order's total, the provider the shop's bank transfer.
+ */
+export const AdminSwitchOrderToTransfer = z
+  .object({
+    actor: z.string().trim().min(1).max(120),
+  })
+  .strict()
+
+export type AdminSwitchOrderToTransferType = z.infer<typeof AdminSwitchOrderToTransfer>
