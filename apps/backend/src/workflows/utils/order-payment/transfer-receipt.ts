@@ -2,6 +2,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 
 import { BANK_TRANSFER_PROVIDER_ID } from "../../../modules/acropora-transfer"
 import { BANK_TRANSFER_RECEIPT_KEY, readBankTransferReceipt } from "../../../modules/acropora-transfer/service"
+import type { OrderPaymentLock } from "./lock"
 
 /**
  * THE PREPAYMENT ARRIVED, SO THE ORDER IS PAID IN MEDUSA (card bb3a6bd5;
@@ -86,6 +87,18 @@ const refuse = (message: string): never => {
 }
 
 const cents = (value: number) => Math.round(value * 100)
+
+/**
+ * THE RECEIPT UNDER THE ORDER'S PAYMENT LOCK (card d31a66a3, 2b; barracuda on #908): an advance's capture and the balance's change
+ * the order's payment, so they run one at a time with each other and with the switch, the capture and the hold's release
+ * (`lock.ts`). Two balance calls side by side would both read the whole remainder; under the lock the second reads it captured.
+ */
+export const recordTransferReceiptUnderLock = (
+  orderId: string,
+  input: TransferReceiptInput,
+  ops: TransferReceiptOperations,
+  lock: OrderPaymentLock
+): Promise<TransferReceiptResult> => lock(orderId, () => recordTransferReceipt(orderId, input, ops))
 
 export const recordTransferReceipt = async (
   orderId: string,

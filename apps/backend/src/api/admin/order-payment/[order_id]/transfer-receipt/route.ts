@@ -1,6 +1,7 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 
-import { recordTransferReceipt } from "../../../../../workflows/utils/order-payment/transfer-receipt"
+import { orderPaymentLock } from "../../../../../workflows/utils/order-payment/lock"
+import { recordTransferReceiptUnderLock } from "../../../../../workflows/utils/order-payment/transfer-receipt"
 import { transferReceiptOperations } from "../../../../../workflows/utils/order-payment/transfer-receipt-operations"
 import { answerRefusal } from "../../../../refusal"
 import type { AdminRecordTransferReceiptType } from "../../validators"
@@ -14,7 +15,13 @@ import type { AdminRecordTransferReceiptType } from "../../validators"
 export const POST = async (req: MedusaRequest<AdminRecordTransferReceiptType>, res: MedusaResponse) => {
   const { order_id } = req.params
   try {
-    const result = await recordTransferReceipt(order_id, req.validatedBody, transferReceiptOperations(req.scope))
+    // under the order's payment lock (2b): an advance's and the balance's capture, one at a time on the order
+    const result = await recordTransferReceiptUnderLock(
+      order_id,
+      req.validatedBody,
+      transferReceiptOperations(req.scope),
+      orderPaymentLock(req.scope)
+    )
     res.json(result)
   } catch (error) {
     if (answerRefusal(res, error)) return

@@ -32,7 +32,19 @@ jest.mock("../../../../workflows/utils/order-payment/release-hold", () => {
 jest.mock("../../../../workflows/utils/order-payment/lock", () => ({
   orderPaymentLock: jest.fn(() => (_id: string, job: () => Promise<unknown>) => job()),
 }))
-jest.mock("../../../../workflows/utils/order-payment/transfer-receipt", () => ({ recordTransferReceipt: jest.fn() }))
+jest.mock("../../../../workflows/utils/order-payment/transfer-receipt", () => {
+  const recordTransferReceipt = jest.fn()
+  // the route's locked entry: the lock (mocked) runs the receipt
+  return {
+    recordTransferReceipt,
+    recordTransferReceiptUnderLock: (
+      id: string,
+      input: unknown,
+      ops: unknown,
+      lock: (id: string, job: () => Promise<unknown>) => Promise<unknown>
+    ) => lock(id, () => recordTransferReceipt(id, input, ops)),
+  }
+})
 jest.mock("../../../../workflows/utils/order-payment/transfer-receipt-operations", () => ({
   transferReceiptOperations: jest.fn(() => "transfer-ops"),
 }))
