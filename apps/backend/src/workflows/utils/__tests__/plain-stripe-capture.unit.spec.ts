@@ -207,38 +207,81 @@ describe("captureOnTransition to closed, a plain card order", () => {
 })
 
 /*
-  THE PROVIDER'S ERROR IS NOT THE OPERATOR'S ANSWER (card 23ebb2a2; barracuda 61115). What must fail: a hold that ran out or a card that was
-  refused coming back as the raw Stripe text with no next step; the provider's words lost (they say which of the two it was); the status-
-  independent claim "a rendelés állapota nem változott" missing; the sentence leaking more than a short, one-line reason; and any other
-  failure (the amount rules, a payment already captured) changing.
+  A FAILED CAPTURE TELLS THE OPERATOR THE TRUTH (card 23ebb2a2; barracuda 61127, BLOCKING in the first version). The capture is Medusa's: Stripe
+  captures first, then Medusa books it. An error AFTER Stripe's success (a timeout on the answer, a failed write, a retried call) leaves the
+  customer's card ALREADY CHARGED; a sentence that said "the money did not come off, send a payment link" would make the operator ask twice.
+  What must fail: the link advice or the "another card" advice on an error that does not NAME an expired hold or a declined card (a network
+  timeout, a database error, an "already captured"); the unknown case not telling the operator to LOOK AT STRIPE before asking for money again,
+  or not naming the PaymentIntent; the known causes losing their advice; the provider's words lost, or more than one short line; the status
+  claim missing.
 */
-describe("a refused capture says what to do next", () => {
-  it("names the amount, keeps the provider's words, says the status did not change and the two ways on", async () => {
-    const { ops } = opsFor(order(14000), "Your card was declined.\n  Code: card_declined")
-    const message = await capturePlainStripePayment("order_plain", ops).then(
-      () => "DID NOT REJECT",
-      (error: Error) => error.message
-    )
-    expect(message).toContain("A kártyáról nem sikerült levonni a 14000 Ft-ot")
-    expect(message).toContain("a rendelés állapota nem változott")
-    expect(message).toContain("Your card was declined. Code: card_declined")
-    expect(message).toMatch(/fizetési linket/)
-    expect(message).toMatch(/másik kártyával/)
+const refusal = async (reason: string, side = order(14000)) => {
+  const { ops, log } = opsFor(side, reason)
+  const message = await capturePlainStripePayment("order_plain", ops).then(
+    () => "DID NOT REJECT",
+    (error: Error) => error.message
+  )
+  return { message, log }
+}
+
+describe("a failed capture says only what is known", () => {
+  it("an EXPIRED hold, named unmistakably: a payment link", async () => {
+    for (const reason of [
+      "This PaymentIntent could not be captured because it has already expired.",
+      "code: charge_expired_for_capture",
+      "The charge has expired for capture",
+    ]) {
+      const { message } = await refusal(reason)
+      expect([reason, /fizetési linket/.test(message), /másik kártyával/.test(message)]).toEqual([reason, true, false])
+      expect(message).toContain("a rendelés állapota nem változott")
+      expect(message).toContain(reason.slice(0, 40))
+    }
+  })
+
+  it("a DECLINED card, named unmistakably: another card", async () => {
+    for (const reason of ["Your card was declined.", "code: card_declined"]) {
+      const { message } = await refusal(reason)
+      expect([reason, /másik kártyával/.test(message), /fizetési linket küldenél|küldj a rendelés oldalán/.test(message)]).toEqual([
+        reason,
+        true,
+        false,
+      ])
+    }
+  })
+
+  it("ANYTHING ELSE (a timeout, a database error, an already captured): no link advice, no card advice, and LOOK AT STRIPE FIRST, naming the PaymentIntent", async () => {
+    for (const reason of [
+      "Request timed out after 30000ms",
+      "ETIMEDOUT",
+      "database is locked",
+      "This PaymentIntent has already been captured.",
+      "token expired",
+      "",
+    ]) {
+      const { message } = await refusal(reason)
+      expect([reason, /küldj a rendelés oldalán fizetési linket/.test(message), /kérd a vevőt, hogy másik kártyával fizessen/.test(message)]).toEqual([
+        reason,
+        false,
+        false,
+      ])
+      expect(message).toContain("Nem tudjuk, hogy az összeg a vevő kártyájáról lejött-e")
+      expect(message).toContain("nézd meg a Stripe-ban a fizetést (pi_plain)")
+      expect(message).toContain("MIELŐTT újra pénzt kérnél")
+      expect(message).toContain("a rendelés állapota nem változott")
+    }
+  })
+
+  it("without a PaymentIntent id the unknown case still says to look in Stripe", async () => {
+    const { message } = await refusal("ETIMEDOUT", order(14000, { data: {} }))
+    expect(message).toContain("nézd meg a Stripe-ban a fizetést, MIELŐTT")
   })
 
   it("the provider's text is one short line: no line breaks, at most 200 characters of it", async () => {
-    const { ops } = opsFor(order(14000), "x".repeat(900))
-    const message = await capturePlainStripePayment("order_plain", ops).then(
-      () => "",
-      (error: Error) => error.message
-    )
+    const { message } = await refusal("x".repeat(900))
     expect(message).not.toMatch(/\n/)
     expect(message.match(/x+/)![0].length).toBe(200)
-  })
-
-  it("an empty provider text still gives the sentence", async () => {
-    const { ops } = opsFor(order(14000), "")
-    await expect(capturePlainStripePayment("order_plain", ops)).rejects.toThrow(/A szolgáltató válasza: nincs\./)
+    const multi = await refusal("Your card was declined.\n  Code: card_declined")
+    expect(multi.message).toContain("Your card was declined. Code: card_declined")
   })
 
   it("a successful capture, and the amount-rule refusals, are as before", async () => {

@@ -103,6 +103,30 @@ describe("closing a plain card order captures it first", () => {
     expect(calls).not.toContain("transition")
   })
 
+  it("an UNKNOWN capture error (the answer timed out: the card may be charged) stops the close and says to look at Stripe, never to ask for money again", async () => {
+    const calls: string[] = []
+    ops.loadPair.mockReset().mockResolvedValue({ shipped: side(), pickup: null })
+    ops.setPaymentData.mockReset().mockResolvedValue(undefined)
+    ops.capture.mockReset().mockRejectedValue(new Error("Request timed out after 30000ms"))
+    const container = createContainer()
+    container.register({
+      logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
+      [ORDER_BUSINESS_STATUS_MODULE]: asValue({
+        assertTransitionAllowed: async () => void calls.push("assert"),
+        listOrderBusinessStatusModels: async () => [],
+        transitionOrderBusinessStatus: async () => void calls.push("transition"),
+      }),
+    })
+    const message = await failureOf(
+      transitionOrderBusinessStatusWorkflow(container as never).run({
+        input: { order_id: "order_1", to: "closed" as never, actor: "admin", source: "admin" },
+      })
+    )
+    expect(message).toContain("nézd meg a Stripe-ban a fizetést (pi_1)")
+    expect(message).not.toMatch(/küldj a rendelés oldalán fizetési linket/)
+    expect(calls).not.toContain("transition")
+  })
+
   it("an order already captured (it went out through Kiszállítás) is closed with no second capture", async () => {
     const { attempt, calls } = await run("closed", side({}, { captured: 14000 }))
     await attempt

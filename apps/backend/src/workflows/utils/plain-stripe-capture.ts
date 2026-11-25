@@ -7,6 +7,31 @@ import { DIFFERENCE_UNPAID, differenceOverpaid } from "./order-payment/state"
 import type { SharedCaptureOperations } from "./shared-stripe-capture"
 import { STRIPE_PROVIDER_ID } from "./stripe-config"
 
+/**
+ * WHAT A FAILED CAPTURE TELLS THE OPERATOR (card 23ebb2a2; barracuda 61127, BLOCKING in the first version). `ops.capture` is Medusa's capture:
+ * the provider (Stripe) captures first, then Medusa books it. An error AFTER Stripe's success (a timeout on the answer, a failed database write,
+ * a retried call) leaves the customer's card ALREADY CHARGED, so a sentence that says "the money did not come off, send a payment link" would
+ * make the operator ask for the money twice. So the advice is given ONLY for the two causes the error text names unmistakably:
+ *
+ *   an expired hold          (`charge_expired_for_capture`, "has already expired", "expired for capture") -> a payment link
+ *   a declined card          (`card_declined`, "was declined")                                          -> another card
+ *
+ * and for EVERYTHING ELSE the sentence says the truth: we do not know whether the amount came off, look at the payment in Stripe (named by its
+ * PaymentIntent) BEFORE asking for money again. The provider's words stay in every case, as one short line (line breaks collapsed, at most 200
+ * characters). The status did not change in any of them (the capture runs before the status step).
+ */
+export const captureRefusalSentence = (input: { owed: number; reason: string; paymentIntentId: string | null }): string => {
+  const reason = input.reason.replace(/\s+/g, " ").trim().slice(0, 200)
+  const head = `A kártyáról nem sikerült levonni a ${input.owed} Ft-ot, a rendelés állapota nem változott. A szolgáltató válasza: ${reason || "nincs"}.`
+  if (/charge_expired_for_capture|has already expired|expired for capture/i.test(input.reason))
+    return `${head} A zárolás lejárt: küldj a rendelés oldalán fizetési linket.`
+  if (/card_declined|was declined/i.test(input.reason))
+    return `${head} A kártyát elutasították: kérd a vevőt, hogy másik kártyával fizessen.`
+  return `${head} Nem tudjuk, hogy az összeg a vevő kártyájáról lejött-e (a hiba a szolgáltató sikere UTÁN is jöhetett): nézd meg a Stripe-ban a fizetést${
+    input.paymentIntentId ? ` (${input.paymentIntentId})` : ""
+  }, MIELŐTT újra pénzt kérnél vagy fizetési linket küldenél.`
+}
+
 export type PlainCaptureResult =
   | { captured: false; reason: "not_card" | "shared" | "already_captured" | "no_order" }
   | { captured: true; amount: number }
@@ -88,16 +113,13 @@ export const capturePlainStripePayment = async (
   try {
     await ops.capture(payment.id, owed)
   } catch (error) {
-    /*
-      THE PROVIDER'S ERROR IS NOT THE OPERATOR'S ANSWER (barracuda 61115; card 23ebb2a2). A hold that ran out or a card that was refused came
-      back as the raw Stripe text; the operator needs the next step. The provider's words stay in the sentence (they say which of the two it
-      was), the status did not change (this runs before it), and the ways on are the two this order has: a payment link, or the customer's
-      other card. Both the close and Kiszállítás reach this.
-    */
-    const reason = (error instanceof Error ? error.message : String(error)).replace(/\s+/g, " ").trim().slice(0, 200)
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      `A kártyáról nem sikerült levonni a ${owed} Ft-ot, a rendelés állapota nem változott. A szolgáltató válasza: ${reason || "nincs"}. Ha a zárolás lejárt, küldj a rendelés oldalán fizetési linket; ha a kártyát elutasították, kérd a vevőt, hogy másik kártyával fizessen.`
+      captureRefusalSentence({
+        owed,
+        reason: error instanceof Error ? error.message : String(error),
+        paymentIntentId: typeof payment.data?.id === "string" ? payment.data.id : null,
+      })
     )
   }
   return { captured: true, amount: owed }
