@@ -38,6 +38,8 @@ const run = async (to: string, pair: ReturnType<typeof side> | null) => {
   ops.setPaymentData.mockReset().mockResolvedValue(undefined)
   const container = createContainer()
   container.register({
+    // the order's payment lock (card efcd5add): one run here, so it only passes the job through
+    locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
     logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
     [ORDER_BUSINESS_STATUS_MODULE]: asValue({
       assertTransitionAllowed: async () => void calls.push("assert"),
@@ -85,6 +87,10 @@ describe("closing a plain card order captures it first", () => {
     ops.capture.mockReset().mockRejectedValue(new Error("This PaymentIntent could not be captured because it has already expired."))
     const container = createContainer()
     container.register({
+      // the order's payment lock (card efcd5add): one run here, so it only passes the job through
+      locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
+    // the lock reads the order's pair link first (`paymentOwnerOf`): a plain order, no pair
+    query: asValue({ graph: async () => ({ data: [{ id: "order_1", metadata: null }] }) }),
       logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
       [ORDER_BUSINESS_STATUS_MODULE]: asValue({
         assertTransitionAllowed: async () => void calls.push("assert"),
@@ -110,6 +116,10 @@ describe("closing a plain card order captures it first", () => {
     ops.capture.mockReset().mockRejectedValue(new Error("Request timed out after 30000ms"))
     const container = createContainer()
     container.register({
+      // the order's payment lock (card efcd5add): one run here, so it only passes the job through
+      locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
+    // the lock reads the order's pair link first (`paymentOwnerOf`): a plain order, no pair
+    query: asValue({ graph: async () => ({ data: [{ id: "order_1", metadata: null }] }) }),
       logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
       [ORDER_BUSINESS_STATUS_MODULE]: asValue({
         assertTransitionAllowed: async () => void calls.push("assert"),
@@ -148,6 +158,10 @@ describe("closing a plain card order captures it first", () => {
     ops.capture.mockReset().mockImplementation(async () => void calls.push("capture"))
     const container = createContainer()
     container.register({
+      // the order's payment lock (card efcd5add): one run here, so it only passes the job through
+      locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
+    // the lock reads the order's pair link first (`paymentOwnerOf`): a plain order, no pair
+    query: asValue({ graph: async () => ({ data: [{ id: "order_1", metadata: null }] }) }),
       logger: asValue({ info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
       [ORDER_BUSINESS_STATUS_MODULE]: asValue({
         assertTransitionAllowed: async () => {

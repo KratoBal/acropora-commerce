@@ -39,8 +39,7 @@ import { ORDER_PAYMENT_METADATA_KEY } from "./state"
  */
 export const ORDER_PAYMENT_SWITCH_METADATA_KEY = "acropora_payment_switch"
 
-/** The order's payment lock: the switch takes it; anything else that changes the order's payment may take it too. */
-export const ORDER_PAYMENT_LOCK_KEY = (orderId: string) => `order-payment:${orderId}`
+export { ORDER_PAYMENT_LOCK_KEY } from "./lock"
 
 export type SwitchOrder = {
   id: string

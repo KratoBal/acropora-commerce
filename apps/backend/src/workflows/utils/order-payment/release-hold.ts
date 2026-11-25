@@ -3,6 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { stripeShareFactsOf } from "../../../modules/stripe-capture/share"
 import { refuseWhileEditing } from "../order-edit-hold"
 import { STRIPE_PROVIDER_ID } from "../stripe-config"
+import type { OrderPaymentLock } from "./lock"
 import {
   ORDER_PAYMENT_METADATA_KEY,
   type OrderPaymentFacts,
@@ -69,6 +70,18 @@ export type ReleaseHoldResult = {
 const refuse = (message: string): never => {
   throw new MedusaError(MedusaError.Types.CONFLICT, message)
 }
+
+/**
+ * THE RELEASE UNDER THE ORDER'S PAYMENT LOCK (card efcd5add): it cancels the card hold, so it runs one at a time with the switch to
+ * bank transfer and the capture on the order (`lock.ts`). The order the OS names is the key; the switch refuses a mixed cart's pair,
+ * so the pair's other order is not one the switch could be running on.
+ */
+export const releaseHoldUnderLock = (
+  orderId: string,
+  ops: ReleaseHoldOperations,
+  lock: OrderPaymentLock,
+  now: () => Date = () => new Date()
+): Promise<ReleaseHoldResult> => lock(orderId, () => releaseHold(orderId, ops, now))
 
 export const releaseHold = async (
   orderId: string,

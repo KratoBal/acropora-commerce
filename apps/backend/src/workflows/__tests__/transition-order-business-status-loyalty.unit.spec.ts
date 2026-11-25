@@ -18,6 +18,8 @@ const run = async (to: string, opts: { accrue?: jest.Mock; rows?: unknown[] } = 
   const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() }
   const container = createContainer()
   container.register({
+    // the order's payment lock (card efcd5add): one run here, so it only passes the job through
+    locking: asValue({ execute: async (_key: unknown, job: () => Promise<unknown>) => job() }),
     logger: asValue(logger),
     [ORDER_BUSINESS_STATUS_MODULE]: asValue({
       assertTransitionAllowed: async () => void calls.push("assert"),
