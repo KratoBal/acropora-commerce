@@ -14,6 +14,19 @@ jest.mock("../../workflows/utils/order-edit-hold", () => ({
   ...jest.requireActual("../../workflows/utils/order-edit-hold"),
   orderEditHoldDecision: jest.fn(),
 }))
+// the order's payment lock (card f3b62beb): the double says whether a call ran inside it
+const lockState = { held: false, taken: [] as string[], nextHeld: [] as boolean[] }
+jest.mock("../../workflows/utils/order-payment/lock", () => ({
+  orderPaymentLock: () => async (id: string, job: () => Promise<unknown>) => {
+    lockState.taken.push(id)
+    lockState.held = true
+    try {
+      return await job()
+    } finally {
+      lockState.held = false
+    }
+  },
+}))
 const run = jest.fn()
 jest.mock("@medusajs/medusa/core-flows", () => ({
   confirmOrderEditRequestWorkflow: jest.fn(() => ({ run })),
@@ -37,7 +50,8 @@ const call = async () => {
       this.sent = body
     },
   }
-  const next = jest.fn()
+  // Medusa's own route: whether it was called inside the lock
+  const next = jest.fn(() => void lockState.nextHeld.push(lockState.held))
   await orderEditConfirmKeepsHold(
     { params: { id: "order_1" }, scope: {}, auth_context: { actor_id: "user_1" } } as never,
     res as never,
@@ -55,6 +69,8 @@ const call = async () => {
  */
 describe("the admin order edit confirm", () => {
   beforeEach(() => {
+    lockState.taken = []
+    lockState.nextHeld = []
     decide.mockReset()
     run.mockReset()
     ops.hold.mockClear()
@@ -69,6 +85,28 @@ describe("the admin order edit confirm", () => {
     expect(res.sent).toEqual({ type: "not_allowed", message: "többe kerül" })
     expect(next).not.toHaveBeenCalled()
     expect(run).not.toHaveBeenCalled()
+  })
+
+  // card f3b62beb: the decision, the confirm and the closing run under the order's payment lock; Medusa's own confirm outside it
+  it("decides, confirms and closes under the order's payment lock; Medusa's own route goes on outside it", async () => {
+    const inside: string[] = []
+    decide.mockImplementationOnce(async () => {
+      inside.push(`decide ${lockState.held}`)
+      return { action: "keep_hold", collectionId: "col_1", newTotal: 100 }
+    })
+    run.mockImplementationOnce(async () => {
+      inside.push(`confirm ${lockState.held}`)
+      return { result: { id: "order_1" } }
+    })
+    ops.closeOthers.mockImplementationOnce(async () => void inside.push(`close ${lockState.held}`))
+    await call()
+    expect(lockState.taken).toEqual(["order_1"])
+    expect(inside).toEqual(["decide true", "confirm true", "close true"])
+
+    decide.mockResolvedValueOnce({ action: "pass", reason: "no_card_hold" })
+    const next = (await call()).next
+    expect(next).toHaveBeenCalledTimes(1)
+    expect(lockState.nextHeld).toEqual([false])
   })
 
   it("nothing to keep: Medusa's own route confirms", async () => {
