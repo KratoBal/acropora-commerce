@@ -12,6 +12,7 @@ const FIELDS = [
   "payment_collections.payment_sessions.currency_code",
   "payment_collections.payment_sessions.data",
   "payment_collections.payment_sessions.payment.id",
+  "payment_collections.payment_sessions.payment.captures.amount",
 ]
 
 /** `recordTransferReceipt` on Medusa: query for the sessions, the payment module for the rest. */
@@ -30,6 +31,9 @@ export const transferReceiptOperations = (container: MedusaContainer): TransferR
         currency_code: session.currency_code,
         data: session.data ?? null,
         payment_id: session.payment?.id ?? null,
+        captured: (session.payment?.captures ?? [])
+          .filter(Boolean)
+          .reduce((sum: number, capture: any) => sum + Number(capture.amount ?? 0), 0),
       }))
     )
   },
@@ -39,5 +43,9 @@ export const transferReceiptOperations = (container: MedusaContainer): TransferR
   authorizeSession: async (id) => {
     const payment = await container.resolve(Modules.PAYMENT).authorizePaymentSession(id, {})
     return payment ? { payment_id: payment.id } : null
+  },
+  // the module's capture, as the full receipt's auto-capture is (the provider's capturePayment needs the receipt, which is there)
+  capture: async (paymentId, amount) => {
+    await container.resolve(Modules.PAYMENT).capturePayment({ payment_id: paymentId, amount })
   },
 })

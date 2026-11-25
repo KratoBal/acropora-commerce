@@ -56,3 +56,25 @@ export const orderPaymentStatus = (collections: readonly PaymentCollectionFacts[
   if ((count.awaiting ?? 0) > 0) return "awaiting"
   return "not_paid"
 }
+
+/**
+ * WHAT IS STILL TO PAY AFTER AN ADVANCE (card d31a66a3, 2b; acrobot 61267: the guest page says "Előleg beérkezett" and the balance
+ * under it). Only for a partly captured order: the order's total less what its collections captured (a canceled collection
+ * captured nothing). `null` for any other status, and when an amount cannot be read: the page then shows no balance line.
+ */
+export const orderOutstanding = (
+  total: number,
+  collections: readonly PaymentCollectionFacts[],
+  status: string | null
+): number | null => {
+  if (status !== "partially_captured" || !Number.isFinite(total)) return null
+  let captured = 0
+  for (const collection of collections) {
+    if (collection.status === "canceled") continue
+    const amount = collection.captured_amount ?? 0
+    if (!Number.isFinite(amount)) return null
+    captured += amount
+  }
+  const outstanding = Math.round((total - captured) * 100) / 100
+  return outstanding > 0 ? outstanding : null
+}

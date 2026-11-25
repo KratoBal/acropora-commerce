@@ -1,4 +1,4 @@
-import { orderPaymentStatus, type PaymentCollectionFacts } from "../guest-order/payment-status"
+import { orderOutstanding, orderPaymentStatus, type PaymentCollectionFacts } from "../guest-order/payment-status"
 
 /*
   THE ORDER PAYMENT STATUS, MEDUSA'S RULE (acrobot 60746). MI PIROSÍT: a waiting order (cash on delivery, bank transfer, a card
@@ -45,5 +45,23 @@ describe("the order payment status, as Medusa computes it", () => {
     expect(orderPaymentStatus([c({ status: "requires_action", captured_amount: 10000 })])).toBe("requires_action")
     expect(orderPaymentStatus([c({ status: "canceled" })])).toBe("canceled")
     expect(orderPaymentStatus([c({ status: "canceled" }), c({ status: "authorized" })])).toBe("authorized")
+  })
+})
+
+/*
+  WHAT IS LEFT AFTER AN ADVANCE (card d31a66a3, 2b; acrobot 61267). MI PIROSÍT: a partly captured order shows no balance, or the
+  total; a canceled collection's money counts as paid; a paid, waiting or unreadable order gets a balance line.
+*/
+describe("the balance after an advance", () => {
+  it("a partly captured order: the total less what its live collections captured", () => {
+    const advance = [c({ status: "canceled", captured_amount: 0 }), c({ status: "partially_captured", amount: 4800, captured_amount: 1920 })]
+    expect(orderPaymentStatus(advance)).toBe("partially_captured")
+    expect(orderOutstanding(4800, advance, "partially_captured")).toBe(2880)
+  })
+
+  it("no balance line for any other status, nor for an amount that cannot be read", () => {
+    expect(orderOutstanding(4800, [c({ status: "completed", amount: 4800, captured_amount: 4800 })], "captured")).toBeNull()
+    expect(orderOutstanding(4800, [c({})], "not_paid")).toBeNull()
+    expect(orderOutstanding(4800, [c({ captured_amount: Number.NaN })], "partially_captured")).toBeNull()
   })
 })

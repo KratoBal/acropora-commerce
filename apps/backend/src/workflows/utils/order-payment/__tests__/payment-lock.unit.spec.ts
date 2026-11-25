@@ -2,6 +2,7 @@ import { type CapturePaymentSide, type SharedCaptureOperations, captureOnTransit
 import { STRIPE_PROVIDER_ID } from "../../stripe-config"
 import { type OrderPaymentLock, orderPaymentLock } from "../lock"
 import { type ReleaseHoldOperations, releaseHoldUnderLock } from "../release-hold"
+import { type TransferReceiptOperations, recordTransferReceiptUnderLock } from "../transfer-receipt"
 
 /*
   THE ORDER'S PAYMENT LOCK ON THE CAPTURE AND THE HOLD'S RELEASE (card efcd5add; barracuda on #905). The switch to bank transfer
@@ -109,6 +110,40 @@ describe("the order's payment lock on the other payment paths", () => {
   takes the pickup's key while the parent's Kiszállítás takes the parent's, so the two paths on the ONE shared payment do not run
   one at a time; a plain order locks anything but its own id.
 */
+describe("the transfer receipt under the order's payment lock (2b)", () => {
+  // an advance's capture runs inside the lock; two balances side by side would otherwise both capture the whole remainder
+  it("the advance's capture runs inside the order's lock", async () => {
+    const { lock, held, taken } = lockDouble()
+    const log: string[] = []
+    const ops: TransferReceiptOperations = {
+      loadSessions: async () => [
+        {
+          id: "payses_1",
+          provider_id: "pp_acropora_transfer",
+          status: "pending_authorization",
+          amount: 4800,
+          currency_code: "huf",
+          data: {},
+          payment_id: null,
+          captured: 0,
+        },
+      ],
+      updateSession: async () => undefined,
+      authorizeSession: async () => ({ payment_id: "pay_1" }),
+      capture: async (id, amount) => void log.push(`capture ${id} ${amount} ${held.has("order_card") ? "locked" : "UNLOCKED"}`),
+    }
+    const result = await recordTransferReceiptUnderLock(
+      "order_card",
+      { reference: "ELO-1", received_at: "2026-11-26", amount: 1920, advance: true },
+      ops,
+      lock
+    )
+    expect(result).toMatchObject({ recorded: true, captured: 1920, outstanding: 2880 })
+    expect(taken).toEqual(["order_card"])
+    expect(log).toEqual(["capture pay_1 1920 locked"])
+  })
+})
+
 describe("the order's payment lock key", () => {
   const container = (metadata: Record<string, Record<string, unknown> | null>) => {
     const keys: string[] = []

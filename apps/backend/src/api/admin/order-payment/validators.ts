@@ -33,6 +33,8 @@ export const AdminRecordTransferReceipt = z
     reference: z.string().trim().min(1).max(200),
     received_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     amount: z.number().positive(),
+    // an advance proforma's transfer (card d31a66a3, 2b): only then may the amount be less than the order (barracuda on #908)
+    advance: z.boolean().optional(),
   })
   .strict()
 

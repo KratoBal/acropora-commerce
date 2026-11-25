@@ -136,6 +136,7 @@ const FIOK_KULCS: Partial<Record<FizetesiHelyzet, Key | "">> = {
   atvetelkor: "account.paymentStatus.onDelivery",
   boltban: "account.paymentStatus.atStore",
   lezart_zarolas: "",
+  eloleg_beerkezett: "account.paymentStatus.advanceReceived",
 }
 
 /**

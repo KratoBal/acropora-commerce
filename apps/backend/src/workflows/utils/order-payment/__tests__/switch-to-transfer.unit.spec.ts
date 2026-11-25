@@ -181,7 +181,7 @@ describe("switching a placed order to bank transfer", () => {
     const { ops, state } = shop(codOrder())
     await switchToBankTransfer("order_1", { actor: "Teszt Elek" }, ops)
     const sessions = state.order.payment_collections.flatMap((c) =>
-      c.payment_sessions.map((s) => ({ ...s, amount: 120000, currency_code: "huf", data: {}, payment_id: null })),
+      c.payment_sessions.map((s) => ({ ...s, amount: 120000, currency_code: "huf", data: {}, payment_id: null, captured: 0 })),
     )
     const updated: string[] = []
     const result = await recordTransferReceipt(
@@ -191,10 +191,11 @@ describe("switching a placed order to bank transfer", () => {
         loadSessions: async () => sessions,
         updateSession: async (input) => void updated.push(input.id),
         authorizeSession: async () => ({ payment_id: "pay_transfer" }),
+        capture: async () => undefined,
       },
     )
     expect(updated).toEqual(["payses_transfer"])
-    expect(result).toEqual({ recorded: true, payment_id: "pay_transfer" })
+    expect(result).toEqual({ recorded: true, payment_id: "pay_transfer", captured: 120000, outstanding: 0 })
   })
 
   it("a second press on a switched order does nothing and says so", async () => {

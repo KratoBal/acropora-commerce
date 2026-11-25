@@ -728,6 +728,12 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "en": "pay in store on pickup"
   },
   {
+    "key": "account.paymentStatus.advanceReceived",
+    "group": "fiok",
+    "hu": "előleg beérkezett",
+    "en": "advance received"
+  },
+  {
     "key": "account.orderDetails.back",
     "group": "fiok",
     "hu": "‹ Rendeléseim",
@@ -3846,6 +3852,18 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "group": "rendeles-allapota",
     "hu": "A fizetés megérkezett.",
     "en": "The payment has arrived."
+  },
+  {
+    "key": "guestOrder.payment.advanceReceived.label",
+    "group": "rendeles-allapota",
+    "hu": "Előleg beérkezett",
+    "en": "Advance received"
+  },
+  {
+    "key": "guestOrder.payment.advanceReceived.text",
+    "group": "rendeles-allapota",
+    "hu": "Hátralék: {amount}",
+    "en": "Balance due: {amount}"
   },
   {
     "key": "guestOrder.payment.refunded.label",

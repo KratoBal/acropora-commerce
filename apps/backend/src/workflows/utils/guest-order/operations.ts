@@ -11,7 +11,7 @@ import type OrderBusinessStatusModuleService from "../../../modules/order-busine
 import { ORDER_BUSINESS_STATUS_LABELS, type OrderBusinessStatus } from "../../../modules/order-business-status/types"
 import { medusaNumber } from "../medusa-number"
 import { buildProviderRoleMap, orderPaymentRoleOf } from "../payment-providers"
-import { orderPaymentStatus } from "./payment-status"
+import { orderOutstanding, orderPaymentStatus } from "./payment-status"
 import { isStorePickupOption } from "../shipping-option-roles"
 import { livestockKindsOfOrder } from "../webshop-mail/livestock-kinds"
 import { lineTitle } from "../webshop-mail/operations"
@@ -63,6 +63,13 @@ const label = (status: string): string => ORDER_BUSINESS_STATUS_LABELS[status as
 
 const sourceOf = (order: any): GuestOrderSource => {
   const method = (order.shipping_methods ?? []).filter(Boolean).at(-1)
+  const collections = (order.payment_collections ?? []).filter(Boolean).map((collection: any) => ({
+    status: typeof collection.status === "string" ? collection.status : null,
+    amount: collection.amount == null ? null : Number(collection.amount),
+    captured_amount: collection.captured_amount == null ? null : Number(collection.captured_amount),
+    refunded_amount: collection.refunded_amount == null ? null : Number(collection.refunded_amount),
+  }))
+  const paymentStatus = orderPaymentStatus(collections)
   return {
     id: order.id,
     display_id: order.display_id,
@@ -71,14 +78,9 @@ const sourceOf = (order: any): GuestOrderSource => {
     total: medusaNumber(order.total, `The total of order ${order.id}`),
     currency_code: String(order.currency_code ?? "huf"),
     // computed, not read: query.graph has no order payment status (payment-status.ts)
-    payment_status: orderPaymentStatus(
-      (order.payment_collections ?? []).filter(Boolean).map((collection: any) => ({
-        status: typeof collection.status === "string" ? collection.status : null,
-        amount: collection.amount == null ? null : Number(collection.amount),
-        captured_amount: collection.captured_amount == null ? null : Number(collection.captured_amount),
-        refunded_amount: collection.refunded_amount == null ? null : Number(collection.refunded_amount),
-      })),
-    ),
+    payment_status: paymentStatus,
+    // after an advance (2b): what is still to pay, for the page's balance line
+    outstanding: orderOutstanding(medusaNumber(order.total, `The total of order ${order.id}`), collections, paymentStatus),
     payment_role: orderPaymentRoleOf(order, buildProviderRoleMap()),
     order_status: typeof order.status === "string" ? order.status : null,
     items: (order.items ?? []).filter(Boolean).map((item: any) => ({

@@ -31,6 +31,8 @@ export type GuestOrderSource = {
   total: number
   currency_code: string
   payment_status: string | null
+  /** after an advance by transfer (2b): what is still to pay; absent or null otherwise (`orderOutstanding`) */
+  outstanding?: number | null
   /** the payment role the order was placed with (`orderPaymentRoleOf`); absent or null when unknown */
   payment_role?: PaymentRole | null
   /** Medusa's own order status (`canceled` when the shop canceled it); absent from an older source */
@@ -92,6 +94,11 @@ export type GuestOrderView = {
    * the page keeps its general sentence.
    */
   payment_kind: GuestPaymentKind | null
+  /**
+   * AFTER AN ADVANCE (card d31a66a3, 2b): what is still to pay, for the page's "Hátralék" line (acrobot 61267). `null` for any
+   * order that is not partly paid.
+   */
+  outstanding: number | null
   business_status: GuestOrderStatus | null
   items: { id: string; title: string; quantity: number; total: number }[]
   shipping: {
@@ -224,6 +231,7 @@ export const guestOrderView = (
   currency_code: source.currency_code,
   payment_status: source.payment_status && PAYMENT_STATUSES.has(source.payment_status) ? source.payment_status : null,
   payment_kind: guestPaymentKind(source, status),
+  outstanding: source.outstanding ?? null,
   business_status: status,
   items: source.items.map((item) => ({
     id: item.id,

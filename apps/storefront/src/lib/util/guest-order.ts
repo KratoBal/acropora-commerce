@@ -56,6 +56,8 @@ export type GuestOrder = {
    * null when the shop does not know: then the general sentence stands
    */
   payment_kind?: GuestPaymentKind | null
+  /** after an advance by transfer (card d31a66a3, 2b): what is still to pay; absent or null otherwise */
+  outstanding?: number | null
   business_status: GuestOrderStatus | null
   /** `id`: the order line's id (the problem report names the lines by it) */
   items: { id: string; title: string; quantity: number; total: number }[]
@@ -133,6 +135,7 @@ const GUEST_KEY: Record<FizetesiHelyzet, string | null> = {
   atvetelkor: null,
   boltban: null,
   lezart_zarolas: null,
+  eloleg_beerkezett: "advanceReceived",
 }
 
 export const paymentTextKeys = (
