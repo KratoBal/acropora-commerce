@@ -52,6 +52,7 @@ export const BANK_TRANSFER_STAGE_KEY = "acropora_transfer_stage" as const
 export const BANK_TRANSFER_STAGES = {
   AWAITING_TRANSFER: "awaiting_transfer",
   RECEIVED: "received",
+  ADVANCE_RECEIVED: "advance_received",
   CANCELED: "canceled",
 } as const
 
@@ -59,6 +60,13 @@ export type BankTransferReceipt = {
   /** The bank transaction or statement line the money came in on. */
   reference: string
   received_at?: string
+  /**
+   * AN ADVANCE (card d31a66a3, 2b): the transfer paid part of the order (the advance proforma's amount). The session is then
+   * authorized, not captured, and the capture is that amount; the rest is captured when the balance arrives.
+   */
+  partial?: true
+  /** The advance's amount, with `partial`. */
+  amount?: number
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -96,9 +104,24 @@ export const readBankTransferReceipt = (
       `${BANK_TRANSFER_RECEIPT_KEY}.received_at must be an ISO 8601 string when present.`
     )
   }
+  const partial = raw.partial
+  const amount = raw.amount
+  if (partial !== undefined && partial !== true) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `${BANK_TRANSFER_RECEIPT_KEY}.partial is true or absent.`
+    )
+  }
+  if (partial && (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0)) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `${BANK_TRANSFER_RECEIPT_KEY}.amount must be a positive number for an advance.`
+    )
+  }
   return {
     reference: reference.trim(),
     ...(receivedAt === undefined ? {} : { received_at: receivedAt }),
+    ...(partial ? { partial: true as const, amount: amount as number } : {}),
   }
 }
 
@@ -139,11 +162,12 @@ class AcroporaBankTransferService extends AbstractPaymentProvider {
       }
     }
     return {
-      status: PaymentSessionStatus.CAPTURED,
+      // an advance pays part of the order: authorized, and the caller captures the advance's amount (2b)
+      status: receipt.partial ? PaymentSessionStatus.AUTHORIZED : PaymentSessionStatus.CAPTURED,
       data: {
         ...(input.data ?? {}),
         [BANK_TRANSFER_RECEIPT_KEY]: receipt,
-        [BANK_TRANSFER_STAGE_KEY]: BANK_TRANSFER_STAGES.RECEIVED,
+        [BANK_TRANSFER_STAGE_KEY]: receipt.partial ? BANK_TRANSFER_STAGES.ADVANCE_RECEIVED : BANK_TRANSFER_STAGES.RECEIVED,
       },
     }
   }

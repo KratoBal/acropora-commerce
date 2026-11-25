@@ -98,6 +98,19 @@ describe("the bank transfer provider", () => {
     expect(readBankTransferReceipt({})).toBeNull()
   })
 
+  // 2b (card d31a66a3): an advance pays part of the order, so the session is authorized and the caller captures the advance
+  it("an advance receipt authorizes, it does not capture; an advance without its amount is refused", async () => {
+    const advance = await provider().authorizePayment({
+      data: { [BANK_TRANSFER_RECEIPT_KEY]: { reference: "ELO-1", partial: true, amount: 1920 } },
+    } as never)
+    expect(advance.status).toBe("authorized")
+    expect(advance.data?.[BANK_TRANSFER_STAGE_KEY]).toBe(BANK_TRANSFER_STAGES.ADVANCE_RECEIVED)
+    for (const bad of [{ reference: "ELO-1", partial: true }, { reference: "ELO-1", partial: true, amount: 0 }, { reference: "ELO-1", partial: "yes" }])
+      await expect(
+        provider().authorizePayment({ data: { [BANK_TRANSFER_RECEIPT_KEY]: bad } } as never)
+      ).rejects.toMatchObject({ type: "invalid_data" })
+  })
+
   it("a cancelled session says so", async () => {
     const cancelled = await provider().cancelPayment({ data: {} } as never)
     expect(cancelled.data?.[BANK_TRANSFER_STAGE_KEY]).toBe(

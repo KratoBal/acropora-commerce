@@ -26,6 +26,7 @@ const transfer = (over: Partial<TransferSession> = {}): TransferSession => ({
   currency_code: "huf",
   data: { acropora_transfer_stage: "awaiting_transfer" },
   payment_id: null,
+  captured: 0,
   ...over,
 })
 
@@ -41,12 +42,16 @@ function ops(sessions: TransferSession[] | null) {
       calls.push(`update ${update.id}`)
       updates.push(update)
     },
-    // as Medusa does: the provider decides from the session's stored data
+    // as Medusa does: the provider decides from the session's stored data; authorized or captured, a payment is made
     authorizeSession: async (id) => {
       calls.push(`authorize ${id}`)
       const stored = updates.find((u) => u.id === id)?.data ?? {}
       const { status } = await provider.authorizePayment({ data: stored } as never)
-      return status === "captured" ? { payment_id: "pay_1" } : null
+      calls.push(`provider ${status}`)
+      return status === "captured" || status === "authorized" ? { payment_id: "pay_1" } : null
+    },
+    capture: async (id, amount) => {
+      calls.push(`capture ${id} ${amount}`)
     },
   }
   return { operations, calls, updates }
@@ -58,8 +63,10 @@ describe("recording a received bank transfer in Medusa", () => {
     await expect(recordTransferReceipt("order_55", input, operations)).resolves.toEqual({
       recorded: true,
       payment_id: "pay_1",
+      captured: 4800,
+      outstanding: 0,
     })
-    expect(calls).toEqual(["update payses_1", "authorize payses_1"])
+    expect(calls).toEqual(["update payses_1", "authorize payses_1", "provider captured"])
     expect(updates[0]!.data).toEqual({
       acropora_transfer_stage: "awaiting_transfer",
       [BANK_TRANSFER_RECEIPT_KEY]: { reference: "OTP 0013", received_at: "2026-10-07" },
@@ -67,10 +74,12 @@ describe("recording a received bank transfer in Medusa", () => {
   })
 
   it("a second call reports the capture and does nothing", async () => {
-    const { operations, calls } = ops([transfer({ status: "authorized", payment_id: "pay_1" })])
+    const { operations, calls } = ops([transfer({ status: "authorized", payment_id: "pay_1", captured: 4800 })])
     await expect(recordTransferReceipt("order_55", input, operations)).resolves.toEqual({
       recorded: false,
       payment_id: "pay_1",
+      captured: 4800,
+      outstanding: 0,
     })
     expect(calls).toEqual([])
   })
@@ -78,7 +87,7 @@ describe("recording a received bank transfer in Medusa", () => {
   it("refuses a non-transfer order, a different amount, and a session not waiting", async () => {
     for (const [sessions, reason] of [
       [[transfer({ provider_id: "pp_acropora_cod" })], /nem előre utalással fizet/],
-      [[transfer({ amount: 4801 })], /Az összeg eltér/],
+      [[transfer({ amount: 4799 })], /Az összeg eltér/],
       [[transfer({ status: "canceled" })], /nem vár befizetésre/],
     ] as const) {
       const { operations, calls } = ops([...sessions])
@@ -88,6 +97,70 @@ describe("recording a received bank transfer in Medusa", () => {
       })
       expect(calls).toEqual([])
     }
+  })
+
+  /*
+    AN ADVANCE, THEN THE BALANCE (card d31a66a3, 2b). WHAT TURNS THIS RED: a transfer smaller than the order is refused (the advance
+    proforma could never be paid); or it is captured as the whole order (the order reads paid on the advance); the balance is not
+    exactly what is left, or is captured on a new payment; the same advance sent again (the OS's "Webshop fizetés lezárása") is
+    captured twice; an advance that stopped before its capture is never captured.
+  */
+  it("an advance: the receipt is partial, the provider authorizes, and only the advance is captured", async () => {
+    const { operations, calls, updates } = ops([transfer()])
+    await expect(
+      recordTransferReceipt("order_55", { reference: "ELO-1", received_at: "2026-11-26", amount: 1920 }, operations)
+    ).resolves.toEqual({ recorded: true, payment_id: "pay_1", captured: 1920, outstanding: 2880 })
+    expect(calls).toEqual(["update payses_1", "authorize payses_1", "provider authorized", "capture pay_1 1920"])
+    expect(updates[0]!.data[BANK_TRANSFER_RECEIPT_KEY]).toEqual({
+      reference: "ELO-1",
+      received_at: "2026-11-26",
+      partial: true,
+      amount: 1920,
+    })
+  })
+
+  const afterAdvance = (captured: number) =>
+    transfer({
+      status: "authorized",
+      payment_id: "pay_1",
+      captured,
+      data: { [BANK_TRANSFER_RECEIPT_KEY]: { reference: "ELO-1", received_at: "2026-11-26", partial: true, amount: 1920 } },
+    })
+
+  it("the balance: exactly what is left, captured on the same payment; any other amount is refused", async () => {
+    const { operations, calls } = ops([afterAdvance(1920)])
+    await expect(
+      recordTransferReceipt("order_55", { reference: "VEG-1", received_at: "2026-12-10", amount: 2880 }, operations)
+    ).resolves.toEqual({ recorded: true, payment_id: "pay_1", captured: 4800, outstanding: 0 })
+    expect(calls).toEqual(["capture pay_1 2880"])
+
+    const wrong = ops([afterAdvance(1920)])
+    await expect(
+      recordTransferReceipt("order_55", { reference: "VEG-1", received_at: "2026-12-10", amount: 2000 }, wrong.operations)
+    ).rejects.toMatchObject({ type: "conflict", message: expect.stringMatching(/a hátralék 2880/) })
+    expect(wrong.calls).toEqual([])
+  })
+
+  it("the same advance again captures nothing; one that stopped before its capture is captured now", async () => {
+    const again = ops([afterAdvance(1920)])
+    await expect(
+      recordTransferReceipt("order_55", { reference: " ELO-1 ", received_at: "2026-11-26", amount: 1920 }, again.operations)
+    ).resolves.toEqual({ recorded: false, payment_id: "pay_1", captured: 1920, outstanding: 2880 })
+    expect(again.calls).toEqual([])
+
+    const stopped = ops([afterAdvance(0)])
+    await expect(
+      recordTransferReceipt("order_55", { reference: "ELO-1", received_at: "2026-11-26", amount: 1920 }, stopped.operations)
+    ).resolves.toEqual({ recorded: true, payment_id: "pay_1", captured: 1920, outstanding: 2880 })
+    expect(stopped.calls).toEqual(["capture pay_1 1920"])
+  })
+
+  it("more than the order is refused, before anything is written", async () => {
+    const { operations, calls } = ops([transfer()])
+    await expect(
+      recordTransferReceipt("order_55", { ...input, amount: 4801 }, operations)
+    ).rejects.toMatchObject({ type: "conflict", message: expect.stringMatching(/Az összeg eltér/) })
+    expect(calls).toEqual([])
   })
 
   it("an unknown order is not found", async () => {
