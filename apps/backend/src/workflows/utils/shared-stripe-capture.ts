@@ -185,10 +185,23 @@ export const captureSharedStripePayment = async (
 
 /** The status whose transition captures the shared payment: the shop's "Kiszállítás". */
 export const CAPTURE_ON_STATUS = "out_for_delivery"
+/** The status whose transition captures a plain card order that never went out: "Megrendelés lezárva". */
+export const CLOSE_STATUS = "closed"
 
 /**
- * The transition's part: only `out_for_delivery` captures, every other status
- * passes.
+ * A CARD ORDER IS NOT CLOSED WITH A HOLD STILL OPEN (task commerce-kartya-lezaras-rogzites-20261125, card d4a1d99d; acrobot 61110).
+ * Measured on the test shop 2026-11-25: a plain Stripe card order went Készletezés -> Átvehető -> Megrendelés lezárva (the only way to
+ * "closed" that skips Kiszállítás; the status table lets nothing else reach it) and ended "lezárva" with its card hold UNCAPTURED, the
+ * customer's money neither taken nor released for days. So the transition to `closed` makes the plain card order's capture too, BEFORE
+ * the status changes, and a refused capture (an expired hold, a refused card) stops the close and says why.
+ *
+ * ONLY THE PLAIN CARD ORDER (`capturePlainStripePayment`): it passes, taking nothing, for every other payment (cash on delivery, pay at the
+ * store, transfer), for a payment already captured (every order that went out through Kiszállítás), and for a mixed cart's share (that one is
+ * captured with the shipped order's Kiszállítás, and a pickup order closed before that must not capture alone). The shared path and its
+ * "waiting for payment" refusal are NOT run for `closed`: they are Kiszállítás's, and closing must not start refusing what it never did.
+ *
+ * The transition's part: `out_for_delivery` captures the shared or plain payment (`CAPTURE_ON_STATUS`), `closed` the plain card order's
+ * (above), every other status passes.
  *
  * THE TRANSITION RULES ARE ASKED FIRST (`assertAllowed`). The capture runs
  * before the status step, and a capture is not undone when a later step fails:
@@ -205,6 +218,11 @@ export const captureOnTransition = async (
   ops: SharedCaptureOperations,
   assertAllowed: () => Promise<void>
 ): Promise<SharedCaptureResult | PlainCaptureResult | null> => {
+  if (input.to === CLOSE_STATUS) {
+    // the rules first, like Kiszállítás: a refused close must take no money
+    await assertAllowed()
+    return capturePlainStripePayment(input.order_id, ops)
+  }
   if (input.to !== CAPTURE_ON_STATUS) return null
   await assertAllowed()
   refuseWhileAwaitingPayment((await ops.loadPair(input.order_id))?.shipped.metadata)

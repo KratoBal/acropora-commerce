@@ -199,14 +199,20 @@ describe("captureSharedStripePayment", () => {
 describe("captureOnTransition", () => {
   const allowed = async () => undefined
 
-  it("only Kiszállítás (out_for_delivery) captures", async () => {
-    for (const to of ["confirmed", "stocking", "ready_for_pickup", "closed"]) {
+  it("only Kiszállítás (out_for_delivery) captures the shared payment; the close (Megrendelés lezárva) never captures a mixed cart's share on its own", async () => {
+    for (const to of ["confirmed", "stocking", "ready_for_pickup"]) {
       const { ops, log } = opsFor({ shipped: shipped(), pickup: pickup() })
       expect(
         await captureOnTransition({ order_id: "order_ship", to }, ops, allowed)
       ).toBeNull()
       expect(log).toEqual([])
     }
+    // the close reaches only the plain card order's capture, which leaves a share alone (card d4a1d99d)
+    const closing = opsFor({ shipped: shipped(), pickup: pickup() })
+    expect(await captureOnTransition({ order_id: "order_ship", to: "closed" }, closing.ops, allowed)).toMatchObject({
+      captured: false,
+    })
+    expect(closing.log).toEqual([])
     const { ops, log } = opsFor({ shipped: shipped(), pickup: pickup() })
     await captureOnTransition({ order_id: "order_ship", to: "out_for_delivery" }, ops, allowed)
     expect(log).toHaveLength(3)
