@@ -117,7 +117,7 @@ describe("captureOnTransition, a plain card order", () => {
     await captureOnTransition({ order_id: "order_plain", to: "out_for_delivery" }, ops, allowed)
     expect(log).toEqual(["capture pay_plain 14000"])
 
-    for (const to of ["confirmed", "stocking", "ready_for_pickup", "closed"]) {
+    for (const to of ["confirmed", "stocking", "ready_for_pickup"]) {
       const other = opsFor(order(14000))
       expect(await captureOnTransition({ order_id: "order_plain", to }, other.ops, allowed)).toBeNull()
       expect(other.log).toEqual([])
@@ -130,5 +130,77 @@ describe("captureOnTransition, a plain card order", () => {
       })
     ).rejects.toThrow("cannot transition")
     expect(refused.log).toEqual([])
+  })
+})
+
+/*
+  A CARD ORDER IS NOT CLOSED WITH A HOLD STILL OPEN (card d4a1d99d; measured 2026-11-25: Készletezés -> Átvehető -> Lezárva left the Stripe
+  hold uncaptured). What must fail: a plain card order closed with nothing captured; the capture before the rules said yes; a refused capture
+  (an expired hold, a refused card, an order edit running) letting the close go on; an order captured at Kiszállítás captured AGAIN at the
+  close; a mixed cart's share, cash on delivery or a transfer touched by it; the shared path's refusals (waiting for payment) now applying to
+  the close.
+*/
+describe("captureOnTransition to closed, a plain card order", () => {
+  const allowed = async () => undefined
+
+  it("captures the order's current total before the close, after the rules said yes", async () => {
+    const { ops, log } = opsFor(order(14000))
+    expect(await captureOnTransition({ order_id: "order_plain", to: "closed" }, ops, allowed)).toEqual({ captured: true, amount: 14000 })
+    expect(log).toEqual(["capture pay_plain 14000"])
+
+    const refused = opsFor(order(14000))
+    await expect(
+      captureOnTransition({ order_id: "order_plain", to: "closed" }, refused.ops, async () => {
+        throw new Error("confirmed cannot transition to closed")
+      })
+    ).rejects.toThrow("cannot transition")
+    expect(refused.log).toEqual([])
+  })
+
+  it("a refused capture stops the close and says why (the hold is smaller than the total: the difference is unpaid)", async () => {
+    const { ops, log } = opsFor(order(20000, { amount: 14000 }))
+    await expect(captureOnTransition({ order_id: "order_plain", to: "closed" }, ops, allowed)).rejects.toThrow()
+    expect(log).toEqual([])
+  })
+
+  it("an order that already went out (captured at Kiszállítás) is not captured again", async () => {
+    const { ops, log } = opsFor(order(14000, { captured: 14000 }))
+    expect(await captureOnTransition({ order_id: "order_plain", to: "closed" }, ops, allowed)).toEqual({
+      captured: false,
+      reason: "already_captured",
+    })
+    expect(log).toEqual([])
+  })
+
+  it("cash on delivery or any other provider, and a mixed cart's share, pass without a capture", async () => {
+    const cod = opsFor(order(14000, { provider_id: "pp_acropora_cod" }))
+    expect(await captureOnTransition({ order_id: "order_plain", to: "closed" }, cod.ops, allowed)).toEqual({
+      captured: false,
+      reason: "not_card",
+    })
+    const share = opsFor(
+      order(14000, { data: { id: "pi_joint", stripe_share: { transactionId: "pi_joint", total: 25800, own: 14000 } } })
+    )
+    expect(await captureOnTransition({ order_id: "order_plain", to: "closed" }, share.ops, allowed)).toEqual({
+      captured: false,
+      reason: "shared",
+    })
+    expect([cod.log, share.log]).toEqual([[], []])
+  })
+
+  it("an order whose payment is waiting for a difference is NOT refused by the close: that refusal is Kiszállítás's, not the close's", async () => {
+    const waiting = { ...order(14000), metadata: { acropora_payment: { state: "awaiting_payment" } } }
+    const closing = opsFor(waiting)
+    // the close's capture runs on its own rules (the hold covers the total), so it captures
+    expect(await captureOnTransition({ order_id: "order_plain", to: "closed" }, closing.ops, allowed)).toEqual({
+      captured: true,
+      amount: 14000,
+    })
+    // while Kiszállítás of the same order IS refused while the difference waits
+    const shipping = opsFor(waiting)
+    await expect(
+      captureOnTransition({ order_id: "order_plain", to: "out_for_delivery" }, shipping.ops, allowed)
+    ).rejects.toThrow()
+    expect(shipping.log).toEqual([])
   })
 })
