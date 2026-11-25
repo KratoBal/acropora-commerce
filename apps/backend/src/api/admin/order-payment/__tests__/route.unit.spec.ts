@@ -20,7 +20,18 @@ jest.mock("../../../../workflows/utils/order-payment/payment-link", () => ({ sen
 jest.mock("../../../../workflows/utils/order-payment/link-config", () => ({
   requirePaymentLinkConfig: () => ({ secret: "s", baseUrl: "https://example.test" }),
 }))
-jest.mock("../../../../workflows/utils/order-payment/release-hold", () => ({ releaseHold: jest.fn() }))
+jest.mock("../../../../workflows/utils/order-payment/release-hold", () => {
+  const releaseHold = jest.fn()
+  // the route's locked entry: the lock (mocked below) runs the release
+  return {
+    releaseHold,
+    releaseHoldUnderLock: (id: string, ops: unknown, lock: (id: string, job: () => Promise<unknown>) => Promise<unknown>) =>
+      lock(id, () => releaseHold(id, ops)),
+  }
+})
+jest.mock("../../../../workflows/utils/order-payment/lock", () => ({
+  orderPaymentLock: jest.fn(() => (_id: string, job: () => Promise<unknown>) => job()),
+}))
 jest.mock("../../../../workflows/utils/order-payment/transfer-receipt", () => ({ recordTransferReceipt: jest.fn() }))
 jest.mock("../../../../workflows/utils/order-payment/transfer-receipt-operations", () => ({
   transferReceiptOperations: jest.fn(() => "transfer-ops"),

@@ -15,7 +15,8 @@ import {
   TransitionOrderBusinessStatusInput,
 } from "../modules/order-business-status/service"
 import OrderBusinessStatusModuleService from "../modules/order-business-status/service"
-import { captureOnTransition } from "./utils/shared-stripe-capture"
+import { orderPaymentLock } from "./utils/order-payment/lock"
+import { captureOnTransitionUnderLock } from "./utils/shared-stripe-capture"
 import { sharedCaptureOperations } from "./utils/shared-stripe-capture-operations"
 import { creditOrderLoyaltyAccrual } from "./utils/loyalty/credit-order-accrual"
 import {
@@ -50,7 +51,7 @@ export const transitionOrderBusinessStatusStep = createStep(
  * A plain card order's own Stripe payment is captured the same way, for the
  * order's current total (`capturePlainStripePayment`, C2). Any other status,
  * and an order paid otherwise (cash on delivery, at the store), passes.
- * The transition rules are checked BEFORE the capture (`captureOnTransition`).
+ * The transition rules are checked BEFORE the capture (`captureOnTransition`), under the order's payment lock.
  */
 export const captureSharedStripePaymentStep = createStep(
   "capture-shared-stripe-payment",
@@ -58,10 +59,12 @@ export const captureSharedStripePaymentStep = createStep(
     const service = container.resolve<OrderBusinessStatusModuleService>(
       ORDER_BUSINESS_STATUS_MODULE,
     )
-    const result = await captureOnTransition(
+    // under the order's payment lock, one at a time with the switch to bank transfer and the hold's release (card efcd5add)
+    const result = await captureOnTransitionUnderLock(
       input,
       sharedCaptureOperations(container),
       () => service.assertTransitionAllowed(input),
+      orderPaymentLock(container),
     )
     return new StepResponse({ captured: result?.captured ?? false })
   },
