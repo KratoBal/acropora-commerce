@@ -3,6 +3,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { STRIPE_PROVIDER_ID } from "../../stripe-config"
 import { type ReleaseHoldOperations, type ReleaseSide, releaseHold } from "../release-hold"
 import { ORDER_PAYMENT_METADATA_KEY } from "../state"
+import { metadataStore } from "./merged-metadata"
 
 /**
  * "CSÚSZIK A SZÁLLÍTÁS": THE CARD HOLD RELEASED (brief, point 3; acrobot
@@ -63,7 +64,9 @@ const opsFor = (
   failCancel: (id: string) => boolean = () => false
 ) => {
   const log: string[] = []
-  const metadata = new Map<string, Record<string, unknown>>()
+  // the order module merges what is written into what is stored (card d35290f2)
+  const store = metadataStore([pair?.primary, pair?.pickup])
+  const metadata = store.written
   const ops: ReleaseHoldOperations = {
     loadPair: async () => pair,
     cancelPayment: async (id) => {
@@ -79,10 +82,10 @@ const opsFor = (
     setMetadata: async (id, value) => {
       const state = value[ORDER_PAYMENT_METADATA_KEY] as Record<string, unknown> | undefined
       log.push(`state ${id} ${state ? (state.released_at ? "released" : "releasing") : "none"}`)
-      metadata.set(id, value)
+      store.write(id, value)
     },
   }
-  return { ops, log, metadata }
+  return { ops, log, metadata, store }
 }
 
 /*
@@ -144,6 +147,32 @@ describe("releaseHold", () => {
         released_amount: 22150,
       },
     })
+  })
+
+  /*
+    ONLY THE OWN KEY (card d35290f2; barracuda on #905 and #907). MI PIROSÍT: a release writes the whole load-time metadata back, so a
+    key another writer changed meanwhile (the deadlines job, an admin) is put back to its old value; the roll-back after a refused
+    cancel rewrites the other keys too.
+  */
+  it("writes only its own key: a key changed meanwhile keeps its new value, the roll-back too", async () => {
+    const released = opsFor({ primary: order("order_1", 44, [payment()], { acropora_note: "régi" }), pickup: null })
+    const cancel = released.ops.cancelPayment
+    released.ops.cancelPayment = async (id) => {
+      released.store.elsewhere("order_1", { acropora_note: "új" })
+      return cancel(id)
+    }
+    await releaseHold("order_1", released.ops, () => NOW)
+    expect(released.metadata.get("order_1")?.acropora_note).toBe("új")
+    expect(released.store.writes.every((w) => w.keys.join() === ORDER_PAYMENT_METADATA_KEY)).toBe(true)
+
+    const refused = opsFor({ primary: order("order_1", 44, [payment()], { acropora_note: "régi" }), pickup: null }, () => true)
+    const refusedCancel = refused.ops.cancelPayment
+    refused.ops.cancelPayment = async (id) => {
+      refused.store.elsewhere("order_1", { acropora_note: "új" })
+      return refusedCancel(id)
+    }
+    await expect(releaseHold("order_1", refused.ops, () => NOW)).rejects.toThrow("Stripe refused")
+    expect(refused.metadata.get("order_1")).toEqual({ kept: "yes", acropora_note: "új" })
   })
 
   it("a mixed cart's pair together, the intent-holding shipped payment first, whichever half is asked", async () => {

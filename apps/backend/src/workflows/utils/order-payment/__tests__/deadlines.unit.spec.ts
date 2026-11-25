@@ -1,6 +1,7 @@
 import { type DeadlineOperations, deadlineStep, runPaymentDeadlines } from "../deadlines"
 import type { ReleaseSide } from "../release-hold"
 import { ORDER_PAYMENT_METADATA_KEY, type StoredOrderPayment } from "../state"
+import { metadataStore } from "./merged-metadata"
 
 /**
  * THE LINK'S DEADLINES (brief, point 6; decision 2: the reminder on day 3,
@@ -58,13 +59,15 @@ const opsFor = (
   over: Partial<DeadlineOperations> = {}
 ) => {
   const log: string[] = []
-  const written = new Map<string, Record<string, unknown>>()
+  // the order module merges what is written into what is stored (card d35290f2)
+  const store = metadataStore(Object.values(pairs).flatMap((p) => [p.primary, p.pickup]))
+  const written = store.written
   const ops: DeadlineOperations = {
     candidates: async () => orders,
     loadPair: async (id) => pairs[id] ?? null,
     setMetadata: async (id, metadata) => {
       log.push(`state ${id} ${(metadata[ORDER_PAYMENT_METADATA_KEY] as StoredOrderPayment).state}`)
-      written.set(id, metadata)
+      store.write(id, metadata)
     },
     remind: async (input) => {
       log.push(`remind ${input.orderId} ${input.pickupOrderId}`)
@@ -74,7 +77,7 @@ const opsFor = (
     log: (message) => void log.push(`log ${message}`),
     ...over,
   }
-  return { ops, log, written }
+  return { ops, log, written, store }
 }
 
 describe("runPaymentDeadlines", () => {
@@ -82,9 +85,11 @@ describe("runPaymentDeadlines", () => {
     const both = state({ link: link({ pickup_collection_id: "col_2" }) })
     const ship = order("order_ship", both)
     const pick = order("order_pick", both, { acropora_parent_order_id: "order_ship" })
-    const { ops, log, written } = opsFor([ship, pick], { order_ship: { primary: ship, pickup: pick } })
+    const { ops, log, written, store } = opsFor([ship, pick], { order_ship: { primary: ship, pickup: pick } })
     const report = await runPaymentDeadlines(ops, at("2026-10-09T11:00:00.000Z"))
     expect(log).toEqual(["state order_ship reminded", "state order_pick reminded", "remind order_ship order_pick"])
+    // card d35290f2: only the own key is written, so the pair's link (and anything else) is the order module's to keep
+    expect(store.writes.every((w) => w.keys.join() === ORDER_PAYMENT_METADATA_KEY)).toBe(true)
     expect(report.reminded).toEqual(["order_ship"])
     expect((written.get("order_pick")?.[ORDER_PAYMENT_METADATA_KEY] as StoredOrderPayment).link?.reminded_at).toBe(
       "2026-10-09T11:00:00.000Z"

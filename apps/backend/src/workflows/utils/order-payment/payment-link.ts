@@ -41,7 +41,8 @@ export type PaymentLinkOperations = {
    * hold's, which `ensureCollection` would cancel and reopen.
    */
   openCollection(orderId: string, amount: number): Promise<{ id: string; amount: number }>
-  setMetadata(orderId: string, metadata: Record<string, unknown>): Promise<void>
+  /** These keys written; the order module merges them, every other key stays (card d35290f2). */
+  setMetadata(orderId: string, keys: Record<string, unknown>): Promise<void>
 }
 
 export type SentPaymentLink = {
@@ -114,8 +115,8 @@ export const sendPaymentLink = async (
   }
   for (const side of sides) {
     const own = storedOrderPaymentOf(side.metadata) ?? stored!
+    // only the own key (card d35290f2): the order module merges it
     await ops.setMetadata(side.order_id, {
-      ...(side.metadata ?? {}),
       [ORDER_PAYMENT_METADATA_KEY]: { ...own, state: "link_sent", link } satisfies StoredOrderPayment,
     })
   }
@@ -172,7 +173,6 @@ const sendDifferenceLink = async (
     url,
   }
   await ops.setMetadata(order.order_id, {
-    ...(order.metadata ?? {}),
     [ORDER_PAYMENT_METADATA_KEY]: { kind: "difference", state: "link_sent", link } satisfies StoredOrderPayment,
   })
 
