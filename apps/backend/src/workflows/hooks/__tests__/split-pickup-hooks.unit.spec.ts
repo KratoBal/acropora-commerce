@@ -9,6 +9,7 @@ const handlers = {
   completeValidate: undefined as undefined | ((...a: any[]) => any),
 }
 
+jest.mock("../../utils/assert-payment-allowed", () => ({ assertPaymentAllowedForCart: async () => undefined }))
 jest.mock("@medusajs/medusa/core-flows", () => ({
   calculateShippingOptionsPricesWorkflow: {
     hooks: {

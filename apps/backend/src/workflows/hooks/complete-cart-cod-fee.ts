@@ -4,6 +4,7 @@ import { completeCartWorkflow } from "@medusajs/medusa/core-flows"
 
 import { guardAszf } from "../utils/aszf-guard"
 import { assertCartNotMixed } from "../utils/assert-cart-not-mixed"
+import { assertPaymentAllowedForCart } from "../utils/assert-payment-allowed"
 import { assertCartPointsFitLocker } from "../utils/locker-rule"
 import { assertCardShare } from "../utils/assert-card-share"
 import { assertNoForeignHold } from "../utils/cart-hold"
@@ -76,6 +77,10 @@ completeCartWorkflow.hooks.validate(async ({ cart }, { container }) => {
   })
 
   const context = await resolveCartPaymentContext(cart, container)
+
+  // d31a66a3, slice 0: the shipping x payment table applies where the order is placed, not only in the offer (the same hook for the stock
+  // `/complete`, both halves of `complete-split` and anything later); see `assert-payment-allowed.ts`
+  await assertPaymentAllowedForCart(cart as never, context, container)
 
   assertCashOnDeliveryFeeMatchesPayment({
     dueHuf: context.cash_on_delivery_fee,
