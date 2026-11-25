@@ -15,7 +15,7 @@ jest.mock("../../workflows/utils/order-edit-hold", () => ({
   orderEditHoldDecision: jest.fn(),
 }))
 // the order's payment lock (card f3b62beb): the double says whether a call ran inside it
-const lockState = { held: false, taken: [] as string[], nextHeld: [] as boolean[] }
+const lockState = { held: false, taken: [] as string[] }
 jest.mock("../../workflows/utils/order-payment/lock", () => ({
   orderPaymentLock: () => async (id: string, job: () => Promise<unknown>) => {
     lockState.taken.push(id)
@@ -50,8 +50,8 @@ const call = async () => {
       this.sent = body
     },
   }
-  // Medusa's own route: whether it was called inside the lock
-  const next = jest.fn(() => void lockState.nextHeld.push(lockState.held))
+  // Medusa's own route: never reached now (every confirm runs here, under the lock)
+  const next = jest.fn()
   await orderEditConfirmKeepsHold(
     { params: { id: "order_1" }, scope: {}, auth_context: { actor_id: "user_1" } } as never,
     res as never,
@@ -62,15 +62,14 @@ const call = async () => {
 
 /**
  * THE ADMIN ORDER EDIT CONFIRM KEEPS AN UNCAPTURED HOLD (order-edit-hold.ts).
- * What must fail: a refused edit reaching Medusa's confirm; a kept hold that
- * also goes on to Medusa's route (it would confirm twice, the second time
- * cancelling the hold); a kept hold answered in another shape than Medusa's
+ * What must fail: a refused edit reaching Medusa's confirm; any confirm that
+ * also goes on to Medusa's route (it would confirm twice; for a kept hold the
+ * second time cancels it), or runs outside the order's payment lock; a kept hold answered in another shape than Medusa's
  * route; the guard not on the admin confirm route.
  */
 describe("the admin order edit confirm", () => {
   beforeEach(() => {
     lockState.taken = []
-    lockState.nextHeld = []
     decide.mockReset()
     run.mockReset()
     ops.hold.mockClear()
@@ -87,8 +86,8 @@ describe("the admin order edit confirm", () => {
     expect(run).not.toHaveBeenCalled()
   })
 
-  // card f3b62beb: the decision, the confirm and the closing run under the order's payment lock; Medusa's own confirm outside it
-  it("decides, confirms and closes under the order's payment lock; Medusa's own route goes on outside it", async () => {
+  // card f3b62beb: the decision, the confirm and the closing run under the order's payment lock
+  it("decides, confirms and closes under the order's payment lock", async () => {
     const inside: string[] = []
     decide.mockImplementationOnce(async () => {
       inside.push(`decide ${lockState.held}`)
@@ -102,18 +101,23 @@ describe("the admin order edit confirm", () => {
     await call()
     expect(lockState.taken).toEqual(["order_1"])
     expect(inside).toEqual(["decide true", "confirm true", "close true"])
-
-    decide.mockResolvedValueOnce({ action: "pass", reason: "no_card_hold" })
-    const next = (await call()).next
-    expect(next).toHaveBeenCalledTimes(1)
-    expect(lockState.nextHeld).toEqual([false])
   })
 
-  it("nothing to keep: Medusa's own route confirms", async () => {
+  // barracuda on commerce #910: a transfer order's confirm moves its collection too, so it must not race the transfer receipt
+  it("nothing to keep: Medusa's confirm workflow runs HERE, under the lock, and answers as Medusa's route; no hold, no closing", async () => {
     decide.mockResolvedValueOnce({ action: "pass", reason: "no_card_hold" })
-    const { next } = await call()
-    expect(next).toHaveBeenCalledTimes(1)
-    expect(run).not.toHaveBeenCalled()
+    const inside: boolean[] = []
+    run.mockImplementationOnce(async () => {
+      inside.push(lockState.held)
+      return { result: { id: "order_1", total: 18000 } }
+    })
+    const { res, next } = await call()
+    expect(run).toHaveBeenCalledWith({ input: { order_id: "order_1", confirmed_by: "user_1" } })
+    expect(inside).toEqual([true])
+    expect(lockState.taken).toEqual(["order_1"])
+    expect(res.sent).toEqual({ order_preview: { id: "order_1", total: 18000 } })
+    expect(next).not.toHaveBeenCalled()
+    expect(ops.hold).not.toHaveBeenCalled()
     expect(ops.closeOthers).not.toHaveBeenCalled()
   })
 
