@@ -113,3 +113,81 @@ describe("a sor ára", () => {
     expect(van.container.textContent).not.toContain("Original")
   })
 })
+
+/*
+  A RENDELES SORA A VASARLASKORI ALLAPOTBOL OLVAS (card 90c54873, acrobot 62358): `reduction="purchase"` a SOR SAJAT metaadatabol dont, a
+  valtozat mostanibol nem. MI PIROSIT: ha a rendeles-sor a valtozat elo metaadatabol athuz (egy akcio, ami a vasarlas utan indult, egy regi
+  rendelesen); ha a vasarlaskor rogzitett masolat az akcio vege utan eltunik a sorrol; ha masolat nelkuli (regi) rendeles athuz.
+*/
+const rendelesSor = (
+  sorMetadata: Record<string, unknown> | null,
+  valtozatMetadata: Record<string, unknown> | null,
+) =>
+  ({
+    quantity: 2,
+    unit_price: 92000,
+    total: 184000,
+    metadata: sorMetadata,
+    variant: { metadata: valtozatMetadata },
+  }) as never
+
+describe("a rendelés sora a vásárláskori állapotból olvas", () => {
+  it("a sor saját másolatából húz át, akkor is, ha az akció azóta véget ért (a változaton már nincs kulcs)", () => {
+    const { container } = render(
+      <LineItemPrice
+        item={rendelesSor(omnibus("100000"), {})}
+        currencyCode="huf"
+        reduction="purchase"
+      />,
+    )
+    expect(screen.getByTestId("product-original-price").textContent).toMatch(
+      /200\s000/,
+    )
+    expect(container.textContent).toContain("-8%")
+  })
+
+  it("másolat nélküli (régi) rendelésnél nincs áthúzás, akkor sem, ha a változaton ma van árcsökkentés", () => {
+    render(
+      <LineItemPrice
+        item={rendelesSor(null, omnibus("100000"))}
+        currencyCode="huf"
+        reduction="purchase"
+      />,
+    )
+    expect(screen.queryByTestId("product-original-price")).toBeNull()
+    cleanup()
+    render(
+      <LineItemUnitPrice
+        item={rendelesSor({}, omnibus("100000"))}
+        currencyCode="huf"
+        reduction="purchase"
+      />,
+    )
+    expect(screen.queryByTestId("product-unit-original-price")).toBeNull()
+  })
+
+  it("az egységár is a sor másolatából olvas, és a változat későbbi, más referenciája nem írja át", () => {
+    render(
+      <LineItemUnitPrice
+        item={rendelesSor(omnibus("100000"), omnibus("500000"))}
+        currencyCode="huf"
+        reduction="purchase"
+      />,
+    )
+    expect(
+      screen.getByTestId("product-unit-original-price").textContent,
+    ).toMatch(/100\s000/)
+  })
+
+  it("az alapértelmezés (kosár) változatlanul az élő változatból olvas", () => {
+    render(
+      <LineItemPrice
+        item={rendelesSor(null, omnibus("100000"))}
+        currencyCode="huf"
+      />,
+    )
+    expect(screen.getByTestId("product-original-price").textContent).toMatch(
+      /200\s000/,
+    )
+  })
+})
