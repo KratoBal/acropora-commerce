@@ -271,11 +271,16 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         <td className="hidden small:table-cell small:py-4 small:pr-4">
           <div className="text-[14px] leading-[22px] text-acr-slate">
             {kedvezmenyes && (
-              <p
-                className="line-through"
-                data-testid="product-unit-original-price"
-              >
-                {penz(egysegEredeti)}
+              <p>
+                <span data-testid="product-unit-reference-label">
+                  {t("product.originalPrice")}{" "}
+                </span>
+                <span
+                  className="line-through"
+                  data-testid="product-unit-original-price"
+                >
+                  {penz(egysegEredeti)}
+                </span>
               </p>
             )}
             <span data-testid="product-unit-price">{penz(egysegAr)}</span>
@@ -290,11 +295,24 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             </span>
           )}
           {kedvezmenyes && (
-            <span
-              className="text-[14px] text-acr-slate line-through"
-              data-testid="product-original-price"
-            >
-              {penz(sorEredeti)}
+            <span className="text-[14px] text-acr-slate">
+              {/*
+                A FELIRAT A SORON: az athuzott osszeg a 30 napos LEGALACSONYABB ar, nem a regi listaar (a termeklapon is ez a felirat all az athuzott ar
+                elott). Asztali nezetben az egysegar oszlopa viseli (a sorosszeg mellett ugyanaz a felirat felesleges), telefonon es az osszegzo
+                elonezetben (nincs egysegar oszlop) a sorosszeg.
+              */}
+              <span
+                className={type === "full" ? "small:hidden" : undefined}
+                data-testid="product-reference-label"
+              >
+                {t("product.originalPrice")}{" "}
+              </span>
+              <span
+                className="line-through"
+                data-testid="product-original-price"
+              >
+                {penz(sorEredeti)}
+              </span>
             </span>
           )}
           <span className="font-medium" data-testid="product-price">
