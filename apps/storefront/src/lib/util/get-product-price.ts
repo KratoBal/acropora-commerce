@@ -118,6 +118,29 @@ export const sorCsokkentes = (
     : null
 }
 
+/**
+ * A RENDELES-SOR KOZLESE A VASARLASKORI ALLAPOTBOL (card 90c54873, acrobot 62358): a visszaigazolas es a rendeles-elozmeny bizonylat, utolag
+ * nem valtozhat attol, hogy kesobb indul vagy vegzodik egy akcio. A backend a kosar frissitesekor a valtozat 30 napos legalacsonyabb arat
+ * (`omnibus_lowest_price_30d`) a SOR SAJAT metaadatara masolja (`omnibus-line-snapshot.ts`), a rendeles sora ezt orokli. Ez a fuggveny ugyanazt a
+ * donto fuggvenyt (`sorCsokkentes`) futtatja, de a SOR metaadatabol, nem az elo valtozatebol. Masolat nelkuli sor (minden korabbi rendeles): nincs athuzas.
+ */
+export const rendelesSorCsokkentes = (
+  item: {
+    unit_price?: number | null
+    quantity?: number | null
+    metadata?: Record<string, unknown> | null
+  },
+  currencyCode: string,
+): SorCsokkentes | null =>
+  sorCsokkentes(
+    {
+      unit_price: item.unit_price,
+      quantity: item.quantity,
+      variant: { metadata: item.metadata },
+    },
+    currencyCode,
+  )
+
 export const getPricesForVariant = (variant: VariantWithPrice) => {
   if (!variant?.calculated_price?.calculated_amount) {
     return null

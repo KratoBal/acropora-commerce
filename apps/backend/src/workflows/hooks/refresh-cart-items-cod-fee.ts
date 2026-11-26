@@ -4,6 +4,7 @@ import { refreshCartItemsWorkflow } from "@medusajs/medusa/core-flows"
 
 import { capGiftCardCredit } from "../utils/cap-gift-card-credit"
 import { capLoyaltyCredit } from "../utils/cap-loyalty-credit"
+import { snapshotOmnibusReferences } from "../utils/omnibus-line-snapshot"
 import { loadCartCashOnDeliveryFeeState } from "../utils/load-cart-cod-fee-state"
 
 /**
@@ -113,5 +114,7 @@ refreshCartItemsWorkflow.hooks.beforeRefreshingPaymentCollection(
     await capGiftCardCredit(cartId, container, logger)
     // and the points credit (card dfb79916): the same, and whole points
     await capLoyaltyCredit(cartId, container, logger)
+    // and the Omnibus reference of every line, copied onto the line so a placed order keeps the state it was bought under (card 90c54873)
+    await snapshotOmnibusReferences(cartId, container, logger)
   }
 )

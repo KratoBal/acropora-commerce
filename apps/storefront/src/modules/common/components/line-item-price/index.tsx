@@ -1,4 +1,7 @@
-import { sorCsokkentes } from "@lib/util/get-product-price"
+import {
+  rendelesSorCsokkentes,
+  sorCsokkentes,
+} from "@lib/util/get-product-price"
 import { convertToLocale } from "@lib/util/money"
 import { hu } from "@lib/i18n/dictionary/hu"
 import { HttpTypes } from "@medusajs/types"
@@ -8,16 +11,25 @@ type LineItemPriceProps = {
   item: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem
   style?: "default" | "tight"
   currencyCode: string
+  /**
+   * `live` (alapertelmezes, a kosar): a valtozat mostani metaadatabol. `purchase` (a rendeles oldalai): a sor sajat, vasarlaskor rogzitett
+   * masolatabol; masolat nelkul nincs athuzas.
+   */
+  reduction?: "live" | "purchase"
 }
 
 const LineItemPrice = ({
   item,
   style = "default",
   currencyCode,
+  reduction = "live",
 }: LineItemPriceProps) => {
   const currentPrice = item.total ?? 0
   // athuzas es szazalek csak valodi arcsokkentesnel (Omnibus 2/A.), a 30 napos legalacsonyabb arhoz, a kupon elotti egysegarral: lasd `sorCsokkentes`
-  const csokkentes = sorCsokkentes(item, currencyCode)
+  const csokkentes =
+    reduction === "purchase"
+      ? rendelesSorCsokkentes(item, currencyCode)
+      : sorCsokkentes(item, currencyCode)
   const hasReducedPrice = csokkentes !== null
 
   return (
