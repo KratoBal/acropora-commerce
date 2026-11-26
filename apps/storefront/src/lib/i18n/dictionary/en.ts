@@ -1365,6 +1365,8 @@ export const en: Dictionary = {
       advanceReceived: {
         label: "Advance received",
         text: "Balance due: {amount}",
+        reference:
+          "When you transfer it, please write this number in the payment reference: {proformaNumber}",
       },
       refunded: {
         label: "Refunded",

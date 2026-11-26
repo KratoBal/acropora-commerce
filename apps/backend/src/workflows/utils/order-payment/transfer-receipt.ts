@@ -57,7 +57,12 @@ export type TransferReceiptOperations = {
   authorizeSession(id: string): Promise<{ payment_id: string } | null>
   /** The payment module's capture of this amount (an advance, or the balance after it). */
   capture(paymentId: string, amount: number): Promise<void>
+  /** The advance proforma's number on the order (`BALANCE_REFERENCE_KEY`), for the guest page's balance line. */
+  setBalanceReference(orderId: string, reference: string): Promise<void>
 }
+
+/** The order's metadata key the guest page reads the balance's transfer reference from (card d31a66a3, acrobot 63071). */
+export const BALANCE_REFERENCE_KEY = "acropora_balance_reference" as const
 
 export type TransferReceiptInput = {
   reference: string
@@ -70,6 +75,11 @@ export type TransferReceiptInput = {
    * it a smaller amount is refused as before: a full proforma underpaid (a typo, a bank fee) must not read as an advance.
    */
   advance?: boolean
+  /**
+   * The advance proforma's number (acrobot 63071): with an advance, the order keeps it, and the guest page asks the customer to
+   * name it on the balance's transfer. Ignored on any other receipt.
+   */
+  balance_reference?: string
 }
 
 export type TransferReceiptResult = {
@@ -111,7 +121,7 @@ export const recordTransferReceipt = async (
   if (!transfer.length) refuse("Ez a rendelés nem előre utalással fizet.")
 
   const paying = transfer.find((s) => s.payment_id && (s.status === "authorized" || s.status === "captured"))
-  if (paying) return balanceOrRepeat(paying, input, ops)
+  if (paying) return balanceOrRepeat(orderId, paying, input, ops)
 
   const waiting = transfer.filter((s) => s.status === "pending_authorization")
   if (waiting.length !== 1) refuse("A rendelés előre utalásos fizetése nem vár befizetésre.")
@@ -140,6 +150,7 @@ export const recordTransferReceipt = async (
   if (!payment) refuse("A befizetés rögzítése után a fizetés nem lett teljesítve; nézd meg a rendelést.")
   if (!partial) return { recorded: true, payment_id: payment!.payment_id, captured: session.amount, outstanding: 0 }
   await ops.capture(payment!.payment_id, input.amount)
+  await keepBalanceReference(orderId, input, ops)
   return {
     recorded: true,
     payment_id: payment!.payment_id,
@@ -148,8 +159,23 @@ export const recordTransferReceipt = async (
   }
 }
 
+/**
+ * The advance proforma's number on the order, after the advance is captured. Written again when the same advance is sent again
+ * (the OS's "Webshop fizetés lezárása"): an order recorded before the number came along gets it then, and the same number twice
+ * is the same metadata.
+ */
+const keepBalanceReference = async (
+  orderId: string,
+  input: TransferReceiptInput,
+  ops: TransferReceiptOperations
+): Promise<void> => {
+  const reference = input.balance_reference?.trim()
+  if (reference) await ops.setBalanceReference(orderId, reference)
+}
+
 /** A session that became a payment: paid already, the same advance again (finished if it stopped), or the balance. */
 const balanceOrRepeat = async (
+  orderId: string,
   session: TransferSession,
   input: TransferReceiptInput,
   ops: TransferReceiptOperations
@@ -160,9 +186,13 @@ const balanceOrRepeat = async (
   if (outstanding <= 0) return paid
   const advance = readBankTransferReceipt(session.data)
   if (advance?.partial && advance.reference === input.reference.trim()) {
-    if (session.captured > 0) return paid
+    if (session.captured > 0) {
+      await keepBalanceReference(orderId, input, ops)
+      return paid
+    }
     // a run that stopped between the authorize and the capture: the advance's capture now
     await ops.capture(paymentId, advance.amount!)
+    await keepBalanceReference(orderId, input, ops)
     return {
       recorded: true,
       payment_id: paymentId,

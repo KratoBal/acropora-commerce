@@ -204,6 +204,48 @@ describe("an advance received by transfer", () => {
     )
   })
 
+  // acrobot 63071: the number the OS's bank pairing looks for on the balance's transfer; without it, no sentence and no placeholder
+  it("under the balance: the number to name on its transfer, and nothing when the shop sent none", () => {
+    const { unmount } = render(
+      <GuestOrderView
+        orders={[
+          {
+            ...base,
+            payment_status: "partially_captured",
+            payment_kind: "transfer",
+            outstanding: 2880,
+            balance_reference: "D-CRPR-7",
+          },
+        ]}
+      />,
+    )
+    expect(
+      screen.getByTestId("guest-order-balance-reference").textContent,
+    ).toBe("Utalásnál a közleménybe kérjük, írd be ezt a számot: D-CRPR-7")
+    unmount()
+
+    for (const balance_reference of [null, undefined]) {
+      const { unmount: again } = render(
+        <GuestOrderView
+          orders={[
+            {
+              ...base,
+              payment_status: "partially_captured",
+              payment_kind: "transfer",
+              outstanding: 2880,
+              balance_reference,
+            },
+          ]}
+        />,
+      )
+      expect(screen.queryByTestId("guest-order-balance-reference")).toBeNull()
+      const text = screen.getByTestId("guest-order-payment").textContent ?? ""
+      expect(text).not.toContain("proformaNumber")
+      expect(text).not.toContain("közleménybe")
+      again()
+    }
+  })
+
   it("without the balance from the shop: the label stands, and no balance line", () => {
     render(
       <GuestOrderView

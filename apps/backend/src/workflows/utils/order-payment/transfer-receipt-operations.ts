@@ -1,7 +1,8 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { updateOrderWorkflow } from "@medusajs/medusa/core-flows"
 
-import type { TransferReceiptOperations } from "./transfer-receipt"
+import { BALANCE_REFERENCE_KEY, type TransferReceiptOperations } from "./transfer-receipt"
 
 const FIELDS = [
   "id",
@@ -15,8 +16,11 @@ const FIELDS = [
   "payment_collections.payment_sessions.payment.captures.amount",
 ]
 
-/** `recordTransferReceipt` on Medusa: query for the sessions, the payment module for the rest. */
-export const transferReceiptOperations = (container: MedusaContainer): TransferReceiptOperations => ({
+/**
+ * `recordTransferReceipt` on Medusa: query for the sessions, the payment module for the rest. `userId`: the admin caller (the OS's
+ * key), whom the order's change record names for the balance reference, as the order notes' write does.
+ */
+export const transferReceiptOperations = (container: MedusaContainer, userId: string): TransferReceiptOperations => ({
   loadSessions: async (orderId) => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const { data } = await query.graph({ entity: "order", filters: { id: orderId }, fields: FIELDS })
@@ -47,5 +51,11 @@ export const transferReceiptOperations = (container: MedusaContainer): TransferR
   // the module's capture, as the full receipt's auto-capture is (the provider's capturePayment needs the receipt, which is there)
   capture: async (paymentId, amount) => {
     await container.resolve(Modules.PAYMENT).capturePayment({ payment_id: paymentId, amount })
+  },
+  // only this key goes to Medusa, whose order service merges it into the order's metadata (as `order-notes.ts` does)
+  setBalanceReference: async (orderId, reference) => {
+    await updateOrderWorkflow(container).run({
+      input: { id: orderId, metadata: { [BALANCE_REFERENCE_KEY]: reference }, user_id: userId },
+    })
   },
 })

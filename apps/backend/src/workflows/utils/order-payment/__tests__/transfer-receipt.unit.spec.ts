@@ -53,6 +53,9 @@ function ops(sessions: TransferSession[] | null) {
     capture: async (id, amount) => {
       calls.push(`capture ${id} ${amount}`)
     },
+    setBalanceReference: async (orderId, reference) => {
+      calls.push(`reference ${orderId} ${reference}`)
+    },
   }
   return { operations, calls, updates }
 }
@@ -168,6 +171,61 @@ describe("recording a received bank transfer in Medusa", () => {
     expect(stopped.calls).toEqual(["capture pay_1 1920"])
   })
 
+  /*
+    THE NUMBER FOR THE BALANCE'S TRANSFER (acrobot 63071). WHAT TURNS THIS RED: the advance proforma's number is not kept on the
+    order after the advance's capture, or is kept before it (a refused or stopped advance would show a number); a balance or a
+    full receipt writes one; the same advance sent again cannot bring a number an older call did not.
+  */
+  it("an advance keeps the advance proforma's number on the order, after its capture", async () => {
+    const { operations, calls } = ops([transfer()])
+    await recordTransferReceipt(
+      "order_55",
+      { reference: "ELO-1", received_at: "2026-11-26", amount: 1920, advance: true, balance_reference: " D-CRPR-7 " },
+      operations
+    )
+    expect(calls).toEqual([
+      "update payses_1",
+      "authorize payses_1",
+      "provider authorized",
+      "capture pay_1 1920",
+      "reference order_55 D-CRPR-7",
+    ])
+  })
+
+  it("no number is written without one, on a full receipt, or on the balance", async () => {
+    const plain = ops([transfer()])
+    await recordTransferReceipt(
+      "order_55",
+      { reference: "ELO-1", received_at: "2026-11-26", amount: 1920, advance: true },
+      plain.operations
+    )
+    expect(plain.calls.some((c) => c.startsWith("reference"))).toBe(false)
+
+    const full = ops([transfer()])
+    await recordTransferReceipt("order_55", { ...input, balance_reference: "D-CRPR-7" }, full.operations)
+    expect(full.calls.some((c) => c.startsWith("reference"))).toBe(false)
+
+    const balance = ops([afterAdvance(1920)])
+    await recordTransferReceipt(
+      "order_55",
+      { reference: "VEG-1", received_at: "2026-12-10", amount: 2880, balance_reference: "D-CRPR-7" },
+      balance.operations
+    )
+    expect(balance.calls).toEqual(["capture pay_1 2880"])
+  })
+
+  it("the same advance sent again brings the number to an order recorded without it, and captures nothing", async () => {
+    const again = ops([afterAdvance(1920)])
+    await expect(
+      recordTransferReceipt(
+        "order_55",
+        { reference: "ELO-1", received_at: "2026-11-26", amount: 1920, advance: true, balance_reference: "D-CRPR-7" },
+        again.operations
+      )
+    ).resolves.toEqual({ recorded: false, payment_id: "pay_1", captured: 1920, outstanding: 2880 })
+    expect(again.calls).toEqual(["reference order_55 D-CRPR-7"])
+  })
+
   it("more than the order is refused, before anything is written", async () => {
     const { operations, calls } = ops([transfer()])
     await expect(
@@ -190,12 +248,20 @@ describe("the route's body", () => {
     expect((middlewares.routes ?? []).find((r) => r.matcher === matcher)?.middlewares).toHaveLength(1)
     expect(AdminRecordTransferReceipt.safeParse(input).success).toBe(true)
     expect(AdminRecordTransferReceipt.safeParse({ ...input, advance: true }).success).toBe(true)
+    for (const number of ["D-CRPR-7", "ACRD-2026/00012", "E-CRPRW-2026-6"])
+      expect(AdminRecordTransferReceipt.safeParse({ ...input, advance: true, balance_reference: number }).success).toBe(true)
     for (const bad of [
       { ...input, reference: "  " },
       { ...input, received_at: "2026.10.07" },
       { ...input, amount: 0 },
       { ...input, captured: true },
       { ...input, advance: "yes" },
+      // the balance reference is a document number, shown to the customer: nothing else passes
+      { ...input, balance_reference: "" },
+      { ...input, balance_reference: "D CRPR 7" },
+      { ...input, balance_reference: "<b>7</b>" },
+      { ...input, balance_reference: "-7" },
+      { ...input, balance_reference: "A".repeat(41) },
     ])
       expect(AdminRecordTransferReceipt.safeParse(bad).success).toBe(false)
   })

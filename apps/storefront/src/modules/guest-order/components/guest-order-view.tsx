@@ -47,6 +47,8 @@ export type WithdrawalsChanged = (
  */
 /** The payment line that carries the balance after an advance (`guestOrder.payment.advanceReceived`). */
 const ADVANCE_TEXT = "guestOrder.payment.advanceReceived.text"
+/** Under the balance: the number to name on its transfer (acrobot 63071), only when the shop sent one. */
+const ADVANCE_REFERENCE = "guestOrder.payment.advanceReceived.reference"
 
 export default function GuestOrderView({
   orders,
@@ -191,12 +193,25 @@ function OrderBlock({
           {payment.text === ADVANCE_TEXT ? (
             // after an advance (card d31a66a3, 2b; acrobot 61267): the balance, or no line when the shop sent none
             order.outstanding != null && (
-              <p
-                className="text-[14px] text-acr-ink"
-                data-testid="guest-order-outstanding"
-              >
-                {t(payment.text, { amount: money(order.outstanding) })}
-              </p>
+              <>
+                <p
+                  className="text-[14px] text-acr-ink"
+                  data-testid="guest-order-outstanding"
+                >
+                  {t(payment.text, { amount: money(order.outstanding) })}
+                </p>
+                {/* no number, no sentence: an empty placeholder never goes out (acrobot 63071) */}
+                {order.balance_reference ? (
+                  <p
+                    className="text-[14px] text-acr-ink"
+                    data-testid="guest-order-balance-reference"
+                  >
+                    {t(ADVANCE_REFERENCE, {
+                      proformaNumber: order.balance_reference,
+                    })}
+                  </p>
+                ) : null}
+              </>
             )
           ) : (
             <p className="text-[14px] text-acr-ink">{t(payment.text)}</p>

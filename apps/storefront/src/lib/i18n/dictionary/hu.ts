@@ -1411,6 +1411,8 @@ export const hu = {
       advanceReceived: {
         label: "Előleg beérkezett",
         text: "Hátralék: {amount}",
+        reference:
+          "Utalásnál a közleménybe kérjük, írd be ezt a számot: {proformaNumber}",
       },
       refunded: {
         label: "Visszatérítve",
