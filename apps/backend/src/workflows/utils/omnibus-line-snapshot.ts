@@ -12,8 +12,9 @@ import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
  * completion, which copies line metadata) carries the line metadata onto the order line. The order pages read the line's copy;
  * a line without it (every order placed before this) is shown without a strike.
  *
- * ONLY THE ONE KEY IS TOUCHED, the rest of the line's metadata is kept. A variant without the key (no reduction, or it has ended)
- * takes the key off the line. A line that is already right is not written, so a refresh that changes nothing writes nothing.
+ * ONLY THE ONE KEY IS SENT, the rest of the line's metadata is not in the update (the module merges key by key). A variant without
+ * the key (no reduction, or it has ended) sends the key as an empty text, which is how the merge deletes it. A line that is already
+ * right is not written, so a refresh that changes nothing writes nothing.
  *
  * WHAT IT DOES NOT DO: it does not decide whether the line is a reduction (that stays the storefront's pure function over the
  * line's `unit_price` and this text), and it does not re-read at completion: the order carries what the last refresh wrote,
@@ -57,12 +58,12 @@ export const planOmnibusSnapshots = (
       continue
     }
 
-    const { [OMNIBUS_LINE_KEY]: _dropped, ...rest } = line.metadata ?? {}
-
+    // ONLY OUR KEY GOES IN THE UPDATE (barracuda, #913 CHANGES): the cart module's `updateLineItems` MERGES metadata key by key
+    // (`mergeMetadata`, @medusajs/utils: a key that is absent from the update stays, only an empty text "" deletes it), so a copy
+    // of the rest would overwrite a key someone wrote meanwhile, and leaving our key out would not remove it
     updates.push({
       id: line.id,
-      metadata:
-        wanted === null ? rest : { ...rest, [OMNIBUS_LINE_KEY]: wanted },
+      metadata: { [OMNIBUS_LINE_KEY]: wanted ?? "" },
     })
   }
 
