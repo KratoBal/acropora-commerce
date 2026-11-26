@@ -15,6 +15,7 @@ import { orderOutstanding, orderPaymentStatus } from "./payment-status"
 import { isStorePickupOption } from "../shipping-option-roles"
 import { livestockKindsOfOrder } from "../webshop-mail/livestock-kinds"
 import { lineTitle } from "../webshop-mail/operations"
+import { PARENT_ORDER_METADATA_KEY, PICKUP_ORDER_METADATA_KEY } from "../split-completion"
 import {
   guestProblemReports,
   guestWithdrawals,
@@ -192,22 +193,43 @@ export const guestOrderOperations = (container: MedusaContainer): GuestOrderDeps
   return {
     findByDisplayId: async (displayId) => (await load({ display_id: displayId }))[0] ?? null,
     siblingsOf: async (orderId) => {
+      const ids = new Set<string>()
       const { data: own } = await query.graph({
         entity: "order_cart",
         filters: { order_id: orderId },
         fields: ["cart_id"],
       })
       const cartId = (own?.[0] as { cart_id?: string } | undefined)?.cart_id
-      if (!cartId) return []
-      const { data: links } = await query.graph({
-        entity: "order_cart",
-        filters: { cart_id: cartId },
-        fields: ["order_id"],
+      if (cartId) {
+        const { data: links } = await query.graph({
+          entity: "order_cart",
+          filters: { cart_id: cartId },
+          fields: ["order_id"],
+        })
+        for (const link of (links ?? []) as { order_id?: string }[]) if (link.order_id) ids.add(link.order_id)
+      }
+      /*
+        THE OTHER HALF OF A SPLIT IS NOT A CART-MATE (card d31a66a3, slice 0 measured on the test shop, orders #160 and #161): the live
+        animal order is placed from its OWN pickup cart, so the two orders share no `order_cart` cart and the cart lookup above finds
+        nothing. The split writes the two orders' ids on each other's metadata (`linkOrders`: the same link the OS reads for its
+        "related order"), so this is the link that joins them. A lookup of either order then answers with both, as the page's two-order
+        notice and the confirmation page already assume.
+      */
+      const { data: self } = await query.graph({
+        entity: "order",
+        filters: { id: orderId },
+        fields: ["id", "metadata"],
       })
-      const ids = ((links ?? []) as { order_id?: string }[])
-        .map((link) => link.order_id)
-        .filter((id): id is string => Boolean(id) && id !== orderId)
-      return ids.length ? load({ id: ids }) : []
+      const metadata = ((self?.[0] as { metadata?: Record<string, unknown> | null } | undefined)?.metadata ?? {}) as Record<
+        string,
+        unknown
+      >
+      for (const key of [PICKUP_ORDER_METADATA_KEY, PARENT_ORDER_METADATA_KEY]) {
+        const linked = metadata[key]
+        if (typeof linked === "string" && linked) ids.add(linked)
+      }
+      ids.delete(orderId)
+      return ids.size ? load({ id: [...ids] }) : []
     },
     problemReportsOf: async (orderId) => {
       try {

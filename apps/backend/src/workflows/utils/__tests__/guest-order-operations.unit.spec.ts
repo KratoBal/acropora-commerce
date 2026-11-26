@@ -62,6 +62,8 @@ const withdrawalService = {
 const warnings: string[] = []
 let reportsFail = false
 let withdrawalsFail = false
+let orderMetadata: Record<string, Record<string, unknown>> = {}
+let noCartLink = false
 const container = (calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[]) =>
   ({
     resolve: (key: string) =>
@@ -86,7 +88,7 @@ const container = (calls: { entity: string; filters: Record<string, unknown>; fi
         : {
       graph: async (q: { entity: string; filters: Record<string, unknown>; fields: string[] }) => {
         calls.push(q)
-        if (q.entity === "order_cart" && q.filters.order_id) return { data: [{ cart_id: "cart_1" }] }
+        if (q.entity === "order_cart" && q.filters.order_id) return { data: noCartLink ? [] : [{ cart_id: "cart_1" }] }
         if (q.entity === "order_cart" && q.filters.cart_id) return { data: [{ order_id: "o_1" }, { order_id: "o_2" }] }
         if (q.entity === "order" && q.filters.display_id === 1042)
           return { data: [order("o_1", 1042, "so_other", "Bolti átvétel")] }
@@ -111,8 +113,10 @@ const container = (calls: { entity: string; filters: Record<string, unknown>; fi
               },
             ],
           }
+        if (q.entity === "order" && typeof q.filters.id === "string")
+          return { data: [{ id: q.filters.id, metadata: orderMetadata[q.filters.id] ?? null }] }
         if (q.entity === "order" && Array.isArray(q.filters.id))
-          return { data: [order("o_2", 1043, pickupId, "Átvétel")] }
+          return { data: q.filters.id.map((id) => order(id, id === "o_2" ? 1043 : 1050, pickupId, "Átvétel")) }
         return { data: [] }
       },
     },
@@ -135,8 +139,53 @@ describe("guestOrderOperations", () => {
     const mates = await guestOrderOperations(container(calls)).siblingsOf("o_1")
     expect(calls[0]).toMatchObject({ entity: "order_cart", filters: { order_id: "o_1" } })
     expect(calls[1]).toMatchObject({ entity: "order_cart", filters: { cart_id: "cart_1" } })
-    expect(calls[2]).toMatchObject({ entity: "order", filters: { id: ["o_2"] } })
+    expect(calls[2]).toMatchObject({ entity: "order", filters: { id: "o_1" }, fields: ["id", "metadata"] })
+    expect(calls[3]).toMatchObject({ entity: "order", filters: { id: ["o_2"] } })
     expect(mates.map((m) => m.id)).toEqual(["o_2"])
+  })
+
+  /*
+    THE SPLIT'S OTHER HALF (card d31a66a3, slice 0, measured live on the test shop with orders #160 and #161): the live animal order is
+    placed from its own pickup cart, so the two orders share no `order_cart` cart; only the metadata links (`acropora_pickup_order_id`
+    on the shipped order, `acropora_parent_order_id` on the pickup order) join them. WHAT TURNS THIS RED: the lookup reading only the
+    cart link (a lookup of either order then answers with itself alone, as it did live); a link followed in one direction only; the
+    order returned as its own mate; the same order listed twice when a cart link AND a metadata link name it.
+  */
+  it("follows the split's metadata links in both directions when the orders share no cart", async () => {
+    noCartLink = true
+    try {
+      orderMetadata = { o_1: { acropora_pickup_order_id: "o_2" } }
+      const fromParent = await guestOrderOperations(container([])).siblingsOf("o_1")
+      expect(fromParent.map((m) => m.id)).toEqual(["o_2"])
+
+      orderMetadata = { o_2: { acropora_parent_order_id: "o_1" } }
+      const fromPickup = await guestOrderOperations(container([])).siblingsOf("o_2")
+      expect(fromPickup.map((m) => m.id)).toEqual(["o_1"])
+    } finally {
+      noCartLink = false
+      orderMetadata = {}
+    }
+  })
+
+  it("lists a mate once when the cart link and the metadata link both name it, and never the order itself", async () => {
+    try {
+      orderMetadata = { o_1: { acropora_pickup_order_id: "o_2", acropora_parent_order_id: "o_1" } }
+      const calls: { entity: string; filters: Record<string, unknown>; fields: string[] }[] = []
+      const mates = await guestOrderOperations(container(calls)).siblingsOf("o_1")
+      expect(mates.map((m) => m.id)).toEqual(["o_2"])
+      expect(calls[3]).toMatchObject({ entity: "order", filters: { id: ["o_2"] } })
+    } finally {
+      orderMetadata = {}
+    }
+  })
+
+  it("an order with no cart mate and no metadata link has no sibling (the control: the lookup does not invent one)", async () => {
+    noCartLink = true
+    try {
+      expect(await guestOrderOperations(container([])).siblingsOf("o_1")).toEqual([])
+    } finally {
+      noCartLink = false
+    }
   })
 
   it("computes the payment status from the collections (query.graph has none) and reads the role (acrobot 60746)", async () => {
