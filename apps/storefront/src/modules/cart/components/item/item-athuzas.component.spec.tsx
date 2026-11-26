@@ -89,6 +89,42 @@ describe("a kosár sorának áthúzása", () => {
     )
   })
 
+  it("az áthúzott összeg felirata: Korábbi legalacsonyabb ár, és csak áthúzásnál áll", () => {
+    // a felirat nélküli áthúzott szám "régi árnak" olvasódik, pedig a 30 napos legalacsonyabb ár (a termékoldalon is ez a felirat áll mellette)
+    const { unmount } = rajzol(sor({ metadata: omnibus("100000") }))
+    expect(
+      screen.getByTestId("product-unit-reference-label").textContent,
+    ).toMatch(/^Korábbi legalacsonyabb ár:/)
+    expect(screen.getByTestId("product-reference-label").textContent).toMatch(
+      /^Korábbi legalacsonyabb ár:/,
+    )
+    // asztali nézetben a sorösszeg mellett a felirat rejtett (az egységár oszlopa viseli), telefonon látszik
+    expect(screen.getByTestId("product-reference-label").className).toContain(
+      "small:hidden",
+    )
+    unmount()
+    rajzol(sor())
+    expect(screen.queryByTestId("product-unit-reference-label")).toBeNull()
+    expect(screen.queryByTestId("product-reference-label")).toBeNull()
+  })
+
+  it("az összegző előnézetben (nincs egységár oszlop) a felirat a sorösszeg mellett látszik", () => {
+    render(
+      <table>
+        <tbody>
+          <Item
+            item={sor({ metadata: omnibus("100000") })}
+            type="preview"
+            currencyCode="huf"
+          />
+        </tbody>
+      </table>,
+    )
+    const felirat = screen.getByTestId("product-reference-label")
+    expect(felirat.textContent).toMatch(/^Korábbi legalacsonyabb ár:/)
+    expect(felirat.className).not.toContain("small:hidden")
+  })
+
   it("ha a 30 napos legalacsonyabb ár nem nagyobb a fizetendőnél, nincs áthúzás", () => {
     for (const amount of ["92000", "80000"]) {
       const { unmount } = rajzol(sor({ metadata: omnibus(amount) }))
