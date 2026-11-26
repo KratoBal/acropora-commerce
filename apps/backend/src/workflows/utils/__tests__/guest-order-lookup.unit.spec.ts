@@ -151,6 +151,24 @@ describe("guestOrderView: only named fields leave", () => {
     })
   })
 
+  // acrobot 63071: the number the customer names on the balance's transfer, only with a balance, only a document number
+  it("names the advance proforma's number only while a balance is due, and only when it is one", () => {
+    const withBalance = (metadata: Record<string, unknown> | null) =>
+      guestOrderView(source({ id: "o", display_id: 1, payment_status: "partially_captured", outstanding: 2880, metadata }), null)
+        .balance_reference
+    expect(withBalance({ acropora_balance_reference: "D-CRPR-7" })).toBe("D-CRPR-7")
+    expect(withBalance(null)).toBeNull()
+    expect(withBalance({ acropora_balance_reference: "<script>" })).toBeNull()
+    expect(withBalance({ acropora_balance_reference: 7 })).toBeNull()
+    // the balance paid: no number, whatever the metadata keeps
+    expect(
+      guestOrderView(
+        source({ id: "o", display_id: 1, outstanding: null, metadata: { acropora_balance_reference: "D-CRPR-7" } }),
+        null,
+      ).balance_reference,
+    ).toBeNull()
+  })
+
   it("an unknown payment status is null, a known one passes", () => {
     expect(
       guestOrderView(source({ id: "o", display_id: 1, payment_status: "something_new" }), null).payment_status,

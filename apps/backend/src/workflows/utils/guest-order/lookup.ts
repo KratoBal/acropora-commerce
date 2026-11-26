@@ -20,6 +20,7 @@
 import type { StoredTracking } from "../order-tracking"
 import { trackingOf } from "../order-tracking"
 import { storedOrderPaymentOf } from "../order-payment/state"
+import { BALANCE_REFERENCE_KEY } from "../order-payment/transfer-receipt"
 import type { PaymentRole } from "../payment-eligibility"
 import type { ProblemKind } from "../../../modules/order-problem-report/types"
 
@@ -99,6 +100,11 @@ export type GuestOrderView = {
    * order that is not partly paid.
    */
   outstanding: number | null
+  /**
+   * The advance proforma's number the customer names on the balance's transfer (acrobot 63071): only with a balance, and only
+   * a document number. `null` when the shop has none: the page then leaves the sentence out.
+   */
+  balance_reference: string | null
   business_status: GuestOrderStatus | null
   items: { id: string; title: string; quantity: number; total: number }[]
   shipping: {
@@ -217,6 +223,14 @@ export const guestWithdrawals = (stored: readonly StoredWithdrawal[]): GuestWith
       item_ids: Array.isArray(row.item_ids) ? [...row.item_ids] : [],
     }))
 
+const BALANCE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9/._-]{0,39}$/
+
+/** The stored advance proforma number (`BALANCE_REFERENCE_KEY`), when it is one; anything else is not shown. */
+const balanceReferenceOf = (metadata: Record<string, unknown> | null): string | null => {
+  const raw = metadata?.[BALANCE_REFERENCE_KEY]
+  return typeof raw === "string" && BALANCE_REFERENCE.test(raw) ? raw : null
+}
+
 /** The customer-safe shape of one order. Every field is named: nothing else of the source passes. */
 export const guestOrderView = (
   source: GuestOrderSource,
@@ -232,6 +246,7 @@ export const guestOrderView = (
   payment_status: source.payment_status && PAYMENT_STATUSES.has(source.payment_status) ? source.payment_status : null,
   payment_kind: guestPaymentKind(source, status),
   outstanding: source.outstanding ?? null,
+  balance_reference: source.outstanding != null ? balanceReferenceOf(source.metadata) : null,
   business_status: status,
   items: source.items.map((item) => ({
     id: item.id,

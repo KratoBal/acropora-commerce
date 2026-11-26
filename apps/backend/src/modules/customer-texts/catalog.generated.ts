@@ -3866,6 +3866,12 @@ export const CUSTOMER_TEXT_CATALOG: readonly { key: string; group: CustomerTextG
     "en": "Balance due: {amount}"
   },
   {
+    "key": "guestOrder.payment.advanceReceived.reference",
+    "group": "rendeles-allapota",
+    "hu": "Utalásnál a közleménybe kérjük, írd be ezt a számot: {proformaNumber}",
+    "en": "When you transfer it, please write this number in the payment reference: {proformaNumber}"
+  },
+  {
     "key": "guestOrder.payment.refunded.label",
     "group": "rendeles-allapota",
     "hu": "Visszatérítve",

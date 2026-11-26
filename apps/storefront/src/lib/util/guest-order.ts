@@ -58,6 +58,11 @@ export type GuestOrder = {
   payment_kind?: GuestPaymentKind | null
   /** after an advance by transfer (card d31a66a3, 2b): what is still to pay; absent or null otherwise */
   outstanding?: number | null
+  /**
+   * the advance proforma's number, for the balance's transfer (acrobot 63071); absent from an older shop answer, or null when the
+   * shop has none: the sentence that names it is then left out
+   */
+  balance_reference?: string | null
   business_status: GuestOrderStatus | null
   /** `id`: the order line's id (the problem report names the lines by it) */
   items: { id: string; title: string; quantity: number; total: number }[]

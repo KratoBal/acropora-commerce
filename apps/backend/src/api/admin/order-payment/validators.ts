@@ -35,6 +35,13 @@ export const AdminRecordTransferReceipt = z
     amount: z.number().positive(),
     // an advance proforma's transfer (card d31a66a3, 2b): only then may the amount be less than the order (barracuda on #908)
     advance: z.boolean().optional(),
+    // the advance proforma's number (card d31a66a3, acrobot 63071): the guest page asks the customer to name it on the balance's
+    // transfer, the number the OS's bank pairing looks for. A document number, nothing else: letters, digits, "/", "-", "_", "."
+    balance_reference: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9][A-Za-z0-9/._-]{0,39}$/)
+      .optional(),
   })
   .strict()
 

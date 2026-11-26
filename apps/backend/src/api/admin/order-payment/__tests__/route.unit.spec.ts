@@ -9,6 +9,7 @@ import { loadOrderPaymentSide } from "../../../../workflows/utils/order-payment/
 import { releaseHold } from "../../../../workflows/utils/order-payment/release-hold"
 import { sendPaymentLink } from "../../../../workflows/utils/order-payment/payment-link"
 import { recordTransferReceipt } from "../../../../workflows/utils/order-payment/transfer-receipt"
+import { transferReceiptOperations } from "../../../../workflows/utils/order-payment/transfer-receipt-operations"
 import { notifyHoldReleased } from "../../../../workflows/utils/webshop-mail/payment-notify"
 
 jest.mock("../../../../workflows/utils/order-payment/operations", () => ({
@@ -189,7 +190,12 @@ describe("POST /admin/order-payment/:order_id/transfer-receipt", () => {
   const call = async () => {
     const { sent, statuses, res } = respond()
     await TRANSFER(
-      { params: { order_id: "order_56" }, scope: "scope", validatedBody: { reference: "R", received_at: "2026-10-07", amount: 5900 } } as never,
+      {
+        params: { order_id: "order_56" },
+        scope: "scope",
+        auth_context: { actor_id: "user_os" },
+        validatedBody: { reference: "R", received_at: "2026-10-07", amount: 5900 },
+      } as never,
       res as never
     )
     return { status: statuses[0], body: sent[0] }
@@ -214,6 +220,8 @@ describe("POST /admin/order-payment/:order_id/transfer-receipt", () => {
       { reference: "R", received_at: "2026-10-07", amount: 5900 },
       "transfer-ops"
     )
+    // the admin caller is the one the order's change record names for the balance reference (acrobot 63071)
+    expect(transferReceiptOperations).toHaveBeenCalledWith("scope", "user_os")
   })
 
   it("an unknown order still goes to the error handler", async () => {
